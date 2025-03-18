@@ -71,10 +71,10 @@ globs: *.cs
     }
     ```
 
-- When inheriting from a class or implementing an interface, the class name should be on the main line, and the inheritence shoudl be done intended on the next line
+- When inheriting from a class or implementing an interface, the class name should be on the main line, and the inheritance should be done intended on the next line
 
     ```csharp
-    //Good: inheritence is on the next line indented
+    //Good: inheritance is on the next line indented
     public interface ISomething
         : IInherited
     {
