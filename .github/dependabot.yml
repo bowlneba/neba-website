@@ -9,5 +9,3 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    pull_request_assignees:
-      - "kippermand"
