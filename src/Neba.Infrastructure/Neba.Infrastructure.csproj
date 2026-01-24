@@ -7,5 +7,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Neba.Application\Neba.Application.csproj" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <InternalVisibleTo Include="Neba.Infrastructure.Tests" />
+    <InternalVisibleTo Include="Neba.TestFactory" />
+  </ItemGroup>
 
 </Project>
