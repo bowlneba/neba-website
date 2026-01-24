@@ -7,7 +7,7 @@ namespace Neba.Infrastructure.Tests.Telemetry;
 
 [UnitTest]
 [Component("Infrastructure.Telemetry")]
-internal sealed class TelemetryExtensionsTests : IDisposable
+public sealed class TelemetryExtensionsTests : IDisposable
 {
     private readonly ActivitySource _activitySource;
 

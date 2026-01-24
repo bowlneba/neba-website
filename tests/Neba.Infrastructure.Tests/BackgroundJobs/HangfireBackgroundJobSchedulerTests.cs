@@ -15,7 +15,7 @@ namespace Neba.Infrastructure.Tests.BackgroundJobs;
 [UnitTest]
 [Component("Infrastructure.BackgroundJobs")]
 [Collection("HangfireSequential")]
-internal sealed class HangfireBackgroundJobSchedulerTests : IDisposable
+public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
 {
     private readonly InMemoryStorage _jobStorage;
 

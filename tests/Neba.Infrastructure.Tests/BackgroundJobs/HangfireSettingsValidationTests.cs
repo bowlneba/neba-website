@@ -8,7 +8,7 @@ namespace Neba.Infrastructure.Tests.BackgroundJobs;
 
 [UnitTest]
 [Component("Infrastructure.BackgroundJobs")]
-internal sealed class HangfireSettingsValidationTests
+public sealed class HangfireSettingsValidationTests
 {
     [Fact(DisplayName = "Valid settings pass validation")]
     public void Validate_WithValidValues_Succeeds()
