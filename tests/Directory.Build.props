@@ -9,7 +9,7 @@
     <!-- Code coverage settings for SonarCloud -->
     <CollectCoverage>true</CollectCoverage>
     <CoverletOutputFormat>opencover</CoverletOutputFormat>
-    <NoWarn>CS1591</NoWarn>
+    <NoWarn>$(NoWarn);CA1859;CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,6 +1,6 @@
 namespace Neba.Website.Server;
-
-public class WeatherApiClient(HttpClient httpClient)
+#pragma warning disable CA1812 // Type is instantiated by DI container
+internal sealed class WeatherApiClient(HttpClient httpClient)
 {
     public async Task<WeatherForecast[]> GetWeatherAsync(int maxItems = 10, CancellationToken cancellationToken = default)
     {
@@ -24,7 +24,7 @@ public class WeatherApiClient(HttpClient httpClient)
     }
 }
 
-public record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+internal sealed record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
