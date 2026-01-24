@@ -1,0 +1,278 @@
+name: Pull Request Workflow
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - '.github/workflows/pull_request.yml'
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Setup .Net
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+    #   - name: Pre-pull Postgres image
+    #     run: docker pull postgres:17.6
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Check formatting
+        run: dotnet format --verify-no-changes --no-restore
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Setup .Net
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+#   jest-tests:
+#     name: JavaScript Tests (Jest)
+#     needs: build
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 10
+#     permissions:
+#       contents: read
+#       checks: write
+
+#     steps:
+#       - uses: actions/checkout@v5
+#         with:
+#           fetch-depth: 1
+
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v6
+#         with:
+#           node-version: '20'
+#           cache: 'npm'
+#           cache-dependency-path: src/frontend/Neba.Web.Server/package.json
+
+#       - name: Install dependencies (skip install scripts)
+#         run: npm ci --ignore-scripts
+#         working-directory: src/frontend/Neba.Web.Server
+
+#       - name: Run Jest tests
+#         run: npm test -- --coverage --ci
+#         working-directory: src/frontend/Neba.Web.Server
+
+#       - name: Upload test results
+#         if: always()
+#         uses: actions/upload-artifact@v5
+#         with:
+#           name: jest-test-results
+#           path: src/frontend/Neba.Web.Server/coverage/
+#           retention-days: 30
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      checks: write
+    strategy:
+      matrix:
+        include:
+        - test-project: tests/Neba.Website.Tests/Neba.Website.Tests.csproj
+          test-name: Web Tests
+        #   - test-project: tests/Neba.UnitTests/Neba.UnitTests.csproj
+        #     test-name: Unit Tests
+        #   - test-project: tests/Neba.IntegrationTests/Neba.IntegrationTests.csproj
+        #     test-name: Integration Tests
+        #   - test-project: tests/Neba.WebTests/Neba.WebTests.csproj
+        #     test-name: Blazor Tests
+      fail-fast: false
+
+    name: ${{ matrix.test-name }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Setup .Net
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Pre-pull test container images
+        if: matrix.test-name == 'Integration Tests'
+        run: |
+          docker pull postgres:17.6
+          docker pull mcr.microsoft.com/azure-storage/azurite:latest
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build projects
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Run tests with coverage
+        run: dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --coverage --coverage-output-format xml --coverage-output coverage.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-results-${{ matrix.test-name }}
+          path: "**/TestResults/**/*.trx"
+          retention-days: 30
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: coverage-${{ matrix.test-name }}
+          path: "**/TestResults/**/coverage.xml"
+          retention-days: 30
+
+#   browser-tests:
+#     needs: build
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 20
+#     name: Playwright E2E Tests
+#     permissions:
+#       contents: read
+#       checks: write
+
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         include:
+#           - project: chromium
+#             browser: chromium
+#           - project: 'Mobile Chrome'
+#             browser: chromium
+#           - project: 'Mobile Safari'
+#             browser: webkit
+
+#     steps:
+#       - uses: actions/checkout@v5
+#         with:
+#           fetch-depth: 1
+
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v6
+#         with:
+#           node-version: lts/*
+
+#       - name: Install Node dependencies
+#         run: npm ci --ignore-scripts
+#         working-directory: tests/browser
+
+#       - name: Install Playwright Browsers
+#         run: npx playwright install --with-deps ${{ matrix.browser }}
+#         working-directory: tests/browser
+
+#       - name: Setup .NET
+#         uses: actions/setup-dotnet@v5
+#         with:
+#           dotnet-version: 10.0.x
+
+#       - name: Cache NuGet packages
+#         uses: actions/cache@v4
+#         with:
+#           path: ~/.nuget/packages
+#           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props') }}
+#           restore-keys: |
+#             ${{ runner.os }}-nuget-
+
+#       - name: Restore dependencies
+#         run: dotnet restore
+
+#       - name: Build projects
+#         run: dotnet build --configuration Release --no-restore
+
+#       - name: Run Playwright tests
+#         run: npx playwright test --project="${{ matrix.project }}"
+#         working-directory: tests/browser
+
+#       - name: Upload Playwright report
+#         if: always()
+#         uses: actions/upload-artifact@v5
+#         with:
+#           name: playwright-report-${{ matrix.project }}
+#           path: tests/browser/playwright-report/
+
+#       - name: Upload test traces
+#         if: failure()
+#         uses: actions/upload-artifact@v5
+#         with:
+#           name: playwright-traces-${{ matrix.project }}
+#           path: tests/browser/test-results/
+#           retention-days: 7
+
+  sonarcloud:
+    name: SonarCloud Analysis
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # Disable shallow clone for better SonarCloud analysis
+
+      - name: Run SonarCloud Analysis
+        uses: ./.github/actions/sonarcloud-analysis
+        with:
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
