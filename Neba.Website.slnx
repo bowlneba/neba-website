@@ -20,6 +20,7 @@
     <Project Path="src/Neba.Website.Server/Neba.Website.Server.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Neba.Application.Tests/Neba.Application.Tests.csproj" />
     <Project Path="tests/Neba.Domain.Tests/Neba.Domain.Tests.csproj" />
     <Project Path="tests/Neba.TestFactory/Neba.TestFactory.csproj" />
     <Project Path="tests/Neba.Website.Tests/Neba.Website.Tests.csproj" />

@@ -3,5 +3,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Neba.Domain\Neba.Domain.csproj" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <InternalVisibleTo Include="Neba.Application.Tests" />
+    <InternalVisibleTo Include="Neba.TestFactory" />
+  </ItemGroup>
 
 </Project>

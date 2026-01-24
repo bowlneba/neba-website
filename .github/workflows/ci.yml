@@ -125,8 +125,8 @@ jobs:
             test-name: Website Tests
           - test-project: tests/Neba.Domain.Tests/Neba.Domain.Tests.csproj
             test-name: Domain Tests
-        #   - test-project: tests/Neba.IntegrationTests/Neba.IntegrationTests.csproj
-        #     test-name: Integration Tests
+          - test-project: tests/Neba.Application.Tests/Neba.Application.Tests.csproj
+            test-name: Application Tests
         #   - test-project: tests/Neba.WebTests/Neba.WebTests.csproj
         #     test-name: Blazor Tests
       fail-fast: false
