@@ -15,7 +15,9 @@
     ],
     "cSpell.ignorePaths": [
         ".gitignore",
-        "**/.editorconfig"
+        "**/.editorconfig",
+        "**/*.csproj",
+        ".vscode/**"
     ],
     "sonarlint.connectedMode.project": {
         "connectionId": "bowlneba",
