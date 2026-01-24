@@ -1,6 +1,9 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
+var postgresUser = builder.AddParameter("postgres-userName", "neba-db-user");
+
 var postgres = builder.AddPostgres("postgres")
+    .WithUserName(postgresUser)
     .WithPgAdmin()
     .WithDataVolume("neba-website-data");
 
