@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+      <OutputType>Exe</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Neba.Domain\Neba.Domain.csproj" />
+      <ProjectReference Include="..\Neba.TestFactory\Neba.TestFactory.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet list:*)",
+      "Bash(dotnet:*)",
+      "Bash(ls:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/kippermand/Projects/bowlneba/neba-website/src"
+    ]
+  }
+}
