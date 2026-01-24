@@ -12,6 +12,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Neba.AppHost\Neba.AppHost.csproj" />
+    <ProjectReference Include="..\..\src\Neba.Website.Client\Neba.Website.Client.csproj" />
+    <ProjectReference Include="..\..\src\Neba.Website.Server\Neba.Website.Server.csproj" />
+    <ProjectReference Include="..\Neba.TestFactory\Neba.TestFactory.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -10,8 +10,8 @@
   </ItemGroup>
   
   <ItemGroup>
-    <InternalVisibleTo Include="Neba.Api.Tests" />
-    <InternalVisibleTo Include="Neba.TestFactory" />
+    <InternalsVisibleTo Include="Neba.Api.Tests" />
+    <InternalsVisibleTo Include="Neba.TestFactory" />
   </ItemGroup>
 
 </Project>

@@ -5,8 +5,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Neba.Api.Contracts\Neba.Api.Contracts.csproj" />
     <ProjectReference Include="..\Neba.Website.Client\Neba.Website.Client.csproj" />
     <ProjectReference Include="..\Neba.ServiceDefaults\Neba.ServiceDefaults.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <InternalsVisibleTo Include="Neba.Website.Tests" />
+    <InternalsVisibleTo Include="Neba.TestFactory" />
   </ItemGroup>
 
 </Project>

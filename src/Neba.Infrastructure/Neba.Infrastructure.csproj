@@ -9,8 +9,8 @@
   </ItemGroup>
   
   <ItemGroup>
-    <InternalVisibleTo Include="Neba.Infrastructure.Tests" />
-    <InternalVisibleTo Include="Neba.TestFactory" />
+    <InternalsVisibleTo Include="Neba.Infrastructure.Tests" />
+    <InternalsVisibleTo Include="Neba.TestFactory" />
   </ItemGroup>
 
 </Project>
