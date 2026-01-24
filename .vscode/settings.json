@@ -17,7 +17,8 @@
         ".gitignore",
         "**/.editorconfig",
         "**/*.csproj",
-        ".vscode/**"
+        ".vscode/**",
+        "**/*.props",
     ],
     "sonarlint.connectedMode.project": {
         "connectionId": "bowlneba",
