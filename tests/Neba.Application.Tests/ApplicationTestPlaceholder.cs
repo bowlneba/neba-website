@@ -1,6 +1,6 @@
 namespace Neba.Application.Tests;
 
-public sealed class ApplicationTestPlaceholder
+internal sealed class ApplicationTestPlaceholder
 {
     [Fact]
     public void PlaceholderTest()

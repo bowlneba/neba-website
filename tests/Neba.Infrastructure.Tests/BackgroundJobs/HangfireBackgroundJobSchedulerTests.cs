@@ -15,7 +15,7 @@ namespace Neba.Infrastructure.Tests.BackgroundJobs;
 [UnitTest]
 [Component("Infrastructure.BackgroundJobs")]
 [Collection("HangfireSequential")]
-public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
+internal sealed class HangfireBackgroundJobSchedulerTests : IDisposable
 {
     private readonly InMemoryStorage _jobStorage;
 
@@ -260,7 +260,7 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
     }
 
     [Fact(DisplayName = "ExecuteJobAsync executes handler successfully")]
-    public async Task ExecuteJobAsync_WithValidHandler_ExecutesSuccessfully()
+    public async Task ExecuteJobAsync_WithValidHandler_ExecutesSuccessfullyAsync()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();
@@ -272,7 +272,7 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
     }
 
     [Fact(DisplayName = "ExecuteJobAsync propagates exception from handler")]
-    public async Task ExecuteJobAsync_WhenHandlerThrows_PropagatesException()
+    public async Task ExecuteJobAsync_WhenHandlerThrows_PropagatesExceptionAsync()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();

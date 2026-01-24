@@ -1,4 +1,5 @@
 using Bogus;
+
 using Neba.Infrastructure.BackgroundJobs;
 
 namespace Neba.TestFactory.Infrastructure.BackgroundJobs;

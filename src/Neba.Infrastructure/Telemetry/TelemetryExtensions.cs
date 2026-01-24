@@ -26,7 +26,7 @@ internal static class TelemetryExtensions
 
             activity.SetTag("code.function", function);
 
-            if(!string.IsNullOrEmpty(@namespace))
+            if (!string.IsNullOrEmpty(@namespace))
             {
                 activity.SetTag("code.namespace", @namespace);
             }

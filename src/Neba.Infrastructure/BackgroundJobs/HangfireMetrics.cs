@@ -11,23 +11,23 @@ internal static class HangfireMetrics
 
     private static readonly Counter<long> JobExecutions
         = Meter.CreateCounter<long>(
-            "neba.hangfire.job.executions", 
+            "neba.hangfire.job.executions",
             description: "Counts the number of Hangfire job executions.");
 
     private static readonly Counter<long> JobSuccesses
         = Meter.CreateCounter<long>(
-            "neba.hangfire.job.successes", 
+            "neba.hangfire.job.successes",
             description: "Counts the number of successful Hangfire job executions.");
 
     private static readonly Counter<long> JobFailures
         = Meter.CreateCounter<long>(
-            "neba.hangfire.job.failures", 
+            "neba.hangfire.job.failures",
             description: "Counts the number of failed Hangfire job executions.");
 
     private static readonly Histogram<double> JobDuration
         = Meter.CreateHistogram<double>(
             "neba.hangfire.job.duration",
-            unit: "ms", 
+            unit: "ms",
             description: "Records the duration of Hangfire job executions in milliseconds.");
 
     public static void RecordJobStart(string jobType)
@@ -38,7 +38,7 @@ internal static class HangfireMetrics
     }
 
     public static void RecordJobSuccess(
-        string jobType, 
+        string jobType,
         double durationMilliseconds)
     {
         TagList successTags = new() { { JobTypeTagName, jobType } };

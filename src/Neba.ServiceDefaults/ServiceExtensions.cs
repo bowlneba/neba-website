@@ -18,7 +18,7 @@ public static class ServiceExtensions
     /// <summary>
     /// Extension members for <see cref="IHostApplicationBuilder"/> implementations.
     /// </summary>
-    extension<TBuilder>(TBuilder builder) 
+    extension<TBuilder>(TBuilder builder)
         where TBuilder : IHostApplicationBuilder
     {
         /// <summary>

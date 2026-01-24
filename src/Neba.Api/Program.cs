@@ -35,7 +35,7 @@ app.MapGet("/weatherforecast", () =>
         var forecast = Enumerable.Range(1, 5).Select(index =>
                 new WeatherForecast
                 (
-                    #pragma warning disable CA5394 // Using Random.Shared for simplicity in sample code
+#pragma warning disable CA5394 // Using Random.Shared for simplicity in sample code
                     DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
                     Random.Shared.Next(-20, 55),
                     summaries[Random.Shared.Next(summaries.Length)]

@@ -1,6 +1,6 @@
 ﻿namespace Neba.Api.Tests;
 
-public sealed class ApiTestPlaceholder
+internal sealed class ApiTestPlaceholder
 {
     [Fact]
     public void PlaceholderTest()

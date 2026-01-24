@@ -16,7 +16,7 @@ namespace Neba.Infrastructure.Tests.BackgroundJobs;
 [IntegrationTest]
 [Component("Infrastructure.BackgroundJobs")]
 [Collection("HangfireSequential")]
-public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
+internal sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
 {
     private readonly InMemoryStorage _jobStorage;
     private readonly List<Activity> _recordedActivities;
@@ -143,7 +143,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
     }
 
     [Fact(DisplayName = "ExecuteJobAsync creates activity with correct name and tags on success")]
-    public async Task ExecuteJobAsync_OnSuccess_CreatesActivityWithCorrectNameAndTags()
+    public async Task ExecuteJobAsync_OnSuccess_CreatesActivityWithCorrectNameAndTagsAsync()
     {
         // Arrange
         _recordedActivities.Clear();
@@ -168,7 +168,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
     }
 
     [Fact(DisplayName = "ExecuteJobAsync sets activity status to Ok on success")]
-    public async Task ExecuteJobAsync_OnSuccess_SetsActivityStatusToOk()
+    public async Task ExecuteJobAsync_OnSuccess_SetsActivityStatusToOkAsync()
     {
         // Arrange
         _recordedActivities.Clear();
@@ -186,7 +186,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
     }
 
     [Fact(DisplayName = "ExecuteJobAsync sets activity status to Error with exception tags on failure")]
-    public async Task ExecuteJobAsync_OnFailure_SetsActivityStatusToErrorWithExceptionTags()
+    public async Task ExecuteJobAsync_OnFailure_SetsActivityStatusToErrorWithExceptionTagsAsync()
     {
         // Arrange
         _recordedActivities.Clear();
@@ -212,7 +212,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
     }
 
     [Fact(DisplayName = "ExecuteJobAsync includes display name in activity tags")]
-    public async Task ExecuteJobAsync_WithCustomDisplayName_IncludesDisplayNameInActivityTags()
+    public async Task ExecuteJobAsync_WithCustomDisplayName_IncludesDisplayNameInActivityTagsAsync()
     {
         // Arrange
         _recordedActivities.Clear();
@@ -230,7 +230,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
     }
 
     [Fact(DisplayName = "ExecuteJobAsync increments executions counter on start")]
-    public async Task ExecuteJobAsync_OnStart_IncrementsExecutionsCounter()
+    public async Task ExecuteJobAsync_OnStart_IncrementsExecutionsCounterAsync()
     {
         // Arrange
         _recordedActivities.Clear();
@@ -250,7 +250,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
     }
 
     [Fact(DisplayName = "ExecuteJobAsync increments successes counter on success")]
-    public async Task ExecuteJobAsync_OnSuccess_IncrementsSuccessesCounter()
+    public async Task ExecuteJobAsync_OnSuccess_IncrementsSuccessesCounterAsync()
     {
         // Arrange
         _recordedActivities.Clear();
@@ -270,7 +270,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
     }
 
     [Fact(DisplayName = "ExecuteJobAsync increments failures counter with error type on failure")]
-    public async Task ExecuteJobAsync_OnFailure_IncrementsFailuresCounterWithErrorType()
+    public async Task ExecuteJobAsync_OnFailure_IncrementsFailuresCounterWithErrorTypeAsync()
     {
         // Arrange
         _recordedActivities.Clear();
@@ -293,7 +293,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
     }
 
     [Fact(DisplayName = "ExecuteJobAsync records duration histogram with success result tag")]
-    public async Task ExecuteJobAsync_OnSuccess_RecordsDurationHistogramWithSuccessResult()
+    public async Task ExecuteJobAsync_OnSuccess_RecordsDurationHistogramWithSuccessResultAsync()
     {
         // Arrange
         _recordedActivities.Clear();
@@ -314,7 +314,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
     }
 
     [Fact(DisplayName = "ExecuteJobAsync records duration histogram with failure result and error type tag")]
-    public async Task ExecuteJobAsync_OnFailure_RecordsDurationHistogramWithFailureResultAndErrorType()
+    public async Task ExecuteJobAsync_OnFailure_RecordsDurationHistogramWithFailureResultAndErrorTypeAsync()
     {
         // Arrange
         _recordedActivities.Clear();
@@ -338,7 +338,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
     }
 
     [Fact(DisplayName = "ExecuteJobAsync records all expected metrics on success")]
-    public async Task ExecuteJobAsync_OnSuccess_RecordsAllExpectedMetrics()
+    public async Task ExecuteJobAsync_OnSuccess_RecordsAllExpectedMetricsAsync()
     {
         // Arrange
         _recordedActivities.Clear();
@@ -360,7 +360,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
     }
 
     [Fact(DisplayName = "ExecuteJobAsync records all expected metrics on failure")]
-    public async Task ExecuteJobAsync_OnFailure_RecordsAllExpectedMetrics()
+    public async Task ExecuteJobAsync_OnFailure_RecordsAllExpectedMetricsAsync()
     {
         // Arrange
         _recordedActivities.Clear();
@@ -384,7 +384,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
     }
 
     [Fact(DisplayName = "ExecuteJobAsync duration in activity matches metric duration approximately")]
-    public async Task ExecuteJobAsync_OnSuccess_ActivityDurationMatchesMetricDuration()
+    public async Task ExecuteJobAsync_OnSuccess_ActivityDurationMatchesMetricDurationAsync()
     {
         // Arrange
         _recordedActivities.Clear();

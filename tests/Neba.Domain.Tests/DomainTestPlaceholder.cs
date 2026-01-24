@@ -1,6 +1,6 @@
 namespace Neba.Domain.Tests;
 
-public sealed class DomainTestPlaceholder
+internal sealed class DomainTestPlaceholder
 {
     [Fact]
     public void PlaceholderTest()

@@ -133,7 +133,7 @@ internal sealed class HangfireBackgroundJobScheduler(
             activity?.SetTag("job.duration_ms", durationMilliseconds);
             activity?.SetStatus(ActivityStatusCode.Ok);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             double durationMilliseconds = Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
             HangfireMetrics.RecordJobFailure(jobType, durationMilliseconds, ex.GetType().Name);

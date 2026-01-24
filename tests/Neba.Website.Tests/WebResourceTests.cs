@@ -2,12 +2,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Neba.Website.Tests;
 
-public class WebTests
+internal class WebTests
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
 
     [Fact]
-    public async Task GetWebResourceRoot_ShouldReturnOk_WhenRequested()
+    public async Task GetWebResourceRoot_ShouldReturnOk_WhenRequestedAsync()
     {
         // Arrange
         using var cancellationTokenSource = new CancellationTokenSource(DefaultTimeout);
