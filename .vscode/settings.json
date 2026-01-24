@@ -28,5 +28,9 @@
     "sonarlint.connectedMode.project": {
         "connectionId": "bowlneba",
         "projectKey": "bowlneba-website"
-    }
+    },
+    "dotnet.defaultSolution": "Neba.Website.slnx",
+    "testExplorer.useNativeTesting": true,
+    "dotnet.testWindow.useTestingPlatformProtocol": true,
+    "dotnet-test-explorer.testProjectPath": "tests/**/*.csproj"
 }

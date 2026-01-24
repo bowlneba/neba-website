@@ -93,6 +93,9 @@ dotnet_diagnostic.S2325.severity = none
 # S1144 is a false positive for private members in extension blocks
 dotnet_diagnostic.S1144.severity = none
 
+# IDE0305: Simplify collection initialization
+dotnet_diagnostic.IDE0305.severity = warning
+
 #### C# Coding Conventions ####
 [*.cs]
 
