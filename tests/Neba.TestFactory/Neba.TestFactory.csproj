@@ -3,4 +3,12 @@
     <PropertyGroup>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Bogus" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="../../src/Neba.Infrastructure/Neba.Infrastructure.csproj" />
+    </ItemGroup>
+
 </Project>

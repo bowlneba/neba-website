@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 using Neba.Infrastructure.BackgroundJobs;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Infrastructure.BackgroundJobs;
 
 namespace Neba.Infrastructure.Tests.BackgroundJobs;
 
@@ -13,13 +14,7 @@ public sealed class HangfireSettingsValidationTests
     public void Validate_WithValidValues_Succeeds()
     {
         // Arrange
-        var settings = new HangfireSettings
-        {
-            WorkerCount = 10,
-            SucceededJobsRetentionDays = 30,
-            DeletedJobsRetentionDays = 30,
-            FailedJobsRetentionDays = 30,
-        };
+        var settings = HangfireSettingsFactory.Create();
 
         // Act
         bool isValid = TryValidate(settings, out List<ValidationResult> results);
@@ -35,13 +30,7 @@ public sealed class HangfireSettingsValidationTests
     public void Validate_WithInvalidWorkerCount_Fails(int workerCount, string expectedMessage)
     {
         // Arrange
-        var settings = new HangfireSettings
-        {
-            WorkerCount = workerCount,
-            SucceededJobsRetentionDays = 30,
-            DeletedJobsRetentionDays = 30,
-            FailedJobsRetentionDays = 30,
-        };
+        var settings = HangfireSettingsFactory.Create(workerCount: workerCount);
 
         // Act
         bool isValid = TryValidate(settings, out List<ValidationResult> results);
@@ -65,13 +54,26 @@ public sealed class HangfireSettingsValidationTests
         string expectedMessage)
     {
         // Arrange
-        var settings = new HangfireSettings
-        {
-            WorkerCount = 10,
-            SucceededJobsRetentionDays = succeededDays,
-            DeletedJobsRetentionDays = deletedDays,
-            FailedJobsRetentionDays = failedDays,
-        };
+        var settings = HangfireSettingsFactory.Create(
+            succeededJobsRetentionDays: succeededDays,
+            deletedJobsRetentionDays: deletedDays,
+            failedJobsRetentionDays: failedDays);
+
+        // Act
+        bool isValid = TryValidate(settings, out List<ValidationResult> results);
+
+        // Assert
+        isValid.ShouldBeFalse();
+        results.ShouldContain(r => r.ErrorMessage == expectedMessage);
+    }
+
+    [Theory(DisplayName = "Invalid automatic retry attempts fails validation")]
+    [InlineData(0, "AutomaticRetryAttempts must be between 1 and 10.", TestDisplayName = "AutomaticRetryAttempts below minimum")]
+    [InlineData(11, "AutomaticRetryAttempts must be between 1 and 10.", TestDisplayName = "AutomaticRetryAttempts above maximum")]
+    public void Validate_WithInvalidAutomaticRetryAttempts_Fails(int retryAttempts, string expectedMessage)
+    {
+        // Arrange
+        var settings = HangfireSettingsFactory.Create(automaticRetryAttempts: retryAttempts);
 
         // Act
         bool isValid = TryValidate(settings, out List<ValidationResult> results);

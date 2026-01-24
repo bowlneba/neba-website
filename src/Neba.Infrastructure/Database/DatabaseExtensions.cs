@@ -24,7 +24,7 @@ internal static class DatabaseExtensions
 
         private void AddDatabaseHealthChecks(string connectionString)
         {
-            string[] tags = ["database"];
+            string[] tags = ["infrastructure", "database"];
 
             services.AddHealthChecks()
                 .AddNpgSql(
