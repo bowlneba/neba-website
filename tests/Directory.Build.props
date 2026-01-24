@@ -11,6 +11,12 @@
     <CoverletOutputFormat>opencover</CoverletOutputFormat>
   </PropertyGroup>
 
+  <!-- Enable Microsoft Testing Platform runner for all test projects except the shared factory library -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' != 'Neba.TestFactory'">
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
   <ItemGroup>
     <Using Include="Xunit" />
     <Using Include="Shouldly" />
