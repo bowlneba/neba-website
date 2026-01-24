@@ -123,8 +123,8 @@ jobs:
         include:
           - test-project: tests/Neba.Website.Tests/Neba.Website.Tests.csproj
             test-name: Website Tests
-        #   - test-project: tests/Neba.UnitTests/Neba.UnitTests.csproj
-        #     test-name: Unit Tests
+          - test-project: tests/Neba.Domain.Tests/Neba.Domain.Tests.csproj
+            test-name: Domain Tests
         #   - test-project: tests/Neba.IntegrationTests/Neba.IntegrationTests.csproj
         #     test-name: Integration Tests
         #   - test-project: tests/Neba.WebTests/Neba.WebTests.csproj
