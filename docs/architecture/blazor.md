@@ -718,7 +718,7 @@ public void Should_Validate_Name(string name, bool expected) { }
 - Successful responses map correctly
 - API errors return appropriate `ErrorOr` failures
 - Network errors are handled gracefully
-- Logging occurs on failures
+- Use `NullLogger<T>.Instance` instead of mocking `ILogger<T>`
 
 **bUnit components**: Test components with meaningful interaction logic. Skip simple display-only components.
 

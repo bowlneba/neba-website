@@ -236,16 +236,19 @@ Flag when:
 - Tests missing `[Component]` trait attribute
 - Facts or Theories missing `DisplayName` parameter
 - InlineData missing `DisplayName` for theory test cases
+- Mocking `ILogger<T>` instead of using `NullLogger<T>.Instance`
 
 ### What to Test
 
 | Layer | Required Tests |
 |-------|----------------|
-| Services | Mock Refit interface, verify ErrorOr mapping, error handling, logging |
+| Services | Mock Refit interface, verify ErrorOr mapping, error handling |
 | Command handlers | Business rule enforcement, domain event raising, error cases |
 | Query handlers | Correct DTO mapping (use Verify snapshots) |
 | Complex components | bUnit tests for interaction logic, conditional rendering |
 | JS modules | Jest tests for function behavior |
+
+**Logging in tests**: Use `NullLogger<T>.Instance` instead of mocking `ILogger<T>`. Mocking ILogger adds complexity with no benefit — the null logger discards output silently.
 
 ### E2E Consideration
 
