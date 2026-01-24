@@ -695,13 +695,13 @@ All tests must have explicit display names for clarity in test runners and CI ou
 public void Should_Fail_When_Squad_At_Capacity() { }
 ```
 
-**Theories**: Use `DisplayName` on the theory and descriptive `[InlineData]`:
+**Theories**: Use `DisplayName` on the theory and `TestDisplayName` on each `[InlineData]`:
 
 ```csharp
 [Theory(DisplayName = "Should validate tournament type eligibility")]
-[InlineData(TournamentType.Senior, 49, false, DisplayName = "Senior tournament rejects bowler under 50")]
-[InlineData(TournamentType.Senior, 50, true, DisplayName = "Senior tournament accepts bowler at 50")]
-[InlineData(TournamentType.Open, 25, true, DisplayName = "Open tournament accepts any age")]
+[InlineData(TournamentType.Senior, 49, false, TestDisplayName = "Senior tournament rejects bowler under 50")]
+[InlineData(TournamentType.Senior, 50, true, TestDisplayName = "Senior tournament accepts bowler at 50")]
+[InlineData(TournamentType.Open, 25, true, TestDisplayName = "Open tournament accepts any age")]
 public void Should_Validate_Eligibility(TournamentType type, int age, bool expected) { }
 ```
 

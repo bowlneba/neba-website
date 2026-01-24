@@ -706,8 +706,8 @@ All tests must have explicit display names. See [backend.md](backend.md#test-nam
 public async Task Should_Show_Error_Toast_When_Api_Fails() { }
 
 [Theory(DisplayName = "Should validate form field")]
-[InlineData("", false, DisplayName = "Empty name is invalid")]
-[InlineData("Valid Name", true, DisplayName = "Non-empty name is valid")]
+[InlineData("", false, TestDisplayName = "Empty name is invalid")]
+[InlineData("Valid Name", true, TestDisplayName = "Non-empty name is valid")]
 public void Should_Validate_Name(string name, bool expected) { }
 ```
 
