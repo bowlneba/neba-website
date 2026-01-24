@@ -231,6 +231,40 @@ Suggest E2E tests for:
 
 ## Code Style & Conventions
 
+### C# Language Features
+
+**Use extension members (C# 14) instead of extension methods:**
+
+```csharp
+// Correct - extension member syntax
+public static class ServiceExtensions
+{
+    extension(WebApplication app)
+    {
+        public WebApplication MapDefaultEndpoints()
+        {
+            // implementation
+            return app;
+        }
+    }
+}
+
+// Incorrect - legacy extension method syntax
+public static class ServiceExtensions
+{
+    public static WebApplication MapDefaultEndpoints(this WebApplication app)
+    {
+        // implementation
+        return app;
+    }
+}
+```
+
+Flag when:
+
+- Extension methods use the legacy `this` parameter syntax instead of `extension()` blocks
+- Multiple extension methods for the same type aren't grouped in a single `extension()` block
+
 ### Naming
 
 - **Files**: Match type name (`CreateTournamentEndpoint.cs` contains `CreateTournamentEndpoint`)
@@ -267,6 +301,7 @@ Flag when:
 | Magic strings for routes/keys | Constants or strongly-typed alternatives |
 | Public setters on entities | Private setters with behavior methods |
 | `DateTime.Now` in domain logic | Inject `TimeProvider` |
+| Legacy extension method syntax (`this` parameter) | Use `extension()` blocks (C# 14) |
 
 ---
 
@@ -286,3 +321,4 @@ When reviewing, verify:
 - [ ] No sensitive data logged
 - [ ] Blazor components don't fetch data directly
 - [ ] Authorization attributes on admin endpoints
+- [ ] Extension methods use `extension()` block syntax, not legacy `this` parameter

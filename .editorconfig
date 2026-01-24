@@ -86,6 +86,12 @@ dotnet_remove_unnecessary_suppression_exclusions = none
 
 # CA rules
 dotnet_diagnostic.CA2007.severity = none
+# CA1034 is a false positive for extension member blocks (C# 14 feature)
+dotnet_diagnostic.CA1034.severity = none
+# S2325 is a false positive for methods inside extension member blocks
+dotnet_diagnostic.S2325.severity = none
+# S1144 is a false positive for private members in extension blocks
+dotnet_diagnostic.S1144.severity = none
 
 #### C# Coding Conventions ####
 [*.cs]
