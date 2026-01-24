@@ -24,7 +24,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Neba.Website.AppHost\Neba.Website.AppHost.csproj" />
+        <ProjectReference Include="..\..\src\Neba.Website.AppHost\Neba.Website.AppHost.csproj" />
     </ItemGroup>
 
     <ItemGroup>
