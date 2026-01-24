@@ -9,6 +9,7 @@
     <Project Path="src/Neba.ServiceDefaults/Neba.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/src/api/">
+    <Project Path="src/Neba.Api.Contracts/Neba.Api.Contracts.csproj" />
     <Project Path="src/Neba.Api/Neba.Api.csproj" />
     <Project Path="src/Neba.Application/Neba.Application.csproj" />
     <Project Path="src/Neba.Domain/Neba.Domain.csproj" />

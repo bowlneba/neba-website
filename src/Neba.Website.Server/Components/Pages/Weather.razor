@@ -2,7 +2,7 @@
 @attribute [StreamRendering(true)]
 @attribute [OutputCache(Duration = 5)]
 
-@inject WeatherApiClient WeatherApi
+@inject NebaApiClient WeatherApi
 
 <PageTitle>Weather</PageTitle>
 
@@ -46,6 +46,6 @@ else
 
     async protected override Task OnInitializedAsync()
     {
-        _forecasts = await WeatherApi.GetWeather();
+        _forecasts = await WeatherApi.GetWeatherAsync();
     }
 }
