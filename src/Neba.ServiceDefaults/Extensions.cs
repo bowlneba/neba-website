@@ -6,6 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 
+using Neba.ServiceDefaults;
+
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
@@ -143,7 +145,10 @@ public static class ServiceExtensions
             if (app.Environment.IsDevelopment())
             {
                 // All health checks must pass for app to be considered ready to accept traffic after starting
-                app.MapHealthChecks(HealthEndpointPath);
+                app.MapHealthChecks(HealthEndpointPath, new HealthCheckOptions
+                {
+                    ResponseWriter = HealthCheckResponseWriter.Default()
+                });
 
                 // Only health checks tagged with the "live" tag must pass for app to be considered alive
                 app.MapHealthChecks(AlivenessEndpointPath, new HealthCheckOptions

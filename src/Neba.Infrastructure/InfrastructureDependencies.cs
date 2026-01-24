@@ -38,7 +38,7 @@ public static class InfrastructureDependencies
             services.AddHealthChecks()
                 .AddNpgSql(
                     connectionString: connectionString,
-                    name: "Neba Website Database",
+                    name: "database",
                     tags: tags);
         }
     }
