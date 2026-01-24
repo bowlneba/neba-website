@@ -9,4 +9,4 @@ builder.AddProject<Projects.Neba_Website_Server>("web")
     .WithReference(apiService)
     .WaitFor(apiService);
 
-builder.Build().Run();
+await builder.Build().RunAsync();
