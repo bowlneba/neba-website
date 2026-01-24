@@ -1,6 +1,9 @@
 # Test-only analyzer suppressions
 [*.cs]
 
+# Don't require accessibility modifiers on test classes
+dotnet_style_require_accessibility_modifiers = silent
+
 # Allow returning mocks and interfaces in tests
 dotnet_diagnostic.CA1859.severity = none # prefer concrete return types
 
