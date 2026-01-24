@@ -13,7 +13,10 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddOutputCache();
 
-builder.Services.AddHttpClient<WeatherApiClient>(client => client.BaseAddress = new("http://api"));
+var nebaApiBaseUrl = builder.Configuration["NebaApi:BaseUrl"]
+    ?? throw new InvalidOperationException("Configuration value 'NebaApi:BaseUrl' is required.");
+
+builder.Services.AddHttpClient<WeatherApiClient>(client => client.BaseAddress = new(nebaApiBaseUrl));
 
 var app = builder.Build();
 
