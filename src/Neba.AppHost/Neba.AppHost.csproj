@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Neba.Website.Api\Neba.Website.Api.csproj" />
+        <ProjectReference Include="..\Neba.Api\Neba.Api.csproj" />
         <ProjectReference Include="..\Neba.Website.Server\Neba.Website.Server.csproj" />
     </ItemGroup>
 

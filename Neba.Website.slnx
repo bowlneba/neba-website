@@ -1,10 +1,12 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/Neba.Website.Api/Neba.Website.Api.csproj" />
-    <Project Path="src/Neba.Website.AppHost/Neba.Website.AppHost.csproj" />
+    <Project Path="src/Neba.Api/Neba.Api.csproj" />
+    <Project Path="src/Neba.AppHost/Neba.AppHost.csproj" />
+    <Project Path="src/Neba.Application/Neba.Application.csproj" />
+    <Project Path="src/Neba.Domain/Neba.Domain.csproj" />
     <Project Path="src/Neba.Website.Client/Neba.Website.Client.csproj" />
     <Project Path="src/Neba.Website.Server/Neba.Website.Server.csproj" />
-    <Project Path="src/Neba.Website.ServiceDefaults/Neba.Website.ServiceDefaults.csproj" />
+    <Project Path="src/Neba.ServiceDefaults/Neba.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Neba.Website.Tests/Neba.Website.Tests.csproj" />

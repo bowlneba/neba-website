@@ -12,7 +12,7 @@ public class WebTests
         // Arrange
         var cancellationToken = new CancellationTokenSource(DefaultTimeout).Token;
 
-        var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Neba_Website_AppHost>(cancellationToken);
+        var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Neba_AppHost>(cancellationToken);
         appHost.Services.AddLogging(logging =>
         {
             logging.SetMinimumLevel(LogLevel.Debug);

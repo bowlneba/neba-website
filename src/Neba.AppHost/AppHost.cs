@@ -1,6 +1,6 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-var apiService = builder.AddProject<Projects.Neba_Website_Api>("api")
+var apiService = builder.AddProject<Projects.Neba_Api>("api")
     .WithHttpHealthCheck("/health");
 
 builder.AddProject<Projects.Neba_Website_Server>("web")

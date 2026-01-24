@@ -12,7 +12,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Neba.Website.Client\Neba.Website.Client.csproj" />
-        <ProjectReference Include="..\Neba.Website.ServiceDefaults\Neba.Website.ServiceDefaults.csproj" />
+        <ProjectReference Include="..\Neba.ServiceDefaults\Neba.ServiceDefaults.csproj" />
     </ItemGroup>
 
 </Project>
