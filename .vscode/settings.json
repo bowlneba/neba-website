@@ -1,18 +1,20 @@
 {
     "cSpell.words": [
-      "Antiforgery",
-      "Blazor",
-      "Challonge",
-      "diagnosability",
-      "Fluxor",
-      "Instantiator",
-      "Neba",
-      "Respawn",
-      "Shouldly",
-      "sonarcloud",
-      "SonarQube",
-      "USBC",
-      "viewports"
+        "Antiforgery",
+        "apphost",
+        "apphosts",
+        "Blazor",
+        "Challonge",
+        "diagnosability",
+        "Fluxor",
+        "Instantiator",
+        "Neba",
+        "Respawn",
+        "Shouldly",
+        "sonarcloud",
+        "SonarQube",
+        "USBC",
+        "viewports"
     ],
     "cSpell.ignorePaths": [
         ".gitignore",
