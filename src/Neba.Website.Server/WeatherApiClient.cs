@@ -2,7 +2,7 @@ namespace Neba.Website.Server;
 #pragma warning disable CA1812 // Type is instantiated by DI container
 internal sealed class WeatherApiClient(HttpClient httpClient)
 {
-    public async Task<WeatherForecast[]> GetWeatherAsync(int maxItems = 10, CancellationToken cancellationToken = default)
+    public async Task<WeatherForecast[]> GetWeather(int maxItems = 10, CancellationToken cancellationToken = default)
     {
         List<WeatherForecast>? forecasts = null;
 
