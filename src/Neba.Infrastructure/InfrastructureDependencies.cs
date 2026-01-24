@@ -21,7 +21,7 @@ public static class InfrastructureDependencies
         /// <returns>The updated service collection.</returns>
         public IServiceCollection AddInfrastructure(IConfiguration configuration)
         {
-            services.AddDatabase(configuration.GetConnectionString("neba-website") 
+            services.AddDatabase(configuration.GetConnectionString("neba-website")
                 ?? throw new InvalidOperationException("Connection string 'neba-website' not found."));
             
             return services;
@@ -32,6 +32,14 @@ public static class InfrastructureDependencies
             services.AddOpenTelemetry()
                 .WithTracing(tracing => tracing.AddNpgsql())
                 .WithMetrics(metrics => metrics.AddNpgsqlInstrumentation());
+
+            string[] tags = ["database"];
+
+            services.AddHealthChecks()
+                .AddNpgSql(
+                    connectionString: connectionString,
+                    name: "Neba Website Database",
+                    tags: tags);
         }
     }
 }
