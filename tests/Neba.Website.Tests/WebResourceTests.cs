@@ -6,7 +6,7 @@ namespace Neba.Website.Tests;
 
 [IntegrationTest]
 [Component("Website")]
-public class WebResourceTests
+public sealed class WebResourceTests
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
 
