@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using Neba.Infrastructure.Database;
+
 using Npgsql;
 
 namespace Neba.Infrastructure;
@@ -25,21 +27,6 @@ public static class InfrastructureDependencies
                 ?? throw new InvalidOperationException("Connection string 'neba-website' not found."));
             
             return services;
-        }
-
-        private void AddDatabase(string connectionString)
-        {
-            services.AddOpenTelemetry()
-                .WithTracing(tracing => tracing.AddNpgsql())
-                .WithMetrics(metrics => metrics.AddNpgsqlInstrumentation());
-
-            string[] tags = ["database"];
-
-            services.AddHealthChecks()
-                .AddNpgSql(
-                    connectionString: connectionString,
-                    name: "database",
-                    tags: tags);
         }
     }
 }
