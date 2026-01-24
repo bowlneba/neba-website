@@ -15,7 +15,8 @@
         "sonarcloud",
         "SonarQube",
         "USBC",
-        "viewports"
+        "viewports",
+        "Xunit"
     ],
     "cSpell.ignorePaths": [
         ".gitignore",

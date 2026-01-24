@@ -57,7 +57,7 @@ public interface IBackgroundJobScheduler
     /// <param name="parentJobId">The identifier of the parent job.</param>
     /// <param name="job">The background job to schedule as a continuation.</param>
     /// <returns>The identifier of the continuation job.</returns>
-    string ContinueWith<TJob>(string parentJobId, TJob job)
+    string ContinueJobWith<TJob>(string parentJobId, TJob job)
         where TJob : IBackgroundJob;
 
     /// <summary>

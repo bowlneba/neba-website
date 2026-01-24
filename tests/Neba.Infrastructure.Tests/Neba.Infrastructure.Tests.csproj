@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Hangfire.InMemory" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Neba.Infrastructure\Neba.Infrastructure.csproj" />
     <ProjectReference Include="..\Neba.TestFactory\Neba.TestFactory.csproj" />
   </ItemGroup>
