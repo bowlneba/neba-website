@@ -1,10 +1,13 @@
 using Neba.Website.Server;
+using Neba.Website.Server.BackgroundJobs;
 using Neba.Website.Server.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
+
+builder.Services.AddBackgroundJobs(builder.Configuration);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -37,5 +40,7 @@ app.MapRazorComponents<App>()
     .AddAdditionalAssemblies(typeof(Neba.Website.Client._Imports).Assembly);
 
 app.MapDefaultEndpoints();
+
+app.UseBackgroundJobsDashboard();
 
 await app.RunAsync();

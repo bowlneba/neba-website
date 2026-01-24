@@ -17,6 +17,8 @@ var apiService = builder.AddProject<Projects.Neba_Api>("api")
 builder.AddProject<Projects.Neba_Website_Server>("web")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
+    .WithReference(database)
+    .WaitFor(database)
     .WithReference(apiService)
     .WaitFor(apiService);
 
