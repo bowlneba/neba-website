@@ -15,4 +15,3 @@ jobs:
       is_pull_request: true
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
