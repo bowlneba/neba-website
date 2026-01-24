@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -35,25 +33,22 @@ public static class TelemetryExtensions
             });
 
             builder.Services.AddOpenTelemetry()
-                .WithMetrics(metrics =>
-                {
-                    metrics.AddAspNetCoreInstrumentation()
-                        .AddHttpClientInstrumentation()
-                        .AddRuntimeInstrumentation();
-                })
-                .WithTracing(tracing =>
-                {
-                    tracing.AddSource(builder.Environment.ApplicationName)
-                        .AddAspNetCoreInstrumentation(tracing =>
-                            // Exclude health check requests from tracing
-                            tracing.Filter = context =>
-                                !context.Request.Path.StartsWithSegments(HealthCheckExtensions.HealthEndpointPath, StringComparison.OrdinalIgnoreCase)
-                                && !context.Request.Path.StartsWithSegments(HealthCheckExtensions.AlivenessEndpointPath, StringComparison.OrdinalIgnoreCase)
-                        )
-                        // Uncomment the following line to enable gRPC instrumentation (requires the OpenTelemetry.Instrumentation.GrpcNetClient package)
-                        //.AddGrpcClientInstrumentation()
-                        .AddHttpClientInstrumentation();
-                });
+                .WithMetrics(metrics => metrics
+                    .AddMeter("Neba.*")
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddRuntimeInstrumentation())
+                .WithTracing(tracing => tracing
+                    .AddSource(builder.Environment.ApplicationName)
+                    .AddSource("Neba.*") // Custom application meters
+                    //.AddSource("Azure.Storage.Blobs") // Azure SDK traces // Uncomment to enable Azure Storage Blob SDK tracing
+                    .AddAspNetCoreInstrumentation(tracing =>
+                        // Exclude health check requests from tracing
+                        tracing.Filter = context =>
+                            !context.Request.Path.StartsWithSegments(HealthCheckExtensions.HealthEndpointPath, StringComparison.OrdinalIgnoreCase)
+                            && !context.Request.Path.StartsWithSegments(HealthCheckExtensions.AlivenessEndpointPath, StringComparison.OrdinalIgnoreCase)
+                    )
+                    .AddHttpClientInstrumentation());
 
             builder.AddOpenTelemetryExporters();
 
