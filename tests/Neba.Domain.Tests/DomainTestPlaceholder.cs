@@ -1,6 +1,10 @@
+using Neba.TestFactory.Attributes;
+
 namespace Neba.Domain.Tests;
 
-internal sealed class DomainTestPlaceholder
+[UnitTest]
+[Component("Domain")]
+public sealed class DomainTestPlaceholder
 {
     [Fact]
     public void PlaceholderTest()

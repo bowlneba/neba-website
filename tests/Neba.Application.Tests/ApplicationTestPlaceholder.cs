@@ -1,6 +1,10 @@
+using Neba.TestFactory.Attributes;
+
 namespace Neba.Application.Tests;
 
-internal sealed class ApplicationTestPlaceholder
+[UnitTest]
+[Component("Application")]
+public sealed class ApplicationTestPlaceholder
 {
     [Fact]
     public void PlaceholderTest()

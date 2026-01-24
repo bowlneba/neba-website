@@ -1,6 +1,10 @@
-﻿namespace Neba.Api.Tests;
+﻿using Neba.TestFactory.Attributes;
 
-internal sealed class ApiTestPlaceholder
+namespace Neba.Api.Tests;
+
+[UnitTest]
+[Component("Api")]
+public sealed class ApiTestPlaceholder
 {
     [Fact]
     public void PlaceholderTest()
