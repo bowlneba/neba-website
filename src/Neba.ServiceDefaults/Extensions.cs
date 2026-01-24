@@ -11,6 +11,8 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
+#pragma warning disable S1144 // Unused private types or members should be removed
+#pragma warning disable S2325 // Private types or members should be static
 namespace Microsoft.Extensions.Hosting;
 
 /// <summary>
