@@ -1,12 +1,16 @@
 using Microsoft.Extensions.Logging;
 
+using Neba.TestFactory.Attributes;
+
 namespace Neba.Website.Tests;
 
-internal class WebTests
+[IntegrationTest]
+[Component("Website")]
+public class WebResourceTests
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
 
-    [Fact]
+    [Fact(DisplayName = "GetWebResourceRoot should return OK when requested")]
     public async Task GetWebResourceRoot_ShouldReturnOk_WhenRequestedAsync()
     {
         // Arrange
