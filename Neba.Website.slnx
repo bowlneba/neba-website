@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="src/Neba.Website.ApiService/Neba.Website.ApiService.csproj" />
+  <Project Path="src/Neba.Website.AppHost/Neba.Website.AppHost.csproj" />
+  <Project Path="src/Neba.Website.ServiceDefaults/Neba.Website.ServiceDefaults.csproj" />
+  <Project Path="src/Neba.Website.Tests/Neba.Website.Tests.csproj" />
+  <Project Path="src/Neba.Website.Server/Neba.Website.Server.csproj" />
+</Solution>

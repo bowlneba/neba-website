@@ -11,5 +11,9 @@
         "SonarQube",
         "USBC",
         "viewports"
+    ],
+    "cSpell.ignorePaths": [
+        ".gitignore",
+        "**/.editorconfig"
     ]
 }
