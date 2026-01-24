@@ -1,4 +1,9 @@
 <Solution>
+  <Folder Name="/Directory/">
+    <File Path="README.md" />
+    <File Path=".gitignore" />
+    <File Path=".editorconfig" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Neba.AppHost/Neba.AppHost.csproj" />
     <Project Path="src/Neba.ServiceDefaults/Neba.ServiceDefaults.csproj" />
