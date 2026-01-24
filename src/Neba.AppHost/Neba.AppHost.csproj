@@ -10,4 +10,8 @@
     <ProjectReference Include="..\Neba.Website.Server\Neba.Website.Server.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+  </ItemGroup>
+
 </Project>

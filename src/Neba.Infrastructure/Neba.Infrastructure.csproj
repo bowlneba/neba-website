@@ -12,5 +12,10 @@
     <InternalsVisibleTo Include="Neba.Infrastructure.Tests" />
     <InternalsVisibleTo Include="Neba.TestFactory" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Npgsql.OpenTelemetry" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+  </ItemGroup>
 
 </Project>

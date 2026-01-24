@@ -9,6 +9,7 @@
         "Fluxor",
         "Instantiator",
         "Neba",
+        "Npgsql",
         "Respawn",
         "Shouldly",
         "sonarcloud",
