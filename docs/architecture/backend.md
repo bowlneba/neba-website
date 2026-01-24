@@ -590,26 +590,153 @@ Career stats combine both sources transparently.
 
 ```
 tests/
-├── Neba.Tests/                              # Shared test infrastructure (factories, fixtures)
-├── Neba.Domain.UnitTests/                   # Unit tests for domain logic
-├── Neba.Application.UnitTests/              # Unit tests for handlers
-├── Neba.Infrastructure.IntegrationTests/    # Integration tests for repositories
-├── Neba.Api.IntegrationTests/               # Integration tests for endpoints
-└── Neba.Architecture.Tests/                 # Architecture tests (backlog)
+├── Neba.TestFactory/           # Shared test infrastructure (factories, fixtures, traits)
+├── Neba.Api.Tests/             # API endpoint tests (unit + integration)
+├── Neba.Application.Tests/     # Handler tests (unit + integration)
+├── Neba.Domain.Tests/          # Domain logic tests (unit)
+├── Neba.Infrastructure.Tests/  # Repository tests (unit + integration)
+├── Neba.Website.Tests/         # UI tests (bUnit, services, JS interop)
+├── e2e/                        # Playwright E2E tests (TypeScript)
+└── js/                         # Jest tests for JS modules
 ```
 
-All test projects reference `Neba.Tests` for shared factories and fixtures.
+All test projects reference `Neba.TestFactory` for shared factories, fixtures, and trait attributes.
+
+### Test Traits
+
+Tests are categorized using custom xUnit v3 trait attributes defined in `Neba.TestFactory`:
+
+```csharp
+// Category traits - Unit vs Integration
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+public sealed class UnitTestAttribute : Attribute, ITraitAttribute
+{
+    public IReadOnlyCollection<KeyValuePair<string, string>> GetTraits()
+        => [new("Category", "Unit")];
+}
+
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+public sealed class IntegrationTestAttribute : Attribute, ITraitAttribute
+{
+    public IReadOnlyCollection<KeyValuePair<string, string>> GetTraits()
+        => [new("Category", "Integration")];
+}
+
+// Component trait - feature/functionality being tested
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
+public sealed class ComponentAttribute(string component) : Attribute, ITraitAttribute
+{
+    public IReadOnlyCollection<KeyValuePair<string, string>> GetTraits()
+        => [new("Component", component)];
+}
+```
+
+**Usage:**
+
+```csharp
+[UnitTest]
+[Component("Tournaments.Registration")]
+public class RegisterBowlerCommandTests
+{
+    [Fact]
+    public void Should_Fail_When_Squad_At_Capacity() { }
+}
+
+[IntegrationTest]
+[Component("Tournaments")]
+public class TournamentRepositoryTests : IClassFixture<DatabaseFixture>
+{
+    [Fact]
+    public async Task GetById_Returns_Tournament_With_Squads() { }
+}
+```
+
+**Component naming**: Use feature folder names (e.g., `Tournaments`, `Bowlers`). Add sub-component when testing specific functionality (e.g., `Tournaments.Registration`, `Tournaments.Scoring`).
+
+### Filtering Tests
+
+Filter by trait using `dotnet test` or `dotnet run`:
+
+```bash
+# Using dotnet test
+dotnet test --filter "Category=Unit"
+dotnet test --filter "Category=Integration"
+dotnet test --filter "Component=Tournaments"
+dotnet test --filter "Category=Unit&Component=Tournaments.Registration"
+
+# Using dotnet run (note the -- to pass args to test runner)
+dotnet run --project tests/Neba.Domain.Tests -- --filter "Category=Unit"
+
+# Running the executable directly
+./Neba.Domain.Tests --filter "Category=Unit"
+
+# xUnit v3 query filter language
+dotnet run -- --filter-query "[Category=Unit]"
+```
+
+**CI usage**: Run unit and integration tests in separate jobs for faster feedback:
+
+```yaml
+- name: Run Unit Tests
+  run: dotnet test --filter "Category=Unit"
+
+- name: Run Integration Tests
+  run: dotnet test --filter "Category=Integration"
+```
+
+### Test Naming & Display Names
+
+All tests must have explicit display names for clarity in test runners and CI output.
+
+**Facts**: Use `DisplayName` parameter:
+
+```csharp
+[Fact(DisplayName = "Should fail when squad is at capacity")]
+public void Should_Fail_When_Squad_At_Capacity() { }
+```
+
+**Theories**: Use `DisplayName` on the theory and descriptive `[InlineData]`:
+
+```csharp
+[Theory(DisplayName = "Should validate tournament type eligibility")]
+[InlineData(TournamentType.Senior, 49, false, DisplayName = "Senior tournament rejects bowler under 50")]
+[InlineData(TournamentType.Senior, 50, true, DisplayName = "Senior tournament accepts bowler at 50")]
+[InlineData(TournamentType.Open, 25, true, DisplayName = "Open tournament accepts any age")]
+public void Should_Validate_Eligibility(TournamentType type, int age, bool expected) { }
+```
+
+**MemberData/ClassData**: Include display name in the test data or use descriptive method names:
+
+```csharp
+[Theory(DisplayName = "Should calculate handicap correctly")]
+[MemberData(nameof(HandicapTestCases))]
+public void Should_Calculate_Handicap(int average, int basis, decimal factor, int expected) { }
+
+public static TheoryData<int, int, decimal, int> HandicapTestCases => new()
+{
+    { 180, 220, 0.8m, 32 },  // (220 - 180) * 0.8 = 32
+    { 200, 220, 0.8m, 16 },  // (220 - 200) * 0.8 = 16
+    { 220, 220, 0.8m, 0 },   // No handicap at basis
+};
+```
+
+**Why display names matter**:
+
+- Test output is readable without parsing method names
+- CI logs clearly show what failed
+- Non-technical stakeholders can understand test coverage
 
 ### Unit Tests
 
-- xUnit, Moq, Shouldly
+- xUnit v3, Moq, Shouldly
 - Domain logic and business rules
 - Command/query handlers
 - Use `Factory.Create()` for test data
+- Mark with `[UnitTest]` trait
 
 ### Test Data Factories
 
-Factories live in `Neba.Tests` and provide two approaches:
+Factories live in `Neba.TestFactory` and provide two approaches:
 
 - **`Create`**: For unit tests. Pass only the properties relevant to the test - everything else gets valid defaults. This makes tests self-documenting.
 - **`Bogus`**: For integration tests. Generates realistic random data using the Bogus library.
@@ -705,12 +832,17 @@ var tournaments = TournamentFactory.Bogus(count: 10, seed: 12345);
 Use Verify (snapshot testing) to catch unmapped properties in query repositories and endpoint responses:
 
 ```csharp
-[Fact]
-public async Task GetPublicDetail_MapsAllFields()
+[IntegrationTest]
+[Component("Tournaments")]
+public class TournamentQueryTests : IClassFixture<DatabaseFixture>
 {
-    var result = await _repository.GetPublicDetail(knownTournamentId);
-    
-    await Verify(result);  // Fails if shape changes
+    [Fact]
+    public async Task GetPublicDetail_MapsAllFields()
+    {
+        var result = await _repository.GetPublicDetail(knownTournamentId);
+
+        await Verify(result);  // Fails if shape changes
+    }
 }
 ```
 
@@ -727,29 +859,32 @@ Workflow:
 - Test containers for PostgreSQL
 - Respawn for database reset between tests
 - Authentication/authorization flow testing
+- Mark with `[IntegrationTest]` trait
 
 **Integration Test Pattern**:
 
 ```csharp
+[IntegrationTest]
+[Component("Tournaments")]
 public class TournamentEndpointTests : IClassFixture<ApiFixture>
 {
     private readonly HttpClient _client;
-    
+
     public TournamentEndpointTests(ApiFixture fixture)
     {
         _client = fixture.CreateClient();
     }
-    
+
     [Fact]
     public async Task GetTournament_ReturnsTournament_WhenExists()
     {
         // Arrange - seed with Bogus data
         var tournament = TournamentFactory.Bogus(seed: 12345);
         await _fixture.SeedAsync(tournament);
-        
+
         // Act
         var response = await _client.GetAsync($"/tournaments/{tournament.Id}");
-        
+
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<TournamentResponse>();

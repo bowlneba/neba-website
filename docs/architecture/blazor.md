@@ -645,7 +645,8 @@ The following are intentionally deferred until the relevant features are built:
 
 ```
 tests/
-├── Neba.Website.UnitTests/      # Services, pure logic, bUnit component tests
+├── Neba.TestFactory/            # Shared test infrastructure (factories, fixtures, traits)
+├── Neba.Website.Tests/          # Services, bUnit component tests (unit + integration)
 ├── e2e/                         # Playwright (TypeScript)
 │   ├── fixtures/
 │   │   ├── mocks/               # API response fixtures
@@ -660,19 +661,57 @@ tests/
     └── jest.config.ts
 ```
 
+`Neba.Website.Tests` references `Neba.TestFactory` for shared factories, fixtures, and trait attributes.
+
+### Test Traits
+
+Use the same trait attributes defined in `Neba.TestFactory` (see [backend.md](backend.md#test-traits)):
+
+```csharp
+[UnitTest]
+[Component("Tournaments")]
+public class TournamentServiceTests
+{
+    [Fact]
+    public async Task GetAsync_Returns_Error_When_Api_Fails() { }
+}
+
+[UnitTest]
+[Component("Notifications")]
+public class ToastComponentTests : TestContext
+{
+    [Fact]
+    public void Should_Auto_Dismiss_After_Timeout() { }
+}
+```
+
 ### What to Test Where
 
-| Layer | Test Type | Approach |
-| ----- | --------- | -------- |
-| Services | Unit test | Mock Refit interface, verify ErrorOr mapping, error handling |
-| JS interop services | Unit test (bUnit) | Mock IJSRuntime, verify correct calls |
-| JS modules | Jest | Test in isolation, mock browser APIs |
-| Complex components | bUnit | Interactive behavior, conditional rendering, event callbacks |
-| Simple display components | Skip | Not worth the ceremony |
-| Pages | Skip | Thin orchestrators, tested implicitly via E2E |
-| Critical user flows | Playwright E2E | Happy paths, common error scenarios |
+| Layer | Test Type | Trait | Approach |
+| ----- | --------- | ----- | -------- |
+| Services | Unit | `[UnitTest]` | Mock Refit interface, verify ErrorOr mapping, error handling |
+| JS interop services | Unit | `[UnitTest]` | Mock IJSRuntime, verify correct calls |
+| JS modules | Jest | — | Test in isolation, mock browser APIs |
+| Complex components | bUnit | `[UnitTest]` | Interactive behavior, conditional rendering, event callbacks |
+| Simple display components | Skip | — | Not worth the ceremony |
+| Pages | Skip | — | Thin orchestrators, tested implicitly via E2E |
+| Critical user flows | Playwright E2E | — | Happy paths, common error scenarios |
 
-### Unit Tests (Neba.Website.UnitTests)
+### Test Naming & Display Names
+
+All tests must have explicit display names. See [backend.md](backend.md#test-naming--display-names) for full examples.
+
+```csharp
+[Fact(DisplayName = "Should show error toast when API returns failure")]
+public async Task Should_Show_Error_Toast_When_Api_Fails() { }
+
+[Theory(DisplayName = "Should validate form field")]
+[InlineData("", false, DisplayName = "Empty name is invalid")]
+[InlineData("Valid Name", true, DisplayName = "Non-empty name is valid")]
+public void Should_Validate_Name(string name, bool expected) { }
+```
+
+### Unit Tests (Neba.Website.Tests)
 
 **Services**: Mock the Refit interface, verify:
 

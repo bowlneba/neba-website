@@ -201,12 +201,41 @@ var tournament = TournamentFactory.Create(type: TournamentType.Senior);
 var tournament = new Tournament("Test", DateTime.Now, TournamentType.Senior, ...);
 ```
 
+**Tests must have trait attributes and display names:**
+
+```csharp
+// Correct - has traits and display name
+[UnitTest]
+[Component("Tournaments.Registration")]
+public class RegisterBowlerTests
+{
+    [Fact(DisplayName = "Should fail when squad is at capacity")]
+    public void Should_Fail_When_Squad_At_Capacity() { }
+
+    [Theory(DisplayName = "Should validate age eligibility")]
+    [InlineData(49, false, DisplayName = "Under 50 rejected for senior")]
+    [InlineData(50, true, DisplayName = "At 50 accepted for senior")]
+    public void Should_Validate_Age(int age, bool expected) { }
+}
+
+// Incorrect - missing traits and display names
+public class RegisterBowlerTests
+{
+    [Fact]
+    public void Should_Fail_When_Squad_At_Capacity() { }
+}
+```
+
 Flag when:
 
 - Tests manually instantiate domain entities instead of using factories
 - Tests don't follow the Arrange-Act-Assert pattern
 - Integration tests don't use Bogus factories with seeds for reproducibility
 - Missing Verify (snapshot) tests for mapping operations
+- Tests missing `[UnitTest]` or `[IntegrationTest]` trait attribute
+- Tests missing `[Component]` trait attribute
+- Facts or Theories missing `DisplayName` parameter
+- InlineData missing `DisplayName` for theory test cases
 
 ### What to Test
 
@@ -315,6 +344,9 @@ When reviewing, verify:
 - [ ] REST conventions followed
 - [ ] Response envelopes consistent
 - [ ] Tests use factories, not manual instantiation
+- [ ] Tests have `[UnitTest]` or `[IntegrationTest]` trait
+- [ ] Tests have `[Component]` trait
+- [ ] Tests have `DisplayName` on Facts and Theories
 - [ ] New code has corresponding tests
 - [ ] Logging present with appropriate levels
 - [ ] Spans added for business operations
