@@ -165,7 +165,7 @@ jobs:
               --include-files "**/Neba.Infrastructure.dll" \
               --include-files "**/Neba.ServiceDefaults.dll" \
               --output TestResults/coverage.xml \
-              --output-format cobertura \
+              --output-format xml \
               "dotnet test ${{ matrix.test-project }} --configuration Release --no-build"
           else
             dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --coverage --coverage-output-format xml --coverage-output coverage.xml --coverage-settings ${{ github.workspace }}/tests/coverage.settings.xml
