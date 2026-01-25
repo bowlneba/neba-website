@@ -142,7 +142,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Run tests with coverage
-        run: dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --coverage --coverage-output-format xml --coverage-output coverage.xml --coverage-settings ${{ github.workspace }}/coverage.settings.xml
+        run: dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --coverage --coverage-output-format xml --coverage-output coverage.xml --coverage-settings ${{ github.workspace }}/tests/coverage.settings.xml
 
       - name: Debug - Find coverage files
         if: always()
