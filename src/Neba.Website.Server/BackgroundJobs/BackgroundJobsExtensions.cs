@@ -33,7 +33,7 @@ internal static class BackgroundJobsExtensions
         {
             app.UseHangfireDashboard("/admin/background-jobs", new DashboardOptions
             {
-                Authorization = [new HangfireDashboardAuthorizationFilter()],
+                Authorization = [new HangfireUiDashboardAuthorizationFilter()],
                 DashboardTitle = "Background Jobs - Admin",
                 StatsPollingInterval = 5000,
                 DisplayStorageConnectionString = false,

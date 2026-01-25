@@ -2,7 +2,7 @@ using Hangfire.Dashboard;
 
 namespace Neba.Website.Server.BackgroundJobs;
 
-internal sealed class HangfireDashboardAuthorizationFilter
+internal sealed class HangfireUiDashboardAuthorizationFilter
     : IDashboardAuthorizationFilter
 {
     public bool Authorize(DashboardContext context)
