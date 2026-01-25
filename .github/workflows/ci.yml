@@ -118,11 +118,6 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Install dotnet-coverage tool
-        run: |
-          dotnet tool install --global dotnet-coverage
-          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-
       - name: Pre-pull test container images
         if: matrix.needs-integration
         run: |
@@ -144,15 +139,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Run tests with coverage
-        run: dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --coverage
-
-      - name: Convert coverage to XML
-        if: always()
-        run: |
-          for coveind . -name "*.coverage" -type f); do
-            output_dir=$(dirname "$coverage_file")
-            dotnet tool run dotnet-coverage merge "$coverage_file" --output-format xml --output "$output_dir/coverage.xml"
-          done
+        run: dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --coverage --coverage-output-format xml --coverage-output coverage.xml
 
       - name: Upload test results
         if: always()
