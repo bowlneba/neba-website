@@ -49,10 +49,12 @@ public sealed class AppModelTests
         postgres.Name.ShouldBe("postgres");
 
         // Verify data volume is configured
-        postgres.Annotations
+        var dataVolumeAnnotations = postgres.Annotations
             .OfType<ContainerMountAnnotation>()
             .Where(m => m.Type == ContainerMountType.Volume && m.Source == "neba-website-data")
-            .ShouldHaveSingleItem();
+            .ToList();
+
+        dataVolumeAnnotations.ShouldHaveSingleItem();
     }
 
     [Fact(DisplayName = "Database resource should be linked to PostgreSQL parent")]
