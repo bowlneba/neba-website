@@ -89,6 +89,9 @@ jobs:
     strategy:
       matrix:
         include:
+          - test-project: tests/Neba.AppHost.Tests/Neba.AppHost.Tests.csproj
+            test-name: AppHost Tests
+            needs-integration: false
           - test-project: tests/Neba.Website.Tests/Neba.Website.Tests.csproj
             test-name: Website Tests
             needs-integration: false
