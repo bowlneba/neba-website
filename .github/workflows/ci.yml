@@ -149,7 +149,7 @@ jobs:
         run: |
           for coverage_file in $(find . -name "*.coverage" -type f); do
             output_dir=$(dirname "$coverage_file")
-            dotnet-coverage merge "$coverage_file" --output-format xml --output "$output_dir/coverage.xml"
+            dotnet tool run dotnet-coverage merge "$coverage_file" --output-format xml --output "$output_dir/coverage.xml"
           done
 
       - name: Upload test results
