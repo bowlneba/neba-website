@@ -1,0 +1,18 @@
+name: Main Branch Workflow
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - '.github/workflows/**'
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+    with:
+      is_pull_request: false
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

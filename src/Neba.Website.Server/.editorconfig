@@ -1,0 +1,4 @@
+[*.cs]
+
+# Internal APIs in executable assemblies are allowed
+dotnet_diagnostic.CA1515.severity = none

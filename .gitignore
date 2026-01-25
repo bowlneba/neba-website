@@ -9,6 +9,7 @@
 *.user
 *.userosscache
 *.sln.docstates
+*.sln
 *.env
 
 # User-specific files (MonoDevelop/Xamarin Studio)
@@ -16,6 +17,9 @@
 
 # Mono auto generated files
 mono_crash.*
+
+# JetBrains Rider
+.idea/
 
 # Build results
 [Dd]ebug/
@@ -160,6 +164,7 @@ _TeamCity*
 # Coverlet is a free, cross platform Code Coverage Tool
 coverage*.json
 coverage*.xml
+!tests/coverage.settings.xml
 coverage*.info
 
 # Visual Studio code coverage results

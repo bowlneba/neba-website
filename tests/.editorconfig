@@ -1,0 +1,26 @@
+# Test-only analyzer suppressions
+[*.cs]
+
+# Completely disable accessibility modifier enforcement for tests
+# Setting to 'always' with 'none' severity means "don't enforce any particular style"
+dotnet_style_require_accessibility_modifiers = always:none
+
+# Suppress IDE rules that modify accessibility
+dotnet_diagnostic.IDE0040.severity = none
+dotnet_diagnostic.CA1515.severity = none
+
+# Allow returning mocks and interfaces in tests
+dotnet_diagnostic.CA1859.severity = none # prefer concrete return types
+
+# Skip XML documentation for test helpers
+dotnet_diagnostic.CS1591.severity = none # missing XML docs
+
+# Permit underscores in test method names
+dotnet_diagnostic.CA1707.severity = none # identifiers should not contain underscores
+
+dotnet_diagnostic.CA1812.severity = none # avoid uninstantiated internal classes
+
+# Do not allow Async suffix on test method names (xUnit convention)
+# Suppress VSTHRD200 which would require Async suffix on async methods
+dotnet_diagnostic.xUnit1032.severity = warning # test methods should not have Async suffix
+dotnet_diagnostic.VSTHRD200.severity = none # allow async test methods without Async suffix
