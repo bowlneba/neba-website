@@ -20,5 +20,7 @@ dotnet_diagnostic.CA1707.severity = none # identifiers should not contain unders
 
 dotnet_diagnostic.CA1812.severity = none # avoid uninstantiated internal classes
 
-# Do not allow Async suffix on test method names
+# Do not allow Async suffix on test method names (xUnit convention)
+# Suppress VSTHRD200 which would require Async suffix on async methods
 dotnet_diagnostic.xUnit1032.severity = warning # test methods should not have Async suffix
+dotnet_diagnostic.VSTHRD200.severity = none # allow async test methods without Async suffix
