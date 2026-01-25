@@ -30,12 +30,12 @@ public sealed class HangfireJobExpirationFilterAttributeTests
     public void OnStateApplied_SucceededState_SetsExpirationTimeout()
     {
         // Arrange
-        var storage = Mock.Of<JobStorage>();
-        var connection = Mock.Of<IStorageConnection>();
-        var transaction = Mock.Of<IWriteOnlyTransaction>();
+        var storage = new Mock<JobStorage>(MockBehavior.Strict).Object;
+        var connection = new Mock<IStorageConnection>(MockBehavior.Strict).Object;
+        var transaction = new Mock<IWriteOnlyTransaction>(MockBehavior.Strict).Object;
         var job = new BackgroundJob("1", null, DateTime.UtcNow);
         var newState = new SucceededState(null, 0, 0);
-        
+
         var context = new ApplyStateContext(
             storage,
             connection,
@@ -55,13 +55,13 @@ public sealed class HangfireJobExpirationFilterAttributeTests
     public void OnStateApplied_FailedState_SetsExpirationTimeout()
     {
         // Arrange
-        var storage = Mock.Of<JobStorage>();
-        var connection = Mock.Of<IStorageConnection>();
-        var transaction = Mock.Of<IWriteOnlyTransaction>();
+        var storage = new Mock<JobStorage>(MockBehavior.Strict).Object;
+        var connection = new Mock<IStorageConnection>(MockBehavior.Strict).Object;
+        var transaction = new Mock<IWriteOnlyTransaction>(MockBehavior.Strict).Object;
         var job = new BackgroundJob("1", null, DateTime.UtcNow);
         var exception = new InvalidOperationException("Test failure");
         var newState = new FailedState(exception);
-        
+
         var context = new ApplyStateContext(
             storage,
             connection,
@@ -81,12 +81,12 @@ public sealed class HangfireJobExpirationFilterAttributeTests
     public void OnStateApplied_DeletedState_SetsExpirationTimeout()
     {
         // Arrange
-        var storage = Mock.Of<JobStorage>();
-        var connection = Mock.Of<IStorageConnection>();
-        var transaction = Mock.Of<IWriteOnlyTransaction>();
+        var storage = new Mock<JobStorage>(MockBehavior.Strict).Object;
+        var connection = new Mock<IStorageConnection>(MockBehavior.Strict).Object;
+        var transaction = new Mock<IWriteOnlyTransaction>(MockBehavior.Strict).Object;
         var job = new BackgroundJob("1", null, DateTime.UtcNow);
         var newState = new DeletedState();
-        
+
         var context = new ApplyStateContext(
             storage,
             connection,
@@ -106,12 +106,12 @@ public sealed class HangfireJobExpirationFilterAttributeTests
     public void OnStateApplied_OtherState_DoesNotSetExpirationTimeout()
     {
         // Arrange
-        var storage = Mock.Of<JobStorage>();
-        var connection = Mock.Of<IStorageConnection>();
-        var transaction = Mock.Of<IWriteOnlyTransaction>();
+        var storage = new Mock<JobStorage>(MockBehavior.Strict).Object;
+        var connection = new Mock<IStorageConnection>(MockBehavior.Strict).Object;
+        var transaction = new Mock<IWriteOnlyTransaction>(MockBehavior.Strict).Object;
         var job = new BackgroundJob("1", null, DateTime.UtcNow);
         var newState = new EnqueuedState();
-        
+
         var context = new ApplyStateContext(
             storage,
             connection,

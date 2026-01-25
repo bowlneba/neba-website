@@ -734,9 +734,11 @@ public static TheoryData<int, int, decimal, int> HandicapTestCases => new()
 - Use `Factory.Create()` for test data
 - Mark with `[UnitTest]` trait
 - Use `NullLogger<T>` instead of mocking `ILogger<T>` — simpler and avoids mock setup complexity
+- **Always use `MockBehavior.Strict`** — fails fast on unexpected calls, making tests more reliable
 
 ```csharp
-// Correct - use NullLogger
+// Correct - use NullLogger and MockBehavior.Strict
+var mockApi = new Mock<IApiClient>(MockBehavior.Strict);
 var sut = new TournamentService(
     mockApi.Object,
     NullLogger<TournamentService>.Instance);
@@ -744,6 +746,9 @@ var sut = new TournamentService(
 // Incorrect - don't mock ILogger
 var mockLogger = new Mock<ILogger<TournamentService>>();
 var sut = new TournamentService(mockApi.Object, mockLogger.Object);
+
+// Incorrect - missing MockBehavior.Strict
+var mockApi = new Mock<IApiClient>();
 ```
 
 ### Test Data Factories

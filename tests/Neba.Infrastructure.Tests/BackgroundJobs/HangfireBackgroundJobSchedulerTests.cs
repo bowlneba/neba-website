@@ -71,14 +71,14 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
 
     private static HangfireBackgroundJobScheduler CreateScheduler()
     {
-        var mockScopeFactory = new Mock<IServiceScopeFactory>();
+        var mockScopeFactory = new Mock<IServiceScopeFactory>(MockBehavior.Strict);
 
         mockScopeFactory
             .Setup(x => x.CreateScope())
             .Returns(() =>
             {
-                var mockScope = new Mock<IServiceScope>();
-                var mockServiceProvider = new Mock<IServiceProvider>();
+                var mockScope = new Mock<IServiceScope>(MockBehavior.Strict);
+                var mockServiceProvider = new Mock<IServiceProvider>(MockBehavior.Strict);
 
                 mockServiceProvider
                     .Setup(x => x.GetService(typeof(IBackgroundJobHandler<TestBackgroundJob>)))

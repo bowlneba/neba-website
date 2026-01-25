@@ -237,6 +237,7 @@ Flag when:
 - Facts or Theories missing `DisplayName` parameter
 - InlineData missing `DisplayName` for theory test cases
 - Mocking `ILogger<T>` instead of using `NullLogger<T>.Instance`
+- Using `new Mock<T>()` without `MockBehavior.Strict` parameter
 
 ### What to Test
 
