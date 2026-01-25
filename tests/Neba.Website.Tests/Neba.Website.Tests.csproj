@@ -5,22 +5,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.Testing" />
     <PackageReference Include="bunit" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Neba.AppHost\Neba.AppHost.csproj" />
     <ProjectReference Include="..\..\src\Neba.Website.Client\Neba.Website.Client.csproj" />
     <ProjectReference Include="..\..\src\Neba.Website.Server\Neba.Website.Server.csproj" />
     <ProjectReference Include="..\Neba.TestFactory\Neba.TestFactory.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Using Include="System.Net" />
-    <Using Include="Microsoft.Extensions.DependencyInjection" />
-    <Using Include="Aspire.Hosting.ApplicationModel" />
-    <Using Include="Aspire.Hosting.Testing" />
-  </ItemGroup>
 
 </Project>

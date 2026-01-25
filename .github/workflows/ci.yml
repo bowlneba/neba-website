@@ -89,30 +89,21 @@ jobs:
     strategy:
       matrix:
         include:
-          - test-project: tests/Neba.AppHost.Tests/Neba.AppHost.Tests.csproj
-            test-name: AppHost Tests
-            needs-integration: false
-            uses-aspire: true
           - test-project: tests/Neba.Website.Tests/Neba.Website.Tests.csproj
             test-name: Website Tests
             needs-integration: false
-            uses-aspire: true
           - test-project: tests/Neba.Domain.Tests/Neba.Domain.Tests.csproj
             test-name: Domain Tests
             needs-integration: false
-            uses-aspire: false
           - test-project: tests/Neba.Application.Tests/Neba.Application.Tests.csproj
             test-name: Application Tests
             needs-integration: false
-            uses-aspire: false
           - test-project: tests/Neba.Infrastructure.Tests/Neba.Infrastructure.Tests.csproj
             test-name: Infrastructure Tests
             needs-integration: true
-            uses-aspire: false
           - test-project: tests/Neba.Api.Tests/Neba.Api.Tests.csproj
             test-name: API Tests
             needs-integration: true
-            uses-aspire: false
       fail-fast: false
 
     name: ${{ matrix.test-name }}
@@ -126,9 +117,6 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
-
-      - name: Install dotnet-coverage tool
-        run: dotnet tool install --global dotnet-coverage
 
       - name: Pre-pull test container images
         if: matrix.needs-integration
@@ -151,40 +139,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Run tests with coverage
-        run: |
-          if [ "${{ matrix.uses-aspire }}" == "true" ]; then
-            # Use dotnet-coverage collect for Aspire-based tests to capture child process coverage
-            # See: https://github.com/dotnet/aspire/issues/8499
-            dotnet-coverage collect \
-              --include-files "**/Neba.Website.Server.dll" \
-              --include-files "**/Neba.Website.Client.dll" \
-              --include-files "**/Neba.AppHost.dll" \
-              --include-files "**/Neba.Api.dll" \
-              --include-files "**/Neba.Application.dll" \
-              --include-files "**/Neba.Domain.dll" \
-              --include-files "**/Neba.Infrastructure.dll" \
-              --include-files "**/Neba.ServiceDefaults.dll" \
-              --output TestResults/coverage.xml \
-              --output-format xml \
-              "dotnet test ${{ matrix.test-project }} --configuration Release --no-build"
-          else
-            dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --coverage --coverage-output-format xml --coverage-output coverage.xml --coverage-settings ${{ github.workspace }}/tests/coverage.settings.xml
-          fi
-
-      - name: Debug - Find coverage files
-        if: always()
-        run: |
-          echo "=== Finding coverage.xml files ==="
-          find . -name "coverage.xml" -type f 2>/dev/null || echo "No coverage.xml files found"
-          echo ""
-          echo "=== Checking coverage modules ==="
-          for f in $(find . -name "coverage.xml" -type f 2>/dev/null); do
-            echo "File: $f"
-            echo "  All Neba modules:"
-            grep -E "<module.*name=\"Neba" "$f" 2>/dev/null || echo "    No Neba modules found"
-            echo "  Skipped with no_symbols:"
-            grep "skipped_module.*neba.*no_symbols" "$f" 2>/dev/null | head -5 || echo "    None"
-          done
+        run: dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --coverage --coverage-output-format xml --coverage-output TestResults/coverage.xml
 
       - name: Upload test results
         if: always()

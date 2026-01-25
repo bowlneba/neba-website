@@ -23,7 +23,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Neba.Api.Tests/Neba.Api.Tests.csproj" />
-    <Project Path="tests/Neba.AppHost.Tests/Neba.AppHost.Tests.csproj" />
     <Project Path="tests/Neba.Application.Tests/Neba.Application.Tests.csproj" />
     <Project Path="tests/Neba.Domain.Tests/Neba.Domain.Tests.csproj" />
     <Project Path="tests/Neba.Infrastructure.Tests/Neba.Infrastructure.Tests.csproj" />

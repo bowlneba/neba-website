@@ -15,7 +15,8 @@
       "Bash(dotnet-coverage merge:*)"
     ],
     "additionalDirectories": [
-      "/Users/kippermand/Projects/bowlneba/neba-website/src"
+      "/Users/kippermand/Projects/bowlneba/neba-website/src",
+      "/Users/kippermand/Projects/bowlneba/neba-website/tests"
     ]
   }
 }
