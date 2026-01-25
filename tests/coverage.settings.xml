@@ -4,6 +4,7 @@
     <ModulePaths>
       <Include>
         <ModulePath>.*Neba\.Website\.Server\.dll$</ModulePath>
+        <ModulePath>.*Neba\.AppHost\.dll$</ModulePath>
         <ModulePath>.*Neba\.Website\.Client\.dll$</ModulePath>
         <ModulePath>.*Neba\.Infrastructure\.dll$</ModulePath>
         <ModulePath>.*Neba\.Application\.dll$</ModulePath>
@@ -14,7 +15,6 @@
       <Exclude>
         <ModulePath>.*\.Tests\.dll$</ModulePath>
         <ModulePath>.*TestFactory\.dll$</ModulePath>
-        <ModulePath>.*AppHost\.dll$</ModulePath>
       </Exclude>
     </ModulePaths>
   </CodeCoverage>
