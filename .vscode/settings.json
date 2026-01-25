@@ -36,5 +36,6 @@
     "dotnet.defaultSolution": "Neba.Website.slnx",
     "testExplorer.useNativeTesting": true,
     "dotnet.testWindow.useTestingPlatformProtocol": true,
-    "dotnet-test-explorer.testProjectPath": "tests/**/*.csproj"
+    "dotnet-test-explorer.testProjectPath": "tests/**/*.csproj",
+    "dotnet.unitTests.runSettingsPath": "${workspaceFolder}/.runsettings"
 }
