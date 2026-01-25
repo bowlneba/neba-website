@@ -74,6 +74,6 @@ jobs:
             /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**,**/*Tests/**,**/wwwroot/**,**/*.razor.js" \
             /d:sonar.test.exclusions="**/obj/**,**/bin/**" \
             /d:sonar.issue.ignore.multicriteria=e1 \
-            /d:sonar.issue.ignore.multicriteria.e1.ruleKey=csharpsquid:S2068 \
+            /d:sonar.issue.ignore.multicriteria.e1.ruleKey=csharpsquid:S2068 
           dotnet build --configuration Release --no-restore
           dotnet-sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
