@@ -4,13 +4,13 @@ namespace Neba.Infrastructure.Tests.BackgroundJobs;
 
 [UnitTest]
 [Component("Infrastructure.BackgroundJobs")]
-public sealed class HangfireDashboardAuthorizationFilterTests
+public sealed class HangfireApiDashboardAuthorizationFilterTests
 {
     [Fact(DisplayName = "Should always authorize in development")]
     public void Authorize_ShouldReturnTrue()
     {
         // Arrange
-        var filter = new Infrastructure.BackgroundJobs.HangfireDashboardAuthorizationFilter();
+        var filter = new Infrastructure.BackgroundJobs.HangfireApiDashboardAuthorizationFilter();
         // DashboardContext cannot be mocked (no parameterless constructor)
         // and is not used by the implementation, so null is acceptable
         Hangfire.Dashboard.DashboardContext context = null!;
