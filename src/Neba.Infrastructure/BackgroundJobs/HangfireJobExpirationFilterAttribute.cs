@@ -5,7 +5,7 @@ using Hangfire.Storage;
 namespace Neba.Infrastructure.BackgroundJobs;
 
 [AttributeUsage(AttributeTargets.Class)]
-internal sealed class JobExpirationFilterAttribute(HangfireSettings settings)
+internal sealed class HangfireJobExpirationFilterAttribute(HangfireSettings settings)
         : JobFilterAttribute, IApplyStateFilter
 {
     public HangfireSettings Settings { get; } = settings;

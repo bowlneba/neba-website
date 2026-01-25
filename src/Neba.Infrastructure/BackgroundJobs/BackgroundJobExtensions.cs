@@ -57,7 +57,7 @@ internal static class BackgroundJobsExtensions
                     .UseSimpleAssemblyNameTypeSerializer()
                     .UseRecommendedSerializerSettings()
                     .UseFilter(new AutomaticRetryAttribute { Attempts = settings.AutomaticRetryAttempts })
-                    .UseFilter(new JobExpirationFilterAttribute(settings))
+                    .UseFilter(new HangfireJobExpirationFilterAttribute(settings))
                     .UsePostgreSqlStorage(postgres => postgres
                         .UseNpgsqlConnection(connectionString),
                         new PostgreSqlStorageOptions
