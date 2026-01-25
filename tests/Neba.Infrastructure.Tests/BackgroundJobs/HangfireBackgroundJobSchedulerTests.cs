@@ -102,8 +102,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
             NullLogger<HangfireBackgroundJobScheduler>.Instance);
     }
 
-    [Fact(DisplayName = "Enqueue returns job ID")]
-    public void Enqueue_WithValidJob_ReturnsJobId()
+    [Fact(DisplayName = "Should return job ID when enqueuing valid job")]
+    public void Enqueue_ShouldReturnJobId_WhenValidJobProvided()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();
@@ -117,8 +117,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         jobId.ShouldNotBeEmpty();
     }
 
-    [Fact(DisplayName = "Enqueue with different job types returns unique job IDs")]
-    public void Enqueue_WithDifferentJobTypes_ReturnsUniqueJobIds()
+    [Fact(DisplayName = "Should return unique job IDs when enqueuing different job types")]
+    public void Enqueue_ShouldReturnUniqueJobIds_WhenDifferentJobTypesEnqueued()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();
@@ -135,8 +135,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         jobId1.ShouldNotBe(jobId2);
     }
 
-    [Fact(DisplayName = "Schedule with TimeSpan returns job ID")]
-    public void Schedule_WithTimeSpan_ReturnsJobId()
+    [Fact(DisplayName = "Should return job ID when scheduling with TimeSpan")]
+    public void Schedule_ShouldReturnJobId_WhenScheduledWithTimeSpan()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();
@@ -151,8 +151,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         jobId.ShouldNotBeEmpty();
     }
 
-    [Fact(DisplayName = "Schedule with DateTimeOffset returns job ID")]
-    public void Schedule_WithDateTimeOffset_ReturnsJobId()
+    [Fact(DisplayName = "Should return job ID when scheduling with DateTimeOffset")]
+    public void Schedule_ShouldReturnJobId_WhenScheduledWithDateTimeOffset()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();
@@ -167,8 +167,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         jobId.ShouldNotBeEmpty();
     }
 
-    [Fact(DisplayName = "AddOrUpdateRecurring with cron expression completes successfully")]
-    public void AddOrUpdateRecurring_WithCronExpression_Succeeds()
+    [Fact(DisplayName = "Should complete successfully when adding recurring job with cron expression")]
+    public void AddOrUpdateRecurring_ShouldSucceed_WhenProvidedWithCronExpression()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();
@@ -179,8 +179,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         Should.NotThrow(() => scheduler.AddOrUpdateRecurring("recurring_job", job, cronExpression));
     }
 
-    [Fact(DisplayName = "AddOrUpdateRecurring can update existing job")]
-    public void AddOrUpdateRecurring_WithSameId_UpdatesJob()
+    [Fact(DisplayName = "Should update existing job when called with same ID")]
+    public void AddOrUpdateRecurring_ShouldUpdateJob_WhenCalledWithSameId()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();
@@ -195,8 +195,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         });
     }
 
-    [Fact(DisplayName = "RemoveRecurring with valid ID completes successfully")]
-    public void RemoveRecurring_WithValidId_Succeeds()
+    [Fact(DisplayName = "Should complete successfully when removing recurring job with valid ID")]
+    public void RemoveRecurring_ShouldSucceed_WhenProvidedWithValidId()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();
@@ -207,8 +207,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         Should.NotThrow(() => scheduler.RemoveRecurring("removable_job"));
     }
 
-    [Fact(DisplayName = "RemoveRecurring with non-existent ID completes successfully")]
-    public void RemoveRecurring_WithNonExistentId_Succeeds()
+    [Fact(DisplayName = "Should complete successfully when removing non-existent recurring job")]
+    public void RemoveRecurring_ShouldSucceed_WhenProvidedWithNonExistentId()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();
@@ -217,8 +217,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         Should.NotThrow(() => scheduler.RemoveRecurring("non_existent_job"));
     }
 
-    [Fact(DisplayName = "ContinueJobWith returns job ID")]
-    public void ContinueJobWith_WithValidParentJobId_ReturnsJobId()
+    [Fact(DisplayName = "Should return job ID when continuing with valid parent job ID")]
+    public void ContinueJobWith_ShouldReturnJobId_WhenProvidedWithValidParentJobId()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();
@@ -233,8 +233,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         jobId.ShouldNotBeEmpty();
     }
 
-    [Fact(DisplayName = "Delete returns result")]
-    public void Delete_WithJobId_ReturnsResult()
+    [Fact(DisplayName = "Should return true when deleting existing job")]
+    public void Delete_ShouldReturnTrue_WhenProvidedWithValidJobId()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();
@@ -247,8 +247,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         result.ShouldBeTrue();
     }
 
-    [Fact(DisplayName = "Delete with non-existent job ID returns false")]
-    public void Delete_WithNonExistentJobId_ReturnsFalse()
+    [Fact(DisplayName = "Should return false when deleting non-existent job")]
+    public void Delete_ShouldReturnFalse_WhenProvidedWithNonExistentJobId()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();
@@ -260,8 +260,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         result.ShouldBeFalse();
     }
 
-    [Fact(DisplayName = "ExecuteJobAsync executes handler successfully")]
-    public async Task ExecuteJobAsync_WithValidHandler_ExecutesSuccessfullyAsync()
+    [Fact(DisplayName = "Should execute handler successfully when valid handler provided")]
+    public async Task ExecuteJobAsync_ShouldExecuteSuccessfully_WhenValidHandlerProvidedAsync()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();
@@ -272,8 +272,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
             scheduler.ExecuteJobAsync(job, "Display Name", CancellationToken.None));
     }
 
-    [Fact(DisplayName = "ExecuteJobAsync propagates exception from handler")]
-    public async Task ExecuteJobAsync_WhenHandlerThrows_PropagatesExceptionAsync()
+    [Fact(DisplayName = "Should propagate exception from handler")]
+    public async Task ExecuteJobAsync_ShouldPropagateException_WhenHandlerThrowsAsync()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();
@@ -285,8 +285,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         exception.Message.ShouldBe("Job execution failed");
     }
 
-    [Fact(DisplayName = "Multiple jobs can be enqueued")]
-    public void Enqueue_MultipleJobs_AllReturnUniqueIds()
+    [Fact(DisplayName = "Should return unique job IDs when multiple jobs enqueued")]
+    public void Enqueue_ShouldReturnUniqueIds_WhenMultipleJobsEnqueued()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();
@@ -303,8 +303,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         new[] { jobId1, jobId2, jobId3 }.ShouldBeUnique();
     }
 
-    [Fact(DisplayName = "Job chain can be created")]
-    public void ContinueJobWith_ChainedJobs_ReturnsUniqueIds()
+    [Fact(DisplayName = "Should return unique IDs when creating job chain")]
+    public void ContinueJobWith_ShouldReturnUniqueIds_WhenChainedJobsCreated()
     {
         // Arrange
         HangfireBackgroundJobScheduler scheduler = CreateScheduler();

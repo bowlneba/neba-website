@@ -235,7 +235,8 @@ Flag when:
 - Tests missing `[UnitTest]` or `[IntegrationTest]` trait attribute
 - Tests missing `[Component]` trait attribute
 - Facts or Theories missing `DisplayName` parameter
-- InlineData missing `DisplayName` for theory test cases
+- InlineData missing `TestDisplayName` for theory test cases
+- Test method names not following `<MethodName>_Should<ExpectedOutcome>_When<Condition>` pattern
 - Mocking `ILogger<T>` instead of using `NullLogger<T>.Instance`
 - Using `new Mock<T>()` without `MockBehavior.Strict` parameter
 

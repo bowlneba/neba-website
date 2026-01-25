@@ -33,8 +33,8 @@ public sealed class TelemetryExtensionsTests : IDisposable
         return _activitySource.StartActivity("TestActivity");
     }
 
-    [Fact(DisplayName = "SetCodeAttributes sets function and namespace tags")]
-    public void SetCodeAttributes_WithValidActivity_SetsFunctionAndNamespaceTags()
+    [Fact(DisplayName = "Should set function and namespace tags when valid activity provided")]
+    public void SetCodeAttributes_ShouldSetFunctionAndNamespaceTags_WhenValidActivityProvided()
     {
         // Arrange
         using Activity? activity = CreateTestActivity();
@@ -49,8 +49,8 @@ public sealed class TelemetryExtensionsTests : IDisposable
         activity.GetTagItem("code.namespace").ShouldBe("Neba.Tests");
     }
 
-    [Fact(DisplayName = "SetCodeAttributes with null activity returns null")]
-    public void SetCodeAttributes_WithNullActivity_ReturnsNull()
+    [Fact(DisplayName = "Should return null when activity is null")]
+    public void SetCodeAttributes_ShouldReturnNull_WhenActivityIsNull()
     {
         // Arrange
         Activity? activity = null;
@@ -62,8 +62,8 @@ public sealed class TelemetryExtensionsTests : IDisposable
         result.ShouldBeNull();
     }
 
-    [Fact(DisplayName = "SetCodeAttributes with empty namespace does not set namespace tag")]
-    public void SetCodeAttributes_WithEmptyNamespace_DoesNotSetNamespaceTag()
+    [Fact(DisplayName = "Should not set namespace tag when namespace is empty")]
+    public void SetCodeAttributes_ShouldNotSetNamespaceTag_WhenNamespaceIsEmpty()
     {
         // Arrange
         using Activity? activity = CreateTestActivity();
@@ -78,8 +78,8 @@ public sealed class TelemetryExtensionsTests : IDisposable
         activity.GetTagItem("code.namespace").ShouldBeNull();
     }
 
-    [Fact(DisplayName = "SetCodeAttributes with null namespace does not set namespace tag")]
-    public void SetCodeAttributes_WithNullNamespace_DoesNotSetNamespaceTag()
+    [Fact(DisplayName = "Should not set namespace tag when namespace is null")]
+    public void SetCodeAttributes_ShouldNotSetNamespaceTag_WhenNamespaceIsNull()
     {
         // Arrange
         using Activity? activity = CreateTestActivity();
@@ -94,8 +94,8 @@ public sealed class TelemetryExtensionsTests : IDisposable
         activity.GetTagItem("code.namespace").ShouldBeNull();
     }
 
-    [Fact(DisplayName = "SetExceptionTags sets all exception-related tags")]
-    public void SetExceptionTags_WithValidActivity_SetsAllExceptionTags()
+    [Fact(DisplayName = "Should set all exception tags when exception provided")]
+    public void SetExceptionTags_ShouldSetAllExceptionTags_WhenExceptionProvided()
     {
         // Arrange
         using Activity? activity = CreateTestActivity();
@@ -122,8 +122,8 @@ public sealed class TelemetryExtensionsTests : IDisposable
         activity.StatusDescription.ShouldBe("Test error message");
     }
 
-    [Fact(DisplayName = "SetExceptionTags with null activity returns null")]
-    public void SetExceptionTags_WithNullActivity_ReturnsNull()
+    [Fact(DisplayName = "Should return null when activity is null")]
+    public void SetExceptionTags_ShouldReturnNull_WhenActivityIsNull()
     {
         // Arrange
         Activity? activity = null;
@@ -136,8 +136,8 @@ public sealed class TelemetryExtensionsTests : IDisposable
         result.ShouldBeNull();
     }
 
-    [Fact(DisplayName = "SetExceptionTags handles exception with null stack trace")]
-    public void SetExceptionTags_WithNullStackTrace_SetsNullStackTraceTag()
+    [Fact(DisplayName = "Should handle exception with null stack trace")]
+    public void SetExceptionTags_ShouldHandleNullStackTrace_WhenExceptionWithoutStackTrace()
     {
         // Arrange
         using Activity? activity = CreateTestActivity();
@@ -153,8 +153,8 @@ public sealed class TelemetryExtensionsTests : IDisposable
         activity.GetTagItem("error.message").ShouldBe("Test error");
     }
 
-    [Fact(DisplayName = "SetExceptionTags handles different exception types")]
-    public void SetExceptionTags_WithArgumentException_SetsCorrectErrorType()
+    [Fact(DisplayName = "Should set correct error type for different exception types")]
+    public void SetExceptionTags_ShouldSetCorrectErrorType_WhenDifferentExceptionTypes()
     {
         // Arrange
         using Activity? activity = CreateTestActivity();
@@ -169,8 +169,8 @@ public sealed class TelemetryExtensionsTests : IDisposable
         activity.GetTagItem("error.type").ShouldBe("System.NotSupportedException");
     }
 
-    [Fact(DisplayName = "SetCodeAttributes can be chained with SetExceptionTags")]
-    public void SetCodeAttributes_ChainingWithSetExceptionTags_WorksCorrectly()
+    [Fact(DisplayName = "Should support method chaining between SetCodeAttributes and SetExceptionTags")]
+    public void MethodChaining_ShouldWork_WhenChainedSetCodeAttributesAndSetExceptionTags()
     {
         // Arrange
         using Activity? activity = CreateTestActivity();

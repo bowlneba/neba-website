@@ -26,7 +26,7 @@ public sealed class HangfireJobExpirationFilterAttributeTests
     }
 
     [Fact(DisplayName = "Should set expiration timeout for succeeded state")]
-    public void OnStateApplied_SucceededState_SetsExpirationTimeout()
+    public void OnStateApplied_ShouldSetExpirationTimeout_WhenSucceededState()
     {
         // Arrange
         var storage = new Mock<JobStorage>(MockBehavior.Strict).Object;
@@ -51,7 +51,7 @@ public sealed class HangfireJobExpirationFilterAttributeTests
     }
 
     [Fact(DisplayName = "Should set expiration timeout for failed state")]
-    public void OnStateApplied_FailedState_SetsExpirationTimeout()
+    public void OnStateApplied_ShouldSetExpirationTimeout_WhenFailedState()
     {
         // Arrange
         var storage = new Mock<JobStorage>(MockBehavior.Strict).Object;
@@ -77,7 +77,7 @@ public sealed class HangfireJobExpirationFilterAttributeTests
     }
 
     [Fact(DisplayName = "Should set expiration timeout for deleted state")]
-    public void OnStateApplied_DeletedState_SetsExpirationTimeout()
+    public void OnStateApplied_ShouldSetExpirationTimeout_WhenDeletedState()
     {
         // Arrange
         var storage = new Mock<JobStorage>(MockBehavior.Strict).Object;
@@ -102,7 +102,7 @@ public sealed class HangfireJobExpirationFilterAttributeTests
     }
 
     [Fact(DisplayName = "Should not set expiration timeout for other states")]
-    public void OnStateApplied_OtherState_DoesNotSetExpirationTimeout()
+    public void OnStateApplied_ShouldNotSetExpirationTimeout_WhenOtherState()
     {
         // Arrange
         var storage = new Mock<JobStorage>(MockBehavior.Strict).Object;

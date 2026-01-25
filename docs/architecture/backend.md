@@ -686,13 +686,13 @@ dotnet run -- --filter-query "[Category=Unit]"
 
 ### Test Naming & Display Names
 
-All tests must have explicit display names for clarity in test runners and CI output.
+All tests must have explicit display names for clarity in test runners and CI output. Method names follow the pattern: `<MethodName>_Should<ExpectedOutcome>_When<Condition>`
 
 **Facts**: Use `DisplayName` parameter:
 
 ```csharp
 [Fact(DisplayName = "Should fail when squad is at capacity")]
-public void Should_Fail_When_Squad_At_Capacity() { }
+public void RegisterBowler_ShouldFail_WhenSquadAtCapacity() { }
 ```
 
 **Theories**: Use `DisplayName` on the theory and `TestDisplayName` on each `[InlineData]`:
@@ -702,7 +702,7 @@ public void Should_Fail_When_Squad_At_Capacity() { }
 [InlineData(TournamentType.Senior, 49, false, TestDisplayName = "Senior tournament rejects bowler under 50")]
 [InlineData(TournamentType.Senior, 50, true, TestDisplayName = "Senior tournament accepts bowler at 50")]
 [InlineData(TournamentType.Open, 25, true, TestDisplayName = "Open tournament accepts any age")]
-public void Should_Validate_Eligibility(TournamentType type, int age, bool expected) { }
+public void ValidateEligibility_ShouldVerifyAge_WhenTournamentTypeRequiresAge(TournamentType type, int age, bool expected) { }
 ```
 
 **MemberData/ClassData**: Include display name in the test data or use descriptive method names:
@@ -710,7 +710,7 @@ public void Should_Validate_Eligibility(TournamentType type, int age, bool expec
 ```csharp
 [Theory(DisplayName = "Should calculate handicap correctly")]
 [MemberData(nameof(HandicapTestCases))]
-public void Should_Calculate_Handicap(int average, int basis, decimal factor, int expected) { }
+public void CalculateHandicap_ShouldComputeCorrectValue_WhenGivenAverageAndBasis(int average, int basis, decimal factor, int expected) { }
 
 public static TheoryData<int, int, decimal, int> HandicapTestCases => new()
 {
