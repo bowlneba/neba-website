@@ -81,17 +81,20 @@ public sealed class TelemetryExtensionsTests : IDisposable
     [Fact(DisplayName = "Should not set namespace tag when namespace is null")]
     public void SetCodeAttributes_ShouldNotSetNamespaceTag_WhenNamespaceIsNull()
     {
+#nullable disable
         // Arrange
-        using Activity? activity = CreateTestActivity();
+        using Activity activity = CreateTestActivity();
         activity.ShouldNotBeNull();
+        string namespaceValue = null;
 
         // Act
-        Activity? result = activity.SetCodeAttributes("TestFunction", null!);
+        Activity result = activity.SetCodeAttributes("TestFunction", namespaceValue);
 
         // Assert
         result.ShouldBe(activity);
         activity.GetTagItem("code.function").ShouldBe("TestFunction");
         activity.GetTagItem("code.namespace").ShouldBeNull();
+#nullable enable
     }
 
     [Fact(DisplayName = "Should set all exception tags when exception provided")]

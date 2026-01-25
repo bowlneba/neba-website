@@ -12,7 +12,8 @@
       "Bash(git restore:*)",
       "Bash(gh issue view:*)",
       "Bash(coverlet:*)",
-      "Bash(dotnet-coverage merge:*)"
+      "Bash(dotnet-coverage merge:*)",
+      "Bash(./bin/Debug/net10.0/Neba.Domain.Tests:*)"
     ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",

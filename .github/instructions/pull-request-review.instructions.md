@@ -239,6 +239,21 @@ Flag when:
 - Test method names not following `<MethodName>_Should<ExpectedOutcome>_When<Condition>` pattern
 - Mocking `ILogger<T>` instead of using `NullLogger<T>.Instance`
 - Using `new Mock<T>()` without `MockBehavior.Strict` parameter
+- Using `null!` instead of `#nullable disable`/`#nullable enable` for null testing
+
+**Null testing pattern**: When testing methods that don't accept nullable references but need null passed:
+
+```csharp
+[Fact]
+public void Method_ShouldThrow_WhenNull()
+{
+#nullable disable
+    string value = null;
+
+    Should.Throw<ArgumentNullException>(() => SomeMethod(value));
+#nullable enable
+}
+```
 
 ### What to Test
 
