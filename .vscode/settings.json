@@ -26,6 +26,7 @@
         "**/*.csproj",
         ".vscode/**",
         "**/*.props",
+        ".github/workflows/**"
     ],
     "sonarlint.connectedMode.project": {
         "connectionId": "bowlneba",
