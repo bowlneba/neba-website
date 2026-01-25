@@ -5,12 +5,19 @@
       <DataCollector friendlyName="Code Coverage" uri="datacollector://Microsoft/CodeCoverage/2.0" assemblyQualifiedName="Microsoft.VisualStudio.Coverage.DynamicCoverageDataCollector, Microsoft.VisualStudio.TraceCollector, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
         <Configuration>
           <CodeCoverage>
-            <!-- Exclude obj, bin, and tests folders -->
+            <!-- Include source assemblies, exclude test assemblies -->
             <ModulePaths>
+              <Include>
+                <ModulePath>.*Neba\.Api\.dll$</ModulePath>
+                <ModulePath>.*Neba\.Application\.dll$</ModulePath>
+                <ModulePath>.*Neba\.Domain\.dll$</ModulePath>
+                <ModulePath>.*Neba\.Infrastructure\.dll$</ModulePath>
+                <ModulePath>.*Neba\.Website\.Server\.dll$</ModulePath>
+                <ModulePath>.*Neba\.Website\.Client\.dll$</ModulePath>
+              </Include>
               <Exclude>
-                <ModulePath>.*\\obj\\.*</ModulePath>
-                <ModulePath>.*\\bin\\.*</ModulePath>
-                <ModulePath>.*\\tests\\.*</ModulePath>
+                <ModulePath>.*Tests\.dll$</ModulePath>
+                <ModulePath>.*TestFactory\.dll$</ModulePath>
               </Exclude>
             </ModulePaths>
             
