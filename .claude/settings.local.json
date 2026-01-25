@@ -5,7 +5,8 @@
       "Bash(dotnet build:*)",
       "Bash(dotnet list:*)",
       "Bash(dotnet:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(python3:*)"
     ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src"

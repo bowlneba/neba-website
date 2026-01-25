@@ -55,6 +55,21 @@ jobs:
         with:
           path: coverage-reports
           pattern: coverage-*
+          merge-multiple: true
+
+      - name: Debug - List coverage files
+        run: |
+          echo "=== Coverage report structure ==="
+          find coverage-reports -name "*.xml" -type f 2>/dev/null || echo "No XML files found in coverage-reports"
+          echo ""
+          echo "=== Checking coverage content ==="
+          for f in $(find coverage-reports -name "coverage.xml" -type f 2>/dev/null); do
+            echo "File: $f"
+            echo "  Modules:"
+            grep -E "<module.*name=\"Neba" "$f" 2>/dev/null | head -5 || echo "    No Neba modules found"
+            echo "  Skipped (no_symbols):"
+            grep -E "skipped_module.*neba.*no_symbols" "$f" 2>/dev/null | head -3 || echo "    None"
+          done
 
       - name: Restore dependencies
         run: dotnet restore
@@ -69,7 +84,7 @@ jobs:
             /o:"bowlneba" \
             /d:sonar.token="${SONAR_TOKEN}" \
             /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.cs.vscoveragexml.reportsPaths="coverage-reports/**/TestResults/**/coverage.xml" \
+            /d:sonar.cs.vscoveragexml.reportsPaths="coverage-reports/**/coverage.xml" \
             /d:sonar.exclusions="**/wwwroot/**,**/obj/**,**/bin/**,**/Migrations/**,**/*.razor.js" \
             /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**,**/*Tests/**,**/wwwroot/**,**/*.razor.js" \
             /d:sonar.test.exclusions="**/obj/**,**/bin/**"

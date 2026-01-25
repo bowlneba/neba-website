@@ -141,6 +141,19 @@ jobs:
       - name: Run tests with coverage
         run: dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --coverage --coverage-output-format xml --coverage-output coverage.xml
 
+      - name: Debug - Find coverage files
+        if: always()
+        run: |
+          echo "=== Finding coverage.xml files ==="
+          find . -name "coverage.xml" -type f 2>/dev/null || echo "No coverage.xml files found"
+          echo ""
+          echo "=== Checking for skipped modules in coverage ==="
+          for f in $(find . -name "coverage.xml" -type f 2>/dev/null); do
+            echo "File: $f"
+            grep -c "<module " "$f" 2>/dev/null && echo "  - Contains module entries"
+            grep "skipped_module.*no_symbols" "$f" 2>/dev/null | head -5 && echo "  - WARNING: Some modules skipped due to missing symbols"
+          done
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v5
@@ -154,7 +167,7 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: coverage-${{ matrix.test-name }}
-          path: "**/TestResults/**/coverage.xml"
+          path: "**/TestResults/coverage.xml"
           retention-days: 30
 
 #   browser-tests:
