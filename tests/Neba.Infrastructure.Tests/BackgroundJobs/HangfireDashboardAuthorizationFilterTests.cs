@@ -1,5 +1,9 @@
+using Neba.TestFactory.Attributes;
+
 namespace Neba.Infrastructure.Tests.BackgroundJobs;
 
+[UnitTest]
+[Component("Infrastructure.BackgroundJobs")]
 public sealed class HangfireDashboardAuthorizationFilterTests
 {
     [Fact]
