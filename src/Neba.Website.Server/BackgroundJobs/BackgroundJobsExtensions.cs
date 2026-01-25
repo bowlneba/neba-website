@@ -19,9 +19,9 @@ internal static class BackgroundJobsExtensions
                 .UsePostgreSqlStorage(postgres => postgres
                     .UseNpgsqlConnection(config.GetConnectionString("neba-website")
                         ?? throw new InvalidOperationException("Hangfire connection string is not configured.")), new PostgreSqlStorageOptions
-                    {
-                        SchemaName = "hangfire"
-                    }));
+                        {
+                            SchemaName = "hangfire"
+                        }));
 
             return services;
         }
