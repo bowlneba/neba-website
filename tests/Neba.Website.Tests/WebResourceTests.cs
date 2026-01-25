@@ -40,6 +40,6 @@ public sealed class WebResourceTests
         using var response = await httpClient.GetAsync(new Uri("/", UriKind.Relative), cancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 }
