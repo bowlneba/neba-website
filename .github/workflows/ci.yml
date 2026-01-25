@@ -147,7 +147,7 @@ jobs:
       - name: Convert coverage to XML
         if: always()
         run: |
-          find "**/TestResults" -name "*.coverage" -type f | while read coverage_file; do
+          for coverage_file in $(find . -name "*.coverage" -type f); do
             output_dir=$(dirname "$coverage_file")
             dotnet-coverage merge "$coverage_file" --output-format xml --output "$output_dir/coverage.xml"
           done
