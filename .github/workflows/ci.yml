@@ -28,6 +28,9 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Install dotnet-coverage tool
+        run: dotnet tool install --global dotnet-coverage
+
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
@@ -140,6 +143,14 @@ jobs:
 
       - name: Run tests with coverage
         run: dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --coverage
+
+      - name: Convert coverage to XML
+        if: always()
+        run: |
+          find "**/TestResults" -name "*.coverage" -type f | while read coverage_file; do
+            output_dir=$(dirname "$coverage_file")
+            dotnet-coverage merge "$coverage_file" --output-format xml --output "$output_dir/coverage.xml"
+          done
 
       - name: Upload test results
         if: always()
