@@ -65,7 +65,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
         Instrument instrument,
         T measurement,
         ReadOnlySpan<KeyValuePair<string, object?>> tags,
-        object? state)
+        object? _)
             where T : struct
     {
         _recordedMetrics.Add(new MetricMeasurement(
