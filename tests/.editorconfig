@@ -19,3 +19,6 @@ dotnet_diagnostic.CS1591.severity = none # missing XML docs
 dotnet_diagnostic.CA1707.severity = none # identifiers should not contain underscores
 
 dotnet_diagnostic.CA1812.severity = none # avoid uninstantiated internal classes
+
+# Do not allow Async suffix on test method names
+dotnet_diagnostic.xUnit1032.severity = warning # test methods should not have Async suffix

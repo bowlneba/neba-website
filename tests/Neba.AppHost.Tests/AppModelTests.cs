@@ -16,8 +16,8 @@ namespace Neba.AppHost.Tests;
 [Component("AppHost")]
 public sealed class AppModelTests
 {
-    [Fact(DisplayName = "Should configure all required resources in app model")]
-    public async Task Should_Configure_All_Required_Resources()
+    [Fact(DisplayName = "All required resources should be configured in app model")]
+    public async Task AppModel_ShouldIncludeAllRequiredResources_WhenDistributedApplicationIsBuilt()
     {
         // Arrange & Act
         var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Neba_AppHost>(TestContext.Current.CancellationToken);
@@ -33,8 +33,8 @@ public sealed class AppModelTests
         resources.ShouldContain("web");
     }
 
-    [Fact(DisplayName = "Should configure PostgreSQL with data volume")]
-    public async Task Should_Configure_PostgreSQL_With_DataVolume()
+    [Fact(DisplayName = "PostgreSQL should be configured with data volume")]
+    public async Task PostgreSQL_ShouldHaveDataVolume_WhenDistributedApplicationIsBuilt()
     {
         // Arrange & Act
         var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Neba_AppHost>(TestContext.Current.CancellationToken);
@@ -55,8 +55,8 @@ public sealed class AppModelTests
             .ShouldHaveSingleItem();
     }
 
-    [Fact(DisplayName = "Should configure database resource with correct parent")]
-    public async Task Should_Configure_Database_With_Correct_Parent()
+    [Fact(DisplayName = "Database resource should be linked to PostgreSQL parent")]
+    public async Task Database_ShouldHavePostgresAsParent_WhenDistributedApplicationIsBuilt()
     {
         // Arrange & Act
         var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Neba_AppHost>(TestContext.Current.CancellationToken);
@@ -72,8 +72,8 @@ public sealed class AppModelTests
         database.Parent.Name.ShouldBe("postgres");
     }
 
-    [Fact(DisplayName = "Should configure API with health check and database dependency")]
-    public async Task Should_Configure_API_With_HealthCheck_And_Database_Dependency()
+    [Fact(DisplayName = "API should have health check and wait for database")]
+    public async Task API_ShouldHaveHealthCheckAndDatabaseDependency_WhenDistributedApplicationIsBuilt()
     {
         // Arrange & Act
         var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Neba_AppHost>(TestContext.Current.CancellationToken);
@@ -107,8 +107,8 @@ public sealed class AppModelTests
         waitAnnotations.ShouldContain(w => w.Resource.Name == "neba-website");
     }
 
-    [Fact(DisplayName = "Should configure web with external endpoints and correct dependencies")]
-    public async Task Should_Configure_Web_With_External_Endpoints_And_Dependencies()
+    [Fact(DisplayName = "Web should have endpoints and wait for database and API")]
+    public async Task Web_ShouldHaveEndpointsAndCorrectDependencies_WhenDistributedApplicationIsBuilt()
     {
         // Arrange & Act
         var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Neba_AppHost>(TestContext.Current.CancellationToken);
@@ -143,8 +143,8 @@ public sealed class AppModelTests
         waitAnnotations.ShouldContain(w => w.Resource.Name == "api");
     }
 
-    [Fact(DisplayName = "Should ensure correct startup order through WaitFor dependencies")]
-    public async Task Should_Ensure_Correct_Startup_Order()
+    [Fact(DisplayName = "Startup order should be database, then API, then web")]
+    public async Task StartupOrder_ShouldBeDatabase_ThenAPI_ThenWeb_WhenDistributedApplicationIsBuilt()
     {
         // Arrange & Act
         var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Neba_AppHost>(TestContext.Current.CancellationToken);
@@ -174,8 +174,8 @@ public sealed class AppModelTests
         // This ensures startup order: database → api → web
     }
 
-    [Fact(DisplayName = "Should configure parameter for PostgreSQL username")]
-    public async Task Should_Configure_Parameter_For_PostgreSQL_Username()
+    [Fact(DisplayName = "PostgreSQL username should be configured as a parameter")]
+    public async Task PostgreSQLUsername_ShouldBeConfiguredAsParameter_WhenDistributedApplicationIsBuilt()
     {
         // Arrange & Act
         var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Neba_AppHost>(TestContext.Current.CancellationToken);
