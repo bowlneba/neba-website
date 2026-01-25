@@ -47,7 +47,7 @@ public sealed class HangfireJobExpirationFilterAttributeTests
         _filter.OnStateApplied(context, transaction);
 
         // Assert
-        Assert.Equal(TimeSpan.FromDays(30), context.JobExpirationTimeout);
+        context.JobExpirationTimeout.ShouldBe(TimeSpan.FromDays(30));
     }
 
     [Fact(DisplayName = "Should set expiration timeout for failed state")]
@@ -73,7 +73,7 @@ public sealed class HangfireJobExpirationFilterAttributeTests
         _filter.OnStateApplied(context, transaction);
 
         // Assert
-        Assert.Equal(TimeSpan.FromDays(7), context.JobExpirationTimeout);
+        context.JobExpirationTimeout.ShouldBe(TimeSpan.FromDays(7));
     }
 
     [Fact(DisplayName = "Should set expiration timeout for deleted state")]
@@ -98,7 +98,7 @@ public sealed class HangfireJobExpirationFilterAttributeTests
         _filter.OnStateApplied(context, transaction);
 
         // Assert
-        Assert.Equal(TimeSpan.FromDays(1), context.JobExpirationTimeout);
+        context.JobExpirationTimeout.ShouldBe(TimeSpan.FromDays(1));
     }
 
     [Fact(DisplayName = "Should not set expiration timeout for other states")]
@@ -125,6 +125,6 @@ public sealed class HangfireJobExpirationFilterAttributeTests
         _filter.OnStateApplied(context, transaction);
 
         // Assert
-        Assert.Equal(initialExpirationTimeout, context.JobExpirationTimeout);
+        context.JobExpirationTimeout.ShouldBe(initialExpirationTimeout);
     }
 }
