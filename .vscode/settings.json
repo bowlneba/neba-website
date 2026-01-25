@@ -1,24 +1,25 @@
 {
     "cSpell.words": [
-        "Antiforgery",
-        "apphost",
-        "apphosts",
-        "Blazor",
-        "Challonge",
-        "diagnosability",
-        "Fluxor",
-        "Instantiator",
-        "kippermand",
-        "Neba",
-        "Npgsql",
-        "Respawn",
-        "Shouldly",
-        "sonarcloud",
-        "SonarQube",
-        "Synchronisation",
-        "USBC",
-        "viewports",
-        "Xunit"
+      "Antiforgery",
+      "apphost",
+      "apphosts",
+      "Blazor",
+      "bowlneba",
+      "Challonge",
+      "diagnosability",
+      "Fluxor",
+      "Instantiator",
+      "kippermand",
+      "Neba",
+      "Npgsql",
+      "Respawn",
+      "Shouldly",
+      "sonarcloud",
+      "SonarQube",
+      "Synchronisation",
+      "USBC",
+      "viewports",
+      "Xunit"
     ],
     "cSpell.ignorePaths": [
         ".gitignore",
@@ -29,8 +30,8 @@
         ".github/workflows/**"
     ],
     "sonarlint.connectedMode.project": {
-        "connectionId": "bowlneba",
-        "projectKey": "bowlneba-website"
+      "connectionId": "bowlneba",
+      "projectKey": "bowlneba-website"
     },
     "dotnet.defaultSolution": "Neba.Website.slnx",
     "testExplorer.useNativeTesting": true,
