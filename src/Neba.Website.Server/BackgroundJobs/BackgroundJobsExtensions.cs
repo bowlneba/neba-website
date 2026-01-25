@@ -16,14 +16,12 @@ internal static class BackgroundJobsExtensions
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                 .UseSimpleAssemblyNameTypeSerializer()
                 .UseRecommendedSerializerSettings()
-                .UsePostgreSqlStorage(postgres =>
-                {
-                    postgres.UseNpgsqlConnection(config.GetConnectionString("neba-website")
-                        ?? throw new InvalidOperationException("Hangfire connection string is not configured."));
-                }, new PostgreSqlStorageOptions
-                {
-                    SchemaName = "hangfire"
-                }));
+                .UsePostgreSqlStorage(postgres => postgres
+                    .UseNpgsqlConnection(config.GetConnectionString("neba-website")
+                        ?? throw new InvalidOperationException("Hangfire connection string is not configured.")), new PostgreSqlStorageOptions
+                    {
+                        SchemaName = "hangfire"
+                    }));
 
             return services;
         }
