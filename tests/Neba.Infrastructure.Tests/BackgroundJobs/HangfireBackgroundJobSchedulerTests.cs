@@ -93,6 +93,7 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
                     .Returns(new FailingJobHandler());
 
                 mockScope.Setup(x => x.ServiceProvider).Returns(mockServiceProvider.Object);
+                mockScope.Setup(x => x.Dispose());
                 return mockScope.Object;
             });
 
