@@ -1,10 +1,9 @@
-using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
-using Aspire.Hosting.Postgres;
 using Aspire.Hosting.Testing;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using Neba.TestFactory.Attributes;
-using Xunit.v3;
 
 namespace Neba.AppHost.Tests;
 
