@@ -9,7 +9,10 @@
       "Bash(python3:*)",
       "Bash(git add:*)",
       "Bash(git check-ignore:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(gh issue view:*)",
+      "Bash(coverlet:*)",
+      "Bash(dotnet-coverage merge:*)"
     ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src"
