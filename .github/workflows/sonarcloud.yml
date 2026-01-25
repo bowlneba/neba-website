@@ -72,8 +72,6 @@ jobs:
             /d:sonar.cs.vscoveragexml.reportsPaths="coverage-reports/**/TestResults/**/coverage.xml" \
             /d:sonar.exclusions="**/wwwroot/**,**/obj/**,**/bin/**,**/Migrations/**,**/*.razor.js" \
             /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**,**/*Tests/**,**/wwwroot/**,**/*.razor.js" \
-            /d:sonar.test.exclusions="**/obj/**,**/bin/**" \
-            /d:sonar.issue.ignore.multicriteria=e1 \
-            /d:sonar.issue.ignore.multicriteria.e1.ruleKey=csharpsquid:S2068 
+            /d:sonar.test.exclusions="**/obj/**,**/bin/**"
           dotnet build --configuration Release --no-restore
           dotnet-sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
