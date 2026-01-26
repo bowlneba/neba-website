@@ -8,5 +8,9 @@
     <InternalsVisibleTo Include="Neba.Application.Tests" />
     <InternalsVisibleTo Include="Neba.TestFactory" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="ErrorOr" />
+  </ItemGroup>
 
 </Project>
