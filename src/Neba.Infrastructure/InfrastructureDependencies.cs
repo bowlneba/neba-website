@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using Neba.Application.Clock;
 using Neba.Infrastructure.BackgroundJobs;
+using Neba.Infrastructure.Clock;
 using Neba.Infrastructure.Database;
 
 namespace Neba.Infrastructure;
@@ -30,6 +32,8 @@ public static class InfrastructureDependencies
                 ?? throw new InvalidOperationException("Connection string 'neba-website' not found."));
 
             services.AddBackgroundJobs(config);
+
+            services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 
             return services;
         }
