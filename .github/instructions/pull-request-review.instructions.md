@@ -226,6 +226,27 @@ public class RegisterBowlerTests
 }
 ```
 
+**Mock verification must use expected values, not `IsAny<T>`:**
+
+```csharp
+// Correct - verify with expected values
+const long startTimestamp = 1000;
+stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(TimeSpan.FromMilliseconds(42));
+
+// ... execute code ...
+
+stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Once);
+
+// Correct - use IsAny<T> ONLY when verifying method was NOT called
+stopwatchProviderMock.Verify(s => s.GetElapsedTime(It.IsAny<long>()), Times.Never);
+
+// Incorrect - using IsAny<T> when you should verify expected value
+stopwatchProviderMock.Verify(s => s.GetElapsedTime(It.IsAny<long>()), Times.Once);
+```
+
+**Key mock verification principle**: `IsAny<T>` should only be used to verify that a method was **not called** (with `Times.Never()`). When verifying that a method **was called**, always verify it was called with the expected arguments, not with `IsAny<T>`.
+
 Flag when:
 
 - Tests manually instantiate domain entities instead of using factories
@@ -240,6 +261,7 @@ Flag when:
 - Mocking `ILogger<T>` instead of using `NullLogger<T>.Instance`
 - Using `new Mock<T>()` without `MockBehavior.Strict` parameter
 - Using `null!` instead of `#nullable disable`/`#nullable enable` for null testing
+- Mock `.Verify()` calls using `IsAny<T>` when verifying method was called with specific arguments
 
 **Null testing pattern**: When testing methods that don't accept nullable references but need null passed:
 

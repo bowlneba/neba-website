@@ -47,15 +47,17 @@ public sealed class TracedQueryHandlerDecoratorTests
         var query = new TestQuery();
         var innerHandlerMock = new Mock<IQueryHandler<TestQuery, string>>(MockBehavior.Strict);
         var stopwatchProviderMock = new Mock<IStopwatchProvider>(MockBehavior.Strict);
+        const long startTimestamp = 1000;
         stopwatchProviderMock
             .Setup(s => s.GetTimestamp())
-            .Returns(1000);
+            .Returns(startTimestamp);
         stopwatchProviderMock
-            .Setup(s => s.GetElapsedTime(It.IsAny<long>()))
+            .Setup(s => s.GetElapsedTime(startTimestamp))
             .Returns(TimeSpan.FromMilliseconds(42));
 
+        var cancellationToken = CancellationToken.None;
         innerHandlerMock
-            .Setup(h => h.HandleAsync(query, It.IsAny<CancellationToken>()))
+            .Setup(h => h.HandleAsync(query, cancellationToken))
             .ReturnsAsync("test-response");
 
         var loggerFactory = new LoggerFactory();
@@ -66,15 +68,15 @@ public sealed class TracedQueryHandlerDecoratorTests
         try
         {
             // Act
-            var result = await decorator.HandleAsync(query, CancellationToken.None);
+            var result = await decorator.HandleAsync(query, cancellationToken);
 
             // Assert
             result.ShouldBe("test-response");
             innerHandlerMock.Verify(
-                h => h.HandleAsync(query, It.IsAny<CancellationToken>()),
+                h => h.HandleAsync(query, cancellationToken),
                 Times.Once);
             stopwatchProviderMock.Verify(s => s.GetTimestamp(), Times.Once);
-            stopwatchProviderMock.Verify(s => s.GetElapsedTime(It.IsAny<long>()), Times.Once);
+            stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Once);
         }
         finally
         {
@@ -90,15 +92,17 @@ public sealed class TracedQueryHandlerDecoratorTests
         const string expectedResult = "expected-result";
         var innerHandlerMock = new Mock<IQueryHandler<TestQuery, string>>(MockBehavior.Strict);
         var stopwatchProviderMock = new Mock<IStopwatchProvider>(MockBehavior.Strict);
+        const long startTimestamp = 1000;
         stopwatchProviderMock
             .Setup(s => s.GetTimestamp())
-            .Returns(1000);
+            .Returns(startTimestamp);
         stopwatchProviderMock
-            .Setup(s => s.GetElapsedTime(It.IsAny<long>()))
+            .Setup(s => s.GetElapsedTime(startTimestamp))
             .Returns(TimeSpan.FromMilliseconds(100));
 
+        var cancellationToken = CancellationToken.None;
         innerHandlerMock
-            .Setup(h => h.HandleAsync(query, It.IsAny<CancellationToken>()))
+            .Setup(h => h.HandleAsync(query, cancellationToken))
             .ReturnsAsync(expectedResult);
 
         var loggerFactory = new LoggerFactory();
@@ -109,7 +113,7 @@ public sealed class TracedQueryHandlerDecoratorTests
         try
         {
             // Act
-            var result = await decorator.HandleAsync(query, CancellationToken.None);
+            var result = await decorator.HandleAsync(query, cancellationToken);
 
             // Assert
             result.ShouldBe(expectedResult);
@@ -127,16 +131,18 @@ public sealed class TracedQueryHandlerDecoratorTests
         var query = new TestQuery();
         var innerHandlerMock = new Mock<IQueryHandler<TestQuery, string>>(MockBehavior.Strict);
         var stopwatchProviderMock = new Mock<IStopwatchProvider>(MockBehavior.Strict);
+        const long startTimestamp = 1000;
         stopwatchProviderMock
             .Setup(s => s.GetTimestamp())
-            .Returns(1000);
+            .Returns(startTimestamp);
         stopwatchProviderMock
-            .Setup(s => s.GetElapsedTime(It.IsAny<long>()))
+            .Setup(s => s.GetElapsedTime(startTimestamp))
             .Returns(TimeSpan.FromMilliseconds(50));
         var testException = new TestException("Test");
 
+        var cancellationToken = CancellationToken.None;
         innerHandlerMock
-            .Setup(h => h.HandleAsync(query, It.IsAny<CancellationToken>()))
+            .Setup(h => h.HandleAsync(query, cancellationToken))
             .ThrowsAsync(testException);
 
         var loggerFactory = new LoggerFactory();
@@ -148,7 +154,7 @@ public sealed class TracedQueryHandlerDecoratorTests
         {
             // Act & Assert
             var exception = await Should.ThrowAsync<TestException>(
-                () => decorator.HandleAsync(query, CancellationToken.None));
+                () => decorator.HandleAsync(query, cancellationToken));
             exception.ShouldBe(testException);
         }
         finally
@@ -204,15 +210,17 @@ public sealed class TracedQueryHandlerDecoratorTests
         var query = new TestQuery();
         var innerHandlerMock = new Mock<IQueryHandler<TestQuery, string>>(MockBehavior.Strict);
         var stopwatchProviderMock = new Mock<IStopwatchProvider>(MockBehavior.Strict);
+        const long startTimestamp = 5000;
         stopwatchProviderMock
             .Setup(s => s.GetTimestamp())
-            .Returns(5000);
+            .Returns(startTimestamp);
         stopwatchProviderMock
-            .Setup(s => s.GetElapsedTime(It.IsAny<long>()))
+            .Setup(s => s.GetElapsedTime(startTimestamp))
             .Returns(TimeSpan.FromMilliseconds(234.5));
 
+        var cancellationToken = CancellationToken.None;
         innerHandlerMock
-            .Setup(h => h.HandleAsync(query, It.IsAny<CancellationToken>()))
+            .Setup(h => h.HandleAsync(query, cancellationToken))
             .ReturnsAsync("response");
 
         var loggerFactory = new LoggerFactory();
@@ -223,11 +231,11 @@ public sealed class TracedQueryHandlerDecoratorTests
         try
         {
             // Act
-            await decorator.HandleAsync(query, CancellationToken.None);
+            await decorator.HandleAsync(query, cancellationToken);
 
-            // Assert - verify stopwatch provider methods were called
+            // Assert - verify stopwatch provider methods were called with expected values
             stopwatchProviderMock.Verify(s => s.GetTimestamp(), Times.Once);
-            stopwatchProviderMock.Verify(s => s.GetElapsedTime(It.IsAny<long>()), Times.Once);
+            stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Once);
         }
         finally
         {
@@ -242,16 +250,18 @@ public sealed class TracedQueryHandlerDecoratorTests
         var query = new TestQuery();
         var innerHandlerMock = new Mock<IQueryHandler<TestQuery, string>>(MockBehavior.Strict);
         var stopwatchProviderMock = new Mock<IStopwatchProvider>(MockBehavior.Strict);
+        const long startTimestamp = 1000;
         stopwatchProviderMock
             .Setup(s => s.GetTimestamp())
-            .Returns(1000);
+            .Returns(startTimestamp);
         stopwatchProviderMock
-            .Setup(s => s.GetElapsedTime(It.IsAny<long>()))
+            .Setup(s => s.GetElapsedTime(startTimestamp))
             .Returns(TimeSpan.FromMilliseconds(42));
         var testException = new TestException("Handler failed");
 
+        var cancellationToken = CancellationToken.None;
         innerHandlerMock
-            .Setup(h => h.HandleAsync(query, It.IsAny<CancellationToken>()))
+            .Setup(h => h.HandleAsync(query, cancellationToken))
             .ThrowsAsync(testException);
 
         var loggerFactory = new LoggerFactory();
@@ -262,11 +272,11 @@ public sealed class TracedQueryHandlerDecoratorTests
         try
         {
             // Act & Assert
-            await Should.ThrowAsync<TestException>(() => decorator.HandleAsync(query, CancellationToken.None));
+            await Should.ThrowAsync<TestException>(() => decorator.HandleAsync(query, cancellationToken));
 
-            // Verify that stopwatch provider was used even on exception
+            // Verify that stopwatch provider was used even on exception with expected values
             stopwatchProviderMock.Verify(s => s.GetTimestamp(), Times.Once);
-            stopwatchProviderMock.Verify(s => s.GetElapsedTime(It.IsAny<long>()), Times.Once);
+            stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Once);
         }
         finally
         {
@@ -281,15 +291,17 @@ public sealed class TracedQueryHandlerDecoratorTests
         var nonCachedQuery = new TestQuery();
         var innerHandlerMock1 = new Mock<IQueryHandler<TestQuery, string>>(MockBehavior.Strict);
         var stopwatchProviderMock1 = new Mock<IStopwatchProvider>(MockBehavior.Strict);
+        const long startTimestamp1 = 1000;
         stopwatchProviderMock1
             .Setup(s => s.GetTimestamp())
-            .Returns(1000);
+            .Returns(startTimestamp1);
         stopwatchProviderMock1
-            .Setup(s => s.GetElapsedTime(It.IsAny<long>()))
+            .Setup(s => s.GetElapsedTime(startTimestamp1))
             .Returns(TimeSpan.FromMilliseconds(10));
 
+        var cancellationToken1 = CancellationToken.None;
         innerHandlerMock1
-            .Setup(h => h.HandleAsync(nonCachedQuery, It.IsAny<CancellationToken>()))
+            .Setup(h => h.HandleAsync(nonCachedQuery, cancellationToken1))
             .ReturnsAsync("response1");
 
         var loggerFactory1 = new LoggerFactory();
@@ -301,15 +313,17 @@ public sealed class TracedQueryHandlerDecoratorTests
         var cachedQuery = new TestCachedQuery();
         var innerHandlerMock2 = new Mock<IQueryHandler<TestCachedQuery, string>>(MockBehavior.Strict);
         var stopwatchProviderMock2 = new Mock<IStopwatchProvider>(MockBehavior.Strict);
+        const long startTimestamp2 = 1000;
         stopwatchProviderMock2
             .Setup(s => s.GetTimestamp())
-            .Returns(1000);
+            .Returns(startTimestamp2);
         stopwatchProviderMock2
-            .Setup(s => s.GetElapsedTime(It.IsAny<long>()))
+            .Setup(s => s.GetElapsedTime(startTimestamp2))
             .Returns(TimeSpan.FromMilliseconds(5));
 
+        var cancellationToken2 = CancellationToken.None;
         innerHandlerMock2
-            .Setup(h => h.HandleAsync(cachedQuery, It.IsAny<CancellationToken>()))
+            .Setup(h => h.HandleAsync(cachedQuery, cancellationToken2))
             .ReturnsAsync("response2");
 
         var loggerFactory2 = new LoggerFactory();
@@ -320,14 +334,14 @@ public sealed class TracedQueryHandlerDecoratorTests
         try
         {
             // Act
-            var result1 = await decorator1.HandleAsync(nonCachedQuery, CancellationToken.None);
-            var result2 = await decorator2.HandleAsync(cachedQuery, CancellationToken.None);
+            var result1 = await decorator1.HandleAsync(nonCachedQuery, cancellationToken1);
+            var result2 = await decorator2.HandleAsync(cachedQuery, cancellationToken2);
 
             // Assert
             result1.ShouldBe("response1");
             result2.ShouldBe("response2");
-            innerHandlerMock1.Verify(h => h.HandleAsync(nonCachedQuery, It.IsAny<CancellationToken>()), Times.Once);
-            innerHandlerMock2.Verify(h => h.HandleAsync(cachedQuery, It.IsAny<CancellationToken>()), Times.Once);
+            innerHandlerMock1.Verify(h => h.HandleAsync(nonCachedQuery, cancellationToken1), Times.Once);
+            innerHandlerMock2.Verify(h => h.HandleAsync(cachedQuery, cancellationToken2), Times.Once);
         }
         finally
         {
@@ -344,15 +358,17 @@ public sealed class TracedQueryHandlerDecoratorTests
         var query2 = new TestQuery();
         var innerHandlerMock = new Mock<IQueryHandler<TestQuery, string>>(MockBehavior.Strict);
         var stopwatchProviderMock = new Mock<IStopwatchProvider>(MockBehavior.Strict);
+        const long startTimestamp = 1000;
         stopwatchProviderMock
             .Setup(s => s.GetTimestamp())
-            .Returns(1000);
+            .Returns(startTimestamp);
         stopwatchProviderMock
-            .Setup(s => s.GetElapsedTime(It.IsAny<long>()))
+            .Setup(s => s.GetElapsedTime(startTimestamp))
             .Returns(TimeSpan.FromMilliseconds(10));
 
+        var cancellationToken = CancellationToken.None;
         innerHandlerMock
-            .Setup(h => h.HandleAsync(It.IsAny<TestQuery>(), It.IsAny<CancellationToken>()))
+            .Setup(h => h.HandleAsync(It.IsAny<TestQuery>(), cancellationToken))
             .ReturnsAsync("response");
 
         var loggerFactory = new LoggerFactory();
@@ -363,17 +379,17 @@ public sealed class TracedQueryHandlerDecoratorTests
         try
         {
             // Act
-            var result1 = await decorator.HandleAsync(query1, CancellationToken.None);
-            var result2 = await decorator.HandleAsync(query2, CancellationToken.None);
+            var result1 = await decorator.HandleAsync(query1, cancellationToken);
+            var result2 = await decorator.HandleAsync(query2, cancellationToken);
 
             // Assert
             result1.ShouldBe("response");
             result2.ShouldBe("response");
             innerHandlerMock.Verify(
-                h => h.HandleAsync(It.IsAny<TestQuery>(), It.IsAny<CancellationToken>()),
+                h => h.HandleAsync(It.IsAny<TestQuery>(), cancellationToken),
                 Times.Exactly(2));
             stopwatchProviderMock.Verify(s => s.GetTimestamp(), Times.Exactly(2));
-            stopwatchProviderMock.Verify(s => s.GetElapsedTime(It.IsAny<long>()), Times.Exactly(2));
+            stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Exactly(2));
         }
         finally
         {
