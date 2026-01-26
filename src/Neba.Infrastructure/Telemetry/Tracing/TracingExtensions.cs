@@ -20,6 +20,8 @@ internal static class TracingExtensions
         public void AddTracing()
         {
             services.Decorate(typeof(IQueryHandler<,>), typeof(TracedQueryHandlerDecorator<,>));
+
+            services.Decorate(typeof(ICommandHandler<,>), typeof(TracedCommandHandlerDecorator<,>));
         }
     }
 }
