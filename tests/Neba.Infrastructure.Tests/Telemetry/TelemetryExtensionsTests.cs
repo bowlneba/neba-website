@@ -85,7 +85,7 @@ public sealed class TelemetryExtensionsTests : IDisposable
         // Arrange
         using Activity activity = CreateTestActivity();
         activity.ShouldNotBeNull();
-        string namespaceValue = null;
+        const string namespaceValue = null;
 
         // Act
         Activity result = activity.SetCodeAttributes("TestFunction", namespaceValue);

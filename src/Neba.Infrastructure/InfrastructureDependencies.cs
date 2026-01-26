@@ -1,8 +1,12 @@
+using System.Reflection;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using Neba.Application;
 using Neba.Application.Clock;
+using Neba.Application.Messaging;
 using Neba.Infrastructure.BackgroundJobs;
 using Neba.Infrastructure.Clock;
 using Neba.Infrastructure.Database;
@@ -34,6 +38,7 @@ public static class InfrastructureDependencies
             services.AddBackgroundJobs(config);
 
             services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+            services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
 
             return services;
         }
