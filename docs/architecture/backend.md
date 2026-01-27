@@ -91,12 +91,21 @@ src/
 │   └── BowlingCenters/
 ├── Neba.Api.Contracts/
 │   ├── Tournaments/
-│   │   ├── CreateTournamentInput.cs
-│   │   ├── TournamentResponse.cs
-│   │   └── TournamentListResponse.cs
+│   │   ├── CreateTournament/
+│   │   │   ├── CreateTournamentRequest.cs
+│   │   │   └── TournamentInput.cs
+│   │   ├── GetTournament/
+│   │   │   └── TournamentResponse.cs
+│   │   ├── ListTournaments/
+│   │   │   ├── ListTournamentsRequest.cs
+│   │   │   └── TournamentSummaryResponse.cs
+│   │   └── ITournamentsApi.cs
 │   ├── Squads/
 │   ├── Bowlers/
-│   └── BowlingCenters/
+│   ├── BowlingCenters/
+│   └── Common/
+│       ├── CollectionResponse.cs
+│       └── PaginationResponse.cs
 └── Neba.Website/
 ```
 
@@ -108,7 +117,7 @@ src/
 | `Neba.Application` | Commands, queries, handlers, application services, DTOs |
 | `Neba.Infrastructure` | EF Core DbContext, repository implementations, external service clients |
 | `Neba.Api` | Fast Endpoints, validators, real-time hubs (SSE/WebSocket) |
-| `Neba.Api.Contracts` | Input records, response records, and Refit interfaces shared with Blazor |
+| `Neba.Api.Contracts` | Request/Input/Response records and Refit interfaces shared with Blazor |
 | `Neba.Website` | Blazor Web App (Interactive Auto mode) |
 
 ### Namespace Boundaries
@@ -417,44 +426,511 @@ The `https+http://api` URI uses Aspire's service discovery to resolve the API en
 
 ### Fast Endpoints Structure
 
-Each endpoint in its own folder with endpoint class and validator:
+Each endpoint in its own use case folder with endpoint, summary, and validator:
 
 ```
 Neba.Api/
 ├── Tournaments/
+│   ├── TournamentEndpointGroup.cs
 │   ├── CreateTournament/
 │   │   ├── CreateTournamentEndpoint.cs
+│   │   ├── CreateTournamentSummary.cs
 │   │   └── CreateTournamentValidator.cs
+│   ├── UpdateTournament/
+│   ├── GetTournament/
+│   ├── ListTournaments/
+│   └── DeleteTournament/
+├── Squads/
+├── Bowlers/
+└── BowlingCenters/
+```
+
+### Contracts Layer
+
+Contracts follow a Request/Input/Response pattern organized by use case:
+
+**Requests wrap Inputs** (for commands):
+
+```csharp
+namespace Neba.Api.Contracts.Tournaments.CreateTournament;
+
+/// <summary>
+/// Tournament details input
+/// </summary>
+public record TournamentInput
+{
+    /// <summary>
+    /// The name of the tournament
+    /// </summary>
+    /// <example>Spring Classic 2026</example>
+    public string TournamentName { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Tournament start date
+    /// </summary>
+    public DateTime StartDate { get; init; }
+
+    /// <summary>
+    /// Tournament location
+    /// </summary>
+    public string Location { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Maximum number of participants
+    /// </summary>
+    public int MaxParticipants { get; init; }
+}
+
+/// <summary>
+/// Request to create a new tournament
+/// </summary>
+public record CreateTournamentRequest
+{
+    /// <summary>
+    /// Tournament details to create
+    /// </summary>
+    public TournamentInput Tournament { get; init; } = new();
+}
+```
+
+**Responses**:
+
+```csharp
+namespace Neba.Api.Contracts.Tournaments.GetTournament;
+
+/// <summary>
+/// Full tournament details response
+/// </summary>
+public record TournamentResponse
+{
+    public Guid TournamentId { get; init; }
+    public string TournamentName { get; init; } = string.Empty;
+    public DateTime StartDate { get; init; }
+    public string Location { get; init; } = string.Empty;
+    public int MaxParticipants { get; init; }
+    public int CurrentParticipants { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public DateTime? UpdatedAt { get; init; }
+}
+```
+
+**Common Response Wrappers** (in `Neba.Api.Contracts.Common`):
+
+```csharp
+public record CollectionResponse<T>
+{
+    public IReadOnlyList<T> Items { get; init; } = Array.Empty<T>();
+    public int TotalCount { get; init; }
+}
+
+public record PaginationResponse<T>
+{
+    public IReadOnlyList<T> Items { get; init; } = Array.Empty<T>();
+    public int TotalCount { get; init; }
+    public int Page { get; init; }
+    public int PageSize { get; init; }
+    public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : 0;
+    public bool HasNextPage => Page < TotalPages;
+    public bool HasPreviousPage => Page > 1;
+}
+```
+
+**Refit Interfaces**:
+
+```csharp
+namespace Neba.Api.Contracts.Tournaments;
+
+public interface ITournamentsApi
+{
+    [Post("/api/tournaments")]
+    Task<TournamentResponse> CreateTournamentAsync(
+        [Body] CreateTournamentRequest request,
+        CancellationToken cancellationToken = default);
+
+    [Get("/api/tournaments/{id}")]
+    Task<TournamentResponse> GetTournamentAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+
+    [Get("/api/tournaments")]
+    Task<PaginationResponse<TournamentSummaryResponse>> ListTournamentsAsync(
+        [Query] ListTournamentsRequest request,
+        CancellationToken cancellationToken = default);
+
+    [Delete("/api/tournaments/{id}")]
+    Task DeleteTournamentAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+}
+```
+
+### Endpoint Implementation
+
+```csharp
+namespace Neba.Api.Tournaments.CreateTournament;
+
+public class CreateTournamentEndpoint
+    : Endpoint<CreateTournamentRequest, TournamentResponse>
+{
+    private readonly ICommandHandler<CreateTournamentCommand, TournamentDto> _handler;
+
+    public CreateTournamentEndpoint(ICommandHandler<CreateTournamentCommand, TournamentDto> handler)
+    {
+        _handler = handler;
+    }
+
+    public override void Configure()
+    {
+        Post("/api/tournaments");
+        Group<TournamentEndpointGroup>();
+        Version(1);
+        Roles("TournamentManager", "Admin");
+        Tags("Tournaments", "Authenticated");
+
+        Description(b => b
+            .WithName("CreateTournament")
+            .Produces<TournamentResponse>(201, "application/json")
+            .ProducesProblemDetails(400, "application/problem+json")
+            .ProducesProblemDetails(409, "application/problem+json"));
+    }
+
+    public override async Task HandleAsync(
+        CreateTournamentRequest req,
+        CancellationToken ct)
+    {
+        // Map Request -> Command
+        var command = new CreateTournamentCommand(
+            req.Tournament.TournamentName,
+            req.Tournament.StartDate,
+            req.Tournament.Location,
+            req.Tournament.MaxParticipants);
+
+        var result = await _handler.HandleAsync(command, ct);
+
+        // Handle errors
+        if (result.IsFailure)
+        {
+            await this.SendProblemDetailsAsync(result.Error, ct);
+            return;
+        }
+
+        // Map DTO -> Response
+        var response = new TournamentResponse
+        {
+            TournamentId = result.Value.TournamentId,
+            TournamentName = result.Value.TournamentName,
+            // ... map remaining properties
+        };
+
+        await SendCreatedAtAsync<GetTournamentEndpoint>(
+            new { id = response.TournamentId },
+            response,
+            cancellation: ct);
+    }
+}
+```
+
+### Endpoint Groups
+
+```csharp
+namespace Neba.Api.Tournaments;
+
+public class TournamentEndpointGroup : Group
+{
+    public TournamentEndpointGroup()
+    {
+        Configure("api/tournaments", ep =>
+        {
+            ep.Description(x => x
+                .ProducesProblemDetails(401, "application/problem+json")
+                .ProducesProblemDetails(403, "application/problem+json")
+                .ProducesProblemDetails(429, "application/problem+json"));
+        });
+    }
+}
+```
+
+### Summary Classes
+
+Summary classes provide OpenAPI documentation and live alongside the endpoint:
+
+```csharp
+namespace Neba.Api.Tournaments.CreateTournament;
+
+public class CreateTournamentSummary : Summary<CreateTournamentEndpoint>
+{
+    public CreateTournamentSummary()
+    {
+        Summary = "Create a new bowling tournament";
+
+        Description = """
+            Creates a new tournament in the NEBA system.
+
+            The tournament will be validated against business rules:
+            - Tournament name must be unique
+            - Start date must be in the future
+            - Max participants must be between 8 and 256
+            """;
+
+        ExampleRequest = new CreateTournamentRequest
+        {
+            Tournament = new TournamentInput
+            {
+                TournamentName = "Spring Classic 2026",
+                StartDate = new DateTime(2026, 4, 15),
+                Location = "Boston, MA",
+                MaxParticipants = 128
+            }
+        };
+
+        Response<TournamentResponse>(201, "Tournament created successfully", example: new()
+        {
+            TournamentId = Guid.Parse("a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"),
+            TournamentName = "Spring Classic 2026",
+            // ... example values
+        });
+
+        Response<ProblemDetails>(400, "Validation errors occurred");
+        Response<ProblemDetails>(409, "Business rule conflict");
+    }
+}
 ```
 
 ### Validation Strategy
 
-**FluentValidation** for input validation (via Fast Endpoints):
+**FluentValidation** (via Fast Endpoints) for structural validation only:
 
-- Structural validation: required fields, formats, lengths
-- Minimal business rules
+```csharp
+public class CreateTournamentValidator : Validator<CreateTournamentRequest>
+{
+    public CreateTournamentValidator()
+    {
+        RuleFor(x => x.Tournament.TournamentName)
+            .NotEmpty()
+            .WithMessage("Tournament name is required")
+            .MaximumLength(200);
 
-**Domain entities** for business rule validation:
+        RuleFor(x => x.Tournament.StartDate)
+            .GreaterThan(DateTime.UtcNow)
+            .WithMessage("Start date must be in the future");
 
-- Complex rules, cross-field validation
-- Return `ErrorOr<T>` for failures
+        RuleFor(x => x.Tournament.MaxParticipants)
+            .InclusiveBetween(8, 256);
+    }
+}
+```
+
+**Validation scope**:
+
+- ✅ Required fields, length constraints, range validation, format validation
+- ❌ Cross-property validation (Application layer)
+- ❌ Database lookups (Application layer)
+- ❌ Business rules (Domain/Application layer)
+
+**Domain entities** handle business rule validation and return `ErrorOr<T>` for failures.
+
+### Query Parameter Handling
+
+```csharp
+public record ListTournamentsRequest
+{
+    [QueryParam, BindFrom("location")]
+    public string? Location { get; init; }
+
+    [QueryParam, BindFrom("startDateFrom")]
+    public DateTime? StartDateFrom { get; init; }
+
+    [QueryParam, BindFrom("page")]
+    public int Page { get; init; } = 1;
+
+    [QueryParam, BindFrom("pageSize")]
+    public int PageSize { get; init; } = 20;
+}
+```
+
+Rules:
+
+- Use flat query strings (not nested objects)
+- Use camelCase for parameter names
+- Use `[QueryParam]` and `[BindFrom]` attributes
 
 ### Error Handling
 
-Errors flow as `ErrorOr<T>` results from domain and application layers. The API translates these to ProblemDetails (RFC 9457):
+Errors flow as `ErrorOr<T>` from domain/application layers. The API translates to ProblemDetails (RFC 9457):
 
-- Domain/application errors → appropriate HTTP status code + ProblemDetails body
-- Validation errors → 400 Bad Request with `errors` object containing field-level details
-- Unexpected exceptions → 500 Internal Server Error (details hidden in production)
+```csharp
+namespace Neba.Api.Extensions;
+
+public static class ProblemDetailsExtensions
+{
+    public static async Task SendProblemDetailsAsync(
+        this IEndpoint endpoint,
+        Error error,
+        CancellationToken ct)
+    {
+        var httpContext = endpoint.HttpContext;
+
+        var problemDetails = new ProblemDetails
+        {
+            Type = "https://www.rfc-editor.org/rfc/rfc7231#section-6.5.1",
+            Title = error.Type switch
+            {
+                ErrorType.Validation => "Validation Error",
+                ErrorType.Conflict => "Conflict",
+                ErrorType.NotFound => "Not Found",
+                _ => "An error occurred"
+            },
+            Status = error.Type switch
+            {
+                ErrorType.Validation => 400,
+                ErrorType.Conflict => 409,
+                ErrorType.NotFound => 404,
+                _ => 500
+            },
+            Detail = error.Message,
+            Instance = httpContext.Request.Path
+        };
+
+        problemDetails.Extensions.Add("traceId", httpContext.TraceIdentifier);
+
+        if (!string.IsNullOrEmpty(error.Code))
+            problemDetails.Extensions.Add("errorCode", error.Code);
+
+        if (error.Context?.Any() == true)
+            problemDetails.Extensions.Add("context", error.Context);
+
+        await endpoint.SendAsync(problemDetails, problemDetails.Status!.Value, ct);
+    }
+}
+```
+
+**Error response rules**:
+
+- Always return ProblemDetails for any error (400, 401, 403, 404, 409, 500, etc.)
+- Use Fast Endpoints methods when appropriate (`SendNotFoundAsync()`, `SendUnauthorizedAsync()`, `SendForbiddenAsync()`)
+- Use `SendProblemDetailsAsync()` extension for Application layer errors
+- Validation errors always return 400
+- Include `traceId` in all error responses
+- Include `errorCode` for domain/business errors
+- Include `context` for additional error details when helpful
 
 ### Authentication & Authorization
 
-- EF Core Identity
+All endpoints must explicitly configure authorization:
+
+```csharp
+public override void Configure()
+{
+    Post("/api/tournaments");
+
+    // Explicitly configure auth - one of:
+    AllowAnonymous();
+    Roles("TournamentManager", "Admin");
+    Policies("CanManageTournaments");
+
+    // Never leave auth unspecified
+}
+```
+
+**Tags for visibility**:
+
+```csharp
+// Public endpoint
+Tags("Tournaments", "Public");
+AllowAnonymous();
+
+// Authenticated endpoint
+Tags("Tournaments", "Authenticated");
+Roles("TournamentManager");
+
+// Admin endpoint
+Tags("Tournaments", "Admin");
+Roles("Admin");
+```
+
+- EF Core Identity for user management
 - Role-based authorization (Admin, Scorer, etc.)
 - Day 1: Admin-only authentication
-- Future: Public user registration (admins can still access admin areas)
+- Future: Public user registration
 
-Endpoints return what they return - not different data based on auth. Access is controlled at the endpoint level (e.g., `GET /tournaments` is public, `POST /tournaments` requires admin).
+Endpoints return what they return - not different data based on auth. Access is controlled at the endpoint level.
+
+### Rate Limiting
+
+Configuration via appsettings.json:
+
+```json
+{
+  "RateLimiting": {
+    "General": {
+      "Anonymous": { "PermitLimit": 100, "Window": "00:01:00" },
+      "Authenticated": { "PermitLimit": 1000, "Window": "00:01:00" }
+    },
+    "PerEndpoint": {
+      "CreateTournament": { "PermitLimit": 10, "Window": "00:01:00" }
+    }
+  }
+}
+```
+
+Rules:
+
+- Rate limit by IP for anonymous requests
+- Rate limit by authenticated user for authenticated requests
+- Per-endpoint limits use the endpoint's `WithName()` value
+- ProblemDetails returned for 429
+
+### Versioning
+
+Header-based versioning via `X-Api-Version`:
+
+```csharp
+// V1 (default - no header required)
+public class CreateTournamentEndpoint : Endpoint<CreateTournamentRequest, TournamentResponse>
+{
+    public override void Configure()
+    {
+        Post("/api/tournaments");
+        Version(1);
+    }
+}
+
+// V2 (requires X-Api-Version: 2 header)
+public class CreateTournamentEndpointV2 : Endpoint<CreateTournamentRequestV2, TournamentResponse>
+{
+    public override void Configure()
+    {
+        Post("/api/tournaments");
+        Version(2);
+    }
+}
+```
+
+Versioning rules:
+
+- V1 is default (no header required)
+- All other versions require explicit header
+- When V1 is sunset, rename `CreateTournamentEndpointV2` → `CreateTournamentEndpoint` but keep `Version(2)`
+
+**Deprecation**:
+
+```csharp
+public override void Configure()
+{
+    Post("/api/tournaments");
+    Version(1);
+    Tags("Tournaments", "Authenticated", "Deprecated");
+    Deprecate(removedOn: new DateTime(2027, 1, 1));
+}
+```
+
+### Response Caching
+
+Response caching is handled via **HybridCache in the Application layer**, not at the API endpoint level. Do not use Fast Endpoints' `ResponseCache()` method.
+
+### Idempotency
+
+Not currently implemented for POST commands. When implementing in the future, Fast Endpoints supports idempotency via headers if needed.
 
 ### Real-time Endpoints
 
@@ -464,6 +940,43 @@ Squad-level boundaries for live scoring:
 - **WebSocket**: Score entry by operators (`/squads/{id}/scores`)
 
 Squads run one at a time within a tournament (no overlap).
+
+### XML Documentation
+
+Enable in .csproj:
+
+```xml
+<PropertyGroup>
+  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  <NoWarn>$(NoWarn);1591</NoWarn>
+</PropertyGroup>
+```
+
+All public contracts (requests, responses, inputs) must have XML comments with `<summary>` and `<example>` tags.
+
+### Endpoint Checklist
+
+When creating a new endpoint:
+
+- [ ] Use case folder created with all files (Endpoint, Summary, Validator if needed)
+- [ ] Contracts created in Api.Contracts (Request/Input, Response)
+- [ ] Request wraps Input (for commands)
+- [ ] All contracts have XML documentation comments
+- [ ] Endpoint inherits from `Endpoint<TRequest, TResponse>`
+- [ ] `Configure()` method includes:
+  - [ ] HTTP verb and route (RESTful)
+  - [ ] Group configured
+  - [ ] Version specified (defaults to 1)
+  - [ ] Authorization explicit (AllowAnonymous, Roles, or Policies)
+  - [ ] Tags with domain and visibility
+  - [ ] Description with `WithName()` (required)
+  - [ ] Produces/ProducesProblemDetails for all status codes
+- [ ] `HandleAsync()` maps Request → Command/Query → Response
+- [ ] Errors use `SendProblemDetailsAsync()` extension or appropriate Fast Endpoints methods
+- [ ] Validator only validates structural rules (no business logic)
+- [ ] Summary class with examples for request and all responses
+- [ ] Refit interface updated
+- [ ] Integration tests written
 
 ---
 
@@ -878,39 +1391,109 @@ Workflow:
 - Authentication/authorization flow testing
 - Mark with `[IntegrationTest]` trait
 
-**Integration Test Pattern**:
+**API Integration Test Pattern**:
 
 ```csharp
 [IntegrationTest]
 [Component("Tournaments")]
-public class TournamentEndpointTests : IClassFixture<ApiFixture>
+public class TournamentEndpointTests : IClassFixture<AppFixture>, IAsyncLifetime
 {
-    private readonly HttpClient _client;
+    private readonly AppFixture _fixture;
 
-    public TournamentEndpointTests(ApiFixture fixture)
+    public TournamentEndpointTests(AppFixture fixture)
     {
-        _client = fixture.CreateClient();
+        _fixture = fixture;
+    }
+
+    public async Task InitializeAsync() { }
+
+    public async Task DisposeAsync()
+    {
+        await _fixture.ResetDatabaseAsync();
     }
 
     [Fact]
-    public async Task GetTournament_ReturnsTournament_WhenExists()
+    public async Task CreateTournament_ValidRequest_ReturnsCreated()
     {
-        // Arrange - seed with Bogus data
-        var tournament = TournamentFactory.Bogus(seed: 12345);
-        await _fixture.SeedAsync(tournament);
+        // Arrange
+        var client = _fixture.CreateAuthenticatedClient("TournamentManager");
+
+        var request = new CreateTournamentRequest
+        {
+            Tournament = new TournamentInput
+            {
+                TournamentName = "Test Tournament",
+                StartDate = DateTime.UtcNow.AddMonths(1),
+                Location = "Boston, MA",
+                MaxParticipants = 128
+            }
+        };
 
         // Act
-        var response = await _client.GetAsync($"/tournaments/{tournament.Id}");
+        var (response, result) = await client
+            .POSTAsync<CreateTournamentEndpoint, CreateTournamentRequest, TournamentResponse>(request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<TournamentResponse>();
-        await Verify(result);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        result.TournamentName.Should().Be("Test Tournament");
+        response.Headers.Location.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task CreateTournament_InvalidRequest_ReturnsBadRequest()
+    {
+        var client = _fixture.CreateAuthenticatedClient("TournamentManager");
+
+        var request = new CreateTournamentRequest
+        {
+            Tournament = new TournamentInput { TournamentName = "" }  // Invalid
+        };
+
+        var (response, result) = await client
+            .POSTAsync<CreateTournamentEndpoint, CreateTournamentRequest, ProblemDetails>(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        result.Status.Should().Be(400);
+        result.Title.Should().Be("Validation Error");
     }
 }
 ```
 
-**Database Reset**: Use Respawn to reset database state between tests rather than recreating the container.
+**AppFixture**:
+
+```csharp
+public class AppFixture : WebApplicationFactory<Program>
+{
+    public string ConnectionString { get; private set; }
+
+    public HttpClient CreateAuthenticatedClient(params string[] roles)
+    {
+        var client = CreateClient();
+        var token = GenerateTestToken(roles);
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+
+    public async Task ResetDatabaseAsync()
+    {
+        // Use Respawn for fast database reset
+    }
+
+    private string GenerateTestToken(string[] roles)
+    {
+        // Test-only JWT generation with provided roles
+    }
+}
+```
+
+**Testing rules**:
+
+- Use `WebApplicationFactory<Program>` via `AppFixture`
+- Database cleanup after each test using Respawn
+- Use `CreateAuthenticatedClient(roles)` for authenticated endpoints
+- Use Fast Endpoints testing helpers for type-safe requests
+- Each layer has its own test project
 
 ---
 
