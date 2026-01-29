@@ -128,6 +128,54 @@ Domain folders should not reference each other directly. Cross-cutting needs go 
 - Domain events
 - Application layer orchestration
 
+### Build Configuration
+
+**Directory.Build.props** at the repository root defines shared build settings:
+
+```xml
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+</Project>
+```
+
+**Central Package Management** via `Directory.Packages.props`:
+
+```xml
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="ErrorOr" Version="2.0.1" />
+    <PackageVersion Include="FastEndpoints" Version="5.33.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
+    <!-- All package versions defined here -->
+  </ItemGroup>
+</Project>
+```
+
+**In project files**, reference packages without versions:
+
+```xml
+<ItemGroup>
+  <PackageReference Include="ErrorOr" />
+  <PackageReference Include="FastEndpoints" />
+</ItemGroup>
+```
+
+**Benefits**:
+
+- Single source of truth for package versions
+- Consistent versions across all projects
+- Easier dependency updates
+- Prevents version drift between projects
+
 ### Dependency Injection Organization
 
 Each layer exposes a single `Add{Layer}Services()` extension method. Feature-specific registrations are grouped into `Add{Feature}Services()` methods called from the layer method.
@@ -588,6 +636,159 @@ public Task<TournamentDto?> GetCachedAsync(TournamentId id, CancellationToken ct
 - Public API contracts (prefer `Task<T>` for simplicity)
 - Methods that always go async (no benefit, adds complexity)
 - When the result will be awaited multiple times (ValueTask can only be awaited once)
+
+### Static Pure Functions
+
+Prefer `static` methods for pure functions that don't access instance state. This communicates intent and enables compiler optimizations.
+
+```csharp
+// Correct - static for pure calculation
+public static decimal CalculateHandicap(int average, int basis, decimal factor)
+{
+    if (average >= basis) return 0;
+    return (basis - average) * factor;
+}
+
+// Correct - static local function
+public void ProcessScores(IEnumerable<int> scores)
+{
+    var adjusted = scores.Select(static s => AdjustScore(s));
+    // ...
+
+    static int AdjustScore(int score) => Math.Min(score, 300);
+}
+
+// Incorrect - instance method that doesn't use instance state
+public decimal CalculateHandicap(int average, int basis, decimal factor)
+{
+    return (basis - average) * factor;
+}
+```
+
+**When to use `static`**:
+
+- Pure calculations with no side effects
+- Utility/helper methods
+- Lambda expressions that don't capture variables (`static s => ...`)
+- Local functions that don't access enclosing scope
+
+**Benefits**:
+
+- Compiler prevents accidental `this` capture
+- Enables certain JIT optimizations
+- Documents that the method is self-contained
+
+### Deferred Enumeration
+
+Be explicit about when enumeration occurs. Materialize sequences when you need to iterate multiple times or when the source may change.
+
+```csharp
+// Correct - explicit materialization when needed
+public IReadOnlyList<TournamentDto> GetFiltered(IEnumerable<Tournament> tournaments)
+{
+    return tournaments
+        .Where(t => t.Status == TournamentStatus.Active)
+        .Select(t => new TournamentDto { /* ... */ })
+        .ToList();  // Materialize once
+}
+
+// Correct - return IEnumerable when caller controls enumeration
+public IEnumerable<int> GetScores(Tournament tournament)
+{
+    foreach (var squad in tournament.Squads)
+    {
+        foreach (var score in squad.Scores)
+        {
+            yield return score.Total;
+        }
+    }
+}
+
+// Incorrect - multiple enumeration of deferred sequence
+public void ProcessTournaments(IEnumerable<Tournament> tournaments)
+{
+    if (!tournaments.Any()) return;  // First enumeration
+    var count = tournaments.Count(); // Second enumeration
+    foreach (var t in tournaments)   // Third enumeration
+    {
+        // ...
+    }
+}
+
+// Incorrect - returning query that may execute multiple times
+public IEnumerable<TournamentDto> GetActive()
+{
+    return _context.Tournaments
+        .Where(t => t.Status == TournamentStatus.Active)
+        .Select(t => new TournamentDto { /* ... */ });
+    // Each enumeration hits the database!
+}
+```
+
+**Guidelines**:
+
+- Use `IReadOnlyList<T>` or `IReadOnlyCollection<T>` for materialized results
+- Use `IEnumerable<T>` only when deferred execution is intentional
+- Call `.ToList()` or `.ToArray()` before returning from repository methods
+- Avoid multiple enumeration — materialize once if iterating multiple times
+
+### Concurrency Primitives
+
+When shared state requires synchronization, prefer simpler primitives. Use this hierarchy (simplest first):
+
+| Primitive | Use When |
+| --------- | -------- |
+| Immutable data | State never changes after construction |
+| `lock` statement | Simple mutual exclusion, short critical sections |
+| `SemaphoreSlim` | Async-compatible locking, limiting concurrency |
+| `Channel<T>` | Producer-consumer patterns |
+| `Interlocked` | Single atomic operations on primitives |
+| `ReaderWriterLockSlim` | Many readers, few writers (rare in practice) |
+
+```csharp
+// Correct - SemaphoreSlim for async locking
+private readonly SemaphoreSlim _semaphore = new(1, 1);
+
+public async Task UpdateCacheAsync(string key, string value, CancellationToken ct)
+{
+    await _semaphore.WaitAsync(ct);
+    try
+    {
+        _cache[key] = value;
+    }
+    finally
+    {
+        _semaphore.Release();
+    }
+}
+
+// Correct - Channel for producer-consumer
+private readonly Channel<ScoreUpdate> _updates = Channel.CreateBounded<ScoreUpdate>(100);
+
+public async ValueTask QueueUpdateAsync(ScoreUpdate update, CancellationToken ct)
+{
+    await _updates.Writer.WriteAsync(update, ct);
+}
+
+// Incorrect - lock in async code
+private readonly object _lock = new();
+
+public async Task UpdateCacheAsync(string key, string value)
+{
+    lock (_lock)  // Blocks thread, can't await inside
+    {
+        _cache[key] = value;
+    }
+}
+```
+
+**Guidelines**:
+
+- Prefer immutability over synchronization
+- Use `lock` only for synchronous code with very short critical sections
+- Use `SemaphoreSlim` for async code or when you need to limit concurrency
+- Use `Channel<T>` for decoupling producers and consumers
+- Avoid `ReaderWriterLockSlim` unless profiling shows contention with many readers
 
 ---
 
