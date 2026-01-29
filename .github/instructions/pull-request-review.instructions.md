@@ -486,6 +486,22 @@ See detailed criteria in **API Layer** section above. Additionally flag when:
 | Request properties without Input wrapper | Wrap in `TournamentInput` (for commands) |
 | Separate mapper classes for endpoints | Inline mapping in endpoint |
 | URL-based API versioning (`/api/v1/...`) | Header-based versioning (`X-Api-Version`) |
+| Direct use of Newtonsoft.Json (`JsonConvert`, `JObject`) | System.Text.Json with source generators |
+| AutoMapper, Mapster, or similar mapping libraries | Explicit inline mapping |
+| Unsealed classes without justification | Seal classes by default |
+| Value objects as mutable class | Use `sealed record class` (EF persisted) or `readonly record struct` (transient) |
+
+### Banned Libraries
+
+The following libraries are explicitly prohibited from direct use in application code:
+
+| Library                                            | Reason                                                                 | Alternative                              |
+| -------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------- |
+| **AutoMapper**, **Mapster**, **ExpressMapper**     | Runtime reflection, hidden mappings, hard to debug, breaks compile-time safety | Explicit mapping methods                 |
+| **Newtonsoft.Json** (`JsonConvert`, `JObject`)     | Reflection-based, not AOT-compatible, legacy                           | System.Text.Json with source generators  |
+| **BinaryFormatter**                                | Security vulnerabilities, deprecated                                   | System.Text.Json, MessagePack, Protobuf  |
+
+**Note on transitive dependencies**: Some packages (e.g., Hangfire) have transitive dependencies on Newtonsoft.Json. The package may exist in the dependency graph, but **direct usage in our code is prohibited**. Flag any `using Newtonsoft.Json` statements or direct calls to `JsonConvert`.
 
 ---
 

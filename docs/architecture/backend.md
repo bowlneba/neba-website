@@ -314,6 +314,111 @@ public class Tournament
 
 ---
 
+## Type Design
+
+### Value Objects
+
+Value object representation depends on whether EF Core needs to materialize the type.
+
+#### Persisted Value Objects (EF Core Owned/Complex Types)
+
+Use `sealed record class` for value objects stored in the database. EF Core can bind to private constructors on classes, enabling the factory method pattern while allowing proper materialization.
+
+```csharp
+public sealed record Money
+{
+    public decimal Amount { get; }
+    public string Currency { get; }
+
+    private Money(decimal amount, string currency)
+        => (Amount, Currency) = (amount, currency);
+
+    public static ErrorOr<Money> Create(decimal amount, string currency)
+    {
+        if (amount < 0)
+            return Error.Validation("money.amount", "Amount cannot be negative");
+        if (string.IsNullOrWhiteSpace(currency))
+            return Error.Validation("money.currency", "Currency is required");
+        if (currency.Length != 3)
+            return Error.Validation("money.currency", "Currency must be ISO 4217 code");
+
+        return new Money(amount, currency);
+    }
+}
+```
+
+Configure as owned type in EF Core:
+
+```csharp
+modelBuilder.Entity<Tournament>().OwnsOne(t => t.EntryFee);
+```
+
+#### Non-Persisted Value Objects
+
+Use `readonly record struct` for value objects that don't need EF Core materialization (DTOs, command parameters, transient calculations). This provides stack allocation and prevents defensive copies.
+
+```csharp
+public readonly record struct DateRange
+{
+    public DateOnly Start { get; }
+    public DateOnly End { get; }
+
+    private DateRange(DateOnly start, DateOnly end)
+        => (Start, End) = (start, end);
+
+    public static ErrorOr<DateRange> Create(DateOnly start, DateOnly end)
+    {
+        if (end < start)
+            return Error.Validation("dateRange", "End date must be after start date");
+
+        return new DateRange(start, end);
+    }
+}
+```
+
+#### When to Use Each
+
+| Use `sealed record class`                     | Use `readonly record struct`                |
+| --------------------------------------------- | ------------------------------------------- |
+| Persisted by EF Core (owned/complex types)    | Not persisted (DTOs, commands, transient)   |
+| Needs private constructor + factory method    | Simple value types without complex creation |
+| Larger objects                                | Small (≤16 bytes)                           |
+
+**Why the distinction**: EF Core materializes entities by calling constructors and setting properties. For structs, it uses `default(T)` which bypasses any private constructor. Classes allow EF Core to bind to private constructors, preserving invariants during database reads.
+
+#### Strongly-Typed IDs
+
+Continue using the `[StronglyTypedId]` source generator. The generator handles EF Core value converters, so IDs work correctly regardless of underlying representation.
+
+### Sealed Classes
+
+Seal classes by default unless explicitly designed for inheritance.
+
+```csharp
+// Correct - sealed by default
+public sealed class TournamentService { }
+
+// Correct - explicitly designed for inheritance (rare)
+public abstract class AggregateRoot { }
+
+// Incorrect - unsealed without reason
+public class TournamentService { }
+```
+
+**Why seal**:
+
+- Communicates design intent
+- Enables JIT devirtualization (performance)
+- Prevents unintended inheritance chains
+- Records are classes — seal them too: `public sealed record TournamentDto`
+
+**Exceptions**:
+
+- Abstract base classes designed for inheritance (`AggregateRoot`)
+- Framework requirements that mandate unsealed classes
+
+---
+
 ## CQRS Implementation
 
 ### Commands
@@ -419,6 +524,118 @@ builder.Services
 ```
 
 The `https+http://api` URI uses Aspire's service discovery to resolve the API endpoint.
+
+---
+
+## Entity Framework Core Patterns
+
+### NoTracking by Default
+
+Configure DbContext to disable change tracking globally. Most queries are read-only.
+
+```csharp
+public class NebaDbContext : DbContext
+{
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+    }
+}
+```
+
+For write operations, either:
+
+- Use `.AsTracking()` on queries that load entities for modification
+- Explicitly call `.Update(entity)` before `SaveChangesAsync()`
+
+```csharp
+// Option 1: Opt-in to tracking
+var tournament = await _context.Tournaments
+    .AsTracking()
+    .FirstOrDefaultAsync(t => t.Id == id, ct);
+
+// Option 2: Explicit update (when entity came from elsewhere)
+_context.Tournaments.Update(tournament);
+await _context.SaveChangesAsync(ct);
+```
+
+### Bulk Operations
+
+Use `ExecuteUpdateAsync()` and `ExecuteDeleteAsync()` for efficient single-statement operations instead of loading entities:
+
+```csharp
+// Correct - single SQL statement
+await _context.Tournaments
+    .Where(t => t.Status == TournamentStatus.Draft && t.Date < cutoffDate)
+    .ExecuteDeleteAsync(ct);
+
+// Incorrect - loads all entities, then deletes one by one
+var tournaments = await _context.Tournaments
+    .Where(t => t.Status == TournamentStatus.Draft && t.Date < cutoffDate)
+    .ToListAsync(ct);
+_context.Tournaments.RemoveRange(tournaments);
+await _context.SaveChangesAsync(ct);
+```
+
+### Split Queries for Multiple Includes
+
+Use `AsSplitQuery()` to prevent Cartesian explosion when including multiple collections:
+
+```csharp
+var tournament = await _context.Tournaments
+    .Include(t => t.Squads)
+    .Include(t => t.Champions)
+    .AsSplitQuery()  // Generates separate queries instead of one massive join
+    .FirstOrDefaultAsync(t => t.Id == id, ct);
+```
+
+When to use:
+
+- Multiple `.Include()` calls on collection navigation properties
+- Large datasets where Cartesian product would multiply rows
+
+When to avoid:
+
+- Single includes
+- When you need transactional consistency across all data (split queries are separate round-trips)
+
+### Migration Management
+
+Use EF Core CLI exclusively. Never manually edit migration files.
+
+```bash
+dotnet ef migrations add AddTournamentChampions
+dotnet ef migrations remove
+dotnet ef database update
+dotnet ef migrations script --idempotent  # For production SQL
+```
+
+### Transient Failure Handling
+
+Wrap database operations in execution strategies for retry handling:
+
+```csharp
+var strategy = _context.Database.CreateExecutionStrategy();
+
+await strategy.ExecuteAsync(async () =>
+{
+    await using var transaction = await _context.Database.BeginTransactionAsync(ct);
+
+    // Multiple operations...
+
+    await _context.SaveChangesAsync(ct);
+    await transaction.CommitAsync(ct);
+});
+```
+
+### Common Pitfalls
+
+| Pitfall                                            | Solution                                      |
+| -------------------------------------------------- | --------------------------------------------- |
+| Forgetting `.Update()` with NoTracking             | Use `.AsTracking()` or explicit `.Update()`   |
+| N+1 queries                                        | Use `.Include()` for eager loading            |
+| Querying inside loops                              | Batch fetch before loop                       |
+| Multiple DbContext instances with same entity      | Use single scoped DbContext                   |
 
 ---
 
@@ -1494,6 +1711,110 @@ public class AppFixture : WebApplicationFactory<Program>
 - Use `CreateAuthenticatedClient(roles)` for authenticated endpoints
 - Use Fast Endpoints testing helpers for type-safe requests
 - Each layer has its own test project
+
+### Aspire Integration Testing
+
+When testing with .NET Aspire, use the `Aspire.Hosting.Testing` package to spin up the full AppHost with real dependencies.
+
+**Required setup** — prevent file descriptor exhaustion on Linux:
+
+```csharp
+// In test project
+internal static class TestInitializer
+{
+    [ModuleInitializer]
+    internal static void Initialize()
+    {
+        Environment.SetEnvironmentVariable(
+            "DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE",
+            "false");
+    }
+}
+```
+
+**Fixture pattern**:
+
+```csharp
+public class AspireFixture : IAsyncLifetime
+{
+    private DistributedApplication? _app;
+    private Respawner? _respawner;
+
+    public HttpClient ApiClient { get; private set; } = null!;
+    public string DbConnectionString { get; private set; } = null!;
+
+    public async Task InitializeAsync()
+    {
+        var appHost = await DistributedApplicationTestingBuilder
+            .CreateAsync<Projects.Neba_AppHost>();
+
+        _app = await appHost.BuildAsync();
+        await _app.StartAsync();
+
+        // Wait for resources to be healthy
+        await _app.WaitForResourceHealthyAsync("api");
+        await _app.WaitForResourceHealthyAsync("postgres");
+
+        // Get endpoints dynamically (ports are assigned at runtime)
+        ApiClient = _app.CreateHttpClient("api");
+        DbConnectionString = await _app.GetConnectionStringAsync("postgres")
+            ?? throw new InvalidOperationException("Connection string not found");
+
+        _respawner = await Respawner.CreateAsync(DbConnectionString, new RespawnerOptions
+        {
+            DbAdapter = DbAdapter.Postgres,
+            TablesToIgnore = ["__EFMigrationsHistory"]
+        });
+    }
+
+    public async Task ResetDatabaseAsync()
+    {
+        if (_respawner is not null)
+        {
+            await _respawner.ResetAsync(DbConnectionString);
+        }
+    }
+
+    public async Task DisposeAsync()
+    {
+        if (_app is not null)
+        {
+            await _app.StopAsync();
+            await _app.DisposeAsync();
+        }
+    }
+}
+```
+
+**Share fixture across tests** using xUnit collection:
+
+```csharp
+[CollectionDefinition("Aspire")]
+public class AspireCollection : ICollectionFixture<AspireFixture> { }
+
+[Collection("Aspire")]
+[IntegrationTest]
+[Component("Tournaments")]
+public class TournamentApiTests(AspireFixture fixture)
+{
+    [Fact(DisplayName = "Should create tournament via API")]
+    public async Task CreateTournament_ShouldSucceed()
+    {
+        var response = await fixture.ApiClient.PostAsJsonAsync(
+            "/api/tournaments",
+            new { /* request */ });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+}
+```
+
+**Key principles**:
+
+- Use dynamic endpoint discovery — never hardcode ports
+- Wait for health checks, not arbitrary delays
+- Share fixtures via xUnit collections to avoid spinning up multiple AppHosts
+- Reset database state between tests with Respawn (~50ms vs 10-30s for container recreation)
 
 ---
 
