@@ -800,6 +800,92 @@ test('displays tournament list', async ({ page }) => {
 | Mock drift from API | Generate types from OpenAPI spec |
 | Coupled to DOM structure | Test user-visible behavior, use accessible selectors |
 
+### Blazor-Specific E2E Patterns
+
+**Test selectors with data-test attributes**:
+
+Add `data-test` attributes to elements for stable test selectors that don't break with styling changes.
+
+```razor
+<!-- Component markup -->
+<button data-test="submit-tournament" @onclick="HandleSubmit">Submit</button>
+<div data-test="tournament-list">
+    @foreach (var tournament in Tournaments)
+    {
+        <div data-test="tournament-card" data-test-id="@tournament.Id">
+            @tournament.Name
+        </div>
+    }
+</div>
+```
+
+```typescript
+// Test code
+await page.locator('[data-test="submit-tournament"]').click();
+await expect(page.locator('[data-test="tournament-card"]')).toHaveCount(3);
+await page.locator('[data-test-id="abc123"]').click();
+```
+
+**Why data-test attributes**:
+
+- Decoupled from CSS classes (styling changes don't break tests)
+- Clear intent (this element is tested)
+- Semantic naming (describes what, not how)
+- Easy to strip in production builds if desired
+
+**Blazor error monitoring**:
+
+Monitor `#blazor-error-ui` for unhandled exceptions during tests:
+
+```typescript
+// fixtures/blazor-helpers.ts
+export async function assertNoBlazorErrors(page: Page) {
+  const errorUi = page.locator('#blazor-error-ui');
+  await expect(errorUi).not.toBeVisible();
+}
+
+// In tests - check after interactions
+test('submits form without errors', async ({ page }) => {
+  await page.goto('/tournaments/new');
+  await page.locator('[data-test="tournament-name"]').fill('Spring Classic');
+  await page.locator('[data-test="submit"]').click();
+
+  await assertNoBlazorErrors(page);
+  await expect(page).toHaveURL(/\/tournaments\/\w+/);
+});
+```
+
+**Async rendering wait strategies**:
+
+Blazor's async rendering requires proper wait strategies. Avoid arbitrary timeouts.
+
+```typescript
+// Correct - wait for specific content
+await expect(page.locator('[data-test="tournament-list"]')).toBeVisible();
+await expect(page.getByText('Spring Classic')).toBeVisible();
+
+// Correct - wait for loading to complete
+await page.locator('[data-test="loading-spinner"]').waitFor({ state: 'hidden' });
+
+// Correct - wait for network idle after navigation
+await page.goto('/tournaments', { waitUntil: 'networkidle' });
+
+// Incorrect - arbitrary timeout
+await page.waitForTimeout(2000);  // Never do this
+```
+
+**Interactive vs Static rendering**:
+
+When testing Interactive Auto mode, be aware that initial render may be static (SSR) before becoming interactive:
+
+```typescript
+// Wait for interactivity if testing client-side behavior
+await page.waitForFunction(() => {
+  // Check for Blazor's circuit connection
+  return (window as any).Blazor !== undefined;
+});
+```
+
 ### When to Add E2E Tests
 
 **This should be a discussion point when adding functionality.**

@@ -128,6 +128,66 @@ Domain folders should not reference each other directly. Cross-cutting needs go 
 - Domain events
 - Application layer orchestration
 
+### Dependency Injection Organization
+
+Each layer exposes a single `Add{Layer}Services()` extension method. Feature-specific registrations are grouped into `Add{Feature}Services()` methods called from the layer method.
+
+```csharp
+// Neba.Application/DependencyInjection.cs
+public static class DependencyInjection
+{
+    extension(IServiceCollection services)
+    {
+        public IServiceCollection AddApplicationServices()
+        {
+            services.AddTournamentServices();
+            services.AddBowlerServices();
+            services.AddMembershipServices();
+
+            // Cross-cutting behaviors
+            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+
+            return services;
+        }
+    }
+}
+
+// Neba.Application/Tournaments/TournamentServices.cs
+internal static class TournamentServices
+{
+    extension(IServiceCollection services)
+    {
+        internal IServiceCollection AddTournamentServices()
+        {
+            services.AddScoped<ICommandHandler<CreateTournamentCommand, TournamentDto>,
+                CreateTournamentHandler>();
+            services.AddScoped<IQueryHandler<GetTournamentQuery, TournamentDto>,
+                GetTournamentHandler>();
+            // ... other tournament handlers
+
+            return services;
+        }
+    }
+}
+```
+
+**In Program.cs**:
+
+```csharp
+builder.Services
+    .AddDomainServices()
+    .AddApplicationServices()
+    .AddInfrastructureServices(builder.Configuration);
+```
+
+**Guidelines**:
+
+- One `Add{Layer}Services()` per project, called from Program.cs
+- Feature-specific `Add{Feature}Services()` methods are `internal`
+- Keep registration methods next to the services they register (feature folder)
+- Cross-cutting concerns (behaviors, middleware) in the layer-level method
+
 ---
 
 ## Domain Modeling
@@ -417,6 +477,118 @@ public class TournamentService { }
 - Abstract base classes designed for inheritance (`AggregateRoot`)
 - Framework requirements that mandate unsealed classes
 
+### Immutable Collections for Static Data
+
+Use `FrozenDictionary<TKey, TValue>` and `FrozenSet<T>` for lookup data that's initialized once and never changes. These collections optimize for read performance after construction.
+
+```csharp
+// Correct - frozen collection for static lookup
+private static readonly FrozenDictionary<string, TournamentType> TypesByCode =
+    new Dictionary<string, TournamentType>
+    {
+        ["O"] = TournamentType.Open,
+        ["S"] = TournamentType.Senior,
+        ["W"] = TournamentType.Women,
+        ["J"] = TournamentType.Junior
+    }.ToFrozenDictionary();
+
+private static readonly FrozenSet<string> ValidStateCodes =
+    new[] { "MA", "CT", "RI", "NH", "VT", "ME" }.ToFrozenSet();
+
+// Incorrect - regular dictionary for static data
+private static readonly Dictionary<string, TournamentType> TypesByCode = new()
+{
+    ["O"] = TournamentType.Open,
+    // ...
+};
+```
+
+**When to use**:
+
+- Configuration lookup tables initialized at startup
+- Enum-like mappings (code → value, value → display name)
+- Validation sets (valid codes, allowed values)
+- Any `static readonly` dictionary or set
+
+**When not to use**:
+
+- Collections that change after initialization
+- Small collections (< 5 items) where overhead isn't justified
+- Hot paths where construction cost matters (construct once, reuse)
+
+### Span and Memory Types
+
+Use `Span<T>` and `ReadOnlySpan<T>` for high-performance buffer operations without heap allocation.
+
+```csharp
+// Correct - span for parsing without allocation
+public static bool TryParseScore(ReadOnlySpan<char> input, out int score)
+{
+    return int.TryParse(input.Trim(), out score) && score >= 0 && score <= 300;
+}
+
+// Correct - span for substring operations
+public static ReadOnlySpan<char> GetFirstName(ReadOnlySpan<char> fullName)
+{
+    var spaceIndex = fullName.IndexOf(' ');
+    return spaceIndex >= 0 ? fullName[..spaceIndex] : fullName;
+}
+
+// Incorrect - allocating strings unnecessarily
+public static bool TryParseScore(string input, out int score)
+{
+    return int.TryParse(input.Trim(), out score) && score >= 0 && score <= 300;
+}
+```
+
+**When to use**:
+
+- Parsing and validation of user input
+- String manipulation without intermediate allocations
+- Buffer processing (reading/writing binary data)
+- Hot paths in domain logic
+
+**Limitations**:
+
+- Cannot be used in async methods or stored in fields
+- Use `Memory<T>` when you need to store or pass to async code
+
+### ValueTask for Hot Paths
+
+Use `ValueTask<T>` instead of `Task<T>` for async methods that frequently complete synchronously (cache hits, buffered I/O).
+
+```csharp
+// Correct - ValueTask for cached data
+public ValueTask<TournamentDto?> GetCachedAsync(TournamentId id, CancellationToken ct)
+{
+    if (_cache.TryGetValue(id, out var cached))
+        return ValueTask.FromResult<TournamentDto?>(cached);
+
+    return new ValueTask<TournamentDto?>(LoadFromDatabaseAsync(id, ct));
+}
+
+// Incorrect - Task when synchronous path is common
+public Task<TournamentDto?> GetCachedAsync(TournamentId id, CancellationToken ct)
+{
+    if (_cache.TryGetValue(id, out var cached))
+        return Task.FromResult<TournamentDto?>(cached);  // Allocates unnecessarily
+
+    return LoadFromDatabaseAsync(id, ct);
+}
+```
+
+**When to use**:
+
+- Methods with caching where cache hits are common
+- I/O operations with buffering
+- Interface methods that may have synchronous implementations
+
+**When not to use**:
+
+- Public API contracts (prefer `Task<T>` for simplicity)
+- Methods that always go async (no benefit, adds complexity)
+- When the result will be awaited multiple times (ValueTask can only be awaited once)
+
 ---
 
 ## CQRS Implementation
@@ -628,6 +800,70 @@ await strategy.ExecuteAsync(async () =>
 });
 ```
 
+### Row Limits on Queries
+
+Always limit result sets to prevent unbounded queries. Define sensible defaults and enforce maximum limits.
+
+```csharp
+// Correct - explicit limit with sensible default
+public async Task<IReadOnlyList<TournamentDto>> GetUpcomingAsync(
+    int limit = 20,
+    CancellationToken ct = default)
+{
+    const int maxLimit = 100;
+    var effectiveLimit = Math.Min(limit, maxLimit);
+
+    return await _context.Tournaments
+        .Where(t => t.Date >= DateOnly.FromDateTime(DateTime.UtcNow))
+        .OrderBy(t => t.Date)
+        .Take(effectiveLimit)
+        .Select(t => new TournamentDto { /* ... */ })
+        .ToListAsync(ct);
+}
+
+// Correct - paginated query
+public async Task<PaginatedResult<BowlerDto>> SearchAsync(
+    string? searchTerm,
+    int page = 1,
+    int pageSize = 20,
+    CancellationToken ct = default)
+{
+    const int maxPageSize = 100;
+    var effectivePageSize = Math.Min(pageSize, maxPageSize);
+
+    var query = _context.Bowlers.AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(searchTerm))
+        query = query.Where(b => b.LastName.Contains(searchTerm));
+
+    var totalCount = await query.CountAsync(ct);
+
+    var items = await query
+        .OrderBy(b => b.LastName)
+        .Skip((page - 1) * effectivePageSize)
+        .Take(effectivePageSize)
+        .Select(b => new BowlerDto { /* ... */ })
+        .ToListAsync(ct);
+
+    return new PaginatedResult<BowlerDto>(items, totalCount, page, effectivePageSize);
+}
+
+// Incorrect - unbounded query
+public async Task<IReadOnlyList<TournamentDto>> GetAllAsync(CancellationToken ct)
+{
+    return await _context.Tournaments
+        .Select(t => new TournamentDto { /* ... */ })
+        .ToListAsync(ct);  // Could return millions of rows
+}
+```
+
+**Guidelines**:
+
+- Every query method must have a limit (explicit parameter or hardcoded)
+- Enforce maximum limits even if caller requests more
+- Use pagination for list endpoints
+- Log warnings when max limit is applied
+
 ### Common Pitfalls
 
 | Pitfall                                            | Solution                                      |
@@ -636,6 +872,7 @@ await strategy.ExecuteAsync(async () =>
 | N+1 queries                                        | Use `.Include()` for eager loading            |
 | Querying inside loops                              | Batch fetch before loop                       |
 | Multiple DbContext instances with same entity      | Use single scoped DbContext                   |
+| Unbounded queries without limits                   | Always use `.Take()` with enforced maximums   |
 
 ---
 
@@ -780,6 +1017,53 @@ public interface ITournamentsApi
         CancellationToken cancellationToken = default);
 }
 ```
+
+### JSON Serialization
+
+Use System.Text.Json with source generators for AOT compatibility and improved performance. Define a `JsonSerializerContext` in the Contracts project.
+
+```csharp
+// Neba.Api.Contracts/NebaJsonContext.cs
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[JsonSerializable(typeof(CreateTournamentRequest))]
+[JsonSerializable(typeof(TournamentResponse))]
+[JsonSerializable(typeof(PaginationResponse<TournamentSummaryResponse>))]
+[JsonSerializable(typeof(CollectionResponse<TournamentSummaryResponse>))]
+// Add all request/response types...
+public partial class NebaJsonContext : JsonSerializerContext { }
+```
+
+**Registration**:
+
+```csharp
+// In API Program.cs
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.TypeInfoResolverChain.Insert(0, NebaJsonContext.Default);
+});
+
+// In Blazor for Refit
+builder.Services
+    .AddRefitClient<ITournamentApi>(new RefitSettings
+    {
+        ContentSerializer = new SystemTextJsonContentSerializer(
+            new JsonSerializerOptions { TypeInfoResolver = NebaJsonContext.Default })
+    });
+```
+
+**Why source generators**:
+
+- Compile-time serialization code generation (no runtime reflection)
+- Required for Native AOT deployment
+- Better performance for high-throughput scenarios
+- Catches serialization issues at compile time
+
+**Maintenance**:
+
+- Add new contract types to the `[JsonSerializable]` attributes as they're created
+- Use `JsonSerializerOptions` consistently across API and Blazor
 
 ### Endpoint Implementation
 

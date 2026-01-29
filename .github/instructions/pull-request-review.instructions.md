@@ -490,6 +490,7 @@ See detailed criteria in **API Layer** section above. Additionally flag when:
 | AutoMapper, Mapster, or similar mapping libraries | Explicit inline mapping |
 | Unsealed classes without justification | Seal classes by default |
 | Value objects as mutable class | Use `sealed record class` (EF persisted) or `readonly record struct` (transient) |
+| Unbounded database queries | Always use `.Take()` with enforced maximum limits |
 
 ### Banned Libraries
 
