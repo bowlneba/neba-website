@@ -7,8 +7,8 @@ namespace Neba.Api.Tests.Contracts;
 [Component("Api.Contracts")]
 public sealed class PaginationResponseTests
 {
-    [Fact(DisplayName = "PaginationResponse should be assignable to CollectionResponse")]
-    public void PaginationResponse_ShouldBeAssignableToCollectionResponse()
+    [Fact(DisplayName = "PaginationResponse should be assignable to ICollectionResponse")]
+    public void PaginationResponse_ShouldBeAssignableToICollectionResponse()
     {
         // Arrange & Act
         var response = new PaginationResponse<string>
@@ -19,7 +19,7 @@ public sealed class PaginationResponseTests
         };
 
         // Assert
-        response.ShouldBeAssignableTo<CollectionResponse<string>>();
+        response.ShouldBeAssignableTo<ICollectionResponse<string>>();
     }
 
     [Theory(DisplayName = "TotalPages should calculate correctly")]
