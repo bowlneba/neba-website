@@ -180,8 +180,8 @@ internal static partial class BackgroundJobLogMessages
         Message = "Adding or updating recurring background job with ID {RecurringJobId} of type {JobType} using cron expression '{CronExpression}'.")]
     public static partial void LogAddOrUpdateRecurringBackgroundJob(
         this ILogger<HangfireBackgroundJobScheduler> logger,
-        string recurringJobId,
         string jobType,
+        string recurringJobId,
         string cronExpression);
 
     [LoggerMessage(
