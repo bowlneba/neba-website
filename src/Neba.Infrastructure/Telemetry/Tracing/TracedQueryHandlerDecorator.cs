@@ -35,7 +35,6 @@ internal sealed class TracedQueryHandlerDecorator<TQuery, TResponse>(
 
         if (_isCached && query is ICachedQuery<TResponse> cachedQuery)
         {
-            activity?.SetTag("query.cache.key", cachedQuery.CacheKey);
             activity?.SetTag("query.cache.expiry", cachedQuery.Expiry.TotalSeconds);
         }
 
