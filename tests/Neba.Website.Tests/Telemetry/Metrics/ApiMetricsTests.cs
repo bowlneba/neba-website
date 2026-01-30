@@ -146,6 +146,7 @@ public sealed class ApiMetricsTests : IDisposable
         // Assert
         _longMeasurements.ShouldHaveSingleItem();
         _longMeasurements[0].Value.ShouldBe(1L);
+        _longMeasurements[0].Tags.ToArray().ShouldNotContain(tag => tag.Key == ApiMetricTagNames.HttpStatusCode);
         _doubleMeasurements.ShouldHaveSingleItem();
     }
 
