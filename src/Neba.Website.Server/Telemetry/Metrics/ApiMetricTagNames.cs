@@ -1,4 +1,4 @@
-namespace Neba.Website.Server.Telemetry;
+namespace Neba.Website.Server.Telemetry.Metrics;
 
 internal static class ApiMetricTagNames
 {
