@@ -6,6 +6,7 @@ using Neba.Application.Clock;
 using Neba.Infrastructure.BackgroundJobs;
 using Neba.Infrastructure.Clock;
 using Neba.Infrastructure.Database;
+using Neba.Infrastructure.Telemetry.Tracing;
 
 namespace Neba.Infrastructure;
 
@@ -27,6 +28,10 @@ public static class InfrastructureConfiguration
         public IServiceCollection AddInfrastructure(IConfiguration config)
         {
             ArgumentNullException.ThrowIfNull(config);
+
+            services.AddTracing();
+
+            // caching decorators can go here
 
             services.AddDatabase(config.GetConnectionString("neba-website")
                 ?? throw new InvalidOperationException("Connection string 'neba-website' not found."));
