@@ -12,7 +12,24 @@ var database = postgres.AddDatabase("neba-website");
 var apiService = builder.AddProject<Projects.Neba_Api>("api")
     .WithHttpHealthCheck("/health")
     .WithReference(database)
-    .WaitFor(database);
+    .WaitFor(database)
+    .WithUrls(context =>
+    {
+        var endpoint = context.GetEndpoint("http")
+            ?? throw new InvalidOperationException("HTTP endpoint not found.");
+
+        context.Urls.Add(new ResourceUrlAnnotation
+        {
+            Url = $"{endpoint.Url}/scalar",
+            DisplayText = "Scalar API Docs"
+        });
+
+        context.Urls.Add(new ResourceUrlAnnotation
+        {
+            Url = $"{endpoint.Url}/background-jobs",
+            DisplayText = "Hangfire Dashboard"
+        });
+    });
 
 builder.AddProject<Projects.Neba_Website_Server>("web")
     .WithExternalHttpEndpoints()
@@ -20,6 +37,17 @@ builder.AddProject<Projects.Neba_Website_Server>("web")
     .WithReference(database)
     .WaitFor(database)
     .WithReference(apiService)
-    .WaitFor(apiService);
+    .WaitFor(apiService)
+    .WithUrls(context =>
+    {
+        var endpoint = context.GetEndpoint("http")
+            ?? throw new InvalidOperationException("HTTP endpoint not found.");
+
+        context.Urls.Add(new ResourceUrlAnnotation
+        {
+            Url = $"{endpoint.Url}/admin/background-jobs",
+            DisplayText = "Hangfire Dashboard"
+        });
+    });
 
 await builder.Build().RunAsync();

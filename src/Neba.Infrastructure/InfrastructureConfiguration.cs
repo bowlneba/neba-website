@@ -29,7 +29,7 @@ public static class InfrastructureConfiguration
         {
             ArgumentNullException.ThrowIfNull(config);
 
-            services.AddTracing();
+            // services.AddTracing(); // once we add a query handler or command handler uncomment this line
 
             // caching decorators can go here
 
