@@ -17,7 +17,7 @@ internal static class VersioningConfiguration
         /// Configures header-based API versioning using the X-Api-Version header.
         /// Defaults to version 1.0 when no version is specified.
         /// </summary>
-        public IServiceCollection AddApiVersioning()
+        public IServiceCollection AddVersioning()
         {
             services.AddVersioning(options =>
             {

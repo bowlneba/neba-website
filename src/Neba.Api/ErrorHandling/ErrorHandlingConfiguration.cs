@@ -61,7 +61,7 @@ internal static class ErrorHandlingConfiguration
             });
 
             options.StatusCode = 400;
-            options.ProducesMetadataType = typeof(ProblemDetails);
+            options.ProducesMetadataType = typeof(FastEndpoints.ProblemDetails);
 
             return options;
         }

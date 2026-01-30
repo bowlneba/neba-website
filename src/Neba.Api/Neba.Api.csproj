@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Neba.Infrastructure\Neba.Infrastructure.csproj" />
     <ProjectReference Include="..\Neba.ServiceDefaults\Neba.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Neba.Api.Contracts\Neba.Api.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
