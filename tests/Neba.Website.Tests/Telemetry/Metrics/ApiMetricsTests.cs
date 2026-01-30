@@ -55,6 +55,8 @@ public sealed class ApiMetricsTests : IDisposable
         // Assert
         _longMeasurements.ShouldHaveSingleItem();
         _longMeasurements[0].Value.ShouldBe(1L);
+        _longMeasurements[0].Tags.ToArray().ShouldContain(tag => tag.Key == ApiMetricTagNames.ApiName && (string)tag.Value! == apiName);
+        _longMeasurements[0].Tags.ToArray().ShouldContain(tag => tag.Key == ApiMetricTagNames.OperationName && (string)tag.Value! == operationName);
     }
 
     [Fact(DisplayName = "Should record success with duration and correct tags")]
