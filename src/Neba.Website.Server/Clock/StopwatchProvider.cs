@@ -12,7 +12,10 @@ internal sealed class StopwatchProvider
         => Stopwatch.GetElapsedTime(startTimestamp);
 }
 
-internal interface IStopwatchProvider
+/// <summary>
+/// Provides stopwatch timestamp and elapsed time measurements.
+/// </summary>
+public interface IStopwatchProvider
 {
     /// <summary>
     /// Gets the current timestamp.

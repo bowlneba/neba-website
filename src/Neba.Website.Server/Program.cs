@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 
 using Neba.Api.Contracts.Weather;
 using Neba.Website.Server.BackgroundJobs;
+using Neba.Website.Server.Clock;
 using Neba.Website.Server.Components;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Weather;
@@ -52,6 +53,8 @@ builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
 
 builder.Services.AddOutputCache();
+
+builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
 
 var app = builder.Build();
 
