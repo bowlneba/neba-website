@@ -30,11 +30,18 @@ public class SmartFlagEnumJsonConverter<TEnum> : JsonConverter<TEnum>
             if (doc.RootElement.TryGetProperty("Value", out JsonElement valueElement))
             {
                 int value = valueElement.GetInt32();
-                var items = SmartFlagEnum<TEnum>.FromValue(value).ToList();
+                try
+                {
+                    var items = SmartFlagEnum<TEnum>.FromValue(value).ToList();
 
-                return items.Count == 0
-                    ? throw new JsonException($"Invalid {typeof(TEnum).Name} value: {value}") 
-                    : items[0];
+                    return items.Count == 0
+                        ? throw new JsonException($"Invalid {typeof(TEnum).Name} value: {value}") 
+                        : items[0];
+                }
+                catch (SmartEnumNotFoundException)
+                {
+                    throw new JsonException($"Invalid {typeof(TEnum).Name} value: {value}");
+                }
             }
 
             throw new JsonException($"Expected 'Value' property in {typeof(TEnum).Name} object");
@@ -47,19 +54,26 @@ public class SmartFlagEnumJsonConverter<TEnum> : JsonConverter<TEnum>
 
         int enumValue = reader.GetInt32();
 
-        // FromValue returns an IEnumerable of flags, we need the first one
-        // For a single flag value, this will return one item
-        var enumItems = SmartFlagEnum<TEnum>.FromValue(enumValue).ToList();
+        try
+        {
+            // FromValue returns an IEnumerable of flags, we need the first one
+            // For a single flag value, this will return one item
+            var enumItems = SmartFlagEnum<TEnum>.FromValue(enumValue).ToList();
 
-        if (enumItems.Count == 0)
+            if (enumItems.Count == 0)
+            {
+                throw new JsonException($"Invalid {typeof(TEnum).Name} value: {enumValue}");
+            }
+
+            // For single values, return the first category
+            // For combined flags, this will return the first flag in the combination
+            // Note: This assumes we're deserializing individual categories, not combinations
+            return enumItems[0];
+        }
+        catch (SmartEnumNotFoundException)
         {
             throw new JsonException($"Invalid {typeof(TEnum).Name} value: {enumValue}");
         }
-
-        // For single values, return the first category
-        // For combined flags, this will return the first flag in the combination
-        // Note: This assumes we're deserializing individual categories, not combinations
-        return enumItems[0];
     }
 
     /// <summary>
