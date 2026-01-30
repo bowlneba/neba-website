@@ -29,7 +29,7 @@ internal static class ApiServicesConfiguration
         {
             services.AddOptions<NebaApiConfiguration>()
                 .Bind(configuration.GetSection("NebaApi"))
-                .Validate(config => config.BaseUrl is not null && config.BaseUrl.IsAbsoluteUri, "BaseUrl must be a valid absolute URI")
+                .Validate(config => config.BaseUrl?.IsAbsoluteUri ?? false, "BaseUrl must be a valid absolute URI")
                 .ValidateOnStart();
 
             services.AddSingleton(sp => sp.GetRequiredService<IOptions<NebaApiConfiguration>>().Value);
