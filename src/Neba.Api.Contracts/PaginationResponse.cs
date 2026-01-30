@@ -11,8 +11,7 @@ public sealed record PaginationResponse<T>
     public required IReadOnlyCollection<T> Items { get; init; }
 
     /// <inheritdoc />
-    public int TotalItems
-        => Items.Count;
+    public required int TotalItems { get; init; }
 
     /// <summary>
     /// The current page number.

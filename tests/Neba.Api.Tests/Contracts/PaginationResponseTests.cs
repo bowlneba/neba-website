@@ -14,6 +14,7 @@ public sealed class PaginationResponseTests
         var response = new PaginationResponse<string>
         {
             Items = ["a", "b"],
+            TotalItems = 2,
             PageNumber = 1,
             PageSize = 10
         };
@@ -35,6 +36,7 @@ public sealed class PaginationResponseTests
         var response = new PaginationResponse<int>
         {
             Items = items,
+            TotalItems = totalItems,
             PageNumber = 1,
             PageSize = pageSize
         };
@@ -56,6 +58,7 @@ public sealed class PaginationResponseTests
         var response = new PaginationResponse<string>
         {
             Items = ["a", "b", "c", "d", "e"],
+            TotalItems = 5,
             PageNumber = pageNumber,
             PageSize = 1
         };
@@ -79,6 +82,7 @@ public sealed class PaginationResponseTests
         var response = new PaginationResponse<int>
         {
             Items = items,
+            TotalItems = totalItems,
             PageNumber = pageNumber,
             PageSize = 1
         };
@@ -98,6 +102,7 @@ public sealed class PaginationResponseTests
         var response = new PaginationResponse<string>
         {
             Items = items,
+            TotalItems = 3,
             PageNumber = 1,
             PageSize = 10
         };
