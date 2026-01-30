@@ -55,28 +55,21 @@ public sealed class TracedCommandHandlerDecoratorTests
             .Setup(h => h.HandleAsync(command, cancellationToken))
             .ReturnsAsync("test-response");
 
-        var loggerFactory = new LoggerFactory();
+        using var loggerFactory = new LoggerFactory();
         var logger = loggerFactory.CreateLogger<TracedCommandHandlerDecorator<TestCommand, string>>();
         var decorator = new TracedCommandHandlerDecorator<TestCommand, string>(
             innerHandlerMock.Object, stopwatchProviderMock.Object, logger);
 
-        try
-        {
-            // Act
-            var result = await decorator.HandleAsync(command, cancellationToken);
+        // Act
+        var result = await decorator.HandleAsync(command, cancellationToken);
 
-            // Assert
-            result.Value.ShouldBe("test-response");
-            innerHandlerMock.Verify(
-                h => h.HandleAsync(command, cancellationToken),
-                Times.Once);
-            stopwatchProviderMock.Verify(s => s.GetTimestamp(), Times.Once);
-            stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Once);
-        }
-        finally
-        {
-            loggerFactory.Dispose();
-        }
+        // Assert
+        result.Value.ShouldBe("test-response");
+        innerHandlerMock.Verify(
+            h => h.HandleAsync(command, cancellationToken),
+            Times.Once);
+        stopwatchProviderMock.Verify(s => s.GetTimestamp(), Times.Once);
+        stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Once);
     }
 
     [Fact(DisplayName = "Should pass command through to handler and return result")]
@@ -100,24 +93,17 @@ public sealed class TracedCommandHandlerDecoratorTests
             .Setup(h => h.HandleAsync(command, cancellationToken))
             .ReturnsAsync(expectedResult);
 
-        var loggerFactory = new LoggerFactory();
+        using var loggerFactory = new LoggerFactory();
         var logger = loggerFactory.CreateLogger<TracedCommandHandlerDecorator<TestCommand, string>>();
         var decorator = new TracedCommandHandlerDecorator<TestCommand, string>(
             innerHandlerMock.Object, stopwatchProviderMock.Object, logger);
 
-        try
-        {
-            // Act
-            var result = await decorator.HandleAsync(command, cancellationToken);
+        // Act
+        var result = await decorator.HandleAsync(command, cancellationToken);
 
-            // Assert
-            result.Value.ShouldBe(expectedResult);
-            result.IsError.ShouldBeFalse();
-        }
-        finally
-        {
-            loggerFactory.Dispose();
-        }
+        // Assert
+        result.Value.ShouldBe(expectedResult);
+        result.IsError.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "Should return error result from handler without throwing")]
@@ -141,25 +127,18 @@ public sealed class TracedCommandHandlerDecoratorTests
             .Setup(h => h.HandleAsync(command, cancellationToken))
             .ReturnsAsync(testError);
 
-        var loggerFactory = new LoggerFactory();
+        using var loggerFactory = new LoggerFactory();
         var logger = loggerFactory.CreateLogger<TracedCommandHandlerDecorator<TestCommand, string>>();
         var decorator = new TracedCommandHandlerDecorator<TestCommand, string>(
             innerHandlerMock.Object, stopwatchProviderMock.Object, logger);
 
-        try
-        {
-            // Act
-            var result = await decorator.HandleAsync(command, cancellationToken);
+        // Act
+        var result = await decorator.HandleAsync(command, cancellationToken);
 
-            // Assert
-            result.IsError.ShouldBeTrue();
-            result.FirstError.ShouldBe(testError);
-            result.Errors.Count.ShouldBe(1);
-        }
-        finally
-        {
-            loggerFactory.Dispose();
-        }
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(testError);
+        result.Errors.Count.ShouldBe(1);
     }
 
     [Fact(DisplayName = "Should throw exception from handler without catching")]
@@ -183,22 +162,15 @@ public sealed class TracedCommandHandlerDecoratorTests
             .Setup(h => h.HandleAsync(command, cancellationToken))
             .ThrowsAsync(testException);
 
-        var loggerFactory = new LoggerFactory();
+        using var loggerFactory = new LoggerFactory();
         var logger = loggerFactory.CreateLogger<TracedCommandHandlerDecorator<TestCommand, string>>();
         var decorator = new TracedCommandHandlerDecorator<TestCommand, string>(
             innerHandlerMock.Object, stopwatchProviderMock.Object, logger);
 
-        try
-        {
-            // Act & Assert
-            var exception = await Should.ThrowAsync<TestException>(
-                () => decorator.HandleAsync(command, cancellationToken));
-            exception.ShouldBe(testException);
-        }
-        finally
-        {
-            loggerFactory.Dispose();
-        }
+        // Act & Assert
+        var exception = await Should.ThrowAsync<TestException>(
+            () => decorator.HandleAsync(command, cancellationToken));
+        exception.ShouldBe(testException);
     }
 
     [Fact(DisplayName = "Should pass cancellation token to inner handler")]
@@ -220,25 +192,18 @@ public sealed class TracedCommandHandlerDecoratorTests
             .Setup(h => h.HandleAsync(command, cancellationToken))
             .ReturnsAsync("response");
 
-        var loggerFactory = new LoggerFactory();
+        using var loggerFactory = new LoggerFactory();
         var logger = loggerFactory.CreateLogger<TracedCommandHandlerDecorator<TestCommand, string>>();
         var decorator = new TracedCommandHandlerDecorator<TestCommand, string>(
             innerHandlerMock.Object, stopwatchProviderMock.Object, logger);
 
-        try
-        {
-            // Act
-            await decorator.HandleAsync(command, cancellationToken);
+        // Act
+        await decorator.HandleAsync(command, cancellationToken);
 
-            // Assert
-            innerHandlerMock.Verify(
-                h => h.HandleAsync(command, cancellationToken),
-                Times.Once);
-        }
-        finally
-        {
-            loggerFactory.Dispose();
-        }
+        // Assert
+        innerHandlerMock.Verify(
+            h => h.HandleAsync(command, cancellationToken),
+            Times.Once);
     }
 
     [Fact(DisplayName = "Should use stopwatch provider for timing measurement")]
@@ -261,24 +226,17 @@ public sealed class TracedCommandHandlerDecoratorTests
             .Setup(h => h.HandleAsync(command, cancellationToken))
             .ReturnsAsync("response");
 
-        var loggerFactory = new LoggerFactory();
+        using var loggerFactory = new LoggerFactory();
         var logger = loggerFactory.CreateLogger<TracedCommandHandlerDecorator<TestCommand, string>>();
         var decorator = new TracedCommandHandlerDecorator<TestCommand, string>(
             innerHandlerMock.Object, stopwatchProviderMock.Object, logger);
 
-        try
-        {
-            // Act
-            await decorator.HandleAsync(command, cancellationToken);
+        // Act
+        await decorator.HandleAsync(command, cancellationToken);
 
-            // Assert - verify stopwatch provider methods were called with expected values
-            stopwatchProviderMock.Verify(s => s.GetTimestamp(), Times.Once);
-            stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Once);
-        }
-        finally
-        {
-            loggerFactory.Dispose();
-        }
+        // Assert - verify stopwatch provider methods were called with expected values
+        stopwatchProviderMock.Verify(s => s.GetTimestamp(), Times.Once);
+        stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Once);
     }
 
     [Fact(DisplayName = "Should measure timing even when handler returns error")]
@@ -302,24 +260,17 @@ public sealed class TracedCommandHandlerDecoratorTests
             .Setup(h => h.HandleAsync(command, cancellationToken))
             .ReturnsAsync(testError);
 
-        var loggerFactory = new LoggerFactory();
+        using var loggerFactory = new LoggerFactory();
         var logger = loggerFactory.CreateLogger<TracedCommandHandlerDecorator<TestCommand, string>>();
         var decorator = new TracedCommandHandlerDecorator<TestCommand, string>(
             innerHandlerMock.Object, stopwatchProviderMock.Object, logger);
 
-        try
-        {
-            // Act
-            await decorator.HandleAsync(command, cancellationToken);
+        // Act
+        await decorator.HandleAsync(command, cancellationToken);
 
-            // Assert - verify that stopwatch provider was used even on error with expected values
-            stopwatchProviderMock.Verify(s => s.GetTimestamp(), Times.Once);
-            stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Once);
-        }
-        finally
-        {
-            loggerFactory.Dispose();
-        }
+        // Assert - verify that stopwatch provider was used even on error with expected values
+        stopwatchProviderMock.Verify(s => s.GetTimestamp(), Times.Once);
+        stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Once);
     }
 
     [Fact(DisplayName = "Should measure timing even when handler throws")]
@@ -343,24 +294,17 @@ public sealed class TracedCommandHandlerDecoratorTests
             .Setup(h => h.HandleAsync(command, cancellationToken))
             .ThrowsAsync(testException);
 
-        var loggerFactory = new LoggerFactory();
+        using var loggerFactory = new LoggerFactory();
         var logger = loggerFactory.CreateLogger<TracedCommandHandlerDecorator<TestCommand, string>>();
         var decorator = new TracedCommandHandlerDecorator<TestCommand, string>(
             innerHandlerMock.Object, stopwatchProviderMock.Object, logger);
 
-        try
-        {
-            // Act & Assert
-            await Should.ThrowAsync<TestException>(() => decorator.HandleAsync(command, cancellationToken));
+        // Act & Assert
+        await Should.ThrowAsync<TestException>(() => decorator.HandleAsync(command, cancellationToken));
 
-            // Verify that stopwatch provider was used even on exception with expected values
-            stopwatchProviderMock.Verify(s => s.GetTimestamp(), Times.Once);
-            stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Once);
-        }
-        finally
-        {
-            loggerFactory.Dispose();
-        }
+        // Verify that stopwatch provider was used even on exception with expected values
+        stopwatchProviderMock.Verify(s => s.GetTimestamp(), Times.Once);
+        stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Once);
     }
 
     [Fact(DisplayName = "Should handle multiple errors from handler")]
@@ -386,26 +330,19 @@ public sealed class TracedCommandHandlerDecoratorTests
             .Setup(h => h.HandleAsync(command, cancellationToken))
             .ReturnsAsync(errors);
 
-        var loggerFactory = new LoggerFactory();
+        using var loggerFactory = new LoggerFactory();
         var logger = loggerFactory.CreateLogger<TracedCommandHandlerDecorator<TestCommand, string>>();
         var decorator = new TracedCommandHandlerDecorator<TestCommand, string>(
             innerHandlerMock.Object, stopwatchProviderMock.Object, logger);
 
-        try
-        {
-            // Act
-            var result = await decorator.HandleAsync(command, cancellationToken);
+        // Act
+        var result = await decorator.HandleAsync(command, cancellationToken);
 
-            // Assert
-            result.IsError.ShouldBeTrue();
-            result.Errors.Count.ShouldBe(2);
-            result.Errors.ShouldContain(error1);
-            result.Errors.ShouldContain(error2);
-        }
-        finally
-        {
-            loggerFactory.Dispose();
-        }
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.Errors.Count.ShouldBe(2);
+        result.Errors.ShouldContain(error1);
+        result.Errors.ShouldContain(error2);
     }
 
     [Fact(DisplayName = "Should handle multiple sequential calls")]
@@ -429,29 +366,22 @@ public sealed class TracedCommandHandlerDecoratorTests
             .Setup(h => h.HandleAsync(It.IsAny<TestCommand>(), cancellationToken))
             .ReturnsAsync("response");
 
-        var loggerFactory = new LoggerFactory();
+        using var loggerFactory = new LoggerFactory();
         var logger = loggerFactory.CreateLogger<TracedCommandHandlerDecorator<TestCommand, string>>();
         var decorator = new TracedCommandHandlerDecorator<TestCommand, string>(
             innerHandlerMock.Object, stopwatchProviderMock.Object, logger);
 
-        try
-        {
-            // Act
-            var result1 = await decorator.HandleAsync(command1, cancellationToken);
-            var result2 = await decorator.HandleAsync(command2, cancellationToken);
+        // Act
+        var result1 = await decorator.HandleAsync(command1, cancellationToken);
+        var result2 = await decorator.HandleAsync(command2, cancellationToken);
 
-            // Assert
-            result1.Value.ShouldBe("response");
-            result2.Value.ShouldBe("response");
-            innerHandlerMock.Verify(
-                h => h.HandleAsync(It.IsAny<TestCommand>(), cancellationToken),
-                Times.Exactly(2));
-            stopwatchProviderMock.Verify(s => s.GetTimestamp(), Times.Exactly(2));
-            stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Exactly(2));
-        }
-        finally
-        {
-            loggerFactory.Dispose();
-        }
+        // Assert
+        result1.Value.ShouldBe("response");
+        result2.Value.ShouldBe("response");
+        innerHandlerMock.Verify(
+            h => h.HandleAsync(It.IsAny<TestCommand>(), cancellationToken),
+            Times.Exactly(2));
+        stopwatchProviderMock.Verify(s => s.GetTimestamp(), Times.Exactly(2));
+        stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Exactly(2));
     }
 }
