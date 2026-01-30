@@ -29,7 +29,7 @@ internal static class ErrorHandlingConfiguration
     extension(ErrorOptions options)
     {
         /// <summary>
-        /// Configures FastEndpoints error handling with RFC 7807 compliant ProblemDetails.
+        /// Configures FastEndpoints error handling with RFC 9457 compliant ProblemDetails.
         /// </summary>
         public ErrorOptions ConfigureErrorHandling()
         {
@@ -39,7 +39,7 @@ internal static class ErrorHandlingConfiguration
                 problemDetailsOptions.IndicateErrorCode = true;
                 problemDetailsOptions.IndicateErrorSeverity = true;
 
-                problemDetailsOptions.TypeValue = "https://datatracker.ietf.org/doc/html/rfc9457";
+                problemDetailsOptions.TypeValue = "https://www.rfc-editor.org/rfc/rfc9457";
 
                 problemDetailsOptions.TitleTransformer = problemDetails => problemDetails.Status switch
                 {
