@@ -1,8 +1,10 @@
 ﻿@page "/weather"
+@using Neba.Api.Contracts.Weather.GetWeatherForecast
+@using Neba.Website.Server.Services
 @attribute [StreamRendering(true)]
 @attribute [OutputCache(Duration = 5)]
 
-@inject NebaApiClient WeatherApi
+@inject WeatherService WeatherService
 
 <PageTitle>Weather</PageTitle>
 
@@ -42,10 +44,11 @@ else
 }
 
 @code {
-    private WeatherForecast[]? _forecasts;
+    private WeatherForecastResponse[]? _forecasts;
 
     async protected override Task OnInitializedAsync()
     {
-        _forecasts = await WeatherApi.GetWeatherAsync();
+        var result = await WeatherService.GetWeatherForecastAsync();
+        _forecasts = result.Items.ToArray();
     }
 }
