@@ -13,9 +13,9 @@ internal sealed class WeatherGroup
         VersionSets.CreateApi("Weather", v => v
             .HasApiVersion(new ApiVersion(1, 0)));
 
-        Configure("weatherforecast", ep =>
-        {
-            ep.Description(d => d.WithTags("Weather"));
-        });
+        Configure("weatherforecast", ep 
+            => ep.Description(d => d
+                    .WithTags("Weather")
+                    .ProducesProblemDetails(500)));
     }
 }

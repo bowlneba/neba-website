@@ -1,10 +1,14 @@
 using System.ComponentModel;
 using System.Text.Json;
 
+using Neba.TestFactory.Attributes;
+
 using StronglyTypedIds;
 
 namespace Neba.Domain.Tests.Identities;
 
+[UnitTest]
+[Component("Identities")]
 public sealed partial class UlidStrongIdTests
 {
     [StronglyTypedId("ulid-full")]
@@ -12,7 +16,7 @@ public sealed partial class UlidStrongIdTests
 
     #region Constructor Tests
 
-    [Fact]
+    [Fact(DisplayName = "Should parse correctly when valid ULID string")]
     public void Constructor_ShouldParseCorrectly_WhenValidUlidString()
     {
         var ulid = Ulid.NewUlid();
@@ -21,7 +25,7 @@ public sealed partial class UlidStrongIdTests
         id.Value.ShouldBe(ulid);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should throw ArgumentNullException when null string")]
     public void Constructor_ShouldThrowArgumentNullException_WhenNullString()
     {
 #nullable disable
@@ -31,7 +35,7 @@ public sealed partial class UlidStrongIdTests
 #nullable enable
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return empty ULID when empty string")]
     public void Constructor_ShouldReturnEmptyUlid_WhenEmptyString()
     {
         var id = new TestId(string.Empty);
@@ -39,7 +43,7 @@ public sealed partial class UlidStrongIdTests
         id.Value.ShouldBe(Ulid.Empty);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should throw ArgumentException when invalid string")]
     public void Constructor_ShouldThrowArgumentException_WhenInvalidString()
     {
         Should.Throw<ArgumentException>(() => new TestId("not-a-valid-ulid"));
@@ -49,7 +53,7 @@ public sealed partial class UlidStrongIdTests
 
     #region Static Factory Tests
 
-    [Fact]
+    [Fact(DisplayName = "Should create unique IDs")]
     public void New_ShouldCreateUniqueIds()
     {
         var id1 = TestId.New();
@@ -59,7 +63,7 @@ public sealed partial class UlidStrongIdTests
         id1.Value.ShouldNotBe(Ulid.Empty);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should create ID from GUID")]
     public void FromGuid_ShouldCreateIdFromGuid()
     {
         var guid = Guid.NewGuid();
@@ -68,7 +72,7 @@ public sealed partial class UlidStrongIdTests
         id.Value.ToGuid().ShouldBe(guid);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return empty ULID")]
     public void Empty_ShouldReturnEmptyUlid()
     {
         TestId.Empty.Value.ShouldBe(Ulid.Empty);
@@ -78,7 +82,7 @@ public sealed partial class UlidStrongIdTests
 
     #region Equality Tests
 
-    [Fact]
+    [Fact(DisplayName = "Should return true when same value")]
     public void Equals_ShouldReturnTrue_WhenSameValue()
     {
         var ulid = Ulid.NewUlid();
@@ -88,7 +92,7 @@ public sealed partial class UlidStrongIdTests
         id1.Equals(id2).ShouldBeTrue();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return false when different value")]
     public void Equals_ShouldReturnFalse_WhenDifferentValue()
     {
         var id1 = TestId.New();
@@ -97,7 +101,7 @@ public sealed partial class UlidStrongIdTests
         id1.Equals(id2).ShouldBeFalse();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return true when boxed same value")]
     public void Equals_ShouldReturnTrue_WhenBoxedSameValue()
     {
         var ulid = Ulid.NewUlid();
@@ -107,7 +111,7 @@ public sealed partial class UlidStrongIdTests
         id1.Equals(id2).ShouldBeTrue();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return false when null")]
     public void Equals_ShouldReturnFalse_WhenNull()
     {
         var id = TestId.New();
@@ -115,7 +119,7 @@ public sealed partial class UlidStrongIdTests
         id.Equals(null).ShouldBeFalse();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return false when different type")]
     public void Equals_ShouldReturnFalse_WhenDifferentType()
     {
         var id = TestId.New();
@@ -123,7 +127,7 @@ public sealed partial class UlidStrongIdTests
         id.Equals("not an id").ShouldBeFalse();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return same hash when same value")]
     public void GetHashCode_ShouldReturnSameHash_WhenSameValue()
     {
         var ulid = Ulid.NewUlid();
@@ -133,7 +137,7 @@ public sealed partial class UlidStrongIdTests
         id1.GetHashCode().ShouldBe(id2.GetHashCode());
     }
 
-    [Fact]
+    [Fact(DisplayName = "Equality operator should return true when same value")]
     public void EqualityOperator_ShouldReturnTrue_WhenSameValue()
     {
         var ulid = Ulid.NewUlid();
@@ -143,7 +147,7 @@ public sealed partial class UlidStrongIdTests
         (id1 == id2).ShouldBeTrue();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Inequality operator should return true when different value")]
     public void InequalityOperator_ShouldReturnTrue_WhenDifferentValue()
     {
         var id1 = TestId.New();
@@ -156,7 +160,7 @@ public sealed partial class UlidStrongIdTests
 
     #region Comparison Tests
 
-    [Fact]
+    [Fact(DisplayName = "Should return zero when same value")]
     public void CompareTo_ShouldReturnZero_WhenSameValue()
     {
         var ulid = Ulid.NewUlid();
@@ -166,7 +170,7 @@ public sealed partial class UlidStrongIdTests
         id1.CompareTo(id2).ShouldBe(0);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should order correctly when different timestamps")]
     public void CompareTo_ShouldOrderCorrectly_WhenDifferentTimestamps()
     {
         // Use explicit ULIDs with known ordering (earlier timestamp < later timestamp)
@@ -177,7 +181,7 @@ public sealed partial class UlidStrongIdTests
         later.CompareTo(earlier).ShouldBeGreaterThan(0);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Comparison operators should work correctly")]
     public void ComparisonOperators_ShouldWorkCorrectly()
     {
         // Use explicit ULIDs with known ordering
@@ -201,7 +205,7 @@ public sealed partial class UlidStrongIdTests
 
     #region Parsing Tests
 
-    [Fact]
+    [Fact(DisplayName = "Should parse correctly when valid string")]
     public void Parse_ShouldParseCorrectly_WhenValidString()
     {
         var ulid = Ulid.NewUlid();
@@ -210,7 +214,7 @@ public sealed partial class UlidStrongIdTests
         id.Value.ShouldBe(ulid);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return empty when empty string")]
     public void Parse_ShouldReturnEmpty_WhenEmptyString()
     {
         var id = TestId.Parse(string.Empty, provider: null);
@@ -218,13 +222,13 @@ public sealed partial class UlidStrongIdTests
         id.Value.ShouldBe(Ulid.Empty);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should throw when string is invalid")]
     public void Parse_ShouldThrow_WhenStringIsInvalid()
     {
         Should.Throw<ArgumentException>(() => TestId.Parse("invalid", provider: null));
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return true when valid string")]
     public void TryParse_ShouldReturnTrue_WhenValidString()
     {
         var ulid = Ulid.NewUlid();
@@ -235,7 +239,7 @@ public sealed partial class UlidStrongIdTests
         id.Value.ShouldBe(ulid);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return false when null")]
     public void TryParse_ShouldReturnFalse_WhenNull()
     {
         var result = TestId.TryParse(null, provider: null, out var id);
@@ -244,7 +248,7 @@ public sealed partial class UlidStrongIdTests
         id.ShouldBe(default);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return true with empty value when empty string")]
     public void TryParse_ShouldReturnTrueWithEmptyValue_WhenEmptyString()
     {
         var result = TestId.TryParse(string.Empty, provider: null, out var id);
@@ -253,7 +257,7 @@ public sealed partial class UlidStrongIdTests
         id.Value.ShouldBe(Ulid.Empty);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return false when invalid string")]
     public void TryParse_ShouldReturnFalse_WhenInvalidString()
     {
         var result = TestId.TryParse("invalid", provider: null, out var id);
@@ -262,7 +266,7 @@ public sealed partial class UlidStrongIdTests
         id.ShouldBe(default);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should parse correctly when valid span")]
     public void Parse_ShouldParseCorrectly_WhenValidSpan()
     {
         var ulid = Ulid.NewUlid();
@@ -273,7 +277,7 @@ public sealed partial class UlidStrongIdTests
         id.Value.ShouldBe(ulid);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return empty when empty span")]
     public void Parse_ShouldReturnEmpty_WhenEmptySpan()
     {
         var id = TestId.Parse([], provider: null);
@@ -281,13 +285,13 @@ public sealed partial class UlidStrongIdTests
         id.Value.ShouldBe(Ulid.Empty);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should throw when span is invalid")]
     public void Parse_ShouldThrow_WhenSpanIsInvalid()
     {
         Should.Throw<ArgumentException>(() => TestId.Parse("invalid".AsSpan(), provider: null));
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return true when valid span")]
     public void TryParse_ShouldReturnTrue_WhenValidSpan()
     {
         var ulid = Ulid.NewUlid();
@@ -299,7 +303,7 @@ public sealed partial class UlidStrongIdTests
         id.Value.ShouldBe(ulid);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return true with empty value when empty span")]
     public void TryParse_ShouldReturnTrueWithEmptyValue_WhenEmptySpan()
     {
         var result = TestId.TryParse(ReadOnlySpan<char>.Empty, provider: null, out var id);
@@ -308,7 +312,7 @@ public sealed partial class UlidStrongIdTests
         id.Value.ShouldBe(Ulid.Empty);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return false when invalid span")]
     public void TryParse_ShouldReturnFalse_WhenInvalidSpan()
     {
         var result = TestId.TryParse("invalid".AsSpan(), provider: null, out var id);
@@ -321,7 +325,7 @@ public sealed partial class UlidStrongIdTests
 
     #region Formatting Tests
 
-    [Fact]
+    [Fact(DisplayName = "Should return ULID string")]
     public void ToString_ShouldReturnUlidString()
     {
         var ulid = Ulid.NewUlid();
@@ -330,7 +334,7 @@ public sealed partial class UlidStrongIdTests
         id.ToString().ShouldBe(ulid.ToString());
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should return ULID string when format provider is null")]
     public void ToString_ShouldReturnUlidString_WhenFormatProviderIsNull()
     {
         var ulid = Ulid.NewUlid();
@@ -339,7 +343,7 @@ public sealed partial class UlidStrongIdTests
         id.ToString(format: null, formatProvider: null).ShouldBe(ulid.ToString());
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should succeed when buffer is sufficient")]
     public void TryFormat_ShouldSucceed_WhenBufferIsSufficient()
     {
         var ulid = Ulid.NewUlid();
@@ -353,7 +357,7 @@ public sealed partial class UlidStrongIdTests
         buffer.ToString().ShouldBe(ulid.ToString());
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should fail when buffer is insufficient")]
     public void TryFormat_ShouldFail_WhenBufferIsInsufficient()
     {
         var id = TestId.New();
@@ -368,7 +372,7 @@ public sealed partial class UlidStrongIdTests
 
     #region TypeConverter Tests
 
-    [Fact]
+    [Fact(DisplayName = "Type converter should be registered")]
     public void TypeConverter_ShouldBeRegistered()
     {
         var converter = TypeDescriptor.GetConverter(typeof(TestId));
@@ -376,7 +380,7 @@ public sealed partial class UlidStrongIdTests
         converter.ShouldBeOfType<TestId.TestIdTypeConverter>();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Type converter can convert from should return true when string")]
     public void TypeConverterCanConvertFrom_ShouldReturnTrue_WhenString()
     {
         var converter = TypeDescriptor.GetConverter(typeof(TestId));
@@ -384,7 +388,7 @@ public sealed partial class UlidStrongIdTests
         converter.CanConvertFrom(typeof(string)).ShouldBeTrue();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Type converter can convert from should return true when ULID")]
     public void TypeConverterCanConvertFrom_ShouldReturnTrue_WhenUlid()
     {
         var converter = TypeDescriptor.GetConverter(typeof(TestId));
@@ -392,7 +396,7 @@ public sealed partial class UlidStrongIdTests
         converter.CanConvertFrom(typeof(Ulid)).ShouldBeTrue();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Type converter can convert from should return true when GUID")]
     public void TypeConverterCanConvertFrom_ShouldReturnTrue_WhenGuid()
     {
         var converter = TypeDescriptor.GetConverter(typeof(TestId));
@@ -400,7 +404,7 @@ public sealed partial class UlidStrongIdTests
         converter.CanConvertFrom(typeof(Guid)).ShouldBeTrue();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Type converter convert from should convert when string")]
     public void TypeConverterConvertFrom_ShouldConvert_WhenString()
     {
         var converter = TypeDescriptor.GetConverter(typeof(TestId));
@@ -411,7 +415,7 @@ public sealed partial class UlidStrongIdTests
         result.Value.ShouldBe(ulid);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Type converter convert from should convert when ULID")]
     public void TypeConverterConvertFrom_ShouldConvert_WhenUlid()
     {
         var converter = TypeDescriptor.GetConverter(typeof(TestId));
@@ -422,7 +426,7 @@ public sealed partial class UlidStrongIdTests
         result.Value.ShouldBe(ulid);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Type converter convert from should convert when GUID")]
     public void TypeConverterConvertFrom_ShouldConvert_WhenGuid()
     {
         var converter = TypeDescriptor.GetConverter(typeof(TestId));
@@ -433,7 +437,7 @@ public sealed partial class UlidStrongIdTests
         result.Value.ToGuid().ShouldBe(guid);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Type converter can convert to should return true when string")]
     public void TypeConverterCanConvertTo_ShouldReturnTrue_WhenString()
     {
         var converter = TypeDescriptor.GetConverter(typeof(TestId));
@@ -441,7 +445,7 @@ public sealed partial class UlidStrongIdTests
         converter.CanConvertTo(typeof(string)).ShouldBeTrue();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Type converter can convert to should return true when ULID")]
     public void TypeConverterCanConvertTo_ShouldReturnTrue_WhenUlid()
     {
         var converter = TypeDescriptor.GetConverter(typeof(TestId));
@@ -449,7 +453,7 @@ public sealed partial class UlidStrongIdTests
         converter.CanConvertTo(typeof(Ulid)).ShouldBeTrue();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Type converter can convert to should return true when GUID")]
     public void TypeConverterCanConvertTo_ShouldReturnTrue_WhenGuid()
     {
         var converter = TypeDescriptor.GetConverter(typeof(TestId));
@@ -457,7 +461,7 @@ public sealed partial class UlidStrongIdTests
         converter.CanConvertTo(typeof(Guid)).ShouldBeTrue();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Type converter convert to should convert when string")]
     public void TypeConverterConvertTo_ShouldConvert_WhenString()
     {
         var converter = TypeDescriptor.GetConverter(typeof(TestId));
@@ -469,7 +473,7 @@ public sealed partial class UlidStrongIdTests
         result.ShouldBe(ulid.ToString());
     }
 
-    [Fact]
+    [Fact(DisplayName = "Type converter convert to should convert when ULID")]
     public void TypeConverterConvertTo_ShouldConvert_WhenUlid()
     {
         var converter = TypeDescriptor.GetConverter(typeof(TestId));
@@ -481,7 +485,7 @@ public sealed partial class UlidStrongIdTests
         result.ShouldBe(ulid);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Type converter convert to should convert when GUID")]
     public void TypeConverterConvertTo_ShouldConvert_WhenGuid()
     {
         var converter = TypeDescriptor.GetConverter(typeof(TestId));
@@ -497,7 +501,7 @@ public sealed partial class UlidStrongIdTests
 
     #region JSON Serialization Tests
 
-    [Fact]
+    [Fact(DisplayName = "Should serialize as string")]
     public void JsonSerialize_ShouldSerializeAsString()
     {
         var ulid = Ulid.NewUlid();
@@ -508,7 +512,7 @@ public sealed partial class UlidStrongIdTests
         json.ShouldBe($"\"{ulid}\"");
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should deserialize from string")]
     public void JsonDeserialize_ShouldDeserializeFromString()
     {
         var ulid = Ulid.NewUlid();
@@ -519,7 +523,7 @@ public sealed partial class UlidStrongIdTests
         id.Value.ShouldBe(ulid);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should round trip when dictionary key")]
     public void JsonSerialize_ShouldRoundTrip_WhenDictionaryKey()
     {
         var id = TestId.New();
@@ -533,7 +537,7 @@ public sealed partial class UlidStrongIdTests
         deserialized[id].ShouldBe("test");
     }
 
-    [Fact]
+    [Fact(DisplayName = "Should round trip when in object")]
     public void JsonSerialize_ShouldRoundTrip_WhenInObject()
     {
         var id = TestId.New();
@@ -557,7 +561,7 @@ public sealed partial class UlidStrongIdTests
 
     #region EF Core ValueConverter Tests
 
-    [Fact]
+    [Fact(DisplayName = "EF Core value converter should convert to string")]
     public void EfCoreValueConverter_ShouldConvertToString()
     {
         var converter = new TestId.EfCoreValueConverter();
@@ -569,7 +573,7 @@ public sealed partial class UlidStrongIdTests
         result.ShouldBe(ulid.ToString());
     }
 
-    [Fact]
+    [Fact(DisplayName = "EF Core value converter should convert from string")]
     public void EfCoreValueConverter_ShouldConvertFromString()
     {
         var converter = new TestId.EfCoreValueConverter();
