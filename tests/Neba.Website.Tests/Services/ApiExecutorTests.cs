@@ -132,6 +132,8 @@ public sealed class ApiExecutorTests
         // Assert
         result.IsError.ShouldBeTrue();
         result.Errors.ShouldHaveSingleItem();
+        result.FirstError.Code.ShouldBe($"{apiName}.{operationName}.DeserializationFailed");
+        result.FirstError.Description.ShouldContain("deserialization failure");
     }
 
     [Fact(DisplayName = "Should handle ApiException gracefully")]

@@ -43,29 +43,57 @@ internal sealed class ApiExecutor(
 
             activity?.SetTag("http.status_code", (int)response.StatusCode);
 
-            if (response.IsSuccessStatusCode && response.Content is not null)
+            if (response.IsSuccessStatusCode)
             {
-                ApiMetrics.RecordSuccess(apiName, operationName, duration);
+                if (response.Content is not null)
+                {
+                    ApiMetrics.RecordSuccess(apiName, operationName, duration);
 
-                activity?.SetStatus(ActivityStatusCode.Ok);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
 
-                return response.Content;
+                    return response.Content;
+                }
+                else
+                {
+                    // Handle null content on success status as a deserialization error
+                    const string errorType = "DeserializationFailed";
+                    ApiMetrics.RecordError(apiName, operationName, duration, errorType, (int)response.StatusCode);
+
+                    activity?.SetTag("error.type", "DeserializationFailed");
+                    activity?.SetTag("error.message", "Response content was null despite success status.");
+                    activity?.SetStatus(ActivityStatusCode.Error, "Deserialization failed: null content on success response.");
+
+                    logger.LogDeserializationFailed(
+                        apiName,
+                        operationName,
+                        (int)response.StatusCode,
+                        duration
+                    );
+
+                    return Error.Failure(
+                        $"{apiName}.{operationName}.DeserializationFailed",
+                        "API call succeeded but response content was null, indicating a deserialization failure."
+                    );
+                }
             }
+            else
+            {
+                // Existing HTTP error handling
+                var errorType = $"HttpError_{(int)response.StatusCode}";
+                ApiMetrics.RecordError(apiName, operationName, duration, errorType, (int)response.StatusCode);
 
-            var errorType = $"HttpError_{(int)response.StatusCode}";
-            ApiMetrics.RecordError(apiName, operationName, duration, errorType, (int)response.StatusCode);
+                logger.LogApiError(
+                    apiName,
+                    operationName,
+                    (int)response.StatusCode,
+                    duration
+                );
 
-            logger.LogApiError(
-                apiName,
-                operationName,
-                (int)response.StatusCode,
-                duration
-            );
-
-            return Error.Failure(
-                $"{apiName}.{operationName}.HttpError",
-                $"API call failed with status code {(int)response.StatusCode}."
-            );
+                return Error.Failure(
+                    $"{apiName}.{operationName}.HttpError",
+                    $"API call failed with status code {(int)response.StatusCode}."
+                );
+            }
         }
         catch (ApiException ex)
         {
@@ -166,6 +194,11 @@ internal static partial class ApiExecutorLogMessages
         Level = LogLevel.Error,
         Message = "API call failed: {ApiName}.{OperationName} returned status {StatusCode} (Duration: {DurationMs}ms)")]
     public static partial void LogApiError(this ILogger<ApiExecutor> logger, string apiName, string operationName, int statusCode, double durationMs);
+
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "API deserialization failed: {ApiName}.{OperationName} returned status {StatusCode} with null content (Duration: {DurationMs}ms)")]
+    public static partial void LogDeserializationFailed(this ILogger<ApiExecutor> logger, string apiName, string operationName, int statusCode, double durationMs);
 
     [LoggerMessage(
         Level = LogLevel.Warning,
