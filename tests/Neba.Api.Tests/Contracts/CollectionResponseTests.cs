@@ -7,31 +7,31 @@ namespace Neba.Api.Tests.Contracts;
 [Component("Api.Contracts")]
 public sealed class CollectionResponseTests
 {
-    [Fact(DisplayName = "TotalCount should return items count")]
-    public void TotalCount_ShouldReturnItemsCount()
+    [Fact(DisplayName = "TotalItems should return items count")]
+    public void TotalItems_ShouldReturnItemsCount()
     {
         // Arrange
         var items = new[] { "a", "b", "c" };
         var response = new CollectionResponse<string> { Items = items };
 
         // Act
-        var totalCount = response.TotalCount;
+        var totalItems = response.TotalItems;
 
         // Assert
-        totalCount.ShouldBe(3);
+        totalItems.ShouldBe(3);
     }
 
-    [Fact(DisplayName = "TotalCount should return zero when collection is empty")]
-    public void TotalCount_ShouldReturnZero_WhenCollectionIsEmpty()
+    [Fact(DisplayName = "TotalItems should return zero when collection is empty")]
+    public void TotalItems_ShouldReturnZero_WhenCollectionIsEmpty()
     {
         // Arrange
         var response = new CollectionResponse<int> { Items = [] };
 
         // Act
-        var totalCount = response.TotalCount;
+        var totalItems = response.TotalItems;
 
         // Assert
-        totalCount.ShouldBe(0);
+        totalItems.ShouldBe(0);
     }
 
     [Fact(DisplayName = "Items should return the provided collection")]

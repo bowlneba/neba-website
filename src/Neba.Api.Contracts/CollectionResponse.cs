@@ -1,19 +1,13 @@
 namespace Neba.Api.Contracts;
 
-/// <summary>
-/// Represents a paginated collection response.
-/// </summary>
-/// <typeparam name="T">The type of items in the collection.</typeparam>
-public record CollectionResponse<T>
+/// <inheritdoc />
+public sealed record CollectionResponse<T>
+    : ICollectionResponse<T>
 {
-    /// <summary>
-    /// The items in the collection.
-    /// </summary>
+    /// <inheritdoc />
     public required IReadOnlyCollection<T> Items { get; init; }
 
-    /// <summary>
-    /// The total count of items available.
-    /// </summary>
-    public int TotalCount
+    /// <inheritdoc />
+    public int TotalItems
         => Items.Count;
 }

@@ -5,8 +5,15 @@ namespace Neba.Api.Contracts;
 /// </summary>
 /// <typeparam name="T">The type of items in the collection.</typeparam>
 public sealed record PaginationResponse<T>
-    : CollectionResponse<T>
+    : ICollectionResponse<T>
 {
+    /// <inheritdoc />
+    public required IReadOnlyCollection<T> Items { get; init; }
+
+    /// <inheritdoc />
+    public int TotalItems
+        => Items.Count;
+
     /// <summary>
     /// The current page number.
     /// </summary>
@@ -24,7 +31,7 @@ public sealed record PaginationResponse<T>
     /// </summary>
     /// <example>5</example>
     public int TotalPages
-        => (int)Math.Ceiling(TotalCount / (double)PageSize);
+        => (int)Math.Ceiling(TotalItems / (double)PageSize);
 
     /// <summary>
     /// Indicates if there is a previous page.

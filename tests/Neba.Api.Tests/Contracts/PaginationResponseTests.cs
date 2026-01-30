@@ -90,8 +90,8 @@ public sealed class PaginationResponseTests
         hasNextPage.ShouldBe(expected);
     }
 
-    [Fact(DisplayName = "TotalCount should return items count (inherited from CollectionResponse)")]
-    public void TotalCount_ShouldReturnItemsCount_WhenInheritedFromCollectionResponse()
+    [Fact(DisplayName = "TotalItems should return items count")]
+    public void TotalItems_ShouldReturnItemsCount_WhenInheritedFromCollectionResponse()
     {
         // Arrange
         var items = new[] { "a", "b", "c" };
@@ -103,9 +103,9 @@ public sealed class PaginationResponseTests
         };
 
         // Act
-        var totalCount = response.TotalCount;
+        var totalItems = response.TotalItems;
 
         // Assert
-        totalCount.ShouldBe(3);
+        totalItems.ShouldBe(3);
     }
 }
