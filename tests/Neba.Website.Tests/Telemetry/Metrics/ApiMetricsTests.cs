@@ -230,5 +230,6 @@ public sealed class ApiMetricsTests : IDisposable
         // Assert
         _longMeasurements.ShouldHaveSingleItem();
         _longMeasurements[0].Value.ShouldBe(1L);
+        _longMeasurements[0].Tags.ToArray().ShouldContain(tag => tag.Key == ApiMetricTagNames.HttpStatusCode && (int)tag.Value! == statusCode);
     }
 }
