@@ -25,7 +25,8 @@ internal sealed class GetWeatherForecastEndpoint
         AllowAnonymous();
 
         Description(description => description
-            .WithName("GetWeatherForecast"));
+            .WithName("GetWeatherForecast")
+            .WithTags("Public"));
     }
 
     public override async Task HandleAsync(CancellationToken ct)
