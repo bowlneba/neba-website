@@ -444,6 +444,8 @@ Flag when:
 - Extension methods use the legacy `this` parameter syntax instead of `extension()` blocks
 - Multiple extension methods for the same type aren't grouped in a single `extension()` block
 
+**Exception**: `[LoggerMessage]` partial methods must use the legacy `this` parameter syntax as required by the source generator.
+
 ### Naming
 
 - **Files**: Match type name (`CreateTournamentEndpoint.cs` contains `CreateTournamentEndpoint`)
