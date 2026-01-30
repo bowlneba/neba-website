@@ -70,6 +70,8 @@ app.UseFastEndpoints(config =>
     config.Serializer.Options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     config.Serializer.Options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 
+    config.Binding.UsePropertyNamingPolicy = true;
+
     config.Errors.UseProblemDetails(options =>
     {
         options.AllowDuplicateErrors = true;
