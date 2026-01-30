@@ -306,7 +306,7 @@ public sealed partial class UlidStrongIdTests
     [Fact(DisplayName = "Should return true with empty value when empty span")]
     public void TryParse_ShouldReturnTrueWithEmptyValue_WhenEmptySpan()
     {
-        var result = TestId.TryParse(ReadOnlySpan<char>.Empty, provider: null, out var id);
+        var result = TestId.TryParse([], provider: null, out var id);
 
         result.ShouldBeTrue();
         id.Value.ShouldBe(Ulid.Empty);

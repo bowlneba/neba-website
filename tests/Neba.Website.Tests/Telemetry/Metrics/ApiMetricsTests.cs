@@ -27,10 +27,8 @@ public sealed class ApiMetricsTests : IDisposable
             }
         };
 
-        _meterListener.SetMeasurementEventCallback<long>((instrument, measurement, tags, state) =>
-        {
-            _longMeasurements.Add(new Measurement<long>(measurement, tags));
-        });
+        _meterListener.SetMeasurementEventCallback<long>((instrument, measurement, tags, state) 
+            => _longMeasurements.Add(new Measurement<long>(measurement, tags)));
 
         _meterListener.SetMeasurementEventCallback<double>((instrument, measurement, tags, state) =>
         {

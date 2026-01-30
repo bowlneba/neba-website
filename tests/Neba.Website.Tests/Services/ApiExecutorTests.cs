@@ -47,7 +47,7 @@ public sealed class ApiExecutorTests
         apiResponseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
 
         var apiCallMock = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            ct => Task.FromResult(apiResponseMock.Object)
+            _ => Task.FromResult(apiResponseMock.Object)
         );
 
         _stopwatchProviderMock
@@ -81,7 +81,7 @@ public sealed class ApiExecutorTests
         apiResponseMock.Setup(r => r.Content).Returns((string?)null);
 
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            ct => Task.FromResult(apiResponseMock.Object)
+            _ => Task.FromResult(apiResponseMock.Object)
         );
 
         _stopwatchProviderMock
@@ -116,7 +116,7 @@ public sealed class ApiExecutorTests
         apiResponseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
 
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            ct => Task.FromResult(apiResponseMock.Object)
+            _ => Task.FromResult(apiResponseMock.Object)
         );
 
         _stopwatchProviderMock
@@ -359,7 +359,7 @@ public sealed class ApiExecutorTests
         apiResponseMock.Setup(r => r.Content).Returns((string?)null);
 
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            ct => Task.FromResult(apiResponseMock.Object)
+            _ => Task.FromResult(apiResponseMock.Object)
         );
 
         _stopwatchProviderMock
@@ -394,7 +394,7 @@ public sealed class ApiExecutorTests
         apiResponseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
 
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            ct => Task.FromResult(apiResponseMock.Object)
+            _ => Task.FromResult(apiResponseMock.Object)
         );
 
         _stopwatchProviderMock
@@ -427,7 +427,7 @@ public sealed class ApiExecutorTests
         apiResponseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
 
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            ct => Task.FromResult(apiResponseMock.Object)
+            _ => Task.FromResult(apiResponseMock.Object)
         );
 
         _stopwatchProviderMock
