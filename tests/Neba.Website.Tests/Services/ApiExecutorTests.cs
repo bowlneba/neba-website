@@ -215,6 +215,7 @@ public sealed class ApiExecutorTests
         var duration = TimeSpan.FromMilliseconds(10);
 
         using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
         var cancellationToken = cts.Token;
 
         var taskCanceledException = new TaskCanceledException("Operation canceled", null, cancellationToken);

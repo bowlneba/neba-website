@@ -89,7 +89,7 @@ internal sealed class ApiExecutor(
                 httpStatusCode: null
             );
         }
-        catch (TaskCanceledException ex) when (ex.CancellationToken == cancellationToken)
+        catch (TaskCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             var duration = stopwatchProvider.GetElapsedTime(startTimestamp).TotalMilliseconds;
             ApiMetrics.RecordError(apiName, operationName, duration, "OperationCanceled");
