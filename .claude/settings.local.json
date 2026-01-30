@@ -14,7 +14,8 @@
       "Bash(coverlet:*)",
       "Bash(dotnet-coverage merge:*)",
       "Bash(./bin/Debug/net10.0/Neba.Domain.Tests:*)",
-      "WebFetch(domain:aspire.dev)"
+      "WebFetch(domain:aspire.dev)",
+      "Bash(gh api:*)"
     ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",
