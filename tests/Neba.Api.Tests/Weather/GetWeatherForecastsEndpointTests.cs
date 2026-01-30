@@ -32,7 +32,7 @@ public sealed class GetWeatherForecastsEndpointTests(AspireFixture fixture)
         result.ShouldNotBeNull();
         result.Items.ShouldNotBeEmpty();
         result.Items.Count.ShouldBe(5);
-        result.TotalCount.ShouldBe(5);
+        result.TotalItems.ShouldBe(5);
 
         foreach (var forecast in result.Items)
         {
