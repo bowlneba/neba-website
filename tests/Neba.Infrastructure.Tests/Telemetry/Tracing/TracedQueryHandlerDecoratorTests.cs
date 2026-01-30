@@ -145,22 +145,16 @@ public sealed class TracedQueryHandlerDecoratorTests
             .Setup(h => h.HandleAsync(query, cancellationToken))
             .ThrowsAsync(testException);
 
-        var loggerFactory = new LoggerFactory();
+        using var loggerFactory = new LoggerFactory();
         var logger = loggerFactory.CreateLogger<TracedQueryHandlerDecorator<TestQuery, string>>();
         var decorator = new TracedQueryHandlerDecorator<TestQuery, string>(
             innerHandlerMock.Object, stopwatchProviderMock.Object, logger);
 
-        try
-        {
-            // Act & Assert
-            var exception = await Should.ThrowAsync<TestException>(
-                () => decorator.HandleAsync(query, cancellationToken));
-            exception.ShouldBe(testException);
-        }
-        finally
-        {
-            loggerFactory.Dispose();
-        }
+        // Act & Assert
+        var exception = await Should.ThrowAsync<TestException>(
+            () => decorator.HandleAsync(query, cancellationToken));
+
+        exception.ShouldBe(testException);
     }
 
     [Fact(DisplayName = "Should pass cancellation token to inner handler")]
@@ -182,25 +176,18 @@ public sealed class TracedQueryHandlerDecoratorTests
             .Setup(h => h.HandleAsync(query, cancellationToken))
             .ReturnsAsync("response");
 
-        var loggerFactory = new LoggerFactory();
+        using var loggerFactory = new LoggerFactory();
         var logger = loggerFactory.CreateLogger<TracedQueryHandlerDecorator<TestQuery, string>>();
         var decorator = new TracedQueryHandlerDecorator<TestQuery, string>(
             innerHandlerMock.Object, stopwatchProviderMock.Object, logger);
 
-        try
-        {
-            // Act
+        // Act
             await decorator.HandleAsync(query, cancellationToken);
 
-            // Assert
-            innerHandlerMock.Verify(
-                h => h.HandleAsync(query, cancellationToken),
-                Times.Once);
-        }
-        finally
-        {
-            loggerFactory.Dispose();
-        }
+        // Assert
+        innerHandlerMock.Verify(
+            h => h.HandleAsync(query, cancellationToken),
+            Times.Once);
     }
 
     [Fact(DisplayName = "Should use stopwatch provider for timing measurement")]
