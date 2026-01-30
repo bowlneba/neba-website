@@ -11,6 +11,8 @@ using Neba.Api;
 using Neba.Application;
 using Neba.Infrastructure;
 
+using Scalar.AspNetCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
@@ -48,13 +50,19 @@ builder.Services.AddFastEndpoints(options =>
         };
 
         options.AutoTagPathSegmentIndex = 0;
+        options.EnableJWTBearerAuth = false;
+        options.ShortSchemaNames = true;
+        options.ExcludeNonFastEndpoints = true;
+
+        options.TagDescriptions = tags =>
+        {
+            tags["Weather"] = "Weather forecast endpoints";
+            tags["Future"] = "Future endpoints"; //place holder so that linting doesn't try to make it expression
+        };
     });
 
-    VersionSets.CreateApi("weather", v => v
-        .HasApiVersion(new ApiVersion(1)));
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+    VersionSets.CreateApi("Weather", v => v
+        .HasApiVersion(new ApiVersion(1, 0)));
 
 builder.Services
     .AddApplication()
@@ -94,12 +102,16 @@ app.UseFastEndpoints(config =>
 
     config.Errors.StatusCode = 400;
     config.Errors.ProducesMetadataType = typeof(ProblemDetails);
-})
-    .UseSwaggerGen();
+});
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseOpenApi(config => config.Path = "/openapi/{documentName}.json");
+
+    app.MapScalarApiReference(config => config
+        .WithTitle("NEBA API")
+        .WithTheme(ScalarTheme.DeepSpace)
+        .AddDocument("v1.0"));
 }
 
 app.UseInfrastructure();
