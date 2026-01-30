@@ -26,4 +26,4 @@ dotnet_diagnostic.xUnit1032.severity = warning # test methods should not have As
 dotnet_diagnostic.VSTHRD200.severity = none # allow async test methods without Async suffix
 
 # Do not use primary constructors
-dotnet_diagnostic.IDE0130.severity = none # use primary constructors
+dotnet_diagnostic.IDE0290.severity = none # use primary constructors
