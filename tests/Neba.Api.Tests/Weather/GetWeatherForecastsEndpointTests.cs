@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Weather.GetWeatherForecast;
 using Neba.TestFactory.Attributes;

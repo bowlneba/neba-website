@@ -20,7 +20,7 @@ internal sealed class GetWeatherForecastEndpoint
 
         Options(options => options
             .WithVersionSet("Weather")
-            .MapToApiVersion(new ApiVersion(1,0)));
+            .MapToApiVersion(new ApiVersion(1, 0)));
 
         AllowAnonymous();
 

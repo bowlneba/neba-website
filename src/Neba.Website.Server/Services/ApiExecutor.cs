@@ -67,7 +67,7 @@ internal sealed class ApiExecutor(
                 $"API call failed with status code {(int)response.StatusCode}."
             );
         }
-        catch(ApiException ex)
+        catch (ApiException ex)
         {
             return HandleException<TResponse>(
                 apiName,
@@ -78,7 +78,7 @@ internal sealed class ApiExecutor(
                 (int?)ex.StatusCode
             );
         }
-        catch(HttpRequestException ex)
+        catch (HttpRequestException ex)
         {
             return HandleException<TResponse>(
                 apiName,
@@ -89,7 +89,7 @@ internal sealed class ApiExecutor(
                 httpStatusCode: null
             );
         }
-        catch(TaskCanceledException ex) when (ex.CancellationToken == cancellationToken)
+        catch (TaskCanceledException ex) when (ex.CancellationToken == cancellationToken)
         {
             var duration = stopwatchProvider.GetElapsedTime(startTimestamp).TotalMilliseconds;
             ApiMetrics.RecordError(apiName, operationName, duration, "OperationCanceled");
@@ -103,7 +103,7 @@ internal sealed class ApiExecutor(
 
             return Error.Failure($"{apiName}.{operationName}.Cancelled", "Request was canceled.");
         }
-        catch(TaskCanceledException ex)
+        catch (TaskCanceledException ex)
         {
             return HandleException<TResponse>(
                 apiName,
@@ -114,7 +114,7 @@ internal sealed class ApiExecutor(
                 httpStatusCode: null
             );
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             return HandleException<TResponse>(
                 apiName,

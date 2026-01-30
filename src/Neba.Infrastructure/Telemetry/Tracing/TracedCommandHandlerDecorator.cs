@@ -16,7 +16,7 @@ internal sealed class TracedCommandHandlerDecorator<TCommand, TResponse>(
     : ICommandHandler<TCommand, TResponse>
     where TCommand : ICommand<TResponse>
 {
-    private static readonly ActivitySource ActivitySource 
+    private static readonly ActivitySource ActivitySource
         = new("Neba.Handlers");
 
     private readonly ICommandHandler<TCommand, TResponse> _innerHandler = innerHandler;
@@ -70,7 +70,7 @@ internal sealed class TracedCommandHandlerDecorator<TCommand, TResponse>(
             activity?.SetTag("command.duration_ms", durationMs);
             activity?.SetTag("command.success", false);
             activity?.SetExceptionTags(ex);
-            
+
             _logger.LogCommandExecutionFailed(
                 _commandType,
                 durationMs,

@@ -352,7 +352,7 @@ public sealed class TracedCommandHandlerDecoratorTests
         {
             // Act & Assert
             await Should.ThrowAsync<TestException>(() => decorator.HandleAsync(command, cancellationToken));
-            
+
             // Verify that stopwatch provider was used even on exception with expected values
             stopwatchProviderMock.Verify(s => s.GetTimestamp(), Times.Once);
             stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Once);

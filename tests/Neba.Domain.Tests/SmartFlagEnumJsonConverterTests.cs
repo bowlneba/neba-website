@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using Ardalis.SmartEnum;
+
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Domain.Tests;

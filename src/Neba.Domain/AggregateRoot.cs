@@ -32,7 +32,7 @@ public interface IAggregateRoot
     /// Collection of domain events raised by the aggregate root
     /// </summary>
     IReadOnlyCollection<IDomainEvent> DomainEvents { get; }
- 
+
     /// <summary>
     /// Clears all domain events from the aggregate root
     /// </summary>
