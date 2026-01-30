@@ -30,7 +30,7 @@ public sealed class ApiMetricsTests : IDisposable
         _meterListener.SetMeasurementEventCallback<long>((_, measurement, tags, _)
             => _longMeasurements.Add(new Measurement<long>(measurement, tags)));
 
-        _meterListener.SetMeasurementEventCallback<double>((_, measurement, tags, _) 
+        _meterListener.SetMeasurementEventCallback<double>((_, measurement, tags, _)
             => _doubleMeasurements.Add(new Measurement<double>(measurement, tags)));
 
         _meterListener.Start();

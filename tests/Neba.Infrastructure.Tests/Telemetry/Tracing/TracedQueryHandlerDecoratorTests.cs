@@ -182,7 +182,7 @@ public sealed class TracedQueryHandlerDecoratorTests
             innerHandlerMock.Object, stopwatchProviderMock.Object, logger);
 
         // Act
-            await decorator.HandleAsync(query, cancellationToken);
+        await decorator.HandleAsync(query, cancellationToken);
 
         // Assert
         innerHandlerMock.Verify(
