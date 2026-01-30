@@ -14,5 +14,5 @@ public interface IWeatherApi
     /// </summary>
     /// <returns>A collection response containing weather forecast data.</returns>
     [Get("/weatherforecast")]
-    Task<ApiResponse<CollectionResponse<WeatherForecastResponse>>> GetWeatherForecastAsync(CancellationToken cancellationToken = default);
+    Task<IApiResponse<CollectionResponse<WeatherForecastResponse>>> GetWeatherForecastAsync(CancellationToken cancellationToken = default);
 }

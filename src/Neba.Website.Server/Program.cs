@@ -3,10 +3,10 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 
 using Neba.Api.Contracts.Weather;
-using Neba.Website.Server;
 using Neba.Website.Server.BackgroundJobs;
 using Neba.Website.Server.Components;
 using Neba.Website.Server.Services;
+using Neba.Website.Server.Weather;
 
 using Refit;
 
