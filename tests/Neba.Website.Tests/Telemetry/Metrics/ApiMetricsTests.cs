@@ -115,8 +115,16 @@ public sealed class ApiMetricsTests : IDisposable
         // Assert
         _longMeasurements.ShouldHaveSingleItem();
         _longMeasurements[0].Value.ShouldBe(1L);
+        _longMeasurements[0].Tags.ToArray().ShouldContain(tag => tag.Key == ApiMetricTagNames.ApiName && (string)tag.Value! == apiName);
+        _longMeasurements[0].Tags.ToArray().ShouldContain(tag => tag.Key == ApiMetricTagNames.OperationName && (string)tag.Value! == operationName);
+        _longMeasurements[0].Tags.ToArray().ShouldContain(tag => tag.Key == ApiMetricTagNames.ErrorType && (string)tag.Value! == errorType);
+        _longMeasurements[0].Tags.ToArray().ShouldContain(tag => tag.Key == ApiMetricTagNames.HttpStatusCode && (int)tag.Value! == httpStatusCode);
         _doubleMeasurements.ShouldHaveSingleItem();
         _doubleMeasurements[0].Value.ShouldBe(durationMs);
+        _doubleMeasurements[0].Tags.ToArray().ShouldContain(tag => tag.Key == ApiMetricTagNames.ApiName && (string)tag.Value! == apiName);
+        _doubleMeasurements[0].Tags.ToArray().ShouldContain(tag => tag.Key == ApiMetricTagNames.OperationName && (string)tag.Value! == operationName);
+        _doubleMeasurements[0].Tags.ToArray().ShouldContain(tag => tag.Key == ApiMetricTagNames.ResultStatus && (string)tag.Value! == "failure");
+        _doubleMeasurements[0].Tags.ToArray().ShouldContain(tag => tag.Key == ApiMetricTagNames.ErrorType && (string)tag.Value! == errorType);
     }
 
     [Theory(DisplayName = "Should record error without HTTP status code when not provided")]
