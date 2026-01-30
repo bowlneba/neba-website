@@ -14,6 +14,8 @@ internal static class ErrorHandlingConfiguration
         /// </summary>
         public IServiceCollection AddErrorHandling()
         {
+            services.AddExceptionHandler<GlobalExceptionHandler>();
+
             services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
                 {
                     context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
