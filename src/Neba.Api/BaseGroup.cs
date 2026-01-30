@@ -11,7 +11,7 @@ internal sealed class BaseGroup
     {
         Configure(string.Empty,
             definition => definition.Description(
-                description => description.ProducesProblemDetails(
+                description => description.Produces<Microsoft.AspNetCore.Mvc.ProblemDetails>(
                     StatusCodes.Status500InternalServerError,
                     MediaTypeNames.Application.ProblemJson)));
     }
