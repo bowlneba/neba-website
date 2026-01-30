@@ -1,7 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using Asp.Versioning;
+
 using FastEndpoints;
+using FastEndpoints.AspVersioning;
 using FastEndpoints.Swagger;
 
 using Neba.Api;
@@ -27,7 +30,28 @@ builder.Services.AddFastEndpoints(options =>
 {
     options.Assemblies = [typeof(Program).Assembly];
 })
-    .SwaggerDocument();
+    .AddVersioning(v =>
+    {
+        v.DefaultApiVersion = new(1, 0);
+        v.AssumeDefaultVersionWhenUnspecified = true;
+        v.ApiVersionReader = new HeaderApiVersionReader("x-api-version");
+    })
+    .SwaggerDocument(options =>
+    {
+        options.DocumentSettings = settings =>
+        {
+            settings.DocumentName = "v1.0";
+            settings.Title = "NEBA API";
+            settings.Version = "v1.0";
+            settings.Description = "NEBA API Service";
+            settings.ApiVersion(new ApiVersion(1, 0));
+        };
+
+        options.AutoTagPathSegmentIndex = 0;
+    });
+
+    VersionSets.CreateApi("weather", v => v
+        .HasApiVersion(new ApiVersion(1)));
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
