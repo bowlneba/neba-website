@@ -8,10 +8,11 @@ using FastEndpoints.AspVersioning;
 using FastEndpoints.Swagger;
 
 using Neba.Api;
+using Neba.Api.ErrorHandling;
+using Neba.Api.OpenApi;
+using Neba.Api.Versioning;
 using Neba.Application;
 using Neba.Infrastructure;
-
-using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,50 +20,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
 // Add services to the container.
-builder.Services.AddProblemDetails(options =>
-{
-    options.CustomizeProblemDetails = context =>
-    {
-        context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
-        context.ProblemDetails.Extensions["requestPath"] = context.HttpContext.Request.Path.Value;
-    };
-});
+builder.Services.AddErrorHandling();
 
-builder.Services.AddFastEndpoints(options =>
-{
-    options.Assemblies = [typeof(Program).Assembly];
-})
-    .AddVersioning(v =>
-    {
-        v.DefaultApiVersion = new(1, 0);
-        v.AssumeDefaultVersionWhenUnspecified = true;
-        v.ApiVersionReader = new HeaderApiVersionReader("x-api-version");
-    })
-    .SwaggerDocument(options =>
-    {
-        options.DocumentSettings = settings =>
-        {
-            settings.DocumentName = "v1.0";
-            settings.Title = "NEBA API";
-            settings.Version = "v1.0";
-            settings.Description = "NEBA API Service";
-            settings.ApiVersion(new ApiVersion(1, 0));
-        };
+builder.Services
+    .AddFastEndpoints(options => options.Assemblies = [typeof(Program).Assembly])
+    .AddApiVersioning();
 
-        options.AutoTagPathSegmentIndex = 0;
-        options.EnableJWTBearerAuth = false;
-        options.ShortSchemaNames = true;
-        options.ExcludeNonFastEndpoints = true;
+VersionSets.CreateApi("Weather", v => v
+    .HasApiVersion(new ApiVersion(1, 0)));
 
-        options.TagDescriptions = tags =>
-        {
-            tags["Weather"] = "Weather forecast endpoints";
-            tags["Future"] = "Future endpoints"; //place holder so that linting doesn't try to make it expression
-        };
-    });
-
-    VersionSets.CreateApi("Weather", v => v
-        .HasApiVersion(new ApiVersion(1, 0)));
+builder.Services.AddOpenApiDocumentation();
 
 builder.Services
     .AddApplication()
@@ -80,39 +47,10 @@ app.UseFastEndpoints(config =>
 
     config.Binding.UsePropertyNamingPolicy = true;
 
-    config.Errors.UseProblemDetails(options =>
-    {
-        options.AllowDuplicateErrors = true;
-        options.IndicateErrorCode = true;
-        options.IndicateErrorSeverity = true;
-
-        options.TypeValue = "https://www.rfc-editor.org/rfc/rfc7231#section-6.5.1";
-
-        options.TitleTransformer = problemDetails => problemDetails.Status switch
-        {
-            400 => "Bad Request",
-            401 => "Unauthorized",
-            403 => "Forbidden",
-            404 => "Not Found",
-            409 => "Conflict",
-            500 => "Internal Server Error",
-            _ => problemDetails.Title
-        };
-    });
-
-    config.Errors.StatusCode = 400;
-    config.Errors.ProducesMetadataType = typeof(ProblemDetails);
+    config.Errors.ConfigureErrorHandling();
 });
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseOpenApi(config => config.Path = "/openapi/{documentName}.json");
-
-    app.MapScalarApiReference(config => config
-        .WithTitle("NEBA API")
-        .WithTheme(ScalarTheme.DeepSpace)
-        .AddDocument("v1.0"));
-}
+app.UseOpenApiDocumentation();
 
 app.UseInfrastructure();
 
