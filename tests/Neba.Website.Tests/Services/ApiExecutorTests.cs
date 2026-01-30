@@ -157,7 +157,7 @@ public sealed class ApiExecutorTests
         );
 
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            ct => throw apiException
+            _ => throw apiException
         );
 
         _stopwatchProviderMock
@@ -187,7 +187,7 @@ public sealed class ApiExecutorTests
 
         var httpException = new HttpRequestException("Connection timeout");
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            ct => throw httpException
+            _ => throw httpException
         );
 
         _stopwatchProviderMock
@@ -220,7 +220,7 @@ public sealed class ApiExecutorTests
 
         var taskCanceledException = new TaskCanceledException("Operation canceled", null, cancellationToken);
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            ct => throw taskCanceledException
+            _ => throw taskCanceledException
         );
 
         _stopwatchProviderMock
@@ -250,7 +250,7 @@ public sealed class ApiExecutorTests
 
         var timeoutException = new TaskCanceledException("Timeout");
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            ct => throw timeoutException
+            _ => throw timeoutException
         );
 
         _stopwatchProviderMock
@@ -280,7 +280,7 @@ public sealed class ApiExecutorTests
 
         var generalException = new InvalidOperationException("Invalid state");
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            ct => throw generalException
+            _ => throw generalException
         );
 
         _stopwatchProviderMock

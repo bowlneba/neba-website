@@ -13,15 +13,10 @@ public sealed class AggregateRootTests
             => AddDomainEvent(domainEvent);
     }
 
-    private sealed class TestDomainEvent
+    private sealed class TestDomainEvent(string name)
         : IDomainEvent
     {
-        public string Name { get; }
-
-        public TestDomainEvent(string name)
-        {
-            Name = name;
-        }
+        public string Name { get; } = name;
     }
 
     [Fact(DisplayName = "Adding a domain event adds it to the DomainEvents collection")]
