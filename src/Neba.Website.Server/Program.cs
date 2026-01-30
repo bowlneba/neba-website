@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
 builder.Services.AddApiServices(builder.Configuration);
+builder.Services.AddBackgroundJobs(builder.Configuration);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
