@@ -107,6 +107,30 @@ public sealed class SmartFlagEnumJsonConverterTests
         exception.Message.ShouldContain("Expected number or object token");
     }
 
+    [Fact(DisplayName = "Deserializing invalid numeric value throws JsonException")]
+    public void Read_ShouldThrowJsonException_WhenNumericValueIsInvalid()
+    {
+        // Act
+        var act = () => JsonSerializer.Deserialize<TestSmartFlagEnum>("999");
+
+        // Assert
+        var exception = act.ShouldThrow<JsonException>();
+        exception.Message.ShouldContain("Invalid");
+        exception.Message.ShouldContain("999");
+    }
+
+    [Fact(DisplayName = "Deserializing legacy object with invalid Value throws JsonException")]
+    public void Read_ShouldThrowJsonException_WhenLegacyObjectValueIsInvalid()
+    {
+        // Act
+        var act = () => JsonSerializer.Deserialize<TestSmartFlagEnum>("""{"Value": 999}""");
+
+        // Assert
+        var exception = act.ShouldThrow<JsonException>();
+        exception.Message.ShouldContain("Invalid");
+        exception.Message.ShouldContain("999");
+    }
+
     [Fact(DisplayName = "Serializing null value writes null JSON")]
     public void Write_ShouldWriteNull_WhenValueIsNull()
     {

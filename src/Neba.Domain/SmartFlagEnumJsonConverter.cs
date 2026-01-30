@@ -31,7 +31,10 @@ public class SmartFlagEnumJsonConverter<TEnum> : JsonConverter<TEnum>
             {
                 int value = valueElement.GetInt32();
                 var items = SmartFlagEnum<TEnum>.FromValue(value).ToList();
-                return items.Count > 0 ? items[0] : default;
+
+                return items.Count == 0
+                    ? throw new JsonException($"Invalid {typeof(TEnum).Name} value: {value}") 
+                    : items[0];
             }
 
             throw new JsonException($"Expected 'Value' property in {typeof(TEnum).Name} object");
