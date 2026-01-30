@@ -2,7 +2,7 @@ using Neba.Api.Contracts;
 using Neba.Api.Contracts.Weather;
 using Neba.Api.Contracts.Weather.GetWeatherForecast;
 
-namespace Neba.Website.Server.Services;
+namespace Neba.Website.Server.Weather;
 
 internal sealed class WeatherService(IWeatherApi weatherApi)
 {
