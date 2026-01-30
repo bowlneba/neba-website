@@ -30,7 +30,9 @@ public sealed record PaginationResponse<T>
     /// </summary>
     /// <example>5</example>
     public int TotalPages
-        => (int)Math.Ceiling(TotalItems / (double)PageSize);
+        => PageSize <= 0
+            ? 0
+            : (int)Math.Ceiling(TotalItems / (double)PageSize);
 
     /// <summary>
     /// Indicates if there is a previous page.
