@@ -5,7 +5,7 @@ using Npgsql;
 namespace Neba.Infrastructure.Database;
 
 #pragma warning disable S1144 // Unused private types or members should be removed
-internal static class DatabaseExtensions
+internal static class DatabaseConfiguration
 {
     extension(IServiceCollection services)
     {

@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 
 using FastEndpoints;
 
-using Neba.Api;
 using Neba.Api.ErrorHandling;
 using Neba.Api.OpenApi;
 using Neba.Api.Versioning;

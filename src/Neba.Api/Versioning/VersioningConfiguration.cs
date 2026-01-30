@@ -2,8 +2,6 @@ using Asp.Versioning;
 
 using FastEndpoints.AspVersioning;
 
-using Microsoft.Extensions.DependencyInjection;
-
 namespace Neba.Api.Versioning;
 
 #pragma warning disable S1144 // Unused private types or members should be removed

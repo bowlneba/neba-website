@@ -10,7 +10,7 @@ namespace Neba.Application;
 /// <summary>
 /// Extension methods to add application dependencies to the service collection.
 /// </summary>
-public static class ApplicationDependencies
+public static class ApplicationConfiguration
 {
     extension(IServiceCollection services)
     {

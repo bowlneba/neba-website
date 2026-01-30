@@ -1,13 +1,7 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
 using Asp.Versioning;
 
 using FastEndpoints.AspVersioning;
 using FastEndpoints.Swagger;
-
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
 
 using Scalar.AspNetCore;
 

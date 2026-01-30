@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
 using Neba.ServiceDefaults;
+using Neba.ServiceDefaults.HealthChecks;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 #pragma warning disable S1144 // Unused private types or members should be removed
@@ -13,7 +14,7 @@ namespace Microsoft.Extensions.Hosting;
 /// This project should be referenced by each service project in your solution.
 /// To learn more about using this project, see https://aka.ms/dotnet/aspire/service-defaults
 /// </summary>
-public static class ServiceExtensions
+public static class ServiceConfiguration
 {
     /// <summary>
     /// Extension members for <see cref="IHostApplicationBuilder"/> implementations.

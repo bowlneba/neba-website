@@ -1,5 +1,3 @@
-using System.Reflection;
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Application.Messaging;
@@ -9,7 +7,7 @@ namespace Neba.Infrastructure.Telemetry.Tracing;
 #pragma warning disable S1144 // Unused private types or members should be removed
 #pragma warning disable S2325 // Classes should be static
 
-internal static class TracingExtensions
+internal static class TracingConfiguration
 {
     extension(IServiceCollection services)
     {

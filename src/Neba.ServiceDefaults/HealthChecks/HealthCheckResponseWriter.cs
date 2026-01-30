@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
-namespace Neba.ServiceDefaults;
+namespace Neba.ServiceDefaults.HealthChecks;
 
 /// <summary>
 /// Provides a default health check response writer.

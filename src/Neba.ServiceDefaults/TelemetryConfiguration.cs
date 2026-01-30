@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
+using Neba.ServiceDefaults.HealthChecks;
+
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
@@ -16,7 +18,7 @@ namespace Neba.ServiceDefaults;
 /// <summary>
 /// Extension methods for configuring telemetry in the application.
 /// </summary>
-public static class TelemetryExtensions
+public static class TelemetryConfiguration
 {
     extension<TBuilder>(TBuilder builder)
         where TBuilder : IHostApplicationBuilder
@@ -46,8 +48,8 @@ public static class TelemetryExtensions
                     .AddAspNetCoreInstrumentation(tracing =>
                         // Exclude health check requests from tracing
                         tracing.Filter = context =>
-                            !context.Request.Path.StartsWithSegments(HealthCheckExtensions.HealthEndpointPath, StringComparison.OrdinalIgnoreCase)
-                            && !context.Request.Path.StartsWithSegments(HealthCheckExtensions.AlivenessEndpointPath, StringComparison.OrdinalIgnoreCase)
+                            !context.Request.Path.StartsWithSegments(HealthCheckConfiguration.HealthEndpointPath, StringComparison.OrdinalIgnoreCase)
+                            && !context.Request.Path.StartsWithSegments(HealthCheckConfiguration.AlivenessEndpointPath, StringComparison.OrdinalIgnoreCase)
                     )
                     .AddHttpClientInstrumentation());
 

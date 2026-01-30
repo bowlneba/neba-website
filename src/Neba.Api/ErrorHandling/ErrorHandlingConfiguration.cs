@@ -1,10 +1,4 @@
 using FastEndpoints;
-
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-
 namespace Neba.Api.ErrorHandling;
 
 #pragma warning disable S1144 // Unused private types or members should be removed
@@ -20,14 +14,11 @@ internal static class ErrorHandlingConfiguration
         /// </summary>
         public IServiceCollection AddErrorHandling()
         {
-            services.AddProblemDetails(options =>
-            {
-                options.CustomizeProblemDetails = context =>
+            services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
                 {
                     context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
-                    context.ProblemDetails.Extensions["requestPath"] = context.HttpContext.Request.Path.Value;
-                };
-            });
+                    context.ProblemDetails.Instance = context.HttpContext.Request.Path.Value;
+                });
 
             return services;
         }
@@ -46,7 +37,7 @@ internal static class ErrorHandlingConfiguration
                 problemDetailsOptions.IndicateErrorCode = true;
                 problemDetailsOptions.IndicateErrorSeverity = true;
 
-                problemDetailsOptions.TypeValue = "https://www.rfc-editor.org/rfc/rfc7231#section-6.5.1";
+                problemDetailsOptions.TypeValue = "https://datatracker.ietf.org/doc/html/rfc9457";
 
                 problemDetailsOptions.TitleTransformer = problemDetails => problemDetails.Status switch
                 {
