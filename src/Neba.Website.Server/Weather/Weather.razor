@@ -1,12 +1,14 @@
 ﻿@page "/weather"
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.OutputCaching
+@using Neba.Api.Contracts.Weather
 @using Neba.Api.Contracts.Weather.GetWeatherForecast
 @using Neba.Website.Server.Services
 @attribute [StreamRendering(true)]
 @attribute [OutputCache(Duration = 5)]
 
-@inject WeatherService WeatherService
+@inject IWeatherApi WeatherApi
+@inject ApiExecutor ApiExecutor
 
 <PageTitle>Weather</PageTitle>
 
@@ -46,11 +48,21 @@ else
 }
 
 @code {
-    private WeatherForecastResponse[]? _forecasts;
+    private IReadOnlyCollection<WeatherForecastResponse>? _forecasts;
 
     async protected override Task OnInitializedAsync()
     {
-        var result = await WeatherService.GetWeatherForecastAsync();
-        _forecasts = result.Items.ToArray();
+        var result = await ApiExecutor.ExecuteAsync(
+            "Weather",
+            "GetWeatherForecast",
+            WeatherApi.GetWeatherForecastAsync,
+            default);
+
+        if (result.IsError)
+        {
+            throw new InvalidOperationException("Failed to load weather forecasts.");
+        }
+
+        _forecasts = result.Value.Items;
     }
 }

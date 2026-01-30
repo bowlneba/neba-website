@@ -3,7 +3,6 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 
 using Neba.Api.Contracts.Weather;
-using Neba.Website.Server.Weather;
 
 using Refit;
 
@@ -36,14 +35,13 @@ internal static class ApiServicesConfiguration
             services.AddSingleton(sp => sp.GetRequiredService<IOptions<NebaApiConfiguration>>().Value);
             services.AddScoped<ApiExecutor>();
 
-            services.RegisterApiEndpoint<IWeatherApi, WeatherService>();
+            services.RegisterApiEndpoint<IWeatherApi>();
 
             return services;
         }
 
-        private IServiceCollection RegisterApiEndpoint<TApi, TService>()
+        private IServiceCollection RegisterApiEndpoint<TApi>()
             where TApi : class
-            where TService : class
         {
             services
                 .AddRefitClient<TApi>(RefitSettings)
@@ -52,8 +50,6 @@ internal static class ApiServicesConfiguration
                     var apiConfig = sp.GetRequiredService<NebaApiConfiguration>();
                     client.BaseAddress = new Uri(apiConfig.BaseUrl);
                 });
-
-            services.AddScoped<TService>();
 
             return services;
         }
