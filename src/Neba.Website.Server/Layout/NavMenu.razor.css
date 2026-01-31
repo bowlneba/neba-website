@@ -53,6 +53,34 @@
     border-radius: var(--neba-radius);
 }
 
+/* Focus fallback for older browsers */
+.neba-menu-toggle:focus {
+    outline: 2px solid var(--neba-blue-500);
+    outline-offset: 2px;
+    border-radius: var(--neba-radius);
+}
+
+.neba-menu-toggle:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Nav link focus styles */
+.navbar-brand:focus-visible {
+    outline: 2px solid var(--neba-blue-500);
+    outline-offset: 2px;
+    border-radius: var(--neba-radius);
+}
+
+.navbar-brand:focus {
+    outline: 2px solid var(--neba-blue-500);
+    outline-offset: 2px;
+    border-radius: var(--neba-radius);
+}
+
+.navbar-brand:focus:not(:focus-visible) {
+    outline: none;
+}
+
 /* Menu open state - prevent jumping by disabling sticky positioning */
 .neba-navbar.menu-open {
     position: relative !important;

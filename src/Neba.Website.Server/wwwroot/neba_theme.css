@@ -940,8 +940,19 @@ a:focus-visible {
   color: var(--neba-blue-700);
 }
 
-.neba-nav-link:hover::after {
+.neba-nav-link:hover::after,
+.neba-nav-link:focus::after {
   width: 80%;
+}
+
+.neba-nav-link:focus {
+  background-color: var(--neba-nav-hover);
+  color: var(--neba-blue-700);
+}
+
+.neba-nav-link:focus-visible {
+  outline: 2px solid var(--neba-blue-500);
+  outline-offset: -2px;
 }
 
 /* Dropdown Menu */
@@ -961,7 +972,8 @@ a:focus-visible {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.neba-nav-item:hover .neba-dropdown {
+.neba-nav-item:hover .neba-dropdown,
+.neba-nav-item.active .neba-dropdown {
   display: block;
   animation: slideDown 0.2s ease forwards;
 }
@@ -983,11 +995,17 @@ a:focus-visible {
   border-left: 3px solid transparent;
 }
 
-.neba-dropdown-link:hover {
+.neba-dropdown-link:hover,
+.neba-dropdown-link:focus {
   background-color: var(--neba-nav-hover);
   color: var(--neba-blue-700);
   border-left-color: var(--neba-blue-700);
   padding-left: 1.25rem;
+}
+
+.neba-dropdown-link:focus-visible {
+  outline: 2px solid var(--neba-blue-500);
+  outline-offset: -2px;
 }
 
 .neba-dropdown-divider {

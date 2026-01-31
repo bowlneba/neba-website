@@ -1,11 +1,13 @@
 let dotNetReference = null;
 let isInitialized = false;
+let navigationObserver = null;
 
 const handlers = {
     scroll: null,
     click: null,
     keydown: null,
-    dropdownClick: null
+    dropdownClick: null,
+    dropdownKeydown: null
 };
 
 /**
@@ -94,6 +96,54 @@ function closeAllDropdowns() {
 }
 
 /**
+ * Update aria-current="page" on active navigation links
+ * Called on initial load and after navigation
+ */
+function updateAriaCurrent() {
+    // Remove existing aria-current from all nav links
+    const allNavLinks = document.querySelectorAll('.neba-nav-link, .neba-dropdown-link');
+    allNavLinks.forEach(link => {
+        link.removeAttribute('aria-current');
+    });
+
+    // Add aria-current="page" to active links (Blazor adds 'active' class)
+    const activeLinks = document.querySelectorAll('.neba-nav-link.active, .neba-dropdown-link.active');
+    activeLinks.forEach(link => {
+        link.setAttribute('aria-current', 'page');
+    });
+}
+
+/**
+ * Set up MutationObserver to watch for active class changes on nav links
+ */
+function setupNavigationObserver() {
+    const navMenu = document.querySelector('.neba-nav-menu');
+    if (!navMenu) return;
+
+    navigationObserver = new MutationObserver((mutations) => {
+        let shouldUpdate = false;
+        for (const mutation of mutations) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                shouldUpdate = true;
+                break;
+            }
+        }
+        if (shouldUpdate) {
+            updateAriaCurrent();
+        }
+    });
+
+    navigationObserver.observe(navMenu, {
+        attributes: true,
+        attributeFilter: ['class'],
+        subtree: true
+    });
+
+    // Initial update
+    updateAriaCurrent();
+}
+
+/**
  * Handle dropdown toggle clicks
  * @param {MouseEvent} event
  */
@@ -122,6 +172,92 @@ function handleDropdownClick(event) {
     if (!isOpen) {
         navItem.classList.add('active');
         link.setAttribute('aria-expanded', 'true');
+
+        // Focus first menu item when opening
+        const firstMenuItem = navItem.querySelector('.neba-dropdown-link');
+        firstMenuItem?.focus();
+    }
+}
+
+/**
+ * Handle keyboard navigation within dropdowns
+ * @param {KeyboardEvent} event
+ */
+function handleDropdownKeydown(event) {
+    const dropdown = event.target.closest('.neba-dropdown');
+    const navItem = event.target.closest('.neba-nav-item');
+
+    if (!dropdown && !navItem?.querySelector('[aria-haspopup]')) {
+        return;
+    }
+
+    const triggerLink = navItem?.querySelector('[aria-haspopup]');
+    const menuItems = navItem ? Array.from(navItem.querySelectorAll('.neba-dropdown-link')) : [];
+    const currentIndex = menuItems.indexOf(document.activeElement);
+
+    switch (event.key) {
+        case 'ArrowDown':
+            event.preventDefault();
+            if (document.activeElement === triggerLink) {
+                // Open dropdown and focus first item
+                if (!navItem.classList.contains('active')) {
+                    closeAllDropdowns();
+                    navItem.classList.add('active');
+                    triggerLink.setAttribute('aria-expanded', 'true');
+                }
+                menuItems[0]?.focus();
+            } else if (currentIndex >= 0 && currentIndex < menuItems.length - 1) {
+                // Move to next item
+                menuItems[currentIndex + 1].focus();
+            }
+            break;
+
+        case 'ArrowUp':
+            event.preventDefault();
+            if (currentIndex > 0) {
+                // Move to previous item
+                menuItems[currentIndex - 1].focus();
+            } else if (currentIndex === 0) {
+                // Return focus to trigger
+                triggerLink?.focus();
+            }
+            break;
+
+        case 'Home':
+            event.preventDefault();
+            if (menuItems.length > 0) {
+                menuItems[0].focus();
+            }
+            break;
+
+        case 'End':
+            event.preventDefault();
+            if (menuItems.length > 0) {
+                menuItems[menuItems.length - 1].focus();
+            }
+            break;
+
+        case 'Enter':
+        case ' ':
+            if (document.activeElement === triggerLink) {
+                event.preventDefault();
+                if (navItem.classList.contains('active')) {
+                    closeAllDropdowns();
+                } else {
+                    closeAllDropdowns();
+                    navItem.classList.add('active');
+                    triggerLink.setAttribute('aria-expanded', 'true');
+                    menuItems[0]?.focus();
+                }
+            }
+            break;
+
+        case 'Tab':
+            // Close dropdown when tabbing out
+            if (navItem?.classList.contains('active')) {
+                closeAllDropdowns();
+            }
+            break;
     }
 }
 
@@ -179,15 +315,20 @@ export function initialize(dotNetRef) {
     handlers.click = handleClickOutside;
     handlers.keydown = handleKeydown;
     handlers.dropdownClick = handleDropdownClick;
+    handlers.dropdownKeydown = handleDropdownKeydown;
 
     // Add event listeners
     globalThis.addEventListener('scroll', handlers.scroll, { passive: true });
     document.addEventListener('click', handlers.click);
     document.addEventListener('keydown', handlers.keydown);
     document.addEventListener('click', handlers.dropdownClick);
+    document.addEventListener('keydown', handlers.dropdownKeydown);
 
     // Initial scroll check
     handleScroll();
+
+    // Set up aria-current observer for navigation changes
+    setupNavigationObserver();
 
     isInitialized = true;
 }
@@ -210,40 +351,25 @@ export function dispose() {
         document.removeEventListener('click', handlers.dropdownClick);
     }
 
+    if (handlers.dropdownKeydown) {
+        document.removeEventListener('keydown', handlers.dropdownKeydown);
+    }
+
+    // Disconnect navigation observer
+    if (navigationObserver) {
+        navigationObserver.disconnect();
+        navigationObserver = null;
+    }
+
     // Clear references
     handlers.scroll = null;
     handlers.click = null;
     handlers.keydown = null;
     handlers.dropdownClick = null;
+    handlers.dropdownKeydown = null;
     dotNetReference = null;
     isInitialized = false;
 }
 
-// === DROPDOWN SUPPORT (Future) ===
-export function toggleDropdown(element) {
-    const navItem = element.closest('.neba-nav-item');
-    const link = navItem?.querySelector('[aria-haspopup]');
-    const isExpanded = navItem?.classList.contains('active');
-
-    navItem?.classList.toggle('active');
-    link?.setAttribute('aria-expanded', (!isExpanded).toString());
-}
-
-function handleDropdownKeydown(event, item) {
-    const link = item.querySelector('[aria-haspopup]');
-    const breakpoint = getBreakpoint('tablet-max');
-
-    if (window.innerWidth > breakpoint) {
-        if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            toggleDropdown(item);
-        } else if (event.key === 'Escape') {
-            item.classList.remove('active');
-            link?.setAttribute('aria-expanded', 'false');
-            link?.focus();
-        }
-    }
-}
-
 // Export functions for Blazor interop
-export { preventBodyScroll };
+export { preventBodyScroll, updateAriaCurrent };

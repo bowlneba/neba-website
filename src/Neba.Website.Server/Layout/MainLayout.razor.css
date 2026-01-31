@@ -124,6 +124,35 @@
     border-radius: 2px;
 }
 
+/* Focus fallback for older browsers */
+.footer-links a:focus {
+    outline: 2px solid var(--neba-blue-500);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* Remove duplicate outline for browsers that support focus-visible */
+.footer-links a:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Banner logo focus styles */
+.banner-logo-container a:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 4px;
+    border-radius: var(--neba-radius);
+}
+
+.banner-logo-container a:focus {
+    outline: 2px solid white;
+    outline-offset: 4px;
+    border-radius: var(--neba-radius);
+}
+
+.banner-logo-container a:focus:not(:focus-visible) {
+    outline: none;
+}
+
 /* Blazor Error UI */
 #blazor-error-ui {
     display: none;
