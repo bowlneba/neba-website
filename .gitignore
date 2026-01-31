@@ -423,3 +423,7 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Jest
+/coverage/
+/.jest-cache/
