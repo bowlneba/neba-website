@@ -3,19 +3,38 @@
 
 <PageTitle>Counter</PageTitle>
 
-<div class="neba-panel">
-    <h1 class="text-2xl font-semibold mb-4">Counter</h1>
+<NebaErrorBoundary ShowDetails="@_isDevelopment">
+    <div class="neba-panel">
+        <h1 class="text-2xl font-semibold mb-4">Counter</h1>
 
-    <p class="mb-4" role="status">Current count: <span class="font-bold text-neba-blue-600">@currentCount</span></p>
+        <p class="mb-4" role="status">Current count: <span class="font-bold text-neba-blue-600">@currentCount</span></p>
 
-    <button class="neba-btn neba-btn-primary" @onclick="IncrementCount">Click me</button>
-</div>
+        <div class="flex gap-2">
+            <button class="neba-btn neba-btn-primary" @onclick="IncrementCount">Click me</button>
+            <button class="neba-btn neba-btn-secondary" @onclick="ThrowTestError">Test Error</button>
+        </div>
+    </div>
+</NebaErrorBoundary>
 
 @code {
     private int currentCount = 0;
+    private bool _isDevelopment = false;
+
+    [Inject]
+    private IWebHostEnvironment Environment { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        _isDevelopment = Environment.IsDevelopment();
+    }
 
     private void IncrementCount()
     {
         currentCount++;
+    }
+
+    private static void ThrowTestError()
+    {
+        throw new InvalidOperationException("This is a test error to demonstrate the error boundary.");
     }
 }

@@ -12,62 +12,113 @@
 
 <PageTitle>Weather</PageTitle>
 
-<div class="neba-space-y-6">
-    <h1 class="text-2xl font-semibold">Weather</h1>
+<NebaErrorBoundary ShowDetails="@_isDevelopment">
+    <div class="neba-space-y-6">
+        <h1 class="text-2xl font-semibold">Weather</h1>
 
-    <p class="text-neba-gray-700">This component demonstrates showing data loaded from a backend API service.</p>
+        <p class="text-neba-gray-700">This component demonstrates showing data loaded from a backend API service.</p>
 
-    @if (_forecasts == null)
-    {
-        <div class="flex items-center gap-2 text-neba-gray-400">
-            <div class="neba-spinner"></div>
-            <span>Loading...</span>
+        @if (_errorMessage is not null)
+        {
+            <NebaAlert Severity="NotifySeverity.Error"
+                       Title="Failed to load weather data"
+                       Message="@_errorMessage"
+                       ShowIcon="true"
+                       Dismissible="true"
+                       OnDismiss="DismissError" />
+        }
+
+        <div class="relative min-h-[200px]">
+            <NebaLoadingIndicator IsVisible="@_isLoading"
+                                  Text="Loading weather data..."
+                                  Scope="LoadingIndicatorScope.Section" />
+
+            @if (_forecasts is not null)
+            {
+                <div class="neba-panel overflow-x-auto">
+                    <table class="neba-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th aria-label="Temperature in Celsius">Temp. (C)</th>
+                                <th aria-label="Temperature in Fahrenheit">Temp. (F)</th>
+                                <th>Summary</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var forecast in _forecasts)
+                            {
+                                <tr>
+                                    <td>@forecast.Date.ToShortDateString()</td>
+                                    <td>@forecast.TemperatureC</td>
+                                    <td>@forecast.TemperatureF</td>
+                                    <td>@forecast.Summary</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
-    }
-    else
-    {
-        <div class="neba-panel overflow-x-auto">
-            <table class="neba-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th aria-label="Temperature in Celsius">Temp. (C)</th>
-                        <th aria-label="Temperature in Fahrenheit">Temp. (F)</th>
-                        <th>Summary</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var forecast in _forecasts)
-                    {
-                        <tr>
-                            <td>@forecast.Date.ToShortDateString()</td>
-                            <td>@forecast.TemperatureC</td>
-                            <td>@forecast.TemperatureF</td>
-                            <td>@forecast.Summary</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-</div>
+    </div>
+</NebaErrorBoundary>
 
 @code {
     private IReadOnlyCollection<WeatherForecastResponse>? _forecasts;
+    private bool _isLoading = true;
+    private string? _errorMessage;
+    private bool _isDevelopment = false;
 
-    async protected override Task OnInitializedAsync()
+    [Inject]
+    private IWebHostEnvironment Environment { get; set; } = default!;
+
+    protected override void OnInitialized()
     {
-        var result = await ApiExecutor.ExecuteAsync(
-            "Weather",
-            "GetWeatherForecast",
-            WeatherApi.GetWeatherForecastAsync,
-            default);
+        _isDevelopment = Environment.IsDevelopment();
+    }
 
-        if (result.IsError)
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadWeatherDataAsync();
+    }
+
+    private async Task LoadWeatherDataAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
         {
-            throw new InvalidOperationException("Failed to load weather forecasts.");
-        }
+            var result = await ApiExecutor.ExecuteAsync(
+                "Weather",
+                "GetWeatherForecast",
+                WeatherApi.GetWeatherForecastAsync,
+                default);
 
-        _forecasts = result.Value.Items;
+            if (result.IsError)
+            {
+                _errorMessage = "Unable to retrieve weather forecasts. Please try again later.";
+            }
+            else
+            {
+                await Task.Delay(2500); // Simulate longer load time for demo purposes
+                _forecasts = result.Value.Items;
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = _isDevelopment
+                ? ex.Message
+                : "An unexpected error occurred while loading weather data.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void DismissError()
+    {
+        _errorMessage = null;
     }
 }
