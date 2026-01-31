@@ -1,4 +1,4 @@
-﻿@page "/weather"
+@page "/weather"
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.OutputCaching
 @using Neba.Api.Contracts.Weather
@@ -12,40 +12,45 @@
 
 <PageTitle>Weather</PageTitle>
 
-<h1>Weather</h1>
+<div class="neba-space-y-6">
+    <h1 class="text-2xl font-semibold">Weather</h1>
 
-<p>This component demonstrates showing data loaded from a backend API service.</p>
+    <p class="text-neba-gray-700">This component demonstrates showing data loaded from a backend API service.</p>
 
-@if (_forecasts == null)
-{
-    <p>
-        <em>Loading...</em>
-    </p>
-}
-else
-{
-    <table class="table">
-        <thead>
-        <tr>
-            <th>Date</th>
-            <th aria-label="Temperature in Celsius">Temp. (C)</th>
-            <th aria-label="Temperature in Fahrenheit">Temp. (F)</th>
-            <th>Summary</th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach (var forecast in _forecasts)
-        {
-            <tr>
-                <td>@forecast.Date.ToShortDateString()</td>
-                <td>@forecast.TemperatureC</td>
-                <td>@forecast.TemperatureF</td>
-                <td>@forecast.Summary</td>
-            </tr>
-        }
-        </tbody>
-    </table>
-}
+    @if (_forecasts == null)
+    {
+        <div class="flex items-center gap-2 text-neba-gray-400">
+            <div class="neba-spinner"></div>
+            <span>Loading...</span>
+        </div>
+    }
+    else
+    {
+        <div class="neba-panel overflow-x-auto">
+            <table class="neba-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th aria-label="Temperature in Celsius">Temp. (C)</th>
+                        <th aria-label="Temperature in Fahrenheit">Temp. (F)</th>
+                        <th>Summary</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var forecast in _forecasts)
+                    {
+                        <tr>
+                            <td>@forecast.Date.ToShortDateString()</td>
+                            <td>@forecast.TemperatureC</td>
+                            <td>@forecast.TemperatureF</td>
+                            <td>@forecast.Summary</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
 
 @code {
     private IReadOnlyCollection<WeatherForecastResponse>? _forecasts;

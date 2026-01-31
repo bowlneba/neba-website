@@ -1,11 +1,17 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <base href="/"/>
-    <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]"/>
+
+    <!-- Tailwind: config must load before CDN script -->
+    <script src="js/tailwind.config.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- NEBA Theme (after Tailwind so it can override) -->
+    <link rel="stylesheet" href="@Assets["neba_theme.css"]"/>
     <link rel="stylesheet" href="@Assets["app.css"]"/>
     <link rel="stylesheet" href="@Assets["Neba.Website.Server.styles.css"]"/>
     <ImportMap/>

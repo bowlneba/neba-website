@@ -1,6 +1,6 @@
+using Neba.Website.Server;
 using Neba.Website.Server.BackgroundJobs;
 using Neba.Website.Server.Clock;
-using Neba.Website.Server.Components;
 using Neba.Website.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);

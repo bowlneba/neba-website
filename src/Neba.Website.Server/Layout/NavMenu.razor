@@ -1,29 +1,44 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Neba.Website</a>
+<nav class="neba-navbar">
+    <div class="neba-navbar-wrapper">
+        <div class="neba-navbar-content">
+            <div class="neba-navbar-header">
+                <a href="" class="text-xl font-semibold text-neba-blue-brand no-underline">
+                    Neba.Website
+                </a>
+                <button class="neba-menu-toggle" @onclick="ToggleNavMenu" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+
+            <ul class="neba-nav-menu @NavMenuCssClass">
+                <li class="neba-nav-item">
+                    <NavLink class="neba-nav-link" href="" Match="NavLinkMatch.All">
+                        Home
+                    </NavLink>
+                </li>
+                <li class="neba-nav-item">
+                    <NavLink class="neba-nav-link" href="counter">
+                        Counter
+                    </NavLink>
+                </li>
+                <li class="neba-nav-item">
+                    <NavLink class="neba-nav-link" href="weather">
+                        Weather
+                    </NavLink>
+                </li>
+            </ul>
+        </div>
     </div>
-</div>
+</nav>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler"/>
+@code {
+    private bool collapseNavMenu = true;
+    private string? NavMenuCssClass => collapseNavMenu ? null : "active";
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
-</div>
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}
