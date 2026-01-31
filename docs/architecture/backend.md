@@ -91,12 +91,21 @@ src/
 │   └── BowlingCenters/
 ├── Neba.Api.Contracts/
 │   ├── Tournaments/
-│   │   ├── CreateTournamentInput.cs
-│   │   ├── TournamentResponse.cs
-│   │   └── TournamentListResponse.cs
+│   │   ├── CreateTournament/
+│   │   │   ├── CreateTournamentRequest.cs
+│   │   │   └── TournamentInput.cs
+│   │   ├── GetTournament/
+│   │   │   └── TournamentResponse.cs
+│   │   ├── ListTournaments/
+│   │   │   ├── ListTournamentsRequest.cs
+│   │   │   └── TournamentSummaryResponse.cs
+│   │   └── ITournamentsApi.cs
 │   ├── Squads/
 │   ├── Bowlers/
-│   └── BowlingCenters/
+│   ├── BowlingCenters/
+│   └── Common/
+│       ├── CollectionResponse.cs
+│       └── PaginationResponse.cs
 └── Neba.Website/
 ```
 
@@ -108,7 +117,7 @@ src/
 | `Neba.Application` | Commands, queries, handlers, application services, DTOs |
 | `Neba.Infrastructure` | EF Core DbContext, repository implementations, external service clients |
 | `Neba.Api` | Fast Endpoints, validators, real-time hubs (SSE/WebSocket) |
-| `Neba.Api.Contracts` | Input records, response records, and Refit interfaces shared with Blazor |
+| `Neba.Api.Contracts` | Request/Input/Response records and Refit interfaces shared with Blazor |
 | `Neba.Website` | Blazor Web App (Interactive Auto mode) |
 
 ### Namespace Boundaries
@@ -118,6 +127,114 @@ Domain folders should not reference each other directly. Cross-cutting needs go 
 - Shared IDs in `SharedKernel`
 - Domain events
 - Application layer orchestration
+
+### Build Configuration
+
+**Directory.Build.props** at the repository root defines shared build settings:
+
+```xml
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+</Project>
+```
+
+**Central Package Management** via `Directory.Packages.props`:
+
+```xml
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="ErrorOr" Version="2.0.1" />
+    <PackageVersion Include="FastEndpoints" Version="5.33.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
+    <!-- All package versions defined here -->
+  </ItemGroup>
+</Project>
+```
+
+**In project files**, reference packages without versions:
+
+```xml
+<ItemGroup>
+  <PackageReference Include="ErrorOr" />
+  <PackageReference Include="FastEndpoints" />
+</ItemGroup>
+```
+
+**Benefits**:
+
+- Single source of truth for package versions
+- Consistent versions across all projects
+- Easier dependency updates
+- Prevents version drift between projects
+
+### Dependency Injection Organization
+
+Each layer exposes a single `Add{Layer}Services()` extension method. Feature-specific registrations are grouped into `Add{Feature}Services()` methods called from the layer method.
+
+```csharp
+// Neba.Application/DependencyInjection.cs
+public static class DependencyInjection
+{
+    extension(IServiceCollection services)
+    {
+        public IServiceCollection AddApplicationServices()
+        {
+            services.AddTournamentServices();
+            services.AddBowlerServices();
+            services.AddMembershipServices();
+
+            // Cross-cutting behaviors
+            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+
+            return services;
+        }
+    }
+}
+
+// Neba.Application/Tournaments/TournamentServices.cs
+internal static class TournamentServices
+{
+    extension(IServiceCollection services)
+    {
+        internal IServiceCollection AddTournamentServices()
+        {
+            services.AddScoped<ICommandHandler<CreateTournamentCommand, TournamentDto>,
+                CreateTournamentHandler>();
+            services.AddScoped<IQueryHandler<GetTournamentQuery, TournamentDto>,
+                GetTournamentHandler>();
+            // ... other tournament handlers
+
+            return services;
+        }
+    }
+}
+```
+
+**In Program.cs**:
+
+```csharp
+builder.Services
+    .AddDomainServices()
+    .AddApplicationServices()
+    .AddInfrastructureServices(builder.Configuration);
+```
+
+**Guidelines**:
+
+- One `Add{Layer}Services()` per project, called from Program.cs
+- Feature-specific `Add{Feature}Services()` methods are `internal`
+- Keep registration methods next to the services they register (feature folder)
+- Cross-cutting concerns (behaviors, middleware) in the layer-level method
 
 ---
 
@@ -305,6 +422,376 @@ public class Tournament
 
 ---
 
+## Type Design
+
+### Value Objects
+
+Value object representation depends on whether EF Core needs to materialize the type.
+
+#### Persisted Value Objects (EF Core Owned/Complex Types)
+
+Use `sealed record class` for value objects stored in the database. EF Core can bind to private constructors on classes, enabling the factory method pattern while allowing proper materialization.
+
+```csharp
+public sealed record Money
+{
+    public decimal Amount { get; }
+    public string Currency { get; }
+
+    private Money(decimal amount, string currency)
+        => (Amount, Currency) = (amount, currency);
+
+    public static ErrorOr<Money> Create(decimal amount, string currency)
+    {
+        if (amount < 0)
+            return Error.Validation("money.amount", "Amount cannot be negative");
+        if (string.IsNullOrWhiteSpace(currency))
+            return Error.Validation("money.currency", "Currency is required");
+        if (currency.Length != 3)
+            return Error.Validation("money.currency", "Currency must be ISO 4217 code");
+
+        return new Money(amount, currency);
+    }
+}
+```
+
+Configure as owned type in EF Core:
+
+```csharp
+modelBuilder.Entity<Tournament>().OwnsOne(t => t.EntryFee);
+```
+
+#### Non-Persisted Value Objects
+
+Use `readonly record struct` for value objects that don't need EF Core materialization (DTOs, command parameters, transient calculations). This provides stack allocation and prevents defensive copies.
+
+```csharp
+public readonly record struct DateRange
+{
+    public DateOnly Start { get; }
+    public DateOnly End { get; }
+
+    private DateRange(DateOnly start, DateOnly end)
+        => (Start, End) = (start, end);
+
+    public static ErrorOr<DateRange> Create(DateOnly start, DateOnly end)
+    {
+        if (end < start)
+            return Error.Validation("dateRange", "End date must be after start date");
+
+        return new DateRange(start, end);
+    }
+}
+```
+
+#### When to Use Each
+
+| Use `sealed record class`                     | Use `readonly record struct`                |
+| --------------------------------------------- | ------------------------------------------- |
+| Persisted by EF Core (owned/complex types)    | Not persisted (DTOs, commands, transient)   |
+| Needs private constructor + factory method    | Simple value types without complex creation |
+| Larger objects                                | Small (≤16 bytes)                           |
+
+**Why the distinction**: EF Core materializes entities by calling constructors and setting properties. For structs, it uses `default(T)` which bypasses any private constructor. Classes allow EF Core to bind to private constructors, preserving invariants during database reads.
+
+#### Strongly-Typed IDs
+
+Continue using the `[StronglyTypedId]` source generator. The generator handles EF Core value converters, so IDs work correctly regardless of underlying representation.
+
+### Sealed Classes
+
+Seal classes by default unless explicitly designed for inheritance.
+
+```csharp
+// Correct - sealed by default
+public sealed class TournamentService { }
+
+// Correct - explicitly designed for inheritance (rare)
+public abstract class AggregateRoot { }
+
+// Incorrect - unsealed without reason
+public class TournamentService { }
+```
+
+**Why seal**:
+
+- Communicates design intent
+- Enables JIT devirtualization (performance)
+- Prevents unintended inheritance chains
+- Records are classes — seal them too: `public sealed record TournamentDto`
+
+**Exceptions**:
+
+- Abstract base classes designed for inheritance (`AggregateRoot`)
+- Framework requirements that mandate unsealed classes
+
+### Immutable Collections for Static Data
+
+Use `FrozenDictionary<TKey, TValue>` and `FrozenSet<T>` for lookup data that's initialized once and never changes. These collections optimize for read performance after construction.
+
+```csharp
+// Correct - frozen collection for static lookup
+private static readonly FrozenDictionary<string, TournamentType> TypesByCode =
+    new Dictionary<string, TournamentType>
+    {
+        ["O"] = TournamentType.Open,
+        ["S"] = TournamentType.Senior,
+        ["W"] = TournamentType.Women,
+        ["J"] = TournamentType.Junior
+    }.ToFrozenDictionary();
+
+private static readonly FrozenSet<string> ValidStateCodes =
+    new[] { "MA", "CT", "RI", "NH", "VT", "ME" }.ToFrozenSet();
+
+// Incorrect - regular dictionary for static data
+private static readonly Dictionary<string, TournamentType> TypesByCode = new()
+{
+    ["O"] = TournamentType.Open,
+    // ...
+};
+```
+
+**When to use**:
+
+- Configuration lookup tables initialized at startup
+- Enum-like mappings (code → value, value → display name)
+- Validation sets (valid codes, allowed values)
+- Any `static readonly` dictionary or set
+
+**When not to use**:
+
+- Collections that change after initialization
+- Small collections (< 5 items) where overhead isn't justified
+- Hot paths where construction cost matters (construct once, reuse)
+
+### Span and Memory Types
+
+Use `Span<T>` and `ReadOnlySpan<T>` for high-performance buffer operations without heap allocation.
+
+```csharp
+// Correct - span for parsing without allocation
+public static bool TryParseScore(ReadOnlySpan<char> input, out int score)
+{
+    return int.TryParse(input.Trim(), out score) && score >= 0 && score <= 300;
+}
+
+// Correct - span for substring operations
+public static ReadOnlySpan<char> GetFirstName(ReadOnlySpan<char> fullName)
+{
+    var spaceIndex = fullName.IndexOf(' ');
+    return spaceIndex >= 0 ? fullName[..spaceIndex] : fullName;
+}
+
+// Incorrect - allocating strings unnecessarily
+public static bool TryParseScore(string input, out int score)
+{
+    return int.TryParse(input.Trim(), out score) && score >= 0 && score <= 300;
+}
+```
+
+**When to use**:
+
+- Parsing and validation of user input
+- String manipulation without intermediate allocations
+- Buffer processing (reading/writing binary data)
+- Hot paths in domain logic
+
+**Limitations**:
+
+- Cannot be used in async methods or stored in fields
+- Use `Memory<T>` when you need to store or pass to async code
+
+### ValueTask for Hot Paths
+
+Use `ValueTask<T>` instead of `Task<T>` for async methods that frequently complete synchronously (cache hits, buffered I/O).
+
+```csharp
+// Correct - ValueTask for cached data
+public ValueTask<TournamentDto?> GetCachedAsync(TournamentId id, CancellationToken ct)
+{
+    if (_cache.TryGetValue(id, out var cached))
+        return ValueTask.FromResult<TournamentDto?>(cached);
+
+    return new ValueTask<TournamentDto?>(LoadFromDatabaseAsync(id, ct));
+}
+
+// Incorrect - Task when synchronous path is common
+public Task<TournamentDto?> GetCachedAsync(TournamentId id, CancellationToken ct)
+{
+    if (_cache.TryGetValue(id, out var cached))
+        return Task.FromResult<TournamentDto?>(cached);  // Allocates unnecessarily
+
+    return LoadFromDatabaseAsync(id, ct);
+}
+```
+
+**When to use**:
+
+- Methods with caching where cache hits are common
+- I/O operations with buffering
+- Interface methods that may have synchronous implementations
+
+**When not to use**:
+
+- Public API contracts (prefer `Task<T>` for simplicity)
+- Methods that always go async (no benefit, adds complexity)
+- When the result will be awaited multiple times (ValueTask can only be awaited once)
+
+### Static Pure Functions
+
+Prefer `static` methods for pure functions that don't access instance state. This communicates intent and enables compiler optimizations.
+
+```csharp
+// Correct - static for pure calculation
+public static decimal CalculateHandicap(int average, int basis, decimal factor)
+{
+    if (average >= basis) return 0;
+    return (basis - average) * factor;
+}
+
+// Correct - static local function
+public void ProcessScores(IEnumerable<int> scores)
+{
+    var adjusted = scores.Select(static s => AdjustScore(s));
+    // ...
+
+    static int AdjustScore(int score) => Math.Min(score, 300);
+}
+
+// Incorrect - instance method that doesn't use instance state
+public decimal CalculateHandicap(int average, int basis, decimal factor)
+{
+    return (basis - average) * factor;
+}
+```
+
+**When to use `static`**:
+
+- Pure calculations with no side effects
+- Utility/helper methods
+- Lambda expressions that don't capture variables (`static s => ...`)
+- Local functions that don't access enclosing scope
+
+**Benefits**:
+
+- Compiler prevents accidental `this` capture
+- Enables certain JIT optimizations
+- Documents that the method is self-contained
+
+### Deferred Enumeration
+
+Be explicit about when enumeration occurs. Materialize sequences when you need to iterate multiple times or when the source may change.
+
+```csharp
+// Correct - explicit materialization when needed
+public IReadOnlyList<TournamentDto> GetFiltered(IEnumerable<Tournament> tournaments)
+{
+    return tournaments
+        .Where(t => t.Status == TournamentStatus.Active)
+        .Select(t => new TournamentDto { /* ... */ })
+        .ToList();  // Materialize once
+}
+
+// Correct - return IEnumerable when caller controls enumeration
+public IEnumerable<int> GetScores(Tournament tournament)
+{
+    foreach (var squad in tournament.Squads)
+    {
+        foreach (var score in squad.Scores)
+        {
+            yield return score.Total;
+        }
+    }
+}
+
+// Incorrect - multiple enumeration of deferred sequence
+public void ProcessTournaments(IEnumerable<Tournament> tournaments)
+{
+    if (!tournaments.Any()) return;  // First enumeration
+    var count = tournaments.Count(); // Second enumeration
+    foreach (var t in tournaments)   // Third enumeration
+    {
+        // ...
+    }
+}
+
+// Incorrect - returning query that may execute multiple times
+public IEnumerable<TournamentDto> GetActive()
+{
+    return _context.Tournaments
+        .Where(t => t.Status == TournamentStatus.Active)
+        .Select(t => new TournamentDto { /* ... */ });
+    // Each enumeration hits the database!
+}
+```
+
+**Guidelines**:
+
+- Use `IReadOnlyList<T>` or `IReadOnlyCollection<T>` for materialized results
+- Use `IEnumerable<T>` only when deferred execution is intentional
+- Call `.ToList()` or `.ToArray()` before returning from repository methods
+- Avoid multiple enumeration — materialize once if iterating multiple times
+
+### Concurrency Primitives
+
+When shared state requires synchronization, prefer simpler primitives. Use this hierarchy (simplest first):
+
+| Primitive | Use When |
+| --------- | -------- |
+| Immutable data | State never changes after construction |
+| `lock` statement | Simple mutual exclusion, short critical sections |
+| `SemaphoreSlim` | Async-compatible locking, limiting concurrency |
+| `Channel<T>` | Producer-consumer patterns |
+| `Interlocked` | Single atomic operations on primitives |
+| `ReaderWriterLockSlim` | Many readers, few writers (rare in practice) |
+
+```csharp
+// Correct - SemaphoreSlim for async locking
+private readonly SemaphoreSlim _semaphore = new(1, 1);
+
+public async Task UpdateCacheAsync(string key, string value, CancellationToken ct)
+{
+    await _semaphore.WaitAsync(ct);
+    try
+    {
+        _cache[key] = value;
+    }
+    finally
+    {
+        _semaphore.Release();
+    }
+}
+
+// Correct - Channel for producer-consumer
+private readonly Channel<ScoreUpdate> _updates = Channel.CreateBounded<ScoreUpdate>(100);
+
+public async ValueTask QueueUpdateAsync(ScoreUpdate update, CancellationToken ct)
+{
+    await _updates.Writer.WriteAsync(update, ct);
+}
+
+// Incorrect - lock in async code
+private readonly object _lock = new();
+
+public async Task UpdateCacheAsync(string key, string value)
+{
+    lock (_lock)  // Blocks thread, can't await inside
+    {
+        _cache[key] = value;
+    }
+}
+```
+
+**Guidelines**:
+
+- Prefer immutability over synchronization
+- Use `lock` only for synchronous code with very short critical sections
+- Use `SemaphoreSlim` for async code or when you need to limit concurrency
+- Use `Channel<T>` for decoupling producers and consumers
+- Avoid `ReaderWriterLockSlim` unless profiling shows contention with many readers
+
+---
+
 ## CQRS Implementation
 
 ### Commands
@@ -413,48 +900,739 @@ The `https+http://api` URI uses Aspire's service discovery to resolve the API en
 
 ---
 
+## Entity Framework Core Patterns
+
+### NoTracking by Default
+
+Configure DbContext to disable change tracking globally. Most queries are read-only.
+
+```csharp
+public class NebaDbContext : DbContext
+{
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+    }
+}
+```
+
+For write operations, either:
+
+- Use `.AsTracking()` on queries that load entities for modification
+- Explicitly call `.Update(entity)` before `SaveChangesAsync()`
+
+```csharp
+// Option 1: Opt-in to tracking
+var tournament = await _context.Tournaments
+    .AsTracking()
+    .FirstOrDefaultAsync(t => t.Id == id, ct);
+
+// Option 2: Explicit update (when entity came from elsewhere)
+_context.Tournaments.Update(tournament);
+await _context.SaveChangesAsync(ct);
+```
+
+### Bulk Operations
+
+Use `ExecuteUpdateAsync()` and `ExecuteDeleteAsync()` for efficient single-statement operations instead of loading entities:
+
+```csharp
+// Correct - single SQL statement
+await _context.Tournaments
+    .Where(t => t.Status == TournamentStatus.Draft && t.Date < cutoffDate)
+    .ExecuteDeleteAsync(ct);
+
+// Incorrect - loads all entities, then deletes one by one
+var tournaments = await _context.Tournaments
+    .Where(t => t.Status == TournamentStatus.Draft && t.Date < cutoffDate)
+    .ToListAsync(ct);
+_context.Tournaments.RemoveRange(tournaments);
+await _context.SaveChangesAsync(ct);
+```
+
+### Split Queries for Multiple Includes
+
+Use `AsSplitQuery()` to prevent Cartesian explosion when including multiple collections:
+
+```csharp
+var tournament = await _context.Tournaments
+    .Include(t => t.Squads)
+    .Include(t => t.Champions)
+    .AsSplitQuery()  // Generates separate queries instead of one massive join
+    .FirstOrDefaultAsync(t => t.Id == id, ct);
+```
+
+When to use:
+
+- Multiple `.Include()` calls on collection navigation properties
+- Large datasets where Cartesian product would multiply rows
+
+When to avoid:
+
+- Single includes
+- When you need transactional consistency across all data (split queries are separate round-trips)
+
+### Migration Management
+
+Use EF Core CLI exclusively. Never manually edit migration files.
+
+```bash
+dotnet ef migrations add AddTournamentChampions
+dotnet ef migrations remove
+dotnet ef database update
+dotnet ef migrations script --idempotent  # For production SQL
+```
+
+### Transient Failure Handling
+
+Wrap database operations in execution strategies for retry handling:
+
+```csharp
+var strategy = _context.Database.CreateExecutionStrategy();
+
+await strategy.ExecuteAsync(async () =>
+{
+    await using var transaction = await _context.Database.BeginTransactionAsync(ct);
+
+    // Multiple operations...
+
+    await _context.SaveChangesAsync(ct);
+    await transaction.CommitAsync(ct);
+});
+```
+
+### Row Limits on Queries
+
+Always limit result sets to prevent unbounded queries. Define sensible defaults and enforce maximum limits.
+
+```csharp
+// Correct - explicit limit with sensible default
+public async Task<IReadOnlyList<TournamentDto>> GetUpcomingAsync(
+    int limit = 20,
+    CancellationToken ct = default)
+{
+    const int maxLimit = 100;
+    var effectiveLimit = Math.Min(limit, maxLimit);
+
+    return await _context.Tournaments
+        .Where(t => t.Date >= DateOnly.FromDateTime(DateTime.UtcNow))
+        .OrderBy(t => t.Date)
+        .Take(effectiveLimit)
+        .Select(t => new TournamentDto { /* ... */ })
+        .ToListAsync(ct);
+}
+
+// Correct - paginated query
+public async Task<PaginatedResult<BowlerDto>> SearchAsync(
+    string? searchTerm,
+    int page = 1,
+    int pageSize = 20,
+    CancellationToken ct = default)
+{
+    const int maxPageSize = 100;
+    var effectivePageSize = Math.Min(pageSize, maxPageSize);
+
+    var query = _context.Bowlers.AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(searchTerm))
+        query = query.Where(b => b.LastName.Contains(searchTerm));
+
+    var totalCount = await query.CountAsync(ct);
+
+    var items = await query
+        .OrderBy(b => b.LastName)
+        .Skip((page - 1) * effectivePageSize)
+        .Take(effectivePageSize)
+        .Select(b => new BowlerDto { /* ... */ })
+        .ToListAsync(ct);
+
+    return new PaginatedResult<BowlerDto>(items, totalCount, page, effectivePageSize);
+}
+
+// Incorrect - unbounded query
+public async Task<IReadOnlyList<TournamentDto>> GetAllAsync(CancellationToken ct)
+{
+    return await _context.Tournaments
+        .Select(t => new TournamentDto { /* ... */ })
+        .ToListAsync(ct);  // Could return millions of rows
+}
+```
+
+**Guidelines**:
+
+- Every query method must have a limit (explicit parameter or hardcoded)
+- Enforce maximum limits even if caller requests more
+- Use pagination for list endpoints
+- Log warnings when max limit is applied
+
+### Common Pitfalls
+
+| Pitfall                                            | Solution                                      |
+| -------------------------------------------------- | --------------------------------------------- |
+| Forgetting `.Update()` with NoTracking             | Use `.AsTracking()` or explicit `.Update()`   |
+| N+1 queries                                        | Use `.Include()` for eager loading            |
+| Querying inside loops                              | Batch fetch before loop                       |
+| Multiple DbContext instances with same entity      | Use single scoped DbContext                   |
+| Unbounded queries without limits                   | Always use `.Take()` with enforced maximums   |
+
+---
+
 ## API Design
 
 ### Fast Endpoints Structure
 
-Each endpoint in its own folder with endpoint class and validator:
+Each endpoint in its own use case folder with endpoint, summary, and validator:
 
 ```
 Neba.Api/
 ├── Tournaments/
+│   ├── TournamentEndpointGroup.cs
 │   ├── CreateTournament/
 │   │   ├── CreateTournamentEndpoint.cs
+│   │   ├── CreateTournamentSummary.cs
 │   │   └── CreateTournamentValidator.cs
+│   ├── UpdateTournament/
+│   ├── GetTournament/
+│   ├── ListTournaments/
+│   └── DeleteTournament/
+├── Squads/
+├── Bowlers/
+└── BowlingCenters/
+```
+
+### Contracts Layer
+
+Contracts follow a Request/Input/Response pattern organized by use case:
+
+**Requests wrap Inputs** (for commands):
+
+```csharp
+namespace Neba.Api.Contracts.Tournaments.CreateTournament;
+
+/// <summary>
+/// Tournament details input
+/// </summary>
+public record TournamentInput
+{
+    /// <summary>
+    /// The name of the tournament
+    /// </summary>
+    /// <example>Spring Classic 2026</example>
+    public string TournamentName { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Tournament start date
+    /// </summary>
+    public DateTime StartDate { get; init; }
+
+    /// <summary>
+    /// Tournament location
+    /// </summary>
+    public string Location { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Maximum number of participants
+    /// </summary>
+    public int MaxParticipants { get; init; }
+}
+
+/// <summary>
+/// Request to create a new tournament
+/// </summary>
+public record CreateTournamentRequest
+{
+    /// <summary>
+    /// Tournament details to create
+    /// </summary>
+    public TournamentInput Tournament { get; init; } = new();
+}
+```
+
+**Responses**:
+
+```csharp
+namespace Neba.Api.Contracts.Tournaments.GetTournament;
+
+/// <summary>
+/// Full tournament details response
+/// </summary>
+public record TournamentResponse
+{
+    public Guid TournamentId { get; init; }
+    public string TournamentName { get; init; } = string.Empty;
+    public DateTime StartDate { get; init; }
+    public string Location { get; init; } = string.Empty;
+    public int MaxParticipants { get; init; }
+    public int CurrentParticipants { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public DateTime? UpdatedAt { get; init; }
+}
+```
+
+**Common Response Wrappers** (in `Neba.Api.Contracts.Common`):
+
+```csharp
+public record CollectionResponse<T>
+{
+    public IReadOnlyList<T> Items { get; init; } = Array.Empty<T>();
+    public int TotalCount { get; init; }
+}
+
+public record PaginationResponse<T>
+{
+    public IReadOnlyList<T> Items { get; init; } = Array.Empty<T>();
+    public int TotalCount { get; init; }
+    public int Page { get; init; }
+    public int PageSize { get; init; }
+    public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : 0;
+    public bool HasNextPage => Page < TotalPages;
+    public bool HasPreviousPage => Page > 1;
+}
+```
+
+**Refit Interfaces**:
+
+```csharp
+namespace Neba.Api.Contracts.Tournaments;
+
+public interface ITournamentsApi
+{
+    [Post("/api/tournaments")]
+    Task<TournamentResponse> CreateTournamentAsync(
+        [Body] CreateTournamentRequest request,
+        CancellationToken cancellationToken = default);
+
+    [Get("/api/tournaments/{id}")]
+    Task<TournamentResponse> GetTournamentAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+
+    [Get("/api/tournaments")]
+    Task<PaginationResponse<TournamentSummaryResponse>> ListTournamentsAsync(
+        [Query] ListTournamentsRequest request,
+        CancellationToken cancellationToken = default);
+
+    [Delete("/api/tournaments/{id}")]
+    Task DeleteTournamentAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+}
+```
+
+### JSON Serialization
+
+Use System.Text.Json with source generators for AOT compatibility and improved performance. Define a `JsonSerializerContext` in the Contracts project.
+
+```csharp
+// Neba.Api.Contracts/NebaJsonContext.cs
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[JsonSerializable(typeof(CreateTournamentRequest))]
+[JsonSerializable(typeof(TournamentResponse))]
+[JsonSerializable(typeof(PaginationResponse<TournamentSummaryResponse>))]
+[JsonSerializable(typeof(CollectionResponse<TournamentSummaryResponse>))]
+// Add all request/response types...
+public partial class NebaJsonContext : JsonSerializerContext { }
+```
+
+**Registration**:
+
+```csharp
+// In API Program.cs
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.TypeInfoResolverChain.Insert(0, NebaJsonContext.Default);
+});
+
+// In Blazor for Refit
+builder.Services
+    .AddRefitClient<ITournamentApi>(new RefitSettings
+    {
+        ContentSerializer = new SystemTextJsonContentSerializer(
+            new JsonSerializerOptions { TypeInfoResolver = NebaJsonContext.Default })
+    });
+```
+
+**Why source generators**:
+
+- Compile-time serialization code generation (no runtime reflection)
+- Required for Native AOT deployment
+- Better performance for high-throughput scenarios
+- Catches serialization issues at compile time
+
+**Maintenance**:
+
+- Add new contract types to the `[JsonSerializable]` attributes as they're created
+- Use `JsonSerializerOptions` consistently across API and Blazor
+
+### Endpoint Implementation
+
+```csharp
+namespace Neba.Api.Tournaments.CreateTournament;
+
+public class CreateTournamentEndpoint
+    : Endpoint<CreateTournamentRequest, TournamentResponse>
+{
+    private readonly ICommandHandler<CreateTournamentCommand, TournamentDto> _handler;
+
+    public CreateTournamentEndpoint(ICommandHandler<CreateTournamentCommand, TournamentDto> handler)
+    {
+        _handler = handler;
+    }
+
+    public override void Configure()
+    {
+        Post("/api/tournaments");
+        Group<TournamentEndpointGroup>();
+        Version(1);
+        Roles("TournamentManager", "Admin");
+        Tags("Tournaments", "Authenticated");
+
+        Description(b => b
+            .WithName("CreateTournament")
+            .Produces<TournamentResponse>(201, "application/json")
+            .ProducesProblemDetails(400, "application/problem+json")
+            .ProducesProblemDetails(409, "application/problem+json"));
+    }
+
+    public override async Task HandleAsync(
+        CreateTournamentRequest req,
+        CancellationToken ct)
+    {
+        // Map Request -> Command
+        var command = new CreateTournamentCommand(
+            req.Tournament.TournamentName,
+            req.Tournament.StartDate,
+            req.Tournament.Location,
+            req.Tournament.MaxParticipants);
+
+        var result = await _handler.HandleAsync(command, ct);
+
+        // Handle errors
+        if (result.IsFailure)
+        {
+            await this.SendProblemDetailsAsync(result.Error, ct);
+            return;
+        }
+
+        // Map DTO -> Response
+        var response = new TournamentResponse
+        {
+            TournamentId = result.Value.TournamentId,
+            TournamentName = result.Value.TournamentName,
+            // ... map remaining properties
+        };
+
+        await SendCreatedAtAsync<GetTournamentEndpoint>(
+            new { id = response.TournamentId },
+            response,
+            cancellation: ct);
+    }
+}
+```
+
+### Endpoint Groups
+
+```csharp
+namespace Neba.Api.Tournaments;
+
+public class TournamentEndpointGroup : Group
+{
+    public TournamentEndpointGroup()
+    {
+        Configure("api/tournaments", ep =>
+        {
+            ep.Description(x => x
+                .ProducesProblemDetails(401, "application/problem+json")
+                .ProducesProblemDetails(403, "application/problem+json")
+                .ProducesProblemDetails(429, "application/problem+json"));
+        });
+    }
+}
+```
+
+### Summary Classes
+
+Summary classes provide OpenAPI documentation and live alongside the endpoint:
+
+```csharp
+namespace Neba.Api.Tournaments.CreateTournament;
+
+public class CreateTournamentSummary : Summary<CreateTournamentEndpoint>
+{
+    public CreateTournamentSummary()
+    {
+        Summary = "Create a new bowling tournament";
+
+        Description = """
+            Creates a new tournament in the NEBA system.
+
+            The tournament will be validated against business rules:
+            - Tournament name must be unique
+            - Start date must be in the future
+            - Max participants must be between 8 and 256
+            """;
+
+        ExampleRequest = new CreateTournamentRequest
+        {
+            Tournament = new TournamentInput
+            {
+                TournamentName = "Spring Classic 2026",
+                StartDate = new DateTime(2026, 4, 15),
+                Location = "Boston, MA",
+                MaxParticipants = 128
+            }
+        };
+
+        Response<TournamentResponse>(201, "Tournament created successfully", example: new()
+        {
+            TournamentId = Guid.Parse("a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"),
+            TournamentName = "Spring Classic 2026",
+            // ... example values
+        });
+
+        Response<ProblemDetails>(400, "Validation errors occurred");
+        Response<ProblemDetails>(409, "Business rule conflict");
+    }
+}
 ```
 
 ### Validation Strategy
 
-**FluentValidation** for input validation (via Fast Endpoints):
+**FluentValidation** (via Fast Endpoints) for structural validation only:
 
-- Structural validation: required fields, formats, lengths
-- Minimal business rules
+```csharp
+public class CreateTournamentValidator : Validator<CreateTournamentRequest>
+{
+    public CreateTournamentValidator()
+    {
+        RuleFor(x => x.Tournament.TournamentName)
+            .NotEmpty()
+            .WithMessage("Tournament name is required")
+            .MaximumLength(200);
 
-**Domain entities** for business rule validation:
+        RuleFor(x => x.Tournament.StartDate)
+            .GreaterThan(DateTime.UtcNow)
+            .WithMessage("Start date must be in the future");
 
-- Complex rules, cross-field validation
-- Return `ErrorOr<T>` for failures
+        RuleFor(x => x.Tournament.MaxParticipants)
+            .InclusiveBetween(8, 256);
+    }
+}
+```
+
+**Validation scope**:
+
+- ✅ Required fields, length constraints, range validation, format validation
+- ❌ Cross-property validation (Application layer)
+- ❌ Database lookups (Application layer)
+- ❌ Business rules (Domain/Application layer)
+
+**Domain entities** handle business rule validation and return `ErrorOr<T>` for failures.
+
+### Query Parameter Handling
+
+```csharp
+public record ListTournamentsRequest
+{
+    [QueryParam, BindFrom("location")]
+    public string? Location { get; init; }
+
+    [QueryParam, BindFrom("startDateFrom")]
+    public DateTime? StartDateFrom { get; init; }
+
+    [QueryParam, BindFrom("page")]
+    public int Page { get; init; } = 1;
+
+    [QueryParam, BindFrom("pageSize")]
+    public int PageSize { get; init; } = 20;
+}
+```
+
+Rules:
+
+- Use flat query strings (not nested objects)
+- Use camelCase for parameter names
+- Use `[QueryParam]` and `[BindFrom]` attributes
 
 ### Error Handling
 
-Errors flow as `ErrorOr<T>` results from domain and application layers. The API translates these to ProblemDetails (RFC 9457):
+Errors flow as `ErrorOr<T>` from domain/application layers. The API translates to ProblemDetails (RFC 9457):
 
-- Domain/application errors → appropriate HTTP status code + ProblemDetails body
-- Validation errors → 400 Bad Request with `errors` object containing field-level details
-- Unexpected exceptions → 500 Internal Server Error (details hidden in production)
+```csharp
+namespace Neba.Api.Extensions;
+
+public static class ProblemDetailsExtensions
+{
+    public static async Task SendProblemDetailsAsync(
+        this IEndpoint endpoint,
+        Error error,
+        CancellationToken ct)
+    {
+        var httpContext = endpoint.HttpContext;
+
+        var problemDetails = new ProblemDetails
+        {
+            Type = "https://www.rfc-editor.org/rfc/rfc7231#section-6.5.1",
+            Title = error.Type switch
+            {
+                ErrorType.Validation => "Validation Error",
+                ErrorType.Conflict => "Conflict",
+                ErrorType.NotFound => "Not Found",
+                _ => "An error occurred"
+            },
+            Status = error.Type switch
+            {
+                ErrorType.Validation => 400,
+                ErrorType.Conflict => 409,
+                ErrorType.NotFound => 404,
+                _ => 500
+            },
+            Detail = error.Message,
+            Instance = httpContext.Request.Path
+        };
+
+        problemDetails.Extensions.Add("traceId", httpContext.TraceIdentifier);
+
+        if (!string.IsNullOrEmpty(error.Code))
+            problemDetails.Extensions.Add("errorCode", error.Code);
+
+        if (error.Context?.Any() == true)
+            problemDetails.Extensions.Add("context", error.Context);
+
+        await endpoint.SendAsync(problemDetails, problemDetails.Status!.Value, ct);
+    }
+}
+```
+
+**Error response rules**:
+
+- Always return ProblemDetails for any error (400, 401, 403, 404, 409, 500, etc.)
+- Use Fast Endpoints methods when appropriate (`SendNotFoundAsync()`, `SendUnauthorizedAsync()`, `SendForbiddenAsync()`)
+- Use `SendProblemDetailsAsync()` extension for Application layer errors
+- Validation errors always return 400
+- Include `traceId` in all error responses
+- Include `errorCode` for domain/business errors
+- Include `context` for additional error details when helpful
 
 ### Authentication & Authorization
 
-- EF Core Identity
+All endpoints must explicitly configure authorization:
+
+```csharp
+public override void Configure()
+{
+    Post("/api/tournaments");
+
+    // Explicitly configure auth - one of:
+    AllowAnonymous();
+    Roles("TournamentManager", "Admin");
+    Policies("CanManageTournaments");
+
+    // Never leave auth unspecified
+}
+```
+
+**Tags for visibility**:
+
+```csharp
+// Public endpoint
+Tags("Tournaments", "Public");
+AllowAnonymous();
+
+// Authenticated endpoint
+Tags("Tournaments", "Authenticated");
+Roles("TournamentManager");
+
+// Admin endpoint
+Tags("Tournaments", "Admin");
+Roles("Admin");
+```
+
+- EF Core Identity for user management
 - Role-based authorization (Admin, Scorer, etc.)
 - Day 1: Admin-only authentication
-- Future: Public user registration (admins can still access admin areas)
+- Future: Public user registration
 
-Endpoints return what they return - not different data based on auth. Access is controlled at the endpoint level (e.g., `GET /tournaments` is public, `POST /tournaments` requires admin).
+Endpoints return what they return - not different data based on auth. Access is controlled at the endpoint level.
+
+### Rate Limiting
+
+Configuration via appsettings.json:
+
+```json
+{
+  "RateLimiting": {
+    "General": {
+      "Anonymous": { "PermitLimit": 100, "Window": "00:01:00" },
+      "Authenticated": { "PermitLimit": 1000, "Window": "00:01:00" }
+    },
+    "PerEndpoint": {
+      "CreateTournament": { "PermitLimit": 10, "Window": "00:01:00" }
+    }
+  }
+}
+```
+
+Rules:
+
+- Rate limit by IP for anonymous requests
+- Rate limit by authenticated user for authenticated requests
+- Per-endpoint limits use the endpoint's `WithName()` value
+- ProblemDetails returned for 429
+
+### Versioning
+
+Header-based versioning via `X-Api-Version`:
+
+```csharp
+// V1 (default - no header required)
+public class CreateTournamentEndpoint : Endpoint<CreateTournamentRequest, TournamentResponse>
+{
+    public override void Configure()
+    {
+        Post("/api/tournaments");
+        Version(1);
+    }
+}
+
+// V2 (requires X-Api-Version: 2 header)
+public class CreateTournamentEndpointV2 : Endpoint<CreateTournamentRequestV2, TournamentResponse>
+{
+    public override void Configure()
+    {
+        Post("/api/tournaments");
+        Version(2);
+    }
+}
+```
+
+Versioning rules:
+
+- V1 is default (no header required)
+- All other versions require explicit header
+- When V1 is sunset, rename `CreateTournamentEndpointV2` → `CreateTournamentEndpoint` but keep `Version(2)`
+
+**Deprecation**:
+
+```csharp
+public override void Configure()
+{
+    Post("/api/tournaments");
+    Version(1);
+    Tags("Tournaments", "Authenticated", "Deprecated");
+    Deprecate(removedOn: new DateTime(2027, 1, 1));
+}
+```
+
+### Response Caching
+
+Response caching is handled via **HybridCache in the Application layer**, not at the API endpoint level. Do not use Fast Endpoints' `ResponseCache()` method.
+
+### Idempotency
+
+Not currently implemented for POST commands. When implementing in the future, Fast Endpoints supports idempotency via headers if needed.
 
 ### Real-time Endpoints
 
@@ -464,6 +1642,43 @@ Squad-level boundaries for live scoring:
 - **WebSocket**: Score entry by operators (`/squads/{id}/scores`)
 
 Squads run one at a time within a tournament (no overlap).
+
+### XML Documentation
+
+Enable in .csproj:
+
+```xml
+<PropertyGroup>
+  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  <NoWarn>$(NoWarn);1591</NoWarn>
+</PropertyGroup>
+```
+
+All public contracts (requests, responses, inputs) must have XML comments with `<summary>` and `<example>` tags.
+
+### Endpoint Checklist
+
+When creating a new endpoint:
+
+- [ ] Use case folder created with all files (Endpoint, Summary, Validator if needed)
+- [ ] Contracts created in Api.Contracts (Request/Input, Response)
+- [ ] Request wraps Input (for commands)
+- [ ] All contracts have XML documentation comments
+- [ ] Endpoint inherits from `Endpoint<TRequest, TResponse>`
+- [ ] `Configure()` method includes:
+  - [ ] HTTP verb and route (RESTful)
+  - [ ] Group configured
+  - [ ] Version specified (defaults to 1)
+  - [ ] Authorization explicit (AllowAnonymous, Roles, or Policies)
+  - [ ] Tags with domain and visibility
+  - [ ] Description with `WithName()` (required)
+  - [ ] Produces/ProducesProblemDetails for all status codes
+- [ ] `HandleAsync()` maps Request → Command/Query → Response
+- [ ] Errors use `SendProblemDetailsAsync()` extension or appropriate Fast Endpoints methods
+- [ ] Validator only validates structural rules (no business logic)
+- [ ] Summary class with examples for request and all responses
+- [ ] Refit interface updated
+- [ ] Integration tests written
 
 ---
 
@@ -878,39 +2093,213 @@ Workflow:
 - Authentication/authorization flow testing
 - Mark with `[IntegrationTest]` trait
 
-**Integration Test Pattern**:
+**API Integration Test Pattern**:
 
 ```csharp
 [IntegrationTest]
 [Component("Tournaments")]
-public class TournamentEndpointTests : IClassFixture<ApiFixture>
+public class TournamentEndpointTests : IClassFixture<AppFixture>, IAsyncLifetime
 {
-    private readonly HttpClient _client;
+    private readonly AppFixture _fixture;
 
-    public TournamentEndpointTests(ApiFixture fixture)
+    public TournamentEndpointTests(AppFixture fixture)
     {
-        _client = fixture.CreateClient();
+        _fixture = fixture;
+    }
+
+    public async Task InitializeAsync() { }
+
+    public async Task DisposeAsync()
+    {
+        await _fixture.ResetDatabaseAsync();
     }
 
     [Fact]
-    public async Task GetTournament_ReturnsTournament_WhenExists()
+    public async Task CreateTournament_ValidRequest_ReturnsCreated()
     {
-        // Arrange - seed with Bogus data
-        var tournament = TournamentFactory.Bogus(seed: 12345);
-        await _fixture.SeedAsync(tournament);
+        // Arrange
+        var client = _fixture.CreateAuthenticatedClient("TournamentManager");
+
+        var request = new CreateTournamentRequest
+        {
+            Tournament = new TournamentInput
+            {
+                TournamentName = "Test Tournament",
+                StartDate = DateTime.UtcNow.AddMonths(1),
+                Location = "Boston, MA",
+                MaxParticipants = 128
+            }
+        };
 
         // Act
-        var response = await _client.GetAsync($"/tournaments/{tournament.Id}");
+        var (response, result) = await client
+            .POSTAsync<CreateTournamentEndpoint, CreateTournamentRequest, TournamentResponse>(request);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<TournamentResponse>();
-        await Verify(result);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        result.TournamentName.Should().Be("Test Tournament");
+        response.Headers.Location.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task CreateTournament_InvalidRequest_ReturnsBadRequest()
+    {
+        var client = _fixture.CreateAuthenticatedClient("TournamentManager");
+
+        var request = new CreateTournamentRequest
+        {
+            Tournament = new TournamentInput { TournamentName = "" }  // Invalid
+        };
+
+        var (response, result) = await client
+            .POSTAsync<CreateTournamentEndpoint, CreateTournamentRequest, ProblemDetails>(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        result.Status.Should().Be(400);
+        result.Title.Should().Be("Validation Error");
     }
 }
 ```
 
-**Database Reset**: Use Respawn to reset database state between tests rather than recreating the container.
+**AppFixture**:
+
+```csharp
+public class AppFixture : WebApplicationFactory<Program>
+{
+    public string ConnectionString { get; private set; }
+
+    public HttpClient CreateAuthenticatedClient(params string[] roles)
+    {
+        var client = CreateClient();
+        var token = GenerateTestToken(roles);
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+
+    public async Task ResetDatabaseAsync()
+    {
+        // Use Respawn for fast database reset
+    }
+
+    private string GenerateTestToken(string[] roles)
+    {
+        // Test-only JWT generation with provided roles
+    }
+}
+```
+
+**Testing rules**:
+
+- Use `WebApplicationFactory<Program>` via `AppFixture`
+- Database cleanup after each test using Respawn
+- Use `CreateAuthenticatedClient(roles)` for authenticated endpoints
+- Use Fast Endpoints testing helpers for type-safe requests
+- Each layer has its own test project
+
+### Aspire Integration Testing
+
+When testing with .NET Aspire, use the `Aspire.Hosting.Testing` package to spin up the full AppHost with real dependencies.
+
+**Required setup** — prevent file descriptor exhaustion on Linux:
+
+```csharp
+// In test project
+internal static class TestInitializer
+{
+    [ModuleInitializer]
+    internal static void Initialize()
+    {
+        Environment.SetEnvironmentVariable(
+            "DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE",
+            "false");
+    }
+}
+```
+
+**Fixture pattern**:
+
+```csharp
+public class AspireFixture : IAsyncLifetime
+{
+    private DistributedApplication? _app;
+    private Respawner? _respawner;
+
+    public HttpClient ApiClient { get; private set; } = null!;
+    public string DbConnectionString { get; private set; } = null!;
+
+    public async Task InitializeAsync()
+    {
+        var appHost = await DistributedApplicationTestingBuilder
+            .CreateAsync<Projects.Neba_AppHost>();
+
+        _app = await appHost.BuildAsync();
+        await _app.StartAsync();
+
+        // Wait for resources to be healthy
+        await _app.WaitForResourceHealthyAsync("api");
+        await _app.WaitForResourceHealthyAsync("postgres");
+
+        // Get endpoints dynamically (ports are assigned at runtime)
+        ApiClient = _app.CreateHttpClient("api");
+        DbConnectionString = await _app.GetConnectionStringAsync("postgres")
+            ?? throw new InvalidOperationException("Connection string not found");
+
+        _respawner = await Respawner.CreateAsync(DbConnectionString, new RespawnerOptions
+        {
+            DbAdapter = DbAdapter.Postgres,
+            TablesToIgnore = ["__EFMigrationsHistory"]
+        });
+    }
+
+    public async Task ResetDatabaseAsync()
+    {
+        if (_respawner is not null)
+        {
+            await _respawner.ResetAsync(DbConnectionString);
+        }
+    }
+
+    public async Task DisposeAsync()
+    {
+        if (_app is not null)
+        {
+            await _app.StopAsync();
+            await _app.DisposeAsync();
+        }
+    }
+}
+```
+
+**Share fixture across tests** using xUnit collection:
+
+```csharp
+[CollectionDefinition("Aspire")]
+public class AspireCollection : ICollectionFixture<AspireFixture> { }
+
+[Collection("Aspire")]
+[IntegrationTest]
+[Component("Tournaments")]
+public class TournamentApiTests(AspireFixture fixture)
+{
+    [Fact(DisplayName = "Should create tournament via API")]
+    public async Task CreateTournament_ShouldSucceed()
+    {
+        var response = await fixture.ApiClient.PostAsJsonAsync(
+            "/api/tournaments",
+            new { /* request */ });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+}
+```
+
+**Key principles**:
+
+- Use dynamic endpoint discovery — never hardcode ports
+- Wait for health checks, not arbitrary delays
+- Share fixtures via xUnit collections to avoid spinning up multiple AppHosts
+- Reset database state between tests with Respawn (~50ms vs 10-30s for container recreation)
 
 ---
 

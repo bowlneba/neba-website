@@ -8,5 +8,10 @@
     <InternalsVisibleTo Include="Neba.Application.Tests" />
     <InternalsVisibleTo Include="Neba.TestFactory" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="ErrorOr" />
+    <PackageReference Include="Scrutor.AspNetCore" />
+  </ItemGroup>
 
 </Project>

@@ -1,4 +1,12 @@
-using Neba.Api;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+using FastEndpoints;
+
+using Neba.Api.ErrorHandling;
+using Neba.Api.OpenApi;
+using Neba.Api.Versioning;
+using Neba.Application;
 using Neba.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,43 +15,36 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
 // Add services to the container.
-builder.Services.AddProblemDetails();
+builder.Services.AddErrorHandling();
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services
+    .AddFastEndpoints(options => options.Assemblies = [typeof(Program).Assembly])
+    .AddVersioning();
 
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddOpenApiDocumentation();
+
+builder.Services
+    .AddApplication()
+    .AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
 
-if (app.Environment.IsDevelopment())
+app.UseFastEndpoints(config =>
 {
-    app.MapOpenApi();
-}
+    config.Serializer.Options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    config.Serializer.Options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+
+    config.Binding.UsePropertyNamingPolicy = true;
+
+    config.Errors.ConfigureErrorHandling();
+});
+
+app.UseOpenApiDocumentation();
 
 app.UseInfrastructure();
-
-string[] summaries = ["Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"];
-
-app.MapGet("/", () => "API service is running. Navigate to /weatherforecast to see sample data.");
-
-app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-#pragma warning disable CA5394 // Using Random.Shared for simplicity in sample code
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast");
 
 app.MapDefaultEndpoints();
 

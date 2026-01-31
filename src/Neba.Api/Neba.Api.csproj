@@ -3,10 +3,15 @@
   <ItemGroup>
     <ProjectReference Include="..\Neba.Infrastructure\Neba.Infrastructure.csproj" />
     <ProjectReference Include="..\Neba.ServiceDefaults\Neba.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Neba.Api.Contracts\Neba.Api.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="FastEndpoints" />
+    <PackageReference Include="FastEndpoints.AspVersioning" />
+    <PackageReference Include="FastEndpoints.Swagger" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Scalar.AspNetCore" />
   </ItemGroup>
   
   <ItemGroup>

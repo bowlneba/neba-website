@@ -1,12 +1,14 @@
-using Neba.Website.Server;
 using Neba.Website.Server.BackgroundJobs;
+using Neba.Website.Server.Clock;
 using Neba.Website.Server.Components;
+using Neba.Website.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
 
+builder.Services.AddApiServices(builder.Configuration);
 builder.Services.AddBackgroundJobs(builder.Configuration);
 
 // Add services to the container.
@@ -16,10 +18,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddOutputCache();
 
-var nebaApiBaseUrl = builder.Configuration["NebaApi:BaseUrl"]
-    ?? throw new InvalidOperationException("Configuration value 'NebaApi:BaseUrl' is required.");
-
-builder.Services.AddHttpClient<NebaApiClient>(client => client.BaseAddress = new(nebaApiBaseUrl));
+builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
 
 var app = builder.Build();
 

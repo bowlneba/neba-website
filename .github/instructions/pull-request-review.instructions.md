@@ -45,12 +45,120 @@ Flag when:
 
 ### API Layer (`Neba.Api`)
 
+**Structure**: Each endpoint lives in a use case folder with endpoint, summary, and validator:
+
+```
+Neba.Api/Tournaments/CreateTournament/
+├── CreateTournamentEndpoint.cs
+├── CreateTournamentSummary.cs
+└── CreateTournamentValidator.cs
+```
+
 Flag when:
 
 - Business logic appears in endpoints (should be in domain or application layer)
-- Endpoints don't use validators for input validation
-- Missing authorization attributes on admin endpoints
-- Inconsistent with REST conventions (see below)
+- Files in wrong folders (e.g., validator in Contracts project)
+- Missing Summary class
+- Mixing concerns (multiple use cases in one folder)
+
+#### Endpoint Configuration
+
+Every endpoint's `Configure()` method must include:
+
+- HTTP verb and RESTful route
+- `Group<TEndpointGroup>()` configured
+- `Version()` explicitly specified (even if defaulting to 1)
+- Authorization **explicitly** configured (`AllowAnonymous()`, `Roles()`, or `Policies()`)
+- `Tags()` with domain and visibility (e.g., `"Tournaments", "Authenticated"`)
+- `Description()` with `WithName()` (required for OpenAPI)
+- `Produces()`/`ProducesProblemDetails()` for all status codes
+
+Flag when:
+
+- Authorization not explicitly configured (implicit defaults are not allowed)
+- Missing `WithName()` in Description
+- Visibility tag doesn't match authorization (e.g., `AllowAnonymous()` with `"Authenticated"` tag)
+- Action-based routes (`/api/tournaments/create` instead of `/api/tournaments`)
+- Missing status code documentation
+
+#### Validation
+
+Validators should only contain structural validation:
+
+- ✅ Required fields, length constraints, range validation, format validation
+- ❌ Cross-property validation (belongs in Application layer)
+- ❌ Database lookups (belongs in Application layer)
+- ❌ Business rules (belongs in Domain/Application layer)
+
+Flag when:
+
+- Validator injects repositories or services
+- Validator contains `MustAsync` with database queries
+- Validation logic appears in endpoint handler instead of validator
+- Missing validator when request has input to validate
+
+#### Error Handling
+
+All errors must return ProblemDetails (RFC 7807).
+
+Flag when:
+
+- Custom error responses instead of ProblemDetails
+- Not handling all error cases from `ErrorOr<T>` result
+- Using `SendAsync()` with custom error objects
+- Missing error case handling (assuming success without checking `result.IsFailure`)
+
+#### Summary Classes
+
+Every endpoint needs a Summary class with:
+
+- Short summary and detailed description
+- `ExampleRequest` with realistic data
+- `Response<T>()` examples for all status codes (200/201, 400, 404, 409, etc.)
+
+Flag when:
+
+- Missing Summary class
+- Summary too brief (e.g., "Create tournament" instead of full description)
+- Missing or unrealistic example data
+- Missing response examples for error cases
+
+#### Mapping
+
+Mapping should be inline in the endpoint (Request → Command, DTO → Response).
+
+Flag when:
+
+- Separate mapper classes created
+- AutoMapper or similar libraries used
+- Mapping logic is overly complex (may indicate wrong abstraction level)
+
+### Contracts Layer (`Neba.Api.Contracts`)
+
+**Structure**: Contracts organized by use case folders:
+
+```
+Neba.Api.Contracts/Tournaments/CreateTournament/
+├── CreateTournamentRequest.cs
+└── TournamentInput.cs
+```
+
+**Request wraps Input** for commands:
+
+```csharp
+public record CreateTournamentRequest
+{
+    public TournamentInput Tournament { get; init; } = new();
+}
+```
+
+Flag when:
+
+- Request doesn't wrap Input (properties directly on request)
+- Contracts organized by type (`Requests/`, `Responses/`) instead of use case
+- Using `{ get; set; }` instead of `{ get; init; }`
+- Missing XML documentation (`<summary>`, `<example>` tags)
+- Refit interface not updated with new endpoint method
 
 ### Blazor (`Neba.Website.Server` / `Neba.Website.Client`)
 
@@ -226,6 +334,27 @@ public class RegisterBowlerTests
 }
 ```
 
+**Mock verification must use expected values, not `IsAny<T>`:**
+
+```csharp
+// Correct - verify with expected values
+const long startTimestamp = 1000;
+stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(TimeSpan.FromMilliseconds(42));
+
+// ... execute code ...
+
+stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Once);
+
+// Correct - use IsAny<T> ONLY when verifying method was NOT called
+stopwatchProviderMock.Verify(s => s.GetElapsedTime(It.IsAny<long>()), Times.Never);
+
+// Incorrect - using IsAny<T> when you should verify expected value
+stopwatchProviderMock.Verify(s => s.GetElapsedTime(It.IsAny<long>()), Times.Once);
+```
+
+**Key mock verification principle**: `IsAny<T>` should only be used to verify that a method was **not called** (with `Times.Never()`). When verifying that a method **was called**, always verify it was called with the expected arguments, not with `IsAny<T>`.
+
 Flag when:
 
 - Tests manually instantiate domain entities instead of using factories
@@ -239,6 +368,22 @@ Flag when:
 - Test method names not following `<MethodName>_Should<ExpectedOutcome>_When<Condition>` pattern
 - Mocking `ILogger<T>` instead of using `NullLogger<T>.Instance`
 - Using `new Mock<T>()` without `MockBehavior.Strict` parameter
+- Using `null!` instead of `#nullable disable`/`#nullable enable` for null testing
+- Mock `.Verify()` calls using `IsAny<T>` when verifying method was called with specific arguments
+
+**Null testing pattern**: When testing methods that don't accept nullable references but need null passed:
+
+```csharp
+[Fact]
+public void Method_ShouldThrow_WhenNull()
+{
+#nullable disable
+    string value = null;
+
+    Should.Throw<ArgumentNullException>(() => SomeMethod(value));
+#nullable enable
+}
+```
 
 ### What to Test
 
@@ -299,6 +444,8 @@ Flag when:
 - Extension methods use the legacy `this` parameter syntax instead of `extension()` blocks
 - Multiple extension methods for the same type aren't grouped in a single `extension()` block
 
+**Exception**: `[LoggerMessage]` partial methods must use the legacy `this` parameter syntax as required by the source generator.
+
 ### Naming
 
 - **Files**: Match type name (`CreateTournamentEndpoint.cs` contains `CreateTournamentEndpoint`)
@@ -315,10 +462,8 @@ Flag when:
 
 ### Contracts (`Neba.Api.Contracts`)
 
-Flag when:
+See detailed criteria in **API Layer** section above. Additionally flag when:
 
-- Input/response records are mutable (should be `record` types or have `init` setters)
-- Missing XML documentation on public contract types
 - Contract types contain logic beyond simple computed properties
 
 ---
@@ -336,6 +481,30 @@ Flag when:
 | Public setters on entities | Private setters with behavior methods |
 | `DateTime.Now` in domain logic | Inject `TimeProvider` |
 | Legacy extension method syntax (`this` parameter) | Use `extension()` blocks (C# 14) |
+| Custom error response in endpoint | Use `ProblemDetails` via `SendProblemDetailsAsync()` |
+| Implicit endpoint authorization | Explicit `AllowAnonymous()`, `Roles()`, or `Policies()` |
+| Validation in endpoint handler | Create separate `Validator<TRequest>` class |
+| Database lookup in validator | Move to Application layer handler |
+| Request properties without Input wrapper | Wrap in `TournamentInput` (for commands) |
+| Separate mapper classes for endpoints | Inline mapping in endpoint |
+| URL-based API versioning (`/api/v1/...`) | Header-based versioning (`X-Api-Version`) |
+| Direct use of Newtonsoft.Json (`JsonConvert`, `JObject`) | System.Text.Json with source generators |
+| AutoMapper, Mapster, or similar mapping libraries | Explicit inline mapping |
+| Unsealed classes without justification | Seal classes by default |
+| Value objects as mutable class | Use `sealed record class` (EF persisted) or `readonly record struct` (transient) |
+| Unbounded database queries | Always use `.Take()` with enforced maximum limits |
+
+### Banned Libraries
+
+The following libraries are explicitly prohibited from direct use in application code:
+
+| Library                                            | Reason                                                                 | Alternative                              |
+| -------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------- |
+| **AutoMapper**, **Mapster**, **ExpressMapper**     | Runtime reflection, hidden mappings, hard to debug, breaks compile-time safety | Explicit mapping methods                 |
+| **Newtonsoft.Json** (`JsonConvert`, `JObject`)     | Reflection-based, not AOT-compatible, legacy                           | System.Text.Json with source generators  |
+| **BinaryFormatter**                                | Security vulnerabilities, deprecated                                   | System.Text.Json, MessagePack, Protobuf  |
+
+**Note on transitive dependencies**: Some packages (e.g., Hangfire) have transitive dependencies on Newtonsoft.Json. The package may exist in the dependency graph, but **direct usage in our code is prohibited**. Flag any `using Newtonsoft.Json` statements or direct calls to `JsonConvert`.
 
 ---
 
@@ -343,19 +512,53 @@ Flag when:
 
 When reviewing, verify:
 
+### Architecture & Code Quality
+
 - [ ] Layer boundaries respected (no cross-domain references)
 - [ ] Commands return `ErrorOr<T>`
 - [ ] Queries return DTOs, not entities
-- [ ] REST conventions followed
+- [ ] Extension methods use `extension()` block syntax, not legacy `this` parameter
+
+### API Endpoints
+
+- [ ] Use case folder structure followed (Endpoint, Summary, Validator)
+- [ ] Authorization **explicitly** configured (`AllowAnonymous()`, `Roles()`, or `Policies()`)
+- [ ] `WithName()` present in Description
+- [ ] Tags match authorization (Public/Authenticated/Admin)
+- [ ] All status codes documented with `Produces()`/`ProducesProblemDetails()`
+- [ ] Validator present (if request has input to validate)
+- [ ] Validator contains only structural validation (no DB lookups, no business rules)
+- [ ] All errors return ProblemDetails
+- [ ] Summary class with realistic examples
+- [ ] Inline mapping (no separate mapper classes)
+
+### Contracts
+
+- [ ] Request wraps Input for commands
+- [ ] XML documentation on all public types and properties
+- [ ] Using `{ get; init; }` not `{ get; set; }`
+- [ ] Refit interface updated
+
+### REST Conventions
+
+- [ ] REST conventions followed (plural nouns, no verbs in URLs)
 - [ ] Response envelopes consistent
+
+### Testing
+
 - [ ] Tests use factories, not manual instantiation
 - [ ] Tests have `[UnitTest]` or `[IntegrationTest]` trait
 - [ ] Tests have `[Component]` trait
 - [ ] Tests have `DisplayName` on Facts and Theories
 - [ ] New code has corresponding tests
+- [ ] API endpoint integration tests cover success, validation failure, and auth failure
+
+### Observability
+
 - [ ] Logging present with appropriate levels
 - [ ] Spans added for business operations
 - [ ] No sensitive data logged
+
+### Blazor
+
 - [ ] Blazor components don't fetch data directly
-- [ ] Authorization attributes on admin endpoints
-- [ ] Extension methods use `extension()` block syntax, not legacy `this` parameter
