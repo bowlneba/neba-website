@@ -10,7 +10,7 @@ public abstract class AggregateRoot
 
     /// <inheritdoc />
     public IReadOnlyCollection<IDomainEvent> DomainEvents
-        => _domainEvents;
+        => _domainEvents.AsReadOnly();
 
     /// <inheritdoc />
     public void ClearDomainEvents()
