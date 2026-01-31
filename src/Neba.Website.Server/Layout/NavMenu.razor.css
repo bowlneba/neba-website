@@ -26,3 +26,35 @@
     white-space: nowrap;
     border-width: 0;
 }
+
+/* Hamburger Menu Toggle - Animation */
+.neba-menu-toggle span {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    transform-origin: center;
+}
+
+/* X animation when menu is open */
+.neba-menu-toggle[aria-expanded="true"] span:nth-child(2) {
+    transform: rotate(45deg) translate(0.35rem, 0.35rem);
+}
+
+.neba-menu-toggle[aria-expanded="true"] span:nth-child(3) {
+    opacity: 0;
+}
+
+.neba-menu-toggle[aria-expanded="true"] span:nth-child(4) {
+    transform: rotate(-45deg) translate(0.35rem, -0.35rem);
+}
+
+/* Focus styles for accessibility */
+.neba-menu-toggle:focus-visible {
+    outline: 2px solid var(--neba-blue-500);
+    outline-offset: 2px;
+    border-radius: var(--neba-radius);
+}
+
+/* Menu open state - prevent jumping by disabling sticky positioning */
+.neba-navbar.menu-open {
+    position: relative !important;
+    top: auto !important;
+}
