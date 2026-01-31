@@ -184,8 +184,8 @@ function handleDropdownClick(event) {
  * @param {KeyboardEvent} event
  */
 function handleDropdownKeydown(event) {
-    const dropdown = event.target.closest('.neba-dropdown');
-    const navItem = event.target.closest('.neba-nav-item');
+    const dropdown = event.target instanceof Element ? event.target.closest('.neba-dropdown') : null;
+    const navItem = event.target instanceof Element ? event.target.closest('.neba-nav-item') : null;
 
     if (!dropdown && !navItem?.querySelector('[aria-haspopup]')) {
         return;

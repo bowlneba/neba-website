@@ -16,7 +16,11 @@
       "Bash(./bin/Debug/net10.0/Neba.Domain.Tests:*)",
       "WebFetch(domain:aspire.dev)",
       "Bash(gh api:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(xargs:*)",
+      "Bash(tree:*)",
+      "Bash(npm install:*)",
+      "Bash(npx playwright:*)"
     ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",

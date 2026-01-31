@@ -38,5 +38,6 @@
     "testExplorer.useNativeTesting": true,
     "dotnet.testWindow.useTestingPlatformProtocol": true,
     "dotnet-test-explorer.testProjectPath": "tests/**/*.csproj",
-    "dotnet.unitTests.runSettingsPath": "${workspaceFolder}/.runsettings"
+    "dotnet.unitTests.runSettingsPath": "${workspaceFolder}/.runsettings",
+    "jest.pathToJest": "${workspaceFolder}/node_modules/.bin/jest"
 }

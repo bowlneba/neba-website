@@ -6,11 +6,16 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
     "@babel/preset-env": "^7.24.0",
+    "@playwright/test": "^1.58.1",
     "@testing-library/jest-dom": "^6.1.5",
     "babel-jest": "^29.7.0",
     "identity-obj-proxy": "^3.0.0",
