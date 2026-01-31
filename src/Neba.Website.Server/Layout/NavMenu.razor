@@ -88,20 +88,6 @@
                         Centers
                     </NavLink>
                 </li>
-                @if (!IsProduction)
-                {
-                    <li class="neba-nav-item" data-action="toggle-dropdown">
-                        <a href="#"
-                           class="neba-nav-link"
-                           aria-haspopup="true"
-                           aria-expanded="false"
-                           @onclick:preventDefault>Testing</a>
-                        <div class="neba-dropdown" role="menu">
-                            <NavLink class="neba-dropdown-link" href="testing/notifications" role="menuitem">Notifications</NavLink>
-                            <NavLink class="neba-dropdown-link" href="testing/modals" role="menuitem">Modals</NavLink>
-                        </div>
-                    </li>
-                }
             </ul>
         </div>
     </div>
@@ -113,10 +99,6 @@
 
     private string? NavMenuCssClass => collapseNavMenu ? null : "active";
     private string? NavbarCssClass => collapseNavMenu ? null : "menu-open";
-
-    private bool IsProduction =>
-        string.Equals(HostEnv.EnvironmentName, "Production", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(HostEnv.EnvironmentName, "Docker", StringComparison.OrdinalIgnoreCase);
 
     private static int CurrentYear => DateTime.Now.Year;
 
