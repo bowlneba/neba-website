@@ -12,6 +12,8 @@
 *.sln
 *.env
 
+reference/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
