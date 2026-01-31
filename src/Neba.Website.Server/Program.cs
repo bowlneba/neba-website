@@ -27,6 +27,21 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
 }
 
+app.UseStatusCodePages(async context =>
+{
+    var response = context.HttpContext.Response;
+    var path = response.StatusCode switch
+    {
+        401 => "/unauthorized",
+        403 => "/forbidden",
+        404 => "/not-found",
+        _ => $"/error?code={response.StatusCode}"
+    };
+
+    response.Redirect(path);
+    await Task.CompletedTask;
+});
+
 app.UseAntiforgery();
 
 app.UseOutputCache();
