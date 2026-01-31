@@ -1024,7 +1024,7 @@ a:focus-visible {
 /* Mobile (< 768px): Compact top banner with search, logo + hamburger in navbar */
 @media (max-width: 767px) {
   .neba-top-banner {
-    padding: 0.75rem 0;
+    display: none;
   }
 
   .neba-banner-content {

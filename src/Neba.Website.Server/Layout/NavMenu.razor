@@ -1,33 +1,65 @@
 @rendermode InteractiveServer
+@inject NavigationManager Nav
 
-<nav class="neba-navbar">
+<nav class="neba-navbar" role="navigation" aria-label="Main navigation">
     <div class="neba-navbar-wrapper">
         <div class="neba-navbar-content">
             <div class="neba-navbar-header">
-                <a href="" class="text-xl font-semibold text-neba-blue-brand no-underline">
-                    Neba.Website
+                <a href="/" class="navbar-brand">
+                    <img src="images/neba-1963.png" alt="NEBA | 1963" class="navbar-logo" />
                 </a>
-                <button class="neba-menu-toggle" @onclick="ToggleNavMenu" aria-label="Toggle navigation">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+
+                <button class="neba-menu-toggle"
+                        @onclick="ToggleNavMenu"
+                        aria-label="Toggle navigation menu"
+                        aria-expanded="@(!collapseNavMenu)"
+                        aria-controls="main-menu">
+                    <span class="sr-only">Menu</span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
                 </button>
             </div>
 
-            <ul class="neba-nav-menu @NavMenuCssClass">
+            <ul class="neba-nav-menu @NavMenuCssClass" id="main-menu">
                 <li class="neba-nav-item">
-                    <NavLink class="neba-nav-link" href="" Match="NavLinkMatch.All">
-                        Home
+                    <NavLink class="neba-nav-link" href="tournaments" Match="NavLinkMatch.Prefix">
+                        Tournaments
                     </NavLink>
                 </li>
                 <li class="neba-nav-item">
-                    <NavLink class="neba-nav-link" href="counter">
-                        Counter
+                    <NavLink class="neba-nav-link" href="stats">
+                        Stats
                     </NavLink>
                 </li>
                 <li class="neba-nav-item">
-                    <NavLink class="neba-nav-link" href="weather">
-                        Weather
+                    <NavLink class="neba-nav-link" href="bylaws">
+                        About
+                    </NavLink>
+                </li>
+                <li class="neba-nav-item">
+                    <NavLink class="neba-nav-link" href="news">
+                        News
+                    </NavLink>
+                </li>
+                <li class="neba-nav-item">
+                    <NavLink class="neba-nav-link" href="history/champions" Match="NavLinkMatch.Prefix">
+                        History
+                    </NavLink>
+                </li>
+                <li class="neba-nav-item">
+                    <NavLink class="neba-nav-link" href="hall-of-fame">
+                        Hall of Fame
+                    </NavLink>
+                </li>
+                <li class="neba-nav-item">
+                    <NavLink class="neba-nav-link" href="sponsors">
+                        Sponsors
+                    </NavLink>
+                </li>
+                <li class="neba-nav-item">
+                    <NavLink class="neba-nav-link" href="bowling-centers">
+                        Centers
                     </NavLink>
                 </li>
             </ul>
@@ -37,6 +69,7 @@
 
 @code {
     private bool collapseNavMenu = true;
+
     private string? NavMenuCssClass => collapseNavMenu ? null : "active";
 
     private void ToggleNavMenu()
