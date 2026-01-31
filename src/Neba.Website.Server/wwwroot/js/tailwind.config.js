@@ -8,7 +8,10 @@
 // - neba_theme.css (:root CSS variables)
 // - breakpoints.js (JavaScript constants)
 
-tailwind.config = {
+// Create the tailwind object if it doesn't exist (CDN hasn't loaded yet)
+window.tailwind = window.tailwind || {};
+
+window.tailwind.config = {
     darkMode: 'class',
     theme: {
         extend: {
