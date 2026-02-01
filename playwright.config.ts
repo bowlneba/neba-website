@@ -1,7 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * See https://playwright.dev/docs/test-configuration
+ * Playwright E2E Test Configuration
+ *
+ * Prerequisites:
+ * - Local: Start Aspire manually before running tests (dotnet run --project src/Neba.AppHost)
+ * - CI: Server is started in a separate workflow step
+ *
+ * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
   testDir: './tests/e2e',
@@ -14,11 +20,14 @@ export default defineConfig({
   /* Opt out of parallel tests on CI */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use */
-  reporter: 'html',
+  reporter: [['html', { open: 'never' }]],
   /* Shared settings for all the projects below */
   use: {
     /* Base URL to use in actions like `await page.goto('/')` */
-    baseURL: 'https://localhost:5200',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'https://localhost:5200',
+
+    /* Ignore HTTPS errors for local development with self-signed certs */
+    ignoreHTTPSErrors: true,
 
     /* Collect trace when retrying the failed test */
     trace: 'on-first-retry',
@@ -40,11 +49,25 @@ export default defineConfig({
     },
   ],
 
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'dotnet run --project src/Neba.AppHost',
-  //   url: 'https://localhost:5200',
-  //   reuseExistingServer: !process.env.CI,
-  //   timeout: 120 * 1000,
-  // },
+  /* Start mock API server and website before running tests */
+  webServer: [
+    {
+      command: 'npx tsx tests/e2e/mock-api/mock-api-server-runner.ts',
+      url: 'http://localhost:5151/health',
+      reuseExistingServer: !process.env.CI,
+      timeout: 30 * 1000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+    {
+      command:
+        'NebaApi__BaseUrl=http://localhost:5151 dotnet run --project src/Neba.Website.Server --urls https://localhost:5200',
+      url: 'https://localhost:5200',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120 * 1000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+      ignoreHTTPSErrors: true,
+    },
+  ],
 });

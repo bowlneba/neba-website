@@ -2,7 +2,7 @@
 @inject NavigationManager Nav
 
 <!-- Skip to main content for accessibility -->
-<a href="#main-content" class="skip-link">
+<a href="#main-content" class="skip-link" onclick="setTimeout(() => document.getElementById('main-content')?.focus(), 0)">
     Skip to main content
 </a>
 
@@ -22,7 +22,7 @@
     <NavMenu />
 
     <!-- Main Content -->
-    <main class="main-content" role="main" id="main-content">
+    <main class="main-content" role="main" id="main-content" tabindex="-1">
         <article class="content-wrapper">
             @Body
         </article>

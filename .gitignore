@@ -427,9 +427,3 @@ FodyWeavers.xsd
 # Jest
 /coverage/
 /.jest-cache/
-
-# Playwright
-/playwright-report/
-/test-results/
-/blob-report/
-/playwright/.cache/

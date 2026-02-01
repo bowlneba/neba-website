@@ -70,8 +70,18 @@ function handleClickOutside(event) {
  */
 function handleKeydown(event) {
     if (event.key === 'Escape') {
+        // Find open dropdown and its trigger before closing
+        const openDropdown = document.querySelector('.neba-nav-item.active');
+        const triggerLink = openDropdown?.querySelector('[aria-haspopup]');
+
         // Close any open dropdowns
         closeAllDropdowns();
+
+        // Return focus to the trigger link if a dropdown was open
+        if (triggerLink) {
+            triggerLink.focus();
+            return;
+        }
 
         // Close mobile menu if open
         const menu = document.querySelector('[data-menu]');
@@ -184,8 +194,8 @@ function handleDropdownClick(event) {
  * @param {KeyboardEvent} event
  */
 function handleDropdownKeydown(event) {
-    const dropdown = event.target instanceof Element ? event.target.closest('.neba-dropdown') : null;
-    const navItem = event.target instanceof Element ? event.target.closest('.neba-nav-item') : null;
+    const dropdown = event.target.closest('.neba-dropdown');
+    const navItem = event.target.closest('.neba-nav-item');
 
     if (!dropdown && !navItem?.querySelector('[aria-haspopup]')) {
         return;
