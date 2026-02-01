@@ -26,7 +26,8 @@
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",
       "/Users/kippermand/Projects/bowlneba/neba-website/tests",
-      "/Users/kippermand/Projects/bowlneba/neba-website/tests/Neba.Website.Server.Tests"
+      "/Users/kippermand/Projects/bowlneba/neba-website/tests/Neba.Website.Server.Tests",
+      "/Users/kippermand/Projects/bowlneba/neba-website/.claude"
     ]
   }
 }

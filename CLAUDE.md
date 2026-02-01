@@ -23,6 +23,57 @@ When you discover something important during a session, update this file to capt
 
 Before ending a session where significant discoveries were made, consider whether they should be documented here for future reference.
 
+## Architecture Rules
+
+### Layer Boundaries
+
+- Domain folders (Bowlers, Tournaments, etc.) must NOT cross-reference each other
+- Commands return `ErrorOr<T>`, never throw for business rules
+- Queries return DTOs, never domain entities
+- Validators handle structural validation only (no DB lookups, no business rules)
+
+### Testing Requirements
+
+- All tests need `[UnitTest]` or `[IntegrationTest]` trait
+- All tests need `[Component("FeatureName")]` trait
+- All Facts/Theories need `DisplayName`
+- Use `MockBehavior.Strict` for all mocks
+- Use `NullLogger<T>.Instance`, never mock ILogger
+- Use test factories from `Neba.TestFactory`, never manual entity instantiation
+
+### API Endpoint Checklist
+
+- Use case folder structure: Endpoint + Summary + Validator
+- Authorization explicitly configured (never implicit) - use `AllowAnonymous()`, `Roles()`, or `Policies()`
+- `WithName()` in Description for OpenAPI
+- `Produces()`/`ProducesProblemDetails()` for all status codes
+- Request wraps Input for commands
+
+### Bug Fixing (TDD Approach)
+
+1. Write a failing test that demonstrates the bug FIRST
+2. Choose test type based on layer:
+   - Domain entity/aggregate → Unit test in `Neba.Domain.Tests`
+   - Application handler → Unit test in `Neba.Application.Tests`
+   - Infrastructure/EF Core → Integration test in `Neba.Infrastructure.Tests`
+   - API endpoint → Integration test in `Neba.Api.Tests`
+   - Blazor component → bUnit test in `Neba.Website.Tests`
+   - UI interaction/flow → E2E test in `tests/e2e/`
+3. Verify the test fails (proves it catches the bug)
+4. Make minimal code change to fix
+5. Verify test passes
+6. Run full test suite for regressions
+
+## Workflow Commands
+
+- **Full stack**: `aspire run`
+- **Unit tests**: `dotnet test --filter "Category=Unit"`
+- **Integration tests**: `dotnet test --filter "Category=Integration"`
+- **Specific component**: `dotnet test --filter "Component=Tournaments"`
+- **E2E tests**: `npm run test:e2e`
+- **CI status**: `gh run list --limit 5`
+- **CI failure details**: `gh run view <run-id> --log-failed`
+
 ## Learnings
 
 <!-- Add project-specific discoveries below as they're encountered -->
