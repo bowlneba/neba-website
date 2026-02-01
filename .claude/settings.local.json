@@ -20,7 +20,8 @@
       "Bash(xargs:*)",
       "Bash(tree:*)",
       "Bash(npm install:*)",
-      "Bash(npx playwright:*)"
+      "Bash(npx playwright:*)",
+      "Read(//Users/kippermand/Projects/bowlneba/**)"
     ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",

@@ -194,6 +194,11 @@ function handleDropdownClick(event) {
  * @param {KeyboardEvent} event
  */
 function handleDropdownKeydown(event) {
+    // Guard against non-element targets (e.g., Document object)
+    if (!(event.target instanceof Element)) {
+        return;
+    }
+
     const dropdown = event.target.closest('.neba-dropdown');
     const navItem = event.target.closest('.neba-nav-item');
 
