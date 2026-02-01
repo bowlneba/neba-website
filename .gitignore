@@ -427,3 +427,6 @@ FodyWeavers.xsd
 # Jest
 /coverage/
 /.jest-cache/
+
+# Playwright report directory
+playwright-report/
