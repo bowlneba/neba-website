@@ -190,6 +190,103 @@ function handleDropdownClick(event) {
 }
 
 /**
+ * Handle ArrowDown key - navigate down in dropdown or open dropdown from trigger
+ * @param {KeyboardEvent} event
+ * @param {Element} triggerLink - The trigger link element
+ * @param {Element} navItem - The nav item container
+ * @param {Element[]} menuItems - Array of dropdown menu items
+ * @param {number} currentIndex - Current focus index in menuItems
+ */
+function handleArrowDown(event, triggerLink, navItem, menuItems, currentIndex) {
+    event.preventDefault();
+    if (document.activeElement === triggerLink) {
+        // Open dropdown and focus first item
+        if (!navItem.classList.contains('active')) {
+            closeAllDropdowns();
+            navItem.classList.add('active');
+            triggerLink.setAttribute('aria-expanded', 'true');
+        }
+        menuItems[0]?.focus();
+    } else if (currentIndex >= 0 && currentIndex < menuItems.length - 1) {
+        // Move to next item
+        menuItems[currentIndex + 1].focus();
+    }
+}
+
+/**
+ * Handle ArrowUp key - navigate up in dropdown or return to trigger
+ * @param {KeyboardEvent} event
+ * @param {Element} triggerLink - The trigger link element
+ * @param {Element[]} menuItems - Array of dropdown menu items
+ * @param {number} currentIndex - Current focus index in menuItems
+ */
+function handleArrowUp(event, triggerLink, menuItems, currentIndex) {
+    event.preventDefault();
+    if (currentIndex > 0) {
+        // Move to previous item
+        menuItems[currentIndex - 1].focus();
+    } else if (currentIndex === 0) {
+        // Return focus to trigger
+        triggerLink?.focus();
+    }
+}
+
+/**
+ * Handle Home key - focus first menu item
+ * @param {KeyboardEvent} event
+ * @param {Element[]} menuItems - Array of dropdown menu items
+ */
+function handleHomeKey(event, menuItems) {
+    event.preventDefault();
+    if (menuItems.length > 0) {
+        menuItems[0].focus();
+    }
+}
+
+/**
+ * Handle End key - focus last menu item
+ * @param {KeyboardEvent} event
+ * @param {Element[]} menuItems - Array of dropdown menu items
+ */
+function handleEndKey(event, menuItems) {
+    event.preventDefault();
+    if (menuItems.length > 0) {
+        menuItems[menuItems.length - 1].focus();
+    }
+}
+
+/**
+ * Handle Enter/Space key - toggle dropdown from trigger
+ * @param {KeyboardEvent} event
+ * @param {Element} triggerLink - The trigger link element
+ * @param {Element} navItem - The nav item container
+ * @param {Element[]} menuItems - Array of dropdown menu items
+ */
+function handleEnterSpace(event, triggerLink, navItem, menuItems) {
+    if (document.activeElement === triggerLink) {
+        event.preventDefault();
+        if (navItem.classList.contains('active')) {
+            closeAllDropdowns();
+        } else {
+            closeAllDropdowns();
+            navItem.classList.add('active');
+            triggerLink.setAttribute('aria-expanded', 'true');
+            menuItems[0]?.focus();
+        }
+    }
+}
+
+/**
+ * Handle Tab key - close dropdown when tabbing out
+ * @param {Element} navItem - The nav item container
+ */
+function handleTabKey(navItem) {
+    if (navItem?.classList.contains('active')) {
+        closeAllDropdowns();
+    }
+}
+
+/**
  * Handle keyboard navigation within dropdowns
  * @param {KeyboardEvent} event
  */
@@ -212,66 +309,23 @@ function handleDropdownKeydown(event) {
 
     switch (event.key) {
         case 'ArrowDown':
-            event.preventDefault();
-            if (document.activeElement === triggerLink) {
-                // Open dropdown and focus first item
-                if (!navItem.classList.contains('active')) {
-                    closeAllDropdowns();
-                    navItem.classList.add('active');
-                    triggerLink.setAttribute('aria-expanded', 'true');
-                }
-                menuItems[0]?.focus();
-            } else if (currentIndex >= 0 && currentIndex < menuItems.length - 1) {
-                // Move to next item
-                menuItems[currentIndex + 1].focus();
-            }
+            handleArrowDown(event, triggerLink, navItem, menuItems, currentIndex);
             break;
-
         case 'ArrowUp':
-            event.preventDefault();
-            if (currentIndex > 0) {
-                // Move to previous item
-                menuItems[currentIndex - 1].focus();
-            } else if (currentIndex === 0) {
-                // Return focus to trigger
-                triggerLink?.focus();
-            }
+            handleArrowUp(event, triggerLink, menuItems, currentIndex);
             break;
-
         case 'Home':
-            event.preventDefault();
-            if (menuItems.length > 0) {
-                menuItems[0].focus();
-            }
+            handleHomeKey(event, menuItems);
             break;
-
         case 'End':
-            event.preventDefault();
-            if (menuItems.length > 0) {
-                menuItems[menuItems.length - 1].focus();
-            }
+            handleEndKey(event, menuItems);
             break;
-
         case 'Enter':
         case ' ':
-            if (document.activeElement === triggerLink) {
-                event.preventDefault();
-                if (navItem.classList.contains('active')) {
-                    closeAllDropdowns();
-                } else {
-                    closeAllDropdowns();
-                    navItem.classList.add('active');
-                    triggerLink.setAttribute('aria-expanded', 'true');
-                    menuItems[0]?.focus();
-                }
-            }
+            handleEnterSpace(event, triggerLink, navItem, menuItems);
             break;
-
         case 'Tab':
-            // Close dropdown when tabbing out
-            if (navItem?.classList.contains('active')) {
-                closeAllDropdowns();
-            }
+            handleTabKey(navItem);
             break;
     }
 }
