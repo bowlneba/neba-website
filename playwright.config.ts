@@ -52,7 +52,7 @@ export default defineConfig({
   /* Start mock API server and website before running tests */
   webServer: [
     {
-      command: 'npx tsx --esm tests/e2e/mock-api/mock-api-server-runner.ts',
+      command: 'npx tsx tests/e2e/mock-api/mock-api-server-runner.ts',
       url: 'http://localhost:5151/health',
       reuseExistingServer: !process.env.CI,
       timeout: 30 * 1000,
