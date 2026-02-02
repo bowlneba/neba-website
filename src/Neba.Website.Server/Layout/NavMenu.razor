@@ -1,5 +1,6 @@
 @rendermode InteractiveServer
 @implements IAsyncDisposable
+@using Microsoft.JSInterop
 
 @inject NavigationManager Nav
 @inject IJSRuntime JS
@@ -142,8 +143,15 @@
     {
         if (_jsModule is not null)
         {
-            await _jsModule.InvokeVoidAsync("dispose");
-            await _jsModule.DisposeAsync();
+            try
+            {
+                await _jsModule.InvokeVoidAsync("dispose");
+                await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit disconnected during error handling - safe to ignore
+            }
         }
     }
 }
