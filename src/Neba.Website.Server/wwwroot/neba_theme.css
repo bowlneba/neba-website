@@ -1039,6 +1039,19 @@ a:focus-visible {
   border-radius: 2px;
 }
 
+/* Hamburger to X animation when menu is open */
+.neba-navbar.menu-open .neba-menu-toggle span:nth-child(2) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.neba-navbar.menu-open .neba-menu-toggle span:nth-child(3) {
+  opacity: 0;
+}
+
+.neba-navbar.menu-open .neba-menu-toggle span:nth-child(4) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
 /* Mobile (< 768px): Compact top banner with search, logo + hamburger in navbar */
 @media (max-width: 767px) {
   .neba-top-banner {

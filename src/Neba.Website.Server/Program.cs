@@ -55,6 +55,7 @@ app.MapRazorComponents<App>()
 
 app.MapDefaultEndpoints();
 
+// Register Hangfire Dashboard after endpoints are mapped
 app.UseBackgroundJobsDashboard();
 
 await app.RunAsync();

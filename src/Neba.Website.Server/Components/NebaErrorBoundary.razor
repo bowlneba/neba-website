@@ -1,6 +1,7 @@
 @* Error boundary component for graceful error handling *@
 @using Neba.Website.Server.Notifications
 @inherits ErrorBoundary
+@inject NavigationManager Navigation
 
 @if (CurrentException is not null)
 {
@@ -12,11 +13,11 @@
                    Dismissible="false" />
 
         <div class="mt-4 flex gap-3">
-            <button class="neba-btn neba-btn-primary" @onclick="Recover">
+            <button class="neba-btn neba-btn-primary" @onclick="ReloadPage">
                 <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                 </svg>
-                Try Again
+                Reload Page
             </button>
 
             @if (ShowDetails && !string.IsNullOrWhiteSpace(CurrentException.StackTrace))
@@ -84,9 +85,8 @@ else
         _showDetails = false; // Reset details view
     }
 
-    private new void Recover()
+    private void ReloadPage()
     {
-        _showDetails = false;
-        base.Recover();
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
     }
 }

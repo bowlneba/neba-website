@@ -1,5 +1,4 @@
 @inherits LayoutComponentBase
-@inject NavigationManager Nav
 
 <!-- Skip to main content for accessibility -->
 <a href="#main-content" class="skip-link" onclick="setTimeout(() => document.getElementById('main-content')?.focus(), 0)">
@@ -54,38 +53,3 @@
         </div>
     </div>
 </div>
-
-@code {
-    /// <summary>
-    /// Checks if the given path matches the current route.
-    /// Used for highlighting active navigation items.
-    /// </summary>
-    /// <param name="path">The path to check (without leading slash)</param>
-    /// <returns>True if the path matches the current route</returns>
-    protected bool IsActive(string path)
-    {
-        var current = Nav.ToBaseRelativePath(Nav.Uri);
-
-        if (string.IsNullOrEmpty(current))
-        {
-            current = "/";
-        }
-
-        path = path.TrimStart('/');
-
-        if (string.IsNullOrEmpty(path))
-        {
-            path = "/";
-        }
-
-        // Exact match
-        if (current == path)
-            return true;
-
-        // Section match (e.g., /tournaments/123 matches /tournaments)
-        if (current.StartsWith(path + "/", StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        return false;
-    }
-}
