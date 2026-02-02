@@ -24,7 +24,7 @@ var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseExceptionHandler("/error", createScopeForErrors: true);
 }
 
 app.UseStatusCodePages(async context =>
