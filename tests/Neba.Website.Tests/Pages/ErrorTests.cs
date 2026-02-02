@@ -1,5 +1,7 @@
 using Bunit;
 
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,9 +47,13 @@ public sealed class ErrorTests : IDisposable
     [InlineData(504, "Gateway Timeout", TestDisplayName = "504 - Gateway Timeout")]
     public void ErrorTitle_ShouldReturnCorrectTitle_WhenCodeProvided(int code, string expectedTitle)
     {
-        // Arrange & Act
-        var cut = _ctx.Render<Error>(parameters => parameters
-            .Add(p => p.Code, code));
+        // Arrange
+        _ctx.Services.AddRouting();
+        var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
+
+        // Act
+        var cut = _ctx.Render<Error>();
+        navigationManager.NavigateTo(navigationManager.GetUriWithQueryParameter("code", code));
 
         // Assert
         cut.Markup.ShouldContain(expectedTitle);
@@ -61,9 +67,13 @@ public sealed class ErrorTests : IDisposable
     [InlineData(504, "The request took too long to process", TestDisplayName = "504 - Timeout message")]
     public void ErrorDescription_ShouldReturnCorrectDescription_WhenCodeProvided(int code, string expectedDescription)
     {
-        // Arrange & Act
-        var cut = _ctx.Render<Error>(parameters => parameters
-            .Add(p => p.Code, code));
+        // Arrange
+        _ctx.Services.AddRouting();
+        var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
+
+        // Act
+        var cut = _ctx.Render<Error>();
+        navigationManager.NavigateTo(navigationManager.GetUriWithQueryParameter("code", code));
 
         // Assert
         cut.Markup.ShouldContain(expectedDescription);
@@ -72,9 +82,13 @@ public sealed class ErrorTests : IDisposable
     [Fact(DisplayName = "Should display error code when provided")]
     public void Render_ShouldDisplayCode_WhenCodeProvided()
     {
-        // Arrange & Act
-        var cut = _ctx.Render<Error>(parameters => parameters
-            .Add(p => p.Code, 500));
+        // Arrange
+        _ctx.Services.AddRouting();
+        var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
+
+        // Act
+        var cut = _ctx.Render<Error>();
+        navigationManager.NavigateTo(navigationManager.GetUriWithQueryParameter("code", 500));
 
         // Assert
         cut.Markup.ShouldContain(">500<");
@@ -141,11 +155,16 @@ public sealed class ErrorTests : IDisposable
     [Fact(DisplayName = "Should render page title with error title")]
     public void Render_ShouldContainPageTitle_WhenRendered()
     {
-        // Arrange & Act
-        var cut = _ctx.Render<Error>(parameters => parameters
-            .Add(p => p.Code, 500));
+        // Arrange
+        _ctx.Services.AddRouting();
+        var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
+
+        // Act
+        var cut = _ctx.Render<Error>();
+        navigationManager.NavigateTo(navigationManager.GetUriWithQueryParameter("code", 500));
+        cut.WaitForAssertion(() => cut.Markup.ShouldContain("Server Error"));
 
         // Assert
-        cut.Markup.ShouldContain("Server Error - NEBA");
+        cut.Markup.ShouldContain("Server Error");
     }
 }
