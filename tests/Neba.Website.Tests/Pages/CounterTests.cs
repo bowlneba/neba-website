@@ -1,6 +1,8 @@
 using Bunit;
+
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Pages;
 

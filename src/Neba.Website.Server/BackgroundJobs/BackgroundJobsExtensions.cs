@@ -24,9 +24,9 @@ internal static class BackgroundJobsExtensions
                 .UseRecommendedSerializerSettings()
                 .UsePostgreSqlStorage(postgres => postgres
                     .UseNpgsqlConnection(connectionString), new PostgreSqlStorageOptions
-                        {
-                            SchemaName = "hangfire"
-                        }));
+                    {
+                        SchemaName = "hangfire"
+                    }));
 
             return services;
         }

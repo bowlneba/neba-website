@@ -1,7 +1,9 @@
 using Bunit;
+
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Weather;
 using Neba.Api.Contracts.Weather.GetWeatherForecast;
@@ -9,6 +11,7 @@ using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Weather;
+
 using Refit;
 
 namespace Neba.Website.Tests.Pages;
