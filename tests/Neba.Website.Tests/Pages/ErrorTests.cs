@@ -38,11 +38,11 @@ public sealed class ErrorTests : IDisposable
     }
 
     [Theory(DisplayName = "Should display correct error title for error code")]
-    [InlineData(429, "Too Many Requests", DisplayName = "429 - Too Many Requests")]
-    [InlineData(500, "Server Error", DisplayName = "500 - Server Error")]
-    [InlineData(502, "Bad Gateway", DisplayName = "502 - Bad Gateway")]
-    [InlineData(503, "Service Unavailable", DisplayName = "503 - Service Unavailable")]
-    [InlineData(504, "Gateway Timeout", DisplayName = "504 - Gateway Timeout")]
+    [InlineData(429, "Too Many Requests", TestDisplayName = "429 - Too Many Requests")]
+    [InlineData(500, "Server Error", TestDisplayName = "500 - Server Error")]
+    [InlineData(502, "Bad Gateway", TestDisplayName = "502 - Bad Gateway")]
+    [InlineData(503, "Service Unavailable", TestDisplayName = "503 - Service Unavailable")]
+    [InlineData(504, "Gateway Timeout", TestDisplayName = "504 - Gateway Timeout")]
     public void ErrorTitle_ShouldReturnCorrectTitle_WhenCodeProvided(int code, string expectedTitle)
     {
         // Arrange & Act
@@ -54,11 +54,11 @@ public sealed class ErrorTests : IDisposable
     }
 
     [Theory(DisplayName = "Should display correct error description for error code")]
-    [InlineData(429, "You've made too many requests", DisplayName = "429 - Rate limit message")]
-    [InlineData(500, "An unexpected error occurred on our server", DisplayName = "500 - Server error message")]
-    [InlineData(502, "We're having trouble connecting to our services", DisplayName = "502 - Bad gateway message")]
-    [InlineData(503, "The service is temporarily unavailable", DisplayName = "503 - Service unavailable message")]
-    [InlineData(504, "The request took too long to process", DisplayName = "504 - Timeout message")]
+    [InlineData(429, "You've made too many requests", TestDisplayName = "429 - Rate limit message")]
+    [InlineData(500, "An unexpected error occurred on our server", TestDisplayName = "500 - Server error message")]
+    [InlineData(502, "We're having trouble connecting to our services", TestDisplayName = "502 - Bad gateway message")]
+    [InlineData(503, "The service is temporarily unavailable", TestDisplayName = "503 - Service unavailable message")]
+    [InlineData(504, "The request took too long to process", TestDisplayName = "504 - Timeout message")]
     public void ErrorDescription_ShouldReturnCorrectDescription_WhenCodeProvided(int code, string expectedDescription)
     {
         // Arrange & Act
