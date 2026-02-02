@@ -73,7 +73,7 @@ jobs:
             /d:sonar.cs.vscoveragexml.reportsPaths="coverage-reports/**/coverage.xml" \
             /d:sonar.javascript.lcov.reportPaths="coverage/lcov.info" \
             /d:sonar.exclusions="**/wwwroot/**,**/obj/**,**/bin/**,**/Migrations/**,**/*.razor.js" \
-            /d:sonar.coverage.exclusions="**/Migrations/**,**/*Tests/**,**/wwwroot/**,**/*.razor.js" \
+            /d:sonar.coverage.exclusions="**/Migrations/**,**/*Tests/**,**/wwwroot/**,**/*.razor.js,**/Program.cs,**/Routes.razor,**/jest.config.js,**/playwright.config.ts,tests/e2e/**,**/*.tests.js,**/*.test.js,**/*.spec.js" \
             /d:sonar.test.exclusions="**/obj/**,**/bin/**"
           dotnet build --configuration Release --no-restore
           dotnet-sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
