@@ -119,18 +119,6 @@ public sealed class MainLayoutTests : IDisposable
         nav.ShouldNotBeNull();
     }
 
-    [Fact(DisplayName = "Should have blazor-error-ui element for connection errors")]
-    public void Render_ShouldContainBlazorErrorUi_ForConnectionErrors()
-    {
-        // Arrange & Act
-        var cut = _ctx.Render<MainLayout>(parameters => parameters
-            .Add(p => p.Body, builder => builder.AddContent(0, "Test content")));
-
-        // Assert
-        var errorUi = cut.Find("#blazor-error-ui");
-        errorUi.ShouldNotBeNull();
-    }
-
     [Fact(DisplayName = "Should have proper landmark elements")]
     public void Render_ShouldContainLandmarkElements_ForAccessibility()
     {

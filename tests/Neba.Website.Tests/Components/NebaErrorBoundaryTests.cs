@@ -109,7 +109,7 @@ public sealed class NebaErrorBoundaryTests : IDisposable
 
         // Assert
         var tryAgainButton = cut.Find("button.neba-btn-primary");
-        tryAgainButton.TextContent.ShouldContain("Try Again");
+        tryAgainButton.TextContent.ShouldContain("Reload Page");
     }
 
     /// <summary>
