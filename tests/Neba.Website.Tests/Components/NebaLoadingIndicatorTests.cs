@@ -148,7 +148,7 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.IsVisible, true)
             .Add(p => p.DelayMs, 0)
             .Add(p => p.Scope, LoadingIndicatorScope.FullScreen)
-            .Add(p => p.OnOverlayClick, () => { clicked = true; }));
+            .Add(p => p.OnOverlayClick, () => clicked = true));
 
         await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
         cut.Render();
@@ -272,7 +272,7 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
         var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.DelayMs, 0)
-            .Add(p => p.OnOverlayClick, () => { clicked = true; }));
+            .Add(p => p.OnOverlayClick, () => clicked = true));
 
         await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
         cut.Render();

@@ -2,6 +2,13 @@
 
 import { initialize, dispose, preventBodyScroll } from './NavMenu.razor.js';
 
+// Helper to mock CSS custom properties
+function mockBreakpoint(value) {
+    jest.spyOn(globalThis, 'getComputedStyle').mockReturnValue({
+        getPropertyValue: jest.fn().mockReturnValue(String(value))
+    });
+}
+
 describe('NavMenu', () => {
     let mockDotNetRef;
     let navbar;
@@ -36,13 +43,6 @@ describe('NavMenu', () => {
         navbar = document.querySelector('.neba-navbar');
         menu = document.querySelector('[data-menu]');
         toggle = document.querySelector('[data-menu-toggle]');
-    }
-
-    // Helper to mock CSS custom properties
-    function mockBreakpoint(value) {
-        jest.spyOn(globalThis, 'getComputedStyle').mockReturnValue({
-            getPropertyValue: jest.fn().mockReturnValue(String(value))
-        });
     }
 
     beforeEach(() => {

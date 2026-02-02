@@ -61,7 +61,7 @@ public sealed class NebaAlertTests : IDisposable
             .Add(p => p.Title, title));
 
         // Assert
-        cut.Markup.ShouldContain($"<div class=\"neba-alert-title");
+        cut.Markup.ShouldContain("<div class=\"neba-alert-title");
         cut.Markup.ShouldContain(title);
     }
 

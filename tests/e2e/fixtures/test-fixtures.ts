@@ -1,4 +1,4 @@
-import { test as base, expect, Page, Route } from '@playwright/test';
+import { test as base, Page, Route } from '@playwright/test';
 
 /**
  * API route patterns for the NEBA API
@@ -49,7 +49,7 @@ export function mockErrorResponse(message: string, status = 500) {
  * API Mock Builder - fluent interface for setting up API mocks
  */
 export class ApiMockBuilder {
-  private mocks: Map<string, (route: Route) => Promise<void>> = new Map();
+  private readonly mocks: Map<string, (route: Route) => Promise<void>> = new Map();
 
   /**
    * Mock a successful response for a route
@@ -122,4 +122,4 @@ export const test = base.extend<{
   },
 });
 
-export { expect };
+export { expect } from '@playwright/test';
