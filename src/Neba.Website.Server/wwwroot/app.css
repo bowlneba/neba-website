@@ -34,3 +34,72 @@ body:has(.blazor-error-boundary) {
 h1:focus {
     outline: none;
 }
+
+/* Blazor error UI - shown when unhandled errors occur */
+#blazor-error-ui {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    background-color: var(--neba-accent-red);
+    color: white;
+    padding: 1rem;
+}
+
+#blazor-error-ui .error-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    max-width: var(--neba-content-max-width);
+    margin: 0 auto;
+}
+
+/* Blazor reconnection modal - shown when connection to server is lost */
+#blazor-reconnect-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+#blazor-reconnect-modal > .reconnect-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--neba-bg-panel);
+    color: var(--neba-text);
+    padding: 2rem;
+    border-radius: var(--neba-radius-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+#blazor-reconnect-modal .reconnect-spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 3px solid var(--neba-gray-200);
+    border-top-color: var(--neba-blue-600);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Blazor shows these states via class names */
+#blazor-reconnect-modal.components-reconnect-show,
+#blazor-reconnect-modal.components-reconnect-failed,
+#blazor-reconnect-modal.components-reconnect-rejected {
+    display: block;
+}
