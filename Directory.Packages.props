@@ -40,7 +40,7 @@
     <PackageVersion Include="Refit" Version="9.0.2" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="9.0.2" />
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.12.24" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.12.27" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
     <PackageVersion Include="Scrutor.AspNetCore" Version="3.3.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
