@@ -97,4 +97,76 @@ public sealed class WeatherTests : IDisposable
         // Assert
         cut.Markup.ShouldContain("backend API");
     }
+
+    [Fact(DisplayName = "Should render table with weather data when loaded successfully")]
+    public async Task Render_ShouldDisplayWeatherTable_WhenDataLoadsSuccessfully()
+    {
+        // Arrange
+        var weatherData = new List<WeatherForecastResponse>
+        {
+            new()
+            {
+                Date = DateOnly.FromDateTime(DateTime.Today),
+                TemperatureC = 25,
+                Summary = "Sunny"
+            },
+            new()
+            {
+                Date = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
+                TemperatureC = 20,
+                Summary = "Cloudy"
+            }
+        };
+
+        var response = new CollectionResponse<WeatherForecastResponse> { Items = weatherData };
+
+        var mockApiResponse = new Mock<IApiResponse<CollectionResponse<WeatherForecastResponse>>>(MockBehavior.Loose);
+        mockApiResponse.Setup(r => r.Content).Returns(response);
+        mockApiResponse.Setup(r => r.IsSuccessStatusCode).Returns(true);
+        mockApiResponse.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
+
+        _mockWeatherApi.Setup(x => x.GetWeatherForecastAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockApiResponse.Object);
+
+        // Act
+        var cut = _ctx.Render<Weather>();
+
+        // Wait for component to load data and complete delay
+        await Task.Delay(3000, Xunit.TestContext.Current.CancellationToken);
+        cut.Render();
+
+        // Assert - verify table exists
+        var table = cut.Find("table.neba-table");
+        table.ShouldNotBeNull();
+
+        // Verify table headers
+        cut.Markup.ShouldContain("<th>Date</th>");
+        cut.Markup.ShouldContain("<th aria-label=\"Temperature in Celsius\">Temp. (C)</th>");
+        cut.Markup.ShouldContain("<th aria-label=\"Temperature in Fahrenheit\">Temp. (F)</th>");
+        cut.Markup.ShouldContain("<th>Summary</th>");
+
+        // Verify weather data in table rows
+        cut.Markup.ShouldContain("Sunny");
+        cut.Markup.ShouldContain("Cloudy");
+        cut.Markup.ShouldContain("25");
+        cut.Markup.ShouldContain("20");
+    }
+
+    [Fact(DisplayName = "Should display error message when API call fails")]
+    public async Task Render_ShouldDisplayError_WhenApiCallFails()
+    {
+        // Arrange
+        _mockWeatherApi.Setup(x => x.GetWeatherForecastAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("API error"));
+
+        // Act
+        var cut = _ctx.Render<Weather>();
+        await Task.Delay(500, Xunit.TestContext.Current.CancellationToken);
+        cut.Render();
+
+        // Assert - verify error alert is shown
+        cut.Markup.ShouldContain("Failed to load weather data");
+        var errorAlerts = cut.FindAll(".neba-alert");
+        errorAlerts.Count.ShouldBeGreaterThan(0);
+    }
 }

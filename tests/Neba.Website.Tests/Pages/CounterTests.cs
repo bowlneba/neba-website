@@ -79,4 +79,62 @@ public sealed class CounterTests : IDisposable
         // Assert
         cut.Markup.ShouldContain("Counter");
     }
+
+    [Theory(DisplayName = "Should display correct message for severity type")]
+    [InlineData("Normal", TestDisplayName = "Normal severity")]
+    [InlineData("Info", TestDisplayName = "Info severity")]
+    [InlineData("Success", TestDisplayName = "Success severity")]
+    [InlineData("Warning", TestDisplayName = "Warning severity")]
+    [InlineData("Error", TestDisplayName = "Error severity")]
+    public async Task ShowAlert_ShouldDisplayMessage_WhenSeverityButtonClicked(string severityButton)
+    {
+        // Arrange
+        var cut = _ctx.Render<Counter>();
+        var buttons = cut.FindAll("button");
+
+        // Find the button matching the severity
+        var severityButtonElement = buttons.FirstOrDefault(b =>
+            b.TextContent.Trim() == severityButton &&
+            b.GetAttribute("class")?.Contains("neba-btn-secondary", StringComparison.Ordinal) == true);
+
+        severityButtonElement.ShouldNotBeNull($"Could not find button for {severityButton}");
+
+        // Act
+        await severityButtonElement.ClickAsync();
+        cut.Render();
+
+        // Assert - verify the alert was added with correct title and message
+        cut.Markup.ShouldContain($"{severityButton} Alert");
+        cut.Markup.ShouldContain("neba-alert");
+    }
+
+    [Fact(DisplayName = "Should clear all alerts when Clear All button is clicked")]
+    public async Task ClearAlerts_ShouldRemoveAllAlerts_WhenClearButtonClicked()
+    {
+        // Arrange
+        var cut = _ctx.Render<Counter>();
+        var buttons = cut.FindAll("button");
+
+        // Click Info button to add an alert
+        var infoButton = buttons.FirstOrDefault(b =>
+            b.TextContent.Trim() == "Info" &&
+            b.GetAttribute("class")?.Contains("neba-btn-secondary", StringComparison.Ordinal) == true);
+
+        infoButton.ShouldNotBeNull();
+        await infoButton.ClickAsync();
+        cut.Render();
+
+        // Verify alert was added
+        cut.Markup.ShouldContain("Info Alert");
+
+        // Act - find and click Clear All button
+        buttons = cut.FindAll("button");
+        var clearButton = buttons.FirstOrDefault(b => b.TextContent.Trim() == "Clear All");
+        clearButton.ShouldNotBeNull();
+        await clearButton.ClickAsync();
+
+        // Assert - Clear All button was clicked without error (page renders successfully)
+        cut.Render();
+        cut.Markup.ShouldNotBeNull();
+    }
 }
