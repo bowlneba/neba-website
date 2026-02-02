@@ -15,6 +15,17 @@ export interface WeatherForecast {
   summary: string;
 }
 
+const seededRandom = (seed: number) => {
+  let t = seed;
+  return () => {
+    t += 0x6d2b79f5;
+    let x = t;
+    x = Math.imul(x ^ (x >>> 15), x | 1);
+    x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
+};
+
 /**
  * Generate mock weather forecast data
  */
@@ -33,17 +44,18 @@ export function createWeatherForecast(overrides: Partial<WeatherForecast> = {}):
  */
 export function createWeatherForecasts(count: number): WeatherForecast[] {
   const summaries = ['Freezing', 'Bracing', 'Chilly', 'Cool', 'Mild', 'Warm', 'Balmy', 'Hot', 'Sweltering', 'Scorching'];
+  const rng = seededRandom(0xc0ffee);
 
   return Array.from({ length: count }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() + i);
-    const tempC = Math.floor(Math.random() * 40) - 10;
+    const tempC = Math.floor(rng() * 40) - 10;
 
     return createWeatherForecast({
       date: date.toISOString(),
       temperatureC: tempC,
       temperatureF: 32 + Math.floor(tempC * 1.8),
-      summary: summaries[Math.floor(Math.random() * summaries.length)],
+      summary: summaries[Math.floor(rng() * summaries.length)],
     });
   });
 }
