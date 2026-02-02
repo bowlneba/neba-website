@@ -379,4 +379,83 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
         // Assert
         cut.Markup.Trim().ShouldBeEmpty();
     }
+
+    [Fact(DisplayName = "Should respect minimum display time when hiding")]
+    public async Task Render_ShouldRespectMinimumDisplayTime_WhenHiding()
+    {
+        // Arrange - render with IsVisible true and short minimum display time
+        var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
+            .Add(p => p.IsVisible, true)
+            .Add(p => p.DelayMs, 0)
+            .Add(p => p.MinimumDisplayMs, 300));
+
+        // Wait for it to show
+        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
+        cut.Render();
+        cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count.ShouldBe(1);
+
+        // Act - immediately try to hide it (before minimum time elapsed)
+        cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
+            .Add(p => p.IsVisible, false)
+            .Add(p => p.DelayMs, 0)
+            .Add(p => p.MinimumDisplayMs, 300));
+
+        // Assert - should still be visible initially
+        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
+        cut.Render();
+
+        // Should eventually hide after minimum display time
+        await Task.Delay(350, Xunit.TestContext.Current.CancellationToken);
+        cut.Render();
+        cut.Markup.Trim().ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should hide immediately if minimum display time already elapsed")]
+    public async Task Render_ShouldHideImmediately_WhenMinimumDisplayTimeElapsed()
+    {
+        // Arrange - render with IsVisible true
+        var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
+            .Add(p => p.IsVisible, true)
+            .Add(p => p.DelayMs, 0)
+            .Add(p => p.MinimumDisplayMs, 100));
+
+        // Wait for it to show and exceed minimum display time
+        await Task.Delay(200, Xunit.TestContext.Current.CancellationToken);
+        cut.Render();
+        cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count.ShouldBe(1);
+
+        // Act - hide after minimum time has passed
+        cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
+            .Add(p => p.IsVisible, false)
+            .Add(p => p.DelayMs, 0));
+
+        // Assert - should hide immediately since minimum time already elapsed
+        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
+        cut.Render();
+        cut.Markup.Trim().ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should cancel delay timer when hiding before delay expires")]
+    public async Task Render_ShouldCancelDelayTimer_WhenHidingBeforeDelayExpires()
+    {
+        // Arrange - render with long delay
+        var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
+            .Add(p => p.IsVisible, true)
+            .Add(p => p.DelayMs, 500));
+
+        // Verify not shown yet
+        cut.Markup.Trim().ShouldBeEmpty();
+
+        // Act - hide before delay expires
+        cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
+            .Add(p => p.IsVisible, false)
+            .Add(p => p.DelayMs, 500));
+
+        // Wait past original delay time
+        await Task.Delay(600, Xunit.TestContext.Current.CancellationToken);
+        cut.Render();
+
+        // Assert - should never have shown
+        cut.Markup.Trim().ShouldBeEmpty();
+    }
 }

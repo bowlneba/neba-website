@@ -365,4 +365,89 @@ public sealed class NavMenuTests : IDisposable
         var dividers = cut.FindAll("div.neba-dropdown-divider");
         dividers.Count.ShouldBeGreaterThan(0);
     }
+
+    [Fact(DisplayName = "Should not have active class when menu is collapsed")]
+    public void Render_ShouldNotHaveActiveClass_WhenMenuCollapsed()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        var menu = cut.Find("ul#main-menu");
+        menu.ClassList.ShouldNotContain("active");
+    }
+
+    [Fact(DisplayName = "Should add active class when menu is toggled")]
+    public void ToggleMenu_ShouldAddActiveClass_WhenButtonClicked()
+    {
+        // Arrange
+        var cut = _ctx.Render<NavMenu>();
+
+        // Act
+        var toggleButton = cut.Find("button.neba-menu-toggle");
+        toggleButton.Click();
+
+        // Assert
+        var menu = cut.Find("ul#main-menu");
+        menu.ClassList.ShouldContain("active");
+    }
+
+    [Fact(DisplayName = "Should add menu-open class to navbar when menu toggled")]
+    public void ToggleMenu_ShouldAddMenuOpenClass_ToNavbar()
+    {
+        // Arrange
+        var cut = _ctx.Render<NavMenu>();
+
+        // Act
+        var toggleButton = cut.Find("button.neba-menu-toggle");
+        toggleButton.Click();
+
+        // Assert
+        var navbar = cut.Find("nav.neba-navbar");
+        navbar.ClassList.ShouldContain("menu-open");
+    }
+
+    [Fact(DisplayName = "Should close menu when CloseMenu is invoked")]
+    public async Task CloseMenu_ShouldRemoveActiveClass_WhenInvoked()
+    {
+        // Arrange
+        var cut = _ctx.Render<NavMenu>();
+
+        // Open the menu first
+        var toggleButton = cut.Find("button.neba-menu-toggle");
+        await toggleButton.ClickAsync();
+
+        var menu = cut.Find("ul#main-menu");
+        menu.ClassList.ShouldContain("active");
+
+        // Act - Get the component instance and call CloseMenu via InvokeAsync
+        var component = cut.Instance;
+        await cut.InvokeAsync(() => component.CloseMenu());
+
+        // Assert
+        menu = cut.Find("ul#main-menu");
+        menu.ClassList.ShouldNotContain("active");
+    }
+
+    [Fact(DisplayName = "Should remove menu-open class from navbar when CloseMenu invoked")]
+    public async Task CloseMenu_ShouldRemoveMenuOpenClass_FromNavbar()
+    {
+        // Arrange
+        var cut = _ctx.Render<NavMenu>();
+
+        // Open the menu first
+        var toggleButton = cut.Find("button.neba-menu-toggle");
+        await toggleButton.ClickAsync();
+
+        var navbar = cut.Find("nav.neba-navbar");
+        navbar.ClassList.ShouldContain("menu-open");
+
+        // Act
+        var component = cut.Instance;
+        await cut.InvokeAsync(() => component.CloseMenu());
+
+        // Assert
+        navbar = cut.Find("nav.neba-navbar");
+        navbar.ClassList.ShouldNotContain("menu-open");
+    }
 }
