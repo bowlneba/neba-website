@@ -22,7 +22,7 @@ public sealed class MainLayoutTests : IDisposable
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         _ctx.JSInterop.SetupModule("./Layout/NavMenu.razor.js");
 
-        var mockWebHostEnvironment = new Mock<IWebHostEnvironment>(MockBehavior.Loose);
+        var mockWebHostEnvironment = new Mock<IWebHostEnvironment>(MockBehavior.Strict);
         mockWebHostEnvironment.Setup(x => x.EnvironmentName).Returns("Development");
 
         _ctx.Services.AddSingleton(mockWebHostEnvironment.Object);

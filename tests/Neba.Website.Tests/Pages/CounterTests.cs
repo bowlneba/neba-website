@@ -22,7 +22,7 @@ public sealed class CounterTests : IDisposable
     {
         _ctx = new BunitContext();
 
-        var mockWebHostEnvironment = new Mock<IWebHostEnvironment>(MockBehavior.Loose);
+        var mockWebHostEnvironment = new Mock<IWebHostEnvironment>(MockBehavior.Strict);
         mockWebHostEnvironment.Setup(x => x.EnvironmentName).Returns("Development");
         _ctx.Services.AddSingleton(mockWebHostEnvironment.Object);
     }

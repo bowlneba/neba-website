@@ -31,7 +31,7 @@ public sealed class WeatherTests : IDisposable
     {
         _ctx = new BunitContext();
 
-        var mockWebHostEnvironment = new Mock<IWebHostEnvironment>(MockBehavior.Loose);
+        var mockWebHostEnvironment = new Mock<IWebHostEnvironment>(MockBehavior.Strict);
         mockWebHostEnvironment.Setup(x => x.EnvironmentName).Returns("Development");
 
         _mockWeatherApi = new Mock<IWeatherApi>(MockBehavior.Loose);
