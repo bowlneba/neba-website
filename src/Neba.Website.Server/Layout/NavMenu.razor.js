@@ -251,7 +251,7 @@ function handleHomeKey(event, menuItems) {
 function handleEndKey(event, menuItems) {
     event.preventDefault();
     if (menuItems.length > 0) {
-        menuItems[menuItems.length - 1].focus();
+        menuItems.at(-1).focus();
     }
 }
 
@@ -336,7 +336,6 @@ function handleDropdownKeydown(event) {
  */
 function preventBodyScroll(prevent) {
     const body = document.body;
-    const html = document.documentElement;
 
     if (prevent) {
         // Store current scroll position
@@ -352,7 +351,7 @@ function preventBodyScroll(prevent) {
         body.dataset.scrollY = scrollY;
     } else {
         // Restore scrolling
-        const scrollY = parseInt(body.dataset.scrollY || '0', 10);
+        const scrollY = Number.parseInt(body.dataset.scrollY || '0', 10);
 
         // Remove fixed positioning
         body.style.position = '';
