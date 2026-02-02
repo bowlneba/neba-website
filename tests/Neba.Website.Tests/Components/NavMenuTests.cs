@@ -118,4 +118,251 @@ public sealed class NavMenuTests : IDisposable
         var dropdownItems = cut.FindAll("li[data-action='toggle-dropdown']");
         dropdownItems.Count.ShouldBeGreaterThan(0);
     }
+
+    [Fact(DisplayName = "Should toggle menu when button is clicked")]
+    public void ToggleNavMenu_ShouldToggleMenu_WhenClicked()
+    {
+        // Arrange
+        var cut = _ctx.Render<NavMenu>();
+        var initialMarkup = cut.Markup;
+
+        // Act
+        var toggleButton = cut.Find("button[data-menu-toggle]");
+        toggleButton.Click();
+
+        // Assert
+        cut.Markup.ShouldNotBe(initialMarkup, "Menu state should change after toggle");
+    }
+
+    [Fact(DisplayName = "Should render logo image")]
+    public void Render_ShouldContainLogo_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        var logo = cut.Find("img.navbar-logo");
+        logo.ShouldNotBeNull();
+        logo.GetAttribute("src").ShouldBe("images/neba-1963.png");
+        logo.GetAttribute("alt").ShouldBe("NEBA | 1963");
+    }
+
+    [Fact(DisplayName = "Should render navbar wrapper")]
+    public void Render_ShouldContainNavbarWrapper_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        var wrapper = cut.Find("div.neba-navbar-wrapper");
+        wrapper.ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should have role navigation on nav element")]
+    public void Render_ShouldHaveNavigationRole_OnNavElement()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        var nav = cut.Find("nav[role='navigation']");
+        nav.ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should render Stats link")]
+    public void Render_ShouldContainStatsLink_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        cut.Markup.ShouldContain("Stats");
+    }
+
+    [Fact(DisplayName = "Should render News link")]
+    public void Render_ShouldContainNewsLink_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        cut.Markup.ShouldContain("News");
+    }
+
+    [Fact(DisplayName = "Should render Hall of Fame link")]
+    public void Render_ShouldContainHallOfFameLink_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        cut.Markup.ShouldContain("Hall of Fame");
+    }
+
+    [Fact(DisplayName = "Should render Sponsors link")]
+    public void Render_ShouldContainSponsorsLink_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        cut.Markup.ShouldContain("Sponsors");
+    }
+
+    [Fact(DisplayName = "Should render Centers link")]
+    public void Render_ShouldContainCentersLink_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        cut.Markup.ShouldContain("Centers");
+    }
+
+    [Fact(DisplayName = "Should render menu with main-menu id")]
+    public void Render_ShouldHaveMainMenuId_OnMenu()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        var menu = cut.Find("ul#main-menu");
+        menu.ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should render Future Tournaments link")]
+    public void Render_ShouldContainFutureTournamentsLink_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        cut.Markup.ShouldContain("Future Tournaments");
+    }
+
+    [Fact(DisplayName = "Should render Tournament Rules link")]
+    public void Render_ShouldContainTournamentRulesLink_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        cut.Markup.ShouldContain("Tournament Rules");
+    }
+
+    [Fact(DisplayName = "Should render Bylaws link")]
+    public void Render_ShouldContainBylawsLink_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        cut.Markup.ShouldContain("Bylaws");
+    }
+
+    [Fact(DisplayName = "Should render Champions link")]
+    public void Render_ShouldContainChampionsLink_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        cut.Markup.ShouldContain("Champions");
+    }
+
+    [Fact(DisplayName = "Should render Bowler of the Year link")]
+    public void Render_ShouldContainBowlerOfTheYearLink_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        cut.Markup.ShouldContain("Bowler of the Year");
+    }
+
+    [Fact(DisplayName = "Should render High Average link")]
+    public void Render_ShouldContainHighAverageLink_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        cut.Markup.ShouldContain("High Average");
+    }
+
+    [Fact(DisplayName = "Should render High Block link")]
+    public void Render_ShouldContainHighBlockLink_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        cut.Markup.ShouldContain("High Block");
+    }
+
+    [Fact(DisplayName = "Should have correct home page link")]
+    public void Render_ShouldHaveCorrectHomeLink_InBrand()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        var brandLink = cut.Find("a.navbar-brand");
+        brandLink.GetAttribute("href").ShouldBe("/");
+    }
+
+    [Fact(DisplayName = "Should have dropdown links with role menuitem")]
+    public void Render_ShouldHaveCorrectDropdownRoles_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        var dropdownLinks = cut.FindAll("a.neba-dropdown-link[role='menuitem']");
+        dropdownLinks.Count.ShouldBeGreaterThan(0);
+    }
+
+    [Fact(DisplayName = "Should have dropdowns with role menu")]
+    public void Render_ShouldHaveMenuRole_OnDropdowns()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        var dropdowns = cut.FindAll("div.neba-dropdown[role='menu']");
+        dropdowns.Count.ShouldBeGreaterThan(0);
+    }
+
+    [Fact(DisplayName = "Should display Past Tournaments link with current year")]
+    public void Render_ShouldContainPastTournamentsLink_WithCurrentYear()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+        var currentYear = DateTime.Now.Year;
+
+        // Assert
+        cut.Markup.ShouldContain($"tournaments/{currentYear}");
+    }
+
+    [Fact(DisplayName = "Should render navbar with correct CSS class")]
+    public void Render_ShouldHaveCorrectNavbarClass_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        var navbar = cut.Find("nav.neba-navbar");
+        navbar.ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should render dropdown divider")]
+    public void Render_ShouldContainDropdownDivider_WhenRendered()
+    {
+        // Arrange & Act
+        var cut = _ctx.Render<NavMenu>();
+
+        // Assert
+        var dividers = cut.FindAll("div.neba-dropdown-divider");
+        dividers.Count.ShouldBeGreaterThan(0);
+    }
 }
