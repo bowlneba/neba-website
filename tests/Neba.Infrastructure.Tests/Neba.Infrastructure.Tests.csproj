@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Neba.Infrastructure\Neba.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Neba.ServiceDefaults\Neba.ServiceDefaults.csproj" />
     <ProjectReference Include="..\Neba.TestFactory\Neba.TestFactory.csproj" />
   </ItemGroup>
 

@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -10,7 +12,7 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
-namespace Neba.ServiceDefaults;
+namespace Neba.ServiceDefaults.Telemetry;
 
 #pragma warning disable S1144 // Unused private types or members should be removed
 #pragma warning disable S2325 // Private types or members should be static
@@ -41,17 +43,23 @@ public static class TelemetryConfiguration
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation())
-                .WithTracing(tracing => tracing
-                    .AddSource(builder.Environment.ApplicationName)
-                    .AddSource("Neba.*") // Custom application meters
-                                         //.AddSource("Azure.Storage.Blobs") // Azure SDK traces // Uncomment to enable Azure Storage Blob SDK tracing
-                    .AddAspNetCoreInstrumentation(tracing =>
-                        // Exclude health check requests from tracing
-                        tracing.Filter = context =>
-                            !context.Request.Path.StartsWithSegments(HealthCheckConfiguration.HealthEndpointPath, StringComparison.OrdinalIgnoreCase)
-                            && !context.Request.Path.StartsWithSegments(HealthCheckConfiguration.AlivenessEndpointPath, StringComparison.OrdinalIgnoreCase)
-                    )
-                    .AddHttpClientInstrumentation());
+                .WithTracing(tracing =>
+                {
+                    tracing
+                        .AddSource(builder.Environment.ApplicationName)
+                        .AddSource("Neba.*") // Custom application meters
+                                             //.AddSource("Azure.Storage.Blobs") // Azure SDK traces // Uncomment to enable Azure Storage Blob SDK tracing
+                        .AddAspNetCoreInstrumentation(tracing =>
+                            // Exclude health check requests from tracing
+                            tracing.Filter = context =>
+                                !context.Request.Path.StartsWithSegments(HealthCheckConfiguration.HealthEndpointPath, StringComparison.OrdinalIgnoreCase)
+                                && !context.Request.Path.StartsWithSegments(HealthCheckConfiguration.AlivenessEndpointPath, StringComparison.OrdinalIgnoreCase)
+                        )
+                        .AddHttpClientInstrumentation();
+
+                    // Filter out Hangfire internal traces to reduce noise and costs in production monitoring
+                    tracing.AddProcessor(new HangfireTraceFilterProcessor());
+                });
 
             builder.AddOpenTelemetryExporters();
 

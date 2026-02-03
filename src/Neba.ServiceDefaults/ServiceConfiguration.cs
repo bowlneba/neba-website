@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Neba.ServiceDefaults;
 using Neba.ServiceDefaults.HealthChecks;
+using Neba.ServiceDefaults.Telemetry;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 #pragma warning disable S1144 // Unused private types or members should be removed
