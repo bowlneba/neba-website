@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   displayName: 'Neba.Website',
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
