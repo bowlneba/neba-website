@@ -48,6 +48,7 @@ public sealed class ApiMetricsTests : IDisposable
         const string apiName = "WeatherApi";
         const string operationName = "GetForecasts";
         _longMeasurements.Clear();
+        _doubleMeasurements.Clear();
 
         // Act
         ApiMetrics.RecordApiCall(apiName, operationName);
@@ -66,6 +67,7 @@ public sealed class ApiMetricsTests : IDisposable
         const string apiName = "WeatherApi";
         const string operationName = "GetForecasts";
         const double durationMs = 123.45;
+        _longMeasurements.Clear();
         _doubleMeasurements.Clear();
 
         // Act

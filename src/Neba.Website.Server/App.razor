@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <base href="/"/>
+
+    <!-- Tailwind: config must load before CDN script -->
+    <script src="js/tailwind.config.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- NEBA Theme (after Tailwind so it can override) -->
+    <link rel="stylesheet" href="@Assets["neba_theme.css"]"/>
+    <link rel="stylesheet" href="@Assets["app.css"]"/>
+    <link rel="stylesheet" href="@Assets["Neba.Website.Server.styles.css"]"/>
+    <ImportMap/>
+    <link rel="icon" type="image/png" href="favicon.png"/>
+    <HeadOutlet/>
+</head>
+
+<body>
+<Routes/>
+<script src="@Assets["_framework/blazor.web.js"]"></script>
+
+<div id="blazor-error-ui" data-nosnippet role="alert" aria-live="assertive">
+    <div class="error-content">
+        <span>An unhandled error has occurred.</span>
+        <a href="" class="neba-btn neba-btn-sm neba-btn-primary" onclick="location.reload(); return false;">Reload</a>
+        <button class="dismiss neba-btn neba-btn-sm neba-btn-secondary" onclick="this.closest('#blazor-error-ui').style.display='none'" aria-label="Dismiss error">&times;</button>
+    </div>
+</div>
+
+<div id="blazor-reconnect-modal">
+    <div class="reconnect-content">
+        <div class="reconnect-spinner"></div>
+        <span>Attempting to reconnect to the server...</span>
+    </div>
+</div>
+</body>
+
+</html>

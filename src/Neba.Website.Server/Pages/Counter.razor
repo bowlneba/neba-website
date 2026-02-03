@@ -1,0 +1,150 @@
+@page "/counter"
+@rendermode InteractiveServer
+
+<PageTitle>Counter</PageTitle>
+
+<NebaErrorBoundary ShowDetails="@_isDevelopment">
+    <div class="neba-space-y-6">
+        <div class="neba-panel">
+            <h1 class="text-2xl font-semibold mb-4">Counter</h1>
+
+            <p class="mb-4" role="status">Current count: <span class="font-bold text-neba-blue-600">@currentCount</span></p>
+
+            <div class="flex gap-2">
+                <button class="neba-btn neba-btn-primary" @onclick="IncrementCount">Click me</button>
+                <button class="neba-btn neba-btn-secondary" @onclick="ThrowTestError">Test Error Boundary</button>
+            </div>
+        </div>
+
+        <div class="neba-panel">
+            <h2 class="text-xl font-semibold mb-4">Alert Severity Tests</h2>
+
+            <div class="flex flex-wrap gap-2 mb-4">
+                <button class="neba-btn neba-btn-secondary" @onclick="@(() => ShowAlert(NotifySeverity.Normal))">Normal</button>
+                <button class="neba-btn neba-btn-secondary" @onclick="@(() => ShowAlert(NotifySeverity.Info))">Info</button>
+                <button class="neba-btn neba-btn-secondary" @onclick="@(() => ShowAlert(NotifySeverity.Success))">Success</button>
+                <button class="neba-btn neba-btn-secondary" @onclick="@(() => ShowAlert(NotifySeverity.Warning))">Warning</button>
+                <button class="neba-btn neba-btn-secondary" @onclick="@(() => ShowAlert(NotifySeverity.Error))">Error</button>
+                <button class="neba-btn neba-btn-secondary" @onclick="ClearAlerts">Clear All</button>
+            </div>
+
+            @if (_alerts.Count > 0)
+            {
+                <div class="neba-space-y-3">
+                    @foreach (var alert in _alerts)
+                    {
+                        <NebaAlert Severity="@alert.Severity"
+                                   Title="@alert.Title"
+                                   Message="@alert.Message"
+                                   ShowIcon="true"
+                                   Dismissible="true"
+                                   OnDismiss="@(() => DismissAlert(alert))" />
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="neba-panel">
+            <h2 class="text-xl font-semibold mb-4">Alert Variants</h2>
+
+            <div class="neba-space-y-3">
+                <NebaAlert Severity="NotifySeverity.Info"
+                           Title="Filled Variant (Default)"
+                           Message="This is the default filled style with solid background."
+                           Variant="AlertVariant.Filled"
+                           ShowIcon="true" />
+
+                <NebaAlert Severity="NotifySeverity.Info"
+                           Title="Outlined Variant"
+                           Message="This variant has a border with transparent background."
+                           Variant="AlertVariant.Outlined"
+                           ShowIcon="true" />
+
+                <NebaAlert Severity="NotifySeverity.Info"
+                           Title="Dense Variant"
+                           Message="Compact padding for dense layouts."
+                           Variant="AlertVariant.Dense"
+                           ShowIcon="true" />
+            </div>
+        </div>
+
+        <div class="neba-panel">
+            <h2 class="text-xl font-semibold mb-4">Validation Messages List</h2>
+
+            <NebaAlert Severity="NotifySeverity.Warning"
+                       Title="Validation Errors"
+                       Message=""
+                       ValidationMessages="@_validationMessages"
+                       ShowIcon="true" />
+        </div>
+    </div>
+</NebaErrorBoundary>
+
+@code {
+    private int currentCount = 0;
+    private bool _isDevelopment = false;
+    private readonly List<AlertItem> _alerts = new();
+
+    private readonly IReadOnlyList<string> _validationMessages = new[]
+    {
+        "Email address is required",
+        "Password must be at least 8 characters",
+        "Please accept the terms and conditions"
+    };
+
+    [Inject]
+    private IWebHostEnvironment Environment { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        _isDevelopment = Environment.IsDevelopment();
+    }
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+
+    private static void ThrowTestError()
+    {
+        throw new InvalidOperationException("This is a test error to demonstrate the error boundary.");
+    }
+
+    private void ShowAlert(NotifySeverity severity)
+    {
+        var alert = new AlertItem
+        {
+            Severity = severity,
+            Title = $"{severity} Alert",
+            Message = GetMessageForSeverity(severity)
+        };
+        _alerts.Add(alert);
+    }
+
+    private static string GetMessageForSeverity(NotifySeverity severity) => severity switch
+    {
+        NotifySeverity.Normal => "This is a normal notification for general information.",
+        NotifySeverity.Info => "This is an informational message to keep you updated.",
+        NotifySeverity.Success => "Operation completed successfully!",
+        NotifySeverity.Warning => "Please review this before proceeding.",
+        NotifySeverity.Error => "Something went wrong. Please try again.",
+        _ => "Alert message"
+    };
+
+    private void DismissAlert(AlertItem alert)
+    {
+        _alerts.Remove(alert);
+    }
+
+    private void ClearAlerts()
+    {
+        _alerts.Clear();
+    }
+
+    private sealed class AlertItem
+    {
+        public NotifySeverity Severity { get; init; }
+        public string Title { get; init; } = string.Empty;
+        public string Message { get; init; } = string.Empty;
+    }
+}

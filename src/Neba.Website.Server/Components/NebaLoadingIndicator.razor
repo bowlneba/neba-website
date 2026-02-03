@@ -1,0 +1,213 @@
+@implements IDisposable
+
+@if (_shouldShow)
+{
+    <div class="@OverlayCssClass" @onclick="HandleOverlayClick">
+        <div class="neba-loading-content">
+            <div class="neba-loading-wave neba-loading-wave-animated">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Text))
+            {
+                <div class="neba-loading-text">@Text</div>
+            }
+        </div>
+    </div>
+}
+
+
+@code {
+    /// <summary>
+    /// Controls whether the loading indicator is visible.
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    /// <summary>
+    /// Optional text to display below the loading animation.
+    /// </summary>
+    [Parameter]
+    public string? Text { get; set; }
+
+    /// <summary>
+    /// Determines the overlay scope: Page (overlays content only) or FullScreen (overlays entire viewport).
+    /// Default is Page.
+    /// </summary>
+    [Parameter]
+    public LoadingIndicatorScope Scope { get; set; } = LoadingIndicatorScope.Page;
+
+    /// <summary>
+    /// Delay in milliseconds before showing the loading indicator.
+    /// Prevents flash for fast-loading operations. Default is 100ms.
+    /// </summary>
+    [Parameter]
+    public int DelayMs { get; set; } = 100;
+
+    /// <summary>
+    /// Minimum time in milliseconds to display the indicator once shown.
+    /// Prevents jarring flash if loading completes shortly after indicator appears. Default is 500ms.
+    /// </summary>
+    [Parameter]
+    public int MinimumDisplayMs { get; set; } = 500;
+
+    /// <summary>
+    /// Callback invoked when the overlay is clicked.
+    /// By default, clicking the overlay does nothing (prevents interaction with underlying content).
+    /// </summary>
+    [Parameter]
+    public EventCallback OnOverlayClick { get; set; }
+
+    private bool _shouldShow;
+    private DateTime? _shownAt;
+    private CancellationTokenSource? _delayCancellation;
+    private CancellationTokenSource? _minimumDisplayCancellation;
+
+    private string OverlayCssClass => Scope switch
+    {
+        LoadingIndicatorScope.FullScreen => "neba-loading-overlay neba-loading-overlay-fullscreen",
+        LoadingIndicatorScope.Section => "neba-loading-overlay-section",
+        var _ => "neba-loading-overlay neba-loading-overlay-page"
+    };
+
+    protected override void OnParametersSet()
+    {
+        if (!IsVisible)
+        {
+            // If loading is not visible, ensure indicator is hidden
+            HandleLoadingFinished();
+
+            return;
+        }
+
+        if (!_shouldShow)
+        {
+            HandleLoadingStarted();
+        }
+        // else: indicator already showing, continue displaying
+    }
+
+    private void HandleLoadingStarted()
+    {
+        // Loading started - begin delay before showing
+        if (_delayCancellation != null)
+        {
+            _delayCancellation.Cancel();
+            _delayCancellation.Dispose();
+        }
+        _delayCancellation = new CancellationTokenSource();
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(DelayMs, _delayCancellation.Token);
+                _shouldShow = true;
+                _shownAt = DateTime.UtcNow;
+                await InvokeAsync(StateHasChanged);
+            }
+            catch (TaskCanceledException)
+            {
+                // Delay was cancelled - loading finished before delay expired
+            }
+        });
+    }
+
+    private void HandleLoadingFinished()
+    {
+        CancelDelayTimer();
+
+        if (_shouldShow)
+        {
+            HandleShownIndicatorFinish();
+        }
+        else
+        {
+            // Never shown, ensure state is clean
+            ResetIndicatorState();
+        }
+    }
+
+    private void CancelDelayTimer()
+    {
+        if (_delayCancellation != null)
+        {
+            _delayCancellation.Cancel();
+            _delayCancellation.Dispose();
+            _delayCancellation = null;
+        }
+    }
+
+    private void HandleShownIndicatorFinish()
+    {
+        if (!_shownAt.HasValue)
+        {
+            // Indicator shown but no timestamp (shouldn't happen)
+            ResetIndicatorState();
+            return;
+        }
+
+        var elapsed = (DateTime.UtcNow - _shownAt.Value).TotalMilliseconds;
+        var remaining = MinimumDisplayMs - elapsed;
+
+        if (remaining > 0)
+        {
+            ScheduleDelayedHide((int)remaining);
+        }
+        else
+        {
+            // Minimum time already elapsed
+            ResetIndicatorState();
+        }
+    }
+
+    private void ScheduleDelayedHide(int delayMs)
+    {
+        // Cancel any existing minimum display timer
+        if (_minimumDisplayCancellation != null)
+        {
+            _minimumDisplayCancellation.Cancel();
+            _minimumDisplayCancellation.Dispose();
+        }
+        _minimumDisplayCancellation = new CancellationTokenSource();
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(delayMs, _minimumDisplayCancellation.Token);
+                ResetIndicatorState();
+                await InvokeAsync(StateHasChanged);
+            }
+            catch (TaskCanceledException)
+            {
+                // Cancellation is expected
+            }
+        });
+    }
+
+    private void ResetIndicatorState()
+    {
+        _shouldShow = false;
+        _shownAt = null;
+    }
+
+    private async Task HandleOverlayClick()
+    {
+        if (OnOverlayClick.HasDelegate)
+        {
+            await OnOverlayClick.InvokeAsync();
+        }
+    }
+
+    public void Dispose()
+    {
+        _delayCancellation?.Cancel();
+        _delayCancellation?.Dispose();
+        _minimumDisplayCancellation?.Cancel();
+        _minimumDisplayCancellation?.Dispose();
+    }
+}

@@ -12,6 +12,8 @@
 *.sln
 *.env
 
+reference/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
@@ -421,3 +423,10 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Jest
+/coverage/
+/.jest-cache/
+
+# Playwright report directory
+playwright-report/

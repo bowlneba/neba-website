@@ -1,0 +1,190 @@
+/* MainLayout Scoped Styles */
+
+/* Skip Link - Hidden until focused */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    z-index: 100;
+    padding: 0.5rem 1rem;
+    background-color: var(--neba-blue-700);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--neba-radius);
+    transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+    top: 1rem;
+    left: 1rem;
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+/* Layout Container */
+.layout-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    position: relative;
+}
+
+/* Banner Logo */
+.banner-logo-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.banner-logo {
+    height: 5rem;
+    width: auto;
+    cursor: pointer;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+}
+
+.content-wrapper {
+    max-width: var(--neba-content-max-width, 1150px);
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+}
+
+@media (min-width: 768px) {
+    .content-wrapper {
+        padding: 1.5rem 2rem;
+    }
+}
+
+/* Footer */
+.footer-content {
+    max-width: var(--neba-content-max-width, 1150px);
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+@media (min-width: 768px) {
+    .footer-content {
+        padding: 2rem;
+    }
+}
+
+.footer-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .footer-row {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+}
+
+.footer-copyright {
+    text-align: center;
+}
+
+@media (min-width: 768px) {
+    .footer-copyright {
+        text-align: left;
+    }
+}
+
+.footer-copyright p {
+    font-size: 0.875rem;
+    color: var(--neba-gray-700);
+    margin: 0;
+}
+
+.footer-links {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.footer-links a {
+    font-size: 0.875rem;
+    color: var(--neba-gray-700);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.footer-links a:hover {
+    color: var(--neba-blue-700);
+}
+
+.footer-links a:focus-visible {
+    outline: 2px solid var(--neba-blue-500);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* Focus fallback for older browsers */
+.footer-links a:focus {
+    outline: 2px solid var(--neba-blue-500);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* Remove duplicate outline for browsers that support focus-visible */
+.footer-links a:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Banner logo focus styles */
+.banner-logo-container a:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 4px;
+    border-radius: var(--neba-radius);
+}
+
+.banner-logo-container a:focus {
+    outline: 2px solid white;
+    outline-offset: 4px;
+    border-radius: var(--neba-radius);
+}
+
+.banner-logo-container a:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Blazor Error UI */
+#blazor-error-ui {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
+
+#blazor-error-ui[style*="display"] {
+    display: block;
+}
+
+.error-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background-color: rgba(204, 8, 10, 0.95);
+    color: white;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.error-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Mobile adjustments for banner */
+@media (max-width: 767px) {
+    .banner-logo {
+        height: 3.5rem;
+    }
+}

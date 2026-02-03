@@ -12,16 +12,21 @@ internal static class BackgroundJobsExtensions
     {
         internal IServiceCollection AddBackgroundJobs(IConfiguration config)
         {
+            var connectionString = config.GetConnectionString("neba-website");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                return services;
+            }
+
             services.AddHangfire(options => options
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                 .UseSimpleAssemblyNameTypeSerializer()
                 .UseRecommendedSerializerSettings()
                 .UsePostgreSqlStorage(postgres => postgres
-                    .UseNpgsqlConnection(config.GetConnectionString("neba-website")
-                        ?? throw new InvalidOperationException("Hangfire connection string is not configured.")), new PostgreSqlStorageOptions
-                        {
-                            SchemaName = "hangfire"
-                        }));
+                    .UseNpgsqlConnection(connectionString), new PostgreSqlStorageOptions
+                    {
+                        SchemaName = "hangfire"
+                    }));
 
             return services;
         }
@@ -31,6 +36,11 @@ internal static class BackgroundJobsExtensions
     {
         internal WebApplication UseBackgroundJobsDashboard()
         {
+            if (app.Services.GetService<JobStorage>() is null)
+            {
+                return app;
+            }
+
             app.UseHangfireDashboard("/admin/background-jobs", new DashboardOptions
             {
                 Authorization = [new HangfireUiDashboardAuthorizationFilter()],

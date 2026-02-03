@@ -1,0 +1,157 @@
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+@using Microsoft.JSInterop
+
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject IWebHostEnvironment HostEnv
+
+<nav class="neba-navbar @NavbarCssClass" role="navigation" aria-label="Main navigation">
+    <div class="neba-navbar-wrapper">
+        <div class="neba-navbar-content">
+            <div class="neba-navbar-header">
+                <a href="/" class="navbar-brand">
+                    <img src="images/neba-1963.png" alt="NEBA | 1963" class="navbar-logo" />
+                </a>
+
+                <button class="neba-menu-toggle"
+                        data-menu-toggle
+                        @onclick="ToggleNavMenu"
+                        aria-label="Toggle navigation menu"
+                        aria-expanded="@(!collapseNavMenu)"
+                        aria-controls="main-menu">
+                    <span class="sr-only">Menu</span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </button>
+            </div>
+
+            <ul class="neba-nav-menu @NavMenuCssClass" id="main-menu" data-menu>
+                <li class="neba-nav-item" data-action="toggle-dropdown">
+                    <a href="#"
+                       class="neba-nav-link"
+                       aria-haspopup="true"
+                       aria-expanded="false"
+                       @onclick:preventDefault>Tournaments</a>
+                    <div class="neba-dropdown" role="menu">
+                        <NavLink class="neba-dropdown-link" href="tournaments" Match="NavLinkMatch.All" role="menuitem">Future Tournaments</NavLink>
+                        <NavLink class="neba-dropdown-link" href="@($"tournaments/{CurrentYear}")" role="menuitem">Past Tournaments</NavLink>
+                        <div class="neba-dropdown-divider"></div>
+                        <NavLink class="neba-dropdown-link" href="tournaments/rules" role="menuitem">Tournament Rules</NavLink>
+                    </div>
+                </li>
+                <li class="neba-nav-item">
+                    <NavLink class="neba-nav-link" href="stats">
+                        Stats
+                    </NavLink>
+                </li>
+                <li class="neba-nav-item" data-action="toggle-dropdown">
+                    <a href="#"
+                       class="neba-nav-link"
+                       aria-haspopup="true"
+                       aria-expanded="false"
+                       @onclick:preventDefault>About</a>
+                    <div class="neba-dropdown" role="menu">
+                        <NavLink class="neba-dropdown-link" href="bylaws" role="menuitem">Bylaws</NavLink>
+                    </div>
+                </li>
+                <li class="neba-nav-item">
+                    <NavLink class="neba-nav-link" href="news">
+                        News
+                    </NavLink>
+                </li>
+                <li class="neba-nav-item" data-action="toggle-dropdown">
+                    <a href="#"
+                       class="neba-nav-link"
+                       aria-haspopup="true"
+                       aria-expanded="false"
+                       @onclick:preventDefault>History</a>
+                    <div class="neba-dropdown" role="menu">
+                        <NavLink class="neba-dropdown-link" href="history/champions" role="menuitem">Champions</NavLink>
+                        <NavLink class="neba-dropdown-link" href="history/bowler-of-the-year" role="menuitem">Bowler of the Year</NavLink>
+                        <NavLink class="neba-dropdown-link" href="history/high-average" role="menuitem">High Average</NavLink>
+                        <NavLink class="neba-dropdown-link" href="history/high-block" role="menuitem">High Block</NavLink>
+                    </div>
+                </li>
+                <li class="neba-nav-item">
+                    <NavLink class="neba-nav-link" href="hall-of-fame">
+                        Hall of Fame
+                    </NavLink>
+                </li>
+                <li class="neba-nav-item">
+                    <NavLink class="neba-nav-link" href="sponsors">
+                        Sponsors
+                    </NavLink>
+                </li>
+                <li class="neba-nav-item">
+                    <NavLink class="neba-nav-link" href="bowling-centers">
+                        Centers
+                    </NavLink>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+@code {
+    private bool collapseNavMenu = true;
+    private IJSObjectReference? _jsModule;
+
+    private string? NavMenuCssClass => collapseNavMenu ? null : "active";
+    private string? NavbarCssClass => collapseNavMenu ? null : "menu-open";
+
+    private static int CurrentYear => DateTime.Now.Year;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsModule = await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./Layout/NavMenu.razor.js");
+            await _jsModule.InvokeVoidAsync(
+                "initialize", DotNetObjectReference.Create(this));
+        }
+    }
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+
+        // Prevent body scrolling when menu is open on mobile
+        if (_jsModule is not null)
+        {
+            _ = _jsModule.InvokeVoidAsync("preventBodyScroll", !collapseNavMenu);
+        }
+    }
+
+    [JSInvokable]
+    public void CloseMenu()
+    {
+        collapseNavMenu = true;
+
+        // Restore body scrolling when menu is closed
+        if (_jsModule is not null)
+        {
+            _ = _jsModule.InvokeVoidAsync("preventBodyScroll", false);
+        }
+
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule is not null)
+        {
+            try
+            {
+                await _jsModule.InvokeVoidAsync("dispose");
+                await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit disconnected during error handling - safe to ignore
+            }
+        }
+    }
+}

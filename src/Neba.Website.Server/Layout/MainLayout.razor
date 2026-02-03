@@ -1,0 +1,45 @@
+@inherits LayoutComponentBase
+
+<!-- Skip to main content for accessibility -->
+<a href="#main-content" class="skip-link" onclick="setTimeout(() => document.getElementById('main-content')?.focus(), 0)">
+    Skip to main content
+</a>
+
+<div class="layout-container">
+    <!-- Top Banner -->
+    <header class="neba-top-banner" role="banner">
+        <div class="neba-banner-content">
+            <div class="banner-logo-container">
+                <a href="/" aria-label="NEBA - Go to home page">
+                    <img src="images/neba-logo.png" alt="New England Bowling Association logo" class="banner-logo" />
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <NavMenu />
+
+    <!-- Main Content -->
+    <main class="main-content" role="main" id="main-content" tabindex="-1">
+        <article class="content-wrapper">
+            @Body
+        </article>
+    </main>
+
+    <!-- Footer -->
+    <footer class="neba-footer" role="contentinfo" aria-label="Site footer">
+        <div class="footer-content">
+            <div class="footer-row">
+                <div class="footer-copyright">
+                    <p>&copy; @DateTime.Now.Year New England Bowling Association. All rights reserved.</p>
+                </div>
+                <nav class="footer-links" aria-label="Footer navigation">
+                    <a href="/privacy">Privacy Policy</a>
+                    <a href="/terms">Terms of Service</a>
+                    <a href="/contact">Contact</a>
+                </nav>
+            </div>
+        </div>
+    </footer>
+</div>

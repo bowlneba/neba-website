@@ -1,6 +1,6 @@
+using Neba.Website.Server;
 using Neba.Website.Server.BackgroundJobs;
 using Neba.Website.Server.Clock;
-using Neba.Website.Server.Components;
 using Neba.Website.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,8 +24,23 @@ var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseExceptionHandler("/error", createScopeForErrors: true);
 }
+
+app.UseStatusCodePages(async context =>
+{
+    var response = context.HttpContext.Response;
+    var path = response.StatusCode switch
+    {
+        401 => "/unauthorized",
+        403 => "/forbidden",
+        404 => "/not-found",
+        _ => $"/error?code={response.StatusCode}"
+    };
+
+    response.Redirect(path);
+    await Task.CompletedTask;
+});
 
 app.UseAntiforgery();
 
@@ -40,6 +55,7 @@ app.MapRazorComponents<App>()
 
 app.MapDefaultEndpoints();
 
+// Register Hangfire Dashboard after endpoints are mapped
 app.UseBackgroundJobsDashboard();
 
 await app.RunAsync();

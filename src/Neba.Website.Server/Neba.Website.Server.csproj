@@ -20,4 +20,9 @@
     <InternalsVisibleTo Include="Neba.TestFactory" />
   </ItemGroup>
 
+  <!-- Exclude JavaScript test files from publish -->
+  <ItemGroup>
+    <Content Remove="**/*.tests.js" />
+  </ItemGroup>
+
 </Project>
