@@ -13,6 +13,8 @@
       "kippermand",
       "Neba",
       "Npgsql",
+      "Provisionable",
+      "psql",
       "Respawn",
       "Shouldly",
       "sonarcloud",

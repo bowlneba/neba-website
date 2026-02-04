@@ -1,18 +1,38 @@
+using Azure.Provisioning.AppService;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
-var postgresUser = builder.AddParameter("postgres-userName", "neba-db-user");
-
-var postgres = builder.AddPostgres("postgres")
-    .WithUserName(postgresUser)
-    .WithPgAdmin()
-    .WithDataVolume("neba-website-data");
+var postgres = builder.AddAzurePostgresFlexibleServer("psql-bowlneba")
+    .RunAsContainer(container => container
+        .WithPgAdmin()
+        .WithDataVolume("neba-website-data"));
 
 var database = postgres.AddDatabase("neba-website");
 
+builder.AddAzureAppServiceEnvironment("bowlneba")
+    .ConfigureInfrastructure(infrastructure =>
+    {
+        var plan = infrastructure.GetProvisionableResources()
+            .OfType<AppServicePlan>()
+            .Single();
+
+        plan.Sku = new AppServiceSkuDescription
+        {
+            Name = Environment.GetEnvironmentVariable("AZURE_ASP_SKU_NAME") ?? "B1",
+            Tier = Environment.GetEnvironmentVariable("AZURE_ASP_SKU_TIER") ?? "Basic"
+        };
+    });
+
 var apiService = builder.AddProject<Projects.Neba_Api>("api")
+    .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(database)
     .WaitFor(database)
+    .PublishAsAzureAppServiceWebsite((_, site) =>
+    {
+        site.SiteConfig.IsAlwaysOn = true;
+        site.SiteConfig.IsHttp20Enabled = true;
+    })
     .WithUrls(context =>
     {
         var endpoint = context.GetEndpoint("http")
@@ -38,6 +58,11 @@ builder.AddProject<Projects.Neba_Website_Server>("web")
     .WaitFor(database)
     .WithReference(apiService)
     .WaitFor(apiService)
+    .PublishAsAzureAppServiceWebsite((_, site) =>
+    {
+        site.SiteConfig.IsAlwaysOn = true;
+        site.SiteConfig.IsHttp20Enabled = true;
+    })
     .WithUrls(context =>
     {
         var endpoint = context.GetEndpoint("http")
