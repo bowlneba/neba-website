@@ -12,7 +12,7 @@ internal static class BackgroundJobsExtensions
     {
         internal IServiceCollection AddBackgroundJobs(IConfiguration config)
         {
-            var connectionString = config.GetConnectionString("neba-website");
+            var connectionString = config.GetConnectionString("bowlneba-db");
             if (string.IsNullOrEmpty(connectionString))
             {
                 return services;

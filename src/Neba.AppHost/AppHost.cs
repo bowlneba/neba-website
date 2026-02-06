@@ -5,9 +5,9 @@ var builder = DistributedApplication.CreateBuilder(args);
 var postgres = builder.AddAzurePostgresFlexibleServer("psql-bowlneba")
     .RunAsContainer(container => container
         .WithPgAdmin()
-        .WithDataVolume("neba-website-data"));
+        .WithDataVolume("bowlneba-website-data"));
 
-var database = postgres.AddDatabase("neba-website");
+var database = postgres.AddDatabase("bowlneba-db");
 
 builder.AddAzureAppServiceEnvironment("bowlneba")
     .ConfigureInfrastructure(infrastructure =>

@@ -1,8 +1,8 @@
 {
-  "name": "neba-website",
+  "name": "bowlneba-website",
   "version": "1.0.0",
   "type": "module",
-  "description": "Neba Website - Blazor + JavaScript",
+  "description": "NEBA Website - Blazor + JavaScript",
   "private": true,
   "scripts": {
     "test": "jest",

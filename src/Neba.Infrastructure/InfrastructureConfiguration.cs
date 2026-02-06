@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 using Neba.Application.Clock;
 using Neba.Infrastructure.BackgroundJobs;
@@ -18,30 +19,28 @@ namespace Neba.Infrastructure;
 /// </summary>
 public static class InfrastructureConfiguration
 {
-    extension(IServiceCollection services)
+    extension(WebApplicationBuilder builder)
     {
         /// <summary>
         /// Adds infrastructure dependencies to the service collection.
         /// </summary>
-        /// <param name="config">The application configuration.</param>
         /// <returns>The updated service collection.</returns>
-        public IServiceCollection AddInfrastructure(IConfiguration config)
+        public WebApplicationBuilder AddInfrastructure()
         {
-            ArgumentNullException.ThrowIfNull(config);
+            ArgumentNullException.ThrowIfNull(builder);
 
             // services.AddTracing(); // once we add a query handler or command handler uncomment this line
 
             // caching decorators can go here
 
-            services.AddDatabase(config.GetConnectionString("neba-website")
-                ?? throw new InvalidOperationException("Connection string 'neba-website' not found."));
+            builder.AddDatabase();
 
-            services.AddBackgroundJobs(config);
+            builder.Services.AddBackgroundJobs(builder.Configuration);
 
-            services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
-            services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
+            builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+            builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
 
-            return services;
+            return builder;
         }
     }
 

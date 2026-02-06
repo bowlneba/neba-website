@@ -1,36 +1,20 @@
-using Microsoft.Extensions.DependencyInjection;
-
-using Npgsql;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Hosting;
 
 namespace Neba.Infrastructure.Database;
 
 #pragma warning disable S1144 // Unused private types or members should be removed
 internal static class DatabaseConfiguration
 {
-    extension(IServiceCollection services)
+    extension(WebApplicationBuilder builder)
     {
-        public IServiceCollection AddDatabase(string connectionString)
+        public WebApplicationBuilder AddDatabase()
         {
-            services.AddDatabaseTelemetry();
-            services.AddDatabaseHealthChecks(connectionString);
+            const string connectionStringName = "bowlneba-db";
 
-            return services;
-        }
+            builder.AddNpgsqlDbContext<AppDbContext>(connectionStringName);
 
-        private void AddDatabaseTelemetry()
-            => services.AddOpenTelemetry()
-                .WithTracing(tracing => tracing.AddNpgsql())
-                .WithMetrics(metrics => metrics.AddNpgsqlInstrumentation());
-
-        private void AddDatabaseHealthChecks(string connectionString)
-        {
-            string[] tags = ["infrastructure", "database"];
-
-            services.AddHealthChecks()
-                .AddNpgSql(
-                    connectionString: connectionString,
-                    name: "database",
-                    tags: tags);
+            return builder;
         }
     }
 }
