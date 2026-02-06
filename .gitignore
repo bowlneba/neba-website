@@ -430,3 +430,4 @@ FodyWeavers.xsd
 
 # Playwright report directory
 playwright-report/
+.azure
