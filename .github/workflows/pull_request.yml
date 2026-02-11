@@ -41,3 +41,41 @@ jobs:
       is_pull_request: true
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  azd-provision-preview:
+    name: Infrastructure Preview
+    runs-on: ubuntu-latest
+    needs: format-check
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Detect AppHost changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            apphost:
+              - 'src/Neba.AppHost/AppHost.cs'
+
+      - name: Login to Azure
+        if: steps.changes.outputs.apphost == 'true'
+        uses: azure/login@v2
+        with:
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+
+      - name: Setup azd
+        if: steps.changes.outputs.apphost == 'true'
+        uses: Azure/setup-azd@v2
+
+      - name: Preview provision
+        if: steps.changes.outputs.apphost == 'true'
+        env:
+          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+        run: azd provision --preview
