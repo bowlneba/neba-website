@@ -35,6 +35,7 @@ var web = builder.AddProject<Projects.Neba_Website_Server>("web")
     .WithReference(database)
     .WaitFor(database)
     .WithReference(api)
+    .WaitFor(api)
     .WithUrls(context =>
     {
         var endpoint = context.GetEndpoint("http")

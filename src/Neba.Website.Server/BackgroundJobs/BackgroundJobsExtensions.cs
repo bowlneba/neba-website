@@ -25,7 +25,8 @@ internal static class BackgroundJobsExtensions
                 .UsePostgreSqlStorage(postgres => postgres
                     .UseNpgsqlConnection(connectionString), new PostgreSqlStorageOptions
                     {
-                        SchemaName = "hangfire"
+                        SchemaName = "hangfire",
+                        PrepareSchemaIfNecessary = true
                     }));
 
             return services;
