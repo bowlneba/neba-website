@@ -6,7 +6,7 @@ var postgres = builder.AddAzurePostgresFlexibleServer("postgres")
 
 var database = postgres.AddDatabase("bowlneba");
 
-var apiService = builder.AddProject<Projects.Neba_Api>("api")
+var api = builder.AddProject<Projects.Neba_Api>("api")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(database)
@@ -29,13 +29,12 @@ var apiService = builder.AddProject<Projects.Neba_Api>("api")
         });
     });
 
-builder.AddProject<Projects.Neba_Website_Server>("web")
+var web = builder.AddProject<Projects.Neba_Website_Server>("web")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(database)
     .WaitFor(database)
-    .WithReference(apiService)
-    .WaitFor(apiService)
+    .WithReference(api)
     .WithUrls(context =>
     {
         var endpoint = context.GetEndpoint("http")
@@ -47,5 +46,12 @@ builder.AddProject<Projects.Neba_Website_Server>("web")
             DisplayText = "Hangfire Dashboard"
         });
     });
+
+if (builder.ExecutionContext.IsPublishMode)
+{
+    var appInsights = builder.AddAzureApplicationInsights("appinsights");
+    api.WithReference(appInsights);
+    web.WithReference(appInsights);
+}
 
 await builder.Build().RunAsync();

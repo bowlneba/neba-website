@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Ardalis.SmartEnum" Version="8.2.0" />
+    <PackageVersion Include="Aspire.Hosting.Azure.ApplicationInsights" Version="13.1.0" />
     <PackageVersion Include="Aspire.Hosting.Azure.AppService" Version="13.1.0-preview.1.25616.3" />
     <PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="13.1.0" />
     <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.1.0" />
