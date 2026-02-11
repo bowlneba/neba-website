@@ -50,7 +50,10 @@ var web = builder.AddProject<Projects.Neba_Website_Server>("web")
 
 if (builder.ExecutionContext.IsPublishMode)
 {
-    var appInsights = builder.AddAzureApplicationInsights("appinsights");
+    var workspace = builder.AddAzureLogAnalyticsWorkspace("logs");
+    var appInsights = builder.AddAzureApplicationInsights("appinsights")
+        .WithLogAnalyticsWorkspace(workspace);
+
     api.WithReference(appInsights);
     web.WithReference(appInsights);
 }
