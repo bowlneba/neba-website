@@ -1,38 +1,16 @@
-using Azure.Provisioning.AppService;
-
 var builder = DistributedApplication.CreateBuilder(args);
 
-var postgres = builder.AddAzurePostgresFlexibleServer("psql-bowlneba")
+var postgres = builder.AddAzurePostgresFlexibleServer("postgres")
     .RunAsContainer(container => container
-        .WithPgAdmin()
-        .WithDataVolume("bowlneba-website-data"));
+        .WithPgAdmin());
 
-var database = postgres.AddDatabase("bowlneba-db");
-
-builder.AddAzureAppServiceEnvironment("bowlneba")
-    .ConfigureInfrastructure(infrastructure =>
-    {
-        var plan = infrastructure.GetProvisionableResources()
-            .OfType<AppServicePlan>()
-            .Single();
-
-        plan.Sku = new AppServiceSkuDescription
-        {
-            Name = Environment.GetEnvironmentVariable("AZURE_ASP_SKU_NAME") ?? "B1",
-            Tier = Environment.GetEnvironmentVariable("AZURE_ASP_SKU_TIER") ?? "Basic"
-        };
-    });
+var database = postgres.AddDatabase("bowlneba");
 
 var apiService = builder.AddProject<Projects.Neba_Api>("api")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(database)
     .WaitFor(database)
-    .PublishAsAzureAppServiceWebsite((_, site) =>
-    {
-        site.SiteConfig.IsAlwaysOn = true;
-        site.SiteConfig.IsHttp20Enabled = true;
-    })
     .WithUrls(context =>
     {
         var endpoint = context.GetEndpoint("http")
@@ -58,11 +36,6 @@ builder.AddProject<Projects.Neba_Website_Server>("web")
     .WaitFor(database)
     .WithReference(apiService)
     .WaitFor(apiService)
-    .PublishAsAzureAppServiceWebsite((_, site) =>
-    {
-        site.SiteConfig.IsAlwaysOn = true;
-        site.SiteConfig.IsHttp20Enabled = true;
-    })
     .WithUrls(context =>
     {
         var endpoint = context.GetEndpoint("http")

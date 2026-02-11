@@ -45,7 +45,7 @@ internal static class BackgroundJobsConfiguration
 
         private void AddHangfireInfrastructure(IConfiguration config)
         {
-            string connectionString = config.GetConnectionString("bowlneba-db")
+            string connectionString = config.GetConnectionString("bowlneba")
                 ?? throw new InvalidOperationException("Connection string 'neba-website' not found.");
 
             services.AddHangfire((serviceProvider, options) =>

@@ -10,7 +10,7 @@ internal static class DatabaseConfiguration
     {
         public WebApplicationBuilder AddDatabase()
         {
-            const string connectionStringName = "bowlneba-db";
+            const string connectionStringName = "bowlneba";
 
             builder.AddNpgsqlDbContext<AppDbContext>(connectionStringName);
 
