@@ -2,7 +2,12 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var postgres = builder.AddAzurePostgresFlexibleServer("postgres")
     .RunAsContainer(container => container
-        .WithPgAdmin());
+        .WithPgAdmin(pgAdmin => pgAdmin
+            .WithLifetime(ContainerLifetime.Persistent)
+            .WithHostPort(19631))
+        .WithLifetime(ContainerLifetime.Persistent)
+        .WithHostPort(19630)
+        .WithDataVolume("bowlneba-data"));
 
 var database = postgres.AddDatabase("bowlneba");
 
