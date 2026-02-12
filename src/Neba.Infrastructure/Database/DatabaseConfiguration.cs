@@ -12,6 +12,7 @@ internal static class DatabaseConfiguration
         {
             const string connectionStringName = "bowlneba";
 
+            builder.AddNpgsqlDataSource(connectionStringName);
             builder.AddNpgsqlDbContext<AppDbContext>(connectionStringName);
 
             return builder;
