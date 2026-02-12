@@ -1,5 +1,4 @@
 using Neba.Website.Server;
-using Neba.Website.Server.BackgroundJobs;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Services;
 
@@ -7,10 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
-builder.AddNpgsqlDataSource("bowlneba");
 
 builder.Services.AddApiServices(builder.Configuration);
-builder.Services.AddBackgroundJobs(builder.Configuration);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -55,8 +52,5 @@ app.MapRazorComponents<App>()
     .AddAdditionalAssemblies(typeof(Neba.Website.Client._Imports).Assembly);
 
 app.MapDefaultEndpoints();
-
-// Register Hangfire Dashboard after endpoints are mapped
-app.UseBackgroundJobsDashboard();
 
 await app.RunAsync();

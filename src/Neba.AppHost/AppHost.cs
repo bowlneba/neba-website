@@ -41,21 +41,8 @@ var api = builder.AddProject<Projects.Neba_Api>("api")
 var web = builder.AddProject<Projects.Neba_Website_Server>("web")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
-    .WithReference(database)
-    .WaitFor(database)
     .WithReference(api)
-    .WaitFor(api)
-    .WithUrls(context =>
-    {
-        var endpoint = context.GetEndpoint("http")
-            ?? throw new InvalidOperationException("HTTP endpoint not found.");
-
-        context.Urls.Add(new ResourceUrlAnnotation
-        {
-            Url = $"{endpoint.Url}/admin/background-jobs",
-            DisplayText = "Hangfire Dashboard"
-        });
-    });
+    .WaitFor(api);
 
 if (builder.ExecutionContext.IsPublishMode)
 {
