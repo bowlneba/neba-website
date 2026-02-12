@@ -2,7 +2,6 @@ var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOpt
 {
     Args = args,
     DashboardApplicationName = "NEBA Website",
-    
 });
 
 var postgres = builder.AddAzurePostgresFlexibleServer("postgres")
