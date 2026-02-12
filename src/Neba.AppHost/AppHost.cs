@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Configuration;
+
 var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions
 {
     Args = args,
@@ -11,6 +13,8 @@ var postgres = builder.AddAzurePostgresFlexibleServer("postgres")
             .WithHostPort(19631))
         .WithLifetime(ContainerLifetime.Persistent)
         .WithHostPort(19630)
+        .WithEnvironment("POSTGRES_USER", builder.Configuration.GetValue<string>("Postgres:UserName") ?? throw new InvalidOperationException("Postgres username not configured."))
+        .WithEnvironment("POSTGRES_PASSWORD", builder.Configuration.GetValue<string>("Postgres:Password") ?? throw new InvalidOperationException("Postgres password not configured."))
         .WithDataVolume("bowlneba-data"));
 
 var database = postgres.AddDatabase("bowlneba");
