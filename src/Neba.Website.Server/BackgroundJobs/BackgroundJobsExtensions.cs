@@ -1,6 +1,8 @@
 using Hangfire;
 using Hangfire.PostgreSql;
 
+using Npgsql;
+
 namespace Neba.Website.Server.BackgroundJobs;
 
 #pragma warning disable S1144 // Unused private types or members should be removed
@@ -18,16 +20,22 @@ internal static class BackgroundJobsExtensions
                 return services;
             }
 
-            services.AddHangfire(options => options
-                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-                .UseSimpleAssemblyNameTypeSerializer()
-                .UseRecommendedSerializerSettings()
-                .UsePostgreSqlStorage(postgres => postgres
-                    .UseNpgsqlConnection(connectionString), new PostgreSqlStorageOptions
-                    {
-                        SchemaName = "hangfire",
-                        PrepareSchemaIfNecessary = true
-                    }));
+            services.AddHangfire((serviceProvider, options) =>
+            {
+                var dataSource = serviceProvider.GetRequiredService<NpgsqlDataSource>();
+
+                options
+                    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                    .UseSimpleAssemblyNameTypeSerializer()
+                    .UseRecommendedSerializerSettings()
+                    .UsePostgreSqlStorage(postgres => postgres
+                        .UseConnectionFactory(new HangfireConnectionFactory(dataSource)),
+                        new PostgreSqlStorageOptions
+                        {
+                            SchemaName = "hangfire",
+                            PrepareSchemaIfNecessary = true
+                        });
+            });
 
             return services;
         }
