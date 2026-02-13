@@ -9,3 +9,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      # Pinned to avoid MTP v2 incompatibility with current xunit.v3 stack.
+      - dependency-name: "Microsoft.Testing.Extensions.CodeCoverage"
