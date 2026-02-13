@@ -5,7 +5,7 @@ using Neba.TestFactory.Attributes;
 
 namespace Neba.Infrastructure.Tests.Telemetry.Tracing;
 
-#pragma warning disable CA2000 // Dispose objects before losing scope - processors don't need disposal in tests
+#pragma warning disable CA2000 // CA2000 in this fixture is triggered by disposable test scaffolding (processor instances and telemetry setup); CreatePostgreSqlActivity now returns a scope that owns ActivitySource/Activity lifetime.
 
 [UnitTest]
 [Component("ServiceDefaults.Telemetry.Tracing")]
@@ -393,10 +393,10 @@ public sealed class HangfireTraceFilterProcessorTests
 
     #region Helper Methods
 
-    private static Activity CreatePostgreSqlActivity(string queryText)
+    private static PostgreSqlActivityScope CreatePostgreSqlActivity(string queryText)
     {
-        using var activitySource = new ActivitySource("Npgsql");
-        using var listener = new ActivityListener
+        var activitySource = new ActivitySource("Npgsql");
+        var listener = new ActivityListener
         {
             ShouldListenTo = _ => true,
             Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
@@ -407,7 +407,24 @@ public sealed class HangfireTraceFilterProcessorTests
         activity.ShouldNotBeNull();
         activity.SetTag("db.query.text", queryText);
         activity.SetTag("db.system.name", "postgresql");
-        return activity;
+        return new PostgreSqlActivityScope(activity, activitySource, listener);
+    }
+
+    private sealed class PostgreSqlActivityScope(Activity activity, ActivitySource activitySource, ActivityListener listener) : IDisposable
+    {
+        public Activity Activity { get; } = activity;
+
+        public static implicit operator Activity(PostgreSqlActivityScope scope)
+        {
+            return scope.Activity;
+        }
+
+        public void Dispose()
+        {
+            Activity.Dispose();
+            activitySource.Dispose();
+            listener.Dispose();
+        }
     }
 
     private static void AssertFiltered(Activity activity)
