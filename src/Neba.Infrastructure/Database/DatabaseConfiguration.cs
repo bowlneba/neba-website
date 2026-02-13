@@ -76,7 +76,7 @@ internal static class DatabaseConfiguration
             }
 
             var hosts = host.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            return (hosts.Length != 0) 
+            return (hosts.Length != 0)
                 && hosts.All(static value =>
                     value.Equals("localhost", StringComparison.OrdinalIgnoreCase)
                     || value.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)
