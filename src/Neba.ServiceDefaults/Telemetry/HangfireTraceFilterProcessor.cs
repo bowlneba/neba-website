@@ -17,16 +17,13 @@ internal sealed class HangfireTraceFilterProcessor
         // Filter out Hangfire-related database operations
         // Most Hangfire traces come from Npgsql executing internal queries
         if (activity.Kind == ActivityKind.Client &&
-            activity.OperationName == "postgresql")
+            activity.OperationName == "postgresql" &&
+            activity.GetTagItem("db.query.text") is string queryText &&
+            IsHangfireInternalQuery(queryText))
         {
-            // Check if this is a Hangfire internal query by examining the query text
-            var queryText = activity.GetTagItem("db.query.text") as string;
-            if (queryText != null && IsHangfireInternalQuery(queryText))
-            {
-                // Suppress this trace
-                activity.ActivityTraceFlags &= ~ActivityTraceFlags.Recorded;
-                return;
-            }
+            // Suppress this trace
+            activity.ActivityTraceFlags &= ~ActivityTraceFlags.Recorded;
+            return;
         }
 
         // Also filter direct Hangfire activity traces (if any)
