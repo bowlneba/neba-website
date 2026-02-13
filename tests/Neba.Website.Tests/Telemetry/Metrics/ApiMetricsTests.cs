@@ -5,6 +5,7 @@ using Neba.Website.Server.Telemetry.Metrics;
 
 namespace Neba.Website.Tests.Telemetry.Metrics;
 
+[Collection("ApiMetrics")]
 [UnitTest]
 [Component("Website.Telemetry.Metrics")]
 public sealed class ApiMetricsTests : IDisposable
