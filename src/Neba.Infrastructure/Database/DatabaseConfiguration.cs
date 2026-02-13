@@ -19,7 +19,7 @@ internal static class DatabaseConfiguration
                 // Ensure connection string has SSL for non-local PostgreSQL hosts.
                 // Local development hosts are allowed to omit SSL.
                 if (!(HasExplicitSslMode(settings.ConnectionString)
-                    || !IsLocalConnectionString(settings.ConnectionString)))
+                    || IsLocalConnectionString(settings.ConnectionString)))
                 {
                     settings.ConnectionString += ";Ssl Mode=Require";
                 }
