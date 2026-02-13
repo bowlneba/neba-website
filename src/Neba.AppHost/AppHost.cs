@@ -24,16 +24,15 @@ var api = builder.AddProject<Projects.Neba_Api>("api")
     .WithHttpHealthCheck("/health")
     .WithReference(database)
     .WaitFor(database)
+    .WithUrlForEndpoint("http", callback =>
+    {
+        callback.DisplayText = "Scalar API";
+        callback.Url = "/scalar";
+    })
     .WithUrls(context =>
     {
         var endpoint = context.GetEndpoint("http")
             ?? throw new InvalidOperationException("HTTP endpoint not found.");
-
-        context.Urls.Add(new ResourceUrlAnnotation
-        {
-            Url = $"{endpoint.Url}/scalar",
-            DisplayText = "Scalar API Docs"
-        });
 
         context.Urls.Add(new ResourceUrlAnnotation
         {
