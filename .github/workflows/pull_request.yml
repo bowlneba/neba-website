@@ -78,6 +78,18 @@ jobs:
         if: steps.changes.outputs.apphost == 'true'
         run: azd config set auth.useAzCliAuth true
 
+      - name: Initialize azd environment
+        if: steps.changes.outputs.apphost == 'true'
+        env:
+          AZURE_ENV_NAME: bowlneba-prod
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+        run: |
+          if ! azd env list | grep -q "$AZURE_ENV_NAME"; then
+            azd env new $AZURE_ENV_NAME --location $AZURE_LOCATION --subscription ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          else
+            azd env select $AZURE_ENV_NAME
+          fi
+
       - name: Preview provision
         if: steps.changes.outputs.apphost == 'true'
         id: preview
