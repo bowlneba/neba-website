@@ -158,6 +158,7 @@ public sealed class ApiMetricsTests : IDisposable
     {
         // Arrange
         _longMeasurements.Clear();
+        _doubleMeasurements.Clear();
 
         // Act
         ApiMetrics.RecordApiCall("Api1", "Operation1");
@@ -173,6 +174,7 @@ public sealed class ApiMetricsTests : IDisposable
     public void RecordSuccess_ShouldHandleZeroDuration_Successfully()
     {
         // Arrange
+        _longMeasurements.Clear();
         _doubleMeasurements.Clear();
 
         // Act
@@ -204,6 +206,7 @@ public sealed class ApiMetricsTests : IDisposable
     {
         // Arrange
         const double largeDuration = 999999.99;
+        _longMeasurements.Clear();
         _doubleMeasurements.Clear();
 
         // Act
@@ -226,6 +229,7 @@ public sealed class ApiMetricsTests : IDisposable
     {
         // Arrange
         _longMeasurements.Clear();
+        _doubleMeasurements.Clear();
 
         // Act
         ApiMetrics.RecordError("Api", "Operation", 100.0, "HttpError", statusCode);
