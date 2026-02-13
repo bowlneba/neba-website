@@ -100,7 +100,9 @@ jobs:
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
           AZD_AUTH_USE_AZURE_CLI: 'true'
-        run: azd provision --preview 2>&1 | tee /tmp/azd-preview.txt
+        run: |
+          set -euo pipefail
+          azd provision --preview 2>&1 | tee /tmp/azd-preview.txt
 
       - name: Comment preview on PR
         if: steps.changes.outputs.apphost == 'true' && github.event_name == 'pull_request'
