@@ -25,6 +25,9 @@ jobs:
       - name: Setup azd
         uses: Azure/setup-azd@c495e71ba59e44bfaaac10a32c8ee90d191ca4a3 # v2
 
+      - name: Configure azd authentication
+        run: azd config set auth.useAzCliAuth true
+
       - name: Provision infrastructure
         env:
           AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}

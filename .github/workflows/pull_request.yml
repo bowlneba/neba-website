@@ -46,7 +46,6 @@ jobs:
     name: Infrastructure Preview
     runs-on: ubuntu-latest
     needs: format-check
-    environment: Production
     permissions:
       contents: read
       id-token: write
@@ -75,11 +74,15 @@ jobs:
         if: steps.changes.outputs.apphost == 'true'
         uses: Azure/setup-azd@c495e71ba59e44bfaaac10a32c8ee90d191ca4a3 # v2
 
+      - name: Configure azd authentication
+        if: steps.changes.outputs.apphost == 'true'
+        run: azd config set auth.useAzCliAuth true
+
       - name: Preview provision
         if: steps.changes.outputs.apphost == 'true'
         id: preview
         env:
-          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+          AZURE_ENV_NAME: bowlneba-prod
           AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
