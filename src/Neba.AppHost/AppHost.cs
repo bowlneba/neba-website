@@ -8,14 +8,14 @@ var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOpt
 
 var postgres = builder.AddAzurePostgresFlexibleServer("postgres")
     .RunAsContainer(container => container
+        .WithContainerName("bowlneba-postgres")
         .WithPgAdmin(pgAdmin => pgAdmin
+            .WithContainerName("bowlneba-pgadmin")
             .WithLifetime(ContainerLifetime.Persistent)
             .WithHostPort(19631))
         .WithLifetime(ContainerLifetime.Persistent)
         .WithHostPort(19630)
-        .WithEnvironment("POSTGRES_USER", builder.Configuration.GetValue<string>("Postgres:UserName") ?? throw new InvalidOperationException("Postgres username not configured."))
-        .WithEnvironment("POSTGRES_PASSWORD", builder.Configuration.GetValue<string>("Postgres:Password") ?? throw new InvalidOperationException("Postgres password not configured."))
-        .WithDataVolume("bowlneba-data"));
+        .WithDataVolume("bowlneba-pgdata"));
 
 var database = postgres.AddDatabase("bowlneba");
 
