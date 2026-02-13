@@ -12,7 +12,17 @@ internal static class DatabaseConfiguration
         {
             const string connectionStringName = "bowlneba";
 
-            builder.AddAzureNpgsqlDataSource(connectionStringName);
+            builder.AddAzureNpgsqlDataSource(connectionStringName, settings =>
+            {
+                // Ensure connection string has SSL for Azure PostgreSQL (not needed for local Docker)
+                var cs = settings.ConnectionString;
+                if (cs?.Contains("Ssl Mode=", StringComparison.OrdinalIgnoreCase) == false
+                    && !cs.Contains("localhost", StringComparison.OrdinalIgnoreCase)
+                    && !cs.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase))
+                {
+                    settings.ConnectionString += ";Ssl Mode=Require";
+                }
+            });
             builder.AddAzureNpgsqlDbContext<AppDbContext>(connectionStringName);
 
             return builder;
