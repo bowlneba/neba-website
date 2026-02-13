@@ -55,7 +55,7 @@ jobs:
 
       - name: Detect AppHost changes
         id: changes
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3
         with:
           filters: |
             apphost:
@@ -63,7 +63,7 @@ jobs:
 
       - name: Login to Azure
         if: steps.changes.outputs.apphost == 'true'
-        uses: azure/login@v2
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2
         with:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
@@ -71,7 +71,7 @@ jobs:
 
       - name: Setup azd
         if: steps.changes.outputs.apphost == 'true'
-        uses: Azure/setup-azd@v2
+        uses: Azure/setup-azd@c495e71ba59e44bfaaac10a32c8ee90d191ca4a3 # v2
 
       - name: Preview provision
         if: steps.changes.outputs.apphost == 'true'
