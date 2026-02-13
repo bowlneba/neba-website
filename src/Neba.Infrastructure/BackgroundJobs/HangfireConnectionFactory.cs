@@ -4,9 +4,9 @@ using Npgsql;
 
 namespace Neba.Infrastructure.BackgroundJobs;
 
-internal sealed class HangfireConnectionFactory(NpgsqlDataSource dataSource) 
+internal sealed class HangfireConnectionFactory(NpgsqlDataSource dataSource)
     : IConnectionFactory
 {
-    public NpgsqlConnection GetOrCreateConnection() 
+    public NpgsqlConnection GetOrCreateConnection()
         => dataSource.CreateConnection();
 }
