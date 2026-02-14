@@ -7,6 +7,7 @@ using Neba.Application.Clock;
 using Neba.Infrastructure.BackgroundJobs;
 using Neba.Infrastructure.Clock;
 using Neba.Infrastructure.Database;
+using Neba.Infrastructure.Documents;
 using Neba.Infrastructure.Telemetry.Tracing;
 
 namespace Neba.Infrastructure;
@@ -38,6 +39,7 @@ public static class InfrastructureConfiguration
                 .AddKeyVault();
 
             builder.Services.AddBackgroundJobs(builder.Configuration);
+            builder.Services.AddGoogleDrive(builder.Configuration);
 
             builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
             builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();

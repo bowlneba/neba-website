@@ -7,6 +7,8 @@ namespace Neba.Infrastructure.Documents;
 /// </summary>
 internal sealed record GoogleDriveSettings
 {
+    internal const string ConfigurationSectionName = "GoogleDrive";
+    
     /// <summary>
     /// Gets the name of the application that will be used when accessing Google Drive. This is required for authentication and API access.
     /// </summary>
