@@ -31,5 +31,10 @@
       "/Users/kippermand/Projects/bowlneba/neba-website/tests/Neba.Website.Server.Tests",
       "/Users/kippermand/Projects/bowlneba/neba-website/.claude"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "aspire",
+    "playwright"
+  ],
+  "enableAllProjectMcpServers": true
 }
