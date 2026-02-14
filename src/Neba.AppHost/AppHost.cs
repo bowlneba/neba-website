@@ -1,28 +1,36 @@
-var builder = DistributedApplication.CreateBuilder(args);
+var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions
+{
+    Args = args,
+    DashboardApplicationName = "NEBA Website",
+});
 
-var postgresUser = builder.AddParameter("postgres-userName", "neba-db-user");
+var postgres = builder.AddAzurePostgresFlexibleServer("postgres")
+    .RunAsContainer(container => container
+        .WithContainerName("bowlneba-postgres")
+        .WithPgAdmin(pgAdmin => pgAdmin
+            .WithContainerName("bowlneba-pgadmin")
+            .WithLifetime(ContainerLifetime.Persistent)
+            .WithHostPort(19631))
+        .WithLifetime(ContainerLifetime.Persistent)
+        .WithHostPort(19630)
+        .WithDataVolume("bowlneba-pgdata"));
 
-var postgres = builder.AddPostgres("postgres")
-    .WithUserName(postgresUser)
-    .WithPgAdmin()
-    .WithDataVolume("neba-website-data");
+var database = postgres.AddDatabase("bowlneba");
 
-var database = postgres.AddDatabase("neba-website");
-
-var apiService = builder.AddProject<Projects.Neba_Api>("api")
+var api = builder.AddProject<Projects.Neba_Api>("api")
+    .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(database)
     .WaitFor(database)
+    .WithUrlForEndpoint("http", callback =>
+    {
+        callback.DisplayText = "Scalar API";
+        callback.Url = "/scalar";
+    })
     .WithUrls(context =>
     {
         var endpoint = context.GetEndpoint("http")
             ?? throw new InvalidOperationException("HTTP endpoint not found.");
-
-        context.Urls.Add(new ResourceUrlAnnotation
-        {
-            Url = $"{endpoint.Url}/scalar",
-            DisplayText = "Scalar API Docs"
-        });
 
         context.Urls.Add(new ResourceUrlAnnotation
         {
@@ -31,23 +39,20 @@ var apiService = builder.AddProject<Projects.Neba_Api>("api")
         });
     });
 
-builder.AddProject<Projects.Neba_Website_Server>("web")
+var web = builder.AddProject<Projects.Neba_Website_Server>("web")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
-    .WithReference(database)
-    .WaitFor(database)
-    .WithReference(apiService)
-    .WaitFor(apiService)
-    .WithUrls(context =>
-    {
-        var endpoint = context.GetEndpoint("http")
-            ?? throw new InvalidOperationException("HTTP endpoint not found.");
+    .WithReference(api)
+    .WaitFor(api);
 
-        context.Urls.Add(new ResourceUrlAnnotation
-        {
-            Url = $"{endpoint.Url}/admin/background-jobs",
-            DisplayText = "Hangfire Dashboard"
-        });
-    });
+if (builder.ExecutionContext.IsPublishMode)
+{
+    var workspace = builder.AddAzureLogAnalyticsWorkspace("logs");
+    var appInsights = builder.AddAzureApplicationInsights("appinsights")
+        .WithLogAnalyticsWorkspace(workspace);
+
+    api.WithReference(appInsights);
+    web.WithReference(appInsights);
+}
 
 await builder.Build().RunAsync();

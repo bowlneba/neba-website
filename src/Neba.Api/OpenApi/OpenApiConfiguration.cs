@@ -51,15 +51,9 @@ internal static class OpenApiConfiguration
     {
         /// <summary>
         /// Configures OpenAPI documentation middleware with Scalar UI.
-        /// Only enabled in Development environment.
         /// </summary>
         public WebApplication UseOpenApiDocumentation()
         {
-            if (!app.Environment.IsDevelopment())
-            {
-                return app;
-            }
-
             app.UseOpenApi(config => config.Path = "/openapi/{documentName}.json");
 
             app.MapScalarApiReference(config => config

@@ -23,9 +23,8 @@ builder.Services
 
 builder.Services.AddOpenApiDocumentation();
 
-builder.Services
-    .AddApplication()
-    .AddInfrastructure(builder.Configuration);
+builder.Services.AddApplication();
+builder.AddInfrastructure();
 
 var app = builder.Build();
 

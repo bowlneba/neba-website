@@ -21,7 +21,9 @@
       "Bash(tree:*)",
       "Bash(npm install:*)",
       "Bash(npx playwright:*)",
-      "Read(//Users/kippermand/Projects/bowlneba/**)"
+      "Read(//Users/kippermand/Projects/bowlneba/**)",
+      "mcp__aspire__get_integration_docs",
+      "mcp__aspire__list_resources"
     ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",

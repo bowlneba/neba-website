@@ -8,6 +8,8 @@ using Microsoft.Extensions.Options;
 
 using Neba.Application.BackgroundJobs;
 
+using Npgsql;
+
 namespace Neba.Infrastructure.BackgroundJobs;
 
 #pragma warning disable S1144 // Unused private types or members should be removed
@@ -31,7 +33,7 @@ internal static class BackgroundJobsConfiguration
                 return settings;
             });
 
-            services.AddHangfireInfrastructure(config);
+            services.AddHangfireInfrastructure();
 
             string[] tags = ["infrastructure", "background-jobs"];
 
@@ -43,14 +45,12 @@ internal static class BackgroundJobsConfiguration
             services.AddScoped<IBackgroundJobScheduler, HangfireBackgroundJobScheduler>();
         }
 
-        private void AddHangfireInfrastructure(IConfiguration config)
+        private void AddHangfireInfrastructure()
         {
-            string connectionString = config.GetConnectionString("neba-website")
-                ?? throw new InvalidOperationException("Connection string 'neba-website' not found.");
-
             services.AddHangfire((serviceProvider, options) =>
             {
                 HangfireSettings settings = serviceProvider.GetRequiredService<HangfireSettings>();
+                var dataSource = serviceProvider.GetRequiredService<NpgsqlDataSource>();
 
                 options
                     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -59,7 +59,7 @@ internal static class BackgroundJobsConfiguration
                     .UseFilter(new AutomaticRetryAttribute { Attempts = settings.AutomaticRetryAttempts })
                     .UseFilter(new HangfireJobExpirationFilterAttribute(settings))
                     .UsePostgreSqlStorage(postgres => postgres
-                        .UseNpgsqlConnection(connectionString),
+                        .UseConnectionFactory(new HangfireConnectionFactory(dataSource)),
                         new PostgreSqlStorageOptions
                         {
                             SchemaName = "hangfire",
