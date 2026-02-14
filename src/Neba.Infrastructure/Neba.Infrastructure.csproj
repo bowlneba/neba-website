@@ -16,6 +16,7 @@
   <ItemGroup>
     <PackageReference Include="Aspire.Azure.Npgsql" />
     <PackageReference Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Aspire.Azure.Security.KeyVault" />
     <PackageReference Include="AspNetCore.HealthChecks.Hangfire" />
     <PackageReference Include="Hangfire.AspNetCore" />
     <PackageReference Include="Hangfire.PostgreSql" />

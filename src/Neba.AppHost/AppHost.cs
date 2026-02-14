@@ -51,8 +51,14 @@ if (builder.ExecutionContext.IsPublishMode)
     var appInsights = builder.AddAzureApplicationInsights("appinsights")
         .WithLogAnalyticsWorkspace(workspace);
 
-    api.WithReference(appInsights);
-    web.WithReference(appInsights);
+    var keyVault = builder.AddAzureKeyVault("keyvault");
+
+    api
+        .WithReference(appInsights)
+        .WithReference(keyVault);
+
+    web
+        .WithReference(appInsights);
 }
 
 await builder.Build().RunAsync();

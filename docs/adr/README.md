@@ -62,6 +62,7 @@ ADRs are numbered sequentially:
 ## Current ADRs
 
 - [ADR-0001](0001-container-apps-revision-mode-and-cost-management.md): Container Apps Revision Mode and Cost Management
+- [ADR-0002](0002-azure-key-vault-for-secrets-management.md): Azure Key Vault for Secrets Management
 
 ## Resources
 

@@ -33,12 +33,28 @@ public static class InfrastructureConfiguration
 
             // caching decorators can go here
 
-            builder.AddDatabase();
+            builder
+                .AddDatabase()
+                .AddKeyVault();
 
             builder.Services.AddBackgroundJobs(builder.Configuration);
 
             builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
             builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
+
+            return builder;
+        }
+
+        private WebApplicationBuilder AddKeyVault()
+        {
+            var keyVaultConnectionString = builder.Configuration.GetConnectionString("keyvault");
+
+            if (string.IsNullOrWhiteSpace(keyVaultConnectionString))
+            {
+                return builder;
+            }
+
+            builder.Configuration.AddAzureKeyVaultSecrets(keyVaultConnectionString);
 
             return builder;
         }
