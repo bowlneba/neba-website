@@ -40,6 +40,7 @@ Before ending a session where significant discoveries were made, consider whethe
 - Use `MockBehavior.Strict` for all mocks
 - Use `NullLogger<T>.Instance`, never mock ILogger
 - Use test factories from `Neba.TestFactory`, never manual entity instantiation
+- Use **Shouldly** for assertions, NOT FluentAssertions
 
 ### API Endpoint Checklist
 

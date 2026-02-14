@@ -19,6 +19,7 @@
     <PackageReference Include="AspNetCore.HealthChecks.Hangfire" />
     <PackageReference Include="Hangfire.AspNetCore" />
     <PackageReference Include="Hangfire.PostgreSql" />
+    <PackageReference Include="HtmlAgilityPack" />
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
   </ItemGroup>
