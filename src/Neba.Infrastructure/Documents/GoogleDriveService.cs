@@ -144,7 +144,7 @@ internal sealed class GoogleDriveService(
             type = "service_account",
             project_id = settings.Credentials.ProjectId,
             private_key_id = settings.Credentials.PrivateKeyId,
-            private_key = settings.Credentials.PrivateKey.Replace("\\n", "\n", StringComparison.InvariantCulture),
+            private_key = settings.Credentials.PrivateKey,
             client_email = settings.Credentials.ClientEmail,
             client_id = string.Empty, // Not required for service account auth
             auth_uri = "https://accounts.google.com/o/oauth2/auth",
