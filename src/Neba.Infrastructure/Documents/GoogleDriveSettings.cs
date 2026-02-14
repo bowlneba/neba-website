@@ -65,16 +65,16 @@ internal sealed record GoogleDriveCredentials
 internal sealed record Document
 {
     /// <summary>
-    /// Gets the name of the document. This is a required field that identifies the document within the application. It is used for display purposes and to reference the document when accessing it through the Google Drive API.
-    /// </summary>
-    [Required]
-    public required string Name { get; init; }
-
-    /// <summary>
     /// Gets the unique document ID assigned by Google Drive. This ID is required to access the specific document through the Google Drive API. It is essential for retrieving the document's content and must be provided for each document configured in the application.
     /// </summary>
     [Required]
     public required string DocumentId { get; init; }
+
+    /// <summary>
+    /// Gets the name of the document. This is a required field that identifies the document within the application. It is used for display purposes and to reference the document when accessing it through the Google Drive API.
+    /// </summary>
+    [Required]
+    public required string Name { get; init; }
 
     /// <summary>
     /// Gets the web route for accessing the document. This is a required field that specifies the URL path through which the document can be accessed within the application. It is used to route requests to the appropriate document when users attempt to access it through the application's interface.
