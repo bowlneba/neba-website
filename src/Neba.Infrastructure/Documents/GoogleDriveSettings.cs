@@ -8,12 +8,12 @@ namespace Neba.Infrastructure.Documents;
 internal sealed record GoogleDriveSettings
 {
     internal const string ConfigurationSectionName = "GoogleDrive";
-    
+
     /// <summary>
     /// Gets the name of the application that will be used when accessing Google Drive. This is required for authentication and API access.
     /// </summary>
     [Required]
-    public required string ApplicationName { get; init;}
+    public required string ApplicationName { get; init; }
 
     /// <summary>
     /// Gets the credentials required to authenticate with Google Drive. This includes the private key, client email, private key ID, and client X509 certificate URL. These credentials are necessary for secure access to the Google Drive API.
