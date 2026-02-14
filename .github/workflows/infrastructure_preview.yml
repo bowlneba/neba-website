@@ -1,0 +1,92 @@
+name: Infrastructure Preview
+
+on:
+  workflow_call:
+    inputs:
+      azure_env_name:
+        description: Azure Developer CLI environment name
+        required: true
+        type: string
+      azure_location:
+        description: Azure location for environment initialization
+        required: true
+        type: string
+      artifact_name:
+        description: Artifact name for the preview output
+        required: false
+        default: azd-preview
+        type: string
+    outputs:
+      artifact-name:
+        description: Name of the uploaded artifact containing preview output
+        value: ${{ jobs.preview.outputs.artifact-name }}
+
+jobs:
+  preview:
+    name: Infrastructure Preview
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      artifact-name: ${{ steps.meta.outputs.artifact-name }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Login to Azure
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2
+        with:
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+
+      - name: Setup azd
+        uses: Azure/setup-azd@c495e71ba59e44bfaaac10a32c8ee90d191ca4a3 # v2
+
+      - name: Configure azd authentication
+        run: azd config set auth.useAzCliAuth true
+
+      - name: Initialize azd environment
+        env:
+          AZURE_ENV_NAME: ${{ inputs.azure_env_name }}
+          AZURE_LOCATION: ${{ inputs.azure_location }}
+        run: |
+          if ! azd env list | grep -q "$AZURE_ENV_NAME"; then
+            azd env new "$AZURE_ENV_NAME" --location "$AZURE_LOCATION" --subscription "${{ vars.AZURE_SUBSCRIPTION_ID }}"
+          else
+            azd env select "$AZURE_ENV_NAME"
+          fi
+
+      - name: Preview provision
+        env:
+          AZURE_ENV_NAME: ${{ inputs.azure_env_name }}
+          AZURE_LOCATION: ${{ inputs.azure_location }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZD_AUTH_USE_AZURE_CLI: 'true'
+        run: |
+          set -euo pipefail
+          azd provision --preview 2>&1 | tee azd-preview.txt
+
+      - name: Add preview to job summary
+        run: |
+          {
+            echo "## Infrastructure Preview"
+            echo
+            echo '```'
+            cat azd-preview.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Set artifact metadata
+        id: meta
+        run: echo "artifact-name=${{ inputs.artifact_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: azd-preview.txt
+          retention-days: 7
