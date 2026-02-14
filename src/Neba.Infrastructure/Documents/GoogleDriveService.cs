@@ -15,20 +15,33 @@ using Neba.Infrastructure.Telemetry;
 
 namespace Neba.Infrastructure.Documents;
 
-internal sealed class GoogleDriveService(
-    GoogleDriveSettings settings,
-    HtmlProcessor htmlProcessor,
-    IStopwatchProvider stopwatchProvider,
-    ILogger<GoogleDriveService> logger)
-        : IDocumentsService, IDisposable
+internal sealed class GoogleDriveService : IDocumentsService, IDisposable
 {
     private static readonly ActivitySource ActivitySource = new("Neba.Documents");
 
-    private readonly GoogleDriveSettings _settings = settings;
-    private readonly HtmlProcessor _htmlProcessor = htmlProcessor;
-    private readonly DriveService _driveService = CreateDriveService(settings);
-    private readonly IStopwatchProvider _stopwatchProvider = stopwatchProvider;
-    private readonly ILogger<GoogleDriveService> _logger = logger;
+    private readonly GoogleDriveSettings _settings;
+    private readonly HtmlProcessor _htmlProcessor;
+    private readonly Lazy<DriveService> _driveService;
+    private readonly IStopwatchProvider _stopwatchProvider;
+    private readonly ILogger<GoogleDriveService> _logger;
+
+    public GoogleDriveService(
+        GoogleDriveSettings settings,
+        HtmlProcessor htmlProcessor,
+        IStopwatchProvider stopwatchProvider,
+        ILogger<GoogleDriveService> logger)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(htmlProcessor);
+        ArgumentNullException.ThrowIfNull(stopwatchProvider);
+        ArgumentNullException.ThrowIfNull(logger);
+
+        _settings = settings;
+        _htmlProcessor = htmlProcessor;
+        _stopwatchProvider = stopwatchProvider;
+        _logger = logger;
+        _driveService = new Lazy<DriveService>(() => CreateDriveService(settings));
+    }
 
     /// <summary>
     /// Retrieves a document as HTML by its configured name.
@@ -60,7 +73,7 @@ internal sealed class GoogleDriveService(
             activity?.AddEvent(new ActivityEvent("export_started"));
 
             // Export document as HTML from Google Drive
-            var exportRequest = _driveService.Files.Export(
+            var exportRequest = _driveService.Value.Files.Export(
                 document.DocumentId,
                 MediaTypeNames.Text.Html);
 
@@ -169,7 +182,10 @@ internal sealed class GoogleDriveService(
     }
 
     public void Dispose()
-        => _driveService?.Dispose();
+    {
+        if (_driveService.IsValueCreated)
+            _driveService.Value.Dispose();
+    }
 }
 
 /// <summary>

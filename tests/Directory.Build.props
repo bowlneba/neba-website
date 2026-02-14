@@ -9,6 +9,7 @@
     <!-- Code coverage settings for SonarCloud -->
     <CollectCoverage>true</CollectCoverage>
     <CoverletOutputFormat>opencover</CoverletOutputFormat>
+    <NoWarn>$(NoWarn);CA1031</NoWarn>
   </PropertyGroup>
 
   <!-- Enable Microsoft Testing Platform runner for all test projects except the shared factory library -->
