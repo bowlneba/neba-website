@@ -1,9 +1,6 @@
 using System.Security.Cryptography;
 
-using Asp.Versioning;
-
 using FastEndpoints;
-using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Weather.GetWeatherForecast;
@@ -17,10 +14,6 @@ internal sealed class GetWeatherForecastEndpoint
     {
         Get(string.Empty);
         Group<WeatherGroup>();
-
-        Options(options => options
-            .WithVersionSet("Weather")
-            .MapToApiVersion(new ApiVersion(1, 0)));
 
         AllowAnonymous();
 
