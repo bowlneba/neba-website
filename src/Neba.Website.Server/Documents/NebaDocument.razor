@@ -15,7 +15,7 @@
 @using System.Globalization
 @implements IAsyncDisposable
 
-<script src="./Components/NebaDocument.razor.js" type="module"></script>
+<script src="./Documents/NebaDocument.razor.js" type="module"></script>
 <link rel="stylesheet" href="/neba-document.css" />
 
 @if (!string.IsNullOrWhiteSpace(ErrorMessage))
@@ -230,7 +230,7 @@
         try
         {
             _module ??= await JSRuntime.InvokeAsync<IJSObjectReference>(
-                "import", "./Components/NebaDocument.razor.js");
+                "import", "./Documents/NebaDocument.razor.js");
 
             _dotNetRef ??= DotNetObjectReference.Create(this);
 

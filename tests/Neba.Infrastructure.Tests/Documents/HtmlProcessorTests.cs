@@ -114,6 +114,43 @@ public sealed class HtmlProcessorTests
         doc.DocumentNode.SelectSingleNode("//h6")?.GetAttributeValue("id", "").ShouldBe("fine-print");
     }
 
+    [Fact(DisplayName = "Process should preserve original heading IDs as data-original-id")]
+    public void Process_PreservesOriginalIds_AsDataAttribute()
+    {
+        // Arrange — Google Docs headings have IDs like "h.xk7tre4v41xy"
+        const string rawHtml = """
+            <html>
+            <body>
+                <h1 id="h.abc123">Article 1</h1>
+                <h2 id="h.def456">Section A</h2>
+                <h3>No Original ID</h3>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        var doc = new HtmlDocument();
+        doc.LoadHtml(result);
+
+        var h1 = doc.DocumentNode.SelectSingleNode("//h1");
+        h1.ShouldNotBeNull();
+        h1!.GetAttributeValue("id", "").ShouldBe("article-1");
+        h1.GetAttributeValue("data-original-id", "").ShouldBe("h.abc123");
+
+        var h2 = doc.DocumentNode.SelectSingleNode("//h2");
+        h2.ShouldNotBeNull();
+        h2!.GetAttributeValue("id", "").ShouldBe("section-a");
+        h2.GetAttributeValue("data-original-id", "").ShouldBe("h.def456");
+
+        var h3 = doc.DocumentNode.SelectSingleNode("//h3");
+        h3.ShouldNotBeNull();
+        h3!.GetAttributeValue("id", "").ShouldBe("no-original-id");
+        h3.GetAttributeValue("data-original-id", "").ShouldBe("");
+    }
+
     [Fact(DisplayName = "Process should generate kebab-case anchor IDs from heading text")]
     public void Process_GeneratesKebabCaseAnchorIds_FromHeadingText()
     {

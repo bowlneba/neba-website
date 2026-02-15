@@ -252,16 +252,51 @@ function scrollTocToActiveLink(link) {
 }
 
 /**
+ * Builds a lookup map from any existing element IDs (e.g., Google Docs anchors like
+ * "h.xk7tre4v41xy") found on heading elements to their generated anchor IDs.
+ * This allows hash-fragment links using original IDs to resolve to the correct heading.
+ * @param {NodeList} headings - Collection of heading elements
+ * @returns {Map<string, string>} Map from original/alternative IDs to current heading IDs
+ */
+function buildAnchorLookup(headings) {
+    const lookup = new Map();
+
+    headings.forEach(heading => {
+        if (heading.id) {
+            lookup.set(heading.id, heading.id);
+        }
+
+        // Map original Google Docs IDs (preserved as data-original-id by HtmlProcessor)
+        const originalId = heading.dataset.originalId;
+        if (originalId) {
+            lookup.set(originalId, heading.id);
+        }
+
+        // Google Docs may also embed <span> or <a> children with IDs
+        const childAnchors = heading.querySelectorAll('[id]');
+        childAnchors.forEach(child => {
+            if (child.id && child.id !== heading.id) {
+                lookup.set(child.id, heading.id);
+            }
+        });
+    });
+
+    return lookup;
+}
+
+/**
  * Sets up click interception for internal document links.
- * Anchor links (#hash) scroll within the content. Same-origin links invoke a Blazor
- * callback so the parent page can load the document via the API pipeline.
+ * Anchor links (#hash) scroll within the content. Same-origin links that point to
+ * the current page with a hash scroll within content. Cross-page same-origin links
+ * invoke a Blazor callback so the parent page can load the document via the API pipeline.
  * @param {HTMLElement} content - The document content container
+ * @param {NodeList} headings - Collection of heading elements (for anchor lookup)
  * @param {string|null} slideoverId - ID of the slideover container
  * @param {string|null} slideoverOverlayId - ID of the slideover overlay
  * @param {string|null} slideoverCloseId - ID of the slideover close button
  * @param {AbortSignal} signal - Abort signal for cleanup
  */
-function setupInternalLinkNavigation(content, slideoverId, slideoverOverlayId, slideoverCloseId, signal) {
+function setupInternalLinkNavigation(content, headings, slideoverId, slideoverOverlayId, slideoverCloseId, signal) {
     const slideover = slideoverId ? document.getElementById(slideoverId) : null;
     const slideoverOverlay = slideoverOverlayId ? document.getElementById(slideoverOverlayId) : null;
     const slideoverClose = slideoverCloseId ? document.getElementById(slideoverCloseId) : null;
@@ -282,7 +317,9 @@ function setupInternalLinkNavigation(content, slideoverId, slideoverOverlayId, s
         }, { signal });
     }
 
+    const anchorLookup = buildAnchorLookup(headings);
     const contentLinks = content.querySelectorAll('a[href]');
+    const currentPath = globalThis.location.pathname;
 
     contentLinks.forEach(link => {
         link.addEventListener('click', (e) => {
@@ -290,9 +327,10 @@ function setupInternalLinkNavigation(content, slideoverId, slideoverOverlayId, s
             if (!href || href === '#') return;
             if (e.ctrlKey || e.metaKey) return;
 
+            // Hash-only links: scroll within the document
             if (href.startsWith('#')) {
                 e.preventDefault();
-                handleAnchorNavigation(content, href);
+                handleAnchorNavigation(content, href, anchorLookup);
                 return;
             }
 
@@ -301,7 +339,17 @@ function setupInternalLinkNavigation(content, slideoverId, slideoverOverlayId, s
                 const isInternal = linkUrl.origin === globalThis.location.origin;
                 const isExternalProtocol = linkUrl.protocol === 'mailto:' || linkUrl.protocol === 'tel:';
 
-                if (isInternal && !isExternalProtocol && dotNetReference && slideover) {
+                if (!isInternal || isExternalProtocol) return;
+
+                // Same-page link with hash: scroll within content instead of navigating
+                if (linkUrl.pathname === currentPath && linkUrl.hash) {
+                    e.preventDefault();
+                    handleAnchorNavigation(content, linkUrl.hash, anchorLookup);
+                    return;
+                }
+
+                // Different-page internal link: open in slideover via Blazor callback
+                if (dotNetReference && slideover) {
                     e.preventDefault();
                     const pathname = linkUrl.pathname.replace(/^\//, '');
                     slideover.classList.add('active');
@@ -317,12 +365,18 @@ function setupInternalLinkNavigation(content, slideoverId, slideoverOverlayId, s
 
 /**
  * Handles anchor (#hash) navigation within the current document.
+ * Uses the anchor lookup to resolve Google Docs IDs (e.g., "h.xk7tre4v41xy")
+ * to generated heading IDs (e.g., "article-1-name-purpose").
  * @param {HTMLElement} content - The document content container
- * @param {string} href - The hash href (e.g., "#section-1")
+ * @param {string} href - The hash href (e.g., "#section-1" or "#h.xk7tre4v41xy")
+ * @param {Map<string, string>} anchorLookup - Map from original IDs to heading IDs
  */
-function handleAnchorNavigation(content, href) {
-    const targetId = href.substring(1);
-    const targetElement = document.getElementById(targetId);
+function handleAnchorNavigation(content, href, anchorLookup) {
+    const rawId = href.substring(1);
+
+    // Resolve through lookup (handles Google Docs IDs → generated kebab-case IDs)
+    const resolvedId = anchorLookup.get(rawId) ?? rawId;
+    const targetElement = document.getElementById(resolvedId) ?? document.getElementById(rawId);
 
     if (!targetElement) return;
 
@@ -343,8 +397,10 @@ function handleAnchorNavigation(content, href) {
         globalThis.scrollTo({ top: targetPosition, behavior: 'smooth' });
     }
 
-    if (globalThis.location.hash !== `#${targetId}`) {
-        globalThis.location.hash = targetId;
+    // Use replaceState instead of location.hash to avoid triggering Blazor's router
+    const newHash = `#${resolvedId}`;
+    if (globalThis.location.hash !== newHash) {
+        history.replaceState(null, '', newHash);
     }
 }
 
@@ -394,13 +450,13 @@ export function initialize(dotNetRef, config) {
 
     if (tocList && headings.length > 0) {
         generateAndPopulateToc(headings, tocList, tocMobileList);
-    } else if (tocList && headings.length === 0) {
-        return false;
+        setupMobileModal(tocMobileButton, tocModal, tocModalOverlay, tocModalClose, tocMobileList, signal);
+        setupScrollSpy(content, tocList, headings, signal);
     }
 
-    setupMobileModal(tocMobileButton, tocModal, tocModalOverlay, tocModalClose, tocMobileList, signal);
-    setupScrollSpy(content, tocList, headings, signal);
-    setupInternalLinkNavigation(content, slideoverId, slideoverOverlayId, slideoverCloseId, signal);
+    // Always set up link navigation — even when no TOC headings are found,
+    // internal links still need to be intercepted to prevent Blazor router navigation.
+    setupInternalLinkNavigation(content, headings, slideoverId, slideoverOverlayId, slideoverCloseId, signal);
 
     isInitialized = true;
     return true;

@@ -46,6 +46,14 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
 
         foreach (var heading in headings)
         {
+            // Preserve original ID (e.g., Google Docs "h.xk7tre4v41xy") so anchor
+            // links using the original fragment can be resolved by the JS anchor lookup.
+            var originalId = heading.GetAttributeValue("id", string.Empty);
+            if (!string.IsNullOrEmpty(originalId))
+            {
+                heading.SetAttributeValue("data-original-id", originalId);
+            }
+
             var anchorId = GenerateAnchorId(heading.InnerText);
             heading.SetAttributeValue("id", anchorId);
         }
