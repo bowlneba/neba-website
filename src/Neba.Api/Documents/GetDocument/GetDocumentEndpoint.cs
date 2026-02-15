@@ -1,6 +1,9 @@
+using Asp.Versioning;
+
 using ErrorOr;
 
 using FastEndpoints;
+using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts.Documents.GetDocument;
 using Neba.Application.Documents.GetDocument;
@@ -17,6 +20,10 @@ internal sealed class GetDocumentEndpoint(IQueryHandler<GetDocumentQuery, ErrorO
     {
         Get("{DocumentName}");
         Group<DocumentsGroup>();
+
+        Options(options => options
+            .WithVersionSet("Documents")
+            .MapToApiVersion(new ApiVersion(1, 0)));
 
         AllowAnonymous();
 
@@ -36,8 +43,7 @@ internal sealed class GetDocumentEndpoint(IQueryHandler<GetDocumentQuery, ErrorO
 
         if (result.IsError)
         {
-            AddError(result.FirstError.Description, result.FirstError.Code);
-            await Send.ErrorsAsync(statusCode: StatusCodes.Status404NotFound, ct);
+            await Send.NotFoundAsync(ct);
 
             return;
         }
