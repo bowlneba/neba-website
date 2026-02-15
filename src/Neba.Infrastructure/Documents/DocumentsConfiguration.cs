@@ -15,15 +15,15 @@ internal static class DocumentsConfiguration
         public void AddGoogleDrive(IConfiguration config)
         {
             // Configure and validate GoogleDriveSettings from appsettings.json
-            services.AddOptions<GoogleDriveSettings>()
-                .Bind(config.GetSection(GoogleDriveSettings.ConfigurationSectionName))
+            services.AddOptions<GoogleSettings>()
+                .Bind(config.GetSection(GoogleSettings.ConfigurationSectionName))
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
 
             // Register settings singleton with private key preprocessing
             services.AddSingleton(sp =>
             {
-                var options = sp.GetRequiredService<IOptions<GoogleDriveSettings>>();
+                var options = sp.GetRequiredService<IOptions<GoogleSettings>>();
                 var settings = options.Value;
 
                 var processedCredentials = settings.Credentials with

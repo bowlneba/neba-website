@@ -56,12 +56,15 @@ jobs:
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-          AZD_AUTH_USE_AZURE_CLI: 'true'
+          AZD_AUTH_USE_AZURE_CLI: "true"
         run: azd provision --no-prompt
 
       - name: Seed Key Vault secrets
         env:
           AZURE_ENV_NAME: bowlneba-prod
+          GOOGLE_PRIVATE_KEY: ${{ secrets.GOOGLE_PRIVATE_KEY }}
+          GOOGLE_PRIVATE_KEY_ID: ${{ secrets.GOOGLE_PRIVATE_KEY_ID }}
+          GOOGLE_CLIENT_EMAIL: ${{ secrets.GOOGLE_CLIENT_EMAIL }}
         run: |
           set -euo pipefail
 
@@ -69,15 +72,15 @@ jobs:
 
           az keyvault secret set --vault-name "$VAULT_NAME" \
             --name "GoogleDrive--Credentials--PrivateKey" \
-            --value "${{ secrets.GOOGLE_DRIVE_PRIVATE_KEY }}"
+            --value "$GOOGLE_PRIVATE_KEY"
 
           az keyvault secret set --vault-name "$VAULT_NAME" \
             --name "GoogleDrive--Credentials--PrivateKeyId" \
-            --value "${{ secrets.GOOGLE_DRIVE_PRIVATE_KEY_ID }}"
+            --value "$GOOGLE_PRIVATE_KEY_ID"
 
           az keyvault secret set --vault-name "$VAULT_NAME" \
             --name "GoogleDrive--Credentials--ClientEmail" \
-            --value "${{ secrets.GOOGLE_DRIVE_CLIENT_EMAIL }}"
+            --value "$GOOGLE_CLIENT_EMAIL"
 
       - name: Deploy application
         env:
@@ -86,5 +89,5 @@ jobs:
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-          AZD_AUTH_USE_AZURE_CLI: 'true'
+          AZD_AUTH_USE_AZURE_CLI: "true"
         run: azd deploy --no-prompt

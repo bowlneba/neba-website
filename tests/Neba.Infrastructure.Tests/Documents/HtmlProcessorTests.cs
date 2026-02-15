@@ -9,15 +9,15 @@ namespace Neba.Infrastructure.Tests.Documents;
 [Component("Documents")]
 public sealed class HtmlProcessorTests
 {
-    private readonly GoogleDriveSettings _settings;
+    private readonly GoogleSettings _settings;
     private readonly HtmlProcessor _processor;
 
     public HtmlProcessorTests()
     {
-        _settings = new GoogleDriveSettings
+        _settings = new GoogleSettings
         {
             ApplicationName = "Test Application",
-            Credentials = new GoogleDriveCredentials
+            Credentials = new GoogleCredentials
             {
                 ProjectId = "test-project",
                 PrivateKey = "test-key",
@@ -26,13 +26,13 @@ public sealed class HtmlProcessorTests
             },
             Documents =
             [
-                new Document
+                new GoogleDocument
                 {
                     Name = "bylaws",
                     DocumentId = "1ABC123",
                     WebRoute = "/about/bylaws"
                 },
-                new Document
+                new GoogleDocument
                 {
                     Name = "tournament-rules",
                     DocumentId = "1DEF456",

@@ -19,14 +19,14 @@ internal sealed class GoogleDriveService : IDocumentsService, IDisposable
 {
     private static readonly ActivitySource ActivitySource = new("Neba.Documents");
 
-    private readonly GoogleDriveSettings _settings;
+    private readonly GoogleSettings _settings;
     private readonly HtmlProcessor _htmlProcessor;
     private readonly Lazy<DriveService> _driveService;
     private readonly IStopwatchProvider _stopwatchProvider;
     private readonly ILogger<GoogleDriveService> _logger;
 
     public GoogleDriveService(
-        GoogleDriveSettings settings,
+        GoogleSettings settings,
         HtmlProcessor htmlProcessor,
         IStopwatchProvider stopwatchProvider,
         ILogger<GoogleDriveService> logger)
@@ -150,7 +150,7 @@ internal sealed class GoogleDriveService : IDocumentsService, IDisposable
     /// PrivateKeyId, PrivateKey, ClientEmail) and construct the rest programmatically.
     /// </para>
     /// </remarks>
-    private static DriveService CreateDriveService(GoogleDriveSettings settings)
+    private static DriveService CreateDriveService(GoogleSettings settings)
     {
         var credentialJson = new
         {

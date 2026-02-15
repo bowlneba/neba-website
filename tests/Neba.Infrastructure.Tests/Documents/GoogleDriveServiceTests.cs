@@ -11,14 +11,14 @@ namespace Neba.Infrastructure.Tests.Documents;
 [Component("GoogleDriveService")]
 public sealed class GoogleDriveServiceTests
 {
-    private readonly GoogleDriveSettings _settings;
+    private readonly GoogleSettings _settings;
 
     public GoogleDriveServiceTests()
     {
-        _settings = new GoogleDriveSettings
+        _settings = new GoogleSettings
         {
             ApplicationName = "Test Application",
-            Credentials = new GoogleDriveCredentials
+            Credentials = new GoogleCredentials
             {
                 ProjectId = "test-project",
                 PrivateKey = """
@@ -31,19 +31,19 @@ public sealed class GoogleDriveServiceTests
             },
             Documents =
             [
-                new Document
+                new GoogleDocument
                 {
                     Name = "bylaws",
                     DocumentId = "1ABC123XYZ",
                     WebRoute = "/about/bylaws"
                 },
-                new Document
+                new GoogleDocument
                 {
                     Name = "tournament-rules",
                     DocumentId = "1DEF456UVW",
                     WebRoute = "/tournaments/rules"
                 },
-                new Document
+                new GoogleDocument
                 {
                     Name = "officer-handbook",
                     DocumentId = "1GHI789RST",
@@ -74,7 +74,7 @@ public sealed class GoogleDriveServiceTests
     public void Constructor_ThrowsArgumentNullException_WhenSettingsIsNull()
     {
         // Arrange
-        GoogleDriveSettings? nullSettings = null;
+        GoogleSettings? nullSettings = null;
         var processor = new HtmlProcessor(_settings);
         var stopwatch = CreateStopwatchProviderMock().Object;
         var logger = NullLogger<GoogleDriveService>.Instance;

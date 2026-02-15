@@ -4,9 +4,9 @@ using HtmlAgilityPack;
 
 namespace Neba.Infrastructure.Documents;
 
-internal sealed partial class HtmlProcessor(GoogleDriveSettings googleDriveSettings)
+internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
 {
-    private readonly GoogleDriveSettings _settings = googleDriveSettings;
+    private readonly GoogleSettings _settings = googleDriveSettings;
 
     public string Process(string rawHtml)
     {

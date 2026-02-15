@@ -3,36 +3,36 @@ using System.ComponentModel.DataAnnotations;
 namespace Neba.Infrastructure.Documents;
 
 /// <summary>
-/// Represents the configuration settings for Google Drive integration, including application details, credentials, and document mappings.
+/// Represents the configuration settings for Google integration, including application details, credentials, and document mappings.
 /// </summary>
-internal sealed record GoogleDriveSettings
+internal sealed record GoogleSettings
 {
-    internal const string ConfigurationSectionName = "GoogleDrive";
+    internal const string ConfigurationSectionName = "Google";
 
     /// <summary>
-    /// Gets the name of the application that will be used when accessing Google Drive. This is required for authentication and API access.
+    /// Gets the name of the application that will be used when accessing Google services. This is required for authentication and API access.
     /// </summary>
     [Required]
     public required string ApplicationName { get; init; }
 
     /// <summary>
-    /// Gets the credentials required to authenticate with Google Drive. This includes the private key, client email, private key ID, and client X509 certificate URL. These credentials are necessary for secure access to the Google Drive API.
+    /// Gets the credentials required to authenticate with Google services. This includes the private key, client email, private key ID, and client X509 certificate URL. These credentials are necessary for secure access to the Google API.
     /// </summary>
     [Required]
-    public required GoogleDriveCredentials Credentials { get; init; }
+    public required GoogleCredentials Credentials { get; init; }
 
     /// <summary>
     /// Gets the collection of documents that are configured for access through Google Drive. Each document includes its name, unique document ID, and the route for accessing it. At least one document must be configured to ensure that there is content available for retrieval from Google Drive.
     /// </summary>
     [Required]
     [MinLength(1, ErrorMessage = "At least one document must be configured.")]
-    public required Document[] Documents { get; init; }
+    public required GoogleDocument[] Documents { get; init; }
 }
 
 /// <summary>
 /// Represents the credentials required for authenticating with Google Drive. This includes the private key, client email, private key ID, and client X509 certificate URL. These credentials are essential for secure access to the Google Drive API and must be provided for successful integration.
 /// </summary>
-internal sealed record GoogleDriveCredentials
+internal sealed record GoogleCredentials
 {
     /// <summary>
     /// Google Cloud project identifier.
@@ -64,7 +64,7 @@ internal sealed record GoogleDriveCredentials
 /// <summary>
 /// Represents a document configuration for Google Drive integration. Each document includes its name, unique document ID, and the route for accessing it. This information is essential for retrieving and managing documents from Google Drive through the API. Each document must be properly configured to ensure successful access and retrieval of content from Google Drive.
 /// </summary>
-internal sealed record Document
+internal sealed record GoogleDocument
 {
     /// <summary>
     /// Gets the unique document ID assigned by Google Drive. This ID is required to access the specific document through the Google Drive API. It is essential for retrieving the document's content and must be provided for each document configured in the application.
