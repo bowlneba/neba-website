@@ -35,6 +35,8 @@ Flag when:
 - Direct instantiation of another domain's aggregates (should go through that domain's factory or repository)
 - Missing `CancellationToken` propagation in async methods
 
+**Do NOT flag** query or command handlers that appear to be simple pass-throughs to an infrastructure service. All handlers are wrapped by `TracedQueryHandlerDecorator` / `TracedCommandHandlerDecorator`, which provides automatic telemetry (activity spans, duration tracking, structured error logging). Bypassing the handler pipeline would lose this observability. See [ADR-0003](../../docs/adr/0003-handler-decoration-over-direct-service-calls.md).
+
 ### Infrastructure Layer (`Neba.Infrastructure`)
 
 Flag when:

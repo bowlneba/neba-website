@@ -19,7 +19,8 @@ internal static class TracingConfiguration
         {
             services.Decorate(typeof(IQueryHandler<,>), typeof(TracedQueryHandlerDecorator<,>));
 
-            services.Decorate(typeof(ICommandHandler<,>), typeof(TracedCommandHandlerDecorator<,>));
+            //services.Decorate(typeof(ICommandHandler<,>), typeof(TracedCommandHandlerDecorator<,>)); // once we add a command handler uncomment this line
+
         }
     }
 }
