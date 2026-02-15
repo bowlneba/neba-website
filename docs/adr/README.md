@@ -64,6 +64,7 @@ ADRs are numbered sequentially:
 - [ADR-0001](0001-container-apps-revision-mode-and-cost-management.md): Container Apps Revision Mode and Cost Management
 - [ADR-0002](0002-azure-key-vault-for-secrets-management.md): Azure Key Vault for Secrets Management
 - [ADR-0003](0003-handler-decoration-over-direct-service-calls.md): Handler Decoration Over Direct Service Calls
+- [ADR-0004](0004-error-code-naming-convention.md): Error Code Naming Convention
 
 ## Resources
 

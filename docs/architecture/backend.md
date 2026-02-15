@@ -444,11 +444,11 @@ public sealed record Money
     public static ErrorOr<Money> Create(decimal amount, string currency)
     {
         if (amount < 0)
-            return Error.Validation("money.amount", "Amount cannot be negative");
+            return Error.Validation("Money.Amount.Negative", "Amount cannot be negative");
         if (string.IsNullOrWhiteSpace(currency))
-            return Error.Validation("money.currency", "Currency is required");
+            return Error.Validation("Money.Currency.Required", "Currency is required");
         if (currency.Length != 3)
-            return Error.Validation("money.currency", "Currency must be ISO 4217 code");
+            return Error.Validation("Money.Currency.InvalidFormat", "Currency must be ISO 4217 code");
 
         return new Money(amount, currency);
     }
@@ -477,7 +477,7 @@ public readonly record struct DateRange
     public static ErrorOr<DateRange> Create(DateOnly start, DateOnly end)
     {
         if (end < start)
-            return Error.Validation("dateRange", "End date must be after start date");
+            return Error.Validation("DateRange.End.BeforeStart", "End date must be after start date");
 
         return new DateRange(start, end);
     }
@@ -1515,6 +1515,28 @@ public static class ProblemDetailsExtensions
 - Include `traceId` in all error responses
 - Include `errorCode` for domain/business errors
 - Include `context` for additional error details when helpful
+
+#### Error Code Convention
+
+Error codes follow the `Entity.ErrorCode` pattern (PascalCase, dot-separated). See [ADR-0004](../adr/0004-error-code-naming-convention.md) for the full decision record.
+
+| Layer | Pattern | Example |
+| ----- | ------- | ------- |
+| Application/Domain errors | `Entity.ErrorCode` | `Document.NotFound`, `Tournament.AlreadyStarted` |
+| Value object validation | `Entity.Property.Rule` | `Money.Amount.Negative`, `Money.Currency.InvalidFormat` |
+| Infrastructure errors | `Service.Operation.ErrorKind` | `GoogleDrive.GetDocument.HttpError` |
+
+Error classes are named `{Entity}Errors`, are `internal static`, and live alongside the handlers that use them:
+
+```csharp
+internal static class DocumentErrors
+{
+    public static Error DocumentNotFound(string documentName)
+        => Error.NotFound(
+            code: "Document.NotFound",
+            description: $"Document with name '{documentName}' was not found.");
+}
+```
 
 ### Authentication & Authorization
 

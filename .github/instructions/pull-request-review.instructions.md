@@ -110,6 +110,17 @@ Flag when:
 - Using `SendAsync()` with custom error objects
 - Missing error case handling (assuming success without checking `result.IsFailure`)
 
+#### Error Codes
+
+Error codes must follow the `Entity.ErrorCode` convention (PascalCase, dot-separated). See [ADR-0004](../../docs/adr/0004-error-code-naming-convention.md).
+
+Flag when:
+
+- Error codes don't follow `Entity.ErrorCode` pattern (e.g., `"documentNotFound"` instead of `"Document.NotFound"`)
+- Error codes use lowercase or camelCase instead of PascalCase
+- Error codes are missing (empty string or generic code)
+- Application error classes are not named `{Entity}Errors` or are not `internal static`
+
 #### Summary Classes
 
 Every endpoint needs a Summary class with:
@@ -495,6 +506,7 @@ See detailed criteria in **API Layer** section above. Additionally flag when:
 | Unsealed classes without justification | Seal classes by default |
 | Value objects as mutable class | Use `sealed record class` (EF persisted) or `readonly record struct` (transient) |
 | Unbounded database queries | Always use `.Take()` with enforced maximum limits |
+| Inconsistent or missing error codes | Follow `Entity.ErrorCode` convention ([ADR-0004](../../docs/adr/0004-error-code-naming-convention.md)) |
 
 ### Banned Libraries
 
