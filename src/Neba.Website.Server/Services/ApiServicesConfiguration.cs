@@ -2,6 +2,7 @@ using System.Text.Json;
 
 using Microsoft.Extensions.Options;
 
+using Neba.Api.Contracts.Documents;
 using Neba.Api.Contracts.Weather;
 
 using Refit;
@@ -35,6 +36,7 @@ internal static class ApiServicesConfiguration
             services.AddSingleton(sp => sp.GetRequiredService<IOptions<NebaApiConfiguration>>().Value);
             services.AddScoped<ApiExecutor>();
 
+            services.RegisterApiEndpoint<IDocumentsApi>();
             services.RegisterApiEndpoint<IWeatherApi>();
 
             return services;
