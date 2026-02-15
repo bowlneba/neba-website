@@ -23,7 +23,8 @@
       "Bash(npx playwright:*)",
       "Read(//Users/kippermand/Projects/bowlneba/**)",
       "mcp__aspire__get_integration_docs",
-      "mcp__aspire__list_resources"
+      "mcp__aspire__list_resources",
+      "Bash(npx jest:*)"
     ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",
@@ -32,9 +33,9 @@
       "/Users/kippermand/Projects/bowlneba/neba-website/.claude"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "aspire",
     "playwright"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

@@ -35,7 +35,7 @@ public sealed class GoogleDriveServiceTests
                 {
                     Name = "bylaws",
                     DocumentId = "1ABC123XYZ",
-                    WebRoute = "/about/bylaws"
+                    WebRoute = "/bylaws"
                 },
                 new GoogleDocument
                 {

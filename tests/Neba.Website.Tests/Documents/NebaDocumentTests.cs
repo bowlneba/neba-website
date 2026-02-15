@@ -890,7 +890,7 @@ public sealed class NebaDocumentTests : IDisposable
             .Add(p => p.Content, content));
 
         // Assert
-        var scriptTag = cut.Find("script[src='./Components/NebaDocument.razor.js']");
+        var scriptTag = cut.Find("script[src='./Documents/NebaDocument.razor.js']");
         scriptTag.ShouldNotBeNull();
         scriptTag.GetAttribute("type").ShouldBe("module");
     }

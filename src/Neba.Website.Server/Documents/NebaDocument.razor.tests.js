@@ -982,7 +982,7 @@ describe('NebaDocument', () => {
       const slideoverContent = document.getElementById('slideover-content');
       slideoverContent.innerHTML = `
         <h1>Tournament Rules</h1>
-        <a href="/about/bylaws">See Bylaws</a>
+        <a href="/bylaws">See Bylaws</a>
       `;
 
       mockDotNetReference.invokeMethodAsync.mockClear();
@@ -990,14 +990,14 @@ describe('NebaDocument', () => {
       // Act
       initializeSlideoverContent('slideover-content');
 
-      const link = slideoverContent.querySelector('a[href="/about/bylaws"]');
+      const link = slideoverContent.querySelector('a[href="/bylaws"]');
       const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
       link.dispatchEvent(clickEvent);
 
       // Assert
       expect(mockDotNetReference.invokeMethodAsync).toHaveBeenCalledWith(
         'OnInternalLinkClicked',
-        'about/bylaws'
+        'bylaws'
       );
     });
 

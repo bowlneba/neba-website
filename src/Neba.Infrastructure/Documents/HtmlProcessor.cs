@@ -72,7 +72,7 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
     /// Handles both direct and redirect URLs:
     /// - Direct: https://docs.google.com/document/d/{documentId}/...
     /// - Redirect: https://www.google.com/url?q=https://docs.google.com/document/...
-    /// Replacement: Configured route from settings (e.g., "/about/bylaws")
+    /// Replacement: Configured route from settings (e.g., "/bylaws")
     /// Also transforms anchor-only links (#h.xk7tre4v41xy) to use human-readable IDs
     /// </remarks>
     private void ReplaceGoogleDocsLinks(HtmlNode node)
