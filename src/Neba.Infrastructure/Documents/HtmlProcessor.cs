@@ -26,7 +26,13 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
         // Replace Google Docs links with internal routes
         ReplaceGoogleDocsLinks(bodyNode);
 
-        return bodyNode.InnerHtml;
+        // Extract and preserve Google Docs list styles
+        var listStyles = ExtractGoogleDocsListStyles(doc.DocumentNode);
+
+        // Return body content with list styles prepended
+        return string.IsNullOrEmpty(listStyles)
+            ? bodyNode.InnerHtml
+            : $"<style>{listStyles}</style>{bodyNode.InnerHtml}";
     }
 
     /// <summary>
@@ -175,6 +181,37 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
     }
 
     /// <summary>
+    /// Extracts Google Docs list-specific CSS rules from the document head.
+    /// </summary>
+    /// <param name="documentNode">The root HTML document node.</param>
+    /// <returns>Filtered CSS rules for list styling, or empty string if none found.</returns>
+    /// <remarks>
+    /// Google Docs exports list formatting (e.g., lower-alpha for a, b, c) in &lt;style&gt; tags
+    /// using CSS classes like .lst-kix_* with list-style-type rules. This method extracts and
+    /// filters only the list-related CSS to preserve the original formatting.
+    /// </remarks>
+    private static string ExtractGoogleDocsListStyles(HtmlNode documentNode)
+    {
+        // Find all style tags in the head
+        var styleNodes = documentNode.SelectNodes("//head/style");
+        if (styleNodes is null || styleNodes.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var listStyleRules = styleNodes
+            .Select(styleNode => styleNode.InnerText)
+            .Where(cssContent => !string.IsNullOrWhiteSpace(cssContent))
+            .SelectMany(cssContent => GoogleDocsListStyleRegex().Matches(cssContent).Cast<Match>())
+            .Select(match => match.Value)
+            .ToList();
+
+        return listStyleRules.Count > 0
+            ? string.Join(string.Empty, listStyleRules)
+            : string.Empty;
+    }
+
+    /// <summary>
     /// Generates a URL-safe anchor ID from heading text.
     /// </summary>
     /// <param name="text">Heading text to convert.</param>
@@ -217,4 +254,14 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
     /// </summary>
     [GeneratedRegex(@"-{2,}")]
     private static partial Regex ConsecutiveHyphensRegex();
+
+    /// <summary>
+    /// Regex pattern for matching Google Docs list CSS rules (.lst-kix_* classes).
+    /// </summary>
+    /// <remarks>
+    /// Matches CSS rules like: .lst-kix_abc123-0{list-style-type:lower-alpha}
+    /// Captures the complete rule including selector, braces, and properties.
+    /// </remarks>
+    [GeneratedRegex(@"\.lst-kix_[^{]+\{[^}]*list-style-type:[^}]+\}")]
+    private static partial Regex GoogleDocsListStyleRegex();
 }

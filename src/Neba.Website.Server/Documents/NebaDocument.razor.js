@@ -175,7 +175,7 @@ function setupScrollSpy(content, tocList, headings, signal) {
             if (targetElement) {
                 const contentRect = content.getBoundingClientRect();
                 const targetRect = targetElement.getBoundingClientRect();
-                const offset = 80;
+                const offset = 0;
                 const scrollPosition = content.scrollTop + (targetRect.top - contentRect.top) - offset;
 
                 content.scrollTo({ top: scrollPosition, behavior: 'smooth' });
@@ -393,12 +393,12 @@ function handleAnchorNavigation(content, href, anchorLookup) {
     if (isContentScrollable) {
         const contentRect = content.getBoundingClientRect();
         const targetRect = targetElement.getBoundingClientRect();
-        const offset = 80;
+        const offset = 0;
         const scrollPosition = content.scrollTop + (targetRect.top - contentRect.top) - offset;
         content.scrollTo({ top: scrollPosition, behavior: 'smooth' });
     } else {
         const navbarHeight = 80;
-        const offset = 60;
+        const offset = 0;
         const targetPosition = targetElement.getBoundingClientRect().top + globalThis.scrollY - navbarHeight - offset;
         globalThis.scrollTo({ top: targetPosition, behavior: 'smooth' });
     }
@@ -505,12 +505,12 @@ export function scrollToHash(contentId, tocListId) {
     if (isContentScrollable) {
         const contentRect = content.getBoundingClientRect();
         const targetRect = targetElement.getBoundingClientRect();
-        const offset = 80;
+        const offset = 0;
         const scrollPosition = content.scrollTop + (targetRect.top - contentRect.top) - offset;
         content.scrollTo({ top: scrollPosition, behavior: 'smooth' });
     } else {
         const navbarHeight = 80;
-        const offset = 60;
+        const offset = 0;
         const targetPosition = targetElement.getBoundingClientRect().top + globalThis.scrollY - navbarHeight - offset;
         globalThis.scrollTo({ top: targetPosition, behavior: 'smooth' });
     }

@@ -701,4 +701,206 @@ public sealed class HtmlProcessorTests
         links[0].GetAttributeValue("href", "").ShouldBe("#article-1");
         links[1].GetAttributeValue("href", "").ShouldBe("/about/bylaws#h.abc123");
     }
+
+    [Fact(DisplayName = "Process should extract Google Docs list styles")]
+    public void Process_ExtractsGoogleDocsListStyles()
+    {
+        // Arrange — Simplified Google Docs HTML with list styling
+        const string rawHtml = """
+            <html>
+            <head>
+                <style>
+                .lst-kix_abc123-0{list-style-type:lower-alpha}
+                .lst-kix_abc123-1{list-style-type:lower-roman}
+                .some-other-class{color:red}
+                </style>
+            </head>
+            <body>
+                <ol class="lst-kix_abc123-0">
+                    <li>First item</li>
+                    <li>Second item</li>
+                </ol>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        result.ShouldContain("<style>");
+        result.ShouldContain(".lst-kix_abc123-0{list-style-type:lower-alpha}");
+        result.ShouldContain(".lst-kix_abc123-1{list-style-type:lower-roman}");
+        result.ShouldNotContain(".some-other-class{color:red}"); // Non-list styles should be filtered out
+        result.ShouldContain("<ol class=\"lst-kix_abc123-0\">");
+    }
+
+    [Fact(DisplayName = "Process should handle HTML without list styles")]
+    public void Process_HandlesHtml_WithoutListStyles()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <head>
+                <style>
+                .some-class{color:blue}
+                </style>
+            </head>
+            <body>
+                <h1>Title</h1>
+                <p>Content</p>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        result.ShouldNotContain("<style>");
+        result.ShouldContain("<h1");
+        result.ShouldContain("Title");
+        result.ShouldContain("<p>Content</p>");
+    }
+
+    [Fact(DisplayName = "Process should only extract list-style-type rules from .lst-kix classes")]
+    public void Process_ExtractsOnly_ListStyleTypeRules()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <head>
+                <style>
+                .lst-kix_def456-0{list-style-type:decimal}
+                .lst-kix_def456-0{margin-left:20px}
+                .lst-kix_ghi789-1{padding:10px}
+                .not-a-list{list-style-type:disc}
+                </style>
+            </head>
+            <body>
+                <ol class="lst-kix_def456-0">
+                    <li>Item</li>
+                </ol>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        result.ShouldContain(".lst-kix_def456-0{list-style-type:decimal}");
+        result.ShouldNotContain("margin-left:20px"); // .lst-kix without list-style-type should be excluded
+        result.ShouldNotContain("padding:10px"); // .lst-kix without list-style-type should be excluded
+        result.ShouldNotContain(".not-a-list{list-style-type:disc}"); // Non .lst-kix classes should be excluded
+    }
+
+    [Fact(DisplayName = "Process should preserve multiple list style rules")]
+    public void Process_PreservesMultiple_ListStyleRules()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <head>
+                <style>
+                .lst-kix_aaa-0{list-style-type:lower-alpha}
+                .lst-kix_aaa-1{list-style-type:lower-roman}
+                .lst-kix_bbb-0{list-style-type:upper-alpha}
+                .lst-kix_ccc-0{list-style-type:decimal}
+                </style>
+            </head>
+            <body>
+                <ol class="lst-kix_aaa-0">
+                    <li>a item</li>
+                    <ol class="lst-kix_aaa-1">
+                        <li>i item</li>
+                    </ol>
+                </ol>
+                <ol class="lst-kix_bbb-0">
+                    <li>A item</li>
+                </ol>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        result.ShouldContain(".lst-kix_aaa-0{list-style-type:lower-alpha}");
+        result.ShouldContain(".lst-kix_aaa-1{list-style-type:lower-roman}");
+        result.ShouldContain(".lst-kix_bbb-0{list-style-type:upper-alpha}");
+        result.ShouldContain(".lst-kix_ccc-0{list-style-type:decimal}");
+    }
+
+    [Fact(DisplayName = "Process should handle empty style tags")]
+    public void Process_HandlesEmpty_StyleTags()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <head>
+                <style></style>
+                <style>   </style>
+            </head>
+            <body>
+                <h1>Title</h1>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        result.ShouldNotContain("<style>");
+        result.ShouldContain("<h1");
+    }
+
+    [Fact(DisplayName = "Process should integrate list styles with heading IDs and link transformation")]
+    public void Process_IntegratesListStyles_WithHeadingsAndLinks()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <head>
+                <style>
+                .lst-kix_xyz-0{list-style-type:lower-alpha}
+                </style>
+            </head>
+            <body>
+                <h1 id="h.abc123">Section 1</h1>
+                <ol class="lst-kix_xyz-0">
+                    <li>First item</li>
+                    <li>Second item</li>
+                </ol>
+                <p>See <a href="#h.abc123">Section 1</a> above.</p>
+                <p>Also see <a href="https://docs.google.com/document/d/1ABC123/edit">Bylaws</a>.</p>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        var doc = new HtmlDocument();
+        doc.LoadHtml(result);
+
+        // List styles preserved
+        result.ShouldContain("<style>");
+        result.ShouldContain(".lst-kix_xyz-0{list-style-type:lower-alpha}");
+
+        // Heading ID generated and original preserved
+        var h1 = doc.DocumentNode.SelectSingleNode("//h1");
+        h1.ShouldNotBeNull();
+        h1!.GetAttributeValue("id", "").ShouldBe("section-1");
+        h1.GetAttributeValue("data-original-id", "").ShouldBe("h.abc123");
+
+        // Links transformed
+        var links = doc.DocumentNode.SelectNodes("//a[@href]");
+        links.Count.ShouldBe(2);
+        links[0].GetAttributeValue("href", "").ShouldBe("#section-1");
+        links[1].GetAttributeValue("href", "").ShouldBe("/about/bylaws");
+    }
 }
