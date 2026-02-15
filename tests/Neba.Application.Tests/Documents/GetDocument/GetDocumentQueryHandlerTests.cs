@@ -40,4 +40,28 @@ public sealed class GetDocumentQueryHandlerTests
         // Assert
         result.ShouldBe(expectedContent);
     }
+
+    [Fact]
+    public async Task HandleAsync_ShouldReturnDocumentNotFoundError_WhenDocumentDoesNotExist()
+    {
+        // Arrange
+        const string documentName = "NonExistentDocument";
+
+        _documentsServiceMock
+            .Setup(service => service.GetDocumentAsHtmlAsync(documentName, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string?)null);
+
+        var query = new GetDocumentQuery
+        {
+            DocumentName = documentName
+        };
+
+        // Act
+        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Document.NotFound");
+        result.FirstError.Description.ShouldBe($"Document with name '{documentName}' was not found.");
+    }
 }

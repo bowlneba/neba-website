@@ -131,8 +131,8 @@ public sealed class GoogleDriveServiceTests
         exception.ParamName.ShouldBe("logger");
     }
 
-    [Fact(DisplayName = "GetDocumentAsHtmlAsync should throw for document not in configuration")]
-    public async Task GetDocumentAsHtmlAsync_ThrowsInvalidOperationException_WhenDocumentNotConfigured()
+    [Fact(DisplayName = "GetDocumentAsHtmlAsync should return null for document not in configuration")]
+    public async Task GetDocumentAsHtmlAsync_ReturnsNull_WhenDocumentNotConfigured()
     {
         // Arrange
         var processor = new HtmlProcessor(_settings);
@@ -140,12 +140,11 @@ public sealed class GoogleDriveServiceTests
         var logger = NullLogger<GoogleDriveService>.Instance;
         using var service = new GoogleDriveService(_settings, processor, stopwatch, logger);
 
-        // Act & Assert
-        var exception = await Should.ThrowAsync<InvalidOperationException>(async () =>
-            await service.GetDocumentAsHtmlAsync("nonexistent-document", CancellationToken.None));
+        // Act
+        var result = await service.GetDocumentAsHtmlAsync("nonexistent-document", CancellationToken.None);
 
-        exception.Message.ShouldContain("nonexistent-document");
-        exception.Message.ShouldContain("not found in configuration");
+        // Assert
+        result.ShouldBeNull();
     }
 
     [Theory(DisplayName = "GetDocumentAsHtmlAsync should find document case-insensitively")]
@@ -168,20 +167,11 @@ public sealed class GoogleDriveServiceTests
         try
         {
             await service.GetDocumentAsHtmlAsync(documentName, CancellationToken.None);
-
-            // If we get here, the API call succeeded (won't happen without real credentials)
-            Assert.True(true, "Document lookup succeeded");
-        }
-        catch (InvalidOperationException ex)
-        {
-            // If we get InvalidOperationException, the document wasn't found - test should fail
-            Assert.Fail($"Document lookup failed: {ex.Message}");
         }
         catch
         {
-            // Any other exception means document was found but API call failed
+            // Any exception means document was found but API call failed
             // This is expected behavior without real credentials
-            Assert.True(true, "Document lookup succeeded, API call failed as expected");
         }
 
         // Verify stopwatch was called (proves we got into the method)

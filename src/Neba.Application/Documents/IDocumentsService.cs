@@ -20,14 +20,12 @@ public interface IDocumentsService
     /// </param>
     /// <param name="cancellationToken">Cancellation token for async operation.</param>
     /// <returns>
-    /// The document content as processed HTML, ready for web display.
+    /// The document content as processed HTML ready for web display,
+    /// or <c>null</c> if the document name is not found in configuration.
     /// HTML includes:
     /// - Body content only (no full HTML document structure)
     /// - Generated anchor IDs on headings for deep linking
     /// - Internal routes replacing external document system URLs
     /// </returns>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when the document name is not found in configuration.
-    /// </exception>
-    Task<string> GetDocumentAsHtmlAsync(string documentName, CancellationToken cancellationToken);
+    Task<string?> GetDocumentAsHtmlAsync(string documentName, CancellationToken cancellationToken);
 }

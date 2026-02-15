@@ -48,16 +48,20 @@ internal sealed class GoogleDriveService : IDocumentsService, IDisposable
     /// </summary>
     /// <param name="documentName">The logical name of the document (e.g., "bylaws").</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The document content as processed HTML.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when document name is not found in configuration.</exception>
+    /// <returns>The document content as processed HTML, or null if the document is not found.</returns>
     /// <exception cref="GoogleApiException">Thrown when Google Drive API request fails.</exception>
-    public async Task<string> GetDocumentAsHtmlAsync(string documentName, CancellationToken cancellationToken)
+    public async Task<string?> GetDocumentAsHtmlAsync(string documentName, CancellationToken cancellationToken)
     {
         // Find document configuration by name (case-insensitive)
         var document = _settings.Documents
-            .FirstOrDefault(d => string.Equals(d.Name, documentName, StringComparison.OrdinalIgnoreCase))
-                ?? throw new InvalidOperationException(
-                    $"Document with name '{documentName}' not found in configuration.");
+            .FirstOrDefault(d => string.Equals(d.Name, documentName, StringComparison.OrdinalIgnoreCase));
+
+        if (document is null)
+        {
+            _logger.LogDocumentNotFound(documentName);
+
+            return null;
+        }
 
         using var activity = ActivitySource.StartActivity("document.export", ActivityKind.Client);
         activity?.SetCodeAttributes(nameof(GetDocumentAsHtmlAsync), "Neba.Documents");
@@ -197,6 +201,13 @@ internal sealed class GoogleDriveService : IDocumentsService, IDisposable
 /// </remarks>
 internal static partial class GoogleDriveServiceLogMessages
 {
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Document not found in configuration: {DocumentName}")]
+    public static partial void LogDocumentNotFound(
+        this ILogger<GoogleDriveService> logger,
+        string documentName);
+
     [LoggerMessage(
         Level = LogLevel.Debug,
         Message = "Exporting Google Drive document: {DocumentName} (ID: {DocumentId})")]

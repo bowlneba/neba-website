@@ -1,3 +1,5 @@
+using ErrorOr;
+
 using Neba.Application.Messaging;
 
 namespace Neba.Application.Documents.GetDocument;
@@ -6,7 +8,7 @@ namespace Neba.Application.Documents.GetDocument;
 /// A query to retrieve a document by its name.
 /// </summary>
 public sealed record GetDocumentQuery
-    : IQuery<string>
+    : IQuery<ErrorOr<string>>
 {
     /// <summary>
     /// The name of the document to retrieve.
