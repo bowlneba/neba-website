@@ -69,7 +69,9 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
     /// Replaces Google Docs URLs with internal application routes.
     /// </summary>
     /// <remarks>
-    /// Pattern: https://docs.google.com/document/d/{documentId}/...
+    /// Handles both direct and redirect URLs:
+    /// - Direct: https://docs.google.com/document/d/{documentId}/...
+    /// - Redirect: https://www.google.com/url?q=https://docs.google.com/document/...
     /// Replacement: Configured route from settings (e.g., "/about/bylaws")
     /// Also transforms anchor-only links (#h.xk7tre4v41xy) to use human-readable IDs
     /// </remarks>
@@ -112,8 +114,19 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
                 continue;
             }
 
+            // Check if this is a Google redirect URL (e.g., https://www.google.com/url?q=...)
+            // If so, extract the actual URL from the 'q' parameter
+            var urlToMatch = href;
+            var match = GoogleRedirectUrlRegex().Match(href);
+            if (match.Success)
+            {
+                // Extract URL from 'q' parameter and decode it
+                var encodedUrl = match.Groups["url"].Value;
+                urlToMatch = Uri.UnescapeDataString(encodedUrl);
+            }
+
             // Match Google Docs URL pattern
-            var match = GoogleDocsUrlRegex().Match(href);
+            match = GoogleDocsUrlRegex().Match(urlToMatch);
             if (!match.Success)
             {
                 continue; // Not a Google Docs link
@@ -131,12 +144,12 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
             }
 
             // Extract anchor if present
-            var anchorIndex = href.IndexOf('#', StringComparison.OrdinalIgnoreCase);
+            var anchorIndex = urlToMatch.IndexOf('#', StringComparison.OrdinalIgnoreCase);
             var anchor = string.Empty;
 
             if (anchorIndex >= 0)
             {
-                anchor = href[anchorIndex..];
+                anchor = urlToMatch[anchorIndex..];
 
                 // Strip Google Docs "heading=" prefix if present
                 // Convert "#heading=h.abc123" → "#h.abc123"
@@ -147,7 +160,10 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
             }
 
             // Replace with internal route
-            link.SetAttributeValue("href", document.WebRoute + anchor);
+            var webRoute = document.WebRoute.StartsWith('/')
+                ? document.WebRoute
+                : "/" + document.WebRoute;
+            link.SetAttributeValue("href", webRoute + anchor);
         }
     }
 
@@ -238,9 +254,24 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
     }
 
     /// <summary>
+    /// Regex pattern for matching Google redirect URLs with embedded document URLs.
+    /// </summary>
+    /// <remarks>
+    /// Matches URLs like: https://www.google.com/url?q=https://docs.google.com/document/...
+    /// Captures the URL in the 'q' query parameter.
+    /// </remarks>
+    [GeneratedRegex(@"https://www\.google\.com/url\?q=(?<url>[^&]+)")]
+    private static partial Regex GoogleRedirectUrlRegex();
+
+    /// <summary>
     /// Regex pattern for matching Google Docs URLs.
     /// </summary>
-    [GeneratedRegex(@"https://docs\.google\.com/document/d/(?<documentId>[^/]+)")]
+    /// <remarks>
+    /// Matches both patterns:
+    /// - https://docs.google.com/document/d/{documentId}/...
+    /// - https://docs.google.com/document/u/{userId}/d/{documentId}/...
+    /// </remarks>
+    [GeneratedRegex(@"https://docs\.google\.com/document/(?:u/\d+/)?d/(?<documentId>[^/]+)")]
     private static partial Regex GoogleDocsUrlRegex();
 
     /// <summary>

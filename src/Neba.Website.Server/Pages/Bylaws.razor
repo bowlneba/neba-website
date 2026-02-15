@@ -23,12 +23,20 @@
               ShowTableOfContents="true"
               TableOfContentsTitle="Contents"
               HeadingLevels="h1, h2"
-              DocumentId="bylaws" />
+              DocumentId="bylaws"
+              OnSlideoverLinkClicked="@HandleSlideoverLinkClicked"
+              SlideoverContent="@_slideoverContent"
+              SlideoverTitle="@_slideoverTitle"
+              SlideoverIsLoading="@_slideoverIsLoading" />
 
 @code {
     private MarkupString? _content;
     private string? _errorMessage;
     private bool _isLoading = true;
+
+    private MarkupString? _slideoverContent;
+    private string? _slideoverTitle;
+    private bool _slideoverIsLoading;
 
     protected override async Task OnInitializedAsync()
     {
@@ -47,5 +55,67 @@
         }
 
         _isLoading = false;
+    }
+
+    private async Task HandleSlideoverLinkClicked(string pathname)
+    {
+        _slideoverIsLoading = true;
+        StateHasChanged();
+
+        // Map web route to document name
+        var route = pathname.TrimStart('/');
+        var documentName = GetDocumentNameFromRoute(route);
+
+        if (documentName is null)
+        {
+            _slideoverContent = new MarkupString($"<p>Document not found for route: {pathname}</p>");
+            _slideoverIsLoading = false;
+            StateHasChanged();
+            return;
+        }
+
+        _slideoverTitle = GetDocumentTitle(documentName);
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "Documents",
+            $"Get{documentName}",
+            ct => DocumentsApi.GetDocumentAsync(documentName, ct));
+
+        _slideoverIsLoading = false;
+
+        if (result.IsError)
+        {
+            _slideoverContent = new MarkupString($"<p>Failed to load document: {result.FirstError.Description}</p>");
+        }
+        else
+        {
+            _slideoverContent = new MarkupString(result.Value.Html);
+        }
+
+        StateHasChanged();
+    }
+
+    private static string? GetDocumentNameFromRoute(string route)
+    {
+        // Map WebRoute to document Name
+        // This mapping corresponds to Google.Documents configuration in appsettings.json
+        return route switch
+        {
+            "about/bylaws" => "bylaws",
+            "tournaments/rules" => "tournament-rules",
+            _ => null
+        };
+    }
+
+    private static string GetDocumentTitle(string documentName)
+    {
+        // Convert document name to display title
+        return documentName switch
+        {
+            "bylaws" => "Bylaws",
+            "tournament-rules" => "Tournament Rules",
+            _ => string.Join(' ', documentName.Split('-')
+                .Select(word => char.ToUpperInvariant(word[0]) + word[1..]))
+        };
     }
 }

@@ -903,4 +903,129 @@ public sealed class HtmlProcessorTests
         links[0].GetAttributeValue("href", "").ShouldBe("#section-1");
         links[1].GetAttributeValue("href", "").ShouldBe("/about/bylaws");
     }
+
+    [Fact(DisplayName = "Process should handle Google redirect URLs")]
+    public void Process_HandlesGoogleRedirectUrls()
+    {
+        // Arrange — Google redirect URL wraps the actual Google Docs URL
+        const string rawHtml = """
+            <html>
+            <body>
+                <p>See <a href="https://www.google.com/url?q=https://docs.google.com/document/d/1ABC123/edit&sa=D&source=editors">Bylaws</a>.</p>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        var doc = new HtmlDocument();
+        doc.LoadHtml(result);
+
+        var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
+        link.ShouldNotBeNull();
+        link!.GetAttributeValue("href", "").ShouldBe("/about/bylaws");
+    }
+
+    [Fact(DisplayName = "Process should handle Google redirect URLs with anchors")]
+    public void Process_HandlesGoogleRedirectUrls_WithAnchors()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <body>
+                <p>See <a href="https://www.google.com/url?q=https://docs.google.com/document/d/1DEF456/edit%23heading%3Dh.xyz789&sa=D&source=editors">Tournament Rules Section 5</a>.</p>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        var doc = new HtmlDocument();
+        doc.LoadHtml(result);
+
+        var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
+        link.ShouldNotBeNull();
+        link!.GetAttributeValue("href", "").ShouldBe("/tournaments/rules#h.xyz789");
+    }
+
+    [Fact(DisplayName = "Process should handle mixed direct and redirect Google Docs URLs")]
+    public void Process_HandlesMixedDirectAndRedirectUrls()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <body>
+                <p>Direct link: <a href="https://docs.google.com/document/d/1ABC123/edit">Bylaws</a></p>
+                <p>Redirect link: <a href="https://www.google.com/url?q=https://docs.google.com/document/d/1DEF456/edit&sa=D">Tournament Rules</a></p>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        var doc = new HtmlDocument();
+        doc.LoadHtml(result);
+
+        var links = doc.DocumentNode.SelectNodes("//a[@href]");
+        links.Count.ShouldBe(2);
+        links[0].GetAttributeValue("href", "").ShouldBe("/about/bylaws");
+        links[1].GetAttributeValue("href", "").ShouldBe("/tournaments/rules");
+    }
+
+    [Fact(DisplayName = "Process should not modify Google redirect URLs for unknown documents")]
+    public void Process_DoesNotModifyRedirectUrls_ForUnknownDocuments()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <body>
+                <p>See <a href="https://www.google.com/url?q=https://docs.google.com/document/d/1UNKNOWN999/edit&sa=D">Unknown Document</a>.</p>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        var doc = new HtmlDocument();
+        doc.LoadHtml(result);
+
+        var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
+        link.ShouldNotBeNull();
+        // Should remain unchanged since document is not in configuration
+        link!.GetAttributeValue("href", "").ShouldBe("https://www.google.com/url?q=https://docs.google.com/document/d/1UNKNOWN999/edit&sa=D");
+    }
+
+    [Fact(DisplayName = "Process should handle Google Docs URLs with user ID in path")]
+    public void Process_HandlesGoogleDocsUrls_WithUserIdInPath()
+    {
+        // Arrange — Google Docs URLs with /u/{userId}/ in path
+        const string rawHtml = """
+            <html>
+            <body>
+                <p>Direct: <a href="https://docs.google.com/document/u/0/d/1ABC123/edit">Bylaws</a></p>
+                <p>Redirect: <a href="https://www.google.com/url?q=https://docs.google.com/document/u/0/d/1DEF456/edit&sa=D">Tournament Rules</a></p>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        var doc = new HtmlDocument();
+        doc.LoadHtml(result);
+
+        var links = doc.DocumentNode.SelectNodes("//a[@href]");
+        links.Count.ShouldBe(2);
+        links[0].GetAttributeValue("href", "").ShouldBe("/about/bylaws");
+        links[1].GetAttributeValue("href", "").ShouldBe("/tournaments/rules");
+    }
 }
