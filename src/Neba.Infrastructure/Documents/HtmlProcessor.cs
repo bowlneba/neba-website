@@ -94,77 +94,86 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
                 continue; // Skip links without href
             }
 
-            // Handle anchor-only links within the same document (e.g., "#h.xk7tre4v41xy")
             if (href.StartsWith('#'))
             {
-                var anchorId = href[1..]; // Remove leading #
-
-                // Strip "heading=" prefix if present
-                if (anchorId.StartsWith("heading=", StringComparison.OrdinalIgnoreCase))
-                {
-                    anchorId = anchorId[8..]; // Skip "heading="
-                }
-
-                // Look up human-readable ID
-                if (anchorLookup.TryGetValue(anchorId, out var humanReadableId))
-                {
-                    link.SetAttributeValue("href", $"#{humanReadableId}");
-                }
-
-                continue;
+                HandleAnchorLink(link, href, anchorLookup);
             }
-
-            // Check if this is a Google redirect URL (e.g., https://www.google.com/url?q=...)
-            // If so, extract the actual URL from the 'q' parameter
-            var urlToMatch = href;
-            var match = GoogleRedirectUrlRegex().Match(href);
-            if (match.Success)
+            else
             {
-                // Extract URL from 'q' parameter and decode it
-                var encodedUrl = match.Groups["url"].Value;
-                urlToMatch = Uri.UnescapeDataString(encodedUrl);
+                HandleGoogleDocsLink(link, href);
             }
-
-            // Match Google Docs URL pattern
-            match = GoogleDocsUrlRegex().Match(urlToMatch);
-            if (!match.Success)
-            {
-                continue; // Not a Google Docs link
-            }
-
-            var documentId = match.Groups["documentId"].Value;
-
-            // Find matching document in configuration
-            var document = _settings.Documents
-                .FirstOrDefault(d => d.DocumentId == documentId);
-
-            if (document is null)
-            {
-                continue; // No matching document found in settings
-            }
-
-            // Extract anchor if present
-            var anchorIndex = urlToMatch.IndexOf('#', StringComparison.OrdinalIgnoreCase);
-            var anchor = string.Empty;
-
-            if (anchorIndex >= 0)
-            {
-                anchor = urlToMatch[anchorIndex..];
-
-                // Strip Google Docs "heading=" prefix if present
-                // Convert "#heading=h.abc123" → "#h.abc123"
-                if (anchor.StartsWith("#heading=", StringComparison.OrdinalIgnoreCase))
-                {
-                    anchor = "#" + anchor[9..]; // Skip "#heading="
-                }
-            }
-
-            // Replace with internal route
-            var webRoute = document.WebRoute.StartsWith('/')
-                ? document.WebRoute
-                : "/" + document.WebRoute;
-            link.SetAttributeValue("href", webRoute + anchor);
         }
+    }
+
+    private static void HandleAnchorLink(HtmlNode link, string href, Dictionary<string, string> anchorLookup)
+    {
+        var anchorId = href[1..]; // Remove leading #
+
+        // Strip "heading=" prefix if present
+        if (anchorId.StartsWith("heading=", StringComparison.OrdinalIgnoreCase))
+        {
+            anchorId = anchorId[8..]; // Skip "heading="
+        }
+
+        // Look up human-readable ID
+        if (anchorLookup.TryGetValue(anchorId, out var humanReadableId))
+        {
+            link.SetAttributeValue("href", $"#{humanReadableId}");
+        }
+    }
+
+    private void HandleGoogleDocsLink(HtmlNode link, string href)
+    {
+        // Check if this is a Google redirect URL (e.g., https://www.google.com/url?q=...)
+        // If so, extract the actual URL from the 'q' parameter
+        var urlToMatch = href;
+        var match = GoogleRedirectUrlRegex().Match(href);
+        if (match.Success)
+        {
+            // Extract URL from 'q' parameter and decode it
+            var encodedUrl = match.Groups["url"].Value;
+            urlToMatch = Uri.UnescapeDataString(encodedUrl);
+        }
+
+        // Match Google Docs URL pattern
+        match = GoogleDocsUrlRegex().Match(urlToMatch);
+        if (!match.Success)
+        {
+            return; // Not a Google Docs link
+        }
+
+        var documentId = match.Groups["documentId"].Value;
+
+        // Find matching document in configuration
+        var document = _settings.Documents
+            .FirstOrDefault(d => d.DocumentId == documentId);
+
+        if (document is null)
+        {
+            return; // No matching document found in settings
+        }
+
+        // Extract anchor if present
+        var anchorIndex = urlToMatch.IndexOf('#', StringComparison.OrdinalIgnoreCase);
+        var anchor = string.Empty;
+
+        if (anchorIndex >= 0)
+        {
+            anchor = urlToMatch[anchorIndex..];
+
+            // Strip Google Docs "heading=" prefix if present
+            // Convert "#heading=h.abc123" → "#h.abc123"
+            if (anchor.StartsWith("#heading=", StringComparison.OrdinalIgnoreCase))
+            {
+                anchor = "#" + anchor[9..]; // Skip "#heading="
+            }
+        }
+
+        // Replace with internal route
+        var webRoute = document.WebRoute.StartsWith('/')
+            ? document.WebRoute
+            : "/" + document.WebRoute;
+        link.SetAttributeValue("href", webRoute + anchor);
     }
 
     /// <summary>
