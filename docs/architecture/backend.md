@@ -1310,9 +1310,10 @@ public class CreateTournamentEndpoint
         var result = await _handler.HandleAsync(command, ct);
 
         // Handle errors
-        if (result.IsFailure)
+        if (result.IsError)
         {
-            await this.SendProblemDetailsAsync(result.Error, ct);
+            AddError(result.FirstError.Description, result.FirstError.Code);
+            await Send.ErrorsAsync(statusCode: StatusCodes.Status409Conflict, ct);
             return;
         }
 
@@ -1458,63 +1459,48 @@ Rules:
 
 ### Error Handling
 
-Errors flow as `ErrorOr<T>` from domain/application layers. The API translates to ProblemDetails (RFC 9457):
+Errors flow as `ErrorOr<T>` from domain/application layers. The API translates to ProblemDetails (RFC 9457) via FastEndpoints' built-in `UseProblemDetails()` configuration.
+
+**ProblemDetails configuration** is in `ErrorHandlingConfiguration.cs`:
 
 ```csharp
-namespace Neba.Api.Extensions;
-
-public static class ProblemDetailsExtensions
+options.UseProblemDetails(problemDetailsOptions =>
 {
-    public static async Task SendProblemDetailsAsync(
-        this IEndpoint endpoint,
-        Error error,
-        CancellationToken ct)
+    problemDetailsOptions.AllowDuplicateErrors = true;
+    problemDetailsOptions.IndicateErrorCode = true;
+    problemDetailsOptions.IndicateErrorSeverity = true;
+    problemDetailsOptions.TypeValue = "https://www.rfc-editor.org/rfc/rfc9457";
+    problemDetailsOptions.TitleTransformer = problemDetails => problemDetails.Status switch
     {
-        var httpContext = endpoint.HttpContext;
+        400 => "Bad Request",
+        404 => "Not Found",
+        409 => "Conflict",
+        _ => problemDetails.Title
+    };
+});
+```
 
-        var problemDetails = new ProblemDetails
-        {
-            Type = "https://www.rfc-editor.org/rfc/rfc7231#section-6.5.1",
-            Title = error.Type switch
-            {
-                ErrorType.Validation => "Validation Error",
-                ErrorType.Conflict => "Conflict",
-                ErrorType.NotFound => "Not Found",
-                _ => "An error occurred"
-            },
-            Status = error.Type switch
-            {
-                ErrorType.Validation => 400,
-                ErrorType.Conflict => 409,
-                ErrorType.NotFound => 404,
-                _ => 500
-            },
-            Detail = error.Message,
-            Instance = httpContext.Request.Path
-        };
+**Returning errors from endpoints** — use `AddError()` + `Send.ErrorsAsync()` to flow `ErrorOr<T>` errors through the ProblemDetails pipeline:
 
-        problemDetails.Extensions.Add("traceId", httpContext.TraceIdentifier);
-
-        if (!string.IsNullOrEmpty(error.Code))
-            problemDetails.Extensions.Add("errorCode", error.Code);
-
-        if (error.Context?.Any() == true)
-            problemDetails.Extensions.Add("context", error.Context);
-
-        await endpoint.SendAsync(problemDetails, problemDetails.Status!.Value, ct);
-    }
+```csharp
+if (result.IsError)
+{
+    AddError(result.FirstError.Description, result.FirstError.Code);
+    await Send.ErrorsAsync(statusCode: StatusCodes.Status404NotFound, ct);
+    return;
 }
 ```
+
+This produces a ProblemDetails response with the error code (via `IndicateErrorCode = true`), `traceId` (via `ErrorHandlingConfiguration`), and RFC 9457 structure automatically.
 
 **Error response rules**:
 
 - Always return ProblemDetails for any error (400, 401, 403, 404, 409, 500, etc.)
-- Use Fast Endpoints methods when appropriate (`SendNotFoundAsync()`, `SendUnauthorizedAsync()`, `SendForbiddenAsync()`)
-- Use `SendProblemDetailsAsync()` extension for Application layer errors
-- Validation errors always return 400
-- Include `traceId` in all error responses
-- Include `errorCode` for domain/business errors
-- Include `context` for additional error details when helpful
+- Use `AddError()` + `Send.ErrorsAsync(statusCode)` for Application layer errors from `ErrorOr<T>` results
+- Map `ErrorType` to the appropriate HTTP status code at the endpoint level
+- Validation errors return 400 automatically via FastEndpoints validators
+- Unhandled exceptions return 500 via `GlobalExceptionHandler`
+- Include `errorCode` for domain/business errors (automatic via `IndicateErrorCode = true`)
 
 #### Error Code Convention
 
@@ -1696,7 +1682,7 @@ When creating a new endpoint:
   - [ ] Description with `WithName()` (required)
   - [ ] Produces/ProducesProblemDetails for all status codes
 - [ ] `HandleAsync()` maps Request → Command/Query → Response
-- [ ] Errors use `SendProblemDetailsAsync()` extension or appropriate Fast Endpoints methods
+- [ ] Errors use `AddError()` + `Send.ErrorsAsync(statusCode)` for ProblemDetails responses
 - [ ] Validator only validates structural rules (no business logic)
 - [ ] Summary class with examples for request and all responses
 - [ ] Refit interface updated

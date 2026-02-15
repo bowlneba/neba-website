@@ -101,14 +101,15 @@ Flag when:
 
 #### Error Handling
 
-All errors must return ProblemDetails (RFC 7807).
+All errors must return ProblemDetails (RFC 9457) via FastEndpoints' built-in `UseProblemDetails()`. Use `AddError()` + `Send.ErrorsAsync(statusCode)` to return `ErrorOr<T>` errors with the appropriate HTTP status code.
 
 Flag when:
 
 - Custom error responses instead of ProblemDetails
 - Not handling all error cases from `ErrorOr<T>` result
 - Using `SendAsync()` with custom error objects
-- Missing error case handling (assuming success without checking `result.IsFailure`)
+- Missing error case handling (assuming success without checking `result.IsError`)
+- Using `result.IsFailure` or `result.Error` instead of `result.IsError` / `result.FirstError` (ErrorOr API)
 
 #### Error Codes
 
@@ -494,7 +495,7 @@ See detailed criteria in **API Layer** section above. Additionally flag when:
 | Public setters on entities | Private setters with behavior methods |
 | `DateTime.Now` in domain logic | Inject `TimeProvider` |
 | Legacy extension method syntax (`this` parameter) | Use `extension()` blocks (C# 14) |
-| Custom error response in endpoint | Use `ProblemDetails` via `SendProblemDetailsAsync()` |
+| Custom error response in endpoint | Use `AddError()` + `Send.ErrorsAsync(statusCode)` for ProblemDetails |
 | Implicit endpoint authorization | Explicit `AllowAnonymous()`, `Roles()`, or `Policies()` |
 | Validation in endpoint handler | Create separate `Validator<TRequest>` class |
 | Database lookup in validator | Move to Application layer handler |

@@ -37,7 +37,7 @@ internal static class OpenApiConfiguration
 
                 options.TagDescriptions = tags =>
                 {
-                    tags["Weather"] = "Weather forecast endpoints";
+                    tags["Documents"] = "Document management endpoints";
                     tags["Tournaments"] = "Tournament management endpoints";
                     tags["Bowlers"] = "Bowler management endpoints";
                 };
