@@ -559,6 +559,66 @@ export function closeSlideover(slideoverId) {
     }
 }
 
+/**
+ * Initializes link handlers for dynamically loaded slideover content.
+ * This should be called after slideover content is loaded to enable hash navigation
+ * within the slideover content.
+ * @param {string} slideoverContentId - ID of the slideover content container
+ */
+export function initializeSlideoverContent(slideoverContentId) {
+    const slideoverContent = document.getElementById(slideoverContentId);
+    if (!slideoverContent) return;
+
+    const headings = slideoverContent.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    const anchorLookup = buildAnchorLookup(headings);
+    const contentLinks = slideoverContent.querySelectorAll('a[href]');
+
+    contentLinks.forEach(link => {
+        // Remove any existing click listener
+        const newLink = link.cloneNode(true);
+        link.parentNode?.replaceChild(newLink, link);
+
+        newLink.addEventListener('click', (e) => {
+            const href = newLink.getAttribute('href');
+            if (!href || href === '#') return;
+            if (e.ctrlKey || e.metaKey) return;
+
+            // Hash-only links: scroll within the slideover content
+            if (href.startsWith('#')) {
+                e.preventDefault();
+                handleAnchorNavigation(slideoverContent, href, anchorLookup);
+                return;
+            }
+
+            try {
+                const linkUrl = new URL(href, globalThis.location.href);
+                const isInternal = linkUrl.origin === globalThis.location.origin;
+                const isExternalProtocol = linkUrl.protocol === 'mailto:' || linkUrl.protocol === 'tel:';
+
+                if (!isInternal || isExternalProtocol) return;
+
+                // Same-page link with hash: scroll within slideover content
+                const currentPath = globalThis.location.pathname;
+                if (linkUrl.pathname === currentPath && linkUrl.hash) {
+                    e.preventDefault();
+                    handleAnchorNavigation(slideoverContent, linkUrl.hash, anchorLookup);
+                    return;
+                }
+
+                // Different-page internal link: let main content handler deal with it
+                // by triggering a re-load in the slideover
+                if (dotNetReference) {
+                    e.preventDefault();
+                    const pathname = linkUrl.pathname.replace(/^\//, '');
+                    dotNetReference.invokeMethodAsync('OnInternalLinkClicked', pathname);
+                }
+            } catch {
+                // Let the browser handle malformed URLs normally
+            }
+        }, { capture: true });
+    });
+}
+
 /** Clean up all event listeners and references. */
 export function dispose() {
     if (abortController) {

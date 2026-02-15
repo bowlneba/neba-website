@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
-import { initialize, scrollToHash, openSlideover, closeSlideover, dispose } from './NebaDocument.razor.js';
+import { initialize, scrollToHash, openSlideover, closeSlideover, initializeSlideoverContent, dispose } from './NebaDocument.razor.js';
 
 describe('NebaDocument', () => {
   let mockDotNetReference;
@@ -94,7 +94,7 @@ describe('NebaDocument', () => {
       );
     });
 
-    test('should return false when no headings found', () => {
+    test('should initialize successfully even without headings (for link navigation)', () => {
       // Arrange
       document.body.innerHTML = `
         <div id="content">
@@ -112,7 +112,8 @@ describe('NebaDocument', () => {
       const result = initialize(mockDotNetReference, config);
 
       // Assert
-      expect(result).toBe(false);
+      // Returns true because link navigation is still set up even without headings
+      expect(result).toBe(true);
     });
 
     test('should escape HTML in heading text to prevent XSS', () => {
@@ -865,7 +866,7 @@ describe('NebaDocument', () => {
       );
     });
 
-    test('should update URL hash when scrolling to anchor', () => {
+    test('should navigate to anchor when clicking hash link', () => {
       // Arrange
       document.body.innerHTML = `
         <div id="content">
@@ -883,16 +884,20 @@ describe('NebaDocument', () => {
       const content = document.getElementById('content');
       content.scrollTo = jest.fn();
 
-      globalThis.location.hash = '';
-
       initialize(mockDotNetReference, config);
 
       // Act
       const link = content.querySelector('a[href="#section1"]');
-      link.click();
+      const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+      const defaultPrevented = !link.dispatchEvent(clickEvent);
 
       // Assert
-      expect(globalThis.location.hash).toBe('section1');
+      expect(defaultPrevented).toBe(true); // Event should be prevented
+      expect(content.scrollTo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          behavior: 'smooth'
+        })
+      );
     });
 
     test('should allow external protocol links like mailto and tel', () => {
@@ -921,6 +926,250 @@ describe('NebaDocument', () => {
 
       expect(() => emailLink.click()).not.toThrow();
       expect(() => phoneLink.click()).not.toThrow();
+    });
+  });
+
+  describe('initializeSlideoverContent', () => {
+    beforeEach(() => {
+      // Initialize main component first to set up dotNetReference
+      document.body.innerHTML = `
+        <div id="main-content">
+          <h1>Main Content</h1>
+        </div>
+        <ul id="toc-list"></ul>
+        <div id="slideover">
+          <div id="slideover-content"></div>
+        </div>
+      `;
+
+      const config = {
+        contentId: 'main-content',
+        tocListId: 'toc-list',
+        slideoverId: 'slideover'
+      };
+
+      initialize(mockDotNetReference, config);
+    });
+
+    test('should handle hash links within slideover content', () => {
+      // Arrange
+      const slideoverContent = document.getElementById('slideover-content');
+      slideoverContent.innerHTML = `
+        <h1 id="section1">Section 1</h1>
+        <a href="#section1">Link to Section 1</a>
+      `;
+
+      slideoverContent.scrollTo = jest.fn();
+
+      // Act
+      initializeSlideoverContent('slideover-content');
+
+      const link = slideoverContent.querySelector('a[href="#section1"]');
+      const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+      const defaultPrevented = !link.dispatchEvent(clickEvent);
+
+      // Assert
+      expect(defaultPrevented).toBe(true);
+      expect(slideoverContent.scrollTo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          behavior: 'smooth'
+        })
+      );
+    });
+
+    test('should invoke callback for internal document links in slideover', () => {
+      // Arrange
+      const slideoverContent = document.getElementById('slideover-content');
+      slideoverContent.innerHTML = `
+        <h1>Tournament Rules</h1>
+        <a href="/about/bylaws">See Bylaws</a>
+      `;
+
+      mockDotNetReference.invokeMethodAsync.mockClear();
+
+      // Act
+      initializeSlideoverContent('slideover-content');
+
+      const link = slideoverContent.querySelector('a[href="/about/bylaws"]');
+      const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+      link.dispatchEvent(clickEvent);
+
+      // Assert
+      expect(mockDotNetReference.invokeMethodAsync).toHaveBeenCalledWith(
+        'OnInternalLinkClicked',
+        'about/bylaws'
+      );
+    });
+
+    test('should handle Google Docs anchor format in slideover', () => {
+      // Arrange
+      const slideoverContent = document.getElementById('slideover-content');
+      slideoverContent.innerHTML = `
+        <h1 id="article-1-name" data-original-id="h.abc123">Article 1 - Name</h1>
+        <a href="#heading=h.abc123">Link to Article 1</a>
+      `;
+
+      slideoverContent.scrollTo = jest.fn();
+
+      // Act
+      initializeSlideoverContent('slideover-content');
+
+      const link = slideoverContent.querySelector('a[href="#heading=h.abc123"]');
+      const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+      link.dispatchEvent(clickEvent);
+
+      // Assert
+      expect(slideoverContent.scrollTo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          behavior: 'smooth'
+        })
+      );
+    });
+
+    test('should handle same-page links with hash in slideover', () => {
+      // Arrange
+      globalThis.location.pathname = '/bylaws';
+
+      const slideoverContent = document.getElementById('slideover-content');
+      slideoverContent.innerHTML = `
+        <h1 id="section1">Section 1</h1>
+        <a href="/bylaws#section1">Link to Section 1</a>
+      `;
+
+      slideoverContent.scrollTo = jest.fn();
+
+      // Act
+      initializeSlideoverContent('slideover-content');
+
+      const link = slideoverContent.querySelector('a[href="/bylaws#section1"]');
+      const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+      const defaultPrevented = !link.dispatchEvent(clickEvent);
+
+      // Assert
+      expect(defaultPrevented).toBe(true);
+      expect(slideoverContent.scrollTo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          behavior: 'smooth'
+        })
+      );
+    });
+
+    test('should ignore external links in slideover', () => {
+      // Arrange
+      const slideoverContent = document.getElementById('slideover-content');
+      slideoverContent.innerHTML = `
+        <h1>Content</h1>
+        <a href="https://external.com">External Link</a>
+      `;
+
+      mockDotNetReference.invokeMethodAsync.mockClear();
+
+      // Act
+      initializeSlideoverContent('slideover-content');
+
+      const link = slideoverContent.querySelector('a[href="https://external.com"]');
+      const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+      const defaultPrevented = !link.dispatchEvent(clickEvent);
+
+      // Assert
+      expect(defaultPrevented).toBe(false);
+      expect(mockDotNetReference.invokeMethodAsync).not.toHaveBeenCalled();
+    });
+
+    test('should handle Ctrl+Click in slideover', () => {
+      // Arrange
+      const slideoverContent = document.getElementById('slideover-content');
+      slideoverContent.innerHTML = `
+        <h1>Content</h1>
+        <a href="/bylaws">Bylaws Link</a>
+      `;
+
+      mockDotNetReference.invokeMethodAsync.mockClear();
+
+      // Act
+      initializeSlideoverContent('slideover-content');
+
+      const link = slideoverContent.querySelector('a[href="/bylaws"]');
+      const clickEvent = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        ctrlKey: true
+      });
+      const defaultPrevented = !link.dispatchEvent(clickEvent);
+
+      // Assert
+      expect(defaultPrevented).toBe(false);
+      expect(mockDotNetReference.invokeMethodAsync).not.toHaveBeenCalled();
+    });
+
+    test('should handle empty href in slideover', () => {
+      // Arrange
+      const slideoverContent = document.getElementById('slideover-content');
+      slideoverContent.innerHTML = `
+        <h1>Content</h1>
+        <a href="">Empty</a>
+        <a href="#">Hash only</a>
+      `;
+
+      // Act
+      initializeSlideoverContent('slideover-content');
+
+      const emptyLink = slideoverContent.querySelector('a[href=""]');
+      const hashLink = slideoverContent.querySelector('a[href="#"]');
+
+      // Assert
+      expect(() => emptyLink.click()).not.toThrow();
+      expect(() => hashLink.click()).not.toThrow();
+    });
+
+    test('should handle missing slideover content element gracefully', () => {
+      // Act & Assert
+      expect(() => initializeSlideoverContent('nonexistent')).not.toThrow();
+    });
+
+    test('should allow mailto and tel links in slideover', () => {
+      // Arrange
+      const slideoverContent = document.getElementById('slideover-content');
+      slideoverContent.innerHTML = `
+        <h1>Contact</h1>
+        <a href="mailto:test@example.com">Email</a>
+        <a href="tel:+1234567890">Phone</a>
+      `;
+
+      mockDotNetReference.invokeMethodAsync.mockClear();
+
+      // Act
+      initializeSlideoverContent('slideover-content');
+
+      const emailLink = slideoverContent.querySelector('a[href^="mailto:"]');
+      const phoneLink = slideoverContent.querySelector('a[href^="tel:"]');
+
+      emailLink.click();
+      phoneLink.click();
+
+      // Assert
+      expect(mockDotNetReference.invokeMethodAsync).not.toHaveBeenCalled();
+    });
+
+    test('should remove existing event listeners before adding new ones', () => {
+      // Arrange
+      const slideoverContent = document.getElementById('slideover-content');
+      slideoverContent.innerHTML = `
+        <h1>Content</h1>
+        <a href="/bylaws">Bylaws</a>
+      `;
+
+      mockDotNetReference.invokeMethodAsync.mockClear();
+
+      // Act - Initialize twice
+      initializeSlideoverContent('slideover-content');
+      initializeSlideoverContent('slideover-content');
+
+      const link = slideoverContent.querySelector('a[href="/bylaws"]');
+      link.click();
+
+      // Assert - Should only be called once (not twice if handlers were duplicated)
+      expect(mockDotNetReference.invokeMethodAsync).toHaveBeenCalledTimes(1);
     });
   });
 });
