@@ -82,7 +82,13 @@ internal sealed class GoogleDriveService : IDocumentsService, IDisposable
                 MediaTypeNames.Text.Html);
 
             await using var stream = new MemoryStream();
-            await exportRequest.DownloadAsync(stream, cancellationToken);
+            var progress = await exportRequest.DownloadAsync(stream, cancellationToken);
+
+            if (progress.Status == Google.Apis.Download.DownloadStatus.Failed)
+            {
+                throw progress.Exception
+                    ?? new GoogleApiException("drive", $"Export failed for document '{documentName}' (ID: {document.DocumentId})");
+            }
 
             // Convert stream to string
             var rawHtml = System.Text.Encoding.UTF8.GetString(stream.ToArray());

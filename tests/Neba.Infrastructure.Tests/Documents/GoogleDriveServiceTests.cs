@@ -202,6 +202,23 @@ public sealed class GoogleDriveServiceTests
         mockStopwatch.Verify(x => x.GetElapsedTime(1000L), Times.Once);
     }
 
+    [Fact(DisplayName = "GetDocumentAsHtmlAsync should throw when Google Drive API call fails")]
+    public async Task GetDocumentAsHtmlAsync_Throws_WhenGoogleDriveApiFails()
+    {
+        // Arrange
+        var processor = new HtmlProcessor(_settings);
+        var mockStopwatch = CreateStopwatchProviderMock();
+        var logger = NullLogger<GoogleDriveService>.Instance;
+        using var service = new GoogleDriveService(_settings, processor, mockStopwatch.Object, logger);
+
+        // Act & Assert - should throw on API failure, not return empty HTML
+        await Should.ThrowAsync<Exception>(
+            () => service.GetDocumentAsHtmlAsync("bylaws", CancellationToken.None));
+
+        // Verify elapsed time was recorded even on failure
+        mockStopwatch.Verify(x => x.GetElapsedTime(1000L), Times.Once);
+    }
+
     [Fact(DisplayName = "Service should dispose DriveService on disposal")]
     public void Dispose_ShouldNotThrow()
     {
