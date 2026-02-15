@@ -175,7 +175,7 @@ function setupScrollSpy(content, tocList, headings, signal) {
             if (targetElement) {
                 const contentRect = content.getBoundingClientRect();
                 const targetRect = targetElement.getBoundingClientRect();
-                const offset = 20;
+                const offset = 80;
                 const scrollPosition = content.scrollTop + (targetRect.top - contentRect.top) - offset;
 
                 content.scrollTo({ top: scrollPosition, behavior: 'smooth' });
@@ -359,7 +359,7 @@ function setupInternalLinkNavigation(content, headings, slideoverId, slideoverOv
             } catch {
                 // Let the browser handle malformed URLs normally
             }
-        }, { signal });
+        }, { capture: true, signal });
     });
 }
 
@@ -368,11 +368,17 @@ function setupInternalLinkNavigation(content, headings, slideoverId, slideoverOv
  * Uses the anchor lookup to resolve Google Docs IDs (e.g., "h.xk7tre4v41xy")
  * to generated heading IDs (e.g., "article-1-name-purpose").
  * @param {HTMLElement} content - The document content container
- * @param {string} href - The hash href (e.g., "#section-1" or "#h.xk7tre4v41xy")
+ * @param {string} href - The hash href (e.g., "#section-1" or "#h.xk7tre4v41xy" or "#heading=h.xk7tre4v41xy")
  * @param {Map<string, string>} anchorLookup - Map from original IDs to heading IDs
  */
 function handleAnchorNavigation(content, href, anchorLookup) {
-    const rawId = href.substring(1);
+    let rawId = href.substring(1);
+
+    // Handle Google Docs "heading=" prefix
+    // Convert "#heading=h.abc123" → "h.abc123"
+    if (rawId.startsWith('heading=')) {
+        rawId = rawId.substring(8); // Skip "heading="
+    }
 
     // Resolve through lookup (handles Google Docs IDs → generated kebab-case IDs)
     const resolvedId = anchorLookup.get(rawId) ?? rawId;
@@ -387,17 +393,17 @@ function handleAnchorNavigation(content, href, anchorLookup) {
     if (isContentScrollable) {
         const contentRect = content.getBoundingClientRect();
         const targetRect = targetElement.getBoundingClientRect();
-        const offset = 20;
+        const offset = 80;
         const scrollPosition = content.scrollTop + (targetRect.top - contentRect.top) - offset;
         content.scrollTo({ top: scrollPosition, behavior: 'smooth' });
     } else {
         const navbarHeight = 80;
-        const offset = 10;
+        const offset = 60;
         const targetPosition = targetElement.getBoundingClientRect().top + globalThis.scrollY - navbarHeight - offset;
         globalThis.scrollTo({ top: targetPosition, behavior: 'smooth' });
     }
 
-    // Use replaceState instead of location.hash to avoid triggering Blazor's router
+    // Use the human-readable ID in the URL instead of the Google Docs ID
     const newHash = `#${resolvedId}`;
     if (globalThis.location.hash !== newHash) {
         history.replaceState(null, '', newHash);
@@ -471,11 +477,26 @@ export function scrollToHash(contentId, tocListId) {
     const hash = globalThis.location.hash;
     if (!hash) return;
 
-    const targetId = hash.substring(1);
-    const content = document.getElementById(contentId);
-    const targetElement = document.getElementById(targetId);
+    let targetId = hash.substring(1);
 
-    if (!content || !targetElement) return;
+    // Handle Google Docs "heading=" prefix
+    // Convert "#heading=h.abc123" → "h.abc123"
+    if (targetId.startsWith('heading=')) {
+        targetId = targetId.substring(8); // Skip "heading="
+    }
+
+    const content = document.getElementById(contentId);
+    if (!content) return;
+
+    // Build anchor lookup to resolve Google Docs IDs
+    const headings = content.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    const anchorLookup = buildAnchorLookup(headings);
+
+    // Resolve the ID through lookup (handles Google Docs IDs → generated kebab-case IDs)
+    const resolvedId = anchorLookup.get(targetId) ?? targetId;
+    const targetElement = document.getElementById(resolvedId);
+
+    if (!targetElement) return;
 
     const isContentScrollable =
         (content.scrollHeight > content.clientHeight) ||
@@ -484,20 +505,26 @@ export function scrollToHash(contentId, tocListId) {
     if (isContentScrollable) {
         const contentRect = content.getBoundingClientRect();
         const targetRect = targetElement.getBoundingClientRect();
-        const offset = 20;
+        const offset = 80;
         const scrollPosition = content.scrollTop + (targetRect.top - contentRect.top) - offset;
         content.scrollTo({ top: scrollPosition, behavior: 'smooth' });
     } else {
         const navbarHeight = 80;
-        const offset = 10;
+        const offset = 60;
         const targetPosition = targetElement.getBoundingClientRect().top + globalThis.scrollY - navbarHeight - offset;
         globalThis.scrollTo({ top: targetPosition, behavior: 'smooth' });
+    }
+
+    // Update URL with human-readable ID
+    const newHash = `#${resolvedId}`;
+    if (globalThis.location.hash !== newHash) {
+        history.replaceState(null, '', newHash);
     }
 
     const tocList = document.getElementById(tocListId);
     if (tocList) {
         const activeLink = tocList.querySelector('.toc-link.active');
-        const newActiveLink = tocList.querySelector(`[data-target="${targetId}"]`);
+        const newActiveLink = tocList.querySelector(`[data-target="${resolvedId}"]`);
 
         activeLink?.classList.remove('active');
         newActiveLink?.classList.add('active');

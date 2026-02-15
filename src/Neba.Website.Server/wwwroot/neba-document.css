@@ -260,8 +260,13 @@
     padding-left: 1.5rem;
 }
 
+.neba-document-content ul {
+    list-style-type: disc;
+}
+
 .neba-document-content li {
     margin-bottom: 0.25rem;
+    display: list-item !important;
 }
 
 .neba-document-content a {
@@ -429,6 +434,21 @@
 
 .neba-document-slideover-content p {
     margin: 0 0 1rem;
+}
+
+.neba-document-slideover-content ul,
+.neba-document-slideover-content ol {
+    margin: 0 0 1rem;
+    padding-left: 1.5rem;
+}
+
+.neba-document-slideover-content ul {
+    list-style-type: disc;
+}
+
+.neba-document-slideover-content li {
+    margin-bottom: 0.25rem;
+    display: list-item !important;
 }
 
 .neba-document-slideover-content a {

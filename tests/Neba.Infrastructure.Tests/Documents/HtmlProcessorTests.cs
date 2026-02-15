@@ -252,8 +252,8 @@ public sealed class HtmlProcessorTests
         links[1].GetAttributeValue("href", "").ShouldBe("/tournaments/rules");
     }
 
-    [Fact(DisplayName = "Process should preserve anchors when replacing Google Docs URLs")]
-    public void Process_PreservesAnchors_WhenReplacingGoogleDocsUrls()
+    [Fact(DisplayName = "Process should strip 'heading=' prefix from Google Docs anchors")]
+    public void Process_StripsHeadingPrefix_FromGoogleDocsAnchors()
     {
         // Arrange
         const string rawHtml = """
@@ -273,7 +273,55 @@ public sealed class HtmlProcessorTests
 
         var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
         link.ShouldNotBeNull();
-        link!.GetAttributeValue("href", "").ShouldBe("/about/bylaws#heading=h.abc123");
+        link!.GetAttributeValue("href", "").ShouldBe("/about/bylaws#h.abc123");
+    }
+
+    [Fact(DisplayName = "Process should preserve anchors without 'heading=' prefix")]
+    public void Process_PreservesAnchors_WithoutHeadingPrefix()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <body>
+                <p>See <a href="https://docs.google.com/document/d/1ABC123/edit#h.xyz789">Section 6</a>.</p>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        var doc = new HtmlDocument();
+        doc.LoadHtml(result);
+
+        var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
+        link.ShouldNotBeNull();
+        link!.GetAttributeValue("href", "").ShouldBe("/about/bylaws#h.xyz789");
+    }
+
+    [Fact(DisplayName = "Process should handle 'heading=' prefix case-insensitively")]
+    public void Process_HandlesHeadingPrefix_CaseInsensitively()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <body>
+                <p>See <a href="https://docs.google.com/document/d/1ABC123/edit#HEADING=h.abc123">Section 7</a>.</p>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        var doc = new HtmlDocument();
+        doc.LoadHtml(result);
+
+        var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
+        link.ShouldNotBeNull();
+        link!.GetAttributeValue("href", "").ShouldBe("/about/bylaws#h.abc123");
     }
 
     [Fact(DisplayName = "Process should not modify non-Google Docs links")]
@@ -439,10 +487,10 @@ public sealed class HtmlProcessorTests
         doc.DocumentNode.SelectSingleNode("//h1")?.GetAttributeValue("id", "").ShouldBe("section-1");
         doc.DocumentNode.SelectSingleNode("//h2")?.GetAttributeValue("id", "").ShouldBe("section-2");
 
-        // Google Docs link replaced with anchor preserved
+        // Google Docs link replaced with anchor preserved (heading= prefix stripped)
         var googleLink = doc.DocumentNode.SelectSingleNode("//a[contains(text(), 'Bylaws')]");
         googleLink.ShouldNotBeNull();
-        googleLink!.GetAttributeValue("href", "").ShouldBe("/about/bylaws#heading=h.xyz");
+        googleLink!.GetAttributeValue("href", "").ShouldBe("/about/bylaws#h.xyz");
 
         // External link preserved
         var externalLink = doc.DocumentNode.SelectSingleNode("//a[contains(text(), 'external')]");
@@ -546,5 +594,111 @@ public sealed class HtmlProcessorTests
         var links = doc.DocumentNode.SelectNodes("//a[@href]");
         links.Count.ShouldBe(3);
         links.ShouldAllBe(link => link.GetAttributeValue("href", "") == "/about/bylaws");
+    }
+
+    [Fact(DisplayName = "Process should transform anchor-only links to use human-readable IDs")]
+    public void Process_TransformsAnchorOnlyLinks_ToHumanReadableIds()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <body>
+                <h1 id="h.abc123">Section 1</h1>
+                <p>See <a href="#h.abc123">Section 1</a> for details.</p>
+                <h2 id="h.def456">Section 2</h2>
+                <p>Check <a href="#h.def456">Section 2</a> above.</p>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        var doc = new HtmlDocument();
+        doc.LoadHtml(result);
+
+        var links = doc.DocumentNode.SelectNodes("//a[@href]");
+        links.Count.ShouldBe(2);
+        links[0].GetAttributeValue("href", "").ShouldBe("#section-1");
+        links[1].GetAttributeValue("href", "").ShouldBe("#section-2");
+    }
+
+    [Fact(DisplayName = "Process should handle anchor-only links with heading= prefix")]
+    public void Process_HandlesAnchorOnlyLinks_WithHeadingPrefix()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <body>
+                <h1 id="h.xyz789">Annual Meeting</h1>
+                <p>See <a href="#heading=h.xyz789">Annual Meeting</a> section.</p>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        var doc = new HtmlDocument();
+        doc.LoadHtml(result);
+
+        var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
+        link.ShouldNotBeNull();
+        link!.GetAttributeValue("href", "").ShouldBe("#annual-meeting");
+    }
+
+    [Fact(DisplayName = "Process should leave anchor-only links unchanged when no matching heading exists")]
+    public void Process_LeavesAnchorOnlyLinks_WhenNoMatchingHeading()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <body>
+                <h1>Section 1</h1>
+                <p>See <a href="#h.nonexistent">unknown section</a>.</p>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        var doc = new HtmlDocument();
+        doc.LoadHtml(result);
+
+        var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
+        link.ShouldNotBeNull();
+        // Should remain unchanged since no matching heading exists
+        link!.GetAttributeValue("href", "").ShouldBe("#h.nonexistent");
+    }
+
+    [Fact(DisplayName = "Process should handle mixed anchor-only and full URL links")]
+    public void Process_HandlesMixedLinks_AnchorAndFullUrl()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <body>
+                <h1 id="h.abc123">Article 1</h1>
+                <p>See <a href="#h.abc123">Article 1</a> in this document.</p>
+                <p>Also see <a href="https://docs.google.com/document/d/1ABC123/edit#h.abc123">Article 1</a> in Bylaws.</p>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        var doc = new HtmlDocument();
+        doc.LoadHtml(result);
+
+        var links = doc.DocumentNode.SelectNodes("//a[@href]");
+        links.Count.ShouldBe(2);
+        links[0].GetAttributeValue("href", "").ShouldBe("#article-1");
+        links[1].GetAttributeValue("href", "").ShouldBe("/about/bylaws#h.abc123");
     }
 }

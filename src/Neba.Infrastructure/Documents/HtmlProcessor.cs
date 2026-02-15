@@ -65,9 +65,13 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
     /// <remarks>
     /// Pattern: https://docs.google.com/document/d/{documentId}/...
     /// Replacement: Configured route from settings (e.g., "/about/bylaws")
+    /// Also transforms anchor-only links (#h.xk7tre4v41xy) to use human-readable IDs
     /// </remarks>
     private void ReplaceGoogleDocsLinks(HtmlNode node)
     {
+        // Build anchor lookup map: Google Docs ID → human-readable ID
+        var anchorLookup = BuildAnchorLookup(node);
+
         var links = node.SelectNodes("//a[@href]");
         if (links is null)
         {
@@ -80,6 +84,26 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
             if (string.IsNullOrEmpty(href))
             {
                 continue; // Skip links without href
+            }
+
+            // Handle anchor-only links within the same document (e.g., "#h.xk7tre4v41xy")
+            if (href.StartsWith('#'))
+            {
+                var anchorId = href[1..]; // Remove leading #
+
+                // Strip "heading=" prefix if present
+                if (anchorId.StartsWith("heading=", StringComparison.OrdinalIgnoreCase))
+                {
+                    anchorId = anchorId[8..]; // Skip "heading="
+                }
+
+                // Look up human-readable ID
+                if (anchorLookup.TryGetValue(anchorId, out var humanReadableId))
+                {
+                    link.SetAttributeValue("href", $"#{humanReadableId}");
+                }
+
+                continue;
             }
 
             // Match Google Docs URL pattern
@@ -102,13 +126,52 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
 
             // Extract anchor if present
             var anchorIndex = href.IndexOf('#', StringComparison.OrdinalIgnoreCase);
-            var anchor = anchorIndex >= 0
-                ? href[anchorIndex..]
-                : string.Empty;
+            var anchor = string.Empty;
+
+            if (anchorIndex >= 0)
+            {
+                anchor = href[anchorIndex..];
+
+                // Strip Google Docs "heading=" prefix if present
+                // Convert "#heading=h.abc123" → "#h.abc123"
+                if (anchor.StartsWith("#heading=", StringComparison.OrdinalIgnoreCase))
+                {
+                    anchor = "#" + anchor[9..]; // Skip "#heading="
+                }
+            }
 
             // Replace with internal route
             link.SetAttributeValue("href", document.WebRoute + anchor);
         }
+    }
+
+    /// <summary>
+    /// Builds a lookup map from Google Docs heading IDs to human-readable IDs.
+    /// </summary>
+    /// <param name="node">The HTML node to search for headings.</param>
+    /// <returns>Dictionary mapping original Google Docs IDs to human-readable IDs.</returns>
+    private static Dictionary<string, string> BuildAnchorLookup(HtmlNode node)
+    {
+        var lookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var headings = node.SelectNodes("//h1[@data-original-id] | //h2[@data-original-id] | //h3[@data-original-id] | //h4[@data-original-id] | //h5[@data-original-id] | //h6[@data-original-id]");
+
+        if (headings is null)
+        {
+            return lookup;
+        }
+
+        foreach (var heading in headings)
+        {
+            var originalId = heading.GetAttributeValue("data-original-id", string.Empty);
+            var humanReadableId = heading.GetAttributeValue("id", string.Empty);
+
+            if (!string.IsNullOrEmpty(originalId) && !string.IsNullOrEmpty(humanReadableId))
+            {
+                lookup[originalId] = humanReadableId;
+            }
+        }
+
+        return lookup;
     }
 
     /// <summary>
