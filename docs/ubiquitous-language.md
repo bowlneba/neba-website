@@ -47,6 +47,30 @@
 
 ---
 
+### File
+
+**Definition**: Any content stored in Azure Blob Storage. Files are the storage representation of content within NEBA, regardless of origin. A file may be a cached export of a Document (e.g., bylaws HTML from Google Drive), an uploaded artifact (e.g., tournament squad results PDF, scanned recap sheets), or any other binary/text content. Files may or may not be associated with a domain entity (tournament, bowler, bowling center). Each file lives in a container with a path and carries metadata describing its content type and provenance.
+
+**Characteristics**:
+
+- **Storage**: Azure Blob Storage (Azurite locally)
+- **Purpose**: Persistent storage for any content — cached documents, uploaded artifacts, generated reports
+- **Metadata**: Each file carries key-value metadata (content type, provenance, timestamps)
+- **Lifecycle**: Varies by use case — cached documents are refreshed periodically, uploaded artifacts are long-lived
+
+**Examples**:
+
+- Cached bylaws HTML exported from Google Drive
+- Tournament squad results PDF
+- Scanned recap sheets from tournaments
+
+**In Code**:
+
+- Namespace: `Neba.Application.Storage`
+- Interface: `IFileStorageService`
+
+---
+
 ### Document Refresh
 
 **Definition**: The process of synchronizing a Document from its source system (Google Drive) to the application's cache layers.
@@ -56,9 +80,8 @@
 1. Triggered by scheduled job or manual user action
 2. Export document from Google Drive as HTML
 3. Process HTML (clean formatting, update links)
-4. Upload to Azure Blob Storage
+4. Upload to Azure Blob Storage (as a File)
 5. Invalidate application caches
-6. Notify connected clients via Server-Sent Events
 
 **Types**:
 
