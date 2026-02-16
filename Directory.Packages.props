@@ -7,6 +7,7 @@
     <PackageVersion Include="Aspire.Azure.Npgsql" Version="13.1.1" />
     <PackageVersion Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.1.1" />
     <PackageVersion Include="Aspire.Azure.Security.KeyVault" Version="13.1.1" />
+    <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="13.1.1" />
     <PackageVersion Include="Aspire.Hosting.Azure.ApplicationInsights" Version="13.1.1" />
     <PackageVersion Include="Aspire.Hosting.Azure.AppService" Version="13.1.1-preview.1.26105.8" />
     <PackageVersion Include="Aspire.Hosting.Azure.KeyVault" Version="13.1.1" />
@@ -56,6 +57,7 @@
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.19.0.132793" />
     <PackageVersion Include="StronglyTypedId" Version="1.0.0-beta08" />
     <PackageVersion Include="StronglyTypedId.Templates" Version="1.0.0-beta08" />
+    <PackageVersion Include="Testcontainers.Azurite" Version="4.10.0" />
     <PackageVersion Include="Ulid" Version="1.4.1" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageVersion Include="xunit.v3" Version="3.2.2" />

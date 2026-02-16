@@ -8,6 +8,7 @@ using Neba.Infrastructure.BackgroundJobs;
 using Neba.Infrastructure.Clock;
 using Neba.Infrastructure.Database;
 using Neba.Infrastructure.Documents;
+using Neba.Infrastructure.Storage;
 using Neba.Infrastructure.Telemetry.Tracing;
 
 namespace Neba.Infrastructure;
@@ -36,7 +37,8 @@ public static class InfrastructureConfiguration
 
             builder
                 .AddDatabase()
-                .AddKeyVault();
+                .AddKeyVault()
+                .AddStorage();
 
             builder.Services.AddBackgroundJobs(builder.Configuration);
             builder.Services.AddGoogleDrive(builder.Configuration);

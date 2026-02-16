@@ -17,6 +17,7 @@
     <PackageReference Include="Aspire.Azure.Npgsql" />
     <PackageReference Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Aspire.Azure.Security.KeyVault" />
+    <PackageReference Include="Aspire.Azure.Storage.Blobs" />
     <PackageReference Include="AspNetCore.HealthChecks.Hangfire" />
     <PackageReference Include="Google.Apis.Auth" />
     <PackageReference Include="Google.Apis.Drive.v3" />

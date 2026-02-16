@@ -24,7 +24,7 @@ var storage = builder.AddAzureStorage("storage")
         .WithDataVolume("bowlneba-storage-data")
         .WithBlobPort(19632));
 
-var blobs = storage.AddBlobs("bowlneba-blob");
+var blobs = storage.AddBlobs("blob");
 
 var api = builder.AddProject<Projects.Neba_Api>("api")
     .WithExternalHttpEndpoints()
