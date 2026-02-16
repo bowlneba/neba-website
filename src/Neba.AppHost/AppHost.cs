@@ -17,11 +17,22 @@ var postgres = builder.AddAzurePostgresFlexibleServer("postgres")
 
 var database = postgres.AddDatabase("bowlneba");
 
+var storage = builder.AddAzureStorage("storage")
+    .RunAsEmulator(emulator => emulator
+        .WithContainerName("bowlneba-storage")
+        .WithLifetime(ContainerLifetime.Persistent)
+        .WithDataVolume("bowlneba-storage-data")
+        .WithBlobPort(19632));
+
+var blobs = storage.AddBlobs("bowlneba-blob");
+
 var api = builder.AddProject<Projects.Neba_Api>("api")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(database)
     .WaitFor(database)
+    .WithReference(blobs)
+    .WaitFor(blobs)
     .WithUrlForEndpoint("http", callback =>
     {
         callback.DisplayText = "Scalar API";
