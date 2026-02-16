@@ -15,7 +15,8 @@ using Neba.Infrastructure.Telemetry;
 
 namespace Neba.Infrastructure.Documents;
 
-internal sealed class GoogleDriveService : IDocumentsService, IDisposable
+internal sealed class GoogleDriveService 
+    : IDocumentsService, IDisposable
 {
     private static readonly ActivitySource ActivitySource = new("Neba.Documents");
 
@@ -48,9 +49,9 @@ internal sealed class GoogleDriveService : IDocumentsService, IDisposable
     /// </summary>
     /// <param name="documentName">The logical name of the document (e.g., "bylaws").</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The document content as processed HTML, or null if the document is not found.</returns>
+    /// <returns>The document as a <see cref="DocumentDto"/> containing the processed HTML content and metadata, or <c>null</c> if the document is not found.</returns>
     /// <exception cref="GoogleApiException">Thrown when Google Drive API request fails.</exception>
-    public async Task<string?> GetDocumentAsHtmlAsync(string documentName, CancellationToken cancellationToken)
+    public async Task<DocumentDto?> GetDocumentAsHtmlAsync(string documentName, CancellationToken cancellationToken)
     {
         // Find document configuration by name (case-insensitive)
         var document = _settings.Documents
@@ -122,7 +123,12 @@ internal sealed class GoogleDriveService : IDocumentsService, IDisposable
             activity?.SetTag("export.duration_ms", durationMs);
             activity?.SetStatus(ActivityStatusCode.Ok);
 
-            return processedHtml;
+            return new DocumentDto
+            {
+                Name = documentName,
+                Content = processedHtml,
+                ContentType = MediaTypeNames.Text.Html
+            };
         }
         catch (Exception ex)
         {

@@ -1,6 +1,7 @@
 using Neba.Application.Documents;
 using Neba.Application.Documents.GetDocument;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Documents;
 
 namespace Neba.Application.Tests.Documents.GetDocument;
 
@@ -22,23 +23,22 @@ public sealed class GetDocumentQueryHandlerTests
     public async Task HandleAsync_ShouldReturnDocumentContent()
     {
         // Arrange
-        const string documentName = "TestDocument";
-        const string expectedContent = "<html><body>Test Document Content</body></html>";
+        var expectedDocument = DocumentDtoFactory.Create();
 
         _documentsServiceMock
-            .Setup(service => service.GetDocumentAsHtmlAsync(documentName, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedContent);
+            .Setup(service => service.GetDocumentAsHtmlAsync(expectedDocument.Name, TestContext.Current.CancellationToken))
+            .ReturnsAsync(expectedDocument);
 
         var query = new GetDocumentQuery
         {
-            DocumentName = documentName
+            DocumentName = expectedDocument.Name
         };
 
         // Act
         var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
 
         // Assert
-        result.ShouldBe(expectedContent);
+        result.ShouldBe(expectedDocument.Content);
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public sealed class GetDocumentQueryHandlerTests
 
         _documentsServiceMock
             .Setup(service => service.GetDocumentAsHtmlAsync(documentName, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string?)null);
+            .ReturnsAsync((DocumentDto?)null);
 
         var query = new GetDocumentQuery
         {

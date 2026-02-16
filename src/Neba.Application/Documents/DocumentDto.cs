@@ -1,0 +1,22 @@
+namespace Neba.Application.Documents;
+
+/// <summary>
+/// Data transfer object representing a document retrieved from an external document management system, including its name, content, and content type.
+/// </summary>
+public sealed record DocumentDto
+{
+    /// <summary>
+    /// The logical name of the document, corresponding to the configured document name used for retrieval. This is a case-insensitive identifier (e.g., "bylaws", "tournament-rules") that allows the application to look up and retrieve the correct document content based on configuration settings. The name serves as a key for identifying which document has been retrieved and can be used for logging, debugging, or further processing within the application.
+    /// </summary>
+    public required string Name { get; init; }
+
+    /// <summary>
+    /// The content of the document as a string, typically containing HTML markup that has been processed and transformed from its original format (e.g., Google Docs, Microsoft Word) into a format suitable for web display. The content includes only the body of the document without any full HTML document structure (like &lt;html&gt;, &lt;head&gt;, or &lt;body&gt; tags). It may also include generated anchor IDs on headings for deep linking and internal routes replacing external document system URLs. This content is intended to be rendered directly in a web application, allowing users to view the document as part of the website's content.
+    /// </summary>
+    public required string Content { get; init; }
+
+    /// <summary>
+    /// The MIME type of the document content, such as "text/html" for HTML content. This information is crucial for the application to understand how to handle and render the document content appropriately. For example, if the content type is "text/html", the application can render the content directly in a web page. If the content type were something else (e.g., "application/pdf"), the application might choose to provide a download link instead of rendering it inline. The content type helps ensure that the document is displayed correctly based on its format and intended use within the web application.
+    /// </summary>
+    public required string ContentType { get; init; }
+}

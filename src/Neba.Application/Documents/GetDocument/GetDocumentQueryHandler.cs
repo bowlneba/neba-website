@@ -13,7 +13,7 @@ internal sealed class GetDocumentQueryHandler(IDocumentsService documentsService
     {
         var document = await _documentsService.GetDocumentAsHtmlAsync(query.DocumentName, cancellationToken);
 
-        return document?.ToErrorOr()
+        return document?.Content.ToErrorOr()
             ?? DocumentErrors.DocumentNotFound(query.DocumentName);
     }
 }
