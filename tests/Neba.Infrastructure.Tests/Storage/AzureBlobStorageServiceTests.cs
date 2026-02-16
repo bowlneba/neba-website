@@ -1,3 +1,6 @@
+using Microsoft.Extensions.Logging.Abstractions;
+
+using Neba.Infrastructure.Clock;
 using Neba.Infrastructure.Storage;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
@@ -16,7 +19,10 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
     {
         ArgumentNullException.ThrowIfNull(fixture);
 
-        _sut = new AzureBlobStorageService(fixture.BlobServiceClient);
+        _sut = new AzureBlobStorageService(
+            fixture.BlobServiceClient,
+            new StopwatchProvider(),
+            NullLogger<AzureBlobStorageService>.Instance);
     }
 
     private static string UniqueContainer() => $"test-{Guid.NewGuid():N}";
