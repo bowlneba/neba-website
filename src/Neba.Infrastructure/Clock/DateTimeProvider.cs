@@ -7,4 +7,7 @@ internal sealed class DateTimeProvider
 {
     public DateOnly Today
         => DateOnly.FromDateTime(DateTime.UtcNow);
+
+    public DateTimeOffset UtcNow
+        => DateTimeOffset.UtcNow;
 }

@@ -125,6 +125,7 @@ internal sealed class GoogleDriveService
 
             return new DocumentDto
             {
+                Id = document.DocumentId,
                 Name = documentName,
                 Content = processedHtml,
                 ContentType = MediaTypeNames.Text.Html

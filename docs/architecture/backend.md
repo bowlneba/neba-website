@@ -525,6 +525,31 @@ public class TournamentService { }
 - Abstract base classes designed for inheritance (`AggregateRoot`)
 - Framework requirements that mandate unsealed classes
 
+### DateTime vs DateTimeOffset
+
+Use `DateTimeOffset` instead of `DateTime` for representing points in time. `DateTimeOffset` carries its UTC offset explicitly, eliminating ambiguity.
+
+```csharp
+// Correct - unambiguous, serializes with offset
+public DateTimeOffset CreatedAt { get; }
+public DateTimeOffset? LastModified { get; }
+
+// Incorrect - DateTimeKind can be lost during serialization/deserialization
+public DateTime CreatedAt { get; }
+```
+
+**When `DateTime` is still appropriate**:
+
+- `DateOnly` / `TimeOnly` when you only need date or time (preferred over `DateTime` for those cases)
+- Interop with APIs that require `DateTime`
+
+**Guidelines**:
+
+- Properties, parameters, and return types: `DateTimeOffset`
+- Clock abstractions (`IDateTimeProvider`): return `DateTimeOffset`
+- Database columns: `timestamptz` in PostgreSQL maps naturally to `DateTimeOffset`
+- Serialization: `.ToString("o")` produces `2026-02-16T12:00:00.0000000+00:00`
+
 ### Immutable Collections for Static Data
 
 Use `FrozenDictionary<TKey, TValue>` and `FrozenSet<T>` for lookup data that's initialized once and never changes. These collections optimize for read performance after construction.
