@@ -53,7 +53,7 @@ internal static class DocumentsConfiguration
             using var scope = app.Services.CreateScope();
             var scheduler = scope.ServiceProvider.GetRequiredService<IBackgroundJobScheduler>();
             var settings = scope.ServiceProvider.GetRequiredService<GoogleSettings>();
-            
+
             foreach (var documentName in settings.Documents.Select(document => document.Name))
             {
                 scheduler.AddOrUpdateRecurring(
