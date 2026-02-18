@@ -8,16 +8,24 @@
  */
 import { createServer, IncomingMessage, ServerResponse } from 'node:http';
 
-const MOCK_WEATHER_FORECAST = {
-  items: [
-    { date: '2024-01-15', temperatureC: 20, temperatureF: 68, summary: 'Mild' },
-    { date: '2024-01-16', temperatureC: 25, temperatureF: 77, summary: 'Warm' },
-    { date: '2024-01-17', temperatureC: 15, temperatureF: 59, summary: 'Cool' },
-    { date: '2024-01-18', temperatureC: 30, temperatureF: 86, summary: 'Hot' },
-    { date: '2024-01-19', temperatureC: 10, temperatureF: 50, summary: 'Chilly' },
-  ],
-  count: 5,
-};
+const MOCK_TOURNAMENT_RULES_HTML = `
+<h1>NEBA Tournament Rules</h1>
+<h2>Section 1: Eligibility</h2>
+<p>All participants must be registered NEBA members in good standing.
+For membership requirements, see the <a href="/bylaws">NEBA Bylaws</a>.</p>
+<h2>Section 2: Equipment Standards</h2>
+<p>All bowling equipment must conform to USBC specifications.</p>
+<h2>Section 3: Scoring</h2>
+<p>Official scoring will follow standard USBC guidelines.</p>
+`;
+
+const MOCK_BYLAWS_HTML = `
+<h1>NEBA Bylaws</h1>
+<h2>Article I: Name</h2>
+<p>This organization shall be known as the New England Bowling Association.</p>
+<h2>Article II: Mission</h2>
+<p>The mission of NEBA is to promote amateur bowling throughout New England.</p>
+`;
 
 function setCorsHeaders(res: ServerResponse): void {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -32,7 +40,8 @@ function sendJsonResponse(res: ServerResponse, data: unknown, statusCode = 200):
 
 const routes: Record<string, unknown> = {
   '/health': { status: 'healthy' },
-  '/weatherforecast': MOCK_WEATHER_FORECAST,
+  '/documents/tournament-rules': { html: MOCK_TOURNAMENT_RULES_HTML },
+  '/documents/bylaws': { html: MOCK_BYLAWS_HTML },
   // Add more routes as the API grows:
   // '/tournaments': { items: [], count: 0 },
   // '/bowling-centers': { items: [], count: 0 },

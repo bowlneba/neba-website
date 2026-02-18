@@ -79,4 +79,7 @@ Before ending a session where significant discoveries were made, consider whethe
 
 ## Learnings
 
-<!-- Add project-specific discoveries below as they're encountered -->
+### API Route Conventions
+
+- **No `/api` prefix** — the API is served from `api.bowlneba.com`, so routes start directly with the resource (e.g. `/documents/{DocumentName}`, not `/api/documents/{DocumentName}`)
+- **No version in path** — API versioning is handled via request headers, not URL segments (no `/v1/`, `/api/v1/`, etc.)
