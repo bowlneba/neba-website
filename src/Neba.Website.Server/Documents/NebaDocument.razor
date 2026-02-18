@@ -35,6 +35,10 @@
 @if (!IsLoading && Content.HasValue)
 {
     <div class="neba-document-container" id="@ContainerId">
+        @{
+            var lastUpdatedText = GetLastUpdatedText(CachedAt);
+        }
+
         @if (ShowTableOfContents)
         {
             <!-- Mobile TOC Button -->
@@ -50,6 +54,10 @@
                 <div class="toc-sticky">
                     <h2 class="toc-title">@TableOfContentsTitle</h2>
                     <div id="@TocListId"></div>
+                    @if (!string.IsNullOrWhiteSpace(lastUpdatedText))
+                    {
+                        <div class="neba-document-toc-last-updated">@lastUpdatedText</div>
+                    }
                 </div>
             </nav>
 
@@ -67,6 +75,10 @@
                     </div>
                     <div class="neba-document-toc-modal-body">
                         <div id="@TocMobileListId"></div>
+                        @if (!string.IsNullOrWhiteSpace(lastUpdatedText))
+                        {
+                            <div class="neba-document-toc-last-updated">@lastUpdatedText</div>
+                        }
                     </div>
                 </div>
             </div>
@@ -75,17 +87,6 @@
         <div class="neba-panel neba-document-content" id="@ContentId">
             @Content
         </div>
-
-        <!-- Last Updated Footer -->
-        @{
-            var lastUpdatedText = GetLastUpdatedText(CachedAt);
-        }
-        @if (!string.IsNullOrWhiteSpace(lastUpdatedText))
-        {
-            <div class="neba-document-last-updated-bottom">
-                @lastUpdatedText
-            </div>
-        }
 
         <!-- Slide-over Panel for Internal Links -->
         <div class="neba-document-slideover" id="@SlideoverId" role="dialog" aria-modal="true" aria-labelledby="@SlideoverTitleId">

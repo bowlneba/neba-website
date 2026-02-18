@@ -626,7 +626,7 @@ public sealed class NebaDocumentTests : IDisposable
         slideoverContentElement.InnerHtml.ShouldContain("Slideover HTML");
     }
 
-    [Fact(DisplayName = "Should not render last updated footer when CachedAt is null")]
+    [Fact(DisplayName = "Should not render last updated in TOC when CachedAt is null")]
     public void Render_ShouldNotShowLastUpdated_WhenCachedAtIsNull()
     {
         // Arrange
@@ -638,11 +638,11 @@ public sealed class NebaDocumentTests : IDisposable
             .Add(p => p.CachedAt, (DateTimeOffset?)null));
 
         // Assert
-        cut.FindAll(".neba-document-last-updated-bottom").ShouldBeEmpty();
+        cut.FindAll(".neba-document-toc-last-updated").ShouldBeEmpty();
     }
 
-    [Fact(DisplayName = "Should render last updated footer when CachedAt is provided")]
-    public void Render_ShouldShowLastUpdated_WhenCachedAtIsProvided()
+    [Fact(DisplayName = "Should render last updated in TOC when CachedAt is provided")]
+    public void Render_ShouldShowLastUpdatedInToc_WhenCachedAtIsProvided()
     {
         // Arrange
         var content = new MarkupString("<p>Content</p>");
@@ -654,10 +654,10 @@ public sealed class NebaDocumentTests : IDisposable
             .Add(p => p.CachedAt, cachedAt));
 
         // Assert
-        var footer = cut.Find(".neba-document-last-updated-bottom");
-        footer.ShouldNotBeNull();
-        footer.TextContent.ShouldContain("Last updated:");
-        footer.TextContent.ShouldContain("January 15, 2024");
+        var tocLastUpdated = cut.Find(".neba-document-toc-last-updated");
+        tocLastUpdated.ShouldNotBeNull();
+        tocLastUpdated.TextContent.ShouldContain("Last updated:");
+        tocLastUpdated.TextContent.ShouldContain("January 15, 2024");
     }
 
     [Fact(DisplayName = "Should generate unique IDs for all TOC elements")]

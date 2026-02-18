@@ -306,14 +306,22 @@
 }
 
 /* ==========================================================================
-   Last Updated Footer
+   Last Updated
    ========================================================================== */
+
+.neba-document-toc-last-updated {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--neba-gray-500);
+    border-top: 1px solid var(--neba-gray-200);
+}
 
 .neba-document-last-updated-bottom {
     padding: 0.75rem 1rem;
     font-size: 0.75rem;
     color: var(--neba-gray-500);
-    text-align: right;
+    text-align: left;
     border-top: 1px solid var(--neba-gray-200);
     margin-top: 0.5rem;
 }
