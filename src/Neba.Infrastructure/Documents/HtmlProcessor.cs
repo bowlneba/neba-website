@@ -232,7 +232,7 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
             .ToList();
 
         return listStyleRules.Count > 0
-            ? string.Join(string.Empty, listStyleRules)
+            ? string.Concat(listStyleRules)
             : string.Empty;
     }
 
