@@ -24,15 +24,18 @@
               TableOfContentsTitle="Contents"
               HeadingLevels="h1, h2"
               DocumentId="bylaws"
+              CachedAt="@_cachedAt"
               OnSlideoverLinkClicked="@HandleSlideoverLinkClicked"
               SlideoverContent="@_slideover.Content"
               SlideoverTitle="@_slideover.Title"
-              SlideoverIsLoading="@_slideover.IsLoading" />
+              SlideoverIsLoading="@_slideover.IsLoading"
+              SlideoverCachedAt="@_slideover.CachedAt" />
 
 @code {
     private MarkupString? _content;
     private string? _errorMessage;
     private bool _isLoading = true;
+    private DateTimeOffset? _cachedAt;
     private DocumentSlideoverHandler _slideover = null!;
 
     protected override void OnInitialized()
@@ -54,6 +57,7 @@
         else
         {
             _content = new MarkupString(result.Value.Html);
+            _cachedAt = result.Value.CachedAt;
         }
 
         _isLoading = false;

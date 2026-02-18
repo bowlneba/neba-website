@@ -626,8 +626,8 @@ public sealed class NebaDocumentTests : IDisposable
         slideoverContentElement.InnerHtml.ShouldContain("Slideover HTML");
     }
 
-    [Fact(DisplayName = "Should not render last updated footer when metadata is null")]
-    public void Render_ShouldNotShowLastUpdated_WhenMetadataIsNull()
+    [Fact(DisplayName = "Should not render last updated footer when CachedAt is null")]
+    public void Render_ShouldNotShowLastUpdated_WhenCachedAtIsNull()
     {
         // Arrange
         var content = new MarkupString("<p>Content</p>");
@@ -635,94 +635,29 @@ public sealed class NebaDocumentTests : IDisposable
         // Act
         var cut = _ctx.Render<NebaDocument>(parameters => parameters
             .Add(p => p.Content, content)
-            .Add(p => p.Metadata, null));
+            .Add(p => p.CachedAt, (DateTimeOffset?)null));
 
         // Assert
         cut.FindAll(".neba-document-last-updated-bottom").ShouldBeEmpty();
     }
 
-    [Fact(DisplayName = "Should not render last updated footer when metadata lacks LastUpdatedUtc")]
-    public void Render_ShouldNotShowLastUpdated_WhenMetadataLacksLastUpdatedUtc()
+    [Fact(DisplayName = "Should render last updated footer when CachedAt is provided")]
+    public void Render_ShouldShowLastUpdated_WhenCachedAtIsProvided()
     {
         // Arrange
         var content = new MarkupString("<p>Content</p>");
-        var metadata = new Dictionary<string, string>
-        {
-            { "SomeOtherKey", "SomeValue" }
-        };
+        var cachedAt = new DateTimeOffset(2024, 1, 15, 10, 30, 0, TimeSpan.Zero);
 
         // Act
         var cut = _ctx.Render<NebaDocument>(parameters => parameters
             .Add(p => p.Content, content)
-            .Add(p => p.Metadata, metadata));
-
-        // Assert
-        cut.FindAll(".neba-document-last-updated-bottom").ShouldBeEmpty();
-    }
-
-    [Fact(DisplayName = "Should render last updated footer with date only")]
-    public void Render_ShouldShowLastUpdatedDate_WhenLastUpdatedUtcIsProvided()
-    {
-        // Arrange
-        var content = new MarkupString("<p>Content</p>");
-        var metadata = new Dictionary<string, string>
-        {
-            { "LastUpdatedUtc", "2024-01-15T10:30:00Z" }
-        };
-
-        // Act
-        var cut = _ctx.Render<NebaDocument>(parameters => parameters
-            .Add(p => p.Content, content)
-            .Add(p => p.Metadata, metadata));
+            .Add(p => p.CachedAt, cachedAt));
 
         // Assert
         var footer = cut.Find(".neba-document-last-updated-bottom");
         footer.ShouldNotBeNull();
-        footer.TextContent.ShouldContain("2024-01-15");
-    }
-
-    [Fact(DisplayName = "Should render last updated footer with date and username")]
-    public void Render_ShouldShowLastUpdatedDateAndUser_WhenLastUpdatedByIsProvided()
-    {
-        // Arrange
-        var content = new MarkupString("<p>Content</p>");
-        var metadata = new Dictionary<string, string>
-        {
-            { "LastUpdatedUtc", "2024-01-15T10:30:00Z" },
-            { "LastUpdatedBy", "Admin User" }
-        };
-
-        // Act
-        var cut = _ctx.Render<NebaDocument>(parameters => parameters
-            .Add(p => p.Content, content)
-            .Add(p => p.Metadata, metadata));
-
-        // Assert
-        var footer = cut.Find(".neba-document-last-updated-bottom");
-        footer.ShouldNotBeNull();
-        footer.TextContent.ShouldContain("2024-01-15");
-        footer.TextContent.ShouldContain("Admin User");
-        footer.TextContent.ShouldContain("by");
-    }
-
-    [Fact(DisplayName = "Should not render last updated footer when date is invalid")]
-    public void Render_ShouldNotShowLastUpdated_WhenDateIsInvalid()
-    {
-        // Arrange
-        var content = new MarkupString("<p>Content</p>");
-        var metadata = new Dictionary<string, string>
-        {
-            { "LastUpdatedUtc", "invalid-date" },
-            { "LastUpdatedBy", "Admin User" }
-        };
-
-        // Act
-        var cut = _ctx.Render<NebaDocument>(parameters => parameters
-            .Add(p => p.Content, content)
-            .Add(p => p.Metadata, metadata));
-
-        // Assert
-        cut.FindAll(".neba-document-last-updated-bottom").ShouldBeEmpty();
+        footer.TextContent.ShouldContain("Last updated:");
+        footer.TextContent.ShouldContain("January 15, 2024");
     }
 
     [Fact(DisplayName = "Should generate unique IDs for all TOC elements")]

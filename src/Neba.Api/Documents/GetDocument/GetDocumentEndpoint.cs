@@ -11,10 +11,10 @@ using Neba.Application.Messaging;
 
 namespace Neba.Api.Documents.GetDocument;
 
-internal sealed class GetDocumentEndpoint(IQueryHandler<GetDocumentQuery, ErrorOr<string>> queryHandler)
+internal sealed class GetDocumentEndpoint(IQueryHandler<GetDocumentQuery, ErrorOr<GetDocumentDto>> queryHandler)
         : Endpoint<GetDocumentRequest, GetDocumentResponse>
 {
-    private readonly IQueryHandler<GetDocumentQuery, ErrorOr<string>> _queryHandler = queryHandler;
+    private readonly IQueryHandler<GetDocumentQuery, ErrorOr<GetDocumentDto>> _queryHandler = queryHandler;
 
     public override void Configure()
     {
@@ -50,7 +50,8 @@ internal sealed class GetDocumentEndpoint(IQueryHandler<GetDocumentQuery, ErrorO
 
         var response = new GetDocumentResponse
         {
-            Html = result.Value,
+            Html = result.Value.Html,
+            CachedAt = result.Value.CachedAt,
         };
 
         await Send.OkAsync(response, ct);

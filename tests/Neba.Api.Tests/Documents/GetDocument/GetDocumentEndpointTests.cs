@@ -9,6 +9,7 @@ using Neba.Api.Documents.GetDocument;
 using Neba.Application.Documents.GetDocument;
 using Neba.Application.Messaging;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Documents;
 
 namespace Neba.Api.Tests.Documents;
 
@@ -21,16 +22,16 @@ public sealed class GetDocumentEndpointTests
     {
         // Arrange
         const string documentName = "TestDocument";
-        const string expectedHtml = "<html><body>Test Content</body></html>";
+        var dto = GetDocumentDtoFactory.Create();
 
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var queryHandlerMock = new Mock<IQueryHandler<GetDocumentQuery, ErrorOr<string>>>(MockBehavior.Strict);
+        var queryHandlerMock = new Mock<IQueryHandler<GetDocumentQuery, ErrorOr<GetDocumentDto>>>(MockBehavior.Strict);
         queryHandlerMock
             .Setup(handler => handler.HandleAsync(
                 It.Is<GetDocumentQuery>(q => q.DocumentName == documentName),
                 cancellationToken))
-            .ReturnsAsync(expectedHtml);
+            .ReturnsAsync(dto.ToErrorOr());
 
         var endpoint = Factory.Create<GetDocumentEndpoint>(
             queryHandlerMock.Object);
@@ -45,7 +46,8 @@ public sealed class GetDocumentEndpointTests
 
         // Assert
         endpoint.Response.ShouldNotBeNull();
-        endpoint.Response.Html.ShouldBe(expectedHtml);
+        endpoint.Response.Html.ShouldBe(dto.Html);
+        endpoint.Response.CachedAt.ShouldBe(dto.CachedAt);
         endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
     }
 
@@ -61,7 +63,7 @@ public sealed class GetDocumentEndpointTests
             "Document.NotFound",
             $"Document with name '{documentName}' was not found.");
 
-        var queryHandlerMock = new Mock<IQueryHandler<GetDocumentQuery, ErrorOr<string>>>(MockBehavior.Strict);
+        var queryHandlerMock = new Mock<IQueryHandler<GetDocumentQuery, ErrorOr<GetDocumentDto>>>(MockBehavior.Strict);
         queryHandlerMock
             .Setup(handler => handler.HandleAsync(
                 It.Is<GetDocumentQuery>(q => q.DocumentName == documentName),
@@ -88,18 +90,18 @@ public sealed class GetDocumentEndpointTests
     {
         // Arrange
         const string documentName = "privacy-policy";
-        const string expectedHtml = "<html><body>Privacy Policy</body></html>";
+        var dto = GetDocumentDtoFactory.Create();
 
         var cancellationToken = TestContext.Current.CancellationToken;
 
         GetDocumentQuery? capturedQuery = null;
 
-        var queryHandlerMock = new Mock<IQueryHandler<GetDocumentQuery, ErrorOr<string>>>(MockBehavior.Strict);
+        var queryHandlerMock = new Mock<IQueryHandler<GetDocumentQuery, ErrorOr<GetDocumentDto>>>(MockBehavior.Strict);
         queryHandlerMock
             .Setup(handler => handler.HandleAsync(
                 It.IsAny<GetDocumentQuery>(),
                 cancellationToken))
-            .ReturnsAsync(expectedHtml)
+            .ReturnsAsync(dto.ToErrorOr())
             .Callback<GetDocumentQuery, CancellationToken>((query, _) => capturedQuery = query);
 
         var endpoint = Factory.Create<GetDocumentEndpoint>(

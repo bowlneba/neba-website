@@ -8,7 +8,7 @@ namespace Neba.Application.Documents.GetDocument;
 /// A query to retrieve a document by its name.
 /// </summary>
 public sealed record GetDocumentQuery
-    : IQuery<ErrorOr<string>>
+    : IQuery<ErrorOr<GetDocumentDto>>
 {
     /// <summary>
     /// The name of the document to retrieve.

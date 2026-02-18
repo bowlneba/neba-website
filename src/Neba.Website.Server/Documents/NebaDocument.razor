@@ -12,7 +12,6 @@
 
     DO NOT move neba-document.css to a .razor.css file - it will break layout and functionality.
 *@
-@using System.Globalization
 @implements IAsyncDisposable
 
 <script src="./Documents/NebaDocument.razor.js" type="module"></script>
@@ -79,7 +78,7 @@
 
         <!-- Last Updated Footer -->
         @{
-            var lastUpdatedText = GetLastUpdatedText();
+            var lastUpdatedText = GetLastUpdatedText(CachedAt);
         }
         @if (!string.IsNullOrWhiteSpace(lastUpdatedText))
         {
@@ -110,6 +109,15 @@
                         @SlideoverContent
                     }
                 </div>
+                @{
+                    var slideoverLastUpdatedText = GetLastUpdatedText(SlideoverCachedAt);
+                }
+                @if (!string.IsNullOrWhiteSpace(slideoverLastUpdatedText))
+                {
+                    <div class="neba-document-last-updated-bottom">
+                        @slideoverLastUpdatedText
+                    </div>
+                }
             </div>
         </div>
     </div>
@@ -147,7 +155,10 @@
     public string? DocumentId { get; set; }
 
     [Parameter]
-    public IReadOnlyDictionary<string, string>? Metadata { get; set; }
+    public DateTimeOffset? CachedAt { get; set; }
+
+    [Parameter]
+    public DateTimeOffset? SlideoverCachedAt { get; set; }
 
     /// <summary>
     /// Callback invoked when an internal document link is clicked in the content.
@@ -336,23 +347,13 @@
         _dotNetRef?.Dispose();
     }
 
-    private string? GetLastUpdatedText()
+    private static string? GetLastUpdatedText(DateTimeOffset? cachedAt)
     {
-        if (Metadata is null || !Metadata.TryGetValue("LastUpdatedUtc", out var lastUpdatedUtcStr))
+        if (cachedAt is null)
         {
             return null;
         }
 
-        if (!DateTime.TryParse(lastUpdatedUtcStr, CultureInfo.InvariantCulture, out var lastUpdatedUtc))
-        {
-            return null;
-        }
-
-        if (Metadata.TryGetValue("LastUpdatedBy", out var lastUpdatedBy))
-        {
-            return $"{lastUpdatedUtc:yyyy-MM-dd} by {lastUpdatedBy}";
-        }
-
-        return lastUpdatedUtc.ToString("yyyy-MM-dd");
+        return $"Last updated: {cachedAt.Value:MMMM d, yyyy}";
     }
 }

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using ErrorOr;
 
 using Neba.Application.Clock;
@@ -10,20 +12,31 @@ internal sealed class GetDocumentQueryHandler(
     IDocumentsService documentsService,
     IFileStorageService storageService,
     IDateTimeProvider dateTimeProvider)
-        : IQueryHandler<GetDocumentQuery, ErrorOr<string>>
+        : IQueryHandler<GetDocumentQuery, ErrorOr<GetDocumentDto>>
 {
     private readonly IDocumentsService _documentsService = documentsService;
     private readonly IFileStorageService _storageService = storageService;
     private readonly IDateTimeProvider _dateTimeProvider = dateTimeProvider;
 
-    public async Task<ErrorOr<string>> HandleAsync(GetDocumentQuery query, CancellationToken cancellationToken)
+    public async Task<ErrorOr<GetDocumentDto>> HandleAsync(GetDocumentQuery query, CancellationToken cancellationToken)
     {
         if (await _storageService.ExistsAsync("documents", query.DocumentName, cancellationToken))
         {
             var file = await _storageService.GetFileAsync("documents", query.DocumentName, cancellationToken);
 
-            return file?.Content.ToErrorOr()
-                ?? DocumentErrors.DocumentNotFound(query.DocumentName);
+            if (file is null)
+            {
+                return DocumentErrors.DocumentNotFound(query.DocumentName);
+            }
+
+            DateTimeOffset? cachedAt = null;
+            if (file.Metadata.TryGetValue("cached_at", out var cachedAtStr) &&
+                DateTimeOffset.TryParse(cachedAtStr, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed))
+            {
+                cachedAt = parsed;
+            }
+
+            return new GetDocumentDto { Html = file.Content, CachedAt = cachedAt };
         }
 
         var document = await _documentsService.GetDocumentAsHtmlAsync(query.DocumentName, cancellationToken);
@@ -33,7 +46,8 @@ internal sealed class GetDocumentQueryHandler(
             return DocumentErrors.DocumentNotFound(query.DocumentName);
         }
 
-        // Cache the document content in storage for future requests (will be a background job when implemented)
+        var now = _dateTimeProvider.UtcNow;
+
         await _storageService.UploadFileAsync(
             "documents",
             query.DocumentName,
@@ -42,10 +56,10 @@ internal sealed class GetDocumentQueryHandler(
             new Dictionary<string, string>
             {
                 { "source_document_id", document.Id },
-                { "cached_at", _dateTimeProvider.UtcNow.ToString("o") }
+                { "cached_at", now.ToString("o") }
             },
             cancellationToken);
 
-        return document.Content;
+        return new GetDocumentDto { Html = document.Content, CachedAt = now };
     }
 }

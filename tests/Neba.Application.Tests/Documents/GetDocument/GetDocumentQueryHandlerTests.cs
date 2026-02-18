@@ -30,11 +30,18 @@ public sealed class GetDocumentQueryHandlerTests
             _dateTimeProviderMock.Object);
     }
 
-    [Fact(DisplayName = "Should return cached content when file exists in storage")]
-    public async Task HandleAsync_ShouldReturnCachedContent_WhenFileExistsInStorage()
+    [Fact(DisplayName = "Should return cached content and cached_at when file exists in storage")]
+    public async Task HandleAsync_ShouldReturnCachedContentAndCachedAt_WhenFileExistsInStorage()
     {
         // Arrange
-        var storedFile = StoredFileFactory.Create(content: DocumentDtoFactory.ValidContent);
+        var cachedAt = new DateTimeOffset(2026, 1, 15, 5, 0, 0, TimeSpan.Zero);
+        var storedFile = StoredFileFactory.Create(
+            content: DocumentDtoFactory.ValidContent,
+            metadata: new Dictionary<string, string>
+            {
+                { "source_document_id", DocumentDtoFactory.ValidId },
+                { "cached_at", cachedAt.ToString("o") }
+            });
         var query = new GetDocumentQuery { DocumentName = DocumentDtoFactory.ValidName };
 
         _storageServiceMock
@@ -50,7 +57,34 @@ public sealed class GetDocumentQueryHandlerTests
 
         // Assert
         result.IsError.ShouldBeFalse();
-        result.Value.ShouldBe(storedFile.Content);
+        result.Value.Html.ShouldBe(storedFile.Content);
+        result.Value.CachedAt.ShouldBe(cachedAt);
+    }
+
+    [Fact(DisplayName = "Should return cached content with null CachedAt when cached_at metadata is absent")]
+    public async Task HandleAsync_ShouldReturnNullCachedAt_WhenCachedAtMetadataAbsent()
+    {
+        // Arrange
+        var storedFile = StoredFileFactory.Create(
+            content: DocumentDtoFactory.ValidContent,
+            metadata: new Dictionary<string, string> { { "source_document_id", DocumentDtoFactory.ValidId } });
+        var query = new GetDocumentQuery { DocumentName = DocumentDtoFactory.ValidName };
+
+        _storageServiceMock
+            .Setup(s => s.ExistsAsync("documents", query.DocumentName, TestContext.Current.CancellationToken))
+            .ReturnsAsync(true);
+
+        _storageServiceMock
+            .Setup(s => s.GetFileAsync("documents", query.DocumentName, TestContext.Current.CancellationToken))
+            .ReturnsAsync(storedFile);
+
+        // Act
+        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Html.ShouldBe(storedFile.Content);
+        result.Value.CachedAt.ShouldBeNull();
     }
 
     [Fact(DisplayName = "Should return not found when file exists in storage but GetFile returns null")]
@@ -75,8 +109,8 @@ public sealed class GetDocumentQueryHandlerTests
         result.FirstError.Code.ShouldBe("Document.NotFound");
     }
 
-    [Fact(DisplayName = "Should fetch from documents service and upload to storage when not cached")]
-    public async Task HandleAsync_ShouldFetchAndUpload_WhenNotCached()
+    [Fact(DisplayName = "Should fetch from documents service, upload to storage, and return CachedAt when not cached")]
+    public async Task HandleAsync_ShouldFetchUploadAndReturnCachedAt_WhenNotCached()
     {
         // Arrange
         var expectedDocument = DocumentDtoFactory.Create();
@@ -112,7 +146,8 @@ public sealed class GetDocumentQueryHandlerTests
 
         // Assert
         result.IsError.ShouldBeFalse();
-        result.Value.ShouldBe(expectedDocument.Content);
+        result.Value.Html.ShouldBe(expectedDocument.Content);
+        result.Value.CachedAt.ShouldBe(cachedAt);
     }
 
     [Fact(DisplayName = "Should return not found when documents service returns null")]
