@@ -18,7 +18,8 @@ internal sealed class GetDocumentSummary
             contentType: MediaTypeNames.Application.Json,
             example: new GetDocumentResponse
             {
-                Html = "<html><body><h1>Document Title</h1><p>This is the document content.</p></body></html>"
+                Html = "<html><body><h1>Document Title</h1><p>This is the document content.</p></body></html>",
+                LastUpdated = new DateTimeOffset(2026, 2, 1, 12, 0, 0, TimeSpan.Zero)
             });
 
         Response(404, "The document was not found.",
