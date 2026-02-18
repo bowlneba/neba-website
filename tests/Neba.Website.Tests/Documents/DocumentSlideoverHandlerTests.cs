@@ -93,7 +93,7 @@ public sealed class DocumentSlideoverHandlerTests
 
         // Assert
         handler.Content.ShouldNotBeNull();
-        handler.Content.Value.Value.ShouldContain("Bylaws Content");
+        handler.Content!.Value.Value.ShouldContain("Bylaws Content");
         handler.Title.ShouldBe("Bylaws");
         handler.IsLoading.ShouldBeFalse();
         stateChangedCount.ShouldBe(2); // Once for loading, once for result
@@ -111,7 +111,7 @@ public sealed class DocumentSlideoverHandlerTests
 
         // Assert
         handler.Content.ShouldNotBeNull();
-        handler.Content.Value.Value.ShouldContain("Failed to load document");
+        handler.Content!.Value.Value.ShouldContain("Failed to load document");
         handler.Title.ShouldBe("Tournament Rules");
         handler.IsLoading.ShouldBeFalse();
     }
