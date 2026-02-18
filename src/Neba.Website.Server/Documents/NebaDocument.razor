@@ -20,17 +20,12 @@
 @if (!string.IsNullOrWhiteSpace(ErrorMessage))
 {
     <div class="mb-6">
-        <NebaAlert Severity="NotifySeverity.Error"
-                   Title="@ErrorTitle"
-                   Message="@ErrorMessage"
-                   Dismissible="true"
+        <NebaAlert Severity="NotifySeverity.Error"                   Title="@ErrorTitle"                   Message="@ErrorMessage"                   Dismissible="true"
                    OnDismiss="@HandleErrorDismiss" />
     </div>
 }
 
-<NebaLoadingIndicator IsVisible="@IsLoading"
-                      Text="@LoadingText"
-                      Scope="LoadingIndicatorScope.Page" />
+<NebaLoadingIndicator IsVisible="@IsLoading"                      Text="@LoadingText"                      Scope="LoadingIndicatorScope.Page" />
 
 @if (!IsLoading && Content.HasValue)
 {
@@ -43,8 +38,10 @@
         {
             <!-- Mobile TOC Button -->
             <button class="neba-document-toc-mobile-btn" id="@TocMobileButtonId" aria-label="Open table of contents">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                    <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"
+                     aria-hidden="true">
+                    <path fill-rule="evenodd"
+                          d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z" />
                 </svg>
                 <span>Contents</span>
             </button>
@@ -62,14 +59,17 @@
             </nav>
 
             <!-- Mobile TOC Modal -->
-            <div class="neba-document-toc-modal" id="@TocModalId" role="dialog" aria-modal="true" aria-labelledby="@TocModalTitleId">
+            <div class="neba-document-toc-modal" id="@TocModalId" role="dialog" aria-modal="true"
+                 aria-labelledby="@TocModalTitleId">
                 <div class="neba-document-toc-modal-overlay" id="@TocModalOverlayId"></div>
                 <div class="neba-document-toc-modal-content">
                     <div class="neba-document-toc-modal-header">
                         <h2 id="@TocModalTitleId" class="toc-title">@TableOfContentsTitle</h2>
-                        <button class="neba-document-toc-modal-close" id="@TocModalCloseId" aria-label="Close table of contents">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                        <button class="neba-document-toc-modal-close" id="@TocModalCloseId"
+                                aria-label="Close table of contents">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                                 viewBox="0 0 16 16" aria-hidden="true">
+                                <path                    d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z" />
                             </svg>
                         </button>
                     </div>
@@ -89,14 +89,17 @@
         </div>
 
         <!-- Slide-over Panel for Internal Links -->
-        <div class="neba-document-slideover" id="@SlideoverId" role="dialog" aria-modal="true" aria-labelledby="@SlideoverTitleId">
+        <div class="neba-document-slideover" id="@SlideoverId" role="dialog" aria-modal="true"
+             aria-labelledby="@SlideoverTitleId">
             <div class="neba-document-slideover-overlay" id="@SlideoverOverlayId"></div>
             <div class="neba-document-slideover-panel">
                 <div class="neba-document-slideover-header">
                     <h2 id="@SlideoverTitleId" class="neba-document-slideover-title">@(SlideoverTitle ?? "Loading...")</h2>
                     <button class="neba-document-slideover-close" id="@SlideoverCloseId" aria-label="Close document">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                            <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                             viewBox="0 0 16 16" aria-hidden="true">
+                            <path
+                            d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z" />
                         </svg>
                     </button>
                 </div>
@@ -125,7 +128,8 @@
 }
 
 @code {
-    [Parameter][EditorRequired]
+    [Parameter]
+    [EditorRequired]
     public MarkupString? Content { get; set; }
 
     [Parameter]
@@ -241,120 +245,129 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Initialize TOC and main content link handlers
-        if (!_tocInitialized && Content.HasValue)
-        {
-            try
-            {
-                _module ??= await JSRuntime.InvokeAsync<IJSObjectReference>(
-                    "import", "./Documents/NebaDocument.razor.js");
+        await InitializeTocAsync();
+        await InitializeSlideoverContentAsync();
 
-                _dotNetRef ??= DotNetObjectReference.Create(this);
-
-                var success = await _module.InvokeAsync<bool>("initialize", _dotNetRef, new
-                {
-                    contentId = ContentId,
-                    tocListId = TocListId,
-                    tocMobileListId = TocMobileListId,
-                    tocMobileButtonId = TocMobileButtonId,
-                    tocModalId = TocModalId,
-                    tocModalOverlayId = TocModalOverlayId,
-                    tocModalCloseId = TocModalCloseId,
-                    headingLevels = HeadingLevels,
-                    slideoverId = SlideoverId,
-                    slideoverOverlayId = SlideoverOverlayId,
-                    slideoverCloseId = SlideoverCloseId
-                });
-
-                if (success)
-                {
-                    _tocInitialized = true;
-                    await _module.InvokeVoidAsync("scrollToHash", ContentId, TocListId);
-                }
-            }
-            catch (JSDisconnectedException)
-            {
-                // Circuit disconnected - browser will clean up JS resources
-            }
-            catch (TaskCanceledException)
-            {
-                // Disposal in progress
-            }
-            catch (Exception ex)
-            {
-                Logger.LogTocInitializationFailed(ex, ContentId);
-            }
-        }
-
-        // Initialize slideover content link handlers after content loads
-        if (_module is not null && SlideoverContent.HasValue && !SlideoverIsLoading)
-        {
-            try
-            {
-                await _module.InvokeVoidAsync("initializeSlideoverContent", SlideoverContentId);
-            }
-            catch (JSDisconnectedException)
-            {
-                // Circuit disconnected - browser will clean up JS resources
-            }
-            catch (TaskCanceledException)
-            {
-                // Disposal in progress
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Failed to initialize slideover content link handlers for {ContentId}", SlideoverContentId);
-            }
-        }
     }
 
-    [JSInvokable]
-    public async Task OnInternalLinkClicked(string pathname)
+    private async Task InitializeTocAsync()
     {
-        if (OnSlideoverLinkClicked.HasDelegate)
-        {
-            await OnSlideoverLinkClicked.InvokeAsync(pathname);
-        }
-    }
+        if (_tocInitialized || !Content.HasValue)
+            return;
 
-    private async Task HandleErrorDismiss()
-    {
-        ErrorMessage = null;
-        if (OnErrorDismiss.HasDelegate)
+        try
         {
-            await OnErrorDismiss.InvokeAsync();
-        }
-    }
+            _module ??= await JSRuntime.InvokeAsync<IJSObjectReference>(
+                "import", "./Documents/NebaDocument.razor.js");
 
-    async ValueTask IAsyncDisposable.DisposeAsync()
-    {
-        if (_module is not null)
-        {
-            try
+            _dotNetRef ??= DotNetObjectReference.Create(this);
+
+            var success = await _module.InvokeAsync<bool>("initialize", _dotNetRef, new
             {
-                await _module.InvokeVoidAsync("dispose");
-                await _module.DisposeAsync();
-            }
-            catch (JSDisconnectedException)
+                contentId = ContentId,
+                tocListId = TocListId,
+                tocMobileListId = TocMobileListId,
+                tocMobileButtonId = TocMobileButtonId,
+                tocModalId = TocModalId,
+                tocModalOverlayId = TocModalOverlayId,
+                tocModalCloseId = TocModalCloseId,
+                headingLevels = HeadingLevels,
+                slideoverId = SlideoverId,
+                slideoverOverlayId = SlideoverOverlayId,
+                slideoverCloseId = SlideoverCloseId
+            });
+
+            if (success)
             {
-                // Circuit disconnected - browser will clean up JS resources
-            }
-            catch (TaskCanceledException)
-            {
-                // Disposal was cancelled
+                _tocInitialized = true;
+                await _module.InvokeVoidAsync("scrollToHash", ContentId, TocListId);
             }
         }
-
-        _dotNetRef?.Dispose();
-    }
-
-    private static string? GetLastUpdatedText(DateTimeOffset? cachedAt)
-    {
-        if (cachedAt is null)
+        catch (JSDisconnectedException)
         {
-            return null;
+            // Circuit disconnected - browser will clean up JS resources
         }
-
-        return $"Last updated: {cachedAt.Value:MMMM d, yyyy}";
+        catch (TaskCanceledException)
+        {
+            // Disposal in progress
+        }
+        catch (Exception ex)
+        {
+            Logger.LogTocInitializationFailed(ex, ContentId);
+        }
     }
+
+    private async Task InitializeSlideoverContentAsync()
+    {
+        if (_module is null || !SlideoverContent.HasValue || SlideoverIsLoading)
+            return;
+
+        try
+        {
+            await _module.InvokeVoidAsync("initializeSlideoverContent", SlideoverContentId);
+        }
+        catch (JSDisconnectedException)
+        {
+            // Circuit disconnected - browser will clean up JS resources
+        }
+        catch (TaskCanceledException)
+        {
+            // Disposal in progress
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize slideover content link handlers for {ContentId}", SlideoverContentId);
+        }
+    }
+}
+
+[JSInvokable]
+public async Task OnInternalLinkClicked(string pathname)
+{
+if (OnSlideoverLinkClicked.HasDelegate)
+{
+await OnSlideoverLinkClicked.InvokeAsync(pathname);
+}
+}
+
+private async Task HandleErrorDismiss()
+{
+ErrorMessage = null;
+if (OnErrorDismiss.HasDelegate)
+{
+await OnErrorDismiss.InvokeAsync();
+}
+}
+
+async ValueTask IAsyncDisposable.DisposeAsync()
+{
+if (_module is not null)
+{
+try
+{
+await _module.InvokeVoidAsync("dispose");
+await _module.DisposeAsync();
+}
+catch (JSDisconnectedException)
+{
+// Circuit disconnected - browser will clean up JS resources
+}
+catch (TaskCanceledException)
+{
+// Disposal was cancelled
+}
+}
+
+_dotNetRef?.Dispose();
+}
+
+private static string? GetLastUpdatedText(DateTimeOffset? cachedAt)
+{
+if (cachedAt is null)
+{
+return null;
+}
+
+return $"Last updated: {cachedAt.Value:MMMM d, yyyy}";
+}
 }
