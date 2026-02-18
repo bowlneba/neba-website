@@ -3,7 +3,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-using Neba.Application;
 using Neba.Application.BackgroundJobs;
 using Neba.Application.Documents;
 using Neba.Application.Documents.SyncDocument;

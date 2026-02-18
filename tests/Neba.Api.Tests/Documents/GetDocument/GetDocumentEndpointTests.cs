@@ -2,8 +2,6 @@ using ErrorOr;
 
 using FastEndpoints;
 
-using Moq;
-
 using Neba.Api.Contracts.Documents.GetDocument;
 using Neba.Api.Documents.GetDocument;
 using Neba.Application.Documents.GetDocument;
