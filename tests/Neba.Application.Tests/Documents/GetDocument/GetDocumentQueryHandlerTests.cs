@@ -102,8 +102,8 @@ public sealed class GetDocumentQueryHandlerTests
                 expectedDocument.Content,
                 expectedDocument.ContentType,
                 It.Is<IDictionary<string, string>>(m =>
-                    m["source-document-id"] == expectedDocument.Id &&
-                    m["cached-at"] == cachedAt.ToString("o")),
+                    m["source_document_id"] == expectedDocument.Id &&
+                    m["cached_at"] == cachedAt.ToString("o")),
                 TestContext.Current.CancellationToken))
             .Returns(Task.CompletedTask);
 

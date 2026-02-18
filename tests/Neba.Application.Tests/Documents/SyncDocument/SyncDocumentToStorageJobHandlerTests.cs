@@ -70,8 +70,8 @@ public sealed class SyncDocumentToStorageJobHandlerTests
                 document.Content,
                 document.ContentType,
                 It.Is<IDictionary<string, string>>(m =>
-                    m["source-document-id"] == document.Id &&
-                    m["cached-at"] == cachedAt.ToString("o")),
+                    m["source_document_id"] == document.Id &&
+                    m["cached_at"] == cachedAt.ToString("o")),
                 TestContext.Current.CancellationToken))
             .Returns(Task.CompletedTask);
 

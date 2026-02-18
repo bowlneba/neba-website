@@ -62,8 +62,8 @@ internal sealed class SyncDocumentToStorageJobHandler(
                 document.ContentType,
                 new Dictionary<string, string>
                 {
-                    {"source-document-id", document.Id},
-                    {"cached-at", _dateTimeProvider.UtcNow.ToString("o")}
+                    {"source_document_id", document.Id},
+                    {"cached_at", _dateTimeProvider.UtcNow.ToString("o")}
                 },
                 cancellationToken
             );
