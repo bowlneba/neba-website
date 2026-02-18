@@ -103,9 +103,11 @@ Flag when:
 
 All errors must return ProblemDetails (RFC 9457) via FastEndpoints' built-in `UseProblemDetails()`. Use `AddError()` + `Send.ErrorsAsync(statusCode)` to return `ErrorOr<T>` errors with the appropriate HTTP status code.
 
+**Exception**: A bare `Send.NotFoundAsync()` (HTTP 404 with no body) is acceptable when the 404 status code itself is sufficient documentation of the error — e.g. a simple "document not found" GET endpoint where the caller only needs to know the resource doesn't exist. Do NOT flag this pattern.
+
 Flag when:
 
-- Custom error responses instead of ProblemDetails
+- Custom error response bodies used instead of ProblemDetails (for errors other than bare 404)
 - Not handling all error cases from `ErrorOr<T>` result
 - Using `SendAsync()` with custom error objects
 - Missing error case handling (assuming success without checking `result.IsError`)
@@ -507,7 +509,7 @@ See detailed criteria in **API Layer** section above. Additionally flag when:
 | `DateTime.Now` / `DateTime.UtcNow` in domain logic | Inject `IDateTimeProvider` / `TimeProvider` |
 | `DateTime` for representing points in time | Use `DateTimeOffset` — unambiguous UTC offset, cleaner serialization |
 | Legacy extension method syntax (`this` parameter) | Use `extension()` blocks (C# 14) |
-| Custom error response in endpoint | Use `AddError()` + `Send.ErrorsAsync(statusCode)` for ProblemDetails |
+| Custom error response body in endpoint | Use `AddError()` + `Send.ErrorsAsync(statusCode)` for ProblemDetails (bare `Send.NotFoundAsync()` is acceptable when status alone is sufficient) |
 | Implicit endpoint authorization | Explicit `AllowAnonymous()`, `Roles()`, or `Policies()` |
 | Validation in endpoint handler | Create separate `Validator<TRequest>` class |
 | Database lookup in validator | Move to Application layer handler |
