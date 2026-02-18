@@ -846,6 +846,76 @@ public sealed class NebaDocumentTests : IDisposable
         linkTag.GetAttribute("rel").ShouldBe("stylesheet");
     }
 
+    [Fact(DisplayName = "Should render last updated in slideover when SlideoverLastUpdated is provided")]
+    public void Render_ShouldShowLastUpdatedInSlideover_WhenSlideoverLastUpdatedIsProvided()
+    {
+        // Arrange
+        var content = new MarkupString("<p>Content</p>");
+        var slideoverContent = new MarkupString("<p>Slideover</p>");
+        var lastUpdated = new DateTimeOffset(2024, 3, 20, 0, 0, 0, TimeSpan.Zero);
+
+        // Act
+        var cut = _ctx.Render<NebaDocument>(parameters => parameters
+            .Add(p => p.Content, content)
+            .Add(p => p.SlideoverContent, slideoverContent)
+            .Add(p => p.SlideoverIsLoading, false)
+            .Add(p => p.SlideoverLastUpdated, lastUpdated));
+
+        // Assert
+        var lastUpdatedElement = cut.Find(".neba-document-last-updated-bottom");
+        lastUpdatedElement.ShouldNotBeNull();
+        lastUpdatedElement.TextContent.ShouldContain("Last updated:");
+        lastUpdatedElement.TextContent.ShouldContain("March 20, 2024");
+    }
+
+    [Fact(DisplayName = "Should not render last updated in slideover when SlideoverLastUpdated is null")]
+    public void Render_ShouldNotShowLastUpdatedInSlideover_WhenSlideoverLastUpdatedIsNull()
+    {
+        // Arrange
+        var content = new MarkupString("<p>Content</p>");
+        var slideoverContent = new MarkupString("<p>Slideover</p>");
+
+        // Act
+        var cut = _ctx.Render<NebaDocument>(parameters => parameters
+            .Add(p => p.Content, content)
+            .Add(p => p.SlideoverContent, slideoverContent)
+            .Add(p => p.SlideoverIsLoading, false)
+            .Add(p => p.SlideoverLastUpdated, (DateTimeOffset?)null));
+
+        // Assert
+        cut.FindAll(".neba-document-last-updated-bottom").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "OnInternalLinkClicked should invoke OnSlideoverLinkClicked callback")]
+    public async Task OnInternalLinkClicked_ShouldInvokeCallback_WhenDelegateIsSet()
+    {
+        // Arrange
+        string? clickedPathname = null;
+        var content = new MarkupString("<p>Content</p>");
+        var cut = _ctx.Render<NebaDocument>(parameters => parameters
+            .Add(p => p.Content, content)
+            .Add(p => p.OnSlideoverLinkClicked, EventCallback.Factory.Create<string>(this,
+                pathname => clickedPathname = pathname)));
+
+        // Act
+        await cut.Instance.OnInternalLinkClicked("bylaws");
+
+        // Assert
+        clickedPathname.ShouldBe("bylaws");
+    }
+
+    [Fact(DisplayName = "OnInternalLinkClicked should not throw when no delegate is set")]
+    public async Task OnInternalLinkClicked_ShouldNotThrow_WhenNoDelegateIsSet()
+    {
+        // Arrange
+        var content = new MarkupString("<p>Content</p>");
+        var cut = _ctx.Render<NebaDocument>(parameters => parameters
+            .Add(p => p.Content, content));
+
+        // Act & Assert
+        await Should.NotThrowAsync(() => cut.Instance.OnInternalLinkClicked("bylaws"));
+    }
+
     [Fact(DisplayName = "Should dispose without throwing exception")]
     public async Task DisposeAsync_ShouldNotThrow()
     {
