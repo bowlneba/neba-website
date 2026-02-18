@@ -11,7 +11,7 @@ using Neba.Application.Messaging;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Documents;
 
-namespace Neba.Api.Tests.Documents;
+namespace Neba.Api.Tests.Documents.GetDocument;
 
 [UnitTest]
 [Component("Documents")]
