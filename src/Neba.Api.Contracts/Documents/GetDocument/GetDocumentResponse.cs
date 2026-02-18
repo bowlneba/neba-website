@@ -11,7 +11,7 @@ public sealed record GetDocumentResponse
     public required string Html { get; init; }
 
     /// <summary>
-    /// The UTC timestamp when the document was last cached from the source.
+    /// The UTC timestamp when the source document was last modified, as reported by the document management system, or null if not available.
     /// </summary>
-    public DateTimeOffset? CachedAt { get; init; }
+    public DateTimeOffset? LastUpdated { get; init; }
 }

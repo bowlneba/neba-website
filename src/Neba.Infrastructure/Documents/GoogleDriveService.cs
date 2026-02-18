@@ -77,6 +77,12 @@ internal sealed class GoogleDriveService
             _logger.LogExportingDocument(documentName, document.DocumentId);
             activity?.AddEvent(new ActivityEvent("export_started"));
 
+            // Fetch last modified time from Google Drive metadata
+            var metaRequest = _driveService.Value.Files.Get(document.DocumentId);
+            metaRequest.Fields = "modifiedTime";
+            var meta = await metaRequest.ExecuteAsync(cancellationToken);
+            var modifiedAt = meta.ModifiedTimeDateTimeOffset;
+
             // Export document as HTML from Google Drive
             var exportRequest = _driveService.Value.Files.Export(
                 document.DocumentId,
@@ -128,7 +134,8 @@ internal sealed class GoogleDriveService
                 Id = document.DocumentId,
                 Name = documentName,
                 Content = processedHtml,
-                ContentType = MediaTypeNames.Text.Html
+                ContentType = MediaTypeNames.Text.Html,
+                ModifiedAt = modifiedAt
             };
         }
         catch (Exception ex)

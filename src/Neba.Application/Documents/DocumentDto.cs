@@ -24,4 +24,9 @@ public sealed record DocumentDto
     /// The MIME type of the document content, such as "text/html" for HTML content. This information is crucial for the application to understand how to handle and render the document content appropriately. For example, if the content type is "text/html", the application can render the content directly in a web page. If the content type were something else (e.g., "application/pdf"), the application might choose to provide a download link instead of rendering it inline. The content type helps ensure that the document is displayed correctly based on its format and intended use within the web application.
     /// </summary>
     public required string ContentType { get; init; }
+
+    /// <summary>
+    /// The UTC timestamp when the source document was last modified, as reported by the document management system, or null if unavailable.
+    /// </summary>
+    public DateTimeOffset? ModifiedAt { get; init; }
 }

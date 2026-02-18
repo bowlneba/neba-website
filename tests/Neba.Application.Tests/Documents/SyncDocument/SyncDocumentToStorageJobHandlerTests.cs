@@ -47,7 +47,8 @@ public sealed class SyncDocumentToStorageJobHandlerTests
     public async Task ExecuteAsync_ShouldRetrieveAndUpload_WhenDocumentExists()
     {
         // Arrange
-        var document = DocumentDtoFactory.Create();
+        var modifiedAt = new DateTimeOffset(2026, 1, 10, 0, 0, 0, TimeSpan.Zero);
+        var document = DocumentDtoFactory.Create(modifiedAt: modifiedAt);
         var cachedAt = new DateTimeOffset(2026, 2, 17, 7, 0, 0, TimeSpan.Zero);
         var job = new SyncDocumentToStorageJob
         {
@@ -71,7 +72,8 @@ public sealed class SyncDocumentToStorageJobHandlerTests
                 document.ContentType,
                 It.Is<IDictionary<string, string>>(m =>
                     m["source_document_id"] == document.Id &&
-                    m["cached_at"] == cachedAt.ToString("o")),
+                    m["cached_at"] == cachedAt.ToString("o") &&
+                    m["source_last_modified"] == modifiedAt.ToString("o")),
                 TestContext.Current.CancellationToken))
             .Returns(Task.CompletedTask);
 

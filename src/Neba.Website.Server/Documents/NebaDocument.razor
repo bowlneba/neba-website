@@ -36,7 +36,7 @@
 {
     <div class="neba-document-container" id="@ContainerId">
         @{
-            var lastUpdatedText = GetLastUpdatedText(CachedAt);
+            var lastUpdatedText = GetLastUpdatedText(LastUpdated);
         }
 
         @if (ShowTableOfContents)
@@ -111,7 +111,7 @@
                     }
                 </div>
                 @{
-                    var slideoverLastUpdatedText = GetLastUpdatedText(SlideoverCachedAt);
+                    var slideoverLastUpdatedText = GetLastUpdatedText(SlideoverLastUpdated);
                 }
                 @if (!string.IsNullOrWhiteSpace(slideoverLastUpdatedText))
                 {
@@ -156,10 +156,10 @@
     public string? DocumentId { get; set; }
 
     [Parameter]
-    public DateTimeOffset? CachedAt { get; set; }
+    public DateTimeOffset? LastUpdated { get; set; }
 
     [Parameter]
-    public DateTimeOffset? SlideoverCachedAt { get; set; }
+    public DateTimeOffset? SlideoverLastUpdated { get; set; }
 
     /// <summary>
     /// Callback invoked when an internal document link is clicked in the content.

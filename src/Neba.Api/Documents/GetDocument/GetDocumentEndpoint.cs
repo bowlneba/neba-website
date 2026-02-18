@@ -51,7 +51,7 @@ internal sealed class GetDocumentEndpoint(IQueryHandler<GetDocumentQuery, ErrorO
         var response = new GetDocumentResponse
         {
             Html = result.Value.Html,
-            CachedAt = result.Value.CachedAt,
+            LastUpdated = result.Value.LastUpdated,
         };
 
         await Send.OkAsync(response, ct);

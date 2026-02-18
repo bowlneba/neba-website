@@ -13,14 +13,16 @@ public static class DocumentDtoFactory
         string? id = null,
         string? name = null,
         string? content = null,
-        string? contentType = null)
+        string? contentType = null,
+        DateTimeOffset? modifiedAt = null)
     {
         return new DocumentDto
         {
             Id = id ?? ValidId,
             Name = name ?? ValidName,
             Content = content ?? ValidContent,
-            ContentType = contentType ?? ValidContentType
+            ContentType = contentType ?? ValidContentType,
+            ModifiedAt = modifiedAt
         };
     }
 

@@ -30,17 +30,18 @@ public sealed class GetDocumentQueryHandlerTests
             _dateTimeProviderMock.Object);
     }
 
-    [Fact(DisplayName = "Should return cached content and cached_at when file exists in storage")]
-    public async Task HandleAsync_ShouldReturnCachedContentAndCachedAt_WhenFileExistsInStorage()
+    [Fact(DisplayName = "Should return cached content and source_last_modified as LastUpdated when file exists in storage")]
+    public async Task HandleAsync_ShouldReturnCachedContentAndLastUpdated_WhenFileExistsInStorage()
     {
         // Arrange
-        var cachedAt = new DateTimeOffset(2026, 1, 15, 5, 0, 0, TimeSpan.Zero);
+        var lastModified = new DateTimeOffset(2026, 1, 15, 5, 0, 0, TimeSpan.Zero);
         var storedFile = StoredFileFactory.Create(
             content: DocumentDtoFactory.ValidContent,
             metadata: new Dictionary<string, string>
             {
                 { "source_document_id", DocumentDtoFactory.ValidId },
-                { "cached_at", cachedAt.ToString("o") }
+                { "cached_at", new DateTimeOffset(2026, 2, 1, 5, 0, 0, TimeSpan.Zero).ToString("o") },
+                { "source_last_modified", lastModified.ToString("o") }
             });
         var query = new GetDocumentQuery { DocumentName = DocumentDtoFactory.ValidName };
 
@@ -58,11 +59,11 @@ public sealed class GetDocumentQueryHandlerTests
         // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Html.ShouldBe(storedFile.Content);
-        result.Value.CachedAt.ShouldBe(cachedAt);
+        result.Value.LastUpdated.ShouldBe(lastModified);
     }
 
-    [Fact(DisplayName = "Should return cached content with null CachedAt when cached_at metadata is absent")]
-    public async Task HandleAsync_ShouldReturnNullCachedAt_WhenCachedAtMetadataAbsent()
+    [Fact(DisplayName = "Should return cached content with null LastUpdated when source_last_modified metadata is absent")]
+    public async Task HandleAsync_ShouldReturnNullLastUpdated_WhenSourceLastModifiedMetadataAbsent()
     {
         // Arrange
         var storedFile = StoredFileFactory.Create(
@@ -84,7 +85,7 @@ public sealed class GetDocumentQueryHandlerTests
         // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Html.ShouldBe(storedFile.Content);
-        result.Value.CachedAt.ShouldBeNull();
+        result.Value.LastUpdated.ShouldBeNull();
     }
 
     [Fact(DisplayName = "Should return not found when file exists in storage but GetFile returns null")]
@@ -109,11 +110,12 @@ public sealed class GetDocumentQueryHandlerTests
         result.FirstError.Code.ShouldBe("Document.NotFound");
     }
 
-    [Fact(DisplayName = "Should fetch from documents service, upload to storage, and return CachedAt when not cached")]
-    public async Task HandleAsync_ShouldFetchUploadAndReturnCachedAt_WhenNotCached()
+    [Fact(DisplayName = "Should fetch from documents service, upload to storage with source_last_modified, and return LastUpdated when not cached")]
+    public async Task HandleAsync_ShouldFetchUploadAndReturnLastUpdated_WhenNotCached()
     {
         // Arrange
-        var expectedDocument = DocumentDtoFactory.Create();
+        var modifiedAt = new DateTimeOffset(2026, 1, 10, 0, 0, 0, TimeSpan.Zero);
+        var expectedDocument = DocumentDtoFactory.Create(modifiedAt: modifiedAt);
         var cachedAt = new DateTimeOffset(2026, 2, 16, 12, 0, 0, TimeSpan.Zero);
         var query = new GetDocumentQuery { DocumentName = expectedDocument.Name };
 
@@ -137,7 +139,8 @@ public sealed class GetDocumentQueryHandlerTests
                 expectedDocument.ContentType,
                 It.Is<IDictionary<string, string>>(m =>
                     m["source_document_id"] == expectedDocument.Id &&
-                    m["cached_at"] == cachedAt.ToString("o")),
+                    m["cached_at"] == cachedAt.ToString("o") &&
+                    m["source_last_modified"] == modifiedAt.ToString("o")),
                 TestContext.Current.CancellationToken))
             .Returns(Task.CompletedTask);
 
@@ -147,7 +150,7 @@ public sealed class GetDocumentQueryHandlerTests
         // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Html.ShouldBe(expectedDocument.Content);
-        result.Value.CachedAt.ShouldBe(cachedAt);
+        result.Value.LastUpdated.ShouldBe(modifiedAt);
     }
 
     [Fact(DisplayName = "Should return not found when documents service returns null")]

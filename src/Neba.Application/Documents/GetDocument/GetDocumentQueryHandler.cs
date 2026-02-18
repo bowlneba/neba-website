@@ -29,14 +29,14 @@ internal sealed class GetDocumentQueryHandler(
                 return DocumentErrors.DocumentNotFound(query.DocumentName);
             }
 
-            DateTimeOffset? cachedAt = null;
-            if (file.Metadata.TryGetValue("cached_at", out var cachedAtStr) &&
-                DateTimeOffset.TryParse(cachedAtStr, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed))
+            DateTimeOffset? lastUpdated = null;
+            if (file.Metadata.TryGetValue("source_last_modified", out var lastModifiedStr) &&
+                DateTimeOffset.TryParse(lastModifiedStr, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed))
             {
-                cachedAt = parsed;
+                lastUpdated = parsed;
             }
 
-            return new GetDocumentDto { Html = file.Content, CachedAt = cachedAt };
+            return new GetDocumentDto { Html = file.Content, LastUpdated = lastUpdated };
         }
 
         var document = await _documentsService.GetDocumentAsHtmlAsync(query.DocumentName, cancellationToken);
@@ -56,10 +56,11 @@ internal sealed class GetDocumentQueryHandler(
             new Dictionary<string, string>
             {
                 { "source_document_id", document.Id },
-                { "cached_at", now.ToString("o") }
+                { "cached_at", now.ToString("o") },
+                { "source_last_modified", document.ModifiedAt?.ToString("o") ?? string.Empty }
             },
             cancellationToken);
 
-        return new GetDocumentDto { Html = document.Content, CachedAt = now };
+        return new GetDocumentDto { Html = document.Content, LastUpdated = document.ModifiedAt };
     }
 }

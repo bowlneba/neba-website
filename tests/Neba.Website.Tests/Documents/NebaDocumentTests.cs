@@ -626,8 +626,8 @@ public sealed class NebaDocumentTests : IDisposable
         slideoverContentElement.InnerHtml.ShouldContain("Slideover HTML");
     }
 
-    [Fact(DisplayName = "Should not render last updated in TOC when CachedAt is null")]
-    public void Render_ShouldNotShowLastUpdated_WhenCachedAtIsNull()
+    [Fact(DisplayName = "Should not render last updated in TOC when LastUpdated is null")]
+    public void Render_ShouldNotShowLastUpdated_WhenLastUpdatedIsNull()
     {
         // Arrange
         var content = new MarkupString("<p>Content</p>");
@@ -635,23 +635,23 @@ public sealed class NebaDocumentTests : IDisposable
         // Act
         var cut = _ctx.Render<NebaDocument>(parameters => parameters
             .Add(p => p.Content, content)
-            .Add(p => p.CachedAt, (DateTimeOffset?)null));
+            .Add(p => p.LastUpdated, (DateTimeOffset?)null));
 
         // Assert
         cut.FindAll(".neba-document-toc-last-updated").ShouldBeEmpty();
     }
 
-    [Fact(DisplayName = "Should render last updated in TOC when CachedAt is provided")]
-    public void Render_ShouldShowLastUpdatedInToc_WhenCachedAtIsProvided()
+    [Fact(DisplayName = "Should render last updated in TOC when LastUpdated is provided")]
+    public void Render_ShouldShowLastUpdatedInToc_WhenLastUpdatedIsProvided()
     {
         // Arrange
         var content = new MarkupString("<p>Content</p>");
-        var cachedAt = new DateTimeOffset(2024, 1, 15, 10, 30, 0, TimeSpan.Zero);
+        var lastUpdated = new DateTimeOffset(2024, 1, 15, 10, 30, 0, TimeSpan.Zero);
 
         // Act
         var cut = _ctx.Render<NebaDocument>(parameters => parameters
             .Add(p => p.Content, content)
-            .Add(p => p.CachedAt, cachedAt));
+            .Add(p => p.LastUpdated, lastUpdated));
 
         // Assert
         var tocLastUpdated = cut.Find(".neba-document-toc-last-updated");

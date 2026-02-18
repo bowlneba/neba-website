@@ -12,7 +12,7 @@ internal sealed class DocumentSlideoverHandler(
     public MarkupString? Content { get; private set; }
     public string? Title { get; private set; }
     public bool IsLoading { get; private set; }
-    public DateTimeOffset? CachedAt { get; private set; }
+    public DateTimeOffset? LastUpdated { get; private set; }
 
     public async Task HandleLinkClickedAsync(string pathname, Action stateHasChanged)
     {
@@ -42,12 +42,12 @@ internal sealed class DocumentSlideoverHandler(
         if (result.IsError)
         {
             Content = new MarkupString($"<p>Failed to load document: {result.FirstError.Description}</p>");
-            CachedAt = null;
+            LastUpdated = null;
         }
         else
         {
             Content = new MarkupString(result.Value.Html);
-            CachedAt = result.Value.CachedAt;
+            LastUpdated = result.Value.LastUpdated;
         }
 
         stateHasChanged();
