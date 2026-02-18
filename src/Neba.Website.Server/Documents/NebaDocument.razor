@@ -280,7 +280,7 @@
             {
                 // Disposal in progress
             }
-            catch (Exception ex)
+            catch (JSException ex)
             {
                 Logger.LogTocInitializationFailed(ex, ContentId);
             }
@@ -301,7 +301,7 @@
             {
                 // Disposal in progress
             }
-            catch (Exception ex)
+            catch (JSException ex)
             {
                 Logger.LogError(ex, "Failed to initialize slideover content link handlers for {ContentId}", SlideoverContentId);
             }
