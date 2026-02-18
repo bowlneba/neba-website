@@ -15,7 +15,7 @@ using Neba.Infrastructure.Telemetry;
 
 namespace Neba.Infrastructure.Documents;
 
-internal sealed class GoogleDriveService 
+internal sealed class GoogleDriveService
     : IDocumentsService, IDisposable
 {
     private static readonly ActivitySource ActivitySource = new("Neba.Documents");
