@@ -163,16 +163,9 @@ public sealed class GoogleDriveServiceTests
         var logger = NullLogger<GoogleDriveService>.Instance;
         using var service = new GoogleDriveService(_settings, processor, mockStopwatch.Object, logger);
 
-        // Act & Assert
-        try
-        {
-            await service.GetDocumentAsHtmlAsync(documentName, CancellationToken.None);
-        }
-        catch
-        {
-            // Any exception means document was found but API call failed
-            // This is expected behavior without real credentials
-        }
+        // Act & Assert — API call fails without real credentials; exception confirms the document was found and the call was attempted
+        await Should.ThrowAsync<Exception>(
+            () => service.GetDocumentAsHtmlAsync(documentName, CancellationToken.None));
 
         // Verify stopwatch was called (proves we got into the method)
         mockStopwatch.Verify(x => x.GetTimestamp(), Times.Once);
@@ -187,15 +180,9 @@ public sealed class GoogleDriveServiceTests
         var logger = NullLogger<GoogleDriveService>.Instance;
         using var service = new GoogleDriveService(_settings, processor, mockStopwatch.Object, logger);
 
-        // Act & Assert
-        try
-        {
-            await service.GetDocumentAsHtmlAsync("bylaws", CancellationToken.None);
-        }
-        catch
-        {
-            // Expected to fail on DriveService call without real credentials
-        }
+        // Act & Assert — API call fails without real credentials
+        await Should.ThrowAsync<Exception>(
+            () => service.GetDocumentAsHtmlAsync("bylaws", CancellationToken.None));
 
         // Verify timing methods were called
         mockStopwatch.Verify(x => x.GetTimestamp(), Times.Once);

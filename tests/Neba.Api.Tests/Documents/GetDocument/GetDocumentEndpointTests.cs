@@ -47,7 +47,7 @@ public sealed class GetDocumentEndpointTests
         // Assert
         endpoint.Response.ShouldNotBeNull();
         endpoint.Response.Html.ShouldBe(dto.Html);
-        endpoint.Response.CachedAt.ShouldBe(dto.CachedAt);
+        endpoint.Response.LastUpdated.ShouldBe(dto.LastUpdated);
         endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
     }
 

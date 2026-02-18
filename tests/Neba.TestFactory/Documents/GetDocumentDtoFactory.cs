@@ -9,12 +9,12 @@ public static class GetDocumentDtoFactory
 
     public static GetDocumentDto Create(
         string? html = null,
-        DateTimeOffset? cachedAt = null)
+        DateTimeOffset? lastedUpdatedAt = null)
     {
         return new GetDocumentDto
         {
             Html = html ?? ValidHtml,
-            CachedAt = cachedAt ?? ValidCachedAt
+            LastUpdated = lastedUpdatedAt ?? ValidCachedAt
         };
     }
 
@@ -27,7 +27,7 @@ public static class GetDocumentDtoFactory
             .CustomInstantiator(f => new GetDocumentDto
             {
                 Html = $"<h1>{f.Lorem.Word()}</h1><p>{f.Lorem.Paragraph()}</p>",
-                CachedAt = new DateTimeOffset(f.Date.Past(), TimeSpan.Zero)
+                LastUpdated = new DateTimeOffset(f.Date.Past(), TimeSpan.Zero)
             });
 
         if (seed.HasValue)
