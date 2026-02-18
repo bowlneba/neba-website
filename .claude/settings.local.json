@@ -24,7 +24,8 @@
       "Read(//Users/kippermand/Projects/bowlneba/**)",
       "mcp__aspire__get_integration_docs",
       "mcp__aspire__list_resources",
-      "Bash(npx jest:*)"
+      "Bash(npx jest:*)",
+      "mcp__aspire__list_trace_structured_logs"
     ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",

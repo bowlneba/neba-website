@@ -1,8 +1,12 @@
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
+using Neba.Application;
+using Neba.Application.BackgroundJobs;
 using Neba.Application.Documents;
+using Neba.Application.Documents.SyncDocument;
 
 namespace Neba.Infrastructure.Documents;
 
@@ -39,6 +43,28 @@ internal static class DocumentsConfiguration
 
             // Register Google Drive service as IDocumentsService
             services.AddSingleton<IDocumentsService, GoogleDriveService>();
+        }
+    }
+
+    extension(WebApplication app)
+    {
+        public void UseDocumentSyncJobs()
+        {
+            using var scope = app.Services.CreateScope();
+            var scheduler = scope.ServiceProvider.GetRequiredService<IBackgroundJobScheduler>();
+            var settings = scope.ServiceProvider.GetRequiredService<GoogleSettings>();
+            
+            foreach (var documentName in settings.Documents.Select(document => document.Name))
+            {
+                scheduler.AddOrUpdateRecurring(
+                    $"sync-document-{documentName}",
+                    new SyncDocumentToStorageJob
+                    {
+                        DocumentName = documentName,
+                        TriggeredBy = "scheduled"
+                    },
+                    "0 5 1-7 * 1"); // First Monday at 5:00 AM
+            }
         }
     }
 }

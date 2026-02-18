@@ -73,6 +73,7 @@ public static class InfrastructureConfiguration
         public WebApplication UseInfrastructure()
         {
             app.UseBackgroundJobsDashboard();
+            app.UseDocumentSyncJobs();
 
             return app;
         }
