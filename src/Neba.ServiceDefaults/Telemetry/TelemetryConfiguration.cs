@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 
 using Microsoft.Extensions.DependencyInjection;

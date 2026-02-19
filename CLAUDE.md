@@ -40,6 +40,9 @@ Before ending a session where significant discoveries were made, consider whethe
 - Use `MockBehavior.Strict` for all mocks
 - Use `NullLogger<T>.Instance`, never mock ILogger
 - Use test factories from `Neba.TestFactory`, never manual entity instantiation
+- Test factories follow a consistent pattern: `Create()` with nullable params (const defaults), `Bogus(int? seed)` for single, `Bogus(int count, int? seed)` for collection
+- Infrastructure services wrapping external SDKs (e.g., Azure Blob Storage) use Testcontainers for integration tests, not mocks
+- Use **Shouldly** for assertions, NOT FluentAssertions
 
 ### API Endpoint Checklist
 
@@ -76,4 +79,7 @@ Before ending a session where significant discoveries were made, consider whethe
 
 ## Learnings
 
-<!-- Add project-specific discoveries below as they're encountered -->
+### API Route Conventions
+
+- **No `/api` prefix** — the API is served from `api.bowlneba.com`, so routes start directly with the resource (e.g. `/documents/{DocumentName}`, not `/api/documents/{DocumentName}`)
+- **No version in path** — API versioning is handled via request headers, not URL segments (no `/v1/`, `/api/v1/`, etc.)

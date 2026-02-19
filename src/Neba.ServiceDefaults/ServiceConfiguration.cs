@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-using Neba.ServiceDefaults;
 using Neba.ServiceDefaults.HealthChecks;
 using Neba.ServiceDefaults.Telemetry;
 

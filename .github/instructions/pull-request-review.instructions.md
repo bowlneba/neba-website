@@ -35,6 +35,8 @@ Flag when:
 - Direct instantiation of another domain's aggregates (should go through that domain's factory or repository)
 - Missing `CancellationToken` propagation in async methods
 
+**Do NOT flag** query or command handlers that appear to be simple pass-throughs to an infrastructure service. All handlers are wrapped by `TracedQueryHandlerDecorator` / `TracedCommandHandlerDecorator`, which provides automatic telemetry (activity spans, duration tracking, structured error logging). Bypassing the handler pipeline would lose this observability. See [ADR-0003](../../docs/adr/0003-handler-decoration-over-direct-service-calls.md).
+
 ### Infrastructure Layer (`Neba.Infrastructure`)
 
 Flag when:
@@ -99,14 +101,28 @@ Flag when:
 
 #### Error Handling
 
-All errors must return ProblemDetails (RFC 7807).
+All errors must return ProblemDetails (RFC 9457) via FastEndpoints' built-in `UseProblemDetails()`. Use `AddError()` + `Send.ErrorsAsync(statusCode)` to return `ErrorOr<T>` errors with the appropriate HTTP status code.
+
+**Exception**: A bare `Send.NotFoundAsync()` (HTTP 404 with no body) is acceptable when the 404 status code itself is sufficient documentation of the error — e.g. a simple "document not found" GET endpoint where the caller only needs to know the resource doesn't exist. Do NOT flag this pattern.
 
 Flag when:
 
-- Custom error responses instead of ProblemDetails
+- Custom error response bodies used instead of ProblemDetails (for errors other than bare 404)
 - Not handling all error cases from `ErrorOr<T>` result
 - Using `SendAsync()` with custom error objects
-- Missing error case handling (assuming success without checking `result.IsFailure`)
+- Missing error case handling (assuming success without checking `result.IsError`)
+- Using `result.IsFailure` or `result.Error` instead of `result.IsError` / `result.FirstError` (ErrorOr API)
+
+#### Error Codes
+
+Error codes must follow the `Entity.ErrorCode` convention (PascalCase, dot-separated). See [ADR-0004](../../docs/adr/0004-error-code-naming-convention.md).
+
+Flag when:
+
+- Error codes don't follow `Entity.ErrorCode` pattern (e.g., `"documentNotFound"` instead of `"Document.NotFound"`)
+- Error codes use lowercase or camelCase instead of PascalCase
+- Error codes are missing (empty string or generic code)
+- Application error classes are not named `{Entity}Errors` or are not `internal static`
 
 #### Summary Classes
 
@@ -334,26 +350,37 @@ public class RegisterBowlerTests
 }
 ```
 
-**Mock verification must use expected values, not `IsAny<T>`:**
+**`MockBehavior.Strict` eliminates the need for `.Verify()` calls:**
+
+With `MockBehavior.Strict`, any call without a matching `Setup` throws immediately. This means:
+
+- **"Was called with expected args"** — redundant; the `Setup` with specific args already enforces this. If the code calls the method with wrong args (or doesn't call it), the test fails.
+- **"Was not called"** — redundant; if no `Setup` exists for a method, `Strict` throws on any invocation.
 
 ```csharp
-// Correct - verify with expected values
-const long startTimestamp = 1000;
-stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
-stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(TimeSpan.FromMilliseconds(42));
+// Correct - Strict setup IS the verification; no .Verify() needed
+_storageServiceMock
+    .Setup(s => s.UploadFileAsync(
+        "documents",
+        query.DocumentName,
+        expectedDocument.Content,
+        expectedDocument.ContentType,
+        It.Is<IDictionary<string, string>>(m =>
+            m["source-document-id"] == expectedDocument.Id),
+        TestContext.Current.CancellationToken))
+    .Returns(Task.CompletedTask);
 
 // ... execute code ...
 
-stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Once);
+// Assert on the result — no .Verify() calls needed
+result.IsError.ShouldBeFalse();
 
-// Correct - use IsAny<T> ONLY when verifying method was NOT called
-stopwatchProviderMock.Verify(s => s.GetElapsedTime(It.IsAny<long>()), Times.Never);
-
-// Incorrect - using IsAny<T> when you should verify expected value
-stopwatchProviderMock.Verify(s => s.GetElapsedTime(It.IsAny<long>()), Times.Once);
+// Incorrect - redundant .Verify() when using MockBehavior.Strict
+_storageServiceMock.Verify(
+    s => s.UploadFileAsync(It.IsAny<string>(), ...), Times.Once);
 ```
 
-**Key mock verification principle**: `IsAny<T>` should only be used to verify that a method was **not called** (with `Times.Never()`). When verifying that a method **was called**, always verify it was called with the expected arguments, not with `IsAny<T>`.
+**Key principle**: With `MockBehavior.Strict`, `Setup` declarations define the expected interaction contract. The test fails immediately if the code deviates from that contract — no explicit `.Verify()` needed.
 
 Flag when:
 
@@ -369,7 +396,7 @@ Flag when:
 - Mocking `ILogger<T>` instead of using `NullLogger<T>.Instance`
 - Using `new Mock<T>()` without `MockBehavior.Strict` parameter
 - Using `null!` instead of `#nullable disable`/`#nullable enable` for null testing
-- Mock `.Verify()` calls using `IsAny<T>` when verifying method was called with specific arguments
+- Using `.Verify()` calls when `MockBehavior.Strict` already enforces the interaction contract via `Setup`
 
 **Null testing pattern**: When testing methods that don't accept nullable references but need null passed:
 
@@ -479,9 +506,10 @@ See detailed criteria in **API Layer** section above. Additionally flag when:
 | Catching generic `Exception` | Catch specific exceptions or use ErrorOr |
 | Magic strings for routes/keys | Constants or strongly-typed alternatives |
 | Public setters on entities | Private setters with behavior methods |
-| `DateTime.Now` in domain logic | Inject `TimeProvider` |
+| `DateTime.Now` / `DateTime.UtcNow` in domain logic | Inject `IDateTimeProvider` / `TimeProvider` |
+| `DateTime` for representing points in time | Use `DateTimeOffset` — unambiguous UTC offset, cleaner serialization |
 | Legacy extension method syntax (`this` parameter) | Use `extension()` blocks (C# 14) |
-| Custom error response in endpoint | Use `ProblemDetails` via `SendProblemDetailsAsync()` |
+| Custom error response body in endpoint | Use `AddError()` + `Send.ErrorsAsync(statusCode)` for ProblemDetails (bare `Send.NotFoundAsync()` is acceptable when status alone is sufficient) |
 | Implicit endpoint authorization | Explicit `AllowAnonymous()`, `Roles()`, or `Policies()` |
 | Validation in endpoint handler | Create separate `Validator<TRequest>` class |
 | Database lookup in validator | Move to Application layer handler |
@@ -493,6 +521,7 @@ See detailed criteria in **API Layer** section above. Additionally flag when:
 | Unsealed classes without justification | Seal classes by default |
 | Value objects as mutable class | Use `sealed record class` (EF persisted) or `readonly record struct` (transient) |
 | Unbounded database queries | Always use `.Take()` with enforced maximum limits |
+| Inconsistent or missing error codes | Follow `Entity.ErrorCode` convention ([ADR-0004](../../docs/adr/0004-error-code-naming-convention.md)) |
 
 ### Banned Libraries
 
@@ -518,6 +547,7 @@ When reviewing, verify:
 - [ ] Commands return `ErrorOr<T>`
 - [ ] Queries return DTOs, not entities
 - [ ] Extension methods use `extension()` block syntax, not legacy `this` parameter
+- [ ] `DateTimeOffset` used instead of `DateTime` for points in time
 
 ### API Endpoints
 

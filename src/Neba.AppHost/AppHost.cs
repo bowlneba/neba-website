@@ -17,11 +17,22 @@ var postgres = builder.AddAzurePostgresFlexibleServer("postgres")
 
 var database = postgres.AddDatabase("bowlneba");
 
+var storage = builder.AddAzureStorage("storage")
+    .RunAsEmulator(emulator => emulator
+        .WithContainerName("bowlneba-storage")
+        .WithLifetime(ContainerLifetime.Persistent)
+        .WithDataVolume("bowlneba-storage-data")
+        .WithBlobPort(19632));
+
+var blobs = storage.AddBlobs("blob");
+
 var api = builder.AddProject<Projects.Neba_Api>("api")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(database)
     .WaitFor(database)
+    .WithReference(blobs)
+    .WaitFor(blobs)
     .WithUrlForEndpoint("http", callback =>
     {
         callback.DisplayText = "Scalar API";
@@ -51,8 +62,14 @@ if (builder.ExecutionContext.IsPublishMode)
     var appInsights = builder.AddAzureApplicationInsights("appinsights")
         .WithLogAnalyticsWorkspace(workspace);
 
-    api.WithReference(appInsights);
-    web.WithReference(appInsights);
+    var keyVault = builder.AddAzureKeyVault("keyvault");
+
+    api
+        .WithReference(appInsights)
+        .WithReference(keyVault);
+
+    web
+        .WithReference(appInsights);
 }
 
 await builder.Build().RunAsync();

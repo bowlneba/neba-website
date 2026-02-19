@@ -6,57 +6,31 @@
  */
 
 /**
- * Weather forecast response matching WeatherForecastResponse
+ * Document response matching GetDocumentResponse
  */
-export interface WeatherForecast {
-  date: string;
-  temperatureC: number;
-  temperatureF: number;
-  summary: string;
+export interface DocumentResponse {
+  html: string;
 }
 
-const seededRandom = (seed: number) => {
-  let t = seed;
-  return () => {
-    t += 0x6d2b79f5;
-    let x = t;
-    x = Math.imul(x ^ (x >>> 15), x | 1);
-    x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
-    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
-  };
-};
-
 /**
- * Generate mock weather forecast data
+ * Generate a mock document response
  */
-export function createWeatherForecast(overrides: Partial<WeatherForecast> = {}): WeatherForecast {
+export function createDocumentResponse(overrides: Partial<DocumentResponse> = {}): DocumentResponse {
   return {
-    date: new Date().toISOString(),
-    temperatureC: 20,
-    temperatureF: 68,
-    summary: 'Mild',
+    html: '<h1>Test Document</h1><h2>Section 1</h2><p>Test content.</p>',
     ...overrides,
   };
 }
 
-/**
- * Generate multiple weather forecasts
- */
-export function createWeatherForecasts(count: number): WeatherForecast[] {
-  const summaries = ['Freezing', 'Bracing', 'Chilly', 'Cool', 'Mild', 'Warm', 'Balmy', 'Hot', 'Sweltering', 'Scorching'];
-  const rng = seededRandom(0xc0ffee);
+export function createTournamentRulesResponse(): DocumentResponse {
+  return createDocumentResponse({
+    html: '<h1>NEBA Tournament Rules</h1><h2>Section 1: Eligibility</h2><p>Test content.</p>',
+  });
+}
 
-  return Array.from({ length: count }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() + i);
-    const tempC = Math.floor(rng() * 40) - 10;
-
-    return createWeatherForecast({
-      date: date.toISOString(),
-      temperatureC: tempC,
-      temperatureF: 32 + Math.floor(tempC * 1.8),
-      summary: summaries[Math.floor(rng() * summaries.length)],
-    });
+export function createBylawsResponse(): DocumentResponse {
+  return createDocumentResponse({
+    html: '<h1>NEBA Bylaws</h1><h2>Article I: Name</h2><p>Test content.</p>',
   });
 }
 

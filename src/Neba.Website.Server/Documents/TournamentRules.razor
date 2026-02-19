@@ -1,0 +1,67 @@
+@page "/tournaments/rules"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Neba.Api.Contracts.Documents
+@using Neba.Website.Server.Services
+
+@inject ApiExecutor ApiExecutor
+@inject IDocumentsApi DocumentsApi
+
+<PageTitle>Tournament Rules - NEBA</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">NEBA Tournament Rules</h1>
+    <p class="mt-1 text-sm text-gray-600">Official rules and regulations for NEBA tournaments</p>
+</div>
+
+<NebaDocument Content="@_content"
+              IsLoading="@_isLoading"
+              ErrorMessage="@_errorMessage"
+              LoadingText="Loading tournament rules..."
+              ErrorTitle="Error Loading Tournament Rules"
+              ShowTableOfContents="true"
+              TableOfContentsTitle="Contents"
+              HeadingLevels="h1, h2"
+              DocumentId="tournament-rules"
+              LastUpdated="@_lastUpdated"
+              OnSlideoverLinkClicked="@HandleSlideoverLinkClicked"
+              SlideoverContent="@_slideover.Content"
+              SlideoverTitle="@_slideover.Title"
+              SlideoverIsLoading="@_slideover.IsLoading"
+              SlideoverLastUpdated="@_slideover.LastUpdated" />
+
+@code {
+    private MarkupString? _content;
+    private string? _errorMessage;
+    private bool _isLoading = true;
+    private DateTimeOffset? _lastUpdated;
+    private DocumentSlideoverHandler _slideover = null!;
+
+    protected override void OnInitialized()
+    {
+        _slideover = new DocumentSlideoverHandler(ApiExecutor, DocumentsApi);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync(
+            "Documents",
+            "GetTournamentRules",
+            ct => DocumentsApi.GetDocumentAsync("tournament-rules", ct));
+
+        if (result.IsError)
+        {
+            _errorMessage = $"Failed to load tournament rules: {result.FirstError.Description}";
+        }
+        else
+        {
+            _content = new MarkupString(result.Value.Html);
+            _lastUpdated = result.Value.LastUpdated;
+        }
+
+        _isLoading = false;
+    }
+
+    private Task HandleSlideoverLinkClicked(string pathname)
+        => _slideover.HandleLinkClickedAsync(pathname, StateHasChanged);
+}

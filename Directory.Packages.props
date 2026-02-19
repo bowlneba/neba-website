@@ -6,23 +6,30 @@
     <PackageVersion Include="Ardalis.SmartEnum" Version="8.2.0" />
     <PackageVersion Include="Aspire.Azure.Npgsql" Version="13.1.1" />
     <PackageVersion Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.1.1" />
+    <PackageVersion Include="Aspire.Azure.Security.KeyVault" Version="13.1.1" />
+    <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="13.1.1" />
     <PackageVersion Include="Aspire.Hosting.Azure.ApplicationInsights" Version="13.1.1" />
     <PackageVersion Include="Aspire.Hosting.Azure.AppService" Version="13.1.1-preview.1.26105.8" />
+    <PackageVersion Include="Aspire.Hosting.Azure.KeyVault" Version="13.1.1" />
     <PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="13.1.1" />
+    <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.1.1" />
     <PackageVersion Include="AspNetCore.HealthChecks.Hangfire" Version="9.0.0" />
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.1.1" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="13.1.1" />
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.4.0" />
     <PackageVersion Include="Bogus" Version="35.6.5" />
     <PackageVersion Include="bunit" Version="2.5.3" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="coverlet.collector" Version="8.0.0" />
     <PackageVersion Include="ErrorOr" Version="2.0.1" />
     <PackageVersion Include="FastEndpoints" Version="7.2.0" />
     <PackageVersion Include="FastEndpoints.AspVersioning" Version="7.2.0" />
     <PackageVersion Include="FastEndpoints.Swagger" Version="7.2.0" />
+    <PackageVersion Include="Google.Apis.Auth" Version="1.73.0" />
+    <PackageVersion Include="Google.Apis.Drive.v3" Version="1.73.0.4045" />
     <PackageVersion Include="Hangfire.AspNetCore" Version="1.8.23" />
     <PackageVersion Include="Hangfire.InMemory" Version="1.0.0" />
     <PackageVersion Include="Hangfire.PostgreSql" Version="1.21.1" />
+    <PackageVersion Include="HtmlAgilityPack" Version="1.12.4" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.3" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.3" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
@@ -43,13 +50,14 @@
     <PackageVersion Include="Refit" Version="10.0.1" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="10.0.1" />
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.12.40" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.12.41" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
     <PackageVersion Include="Scrutor.AspNetCore" Version="3.3.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.19.0.132793" />
     <PackageVersion Include="StronglyTypedId" Version="1.0.0-beta08" />
     <PackageVersion Include="StronglyTypedId.Templates" Version="1.0.0-beta08" />
+    <PackageVersion Include="Testcontainers.Azurite" Version="4.10.0" />
     <PackageVersion Include="Ulid" Version="1.4.1" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageVersion Include="xunit.v3" Version="3.2.2" />

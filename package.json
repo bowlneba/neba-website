@@ -16,7 +16,7 @@
   "devDependencies": {
     "@babel/core": "^7.24.0",
     "@babel/preset-env": "^7.24.0",
-    "@playwright/test": "^1.58.1",
+    "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.1.5",
     "babel-jest": "^29.7.0",
     "identity-obj-proxy": "^3.0.0",

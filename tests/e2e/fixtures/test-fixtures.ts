@@ -4,8 +4,8 @@ import { test as base, Page, Route } from '@playwright/test';
  * API route patterns for the NEBA API
  */
 export const API_ROUTES = {
-  weather: '**/weatherforecast',
-  // Add more API routes as needed:
+  // Add more browser-interceptable routes as needed (note: Blazor Server API calls
+  // are made server-side and must be handled by the mock API server instead):
   // tournaments: '**/tournaments',
   // stats: '**/stats',
 } as const;

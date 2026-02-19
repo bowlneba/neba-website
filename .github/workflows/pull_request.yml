@@ -43,14 +43,14 @@ jobs:
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-  azd-provision-preview:
-    name: Infrastructure Preview
+  detect-apphost-changes:
+    name: Detect AppHost changes
     runs-on: ubuntu-latest
     needs: format-check
     permissions:
       contents: read
-      id-token: write
-      pull-requests: write
+    outputs:
+      apphost_changed: ${{ steps.changes.outputs.apphost }}
 
     steps:
       - uses: actions/checkout@v5
@@ -63,50 +63,39 @@ jobs:
             apphost:
               - 'src/Neba.AppHost/AppHost.cs'
 
-      - name: Login to Azure
-        if: steps.changes.outputs.apphost == 'true'
-        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2
+  azd-provision-preview:
+    name: Infrastructure Preview
+    if: needs.detect-apphost-changes.outputs.apphost_changed == 'true'
+    needs: detect-apphost-changes
+    uses: ./.github/workflows/infrastructure_preview.yml
+    with:
+      azure_env_name: bowlneba-prod
+      azure_location: ${{ vars.AZURE_LOCATION }}
+      artifact_name: pr-azd-preview
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+
+  comment-infra-preview:
+    name: Comment preview on PR
+    if: needs.detect-apphost-changes.outputs.apphost_changed == 'true' && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs:
+      - detect-apphost-changes
+      - azd-provision-preview
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Download preview artifact
+        uses: actions/download-artifact@v4
         with:
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-
-      - name: Setup azd
-        if: steps.changes.outputs.apphost == 'true'
-        uses: Azure/setup-azd@c495e71ba59e44bfaaac10a32c8ee90d191ca4a3 # v2
-
-      - name: Configure azd authentication
-        if: steps.changes.outputs.apphost == 'true'
-        run: azd config set auth.useAzCliAuth true
-
-      - name: Initialize azd environment
-        if: steps.changes.outputs.apphost == 'true'
-        env:
-          AZURE_ENV_NAME: bowlneba-prod
-          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
-        run: |
-          if ! azd env list | grep -q "$AZURE_ENV_NAME"; then
-            azd env new $AZURE_ENV_NAME --location $AZURE_LOCATION --subscription ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          else
-            azd env select $AZURE_ENV_NAME
-          fi
-
-      - name: Preview provision
-        if: steps.changes.outputs.apphost == 'true'
-        id: preview
-        env:
-          AZURE_ENV_NAME: bowlneba-prod
-          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
-          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-          AZD_AUTH_USE_AZURE_CLI: 'true'
-        run: |
-          set -euo pipefail
-          azd provision --preview 2>&1 | tee /tmp/azd-preview.txt
+          name: ${{ needs.azd-provision-preview.outputs.artifact-name }}
+          path: /tmp
 
       - name: Comment preview on PR
-        if: steps.changes.outputs.apphost == 'true' && github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -126,5 +115,5 @@ jobs:
           if [ -n "$COMMENT_ID" ]; then
             gh api "repos/${REPO}/issues/comments/${COMMENT_ID}" -X PATCH -f body="$BODY"
           else
-            gh pr comment "$PR_NUMBER" --body "$BODY"
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY"
           fi

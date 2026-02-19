@@ -7,6 +7,8 @@ using Neba.Application.Clock;
 using Neba.Infrastructure.BackgroundJobs;
 using Neba.Infrastructure.Clock;
 using Neba.Infrastructure.Database;
+using Neba.Infrastructure.Documents;
+using Neba.Infrastructure.Storage;
 using Neba.Infrastructure.Telemetry.Tracing;
 
 namespace Neba.Infrastructure;
@@ -29,16 +31,34 @@ public static class InfrastructureConfiguration
         {
             ArgumentNullException.ThrowIfNull(builder);
 
-            // services.AddTracing(); // once we add a query handler or command handler uncomment this line
+            builder.Services.AddTracing();
 
             // caching decorators can go here
 
-            builder.AddDatabase();
+            builder
+                .AddDatabase()
+                .AddKeyVault()
+                .AddStorage();
 
             builder.Services.AddBackgroundJobs(builder.Configuration);
+            builder.Services.AddGoogleDrive(builder.Configuration);
 
             builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
             builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
+
+            return builder;
+        }
+
+        private WebApplicationBuilder AddKeyVault()
+        {
+            var keyVaultConnectionString = builder.Configuration.GetConnectionString("keyvault");
+
+            if (string.IsNullOrWhiteSpace(keyVaultConnectionString))
+            {
+                return builder;
+            }
+
+            builder.Configuration.AddAzureKeyVaultSecrets(keyVaultConnectionString);
 
             return builder;
         }
@@ -53,6 +73,7 @@ public static class InfrastructureConfiguration
         public WebApplication UseInfrastructure()
         {
             app.UseBackgroundJobsDashboard();
+            app.UseDocumentSyncJobs();
 
             return app;
         }
