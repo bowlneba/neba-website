@@ -228,6 +228,7 @@ jobs:
           retention-days: 7
 
   sonarcloud:
+    if: github.actor != 'dependabot[bot]'
     needs: [xunit, jest, playwright]
     permissions:
       contents: read
