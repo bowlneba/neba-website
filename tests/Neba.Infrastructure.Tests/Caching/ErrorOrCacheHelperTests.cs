@@ -11,6 +11,11 @@ public sealed class ErrorOrCacheHelperTests
 {
     private sealed record TestValue(string Name, int Score);
 
+    private sealed class GenericWithValue<T>
+    {
+        public T Value { get; } = default!;
+    }
+
     // IsErrorOrType
 
     [Fact(DisplayName = "IsErrorOrType returns true for ErrorOr<string>")]
@@ -93,6 +98,14 @@ public sealed class ErrorOrCacheHelperTests
     [Fact(DisplayName = "GetValue throws ArgumentNullException for null")]
     public void GetValue_Throws_ForNull()
         => Should.Throw<ArgumentNullException>(() => ErrorOrCacheHelper.GetValue(null!));
+
+    [Fact(DisplayName = "GetValue throws InvalidOperationException when type has no Value property")]
+    public void GetValue_ThrowsInvalidOperationException_WhenTypeHasNoValueProperty()
+        => Should.Throw<InvalidOperationException>(() => ErrorOrCacheHelper.GetValue(new List<string>()));
+
+    [Fact(DisplayName = "GetValue throws InvalidOperationException when type has no implicit conversion operator")]
+    public void GetValue_ThrowsInvalidOperationException_WhenTypeHasNoImplicitOperator()
+        => Should.Throw<InvalidOperationException>(() => ErrorOrCacheHelper.GetValue(new GenericWithValue<string>()));
 
     // WrapValue
 
