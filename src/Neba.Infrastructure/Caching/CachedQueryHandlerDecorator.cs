@@ -18,7 +18,6 @@ internal sealed class CachedQueryHandlerDecorator<TQuery, TResponse>
     private readonly IFusionCache _cache;
     private readonly ILogger<CachedQueryHandlerDecorator<TQuery, TResponse>> _logger;
 
-    private readonly bool _isCacheable;
     private readonly bool _isErrorOrResponse;
     private readonly Type? _innerType;
 
@@ -31,22 +30,14 @@ internal sealed class CachedQueryHandlerDecorator<TQuery, TResponse>
         _cache = cache;
         _logger = logger;
 
-        _isCacheable = typeof(ICachedQuery<TResponse>).IsAssignableFrom(typeof(TQuery));
         _isErrorOrResponse = ErrorOrCacheHelper.IsErrorOrType(typeof(TResponse));
         _innerType = _isErrorOrResponse ? ErrorOrCacheHelper.GetInnerType(typeof(TResponse)) : null;
     }
 
-    public async Task<TResponse> HandleAsync(TQuery query, CancellationToken cancellationToken)
-    {
-        if (!_isCacheable || query is not ICachedQuery<TResponse> cachedQuery)
-        {
-            return await _innerHandler.HandleAsync(query, cancellationToken);
-        }
-
-        return _isErrorOrResponse
-            ? await HandleErrorOrResponseAsync(cachedQuery, cancellationToken)
-            : await HandleResponseAsync(cachedQuery, cancellationToken);
-    }
+    public Task<TResponse> HandleAsync(TQuery query, CancellationToken cancellationToken)
+        => _isErrorOrResponse
+            ? HandleErrorOrResponseAsync(query, cancellationToken)
+            : HandleResponseAsync(query, cancellationToken);
 
     private async Task<TResponse> HandleResponseAsync(ICachedQuery<TResponse> query, CancellationToken cancellationToken)
     {
