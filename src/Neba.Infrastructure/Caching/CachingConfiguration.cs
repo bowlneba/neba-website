@@ -33,7 +33,8 @@ internal static class CachingConfiguration
                     options.FailSafeMaxDuration = TimeSpan.FromDays(1);
                     options.FailSafeThrottleDuration = TimeSpan.FromSeconds(30);
                 })
-                .WithSystemTextJsonSerializer();
+                .WithSystemTextJsonSerializer()
+                .WithRegisteredDistributedCache();
         }
     }
 }
