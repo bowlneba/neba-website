@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Application.Caching;
 
 namespace Neba.TestFactory.Caching;
