@@ -29,9 +29,11 @@ public sealed class ErrorOrCacheHelperTests
     public void IsErrorOrType_ReturnsFalse_ForInt()
         => ErrorOrCacheHelper.IsErrorOrType(typeof(int)).ShouldBeFalse();
 
+#nullable disable
     [Fact(DisplayName = "IsErrorOrType throws ArgumentNullException for null")]
     public void IsErrorOrType_Throws_ForNull()
-        => Should.Throw<ArgumentNullException>(() => ErrorOrCacheHelper.IsErrorOrType(null!));
+        => Should.Throw<ArgumentNullException>(() => ErrorOrCacheHelper.IsErrorOrType(null));
+#nullable enable
 
     // GetInnerType
 
