@@ -16,11 +16,12 @@ internal static class CachingConfiguration
     {
         public void AddCaching(IConfiguration config)
         {
+            var connectionString = config.GetConnectionString("bowlneba-cache")
+                ?? throw new InvalidOperationException("Cache connection string not found.");
+
             services.AddDistributedPostgreSqlCache(options =>
             {
-                options.ConnectionString = config.GetConnectionString("bowlneba-cache")
-                    ?? throw new InvalidOperationException("Cache connection string not found.");
-
+                options.ConnectionString = connectionString;
                 options.SchemaName = "public";
                 options.TableName = "distributed_cache";
                 options.CreateInfrastructure = true;
