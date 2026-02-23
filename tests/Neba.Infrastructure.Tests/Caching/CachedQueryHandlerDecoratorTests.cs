@@ -40,15 +40,22 @@ public sealed class CachedQueryHandlerDecoratorTests
         var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
-        var query = new PlainQuery("key:plain", TimeSpan.FromMinutes(5), []);
+        var query = new PlainQuery("key:plain:hit", TimeSpan.FromMinutes(5), []);
         var cachedValue = new TestResponse("cached");
 
         cache
-            .Setup(c => c.TryGetAsync<TestResponse>(
+            .SetupGet(c => c.DefaultEntryOptions)
+            .Returns(new FusionCacheEntryOptions { Duration = TimeSpan.FromHours(1) });
+
+        cache
+            .Setup(c => c.GetOrSetAsync<TestResponse>(
                 query.CacheKey,
-                It.IsAny<FusionCacheEntryOptions?>(),
+                It.IsAny<Func<FusionCacheFactoryExecutionContext<TestResponse>, CancellationToken, Task<TestResponse>>>(),
+                It.IsAny<MaybeValue<TestResponse>>(),
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.IsAny<IEnumerable<string>>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync((MaybeValue<TestResponse>)cachedValue);
+            .ReturnsAsync(cachedValue);
 
         var result = await CreatePlainDecorator(innerHandler.Object, cache.Object)
             .HandleAsync(query, CancellationToken.None);
@@ -56,33 +63,29 @@ public sealed class CachedQueryHandlerDecoratorTests
         result.ShouldBe(cachedValue);
     }
 
-    [Fact(DisplayName = "Plain response: cache miss calls inner handler, stores result, and returns it")]
-    public async Task HandleAsync_PlainResponse_CacheMiss_StoresAndReturnsResult()
+    [Fact(DisplayName = "Plain response: cache miss calls inner handler and returns result")]
+    public async Task HandleAsync_PlainResponse_CacheMiss_CallsHandlerAndReturnsResult()
     {
         var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
-        var query = new PlainQuery("key:plain", TimeSpan.FromMinutes(5), []);
+        var query = new PlainQuery("key:plain:miss", TimeSpan.FromMinutes(5), []);
         var handlerResult = new TestResponse("fresh");
-
-        cache
-            .Setup(c => c.TryGetAsync<TestResponse>(
-                query.CacheKey,
-                It.IsAny<FusionCacheEntryOptions?>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(default(MaybeValue<TestResponse>));
 
         cache
             .SetupGet(c => c.DefaultEntryOptions)
             .Returns(new FusionCacheEntryOptions { Duration = TimeSpan.FromHours(1) });
 
         cache
-            .Setup(c => c.SetAsync(
+            .Setup(c => c.GetOrSetAsync<TestResponse>(
                 query.CacheKey,
-                handlerResult,
-                It.IsAny<FusionCacheEntryOptions?>(),
+                It.IsAny<Func<FusionCacheFactoryExecutionContext<TestResponse>, CancellationToken, Task<TestResponse>>>(),
+                It.IsAny<MaybeValue<TestResponse>>(),
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.IsAny<IEnumerable<string>>(),
                 It.IsAny<CancellationToken>()))
-            .Returns(ValueTask.CompletedTask);
+            .Returns<string, Func<FusionCacheFactoryExecutionContext<TestResponse>, CancellationToken, Task<TestResponse>>, MaybeValue<TestResponse>, FusionCacheEntryOptions, IEnumerable<string>, CancellationToken>(
+                (_, factory, _, _, _, cancel) => new ValueTask<TestResponse>(factory(null!, cancel)));
 
         innerHandler
             .Setup(h => h.HandleAsync(query, It.IsAny<CancellationToken>()))
@@ -170,13 +173,14 @@ public sealed class CachedQueryHandlerDecoratorTests
         result.FirstError.Type.ShouldBe(ErrorType.NotFound);
     }
 
-    [Fact(DisplayName = "ErrorOr response: cache miss with success result caches inner value and returns response")]
-    public async Task HandleAsync_ErrorOrResponse_CacheMiss_SuccessResult_CachesAndReturnsResponse()
+    [Fact(DisplayName = "ErrorOr response: cache miss with success result caches inner value with tags and returns response")]
+    public async Task HandleAsync_ErrorOrResponse_CacheMiss_SuccessResult_CachesWithTagsAndReturnsResponse()
     {
         var innerHandler = new Mock<IQueryHandler<ErrorOrQuery, ErrorOr<TestResponse>>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
-        var query = new ErrorOrQuery("key:error-or", TimeSpan.FromMinutes(5), []);
+        var tags = new[] { "website", "website:docs" };
+        var query = new ErrorOrQuery("key:error-or", TimeSpan.FromMinutes(5), tags);
         var innerValue = new TestResponse("fresh");
         ErrorOr<TestResponse> successResult = innerValue;
 
@@ -195,7 +199,8 @@ public sealed class CachedQueryHandlerDecoratorTests
             .Setup(c => c.SetAsync(
                 query.CacheKey,
                 It.IsAny<object>(),
-                It.IsAny<FusionCacheEntryOptions?>(),
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.Is<IEnumerable<string>>(t => t.SequenceEqual(tags)),
                 It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
 
