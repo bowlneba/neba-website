@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 using Community.Microsoft.Extensions.Caching.PostgreSql;
 
 using Microsoft.Extensions.Configuration;
