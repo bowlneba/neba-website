@@ -38,6 +38,7 @@ public static class TelemetryConfiguration
             builder.Services.AddOpenTelemetry()
                 .WithMetrics(metrics => metrics
                     .AddMeter("Neba.*")
+                    .AddFusionCacheInstrumentation()
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation())
@@ -46,7 +47,8 @@ public static class TelemetryConfiguration
                     tracing
                         .AddSource(builder.Environment.ApplicationName)
                         .AddSource("Neba.*") // Custom application meters
-                                             //.AddSource("Azure.Storage.Blobs") // Azure SDK traces // Uncomment to enable Azure Storage Blob SDK tracing
+                        .AddSource("Azure.Storage.Blobs") // Azure SDK traces
+                        .AddFusionCacheInstrumentation()
                         .AddAspNetCoreInstrumentation(tracing =>
                             // Exclude health check requests from tracing
                             tracing.Filter = context =>
