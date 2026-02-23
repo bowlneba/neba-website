@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 
 using Neba.Application.Clock;
 using Neba.Infrastructure.BackgroundJobs;
+using Neba.Infrastructure.Caching;
 using Neba.Infrastructure.Clock;
 using Neba.Infrastructure.Database;
 using Neba.Infrastructure.Documents;
@@ -40,6 +41,7 @@ public static class InfrastructureConfiguration
                 .AddKeyVault()
                 .AddStorage();
 
+            builder.Services.AddCaching(builder.Configuration);
             builder.Services.AddBackgroundJobs(builder.Configuration);
             builder.Services.AddGoogleDrive(builder.Configuration);
 
