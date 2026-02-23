@@ -1,3 +1,5 @@
+using Neba.Application.Caching;
+
 namespace Neba.Application.Messaging;
 
 /// <summary>
@@ -9,17 +11,12 @@ public interface ICachedQuery<out TResponse>
     : IQuery<TResponse>
 {
     /// <summary>
-    /// Gets the cache key associated with this query.
+    /// Gets the cache descriptor containing the cache key and associated tags for this query, used to identify and manage cached entries.
     /// </summary>
-    string CacheKey { get; }
+    CacheDescriptor Cache { get; }
 
     /// <summary>
     /// Gets the expiry duration for the cached response.
     /// </summary>
     TimeSpan Expiry { get; }
-
-    /// <summary>
-    /// Gets the tags associated with this cached query for cache invalidation purposes.
-    /// </summary>
-    IReadOnlyCollection<string> Tags { get; }
 }

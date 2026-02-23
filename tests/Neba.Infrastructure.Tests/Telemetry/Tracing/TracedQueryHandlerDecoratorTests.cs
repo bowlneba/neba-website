@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Logging;
 
+using Neba.Application.Caching;
 using Neba.Application.Clock;
 using Neba.Application.Messaging;
 using Neba.Infrastructure.Telemetry.Tracing;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Caching;
 
 namespace Neba.Infrastructure.Tests.Telemetry.Tracing;
 
@@ -15,9 +17,8 @@ public sealed class TracedQueryHandlerDecoratorTests
 
     public sealed class TestCachedQuery : ICachedQuery<string>
     {
-        public string CacheKey => "test-cache-key";
+        public CacheDescriptor Cache { get; } = CacheDescriptorFactory.Create();
         public TimeSpan Expiry => TimeSpan.FromMinutes(5);
-        public IReadOnlyCollection<string> Tags => ["tag1", "tag2"];
     }
 
 #pragma warning disable S3871 // Test exception classes should be public

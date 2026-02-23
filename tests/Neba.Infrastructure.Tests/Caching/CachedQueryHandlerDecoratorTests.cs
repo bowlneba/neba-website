@@ -6,9 +6,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Moq;
 
+using Neba.Application.Caching;
 using Neba.Application.Messaging;
 using Neba.Infrastructure.Caching;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Caching;
 
 using Shouldly;
 
@@ -20,17 +22,15 @@ namespace Neba.Infrastructure.Tests.Caching;
 [Component("Infrastructure.Caching")]
 public sealed class CachedQueryHandlerDecoratorTests
 {
-    private sealed record TestResponse(string Value);
+    public sealed record TestResponse(string Value);
 
-    private sealed record PlainQuery(
-        string CacheKey,
-        TimeSpan Expiry,
-        IReadOnlyCollection<string> Tags) : ICachedQuery<TestResponse>;
+    public sealed record PlainQuery(
+        CacheDescriptor Cache,
+        TimeSpan Expiry) : ICachedQuery<TestResponse>;
 
-    private sealed record ErrorOrQuery(
-        string CacheKey,
-        TimeSpan Expiry,
-        IReadOnlyCollection<string> Tags) : ICachedQuery<ErrorOr<TestResponse>>;
+    public sealed record ErrorOrQuery(
+        CacheDescriptor Cache,
+        TimeSpan Expiry) : ICachedQuery<ErrorOr<TestResponse>>;
 
     // ─── Plain response ───────────────────────────────────────────────────────
 
@@ -40,7 +40,7 @@ public sealed class CachedQueryHandlerDecoratorTests
         var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
-        var query = new PlainQuery("key:plain:hit", TimeSpan.FromMinutes(5), []);
+        var query = new PlainQuery(CacheDescriptorFactory.Create(key: "key:plain:hit"), TimeSpan.FromMinutes(5));
         var cachedValue = new TestResponse("cached");
 
         cache
@@ -49,7 +49,7 @@ public sealed class CachedQueryHandlerDecoratorTests
 
         cache
             .Setup(c => c.GetOrSetAsync<TestResponse>(
-                query.CacheKey,
+                query.Cache.Key,
                 It.IsAny<Func<FusionCacheFactoryExecutionContext<TestResponse>, CancellationToken, Task<TestResponse>>>(),
                 It.IsAny<MaybeValue<TestResponse>>(),
                 It.IsAny<FusionCacheEntryOptions>(),
@@ -69,7 +69,7 @@ public sealed class CachedQueryHandlerDecoratorTests
         var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
-        var query = new PlainQuery("key:plain:miss", TimeSpan.FromMinutes(5), []);
+        var query = new PlainQuery(CacheDescriptorFactory.Create(key: "key:plain:miss"), TimeSpan.FromMinutes(5));
         var handlerResult = new TestResponse("fresh");
 
         cache
@@ -78,7 +78,7 @@ public sealed class CachedQueryHandlerDecoratorTests
 
         cache
             .Setup(c => c.GetOrSetAsync<TestResponse>(
-                query.CacheKey,
+                query.Cache.Key,
                 It.IsAny<Func<FusionCacheFactoryExecutionContext<TestResponse>, CancellationToken, Task<TestResponse>>>(),
                 It.IsAny<MaybeValue<TestResponse>>(),
                 It.IsAny<FusionCacheEntryOptions>(),
@@ -105,12 +105,12 @@ public sealed class CachedQueryHandlerDecoratorTests
         var innerHandler = new Mock<IQueryHandler<ErrorOrQuery, ErrorOr<TestResponse>>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
-        var query = new ErrorOrQuery("key:error-or", TimeSpan.FromMinutes(5), []);
+        var query = new ErrorOrQuery(CacheDescriptorFactory.Create(key: "key:error-or"), TimeSpan.FromMinutes(5));
         var innerValue = new TestResponse("from-l1");
 
         cache
             .Setup(c => c.TryGetAsync<object>(
-                query.CacheKey,
+                query.Cache.Key,
                 It.IsAny<FusionCacheEntryOptions?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync((MaybeValue<object>)innerValue);
@@ -128,13 +128,13 @@ public sealed class CachedQueryHandlerDecoratorTests
         var innerHandler = new Mock<IQueryHandler<ErrorOrQuery, ErrorOr<TestResponse>>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
-        var query = new ErrorOrQuery("key:error-or", TimeSpan.FromMinutes(5), []);
+        var query = new ErrorOrQuery(CacheDescriptorFactory.Create(key: "key:error-or"), TimeSpan.FromMinutes(5));
         var innerValue = new TestResponse("from-l2");
         var jsonElement = JsonDocument.Parse(JsonSerializer.Serialize(innerValue)).RootElement;
 
         cache
             .Setup(c => c.TryGetAsync<object>(
-                query.CacheKey,
+                query.Cache.Key,
                 It.IsAny<FusionCacheEntryOptions?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync((MaybeValue<object>)jsonElement);
@@ -152,12 +152,12 @@ public sealed class CachedQueryHandlerDecoratorTests
         var innerHandler = new Mock<IQueryHandler<ErrorOrQuery, ErrorOr<TestResponse>>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
-        var query = new ErrorOrQuery("key:error-or", TimeSpan.FromMinutes(5), []);
+        var query = new ErrorOrQuery(CacheDescriptorFactory.Create(key: "key:error-or"), TimeSpan.FromMinutes(5));
         ErrorOr<TestResponse> errorResult = Error.NotFound("Test.NotFound", "not found");
 
         cache
             .Setup(c => c.TryGetAsync<object>(
-                query.CacheKey,
+                query.Cache.Key,
                 It.IsAny<FusionCacheEntryOptions?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(default(MaybeValue<object>));
@@ -179,14 +179,16 @@ public sealed class CachedQueryHandlerDecoratorTests
         var innerHandler = new Mock<IQueryHandler<ErrorOrQuery, ErrorOr<TestResponse>>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
-        var tags = new[] { "website", "website:docs" };
-        var query = new ErrorOrQuery("key:error-or", TimeSpan.FromMinutes(5), tags);
+        var descriptor = CacheDescriptorFactory.Create(
+            key: "neba:document:bylaws:content",
+            tags: ["neba:documents", "neba:document:bylaws"]);
+        var query = new ErrorOrQuery(descriptor, TimeSpan.FromMinutes(5));
         var innerValue = new TestResponse("fresh");
         ErrorOr<TestResponse> successResult = innerValue;
 
         cache
             .Setup(c => c.TryGetAsync<object>(
-                query.CacheKey,
+                query.Cache.Key,
                 It.IsAny<FusionCacheEntryOptions?>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(default(MaybeValue<object>));
@@ -197,10 +199,10 @@ public sealed class CachedQueryHandlerDecoratorTests
 
         cache
             .Setup(c => c.SetAsync(
-                query.CacheKey,
+                query.Cache.Key,
                 It.IsAny<object>(),
                 It.IsAny<FusionCacheEntryOptions>(),
-                It.Is<IEnumerable<string>>(t => t.SequenceEqual(tags)),
+                It.Is<IEnumerable<string>>(t => t.SequenceEqual(descriptor.Tags)),
                 It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
 

@@ -41,7 +41,7 @@ internal sealed class CachedQueryHandlerDecorator<TQuery, TResponse>
 
     private async Task<TResponse> HandleResponseAsync(ICachedQuery<TResponse> query, CancellationToken cancellationToken)
     {
-        var cacheKey = query.CacheKey;
+        var cacheKey = query.Cache.Key;
 
         var options = _cache.DefaultEntryOptions.Duplicate();
         options.Duration = query.Expiry;
@@ -55,13 +55,13 @@ internal sealed class CachedQueryHandlerDecorator<TQuery, TResponse>
             },
             failSafeDefaultValue: default,
             options: options,
-            tags: query.Tags,
+            tags: query.Cache.Tags,
             token: cancellationToken);
     }
 
     private async Task<TResponse> HandleErrorOrResponseAsync(ICachedQuery<TResponse> query, CancellationToken cancellationToken)
     {
-        var cacheKey = query.CacheKey;
+        var cacheKey = query.Cache.Key;
 
         var cached = await _cache.TryGetAsync<object>(cacheKey, token: cancellationToken);
 
@@ -98,7 +98,7 @@ internal sealed class CachedQueryHandlerDecorator<TQuery, TResponse>
 
         var options = _cache.DefaultEntryOptions.Duplicate();
         options.Duration = query.Expiry;
-        await _cache.SetAsync(cacheKey, innerValue!, options, tags: query.Tags, token: cancellationToken);
+        await _cache.SetAsync(cacheKey, innerValue!, options, tags: query.Cache.Tags, token: cancellationToken);
 
         return response;
     }
