@@ -103,7 +103,7 @@ internal static class ErrorOrCacheHelper
                 m.Name == "op_Implicit" &&
                 m.GetParameters().Length == 1 &&
                 m.GetParameters()[0].ParameterType == innerType);
-        
+
         if (valueProperty is null)
         {
             throw new InvalidOperationException($"Type {errorOrType.Name} does not have a Value property.");
