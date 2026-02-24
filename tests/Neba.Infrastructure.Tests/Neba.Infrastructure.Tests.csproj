@@ -6,6 +6,12 @@
 
   <ItemGroup>
     <PackageReference Include="Hangfire.InMemory" />
+    <PackageReference Include="StronglyTypedId" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <PackageReference Include="StronglyTypedId.Templates" GeneratePathProperty="true" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="..\..\src\Neba.Domain\ulid-full.typedid" Link="ulid-full.typedid" />
   </ItemGroup>
 
   <ItemGroup>
