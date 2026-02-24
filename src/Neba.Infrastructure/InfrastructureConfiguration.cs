@@ -4,7 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Neba.Application.Clock;
+using Neba.Application.Messaging;
 using Neba.Infrastructure.BackgroundJobs;
+using Neba.Infrastructure.Caching;
 using Neba.Infrastructure.Clock;
 using Neba.Infrastructure.Database;
 using Neba.Infrastructure.Documents;
@@ -33,13 +35,14 @@ public static class InfrastructureConfiguration
 
             builder.Services.AddTracing();
 
-            // caching decorators can go here
+            builder.Services.Decorate(typeof(IQueryHandler<,>), typeof(CachedQueryHandlerDecorator<,>));
 
             builder
                 .AddDatabase()
                 .AddKeyVault()
                 .AddStorage();
 
+            builder.Services.AddCaching(builder.Configuration);
             builder.Services.AddBackgroundJobs(builder.Configuration);
             builder.Services.AddGoogleDrive(builder.Configuration);
 
