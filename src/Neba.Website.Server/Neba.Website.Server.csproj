@@ -5,6 +5,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="Refit.HttpClientFactory" />
+    <PackageReference Include="UnitsNet" />
   </ItemGroup>
 
   <ItemGroup>
