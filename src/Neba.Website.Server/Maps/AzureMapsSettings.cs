@@ -5,6 +5,8 @@ namespace Neba.Website.Server.Maps;
 /// </summary>
 public sealed class AzureMapsSettings
 {
+    internal const string SectionName = "AzureMaps";
+
     /// <summary>
     /// The Azure Maps Account ID (Client ID) used for Azure AD authentication.
     /// This is provided by Azure when using managed identity and is injected
