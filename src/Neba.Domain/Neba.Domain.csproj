@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <PackageReference Include="Ardalis.SmartEnum" />
+    <PackageReference Include="ErrorOr" />
     <PackageReference Include="StronglyTypedId" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <PackageReference Include="StronglyTypedId.Templates" GeneratePathProperty="true" PrivateAssets="all" />
   </ItemGroup>

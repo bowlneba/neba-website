@@ -43,6 +43,18 @@ Before ending a session where significant discoveries were made, consider whethe
 - Test factories follow a consistent pattern: `Create()` with nullable params (const defaults), `Bogus(int? seed)` for single, `Bogus(int count, int? seed)` for collection
 - Infrastructure services wrapping external SDKs (e.g., Azure Blob Storage) use Testcontainers for integration tests, not mocks
 - Use **Shouldly** for assertions, NOT FluentAssertions
+- When testing null inputs on non-nullable parameters (nullable reference types are enabled project-wide), wrap the test method with `#nullable disable` / `#nullable enable` instead of using `null!`:
+
+  ```csharp
+  #nullable disable
+  [Fact(DisplayName = "...")]
+  public void Method_ShouldReturnError_WhenInputIsNull()
+  {
+      var result = SomeMethod(null);
+      // assertions
+  }
+  #nullable enable
+  ```
 
 ### API Endpoint Checklist
 
