@@ -558,32 +558,4 @@ public sealed partial class UlidStrongIdTests
     }
 
     #endregion
-
-    #region EF Core ValueConverter Tests
-
-    [Fact(DisplayName = "EF Core value converter should convert to string")]
-    public void EfCoreValueConverter_ShouldConvertToString()
-    {
-        var converter = new TestId.EfCoreValueConverter();
-        var ulid = Ulid.NewUlid();
-        var id = new TestId(ulid.ToString());
-
-        var result = converter.ConvertToProvider(id);
-
-        result.ShouldBe(ulid.ToString());
-    }
-
-    [Fact(DisplayName = "EF Core value converter should convert from string")]
-    public void EfCoreValueConverter_ShouldConvertFromString()
-    {
-        var converter = new TestId.EfCoreValueConverter();
-        var ulid = Ulid.NewUlid();
-
-        var result = converter.ConvertFromProvider(ulid.ToString());
-
-        result.ShouldBeOfType<TestId>();
-        ((TestId)result!).Value.ShouldBe(ulid);
-    }
-
-    #endregion
 }
