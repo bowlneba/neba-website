@@ -1,14 +1,7 @@
 using Neba.Domain.Contact;
-
-using Shouldly;
-
-using Xunit;
+using Neba.TestFactory.Attributes;
 
 namespace Neba.Domain.Tests.Contact;
-
-global using Xunit;
-
-global using Shouldly;
 
 [UnitTest]
 [Component("Contact.CanadianProvince")]
