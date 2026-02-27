@@ -38,13 +38,22 @@ public sealed class CertificationNumberTests
         result.FirstError.Code.ShouldBe("CertificationNumber.NullOrEmpty");
     }
 
-    [Fact(DisplayName = "Create returns error when number starts with 'x'")]
-    public void Create_ShouldReturnError_WhenNumberStartsWithX()
+    [Fact(DisplayName = "Create returns error when number is not numeric")]
+    public void Create_ShouldReturnError_WhenNumberIsNotNumeric()
+    {
+        var result = CertificationNumber.Create("ABC-001");
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("CertificationNumber.NotNumeric");
+    }
+
+    [Fact(DisplayName = "Create returns error when number contains non-digit characters")]
+    public void Create_ShouldReturnError_WhenNumberContainsNonDigitCharacters()
     {
         var result = CertificationNumber.Create("x12345");
 
         result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("CertificationNumber.StartsWithX");
+        result.FirstError.Code.ShouldBe("CertificationNumber.NotNumeric");
     }
 
     [Fact(DisplayName = "Create returns CertificationNumber with correct value when number is valid")]
@@ -59,7 +68,7 @@ public sealed class CertificationNumberTests
     [Fact(DisplayName = "Create returns non-placeholder CertificationNumber when number is valid")]
     public void Create_ShouldReturnNonPlaceholder_WhenNumberIsValid()
     {
-        var result = CertificationNumber.Create("ABC-001");
+        var result = CertificationNumber.Create("12345");
 
         result.IsError.ShouldBeFalse();
         result.Value.IsPlaceholder.ShouldBeFalse();

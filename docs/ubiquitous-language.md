@@ -104,6 +104,105 @@
 
 ---
 
+## Contact
+
+### Address
+
+**Definition**: The physical postal location of a NEBA entity (bowling center, bowler). Captures street, unit, city, state or province, country, and postal code.
+
+**Characteristics**:
+
+- **Country scope**: US and Canada. Bowling centers are always US; bowlers may be US or Canadian
+- **Default country**: US
+- **Postal codes**: Normalized on input — dashes and spaces stripped internally (`12345-6789` → `123456789`; `K1A 0B1` → `K1A0B1`)
+- **Coordinates**: Optional on Address itself. Whether coordinates are required is determined by the owning entity (e.g., BowlingCenter), not by Address
+- **No edge cases in scope**: P.O. boxes, rural routes, and military addresses are not supported
+
+**Fields**:
+
+| Field | Required | Notes |
+| --- | --- | --- |
+| Street | Yes | e.g., `123 Main St` |
+| Unit | No | Suite, apt, or lane number |
+| City | Yes | |
+| Region | Yes | `UsState` (US) or `CanadianProvince` (CA) — internal code term, never user-facing |
+| Country | Yes | `US` or `CA`; defaults to `US` |
+| PostalCode | Yes | US: `12345` or `12345-6789`; CA: `A1A 1A1` |
+| Coordinates | No | Set by geocoding, never entered manually |
+
+**UI Note**: The `Region` field label renders as **State** when country is US, and **Province** when country is Canada. The term *Region* is an internal code concept and is never shown to users.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Contact`
+- Type: `Address` (sealed record)
+- Related enums: `UsState`, `CanadianProvince` (SmartEnums)
+
+---
+
+## Geography
+
+### Coordinates
+
+**Definition**: A geographic point expressed as latitude and longitude in WGS84 decimal degrees. Coordinates are an internal concept used to enforce the 35-mile rule. They are never labeled or presented to users.
+
+**Characteristics**:
+
+- **Latitude**: −90 to 90
+- **Longitude**: −180 to 180
+- **Source**: Geocoded via Azure Maps; never entered manually by staff or users
+- **Lifecycle**: Cleared and re-geocoded whenever the owning entity's address is updated
+- **Not user-facing**: The term *Coordinates* does not appear in any UI; it has no public label
+
+**Usage**:
+
+- `BowlingCenter` must always have Coordinates — enforced as an aggregate invariant, not on Address
+- `Address` may exist without Coordinates; whether Coordinates are required depends on the owning aggregate
+- Used exclusively to calculate distances for the 35-mile rule
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Geography`
+- Type: `Coordinates` (sealed record)
+
+---
+
+## Bowling Centers
+
+### Certification Number
+
+**Definition**: A numeric identifier issued by the United States Bowling Congress (USBC) to a bowling center whose lanes have been inspected and confirmed to meet USBC standards for sanctioned competition. Certification is tied to the bowling center's physical address. As a USBC requirement, sanctioned competition may only be held at certified bowling centers; NEBA, as a USBC-sanctioned tournament organization, is bound by this requirement.
+
+**Characteristics**:
+
+- **Issuer**: USBC
+- **Format**: Numeric only; up to 5 digits (no enforced minimum — values as short as 2 digits exist in USBC records)
+- **Storage**: Stored as a string — no arithmetic is performed on this value
+- **Leading zeros**: Not semantically significant. `"01948"` and `"1948"` refer to the same certification. Formatting varies by USBC context
+- **Source**: Sourced directly from USBC data — format is accepted as-is
+- **Lifecycle**: Assigned once by USBC and does not change. A bowling center that is destroyed and rebuilt — even under the same name — is treated as a new bowling center with a new certification number, not an update to the existing record. The USBC API import is the authority on this distinction: a new certification number means a new center
+- **Decertification**: Not modeled — not a real-world concern for NEBA's operations
+
+**Placeholder Values**:
+
+The USBC API only returns open (active) bowling centers. NEBA has a 60-year history that includes centers which have since closed and whose certification numbers are no longer retrievable from USBC. These centers are represented with an internal placeholder value prefixed with `x` (e.g., `x001`). Placeholders are an internal system concept only — users never see them. The certification number field is blank in the UI for any center with a placeholder value. If the actual certification number is ever identified, the placeholder is replaced accordingly.
+
+**Business Rule**: A bowling center without a known certification number cannot host sanctioned competition.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.BowlingCenters`
+- Type: `CertificationNumber` (sealed record)
+- Factory: `CertificationNumberFactory`
+
+**Code Validation**:
+
+- `Create` rejects non-numeric input (placeholders are handled separately via factory)
+- No length invariant — USBC data varies (2–5 digits observed)
+- Leading zeros stored as received from USBC; no normalization applied
+
+---
+
 ## Maintaining This Document
 
 This is a **living document**. As the project evolves:

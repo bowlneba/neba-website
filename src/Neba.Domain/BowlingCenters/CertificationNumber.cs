@@ -34,8 +34,9 @@ public sealed record CertificationNumber
     }
 
     /// <summary>
-    /// Creates a new <see cref="CertificationNumber"/> from the provided string value, validating that it is not null, empty, or a reserved placeholder.
-    /// </summary> <param name="number">The certification number string to create.</param>
+    /// Creates a new <see cref="CertificationNumber"/> from the provided string value, validating that it is not null, empty, or non-numeric.
+    /// </summary>
+    /// <param name="number">The certification number string to create.</param>
     /// <returns>An <see cref="ErrorOr{CertificationNumber}"/> containing either a valid <see cref="CertificationNumber"/> or an error if the input is invalid.</returns>
     public static ErrorOr<CertificationNumber> Create(string number)
     {
@@ -44,9 +45,9 @@ public sealed record CertificationNumber
             return CertificationNumberErrors.CertificationNumberNullOrEmpty;
         }
 
-        if (number.StartsWith('x'))
+        if (!number.All(char.IsDigit))
         {
-            return CertificationNumberErrors.CertificationNumberStartsWithX;
+            return CertificationNumberErrors.CertificationNumberNotNumeric;
         }
 
         return new CertificationNumber { Value = number };
@@ -54,12 +55,12 @@ public sealed record CertificationNumber
 }
 
 /// <summary>
-/// Defines error messages related to validation of <see cref="CertificationNumber"/> instances, such as null/empty values or reserved placeholder formats.
+/// Defines error messages related to validation of <see cref="CertificationNumber"/> instances.
 /// </summary>
 public static class CertificationNumberErrors
 {
     /// <summary>
-    /// Error indicating that a certification number cannot be null or empty, which is required for valid certification numbers.
+    /// Error indicating that a certification number cannot be null or empty.
     /// </summary>
     public static Error CertificationNumberNullOrEmpty
         => Error.Validation(
@@ -67,10 +68,10 @@ public static class CertificationNumberErrors
             description: "Certification number cannot be null or empty.");
 
     /// <summary>
-    /// Error indicating that a certification number cannot start with 'x', as this prefix is reserved for placeholder values and not valid certification numbers.
+    /// Error indicating that a certification number must contain only digits, as issued by USBC.
     /// </summary>
-    public static Error CertificationNumberStartsWithX
+    public static Error CertificationNumberNotNumeric
         => Error.Validation(
-            code: "CertificationNumber.StartsWithX",
-            description: "Certification number cannot start with 'x' as it is reserved for placeholders.");
+            code: "CertificationNumber.NotNumeric",
+            description: "Certification number must contain only digits.");
 }
