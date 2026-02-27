@@ -385,6 +385,7 @@ _storageServiceMock.Verify(
 Flag when:
 
 - Tests manually instantiate domain entities instead of using factories
+- New entity, value object, DTO, or response type is added without a corresponding factory class in `Neba.TestFactory`
 - Tests don't follow the Arrange-Act-Assert pattern
 - Integration tests don't use Bogus factories with seeds for reproducibility
 - Missing Verify (snapshot) tests for mapping operations
@@ -577,6 +578,7 @@ When reviewing, verify:
 ### Testing
 
 - [ ] Tests use factories, not manual instantiation
+- [ ] New entity/value object/DTO/response has a corresponding factory in `Neba.TestFactory`
 - [ ] Tests have `[UnitTest]` or `[IntegrationTest]` trait
 - [ ] Tests have `[Component]` trait
 - [ ] Tests have `DisplayName` on Facts and Theories
