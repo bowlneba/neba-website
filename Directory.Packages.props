@@ -6,7 +6,7 @@
     <PackageVersion Include="Ardalis.SmartEnum" Version="8.2.0" />
     <PackageVersion Include="Aspire.Azure.Npgsql" Version="13.1.1" />
     <PackageVersion Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.1.1" />
-    <PackageVersion Include="Aspire.Azure.Security.KeyVault" Version="13.1.1" />
+    <PackageVersion Include="Aspire.Azure.Security.KeyVault" Version="13.1.2" />
     <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="13.1.1" />
     <PackageVersion Include="Aspire.Hosting.Azure.ApplicationInsights" Version="13.1.1" />
     <PackageVersion Include="Aspire.Hosting.Azure.AppService" Version="13.1.1-preview.1.26105.8" />
