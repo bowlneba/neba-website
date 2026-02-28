@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+
 using ErrorOr;
 
 namespace Neba.Domain.Contact;

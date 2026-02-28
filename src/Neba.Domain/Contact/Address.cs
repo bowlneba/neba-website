@@ -1,7 +1,10 @@
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+
 using Ardalis.SmartEnum.SystemTextJson;
+
 using ErrorOr;
+
 using Neba.Domain.Geography;
 
 namespace Neba.Domain.Contact;
