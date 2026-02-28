@@ -284,6 +284,134 @@ The USBC API only returns open (active) bowling centers. NEBA has a 60-year hist
 
 ---
 
+### BowlingCenter
+
+**Definition**: A physical bowling facility certified by the United States Bowling Congress (USBC) and tracked by NEBA for tournament hosting and membership purposes. BowlingCenter is the aggregate root for all bowling center concepts.
+
+**Characteristics**:
+
+- **Identity**: Uniquely identified by its Certification Number — not by name, ownership, or address. A surrogate database key exists for persistence but carries no domain meaning
+- **Scope**: US only
+- **Name**: The current publicly known operating name. Mutable — updated in place on rebrand or ownership change. NEBA does not track historical names
+- **Website**: The center's public website URL. Optional. Validated as a well-formed URI on import and update. Informational only — no domain behavior
+
+**Status transitions**:
+
+- A center may transition from `Closed` back to `Open` if USBC re-certifies the same physical location under the same Certification Number (e.g., new ownership)
+- If a location reopens under a new Certification Number, the original record remains `Closed` and a new BowlingCenter is created at the same address
+
+**Business Rules**:
+
+- Must always have a Work phone number on file
+- Must always have Coordinates — enforced as an aggregate invariant. A center without Coordinates cannot be created; geocoding failures during import require manual intervention before the record is committed
+- A center with a placeholder Certification Number cannot host sanctioned competition
+
+**In Code**:
+
+- Namespace: `Neba.Domain.BowlingCenters`
+- Type: `BowlingCenter` (aggregate root)
+
+---
+
+### BowlingCenterStatus
+
+**Definition**: An enumeration representing the operational state of a Bowling Center.
+
+| Value | Meaning |
+| --- | --- |
+| `Open` | The center is active and available for tournament hosting and league play |
+| `Closed` | The center is no longer operating |
+
+> The enumeration is intentionally extensible — future values such as `TemporarilyClosed` or `PendingCertification` may be added without a schema change.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.BowlingCenters`
+- Type: `BowlingCenterStatus`
+
+---
+
+### LaneConfiguration
+
+**Definition**: The complete set of usable tenpin lanes at a Bowling Center, expressed as one or more contiguous Lane Ranges. The Lane Configuration is the authoritative source for which lane pairs are available for tournament squad assignment.
+
+**Characteristics**:
+
+- **Replacement**: Replaced in its entirety when a physical change occurs at the center (see `ReconfigureLanes`). Never partially updated
+- **USBC import default**: When seeded from USBC data, initialized as a single Lane Range spanning lane 1 to the total lane count reported by USBC (e.g., 56 lanes → `LaneRange(1, 56)`). This is an explicit import assumption — centers known to have gaps or non-standard configurations must be manually reconfigured after import
+- **Odd lane count**: If USBC reports an odd total lane count, the import fails and requires manual intervention before the center record is created
+
+**Invariants**:
+
+- Must contain at least one Lane Range
+- Lane Ranges must not overlap
+- Lane Ranges must not be adjacent — if two ranges share no gap between them, they must be merged into one; any two ranges must have at least one lane of gap between them
+
+**In Code**:
+
+- Namespace: `Neba.Domain.BowlingCenters`
+- Type: `LaneConfiguration` (sealed record)
+
+---
+
+### LaneRange
+
+**Definition**: A contiguous block of usable tenpin lanes defined by a start lane number and an end lane number. Lanes are always used in consecutive pairs — two adjacent lanes referred to together (e.g., "lanes 25/26").
+
+**Characteristics**:
+
+- **PairCount**: The number of lane pairs within the range. Derived from start and end lane numbers
+- **Pair enumeration**: A Lane Range can enumerate all lane pairs it contains by their actual lane numbers
+- **Gap scenario**: Some centers have non-contiguous lanes due to physical changes (e.g., an arcade installed mid-center). The Lane Configuration for these centers contains multiple Lane Ranges separated by a gap. If a gap boundary falls between a natural pair, the affected lane on the usable side is also treated as out of play — the adjacent Lane Range begins at the next valid odd lane
+
+> **Example**: A center with lanes 1–22 and 27–60 (gap at 23–26) has two Lane Ranges: `LaneRange(1, 22)` and `LaneRange(27, 60)`.
+
+**Invariants**:
+
+- `StartLane` must be an odd number
+- `EndLane` must be an even number and at least `StartLane + 1`
+- All pairs within the range are valid and usable
+
+> **Deferred**: A `PinType` attribute (string pin vs. free fall) on Lane Range is planned for a future scope. When introduced, adjacent Lane Ranges of *different* pin types will not be merged — the adjacency merge invariant will apply only to ranges of the same type. The split center conversion scenario — where one bank of lanes converts to string pin while the other remains free fall — is the primary driver of this design.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.BowlingCenters`
+- Type: `LaneRange` (sealed record)
+
+---
+
+### ReconfigureLanes
+
+**Definition**: A named domain operation on BowlingCenter that replaces the current Lane Configuration with a new one in its entirety. Represents a significant physical change at the center — such as lanes being removed, added, or a gap being introduced or closed. Not a routine update.
+
+**In Code**:
+
+- Method: `BowlingCenter.ReconfigureLanes(LaneConfiguration)`
+
+---
+
+## USBC Source Mapping — Bowling Centers
+
+For reference, the following table maps USBC API fields to this domain model. Used by the import process.
+
+| USBC Field | Disposition | Maps To |
+| --- | --- | --- |
+| `certnumber` | Adopted | `CertificationNumber` |
+| `name` | Adopted | `Name` |
+| `address`, `city`, `state`, `zip`, `country` | Adopted | `Address` |
+| `phone` | Adopted (normalized on import) | `PhoneNumber` (Work) |
+| `email` | Adopted | `EmailAddress` |
+| `web` | Adopted | `Website` |
+| `lanes` | Adopted (seeds default `LaneConfiguration`) | `LaneConfiguration` |
+| `strpin` | Ignored | Deferred — lane-level pin type will be modeled on `LaneRange` in a future scope |
+| `id` | Ignored | USBC internal key — not domain-relevant |
+| `distance` | Ignored | Calculated at USBC query time — not a center attribute |
+| `sport` | Ignored | Sport Bowling certification no longer applicable |
+| `rvp`, `snackbar`, `restaurant`, `lounge`, `arcade`, `proshop`, `glow`, `childcare`, `parties`, `banquets`, `coach` | Ignored | Amenity/marketing data — no domain behavior |
+
+---
+
 ## Maintaining This Document
 
 This is a **living document**. As the project evolves:
