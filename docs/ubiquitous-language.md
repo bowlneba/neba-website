@@ -192,6 +192,35 @@
 
 ---
 
+### Email Address
+
+**Definition**: An electronic mail address associated with a NEBA entity (bowling center or bowler). Staff refer to this as "email address" or simply "email."
+
+**Characteristics**:
+
+- **Format**: Stored and displayed as-is — no normalization applied
+- **Validation**: Standard email format validation (must contain `@` with a valid structure). Structurally valid format only — no mailbox existence check is performed
+- **One per entity**: A single email address is supported per entity. No type distinction (home, work, etc.) is needed
+- **No email on file**: The correct term when no email address has been recorded for an entity
+
+**Bowling Center Email**:
+
+- Optional — most centers have one but it is not required
+
+**Bowler Email**:
+
+- Optional — no email address is required
+- Email address is a potential future notification channel. Bowler opt-in preference ("receive emails") is a separate concern managed on the Bowler entity, not here
+
+**Business Rule**: No entity is required to have an email address on file.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Contact`
+- Type: `EmailAddress` (sealed record)
+
+---
+
 ## Geography
 
 ### Coordinates
