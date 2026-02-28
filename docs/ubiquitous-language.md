@@ -331,6 +331,40 @@ The USBC API only returns open (active) bowling centers. NEBA has a 60-year hist
 
 ---
 
+### WebsiteId
+
+**Definition**: The integer identifier used by the existing NEBA website to reference a Bowling Center. Nullable — only present for centers that existed in the legacy website's database.
+
+**Characteristics**:
+
+- **Type**: Nullable integer
+- **Source**: Legacy website database — assigned by that system, not by NEBA staff
+- **Purpose**: Data migration only. Allows records imported from the legacy website to be traced back to their origin, and enables cross-referencing during the migration period
+- **Lifecycle**: Temporary. Once the new application (this system) goes live and the legacy website is retired, this field is no longer needed and should be dropped
+
+**In Code**:
+
+- Property: `BowlingCenter.WebsiteId` (`int?`)
+
+---
+
+### LegacyId
+
+**Definition**: The integer identifier used by the existing NEBA WinForms application to reference a Bowling Center. Nullable — only present for centers that existed in the WinForms application's database.
+
+**Characteristics**:
+
+- **Type**: Nullable integer
+- **Source**: WinForms application database — assigned by that system, not by NEBA staff
+- **Purpose**: Data migration only. Allows records imported from the WinForms application to be traced back to their origin, and enables cross-referencing during the porting period
+- **Lifecycle**: Temporary. Once all WinForms functionality has been ported to this application and the WinForms application is sunset, this field is no longer needed and should be dropped
+
+**In Code**:
+
+- Property: `BowlingCenter.LegacyId` (`int?`)
+
+---
+
 ### LaneConfiguration
 
 **Definition**: The complete set of usable tenpin lanes at a Bowling Center, expressed as one or more contiguous Lane Ranges. The Lane Configuration is the authoritative source for which lane pairs are available for tournament squad assignment.
