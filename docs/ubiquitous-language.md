@@ -140,6 +140,58 @@
 
 ---
 
+### Phone Number
+
+**Definition**: A contact telephone number associated with a NEBA entity (bowling center or bowler). Phone numbers are North American (NANP) only, consistent with the address scope of the system. Staff refer to this simply as "phone number."
+
+**Characteristics**:
+
+- **Format**: Stored as raw digits only — formatting characters (dashes, parentheses, spaces, dots) are stripped on input. `"(203) 555-1234"` → stored as `"2035551234"`
+- **Display format**: `(203) 555-1234` — always rendered in this format on screen
+- **Country code**: Always `"1"` (NANP). Non-North American numbers are not in scope
+- **Extensions**: Optional digits-only suffix. Applicable to both bowling centers and bowlers (e.g., a work number at a corporate-owned center, or a bowler's work number). Displayed as `ext. 123`
+- **No phone on file**: The absent state — used when no phone number has been recorded for a bowler. Never applicable to a bowling center (see Business Rules)
+- **History**: Last-write-wins. Phone number changes are not tracked
+
+**Phone Number Types**:
+
+| Type | Description |
+| --- | --- |
+| Work | The primary publicly listed number (e.g., the number you would find looking up the entity) |
+| Home | Residential number — bowlers only |
+| Mobile | Cell phone number — bowlers only |
+| Fax | Facsimile number |
+
+**Bowling Center Phone Numbers**:
+
+- **Work**: Required. The publicly listed number for the center. May include an extension (e.g., for centers owned by a corporate chain where the main line requires an extension to reach the center directly)
+- **Fax**: Optional. May include an extension
+- Home and Mobile types are not applicable to bowling centers
+
+**Bowler Phone Numbers**:
+
+- Multiple phone numbers are supported across any combination of types
+- No phone number is required — a bowler may have none on file
+- Extensions are applicable to work numbers
+- "No phone on file" is the correct term when no phone number has been recorded
+
+**Validation**:
+
+- Area code first digit must be 2–9
+- N11 codes (211, 311, 411 … 911) are rejected — these are reserved service codes, not valid area codes
+- Toll-free numbers (800, 888, 877, 866, 855, 844, 833) are supported — bowling centers may use a corporate toll-free number as their contact number
+- Structurally valid format only — no validation beyond format (e.g., no SMS-capability check)
+
+**Business Rule**: A bowling center must always have a work phone number on file.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Contact`
+- Type: `PhoneNumber` (sealed record)
+- Factory: `PhoneNumber.CreateNorthAmerican(number, extension?)`
+
+---
+
 ## Geography
 
 ### Coordinates
