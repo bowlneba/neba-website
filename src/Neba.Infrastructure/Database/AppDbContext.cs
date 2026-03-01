@@ -13,6 +13,7 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     : DbContext(options)
 {
     public const string DefaultSchema = "app";
+    public const string MigrationsHistoryTableName = "__EFMigrationsHistory";
 
     public DbSet<BowlingCenter> BowlingCenters
         => Set<BowlingCenter>();
@@ -21,10 +22,12 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     {
         modelBuilder.ApplyConfiguration(new BowlingCenterConfiguration());
     }
-    
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder
+            .UseNpgsql(npgsqlOptions =>
+                npgsqlOptions.MigrationsHistoryTable(MigrationsHistoryTableName, DefaultSchema))
             .UseExceptionProcessor()
             .UseSnakeCaseNamingConvention()
             .EnableDetailedErrors();

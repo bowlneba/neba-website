@@ -381,7 +381,7 @@ The USBC API only returns open (active) bowling centers. NEBA has a 60-year hist
 
 - Must contain at least one Lane Range
 - Lane Ranges must not overlap
-- Lane Ranges must not be adjacent — if two ranges share no gap between them, they must be merged into one; any two ranges must have at least one lane of gap between them
+- Lane Ranges with the same pin fall type must not be adjacent — adjacent ranges of the same type must be merged into one
 
 **In Code**:
 
@@ -397,6 +397,7 @@ The USBC API only returns open (active) bowling centers. NEBA has a 60-year hist
 **Characteristics**:
 
 - **PairCount**: The number of lane pairs within the range. Derived from start and end lane numbers
+- **PinFallType**: Required per range. Supported values are `FreeFall` and `StringPin`
 - **Pair enumeration**: A Lane Range can enumerate all lane pairs it contains by their actual lane numbers
 - **Gap scenario**: Some centers have non-contiguous lanes due to physical changes (e.g., an arcade installed mid-center). The Lane Configuration for these centers contains multiple Lane Ranges separated by a gap. If a gap boundary falls between a natural pair, the affected lane on the usable side is also treated as out of play — the adjacent Lane Range begins at the next valid odd lane
 
@@ -406,9 +407,8 @@ The USBC API only returns open (active) bowling centers. NEBA has a 60-year hist
 
 - `StartLane` must be an odd number
 - `EndLane` must be an even number and at least `StartLane + 1`
+- `PinFallType` is required
 - All pairs within the range are valid and usable
-
-> **Deferred**: A `PinType` attribute (string pin vs. free fall) on Lane Range is planned for a future scope. When introduced, adjacent Lane Ranges of *different* pin types will not be merged — the adjacency merge invariant will apply only to ranges of the same type. The split center conversion scenario — where one bank of lanes converts to string pin while the other remains free fall — is the primary driver of this design.
 
 **In Code**:
 
@@ -440,7 +440,7 @@ For reference, the following table maps USBC API fields to this domain model. Us
 | `email` | Adopted | `EmailAddress` |
 | `web` | Adopted | `Website` |
 | `lanes` | Adopted (seeds default `LaneConfiguration`) | `LaneConfiguration` |
-| `strpin` | Ignored | Deferred — lane-level pin type will be modeled on `LaneRange` in a future scope |
+| `strpin` | Ignored | `PinFallType` is modeled on `LaneRange`; current import flow does not use this source field |
 | `id` | Ignored | USBC internal key — not domain-relevant |
 | `distance` | Ignored | Calculated at USBC query time — not a center attribute |
 | `sport` | Ignored | Sport Bowling certification no longer applicable |

@@ -25,19 +25,26 @@ internal sealed class BowlingCenterConfiguration
 
         builder.ConfigureShadowId();
 
-        builder.ComplexProperty(bowlingCenter => bowlingCenter.CertificationNumber, certificationNumber => certificationNumber.Property(c => c.Value)
-                .HasColumnName("certification_number")
-                .HasMaxLength(6)
-                .IsRequired());
+        builder.Property(bowlingCenter => bowlingCenter.CertificationNumber)
+            .HasColumnName("certification_number")
+            .HasMaxLength(6)
+            .HasConversion(
+                certificationNumber => certificationNumber.Value,
+                value => new CertificationNumber { Value = value })
+            .IsRequired();
 
-        builder.HasAlternateKey(bowlingCenter => bowlingCenter.CertificationNumber.Value);
+        builder.HasAlternateKey(bowlingCenter => bowlingCenter.CertificationNumber);
 
         builder.Property(bowlingCenter => bowlingCenter.Name)
             .HasColumnName("name")
             .HasMaxLength(127)
             .IsRequired();
 
-        builder.HasAddress(bowlingCenter => bowlingCenter.Address);
+        builder.HasAddress(bowlingCenter => bowlingCenter.Address, address =>
+        {
+            address.ComplexProperty(a => a.Coordinates)
+                .IsRequired();
+        });
 
         builder.OwnsMany(bowlingCenter => bowlingCenter.PhoneNumbers, phoneNumbers =>
         {
@@ -81,9 +88,10 @@ internal sealed class BowlingCenterConfiguration
                 laneRanges.ToTable("bowling_center_lanes", AppDbContext.DefaultSchema);
                 laneRanges.WithOwner().HasForeignKey(ForeignKeyName);
                 laneRanges.HasKey(ForeignKeyName, nameof(LaneRange.StartLane));
-                
+
                 laneRanges.Property(range => range.StartLane)
                     .HasColumnName("start_lane")
+                    .ValueGeneratedNever()
                     .IsRequired();
 
                 laneRanges.Property(range => range.EndLane)
