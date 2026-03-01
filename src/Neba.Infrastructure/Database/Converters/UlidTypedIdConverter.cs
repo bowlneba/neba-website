@@ -4,10 +4,12 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Neba.Infrastructure.Database.Converters;
 
-internal sealed class UlidTypedIdConverter<TId>(ConverterMappingHints? mappingHints = null)
+internal sealed class UlidTypedIdConverter<TId>(ConverterMappingHints? mappingHints)
     : ValueConverter<TId, string>(BuildToProvider(), BuildFromProvider(), mappingHints)
     where TId : struct
 {
+    public UlidTypedIdConverter() : this((ConverterMappingHints?)null) { }
+
     private static Expression<Func<TId, string>> BuildToProvider()
     {
         var param = Expression.Parameter(typeof(TId), "id");
