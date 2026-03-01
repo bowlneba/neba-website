@@ -1,3 +1,5 @@
+using EntityFramework.Exceptions.PostgreSQL;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -30,6 +32,7 @@ internal static class DatabaseConfiguration
                 options
                     .UseNpgsql(npgsqlOptions =>
                         npgsqlOptions.MigrationsHistoryTable(AppDbContext.MigrationsHistoryTableName, AppDbContext.DefaultSchema))
+                    .UseExceptionProcessor()
                     .UseSnakeCaseNamingConvention()
                     .EnableDetailedErrors();
 
