@@ -290,7 +290,7 @@ The USBC API only returns open (active) bowling centers. NEBA has a 60-year hist
 
 **Characteristics**:
 
-- **Identity**: Uniquely identified by its Certification Number — not by name, ownership, or address. A surrogate database key exists for persistence but carries no domain meaning
+- **Identity**: Uniquely identified by its Certification Number — not by name, ownership, or address. The `CertificationNumber` property is the domain identity; there is no separate `BowlingCenterId` type. The database PK is a shadow `int` property managed by EF Core, not exposed on the domain model
 - **Scope**: US only
 - **Name**: The current publicly known operating name. Mutable — updated in place on rebrand or ownership change. NEBA does not track historical names
 - **Website**: The center's public website URL. Optional. Validated as a well-formed URI on import and update. Informational only — no domain behavior
@@ -310,6 +310,7 @@ The USBC API only returns open (active) bowling centers. NEBA has a 60-year hist
 
 - Namespace: `Neba.Domain.BowlingCenters`
 - Type: `BowlingCenter` (aggregate root)
+- Domain identity: `CertificationNumber` — no `BowlingCenterId` wrapper type exists (see [ADR-0005](../adr/0005-shadow-db-pk-for-natural-key-aggregates.md))
 
 ---
 
