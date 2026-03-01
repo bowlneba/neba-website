@@ -164,6 +164,7 @@
 
 **Bowling Center Phone Numbers**:
 
+- Phone numbers are stored as a collection; exactly one `Work` number is required (enforced as a domain invariant)
 - **Work**: Required. The publicly listed number for the center. May include an extension (e.g., for centers owned by a corporate chain where the main line requires an extension to reach the center directly)
 - **Fax**: Optional. May include an extension
 - Home and Mobile types are not applicable to bowling centers

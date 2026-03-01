@@ -29,14 +29,9 @@ public sealed class BowlingCenter
     public Address Address { get; init; } = Address.Empty;
 
     /// <summary>
-    /// The work phone number of the bowling center.
+    /// The phone numbers of the bowling center.
     /// </summary>
-    public PhoneNumber WorkNumber { get; init; } = PhoneNumber.Empty;
-
-    /// <summary>
-    /// The fax number of the bowling center.
-    /// </summary>
-    public PhoneNumber? FaxNumber { get; init; }
+    public IReadOnlyCollection<PhoneNumber> PhoneNumbers { get; init; } = [];
 
     /// <summary>
     /// The email address of the bowling center.
