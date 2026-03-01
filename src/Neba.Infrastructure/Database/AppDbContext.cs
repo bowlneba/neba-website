@@ -1,5 +1,3 @@
-using EntityFramework.Exceptions.PostgreSQL;
-
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Domain.BowlingCenters;
@@ -21,22 +19,6 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BowlingCenterConfiguration());
-    }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder
-            .UseNpgsql(npgsqlOptions =>
-                npgsqlOptions.MigrationsHistoryTable(MigrationsHistoryTableName, DefaultSchema))
-            .UseExceptionProcessor()
-            .UseSnakeCaseNamingConvention()
-            .EnableDetailedErrors();
-
-#if DEBUG
-
-        optionsBuilder.EnableSensitiveDataLogging();
-
-#endif
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 
 using Npgsql;
@@ -24,7 +25,18 @@ internal static class DatabaseConfiguration
                     settings.ConnectionString += ";Ssl Mode=Require";
                 }
             });
-            builder.AddAzureNpgsqlDbContext<AppDbContext>(connectionStringName);
+            builder.AddAzureNpgsqlDbContext<AppDbContext>(connectionStringName, configureDbContextOptions: options =>
+            {
+                options
+                    .UseNpgsql(npgsqlOptions =>
+                        npgsqlOptions.MigrationsHistoryTable(AppDbContext.MigrationsHistoryTableName, AppDbContext.DefaultSchema))
+                    .UseSnakeCaseNamingConvention()
+                    .EnableDetailedErrors();
+
+#if DEBUG
+                options.EnableSensitiveDataLogging();
+#endif
+            });
 
             return builder;
         }
