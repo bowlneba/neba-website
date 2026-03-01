@@ -2,6 +2,9 @@ using EntityFramework.Exceptions.PostgreSQL;
 
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Domain.BowlingCenters;
+using Neba.Infrastructure.Database.Configurations;
+
 using SmartEnum.EFCore;
 
 namespace Neba.Infrastructure.Database;
@@ -10,6 +13,14 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     : DbContext(options)
 {
     public const string DefaultSchema = "app";
+
+    public DbSet<BowlingCenter> BowlingCenters
+        => Set<BowlingCenter>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfiguration(new BowlingCenterConfiguration());
+    }
     
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -24,6 +35,7 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
 #endif
     }
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder.ConfigureSmartEnum();
