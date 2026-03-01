@@ -12,8 +12,10 @@ public sealed class CoordinatesTests
     [Fact(DisplayName = "Create returns Coordinates with correct latitude and longitude when values are valid")]
     public void Create_ShouldReturnCoordinates_WhenValuesAreValid()
     {
+        // Act
         var result = Coordinates.Create(41.7508, -72.6850);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Latitude.ShouldBe(41.7508);
         result.Value.Longitude.ShouldBe(-72.6850);
@@ -22,8 +24,10 @@ public sealed class CoordinatesTests
     [Fact(DisplayName = "Create succeeds at latitude lower boundary of -90")]
     public void Create_ShouldSucceed_WhenLatitudeIsNegative90()
     {
+        // Act
         var result = Coordinates.Create(-90, 0);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Latitude.ShouldBe(-90);
     }
@@ -31,8 +35,10 @@ public sealed class CoordinatesTests
     [Fact(DisplayName = "Create succeeds at latitude upper boundary of 90")]
     public void Create_ShouldSucceed_WhenLatitudeIs90()
     {
+        // Act
         var result = Coordinates.Create(90, 0);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Latitude.ShouldBe(90);
     }
@@ -40,8 +46,10 @@ public sealed class CoordinatesTests
     [Fact(DisplayName = "Create succeeds at longitude lower boundary of -180")]
     public void Create_ShouldSucceed_WhenLongitudeIsNegative180()
     {
+        // Act
         var result = Coordinates.Create(0, -180);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Longitude.ShouldBe(-180);
     }
@@ -49,8 +57,10 @@ public sealed class CoordinatesTests
     [Fact(DisplayName = "Create succeeds at longitude upper boundary of 180")]
     public void Create_ShouldSucceed_WhenLongitudeIs180()
     {
+        // Act
         var result = Coordinates.Create(0, 180);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Longitude.ShouldBe(180);
     }
@@ -58,8 +68,10 @@ public sealed class CoordinatesTests
     [Fact(DisplayName = "Create succeeds at origin (0, 0)")]
     public void Create_ShouldSucceed_WhenLatitudeAndLongitudeAreZero()
     {
+        // Act
         var result = Coordinates.Create(0, 0);
 
+        // Assert
         result.IsError.ShouldBeFalse();
     }
 
@@ -70,8 +82,10 @@ public sealed class CoordinatesTests
     [Fact(DisplayName = "Create returns InvalidLatitude error when latitude is below -90")]
     public void Create_ShouldReturnInvalidLatitudeError_WhenLatitudeIsBelowNegative90()
     {
+        // Act
         var result = Coordinates.Create(-90.001, 0);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Coordinates.InvalidLatitude");
     }
@@ -79,8 +93,10 @@ public sealed class CoordinatesTests
     [Fact(DisplayName = "Create returns InvalidLatitude error when latitude is above 90")]
     public void Create_ShouldReturnInvalidLatitudeError_WhenLatitudeIsAbove90()
     {
+        // Act
         var result = Coordinates.Create(90.001, 0);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Coordinates.InvalidLatitude");
     }
@@ -92,8 +108,10 @@ public sealed class CoordinatesTests
     [Fact(DisplayName = "Create returns InvalidLongitude error when longitude is below -180")]
     public void Create_ShouldReturnInvalidLongitudeError_WhenLongitudeIsBelowNegative180()
     {
+        // Act
         var result = Coordinates.Create(0, -180.001);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Coordinates.InvalidLongitude");
     }
@@ -101,8 +119,10 @@ public sealed class CoordinatesTests
     [Fact(DisplayName = "Create returns InvalidLongitude error when longitude is above 180")]
     public void Create_ShouldReturnInvalidLongitudeError_WhenLongitudeIsAbove180()
     {
+        // Act
         var result = Coordinates.Create(0, 180.001);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Coordinates.InvalidLongitude");
     }
@@ -110,8 +130,10 @@ public sealed class CoordinatesTests
     [Fact(DisplayName = "Create returns InvalidLatitude error first when both latitude and longitude are invalid")]
     public void Create_ShouldReturnInvalidLatitudeError_WhenBothValuesAreInvalid()
     {
+        // Act
         var result = Coordinates.Create(91, 181);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Coordinates.InvalidLatitude");
     }
@@ -123,8 +145,10 @@ public sealed class CoordinatesTests
     [Fact(DisplayName = "ToString returns 'Latitude, Longitude' format")]
     public void ToString_ShouldReturnLatitudeLongitudeFormat()
     {
+        // Arrange
         var result = Coordinates.Create(41.7508, -72.6850);
 
+        // Act & Assert
         result.Value.ToString().ShouldBe("41.7508, -72.685");
     }
 
@@ -135,18 +159,22 @@ public sealed class CoordinatesTests
     [Fact(DisplayName = "Two Coordinates with the same values are equal")]
     public void Equality_ShouldBeEqual_WhenValuesAreTheSame()
     {
+        // Arrange
         var a = Coordinates.Create(41.7508, -72.6850);
         var b = Coordinates.Create(41.7508, -72.6850);
 
+        // Act & Assert
         a.Value.ShouldBe(b.Value);
     }
 
     [Fact(DisplayName = "Two Coordinates with different values are not equal")]
     public void Equality_ShouldNotBeEqual_WhenValuesAreDifferent()
     {
+        // Arrange
         var a = Coordinates.Create(41.7508, -72.6850);
         var b = Coordinates.Create(42.3601, -71.0589);
 
+        // Act & Assert
         a.Value.ShouldNotBe(b.Value);
     }
 

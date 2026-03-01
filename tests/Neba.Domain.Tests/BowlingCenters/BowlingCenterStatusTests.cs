@@ -10,7 +10,11 @@ public sealed class BowlingCenterStatusTests
     [Fact(DisplayName = "Should have 2 bowling center statuses")]
     public void BowlingCenterStatus_ShouldHave2Statuses()
     {
-        BowlingCenterStatus.List.Count.ShouldBe(2);
+        // Act
+        var count = BowlingCenterStatus.List.Count;
+
+        // Assert
+        count.ShouldBe(2);
     }
 
     [Theory(DisplayName = "Bowling center status values should be correct")]
@@ -18,7 +22,10 @@ public sealed class BowlingCenterStatusTests
     [InlineData("Closed", 1, TestDisplayName = "Closed value should be 1")]
     public void BowlingCenterStatus_ShouldHaveCorrectProperties(string expectedName, int expectedValue)
     {
+        // Act
         var status = BowlingCenterStatus.FromValue(expectedValue);
+
+        // Assert
         status.Name.ShouldBe(expectedName);
         status.Value.ShouldBe(expectedValue);
     }

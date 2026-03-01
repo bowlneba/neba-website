@@ -10,10 +10,12 @@ namespace Neba.Domain.Tests.BowlingCenters;
 public sealed class BowlingCenterIdTests
 {
     [Fact(DisplayName = "Should be a valid strongly typed ID")]
-    public void BowlingCenterId_ShouldBeValidStronglyTypedId()
+    public void BowlingCenterId_ShouldBeValid_WhenCreatedWithNew()
     {
+        // Act
         var id = BowlingCenterId.New();
 
+        // Assert
         id.Value.ShouldNotBe(Ulid.Empty);
         BowlingCenterId.Parse(id.ToString(), CultureInfo.InvariantCulture).ShouldBe(id);
     }

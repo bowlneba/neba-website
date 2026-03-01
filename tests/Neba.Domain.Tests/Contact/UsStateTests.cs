@@ -10,7 +10,11 @@ public sealed class UsStateTests
     [Fact(DisplayName = "Should have 51 US states including DC")]
     public void UsState_ShouldHave51States()
     {
-        UsState.List.Count.ShouldBe(51);
+        // Act
+        var count = UsState.List.Count;
+
+        // Assert
+        count.ShouldBe(51);
     }
 
     [Theory(DisplayName = "State abbreviations should be correct")]
@@ -67,7 +71,10 @@ public sealed class UsStateTests
     [InlineData("District of Columbia", "DC", TestDisplayName = "District of Columbia abbreviation should be DC")]
     public void UsState_ShouldHaveCorrectProperties(string stateName, string expectedAbbreviation)
     {
+        // Act
         var state = UsState.FromValue(expectedAbbreviation);
+
+        // Assert
         state.Name.ShouldBe(stateName);
         state.Value.ShouldBe(expectedAbbreviation);
     }

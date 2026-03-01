@@ -15,8 +15,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns Address with correct properties for a US address")]
     public void Create_US_ShouldReturnAddress_WhenInputIsValid()
     {
+        // Act
         var result = Address.Create("123 Main St", unit: null, "Hartford", UsState.Connecticut, "06103");
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Street.ShouldBe("123 Main St");
         result.Value.Unit.ShouldBeNull();
@@ -30,8 +32,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns Address with unit when unit is provided for a US address")]
     public void Create_US_ShouldIncludeUnit_WhenUnitIsProvided()
     {
+        // Act
         var result = Address.Create("123 Main St", "Apt 4B", "Hartford", UsState.Connecticut, "06103");
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Unit.ShouldBe("Apt 4B");
     }
@@ -39,10 +43,13 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns Address with coordinates when coordinates are provided for a US address")]
     public void Create_US_ShouldIncludeCoordinates_WhenCoordinatesAreProvided()
     {
+        // Arrange
         var coordinates = CoordinatesFactory.Create();
 
+        // Act
         var result = Address.Create("123 Main St", unit: null, "Hartford", UsState.Connecticut, "06103", coordinates);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Coordinates.ShouldBe(coordinates);
     }
@@ -50,8 +57,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create accepts and stores a 5-digit ZIP code as-is")]
     public void Create_US_ShouldStorePostalCode_When5DigitZipCode()
     {
+        // Act
         var result = Address.Create("123 Main St", unit: null, "Hartford", UsState.Connecticut, "06103");
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.PostalCode.ShouldBe("06103");
     }
@@ -59,8 +68,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create accepts and normalizes ZIP+4 code with dash by removing the dash")]
     public void Create_US_ShouldNormalizePostalCode_WhenZipPlus4WithDash()
     {
+        // Act
         var result = Address.Create("123 Main St", unit: null, "Hartford", UsState.Connecticut, "06103-1234");
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.PostalCode.ShouldBe("061031234");
     }
@@ -68,8 +79,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create accepts and stores ZIP+4 code without dash as-is")]
     public void Create_US_ShouldStorePostalCode_WhenZipPlus4WithoutDash()
     {
+        // Act
         var result = Address.Create("123 Main St", unit: null, "Hartford", UsState.Connecticut, "061031234");
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.PostalCode.ShouldBe("061031234");
     }
@@ -81,8 +94,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns StreetIsRequired error when street is empty for a US address")]
     public void Create_US_ShouldReturnStreetIsRequiredError_WhenStreetIsEmpty()
     {
+        // Act
         var result = Address.Create(string.Empty, unit: null, "Hartford", UsState.Connecticut, "06103");
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Address.StreetIsRequired");
     }
@@ -90,8 +105,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns StreetIsRequired error when street is whitespace for a US address")]
     public void Create_US_ShouldReturnStreetIsRequiredError_WhenStreetIsWhitespace()
     {
+        // Act
         var result = Address.Create("   ", unit: null, "Hartford", UsState.Connecticut, "06103");
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Address.StreetIsRequired");
     }
@@ -99,8 +116,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns CityIsRequired error when city is empty for a US address")]
     public void Create_US_ShouldReturnCityIsRequiredError_WhenCityIsEmpty()
     {
+        // Act
         var result = Address.Create("123 Main St", unit: null, string.Empty, UsState.Connecticut, "06103");
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Address.CityIsRequired");
     }
@@ -108,8 +127,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns CityIsRequired error when city is whitespace for a US address")]
     public void Create_US_ShouldReturnCityIsRequiredError_WhenCityIsWhitespace()
     {
+        // Act
         var result = Address.Create("123 Main St", unit: null, "   ", UsState.Connecticut, "06103");
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Address.CityIsRequired");
     }
@@ -117,8 +138,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns PostalCodeIsRequired error when ZIP code is empty for a US address")]
     public void Create_US_ShouldReturnPostalCodeIsRequiredError_WhenZipCodeIsEmpty()
     {
+        // Act
         var result = Address.Create("123 Main St", unit: null, "Hartford", UsState.Connecticut, string.Empty);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Address.PostalCodeIsRequired");
     }
@@ -126,8 +149,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns PostalCodeIsRequired error when ZIP code is whitespace for a US address")]
     public void Create_US_ShouldReturnPostalCodeIsRequiredError_WhenZipCodeIsWhitespace()
     {
+        // Act
         var result = Address.Create("123 Main St", unit: null, "Hartford", UsState.Connecticut, "   ");
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Address.PostalCodeIsRequired");
     }
@@ -140,8 +165,10 @@ public sealed class AddressTests
     [InlineData("12345-12345", TestDisplayName = "ZIP+5 format is invalid")]
     public void Create_US_ShouldReturnInvalidPostalCodeError_WhenZipCodeFormatIsInvalid(string invalidZip)
     {
+        // Act
         var result = Address.Create("123 Main St", unit: null, "Hartford", UsState.Connecticut, invalidZip);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Address.InvalidPostalCode");
     }
@@ -149,6 +176,7 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create throws ArgumentNullException when state is null for a US address")]
     public void Create_US_ShouldThrowArgumentNullException_WhenStateIsNull()
     {
+        // Act & Assert
 #nullable disable
         Should.Throw<ArgumentNullException>(() =>
             Address.Create("123 Main St", unit: null, "Hartford", state: null, "06103"));
@@ -162,8 +190,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns Address with correct properties for a Canadian address")]
     public void Create_Canada_ShouldReturnAddress_WhenInputIsValid()
     {
+        // Act
         var result = Address.Create("123 Maple Ave", unit: null, "Toronto", CanadianProvince.Ontario, "M5V 3A8");
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Street.ShouldBe("123 Maple Ave");
         result.Value.Unit.ShouldBeNull();
@@ -176,8 +206,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create normalizes postal code by removing the space for a Canadian address")]
     public void Create_Canada_ShouldNormalizePostalCode_WhenSpaceIsPresent()
     {
+        // Act
         var result = Address.Create("123 Maple Ave", unit: null, "Toronto", CanadianProvince.Ontario, "M5V 3A8");
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.PostalCode.ShouldBe("M5V3A8");
     }
@@ -185,8 +217,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create stores postal code without space after uppercasing for a Canadian address")]
     public void Create_Canada_ShouldStorePostalCode_WhenNoSpaceIsPresent()
     {
+        // Act
         var result = Address.Create("123 Maple Ave", unit: null, "Toronto", CanadianProvince.Ontario, "M5V3A8");
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.PostalCode.ShouldBe("M5V3A8");
     }
@@ -194,8 +228,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create normalizes postal code to uppercase for a Canadian address")]
     public void Create_Canada_ShouldNormalizePostalCode_ToUppercase()
     {
+        // Act
         var result = Address.Create("123 Maple Ave", unit: null, "Toronto", CanadianProvince.Ontario, "m5v 3a8");
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.PostalCode.ShouldBe("M5V3A8");
     }
@@ -203,8 +239,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns Address with unit when unit is provided for a Canadian address")]
     public void Create_Canada_ShouldIncludeUnit_WhenUnitIsProvided()
     {
+        // Act
         var result = Address.Create("123 Maple Ave", "Suite 200", "Toronto", CanadianProvince.Ontario, "M5V3A8");
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Unit.ShouldBe("Suite 200");
     }
@@ -212,10 +250,13 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns Address with coordinates when coordinates are provided for a Canadian address")]
     public void Create_Canada_ShouldIncludeCoordinates_WhenCoordinatesAreProvided()
     {
+        // Arrange
         var coordinates = CoordinatesFactory.Create();
 
+        // Act
         var result = Address.Create("123 Maple Ave", unit: null, "Toronto", CanadianProvince.Ontario, "M5V3A8", coordinates);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Coordinates.ShouldBe(coordinates);
     }
@@ -227,8 +268,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns StreetIsRequired error when street is empty for a Canadian address")]
     public void Create_Canada_ShouldReturnStreetIsRequiredError_WhenStreetIsEmpty()
     {
+        // Act
         var result = Address.Create(string.Empty, unit: null, "Toronto", CanadianProvince.Ontario, "M5V3A8");
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Address.StreetIsRequired");
     }
@@ -236,8 +279,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns StreetIsRequired error when street is whitespace for a Canadian address")]
     public void Create_Canada_ShouldReturnStreetIsRequiredError_WhenStreetIsWhitespace()
     {
+        // Act
         var result = Address.Create("   ", unit: null, "Toronto", CanadianProvince.Ontario, "M5V3A8");
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Address.StreetIsRequired");
     }
@@ -245,8 +290,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns CityIsRequired error when city is empty for a Canadian address")]
     public void Create_Canada_ShouldReturnCityIsRequiredError_WhenCityIsEmpty()
     {
+        // Act
         var result = Address.Create("123 Maple Ave", unit: null, string.Empty, CanadianProvince.Ontario, "M5V3A8");
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Address.CityIsRequired");
     }
@@ -254,8 +301,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns CityIsRequired error when city is whitespace for a Canadian address")]
     public void Create_Canada_ShouldReturnCityIsRequiredError_WhenCityIsWhitespace()
     {
+        // Act
         var result = Address.Create("123 Maple Ave", unit: null, "   ", CanadianProvince.Ontario, "M5V3A8");
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Address.CityIsRequired");
     }
@@ -263,8 +312,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns PostalCodeIsRequired error when postal code is empty for a Canadian address")]
     public void Create_Canada_ShouldReturnPostalCodeIsRequiredError_WhenPostalCodeIsEmpty()
     {
+        // Act
         var result = Address.Create("123 Maple Ave", unit: null, "Toronto", CanadianProvince.Ontario, string.Empty);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Address.PostalCodeIsRequired");
     }
@@ -272,8 +323,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create returns PostalCodeIsRequired error when postal code is whitespace for a Canadian address")]
     public void Create_Canada_ShouldReturnPostalCodeIsRequiredError_WhenPostalCodeIsWhitespace()
     {
+        // Act
         var result = Address.Create("123 Maple Ave", unit: null, "Toronto", CanadianProvince.Ontario, "   ");
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Address.PostalCodeIsRequired");
     }
@@ -285,8 +338,10 @@ public sealed class AddressTests
     [InlineData("D5V3A8", TestDisplayName = "Postal code starting with invalid letter D is invalid")]
     public void Create_Canada_ShouldReturnInvalidPostalCodeError_WhenPostalCodeFormatIsInvalid(string invalidPostalCode)
     {
+        // Act
         var result = Address.Create("123 Maple Ave", unit: null, "Toronto", CanadianProvince.Ontario, invalidPostalCode);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Address.InvalidPostalCode");
     }
@@ -294,6 +349,7 @@ public sealed class AddressTests
     [Fact(DisplayName = "Create throws ArgumentNullException when province is null for a Canadian address")]
     public void Create_Canada_ShouldThrowArgumentNullException_WhenProvinceIsNull()
     {
+        // Act & Assert
 #nullable disable
         Should.Throw<ArgumentNullException>(() =>
             Address.Create("123 Maple Ave", unit: null, "Toronto", province: null, "M5V3A8"));
@@ -307,8 +363,10 @@ public sealed class AddressTests
     [Fact(DisplayName = "Empty returns an Address with default property values")]
     public void Empty_ShouldHaveDefaultPropertyValues()
     {
+        // Act
         var empty = Address.Empty;
 
+        // Assert
         empty.Street.ShouldBe(string.Empty);
         empty.Unit.ShouldBeNull();
         empty.City.ShouldBe(string.Empty);
@@ -320,6 +378,7 @@ public sealed class AddressTests
     [Fact(DisplayName = "Empty returns the same instance on repeated access")]
     public void Empty_ShouldReturnSameInstance_OnRepeatedAccess()
     {
+        // Act & Assert
         Address.Empty.ShouldBeSameAs(Address.Empty);
     }
 
@@ -330,20 +389,26 @@ public sealed class AddressTests
     [Fact(DisplayName = "Country property serializes to its string value for a US address")]
     public void JsonSerialization_ShouldSerializeCountry_AsStringValue_ForUsAddress()
     {
+        // Arrange
         var address = Address.Create("123 Main St", unit: null, "Hartford", UsState.Connecticut, "06103").Value;
 
+        // Act
         var json = JsonSerializer.Serialize(address);
 
+        // Assert
         json.ShouldContain("\"US\"");
     }
 
     [Fact(DisplayName = "Country property serializes to its string value for a Canadian address")]
     public void JsonSerialization_ShouldSerializeCountry_AsStringValue_ForCanadianAddress()
     {
+        // Arrange
         var address = Address.Create("123 Maple Ave", unit: null, "Toronto", CanadianProvince.Ontario, "M5V3A8").Value;
 
+        // Act
         var json = JsonSerializer.Serialize(address);
 
+        // Assert
         json.ShouldContain("\"CA\"");
     }
 
@@ -354,27 +419,33 @@ public sealed class AddressTests
     [Fact(DisplayName = "Two US addresses with the same values are equal")]
     public void Equality_US_ShouldBeEqual_WhenValuesAreTheSame()
     {
+        // Arrange
         var a = Address.Create("123 Main St", unit: null, "Hartford", UsState.Connecticut, "06103");
         var b = Address.Create("123 Main St", unit: null, "Hartford", UsState.Connecticut, "06103");
 
+        // Act & Assert
         a.Value.ShouldBe(b.Value);
     }
 
     [Fact(DisplayName = "Two US addresses with different streets are not equal")]
     public void Equality_US_ShouldNotBeEqual_WhenStreetsAreDifferent()
     {
+        // Arrange
         var a = Address.Create("123 Main St", unit: null, "Hartford", UsState.Connecticut, "06103");
         var b = Address.Create("456 Elm St", unit: null, "Hartford", UsState.Connecticut, "06103");
 
+        // Act & Assert
         a.Value.ShouldNotBe(b.Value);
     }
 
     [Fact(DisplayName = "Two Canadian addresses with the same values are equal")]
     public void Equality_Canada_ShouldBeEqual_WhenValuesAreTheSame()
     {
+        // Arrange
         var a = Address.Create("123 Maple Ave", unit: null, "Toronto", CanadianProvince.Ontario, "M5V3A8");
         var b = Address.Create("123 Maple Ave", unit: null, "Toronto", CanadianProvince.Ontario, "M5V3A8");
 
+        // Act & Assert
         a.Value.ShouldBe(b.Value);
     }
 

@@ -10,7 +10,11 @@ public sealed class CanadianProvinceTests
     [Fact(DisplayName = "Should have 13 Canadian provinces and territories")]
     public void CanadianProvince_ShouldHave13Provinces()
     {
-        CanadianProvince.List.Count.ShouldBe(13);
+        // Act
+        var count = CanadianProvince.List.Count;
+
+        // Assert
+        count.ShouldBe(13);
     }
 
     [Theory(DisplayName = "Province and territory abbreviations should be correct")]
@@ -29,7 +33,10 @@ public sealed class CanadianProvinceTests
     [InlineData("Yukon", "YT", TestDisplayName = "Yukon abbreviation should be YT")]
     public void CanadianProvince_ShouldHaveCorrectProperties(string provinceName, string expectedAbbreviation)
     {
+        // Act
         var province = CanadianProvince.FromValue(expectedAbbreviation);
+
+        // Assert
         province.Name.ShouldBe(provinceName);
         province.Value.ShouldBe(expectedAbbreviation);
     }

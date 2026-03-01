@@ -37,18 +37,22 @@ public sealed class NebaMapTests : IDisposable
     public void Dispose() => _ctx.Dispose();
 
     [Fact(DisplayName = "Should render map container div with neba-map id prefix")]
-    public void Render_ContainerDiv_HasNebaMapIdPrefix()
+    public void Render_ShouldRenderContainerDiv_WithNebaMapIdPrefix()
     {
+        // Act
         var cut = _ctx.Render<NebaMap>();
 
+        // Assert
         cut.Find("div[id^='neba-map-']").ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "Should apply default height and width to container style")]
-    public void Render_DefaultDimensions_AppliedToContainerStyle()
+    public void Render_ShouldApplyDefaultDimensions_WhenRendered()
     {
+        // Act
         var cut = _ctx.Render<NebaMap>();
 
+        // Assert
         var style = cut.Find("div").GetAttribute("style");
         style.ShouldNotBeNull();
         style.ShouldContain("height: 600px");
@@ -56,12 +60,14 @@ public sealed class NebaMapTests : IDisposable
     }
 
     [Fact(DisplayName = "Should apply custom height and width to container style")]
-    public void Render_CustomDimensions_AppliedToContainerStyle()
+    public void Render_ShouldApplyCustomDimensions_WhenCustomDimensionsProvided()
     {
+        // Act
         var cut = _ctx.Render<NebaMap>(parameters =>
             parameters.Add(p => p.Height, "400px")
                       .Add(p => p.Width, "50%"));
 
+        // Assert
         var style = cut.Find("div").GetAttribute("style");
         style.ShouldNotBeNull();
         style.ShouldContain("height: 400px");
@@ -69,140 +75,176 @@ public sealed class NebaMapTests : IDisposable
     }
 
     [Fact(DisplayName = "Should apply custom CSS class to container div")]
-    public void Render_CustomCssClass_AppliedToContainer()
+    public void Render_ShouldApplyCssClass_WhenCustomClassProvided()
     {
+        // Act
         var cut = _ctx.Render<NebaMap>(parameters =>
             parameters.Add(p => p.CssClass, "my-map-class"));
 
+        // Assert
         cut.Find("div.my-map-class").ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "Should call initializeMap JS function on first render")]
-    public void OnAfterRender_FirstRender_CallsInitializeMap()
+    public void OnAfterRender_ShouldCallInitializeMap_WhenFirstRender()
     {
+        // Act
         _ctx.Render<NebaMap>();
 
+        // Assert
         _moduleInterop.VerifyInvoke("initializeMap");
     }
 
     [Fact(DisplayName = "Should call initializeMap exactly once across multiple renders")]
-    public void OnAfterRender_SubsequentRender_DoesNotCallInitializeMapAgain()
+    public void OnAfterRender_ShouldNotCallInitializeMapAgain_WhenSubsequentRender()
     {
+        // Arrange
         var cut = _ctx.Render<NebaMap>();
+
+        // Act
         cut.Render(ParameterView.FromDictionary(new Dictionary<string, object?>
         {
             { nameof(NebaMap.Zoom), 10 }
         }));
 
+        // Assert
         _moduleInterop.VerifyInvoke("initializeMap", 1);
     }
 
     [Fact(DisplayName = "Should call updateMarkers when locations change after initialization")]
-    public void OnParametersSet_AfterInit_CallsUpdateMarkers()
+    public void OnParametersSet_ShouldCallUpdateMarkers_WhenLocationsChangeAfterInit()
     {
+        // Arrange
         var cut = _ctx.Render<NebaMap>();
         var locations = new[]
         {
             new NebaMapLocation("loc-1", "Test Bowl", "123 Main St", 42.3601, -71.0589)
         };
 
+        // Act
         cut.Render(ParameterView.FromDictionary(new Dictionary<string, object?>
         {
             { nameof(NebaMap.Locations), locations }
         }));
 
+        // Assert
         _moduleInterop.VerifyInvoke("updateMarkers");
     }
 
     [Fact(DisplayName = "Should invoke OnMapReady callback when NotifyMapReady is called")]
-    public async Task NotifyMapReady_InvokesOnMapReadyCallback()
+    public async Task NotifyMapReady_ShouldInvokeOnMapReadyCallback_WhenCalled()
     {
+        // Arrange
         var mapReadyCalled = false;
         var cut = _ctx.Render<NebaMap>(parameters =>
             parameters.Add(p => p.OnMapReady, EventCallback.Factory.Create(this, () => mapReadyCalled = true)));
 
+        // Act
         await cut.InvokeAsync(() => cut.Instance.NotifyMapReady());
 
+        // Assert
         mapReadyCalled.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Should invoke OnBoundsChanged callback with correct bounds")]
-    public async Task NotifyBoundsChanged_InvokesOnBoundsChangedCallback_WithCorrectBounds()
+    public async Task NotifyBoundsChanged_ShouldInvokeCallback_WhenCalled()
     {
+        // Arrange
         MapBounds? receivedBounds = null;
         var expectedBounds = new MapBounds(North: 43.0, South: 42.0, East: -70.0, West: -72.0);
         var cut = _ctx.Render<NebaMap>(parameters =>
             parameters.Add(p => p.OnBoundsChanged, EventCallback.Factory.Create<MapBounds>(this, b => receivedBounds = b)));
 
+        // Act
         await cut.InvokeAsync(() => cut.Instance.NotifyBoundsChanged(expectedBounds));
 
+        // Assert
         receivedBounds.ShouldNotBeNull();
         receivedBounds.ShouldBe(expectedBounds);
     }
 
-    [Fact(DisplayName = "Should call focusOnLocation JS function with location id")]
-    public async Task FocusOnLocationAsync_CallsJsWithLocationId()
+    [Fact(DisplayName = "Should call focusOnLocation JS function when location id is provided")]
+    public async Task FocusOnLocationAsync_ShouldCallFocusOnLocationJs_WhenLocationIdProvided()
     {
+        // Arrange
         var cut = _ctx.Render<NebaMap>();
 
+        // Act
         await cut.InvokeAsync(() => cut.Instance.FocusOnLocationAsync("loc-1"));
 
+        // Assert
         _moduleInterop.VerifyInvoke("focusOnLocation", 1);
     }
 
-    [Fact(DisplayName = "Should call fitBounds JS function")]
-    public async Task FitBoundsAsync_CallsJs()
+    [Fact(DisplayName = "Should call fitBounds JS function when invoked")]
+    public async Task FitBoundsAsync_ShouldCallFitBoundsJs_WhenCalled()
     {
+        // Arrange
         var cut = _ctx.Render<NebaMap>();
 
+        // Act
         await cut.InvokeAsync(() => cut.Instance.FitBoundsAsync());
 
+        // Assert
         _moduleInterop.VerifyInvoke("fitBounds", 1);
     }
 
-    [Fact(DisplayName = "Should call closePopup JS function")]
-    public async Task ClosePopupAsync_CallsJs()
+    [Fact(DisplayName = "Should call closePopup JS function when invoked")]
+    public async Task ClosePopupAsync_ShouldCallClosePopupJs_WhenCalled()
     {
+        // Arrange
         var cut = _ctx.Render<NebaMap>();
 
+        // Act
         await cut.InvokeAsync(() => cut.Instance.ClosePopupAsync());
 
+        // Assert
         _moduleInterop.VerifyInvoke("closePopup", 1);
     }
 
-    [Fact(DisplayName = "Should call setMapStyle JS function with requested style")]
-    public async Task SetMapStyleAsync_CallsJsWithStyle()
+    [Fact(DisplayName = "Should call setMapStyle JS function when style is provided")]
+    public async Task SetMapStyleAsync_ShouldCallSetMapStyleJs_WhenStyleProvided()
     {
+        // Arrange
         var cut = _ctx.Render<NebaMap>();
 
+        // Act
         await cut.InvokeAsync(() => cut.Instance.SetMapStyleAsync("satellite"));
 
+        // Assert
         _moduleInterop.VerifyInvoke("setMapStyle", 1);
     }
 
-    [Fact(DisplayName = "Should call enterDirectionsPreview JS function with location id")]
-    public async Task EnterDirectionsPreviewAsync_CallsJsWithLocationId()
+    [Fact(DisplayName = "Should call enterDirectionsPreview JS function when location id is provided")]
+    public async Task EnterDirectionsPreviewAsync_ShouldCallJs_WhenLocationIdProvided()
     {
+        // Arrange
         var cut = _ctx.Render<NebaMap>();
 
+        // Act
         await cut.InvokeAsync(() => cut.Instance.EnterDirectionsPreviewAsync("loc-2"));
 
+        // Assert
         _moduleInterop.VerifyInvoke("enterDirectionsPreview", 1);
     }
 
-    [Fact(DisplayName = "Should call exitDirectionsMode JS function")]
-    public async Task ExitDirectionsModeAsync_CallsJs()
+    [Fact(DisplayName = "Should call exitDirectionsMode JS function when invoked")]
+    public async Task ExitDirectionsModeAsync_ShouldCallExitDirectionsModeJs_WhenCalled()
     {
+        // Arrange
         var cut = _ctx.Render<NebaMap>();
 
+        // Act
         await cut.InvokeAsync(() => cut.Instance.ExitDirectionsModeAsync());
 
+        // Assert
         _moduleInterop.VerifyInvoke("exitDirectionsMode", 1);
     }
 
-    [Fact(DisplayName = "Should return route data returned by showRoute JS function")]
-    public async Task ShowRouteAsync_WhenModuleLoaded_ReturnsRouteData()
+    [Fact(DisplayName = "Should return route data when module is loaded")]
+    public async Task ShowRouteAsync_ShouldReturnRouteData_WhenModuleIsLoaded()
     {
+        // Arrange
         var expectedRoute = new RouteData { DistanceMeters = 16093.4, TravelTimeSeconds = 1200 };
         _moduleInterop.Setup<RouteData>("showRoute", _ => true).SetResult(expectedRoute);
 
@@ -210,20 +252,25 @@ public sealed class NebaMapTests : IDisposable
         var origin = new[] { -71.0589, 42.3601 };
         var destination = new[] { -71.5, 42.5 };
 
+        // Act
         var result = await cut.InvokeAsync(() => cut.Instance.ShowRouteAsync(origin, destination));
 
+        // Assert
         result.ShouldNotBeNull();
         result.DistanceMeters.ShouldBe(16093.4);
         result.TravelTimeSeconds.ShouldBe(1200);
     }
 
     [Fact(DisplayName = "Should call dispose JS function when component is disposed")]
-    public async Task DisposeAsync_CallsJsDispose()
+    public async Task DisposeAsync_ShouldCallDisposeJs_WhenDisposed()
     {
+        // Arrange
         var cut = _ctx.Render<NebaMap>();
 
+        // Act
         await cut.InvokeAsync(() => cut.Instance.DisposeAsync().AsTask());
 
+        // Assert
         _moduleInterop.VerifyInvoke("dispose", 1);
     }
 }

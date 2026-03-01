@@ -47,8 +47,8 @@ public sealed partial class UlidTypedIdConverterTests
         ((TestId)result!).Value.ShouldBe(ulid);
     }
 
-    [Fact(DisplayName = "Should preserve value when round-tripping through converter")]
-    public void RoundTrip_ShouldPreserveValue()
+    [Fact(DisplayName = "Should preserve value when converting to and from string")]
+    public void RoundTrip_ShouldPreserveValue_WhenConvertingToAndFromString()
     {
         // Arrange
         var ulid = Ulid.NewUlid();
