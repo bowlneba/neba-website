@@ -69,7 +69,7 @@ public sealed class PhoneNumberConfigurationTests
     private sealed class TestOwner
     {
         public int Id { get; init; } = 5;
-        
+
         public IReadOnlyCollection<PhoneNumber> PhoneNumbers { get; init; } = [];
     }
 

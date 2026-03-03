@@ -2,6 +2,7 @@ using Ardalis.SmartEnum.EFCore;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 using Neba.Domain.Contact;
 
 namespace Neba.Infrastructure.Database.Configurations;
@@ -18,7 +19,7 @@ internal static class PhoneNumberConfiguration
         {
             builder.Property(phone => phone.Type)
                 .HasColumnName("phone_type")
-                .HasConversion<SmartEnumConverter<PhoneNumberType,string>>()
+                .HasConversion<SmartEnumConverter<PhoneNumberType, string>>()
                 .HasMaxLength(1)
                 .IsFixedLength()
                 .IsRequired();
