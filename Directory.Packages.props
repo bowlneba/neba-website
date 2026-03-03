@@ -32,7 +32,7 @@
     <PackageVersion Include="FastEndpoints.AspVersioning" Version="8.0.1" />
     <PackageVersion Include="FastEndpoints.Swagger" Version="8.0.1" />
     <PackageVersion Include="Google.Apis.Auth" Version="1.73.0" />
-    <PackageVersion Include="Google.Apis.Drive.v3" Version="1.73.0.4045" />
+    <PackageVersion Include="Google.Apis.Drive.v3" Version="1.73.0.4068" />
     <PackageVersion Include="Hangfire.AspNetCore" Version="1.8.23" />
     <PackageVersion Include="Hangfire.InMemory" Version="1.0.0" />
     <PackageVersion Include="Hangfire.PostgreSql" Version="1.21.1" />
@@ -62,7 +62,7 @@
     <PackageVersion Include="Refit" Version="10.0.1" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="10.0.1" />
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.12.50" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.12.53" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
     <PackageVersion Include="Scrutor.AspNetCore" Version="3.3.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
