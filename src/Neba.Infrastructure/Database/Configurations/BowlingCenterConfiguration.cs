@@ -42,6 +42,9 @@ internal sealed class BowlingCenterConfiguration
 
         builder.HasAddress(bowlingCenter => bowlingCenter.Address, address =>
         {
+            address.Property(a => a.Region)
+                .HasColumnName("state");
+
             address.ComplexProperty(a => a.Coordinates)
                 .IsRequired();
         });

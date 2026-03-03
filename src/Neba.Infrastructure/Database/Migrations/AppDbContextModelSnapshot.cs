@@ -87,7 +87,7 @@ namespace Neba.Infrastructure.Database.Migrations
                                 .IsRequired()
                                 .HasMaxLength(2)
                                 .HasColumnType("character(2)")
-                                .HasColumnName("region")
+                                .HasColumnName("state")
                                 .IsFixedLength();
 
                             b1.Property<string>("Street")

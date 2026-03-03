@@ -39,7 +39,8 @@ internal sealed class AppDbContextDesignTimeFactory
             connectionString,
             npgsqlOptions => npgsqlOptions.MigrationsHistoryTable(
                 AppDbContext.MigrationsHistoryTableName,
-                AppDbContext.DefaultSchema));
+                AppDbContext.DefaultSchema))
+                .UseSnakeCaseNamingConvention();
 
         return new AppDbContext(optionsBuilder.Options);
     }

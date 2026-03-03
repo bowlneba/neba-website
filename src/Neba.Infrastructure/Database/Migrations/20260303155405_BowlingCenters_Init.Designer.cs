@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Neba.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260301190159_BowlingCenter_Init")]
-    partial class BowlingCenter_Init
+    [Migration("20260303155405_BowlingCenters_Init")]
+    partial class BowlingCenters_Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -90,7 +90,7 @@ namespace Neba.Infrastructure.Database.Migrations
                                 .IsRequired()
                                 .HasMaxLength(2)
                                 .HasColumnType("character(2)")
-                                .HasColumnName("region")
+                                .HasColumnName("state")
                                 .IsFixedLength();
 
                             b1.Property<string>("Street")

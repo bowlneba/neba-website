@@ -28,7 +28,8 @@
       "mcp__aspire__list_trace_structured_logs",
       "Bash(gh issue list:*)",
       "Bash(curl:*)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "Bash(ConnectionStrings__bowlneba='Host=localhost;Port=59171;Database=bowlneba;Username=postgres;Password=bowlneba' dotnet ef database update)"
     ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",
