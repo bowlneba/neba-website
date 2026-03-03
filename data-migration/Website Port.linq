@@ -31,7 +31,10 @@
 
 async Task Main()
 {
-	var bowlingCenterIds = await MigrateBowlingCentersAsync();
+	IReadOnlyCollection<(int Id, string CertificationNumber, int? LegacyId, int? WebsiteId)> bowlingCenterIds = [];
+	
+	//bowlingCenterIds = await MigrateBowlingCentersAsync();
+	bowlingCenterIds = BowlingCenters.ToList().Select(b => (b.Id, b.CertificationNumber, b.LegacyId, b.WebsiteId)).ToList().AsReadOnly();
 }
 
 // You can define other methods, fields, classes and namespaces here
@@ -471,6 +474,10 @@ private void ManualLocationUpdates(IReadOnlyCollection<BowlingCenters> bowlingCe
 	var bruce = bowlingCenters.Single(bc => bc.Name == "Vincent Hall Training Center");
 	bruce.Latitude = 42.322359;
 	bruce.Longitude = -71.5583947;
+	
+	var junctionBowl = bowlingCenters.Single(bc => bc.Name == "Junction Bowl");
+	junctionBowl.BowlingCenterPhoneNumbers.First().PhoneNumber = "2072227600";
+	junctionBowl.Unit = "Unit 102";
 
 	var oldMountain = bowlingCenters.Single(bc => bc.Name == "Old Mountain Lanes");
 	oldMountain.PostalCode = "02879";
