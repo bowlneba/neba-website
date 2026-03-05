@@ -278,6 +278,36 @@ public sealed class PhoneNumberTests
 
     #endregion
 
+    #region ToCanonical
+
+    [Fact(DisplayName = "ToCanonical returns country code and number when no extension")]
+    public void ToCanonical_ShouldReturnCountryCodeAndNumber_WhenNoExtension()
+    {
+        // Arrange
+        var phone = PhoneNumber.CreateNorthAmerican(PhoneNumberType.Work, "5554567890").Value;
+
+        // Act
+        var result = phone.ToCanonical();
+
+        // Assert
+        result.ShouldBe("15554567890");
+    }
+
+    [Fact(DisplayName = "ToCanonical returns country code, number, and extension separated by x when extension is present")]
+    public void ToCanonical_ShouldReturnCountryCodeNumberAndExtension_WhenExtensionIsPresent()
+    {
+        // Arrange
+        var phone = PhoneNumber.CreateNorthAmerican(PhoneNumberType.Work, "5554567890", "123").Value;
+
+        // Act
+        var result = phone.ToCanonical();
+
+        // Assert
+        result.ShouldBe("15554567890x123");
+    }
+
+    #endregion
+
     #region Record equality
 
     [Fact(DisplayName = "Two PhoneNumbers with the same type, number, and no extension are equal")]

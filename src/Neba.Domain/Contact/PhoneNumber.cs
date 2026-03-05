@@ -89,6 +89,22 @@ public sealed partial record PhoneNumber
     }
 
     /// <summary>
+    /// Formats the phone number into a canonical string representation.
+    /// </summary>
+    /// <returns>A string representing the phone number in a canonical format.</returns>
+    public string ToCanonical()
+    {
+        string formattedNumber = CountryCode + Number;
+
+        if (!string.IsNullOrEmpty(Extension))
+        {
+            formattedNumber += $"x{Extension}";
+        }
+
+        return formattedNumber;
+    }
+
+    /// <summary>
     /// Regex generator that matches any non-digit character. Used to strip formatting.
     /// </summary>
     [GeneratedRegex(@"\D")]
