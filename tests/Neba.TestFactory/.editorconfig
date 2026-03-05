@@ -5,3 +5,6 @@ dotnet_diagnostic.CA1515.severity = none
 
 # Avoid uninstantiated internal classes
 dotnet_diagnostic.CA1812.severity = none
+
+# S107 (too many parameters) is intentionally not enforced in this codebase
+dotnet_diagnostic.S107.severity = none
