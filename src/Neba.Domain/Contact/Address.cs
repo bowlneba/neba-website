@@ -1,7 +1,4 @@
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-
-using Ardalis.SmartEnum.SystemTextJson;
 
 using ErrorOr;
 
@@ -37,7 +34,6 @@ public sealed partial record Address
     /// <summary>
     /// Gets the country for the address.
     /// </summary>
-    [JsonConverter(typeof(SmartEnumValueConverter<Country, string>))]
     public Country Country { get; init; } = Country.UnitedStates;
 
     /// <summary>

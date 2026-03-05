@@ -384,36 +384,6 @@ public sealed class AddressTests
 
     #endregion
 
-    #region JSON serialization
-
-    [Fact(DisplayName = "Country property serializes to its string value for a US address")]
-    public void JsonSerialization_ShouldSerializeCountry_AsStringValue_ForUsAddress()
-    {
-        // Arrange
-        var address = Address.Create("123 Main St", unit: null, "Hartford", UsState.Connecticut, "06103").Value;
-
-        // Act
-        var json = JsonSerializer.Serialize(address);
-
-        // Assert
-        json.ShouldContain("\"US\"");
-    }
-
-    [Fact(DisplayName = "Country property serializes to its string value for a Canadian address")]
-    public void JsonSerialization_ShouldSerializeCountry_AsStringValue_ForCanadianAddress()
-    {
-        // Arrange
-        var address = Address.Create("123 Maple Ave", unit: null, "Toronto", CanadianProvince.Ontario, "M5V3A8").Value;
-
-        // Act
-        var json = JsonSerializer.Serialize(address);
-
-        // Assert
-        json.ShouldContain("\"CA\"");
-    }
-
-    #endregion
-
     #region Record equality
 
     [Fact(DisplayName = "Two US addresses with the same values are equal")]
