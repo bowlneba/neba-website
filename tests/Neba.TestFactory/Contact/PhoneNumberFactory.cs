@@ -39,13 +39,12 @@ public static class PhoneNumberFactory
             .Take(Math.Min(count, PhoneNumberType.List.Count))
             .ToArray();
 
-        return types.Select(type => Create(
+        return [.. types.Select(type => Create(
                 type: type,
                 countryCode: "1",
                 number: faker.Phone.PhoneNumber("##########"),
                 extension: faker.Random.Bool()
                     ? faker.Random.Number(1, 9999).ToString(CultureInfo.InvariantCulture)
-                    : null))
-            .ToList();
+                    : null))];
     }
 }

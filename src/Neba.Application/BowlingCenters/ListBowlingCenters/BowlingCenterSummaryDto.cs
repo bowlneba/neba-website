@@ -26,7 +26,7 @@ public sealed record BowlingCenterSummaryDto
     /// <summary>
     /// The center's physical address details, including street, city, state, and postal code, used for display and geolocation purposes. This information is essential for users to find the center and for mapping features.
     /// </summary>
-    public required AddressDto Address { get; init;}
+    public required AddressDto Address { get; init; }
 
     /// <summary>
     /// A collection of the center's primary contact phone numbers, including area codes and extensions when applicable, used for display and user contact purposes. This allows users to easily reach the center for inquiries or reservations.

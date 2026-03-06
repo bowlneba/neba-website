@@ -15,5 +15,5 @@ public sealed record PhoneNumberDto
     /// <summary>
     /// Gets the ISO country calling code for the phone number (e.g. "1" for North America).
     /// </summary>
-    public required string Number { get ; init; }
+    public required string Number { get; init; }
 }
