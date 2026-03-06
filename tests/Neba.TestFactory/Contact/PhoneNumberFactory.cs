@@ -30,18 +30,22 @@ public static class PhoneNumberFactory
 
     public static IReadOnlyCollection<PhoneNumber> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<PhoneNumber>()
-            .CustomInstantiator(f => Create(
-                type: f.PickRandom(PhoneNumberType.List.ToArray()),
+        var faker = seed.HasValue
+            ? new Faker { Random = new Randomizer(seed.Value) }
+            : new Faker();
+
+        var types = faker.Random
+            .Shuffle(PhoneNumberType.List.ToArray())
+            .Take(Math.Min(count, PhoneNumberType.List.Count))
+            .ToArray();
+
+        return types.Select(type => Create(
+                type: type,
                 countryCode: "1",
-                number: f.Phone.PhoneNumber("##########"),
-                extension: f.Random.Bool() ? f.Random.Number(1, 9999).ToString(CultureInfo.InvariantCulture) : null));
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+                number: faker.Phone.PhoneNumber("##########"),
+                extension: faker.Random.Bool()
+                    ? faker.Random.Number(1, 9999).ToString(CultureInfo.InvariantCulture)
+                    : null))
+            .ToList();
     }
 }

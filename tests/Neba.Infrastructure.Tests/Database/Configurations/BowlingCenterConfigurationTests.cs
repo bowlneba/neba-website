@@ -43,8 +43,8 @@ public sealed class BowlingCenterConfigurationTests
     [Fact(DisplayName = "OpenCentersFilter query filter is configured")]
     public void Configure_ShouldConfigureOpenCentersQueryFilter()
     {
-        _bowlingCenterType.GetQueryFilters()
-            .ShouldContain(f => f.Name == BowlingCenterConfiguration.QueryFilters.OpenCentersFilter);
+        _bowlingCenterType.GetDeclaredQueryFilters()
+            .ShouldContain(f => f.Key == BowlingCenterConfiguration.QueryFilters.OpenCentersFilter);
     }
 
     [Fact(DisplayName = "certification_number is varchar(6), not nullable")]

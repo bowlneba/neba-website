@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using Bogus;
 
 using Neba.Domain.BowlingCenters;
@@ -42,10 +44,25 @@ public static class BowlingCenterFactory
 
     public static IReadOnlyCollection<BowlingCenter> Bogus(int count, int? seed)
     {
+        var certPool = UniquePool.Create(
+            Enumerable.Range(10000, 90000).Select(i => i.ToString(CultureInfo.InvariantCulture)),
+            seed,
+            probabilityOfValue: 1.0f);
+
+        var websiteIdPool = UniquePool.Create(
+            Enumerable.Range(1, 100_000).Select(i => (int?)i),
+            seed,
+            probabilityOfValue: 0.5f);
+
+        var legacyIdPool = UniquePool.Create(
+            Enumerable.Range(100_001, 100_000).Select(i => (int?)i),
+            seed,
+            probabilityOfValue: 0.5f);
+
         var faker = new Faker<BowlingCenter>()
             .CustomInstantiator(f => new()
             {
-                CertificationNumber = CertificationNumberFactory.Create(f.Random.Replace("#####")),
+                CertificationNumber = CertificationNumberFactory.Create(certPool.GetNext()!),
                 Name = f.Company.CompanyName(),
                 Status = f.PickRandom(BowlingCenterStatus.List.ToArray()),
                 Address = AddressFactory.BogusUs(seed: seed),
@@ -53,8 +70,8 @@ public static class BowlingCenterFactory
                 EmailAddress = EmailAddressFactory.Create(f.Internet.Email()),
                 Website = new Uri(f.Internet.Url()),
                 Lanes = LaneConfigurationFactory.Bogus(seed),
-                WebsiteId = f.Random.Int(1, 1000),
-                LegacyId = f.Random.Int(1, 1000)
+                WebsiteId = websiteIdPool.GetNext(),
+                LegacyId = legacyIdPool.GetNext()
             });
 
         if (seed.HasValue)
