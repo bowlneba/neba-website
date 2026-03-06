@@ -14,6 +14,7 @@
     <ItemGroup>
       <ProjectReference Include="../../src/Neba.AppHost/Neba.AppHost.csproj" />
       <ProjectReference Include="../../src/Neba.Infrastructure/Neba.Infrastructure.csproj" />
+      <ProjectReference Include="../../src\neba.api.contracts\Neba.Api.Contracts.csproj" />
     </ItemGroup>
 
     <ItemGroup>
