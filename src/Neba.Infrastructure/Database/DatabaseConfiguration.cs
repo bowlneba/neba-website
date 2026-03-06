@@ -2,7 +2,11 @@ using EntityFramework.Exceptions.PostgreSQL;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
+using Neba.Application.BowlingCenters;
+using Neba.Infrastructure.BowlingCenters;
 
 using Npgsql;
 
@@ -40,6 +44,8 @@ internal static class DatabaseConfiguration
                 options.EnableSensitiveDataLogging();
 #endif
             });
+
+            builder.Services.AddQueries();
 
             return builder;
         }
@@ -97,6 +103,14 @@ internal static class DatabaseConfiguration
                     || value.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)
                     || value.Equals("::1", StringComparison.OrdinalIgnoreCase)
                     || value.EndsWith(".local", StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    extension(IServiceCollection services)
+    {
+        public void AddQueries()
+        {
+            services.AddScoped<IBowlingCenterQueries, BowlingCenterQueries>();
         }
     }
 }
