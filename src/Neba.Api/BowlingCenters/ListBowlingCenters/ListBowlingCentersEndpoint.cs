@@ -4,7 +4,7 @@ using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts;
-using Neba.Api.Contracts.BowlingCenters;
+using Neba.Api.Contracts.BowlingCenters.ListBowlingCenters;
 using Neba.Api.Contracts.Contact;
 using Neba.Application.BowlingCenters.ListBowlingCenters;
 using Neba.Application.Messaging;

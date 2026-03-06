@@ -1,6 +1,6 @@
 using Neba.Api.Contracts.Contact;
 
-namespace Neba.Api.Contracts.BowlingCenters;
+namespace Neba.Api.Contracts.BowlingCenters.ListBowlingCenters;
 
 /// <summary>
 /// Represents a summary of a bowling center's key details for display in lists and search results, including contact information and geolocation data for mapping. This response model is designed to provide clients with the necessary information to identify and locate bowling centers, as well as to contact them directly if needed. The inclusion of geolocation data allows for enhanced user experiences, such as displaying the center on a map or providing directions.

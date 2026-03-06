@@ -3,7 +3,7 @@ using System.Net.Mime;
 using FastEndpoints;
 
 using Neba.Api.Contracts;
-using Neba.Api.Contracts.BowlingCenters;
+using Neba.Api.Contracts.BowlingCenters.ListBowlingCenters;
 using Neba.Api.Contracts.Contact;
 
 namespace Neba.Api.BowlingCenters.ListBowlingCenters;
