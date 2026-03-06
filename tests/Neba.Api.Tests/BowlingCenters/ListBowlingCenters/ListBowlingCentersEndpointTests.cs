@@ -9,7 +9,7 @@ using Neba.TestFactory.BowlingCenters;
 namespace Neba.Api.Tests.BowlingCenters.ListBowlingCenters;
 
 [UnitTest]
-[Component("BowlingCenter")]
+[Component("BowlingCenters")]
 public sealed class ListBowlingCentersEndpointTests
 {
     [Fact(DisplayName = "HandleAsync should return OK with mapped bowling centers when query succeeds")]

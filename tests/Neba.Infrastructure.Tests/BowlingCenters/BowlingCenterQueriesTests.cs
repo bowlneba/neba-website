@@ -10,7 +10,7 @@ using Neba.TestFactory.Infrastructure;
 namespace Neba.Infrastructure.Tests.BowlingCenters;
 
 [IntegrationTest]
-[Component("BowlingCenter")]
+[Component("BowlingCenters")]
 [Collection<PostgreSqlFixture>]
 public sealed class BowlingCenterQueriesTests : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
 {

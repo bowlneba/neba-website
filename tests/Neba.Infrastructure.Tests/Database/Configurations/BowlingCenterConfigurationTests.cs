@@ -10,7 +10,7 @@ using Neba.TestFactory.Attributes;
 namespace Neba.Infrastructure.Tests.Database.Configurations;
 
 [UnitTest]
-[Component("BowlingCenter")]
+[Component("BowlingCenters")]
 public sealed class BowlingCenterConfigurationTests
 {
     private readonly IEntityType _bowlingCenterType;
