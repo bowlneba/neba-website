@@ -1,8 +1,6 @@
 using Neba.Application.Documents.GetDocument;
 using Neba.TestFactory.Attributes;
 
-using Shouldly;
-
 namespace Neba.Application.Tests.Documents.GetDocument;
 
 [UnitTest]
