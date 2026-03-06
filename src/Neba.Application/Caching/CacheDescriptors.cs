@@ -30,5 +30,21 @@ public static class CacheDescriptors
                 Tags = ["neba:documents", $"neba:document:{documentKey}"]
             };
     }
+
+    /// <summary>
+    /// Cache descriptors for bowling center data.
+    /// </summary>
+    public static class BowlingCenters
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of bowling centers, with a key and tags that allow for efficient caching and invalidation of bowling center data.
+        /// </summary>
+        public static CacheDescriptor List
+            => new()
+            {
+                Key = "neba:bowling-centers:list",
+                Tags = ["neba:bowling-centers"]
+            };
+    }
 }
 #pragma warning restore CA1724
