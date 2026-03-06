@@ -24,7 +24,7 @@ public static class PhoneNumberDtoFactory
         var faker = new Faker<PhoneNumberDto>()
             .CustomInstantiator(f => new PhoneNumberDto
             {
-                PhoneNumberType = f.PickRandom<PhoneNumberType>(),
+                PhoneNumberType = f.PickRandom(PhoneNumberType.List.ToArray()),
                 Number = f.Phone.PhoneNumber("1##########")
             });
 

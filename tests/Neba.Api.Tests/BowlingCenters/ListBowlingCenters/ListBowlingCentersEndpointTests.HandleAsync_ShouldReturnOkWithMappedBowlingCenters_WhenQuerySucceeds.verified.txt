@@ -1,0 +1,80 @@
+﻿{
+  Items: [
+    {
+      CertificationNumber: 30358,
+      Name: Klein and Sons,
+      Status: Closed,
+      Street: 04445 Kadin Summit,
+      City: Port Alfredo,
+      State: NJ,
+      PostalCode: 63415-7784,
+      Latitude: 6.3735,
+      Longitude: -177.3224,
+      PhoneNumbers: [
+        {
+          PhoneNumberType: Home,
+          PhoneNumber: 10358044459
+        },
+        {
+          PhoneNumberType: Home,
+          PhoneNumber: 18055634157
+        },
+        {
+          PhoneNumberType: Mobile,
+          PhoneNumber: 18450026585
+        }
+      ]
+    },
+    {
+      CertificationNumber: 59380,
+      Name: Larson - Nader,
+      Status: Closed,
+      Street: 04445 Kadin Summit,
+      City: Port Alfredo,
+      State: NJ,
+      PostalCode: 63415-7784,
+      Latitude: 6.3735,
+      Longitude: -177.3224,
+      PhoneNumbers: [
+        {
+          PhoneNumberType: Home,
+          PhoneNumber: 10358044459
+        },
+        {
+          PhoneNumberType: Home,
+          PhoneNumber: 18055634157
+        },
+        {
+          PhoneNumberType: Mobile,
+          PhoneNumber: 18450026585
+        }
+      ]
+    },
+    {
+      CertificationNumber: 41577,
+      Name: Kilback, Leuschke and Adams,
+      Status: Closed,
+      Street: 04445 Kadin Summit,
+      City: Port Alfredo,
+      State: NJ,
+      PostalCode: 63415-7784,
+      Latitude: 6.3735,
+      Longitude: -177.3224,
+      PhoneNumbers: [
+        {
+          PhoneNumberType: Home,
+          PhoneNumber: 10358044459
+        },
+        {
+          PhoneNumberType: Home,
+          PhoneNumber: 18055634157
+        },
+        {
+          PhoneNumberType: Mobile,
+          PhoneNumber: 18450026585
+        }
+      ]
+    }
+  ],
+  TotalItems: 3
+}
