@@ -54,7 +54,7 @@ internal sealed class ListBowlingCentersEndpoint(IQueryHandler<ListBowlingCenter
                     PhoneNumbers = [.. bc.PhoneNumbers
                         .Select(p => new PhoneNumberResponse
                         {
-                            PhoneNumberType = p.PhoneNumberType.Name,
+                            PhoneNumberType = p.PhoneNumberType,
                             PhoneNumber = p.Number,
                         })],
                 })],

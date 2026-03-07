@@ -34,7 +34,7 @@ internal sealed class BowlingCenterQueries(AppDbContext dbContext)
                 },
                 PhoneNumbers = bowlingCenter.PhoneNumbers.Select(phoneNumber => new PhoneNumberDto
                 {
-                    PhoneNumberType = phoneNumber.Type,
+                    PhoneNumberType = phoneNumber.Type.Name,
                     Number = phoneNumber.ToCanonical()
                 }).ToList()
             })

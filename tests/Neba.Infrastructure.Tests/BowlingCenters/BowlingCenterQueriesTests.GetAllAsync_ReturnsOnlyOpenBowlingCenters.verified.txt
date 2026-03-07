@@ -15,24 +15,15 @@
     },
     PhoneNumbers: [
       {
-        PhoneNumberType: {
-          Name: Fax,
-          Value: F
-        },
+        PhoneNumberType: Fax,
         Number: 10719651035
       },
       {
-        PhoneNumberType: {
-          Name: Home,
-          Value: H
-        },
+        PhoneNumberType: Home,
         Number: 12508531078
       },
       {
-        PhoneNumberType: {
-          Name: Mobile,
-          Value: M
-        },
+        PhoneNumberType: Mobile,
         Number: 15127517225x3810
       }
     ]
@@ -53,24 +44,15 @@
     },
     PhoneNumbers: [
       {
-        PhoneNumberType: {
-          Name: Fax,
-          Value: F
-        },
+        PhoneNumberType: Fax,
         Number: 10719651035
       },
       {
-        PhoneNumberType: {
-          Name: Home,
-          Value: H
-        },
+        PhoneNumberType: Home,
         Number: 12508531078
       },
       {
-        PhoneNumberType: {
-          Name: Mobile,
-          Value: M
-        },
+        PhoneNumberType: Mobile,
         Number: 15127517225x3810
       }
     ]
@@ -91,24 +73,15 @@
     },
     PhoneNumbers: [
       {
-        PhoneNumberType: {
-          Name: Fax,
-          Value: F
-        },
+        PhoneNumberType: Fax,
         Number: 10719651035
       },
       {
-        PhoneNumberType: {
-          Name: Home,
-          Value: H
-        },
+        PhoneNumberType: Home,
         Number: 12508531078
       },
       {
-        PhoneNumberType: {
-          Name: Mobile,
-          Value: M
-        },
+        PhoneNumberType: Mobile,
         Number: 15127517225x3810
       }
     ]
@@ -129,24 +102,15 @@
     },
     PhoneNumbers: [
       {
-        PhoneNumberType: {
-          Name: Fax,
-          Value: F
-        },
+        PhoneNumberType: Fax,
         Number: 10719651035
       },
       {
-        PhoneNumberType: {
-          Name: Home,
-          Value: H
-        },
+        PhoneNumberType: Home,
         Number: 12508531078
       },
       {
-        PhoneNumberType: {
-          Name: Mobile,
-          Value: M
-        },
+        PhoneNumberType: Mobile,
         Number: 15127517225x3810
       }
     ]
@@ -167,24 +131,15 @@
     },
     PhoneNumbers: [
       {
-        PhoneNumberType: {
-          Name: Fax,
-          Value: F
-        },
+        PhoneNumberType: Fax,
         Number: 10719651035
       },
       {
-        PhoneNumberType: {
-          Name: Home,
-          Value: H
-        },
+        PhoneNumberType: Home,
         Number: 12508531078
       },
       {
-        PhoneNumberType: {
-          Name: Mobile,
-          Value: M
-        },
+        PhoneNumberType: Mobile,
         Number: 15127517225x3810
       }
     ]

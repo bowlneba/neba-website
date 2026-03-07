@@ -12,7 +12,7 @@ public static class PhoneNumberDtoFactory
         string? number = null)
         => new()
         {
-            PhoneNumberType = type ?? PhoneNumberFactory.ValidType,
+            PhoneNumberType = type?.Name ?? PhoneNumberFactory.ValidType.Name,
             Number = number ?? (PhoneNumberFactory.ValidCountryCode + PhoneNumberFactory.ValidNumber)
         };
 
@@ -24,7 +24,7 @@ public static class PhoneNumberDtoFactory
         var faker = new Faker<PhoneNumberDto>()
             .CustomInstantiator(f => new PhoneNumberDto
             {
-                PhoneNumberType = f.PickRandom(PhoneNumberType.List.ToArray()),
+                PhoneNumberType = f.PickRandom(PhoneNumberType.List.Select(t => t.Name).ToArray()),
                 Number = f.Phone.PhoneNumber("1##########")
             });
 
