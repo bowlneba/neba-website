@@ -96,6 +96,9 @@ jobs:
           - test-project: tests/Neba.Infrastructure.Tests/Neba.Infrastructure.Tests.csproj
             test-name: Infrastructure Tests
             needs-integration: true
+          - test-project: tests/Neba.Architecture.Tests/Neba.Architecture.Tests.csproj
+            test-name: Architecture Tests
+            needs-integration: false
           - test-project: tests/Neba.Api.Tests/Neba.Api.Tests.csproj
             test-name: API Tests
             needs-integration: true

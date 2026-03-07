@@ -1822,6 +1822,7 @@ Career stats combine both sources transparently.
 ```
 tests/
 ├── Neba.TestFactory/           # Shared test infrastructure (factories, fixtures, traits)
+├── Neba.Architecture.Tests/    # Architecture rule enforcement (ArchUnitNET)
 ├── Neba.Api.Tests/             # API endpoint tests (unit + integration)
 ├── Neba.Application.Tests/     # Handler tests (unit + integration)
 ├── Neba.Domain.Tests/          # Domain logic tests (unit)
@@ -1838,28 +1839,14 @@ All test projects reference `Neba.TestFactory` for shared factories, fixtures, a
 Tests are categorized using custom xUnit v3 trait attributes defined in `Neba.TestFactory`:
 
 ```csharp
-// Category traits - Unit vs Integration
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
-public sealed class UnitTestAttribute : Attribute, ITraitAttribute
-{
-    public IReadOnlyCollection<KeyValuePair<string, string>> GetTraits()
-        => [new("Category", "Unit")];
-}
-
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
-public sealed class IntegrationTestAttribute : Attribute, ITraitAttribute
-{
-    public IReadOnlyCollection<KeyValuePair<string, string>> GetTraits()
-        => [new("Category", "Integration")];
-}
+// Category traits
+[UnitTest]         // Category=Unit
+[IntegrationTest]  // Category=Integration
+[ArchitectureTest] // Category=Architecture
 
 // Component trait - feature/functionality being tested
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
-public sealed class ComponentAttribute(string component) : Attribute, ITraitAttribute
-{
-    public IReadOnlyCollection<KeyValuePair<string, string>> GetTraits()
-        => [new("Component", component)];
-}
+[Component("Tournaments")]
+[Component("Tournaments.Registration")] // sub-component
 ```
 
 **Usage:**
@@ -1905,15 +1892,20 @@ dotnet run --project tests/Neba.Domain.Tests -- --filter "Category=Unit"
 dotnet run -- --filter-query "[Category=Unit]"
 ```
 
-**CI usage**: Run unit and integration tests in separate jobs for faster feedback:
+**CI usage**: Run in separate jobs for faster feedback and clear failure attribution:
 
 ```yaml
+- name: Run Architecture Tests
+  run: dotnet test --filter "Category=Architecture"
+
 - name: Run Unit Tests
   run: dotnet test --filter "Category=Unit"
 
 - name: Run Integration Tests
   run: dotnet test --filter "Category=Integration"
 ```
+
+Architecture tests run first — they're fast (milliseconds, no I/O) and catch structural violations before the full test suite runs.
 
 ### Test Naming & Display Names
 
@@ -1956,6 +1948,38 @@ public static TheoryData<int, int, decimal, int> HandicapTestCases => new()
 - Test output is readable without parsing method names
 - CI logs clearly show what failed
 - Non-technical stakeholders can understand test coverage
+
+### Architecture Tests
+
+Architecture tests live in `Neba.Architecture.Tests` and use [ArchUnitNET](https://github.com/TNG/ArchUnitNET) to enforce structural rules that code review alone cannot reliably catch. They run in milliseconds with no infrastructure required.
+
+All architecture test classes are marked `[ArchitectureTest]` and `[Component("Architecture")]`.
+
+#### What is enforced
+
+| Test class | What it guards |
+| --- | --- |
+| `LayerDependencyTests` | Clean architecture dependency direction: Domain ← Application ← Infrastructure ← Api. Domain and Application must not reference Infrastructure, Api, or Contracts. |
+| `NamingConventionTests` | `IQueryHandler` implementors → name ends with `QueryHandler`. `ICommandHandler` implementors → `CommandHandler`. `IBackgroundJobHandler` implementors → `JobHandler`. |
+| `VisibilityTests` | All handler implementations in the Application layer must be `internal`. |
+| `DependencyGuardTests` | Domain and Application must not reference EF Core, Hangfire, or Newtonsoft.Json. |
+| `ColocationTests` | Each handler class must live in the same namespace as its command/query/job type. |
+| `DomainBoundaryTests` | Domain bounded contexts must not cross-reference each other (see below). |
+
+#### Bounded context namespaces
+
+`DomainBoundaryTests` enforces that the following namespaces within `Neba.Domain` do not depend on each other:
+
+```text
+Neba.Domain.BowlingCenters
+Neba.Domain.Tournaments
+Neba.Domain.Bowlers
+Neba.Domain.Membership
+```
+
+Shared kernel namespaces (`Neba.Domain.Contact`, `Neba.Domain.Geography`) are intentionally excluded — they are designed to be used by all bounded contexts.
+
+**When adding a new bounded context**: add its namespace to `BoundedContextNamespaces` in [DomainBoundaryTests.cs](../../tests/Neba.Architecture.Tests/DomainBoundaryTests.cs). This is the only file that must be updated.
 
 ### Unit Tests
 
@@ -2405,8 +2429,6 @@ Agents should:
 
 ## Backlog
 
-- **Architecture Tests**: NetArchTest to enforce layer/folder boundaries (deferred - rely on discipline for now)
-
 ---
 
 ## Libraries & Packages
@@ -2419,6 +2441,7 @@ Agents should:
 | API Documentation | Scalar |
 | Background Jobs | Hangfire |
 | Snapshot Testing | Verify |
+| Architecture Testing | ArchUnitNET |
 | Unit Testing | xUnit, Moq, Shouldly |
 | Test Data Generation | Bogus |
 | Database Reset (Tests) | Respawn |
