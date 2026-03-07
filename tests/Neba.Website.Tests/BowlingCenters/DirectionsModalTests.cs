@@ -15,7 +15,7 @@ namespace Neba.Website.Tests.BowlingCenters;
 public sealed class DirectionsModalTests : IDisposable
 {
     private readonly BunitContext _ctx;
-    private readonly BunitJSObjectInterop _modalModuleInterop;
+    private readonly BunitJSInterop _modalModuleInterop;
 
     public DirectionsModalTests()
     {

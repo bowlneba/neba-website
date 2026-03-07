@@ -167,8 +167,10 @@ public sealed class BowlingCentersTests : IDisposable
         var cut = _ctx.Render<BowlingCentersPage>();
         var markup = cut.Markup;
 
-        markup.IndexOf("Alpha Lanes").ShouldBeLessThan(markup.IndexOf("Middle Lanes"));
-        markup.IndexOf("Middle Lanes").ShouldBeLessThan(markup.IndexOf("Zebra Lanes"));
+        markup.IndexOf("Alpha Lanes", StringComparison.Ordinal)
+            .ShouldBeLessThan(markup.IndexOf("Middle Lanes", StringComparison.Ordinal));
+        markup.IndexOf("Middle Lanes", StringComparison.Ordinal)
+            .ShouldBeLessThan(markup.IndexOf("Zebra Lanes", StringComparison.Ordinal));
     }
 
     [Fact(DisplayName = "BuildCenterDescription should join street and city line with newline when no unit")]
