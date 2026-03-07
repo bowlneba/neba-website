@@ -22,7 +22,7 @@ internal static class BowlingCenterMappingExtensions
                 Unit = response.Unit,
                 City = response.City,
                 State = response.State,
-                PostalCode = response.PostalCode,
+                PostalCode = PostalCodeFormatter.FormatForDisplay(response.PostalCode),
                 Latitude = response.Latitude,
                 Longitude = response.Longitude,
                 PhoneUri = new($"tel:{workPhoneNumber?.PhoneNumber ?? response.PhoneNumbers.First().PhoneNumber}"),

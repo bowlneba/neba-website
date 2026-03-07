@@ -142,8 +142,9 @@ public sealed class NebaSkeletonLoaderTests : IDisposable
             .Add(x => x.Size, 64));
 
         var circle = cut.Find(".neba-skeleton.rounded-full");
-        circle.GetAttribute("style").ShouldContain("width: 64px");
-        circle.GetAttribute("style").ShouldContain("height: 64px");
+        var style = circle.GetAttribute("style") ?? string.Empty;
+        style.ShouldContain("width: 64px");
+        style.ShouldContain("height: 64px");
     }
 
     [Fact(DisplayName = "Custom type renders single skeleton with default dimensions")]
@@ -153,8 +154,9 @@ public sealed class NebaSkeletonLoaderTests : IDisposable
             .Add(x => x.Type, SkeletonType.Custom));
 
         var skeleton = cut.Find(".neba-skeleton");
-        skeleton.GetAttribute("style").ShouldContain("width: 100%");
-        skeleton.GetAttribute("style").ShouldContain("height: 1rem");
+        var style = skeleton.GetAttribute("style") ?? string.Empty;
+        style.ShouldContain("width: 100%");
+        style.ShouldContain("height: 1rem");
     }
 
     [Fact(DisplayName = "Custom type renders single skeleton with specified dimensions")]
@@ -166,8 +168,9 @@ public sealed class NebaSkeletonLoaderTests : IDisposable
             .Add(x => x.Height, "600px"));
 
         var skeleton = cut.Find(".neba-skeleton");
-        skeleton.GetAttribute("style").ShouldContain("width: 50%");
-        skeleton.GetAttribute("style").ShouldContain("height: 600px");
+        var style = skeleton.GetAttribute("style") ?? string.Empty;
+        style.ShouldContain("width: 50%");
+        style.ShouldContain("height: 600px");
     }
 
     [Fact(DisplayName = "Custom type renders a single skeleton element")]

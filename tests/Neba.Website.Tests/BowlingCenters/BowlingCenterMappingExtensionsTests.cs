@@ -54,4 +54,37 @@ public sealed class BowlingCenterMappingExtensionsTests
 
         await Verify(viewModel);
     }
+
+    [Fact(DisplayName = "Passes through a five-digit US postal code unchanged")]
+    public async Task ToViewModel_ShouldPassThroughPostalCode_WhenFiveDigitUsZip()
+    {
+        var address = AddressDtoFactory.Create(postalCode: "06103");
+        var response = BowlingCenterSummaryResponseFactory.Create(address: address);
+
+        var viewModel = response.ToViewModel();
+
+        await Verify(viewModel);
+    }
+
+    [Fact(DisplayName = "Formats a nine-digit US postal code with hyphen")]
+    public async Task ToViewModel_ShouldFormatPostalCode_WhenNineDigitUsZip()
+    {
+        var address = AddressDtoFactory.Create(postalCode: "035702411");
+        var response = BowlingCenterSummaryResponseFactory.Create(address: address);
+
+        var viewModel = response.ToViewModel();
+
+        await Verify(viewModel);
+    }
+
+    [Fact(DisplayName = "Formats an unformatted Canadian postal code with space")]
+    public async Task ToViewModel_ShouldFormatPostalCode_WhenUnformattedCanadian()
+    {
+        var address = AddressDtoFactory.Create(postalCode: "K1A0B1");
+        var response = BowlingCenterSummaryResponseFactory.Create(address: address);
+
+        var viewModel = response.ToViewModel();
+
+        await Verify(viewModel);
+    }
 }
