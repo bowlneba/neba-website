@@ -2,7 +2,7 @@
 // Displays locations on an interactive map with clustering, popups, and focus capabilities
 // Note: Assumes 'atlas' is available globally from the Azure Maps SDK CDN
 
-import { trackError, createTimer } from "../wwwroot/js/telemetry-helper";
+import { trackError, createTimer } from "../js/telemetry-helper";
 
 let map = null;
 let dataSource = null;
