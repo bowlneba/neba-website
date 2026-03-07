@@ -1,6 +1,6 @@
 <Query Kind="Program">
   <Connection>
-    <ID>764b3758-bc1b-4eda-a573-7ecf60472933</ID>
+    <ID>e34b0eb3-dca3-44a7-a425-2099814c6c2d</ID>
     <NamingServiceVersion>3</NamingServiceVersion>
     <Persist>true</Persist>
     <Driver Assembly="(internal)" PublicKeyToken="no-strong-name">LINQPad.Drivers.EFCore.DynamicDriver</Driver>
@@ -8,14 +8,13 @@
     <SqlSecurity>true</SqlSecurity>
     <Server>localhost</Server>
     <UserName>postgres</UserName>
-    <Database>bowlneba</Database>
     <DisplayName>neba-website (localhost)</DisplayName>
-    <AlphabetizeColumns>true</AlphabetizeColumns>
+    <Database>bowlneba</Database>
     <DriverData>
       <EncryptSqlTraffic>True</EncryptSqlTraffic>
       <PreserveNumeric1>True</PreserveNumeric1>
       <EFProvider>Npgsql.EntityFrameworkCore.PostgreSQL</EFProvider>
-      <Port>59171</Port>
+      <Port>54070</Port>
     </DriverData>
   </Connection>
   <NuGetReference>Microsoft.Data.SqlClient</NuGetReference>
@@ -31,10 +30,16 @@
 
 async Task Main()
 {
+	BowlingCenters.RemoveRange(BowlingCenters);
+	SaveChanges();
+	
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowling_centers RESTART IDENTITY CASCADE;");
+	SaveChanges();
+	
 	IReadOnlyCollection<(int Id, string CertificationNumber, int? LegacyId, int? WebsiteId)> bowlingCenterIds = [];
 	
-	//bowlingCenterIds = await MigrateBowlingCentersAsync();
-	bowlingCenterIds = BowlingCenters.ToList().Select(b => (b.Id, b.CertificationNumber, b.LegacyId, b.WebsiteId)).ToList().AsReadOnly();
+	bowlingCenterIds = await MigrateBowlingCentersAsync();
+	//bowlingCenterIds = BowlingCenters.ToList().Select(b => (b.Id, b.CertificationNumber, b.LegacyId, b.WebsiteId)).ToList().AsReadOnly();
 }
 
 // You can define other methods, fields, classes and namespaces here
@@ -439,6 +444,9 @@ private void ManualLocationUpdates(IReadOnlyCollection<BowlingCenters> bowlingCe
 	barnBowl.City = "Oak Bluffs";
 	barnBowl.Latitude = 41.4522285;
 	barnBowl.Longitude = -70.5657132;
+	
+	var wolcottLanes = bowlingCenters.Single(bc => bc.City == "Wolcott");
+	wolcottLanes.BowlingCenterPhoneNumbers.Single().PhoneNumber = "2038791469";
 
 	var auburn = bowlingCenters.Single(bc => bc.Name == "Bowlero Worcester");
 	auburn.Latitude = 42.222311;
@@ -448,6 +456,9 @@ private void ManualLocationUpdates(IReadOnlyCollection<BowlingCenters> bowlingCe
 	cove.City = "Great Barrington";
 	cove.Latitude = 42.204971;
 	cove.Longitude = -73.347347;
+	
+	var shu = bowlingCenters.Single(bc => bc.Name == "Sacred Heart University Bowling Center");
+	shu.BowlingCenterPhoneNumbers.Single().PhoneNumber = "2033717999";
 
 	var hanscom = bowlingCenters.Single(bc => bc.Name == "Hanscom Lanes");
 	hanscom.Latitude = 42.4605193;
@@ -470,6 +481,9 @@ private void ManualLocationUpdates(IReadOnlyCollection<BowlingCenters> bowlingCe
 
 	var ryansFamilyRaynham = bowlingCenters.Single(bc => bc.Name == "Ryan's Family Amusements Raynham");
 	ryansFamilyRaynham.Street = "115 New State Highway, Rte. 44";
+	
+	var kmBowlingCenter = bowlingCenters.Single(bc => bc.Name == "K&M Bowling Center");
+	kmBowlingCenter.BowlingCenterPhoneNumbers.Single().PhoneNumber = "4133444349";
 
 	var bruce = bowlingCenters.Single(bc => bc.Name == "Vincent Hall Training Center");
 	bruce.Latitude = 42.322359;

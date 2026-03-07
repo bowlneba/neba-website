@@ -18,4 +18,14 @@ public sealed class PhoneNumberFormatterTests
 
         result.ShouldBe(expected);
     }
+
+    [Theory(DisplayName = "Returns raw number when not enough digits to format")]
+    [InlineData("1")]
+    [InlineData("555")]
+    public void FormatForDisplay_ShouldReturnRawNumber_WhenInsufficientDigits(string rawNumber)
+    {
+        var result = PhoneNumberFormatter.FormatForDisplay(rawNumber);
+
+        result.ShouldBe(rawNumber);
+    }
 }

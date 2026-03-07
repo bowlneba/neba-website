@@ -17,12 +17,15 @@ internal static class PhoneNumberFormatter
 
         var formatted = FormatDigits(digits);
 
+        if (formatted is null)
+            return rawPhoneNumber;
+
         return extension is not null
             ? $"{formatted} x{extension}"
             : formatted;
     }
 
-    private static string FormatDigits(string digits)
+    private static string? FormatDigits(string digits)
     {
         digits = new string(digits.Where(char.IsDigit).ToArray());
 
@@ -31,6 +34,9 @@ internal static class PhoneNumberFormatter
         {
             digits = digits[1..];
         }
+
+        if (digits.Length != 10)
+            return null;
 
         return $"({digits[..3]}) {digits[3..6]}-{digits[6..]}";
     }
