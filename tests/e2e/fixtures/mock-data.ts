@@ -34,21 +34,39 @@ export function createBylawsResponse(): DocumentResponse {
   });
 }
 
-// Add more mock data factories as your API grows:
-//
-// export interface Tournament {
-//   id: string;
-//   name: string;
-//   date: string;
-//   location: string;
-// }
-//
-// export function createTournament(overrides: Partial<Tournament> = {}): Tournament {
-//   return {
-//     id: crypto.randomUUID(),
-//     name: 'Test Tournament',
-//     date: new Date().toISOString(),
-//     location: 'Test Bowling Center',
-//     ...overrides,
-//   };
-// }
+export interface PhoneNumberResponse {
+  phoneNumberType: string;
+  phoneNumber: string;
+}
+
+export interface BowlingCenterSummaryResponse {
+  certificationNumber: string;
+  name: string;
+  status: string;
+  street: string;
+  unit?: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+  latitude: number;
+  longitude: number;
+  phoneNumbers: PhoneNumberResponse[];
+}
+
+export function createBowlingCenterResponse(
+  overrides: Partial<BowlingCenterSummaryResponse> = {}
+): BowlingCenterSummaryResponse {
+  return {
+    certificationNumber: '12345',
+    name: 'Lucky Strike Lanes',
+    status: 'Open',
+    street: '100 Bowling Way',
+    city: 'Boston',
+    state: 'MA',
+    postalCode: '02101',
+    latitude: 42.3601,
+    longitude: -71.0589,
+    phoneNumbers: [{ phoneNumberType: 'Work', phoneNumber: '6175550100' }],
+    ...overrides,
+  };
+}

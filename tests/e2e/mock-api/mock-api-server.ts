@@ -38,13 +38,43 @@ function sendJsonResponse(res: ServerResponse, data: unknown, statusCode = 200):
   res.end(JSON.stringify(data));
 }
 
+const MOCK_BOWLING_CENTERS = {
+  items: [
+    {
+      certificationNumber: '12345',
+      name: 'Lucky Strike Lanes',
+      status: 'Open',
+      street: '100 Bowling Way',
+      unit: null,
+      city: 'Boston',
+      state: 'MA',
+      postalCode: '02101',
+      latitude: 42.3601,
+      longitude: -71.0589,
+      phoneNumbers: [{ phoneNumberType: 'Work', phoneNumber: '6175550100' }],
+    },
+    {
+      certificationNumber: '67890',
+      name: 'Strike Zone',
+      status: 'Open',
+      street: '200 Pin Street',
+      unit: null,
+      city: 'Cambridge',
+      state: 'MA',
+      postalCode: '02139',
+      latitude: 42.3736,
+      longitude: -71.1097,
+      phoneNumbers: [{ phoneNumberType: 'Work', phoneNumber: '6175550200' }],
+    },
+  ],
+  count: 2,
+};
+
 const routes: Record<string, unknown> = {
   '/health': { status: 'healthy' },
   '/documents/tournament-rules': { html: MOCK_TOURNAMENT_RULES_HTML },
   '/documents/bylaws': { html: MOCK_BYLAWS_HTML },
-  // Add more routes as the API grows:
-  // '/tournaments': { items: [], count: 0 },
-  // '/bowling-centers': { items: [], count: 0 },
+  '/bowling-centers': MOCK_BOWLING_CENTERS,
 };
 
 function handleRequest(req: IncomingMessage, res: ServerResponse): void {
