@@ -60,7 +60,7 @@ public sealed class BowlingCenterQueriesTests : IClassFixture<PostgreSqlFixture>
 
         // Assert
         result.Count.ShouldBe(expectedOpenCount);
-        result.ShouldAllBe(c => c.Status == BowlingCenterStatus.Open);
+        result.ShouldAllBe(c => c.Status == BowlingCenterStatus.Open.Name);
         result.ShouldNotContain(c => c.CertificationNumber == "00001");
         await Verify(result.OrderBy(c => c.CertificationNumber));
     }

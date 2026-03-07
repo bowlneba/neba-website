@@ -93,6 +93,51 @@ public sealed class CachedQueryHandlerDecoratorTests
         result.ShouldBe(handlerResult);
     }
 
+    [Fact(DisplayName = "Plain response: deserialization failure falls back to handler and refreshes cache")]
+    public async Task HandleAsync_PlainResponse_DeserializationFailure_FallsBackToHandlerAndRefreshesCache()
+    {
+        var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
+        var cache = new Mock<IFusionCache>(MockBehavior.Strict);
+
+        var descriptor = CacheDescriptorFactory.Create(
+            key: "key:plain:deserialization",
+            tags: ["tag:a", "tag:b"]);
+        var query = new PlainQuery(descriptor, TimeSpan.FromMinutes(5));
+        var handlerResult = new TestResponse("fresh-after-failure");
+
+        cache
+            .SetupGet(c => c.DefaultEntryOptions)
+            .Returns(new FusionCacheEntryOptions { Duration = TimeSpan.FromHours(1) });
+
+        cache
+            .Setup(c => c.GetOrSetAsync<TestResponse>(
+                query.Cache.Key,
+                It.IsAny<Func<FusionCacheFactoryExecutionContext<TestResponse>, CancellationToken, Task<TestResponse>>>(),
+                It.IsAny<MaybeValue<TestResponse>>(),
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()))
+            .Throws(new NotSupportedException("Deserialization failed for cached entry"));
+
+        innerHandler
+            .Setup(h => h.HandleAsync(query, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(handlerResult);
+
+        cache
+            .Setup(c => c.SetAsync(
+                query.Cache.Key,
+                handlerResult,
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.Is<IEnumerable<string>>(t => t.SequenceEqual(descriptor.Tags)),
+                It.IsAny<CancellationToken>()))
+            .Returns(ValueTask.CompletedTask);
+
+        var result = await CreatePlainDecorator(innerHandler.Object, cache.Object)
+            .HandleAsync(query, CancellationToken.None);
+
+        result.ShouldBe(handlerResult);
+    }
+
     // ─── ErrorOr response ─────────────────────────────────────────────────────
 
     [Fact(DisplayName = "ErrorOr response: L1 cache hit rewraps typed object and returns it")]

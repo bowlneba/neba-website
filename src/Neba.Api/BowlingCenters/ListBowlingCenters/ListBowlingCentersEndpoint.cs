@@ -43,7 +43,7 @@ internal sealed class ListBowlingCentersEndpoint(IQueryHandler<ListBowlingCenter
                 {
                     CertificationNumber = bc.CertificationNumber,
                     Name = bc.Name,
-                    Status = bc.Status.Name,
+                    Status = bc.Status,
                     Street = bc.Address.Street,
                     Unit = bc.Address.Unit,
                     City = bc.Address.City,

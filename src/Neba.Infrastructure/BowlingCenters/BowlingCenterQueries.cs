@@ -20,7 +20,7 @@ internal sealed class BowlingCenterQueries(AppDbContext dbContext)
             {
                 CertificationNumber = bowlingCenter.CertificationNumber.Value,
                 Name = bowlingCenter.Name,
-                Status = bowlingCenter.Status,
+                Status = bowlingCenter.Status.Name,
                 Address = new AddressDto
                 {
                     Street = bowlingCenter.Address.Street,

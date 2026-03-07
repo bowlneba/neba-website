@@ -21,7 +21,7 @@ public static class BowlingCenterSummaryDtoFactory
         {
             CertificationNumber = certificationNumber ?? BowlingCenterFactory.ValidCertificationNumber,
             Name = name ?? BowlingCenterFactory.ValidName,
-            Status = status ?? BowlingCenterFactory.ValidStatus,
+            Status = status?.Name ?? BowlingCenterFactory.ValidStatus.Name,
             Address = address ?? AddressDtoFactory.Create(),
             PhoneNumbers = phoneNumbers ?? [PhoneNumberDtoFactory.Create(type: PhoneNumberType.Work)]
         };
@@ -36,7 +36,7 @@ public static class BowlingCenterSummaryDtoFactory
             {
                 CertificationNumber = f.Random.Replace("#####"),
                 Name = f.Company.CompanyName(),
-                Status = f.PickRandom(BowlingCenterStatus.List.ToArray()),
+                Status = f.PickRandom(BowlingCenterStatus.List.ToArray()).Name,
                 Address = AddressDtoFactory.Bogus(seed: seed),
                 PhoneNumbers = PhoneNumberDtoFactory.Bogus(3, seed)
             });

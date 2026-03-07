@@ -97,3 +97,10 @@ Before ending a session where significant discoveries were made, consider whethe
 
 - **No `/api` prefix** — the API is served from `api.bowlneba.com`, so routes start directly with the resource (e.g. `/documents/{DocumentName}`, not `/api/documents/{DocumentName}`)
 - **No version in path** — API versioning is handled via request headers, not URL segments (no `/v1/`, `/api/v1/`, etc.)
+
+### FusionCache Deserialization Recovery
+
+- Cached query DTOs should use serialization-safe types; do not store domain `SmartEnum` instances directly in cached DTO properties.
+- Map SmartEnum values to primitives in query projections (for example, `Status.Name` as `string`) before caching.
+- `CachedQueryHandlerDecorator` catches cache deserialization failures on plain cached queries, logs a warning, executes the inner handler, and rewrites the cache entry.
+- Keep the cache key stable unless explicitly directed otherwise; deserialization fallback handles stale entry recovery.

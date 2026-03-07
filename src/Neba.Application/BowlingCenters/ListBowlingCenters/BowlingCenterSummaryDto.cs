@@ -1,5 +1,4 @@
 using Neba.Application.Contact;
-using Neba.Domain.BowlingCenters;
 
 namespace Neba.Application.BowlingCenters.ListBowlingCenters;
 
@@ -21,7 +20,7 @@ public sealed record BowlingCenterSummaryDto
     /// <summary>
     /// The current operational status of the bowling center, indicating whether it is open, temporarily closed, permanently closed, or under renovation. This information is crucial for users to know before planning a visit.
     /// </summary>
-    public required BowlingCenterStatus Status { get; init; }
+    public required string Status { get; init; }
 
     /// <summary>
     /// The center's physical address details, including street, city, state, and postal code, used for display and geolocation purposes. This information is essential for users to find the center and for mapping features.

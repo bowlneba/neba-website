@@ -2,9 +2,7 @@
   {
     CertificationNumber: 11181,
     Name: Gleichner - Bernhard,
-    Status: {
-      Name: Open
-    },
+    Status: Open,
     Address: {
       Street: 27517 Joyce Drive,
       Unit: Apt. 533,
@@ -45,9 +43,7 @@
   {
     CertificationNumber: 18962,
     Name: Leuschke Group,
-    Status: {
-      Name: Open
-    },
+    Status: Open,
     Address: {
       Street: 27517 Joyce Drive,
       Unit: Apt. 533,
@@ -88,9 +84,7 @@
   {
     CertificationNumber: 61154,
     Name: Homenick and Sons,
-    Status: {
-      Name: Open
-    },
+    Status: Open,
     Address: {
       Street: 27517 Joyce Drive,
       Unit: Apt. 533,
@@ -131,9 +125,7 @@
   {
     CertificationNumber: 69316,
     Name: Abernathy Inc,
-    Status: {
-      Name: Open
-    },
+    Status: Open,
     Address: {
       Street: 27517 Joyce Drive,
       Unit: Apt. 533,
@@ -174,9 +166,7 @@
   {
     CertificationNumber: 98529,
     Name: Kertzmann Group,
-    Status: {
-      Name: Open
-    },
+    Status: Open,
     Address: {
       Street: 27517 Joyce Drive,
       Unit: Apt. 533,

@@ -1644,7 +1644,14 @@ public override void Configure()
 
 ### Response Caching
 
-Response caching is handled via **HybridCache in the Application layer**, not at the API endpoint level. Do not use Fast Endpoints' `ResponseCache()` method.
+Response caching is handled via **FusionCache in the Application layer**, not at the API endpoint level. Do not use Fast Endpoints' `ResponseCache()` method.
+
+Current implementation details:
+
+- Cached queries are decorated by `CachedQueryHandlerDecorator<TQuery, TResponse>`.
+- Cache payloads must be serialization-safe DTO shapes. Avoid storing domain SmartEnum types directly in cached DTO properties; map those values to primitives (for example, `Status.Name` as `string`).
+- If a cache entry cannot be deserialized (`JsonException` or deserialization-related `NotSupportedException`), the decorator logs a warning, executes the inner handler, and rewrites the cache entry with fresh data.
+- This self-heals stale distributed cache entries created by older payload shapes without requiring endpoint-level changes.
 
 ### Idempotency
 
