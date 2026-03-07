@@ -303,7 +303,8 @@
 
         if (_jsModule is not null)
         {
-            await _jsModule.DisposeAsync();
+            try { await _jsModule.DisposeAsync(); }
+            catch (JSDisconnectedException) { /* circuit disconnected during disposal — safe to ignore */ }
         }
     }
 
