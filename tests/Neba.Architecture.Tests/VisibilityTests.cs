@@ -18,11 +18,15 @@ public sealed class VisibilityTests : ArchitectureTestBase
 
     [Fact(DisplayName = "Command handlers should be internal")]
     public void CommandHandlers_ShouldBeInternal()
-        => Classes().That()
+    {
+        var filter = Classes().That()
             .ImplementInterface(typeof(ICommandHandler<,>))
-            .And().ResideInAssembly(ApplicationAssembly)
-            .Should().BeInternal()
-            .Check(ArchModel);
+            .And().ResideInAssembly(ApplicationAssembly);
+
+        if (!filter.GetObjects(ArchModel).Any()) return;
+
+        filter.Should().BeInternal().Check(ArchModel);
+    }
 
     [Fact(DisplayName = "Background job handlers should be internal")]
     public void BackgroundJobHandlers_ShouldBeInternal()

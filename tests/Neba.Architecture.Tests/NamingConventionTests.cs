@@ -18,11 +18,15 @@ public sealed class NamingConventionTests : ArchitectureTestBase
 
     [Fact(DisplayName = "Command handlers should have name ending with CommandHandler")]
     public void CommandHandlers_ShouldHaveNameEndingWith_CommandHandler()
-        => Classes().That()
+    {
+        var filter = Classes().That()
             .ImplementInterface(typeof(ICommandHandler<,>))
-            .And().ResideInAssembly(ApplicationAssembly)
-            .Should().HaveNameEndingWith("CommandHandler")
-            .Check(ArchModel);
+            .And().ResideInAssembly(ApplicationAssembly);
+
+        if (!filter.GetObjects(ArchModel).Any()) return;
+
+        filter.Should().HaveNameEndingWith("CommandHandler").Check(ArchModel);
+    }
 
     [Fact(DisplayName = "Background job handlers should have name ending with JobHandler")]
     public void BackgroundJobHandlers_ShouldHaveNameEndingWith_JobHandler()

@@ -12,37 +12,25 @@ public sealed class DomainBoundaryTests : ArchitectureTestBase
     private static readonly string[] BoundedContextNamespaces =
     [
         "Neba.Domain.BowlingCenters",
-        "Neba.Domain.Tournaments",
-        "Neba.Domain.Bowlers",
-        "Neba.Domain.Membership",
+        // Uncomment as each bounded context is implemented:
+        // "Neba.Domain.Tournaments",
+        // "Neba.Domain.Bowlers",
+        // "Neba.Domain.Membership",
     ];
 
-    [Theory(DisplayName = "Bounded context should not depend on other bounded contexts")]
-    [MemberData(nameof(GetBoundedContextPairs))]
-    public void BoundedContext_ShouldNotDependOn_OtherBoundedContext(
-        string sourceNamespace,
-        string targetNamespace)
+    [Fact(DisplayName = "Bounded context should not depend on other bounded contexts")]
+    public void BoundedContext_ShouldNotDependOn_OtherBoundedContext()
     {
-        Types().That().ResideInNamespace(sourceNamespace).Should()
-            .NotDependOnAnyTypesThat().ResideInNamespace(targetNamespace)
-            .Check(ArchModel);
-    }
-
-    public static TheoryData<string, string> GetBoundedContextPairs()
-    {
-        var pairs = new TheoryData<string, string>();
-
         for (var i = 0; i < BoundedContextNamespaces.Length; i++)
         {
             for (var j = 0; j < BoundedContextNamespaces.Length; j++)
             {
-                if (i != j)
-                {
-                    pairs.Add(BoundedContextNamespaces[i], BoundedContextNamespaces[j]);
-                }
+                if (i == j) continue;
+
+                Types().That().ResideInNamespace(BoundedContextNamespaces[i]).Should()
+                    .NotDependOnAnyTypesThat().ResideInNamespace(BoundedContextNamespaces[j])
+                    .Check(ArchModel);
             }
         }
-
-        return pairs;
     }
 }
