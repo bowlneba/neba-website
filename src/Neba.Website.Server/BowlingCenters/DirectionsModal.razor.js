@@ -62,7 +62,7 @@ export async function searchAddress(query) {
 
     try {
         // Get authentication configuration
-        const authConfig = window.azureMapsAuthConfig;
+        const authConfig = globalThis.azureMapsAuthConfig;
 
         if (!authConfig) {
             console.error('[DirectionsModal] No Azure Maps auth configuration available');
@@ -140,6 +140,87 @@ export function openInNewTab(url) {
     window.open(url, '_blank', 'noopener,noreferrer');
 }
 
+// ---------------------------------------------------------------------------
+// Route mini-map (shown inside the modal once directions are calculated)
+// ---------------------------------------------------------------------------
+
+let routeMap = null;
+
+/**
+ * Initializes a compact Azure Maps instance inside the directions modal,
+ * rendering the route line and start/end markers.
+ * @param {string} containerId - ID of the DOM element to render the map into
+ * @param {number[]} origin - [longitude, latitude] of the user's starting point
+ * @param {number[]} destination - [longitude, latitude] of the bowling center
+ * @param {string|null} routeGeoJson - GeoJSON Feature string for the route line
+ */
+export async function initializeRouteMap(containerId, origin, destination, routeGeoJson) {
+    disposeRouteMap();
+
+    const authConfig = globalThis.azureMapsAuthConfig;
+    if (!authConfig) {
+        console.error('[DirectionsModal] No Azure Maps auth config available for route map');
+        return;
+    }
+
+    const mapOptions = { language: 'en-US' };
+
+    if (authConfig.subscriptionKey) {
+        mapOptions.authOptions = { authType: 'subscriptionKey', subscriptionKey: authConfig.subscriptionKey };
+    } else if (authConfig.accountId) {
+        mapOptions.authOptions = { authType: 'aad', clientId: authConfig.accountId };
+    } else {
+        console.error('[DirectionsModal] No valid auth method available for route map');
+        return;
+    }
+
+    routeMap = new atlas.Map(containerId, mapOptions);
+
+    routeMap.events.add('ready', () => {
+        const dataSource = new atlas.source.DataSource();
+        routeMap.sources.add(dataSource);
+
+        if (routeGeoJson) {
+            dataSource.add(JSON.parse(routeGeoJson));
+            routeMap.layers.add(new atlas.layer.LineLayer(dataSource, null, {
+                strokeColor: '#0066b2',
+                strokeWidth: 4,
+                strokeOpacity: 0.8,
+                filter: ['==', ['geometry-type'], 'LineString']
+            }));
+        }
+
+        dataSource.add(new atlas.data.Feature(new atlas.data.Point(origin), { pointType: 'origin' }));
+        dataSource.add(new atlas.data.Feature(new atlas.data.Point(destination), { pointType: 'destination' }));
+
+        routeMap.layers.add(new atlas.layer.SymbolLayer(dataSource, null, {
+            iconOptions: { image: 'pin-blue', anchor: 'center', allowOverlap: true },
+            filter: ['==', ['get', 'pointType'], 'origin']
+        }));
+
+        routeMap.layers.add(new atlas.layer.SymbolLayer(dataSource, null, {
+            iconOptions: { image: 'pin-red', anchor: 'center', allowOverlap: true },
+            filter: ['==', ['get', 'pointType'], 'destination']
+        }));
+
+        const bounds = atlas.data.BoundingBox.fromData([
+            new atlas.data.Point(origin),
+            new atlas.data.Point(destination)
+        ]);
+        routeMap.setCamera({ bounds, padding: 40 });
+    });
+}
+
+/**
+ * Disposes the route mini-map instance if one exists.
+ */
+export function disposeRouteMap() {
+    if (routeMap) {
+        routeMap.dispose();
+        routeMap = null;
+    }
+}
+
 /**
  * Gets an Azure AD access token for Azure Maps API calls
  * In production with Azure App Service, this uses the built-in authentication
@@ -157,7 +238,7 @@ async function getAzureADToken() {
 
         const data = await response.json();
 
-        if (data && data[0] && data[0].access_token) {
+        if (data?.[0]?.access_token) {
             return data[0].access_token;
         }
 

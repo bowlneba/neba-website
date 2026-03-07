@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach, jest } from '@jest/globals';
-import { getCurrentLocation, searchAddress, openInNewTab } from './DirectionsModal.razor.js';
+import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { getCurrentLocation, searchAddress, openInNewTab, initializeRouteMap, disposeRouteMap } from './DirectionsModal.razor.js';
 
 describe('DirectionsModal', () => {
   beforeEach(() => {
@@ -10,7 +10,7 @@ describe('DirectionsModal', () => {
     globalThis.window.open = jest.fn();
 
     // Reset Azure Maps auth config
-    delete globalThis.window.azureMapsAuthConfig;
+    delete globalThis.azureMapsAuthConfig;
   });
 
   describe('getCurrentLocation', () => {
@@ -187,7 +187,7 @@ describe('DirectionsModal', () => {
 
     test('should search with subscription key authentication', async () => {
       // Arrange
-      globalThis.window.azureMapsAuthConfig = {
+      globalThis.azureMapsAuthConfig = {
         subscriptionKey: 'test-key-123'
       };
 
@@ -228,7 +228,7 @@ describe('DirectionsModal', () => {
 
     test('should return empty array when API returns error', async () => {
       // Arrange
-      globalThis.window.azureMapsAuthConfig = {
+      globalThis.azureMapsAuthConfig = {
         subscriptionKey: 'test-key-123'
       };
 
@@ -250,7 +250,7 @@ describe('DirectionsModal', () => {
 
     test('should return empty array when no results found', async () => {
       // Arrange
-      globalThis.window.azureMapsAuthConfig = {
+      globalThis.azureMapsAuthConfig = {
         subscriptionKey: 'test-key-123'
       };
 
@@ -270,7 +270,7 @@ describe('DirectionsModal', () => {
 
     test('should handle fetch exception gracefully', async () => {
       // Arrange
-      globalThis.window.azureMapsAuthConfig = {
+      globalThis.azureMapsAuthConfig = {
         subscriptionKey: 'test-key-123'
       };
 
@@ -285,7 +285,7 @@ describe('DirectionsModal', () => {
 
     test('should limit results to 5', async () => {
       // Arrange
-      globalThis.window.azureMapsAuthConfig = {
+      globalThis.azureMapsAuthConfig = {
         subscriptionKey: 'test-key-123'
       };
 
@@ -304,7 +304,7 @@ describe('DirectionsModal', () => {
 
     test('should restrict search to US', async () => {
       // Arrange
-      globalThis.window.azureMapsAuthConfig = {
+      globalThis.azureMapsAuthConfig = {
         subscriptionKey: 'test-key-123'
       };
 
@@ -323,7 +323,7 @@ describe('DirectionsModal', () => {
 
     test('should use Azure AD authentication when accountId is provided', async () => {
       // Arrange
-      globalThis.window.azureMapsAuthConfig = {
+      globalThis.azureMapsAuthConfig = {
         accountId: 'test-account-id'
       };
 
@@ -363,7 +363,7 @@ describe('DirectionsModal', () => {
 
     test('should return empty array when Azure AD token fetch fails', async () => {
       // Arrange
-      globalThis.window.azureMapsAuthConfig = {
+      globalThis.azureMapsAuthConfig = {
         accountId: 'test-account-id'
       };
 
@@ -382,7 +382,7 @@ describe('DirectionsModal', () => {
 
     test('should return empty array when Azure AD token is missing', async () => {
       // Arrange
-      globalThis.window.azureMapsAuthConfig = {
+      globalThis.azureMapsAuthConfig = {
         accountId: 'test-account-id'
       };
 
@@ -400,7 +400,7 @@ describe('DirectionsModal', () => {
 
     test('should handle Azure AD token fetch exception', async () => {
       // Arrange
-      globalThis.window.azureMapsAuthConfig = {
+      globalThis.azureMapsAuthConfig = {
         accountId: 'test-account-id'
       };
 
@@ -415,7 +415,7 @@ describe('DirectionsModal', () => {
 
     test('should handle empty auth response array', async () => {
       // Arrange
-      globalThis.window.azureMapsAuthConfig = {
+      globalThis.azureMapsAuthConfig = {
         accountId: 'test-account-id'
       };
 
@@ -429,6 +429,147 @@ describe('DirectionsModal', () => {
 
       // Assert
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('initializeRouteMap', () => {
+    let mockMap;
+    let mockDataSource;
+
+    beforeEach(() => {
+      mockDataSource = { add: jest.fn() };
+      mockMap = {
+        events: { add: jest.fn((event, cb) => { if (event === 'ready') cb(); }) },
+        sources: { add: jest.fn() },
+        layers: { add: jest.fn() },
+        setCamera: jest.fn(),
+        dispose: jest.fn(),
+      };
+      globalThis.atlas = {
+        Map: jest.fn(() => mockMap),
+        source: { DataSource: jest.fn(() => mockDataSource) },
+        layer: { LineLayer: jest.fn(), SymbolLayer: jest.fn() },
+        data: {
+          Feature: jest.fn((geometry, props) => ({ geometry, properties: props })),
+          Point: jest.fn((coords) => ({ type: 'Point', coordinates: coords })),
+          BoundingBox: { fromData: jest.fn(() => [-72, 41, -70, 43]) },
+        },
+      };
+      globalThis.azureMapsAuthConfig = { subscriptionKey: 'test-key' };
+    });
+
+    afterEach(() => {
+      disposeRouteMap();
+      delete globalThis.atlas;
+      delete globalThis.azureMapsAuthConfig;
+    });
+
+    test('does nothing when no auth config is available', async () => {
+      delete globalThis.azureMapsAuthConfig;
+
+      await initializeRouteMap('map-id', [-71, 42], [-70, 43], null);
+
+      expect(globalThis.atlas.Map).not.toHaveBeenCalled();
+    });
+
+    test('creates an atlas Map with subscription key auth', async () => {
+      await initializeRouteMap('map-id', [-71, 42], [-70, 43], null);
+
+      expect(globalThis.atlas.Map).toHaveBeenCalledWith(
+        'map-id',
+        expect.objectContaining({
+          authOptions: expect.objectContaining({ subscriptionKey: 'test-key' }),
+        }),
+      );
+    });
+
+    test('creates an atlas Map with AAD auth when accountId is provided', async () => {
+      globalThis.azureMapsAuthConfig = { accountId: 'my-account' };
+
+      await initializeRouteMap('map-id', [-71, 42], [-70, 43], null);
+
+      expect(globalThis.atlas.Map).toHaveBeenCalledWith(
+        'map-id',
+        expect.objectContaining({
+          authOptions: expect.objectContaining({ clientId: 'my-account' }),
+        }),
+      );
+    });
+
+    test('does nothing when auth config has neither subscriptionKey nor accountId', async () => {
+      globalThis.azureMapsAuthConfig = {};
+
+      await initializeRouteMap('map-id', [-71, 42], [-70, 43], null);
+
+      expect(globalThis.atlas.Map).not.toHaveBeenCalled();
+    });
+
+    test('adds a LineLayer when routeGeoJson is provided', async () => {
+      const routeGeoJson = JSON.stringify({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: [[-71, 42], [-70, 43]] },
+        properties: {},
+      });
+
+      await initializeRouteMap('map-id', [-71, 42], [-70, 43], routeGeoJson);
+
+      expect(globalThis.atlas.layer.LineLayer).toHaveBeenCalled();
+    });
+
+    test('skips LineLayer when routeGeoJson is null', async () => {
+      await initializeRouteMap('map-id', [-71, 42], [-70, 43], null);
+
+      expect(globalThis.atlas.layer.LineLayer).not.toHaveBeenCalled();
+    });
+
+    test('adds two SymbolLayers for origin and destination', async () => {
+      await initializeRouteMap('map-id', [-71, 42], [-70, 43], null);
+
+      expect(globalThis.atlas.layer.SymbolLayer).toHaveBeenCalledTimes(2);
+    });
+
+    test('fits camera to origin and destination bounds', async () => {
+      await initializeRouteMap('map-id', [-71, 42], [-70, 43], null);
+
+      expect(mockMap.setCamera).toHaveBeenCalledWith(
+        expect.objectContaining({ bounds: expect.anything(), padding: 40 }),
+      );
+    });
+  });
+
+  describe('disposeRouteMap', () => {
+    test('does nothing when no route map has been initialized', () => {
+      expect(() => disposeRouteMap()).not.toThrow();
+    });
+
+    test('disposes the atlas Map instance after initializeRouteMap', async () => {
+      const mockDispose = jest.fn();
+      const mockMap = {
+        events: { add: jest.fn((event, cb) => { if (event === 'ready') cb(); }) },
+        sources: { add: jest.fn() },
+        layers: { add: jest.fn() },
+        setCamera: jest.fn(),
+        dispose: mockDispose,
+      };
+      globalThis.atlas = {
+        Map: jest.fn(() => mockMap),
+        source: { DataSource: jest.fn(() => ({ add: jest.fn() })) },
+        layer: { LineLayer: jest.fn(), SymbolLayer: jest.fn() },
+        data: {
+          Feature: jest.fn((g, p) => ({ geometry: g, properties: p })),
+          Point: jest.fn((c) => ({ type: 'Point', coordinates: c })),
+          BoundingBox: { fromData: jest.fn(() => [-72, 41, -70, 43]) },
+        },
+      };
+      globalThis.azureMapsAuthConfig = { subscriptionKey: 'test-key' };
+
+      await initializeRouteMap('map-id', [-71, 42], [-70, 43], null);
+      disposeRouteMap();
+
+      expect(mockDispose).toHaveBeenCalled();
+
+      delete globalThis.atlas;
+      delete globalThis.azureMapsAuthConfig;
     });
   });
 

@@ -15,12 +15,13 @@ namespace Neba.Website.Tests.BowlingCenters;
 public sealed class DirectionsModalTests : IDisposable
 {
     private readonly BunitContext _ctx;
+    private readonly BunitJSObjectInterop _modalModuleInterop;
 
     public DirectionsModalTests()
     {
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
-        _ctx.JSInterop.SetupModule("./BowlingCenters/DirectionsModal.razor.js");
+        _modalModuleInterop = _ctx.JSInterop.SetupModule("./BowlingCenters/DirectionsModal.razor.js");
         _ctx.JSInterop.SetupModule("./Components/NebaModal.razor.js");
     }
 
@@ -155,5 +156,95 @@ public sealed class DirectionsModalTests : IDisposable
         await cut.InvokeAsync(() => cancelButton.Click());
 
         closeCalled.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "Should render route mini-map container when DirectionsActive and RouteGeoJson is set")]
+    public void Render_ShouldShowRouteMapContainer_WhenDirectionsActiveWithGeoJson()
+    {
+        var state = new DirectionsState
+        {
+            Mode = MapMode.DirectionsActive,
+            UserLocation = [-71.0589, 42.3601],
+            DestinationLocation = [-71.5, 42.5],
+            Route = new ServerMaps.RouteData
+            {
+                DistanceMeters = 16093.4,
+                TravelTimeSeconds = 1200,
+                RouteGeoJson = "{\"type\":\"Feature\"}"
+            }
+        };
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        cut.Find("#directions-mini-map").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should not render route mini-map container when RouteGeoJson is null")]
+    public void Render_ShouldNotShowRouteMapContainer_WhenRouteGeoJsonIsNull()
+    {
+        var state = new DirectionsState
+        {
+            Mode = MapMode.DirectionsActive,
+            Route = new ServerMaps.RouteData
+            {
+                DistanceMeters = 16093.4,
+                TravelTimeSeconds = 1200,
+                RouteGeoJson = null
+            }
+        };
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        cut.FindAll("#directions-mini-map").Count.ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "Should call initializeRouteMap JS function when DirectionsActive with RouteGeoJson")]
+    public void OnAfterRender_ShouldCallInitializeRouteMap_WhenDirectionsActiveWithGeoJson()
+    {
+        var state = new DirectionsState
+        {
+            Mode = MapMode.DirectionsActive,
+            UserLocation = [-71.0589, 42.3601],
+            DestinationLocation = [-71.5, 42.5],
+            Route = new ServerMaps.RouteData
+            {
+                DistanceMeters = 16093.4,
+                TravelTimeSeconds = 1200,
+                RouteGeoJson = "{\"type\":\"Feature\"}"
+            }
+        };
+
+        _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        _modalModuleInterop.VerifyInvoke("initializeRouteMap", 1);
+    }
+
+    [Fact(DisplayName = "Should call disposeRouteMap JS function when Close button is clicked")]
+    public async Task HandleClose_ShouldCallDisposeRouteMap_WhenClosed()
+    {
+        var state = new DirectionsState { Mode = MapMode.DirectionsPreview };
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        var cancelButton = cut.FindAll(".neba-btn-secondary").First(b => b.TextContent.Trim() == "Cancel");
+        await cut.InvokeAsync(() => cancelButton.Click());
+
+        _modalModuleInterop.VerifyInvoke("disposeRouteMap", 1);
     }
 }

@@ -1,11 +1,12 @@
 @implements IAsyncDisposable
 
 @inject IJSRuntime JSRuntime
+@inject ILogger<DirectionsModal> Logger
 
 <NebaModal IsOpen="@IsOpen"
            OnClose="@HandleClose"
            Title="@($"Directions to {State.SelectedCenterName}")"
-           MaxWidth="600px">
+           MaxWidth="700px">
     <ChildContent>
         @if (State.Mode == MapMode.DirectionsPreview)
         {
@@ -150,6 +151,14 @@
                         </div>
                     }
                 </div>
+
+                <!-- Route Mini-Map -->
+                @if (State.Route.RouteGeoJson is not null)
+                {
+                    <div id="directions-mini-map"
+                         style="height: 260px; width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid var(--neba-gray-300);">
+                    </div>
+                }
             </div>
         }
     </ChildContent>
@@ -169,6 +178,7 @@
     private string _addressInput = string.Empty;
     private List<AddressSuggestion> _addressSuggestions = new();
     private bool _showDirections = false;
+    private bool _routeMapInitialized = false;
     private System.Threading.CancellationTokenSource? _searchCts;
 
     [Parameter, EditorRequired]
@@ -188,6 +198,33 @@
         if (firstRender)
         {
             _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./BowlingCenters/DirectionsModal.razor.js");
+        }
+
+        if (_jsModule is not null
+            && State.Mode == MapMode.DirectionsActive
+            && State.Route?.RouteGeoJson is not null
+            && !_routeMapInitialized)
+        {
+            try
+            {
+                await _jsModule.InvokeVoidAsync(
+                    "initializeRouteMap",
+                    "directions-mini-map",
+                    State.UserLocation,
+                    State.DestinationLocation,
+                    State.Route.RouteGeoJson);
+
+                _routeMapInitialized = true;
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit disconnected during render; no local recovery needed.
+            }
+            catch (JSException ex)
+            {
+                Logger.LogWarning(ex, "[DirectionsModal] Failed to initialize route mini-map");
+                _routeMapInitialized = false;
+            }
         }
     }
 
@@ -290,6 +327,24 @@
         _addressInput = string.Empty;
         _addressSuggestions.Clear();
         _showDirections = false;
+        _routeMapInitialized = false;
+
+        if (_jsModule is not null)
+        {
+            try
+            {
+                await _jsModule.InvokeVoidAsync("disposeRouteMap");
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit disconnected; nothing to dispose in the current session.
+            }
+            catch (JSException ex)
+            {
+                Logger.LogWarning(ex, "[DirectionsModal] Failed to dispose route mini-map");
+            }
+        }
+
         await OnClose.InvokeAsync();
     }
 
@@ -303,7 +358,11 @@
 
         if (_jsModule is not null)
         {
-            try { await _jsModule.DisposeAsync(); }
+            try
+            {
+                await _jsModule.InvokeVoidAsync("disposeRouteMap");
+                await _jsModule.DisposeAsync();
+            }
             catch (JSDisconnectedException) { /* circuit disconnected during disposal — safe to ignore */ }
         }
     }

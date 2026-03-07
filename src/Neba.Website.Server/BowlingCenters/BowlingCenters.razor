@@ -427,10 +427,16 @@
         }
     }
 
-    private Task HandleDirectionsClose()
+    private async Task HandleDirectionsClose()
     {
         _showDirectionsModal = false;
-        return Task.CompletedTask;
+
+        if (_mapComponent is not null)
+        {
+            await _mapComponent.ExitDirectionsModeAsync();
+        }
+
+        _directionsState.Reset();
     }
 
     private async Task HandleMapStyleChange(string style)

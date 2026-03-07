@@ -13,10 +13,6 @@ let boundsChangeTimeout = null; // Timeout for debouncing bounds changes
 let lastLocationHash = null; // Hash of last locations to detect changes
 let markerClickInProgress = false; // Flag to track if a marker/cluster was just clicked
 
-// Directions mode state
-let routeDataSource = null; // Data source for route line
-let routeLayer = null; // Layer for route display
-let startMarker = null; // Starting location marker
 let subscriptionKey = null; // Azure Maps subscription key (stored for routing API)
 
 // NOTE: Module-level state means only one NebaMap instance per page is supported.
@@ -455,6 +451,44 @@ export function enterDirectionsPreview(locationId) {
 }
 
 /**
+ * Builds a compact, interop-safe route coordinate list.
+ * Long routes can exceed SignalR message limits if every point is returned to .NET.
+ * @param {Object} route - Azure Maps route object
+ * @param {number} maxPoints - Maximum number of points to keep
+ * @returns {Array<Array<number>>} Array of [longitude, latitude] coordinate pairs
+ */
+function buildCompactRouteCoordinates(route, maxPoints = 220) {
+    const rawPoints = (route?.legs ?? []).flatMap(leg => leg?.points ?? []);
+
+    const coordinates = rawPoints
+        .filter(point => point?.longitude !== null && point?.longitude !== undefined)
+        .filter(point => point?.latitude !== null && point?.latitude !== undefined)
+        .map(point => [Number(point?.longitude), Number(point?.latitude)])
+        .filter(([longitude, latitude]) => Number.isFinite(longitude) && Number.isFinite(latitude))
+        .map(([longitude, latitude]) => [
+            Number(longitude.toFixed(6)),
+            Number(latitude.toFixed(6))
+        ]);
+
+    if (coordinates.length <= maxPoints) {
+        return coordinates;
+    }
+
+    const sampledCoordinates = [];
+    const lastIndex = coordinates.length - 1;
+    const step = lastIndex / (maxPoints - 1);
+
+    for (let i = 0; i < maxPoints; i += 1) {
+        sampledCoordinates.push(coordinates[Math.round(i * step)]);
+    }
+
+    sampledCoordinates[0] = coordinates[0];
+    sampledCoordinates[sampledCoordinates.length - 1] = coordinates[lastIndex];
+
+    return sampledCoordinates;
+}
+
+/**
  * Calculates and displays a route from origin to destination using Azure Maps Route API
  * @param {number[]} origin - Origin coordinates [longitude, latitude]
  * @param {number[]} destination - Destination coordinates [longitude, latitude]
@@ -504,7 +538,15 @@ export async function showRoute(origin, destination) {
             headers['x-ms-client-id'] = authConfig.accountId;
         }
 
-        const response = await fetch(url, { headers });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+        let response;
+        try {
+            response = await fetch(url, { headers, signal: controller.signal });
+        } finally {
+            clearTimeout(timeoutId);
+        }
 
         if (!response.ok) {
             const error = new Error(`Route API error: ${response.status} ${response.statusText}`);
@@ -540,14 +582,33 @@ export async function showRoute(origin, destination) {
             }));
         }
 
+        const routeCoordinates = buildCompactRouteCoordinates(route);
+        const originalPointCount = (route?.legs ?? []).reduce((count, leg) => count + (leg?.points?.length ?? 0), 0);
+
+        const routeGeoJson = routeCoordinates.length >= 2
+            ? JSON.stringify({
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: routeCoordinates },
+                properties: {}
+            })
+            : null;
+
+        if (routeCoordinates.length < originalPointCount) {
+            console.log('[NebaMap] Compacted route geometry for interop payload:', {
+                originalPointCount,
+                compactPointCount: routeCoordinates.length,
+                routeGeoJsonLength: routeGeoJson?.length ?? 0
+            });
+        }
+
         const routeData = {
             DistanceMeters: summary.lengthInMeters,
             TravelTimeSeconds: summary.travelTimeInSeconds,
             Instructions: instructions,
-            RouteGeoJson: null
+            RouteGeoJson: routeGeoJson
         };
 
-        drawRoute(route, origin, destination);
+        // Route is rendered in the directions modal mini-map (initializeRouteMap in DirectionsModal.razor.js)
 
         timer.stop(true, {
             distance_meters: summary.lengthInMeters,
@@ -558,6 +619,13 @@ export async function showRoute(origin, destination) {
         console.log('[NebaMap] Route calculated:', routeData);
         return routeData;
     } catch (error) {
+        if (error.name === 'AbortError') {
+            console.error('[NebaMap] Route calculation timed out');
+            const timedOut = new Error('Route calculation timed out. Please try again.');
+            trackError(timedOut.message, 'map.route', timedOut.stack);
+            timer.stop(false, { error: 'timeout' });
+            throw timedOut;
+        }
         console.error('[NebaMap] Error calculating route:', error);
         trackError(error.message, 'map.route', error.stack);
         timer.stop(false, { error: error.message });
@@ -566,87 +634,19 @@ export async function showRoute(origin, destination) {
 }
 
 /**
- * Draws the route line and start marker on the map
- */
-function drawRoute(route, origin, destination) {
-    if (!routeDataSource) {
-        routeDataSource = new atlas.source.DataSource();
-        map.sources.add(routeDataSource);
-
-        routeLayer = new atlas.layer.LineLayer(routeDataSource, null, {
-            strokeColor: '#0066b2',
-            strokeWidth: 5,
-            strokeOpacity: 0.8
-        });
-        map.layers.add(routeLayer, 'labels');
-    }
-
-    routeDataSource.clear();
-
-    const routeLine = route.legs[0].points.map(p => [p.longitude, p.latitude]);
-    routeDataSource.add(new atlas.data.Feature(
-        new atlas.data.LineString(routeLine)
-    ));
-
-    const startPoint = new atlas.data.Feature(
-        new atlas.data.Point(origin),
-        { type: 'start' }
-    );
-    routeDataSource.add(startPoint);
-
-    if (!startMarker) {
-        startMarker = new atlas.layer.SymbolLayer(routeDataSource, null, {
-            iconOptions: {
-                image: 'pin-blue',
-                anchor: 'center',
-                size: 1
-            },
-            filter: ['==', ['get', 'type'], 'start']
-        });
-        map.layers.add(startMarker);
-    }
-
-    const bounds = atlas.data.BoundingBox.fromData([
-        new atlas.data.Point(origin),
-        new atlas.data.Point(destination)
-    ]);
-
-    map.setCamera({
-        bounds: bounds,
-        padding: 80,
-        type: 'ease',
-        duration: 1000
-    });
-}
-
-/**
  * Exits directions mode and returns to overview
  */
 export function exitDirectionsMode() {
     console.log('[NebaMap] Exiting directions mode');
 
-    if (routeLayer) {
-        map.layers.remove(routeLayer);
-        routeLayer = null;
+    if (!map) {
+        console.warn('[NebaMap] Cannot exit directions mode - map not initialized');
+        return;
     }
 
-    if (startMarker) {
-        map.layers.remove(startMarker);
-        startMarker = null;
-    }
-
-    if (routeDataSource) {
-        map.sources.remove(routeDataSource);
-        routeDataSource = null;
-    }
-
-    const symbolLayers = map.layers.getLayers().filter(l => l instanceof atlas.layer.SymbolLayer);
+    const symbolLayers = (map.layers?.getLayers?.() ?? []).filter(l => l instanceof atlas.layer.SymbolLayer);
     symbolLayers.forEach(layer => {
-        layer.setOptions({
-            iconOptions: {
-                opacity: 1
-            }
-        });
+        layer.setOptions({ iconOptions: { opacity: 1 } });
     });
 
     fitBounds();
@@ -711,21 +711,6 @@ export function dispose() {
     if (currentPopup) {
         currentPopup.close();
         currentPopup = null;
-    }
-
-    if (routeLayer) {
-        map?.layers.remove(routeLayer);
-        routeLayer = null;
-    }
-
-    if (startMarker) {
-        map?.layers.remove(startMarker);
-        startMarker = null;
-    }
-
-    if (routeDataSource) {
-        map?.sources.remove(routeDataSource);
-        routeDataSource = null;
     }
 
     if (map) {

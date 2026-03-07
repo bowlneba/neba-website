@@ -636,17 +636,103 @@ describe('NebaMap', () => {
 
       expect(globalThis.fetch.mock.calls[0][0]).toContain('query=42,-71:43,-70');
     });
+
+    test('populates RouteGeoJson with a LineString built from route leg points', async () => {
+      await createInitializedMap();
+      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+
+      expect(result.RouteGeoJson).not.toBeNull();
+      const geoJson = JSON.parse(result.RouteGeoJson);
+      expect(geoJson.geometry.type).toBe('LineString');
+      expect(geoJson.geometry.coordinates).toEqual([[-71, 42], [-70, 43]]);
+    });
+
+    test('compacts route geometry payload for long routes', async () => {
+      await createInitializedMap();
+
+      const points = Array.from({ length: 1200 }, (_, i) => ({
+        longitude: -71 + (i * 0.001),
+        latitude: 42 + (i * 0.001),
+      }));
+
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          routes: [
+            {
+              summary: { lengthInMeters: 5000, travelTimeInSeconds: 300 },
+              guidance: { instructions: [] },
+              legs: [{ points }],
+            },
+          ],
+        }),
+      });
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+      const geoJson = JSON.parse(result.RouteGeoJson);
+      const coordinates = geoJson.geometry.coordinates;
+
+      expect(coordinates.length).toBeLessThanOrEqual(220);
+      expect(coordinates[0]).toEqual([-71, 42]);
+
+      const lastPoint = points.at(-1);
+      expect(coordinates.at(-1)).toEqual([
+        Number(lastPoint.longitude.toFixed(6)),
+        Number(lastPoint.latitude.toFixed(6)),
+      ]);
+    });
+
+    test('filters invalid route geometry points before creating RouteGeoJson', async () => {
+      await createInitializedMap();
+
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          routes: [
+            {
+              summary: { lengthInMeters: 1500, travelTimeInSeconds: 120 },
+              guidance: { instructions: [] },
+              legs: [
+                {
+                  points: [
+                    { longitude: null, latitude: 42 },
+                    { longitude: -71, latitude: 42 },
+                    { longitude: -70, latitude: 43 },
+                  ],
+                },
+              ],
+            },
+          ],
+        }),
+      });
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+      const geoJson = JSON.parse(result.RouteGeoJson);
+
+      expect(geoJson.geometry.coordinates).toEqual([[-71, 42], [-70, 43]]);
+    });
   });
 
   // -------------------------------------------------------------------------
   describe('exitDirectionsMode', () => {
+    test('warns and no-ops when map is not initialized', () => {
+      dispose();
+
+      expect(() => exitDirectionsMode()).not.toThrow();
+      expect(console.warn).toHaveBeenCalledWith(
+        '[NebaMap] Cannot exit directions mode - map not initialized',
+      );
+    });
+
     test('is safe to call when no route is active', async () => {
       await createInitializedMap();
 
       expect(() => exitDirectionsMode()).not.toThrow();
     });
 
-    test('removes route layer and data source after showRoute', async () => {
+    test('does not remove map layers or sources after showRoute', async () => {
       const { mockMap } = await createInitializedMap();
       globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
       await showRoute([-71, 42], [-70, 43]);
@@ -656,8 +742,8 @@ describe('NebaMap', () => {
 
       exitDirectionsMode();
 
-      expect(mockMap.layers.remove).toHaveBeenCalled();
-      expect(mockMap.sources.remove).toHaveBeenCalled();
+      expect(mockMap.layers.remove).not.toHaveBeenCalled();
+      expect(mockMap.sources.remove).not.toHaveBeenCalled();
     });
 
     test('restores full opacity on all symbol layers', async () => {

@@ -198,7 +198,18 @@
     {
         if (_jsModule is not null)
         {
-            await _jsModule.InvokeVoidAsync("exitDirectionsMode");
+            try
+            {
+                await _jsModule.InvokeVoidAsync("exitDirectionsMode");
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit disconnected; nothing to clean up client-side.
+            }
+            catch (JSException ex)
+            {
+                Logger.LogWarning(ex, "[NebaMap] Error exiting directions mode");
+            }
         }
     }
 
