@@ -27,7 +27,7 @@ internal sealed class BowlingCenterQueries(AppDbContext dbContext)
                     Unit = bowlingCenter.Address.Unit,
                     City = bowlingCenter.Address.City,
                     Region = bowlingCenter.Address.Region,
-                    Country = bowlingCenter.Address.Country,
+                    Country = bowlingCenter.Address.Country.Value,
                     PostalCode = bowlingCenter.Address.PostalCode,
                     Latitude = bowlingCenter.Address.Coordinates!.Latitude,
                     Longitude = bowlingCenter.Address.Coordinates.Longitude

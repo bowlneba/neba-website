@@ -21,7 +21,7 @@ public static class AddressDtoFactory
             Unit = unit,
             City = city ?? AddressFactory.ValidCity,
             Region = region ?? AddressFactory.ValidUsState.Value,
-            Country = country ?? Country.UnitedStates,
+            Country = country?.Value ?? Country.UnitedStates.Value,
             PostalCode = postalCode ?? AddressFactory.ValidZipCode,
             Latitude = latitude,
             Longitude = longitude
@@ -39,7 +39,7 @@ public static class AddressDtoFactory
                 Unit = f.Random.Bool() ? f.Address.SecondaryAddress() : null,
                 City = f.Address.City(),
                 Region = f.Address.StateAbbr(),
-                Country = Country.UnitedStates,
+                Country = Country.UnitedStates.Value,
                 PostalCode = f.Address.ZipCode(),
                 Latitude = f.Address.Latitude(),
                 Longitude = f.Address.Longitude()

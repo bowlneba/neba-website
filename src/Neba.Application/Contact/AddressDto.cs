@@ -1,5 +1,3 @@
-using Neba.Domain.Contact;
-
 namespace Neba.Application.Contact;
 
 /// <summary>
@@ -30,7 +28,7 @@ public sealed record AddressDto
     /// <summary>
     /// Country for the address (required). Use a valid ISO 3166-1 alpha-2 country code (e.g., "US" for United States) or a recognized country name. For U.S. addresses, this should be "United States".
     /// </summary>
-    public required Country Country { get; init; }
+    public required string Country { get; init; }
 
     /// <summary>
     /// Postal code or ZIP code for the address (required). For U.S. addresses, this should be a valid five-digit ZIP code (e.g., "10001").

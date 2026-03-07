@@ -1,4 +1,4 @@
-[
+﻿[
   {
     CertificationNumber: 11181,
     Name: Gleichner - Bernhard,
@@ -8,10 +8,7 @@
       Unit: Apt. 533,
       City: South Alfonzo,
       Region: SD,
-      Country: {
-        Name: United States,
-        Value: US
-      },
+      Country: US,
       PostalCode: 310785071,
       Latitude: 73.1183,
       Longitude: 69.3323
@@ -49,10 +46,7 @@
       Unit: Apt. 533,
       City: South Alfonzo,
       Region: SD,
-      Country: {
-        Name: United States,
-        Value: US
-      },
+      Country: US,
       PostalCode: 310785071,
       Latitude: 73.1183,
       Longitude: 69.3323
@@ -90,10 +84,7 @@
       Unit: Apt. 533,
       City: South Alfonzo,
       Region: SD,
-      Country: {
-        Name: United States,
-        Value: US
-      },
+      Country: US,
       PostalCode: 310785071,
       Latitude: 73.1183,
       Longitude: 69.3323
@@ -131,10 +122,7 @@
       Unit: Apt. 533,
       City: South Alfonzo,
       Region: SD,
-      Country: {
-        Name: United States,
-        Value: US
-      },
+      Country: US,
       PostalCode: 310785071,
       Latitude: 73.1183,
       Longitude: 69.3323
@@ -172,10 +160,7 @@
       Unit: Apt. 533,
       City: South Alfonzo,
       Region: SD,
-      Country: {
-        Name: United States,
-        Value: US
-      },
+      Country: US,
       PostalCode: 310785071,
       Latitude: 73.1183,
       Longitude: 69.3323

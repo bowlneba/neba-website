@@ -281,6 +281,11 @@
                         c.City.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
+        // Keep the list in sync immediately when changing filters; map bounds updates can refine it after fit.
+        _displayedCenters = (_mapComponent is null || _currentMapBounds is null || shouldFitBounds)
+            ? _filteredCenters
+            : _filteredCenters.Where(c => _currentMapBounds.Contains(c.Latitude, c.Longitude)).ToList();
+
         UpdateMapLocations();
 
         if (shouldFitBounds && _mapComponent is not null && _filteredCenters.Count > 0)
@@ -288,12 +293,6 @@
             StateHasChanged();
             await Task.Delay(200);
             await _mapComponent.FitBoundsAsync();
-        }
-        else
-        {
-            _displayedCenters = (_mapComponent is null || _currentMapBounds is null)
-                ? _filteredCenters
-                : _filteredCenters.Where(c => _currentMapBounds.Contains(c.Latitude, c.Longitude)).ToList();
         }
     }
 

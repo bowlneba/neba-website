@@ -6,6 +6,7 @@ using Microsoft.JSInterop;
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.BowlingCenters;
 using Neba.Website.Server.Maps;
+using ServerMaps = Neba.Website.Server.Maps;
 
 namespace Neba.Website.Tests.BowlingCenters;
 
@@ -103,7 +104,7 @@ public sealed class DirectionsModalTests : IDisposable
         var state = new DirectionsState
         {
             Mode = MapMode.DirectionsActive,
-            Route = new RouteData
+            Route = new ServerMaps.RouteData
             {
                 DistanceMeters = 16093.4,
                 TravelTimeSeconds = 1200,

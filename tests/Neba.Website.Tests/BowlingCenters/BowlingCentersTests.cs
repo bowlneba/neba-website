@@ -1,6 +1,7 @@
 using Bunit;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.JSInterop;
 
@@ -41,8 +42,9 @@ public sealed class BowlingCentersTests : IDisposable
 
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
+        _ctx.Services.AddSingleton(new AzureMapsSettings());
+        _ctx.Services.AddSingleton<ILogger<NebaMap>>(NullLogger<NebaMap>.Instance);
 
-        _ctx.ComponentFactories.AddStub<NebaMap>();
         _ctx.ComponentFactories.AddStub<DirectionsModal>();
     }
 
@@ -161,7 +163,6 @@ public sealed class BowlingCentersTests : IDisposable
         response.Setup(r => r.Content).Returns(new CollectionResponse<BowlingCenterSummaryResponse>
         {
             Items = centers,
-            TotalItems = centers.Count
         });
 
         _mockApi
