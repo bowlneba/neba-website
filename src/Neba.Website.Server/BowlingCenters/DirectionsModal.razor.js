@@ -147,6 +147,63 @@ export function openInNewTab(url) {
 let routeMap = null;
 
 /**
+ * Waits for Azure Maps SDK to be available.
+ * @param {number} timeoutMs - Maximum wait time in milliseconds
+ * @returns {Promise<void>}
+ */
+function waitForAtlas(timeoutMs = 10000) {
+    return new Promise((resolve, reject) => {
+        if (typeof atlas !== 'undefined') {
+            resolve();
+            return;
+        }
+
+        const startedAt = Date.now();
+        const interval = setInterval(() => {
+            if (typeof atlas !== 'undefined') {
+                clearInterval(interval);
+                resolve();
+                return;
+            }
+
+            if (Date.now() - startedAt >= timeoutMs) {
+                clearInterval(interval);
+                reject(new Error('Azure Maps SDK did not load in time'));
+            }
+        }, 100);
+    });
+}
+
+/**
+ * Waits until the target container exists and has dimensions.
+ * @param {string} containerId - DOM id for the map container
+ * @param {number} timeoutMs - Maximum wait time in milliseconds
+ * @returns {Promise<HTMLElement|null>}
+ */
+function waitForVisibleContainer(containerId, timeoutMs = 2000) {
+    return new Promise((resolve) => {
+        const startedAt = Date.now();
+
+        const check = () => {
+            const element = document.getElementById(containerId);
+            if (element && element.clientWidth > 0 && element.clientHeight > 0) {
+                resolve(element);
+                return;
+            }
+
+            if (Date.now() - startedAt >= timeoutMs) {
+                resolve(element ?? null);
+                return;
+            }
+
+            requestAnimationFrame(check);
+        };
+
+        check();
+    });
+}
+
+/**
  * Initializes a compact Azure Maps instance inside the directions modal,
  * rendering the route line and start/end markers.
  * @param {string} containerId - ID of the DOM element to render the map into
@@ -156,6 +213,19 @@ let routeMap = null;
  */
 export async function initializeRouteMap(containerId, origin, destination, routeGeoJson) {
     disposeRouteMap();
+
+    try {
+        await waitForAtlas();
+    } catch (error) {
+        console.error('[DirectionsModal] Azure Maps SDK unavailable for route map:', error);
+        return;
+    }
+
+    const container = await waitForVisibleContainer(containerId);
+    if (!container) {
+        console.error('[DirectionsModal] Route map container not found:', containerId);
+        return;
+    }
 
     const authConfig = globalThis.azureMapsAuthConfig;
     if (!authConfig) {
@@ -174,40 +244,74 @@ export async function initializeRouteMap(containerId, origin, destination, route
         return;
     }
 
-    routeMap = new atlas.Map(containerId, mapOptions);
+    try {
+        routeMap = new atlas.Map(containerId, mapOptions);
+    } catch (error) {
+        console.error('[DirectionsModal] Failed to create route map:', error);
+        return;
+    }
+
+    routeMap.events.add('error', (event) => {
+        console.error('[DirectionsModal] Route map error event:', event);
+    });
 
     routeMap.events.add('ready', () => {
-        const dataSource = new atlas.source.DataSource();
-        routeMap.sources.add(dataSource);
+        try {
+            const dataSource = new atlas.source.DataSource();
+            routeMap.sources.add(dataSource);
 
-        if (routeGeoJson) {
-            dataSource.add(JSON.parse(routeGeoJson));
-            routeMap.layers.add(new atlas.layer.LineLayer(dataSource, null, {
-                strokeColor: '#0066b2',
-                strokeWidth: 4,
-                strokeOpacity: 0.8,
-                filter: ['==', ['geometry-type'], 'LineString']
-            }));
+            if (routeGeoJson) {
+                try {
+                    const routeFeature = JSON.parse(routeGeoJson);
+                    if (routeFeature?.geometry?.type === 'LineString' && routeFeature?.geometry?.coordinates?.length >= 2) {
+                        dataSource.add(routeFeature);
+                        routeMap.layers.add(new atlas.layer.LineLayer(dataSource, null, {
+                            strokeColor: '#0066b2',
+                            strokeWidth: 4,
+                            strokeOpacity: 0.8,
+                            filter: ['==', ['geometry-type'], 'LineString']
+                        }));
+                    } else {
+                        console.warn('[DirectionsModal] Route GeoJSON missing usable LineString geometry');
+                    }
+                } catch (error) {
+                    console.error('[DirectionsModal] Failed to parse RouteGeoJson for mini-map:', error);
+                }
+            }
+
+            const hasOrigin = Array.isArray(origin) && origin.length === 2;
+            const hasDestination = Array.isArray(destination) && destination.length === 2;
+            if (hasOrigin && hasDestination) {
+                dataSource.add(new atlas.data.Feature(new atlas.data.Point(origin), { pointType: 'origin' }));
+                dataSource.add(new atlas.data.Feature(new atlas.data.Point(destination), { pointType: 'destination' }));
+
+                routeMap.layers.add(new atlas.layer.SymbolLayer(dataSource, null, {
+                    iconOptions: { image: 'pin-blue', anchor: 'center', allowOverlap: true },
+                    filter: ['==', ['get', 'pointType'], 'origin']
+                }));
+
+                routeMap.layers.add(new atlas.layer.SymbolLayer(dataSource, null, {
+                    iconOptions: { image: 'pin-red', anchor: 'center', allowOverlap: true },
+                    filter: ['==', ['get', 'pointType'], 'destination']
+                }));
+
+                const bounds = atlas.data.BoundingBox.fromData([
+                    new atlas.data.Point(origin),
+                    new atlas.data.Point(destination)
+                ]);
+                routeMap.setCamera({ bounds, padding: 40 });
+            }
+
+            // Ensure the map paints correctly in modal layouts after first frame.
+            routeMap.resize();
+            setTimeout(() => {
+                if (routeMap) {
+                    routeMap.resize();
+                }
+            }, 150);
+        } catch (error) {
+            console.error('[DirectionsModal] Error rendering route mini-map:', error);
         }
-
-        dataSource.add(new atlas.data.Feature(new atlas.data.Point(origin), { pointType: 'origin' }));
-        dataSource.add(new atlas.data.Feature(new atlas.data.Point(destination), { pointType: 'destination' }));
-
-        routeMap.layers.add(new atlas.layer.SymbolLayer(dataSource, null, {
-            iconOptions: { image: 'pin-blue', anchor: 'center', allowOverlap: true },
-            filter: ['==', ['get', 'pointType'], 'origin']
-        }));
-
-        routeMap.layers.add(new atlas.layer.SymbolLayer(dataSource, null, {
-            iconOptions: { image: 'pin-red', anchor: 'center', allowOverlap: true },
-            filter: ['==', ['get', 'pointType'], 'destination']
-        }));
-
-        const bounds = atlas.data.BoundingBox.fromData([
-            new atlas.data.Point(origin),
-            new atlas.data.Point(destination)
-        ]);
-        routeMap.setCamera({ bounds, padding: 40 });
     });
 }
 
