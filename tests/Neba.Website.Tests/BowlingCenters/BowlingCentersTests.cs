@@ -171,6 +171,46 @@ public sealed class BowlingCentersTests : IDisposable
         markup.IndexOf("Middle Lanes").ShouldBeLessThan(markup.IndexOf("Zebra Lanes"));
     }
 
+    [Fact(DisplayName = "BuildCenterDescription should join street and city line with newline when no unit")]
+    public void BuildCenterDescription_ShouldUseNewlineSeparator_WhenNoUnit()
+    {
+        var center = BowlingCenterSummaryViewModelFactory.Create(
+            street: "1450 Elmwood Avenue",
+            unit: null,
+            city: "Cranston",
+            state: "RI",
+            postalCode: "02910-3847");
+
+        var description = BowlingCentersPage.BuildCenterDescription(center);
+
+        description.ShouldBe("1450 Elmwood Avenue\nCranston, RI 02910-3847");
+    }
+
+    [Fact(DisplayName = "BuildCenterDescription should place unit on its own line between street and city")]
+    public void BuildCenterDescription_ShouldPlaceUnit_OnSeparateLine()
+    {
+        var center = BowlingCenterSummaryViewModelFactory.Create(
+            street: "100 Main St",
+            unit: "Suite 200",
+            city: "Boston",
+            state: "MA",
+            postalCode: "02101");
+
+        var description = BowlingCentersPage.BuildCenterDescription(center);
+
+        description.ShouldBe("100 Main St\nSuite 200\nBoston, MA 02101");
+    }
+
+    [Fact(DisplayName = "BuildCenterDescription should not contain html br tags")]
+    public void BuildCenterDescription_ShouldNotContainBrTags()
+    {
+        var center = BowlingCenterSummaryViewModelFactory.Create();
+
+        var description = BowlingCentersPage.BuildCenterDescription(center);
+
+        description.ShouldNotContain("<br");
+    }
+
     private void SetupSuccessResponse(IReadOnlyCollection<BowlingCenterSummaryResponse> centers)
     {
         var response = new Mock<IApiResponse<CollectionResponse<BowlingCenterSummaryResponse>>>(MockBehavior.Strict);

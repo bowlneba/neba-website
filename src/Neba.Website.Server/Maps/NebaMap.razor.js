@@ -373,7 +373,7 @@ function showPopup(coordinates, properties) {
             <div style="font-weight: 700; font-size: 16px; color: #0066b2; margin-bottom: 8px;">
                 ${properties.title}
             </div>
-            <div style="font-size: 14px; color: #4b5563;">
+            <div style="font-size: 14px; color: #4b5563; white-space: pre-line;">
                 ${properties.description}
             </div>
         </div>

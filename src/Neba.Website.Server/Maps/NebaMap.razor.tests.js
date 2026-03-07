@@ -24,9 +24,7 @@ import {
  */
 function createAtlasMock() {
   class SymbolLayerMock {
-    constructor() {
-      this.setOptions = jest.fn();
-    }
+    setOptions = jest.fn();
   }
 
   const dataSources = [];
@@ -180,7 +178,7 @@ describe('NebaMap', () => {
     jest.restoreAllMocks();
     jest.clearAllTimers();
     jest.useRealTimers();
-    delete global.fetch;
+    delete globalThis.fetch;
   });
 
   // -------------------------------------------------------------------------
@@ -327,12 +325,12 @@ describe('NebaMap', () => {
     test('filters out locations with NaN latitude', async () => {
       await createInitializedMap();
 
-      updateMarkers([makeLocation({ id: 'bad', latitude: NaN })]);
+      updateMarkers([makeLocation({ id: 'bad', latitude: Number.NaN })]);
 
       expect(console.warn).toHaveBeenCalledWith(
         expect.stringContaining('Skipping location with invalid coordinates'),
         'bad',
-        NaN,
+        Number.NaN,
         -71.06,
       );
     });
@@ -368,7 +366,7 @@ describe('NebaMap', () => {
 
       updateMarkers([
         makeLocation({ id: 'valid' }),
-        makeLocation({ id: 'bad-nan', latitude: NaN }),
+        makeLocation({ id: 'bad-nan', latitude: Number.NaN }),
         makeLocation({ id: 'bad-inf', longitude: Infinity }),
       ]);
 
@@ -432,6 +430,32 @@ describe('NebaMap', () => {
       expect(globalThis.atlas.Popup).not.toHaveBeenCalled();
       jest.advanceTimersByTime(1100);
       expect(globalThis.atlas.Popup).toHaveBeenCalled();
+    });
+
+    test('popup content applies white-space: pre-line to the description element', async () => {
+      jest.useFakeTimers();
+      await createInitializedMap(defaultMapConfig, [makeLocation({ id: 'target' })]);
+
+      focusOnLocation('target');
+      jest.advanceTimersByTime(1100);
+
+      const [[popupOptions]] = globalThis.atlas.Popup.mock.calls;
+      expect(popupOptions.content).toContain('white-space: pre-line');
+    });
+
+    test('popup description renders newline-separated text verbatim', async () => {
+      jest.useFakeTimers();
+      const description = '123 Main St\nBoston, MA 02101';
+      await createInitializedMap(defaultMapConfig, [
+        makeLocation({ id: 'target', description }),
+      ]);
+
+      focusOnLocation('target');
+      jest.advanceTimersByTime(1100);
+
+      const [[popupOptions]] = globalThis.atlas.Popup.mock.calls;
+      expect(popupOptions.content).toContain(description);
+      expect(popupOptions.content).not.toContain('<br');
     });
   });
 
@@ -531,7 +555,7 @@ describe('NebaMap', () => {
 
     test('throws when the route API returns a non-ok response', async () => {
       await createInitializedMap();
-      global.fetch = jest
+      globalThis.fetch = jest
         .fn()
         .mockResolvedValue({ ok: false, status: 503, statusText: 'Service Unavailable' });
 
@@ -540,7 +564,7 @@ describe('NebaMap', () => {
 
     test('throws when the API response contains no routes', async () => {
       await createInitializedMap();
-      global.fetch = jest.fn().mockResolvedValue({
+      globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ routes: [] }),
       });
@@ -550,7 +574,7 @@ describe('NebaMap', () => {
 
     test('returns distance and travel time from the route summary', async () => {
       await createInitializedMap();
-      global.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
+      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
 
       const result = await showRoute([-71, 42], [-70, 43]);
 
@@ -560,7 +584,7 @@ describe('NebaMap', () => {
 
     test('maps guidance instructions to the Instructions array', async () => {
       await createInitializedMap();
-      global.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
+      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
 
       const result = await showRoute([-71, 42], [-70, 43]);
 
@@ -570,7 +594,7 @@ describe('NebaMap', () => {
 
     test('falls back to instructionGroups when instructions array is absent', async () => {
       await createInitializedMap();
-      global.fetch = jest.fn().mockResolvedValue({
+      globalThis.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -596,21 +620,21 @@ describe('NebaMap', () => {
 
     test('includes the subscription key in the route API URL', async () => {
       await createInitializedMap();
-      global.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
+      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
 
       await showRoute([-71, 42], [-70, 43]);
 
-      expect(global.fetch.mock.calls[0][0]).toContain('subscription-key=test-key-123');
+      expect(globalThis.fetch.mock.calls[0][0]).toContain('subscription-key=test-key-123');
     });
 
     test('encodes origin and destination as lat,lon pairs in the query', async () => {
       await createInitializedMap();
-      global.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
+      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
 
       // origin: [-71, 42] → lat=42, lon=-71  |  destination: [-70, 43] → lat=43, lon=-70
       await showRoute([-71, 42], [-70, 43]);
 
-      expect(global.fetch.mock.calls[0][0]).toContain('query=42,-71:43,-70');
+      expect(globalThis.fetch.mock.calls[0][0]).toContain('query=42,-71:43,-70');
     });
   });
 
@@ -624,7 +648,7 @@ describe('NebaMap', () => {
 
     test('removes route layer and data source after showRoute', async () => {
       const { mockMap } = await createInitializedMap();
-      global.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
+      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
       await showRoute([-71, 42], [-70, 43]);
 
       mockMap.layers.remove.mockClear();
@@ -640,7 +664,7 @@ describe('NebaMap', () => {
       const { mockMap, atlasMock } = await createInitializedMap(defaultMapConfig, [
         makeLocation({ id: 'dest' }),
       ]);
-      global.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
+      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
       await showRoute([-71, 42], [-70, 43]);
 
       const symbolLayers = mockMap.layers

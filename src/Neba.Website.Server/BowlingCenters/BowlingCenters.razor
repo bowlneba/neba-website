@@ -339,7 +339,7 @@
                longitude is >= -74 and <= -65;
     }
 
-    private static string BuildCenterDescription(BowlingCenterSummaryViewModel center)
+    internal static string BuildCenterDescription(BowlingCenterSummaryViewModel center)
     {
         var parts = new List<string> { center.Street };
 
@@ -350,7 +350,7 @@
 
         parts.Add($"{center.City}, {center.State} {center.PostalCode}");
 
-        return string.Join("<br/>", parts);
+        return string.Join("\n", parts);
     }
 
     private async Task ScrollToTopAsync()
