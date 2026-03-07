@@ -235,6 +235,7 @@
 
         _allCenters = result.Value.Items
             .Select(r => r.ToViewModel())
+            .OrderBy(bowlingCenter => bowlingCenter.Name)
             .ToList();
 
         await ApplyFiltersAsync();

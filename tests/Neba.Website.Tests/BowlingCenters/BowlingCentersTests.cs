@@ -155,6 +155,22 @@ public sealed class BowlingCentersTests : IDisposable
         cut.Markup.ShouldNotContain("MA Lanes");
     }
 
+    [Fact(DisplayName = "Should render centers in alphabetical order by name")]
+    public void Render_ShouldOrderCentersByName_WhenApiSucceeds()
+    {
+        SetupSuccessResponse([
+            BowlingCenterSummaryResponseFactory.Create(name: "Zebra Lanes"),
+            BowlingCenterSummaryResponseFactory.Create(name: "Alpha Lanes"),
+            BowlingCenterSummaryResponseFactory.Create(name: "Middle Lanes"),
+        ]);
+
+        var cut = _ctx.Render<BowlingCentersPage>();
+        var markup = cut.Markup;
+
+        markup.IndexOf("Alpha Lanes").ShouldBeLessThan(markup.IndexOf("Middle Lanes"));
+        markup.IndexOf("Middle Lanes").ShouldBeLessThan(markup.IndexOf("Zebra Lanes"));
+    }
+
     private void SetupSuccessResponse(IReadOnlyCollection<BowlingCenterSummaryResponse> centers)
     {
         var response = new Mock<IApiResponse<CollectionResponse<BowlingCenterSummaryResponse>>>(MockBehavior.Strict);
