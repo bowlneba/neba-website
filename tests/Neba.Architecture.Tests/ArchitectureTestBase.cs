@@ -7,8 +7,8 @@ using Neba.Application;
 using Neba.Domain;
 using Neba.Infrastructure;
 
-using SystemAssembly = System.Reflection.Assembly;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
+using SystemAssembly = System.Reflection.Assembly;
 
 namespace Neba.Architecture.Tests;
 

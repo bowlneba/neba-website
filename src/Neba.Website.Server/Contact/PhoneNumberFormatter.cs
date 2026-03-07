@@ -27,7 +27,7 @@ internal static class PhoneNumberFormatter
 
     private static string? FormatDigits(string digits)
     {
-        digits = new string(digits.Where(char.IsDigit).ToArray());
+        digits = new string([.. digits.Where(char.IsDigit)]);
 
         // Strip leading country code "1" for North American numbers
         if (digits.Length == 11 && digits[0] == '1')

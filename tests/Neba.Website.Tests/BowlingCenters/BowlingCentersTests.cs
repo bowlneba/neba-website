@@ -16,9 +16,9 @@ using Neba.Website.Server.Clock;
 using Neba.Website.Server.Maps;
 using Neba.Website.Server.Services;
 
-using BowlingCentersPage = Neba.Website.Server.BowlingCenters.BowlingCenters;
-
 using Refit;
+
+using BowlingCentersPage = Neba.Website.Server.BowlingCenters.BowlingCenters;
 
 namespace Neba.Website.Tests.BowlingCenters;
 
