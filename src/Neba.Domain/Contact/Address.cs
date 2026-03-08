@@ -92,15 +92,15 @@ public sealed partial record Address
         return !IsValidZipCode(zipCode)
             ? AddressErrors.InvalidPostalCode(zipCode)
             : new Address
-        {
-            Street = street,
-            Unit = unit,
-            City = city,
-            Region = state.Value,
-            Country = Country.UnitedStates,
-            PostalCode = NormalizeZipCode(zipCode),
-            Coordinates = coordinates
-        };
+            {
+                Street = street,
+                Unit = unit,
+                City = city,
+                Region = state.Value,
+                Country = Country.UnitedStates,
+                PostalCode = NormalizeZipCode(zipCode),
+                Coordinates = coordinates
+            };
     }
 
     /// <summary>
@@ -145,15 +145,15 @@ public sealed partial record Address
         return !IsValidCanadianPostalCode(postalCode)
             ? AddressErrors.InvalidPostalCode(postalCode)
             : new Address
-        {
-            Street = street,
-            Unit = unit,
-            City = city,
-            Region = province.Value,
-            Country = Country.Canada,
-            PostalCode = NormalizeCanadianPostalCode(postalCode),
-            Coordinates = coordinates
-        };
+            {
+                Street = street,
+                Unit = unit,
+                City = city,
+                Region = province.Value,
+                Country = Country.Canada,
+                PostalCode = NormalizeCanadianPostalCode(postalCode),
+                Coordinates = coordinates
+            };
     }
 
     private static bool IsValidZipCode(string zipCode)
