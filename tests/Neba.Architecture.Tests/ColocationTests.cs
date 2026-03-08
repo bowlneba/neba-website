@@ -37,8 +37,7 @@ public sealed class ColocationTests : ArchitectureTestBase
 
         IEnumerable<Type> handlers = ApplicationAssembly
             .GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false, IsGenericTypeDefinition: false })
-            .Where(t => t.DeclaringType is null);
+            .Where(t => t is { IsClass: true, IsAbstract: false, IsGenericTypeDefinition: false } && t.DeclaringType is null);
 
         foreach (var handler in handlers)
         {
