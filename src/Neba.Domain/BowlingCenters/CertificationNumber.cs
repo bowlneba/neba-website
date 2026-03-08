@@ -25,12 +25,9 @@ public sealed record CertificationNumber
     /// <returns>An <see cref="ErrorOr{CertificationNumber}"/> containing either a valid placeholder <see cref="CertificationNumber"/> or an error if the input is invalid.</returns>
     public static ErrorOr<CertificationNumber> Placeholder(string sequence)
     {
-        if (string.IsNullOrWhiteSpace(sequence))
-        {
-            return CertificationNumberErrors.CertificationNumberNullOrEmpty;
-        }
-
-        return new CertificationNumber { Value = $"x{sequence}" };
+        return string.IsNullOrWhiteSpace(sequence)
+            ? CertificationNumberErrors.CertificationNumberNullOrEmpty
+            : new CertificationNumber { Value = $"x{sequence}" };
     }
 
     /// <summary>
@@ -45,12 +42,9 @@ public sealed record CertificationNumber
             return CertificationNumberErrors.CertificationNumberNullOrEmpty;
         }
 
-        if (!number.All(char.IsDigit))
-        {
-            return CertificationNumberErrors.CertificationNumberNotNumeric;
-        }
-
-        return new CertificationNumber { Value = number };
+        return !number.All(char.IsDigit)
+            ? CertificationNumberErrors.CertificationNumberNotNumeric
+            : new CertificationNumber { Value = number };
     }
 }
 
