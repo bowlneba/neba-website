@@ -10,6 +10,7 @@ using Neba.Website.Server.Clock;
 using Neba.Website.Server.Documents;
 using Neba.Website.Server.Pages;
 using Neba.Website.Server.Services;
+using Neba.Website.Tests.TestSupport;
 
 using Refit;
 
@@ -25,6 +26,8 @@ public sealed class BylawsTests : IDisposable
     public BylawsTests()
     {
         _mockDocumentsApi = new Mock<IDocumentsApi>(MockBehavior.Strict);
+
+        _ctx.SetupNebaDocumentModule();
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
         mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);

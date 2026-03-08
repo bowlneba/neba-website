@@ -277,7 +277,9 @@ public sealed class NavMenuTests : IDisposable
         var cut = _ctx.Render<NavMenu>();
 
         // Assert
-        cut.Markup.ShouldContain("Bowler of the Year");
+        var bowlerOfTheYearLink = cut.Find("a[href='history/bowler-of-the-year']");
+        bowlerOfTheYearLink.TextContent.ShouldContain("Bowler");
+        bowlerOfTheYearLink.TextContent.ShouldContain("Year");
     }
 
     [Fact(DisplayName = "Should render High Average link")]

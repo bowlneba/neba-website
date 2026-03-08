@@ -9,6 +9,7 @@ using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Documents;
 using Neba.Website.Server.Services;
+using Neba.Website.Tests.TestSupport;
 
 using Refit;
 
@@ -24,6 +25,8 @@ public sealed class TournamentRulesTests : IDisposable
     public TournamentRulesTests()
     {
         _mockDocumentsApi = new Mock<IDocumentsApi>(MockBehavior.Strict);
+
+        _ctx.SetupNebaDocumentModule();
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
         mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);

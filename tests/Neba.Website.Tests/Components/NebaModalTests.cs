@@ -1,6 +1,7 @@
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 
 using Neba.TestFactory.Attributes;
@@ -13,12 +14,13 @@ namespace Neba.Website.Tests.Components;
 public sealed class NebaModalTests : IDisposable
 {
     private readonly BunitContext _ctx;
+    private readonly BunitJSInterop _modalModuleInterop;
 
     public NebaModalTests()
     {
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
-        _ctx.JSInterop.SetupModule("./Components/NebaModal.razor.js");
+        _modalModuleInterop = _ctx.JSInterop.SetupModule("./Components/NebaModal.razor.js");
     }
 
     public void Dispose() => _ctx.Dispose();
@@ -41,6 +43,55 @@ public sealed class NebaModalTests : IDisposable
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { })));
 
         cut.Find(".neba-modal-backdrop").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should enable focus trap when modal opens")]
+    public void OnAfterRender_ShouldEnableFocusTrap_WhenModalOpens()
+    {
+        _ctx.Render<NebaModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { })));
+
+        _modalModuleInterop.VerifyInvoke("focusElement", 1);
+        _modalModuleInterop.VerifyInvoke("enableFocusTrap", 1);
+    }
+
+    [Fact(DisplayName = "Should apply dialog ARIA semantics when modal is open")]
+    public void Render_ShouldApplyDialogAriaSemantics_WhenModalIsOpen()
+    {
+        var cut = _ctx.Render<NebaModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.Title, "Accessible title"));
+
+        var dialog = cut.Find(".neba-modal-content");
+
+        dialog.GetAttribute("role").ShouldBe("dialog");
+        dialog.GetAttribute("aria-modal").ShouldBe("true");
+        dialog.GetAttribute("aria-label").ShouldBeNull();
+
+        var labelledBy = dialog.GetAttribute("aria-labelledby") ?? string.Empty;
+        labelledBy.ShouldNotBeEmpty();
+        var titleClassName = cut.Find($"#{labelledBy}").ClassName ?? string.Empty;
+        titleClassName.ShouldContain("neba-modal-title");
+
+        var describedBy = dialog.GetAttribute("aria-describedby") ?? string.Empty;
+        describedBy.ShouldNotBeEmpty();
+        var bodyClassName = cut.Find($"#{describedBy}").ClassName ?? string.Empty;
+        bodyClassName.ShouldContain("neba-modal-body");
+    }
+
+    [Fact(DisplayName = "Should omit aria-labelledby when title is not provided")]
+    public void Render_ShouldOmitAriaLabelledBy_WhenTitleIsNotProvided()
+    {
+        var cut = _ctx.Render<NebaModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { })));
+
+        var dialog = cut.Find(".neba-modal-content");
+
+        dialog.GetAttribute("aria-labelledby").ShouldBeNull();
+        dialog.GetAttribute("aria-label").ShouldBe("Dialog");
     }
 
     [Fact(DisplayName = "Should render title when Title is provided")]
@@ -165,6 +216,40 @@ public sealed class NebaModalTests : IDisposable
             .Add(x => x.CloseOnBackdropClick, false));
 
         await cut.Find(".neba-modal-backdrop").ClickAsync(new());
+
+        closeCalled.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "Should invoke OnClose when Escape is pressed and escape close is enabled")]
+    public async Task HandleKeyDown_ShouldInvokeOnClose_WhenEscapePressedAndEscapeCloseIsEnabled()
+    {
+        var closeCalled = false;
+
+        var cut = _ctx.Render<NebaModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => closeCalled = true))
+            .Add(x => x.ShowCloseButton, false)
+            .Add(x => x.CloseOnBackdropClick, true));
+
+        await cut.Find(".neba-modal-content")
+            .TriggerEventAsync("onkeydown", new KeyboardEventArgs { Key = "Escape" });
+
+        closeCalled.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "Should not invoke OnClose when Escape is pressed and escape close is disabled")]
+    public async Task HandleKeyDown_ShouldNotInvokeOnClose_WhenEscapePressedAndEscapeCloseIsDisabled()
+    {
+        var closeCalled = false;
+
+        var cut = _ctx.Render<NebaModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => closeCalled = true))
+            .Add(x => x.ShowCloseButton, false)
+            .Add(x => x.CloseOnBackdropClick, false));
+
+        await cut.Find(".neba-modal-content")
+            .TriggerEventAsync("onkeydown", new KeyboardEventArgs { Key = "Escape" });
 
         closeCalled.ShouldBeFalse();
     }
