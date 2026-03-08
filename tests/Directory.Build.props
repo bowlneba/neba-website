@@ -6,6 +6,9 @@
     <IsTestProject>true</IsTestProject>
     <IsPackable>false</IsPackable>
 
+    <!-- Keep original source paths for Verify snapshots and architecture checks when tests run via `dotnet run`. -->
+    <PathMap Condition="'$(Configuration)' == 'Release'"></PathMap>
+
     <!-- Code coverage settings for SonarCloud -->
     <CollectCoverage>true</CollectCoverage>
     <CoverletOutputFormat>opencover</CoverletOutputFormat>

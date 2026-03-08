@@ -24,13 +24,8 @@ describe('NebaDocument', () => {
       return 1;
     });
 
-    // Mock location
-    delete globalThis.location;
-    globalThis.location = {
-      href: 'http://localhost',
-      origin: 'http://localhost',
-      hash: ''
-    };
+    // Keep a stable jsdom URL without reassigning window.location.
+    globalThis.history.replaceState(null, '', 'http://localhost/');
   });
 
   describe('initialize', () => {
@@ -410,7 +405,7 @@ describe('NebaDocument', () => {
         <ul id="toc-list"></ul>
       `;
 
-      globalThis.location.hash = '#heading1';
+      globalThis.history.replaceState(null, '', 'http://localhost/#heading1');
       globalThis.pageYOffset = 0;
 
       const content = document.getElementById('content');
@@ -436,13 +431,16 @@ describe('NebaDocument', () => {
         <ul id="toc-list"></ul>
       `;
 
-      globalThis.location.hash = '';
+      globalThis.history.replaceState(null, '', 'http://localhost/');
+
+      const content = document.getElementById('content');
+      content.scrollTo = jest.fn();
 
       // Act
       scrollToHash('content', 'toc-list');
 
-      // Assert - function should return early without errors
-      expect(globalThis.console.error).not.toHaveBeenCalled();
+      // Assert - function should return early without scrolling
+      expect(content.scrollTo).not.toHaveBeenCalled();
     });
 
     test('should update active link in TOC', () => {
@@ -458,7 +456,7 @@ describe('NebaDocument', () => {
         </ul>
       `;
 
-      globalThis.location.hash = '#heading1';
+      globalThis.history.replaceState(null, '', 'http://localhost/#heading1');
 
       const content = document.getElementById('content');
       content.scrollTo = jest.fn();
@@ -1028,7 +1026,7 @@ describe('NebaDocument', () => {
 
     test('should handle same-page links with hash in slideover', () => {
       // Arrange
-      globalThis.location.pathname = '/bylaws';
+      globalThis.history.replaceState(null, '', 'http://localhost/bylaws');
 
       const slideoverContent = document.getElementById('slideover-content');
       slideoverContent.innerHTML = `

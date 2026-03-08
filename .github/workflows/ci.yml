@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       is_pull_request:
-        description: 'Whether this is running for a pull request'
+        description: "Whether this is running for a pull request"
         type: boolean
         required: true
     secrets:
@@ -58,7 +58,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
@@ -87,21 +87,27 @@ jobs:
           - test-project: tests/Neba.Website.Tests/Neba.Website.Tests.csproj
             test-name: Website Tests
             needs-integration: false
+            collect_coverage: true
           - test-project: tests/Neba.Domain.Tests/Neba.Domain.Tests.csproj
             test-name: Domain Tests
             needs-integration: false
+            collect_coverage: true
           - test-project: tests/Neba.Application.Tests/Neba.Application.Tests.csproj
             test-name: Application Tests
             needs-integration: false
+            collect_coverage: true
           - test-project: tests/Neba.Infrastructure.Tests/Neba.Infrastructure.Tests.csproj
             test-name: Infrastructure Tests
             needs-integration: true
+            collect_coverage: true
           - test-project: tests/Neba.Architecture.Tests/Neba.Architecture.Tests.csproj
             test-name: Architecture Tests
             needs-integration: false
+            collect_coverage: false
           - test-project: tests/Neba.Api.Tests/Neba.Api.Tests.csproj
             test-name: API Tests
             needs-integration: true
+            collect_coverage: true
       fail-fast: false
 
     name: ${{ matrix.test-name }}
@@ -136,8 +142,13 @@ jobs:
       - name: Build projects
         run: dotnet build --configuration Release --no-restore
 
-      - name: Run tests with coverage
-        run: dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --coverage --coverage-output-format xml --coverage-output TestResults/coverage.xml
+      - name: Run tests
+        run: |
+          if [ "${{ matrix.collect_coverage }}" = "true" ]; then
+            dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --coverage --coverage-output-format xml --coverage-output TestResults/coverage.xml
+          else
+            dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build
+          fi
 
       - name: Upload test results
         if: always()
@@ -148,7 +159,7 @@ jobs:
           retention-days: 30
 
       - name: Upload coverage reports
-        if: always()
+        if: always() && matrix.collect_coverage
         uses: actions/upload-artifact@v5
         with:
           name: coverage-${{ matrix.test-name }}
@@ -187,7 +198,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Cache NuGet packages
         uses: actions/cache@v4
