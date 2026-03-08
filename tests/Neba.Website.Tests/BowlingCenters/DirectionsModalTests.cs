@@ -423,4 +423,78 @@ public sealed class DirectionsModalTests : IDisposable
 
         cut.Instance.ShouldNotBeNull();
     }
+
+    [Fact(DisplayName = "HandleUseCurrentLocation should swallow exception when location request is task-canceled")]
+    public async Task HandleUseCurrentLocation_ShouldSwallowException_WhenTaskCanceled()
+    {
+        var state = new DirectionsState { Mode = MapMode.DirectionsPreview };
+        _modalModuleInterop.Setup<double[]>("getCurrentLocation", _ => true)
+            .SetException(new TaskCanceledException("Canceled"));
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        await cut.InvokeAsync(() => cut.FindAll("button").First(b => b.TextContent.Contains("Use My Current Location", StringComparison.OrdinalIgnoreCase)).Click());
+
+        state.IsLoading.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleUseCurrentLocation should swallow exception when circuit disconnects")]
+    public async Task HandleUseCurrentLocation_ShouldSwallowException_WhenJSDisconnected()
+    {
+        var state = new DirectionsState { Mode = MapMode.DirectionsPreview };
+        _modalModuleInterop.Setup<double[]>("getCurrentLocation", _ => true)
+            .SetException(new JSDisconnectedException("Disconnected"));
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        await cut.InvokeAsync(() => cut.FindAll("button").First(b => b.TextContent.Contains("Use My Current Location", StringComparison.OrdinalIgnoreCase)).Click());
+
+        state.IsLoading.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleClose should still invoke OnClose when disposeRouteMap throws JSException")]
+    public async Task HandleClose_ShouldInvokeOnClose_WhenDisposeRouteMapThrowsJSException()
+    {
+        var closeCalled = false;
+        var state = new DirectionsState { Mode = MapMode.DirectionsPreview };
+        _modalModuleInterop.SetupVoid("disposeRouteMap", _ => true)
+            .SetException(new JSException("Dispose failed"));
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => closeCalled = true))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        var cancelButton = cut.FindAll(".neba-btn-secondary").First(b => b.TextContent.Trim() == "Cancel");
+        await cut.InvokeAsync(() => cancelButton.Click());
+
+        closeCalled.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "DisposeAsync should swallow JSDisconnectedException when disposeRouteMap fails")]
+    public async Task DisposeAsync_ShouldSwallow_WhenDisposeRouteMapThrowsJSDisconnectedException()
+    {
+        var state = new DirectionsState { Mode = MapMode.DirectionsPreview };
+        _modalModuleInterop.SetupVoid("disposeRouteMap", _ => true)
+            .SetException(new JSDisconnectedException("Disconnected"));
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        await cut.InvokeAsync(() => cut.Instance.DisposeAsync().AsTask());
+
+        cut.Instance.ShouldNotBeNull();
+    }
 }

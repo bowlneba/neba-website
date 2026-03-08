@@ -282,6 +282,37 @@ public sealed class BowlingCentersTests : IDisposable
         cut.Markup.ShouldContain("Focus Bowl");
     }
 
+    [Fact(DisplayName = "HandleBoundsChanged should filter displayed centers to those within map bounds")]
+    public async Task HandleBoundsChanged_ShouldFilterDisplayedCenters_WhenBoundsChange()
+    {
+        var insideCenter = BowlingCenterSummaryResponseFactory.Create(
+            name: "Inside Bounds Bowl",
+            address: AddressDtoFactory.Create(latitude: 42.3601, longitude: -71.0589));
+        var outsideCenter = BowlingCenterSummaryResponseFactory.Create(
+            name: "Outside Bounds Bowl",
+            address: AddressDtoFactory.Create(latitude: 44.0, longitude: -70.0));
+        SetupSuccessResponse([insideCenter, outsideCenter]);
+
+        var cut = _ctx.Render<BowlingCentersPage>();
+        var nebaMap = cut.FindComponent<NebaMap>();
+        var bounds = new MapBounds(North: 43.0, South: 41.0, East: -70.5, West: -72.0);
+        await cut.InvokeAsync(() => nebaMap.Instance.NotifyBoundsChanged(bounds));
+
+        cut.Markup.ShouldContain("Inside Bounds Bowl");
+        cut.Markup.ShouldNotContain("Outside Bounds Bowl");
+    }
+
+    [Fact(DisplayName = "DisposeAsync should complete without throwing when JS module is loaded")]
+    public async Task DisposeAsync_ShouldComplete_WhenJsModuleIsLoaded()
+    {
+        SetupSuccessResponse([BowlingCenterSummaryResponseFactory.Create()]);
+        var cut = _ctx.Render<BowlingCentersPage>();
+
+        await cut.InvokeAsync(() => cut.Instance.DisposeAsync().AsTask());
+
+        cut.Instance.ShouldNotBeNull();
+    }
+
     private void SetupSuccessResponse(IReadOnlyCollection<BowlingCenterSummaryResponse> centers)
     {
         var response = new Mock<IApiResponse<CollectionResponse<BowlingCenterSummaryResponse>>>(MockBehavior.Strict);
