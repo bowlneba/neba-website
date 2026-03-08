@@ -13,13 +13,15 @@ internal sealed class AppDbContextDesignTimeFactory
             ?? "Development";
 
         var basePath = Directory.GetCurrentDirectory();
+        var apiProjectPath = Path.GetFullPath(Path.Join(basePath, "..", "Neba.Api"));
+        var environmentSettingsFileName = $"appsettings.{environmentName}.json";
 
         var configuration = new ConfigurationBuilder()
             .SetBasePath(basePath)
             .AddJsonFile("appsettings.json", optional: true)
             .AddJsonFile($"appsettings.{environmentName}.json", optional: true)
-            .AddJsonFile(Path.Combine(basePath, "..", "Neba.Api", "appsettings.json"), optional: true)
-            .AddJsonFile(Path.Combine(basePath, "..", "Neba.Api", $"appsettings.{environmentName}.json"), optional: true)
+            .AddJsonFile(Path.Join(apiProjectPath, "appsettings.json"), optional: true)
+            .AddJsonFile(Path.Join(apiProjectPath, environmentSettingsFileName), optional: true)
             .AddUserSecrets<AppDbContextDesignTimeFactory>(optional: true)
             .AddEnvironmentVariables()
             .Build();
