@@ -108,7 +108,12 @@ public async Task<IReadOnlyCollection<(int Id, string CertificationNumber, int? 
 			PostalCode = bowlingCenter.Zip,
 			Status = BowlingCenterStatus.Open,
 			EmailAddress = bowlingCenter.Email.Length > 0 ? bowlingCenter.Email : null,
-			Website = bowlingCenter.Web?.Length > 0 ? bowlingCenter.Web : null,
+			Website = bowlingCenter.Web?.Length > 0
+				? bowlingCenter.Web.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+					? bowlingCenter.Web
+					: "http://" + bowlingCenter.Web
+				: null,
+
 			BowlingCenterPhoneNumbers = 
 			[
 				new BowlingCenterPhoneNumbers 

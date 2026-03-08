@@ -21,7 +21,7 @@ public static class BowlingCenterFactory
         Address? address = null,
         IReadOnlyCollection<PhoneNumber>? phoneNumbers = null,
         EmailAddress? emailAddress = null,
-        Uri? website = null,
+        string? website = null,
         LaneConfiguration? lanes = null,
         int? websiteId = null,
         int? legacyId = null)
@@ -68,7 +68,7 @@ public static class BowlingCenterFactory
                 Address = AddressFactory.BogusUs(seed: seed),
                 PhoneNumbers = PhoneNumberFactory.Bogus(3, seed),
                 EmailAddress = EmailAddressFactory.Create(f.Internet.Email()),
-                Website = new Uri(f.Internet.Url()),
+                Website = f.Internet.Url(),
                 Lanes = LaneConfigurationFactory.Bogus(seed),
                 WebsiteId = websiteIdPool.GetNext(),
                 LegacyId = legacyIdPool.GetNext()

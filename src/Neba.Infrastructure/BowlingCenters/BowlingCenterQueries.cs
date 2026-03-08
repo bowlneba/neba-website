@@ -36,7 +36,8 @@ internal sealed class BowlingCenterQueries(AppDbContext dbContext)
                 {
                     PhoneNumberType = phoneNumber.Type.Name,
                     Number = phoneNumber.ToCanonical()
-                }).ToList()
+                }).ToList(),
+                Website = bowlingCenter.Website
             })
             .ToListAsync(cancellationToken);
 }

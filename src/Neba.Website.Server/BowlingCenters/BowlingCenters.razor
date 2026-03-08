@@ -141,6 +141,23 @@
                                                 @center.PhoneDisplay
                                             </a>
                                         </div>
+
+                                        <!-- Website -->
+                                        @if (center.Website is not null)
+                                        {
+                                            <div class="flex items-center gap-2 text-sm">
+                                                <svg class="w-5 h-5 text-[var(--neba-blue-600)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" />
+                                                </svg>
+                                                <a href="@center.Website"
+                                                   target="_blank"
+                                                   rel="noopener noreferrer"
+                                                   class="text-[var(--neba-blue-600)] hover:text-[var(--neba-blue-700)] hover:underline truncate"
+                                                   @onclick:stopPropagation="true">
+                                                    @center.Website.Host
+                                                </a>
+                                            </div>
+                                        }
                                     </div>
 
                                     <button class="neba-btn neba-btn-primary w-full flex items-center justify-center gap-2"

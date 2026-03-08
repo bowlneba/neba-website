@@ -65,10 +65,7 @@ internal sealed class BowlingCenterConfiguration
 
         builder.Property(bowlingCenter => bowlingCenter.Website)
             .HasColumnName("website")
-            .HasMaxLength(255)
-            .HasConversion(
-                website => website!.ToString(),
-                urlString => new Uri(urlString));
+            .HasMaxLength(255);
 
         builder.Property(bowlingCenter => bowlingCenter.WebsiteId)
             .ValueGeneratedNever();

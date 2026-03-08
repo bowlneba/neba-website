@@ -417,16 +417,6 @@ The USBC API only returns open (active) bowling centers. NEBA has a 60-year hist
 
 ---
 
-### ReconfigureLanes
-
-**Definition**: A named domain operation on BowlingCenter that replaces the current Lane Configuration with a new one in its entirety. Represents a significant physical change at the center — such as lanes being removed, added, or a gap being introduced or closed. Not a routine update.
-
-**In Code**:
-
-- Method: `BowlingCenter.ReconfigureLanes(LaneConfiguration)`
-
----
-
 ## USBC Source Mapping — Bowling Centers
 
 For reference, the following table maps USBC API fields to this domain model. Used by the import process.

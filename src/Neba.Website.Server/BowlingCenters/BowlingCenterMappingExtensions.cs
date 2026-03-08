@@ -26,7 +26,8 @@ internal static class BowlingCenterMappingExtensions
                 Latitude = response.Latitude,
                 Longitude = response.Longitude,
                 PhoneUri = new($"tel:{workPhoneNumber?.PhoneNumber ?? response.PhoneNumbers.First().PhoneNumber}"),
-                PhoneDisplay = PhoneNumberFormatter.FormatForDisplay(workPhoneNumber?.PhoneNumber ?? response.PhoneNumbers.First().PhoneNumber)
+                PhoneDisplay = PhoneNumberFormatter.FormatForDisplay(workPhoneNumber?.PhoneNumber ?? response.PhoneNumbers.First().PhoneNumber),
+                Website = Uri.TryCreate(response.Website, UriKind.Absolute, out var websiteUri) ? websiteUri : null
             };
         }
     }

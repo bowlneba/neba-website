@@ -61,4 +61,9 @@ public sealed record BowlingCenterSummaryResponse
     /// A collection of phone numbers associated with the bowling center, used for contact and communication purposes. This information is essential for users to reach the center for inquiries, reservations, or other services.
     /// </summary>
     public required IReadOnlyCollection<PhoneNumberResponse> PhoneNumbers { get; init; }
+
+    /// <summary>
+    /// The center's public website URL. Optional — not all centers have a website on file.
+    /// </summary>
+    public string? Website { get; init; }
 }

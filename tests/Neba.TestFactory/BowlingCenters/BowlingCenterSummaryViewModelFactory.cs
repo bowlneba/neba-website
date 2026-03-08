@@ -19,7 +19,8 @@ public static class BowlingCenterSummaryViewModelFactory
         double? latitude = null,
         double? longitude = null,
         string? phoneDisplay = null,
-        Uri? phoneUri = null)
+        Uri? phoneUri = null,
+        Uri? website = null)
     {
         return new BowlingCenterSummaryViewModel
         {
@@ -30,10 +31,11 @@ public static class BowlingCenterSummaryViewModelFactory
             City = city ?? AddressFactory.ValidCity,
             State = state ?? AddressFactory.ValidUsState.Value,
             PostalCode = postalCode ?? AddressFactory.ValidZipCode,
-            Latitude = latitude ?? CoordinatesFactory.ValidLatitude, // Example: Los Angeles latitude
-            Longitude = longitude ?? CoordinatesFactory.ValidLongitude, // Example: Los Angeles longitude
+            Latitude = latitude ?? CoordinatesFactory.ValidLatitude,
+            Longitude = longitude ?? CoordinatesFactory.ValidLongitude,
             PhoneDisplay = phoneDisplay ?? "(555) 123-4567",
-            PhoneUri = phoneUri ?? new Uri("tel:+15551234567")
+            PhoneUri = phoneUri ?? new Uri("tel:+15551234567"),
+            Website = website
         };
     }
 
@@ -43,19 +45,21 @@ public static class BowlingCenterSummaryViewModelFactory
     public static IReadOnlyCollection<BowlingCenterSummaryViewModel> Bogus(int count, int? seed = null)
     {
         var faker = new Faker<BowlingCenterSummaryViewModel>()
-            .CustomInstantiator(f => Create(
-                name: f.Company.CompanyName(),
-                certificationNumber: f.Random.Replace("NEBA-###"),
-                street: f.Address.StreetAddress(),
-                unit: f.Random.Bool() ? f.Address.SecondaryAddress() : null,
-                city: f.Address.City(),
-                state: f.Address.StateAbbr(),
-                postalCode: f.Address.ZipCode(),
-                latitude: f.Person.Address.Geo.Lat,
-                longitude: f.Person.Address.Geo.Lng,
-                phoneDisplay: f.Phone.PhoneNumber("(###) ###-####"),
-                phoneUri: new Uri($"tel:+1{f.Phone.PhoneNumber("##########").Replace("-", "", StringComparison.InvariantCulture)}")
-            ));
+            .CustomInstantiator(f => new()
+            {
+                Name = f.Company.CompanyName(),
+                CertificationNumber = f.Random.Replace("NEBA-###"),
+                Street = f.Address.StreetAddress(),
+                Unit = f.Random.Bool() ? f.Address.SecondaryAddress() : null,
+                City = f.Address.City(),
+                State = f.Address.StateAbbr(),
+                PostalCode = f.Address.ZipCode(),
+                Latitude = f.Person.Address.Geo.Lat,
+                Longitude = f.Person.Address.Geo.Lng,
+                PhoneDisplay = f.Phone.PhoneNumber("(###) ###-####"),
+                PhoneUri = new Uri($"tel:+1{f.Phone.PhoneNumber("##########").Replace("-", "", StringComparison.InvariantCulture)}"),
+                Website = f.Random.Bool() ? new Uri(f.Internet.Url()) : null
+            });
 
         if (seed.HasValue)
         {

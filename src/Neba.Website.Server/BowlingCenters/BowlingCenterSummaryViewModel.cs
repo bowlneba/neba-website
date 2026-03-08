@@ -59,4 +59,9 @@ public sealed record BowlingCenterSummaryViewModel
     /// A URI that can be used to initiate a phone call to the center's primary contact number, formatted according to the "tel:" URI scheme. This allows users to easily click on the phone number to initiate a call from their device, enhancing the user experience and making it more convenient for users to contact the center directly from the website.
     /// </summary>
     public required Uri PhoneUri { get; init; }
+
+    /// <summary>
+    /// The center's public website URL. Optional — not all centers have a website on file.
+    /// </summary>
+    public Uri? Website { get; init; }
 }

@@ -57,6 +57,7 @@ internal sealed class ListBowlingCentersEndpoint(IQueryHandler<ListBowlingCenter
                             PhoneNumberType = p.PhoneNumberType,
                             PhoneNumber = p.Number,
                         })],
+                    Website = bc.Website,
                 })],
         };
 

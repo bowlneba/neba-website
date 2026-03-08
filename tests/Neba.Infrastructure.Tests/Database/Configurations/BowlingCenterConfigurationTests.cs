@@ -104,13 +104,6 @@ public sealed class BowlingCenterConfigurationTests
         property.IsNullable.ShouldBeTrue();
     }
 
-    [Fact(DisplayName = "website has a value converter")]
-    public void Configure_ShouldConfigureWebsiteConverter()
-    {
-        var property = _bowlingCenterType.FindProperty(nameof(BowlingCenter.Website))!;
-
-        property.GetValueConverter().ShouldNotBeNull();
-    }
 
     [Fact(DisplayName = "website_id is never generated")]
     public void Configure_ShouldConfigureWebsiteIdValueGeneratedNever()

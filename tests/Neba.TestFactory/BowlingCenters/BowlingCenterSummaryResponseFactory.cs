@@ -17,7 +17,8 @@ public static class BowlingCenterSummaryResponseFactory
         string? name = null,
         BowlingCenterStatus? status = null,
         AddressDto? address = null,
-        IReadOnlyCollection<PhoneNumberResponse>? phoneNumbers = null
+        IReadOnlyCollection<PhoneNumberResponse>? phoneNumbers = null,
+        string? website = null
     )
         => new()
         {
@@ -31,7 +32,8 @@ public static class BowlingCenterSummaryResponseFactory
             PostalCode = address?.PostalCode ?? AddressFactory.ValidPostalCode,
             Latitude = address?.Latitude ?? CoordinatesFactory.ValidLatitude,
             Longitude = address?.Longitude ?? CoordinatesFactory.ValidLongitude,
-            PhoneNumbers = phoneNumbers ?? [PhoneNumberResponseFactory.Create(type: PhoneNumberType.Work)]
+            PhoneNumbers = phoneNumbers ?? [PhoneNumberResponseFactory.Create(type: PhoneNumberType.Work)],
+            Website = website
         };
 
     public static BowlingCenterSummaryResponse Bogus(int? seed = null)
@@ -52,7 +54,8 @@ public static class BowlingCenterSummaryResponseFactory
                 PostalCode = f.Address.ZipCode(),
                 Latitude = f.Person.Address.Geo.Lat,
                 Longitude = f.Person.Address.Geo.Lng,
-                PhoneNumbers = [PhoneNumberResponseFactory.Bogus(seed: seed)]
+                PhoneNumbers = [PhoneNumberResponseFactory.Bogus(seed: seed)],
+                Website = f.Random.Bool() ? f.Internet.Url() : null
             });
 
         if (seed.HasValue)

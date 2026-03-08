@@ -87,4 +87,15 @@ public sealed class BowlingCenterMappingExtensionsTests
 
         await Verify(viewModel);
     }
+
+    [Fact(DisplayName = "Maps website URI from response to view model when present")]
+    public async Task ToViewModel_ShouldMapWebsite_WhenWebsiteIsPresent()
+    {
+        var response = BowlingCenterSummaryResponseFactory.Create(
+            website: "https://www.amfbowling.com");
+
+        var viewModel = response.ToViewModel();
+
+        await Verify(viewModel);
+    }
 }

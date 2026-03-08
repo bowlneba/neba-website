@@ -31,11 +31,19 @@ public sealed class ListBowlingCentersQueryTests
         query.Cache.Tags.ShouldContain("neba:bowling-centers");
     }
 
-    [Fact(DisplayName = "Cache tags should contain exactly 1 tag")]
-    public void Cache_Tags_ShouldContainExactly1Tag()
+    [Fact(DisplayName = "Cache tags should contain neba")]
+    public void Cache_Tags_ShouldContainNebaTag()
     {
         var query = new ListBowlingCentersQuery();
 
-        query.Cache.Tags.Count.ShouldBe(1);
+        query.Cache.Tags.ShouldContain("neba");
+    }
+
+    [Fact(DisplayName = "Cache tags should contain exactly 2 tags")]
+    public void Cache_Tags_ShouldContainExactly2Tags()
+    {
+        var query = new ListBowlingCentersQuery();
+
+        query.Cache.Tags.Count.ShouldBe(2);
     }
 }

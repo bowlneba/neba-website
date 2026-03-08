@@ -41,7 +41,7 @@ public sealed class BowlingCenter
     /// <summary>
     /// The website of the bowling center.
     /// </summary>
-    public Uri? Website { get; init; }
+    public string? Website { get; init; }
 
     /// <summary>
     /// The lane configuration of the bowling center.

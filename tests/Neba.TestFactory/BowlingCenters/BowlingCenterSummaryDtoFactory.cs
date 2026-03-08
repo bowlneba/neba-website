@@ -15,7 +15,8 @@ public static class BowlingCenterSummaryDtoFactory
         string? name = null,
         BowlingCenterStatus? status = null,
         AddressDto? address = null,
-        IReadOnlyCollection<PhoneNumberDto>? phoneNumbers = null
+        IReadOnlyCollection<PhoneNumberDto>? phoneNumbers = null,
+        string? website = null
     )
         => new()
         {
@@ -23,7 +24,8 @@ public static class BowlingCenterSummaryDtoFactory
             Name = name ?? BowlingCenterFactory.ValidName,
             Status = status?.Name ?? BowlingCenterFactory.ValidStatus.Name,
             Address = address ?? AddressDtoFactory.Create(),
-            PhoneNumbers = phoneNumbers ?? [PhoneNumberDtoFactory.Create(type: PhoneNumberType.Work)]
+            PhoneNumbers = phoneNumbers ?? [PhoneNumberDtoFactory.Create(type: PhoneNumberType.Work)],
+            Website = website
         };
 
     public static BowlingCenterSummaryDto Bogus(int? seed = null)
@@ -38,7 +40,8 @@ public static class BowlingCenterSummaryDtoFactory
                 Name = f.Company.CompanyName(),
                 Status = f.PickRandom(BowlingCenterStatus.List.ToArray()).Name,
                 Address = AddressDtoFactory.Bogus(seed: seed),
-                PhoneNumbers = PhoneNumberDtoFactory.Bogus(3, seed)
+                PhoneNumbers = PhoneNumberDtoFactory.Bogus(3, seed),
+                Website = f.Random.Bool() ? f.Internet.Url() : null
             });
 
         if (seed.HasValue)
