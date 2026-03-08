@@ -6,7 +6,7 @@
 {
     <div class="neba-modal-backdrop @CssClass" @onclick="HandleBackdropClick"
          style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; z-index: 1000 !important;">
-        <div class="neba-modal-container" @onclick:stopPropagation="true">
+        <div class="neba-modal-container" style="@ContainerStyle" @onclick:stopPropagation="true">
             <div class="neba-modal-content @CssClass" role="dialog" aria-modal="true" aria-labelledby="@DialogLabelledBy"
                  aria-label="@DialogAriaLabel" aria-describedby="@_bodyId" tabindex="-1" @onkeydown="HandleKeyDown"
                  @onkeydown:stopPropagation="true" @ref="_dialogElement">
@@ -47,6 +47,7 @@
 
     private string? DialogLabelledBy => string.IsNullOrWhiteSpace(Title) ? null : _titleId;
     private string? DialogAriaLabel => string.IsNullOrWhiteSpace(Title) ? "Dialog" : null;
+    private string? ContainerStyle => string.IsNullOrWhiteSpace(MaxWidth) ? null : $"max-width: {MaxWidth};";
     private bool IsEscapeCloseEnabled => ShowCloseButton || CloseOnBackdropClick;
 
     /// <summary>

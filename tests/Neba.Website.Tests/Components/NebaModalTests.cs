@@ -264,4 +264,17 @@ public sealed class NebaModalTests : IDisposable
 
         cut.Find(".neba-modal-content.my-custom-class").ShouldNotBeNull();
     }
+
+    [Fact(DisplayName = "Should apply MaxWidth to modal container when provided")]
+    public void Render_ShouldApplyMaxWidthStyle_WhenProvided()
+    {
+        var cut = _ctx.Render<NebaModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.MaxWidth, "700px"));
+
+        var containerStyle = cut.Find(".neba-modal-container").GetAttribute("style") ?? string.Empty;
+
+        containerStyle.ShouldContain("max-width: 700px;");
+    }
 }
