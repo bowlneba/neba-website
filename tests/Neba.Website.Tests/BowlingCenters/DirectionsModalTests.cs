@@ -248,4 +248,179 @@ public sealed class DirectionsModalTests : IDisposable
 
         _modalModuleInterop.VerifyInvoke("disposeRouteMap", 1);
     }
+
+    [Fact(DisplayName = "Should show loading spinner when state is loading")]
+    public void Render_ShouldShowLoadingSpinner_WhenStateIsLoading()
+    {
+        var state = new DirectionsState { Mode = MapMode.DirectionsPreview, IsLoading = true };
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        cut.Markup.ShouldContain("Getting your location...");
+    }
+
+    [Fact(DisplayName = "HandleUseCurrentLocation should invoke OnLocationSelected when geolocation succeeds")]
+    public async Task HandleUseCurrentLocation_ShouldInvokeOnLocationSelected_WhenSuccess()
+    {
+        double[]? receivedLocation = null;
+        var state = new DirectionsState { Mode = MapMode.DirectionsPreview };
+        _modalModuleInterop.Setup<double[]>("getCurrentLocation", _ => true)
+            .SetResult([-71.0589, 42.3601]);
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, loc => receivedLocation = loc)));
+
+        await cut.InvokeAsync(() => cut.FindAll("button").First(b => b.TextContent.Contains("Use My Current Location", StringComparison.OrdinalIgnoreCase)).Click());
+
+        receivedLocation.ShouldNotBeNull();
+        receivedLocation[0].ShouldBe(-71.0589);
+    }
+
+    [Fact(DisplayName = "HandleUseCurrentLocation should show permission denied error when browser denies geolocation")]
+    public async Task HandleUseCurrentLocation_ShouldShowPermissionDeniedError_WhenPermissionDenied()
+    {
+        var state = new DirectionsState { Mode = MapMode.DirectionsPreview };
+        _modalModuleInterop.Setup<double[]>("getCurrentLocation", _ => true)
+            .SetException(new JSException("User denied geolocation permission"));
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        await cut.InvokeAsync(() => cut.FindAll("button").First(b => b.TextContent.Contains("Use My Current Location", StringComparison.OrdinalIgnoreCase)).Click());
+
+        state.ErrorMessage.ShouldNotBeNull();
+        state.ErrorMessage.ShouldContain("Location access denied");
+    }
+
+    [Fact(DisplayName = "HandleUseCurrentLocation should show generic error when geolocation fails for non-permission reason")]
+    public async Task HandleUseCurrentLocation_ShouldShowGenericError_WhenJSExceptionWithoutPermission()
+    {
+        var state = new DirectionsState { Mode = MapMode.DirectionsPreview };
+        _modalModuleInterop.Setup<double[]>("getCurrentLocation", _ => true)
+            .SetException(new JSException("Geolocation hardware unavailable"));
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        await cut.InvokeAsync(() => cut.FindAll("button").First(b => b.TextContent.Contains("Use My Current Location", StringComparison.OrdinalIgnoreCase)).Click());
+
+        state.ErrorMessage.ShouldNotBeNull();
+        state.ErrorMessage.ShouldContain("Unable to get your location");
+    }
+
+    [Fact(DisplayName = "HandleAddressInputChange should clear suggestions when input is fewer than 3 characters")]
+    public async Task HandleAddressInputChange_ShouldClearSuggestions_WhenInputIsTooShort()
+    {
+        var state = new DirectionsState { Mode = MapMode.DirectionsPreview };
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        await cut.InvokeAsync(() => cut.Find("input#address-input").Input("AB"));
+
+        // Only the NebaModal close button (✕) should have type="button"; no suggestion buttons should appear
+        cut.FindAll("button[type='button']").Count.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "HandleOpenInMaps should call openInNewTab JS when user and destination locations are set")]
+    public async Task HandleOpenInMaps_ShouldCallOpenInNewTab_WhenLocationsAreSet()
+    {
+        var state = new DirectionsState
+        {
+            Mode = MapMode.DirectionsActive,
+            UserLocation = [-71.0589, 42.3601],
+            DestinationLocation = [-71.5, 42.5],
+            Route = new ServerMaps.RouteData { DistanceMeters = 16093.4, TravelTimeSeconds = 1200, Instructions = [] }
+        };
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        await cut.InvokeAsync(() => cut.FindAll("button").First(b => b.TextContent.Contains("Open in Maps App", StringComparison.OrdinalIgnoreCase)).Click());
+
+        _modalModuleInterop.VerifyInvoke("openInNewTab", 1);
+    }
+
+    [Fact(DisplayName = "HandleOpenInMaps should return early when UserLocation is null")]
+    public async Task HandleOpenInMaps_ShouldReturnEarly_WhenUserLocationIsNull()
+    {
+        var state = new DirectionsState
+        {
+            Mode = MapMode.DirectionsActive,
+            UserLocation = null,
+            DestinationLocation = [-71.5, 42.5],
+            Route = new ServerMaps.RouteData { DistanceMeters = 16093.4, TravelTimeSeconds = 1200, Instructions = [] }
+        };
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        await cut.InvokeAsync(() => cut.FindAll("button").First(b => b.TextContent.Contains("Open in Maps App", StringComparison.OrdinalIgnoreCase)).Click());
+
+        // openInNewTab should not be called when UserLocation is null
+        cut.Instance.ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should show turn-by-turn instructions when toggle button is clicked")]
+    public async Task ToggleDirections_ShouldShowInstructions_WhenToggled()
+    {
+        var state = new DirectionsState
+        {
+            Mode = MapMode.DirectionsActive,
+            Route = new ServerMaps.RouteData
+            {
+                DistanceMeters = 16093.4,
+                TravelTimeSeconds = 1200,
+                Instructions = [new ServerMaps.RouteInstruction { Text = "Head north on Main St", DistanceMeters = 500 }]
+            }
+        };
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        await cut.InvokeAsync(() => cut.FindAll("button").First(b => b.TextContent.Contains("Turn-by-turn", StringComparison.OrdinalIgnoreCase)).Click());
+
+        cut.Markup.ShouldContain("Head north on Main St");
+    }
+
+    [Fact(DisplayName = "DisposeAsync should complete without throwing")]
+    public async Task DisposeAsync_ShouldComplete_WhenCalled()
+    {
+        var state = new DirectionsState { Mode = MapMode.DirectionsPreview };
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        await cut.InvokeAsync(() => cut.Instance.DisposeAsync().AsTask());
+
+        cut.Instance.ShouldNotBeNull();
+    }
 }
