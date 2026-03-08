@@ -62,7 +62,7 @@ public static class BowlingCenterFactory
         var faker = new Faker<BowlingCenter>()
             .CustomInstantiator(f => new()
             {
-                CertificationNumber = CertificationNumberFactory.Create(certPool.GetNext()!),
+                CertificationNumber = CertificationNumberFactory.Create(certPool.GetNext()),
                 Name = f.Company.CompanyName(),
                 Status = f.PickRandom(BowlingCenterStatus.List.ToArray()),
                 Address = AddressFactory.BogusUs(seed: seed),
