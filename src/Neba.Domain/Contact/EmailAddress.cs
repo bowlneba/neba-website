@@ -37,12 +37,9 @@ public sealed partial record EmailAddress
             return EmailAddressErrors.EmailAddressIsRequired;
         }
 
-        if (!ValidEmailAddress().IsMatch(email))
-        {
-            return EmailAddressErrors.InvalidEmailAddress(email);
-        }
-
-        return new EmailAddress { Value = email };
+        return !ValidEmailAddress().IsMatch(email)
+            ? EmailAddressErrors.InvalidEmailAddress(email)
+            : new EmailAddress { Value = email };
     }
 
     /// <summary>
