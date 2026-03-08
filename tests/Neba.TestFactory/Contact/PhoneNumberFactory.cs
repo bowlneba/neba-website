@@ -8,7 +8,7 @@ namespace Neba.TestFactory.Contact;
 
 public static class PhoneNumberFactory
 {
-    public readonly static PhoneNumberType ValidType = PhoneNumberType.Home;
+    public static readonly PhoneNumberType ValidType = PhoneNumberType.Home;
     public const string ValidCountryCode = "1";
     public const string ValidNumber = "5551234567";
 
