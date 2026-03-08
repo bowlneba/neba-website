@@ -210,4 +210,31 @@ public sealed class LaneConfigurationTests
     }
 
     #endregion
+
+    #region GetHashCode
+
+    [Fact(DisplayName = "GetHashCode returns same value for two configurations with identical ranges")]
+    public void GetHashCode_ShouldReturnSameValue_ForIdenticalRanges()
+    {
+        // Arrange
+        var range = LaneRangeFactory.Create(startLane: 1, endLane: 10);
+        var a = LaneConfigurationFactory.Create([range]);
+        var b = LaneConfigurationFactory.Create([range]);
+
+        // Act & Assert
+        a.GetHashCode().ShouldBe(b.GetHashCode());
+    }
+
+    [Fact(DisplayName = "GetHashCode returns different values for configurations with different ranges")]
+    public void GetHashCode_ShouldReturnDifferentValues_ForDifferentRanges()
+    {
+        // Arrange
+        var a = LaneConfigurationFactory.Create([LaneRangeFactory.Create(startLane: 1, endLane: 10)]);
+        var b = LaneConfigurationFactory.Create([LaneRangeFactory.Create(startLane: 1, endLane: 20)]);
+
+        // Act & Assert
+        a.GetHashCode().ShouldNotBe(b.GetHashCode());
+    }
+
+    #endregion
 }
