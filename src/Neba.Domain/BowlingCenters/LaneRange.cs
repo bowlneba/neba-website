@@ -64,12 +64,9 @@ public sealed record LaneRange
             return LaneRangeErrors.EndLaneMustBeEven;
         }
 
-        if (endLane <= startLane)
-        {
-            return LaneRangeErrors.EndLaneMustExceedStartLane;
-        }
-
-        return new LaneRange
+        return endLane <= startLane
+            ? LaneRangeErrors.EndLaneMustExceedStartLane
+            : new LaneRange
         {
             StartLane = startLane,
             EndLane = endLane,
