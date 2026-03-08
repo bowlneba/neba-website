@@ -54,13 +54,10 @@ public sealed class UniqueIdPool<T>
             return default;
         }
 
-        if (_currentIndex >= _values.Count)
-        {
-            throw new InvalidOperationException(
-                $"UniquePool<{typeof(T).Name}> exhausted. Attempted to get value at index {_currentIndex} but pool only contains {_values.Count} values.");
-        }
-
-        return _values[_currentIndex++];
+        return _currentIndex >= _values.Count
+            ? throw new InvalidOperationException(
+                $"UniquePool<{typeof(T).Name}> exhausted. Attempted to get value at index {_currentIndex} but pool only contains {_values.Count} values.")
+            : _values[_currentIndex++];
     }
 #pragma warning restore CA1024, CA5394
 
