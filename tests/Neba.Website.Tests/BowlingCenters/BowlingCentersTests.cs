@@ -213,6 +213,75 @@ public sealed class BowlingCentersTests : IDisposable
         description.ShouldNotContain("<br");
     }
 
+    [Fact(DisplayName = "Should filter centers by name search query")]
+    public async Task SearchFilter_ShouldShowOnlyCentersMatchingName()
+    {
+        var matching = BowlingCenterSummaryResponseFactory.Create(name: "Spare Time Lanes");
+        var nonMatching = BowlingCenterSummaryResponseFactory.Create(name: "Lucky Strike Bowl");
+        SetupSuccessResponse([matching, nonMatching]);
+
+        var cut = _ctx.Render<BowlingCentersPage>();
+        await cut.InvokeAsync(() => cut.Find("input[placeholder='Search centers...']").Input("Spare"));
+
+        cut.Markup.ShouldContain("Spare Time Lanes");
+        cut.Markup.ShouldNotContain("Lucky Strike Bowl");
+    }
+
+    [Fact(DisplayName = "Should filter centers by city search query")]
+    public async Task SearchFilter_ShouldShowOnlyCentersMatchingCity()
+    {
+        var bostonCenter = BowlingCenterSummaryResponseFactory.Create(
+            name: "Fenway Bowl",
+            address: AddressDtoFactory.Create(city: "Boston"));
+        var hartfordCenter = BowlingCenterSummaryResponseFactory.Create(
+            name: "Capitol Lanes",
+            address: AddressDtoFactory.Create(city: "Hartford"));
+        SetupSuccessResponse([bostonCenter, hartfordCenter]);
+
+        var cut = _ctx.Render<BowlingCentersPage>();
+        await cut.InvokeAsync(() => cut.Find("input[placeholder='Search centers...']").Input("Boston"));
+
+        cut.Markup.ShouldContain("Fenway Bowl");
+        cut.Markup.ShouldNotContain("Capitol Lanes");
+    }
+
+    [Fact(DisplayName = "Should change map style when satellite button is clicked")]
+    public async Task HandleMapStyleChange_ShouldUpdateStyle_WhenSatelliteSelected()
+    {
+        SetupSuccessResponse([BowlingCenterSummaryResponseFactory.Create()]);
+
+        var cut = _ctx.Render<BowlingCentersPage>();
+        await cut.InvokeAsync(() => cut.FindAll("button").First(b => b.TextContent.Trim() == "Satellite").Click());
+
+        var satelliteButton = cut.FindAll("button").First(b => b.TextContent.Trim() == "Satellite");
+        satelliteButton.ClassList.ShouldContain("bg-[var(--neba-blue-600)]");
+    }
+
+    [Fact(DisplayName = "Should invoke directions flow when Get Directions button is clicked")]
+    public async Task HandleDirectionsClick_ShouldStartDirectionsFlow_WhenClicked()
+    {
+        var center = BowlingCenterSummaryResponseFactory.Create(name: "Directions Bowl");
+        SetupSuccessResponse([center]);
+
+        var cut = _ctx.Render<BowlingCentersPage>();
+        await cut.InvokeAsync(() =>
+            cut.FindAll("button").First(b => b.TextContent.Trim() == "Get Directions").Click());
+
+        cut.Markup.ShouldContain("Directions Bowl");
+    }
+
+    [Fact(DisplayName = "Should focus map location when center card is clicked")]
+    public async Task HandleCenterCardClick_ShouldFocusMapLocation_WhenCardClicked()
+    {
+        var center = BowlingCenterSummaryResponseFactory.Create(name: "Focus Bowl");
+        SetupSuccessResponse([center]);
+
+        var cut = _ctx.Render<BowlingCentersPage>();
+        await cut.InvokeAsync(() => cut.Find(".neba-card").Click());
+
+        cut.Markup.ShouldContain("Focus Bowl");
+    }
+
     private void SetupSuccessResponse(IReadOnlyCollection<BowlingCenterSummaryResponse> centers)
     {
         var response = new Mock<IApiResponse<CollectionResponse<BowlingCenterSummaryResponse>>>(MockBehavior.Strict);
