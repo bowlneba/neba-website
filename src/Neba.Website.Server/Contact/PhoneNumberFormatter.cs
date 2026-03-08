@@ -35,9 +35,8 @@ internal static class PhoneNumberFormatter
             digits = digits[1..];
         }
 
-        if (digits.Length != 10)
-            return null;
-
-        return $"({digits[..3]}) {digits[3..6]}-{digits[6..]}";
+        return digits.Length != 10
+            ? null
+            : $"({digits[..3]}) {digits[3..6]}-{digits[6..]}";
     }
 }
