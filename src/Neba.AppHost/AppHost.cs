@@ -51,6 +51,14 @@ var api = builder.AddProject<Projects.Neba_Api>("api")
             Url = $"{endpoint.Url}/background-jobs",
             DisplayText = "Hangfire Dashboard"
         });
+
+#if DEBUG
+        context.Urls.Add(new ResourceUrlAnnotation
+        {
+            Url = $"{endpoint.Url}/debug/cache",
+            DisplayText = "Clear Cache"
+        });
+#endif
     });
 
 var web = builder.AddProject<Projects.Neba_Website_Server>("web")
