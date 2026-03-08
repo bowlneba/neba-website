@@ -8,12 +8,14 @@
 @inject IJSRuntime JSInterop
 @inject ApiExecutor ApiExecutor
 @inject IBowlingCentersApi BowlingCentersApi
+@inject ILogger<BowlingCenters> Logger
 
 <script src="./BowlingCenters/BowlingCenters.razor.js" type="module"></script>
 
 <PageTitle>Bowling Centers - NEBA</PageTitle>
 <HeadContent>
-    <meta name="description" content="Browse USBC certified bowling centers across New England. Find centers in Massachusetts, Connecticut, Rhode Island, New Hampshire, Maine, and Vermont." />
+    <meta name="description"
+          content="Browse USBC certified bowling centers across New England. Find centers in Massachusetts, Connecticut, Rhode Island, New Hampshire, Maine, and Vermont." />
 </HeadContent>
 
 <div class="neba-space-y-6">
@@ -26,10 +28,7 @@
     <!-- Error Alert -->
     @if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
-        <NebaAlert Severity="NotifySeverity.Error"
-                   Title="Error Loading Centers"
-                   Message="@_errorMessage"
-                   Dismissible="true"
+        <NebaAlert Severity="NotifySeverity.Error" Title="Error Loading Centers" Message="@_errorMessage" Dismissible="true"
                    OnDismiss="@(() => _errorMessage = null)" />
     }
 
@@ -53,26 +52,32 @@
         <!-- Filter Bar -->
         @if (_allCenters.Count > 0)
         {
-            <div class="flex flex-col md:flex-row gap-4 p-4 bg-[var(--neba-gray-100)] rounded-lg border border-[var(--neba-gray-300)]">
+            <div
+                class="flex flex-col md:flex-row gap-4 p-4 bg-[var(--neba-gray-100)] rounded-lg border border-[var(--neba-gray-300)]">
                 <!-- State Filters -->
                 <div class="flex flex-wrap items-center gap-2">
                     <span class="font-semibold text-[var(--neba-gray-700)] text-sm">Filter by State:</span>
-                    <button class="state-btn @(_selectedState == null ? "active" : "")" @onclick="@(async () => await FilterByStateAsync(null))">All States</button>
-                    <button class="state-btn @(_selectedState == "MA" ? "active" : "")" @onclick="@(async () => await FilterByStateAsync("MA"))">MA</button>
-                    <button class="state-btn @(_selectedState == "CT" ? "active" : "")" @onclick="@(async () => await FilterByStateAsync("CT"))">CT</button>
-                    <button class="state-btn @(_selectedState == "RI" ? "active" : "")" @onclick="@(async () => await FilterByStateAsync("RI"))">RI</button>
-                    <button class="state-btn @(_selectedState == "NH" ? "active" : "")" @onclick="@(async () => await FilterByStateAsync("NH"))">NH</button>
-                    <button class="state-btn @(_selectedState == "ME" ? "active" : "")" @onclick="@(async () => await FilterByStateAsync("ME"))">ME</button>
-                    <button class="state-btn @(_selectedState == "VT" ? "active" : "")" @onclick="@(async () => await FilterByStateAsync("VT"))">VT</button>
+                    <button class="state-btn @(_selectedState == null ? "active" : "")"
+                            @onclick="@(async () => await FilterByStateAsync(null))">All States</button>
+                    <button class="state-btn @(_selectedState == "MA" ? "active" : "")"
+                            @onclick="@(async () => await FilterByStateAsync("MA"))">MA</button>
+                    <button class="state-btn @(_selectedState == "CT" ? "active" : "")"
+                            @onclick="@(async () => await FilterByStateAsync("CT"))">CT</button>
+                    <button class="state-btn @(_selectedState == "RI" ? "active" : "")"
+                            @onclick="@(async () => await FilterByStateAsync("RI"))">RI</button>
+                    <button class="state-btn @(_selectedState == "NH" ? "active" : "")"
+                            @onclick="@(async () => await FilterByStateAsync("NH"))">NH</button>
+                    <button class="state-btn @(_selectedState == "ME" ? "active" : "")"
+                            @onclick="@(async () => await FilterByStateAsync("ME"))">ME</button>
+                    <button class="state-btn @(_selectedState == "VT" ? "active" : "")"
+                            @onclick="@(async () => await FilterByStateAsync("VT"))">VT</button>
                 </div>
 
                 <!-- Search Box -->
                 <div class="flex-1 min-w-[200px]">
                     <input type="text"
                            class="w-full px-4 py-2 border-2 border-[var(--neba-gray-300)] rounded-md focus:outline-none focus:border-[var(--neba-blue-500)] transition-colors"
-                           placeholder="Search centers..."
-                           @bind="_searchQuery"
-                           @bind:event="oninput"
+                           placeholder="Search centers..." @bind="_searchQuery" @bind:event="oninput"
                            @bind:after="ApplySearchFilterAsync" />
                 </div>
 
@@ -114,9 +119,12 @@
                                     <div class="space-y-2 mb-4">
                                         <!-- Address -->
                                         <div class="flex items-start gap-2 text-sm text-[var(--neba-gray-700)]">
-                                            <svg class="w-5 h-5 text-[var(--neba-blue-600)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <svg class="w-5 h-5 text-[var(--neba-blue-600)] flex-shrink-0 mt-0.5" fill="none"
+                                                 stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                             </svg>
                                             <div>
                                                 @center.Street
@@ -132,12 +140,14 @@
 
                                         <!-- Phone -->
                                         <div class="flex items-center gap-2 text-sm">
-                                            <svg class="w-5 h-5 text-[var(--neba-blue-600)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                            <svg class="w-5 h-5 text-[var(--neba-blue-600)] flex-shrink-0" fill="none"
+                                                 stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                             </svg>
                                             <a href="@center.PhoneUri"
-                                               class="text-[var(--neba-blue-600)] hover:text-[var(--neba-blue-700)] hover:underline"
-                                               @onclick:stopPropagation="true">
+                                                   class="text-[var(--neba-blue-600)] hover:text-[var(--neba-blue-700)] hover:underline"
+                                                   @onclick:stopPropagation="true">
                                                 @center.PhoneDisplay
                                             </a>
                                         </div>
@@ -146,14 +156,14 @@
                                         @if (center.Website is not null)
                                         {
                                             <div class="flex items-center gap-2 text-sm">
-                                                <svg class="w-5 h-5 text-[var(--neba-blue-600)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" />
+                                                <svg class="w-5 h-5 text-[var(--neba-blue-600)] flex-shrink-0" fill="none"
+                                                     stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" />
                                                 </svg>
-                                                <a href="@center.Website"
-                                                   target="_blank"
-                                                   rel="noopener noreferrer"
-                                                   class="text-[var(--neba-blue-600)] hover:text-[var(--neba-blue-700)] hover:underline truncate"
-                                                   @onclick:stopPropagation="true">
+                                                <a href="@center.Website" target="_blank" rel="noopener noreferrer"
+                                                       class="text-[var(--neba-blue-600)] hover:text-[var(--neba-blue-700)] hover:underline truncate"
+                                                       @onclick:stopPropagation="true">
                                                     @center.Website.Host
                                                 </a>
                                             </div>
@@ -161,10 +171,10 @@
                                     </div>
 
                                     <button class="neba-btn neba-btn-primary w-full flex items-center justify-center gap-2"
-                                            @onclick="@(() => HandleDirectionsClick(center))"
-                                            @onclick:stopPropagation="true">
+                                            @onclick="@(() => HandleDirectionsClick(center))" @onclick:stopPropagation="true">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                                         </svg>
                                         Get Directions
                                     </button>
@@ -199,13 +209,8 @@
                     </div>
 
                     <!-- Map Component -->
-                    <NebaMap @ref="_mapComponent"
-                             Locations="@_mapLocations"
-                             EnableClustering="true"
-                             Center="@(new[] { -71.0589, 42.3601 })"
-                             Zoom="7"
-                             Height="600px"
-                             MapStyle="@_mapStyle"
+                    <NebaMap @ref="_mapComponent" Locations="@_mapLocations" EnableClustering="true"
+                             Center="@(new[] { -71.0589, 42.3601 })" Zoom="7" Height="600px" MapStyle="@_mapStyle"
                              OnBoundsChanged="@HandleBoundsChanged" />
                 </div>
             </div>
@@ -213,9 +218,7 @@
     }
 
     <!-- Directions Modal -->
-    <DirectionsModal IsOpen="@_showDirectionsModal"
-                     OnClose="@HandleDirectionsClose"
-                     State="@_directionsState"
+    <DirectionsModal IsOpen="@_showDirectionsModal" OnClose="@HandleDirectionsClose" State="@_directionsState"
                      OnLocationSelected="@HandleLocationSelected" />
 </div>
 
@@ -433,9 +436,19 @@
                 _directionsState.ErrorMessage = "Unable to calculate route. Please try a different starting location.";
             }
         }
-        catch (Exception ex)
+        catch (TaskCanceledException ex)
         {
-            _directionsState.ErrorMessage = $"Error calculating route: {ex.Message}";
+            Logger.LogInformation(ex, "[BowlingCenters] Route request was canceled.");
+            _directionsState.ErrorMessage = "Route request was canceled. Please try again.";
+        }
+        catch (JSDisconnectedException ex)
+        {
+            Logger.LogInformation(ex, "[BowlingCenters] Route request stopped because the circuit disconnected.");
+        }
+        catch (JSException ex)
+        {
+            Logger.LogWarning(ex, "[BowlingCenters] Route request failed in JavaScript interop.");
+            _directionsState.ErrorMessage = "Unable to calculate route right now. Please try again.";
         }
         finally
         {
@@ -470,8 +483,18 @@
     {
         if (_jsModule is not null)
         {
-            try { await _jsModule.DisposeAsync(); }
-            catch (JSDisconnectedException) { /* circuit disconnected during disposal — safe to ignore */ }
+            try
+            {
+                await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException ex)
+            {
+                Logger.LogInformation(ex, "[BowlingCenters] JS module disposal skipped because the circuit disconnected.");
+            }
+            catch (JSException ex)
+            {
+                Logger.LogWarning(ex, "[BowlingCenters] Failed to dispose JS module.");
+            }
         }
     }
 }

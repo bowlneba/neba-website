@@ -20,12 +20,12 @@
 @if (!string.IsNullOrWhiteSpace(ErrorMessage))
 {
     <div class="mb-6">
-        <NebaAlert Severity="NotifySeverity.Error"                   Title="@ErrorTitle"                   Message="@ErrorMessage"                   Dismissible="true"
+        <NebaAlert Severity="NotifySeverity.Error" Title="@ErrorTitle" Message="@ErrorMessage" Dismissible="true"
                    OnDismiss="@HandleErrorDismiss" />
     </div>
 }
 
-<NebaLoadingIndicator IsVisible="@IsLoading"                      Text="@LoadingText"                      Scope="LoadingIndicatorScope.Page" />
+<NebaLoadingIndicator IsVisible="@IsLoading" Text="@LoadingText" Scope="LoadingIndicatorScope.Page" />
 
 @if (!IsLoading && Content.HasValue)
 {
@@ -69,7 +69,8 @@
                                 aria-label="Close table of contents">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
                                  viewBox="0 0 16 16" aria-hidden="true">
-                                <path                    d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z" />
+                                <path
+                                d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z" />
                             </svg>
                         </button>
                     </div>
@@ -283,15 +284,15 @@
                 await _module.InvokeVoidAsync("scrollToHash", ContentId, TocListId);
             }
         }
-        catch (JSDisconnectedException)
+        catch (JSDisconnectedException ex)
         {
-            // Circuit disconnected - browser will clean up JS resources
+            Logger.LogInformation(ex, "[NebaDocument] TOC initialization skipped because the circuit disconnected.");
         }
-        catch (TaskCanceledException)
+        catch (TaskCanceledException ex)
         {
-            // Disposal in progress
+            Logger.LogInformation(ex, "[NebaDocument] TOC initialization was canceled.");
         }
-        catch (Exception ex)
+        catch (JSException ex)
         {
             Logger.LogTocInitializationFailed(ex, ContentId);
         }
@@ -306,17 +307,17 @@
         {
             await _module.InvokeVoidAsync("initializeSlideoverContent", SlideoverContentId);
         }
-        catch (JSDisconnectedException)
+        catch (JSDisconnectedException ex)
         {
-            // Circuit disconnected - browser will clean up JS resources
+            Logger.LogInformation(ex, "[NebaDocument] Slideover initialization skipped because the circuit disconnected.");
         }
-        catch (TaskCanceledException)
+        catch (TaskCanceledException ex)
         {
-            // Disposal in progress
+            Logger.LogInformation(ex, "[NebaDocument] Slideover initialization was canceled.");
         }
-        catch (Exception ex)
+        catch (JSException ex)
         {
-            Logger.LogError(ex, "Failed to initialize slideover content link handlers for {ContentId}", SlideoverContentId);
+            Logger.LogWarning(ex, "Failed to initialize slideover content link handlers for {ContentId}", SlideoverContentId);
         }
     }
 
@@ -347,13 +348,17 @@
                 await _module.InvokeVoidAsync("dispose");
                 await _module.DisposeAsync();
             }
-            catch (JSDisconnectedException)
+            catch (JSDisconnectedException ex)
             {
-                // Circuit disconnected - browser will clean up JS resources
+                Logger.LogInformation(ex, "[NebaDocument] JS cleanup skipped because the circuit disconnected.");
             }
-            catch (TaskCanceledException)
+            catch (TaskCanceledException ex)
             {
-                // Disposal was cancelled
+                Logger.LogInformation(ex, "[NebaDocument] JS cleanup was canceled.");
+            }
+            catch (JSException ex)
+            {
+                Logger.LogWarning(ex, "[NebaDocument] Failed to dispose JS resources.");
             }
         }
 

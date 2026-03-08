@@ -187,9 +187,19 @@
         {
             return await _jsModule.InvokeAsync<RouteData>("showRoute", origin, destination);
         }
-        catch (Exception ex)
+        catch (TaskCanceledException ex)
         {
-            Logger.LogError(ex, "[NebaMap] Error showing route");
+            Logger.LogInformation(ex, "[NebaMap] Route request was canceled.");
+            return null;
+        }
+        catch (JSDisconnectedException ex)
+        {
+            Logger.LogInformation(ex, "[NebaMap] Route request stopped because the circuit disconnected.");
+            return null;
+        }
+        catch (JSException ex)
+        {
+            Logger.LogWarning(ex, "[NebaMap] Route request failed in JavaScript interop.");
             return null;
         }
     }
@@ -202,9 +212,9 @@
             {
                 await _jsModule.InvokeVoidAsync("exitDirectionsMode");
             }
-            catch (JSDisconnectedException)
+            catch (JSDisconnectedException ex)
             {
-                // Circuit disconnected; nothing to clean up client-side.
+                Logger.LogInformation(ex, "[NebaMap] Directions cleanup skipped because the circuit disconnected.");
             }
             catch (JSException ex)
             {
@@ -247,13 +257,26 @@
             {
                 await _jsModule.InvokeVoidAsync("dispose");
             }
-            catch (Exception ex)
+            catch (JSDisconnectedException ex)
             {
-                Logger.LogWarning(ex, "[NebaMap] Error during dispose");
+                Logger.LogInformation(ex, "[NebaMap] JS cleanup skipped because the circuit disconnected.");
             }
-            finally
+            catch (JSException ex)
+            {
+                Logger.LogWarning(ex, "[NebaMap] Error during JS cleanup.");
+            }
+
+            try
             {
                 await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException ex)
+            {
+                Logger.LogInformation(ex, "[NebaMap] JS module disposal skipped because the circuit disconnected.");
+            }
+            catch (JSException ex)
+            {
+                Logger.LogWarning(ex, "[NebaMap] Failed to dispose JS module.");
             }
         }
 
