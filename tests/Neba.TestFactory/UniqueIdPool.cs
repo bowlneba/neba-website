@@ -1,22 +1,22 @@
 namespace Neba.TestFactory;
 
 /// <summary>
-/// Factory for creating <see cref="UniquePool{T}"/> instances.
+/// Factory for creating <see cref="UniqueIdPool{T}"/> instances.
 /// </summary>
-public static class UniquePool
+public static class UniqueIdPool
 {
     /// <summary>
     /// Creates a pool from <paramref name="values"/>, shuffled using the optional <paramref name="seed"/>.
     /// </summary>
     /// <param name="values">The unique values to pool.</param>
     /// <param name="seed">Optional seed for reproducible shuffling and null decisions.</param>
-    /// <param name="probabilityOfValue">Probability (0.0–1.0) that <see cref="UniquePool{T}.GetNext"/> returns a value rather than null. Defaults to 1.0 (always a value).</param>
+    /// <param name="probabilityOfValue">Probability (0.0–1.0) that <see cref="UniqueIdPool{T}.GetNext"/> returns a value rather than null. Defaults to 1.0 (always a value).</param>
 #pragma warning disable CA5394 // Random is acceptable here — used only for test data generation, not security
-    public static UniquePool<T> Create<T>(IEnumerable<T> values, int? seed = null, float probabilityOfValue = 1.0f)
+    public static UniqueIdPool<T> Create<T>(IEnumerable<T> values, int? seed = null, float probabilityOfValue = 1.0f)
     {
         var random = seed.HasValue ? new Random(seed.Value) : new Random();
         List<T> shuffled = [.. values.OrderBy(_ => random.Next())];
-        return new UniquePool<T>(shuffled, random, probabilityOfValue);
+        return new UniqueIdPool<T>(shuffled, random, probabilityOfValue);
     }
 #pragma warning restore CA5394
 }
@@ -27,14 +27,14 @@ public static class UniquePool
 /// Supports probabilistic null values for optional fields.
 /// </summary>
 /// <typeparam name="T">The type of values in the pool.</typeparam>
-public sealed class UniquePool<T>
+public sealed class UniqueIdPool<T>
 {
     private readonly List<T> _values;
     private readonly Random _random;
     private readonly float _probabilityOfValue;
     private int _currentIndex;
 
-    internal UniquePool(List<T> values, Random random, float probabilityOfValue)
+    internal UniqueIdPool(List<T> values, Random random, float probabilityOfValue)
     {
         _values = values;
         _random = random;

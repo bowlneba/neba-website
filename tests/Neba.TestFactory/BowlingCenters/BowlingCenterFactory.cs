@@ -44,17 +44,17 @@ public static class BowlingCenterFactory
 
     public static IReadOnlyCollection<BowlingCenter> Bogus(int count, int? seed)
     {
-        var certPool = UniquePool.Create(
+        var certPool = UniqueIdPool.Create(
             Enumerable.Range(10000, 90000).Select(i => i.ToString(CultureInfo.InvariantCulture)),
             seed,
             probabilityOfValue: 1.0f);
 
-        var websiteIdPool = UniquePool.Create(
+        var websiteIdPool = UniqueIdPool.Create(
             Enumerable.Range(1, 100_000).Select(i => (int?)i),
             seed,
             probabilityOfValue: 0.5f);
 
-        var legacyIdPool = UniquePool.Create(
+        var legacyIdPool = UniqueIdPool.Create(
             Enumerable.Range(100_001, 100_000).Select(i => (int?)i),
             seed,
             probabilityOfValue: 0.5f);
