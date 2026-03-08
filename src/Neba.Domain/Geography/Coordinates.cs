@@ -49,12 +49,9 @@ public sealed record Coordinates
             return CoordinatesErrors.InvalidLatitude;
         }
 
-        if (longitude < -180 || longitude > 180)
-        {
-            return CoordinatesErrors.InvalidLongitude;
-        }
-
-        return new Coordinates(latitude, longitude);
+        return longitude < -180 || longitude > 180
+            ? CoordinatesErrors.InvalidLongitude
+            : new Coordinates(latitude, longitude);
     }
 
     /// <summary>
