@@ -81,29 +81,26 @@ internal sealed class BowlingCenterConfiguration
             .IsUnique()
             .AreNullsDistinct();
 
-        builder.OwnsOne(bowlingCenter => bowlingCenter.Lanes, lanes =>
+        builder.OwnsOne(bowlingCenter => bowlingCenter.Lanes, lanes => lanes.OwnsMany(lanes => lanes.Ranges, laneRanges =>
         {
-            lanes.OwnsMany(lanes => lanes.Ranges, laneRanges =>
-            {
-                laneRanges.ToTable("bowling_center_lanes", AppDbContext.DefaultSchema);
-                laneRanges.WithOwner().HasForeignKey(ForeignKeyName);
-                laneRanges.HasKey(ForeignKeyName, nameof(LaneRange.StartLane));
+            laneRanges.ToTable("bowling_center_lanes", AppDbContext.DefaultSchema);
+            laneRanges.WithOwner().HasForeignKey(ForeignKeyName);
+            laneRanges.HasKey(ForeignKeyName, nameof(LaneRange.StartLane));
 
-                laneRanges.Property(range => range.StartLane)
-                    .HasColumnName("start_lane")
-                    .ValueGeneratedNever()
-                    .IsRequired();
+            laneRanges.Property(range => range.StartLane)
+                .HasColumnName("start_lane")
+                .ValueGeneratedNever()
+                .IsRequired();
 
-                laneRanges.Property(range => range.EndLane)
-                    .HasColumnName("end_lane")
-                    .IsRequired();
+            laneRanges.Property(range => range.EndLane)
+                .HasColumnName("end_lane")
+                .IsRequired();
 
-                laneRanges.Property(range => range.PinFallType)
-                    .HasColumnName("pin_fall_type")
-                    .HasMaxLength(2)
-                    .IsFixedLength()
-                    .IsRequired();
-            });
-        });
+            laneRanges.Property(range => range.PinFallType)
+                .HasColumnName("pin_fall_type")
+                .HasMaxLength(2)
+                .IsFixedLength()
+                .IsRequired();
+        }));
     }
 }
