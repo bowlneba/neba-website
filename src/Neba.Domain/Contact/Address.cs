@@ -89,12 +89,9 @@ public sealed partial record Address
             return AddressErrors.PostalCodeIsRequired;
         }
 
-        if (!IsValidZipCode(zipCode))
-        {
-            return AddressErrors.InvalidPostalCode(zipCode);
-        }
-
-        return new Address
+        return !IsValidZipCode(zipCode)
+            ? AddressErrors.InvalidPostalCode(zipCode)
+            : new Address
         {
             Street = street,
             Unit = unit,
@@ -145,12 +142,9 @@ public sealed partial record Address
             return AddressErrors.PostalCodeIsRequired;
         }
 
-        if (!IsValidCanadianPostalCode(postalCode))
-        {
-            return AddressErrors.InvalidPostalCode(postalCode);
-        }
-
-        return new Address
+        return !IsValidCanadianPostalCode(postalCode)
+            ? AddressErrors.InvalidPostalCode(postalCode)
+            : new Address
         {
             Street = street,
             Unit = unit,
