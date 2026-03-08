@@ -12,10 +12,7 @@ namespace Neba.Domain.Tests.Identities;
 public sealed partial class UlidStrongIdTests
 {
     [StronglyTypedId("ulid-full")]
-    private readonly partial struct TestId
-    {
-        public override readonly string ToString() => Value.ToString();
-    }
+    private readonly partial struct TestId;
 
     #region Constructor Tests
 

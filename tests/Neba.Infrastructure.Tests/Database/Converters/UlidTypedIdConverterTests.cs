@@ -10,10 +10,7 @@ namespace Neba.Infrastructure.Tests.Database.Converters;
 public sealed partial class UlidTypedIdConverterTests
 {
     [StronglyTypedId("ulid-full")]
-    private readonly partial struct TestId
-    {
-        public override readonly string ToString() => Value.ToString();
-    }
+    private readonly partial struct TestId;
 
     private readonly struct NoStringCtorId(int value)
     {

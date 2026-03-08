@@ -12,10 +12,22 @@ internal sealed class UlidTypedIdConverter<TId>(ConverterMappingHints? mappingHi
 
     private static Expression<Func<TId, string>> BuildToProvider()
     {
-        var param = Expression.Parameter(typeof(TId), "id");
-        var toString = Expression.Call(param, nameof(ToString), typeArguments: null);
+        const string valuePropertyName = "Value";
 
-        return Expression.Lambda<Func<TId, string>>(toString, param);
+        var valueProperty = typeof(TId).GetProperty(valuePropertyName)
+            ?? throw new InvalidOperationException($"Type {typeof(TId)} must expose a '{valuePropertyName}' property.");
+
+        var param = Expression.Parameter(typeof(TId), "id");
+        var value = Expression.Property(param, valueProperty);
+
+        Expression toProvider = valueProperty.PropertyType switch
+        {
+            { } type when type == typeof(Ulid) => Expression.Call(value, nameof(Ulid.ToString), Type.EmptyTypes),
+            { } type when type == typeof(string) => value,
+            _ => throw new InvalidOperationException($"Type {typeof(TId)} must expose a '{valuePropertyName}' property of type {nameof(Ulid)} or {nameof(String)}."),
+        };
+
+        return Expression.Lambda<Func<TId, string>>(toProvider, param);
     }
 
     private static Expression<Func<string, TId>> BuildFromProvider()
