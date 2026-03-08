@@ -12,7 +12,12 @@ internal static class BowlingCenterMappingExtensions
     {
         public BowlingCenterSummaryViewModel ToViewModel()
         {
-            var workPhoneNumber = response.PhoneNumbers.SingleOrDefault(phone => phone.PhoneNumberType == "Work");
+            var selectedPhoneNumber = response.PhoneNumbers
+                .SingleOrDefault(phone => phone.PhoneNumberType == "Work")
+                ?.PhoneNumber
+                ?? response.PhoneNumbers.FirstOrDefault()?.PhoneNumber
+                ?? throw new InvalidOperationException(
+                    $"Bowling center '{response.CertificationNumber}' has no phone numbers; this violates the domain invariant.");
 
             return new()
             {
@@ -25,8 +30,8 @@ internal static class BowlingCenterMappingExtensions
                 PostalCode = PostalCodeFormatter.FormatForDisplay(response.PostalCode),
                 Latitude = response.Latitude,
                 Longitude = response.Longitude,
-                PhoneUri = new($"tel:{workPhoneNumber?.PhoneNumber ?? response.PhoneNumbers.First().PhoneNumber}"),
-                PhoneDisplay = PhoneNumberFormatter.FormatForDisplay(workPhoneNumber?.PhoneNumber ?? response.PhoneNumbers.First().PhoneNumber),
+                PhoneUri = new($"tel:{selectedPhoneNumber}"),
+                PhoneDisplay = PhoneNumberFormatter.FormatForDisplay(selectedPhoneNumber),
                 Website = Uri.TryCreate(response.Website, UriKind.Absolute, out var websiteUri) ? websiteUri : null
             };
         }

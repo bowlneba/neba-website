@@ -44,6 +44,16 @@ public sealed class BowlingCenterMappingExtensionsTests
         await Verify(viewModel);
     }
 
+    [Fact(DisplayName = "Throws when no phone numbers are provided")]
+    public void ToViewModel_ShouldThrowInvalidOperationException_WhenPhoneNumbersAreEmpty()
+    {
+        var response = BowlingCenterSummaryResponseFactory.Create(phoneNumbers: []);
+
+        var exception = Should.Throw<InvalidOperationException>(() => response.ToViewModel());
+
+        exception.Message.ShouldContain($"Bowling center '{response.CertificationNumber}' has no phone numbers");
+    }
+
     [Fact(DisplayName = "Formats phone number with extension for display and URI")]
     public async Task ToViewModel_ShouldFormatPhoneWithExtension()
     {
