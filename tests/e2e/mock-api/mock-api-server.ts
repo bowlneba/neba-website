@@ -67,7 +67,7 @@ const MOCK_BOWLING_CENTERS = {
       phoneNumbers: [{ phoneNumberType: 'Work', phoneNumber: '6175550200' }],
     },
   ],
-  count: 2,
+  totalItems: 2,
 };
 
 const routes: Record<string, unknown> = {

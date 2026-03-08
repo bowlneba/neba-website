@@ -27,7 +27,7 @@ export function mockApiResponse<T>(data: T, status = 200) {
 export function collectionResponse<T>(items: T[]) {
   return {
     items,
-    count: items.length,
+    totalItems: items.length,
   };
 }
 
