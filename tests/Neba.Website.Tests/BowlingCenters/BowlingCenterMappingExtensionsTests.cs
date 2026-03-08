@@ -108,4 +108,26 @@ public sealed class BowlingCenterMappingExtensionsTests
 
         await Verify(viewModel);
     }
+
+    [Fact(DisplayName = "Drops website when URI scheme is javascript")]
+    public void ToViewModel_ShouldDropWebsite_WhenWebsiteSchemeIsJavascript()
+    {
+        var response = BowlingCenterSummaryResponseFactory.Create(
+            website: "javascript:alert('xss')");
+
+        var viewModel = response.ToViewModel();
+
+        viewModel.Website.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "Drops website when URI scheme is data")]
+    public void ToViewModel_ShouldDropWebsite_WhenWebsiteSchemeIsData()
+    {
+        var response = BowlingCenterSummaryResponseFactory.Create(
+            website: "data:text/html;base64,PHNjcmlwdD5hbGVydCgneHNzJyk8L3NjcmlwdD4=");
+
+        var viewModel = response.ToViewModel();
+
+        viewModel.Website.ShouldBeNull();
+    }
 }

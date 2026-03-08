@@ -32,7 +32,11 @@ internal static class BowlingCenterMappingExtensions
                 Longitude = response.Longitude,
                 PhoneUri = new($"tel:{selectedPhoneNumber}"),
                 PhoneDisplay = PhoneNumberFormatter.FormatForDisplay(selectedPhoneNumber),
-                Website = Uri.TryCreate(response.Website, UriKind.Absolute, out var websiteUri) ? websiteUri : null
+                Website = Uri.TryCreate(response.Website, UriKind.Absolute, out var websiteUri)
+                    && (string.Equals(websiteUri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(websiteUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+                    ? websiteUri
+                    : null
             };
         }
     }
