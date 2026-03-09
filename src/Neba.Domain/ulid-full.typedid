@@ -245,16 +245,4 @@
             return Value.TryFormat(destination, out charsWritten, format, provider: null);
         }
 #endif
-
-        public partial class EfCoreValueConverter : global::Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<PLACEHOLDERID, string>
-        {
-            public EfCoreValueConverter() : this(null) { }
-            public EfCoreValueConverter(global::Microsoft.EntityFrameworkCore.Storage.ValueConversion.ConverterMappingHints? mappingHints = null)
-                : base(
-                    id => id.Value.ToString(),
-                    value => new PLACEHOLDERID(value),
-                    mappingHints
-                ) { }
-        }
-
     }

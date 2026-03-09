@@ -45,6 +45,14 @@ app.UseOpenApiDocumentation();
 
 app.UseInfrastructure();
 
+#if DEBUG
+app.MapGet("/debug/cache", async (ZiggyCreatures.Caching.Fusion.IFusionCache cache, CancellationToken ct) =>
+{
+    await cache.RemoveByTagAsync("neba", token: ct);
+    return Results.Ok("Cache cleared.");
+}).AllowAnonymous();
+#endif
+
 app.MapDefaultEndpoints();
 
 await app.RunAsync();

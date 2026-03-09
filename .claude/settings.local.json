@@ -28,8 +28,7 @@
       "mcp__aspire__list_trace_structured_logs",
       "Bash(gh issue list:*)",
       "Bash(curl:*)",
-      "Bash(lsof:*)"
-    ],
+      "Bash(lsof:*)"],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",
       "/Users/kippermand/Projects/bowlneba/neba-website/tests",

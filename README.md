@@ -121,6 +121,29 @@ src/
 - [Blazor Architecture](docs/architecture/blazor.md)
 - [ADR: ULID and Shadow Key Pattern](docs/architecture/adr-ulid-shadow-keys.md)
 
+### Local EF Core Migrations
+
+For local-only `dotnet ef` operations, do not hardcode or commit database credentials.
+
+1. Set the local connection string in user-secrets (Infrastructure project):
+
+  ```bash
+  dotnet user-secrets --project src/Neba.Infrastructure set "ConnectionStrings:bowlneba" "Host=localhost;Port=52502;Database=bowlneba;Username=postgres;Password=<local-password>"
+  ```
+
+2. Run migrations from infrastructure:
+
+  ```bash
+  cd src/Neba.Infrastructure
+  dotnet ef database update
+  ```
+
+Optional one-off (without user-secrets):
+
+```bash
+ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Username=postgres;Password=<local-password>' dotnet ef database update
+```
+
 ---
 
 ## Implementation Plan

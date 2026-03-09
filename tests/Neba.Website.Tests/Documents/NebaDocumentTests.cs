@@ -6,6 +6,7 @@ using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Components;
 using Neba.Website.Server.Documents;
 using Neba.Website.Server.Notifications;
+using Neba.Website.Tests.TestSupport;
 
 namespace Neba.Website.Tests.Documents;
 
@@ -13,7 +14,13 @@ namespace Neba.Website.Tests.Documents;
 [Component("Website.Documents.NebaDocument")]
 public sealed class NebaDocumentTests : IDisposable
 {
-    private readonly BunitContext _ctx = new();
+    private readonly BunitContext _ctx;
+
+    public NebaDocumentTests()
+    {
+        _ctx = new BunitContext();
+        _ctx.SetupNebaDocumentModule();
+    }
 
     public void Dispose() => _ctx.Dispose();
 

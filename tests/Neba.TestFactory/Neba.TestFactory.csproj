@@ -6,12 +6,20 @@
     <ItemGroup>
       <PackageReference Include="Aspire.Hosting.Testing" />
       <PackageReference Include="Bogus" />
+      <PackageReference Include="Respawn" />
       <PackageReference Include="Testcontainers.Azurite" />
+      <PackageReference Include="Testcontainers.PostgreSql" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="../../src/Neba.AppHost/Neba.AppHost.csproj" />
       <ProjectReference Include="../../src/Neba.Infrastructure/Neba.Infrastructure.csproj" />
+      <ProjectReference Include="../../src/Neba.Api.Contracts/Neba.Api.Contracts.csproj" />
+      <ProjectReference Include="../../src/Neba.Website.Server/Neba.Website.Server.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <InternalsVisibleTo Include="Neba.Infrastructure.Tests" />
     </ItemGroup>
 
 </Project>

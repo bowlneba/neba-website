@@ -304,6 +304,15 @@ Flag when:
 
 ## Testing
 
+### Architecture Tests
+
+Architecture rules are enforced automatically by `Neba.Architecture.Tests` (ArchUnitNET). These run in CI before unit tests and fail the build on violations — no manual review needed for what they cover.
+
+Flag when:
+
+- A new bounded context namespace is added under `Neba.Domain` (e.g., `Neba.Domain.Tournaments`) but `BoundedContextNamespaces` in `DomainBoundaryTests.cs` is not updated. This is the **only file that needs updating** when a new bounded context is introduced.
+- A new handler interface type is introduced (beyond `ICommandHandler`, `IQueryHandler`, `IBackgroundJobHandler`) without corresponding naming, visibility, and colocation tests added to `Neba.Architecture.Tests`.
+
 ### Required Coverage
 
 New code should maintain 80%+ coverage (enforced by SonarQube). Flag when:
@@ -385,6 +394,7 @@ _storageServiceMock.Verify(
 Flag when:
 
 - Tests manually instantiate domain entities instead of using factories
+- New entity, value object, DTO, or response type is added without a corresponding factory class in `Neba.TestFactory` (excludes SmartEnums, strongly-typed IDs, and command/query/job input objects — those don't need factories)
 - Tests don't follow the Arrange-Act-Assert pattern
 - Integration tests don't use Bogus factories with seeds for reproducibility
 - Missing Verify (snapshot) tests for mapping operations
@@ -577,11 +587,13 @@ When reviewing, verify:
 ### Testing
 
 - [ ] Tests use factories, not manual instantiation
+- [ ] New entity/value object/DTO/response has a corresponding factory in `Neba.TestFactory` (SmartEnums, strongly-typed IDs, and input objects are exempt)
 - [ ] Tests have `[UnitTest]` or `[IntegrationTest]` trait
 - [ ] Tests have `[Component]` trait
 - [ ] Tests have `DisplayName` on Facts and Theories
 - [ ] New code has corresponding tests
 - [ ] API endpoint integration tests cover success, validation failure, and auth failure
+- [ ] New Domain bounded context namespace added to `BoundedContextNamespaces` in `DomainBoundaryTests.cs`
 
 ### Observability
 

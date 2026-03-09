@@ -1,0 +1,152 @@
+﻿[
+  {
+    CertificationNumber: 11181,
+    Name: Gleichner - Bernhard,
+    Status: Open,
+    Address: {
+      Street: 27517 Joyce Drive,
+      Unit: Apt. 533,
+      City: South Alfonzo,
+      Region: SD,
+      Country: US,
+      PostalCode: 310785071,
+      Latitude: 73.1183,
+      Longitude: 69.3323
+    },
+    PhoneNumbers: [
+      {
+        PhoneNumberType: Fax,
+        Number: 10719651035
+      },
+      {
+        PhoneNumberType: Home,
+        Number: 12508531078
+      },
+      {
+        PhoneNumberType: Mobile,
+        Number: 15127517225x3810
+      }
+    ],
+    Website: http://adela.net
+  },
+  {
+    CertificationNumber: 18962,
+    Name: Leuschke Group,
+    Status: Open,
+    Address: {
+      Street: 27517 Joyce Drive,
+      Unit: Apt. 533,
+      City: South Alfonzo,
+      Region: SD,
+      Country: US,
+      PostalCode: 310785071,
+      Latitude: 73.1183,
+      Longitude: 69.3323
+    },
+    PhoneNumbers: [
+      {
+        PhoneNumberType: Fax,
+        Number: 10719651035
+      },
+      {
+        PhoneNumberType: Home,
+        Number: 12508531078
+      },
+      {
+        PhoneNumberType: Mobile,
+        Number: 15127517225x3810
+      }
+    ],
+    Website: https://bette.biz
+  },
+  {
+    CertificationNumber: 61154,
+    Name: Homenick and Sons,
+    Status: Open,
+    Address: {
+      Street: 27517 Joyce Drive,
+      Unit: Apt. 533,
+      City: South Alfonzo,
+      Region: SD,
+      Country: US,
+      PostalCode: 310785071,
+      Latitude: 73.1183,
+      Longitude: 69.3323
+    },
+    PhoneNumbers: [
+      {
+        PhoneNumberType: Fax,
+        Number: 10719651035
+      },
+      {
+        PhoneNumberType: Home,
+        Number: 12508531078
+      },
+      {
+        PhoneNumberType: Mobile,
+        Number: 15127517225x3810
+      }
+    ],
+    Website: http://meaghan.net
+  },
+  {
+    CertificationNumber: 69316,
+    Name: Abernathy Inc,
+    Status: Open,
+    Address: {
+      Street: 27517 Joyce Drive,
+      Unit: Apt. 533,
+      City: South Alfonzo,
+      Region: SD,
+      Country: US,
+      PostalCode: 310785071,
+      Latitude: 73.1183,
+      Longitude: 69.3323
+    },
+    PhoneNumbers: [
+      {
+        PhoneNumberType: Fax,
+        Number: 10719651035
+      },
+      {
+        PhoneNumberType: Home,
+        Number: 12508531078
+      },
+      {
+        PhoneNumberType: Mobile,
+        Number: 15127517225x3810
+      }
+    ],
+    Website: https://alvah.info
+  },
+  {
+    CertificationNumber: 98529,
+    Name: Kertzmann Group,
+    Status: Open,
+    Address: {
+      Street: 27517 Joyce Drive,
+      Unit: Apt. 533,
+      City: South Alfonzo,
+      Region: SD,
+      Country: US,
+      PostalCode: 310785071,
+      Latitude: 73.1183,
+      Longitude: 69.3323
+    },
+    PhoneNumbers: [
+      {
+        PhoneNumberType: Fax,
+        Number: 10719651035
+      },
+      {
+        PhoneNumberType: Home,
+        Number: 12508531078
+      },
+      {
+        PhoneNumberType: Mobile,
+        Number: 15127517225x3810
+      }
+    ],
+    Website: http://shannon.org
+  }
+]

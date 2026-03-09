@@ -46,17 +46,52 @@ internal sealed class CachedQueryHandlerDecorator<TQuery, TResponse>
         var options = _cache.DefaultEntryOptions.Duplicate();
         options.Duration = query.Expiry;
 
-        return await _cache.GetOrSetAsync<TResponse>(
-            cacheKey,
-            async (_, cancel) =>
+        try
+        {
+            return await _cache.GetOrSetAsync<TResponse>(
+                cacheKey,
+                async (_, cancel) =>
+                {
+                    _logger.LogCacheMiss(cacheKey);
+                    return await _innerHandler.HandleAsync((TQuery)query, cancel);
+                },
+                failSafeDefaultValue: default,
+                options: options,
+                tags: query.Cache.Tags,
+                token: cancellationToken);
+        }
+        catch (Exception ex) when (IsCacheDeserializationException(ex))
+        {
+            _logger.LogCacheDeserializationFallback(cacheKey, ex);
+
+            var fresh = await _innerHandler.HandleAsync((TQuery)query, cancellationToken);
+            await _cache.SetAsync(cacheKey, fresh!, options, tags: query.Cache.Tags, token: cancellationToken);
+
+            return fresh;
+        }
+    }
+
+    private static bool IsCacheDeserializationException(Exception exception)
+    {
+        Exception? current = exception;
+
+        while (current is not null)
+        {
+            if (current is JsonException)
             {
-                _logger.LogCacheMiss(cacheKey);
-                return await _innerHandler.HandleAsync((TQuery)query, cancel);
-            },
-            failSafeDefaultValue: default,
-            options: options,
-            tags: query.Cache.Tags,
-            token: cancellationToken);
+                return true;
+            }
+
+            if (current is NotSupportedException &&
+                current.Message.Contains("deserialization", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            current = current.InnerException;
+        }
+
+        return false;
     }
 
     private async Task<TResponse> HandleErrorOrResponseAsync(ICachedQuery<TResponse> query, CancellationToken cancellationToken)
@@ -140,4 +175,12 @@ internal static partial class CachedQueryHandlerDecoratorLogMessages
     public static partial void LogRewrappingErrorOr(
         this ILogger logger,
         string cacheKey);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Cache deserialization failed for key '{CacheKey}', refreshing entry from source")]
+    public static partial void LogCacheDeserializationFallback(
+        this ILogger logger,
+        string cacheKey,
+        Exception exception);
 }

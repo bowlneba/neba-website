@@ -1,5 +1,6 @@
 using Neba.Website.Server;
 using Neba.Website.Server.Clock;
+using Neba.Website.Server.Maps;
 using Neba.Website.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
 builder.Services.AddApiServices(builder.Configuration);
+builder.Services.AddMaps(builder.Configuration);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

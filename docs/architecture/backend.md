@@ -289,54 +289,37 @@ From a DDD perspective, there is no difference between natural keys and surrogat
 
 **Surrogate Key (ULID)**:
 
-- Used when no reliable natural key exists
+- Used when no stable natural key exists
 - Example: `BowlerId` wraps a ULID
+- Lives in `SharedKernel` as a cross-boundary reference type
+- Is a strongly-typed value object with a factory method
 
-**Natural Key**:
+**Natural Key** (see [ADR-0005](../adr/0005-shadow-db-pk-for-natural-key-aggregates.md)):
 
 - Used when a stable, always-present natural key exists
-- Example: `BowlingCenterId` wraps a USBC certification number
-
-Both patterns:
-
-- Live in `SharedKernel` as cross-boundary reference types
-- Are strongly-typed value objects
-- Have factory methods for construction
+- The natural key value object **is** the domain identity — no wrapper ID type is created
+- Example: `BowlingCenter` uses `CertificationNumber` directly; no `BowlingCenterId` exists
+- The database PK is a shadow `int` property (`db_id`) configured in EF Core only — never exposed on the domain model
+- Cross-aggregate references use the natural key value object in domain code; EF Core resolves FKs via the shadow int
 
 ```csharp
-// SharedKernel - surrogate key
-[StronglyTypedId("ulid-full)]
+// SharedKernel — surrogate key
+[StronglyTypedId("ulid-full")]
 public record BowlerId;
 
-// SharedKernel - natural key with synthetic fallback
-public record BowlingCenterId
-{
-    public string Value { get; }
-    
-    private BowlingCenterId(string value) 
-        => Value = value;
-    
-    public static BowlingCenterId FromCertification(string certNumber) 
-        => new(certNumber);
-        
-    public static BowlingCenterId Synthetic() => new($"HISTORICAL-{Ulid.NewUlid()}");
-    
-    public bool IsSynthetic => Value.StartsWith("HISTORICAL-");
-}
+// Natural-key aggregate — no wrapper type; the value object is the identity
+// BowlingCenter.CertificationNumber is its domain identity (no BowlingCenterId exists)
 ```
 
-For `BowlingCenter`, the certification number IS the identity. The UI can expose it as "Certification Number" via a property while the domain uses `Id`:
-
 ```csharp
-public class BowlingCenter 
+public sealed class BowlingCenter
     : AggregateRoot
 {
-    public BowlingCenterId Id { get; }
-    public string Name { get; private set; }
-    public Address Address { get; }
-    public BowlingCenterStatus Status { get; private set; }
-    public BowlingCenterSource Source { get; }
-    public DateTime? LastUsbcSync { get; private set; }
+    // CertificationNumber is the domain identity — no Id property
+    public CertificationNumber CertificationNumber { get; init; }
+    public string Name { get; init; }
+    public BowlingCenterStatus Status { get; init; }
+    // ...
 }
 ```
 
@@ -375,16 +358,16 @@ public abstract class AggregateRoot : IAggregateRoot
 
 **Aggregate references** (one aggregate pointing to another):
 
-- FK references the entity ID (BowlerId, BowlingCenterId)
-- Example: `Tournament.VenueId` → `BowlingCenter`
+- For **surrogate-key** aggregates: the domain property holds the typed ID (e.g., `BowlerId`)
+- For **natural-key** aggregates: the domain property holds the natural key value object (e.g., `CertificationNumber`); EF Core maps this to the shadow int FK in the database via a value converter
 
 ```csharp
-public class Tournament 
+public class Tournament
     : AggregateRoot
 {
     public TournamentId Id { get; }
-    public BowlingCenterId VenueId { get; }  // Aggregate reference
-    
+    public CertificationNumber VenueCertificationNumber { get; }  // Cross-aggregate reference to BowlingCenter
+
     private readonly List<TournamentChampion> _champions = [];
     public IReadOnlyList<TournamentChampion> Champions => _champions.AsReadOnly();
 }
@@ -1661,7 +1644,14 @@ public override void Configure()
 
 ### Response Caching
 
-Response caching is handled via **HybridCache in the Application layer**, not at the API endpoint level. Do not use Fast Endpoints' `ResponseCache()` method.
+Response caching is handled via **FusionCache in the Application layer**, not at the API endpoint level. Do not use Fast Endpoints' `ResponseCache()` method.
+
+Current implementation details:
+
+- Cached queries are decorated by `CachedQueryHandlerDecorator<TQuery, TResponse>`.
+- Cache payloads must be serialization-safe DTO shapes. Avoid storing domain SmartEnum types directly in cached DTO properties; map those values to primitives (for example, `Status.Name` as `string`).
+- If a cache entry cannot be deserialized (`JsonException` or deserialization-related `NotSupportedException`), the decorator logs a warning, executes the inner handler, and rewrites the cache entry with fresh data.
+- This self-heals stale distributed cache entries created by older payload shapes without requiring endpoint-level changes.
 
 ### Idempotency
 
@@ -1839,6 +1829,7 @@ Career stats combine both sources transparently.
 ```
 tests/
 ├── Neba.TestFactory/           # Shared test infrastructure (factories, fixtures, traits)
+├── Neba.Architecture.Tests/    # Architecture rule enforcement (ArchUnitNET)
 ├── Neba.Api.Tests/             # API endpoint tests (unit + integration)
 ├── Neba.Application.Tests/     # Handler tests (unit + integration)
 ├── Neba.Domain.Tests/          # Domain logic tests (unit)
@@ -1855,28 +1846,14 @@ All test projects reference `Neba.TestFactory` for shared factories, fixtures, a
 Tests are categorized using custom xUnit v3 trait attributes defined in `Neba.TestFactory`:
 
 ```csharp
-// Category traits - Unit vs Integration
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
-public sealed class UnitTestAttribute : Attribute, ITraitAttribute
-{
-    public IReadOnlyCollection<KeyValuePair<string, string>> GetTraits()
-        => [new("Category", "Unit")];
-}
-
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
-public sealed class IntegrationTestAttribute : Attribute, ITraitAttribute
-{
-    public IReadOnlyCollection<KeyValuePair<string, string>> GetTraits()
-        => [new("Category", "Integration")];
-}
+// Category traits
+[UnitTest]         // Category=Unit
+[IntegrationTest]  // Category=Integration
+[ArchitectureTest] // Category=Architecture
 
 // Component trait - feature/functionality being tested
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
-public sealed class ComponentAttribute(string component) : Attribute, ITraitAttribute
-{
-    public IReadOnlyCollection<KeyValuePair<string, string>> GetTraits()
-        => [new("Component", component)];
-}
+[Component("Tournaments")]
+[Component("Tournaments.Registration")] // sub-component
 ```
 
 **Usage:**
@@ -1922,15 +1899,20 @@ dotnet run --project tests/Neba.Domain.Tests -- --filter "Category=Unit"
 dotnet run -- --filter-query "[Category=Unit]"
 ```
 
-**CI usage**: Run unit and integration tests in separate jobs for faster feedback:
+**CI usage**: Run in separate jobs for faster feedback and clear failure attribution:
 
 ```yaml
+- name: Run Architecture Tests
+  run: dotnet test --filter "Category=Architecture"
+
 - name: Run Unit Tests
   run: dotnet test --filter "Category=Unit"
 
 - name: Run Integration Tests
   run: dotnet test --filter "Category=Integration"
 ```
+
+Architecture tests run first — they're fast (milliseconds, no I/O) and catch structural violations before the full test suite runs.
 
 ### Test Naming & Display Names
 
@@ -1973,6 +1955,38 @@ public static TheoryData<int, int, decimal, int> HandicapTestCases => new()
 - Test output is readable without parsing method names
 - CI logs clearly show what failed
 - Non-technical stakeholders can understand test coverage
+
+### Architecture Tests
+
+Architecture tests live in `Neba.Architecture.Tests` and use [ArchUnitNET](https://github.com/TNG/ArchUnitNET) to enforce structural rules that code review alone cannot reliably catch. They run in milliseconds with no infrastructure required.
+
+All architecture test classes are marked `[ArchitectureTest]` and `[Component("Architecture")]`.
+
+#### What is enforced
+
+| Test class | What it guards |
+| --- | --- |
+| `LayerDependencyTests` | Clean architecture dependency direction: Domain ← Application ← Infrastructure ← Api. Domain and Application must not reference Infrastructure, Api, or Contracts. |
+| `NamingConventionTests` | `IQueryHandler` implementors → name ends with `QueryHandler`. `ICommandHandler` implementors → `CommandHandler`. `IBackgroundJobHandler` implementors → `JobHandler`. |
+| `VisibilityTests` | All handler implementations in the Application layer must be `internal`. |
+| `DependencyGuardTests` | Domain and Application must not reference EF Core, Hangfire, or Newtonsoft.Json. |
+| `ColocationTests` | Each handler class must live in the same namespace as its command/query/job type. |
+| `DomainBoundaryTests` | Domain bounded contexts must not cross-reference each other (see below). |
+
+#### Bounded context namespaces
+
+`DomainBoundaryTests` enforces that the following namespaces within `Neba.Domain` do not depend on each other:
+
+```text
+Neba.Domain.BowlingCenters
+Neba.Domain.Tournaments
+Neba.Domain.Bowlers
+Neba.Domain.Membership
+```
+
+Shared kernel namespaces (`Neba.Domain.Contact`, `Neba.Domain.Geography`) are intentionally excluded — they are designed to be used by all bounded contexts.
+
+**When adding a new bounded context**: add its namespace to `BoundedContextNamespaces` in [DomainBoundaryTests.cs](../../tests/Neba.Architecture.Tests/DomainBoundaryTests.cs). This is the only file that must be updated.
 
 ### Unit Tests
 
@@ -2422,8 +2436,6 @@ Agents should:
 
 ## Backlog
 
-- **Architecture Tests**: NetArchTest to enforce layer/folder boundaries (deferred - rely on discipline for now)
-
 ---
 
 ## Libraries & Packages
@@ -2436,6 +2448,7 @@ Agents should:
 | API Documentation | Scalar |
 | Background Jobs | Hangfire |
 | Snapshot Testing | Verify |
+| Architecture Testing | ArchUnitNET |
 | Unit Testing | xUnit, Moq, Shouldly |
 | Test Data Generation | Bogus |
 | Database Reset (Tests) | Respawn |

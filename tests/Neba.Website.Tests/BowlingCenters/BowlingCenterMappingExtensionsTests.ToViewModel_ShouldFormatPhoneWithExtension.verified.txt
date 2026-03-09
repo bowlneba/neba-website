@@ -1,0 +1,12 @@
+﻿{
+  Name: AMF Testing Lanes,
+  CertificationNumber: 12345,
+  Street: 123 Main St,
+  City: Hartford,
+  State: CT,
+  PostalCode: K1A 0B1,
+  Latitude: 40.7128,
+  Longitude: -74.006,
+  PhoneDisplay: (203) 555-0430 x6666,
+  PhoneUri: tel:12035550430x6666
+}

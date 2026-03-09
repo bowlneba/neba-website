@@ -1,8 +1,6 @@
 using Neba.Application.Documents.GetDocument;
 using Neba.TestFactory.Attributes;
 
-using Shouldly;
-
 namespace Neba.Application.Tests.Documents.GetDocument;
 
 [UnitTest]
@@ -39,12 +37,20 @@ public sealed class GetDocumentQueryTests
         query.Cache.Tags.ShouldContain($"neba:document:{documentName}");
     }
 
-    [Fact(DisplayName = "Cache tags should contain exactly 2 tags")]
-    public void Cache_Tags_ShouldContainExactly2Tags()
+    [Fact(DisplayName = "Cache tags should contain neba")]
+    public void Cache_Tags_ShouldContainNebaTag()
     {
         var query = new GetDocumentQuery { DocumentName = "bylaws" };
 
-        query.Cache.Tags.Count.ShouldBe(2);
+        query.Cache.Tags.ShouldContain("neba");
+    }
+
+    [Fact(DisplayName = "Cache tags should contain exactly 3 tags")]
+    public void Cache_Tags_ShouldContainExactly3Tags()
+    {
+        var query = new GetDocumentQuery { DocumentName = "bylaws" };
+
+        query.Cache.Tags.Count.ShouldBe(3);
     }
 
     [Fact(DisplayName = "Cache descriptor key should be specific to document name")]

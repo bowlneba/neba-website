@@ -4,15 +4,11 @@ using ErrorOr;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Moq;
-
 using Neba.Application.Caching;
 using Neba.Application.Messaging;
 using Neba.Infrastructure.Caching;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Caching;
-
-using Shouldly;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -90,6 +86,51 @@ public sealed class CachedQueryHandlerDecoratorTests
         innerHandler
             .Setup(h => h.HandleAsync(query, It.IsAny<CancellationToken>()))
             .ReturnsAsync(handlerResult);
+
+        var result = await CreatePlainDecorator(innerHandler.Object, cache.Object)
+            .HandleAsync(query, CancellationToken.None);
+
+        result.ShouldBe(handlerResult);
+    }
+
+    [Fact(DisplayName = "Plain response: deserialization failure falls back to handler and refreshes cache")]
+    public async Task HandleAsync_PlainResponse_DeserializationFailure_FallsBackToHandlerAndRefreshesCache()
+    {
+        var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
+        var cache = new Mock<IFusionCache>(MockBehavior.Strict);
+
+        var descriptor = CacheDescriptorFactory.Create(
+            key: "key:plain:deserialization",
+            tags: ["tag:a", "tag:b"]);
+        var query = new PlainQuery(descriptor, TimeSpan.FromMinutes(5));
+        var handlerResult = new TestResponse("fresh-after-failure");
+
+        cache
+            .SetupGet(c => c.DefaultEntryOptions)
+            .Returns(new FusionCacheEntryOptions { Duration = TimeSpan.FromHours(1) });
+
+        cache
+            .Setup(c => c.GetOrSetAsync<TestResponse>(
+                query.Cache.Key,
+                It.IsAny<Func<FusionCacheFactoryExecutionContext<TestResponse>, CancellationToken, Task<TestResponse>>>(),
+                It.IsAny<MaybeValue<TestResponse>>(),
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()))
+            .Throws(new NotSupportedException("Deserialization failed for cached entry"));
+
+        innerHandler
+            .Setup(h => h.HandleAsync(query, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(handlerResult);
+
+        cache
+            .Setup(c => c.SetAsync(
+                query.Cache.Key,
+                handlerResult,
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.Is<IEnumerable<string>>(t => t.SequenceEqual(descriptor.Tags)),
+                It.IsAny<CancellationToken>()))
+            .Returns(ValueTask.CompletedTask);
 
         var result = await CreatePlainDecorator(innerHandler.Object, cache.Object)
             .HandleAsync(query, CancellationToken.None);
@@ -215,6 +256,94 @@ public sealed class CachedQueryHandlerDecoratorTests
 
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(innerValue);
+    }
+
+    // ─── IsCacheDeserializationException ─────────────────────────────────────
+
+    [Fact(DisplayName = "Plain response: JsonException falls back to handler and refreshes cache")]
+    public async Task HandleAsync_PlainResponse_JsonException_FallsBackToHandlerAndRefreshesCache()
+    {
+        var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
+        var cache = new Mock<IFusionCache>(MockBehavior.Strict);
+
+        var descriptor = CacheDescriptorFactory.Create(key: "key:plain:json-exception", tags: ["tag:json"]);
+        var query = new PlainQuery(descriptor, TimeSpan.FromMinutes(5));
+        var handlerResult = new TestResponse("fresh-after-json-failure");
+
+        cache
+            .SetupGet(c => c.DefaultEntryOptions)
+            .Returns(new FusionCacheEntryOptions { Duration = TimeSpan.FromHours(1) });
+
+        cache
+            .Setup(c => c.GetOrSetAsync<TestResponse>(
+                query.Cache.Key,
+                It.IsAny<Func<FusionCacheFactoryExecutionContext<TestResponse>, CancellationToken, Task<TestResponse>>>(),
+                It.IsAny<MaybeValue<TestResponse>>(),
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()))
+            .Throws(new JsonException("Deserialization failed"));
+
+        innerHandler
+            .Setup(h => h.HandleAsync(query, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(handlerResult);
+
+        cache
+            .Setup(c => c.SetAsync(
+                query.Cache.Key,
+                handlerResult,
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.Is<IEnumerable<string>>(t => t.SequenceEqual(descriptor.Tags)),
+                It.IsAny<CancellationToken>()))
+            .Returns(ValueTask.CompletedTask);
+
+        var result = await CreatePlainDecorator(innerHandler.Object, cache.Object)
+            .HandleAsync(query, CancellationToken.None);
+
+        result.ShouldBe(handlerResult);
+    }
+
+    [Fact(DisplayName = "Plain response: nested JsonException in InnerException chain falls back to handler")]
+    public async Task HandleAsync_PlainResponse_NestedJsonException_FallsBackToHandlerAndRefreshesCache()
+    {
+        var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
+        var cache = new Mock<IFusionCache>(MockBehavior.Strict);
+
+        var descriptor = CacheDescriptorFactory.Create(key: "key:plain:nested-json", tags: ["tag:nested"]);
+        var query = new PlainQuery(descriptor, TimeSpan.FromMinutes(5));
+        var handlerResult = new TestResponse("fresh-after-nested-failure");
+
+        cache
+            .SetupGet(c => c.DefaultEntryOptions)
+            .Returns(new FusionCacheEntryOptions { Duration = TimeSpan.FromHours(1) });
+
+        cache
+            .Setup(c => c.GetOrSetAsync<TestResponse>(
+                query.Cache.Key,
+                It.IsAny<Func<FusionCacheFactoryExecutionContext<TestResponse>, CancellationToken, Task<TestResponse>>>(),
+                It.IsAny<MaybeValue<TestResponse>>(),
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()))
+            .Throws(new InvalidOperationException("Outer exception", new JsonException("Root deserialization cause")));
+
+        innerHandler
+            .Setup(h => h.HandleAsync(query, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(handlerResult);
+
+        cache
+            .Setup(c => c.SetAsync(
+                query.Cache.Key,
+                handlerResult,
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.Is<IEnumerable<string>>(t => t.SequenceEqual(descriptor.Tags)),
+                It.IsAny<CancellationToken>()))
+            .Returns(ValueTask.CompletedTask);
+
+        var result = await CreatePlainDecorator(innerHandler.Object, cache.Object)
+            .HandleAsync(query, CancellationToken.None);
+
+        result.ShouldBe(handlerResult);
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

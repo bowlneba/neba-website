@@ -2,6 +2,7 @@ using System.Text.Json;
 
 using Microsoft.Extensions.Options;
 
+using Neba.Api.Contracts.BowlingCenters;
 using Neba.Api.Contracts.Documents;
 
 using Refit;
@@ -36,6 +37,7 @@ internal static class ApiServicesConfiguration
             services.AddScoped<ApiExecutor>();
 
             services.RegisterApiEndpoint<IDocumentsApi>();
+            services.RegisterApiEndpoint<IBowlingCentersApi>();
 
             return services;
         }

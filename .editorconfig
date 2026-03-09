@@ -92,7 +92,6 @@ dotnet_diagnostic.CA1034.severity = none
 dotnet_diagnostic.S2325.severity = none
 # S1144 is a false positive for private members in extension blocks
 dotnet_diagnostic.S1144.severity = none
-
 # IDE0305: Simplify collection initialization
 dotnet_diagnostic.IDE0305.severity = warning
 
@@ -392,7 +391,16 @@ dotnet_naming_style.camelcase.word_separator =
 dotnet_naming_style.camelcase.capitalization = camel_case
 
 dotnet_naming_style.s_camelcase.required_prefix = s_
-dotnet_naming_style.s_camelcase.required_suffix = 
-dotnet_naming_style.s_camelcase.word_separator = 
+dotnet_naming_style.s_camelcase.required_suffix =
+dotnet_naming_style.s_camelcase.word_separator =
 dotnet_naming_style.s_camelcase.capitalization = camel_case
 
+# Verify
+[*.{received,verified}.{txt}]
+charset = utf-8-bom
+end_of_line = lf
+indent_size = unset
+indent_style = unset
+insert_final_newline = false
+tab_width = unset
+trim_trailing_whitespace = false

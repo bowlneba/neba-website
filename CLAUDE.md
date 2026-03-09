@@ -41,8 +41,22 @@ Before ending a session where significant discoveries were made, consider whethe
 - Use `NullLogger<T>.Instance`, never mock ILogger
 - Use test factories from `Neba.TestFactory`, never manual entity instantiation
 - Test factories follow a consistent pattern: `Create()` with nullable params (const defaults), `Bogus(int? seed)` for single, `Bogus(int count, int? seed)` for collection
+- Use a seed with `Bogus` only when the specific data values matter to the assertion (e.g., snapshot tests, integration tests for reproducibility). Omit the seed when only shape/count/type matters — the test is clearer without it
+- When seeds are used, each test should use a distinct seed value — don't reuse the same seed across multiple tests
 - Infrastructure services wrapping external SDKs (e.g., Azure Blob Storage) use Testcontainers for integration tests, not mocks
 - Use **Shouldly** for assertions, NOT FluentAssertions
+- When testing null inputs on non-nullable parameters (nullable reference types are enabled project-wide), wrap the test method with `#nullable disable` / `#nullable enable` instead of using `null!`:
+
+  ```csharp
+  #nullable disable
+  [Fact(DisplayName = "...")]
+  public void Method_ShouldReturnError_WhenInputIsNull()
+  {
+      var result = SomeMethod(null);
+      // assertions
+  }
+  #nullable enable
+  ```
 
 ### API Endpoint Checklist
 
@@ -83,3 +97,10 @@ Before ending a session where significant discoveries were made, consider whethe
 
 - **No `/api` prefix** — the API is served from `api.bowlneba.com`, so routes start directly with the resource (e.g. `/documents/{DocumentName}`, not `/api/documents/{DocumentName}`)
 - **No version in path** — API versioning is handled via request headers, not URL segments (no `/v1/`, `/api/v1/`, etc.)
+
+### FusionCache Deserialization Recovery
+
+- Cached query DTOs should use serialization-safe types; do not store domain `SmartEnum` instances directly in cached DTO properties.
+- Map SmartEnum values to primitives in query projections (for example, `Status.Name` as `string`) before caching.
+- `CachedQueryHandlerDecorator` catches cache deserialization failures on plain cached queries, logs a warning, executes the inner handler, and rewrites the cache entry.
+- Keep the cache key stable unless explicitly directed otherwise; deserialization fallback handles stale entry recovery.
