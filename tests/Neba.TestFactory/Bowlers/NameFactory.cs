@@ -1,0 +1,53 @@
+using Bogus;
+
+using Neba.Domain.Bowlers;
+
+namespace Neba.TestFactory.Bowlers;
+
+public static class NameFactory
+{
+    public const string ValidFirstName = "John";
+    public const string ValidLastName = "Doe";
+    public const string ValidMiddleName = "M.";
+    public const string ValidSuffix = "Jr.";
+    public const string ValidNickname = "Johnny";
+
+    public static Name Create(
+        string? firstName = null,
+        string? lastName = null,
+        string? middleName = null,
+        string? suffix = null,
+        string? nickname = null)
+         => new()
+         {
+             FirstName = firstName ?? ValidFirstName,
+             LastName = lastName ?? ValidLastName,
+             MiddleName = middleName,
+             Suffix = suffix,
+             Nickname = nickname
+         };
+
+    public static Name Bogus(int? seed = null)
+        => Bogus(1, seed).Single();
+
+    public static IReadOnlyCollection<Name> Bogus(int count, int? seed = null)
+    {
+        var faker = new Faker<Name>()
+            .CustomInstantiator(f =>
+            new Name
+            {
+                FirstName = f.Person.FirstName,
+                LastName = f.Person.LastName,
+                MiddleName = f.Random.Bool() ? f.Name.FirstName() : null,
+                Suffix = f.Random.Bool() ? f.Name.Suffix() : null,
+                Nickname = f.Random.Bool() ? f.Name.FirstName() : null
+            });
+
+        if (seed.HasValue)
+        {
+            faker.UseSeed(seed.Value);
+        }
+
+        return faker.Generate(count);
+    }
+}
