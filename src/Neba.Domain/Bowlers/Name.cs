@@ -27,9 +27,9 @@ public sealed record Name
     public string? MiddleName { get; init; }
 
     /// <summary>
-    /// Name suffix such as Jr., Sr., III, etc. (optional), used in official records.
+    /// Name suffix such as Jr., Sr., II, III, IV, or V (optional), used in official records including 1099 tax reporting.
     /// </summary>
-    public string? Suffix { get; init; }
+    public NameSuffix? Suffix { get; init; }
 
     /// <summary>
     /// The bowler's preferred informal name (optional).
@@ -56,7 +56,7 @@ public sealed record Name
         string firstName,
         string lastName,
         string? middleName = null,
-        string? suffix = null,
+        NameSuffix? suffix = null,
         string? nickname = null
     )
     {
@@ -100,9 +100,9 @@ public sealed record Name
 
         parts.Append(CultureInfo.CurrentCulture, $" {LastName}");
 
-        if (!string.IsNullOrWhiteSpace(Suffix))
+        if (Suffix is not null)
         {
-            parts.Append(CultureInfo.CurrentCulture, $", {Suffix}");
+            parts.Append(CultureInfo.CurrentCulture, $", {Suffix.Value}");
         }
 
         return parts.ToString();

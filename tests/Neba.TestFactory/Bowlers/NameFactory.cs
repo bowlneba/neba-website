@@ -9,14 +9,14 @@ public static class NameFactory
     public const string ValidFirstName = "John";
     public const string ValidLastName = "Doe";
     public const string ValidMiddleName = "M.";
-    public const string ValidSuffix = "Jr.";
+    public static readonly NameSuffix ValidSuffix = NameSuffix.Jr;
     public const string ValidNickname = "Johnny";
 
     public static Name Create(
         string? firstName = null,
         string? lastName = null,
         string? middleName = null,
-        string? suffix = null,
+        NameSuffix? suffix = null,
         string? nickname = null)
          => new()
          {
@@ -39,7 +39,7 @@ public static class NameFactory
                 FirstName = f.Person.FirstName,
                 LastName = f.Person.LastName,
                 MiddleName = f.Random.Bool() ? f.Name.FirstName() : null,
-                Suffix = f.Random.Bool() ? f.Name.Suffix() : null,
+                Suffix = f.Random.Bool() ? f.PickRandom(NameSuffix.List.ToList()) : null,
                 Nickname = f.Random.Bool() ? f.Name.FirstName() : null
             });
 

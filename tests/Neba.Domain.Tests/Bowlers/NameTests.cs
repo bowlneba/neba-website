@@ -174,7 +174,7 @@ public sealed class NameTests
     public void ToLegalName_ShouldIncludeSuffix_WhenSuffixIsSet()
     {
         // Arrange
-        var name = NameFactory.Create(firstName: "David", lastName: "Smith", suffix: "Jr.");
+        var name = NameFactory.Create(firstName: "David", lastName: "Smith", suffix: NameSuffix.Jr);
 
         // Act
         var result = name.ToLegalName();
@@ -187,7 +187,7 @@ public sealed class NameTests
     public void ToLegalName_ShouldIncludeAllComponents_WhenAllFieldsSet()
     {
         // Arrange
-        var name = NameFactory.Create(firstName: "David", lastName: "Smith", middleName: "Michael", suffix: "Jr.");
+        var name = NameFactory.Create(firstName: "David", lastName: "Smith", middleName: "Michael", suffix: NameSuffix.Jr);
 
         // Act
         var result = name.ToLegalName();
@@ -243,7 +243,7 @@ public sealed class NameTests
     public void ToDisplayName_ShouldNotIncludeMiddleNameOrSuffix()
     {
         // Arrange
-        var name = NameFactory.Create(firstName: "David", lastName: "Smith", middleName: "Michael", suffix: "Jr.");
+        var name = NameFactory.Create(firstName: "David", lastName: "Smith", middleName: "Michael", suffix: NameSuffix.Jr);
 
         // Act
         var result = name.ToDisplayName();
@@ -292,7 +292,7 @@ public sealed class NameTests
     public void ToString_ShouldReturnLegalName()
     {
         // Arrange
-        var name = NameFactory.Create(firstName: "David", lastName: "Smith", middleName: "Michael", suffix: "Jr.");
+        var name = NameFactory.Create(firstName: "David", lastName: "Smith", middleName: "Michael", suffix: NameSuffix.Jr);
 
         // Act
         var result = name.ToString();
