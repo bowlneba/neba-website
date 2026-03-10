@@ -34,11 +34,15 @@ public static class BowlerFactory
             seed,
             probabilityOfValue: 0.5f);
 
+        var namePool = UniqueIdPool.Create(
+            NameFactory.Bogus(100_000, seed),
+            seed);
+
         var faker = new Faker<Bowler>()
             .CustomInstantiator(f => new()
             {
                 Id = BowlerId.New(),
-                Name = NameFactory.Bogus(seed: seed),
+                Name = namePool.GetNext()!,
                 WebsiteId = websiteIdPool.GetNext(),
                 LegacyId = legacyIdPool.GetNext()
             });

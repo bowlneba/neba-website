@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+
 using ErrorOr;
 
 namespace Neba.Domain.Bowlers;
@@ -75,13 +76,13 @@ public sealed record Name
         return errors.Count > 0
             ? errors
             : new Name
-        {
-            FirstName = firstName,
-            LastName = lastName,
-            MiddleName = middleName,
-            Suffix = suffix,
-            Nickname = nickname
-        };
+            {
+                FirstName = firstName,
+                LastName = lastName,
+                MiddleName = middleName,
+                Suffix = suffix,
+                Nickname = nickname
+            };
     }
 
     /// <summary>
@@ -136,13 +137,13 @@ internal static class NameErrors
 {
     public static Error FirstNameRequired
         => Error.Validation(
-            code: "Name.FirstName.Required",
+            code: "Name.FirstNameRequired",
             description: "First name is required."
         );
 
     public static Error LastNameRequired
         => Error.Validation(
-            code: "Name.LastName.Required",
+            code: "Name.LastNameRequired",
             description: "Last name is required."
         );
 }
