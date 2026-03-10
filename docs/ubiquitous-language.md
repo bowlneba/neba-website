@@ -438,6 +438,86 @@ For reference, the following table maps USBC API fields to this domain model. Us
 
 ---
 
+## Bowlers
+
+### Bowler
+
+**Definition**: A person who exists in the NEBA system. The Bowler record is the central identity for a person — everything related to their competitive history, results, and organizational participation links back to it.
+
+A Bowler record may represent a fully registered active participant or a historical record only (e.g., a past champion with no active registration). Only a legal name is required to create a Bowler record.
+
+> **"Bowler" is the correct term.** Do not use *member*, *participant*, or *player* as synonyms in this system. *Member* is reserved for the separate concept of NEBA organizational membership.
+
+**Identity**:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `Id` | ULID | System-generated permanent identifier. Never changes. Used as the primary key for all API routes |
+| `WebsiteId` | `int?` | Legacy ID from the old NEBA website database. Retained for data migration traceability only. Not exposed in search or UI |
+| `LegacyId` | `int?` | Legacy ID from the organization management software. Retained for data migration traceability only. Not exposed in search or UI |
+
+**Primary lookup pattern**: Search by name → select from result list → navigate by `Id`.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Bowlers`
+- Type: `Bowler` (aggregate root)
+- Identity type: `BowlerId` (ULID-backed strongly-typed ID)
+
+---
+
+### Name
+
+**Definition**: A value object decomposing a Bowler's name into discrete components. Different contexts require different formats — competition results, legal documents, and formal communications each use a distinct derived format.
+
+**Components**:
+
+| Field | Required | Description | Examples |
+| --- | --- | --- | --- |
+| `FirstName` | Yes | Given name. Used in all official and display contexts | David |
+| `LastName` | Yes | Family name. Used in all official and display contexts | Smith |
+| `MiddleName` | No | Middle name or middle initial (e.g., `B.`). Used only in legal document contexts. Never displayed publicly | Michael, B. |
+| `Suffix` | No | Generational suffix. Constrained to the `NameSuffix` enumeration | Jr. |
+| `Nickname` | No | Preferred informal name. May be a derivative of the first name or entirely different. Clearable at any time | Dave, Sparky |
+
+**Derived Name Formats**:
+
+| Format | Formula | Used For |
+| --- | --- | --- |
+| **Legal Name** | `First [Middle] Last[, Suffix]` | Official documents, 1099 tax reporting, legal records |
+| **Display Name** | `[Nickname \| First] Last` | Public website, tournament results, standings, awards lists |
+| **Formal Name** | `First Last` | Formal communications where a nickname would be inappropriate |
+
+**Display Name Rules**:
+
+- If the Bowler has a nickname set, Display Name uses the nickname in place of the first name
+- If no nickname is set, Display Name falls back to first name
+- Middle name never appears in Display Name or Formal Name — it is strictly for Legal Name
+- Nicknames are clearable at any time
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Bowlers`
+- Type: `Name` (sealed record)
+- Factory: `Name.Create(firstName, lastName, middleName?, suffix?, nickname?)`
+
+---
+
+### NameSuffix
+
+**Definition**: An enumeration of valid generational name suffixes for a Bowler. Used in legal and official contexts (e.g., 1099 tax reporting).
+
+**Valid Values**: `Jr.` `Sr.` `II` `III` `IV` `V`
+
+Suffix is not free-text. If a value outside this set is required in the future, the enumeration is extended at that time.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Bowlers`
+- Type: `NameSuffix` (SmartEnum with string value)
+
+---
+
 ## Maintaining This Document
 
 This is a **living document**. As the project evolves:
