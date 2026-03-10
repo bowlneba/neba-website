@@ -15,11 +15,18 @@ internal static class UlidConfiguration
             string columnName = "domain_id")
         {
             return propertyBuilder
+                .IsUlid(columnName)
+                .HasConversion<TEfCoreValueConverter>();
+        }
+        
+        public PropertyBuilder<TId> IsUlid(
+            string columnName = "domain_id")
+        {
+            return propertyBuilder
                 .HasColumnName(columnName)
                 .HasMaxLength(26)
                 .IsFixedLength()
-                .ValueGeneratedNever()
-                .HasConversion<TEfCoreValueConverter>();
+                .ValueGeneratedNever();
         }
     }
 }

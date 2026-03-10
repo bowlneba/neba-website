@@ -18,9 +18,13 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<BowlingCenter> BowlingCenters
         => Set<BowlingCenter>();
 
+    public DbSet<Bowler> Bowlers
+        => Set<Bowler>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BowlingCenterConfiguration());
+        modelBuilder.ApplyConfiguration(new BowlerConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
