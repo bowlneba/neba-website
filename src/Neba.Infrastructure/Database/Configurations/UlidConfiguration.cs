@@ -18,7 +18,7 @@ internal static class UlidConfiguration
                 .IsUlid(columnName)
                 .HasConversion<TEfCoreValueConverter>();
         }
-        
+
         public PropertyBuilder<TId> IsUlid(
             string columnName = "domain_id")
         {

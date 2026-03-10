@@ -23,7 +23,7 @@ internal sealed class BowlerConfiguration
 
         builder.OwnsOne(bowler => bowler.Name, nameBuilder =>
         {
-            nameBuilder.HasIndex(name => new {name.LastName, name.FirstName});
+            nameBuilder.HasIndex(name => new { name.LastName, name.FirstName });
 
             nameBuilder.Property(name => name.FirstName)
                 .HasColumnName("first_name")

@@ -6,7 +6,7 @@ namespace Neba.Domain.Bowlers;
 /// Represents a name suffix for a bowler, used in legal and official contexts such as 1099 tax reporting.
 /// </summary>
 public sealed class NameSuffix
-    : SmartEnum<NameSuffix,string>
+    : SmartEnum<NameSuffix, string>
 {
     /// <summary>
     /// Indicates that the bowler is a junior (e.g., John Doe Jr.). This suffix is used to distinguish a son from his father when they share the same name.
