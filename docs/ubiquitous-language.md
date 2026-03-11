@@ -66,8 +66,48 @@
 
 **In Code**:
 
-- Namespace: `Neba.Application.Storage`
+- Namespace: `Neba.Application.Storage` / `Neba.Domain.Storage`
 - Interface: `IFileStorageService`
+- Value object: `StoredFile` (domain — the storage address)
+- DTO: `FileContent` (application — the retrieved content)
+
+---
+
+### Stored File
+
+**Definition**: A value object that records the storage address of a file written to Azure Blob Storage. Owned by domain entities as a complex property. A Stored File does not carry the file's bytes — it is a reference that can be used to retrieve or serve the file later.
+
+**Characteristics**:
+
+- **Container**: The top-level logical partition in Azure Blob Storage grouping related Files (e.g., `"documents"`). Maps to the Azure Blob Storage container name. Max 63 characters
+- **Path**: The blob path within the Container uniquely identifying a File (e.g., `"bylaws"`). May be flat or slash-segmented. Max 1023 characters
+- **ContentType**: The MIME type of the file as stored (e.g., `"text/html"`)
+- **SizeInBytes**: The size of the stored file in bytes
+- **No content**: Does not carry file bytes — use `IFileStorageService.GetFileAsync()` to retrieve content
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Storage`
+- Type: `StoredFile` (sealed record, domain value object)
+- EF mapping: `StoredFileConfiguration.HasStoredFile()` — maps as EF ComplexProperty on owning entities
+
+---
+
+### File Content
+
+**Definition**: The materialized content of a File after it has been read from Azure Blob Storage. Returned by `IFileStorageService.GetFileAsync()`. Carries the file bytes (as a string), the MIME content type, and the metadata stored alongside the blob. Ephemeral — used within a request or handler and not persisted.
+
+**Characteristics**:
+
+- **Content**: The file content as a string (text files as-is; binary as Base64 or equivalent)
+- **ContentType**: The MIME type (e.g., `"text/html"`)
+- **Metadata**: Key-value pairs stored alongside the blob (e.g., `source_document_id`, `cached_at`)
+- Distinct from `StoredFile` — `StoredFile` is the address; `FileContent` is what you receive when you fetch that address
+
+**In Code**:
+
+- Namespace: `Neba.Application.Storage`
+- Type: `FileContent` (sealed record, application DTO)
 
 ---
 
