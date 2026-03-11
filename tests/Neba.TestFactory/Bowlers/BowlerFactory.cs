@@ -35,7 +35,7 @@ public static class BowlerFactory
             probabilityOfValue: 0.5f);
 
         var namePool = UniqueIdPool.Create(
-            NameFactory.Bogus(100_000, seed),
+            NameFactory.Bogus(count, seed),
             seed);
 
         var faker = new Faker<Bowler>()
