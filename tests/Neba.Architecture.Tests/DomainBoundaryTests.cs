@@ -16,6 +16,7 @@ public sealed class DomainBoundaryTests : ArchitectureTestBase
         // "Neba.Domain.Tournaments",
         "Neba.Domain.Bowlers",
         // "Neba.Domain.Membership",
+        "Neba.Domain.HallOfFame"
     ];
 
     [Fact(DisplayName = "Bounded context should not depend on other bounded contexts")]

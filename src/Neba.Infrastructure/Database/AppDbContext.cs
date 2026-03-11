@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Neba.Domain.Bowlers;
 using Neba.Domain.BowlingCenters;
+using Neba.Domain.HallOfFame;
 using Neba.Infrastructure.Database.Configurations;
 using Neba.Infrastructure.Database.Converters;
 
@@ -33,5 +34,8 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
         configurationBuilder.Properties<BowlerId>()
             .HaveConversion<UlidTypedIdConverter<BowlerId>>();
+
+        configurationBuilder.Properties<HallOfFameId>()
+            .HaveConversion<UlidTypedIdConverter<HallOfFameId>>();
     }
 }
