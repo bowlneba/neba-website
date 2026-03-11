@@ -25,12 +25,12 @@ public static class BowlerFactory
     public static IReadOnlyCollection<Bowler> Bogus(int count, int? seed = null)
     {
         var websiteIdPool = UniqueIdPool.Create(
-            Enumerable.Range(1, 100_000).Select(i => (int?)i),
+            Enumerable.Range(1, count).Select(i => (int?)i),
             seed,
             probabilityOfValue: 0.5f);
 
         var legacyIdPool = UniqueIdPool.Create(
-            Enumerable.Range(100_001, 100_000).Select(i => (int?)i),
+            Enumerable.Range(100_001, count).Select(i => (int?)i),
             seed,
             probabilityOfValue: 0.5f);
 
