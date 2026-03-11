@@ -39,7 +39,7 @@ public static class BowlerFactory
             seed);
 
         var faker = new Faker<Bowler>()
-            .CustomInstantiator(f => new()
+            .CustomInstantiator(_ => new()
             {
                 Id = BowlerId.New(),
                 Name = namePool.GetNext()!,
