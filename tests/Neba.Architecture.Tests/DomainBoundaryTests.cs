@@ -14,7 +14,7 @@ public sealed class DomainBoundaryTests : ArchitectureTestBase
         "Neba.Domain.BowlingCenters",
         // Uncomment as each bounded context is implemented:
         // "Neba.Domain.Tournaments",
-        // "Neba.Domain.Bowlers",
+        "Neba.Domain.Bowlers",
         // "Neba.Domain.Membership",
     ];
 
