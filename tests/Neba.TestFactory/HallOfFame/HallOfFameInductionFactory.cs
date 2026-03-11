@@ -2,6 +2,8 @@ using Bogus;
 
 using Neba.Domain.Bowlers;
 using Neba.Domain.HallOfFame;
+using Neba.Domain.Storage;
+using Neba.TestFactory.Storage;
 
 namespace Neba.TestFactory.HallOfFame;
 
@@ -13,13 +15,15 @@ public static class HallOfFameInductionFactory
         HallOfFameId? id = null,
         int? year = null,
         BowlerId? bowlerId = null,
-        IReadOnlyCollection<HallOfFameCategory>? categories = null)
+        IReadOnlyCollection<HallOfFameCategory>? categories = null,
+        StoredFile? photo = null)
         => new()
         {
             Id = id ?? HallOfFameId.New(),
             Year = year ?? ValidYear,
             BowlerId = bowlerId ?? BowlerId.New(),
-            Categories = categories ?? [HallOfFameCategory.SuperiorPerformance]
+            Categories = categories ?? [HallOfFameCategory.SuperiorPerformance],
+            Photo = photo
         };
 
     public static HallOfFameInduction Bogus(int? seed = null)
@@ -33,7 +37,8 @@ public static class HallOfFameInductionFactory
                 Id = HallOfFameId.New(),
                 Year = f.Date.PastDateOnly(20).Year,
                 BowlerId = BowlerId.New(),
-                Categories = [.. f.PickRandom(HallOfFameCategory.List, f.Random.Int(1, HallOfFameCategory.List.Count))]
+                Categories = [.. f.PickRandom(HallOfFameCategory.List, f.Random.Int(1, HallOfFameCategory.List.Count))],
+                Photo = f.Random.Bool() ? StoredFileFactory.Bogus(seed: seed) : null
             });
 
         if (seed.HasValue)
