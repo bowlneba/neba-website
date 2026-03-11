@@ -22,10 +22,14 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Bowler> Bowlers
         => Set<Bowler>();
 
+    public DbSet<HallOfFameInduction> HallOfFameInductions
+        => Set<HallOfFameInduction>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BowlingCenterConfiguration());
         modelBuilder.ApplyConfiguration(new BowlerConfiguration());
+        modelBuilder.ApplyConfiguration(new HallOfFameInductionConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
