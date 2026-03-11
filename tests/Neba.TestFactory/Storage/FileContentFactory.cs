@@ -2,7 +2,7 @@ using Neba.Application.Storage;
 
 namespace Neba.TestFactory.Storage;
 
-public static class StoredFileFactory
+public static class FileContentFactory
 {
     public const string ValidContent = "This is a test file content.";
     public const string ValidContentType = "text/plain";
@@ -12,12 +12,12 @@ public static class StoredFileFactory
         { "CreatedDate", DateTime.UtcNow.ToString("o") }
     };
 
-    public static StoredFile Create(
+    public static FileContent Create(
         string? content = null,
         string? contentType = null,
         IDictionary<string, string>? metadata = null)
     {
-        return new StoredFile
+        return new FileContent
         {
             Content = content ?? ValidContent,
             ContentType = contentType ?? ValidContentType,
@@ -25,12 +25,12 @@ public static class StoredFileFactory
         };
     }
 
-    public static StoredFile Bogus(int? seed = null)
+    public static FileContent Bogus(int? seed = null)
         => Bogus(1, seed).Single();
 
-    public static IReadOnlyCollection<StoredFile> Bogus(int count, int? seed)
+    public static IReadOnlyCollection<FileContent> Bogus(int count, int? seed)
     {
-        var faker = new Bogus.Faker<StoredFile>()
+        var faker = new Bogus.Faker<FileContent>()
             .CustomInstantiator(f => Create(
                 content: f.Lorem.Paragraph(),
                 contentType: "text/plain",

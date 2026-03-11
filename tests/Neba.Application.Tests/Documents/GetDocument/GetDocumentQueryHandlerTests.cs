@@ -35,7 +35,7 @@ public sealed class GetDocumentQueryHandlerTests
     {
         // Arrange
         var lastModified = new DateTimeOffset(2026, 1, 15, 5, 0, 0, TimeSpan.Zero);
-        var storedFile = StoredFileFactory.Create(
+        var storedFile = FileContentFactory.Create(
             content: DocumentDtoFactory.ValidContent,
             metadata: new Dictionary<string, string>
             {
@@ -66,7 +66,7 @@ public sealed class GetDocumentQueryHandlerTests
     public async Task HandleAsync_ShouldReturnNullLastUpdated_WhenSourceLastModifiedMetadataAbsent()
     {
         // Arrange
-        var storedFile = StoredFileFactory.Create(
+        var storedFile = FileContentFactory.Create(
             content: DocumentDtoFactory.ValidContent,
             metadata: new Dictionary<string, string> { { "source_document_id", DocumentDtoFactory.ValidId } });
         var query = new GetDocumentQuery { DocumentName = DocumentDtoFactory.ValidName };
@@ -100,7 +100,7 @@ public sealed class GetDocumentQueryHandlerTests
 
         _storageServiceMock
             .Setup(s => s.GetFileAsync("documents", query.DocumentName, TestContext.Current.CancellationToken))
-            .ReturnsAsync((StoredFile?)null);
+            .ReturnsAsync((FileContent?)null);
 
         // Act
         var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);

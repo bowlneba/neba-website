@@ -50,9 +50,9 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
         await _sut.UploadFileAsync(
             container,
             path,
-            StoredFileFactory.ValidContent,
-            StoredFileFactory.ValidContentType,
-            new Dictionary<string, string>(StoredFileFactory.ValidMetadata),
+            FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType,
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
             CancellationToken.None);
 
         // Act
@@ -107,9 +107,9 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
         await Should.NotThrowAsync(() => _sut.UploadFileAsync(
             container,
             "new-file.txt",
-            StoredFileFactory.ValidContent,
-            StoredFileFactory.ValidContentType,
-            new Dictionary<string, string>(StoredFileFactory.ValidMetadata),
+            FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType,
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
             CancellationToken.None));
     }
 
@@ -149,8 +149,8 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
         };
 
         await _sut.UploadFileAsync(
-            container, path, StoredFileFactory.ValidContent,
-            StoredFileFactory.ValidContentType, metadata, CancellationToken.None);
+            container, path, FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType, metadata, CancellationToken.None);
 
         // Act
         var result = await _sut.GetFileAsync(container, path, CancellationToken.None);

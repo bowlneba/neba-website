@@ -26,7 +26,7 @@ public interface IFileStorageService
     /// <param name="path">The blob path within the container.</param>
     /// <param name="cancellationToken">Cancellation token for async operation.</param>
     /// <returns>The file content and metadata, or <c>null</c> if the file does not exist.</returns>
-    Task<StoredFile?> GetFileAsync(string container, string path, CancellationToken cancellationToken);
+    Task<FileContent?> GetFileAsync(string container, string path, CancellationToken cancellationToken);
 
     /// <summary>
     /// Uploads content as a file to the specified container.

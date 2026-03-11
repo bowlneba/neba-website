@@ -79,7 +79,7 @@ internal sealed class AzureBlobStorageService : IFileStorageService
         }
     }
 
-    public async Task<StoredFile?> GetFileAsync(string container, string path, CancellationToken cancellationToken)
+    public async Task<FileContent?> GetFileAsync(string container, string path, CancellationToken cancellationToken)
     {
         using var activity = ActivitySource.StartActivity("storage.download", ActivityKind.Client);
         activity?.SetCodeAttributes(nameof(GetFileAsync), StorageMetricsNamespace);
@@ -109,7 +109,7 @@ internal sealed class AzureBlobStorageService : IFileStorageService
 
             var result = await blobClient.DownloadContentAsync(cancellationToken);
 
-            var storedFile = new StoredFile
+            var storedFile = new FileContent
             {
                 Content = result.Value.Content.ToString(),
                 ContentType = result.Value.Details.ContentType,

@@ -3,7 +3,7 @@ namespace Neba.Application.Storage;
 /// <summary>
 /// Represents a file retrieved from storage, including its content, content type, and metadata.
 /// </summary>
-public sealed record StoredFile
+public sealed record FileContent
 {
     /// <summary>
     /// The content of the file as a string. For binary files, this may be a Base64-encoded string or similar representation, depending on the storage implementation.
