@@ -34,10 +34,12 @@ async Task Main()
 {
 	BowlingCenters.RemoveRange(BowlingCenters);
 	Bowlers.RemoveRange(Bowlers);
+	HallsOfFameInductions.RemoveRange(HallsOfFameInductions);
 	SaveChanges();
 	
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowling_centers RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowlers RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.hall_of_fame_inductions RESTART IDENTITY CASCADE;");
 	SaveChanges();
 	
 	await MigrateBowlingCentersAsync();
@@ -881,7 +883,7 @@ public async Task MigrateHallOfFameAsync(Dictionary<int, Ulid> bowlerIdBySoftwar
 
 #region Bowling Centers
 
-public async Task<IReadOnlyCollection<(int Id, string CertificationNumber, int? LegacyId, int? WebsiteId)>> MigrateBowlingCentersAsync()
+public async Task MigrateBowlingCentersAsync()
 {
 	var softwareBowlingCentersDataTable = await QuerySoftwareDatabaseAsync("SELECT * FROM BowlingCenters");
 	var websiteBowlingCentersDataTable = await QueryStatsDatabaseAsync("SELECT * FROM Centers WHERE ID not in (2, 19, 28)"); //2: AMF Silver (HOF Silver), 19: TBD Center, 28: Superbowl (Apple Valley)
