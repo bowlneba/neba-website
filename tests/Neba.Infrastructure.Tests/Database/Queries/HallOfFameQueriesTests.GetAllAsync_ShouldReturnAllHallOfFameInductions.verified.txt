@@ -1,0 +1,135 @@
+﻿[
+  {
+    Year: 2025,
+    BowlerName: {
+      FirstName: Felipe,
+      LastName: Kshlerin,
+      MiddleName: Catalina,
+      Suffix: {
+        Name: II,
+        Value: II
+      }
+    },
+    Categories: [
+      {
+        Name: Superior Performance,
+        Value: 1
+      }
+    ]
+  },
+  {
+    Year: 2025,
+    BowlerName: {
+      FirstName: Kristie,
+      LastName: Bernhard,
+      Suffix: {
+        Name: Jr,
+        Value: Jr.
+      },
+      Nickname: Lauriane
+    },
+    Categories: [
+      {
+        Name: Superior Performance,
+        Value: 1
+      }
+    ],
+    PhotoContainer: container-uhp8s9bi,
+    PhotoPath: pula.tao.pdf
+  },
+  {
+    Year: 2023,
+    BowlerName: {
+      FirstName: Kelly,
+      LastName: Gottlieb,
+      Nickname: Amy
+    },
+    Categories: [
+      {
+        Name: Meritorious Service,
+        Value: 2
+      },
+      {
+        Name: Friend of NEBA,
+        Value: 4
+      }
+    ]
+  },
+  {
+    Year: 2011,
+    BowlerName: {
+      FirstName: Franklin,
+      LastName: Barrows,
+      MiddleName: Kareem,
+      Nickname: Lisette
+    },
+    Categories: [
+      {
+        Name: Meritorious Service,
+        Value: 2
+      }
+    ],
+    PhotoContainer: container-uhp8s9bi,
+    PhotoPath: pula.tao.pdf
+  },
+  {
+    Year: 2019,
+    BowlerName: {
+      FirstName: Sandy,
+      LastName: Shanahan,
+      Nickname: Jody
+    },
+    Categories: [
+      {
+        Name: Superior Performance,
+        Value: 1
+      },
+      {
+        Name: Meritorious Service,
+        Value: 2
+      }
+    ],
+    PhotoContainer: container-uhp8s9bi,
+    PhotoPath: pula.tao.pdf
+  },
+  {
+    Year: 2015,
+    BowlerName: {
+      FirstName: Leo,
+      LastName: Herzog,
+      MiddleName: Halle
+    },
+    Categories: [
+      {
+        Name: Superior Performance,
+        Value: 1
+      },
+      {
+        Name: Meritorious Service,
+        Value: 2
+      },
+      {
+        Name: Friend of NEBA,
+        Value: 4
+      }
+    ],
+    PhotoContainer: container-uhp8s9bi,
+    PhotoPath: pula.tao.pdf
+  },
+  {
+    Year: 2020,
+    BowlerName: {
+      FirstName: Yolanda,
+      LastName: Kreiger,
+      Nickname: Brice
+    },
+    Categories: [
+      {
+        Name: Meritorious Service,
+        Value: 2
+      }
+    ],
+    PhotoContainer: container-uhp8s9bi,
+    PhotoPath: pula.tao.pdf
+  }
+]
