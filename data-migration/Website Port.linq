@@ -44,6 +44,7 @@ async Task Main()
 	var bowlingCenterIds = BowlingCenters.ToList().Select(b => (b.Id, b.CertificationNumber, b.LegacyId, b.WebsiteId)).ToList().AsReadOnly();
 	
 	var bowlerIds = await MigrateBowlersAsync();
+	await MigrateHallOfFameAsync(bowlerIds.Where(i => i.softwareId.HasValue).ToDictionary(i => i.softwareId!.Value, i => i.bowlerId));
 }
 
 // You can define other methods, fields, classes and namespaces here
@@ -837,6 +838,44 @@ static List<(int? websiteId, int? softwareId)> s_manualMatch = new()
 
 #endregion
 
+
+#endregion
+
+#region Hall of Fame
+
+public async Task MigrateHallOfFameAsync(Dictionary<int, Ulid> bowlerIdBySoftwareId)
+{
+	var categoryConversion = new Dictionary<int, int>
+	{
+		{100, 1},
+		{200, 2}
+	};
+
+	var hallOfFameDataTable = await QuerySoftwareDatabaseAsync("SELECT * FROM dbo.HallOfFame");
+
+	var hallOfFameSoftwareEntries = hallOfFameDataTable.AsEnumerable()
+		.Select(row => new
+		{
+			SoftwareId = row.Field<int>("BowlerId"),
+			Category = row.Field<int>("Category"),
+			Year = row.Field<int>("Year")
+		}).ToList();
+
+	var hallOfFameInductions = hallOfFameSoftwareEntries.Select(entry =>
+		new HallOfFameInductions
+		{
+			DomainId = Guid.AsDomainId(),
+			BowlerId = bowlerIdBySoftwareId[entry.SoftwareId].ToString(),
+			Category = categoryConversion[entry.Category],
+			InductionYear = entry.Year
+		});
+
+	HallsOfFameInductions.AddRange(hallOfFameInductions);
+
+	await SaveChangesAsync();
+
+	"Hall of Famers Migrated".Dump();
+}
 
 #endregion
 
