@@ -27,16 +27,19 @@ public static class HallOfFameInductionFactory
         };
 
     public static HallOfFameInduction Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
+        => Bogus(1, null, seed).Single();
 
-    public static IReadOnlyCollection<HallOfFameInduction> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<HallOfFameInduction> Bogus(
+        int count,
+        UniqueIdPool<BowlerId>? bowlerIds = null,
+        int? seed = null)
     {
         var faker = new Faker<HallOfFameInduction>()
             .CustomInstantiator(f => new()
             {
                 Id = HallOfFameId.New(),
                 Year = f.Date.PastDateOnly(20).Year,
-                BowlerId = BowlerId.New(),
+                BowlerId = bowlerIds?.GetNext() ?? BowlerId.New(),
                 Categories = [.. f.PickRandom(HallOfFameCategory.List, f.Random.Int(1, HallOfFameCategory.List.Count))],
                 Photo = f.Random.Bool() ? StoredFileFactory.Bogus(seed: seed) : null
             });
