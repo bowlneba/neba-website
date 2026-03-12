@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Neba.Application.BowlingCenters;
-using Neba.Infrastructure.BowlingCenters;
+using Neba.Infrastructure.Database.Queries;
 
 using Npgsql;
 

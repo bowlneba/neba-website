@@ -4,9 +4,8 @@ using Neba.Application.BowlingCenters;
 using Neba.Application.BowlingCenters.ListBowlingCenters;
 using Neba.Application.Contact;
 using Neba.Domain.BowlingCenters;
-using Neba.Infrastructure.Database;
 
-namespace Neba.Infrastructure.BowlingCenters;
+namespace Neba.Infrastructure.Database.Queries;
 
 internal sealed class BowlingCenterQueries(AppDbContext dbContext)
         : IBowlingCenterQueries
