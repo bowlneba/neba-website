@@ -162,4 +162,20 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
         result.Metadata.ShouldContainKeyAndValue("LastUpdatedUtc", "2026-02-16T00:00:00Z");
         result.Metadata.ShouldContainKeyAndValue("Source", "GoogleDrive");
     }
+
+    [Fact(DisplayName = "GetBlobUri should return URI containing container and path")]
+    public void GetBlobUri_ReturnsUri_ContainingContainerAndPath()
+    {
+        // Arrange
+        const string container = "my-container";
+        const string path = "folder/my-file.txt";
+
+        // Act
+        var result = _sut.GetBlobUri(container, path);
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.AbsoluteUri.ShouldContain(container);
+        result.AbsoluteUri.ShouldContain("folder/my-file.txt");
+    }
 }

@@ -11,7 +11,8 @@ using Neba.Infrastructure.Telemetry;
 
 namespace Neba.Infrastructure.Storage;
 
-internal sealed class AzureBlobStorageService : IFileStorageService
+internal sealed class AzureBlobStorageService
+    : IFileStorageService
 {
     private const string StorageMetricsNamespace = "Neba.Storage";
     private const string StorageDurationMsTag = "storage.duration_ms";
@@ -199,6 +200,14 @@ internal sealed class AzureBlobStorageService : IFileStorageService
 
             throw;
         }
+    }
+
+    public Uri GetBlobUri(string container, string path)
+    {
+        var containerClient = _blobServiceClient.GetBlobContainerClient(container);
+        var blobClient = containerClient.GetBlobClient(path);
+
+        return blobClient.Uri;
     }
 
     private BlobClient GetBlobClient(string container, string path)

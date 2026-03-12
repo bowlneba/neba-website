@@ -44,4 +44,12 @@ public interface IFileStorageService
         string contentType,
         IDictionary<string, string> metadata,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Gets the URI of a blob in the specified container and path.
+    /// </summary>
+    /// <param name="container">The storage container name.</param>
+    /// <param name="path">The blob path within the container.</param>
+    /// <returns>The URI of the blob.</returns>
+    Uri GetBlobUri(string container, string path);
 }
