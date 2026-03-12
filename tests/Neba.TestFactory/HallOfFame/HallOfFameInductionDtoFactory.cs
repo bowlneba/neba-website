@@ -35,11 +35,12 @@ public static class HallOfFameInductionDtoFactory
             .CustomInstantiator(f =>
             {
                 var hasPhoto = f.Random.Bool();
+                var bowlerNames = UniquePool.Create(NameFactory.Bogus(count, seed));
 
                 return new HallOfFameInductionDto
                 {
                     Year = f.Date.PastDateOnly().Year,
-                    BowlerName = NameFactory.Bogus(seed: seed),
+                    BowlerName = bowlerNames.GetNext()!,
                     Categories = [.. f.PickRandom(HallOfFameCategory.List, f.Random.Int(1, HallOfFameCategory.List.Count))],
                     PhotoContainer = hasPhoto ? f.System.FileName() : null,
                     PhotoPath = hasPhoto ? f.System.FilePath() : null,

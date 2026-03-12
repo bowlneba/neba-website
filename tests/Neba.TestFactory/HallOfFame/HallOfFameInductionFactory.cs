@@ -31,7 +31,7 @@ public static class HallOfFameInductionFactory
 
     public static IReadOnlyCollection<HallOfFameInduction> Bogus(
         int count,
-        UniqueIdPool<BowlerId>? bowlerIds = null,
+        UniquePool<BowlerId>? bowlerIds = null,
         int? seed = null)
     {
         var faker = new Faker<HallOfFameInduction>()

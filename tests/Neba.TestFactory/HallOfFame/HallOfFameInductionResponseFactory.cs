@@ -26,7 +26,7 @@ public static class HallOfFameInductionResponseFactory
 
     public static IReadOnlyCollection<HallOfFameInductionResponse> Bogus(int count, int? seed = null)
     {
-        var bowlerNamePool = UniqueIdPool.Create(NameFactory.Bogus(count, seed));
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed));
 
         var faker = new Faker<HallOfFameInductionResponse>()
             .CustomInstantiator(f => new()

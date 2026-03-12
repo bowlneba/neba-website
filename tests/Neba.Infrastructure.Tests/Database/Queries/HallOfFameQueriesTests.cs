@@ -44,7 +44,7 @@ public sealed class HallOfFameQueriesTests
         // Arrange
         const int seed = 50;
         var bowlers = BowlerFactory.Bogus(50, seed);
-        var bowlerIdPool = UniqueIdPool.Create(bowlers.Select(b => b.Id), seed);
+        var bowlerIdPool = UniquePool.Create(bowlers.Select(b => b.Id), seed);
         var inductions = HallOfFameInductionFactory.Bogus(5, bowlerIdPool, seed);
 
         var inductionWithPhoto = HallOfFameInductionFactory.Create(
