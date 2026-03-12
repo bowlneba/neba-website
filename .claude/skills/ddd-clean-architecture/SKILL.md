@@ -53,7 +53,7 @@ Organize code into layers with clear dependency rules (dependencies point inward
 
 ### 4. Presentation Layer (API)
 
-Implemented using **Fast Endpoints** with the REPR (Request-Endpoint-Response) pattern. Each use case gets its own folder containing an endpoint, summary, and validator. See [REPR Pattern with Fast Endpoints](#repr-pattern-with-fast-endpoints).
+Implemented using **Fast Endpoints** with the REPR (Request-Endpoint-Response) pattern. Each use case gets its own folder containing an endpoint, summary, and validator. See the **REPR Pattern with Fast Endpoints** section below.
 
 ## Tactical DDD Patterns Implementation
 
