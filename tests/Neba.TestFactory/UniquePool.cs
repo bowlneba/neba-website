@@ -11,14 +11,14 @@ public static class UniquePool
     /// <param name="values">The unique values to pool.</param>
     /// <param name="seed">Optional seed for reproducible shuffling and null decisions.</param>
 #pragma warning disable CA5394 // Random is acceptable here — used only for test data generation, not security
-    public static UniquePool<T> Create<T>(IEnumerable<T> values, int? seed = null)
+    public static UniquePool<T> Create<T>(IEnumerable<T> values, int? seed)
     {
         var random = seed.HasValue ? new Random(seed.Value) : new Random();
         List<T> shuffled = [.. values.OrderBy(_ => random.Next())];
         return new UniquePool<T>(shuffled, random, 1);
     }
 
-    public static UniquePool<T?> CreateNullable<T>(IEnumerable<T> values, int? seed = null, float probabilityOfValue = .5f)
+    public static UniquePool<T?> CreateNullable<T>(IEnumerable<T> values, int? seed, float probabilityOfValue = .5f)
     {
         var random = seed.HasValue ? new Random(seed.Value) : new Random();
         List<T?> shuffled = [.. values.OrderBy(_ => random.Next())];

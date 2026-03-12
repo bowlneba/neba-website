@@ -38,7 +38,7 @@ public static class BowlingCenterSummaryResponseFactory
 
     public static IReadOnlyCollection<BowlingCenterSummaryResponse> Bogus(int count, int? seed = null)
     {
-        var phoneNumberPool = UniquePool.Create(PhoneNumberResponseFactory.Bogus(count, seed));
+        var phoneNumberPool = UniquePool.Create(PhoneNumberResponseFactory.Bogus(count, seed), seed);
 
         var faker = new Faker<BowlingCenterSummaryResponse>()
             .CustomInstantiator(f => new()

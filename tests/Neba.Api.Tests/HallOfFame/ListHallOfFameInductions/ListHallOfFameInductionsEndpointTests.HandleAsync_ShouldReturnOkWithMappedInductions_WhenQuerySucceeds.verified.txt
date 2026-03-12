@@ -2,7 +2,7 @@
   Items: [
     {
       Year: 2025,
-      BowlerName: Wanda Kub,
+      BowlerName: Leticia Muller,
       Categories: [
         Friend of NEBA,
         Meritorious Service
@@ -11,7 +11,7 @@
     },
     {
       Year: 2026,
-      BowlerName: Leticia Muller,
+      BowlerName: Kevin Koch,
       Categories: [
         Friend of NEBA,
         Superior Performance,
@@ -20,7 +20,7 @@
     },
     {
       Year: 2025,
-      BowlerName: Leticia Muller,
+      BowlerName: Wanda Kub,
       Categories: [
         Superior Performance,
         Meritorious Service,
