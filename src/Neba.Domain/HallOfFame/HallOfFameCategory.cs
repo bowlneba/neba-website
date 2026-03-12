@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+
 using Ardalis.SmartEnum;
 
 namespace Neba.Domain.HallOfFame;

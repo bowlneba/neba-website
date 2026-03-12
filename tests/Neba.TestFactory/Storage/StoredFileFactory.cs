@@ -38,7 +38,7 @@ public static class StoredFileFactory
                 Path = $"{f.System.FileName()}.{f.System.CommonFileExt()}",
                 ContentType = f.System.MimeType(),
                 SizeInBytes = f.Random.Long(1, 10_000_000)
-             });
+            });
 
         if (seed.HasValue)
         {

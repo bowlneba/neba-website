@@ -1,7 +1,9 @@
-using Neba.Domain.Storage;
 using System.Linq.Expressions;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+using Neba.Domain.Storage;
 
 namespace Neba.Infrastructure.Database.Configurations;
 
