@@ -14,7 +14,7 @@
       <EncryptSqlTraffic>True</EncryptSqlTraffic>
       <PreserveNumeric1>True</PreserveNumeric1>
       <EFProvider>Npgsql.EntityFrameworkCore.PostgreSQL</EFProvider>
-      <Port>54070</Port>
+      <Port>61985</Port>
     </DriverData>
   </Connection>
   <NuGetReference>Microsoft.Data.SqlClient</NuGetReference>
@@ -40,7 +40,9 @@ async Task Main()
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowlers RESTART IDENTITY CASCADE;");
 	SaveChanges();
 	
-	var bowlingCenterIds = await MigrateBowlingCentersAsync();
+	await MigrateBowlingCentersAsync();
+	var bowlingCenterIds = BowlingCenters.ToList().Select(b => (b.Id, b.CertificationNumber, b.LegacyId, b.WebsiteId)).ToList().AsReadOnly();
+	
 	var bowlerIds = await MigrateBowlersAsync();
 }
 
@@ -1006,8 +1008,6 @@ public async Task<IReadOnlyCollection<(int Id, string CertificationNumber, int? 
 	await SaveChangesAsync();
 	
 	"Bowling Centers Migrated".Dump();
-
-	return BowlingCenters.ToList().Select(b => (b.Id, b.CertificationNumber, b.LegacyId, b.WebsiteId)).ToList().AsReadOnly();
 }
 
 private async Task AzureAddressLookup(HttpClient httpClient, BowlingCenters bowlingCenter)
