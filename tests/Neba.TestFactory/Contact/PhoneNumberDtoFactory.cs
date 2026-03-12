@@ -16,9 +16,6 @@ public static class PhoneNumberDtoFactory
             Number = number ?? (PhoneNumberFactory.ValidCountryCode + PhoneNumberFactory.ValidNumber)
         };
 
-    public static PhoneNumberDto Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<PhoneNumberDto> Bogus(int count, int? seed = null)
     {
         var faker = new Faker<PhoneNumberDto>()

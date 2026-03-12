@@ -25,9 +25,6 @@ public static class FileContentFactory
         };
     }
 
-    public static FileContent Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<FileContent> Bogus(int count, int? seed)
     {
         var faker = new Bogus.Faker<FileContent>()

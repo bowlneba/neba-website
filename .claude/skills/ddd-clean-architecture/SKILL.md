@@ -727,7 +727,7 @@ var sut = new CreateTournamentHandler(
 Factories live in `Neba.TestFactory`. Two creation approaches per factory:
 
 - **`Create()`**: For unit tests. All parameters nullable with valid constant defaults. Pass only what matters for the test.
-- **`Bogus(int? seed)`** / **`Bogus(int count, int? seed)`**: For integration tests. Realistic random data via Bogus. Never instantiate entities manually in tests.
+- **`Bogus(int count, int? seed)`**: For integration tests. Realistic random data via Bogus. Never instantiate entities manually in tests.
 
 ```csharp
 public static class TournamentFactory
@@ -742,8 +742,6 @@ public static class TournamentFactory
         DateOnly? date = null,
         TournamentType? type = null)
         => new(id ?? TournamentId.New(), name ?? ValidName, date ?? ValidDate, type ?? ValidType);
-
-    public static Tournament Bogus(int? seed = null) => Bogus(1, seed).First();
 
     public static IReadOnlyList<Tournament> Bogus(int count, int? seed = null)
     {

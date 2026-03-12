@@ -2065,8 +2065,6 @@ public static class TournamentFactory
         
         return faker.Generate(count);
     }
-    
-    public static Tournament Bogus(int? seed = null) => Bogus(1, seed).First();
 }
 ```
 

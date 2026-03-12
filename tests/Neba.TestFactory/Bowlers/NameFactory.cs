@@ -27,9 +27,6 @@ public static class NameFactory
              Nickname = nickname
          };
 
-    public static Name Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<Name> Bogus(int count, int? seed = null)
     {
         var faker = new Faker<Name>()

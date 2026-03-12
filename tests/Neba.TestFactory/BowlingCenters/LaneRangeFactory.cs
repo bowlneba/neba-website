@@ -16,9 +16,6 @@ public static class LaneRangeFactory
             endLane ?? ValidEndLane,
             pinFallType ?? ValidPinFallType).Value;
 
-    public static LaneRange Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<LaneRange> Bogus(int count, int? seed = null)
     {
         var faker = new Faker<LaneRange>()

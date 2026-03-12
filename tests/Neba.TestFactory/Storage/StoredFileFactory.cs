@@ -26,9 +26,6 @@ public static class StoredFileFactory
         };
     }
 
-    public static StoredFile Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<StoredFile> Bogus(int count, int? seed = null)
     {
         var faker = new Faker<StoredFile>()

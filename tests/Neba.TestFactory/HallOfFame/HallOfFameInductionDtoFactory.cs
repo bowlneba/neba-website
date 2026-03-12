@@ -26,9 +26,6 @@ public static class HallOfFameInductionDtoFactory
             PhotoUri = photoUri
         };
 
-    public static HallOfFameInductionDto Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<HallOfFameInductionDto> Bogus(int count, int? seed = null)
     {
         var faker = new Faker<HallOfFameInductionDto>()
@@ -40,7 +37,7 @@ public static class HallOfFameInductionDtoFactory
                 return new HallOfFameInductionDto
                 {
                     Year = f.Date.PastDateOnly().Year,
-                    BowlerName = bowlerNames.GetNext()!,
+                    BowlerName = bowlerNames.GetNext(),
                     Categories = [.. f.PickRandom(HallOfFameCategory.List, f.Random.Int(1, HallOfFameCategory.List.Count))],
                     PhotoContainer = hasPhoto ? f.System.FileName() : null,
                     PhotoPath = hasPhoto ? f.System.FilePath() : null,

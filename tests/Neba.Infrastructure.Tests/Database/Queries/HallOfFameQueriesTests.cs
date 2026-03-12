@@ -44,16 +44,16 @@ public sealed class HallOfFameQueriesTests
         // Arrange
         const int seed = 50;
         var bowlers = BowlerFactory.Bogus(50, seed);
-        var bowlerIdPool = UniquePool.Create(bowlers.Select(b => b.Id), seed);
+        var bowlerIdPool = UniquePool.CreateNullable(bowlers.Select(b => b.Id), seed);
         var inductions = HallOfFameInductionFactory.Bogus(5, bowlerIdPool, seed);
 
         var inductionWithPhoto = HallOfFameInductionFactory.Create(
-            bowlerId: bowlerIdPool.GetNext(),
-            photo: StoredFileFactory.Bogus(seed: seed)
+            bowlerId: bowlerIdPool.GetNextNullable(),
+            photo: StoredFileFactory.Bogus(1, seed: seed).Single()
         );
 
         var inductionWithoutPhoto = HallOfFameInductionFactory.Create(
-            bowlerId: bowlerIdPool.GetNext(),
+            bowlerId: bowlerIdPool.GetNextNullable(),
             photo: null
         );
 

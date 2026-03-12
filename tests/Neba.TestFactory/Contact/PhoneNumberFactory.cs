@@ -25,9 +25,6 @@ public static class PhoneNumberFactory
              Extension = extension
          };
 
-    public static PhoneNumber Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<PhoneNumber> Bogus(int count, int? seed = null)
     {
         var faker = seed.HasValue

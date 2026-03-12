@@ -19,20 +19,15 @@ public static class BowlerFactory
             LegacyId = legacyId
         };
 
-    public static Bowler Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<Bowler> Bogus(int count, int? seed = null)
     {
-        var websiteIdPool = UniquePool.Create(
+        var websiteIdPool = UniquePool.CreateNullable(
             Enumerable.Range(1, count).Select(i => (int?)i),
-            seed,
-            probabilityOfValue: 0.5f);
+            seed);
 
-        var legacyIdPool = UniquePool.Create(
+        var legacyIdPool = UniquePool.CreateNullable(
             Enumerable.Range(100_001, count).Select(i => (int?)i),
-            seed,
-            probabilityOfValue: 0.5f);
+            seed);
 
         var namePool = UniquePool.Create(
             NameFactory.Bogus(count, seed),
@@ -42,9 +37,9 @@ public static class BowlerFactory
             .CustomInstantiator(_ => new()
             {
                 Id = BowlerId.New(),
-                Name = namePool.GetNext()!,
-                WebsiteId = websiteIdPool.GetNext(),
-                LegacyId = legacyIdPool.GetNext()
+                Name = namePool.GetNext(),
+                WebsiteId = websiteIdPool.GetNextNullable(),
+                LegacyId = legacyIdPool.GetNextNullable()
             });
 
         if (seed.HasValue)

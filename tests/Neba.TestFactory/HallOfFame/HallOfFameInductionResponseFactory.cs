@@ -21,9 +21,6 @@ public static class HallOfFameInductionResponseFactory
             PhotoUri = photoUri
         };
 
-    public static HallOfFameInductionResponse Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<HallOfFameInductionResponse> Bogus(int count, int? seed = null)
     {
         var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed));
@@ -32,7 +29,7 @@ public static class HallOfFameInductionResponseFactory
             .CustomInstantiator(f => new()
             {
                 Year = f.Date.PastDateOnly(50).Year,
-                BowlerName = bowlerNamePool.GetNext()!.ToFormalName(),
+                BowlerName = bowlerNamePool.GetNext().ToFormalName(),
                 Categories = [.. f.PickRandom(HallOfFameCategory.List.Select(c => c.Name), 2)],
                 PhotoUri = f.Random.Bool() ? new Uri(f.Internet.Url()) : null
             });

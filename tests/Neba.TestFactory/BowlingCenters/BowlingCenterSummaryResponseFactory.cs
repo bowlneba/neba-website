@@ -36,11 +36,10 @@ public static class BowlingCenterSummaryResponseFactory
             Website = website
         };
 
-    public static BowlingCenterSummaryResponse Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<BowlingCenterSummaryResponse> Bogus(int count, int? seed = null)
     {
+        var phoneNumberPool = UniquePool.Create(PhoneNumberResponseFactory.Bogus(count, seed));
+
         var faker = new Faker<BowlingCenterSummaryResponse>()
             .CustomInstantiator(f => new()
             {
@@ -54,7 +53,7 @@ public static class BowlingCenterSummaryResponseFactory
                 PostalCode = f.Address.ZipCode(),
                 Latitude = f.Person.Address.Geo.Lat,
                 Longitude = f.Person.Address.Geo.Lng,
-                PhoneNumbers = [PhoneNumberResponseFactory.Bogus(seed: seed)],
+                PhoneNumbers = phoneNumberPool.GetNext(1),
                 Website = f.Random.Bool() ? f.Internet.Url() : null
             });
 

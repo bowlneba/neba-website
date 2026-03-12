@@ -20,9 +20,6 @@ public static class CoordinatesFactory
         };
     }
 
-    public static Coordinates Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<Coordinates> Bogus(int count, int? seed)
     {
         var faker = new Faker<Coordinates>()

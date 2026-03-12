@@ -39,25 +39,19 @@ public static class BowlingCenterFactory
             LegacyId = legacyId
         };
 
-    public static BowlingCenter Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<BowlingCenter> Bogus(int count, int? seed)
     {
         var certPool = UniquePool.Create(
             Enumerable.Range(10000, 90000).Select(i => i.ToString(CultureInfo.InvariantCulture)),
-            seed,
-            probabilityOfValue: 1.0f);
+            seed);
 
-        var websiteIdPool = UniquePool.Create(
+        var websiteIdPool = UniquePool.CreateNullable(
             Enumerable.Range(1, 100_000).Select(i => (int?)i),
-            seed,
-            probabilityOfValue: 0.5f);
+            seed);
 
-        var legacyIdPool = UniquePool.Create(
+        var legacyIdPool = UniquePool.CreateNullable(
             Enumerable.Range(100_001, 100_000).Select(i => (int?)i),
-            seed,
-            probabilityOfValue: 0.5f);
+            seed);
 
         var faker = new Faker<BowlingCenter>()
             .CustomInstantiator(f => new()
@@ -69,9 +63,9 @@ public static class BowlingCenterFactory
                 PhoneNumbers = PhoneNumberFactory.Bogus(3, seed),
                 EmailAddress = EmailAddressFactory.Create(f.Internet.Email()),
                 Website = f.Internet.Url(),
-                Lanes = LaneConfigurationFactory.Bogus(seed),
-                WebsiteId = websiteIdPool.GetNext(),
-                LegacyId = legacyIdPool.GetNext()
+                Lanes = LaneConfigurationFactory.Bogus(1, seed).Single(),
+                WebsiteId = websiteIdPool.GetNextNullable(),
+                LegacyId = legacyIdPool.GetNextNullable()
             });
 
         if (seed.HasValue)
