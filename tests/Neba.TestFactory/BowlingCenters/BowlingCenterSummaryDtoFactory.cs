@@ -30,7 +30,7 @@ public static class BowlingCenterSummaryDtoFactory
 
     public static IReadOnlyCollection<BowlingCenterSummaryDto> Bogus(int count, int? seed = null)
     {
-        var addressPool = UniquePool.Create(AddressDtoFactory.Bogus(count, seed));
+        var addressPool = UniquePool.Create(AddressDtoFactory.Bogus(count, seed), seed);
 
         var faker = new Faker<BowlingCenterSummaryDto>()
             .CustomInstantiator(f => new()
