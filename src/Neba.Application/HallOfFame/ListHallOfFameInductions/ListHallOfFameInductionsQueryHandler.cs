@@ -15,7 +15,7 @@ internal sealed class ListHallOfFameInductionsQueryHandler(
     {
         var inductions = await _hallOfFameQueries.GetAllAsync(cancellationToken);
 
-        foreach (var induction in inductions.Where(i => i.PhotoContainer is not null))
+        foreach (var induction in inductions.Where(i => i.PhotoContainer is not null && i.PhotoPath is not null))
         {
             induction.PhotoUri = _fileStorageService.GetBlobUri(induction.PhotoContainer!, induction.PhotoPath!);
         }
