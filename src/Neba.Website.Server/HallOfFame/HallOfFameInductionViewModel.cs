@@ -23,8 +23,8 @@ public sealed record HallOfFameInductionViewModel
     public required IReadOnlyCollection<string> Categories { get; init; }
 
     /// <summary>
-    /// URL of the bowler's photo, if available.
+    /// URI of the bowler's photo, if available.
     /// </summary>
     /// <value></value>
-    public Uri? PhotoUrl { get; init; }
+    public Uri? PhotoUri { get; init; }
 }

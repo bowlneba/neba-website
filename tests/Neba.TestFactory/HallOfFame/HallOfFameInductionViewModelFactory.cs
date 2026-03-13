@@ -11,13 +11,13 @@ public static class HallOfFameInductionViewModelFactory
         string? bowlerName = null,
         int? inductionYear = null,
         IReadOnlyCollection<HallOfFameCategory>? categories = null,
-        Uri? photoUrl = null)
+        Uri? photoUri = null)
         => new()
         {
             BowlerName = bowlerName ?? "John Doe",
             InductionYear = inductionYear ?? 2020,
             Categories = [.. (categories ?? [HallOfFameCategory.SuperiorPerformance]).Select(c => c.Name)],
-            PhotoUrl = photoUrl
+            PhotoUri = photoUri
         };
 
     public static IReadOnlyCollection<HallOfFameInductionViewModel> Bogus(int count, int? seed = null)
@@ -28,9 +28,9 @@ public static class HallOfFameInductionViewModelFactory
                 BowlerName = f.Name.FullName(),
                 InductionYear = f.Date.Past(50).Year,
                 Categories = [.. f.PickRandom(HallOfFameCategory.List).Select(c => c.Name)],
-                PhotoUrl = new Uri(f.Internet.Avatar())
+                PhotoUri = new Uri(f.Internet.Avatar())
             });
-        
+
         if (seed.HasValue)
         {
             faker.UseSeed(seed.Value);
