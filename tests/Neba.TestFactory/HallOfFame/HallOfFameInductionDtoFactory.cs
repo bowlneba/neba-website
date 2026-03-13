@@ -28,11 +28,12 @@ public static class HallOfFameInductionDtoFactory
 
     public static IReadOnlyCollection<HallOfFameInductionDto> Bogus(int count, int? seed = null)
     {
+        var bowlerNames = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
+        
         var faker = new Faker<HallOfFameInductionDto>()
             .CustomInstantiator(f =>
             {
                 var hasPhoto = f.Random.Bool();
-                var bowlerNames = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
 
                 return new HallOfFameInductionDto
                 {
