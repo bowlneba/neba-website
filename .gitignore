@@ -434,3 +434,5 @@ FodyWeavers.xsd
 playwright-report/
 test-results/
 .azure
+
+.stryker-tmp/
