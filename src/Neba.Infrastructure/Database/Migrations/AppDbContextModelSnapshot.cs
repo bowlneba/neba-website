@@ -17,7 +17,7 @@ namespace Neba.Infrastructure.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.3")
+                .HasAnnotation("ProductVersion", "10.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -190,6 +190,80 @@ namespace Neba.Infrastructure.Database.Migrations
                     b.ToTable("bowling_centers", "app");
                 });
 
+            modelBuilder.Entity("Neba.Domain.HallOfFame.HallOfFameInduction", b =>
+                {
+                    b.Property<int>("db_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
+
+                    b.Property<string>("BowlerId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("bowler_id")
+                        .IsFixedLength();
+
+                    b.Property<int>("Categories")
+                        .HasColumnType("integer")
+                        .HasColumnName("category");
+
+                    b.Property<string>("Id")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("domain_id")
+                        .IsFixedLength();
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer")
+                        .HasColumnName("induction_year");
+
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Photo", "Neba.Domain.HallOfFame.HallOfFameInduction.Photo#StoredFile", b1 =>
+                        {
+                            b1.Property<string>("Container")
+                                .IsRequired()
+                                .HasMaxLength(63)
+                                .HasColumnType("character varying(63)")
+                                .HasColumnName("photo_container");
+
+                            b1.Property<string>("ContentType")
+                                .IsRequired()
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("photo_content_type");
+
+                            b1.Property<string>("Path")
+                                .IsRequired()
+                                .HasMaxLength(1023)
+                                .HasColumnType("character varying(1023)")
+                                .HasColumnName("photo_file_path");
+
+                            b1.Property<long>("SizeInBytes")
+                                .HasColumnType("bigint")
+                                .HasColumnName("photo_size_in_bytes");
+                        });
+
+                    b.HasKey("db_id")
+                        .HasName("pk_hall_of_fame_inductions");
+
+                    b.HasAlternateKey("Id")
+                        .HasName("ak_hall_of_fame_inductions_domain_id");
+
+                    b.HasAlternateKey("Year", "BowlerId")
+                        .HasName("ak_hall_of_fame_inductions_induction_year_bowler_id");
+
+                    b.HasIndex("BowlerId")
+                        .HasDatabaseName("ix_hall_of_fame_inductions_bowler_id");
+
+                    b.HasIndex("Year")
+                        .HasDatabaseName("ix_hall_of_fame_inductions_induction_year");
+
+                    b.ToTable("hall_of_fame_inductions", "app");
+                });
+
             modelBuilder.Entity("Neba.Domain.Bowlers.Bowler", b =>
                 {
                     b.OwnsOne("Neba.Domain.Bowlers.Name", "Name", b1 =>
@@ -334,6 +408,19 @@ namespace Neba.Infrastructure.Database.Migrations
                         .IsRequired();
 
                     b.Navigation("PhoneNumbers");
+                });
+
+            modelBuilder.Entity("Neba.Domain.HallOfFame.HallOfFameInduction", b =>
+                {
+                    b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
+                        .WithMany()
+                        .HasForeignKey("BowlerId")
+                        .HasPrincipalKey("Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_hall_of_fame_inductions_bowlers_bowler_id");
+
+                    b.Navigation("Bowler");
                 });
 #pragma warning restore 612, 618
         }

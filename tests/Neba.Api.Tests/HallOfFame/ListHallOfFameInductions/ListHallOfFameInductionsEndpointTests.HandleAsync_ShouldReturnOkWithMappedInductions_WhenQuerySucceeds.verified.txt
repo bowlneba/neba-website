@@ -1,0 +1,32 @@
+﻿{
+  Items: [
+    {
+      Year: 2025,
+      BowlerName: Leticia Muller,
+      Categories: [
+        Friend of NEBA,
+        Meritorious Service
+      ],
+      PhotoUri: https://kiera.biz
+    },
+    {
+      Year: 2026,
+      BowlerName: Wanda Kub,
+      Categories: [
+        Friend of NEBA,
+        Superior Performance,
+        Meritorious Service
+      ]
+    },
+    {
+      Year: 2025,
+      BowlerName: Kevin Koch,
+      Categories: [
+        Superior Performance,
+        Meritorious Service,
+        Friend of NEBA
+      ]
+    }
+  ],
+  TotalItems: 3
+}

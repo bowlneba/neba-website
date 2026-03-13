@@ -11,7 +11,8 @@ using Neba.Infrastructure.Telemetry;
 
 namespace Neba.Infrastructure.Storage;
 
-internal sealed class AzureBlobStorageService : IFileStorageService
+internal sealed class AzureBlobStorageService
+    : IFileStorageService
 {
     private const string StorageMetricsNamespace = "Neba.Storage";
     private const string StorageDurationMsTag = "storage.duration_ms";
@@ -79,7 +80,7 @@ internal sealed class AzureBlobStorageService : IFileStorageService
         }
     }
 
-    public async Task<StoredFile?> GetFileAsync(string container, string path, CancellationToken cancellationToken)
+    public async Task<FileContent?> GetFileAsync(string container, string path, CancellationToken cancellationToken)
     {
         using var activity = ActivitySource.StartActivity("storage.download", ActivityKind.Client);
         activity?.SetCodeAttributes(nameof(GetFileAsync), StorageMetricsNamespace);
@@ -109,7 +110,7 @@ internal sealed class AzureBlobStorageService : IFileStorageService
 
             var result = await blobClient.DownloadContentAsync(cancellationToken);
 
-            var storedFile = new StoredFile
+            var storedFile = new FileContent
             {
                 Content = result.Value.Content.ToString(),
                 ContentType = result.Value.Details.ContentType,
@@ -199,6 +200,14 @@ internal sealed class AzureBlobStorageService : IFileStorageService
 
             throw;
         }
+    }
+
+    public Uri GetBlobUri(string container, string path)
+    {
+        var containerClient = _blobServiceClient.GetBlobContainerClient(container);
+        var blobClient = containerClient.GetBlobClient(path);
+
+        return blobClient.Uri;
     }
 
     private BlobClient GetBlobClient(string container, string path)

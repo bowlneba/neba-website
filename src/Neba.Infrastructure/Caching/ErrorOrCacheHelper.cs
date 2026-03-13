@@ -109,18 +109,14 @@ internal static class ErrorOrCacheHelper
             throw new InvalidOperationException($"Type {errorOrType.Name} does not have a Value property.");
         }
 
-        if (implicitOperator is null)
-        {
-            throw new InvalidOperationException($"Type {errorOrType.Name} does not have an implicit conversion operator from {innerType.Name}.");
-        }
-
-        return new ErrorOrTypeInfo
-        {
-            InnerType = innerType,
-            ValueProperty = valueProperty,
-            ImplicitOperator = implicitOperator
-        };
-
+        return implicitOperator is null
+            ? throw new InvalidOperationException($"Type {errorOrType.Name} does not have an implicit conversion operator from {innerType.Name}.")
+            : new ErrorOrTypeInfo
+            {
+                InnerType = innerType,
+                ValueProperty = valueProperty,
+                ImplicitOperator = implicitOperator
+            };
     }
 
     private sealed class ErrorOrTypeInfo

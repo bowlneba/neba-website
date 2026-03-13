@@ -27,9 +27,6 @@ public static class AddressDtoFactory
             Longitude = longitude
         };
 
-    public static AddressDto Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<AddressDto> Bogus(int count, int? seed)
     {
         var faker = new Bogus.Faker<AddressDto>()

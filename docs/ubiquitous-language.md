@@ -66,8 +66,48 @@
 
 **In Code**:
 
-- Namespace: `Neba.Application.Storage`
+- Namespace: `Neba.Application.Storage` / `Neba.Domain.Storage`
 - Interface: `IFileStorageService`
+- Value object: `StoredFile` (domain — the storage address)
+- DTO: `FileContent` (application — the retrieved content)
+
+---
+
+### Stored File
+
+**Definition**: A value object that records the storage address of a file written to Azure Blob Storage. Owned by domain entities as a complex property. A Stored File does not carry the file's bytes — it is a reference that can be used to retrieve or serve the file later.
+
+**Characteristics**:
+
+- **Container**: The top-level logical partition in Azure Blob Storage grouping related Files (e.g., `"documents"`). Maps to the Azure Blob Storage container name. Max 63 characters
+- **Path**: The blob path within the Container uniquely identifying a File (e.g., `"bylaws"`). May be flat or slash-segmented. Max 1023 characters
+- **ContentType**: The MIME type of the file as stored (e.g., `"text/html"`)
+- **SizeInBytes**: The size of the stored file in bytes
+- **No content**: Does not carry file bytes — use `IFileStorageService.GetFileAsync()` to retrieve content
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Storage`
+- Type: `StoredFile` (sealed record, domain value object)
+- EF mapping: `StoredFileConfiguration.HasStoredFile()` — maps as EF ComplexProperty on owning entities
+
+---
+
+### File Content
+
+**Definition**: The materialized content of a File after it has been read from Azure Blob Storage. Returned by `IFileStorageService.GetFileAsync()`. Carries the file bytes (as a string), the MIME content type, and the metadata stored alongside the blob. Ephemeral — used within a request or handler and not persisted.
+
+**Characteristics**:
+
+- **Content**: The file content as a string (text files as-is; binary as Base64 or equivalent)
+- **ContentType**: The MIME type (e.g., `"text/html"`)
+- **Metadata**: Key-value pairs stored alongside the blob (e.g., `source_document_id`, `cached_at`)
+- Distinct from `StoredFile` — `StoredFile` is the address; `FileContent` is what you receive when you fetch that address
+
+**In Code**:
+
+- Namespace: `Neba.Application.Storage`
+- Type: `FileContent` (sealed record, application DTO)
 
 ---
 
@@ -486,7 +526,7 @@ A Bowler record may represent a fully registered active participant or a histori
 | --- | --- | --- |
 | **Legal Name** | `First [Middle] Last[, Suffix]` | Official documents, 1099 tax reporting, legal records |
 | **Display Name** | `[Nickname \| First] Last` | Public website, tournament results, standings, awards lists |
-| **Formal Name** | `First Last` | Formal communications where a nickname would be inappropriate |
+| **Formal Name** | `First Last` | Formal communications where a nickname would be inappropriate; Hall of Fame inductee listings |
 
 **Display Name Rules**:
 
@@ -515,6 +555,135 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 - Namespace: `Neba.Domain.Bowlers`
 - Type: `NameSuffix` (SmartEnum with string value)
+
+---
+
+## Hall of Fame
+
+The NEBA program that formally recognizes individuals for exceptional competitive achievement, organizational service, or meaningful contribution to the organization. Inductees are honored at a Hall of Fame Banquet held every two years.
+
+**In Code**: Namespace `Neba.Domain.HallOfFame`
+
+---
+
+### Banquet
+
+**Definition**: The ceremony held every two years at which Hall of Fame inductees are formally honored. All inductees honored at a given Banquet are collectively referred to as a Class.
+
+**Characteristics**:
+
+- Held every two years — not annually
+- All inductees across all categories are honored at the same event
+- The year of the Banquet identifies the Class
+
+---
+
+### Class
+
+**Definition**: The group of inductees honored at a single Banquet, identified by year (e.g., Class of 2024). A Class contains one or more Inductions.
+
+**Characteristics**:
+
+- Identified by the Banquet year — not a separate named entity in the system
+- Grouping by year on the Hall of Fame page represents the Class
+
+---
+
+### Induction
+
+**Definition**: A single record recognizing a Person under one or more Induction Categories in a given Class. If a Person is recognized under multiple categories at the same Banquet, this is recorded as one Induction — not separate records. An Induction is permanent and is never modified or revoked once recorded.
+
+**Characteristics**:
+
+- One record per Person per Banquet year
+- May reference more than one Induction Category via bitmask
+- Permanent — no modification or revocation after recording
+- A Person may have Inductions across multiple years (e.g., Service in 2018, Performance in 2024)
+
+**In Code**:
+
+- Namespace: `Neba.Domain.HallOfFame`
+- Type: `HallOfFameInduction` (aggregate root)
+- Identity type: `HallOfFameId` (ULID-backed strongly-typed ID)
+
+---
+
+### Inductee
+
+**Definition**: A Person who has one or more Inductions recorded in the Hall of Fame. Being an Inductee does not preclude future Induction under a different category.
+
+---
+
+### Induction Category
+
+**Definition**: The basis under which a Person is inducted. There are three categories: Superior Performance, Meritorious Service, and Friend of NEBA. A single Induction may reference more than one category.
+
+**In Code**:
+
+- Type: `HallOfFameCategory` (SmartFlagEnum — bitmask, powers of two)
+- Values: `SuperiorPerformance` (1), `MeritoriousService` (2), `FriendOfNeba` (4)
+
+---
+
+### Superior Performance
+
+**Definition**: An Induction Category awarded to bowlers who have demonstrated exceptional competitive achievement in NEBA. Eligibility is determined by accumulating a minimum of 36 Hall of Fame Points through tournament titles and Bowler of the Year awards, with additional requirements around minimum years of NEBA membership and earning titles or awards across at least three different years.
+
+**Characteristics**:
+
+- Eligibility is calculated systematically from tracked tournament and award history
+- Point accumulation logic will be implemented when the tournament and membership management migration is in scope
+- Eligibility criteria and point values are published on the Hall of Fame page
+
+---
+
+### Hall of Fame Points
+
+**Definition**: The numeric values assigned to tournament titles and Bowler of the Year awards used to determine eligibility for the Superior Performance Induction Category. A minimum of 36 points is required. Specific point values per award type are published on the Hall of Fame page.
+
+---
+
+### Meritorious Service
+
+**Definition**: An Induction Category awarded to individuals who have dedicated significant time and contributions to NEBA in an organizational capacity, such as serving on the board, holding officer positions, or other leadership roles. Formal eligibility criteria exist and are published on the Hall of Fame page.
+
+**Characteristics**:
+
+- Selection process not yet documented — to be confirmed with the Hall of Fame Committee
+- Not point-calculated; eligibility criteria are informational, displayed on the Hall of Fame page
+
+---
+
+### Friend of NEBA
+
+**Definition**: An Induction Category awarded to individuals who have been meaningful to the organization but do not qualify under Superior Performance or Meritorious Service. Requires a formal Nomination by a NEBA member followed by a vote by the Hall of Fame Committee.
+
+**Characteristics**:
+
+- The broadest category — may apply to non-bowlers (e.g., center owners, sponsors, officials) who have no competitive history with NEBA
+- Requires Nomination as a prerequisite; cannot be inducted without one
+
+---
+
+### Hall of Fame Committee
+
+**Definition**: The body responsible for reviewing Nominations and voting on Friend of NEBA candidates.
+
+> **Note**: The composition of the Hall of Fame Committee (who sits on it, how members are selected) is not yet documented. This is not a blocker for the current scope but will be relevant if the system ever needs to model voting or committee membership.
+
+---
+
+### Nomination
+
+**Definition**: A formal action by a NEBA member to put forward a candidate for the Friend of NEBA category. A Nomination is a prerequisite for a Friend of NEBA Induction and triggers a vote by the Hall of Fame Committee.
+
+---
+
+### Person (Hall of Fame context)
+
+**Definition**: Any individual who may be inducted into the Hall of Fame — including bowlers with a competitive history in NEBA and non-bowlers recognized under Friend of NEBA (e.g., center owners, sponsors, officials).
+
+> **Dev note**: The UL uses "Person" here to reflect that not all Inductees are competitive bowlers. However, the current system models all Persons as `Bowler` records. Any individual being inducted who does not already have a Bowler record must be added to the system as one before the Induction is recorded. The induction flow does not create Bowler records. This is an acknowledged semantic gap — if a future `Person` entity is introduced to represent non-bowlers, Induction will reference it instead.
 
 ---
 

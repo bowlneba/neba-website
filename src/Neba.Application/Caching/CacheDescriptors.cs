@@ -46,5 +46,21 @@ public static class CacheDescriptors
                 Tags = ["neba", "neba:bowling-centers"]
             };
     }
+
+    /// <summary>
+    /// Cache descriptors for Hall of Fame data.
+    /// </summary>
+    public static class HallOfFame
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of Hall of Fame inductions, with a key and tags that allow for efficient caching and invalidation of Hall of Fame data.
+        /// </summary>
+        public static CacheDescriptor ListInductions
+            => new()
+            {
+                Key = "neba:hall-of-fame:inductions:list",
+                Tags = ["neba", "neba:hall-of-fame", "neba:hall-of-fame:inductions"]
+            };
+    }
 }
 #pragma warning restore CA1724

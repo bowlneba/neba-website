@@ -39,9 +39,6 @@ public static class BowlingCenterSummaryViewModelFactory
         };
     }
 
-    public static BowlingCenterSummaryViewModel Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<BowlingCenterSummaryViewModel> Bogus(int count, int? seed = null)
     {
         var faker = new Faker<BowlingCenterSummaryViewModel>()

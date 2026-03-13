@@ -12,9 +12,6 @@ public static class EmailAddressFactory
              Value = email ?? ValidEmail
          };
 
-    public static EmailAddress Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<EmailAddress> Bogus(int count, int? seed = null)
     {
         var faker = new Bogus.Faker<EmailAddress>()

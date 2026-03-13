@@ -18,9 +18,6 @@ public static class GetDocumentDtoFactory
         };
     }
 
-    public static GetDocumentDto Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<GetDocumentDto> Bogus(int count, int? seed = null)
     {
         var faker = new Bogus.Faker<GetDocumentDto>()

@@ -1,0 +1,255 @@
+@page "/hall-of-fame"
+@using Neba.Api.Contracts.HallOfFame
+@using Neba.Website.Server.HallOfFame
+@using Neba.Website.Server.Services
+
+@inject ApiExecutor ApiExecutor
+@inject IHallOfFameApi HallOfFameApi
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>Hall of Fame - NEBA</PageTitle>
+<HeadContent>
+    <meta name="description"
+          content="NEBA Hall of Fame honoring excellence in bowling. View inductees by year and category including Superior Performance, Meritorious Service, and Friend of NEBA." />
+</HeadContent>
+
+<div class="neba-space-y-6">
+    <!-- Page Header -->
+    <div class="text-center">
+        <h1 class="text-3xl font-bold text-[var(--neba-blue-700)]">Hall of Fame</h1>
+        <p class="mt-1 text-sm text-gray-600">Honoring Excellence in Bowling</p>
+    </div>
+
+    <!-- Error Alert -->
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <NebaAlert Severity="NotifySeverity.Error"
+                   Title="Error Loading Hall of Fame"
+                   Message="@_errorMessage"
+                   Dismissible="true"
+                   OnDismiss="@(() => _errorMessage = null)" />
+    }
+
+    @if (_isLoading)
+    {
+        <div class="space-y-8">
+            @for (var section = 0; section < 2; section++)
+            {
+                <div class="space-y-6">
+                    <NebaSkeletonLoader Type="SkeletonType.Custom" Width="250px" Height="2.5rem" />
+                    <div class="inductees-photo-grid">
+                        @for (var i = 0; i < 5; i++)
+                        {
+                            <NebaSkeletonLoader Type="SkeletonType.Avatar" Size="140" />
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (_inductionsByYear is { Count: > 0 })
+    {
+        <div class="space-y-12">
+            @foreach (var yearGroup in _inductionsByYear)
+            {
+                <div>
+                    <div class="text-3xl font-bold text-[var(--neba-blue-700)] text-center pb-4 mb-6 border-b-[3px] border-[var(--neba-blue-700)]">
+                        Class of @yearGroup.Year
+                    </div>
+
+                    <div class="space-y-10">
+                        @foreach (var categoryGroup in yearGroup.InducteesByCategory.OrderBy(c => GetCategoryOrder(c.Category)))
+                        {
+                            var singleCategoryInductees = categoryGroup.Inductees.Where(i => i.Categories.Count == 1).ToList();
+                            @if (singleCategoryInductees.Count > 0)
+                            {
+                                <div>
+                                    <div class="text-base font-semibold text-gray-700 mb-5 px-5 py-3 bg-gray-50 rounded uppercase tracking-wide">
+                                        @categoryGroup.Category
+                                    </div>
+                                    <div class="inductees-photo-grid">
+                                        @foreach (var inductee in singleCategoryInductees.OrderBy(i => i.BowlerName))
+                                        {
+                                            <div class="inductee-item">
+                                                <div class="inductee-photo" style="@GetPhotoStyle(inductee)">
+                                                    @if (inductee.PhotoUri is null)
+                                                    {
+                                                        @GetInitials(inductee.BowlerName)
+                                                    }
+                                                </div>
+                                                <div class="inductee-name">@inductee.BowlerName</div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+
+                        @{
+                            var combinedInductees = yearGroup.InducteesByCategory
+                                .SelectMany(c => c.Inductees)
+                                .Where(i => i.Categories.Count > 1)
+                                .Distinct()
+                                .ToList();
+                        }
+                        @if (combinedInductees.Count > 0)
+                        {
+                            <div>
+                                <div class="text-base font-semibold text-gray-700 mb-5 px-5 py-3 bg-gray-50 rounded uppercase tracking-wide">
+                                    Combined
+                                </div>
+                                <div class="inductees-photo-grid">
+                                    @foreach (var inductee in combinedInductees.OrderBy(i => i.BowlerName))
+                                    {
+                                        <div class="inductee-item">
+                                            <div class="inductee-photo" style="@GetPhotoStyle(inductee)">
+                                                @if (inductee.PhotoUri is null)
+                                                {
+                                                    @GetInitials(inductee.BowlerName)
+                                                }
+                                            </div>
+                                            <div class="inductee-name">@inductee.BowlerName</div>
+                                            <div class="combined-categories">
+                                                @string.Join(" • ", inductee.Categories)
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Eligibility Criteria — static content, always visible -->
+    <div class="mt-12 pt-8 border-t-2 border-gray-200">
+        <h2 class="text-2xl font-bold text-gray-700 mb-6">Eligibility & Criteria</h2>
+
+        <div class="max-w-[900px] mx-auto mb-8 bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-[var(--neba-blue-700)] mb-4 pb-2 border-b-2 border-[var(--neba-blue-700)]">Superior Performance Category</h3>
+            <p class="text-gray-600 mb-3 leading-relaxed">To be eligible for the NEBA Hall of Fame Superior Performance category, a bowler must meet the following criteria:</p>
+            <p class="text-gray-700 mb-3 leading-relaxed"><strong>• Must have been a NEBA member for a minimum of 10 years</strong></p>
+            <p class="text-gray-700 mb-3 leading-relaxed"><strong>• Must have won titles or Bowler of Year awards in 3 or more different years</strong></p>
+            <p class="text-gray-700 mb-3 leading-relaxed"><strong>• Must accumulate 36 NEBA Hall of Fame points based on the following:</strong></p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-6">
+                <h3 class="text-xl font-semibold text-[var(--neba-blue-700)] mb-4 pb-2 border-b-2 border-[var(--neba-blue-700)]">Bowler of the Year Awards</h3>
+                <p class="text-gray-600 mb-3 leading-relaxed">12 points - Bowler of the Year</p>
+                <p class="text-gray-600 mb-3 leading-relaxed">2 points - Senior Bowler of the Year</p>
+                <p class="text-gray-600 mb-3 leading-relaxed">2 points - Super Senior Bowler of the Year</p>
+                <p class="text-gray-600 mb-3 leading-relaxed">2 points - Woman Bowler of the Year</p>
+                <p class="text-gray-600 mb-3 leading-relaxed">2 points - Rookie of the Year</p>
+            </div>
+            <div class="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-6">
+                <h3 class="text-xl font-semibold text-[var(--neba-blue-700)] mb-4 pb-2 border-b-2 border-[var(--neba-blue-700)]">Tournament Titles</h3>
+                <p class="text-gray-600 mb-3 leading-relaxed">6 points - Singles Title</p>
+                <p class="text-gray-600 mb-3 leading-relaxed">6 points - TOC Title</p>
+                <p class="text-gray-600 mb-3 leading-relaxed">6 points - Doubles Title</p>
+                <p class="text-gray-600 mb-3 leading-relaxed">6 points - Points Leader/Invitational Title</p>
+                <p class="text-gray-600 mb-3 leading-relaxed">6 points - NEBA Masters Title</p>
+                <p class="text-gray-600 mb-3 leading-relaxed">3 points - Over/Under Title</p>
+                <p class="text-gray-600 mb-3 leading-relaxed">2 points - Non-Champions Title</p>
+                <p class="text-gray-600 mb-3 leading-relaxed">2 points - Senior Title</p>
+                <p class="text-gray-600 mb-3 leading-relaxed">2 points - NEBA Trios Title</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div class="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-6">
+                <h3 class="text-xl font-semibold text-[var(--neba-blue-700)] mb-4 pb-2 border-b-2 border-[var(--neba-blue-700)]">Legacy Titles</h3>
+                <p class="italic text-gray-500 mb-3 leading-relaxed">Bowlers may have also accumulated points based on the following:</p>
+                <p class="text-gray-600 mb-3 leading-relaxed">12 points - NEBA Singles Title (prior to 1991)</p>
+                <p class="text-gray-600 mb-3 leading-relaxed">3 points - NEBA High-Roller Title</p>
+                <p class="text-gray-600 mb-3 leading-relaxed">2 points - NEBA Over 40 Title</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _isLoading = true;
+    private List<YearGroup>? _inductionsByYear;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync(
+            "HallOfFame",
+            "ListHallOfFameInductions",
+            ct => HallOfFameApi.ListHallOfFameInductionsAsync(ct));
+
+        _isLoading = false;
+
+        if (result.IsError)
+        {
+            _errorMessage = result.FirstError.Description;
+            return;
+        }
+
+        _inductionsByYear = result.Value.Items
+            .Select(r => r.ToViewModel())
+            .GroupBy(i => i.InductionYear)
+            .OrderByDescending(g => g.Key)
+            .Select(yearGroup => new YearGroup
+            {
+                Year = yearGroup.Key,
+                InducteesByCategory = yearGroup
+                    .SelectMany(i => i.Categories.Select(c => new { Category = c, Inductee = i }))
+                    .GroupBy(x => x.Category)
+                    .Select(catGroup => new CategoryGroup
+                    {
+                        Category = catGroup.Key,
+                        Inductees = [.. catGroup.Select(x => x.Inductee)]
+                    })
+                    .ToList()
+            })
+            .ToList();
+    }
+
+    internal static string GetInitials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        if (parts.Length >= 2)
+        {
+            return $"{parts[0][0]}{parts[^1][0]}";
+        }
+
+        return parts.Length > 0 ? parts[0][0].ToString() : "?";
+    }
+
+    private static string GetPhotoStyle(HallOfFameInductionViewModel inductee)
+    {
+        if (inductee.PhotoUri is not null)
+        {
+            return $"background-image: url('{inductee.PhotoUri}'); background-size: cover; background-position: center;";
+        }
+
+        return string.Empty;
+    }
+
+    private static int GetCategoryOrder(string category) => category switch
+    {
+        "Superior Performance" => 1,
+        "Meritorious Service" => 2,
+        "Friend of NEBA" => 3,
+        _ => 99
+    };
+
+    private sealed class YearGroup
+    {
+        public int Year { get; init; }
+        public List<CategoryGroup> InducteesByCategory { get; init; } = [];
+    }
+
+    private sealed class CategoryGroup
+    {
+        public string Category { get; init; } = string.Empty;
+        public List<HallOfFameInductionViewModel> Inductees { get; init; } = [];
+    }
+}

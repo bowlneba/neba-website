@@ -95,9 +95,9 @@ public sealed class AzureBlobStorageServiceTelemetryTests : IClassFixture<Azurit
         await _sut.UploadFileAsync(
             container,
             path,
-            StoredFileFactory.ValidContent,
-            StoredFileFactory.ValidContentType,
-            new Dictionary<string, string>(StoredFileFactory.ValidMetadata),
+            FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType,
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
             CancellationToken.None);
 
         // Assert
@@ -109,8 +109,8 @@ public sealed class AzureBlobStorageServiceTelemetryTests : IClassFixture<Azurit
         activity.GetTagItem("code.namespace").ShouldBe("Neba.Storage");
         activity.GetTagItem("storage.container").ShouldBe(container);
         activity.GetTagItem("storage.path").ShouldBe(path);
-        activity.GetTagItem("storage.size_bytes").ShouldBe(StoredFileFactory.ValidContent.Length);
-        activity.GetTagItem("storage.content_type").ShouldBe(StoredFileFactory.ValidContentType);
+        activity.GetTagItem("storage.size_bytes").ShouldBe(FileContentFactory.ValidContent.Length);
+        activity.GetTagItem("storage.content_type").ShouldBe(FileContentFactory.ValidContentType);
         activity.GetTagItem("storage.duration_ms").ShouldNotBeNull();
         activity.Status.ShouldBe(ActivityStatusCode.Ok);
     }
@@ -128,9 +128,9 @@ public sealed class AzureBlobStorageServiceTelemetryTests : IClassFixture<Azurit
         await _sut.UploadFileAsync(
             container,
             path,
-            StoredFileFactory.ValidContent,
-            StoredFileFactory.ValidContentType,
-            new Dictionary<string, string>(StoredFileFactory.ValidMetadata),
+            FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType,
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
             CancellationToken.None);
 
         // Assert
@@ -150,7 +150,7 @@ public sealed class AzureBlobStorageServiceTelemetryTests : IClassFixture<Azurit
 
         List<MetricMeasurement> sizeMetrics = [.. _recordedMetrics.Where(m => m.InstrumentName == "neba.storage.file.size")];
         sizeMetrics.ShouldHaveSingleItem();
-        sizeMetrics[0].Value.ShouldBe(StoredFileFactory.ValidContent.Length);
+        sizeMetrics[0].Value.ShouldBe(FileContentFactory.ValidContent.Length);
         sizeMetrics[0].Tags["storage.container"].ShouldBe(container);
         sizeMetrics[0].Tags["storage.operation"].ShouldBe("upload");
     }
@@ -167,9 +167,9 @@ public sealed class AzureBlobStorageServiceTelemetryTests : IClassFixture<Azurit
         await _sut.UploadFileAsync(
             container,
             path,
-            StoredFileFactory.ValidContent,
-            StoredFileFactory.ValidContentType,
-            new Dictionary<string, string>(StoredFileFactory.ValidMetadata),
+            FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType,
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
             CancellationToken.None);
 
         _recordedActivities.Clear();
@@ -188,8 +188,8 @@ public sealed class AzureBlobStorageServiceTelemetryTests : IClassFixture<Azurit
         activity.GetTagItem("storage.container").ShouldBe(container);
         activity.GetTagItem("storage.path").ShouldBe(path);
         activity.GetTagItem("storage.found").ShouldBe(true);
-        activity.GetTagItem("storage.size_bytes").ShouldBe(StoredFileFactory.ValidContent.Length);
-        activity.GetTagItem("storage.content_type").ShouldBe(StoredFileFactory.ValidContentType);
+        activity.GetTagItem("storage.size_bytes").ShouldBe(FileContentFactory.ValidContent.Length);
+        activity.GetTagItem("storage.content_type").ShouldBe(FileContentFactory.ValidContentType);
         activity.GetTagItem("storage.duration_ms").ShouldNotBeNull();
         activity.Status.ShouldBe(ActivityStatusCode.Ok);
     }
@@ -227,9 +227,9 @@ public sealed class AzureBlobStorageServiceTelemetryTests : IClassFixture<Azurit
         await _sut.UploadFileAsync(
             container,
             path,
-            StoredFileFactory.ValidContent,
-            StoredFileFactory.ValidContentType,
-            new Dictionary<string, string>(StoredFileFactory.ValidMetadata),
+            FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType,
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
             CancellationToken.None);
 
         _recordedActivities.Clear();
@@ -248,7 +248,7 @@ public sealed class AzureBlobStorageServiceTelemetryTests : IClassFixture<Azurit
 
         List<MetricMeasurement> sizeMetrics = [.. _recordedMetrics.Where(m => m.InstrumentName == "neba.storage.file.size")];
         sizeMetrics.ShouldHaveSingleItem();
-        sizeMetrics[0].Value.ShouldBe(StoredFileFactory.ValidContent.Length);
+        sizeMetrics[0].Value.ShouldBe(FileContentFactory.ValidContent.Length);
     }
 
     [Fact(DisplayName = "ExistsAsync should create activity with correct tags")]
@@ -263,9 +263,9 @@ public sealed class AzureBlobStorageServiceTelemetryTests : IClassFixture<Azurit
         await _sut.UploadFileAsync(
             container,
             path,
-            StoredFileFactory.ValidContent,
-            StoredFileFactory.ValidContentType,
-            new Dictionary<string, string>(StoredFileFactory.ValidMetadata),
+            FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType,
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
             CancellationToken.None);
 
         _recordedActivities.Clear();
@@ -324,9 +324,9 @@ public sealed class AzureBlobStorageServiceTelemetryTests : IClassFixture<Azurit
         await _sut.UploadFileAsync(
             container,
             "all-metrics-test.txt",
-            StoredFileFactory.ValidContent,
-            StoredFileFactory.ValidContentType,
-            new Dictionary<string, string>(StoredFileFactory.ValidMetadata),
+            FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType,
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
             CancellationToken.None);
 
         // Assert
@@ -351,9 +351,9 @@ public sealed class AzureBlobStorageServiceTelemetryTests : IClassFixture<Azurit
         await _sut.UploadFileAsync(
             container,
             "duration-test.txt",
-            StoredFileFactory.ValidContent,
-            StoredFileFactory.ValidContentType,
-            new Dictionary<string, string>(StoredFileFactory.ValidMetadata),
+            FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType,
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
             CancellationToken.None);
 
         // Assert

@@ -53,7 +53,7 @@ Organize code into layers with clear dependency rules (dependencies point inward
 
 ### 4. Presentation Layer (API)
 
-Implemented using **Fast Endpoints** with the REPR (Request-Endpoint-Response) pattern. Each use case gets its own folder containing an endpoint, summary, and validator. See [REPR Pattern with Fast Endpoints](#repr-pattern-with-fast-endpoints).
+Implemented using **Fast Endpoints** with the REPR (Request-Endpoint-Response) pattern. Each use case gets its own folder containing an endpoint, summary, and validator. See the **REPR Pattern with Fast Endpoints** section below.
 
 ## Tactical DDD Patterns Implementation
 
@@ -574,23 +574,23 @@ private static readonly FrozenDictionary<string, TournamentType> TypesByCode =
 
 ## Essential NuGet Packages
 
-| Purpose | Package |
-| ------- | ------- |
-| Result pattern | ErrorOr |
-| API framework | FastEndpoints |
-| API documentation | Scalar.AspNetCore |
-| Validation | FluentValidation (via Fast Endpoints) |
-| Background jobs | Hangfire, Hangfire.PostgreSql |
-| ORM | Microsoft.EntityFrameworkCore |
-| DI scanning | Scrutor |
-| Typed HTTP clients | Refit |
-| Strongly-typed IDs | StronglyTypedId (source generator) |
-| Unit testing | xUnit v3, Moq, Shouldly |
-| Test data | Bogus |
-| Snapshot testing | Verify |
-| Testcontainers | Testcontainers.PostgreSql, Testcontainers.Azurite |
-| Database reset | Respawn |
-| Aspire integration testing | Aspire.Hosting.Testing |
+| Purpose                    | Package                                           |
+| -------------------------- | ------------------------------------------------- |
+| Result pattern             | ErrorOr                                           |
+| API framework              | FastEndpoints                                     |
+| API documentation          | Scalar.AspNetCore                                 |
+| Validation                 | FluentValidation (via Fast Endpoints)             |
+| Background jobs            | Hangfire, Hangfire.PostgreSql                     |
+| ORM                        | Microsoft.EntityFrameworkCore                     |
+| DI scanning                | Scrutor                                           |
+| Typed HTTP clients         | Refit                                             |
+| Strongly-typed IDs         | StronglyTypedId (source generator)                |
+| Unit testing               | xUnit v3, Moq, Shouldly                           |
+| Test data                  | Bogus                                             |
+| Snapshot testing           | Verify                                            |
+| Testcontainers             | Testcontainers.PostgreSql, Testcontainers.Azurite |
+| Database reset             | Respawn                                           |
+| Aspire integration testing | Aspire.Hosting.Testing                            |
 
 ---
 
@@ -656,15 +656,15 @@ Namespace boundaries: Domain folders must not reference each other. Cross-cuttin
 
 ### Testing Stack
 
-| Purpose | Library |
-| ------- | ------- |
-| Test framework | xUnit v3 |
-| Mocking | Moq (always `MockBehavior.Strict`) |
-| Assertions | **Shouldly** |
-| Test data | Bogus |
-| Snapshot testing | Verify |
-| Testcontainers | Testcontainers.PostgreSql, Testcontainers.Azurite |
-| Database reset | Respawn |
+| Purpose          | Library                                           |
+| ---------------- | ------------------------------------------------- |
+| Test framework   | xUnit v3                                          |
+| Mocking          | Moq (always `MockBehavior.Strict`)                |
+| Assertions       | **Shouldly**                                      |
+| Test data        | Bogus                                             |
+| Snapshot testing | Verify                                            |
+| Testcontainers   | Testcontainers.PostgreSql, Testcontainers.Azurite |
+| Database reset   | Respawn                                           |
 
 **Never use FluentAssertions** — this project uses Shouldly for all assertions.
 
@@ -727,7 +727,7 @@ var sut = new CreateTournamentHandler(
 Factories live in `Neba.TestFactory`. Two creation approaches per factory:
 
 - **`Create()`**: For unit tests. All parameters nullable with valid constant defaults. Pass only what matters for the test.
-- **`Bogus(int? seed)`** / **`Bogus(int count, int? seed)`**: For integration tests. Realistic random data via Bogus. Never instantiate entities manually in tests.
+- **`Bogus(int count, int? seed)`**: For integration tests. Realistic random data via Bogus. Never instantiate entities manually in tests.
 
 ```csharp
 public static class TournamentFactory
@@ -742,8 +742,6 @@ public static class TournamentFactory
         DateOnly? date = null,
         TournamentType? type = null)
         => new(id ?? TournamentId.New(), name ?? ValidName, date ?? ValidDate, type ?? ValidType);
-
-    public static Tournament Bogus(int? seed = null) => Bogus(1, seed).First();
 
     public static IReadOnlyList<Tournament> Bogus(int count, int? seed = null)
     {

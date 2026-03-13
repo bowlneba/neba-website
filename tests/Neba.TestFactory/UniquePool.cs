@@ -1,22 +1,28 @@
 namespace Neba.TestFactory;
 
 /// <summary>
-/// Factory for creating <see cref="UniqueIdPool{T}"/> instances.
+/// Factory for creating <see cref="UniquePool{T}"/> instances.
 /// </summary>
-public static class UniqueIdPool
+public static class UniquePool
 {
     /// <summary>
     /// Creates a pool from <paramref name="values"/>, shuffled using the optional <paramref name="seed"/>.
     /// </summary>
     /// <param name="values">The unique values to pool.</param>
     /// <param name="seed">Optional seed for reproducible shuffling and null decisions.</param>
-    /// <param name="probabilityOfValue">Probability (0.0–1.0) that <see cref="UniqueIdPool{T}.GetNext"/> returns a value rather than null. Defaults to 1.0 (always a value).</param>
 #pragma warning disable CA5394 // Random is acceptable here — used only for test data generation, not security
-    public static UniqueIdPool<T> Create<T>(IEnumerable<T> values, int? seed = null, float probabilityOfValue = 1.0f)
+    public static UniquePool<T> Create<T>(IEnumerable<T> values, int? seed)
     {
         var random = seed.HasValue ? new Random(seed.Value) : new Random();
         List<T> shuffled = [.. values.OrderBy(_ => random.Next())];
-        return new UniqueIdPool<T>(shuffled, random, probabilityOfValue);
+        return new UniquePool<T>(shuffled, random, 1);
+    }
+
+    public static UniquePool<T?> CreateNullable<T>(IEnumerable<T> values, int? seed, float probabilityOfValue = .5f)
+    {
+        var random = seed.HasValue ? new Random(seed.Value) : new Random();
+        List<T?> shuffled = [.. values.OrderBy(_ => random.Next())];
+        return new UniquePool<T?>(shuffled, random, probabilityOfValue);
     }
 #pragma warning restore CA5394
 }
@@ -27,14 +33,14 @@ public static class UniqueIdPool
 /// Supports probabilistic null values for optional fields.
 /// </summary>
 /// <typeparam name="T">The type of values in the pool.</typeparam>
-public sealed class UniqueIdPool<T>
+public sealed class UniquePool<T>
 {
     private readonly List<T> _values;
     private readonly Random _random;
     private readonly float _probabilityOfValue;
     private int _currentIndex;
 
-    internal UniqueIdPool(List<T> values, Random random, float probabilityOfValue)
+    internal UniquePool(List<T> values, Random random, float probabilityOfValue)
     {
         _values = values;
         _random = random;
@@ -47,7 +53,7 @@ public sealed class UniqueIdPool<T>
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown when the pool is exhausted and a value is needed.</exception>
 #pragma warning disable CA1024, CA5394 // GetNext() appropriately named (mutates state); Random acceptable for test data
-    public T? GetNext()
+    public T? GetNextNullable()
     {
         if (_random.NextDouble() >= _probabilityOfValue)
         {
@@ -60,6 +66,30 @@ public sealed class UniqueIdPool<T>
             : _values[_currentIndex++];
     }
 #pragma warning restore CA1024, CA5394
+
+    public T GetNext()
+    {
+        // loop over GetNextNullable until we get a non default
+        T? value;
+        do
+        {
+            value = GetNextNullable();
+        } while (EqualityComparer<T?>.Default.Equals(value, default));
+
+        return value!;
+    }
+
+    public IReadOnlyCollection<T> GetNext(int count)
+    {
+        var items = new List<T>();
+
+        for (var i = 0; i < count; i++)
+        {
+            items.Add(GetNext());
+        }
+
+        return items;
+    }
 
     /// <summary>Gets the number of remaining values in the pool.</summary>
     public int RemainingCount => _values.Count - _currentIndex;

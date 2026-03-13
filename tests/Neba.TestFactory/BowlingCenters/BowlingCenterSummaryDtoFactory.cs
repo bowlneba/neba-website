@@ -28,18 +28,17 @@ public static class BowlingCenterSummaryDtoFactory
             Website = website
         };
 
-    public static BowlingCenterSummaryDto Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<BowlingCenterSummaryDto> Bogus(int count, int? seed = null)
     {
+        var addressPool = UniquePool.Create(AddressDtoFactory.Bogus(count, seed), seed);
+
         var faker = new Faker<BowlingCenterSummaryDto>()
             .CustomInstantiator(f => new()
             {
                 CertificationNumber = f.Random.Replace("#####"),
                 Name = f.Company.CompanyName(),
                 Status = f.PickRandom(BowlingCenterStatus.List.ToArray()).Name,
-                Address = AddressDtoFactory.Bogus(seed: seed),
+                Address = addressPool.GetNext(),
                 PhoneNumbers = PhoneNumberDtoFactory.Bogus(3, seed),
                 Website = f.Random.Bool() ? f.Internet.Url() : null
             });

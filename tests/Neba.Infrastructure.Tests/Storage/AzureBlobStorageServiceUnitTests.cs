@@ -110,4 +110,48 @@ public sealed class AzureBlobStorageServiceUnitTests
                 "container", "path.txt", "content", "text/plain",
                 new Dictionary<string, string>(), CancellationToken.None));
     }
+
+    [Fact(DisplayName = "GetBlobUri should return URI from blob client")]
+    public void GetBlobUri_ShouldReturnUri_FromBlobClient()
+    {
+        // Arrange
+        var expectedUri = new Uri("https://storage.example.com/container/path.txt");
+
+        var mockBlobClient = new Mock<BlobClient>(MockBehavior.Strict);
+        mockBlobClient.Setup(x => x.Uri).Returns(expectedUri);
+
+        var mockContainerClient = new Mock<BlobContainerClient>(MockBehavior.Strict);
+        mockContainerClient
+            .Setup(x => x.GetBlobClient("path.txt"))
+            .Returns(mockBlobClient.Object);
+
+        var mockBlobServiceClient = new Mock<BlobServiceClient>(MockBehavior.Strict);
+        mockBlobServiceClient
+            .Setup(x => x.GetBlobContainerClient("container"))
+            .Returns(mockContainerClient.Object);
+
+        var sut = new AzureBlobStorageService(
+            mockBlobServiceClient.Object,
+            new Mock<IStopwatchProvider>(MockBehavior.Strict).Object,
+            NullLogger<AzureBlobStorageService>.Instance);
+
+        // Act
+        var result = sut.GetBlobUri("container", "path.txt");
+
+        // Assert
+        result.ShouldBe(expectedUri);
+    }
+
+    [Fact(DisplayName = "GetBlobUri should rethrow when storage client throws")]
+    public void GetBlobUri_ShouldRethrow_WhenStorageClientThrows()
+    {
+        // Arrange
+        var sut = CreateSutWithThrowingClient(new InvalidOperationException("Storage failure"));
+
+        // Act & Assert
+        var exception = Should.Throw<InvalidOperationException>(
+            () => sut.GetBlobUri("container", "path.txt"));
+
+        exception.Message.ShouldBe("Storage failure");
+    }
 }

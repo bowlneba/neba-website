@@ -17,9 +17,6 @@ public static class CertificationNumberFactory
     public static CertificationNumber CreatePlaceholder(string? sequence = null)
         => CertificationNumber.Placeholder(sequence ?? ValidPlaceholderSequence).Value;
 
-    public static CertificationNumber Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<CertificationNumber> Bogus(int count, int? seed)
     {
         var faker = new Faker<CertificationNumber>()

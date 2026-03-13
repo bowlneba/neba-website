@@ -50,9 +50,9 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
         await _sut.UploadFileAsync(
             container,
             path,
-            StoredFileFactory.ValidContent,
-            StoredFileFactory.ValidContentType,
-            new Dictionary<string, string>(StoredFileFactory.ValidMetadata),
+            FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType,
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
             CancellationToken.None);
 
         // Act
@@ -107,9 +107,9 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
         await Should.NotThrowAsync(() => _sut.UploadFileAsync(
             container,
             "new-file.txt",
-            StoredFileFactory.ValidContent,
-            StoredFileFactory.ValidContentType,
-            new Dictionary<string, string>(StoredFileFactory.ValidMetadata),
+            FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType,
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
             CancellationToken.None));
     }
 
@@ -149,8 +149,8 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
         };
 
         await _sut.UploadFileAsync(
-            container, path, StoredFileFactory.ValidContent,
-            StoredFileFactory.ValidContentType, metadata, CancellationToken.None);
+            container, path, FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType, metadata, CancellationToken.None);
 
         // Act
         var result = await _sut.GetFileAsync(container, path, CancellationToken.None);
@@ -161,5 +161,21 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
         result.Metadata.ShouldContainKeyAndValue("Author", "TestUser");
         result.Metadata.ShouldContainKeyAndValue("LastUpdatedUtc", "2026-02-16T00:00:00Z");
         result.Metadata.ShouldContainKeyAndValue("Source", "GoogleDrive");
+    }
+
+    [Fact(DisplayName = "GetBlobUri should return URI containing container and path")]
+    public void GetBlobUri_ReturnsUri_ContainingContainerAndPath()
+    {
+        // Arrange
+        const string container = "my-container";
+        const string path = "folder/my-file.txt";
+
+        // Act
+        var result = _sut.GetBlobUri(container, path);
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.AbsoluteUri.ShouldContain(container);
+        result.AbsoluteUri.ShouldContain("folder/my-file.txt");
     }
 }

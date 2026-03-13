@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Neba.Domain.Bowlers;
 using Neba.Domain.BowlingCenters;
+using Neba.Domain.HallOfFame;
 using Neba.Infrastructure.Database.Configurations;
 using Neba.Infrastructure.Database.Converters;
 
@@ -21,10 +22,14 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Bowler> Bowlers
         => Set<Bowler>();
 
+    public DbSet<HallOfFameInduction> HallOfFameInductions
+        => Set<HallOfFameInduction>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BowlingCenterConfiguration());
         modelBuilder.ApplyConfiguration(new BowlerConfiguration());
+        modelBuilder.ApplyConfiguration(new HallOfFameInductionConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -33,5 +38,8 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
         configurationBuilder.Properties<BowlerId>()
             .HaveConversion<UlidTypedIdConverter<BowlerId>>();
+
+        configurationBuilder.Properties<HallOfFameId>()
+            .HaveConversion<UlidTypedIdConverter<HallOfFameId>>();
     }
 }

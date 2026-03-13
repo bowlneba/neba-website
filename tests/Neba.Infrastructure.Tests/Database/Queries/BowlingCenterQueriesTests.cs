@@ -1,13 +1,13 @@
 using Neba.Domain.BowlingCenters;
-using Neba.Infrastructure.BowlingCenters;
 using Neba.Infrastructure.Database;
+using Neba.Infrastructure.Database.Queries;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.BowlingCenters;
 using Neba.TestFactory.Contact;
 using Neba.TestFactory.Geography;
 using Neba.TestFactory.Infrastructure;
 
-namespace Neba.Infrastructure.Tests.BowlingCenters;
+namespace Neba.Infrastructure.Tests.Database.Queries;
 
 [IntegrationTest]
 [Component("BowlingCenters")]

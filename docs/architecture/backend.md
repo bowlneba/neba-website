@@ -62,7 +62,7 @@ NEBA Website is a centralized platform for the New England Bowlers Association. 
 
 ## Project Structure
 
-```
+```text
 src/
 ├── Neba.Domain/
 │   ├── Bowlers/
@@ -112,7 +112,7 @@ src/
 ### Layer Responsibilities
 
 | Layer | Responsibility |
-|-------|----------------|
+| ----- | -------------- |
 | `Neba.Domain` | Entities, aggregates, value objects, domain events, repository interfaces |
 | `Neba.Application` | Commands, queries, handlers, application services, DTOs |
 | `Neba.Infrastructure` | EF Core DbContext, repository implementations, external service clients |
@@ -1091,7 +1091,7 @@ public async Task<IReadOnlyList<TournamentDto>> GetAllAsync(CancellationToken ct
 
 Each endpoint in its own use case folder with endpoint, summary, and validator:
 
-```
+```text
 Neba.Api/
 ├── Tournaments/
 │   ├── TournamentEndpointGroup.cs
@@ -1826,7 +1826,7 @@ Career stats combine both sources transparently.
 
 ### Test Project Structure
 
-```
+```text
 tests/
 ├── Neba.TestFactory/           # Shared test infrastructure (factories, fixtures, traits)
 ├── Neba.Architecture.Tests/    # Architecture rule enforcement (ArchUnitNET)
@@ -2065,8 +2065,6 @@ public static class TournamentFactory
         
         return faker.Generate(count);
     }
-    
-    public static Tournament Bogus(int? seed = null) => Bogus(1, seed).First();
 }
 ```
 

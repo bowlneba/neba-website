@@ -6,7 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Neba.Application.BowlingCenters;
-using Neba.Infrastructure.BowlingCenters;
+using Neba.Application.HallOfFame;
+using Neba.Infrastructure.Database.Queries;
 
 using Npgsql;
 
@@ -111,6 +112,7 @@ internal static class DatabaseConfiguration
         public void AddQueries()
         {
             services.AddScoped<IBowlingCenterQueries, BowlingCenterQueries>();
+            services.AddScoped<IHallOfFameQueries, HallOfFameQueries>();
         }
     }
 }

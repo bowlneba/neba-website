@@ -16,9 +16,6 @@ public static class PhoneNumberResponseFactory
             PhoneNumber = number ?? (PhoneNumberFactory.ValidCountryCode + PhoneNumberFactory.ValidNumber)
         };
 
-    public static PhoneNumberResponse Bogus(int? seed = null)
-        => Bogus(1, seed).Single();
-
     public static IReadOnlyCollection<PhoneNumberResponse> Bogus(int count, int? seed = null)
     {
         var faker = new Faker<PhoneNumberResponse>()

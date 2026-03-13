@@ -27,7 +27,7 @@ Before ending a session where significant discoveries were made, consider whethe
 
 ### Layer Boundaries
 
-- Domain folders (Bowlers, Tournaments, etc.) must NOT cross-reference each other
+- Domain folders (Bowlers, Tournaments, etc.) must NOT cross-reference each other's domain objects (aggregates, entities, value objects, domain services). Exception: importing a strongly-typed ID from another context (e.g., `BowlerId` in `HallOfFame`) is allowed — it's a typed foreign key, not a domain dependency.
 - Commands return `ErrorOr<T>`, never throw for business rules
 - Queries return DTOs, never domain entities
 - Validators handle structural validation only (no DB lookups, no business rules)
@@ -40,7 +40,7 @@ Before ending a session where significant discoveries were made, consider whethe
 - Use `MockBehavior.Strict` for all mocks
 - Use `NullLogger<T>.Instance`, never mock ILogger
 - Use test factories from `Neba.TestFactory`, never manual entity instantiation
-- Test factories follow a consistent pattern: `Create()` with nullable params (const defaults), `Bogus(int? seed)` for single, `Bogus(int count, int? seed)` for collection
+- Test factories follow a consistent pattern: `Create()` with nullable params (const defaults), `Bogus(int count, int? seed)` for collection
 - Use a seed with `Bogus` only when the specific data values matter to the assertion (e.g., snapshot tests, integration tests for reproducibility). Omit the seed when only shape/count/type matters — the test is clearer without it
 - When seeds are used, each test should use a distinct seed value — don't reuse the same seed across multiple tests
 - Infrastructure services wrapping external SDKs (e.g., Azure Blob Storage) use Testcontainers for integration tests, not mocks
