@@ -27,7 +27,7 @@ Before ending a session where significant discoveries were made, consider whethe
 
 ### Layer Boundaries
 
-- Domain folders (Bowlers, Tournaments, etc.) must NOT cross-reference each other
+- Domain folders (Bowlers, Tournaments, etc.) must NOT cross-reference each other's domain objects (aggregates, entities, value objects, domain services). Exception: importing a strongly-typed ID from another context (e.g., `BowlerId` in `HallOfFame`) is allowed — it's a typed foreign key, not a domain dependency.
 - Commands return `ErrorOr<T>`, never throw for business rules
 - Queries return DTOs, never domain entities
 - Validators handle structural validation only (no DB lookups, no business rules)

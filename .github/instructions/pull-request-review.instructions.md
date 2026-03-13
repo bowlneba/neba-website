@@ -12,11 +12,13 @@ applyTo: '**'
 
 ### Domain Layer (`Neba.Domain`)
 
-**Treat each root-level namespace as a separate bounded context.** Folders like `Tournaments`, `Bowlers`, `BowlingCenters`, and `Membership` should never directly reference each other — review as if they were separate assemblies without project references.
+**Treat each root-level namespace as a separate bounded context.** Folders like `Tournaments`, `Bowlers`, `BowlingCenters`, and `Membership` should never directly reference each other's domain objects — review as if they were separate assemblies without project references.
+
+**Exception — strongly-typed IDs only**: A bounded context may import a strongly-typed ID from another context (e.g., `HallOfFame` importing `BowlerId`) when it needs to record a cross-context foreign key relationship. This is analogous to a database FK: the context stores the _identifier_, not the object. Importing the full aggregate, entity, value objects, or domain services of another context is still prohibited.
 
 Flag when:
 
-- A domain folder imports types from another domain folder (e.g., `Tournaments` importing from `Bowlers`)
+- A domain folder imports domain objects from another domain folder (aggregates, entities, value objects, domain services, or enums — e.g., `Tournaments` importing `Bowler`, not `BowlerId`)
 - Types that should live in `SharedKernel` are defined within a specific domain folder (cross-cutting IDs, shared value objects, domain event interfaces)
 - Domain entities expose public setters or mutable collections
 - Aggregates lack domain event support when state changes occur
