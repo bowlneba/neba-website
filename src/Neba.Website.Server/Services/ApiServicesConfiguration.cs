@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 
 using Neba.Api.Contracts.BowlingCenters;
 using Neba.Api.Contracts.Documents;
+using Neba.Api.Contracts.HallOfFame;
 
 using Refit;
 
@@ -38,6 +39,7 @@ internal static class ApiServicesConfiguration
 
             services.RegisterApiEndpoint<IDocumentsApi>();
             services.RegisterApiEndpoint<IBowlingCentersApi>();
+            services.RegisterApiEndpoint<IHallOfFameApi>();
 
             return services;
         }
