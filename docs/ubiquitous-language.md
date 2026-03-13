@@ -526,7 +526,7 @@ A Bowler record may represent a fully registered active participant or a histori
 | --- | --- | --- |
 | **Legal Name** | `First [Middle] Last[, Suffix]` | Official documents, 1099 tax reporting, legal records |
 | **Display Name** | `[Nickname \| First] Last` | Public website, tournament results, standings, awards lists |
-| **Formal Name** | `First Last` | Formal communications where a nickname would be inappropriate |
+| **Formal Name** | `First Last` | Formal communications where a nickname would be inappropriate; Hall of Fame inductee listings |
 
 **Display Name Rules**:
 
