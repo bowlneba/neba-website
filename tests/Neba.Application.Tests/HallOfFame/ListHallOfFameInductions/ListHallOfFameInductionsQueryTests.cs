@@ -1,8 +1,7 @@
-using Neba.Application.BowlingCenters.ListBowlingCenters;
 using Neba.Application.HallOfFame.ListHallOfFameInductions;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Application.Tests.BowlingCenters.ListBowlingCenters;
+namespace Neba.Application.Tests.HallOfFame.ListHallOfFameInductions;
 
 [UnitTest]
 [Component("HallOfFame")]
