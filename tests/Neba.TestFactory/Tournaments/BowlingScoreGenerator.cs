@@ -1,6 +1,6 @@
-using Neba.TestFactory.Attributes;
-
 using System.Collections.Frozen;
+
+using Neba.TestFactory.Attributes;
 
 namespace Neba.TestFactory.Tournaments;
 

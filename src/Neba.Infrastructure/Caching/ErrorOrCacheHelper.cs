@@ -112,11 +112,11 @@ internal static class ErrorOrCacheHelper
         return implicitOperator is null
             ? throw new InvalidOperationException($"Type {errorOrType.Name} does not have an implicit conversion operator from {innerType.Name}.")
             : new ErrorOrTypeInfo
-        {
-            InnerType = innerType,
-            ValueProperty = valueProperty,
-            ImplicitOperator = implicitOperator
-        };
+            {
+                InnerType = innerType,
+                ValueProperty = valueProperty,
+                ImplicitOperator = implicitOperator
+            };
     }
 
     private sealed class ErrorOrTypeInfo

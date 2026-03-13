@@ -36,7 +36,7 @@ public sealed class ListHallOfFameInductionsEndpointTests
         endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
         endpoint.Response.ShouldNotBeNull();
         endpoint.Response.TotalItems.ShouldBe(dtos.Count);
-        
+
         await Verify(endpoint.Response);
     }
 
