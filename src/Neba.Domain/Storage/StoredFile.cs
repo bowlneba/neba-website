@@ -1,17 +1,18 @@
 namespace Neba.Domain.Storage;
 
 /// <summary>
-/// Represents a file stored by the system, including its location and metadata.
+/// The storage address of a file in Azure Blob Storage — container, path, content type, and size.
+/// Does not hold file content.
 /// </summary>
 public sealed record StoredFile
 {
     /// <summary>
-    /// Gets the storage location or path of the file (for example, a blob URI or filesystem path).
+    /// Gets the Azure Blob Storage container name where the file is stored.
     /// </summary>
     public string Container { get; init; } = string.Empty;
 
     /// <summary>
-    /// Gets the original or stored file name including extension.
+    /// Gets the blob path (key) within the container, including any virtual directory segments and file name.
     /// </summary>
     public string Path { get; init; } = string.Empty;
 
