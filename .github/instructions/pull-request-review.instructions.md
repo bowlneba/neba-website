@@ -16,6 +16,8 @@ applyTo: '**'
 
 **Exception — strongly-typed IDs only**: A bounded context may import a strongly-typed ID from another context (e.g., `HallOfFame` importing `BowlerId`) when it needs to record a cross-context foreign key relationship. This is analogous to a database FK: the context stores the _identifier_, not the object. Importing the full aggregate, entity, value objects, or domain services of another context is still prohibited.
 
+**Do NOT flag** `internal` navigation properties on domain aggregates. These are intentional: `Neba.Infrastructure` has `[InternalsVisibleTo("Neba.Infrastructure")]` on `Neba.Domain`, which gives the infrastructure layer access for EF Core mapping and query projections. The `internal` modifier is what prevents the Application layer from using them — that's the design. Flagging them as an accessibility or encapsulation problem misreads the intent.
+
 Flag when:
 
 - A domain folder imports domain objects from another domain folder (aggregates, entities, value objects, domain services, or enums — e.g., `Tournaments` importing `Bowler`, not `BowlerId`)
