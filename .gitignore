@@ -436,3 +436,4 @@ test-results/
 .azure
 
 .stryker-tmp/
+reports/
