@@ -16,7 +16,6 @@ var postgres = builder.AddAzurePostgresFlexibleServer("postgres")
         .WithDataVolume("bowlneba-pgdata"));
 
 var database = postgres.AddDatabase("bowlneba");
-var cache = postgres.AddDatabase("bowlneba-cache");
 
 var storage = builder.AddAzureStorage("storage")
     .RunAsEmulator(emulator => emulator
@@ -32,8 +31,6 @@ var api = builder.AddProject<Projects.Neba_Api>("api")
     .WithHttpHealthCheck("/health")
     .WithReference(database)
     .WaitFor(database)
-    .WithReference(cache)
-    .WaitFor(cache)
     .WithReference(blobs)
     .WaitFor(blobs)
     .WithUrlForEndpoint("http", callback =>

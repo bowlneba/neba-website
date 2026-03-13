@@ -29,7 +29,7 @@ public sealed class CachingConfigurationTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:bowlneba-cache"] = "Host=fake;Database=test;Username=test;Password=test"
+                ["ConnectionStrings:bowlneba"] = "Host=fake;Database=test;Username=test;Password=test"
             })
             .Build();
 
