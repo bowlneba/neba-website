@@ -221,11 +221,7 @@ export async function initializeRouteMap(containerId, origin, destination, route
         return;
     }
 
-    const container = await waitForVisibleContainer(containerId);
-    if (!container) {
-        console.error('[DirectionsModal] Route map container not found:', containerId);
-        return;
-    }
+    await waitForVisibleContainer(containerId);
 
     const authConfig = globalThis.azureMapsAuthConfig;
     if (!authConfig) {
