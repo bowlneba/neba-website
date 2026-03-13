@@ -178,8 +178,8 @@ public sealed class HallOfFameTests : IDisposable
     {
         var induction = HallOfFameInductionResponseFactory.Create(
             bowlerName: "Jane Smith",
-            photoUri: null,
-            categories: [HallOfFameCategory.SuperiorPerformance.Name]);
+            categories: [HallOfFameCategory.SuperiorPerformance.Name],
+            photoUri: null);
         SetupSuccessResponse([induction]);
 
         var cut = _ctx.Render<HallOfFamePage>();
@@ -192,8 +192,8 @@ public sealed class HallOfFameTests : IDisposable
     {
         var photoUri = new Uri("https://example.com/photo.jpg");
         var induction = HallOfFameInductionResponseFactory.Create(
-            photoUri: photoUri,
-            categories: [HallOfFameCategory.SuperiorPerformance.Name]);
+            categories: [HallOfFameCategory.SuperiorPerformance.Name],
+            photoUri: photoUri);
         SetupSuccessResponse([induction]);
 
         var cut = _ctx.Render<HallOfFamePage>();
