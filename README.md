@@ -22,6 +22,8 @@ Centralized platform for managing the New England Bowlers Association (NEBA). Ha
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=bowlneba-website&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=bowlneba-website)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bowlneba-website&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=bowlneba-website)
 
+[![Mutation testing badge](https://img.shields.io/endpoint?style=plastic&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2Fbowlneba%2Fneba-website%2Fmain)](https://dashboard.stryker-mutator.io/reports/github.com/bowlneba/neba-website/main)
+
 ## Architecture
 
 This application follows **Clean Architecture** with **Domain-Driven Design (DDD)** tactical patterns and **CQRS**. It is intentionally *not* a modular monolith — complexity isn't justified for current scale (~1k members, 1-2 tournaments/month).
