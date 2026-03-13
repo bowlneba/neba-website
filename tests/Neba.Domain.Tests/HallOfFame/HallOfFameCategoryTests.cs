@@ -9,8 +9,8 @@ namespace Neba.Domain.Tests.HallOfFame;
 [Component("HallOfFame.HallOfFameCategory")]
 public sealed class HallOfFameCategoryTests
 {
-    [Fact(DisplayName = "Should have 4 Hall of Fame categories")]
-    public void HallOfFameCategory_ShouldHave4Categories()
+    [Fact(DisplayName = "Should have 3 Hall of Fame categories")]
+    public void HallOfFameCategory_ShouldHave3Categories()
     {
         // Act
         var count = HallOfFameCategory.List.Count;
