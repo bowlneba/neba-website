@@ -637,6 +637,66 @@ describe('NebaMap', () => {
       expect(globalThis.fetch.mock.calls[0][0]).toContain('query=42,-71:43,-70');
     });
 
+    test('requests fastest traffic-aware alternatives with effective settings', async () => {
+      await createInitializedMap();
+      globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
+
+      await showRoute([-71, 42], [-70, 43]);
+
+      const routeUrl = globalThis.fetch.mock.calls[0][0];
+      expect(routeUrl).toContain('routeType=fastest');
+      expect(routeUrl).toContain('traffic=true');
+      expect(routeUrl).toContain('maxAlternatives=2');
+      expect(routeUrl).toContain('report=effectiveSettings');
+      expect(routeUrl).toContain('sectionType=motorway');
+    });
+
+    test('selects the fastest returned route by travel time', async () => {
+      await createInitializedMap();
+
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          routes: [
+            {
+              summary: { lengthInMeters: 5000, travelTimeInSeconds: 420 },
+              guidance: {
+                instructions: [{ message: 'Slower option', travelDistance: 100 }],
+              },
+              legs: [
+                {
+                  points: [
+                    { longitude: -71, latitude: 42 },
+                    { longitude: -70.5, latitude: 42.5 },
+                  ],
+                },
+              ],
+            },
+            {
+              summary: { lengthInMeters: 6100, travelTimeInSeconds: 300 },
+              guidance: {
+                instructions: [{ message: 'Faster option', travelDistance: 120 }],
+              },
+              legs: [
+                {
+                  points: [
+                    { longitude: -71, latitude: 42 },
+                    { longitude: -70, latitude: 43 },
+                  ],
+                },
+              ],
+            },
+          ],
+        }),
+      });
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+
+      expect(result.DistanceMeters).toBe(6100);
+      expect(result.TravelTimeSeconds).toBe(300);
+      expect(result.Instructions[0].Text).toBe('Faster option');
+    });
+
     test('populates RouteGeoJson with a LineString built from route leg points', async () => {
       await createInitializedMap();
       globalThis.fetch = jest.fn().mockResolvedValue(makeSuccessfulRouteResponse());
