@@ -123,6 +123,88 @@ public sealed class DirectionsModalTests : IDisposable
         cut.Markup.ShouldContain("Open in Maps App");
     }
 
+    [Fact(DisplayName = "Should render best route and alternative options when route options are available")]
+    public void Render_ShouldShowRouteOptions_WhenRouteOptionsAreAvailable()
+    {
+        var state = new DirectionsState
+        {
+            Mode = MapMode.DirectionsActive,
+            Route = new ServerMaps.RouteData
+            {
+                DistanceMeters = 16093.4,
+                TravelTimeSeconds = 1200,
+                SelectedRouteIndex = 0,
+                RouteOptions =
+                [
+                    new ServerMaps.RouteData { DistanceMeters = 16093.4, TravelTimeSeconds = 1200, Instructions = [] },
+                    new ServerMaps.RouteData { DistanceMeters = 17702.8, TravelTimeSeconds = 1260, Instructions = [] }
+                ],
+                Instructions = []
+            }
+        };
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        cut.Markup.ShouldContain("Route options");
+        cut.Markup.ShouldContain("Best route");
+        cut.Markup.ShouldContain("Alternative 1");
+    }
+
+    [Fact(DisplayName = "Should switch summary route when an alternative route option is selected")]
+    public async Task HandleRouteOptionSelected_ShouldSwitchRoute_WhenAlternativeSelected()
+    {
+        var state = new DirectionsState
+        {
+            Mode = MapMode.DirectionsActive,
+            Route = new ServerMaps.RouteData
+            {
+                DistanceMeters = 16093.4,
+                TravelTimeSeconds = 1200,
+                SelectedRouteIndex = 0,
+                RouteGeoJson = "{\"type\":\"Feature\"}",
+                RouteOptions =
+                [
+                    new ServerMaps.RouteData
+                    {
+                        DistanceMeters = 16093.4,
+                        TravelTimeSeconds = 1200,
+                        Instructions = [new ServerMaps.RouteInstruction { Text = "Best route step" }],
+                        RouteGeoJson = "{\"type\":\"Feature\"}"
+                    },
+                    new ServerMaps.RouteData
+                    {
+                        DistanceMeters = 17702.8,
+                        TravelTimeSeconds = 1260,
+                        Instructions = [new ServerMaps.RouteInstruction { Text = "Alternative step" }],
+                        RouteGeoJson = "{\"type\":\"Feature\"}"
+                    }
+                ],
+                Instructions = [new ServerMaps.RouteInstruction { Text = "Best route step" }]
+            }
+        };
+
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        var alternativeButton = cut.FindAll("button")
+            .First(button => button.TextContent.Contains("Alternative 1", StringComparison.OrdinalIgnoreCase));
+
+        await cut.InvokeAsync(() => alternativeButton.Click());
+
+        state.Route.SelectedRouteIndex.ShouldBe(1);
+        state.Route.DistanceMeters.ShouldBe(17702.8);
+        state.Route.TravelTimeSeconds.ShouldBe(1260);
+        state.Route.Instructions[0].Text.ShouldBe("Alternative step");
+        _modalModuleInterop.VerifyInvoke("disposeRouteMap", 1);
+    }
+
     [Fact(DisplayName = "Should show error message when state has an error")]
     public void Render_ShouldShowErrorMessage_WhenStateHasError()
     {

@@ -695,6 +695,34 @@ describe('NebaMap', () => {
       expect(result.DistanceMeters).toBe(6100);
       expect(result.TravelTimeSeconds).toBe(300);
       expect(result.Instructions[0].Text).toBe('Faster option');
+      expect(result.SelectedRouteIndex).toBe(0);
+      expect(result.RouteOptions).toHaveLength(2);
+      expect(result.RouteOptions[0].TravelTimeSeconds).toBe(300);
+      expect(result.RouteOptions[1].TravelTimeSeconds).toBe(420);
+    });
+
+    test('returns at most best route plus two alternatives', async () => {
+      await createInitializedMap();
+
+      const routes = [
+        { summary: { lengthInMeters: 8000, travelTimeInSeconds: 500 }, guidance: { instructions: [] }, legs: [{ points: [{ longitude: -71, latitude: 42 }, { longitude: -70, latitude: 43 }] }] },
+        { summary: { lengthInMeters: 8100, travelTimeInSeconds: 490 }, guidance: { instructions: [] }, legs: [{ points: [{ longitude: -71, latitude: 42 }, { longitude: -70, latitude: 43 }] }] },
+        { summary: { lengthInMeters: 8200, travelTimeInSeconds: 480 }, guidance: { instructions: [] }, legs: [{ points: [{ longitude: -71, latitude: 42 }, { longitude: -70, latitude: 43 }] }] },
+        { summary: { lengthInMeters: 8300, travelTimeInSeconds: 470 }, guidance: { instructions: [] }, legs: [{ points: [{ longitude: -71, latitude: 42 }, { longitude: -70, latitude: 43 }] }] },
+        { summary: { lengthInMeters: 8400, travelTimeInSeconds: 460 }, guidance: { instructions: [] }, legs: [{ points: [{ longitude: -71, latitude: 42 }, { longitude: -70, latitude: 43 }] }] },
+      ];
+
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ routes }),
+      });
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+
+      expect(result.RouteOptions).toHaveLength(3);
+      expect(result.RouteOptions[0].TravelTimeSeconds).toBe(460);
+      expect(result.RouteOptions[1].TravelTimeSeconds).toBe(470);
+      expect(result.RouteOptions[2].TravelTimeSeconds).toBe(480);
     });
 
     test('populates RouteGeoJson with a LineString built from route leg points', async () => {

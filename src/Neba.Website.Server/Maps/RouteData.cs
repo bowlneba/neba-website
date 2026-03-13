@@ -27,6 +27,18 @@ public sealed class RouteData
 #pragma warning restore CA2227
 
     /// <summary>
+    /// Available route options, ordered from best (fastest) to alternatives.
+    /// </summary>
+#pragma warning disable CA2227 // Collection properties should be read only (needed for JSON deserialization)
+    public Collection<RouteData> RouteOptions { get; set; } = [];
+#pragma warning restore CA2227
+
+    /// <summary>
+    /// Zero-based index of the currently selected route within <see cref="RouteOptions"/>.
+    /// </summary>
+    public int SelectedRouteIndex { get; set; }
+
+    /// <summary>
     /// GeoJSON representation of the route line (for drawing on map).
     /// </summary>
     public string? RouteGeoJson { get; set; }

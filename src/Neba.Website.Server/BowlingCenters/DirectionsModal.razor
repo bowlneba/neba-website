@@ -107,73 +107,97 @@
                     </svg>
                 </div>
 
-                <!-- Open in Maps App Button -->
-                <button class="neba-btn neba-btn-secondary w-full flex items-center justify-center gap-2"
-                        @onclick="HandleOpenInMaps">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                    Open in Maps App
-                </button>
-
-                <!-- Turn-by-Turn Directions -->
-                <div>
-                    <button
-                        class="w-full flex items-center justify-between p-3 bg-[var(--neba-gray-100)] hover:bg-[var(--neba-gray-200)] rounded-md transition-colors"
-                        @onclick="@(() => _showDirections = !_showDirections)">
-                        <span class="font-semibold text-[var(--neba-gray-700)]">
-                            Turn-by-turn directions (@State.Route.Instructions.Count steps)
-                        </span>
-                        <svg class="w-5 h-5 text-[var(--neba-gray-700)] transition-transform @(_showDirections ? "rotate-180" : "")"
-                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
-
-                    @if (_showDirections)
-                    {
-                        <div class="mt-2 space-y-2 max-h-80 overflow-y-auto">
-                            @for (var i = 0; i < State.Route.Instructions.Count; i++)
-                            {
-                                var instruction = State.Route.Instructions[i];
-                                <div class="flex gap-3 p-3 bg-white border border-[var(--neba-gray-300)] rounded-md">
-                                    <div
-                                        class="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--neba-blue-600)] text-white flex items-center justify-center font-semibold text-sm">
-                                        @(i + 1)
+                <!-- Route Options -->
+                @if (State.Route.RouteOptions.Count > 0)
+                {
+                    <div class="neba-space-y-2">
+                        <h3 class="text-sm font-semibold text-[var(--neba-gray-700)]">Route options</h3>
+                        @for (var i = 0; i < State.Route.RouteOptions.Count; i++)
+                        {
+                            var routeOptionIndex = i;
+                            var option = State.Route.RouteOptions[routeOptionIndex];
+                            var isSelected = State.Route.SelectedRouteIndex == routeOptionIndex;
+                            <button type="button"
+                                    class="w-full text-left p-3 border rounded-md transition-colors @GetRouteOptionClass(isSelected)"
+                                    @onclick="@(() => HandleRouteOptionSelected(routeOptionIndex))">
+                                <div class="flex items-center justify-between gap-3">
+                                    <span
+                                    class="text-sm font-semibold text-[var(--neba-gray-700)]">@GetRouteOptionLabel(routeOptionIndex)</span>
+                                    <span class="text-sm text-[var(--neba-gray-700)]">@option.FormattedDistance ·
+                                        @option.FormattedTravelTime</span>
                                     </div>
-                                    <div class="flex-grow">
-                                        <p class="text-sm text-[var(--neba-gray-700)]">@instruction.Text</p>
-                                        @if (instruction.DistanceMeters > 0)
-                                        {
-                                            <p class="text-xs text-[var(--neba-gray-600)] mt-1">@instruction.FormattedDistance</p>
-                                        }
-                                    </div>
-                                </div>
+                                </button>
                             }
                         </div>
                     }
-                </div>
 
-                <!-- Route Mini-Map -->
-                @if (State.Route.RouteGeoJson is not null)
-                {
-                    <div id="directions-mini-map"
-                         style="height: 260px; width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid var(--neba-gray-300);">
+                    <!-- Open in Maps App Button -->
+                    <button class="neba-btn neba-btn-secondary w-full flex items-center justify-center gap-2"
+                            @onclick="HandleOpenInMaps">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        Open in Maps App
+                    </button>
+
+                    <!-- Turn-by-Turn Directions -->
+                    <div>
+                        <button
+                            class="w-full flex items-center justify-between p-3 bg-[var(--neba-gray-100)] hover:bg-[var(--neba-gray-200)] rounded-md transition-colors"
+                            @onclick="@(() => _showDirections = !_showDirections)">
+                            <span class="font-semibold text-[var(--neba-gray-700)]">
+                                Turn-by-turn directions (@State.Route.Instructions.Count steps)
+                            </span>
+                            <svg class="w-5 h-5 text-[var(--neba-gray-700)] transition-transform @(_showDirections ? "rotate-180" : "")"
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+
+                        @if (_showDirections)
+                        {
+                            <div class="mt-2 space-y-2 max-h-80 overflow-y-auto">
+                                @for (var i = 0; i < State.Route.Instructions.Count; i++)
+                                {
+                                    var instruction = State.Route.Instructions[i];
+                                    <div class="flex gap-3 p-3 bg-white border border-[var(--neba-gray-300)] rounded-md">
+                                        <div
+                                            class="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--neba-blue-600)] text-white flex items-center justify-center font-semibold text-sm">
+                                            @(i + 1)
+                                        </div>
+                                        <div class="flex-grow">
+                                            <p class="text-sm text-[var(--neba-gray-700)]">@instruction.Text</p>
+                                            @if (instruction.DistanceMeters > 0)
+                                            {
+                                                <p class="text-xs text-[var(--neba-gray-600)] mt-1">@instruction.FormattedDistance</p>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
                     </div>
-                }
-            </div>
-        }
-    </ChildContent>
 
-    <FooterContent>
-        <div class="flex justify-end gap-2">
-            <button class="neba-btn neba-btn-secondary" @onclick="HandleClose">
-                @(State.Mode == MapMode.DirectionsActive ? "Close" : "Cancel")
-            </button>
-        </div>
-    </FooterContent>
-</NebaModal>
+                    <!-- Route Mini-Map -->
+                    @if (State.Route.RouteGeoJson is not null)
+                    {
+                        <div id="directions-mini-map"
+                             style="height: 260px; width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid var(--neba-gray-300);">
+                        </div>
+                    }
+                </div>
+            }
+        </ChildContent>
+
+        <FooterContent>
+            <div class="flex justify-end gap-2">
+                <button class="neba-btn neba-btn-secondary" @onclick="HandleClose">
+                    @(State.Mode == MapMode.DirectionsActive ? "Close" : "Cancel")
+                </button>
+            </div>
+        </FooterContent>
+    </NebaModal>
 
 @code {
     private IJSObjectReference? _jsModule;
@@ -327,6 +351,43 @@
         await OnLocationSelected.InvokeAsync(State.UserLocation);
     }
 
+    private async Task HandleRouteOptionSelected(int routeOptionIndex)
+    {
+        if (State.Route is null
+            || State.Route.RouteOptions.Count == 0
+            || routeOptionIndex < 0
+            || routeOptionIndex >= State.Route.RouteOptions.Count
+            || routeOptionIndex == State.Route.SelectedRouteIndex)
+        {
+            return;
+        }
+
+        var selectedRoute = State.Route.RouteOptions[routeOptionIndex];
+
+        State.Route.DistanceMeters = selectedRoute.DistanceMeters;
+        State.Route.TravelTimeSeconds = selectedRoute.TravelTimeSeconds;
+        State.Route.Instructions = selectedRoute.Instructions;
+        State.Route.RouteGeoJson = selectedRoute.RouteGeoJson;
+        State.Route.SelectedRouteIndex = routeOptionIndex;
+
+        _routeMapInitialized = false;
+        await DisposeRouteMapAsync();
+
+        StateHasChanged();
+    }
+
+    private static string GetRouteOptionLabel(int routeOptionIndex)
+    {
+        return routeOptionIndex == 0 ? "Best route" : $"Alternative {routeOptionIndex}";
+    }
+
+    private static string GetRouteOptionClass(bool isSelected)
+    {
+        return isSelected
+            ? "border-[var(--neba-blue-600)] bg-[var(--neba-blue-100)]"
+            : "border-[var(--neba-gray-300)] hover:bg-[var(--neba-gray-100)]";
+    }
+
     private async Task HandleOpenInMaps()
     {
         if (State.UserLocation is null || State.DestinationLocation is null)
@@ -354,21 +415,7 @@
         _showDirections = false;
         _routeMapInitialized = false;
 
-        if (_jsModule is not null)
-        {
-            try
-            {
-                await _jsModule.InvokeVoidAsync("disposeRouteMap");
-            }
-            catch (JSDisconnectedException ex)
-            {
-                Logger.LogInformation(ex, "[DirectionsModal] Route mini-map cleanup skipped because the circuit disconnected.");
-            }
-            catch (JSException ex)
-            {
-                Logger.LogWarning(ex, "[DirectionsModal] Failed to dispose route mini-map");
-            }
-        }
+        await DisposeRouteMapAsync();
 
         await OnClose.InvokeAsync();
     }
@@ -385,7 +432,7 @@
         {
             try
             {
-                await _jsModule.InvokeVoidAsync("disposeRouteMap");
+                await DisposeRouteMapAsync();
                 await _jsModule.DisposeAsync();
             }
             catch (JSDisconnectedException ex)
@@ -396,6 +443,27 @@
             {
                 Logger.LogWarning(ex, "[DirectionsModal] Failed to dispose JS resources.");
             }
+        }
+    }
+
+    private async Task DisposeRouteMapAsync()
+    {
+        if (_jsModule is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _jsModule.InvokeVoidAsync("disposeRouteMap");
+        }
+        catch (JSDisconnectedException ex)
+        {
+            Logger.LogInformation(ex, "[DirectionsModal] Route mini-map cleanup skipped because the circuit disconnected.");
+        }
+        catch (JSException ex)
+        {
+            Logger.LogWarning(ex, "[DirectionsModal] Failed to dispose route mini-map");
         }
     }
 

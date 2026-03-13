@@ -295,10 +295,19 @@ export async function initializeRouteMap(containerId, origin, destination, route
                     filter: ['==', ['get', 'pointType'], 'destination']
                 }));
 
-                const bounds = atlas.data.BoundingBox.fromData([
+                let boundsData = [
                     new atlas.data.Point(origin),
                     new atlas.data.Point(destination)
-                ]);
+                ];
+                if (routeGeoJson) {
+                    try {
+                        const rf = JSON.parse(routeGeoJson);
+                        if (rf?.geometry?.coordinates?.length >= 2) {
+                            boundsData = rf.geometry.coordinates.map(c => new atlas.data.Point(c));
+                        }
+                    } catch { /* fall back to origin/destination */ }
+                }
+                const bounds = atlas.data.BoundingBox.fromData(boundsData);
                 routeMap.setCamera({ bounds, padding: 40 });
             }
 
