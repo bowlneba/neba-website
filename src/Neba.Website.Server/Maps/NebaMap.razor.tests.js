@@ -244,12 +244,61 @@ describe('NebaMap', () => {
 
       expect(atlasMock.layer.BubbleLayer).not.toHaveBeenCalled();
     });
+
+    test('defaults to road style when mapConfig.style is not provided', async () => {
+      const { atlasMock } = createAtlasMock();
+      globalThis.atlas = atlasMock;
+
+      await initializeMap(
+        defaultAuthConfig,
+        { ...defaultMapConfig, style: undefined },
+        [],
+        { invokeMethodAsync: jest.fn().mockResolvedValue(undefined) },
+      );
+
+      expect(atlasMock.Map).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ style: 'road' }),
+      );
+    });
+
+    test('creates the map with AAD auth when accountId is provided instead of subscriptionKey', async () => {
+      const { atlasMock } = createAtlasMock();
+      globalThis.atlas = atlasMock;
+
+      await initializeMap(
+        { accountId: 'test-entra-client-id' },
+        defaultMapConfig,
+        [],
+        { invokeMethodAsync: jest.fn().mockResolvedValue(undefined) },
+      );
+
+      expect(atlasMock.Map).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          authOptions: expect.objectContaining({ authType: 'aad', clientId: 'test-entra-client-id' }),
+        }),
+      );
+    });
   });
 
   // -------------------------------------------------------------------------
   describe('closePopup', () => {
     test('does nothing when no popup is open', () => {
       expect(() => closePopup()).not.toThrow();
+    });
+
+    test('closes the popup when one is open', async () => {
+      jest.useFakeTimers();
+      await createInitializedMap(defaultMapConfig, [makeLocation({ id: 'target' })]);
+
+      focusOnLocation('target');
+      jest.advanceTimersByTime(1100);
+
+      const popup = globalThis.atlas.Popup.mock.results.at(-1).value;
+      closePopup();
+
+      expect(popup.close).toHaveBeenCalled();
     });
   });
 
@@ -392,6 +441,35 @@ describe('NebaMap', () => {
 
       expect(mockDataSource.clear).toHaveBeenCalled();
     });
+
+    test('treats the same location IDs as identical regardless of their order', async () => {
+      const { mockDataSource } = await createInitializedMap();
+
+      updateMarkers([makeLocation({ id: 'b' }), makeLocation({ id: 'a' })]);
+      const addCount = mockDataSource.add.mock.calls.length;
+
+      updateMarkers([makeLocation({ id: 'a' }), makeLocation({ id: 'b' })]);
+
+      expect(mockDataSource.add.mock.calls.length).toBe(addCount);
+    });
+
+    test('filters out locations where latitude is a string rather than a number', async () => {
+      const { mockDataSource } = await createInitializedMap();
+
+      updateMarkers([makeLocation({ id: 'str-lat', latitude: '42.36' })]);
+
+      const features = mockDataSource.add.mock.calls.at(-1)[0];
+      expect(features).toHaveLength(0);
+    });
+
+    test('filters out locations where longitude is a string rather than a number', async () => {
+      const { mockDataSource } = await createInitializedMap();
+
+      updateMarkers([makeLocation({ id: 'str-lng', longitude: '-71.06' })]);
+
+      const features = mockDataSource.add.mock.calls.at(-1)[0];
+      expect(features).toHaveLength(0);
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -441,6 +519,17 @@ describe('NebaMap', () => {
 
       const [[popupOptions]] = globalThis.atlas.Popup.mock.calls;
       expect(popupOptions.content).toContain('white-space: pre-line');
+    });
+
+    test('positions the popup with a pixel offset of [0, -18]', async () => {
+      jest.useFakeTimers();
+      await createInitializedMap(defaultMapConfig, [makeLocation({ id: 'target' })]);
+
+      focusOnLocation('target');
+      jest.advanceTimersByTime(1100);
+
+      const [[popupOptions]] = globalThis.atlas.Popup.mock.calls;
+      expect(popupOptions.pixelOffset).toEqual([0, -18]);
     });
 
     test('popup description renders newline-separated text verbatim', async () => {
@@ -534,6 +623,35 @@ describe('NebaMap', () => {
           expect.objectContaining({ iconOptions: expect.any(Object) }),
         );
       });
+    });
+
+    test('uses a case expression referencing the location ID for the opacity filter', async () => {
+      const locationId = 'dest';
+      const { mockMap, atlasMock } = await createInitializedMap(defaultMapConfig, [
+        makeLocation({ id: locationId }),
+      ]);
+
+      enterDirectionsPreview(locationId);
+
+      const symbolLayers = mockMap.layers
+        .getLayers()
+        .filter((l) => l instanceof atlasMock.layer.SymbolLayer);
+      symbolLayers.forEach((layer) => {
+        const { iconOptions } = layer.setOptions.mock.calls.at(-1)[0];
+        const opacityExpr = iconOptions.opacity;
+        expect(opacityExpr[0]).toBe('case');
+        expect(opacityExpr).toContain(0.3);
+        expect(opacityExpr[1]).toContain(locationId);
+      });
+    });
+
+    test('does not throw when clustering is active (filters to symbol layers only)', async () => {
+      await createInitializedMap(
+        { ...defaultMapConfig, enableClustering: true },
+        [makeLocation({ id: 'dest' })],
+      );
+
+      expect(() => enterDirectionsPreview('dest')).not.toThrow();
     });
   });
 
@@ -822,6 +940,62 @@ describe('NebaMap', () => {
       expect(result.RouteGeoJson).toBeNull();
     });
 
+    test('re-throws an AbortError as a user-friendly timeout message', async () => {
+      await createInitializedMap();
+      const abortError = new Error('The operation was aborted');
+      abortError.name = 'AbortError';
+      globalThis.fetch = jest.fn().mockRejectedValue(abortError);
+
+      await expect(showRoute([-71, 42], [-70, 43])).rejects.toThrow('timed out');
+    });
+
+    test('falls through to instructionGroups when the instructions array is empty', async () => {
+      await createInitializedMap();
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            routes: [
+              {
+                summary: { lengthInMeters: 2000, travelTimeInSeconds: 120 },
+                guidance: {
+                  instructions: [],
+                  instructionGroups: [
+                    { instructions: [{ message: 'Via the bridge', travelDistance: 750 }] },
+                  ],
+                },
+                legs: [{ points: [{ longitude: -71, latitude: 42 }, { longitude: -70, latitude: 43 }] }],
+              },
+            ],
+          }),
+      });
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+
+      expect(result.Instructions[0].Text).toBe('Via the bridge');
+    });
+
+    test('returns empty instructions when guidance has neither instructions nor instructionGroups', async () => {
+      await createInitializedMap();
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            routes: [
+              {
+                summary: { lengthInMeters: 2000, travelTimeInSeconds: 120 },
+                guidance: {},
+                legs: [{ points: [{ longitude: -71, latitude: 42 }, { longitude: -70, latitude: 43 }] }],
+              },
+            ],
+          }),
+      });
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+
+      expect(result.Instructions).toHaveLength(0);
+    });
+
     test('filters invalid route geometry points before creating RouteGeoJson', async () => {
       await createInitializedMap();
 
@@ -949,6 +1123,33 @@ describe('NebaMap', () => {
       expect(console.warn).toHaveBeenCalledWith(
         '[NebaMap] Cannot change map style - map not initialized',
       );
+    });
+
+    test('closes an open popup on disposal', async () => {
+      jest.useFakeTimers();
+      await createInitializedMap(defaultMapConfig, [makeLocation({ id: 'target' })]);
+
+      focusOnLocation('target');
+      jest.advanceTimersByTime(1100);
+
+      const popup = globalThis.atlas.Popup.mock.results.at(-1).value;
+      dispose();
+
+      expect(popup.close).toHaveBeenCalled();
+    });
+
+    test('cancels a pending bounds-change debounce to prevent post-disposal callbacks', async () => {
+      jest.useFakeTimers();
+      const { mockMap } = await createInitializedMap();
+
+      const moveendHandler = mockMap.events.add.mock.calls
+        .find(([evt]) => evt === 'moveend')?.[1];
+      moveendHandler();
+
+      dispose();
+
+      // If clearTimeout was skipped, the debounce fires and map.getCamera() on null throws
+      expect(() => jest.runAllTimers()).not.toThrow();
     });
   });
 });
