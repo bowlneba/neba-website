@@ -34,6 +34,19 @@ Before ending a session where significant discoveries were made, consider whethe
 
 ### Testing Requirements
 
+#### JavaScript Mutation Testing
+
+- Uses **Stryker v9** with `@stryker-mutator/jest-runner`; config: `stryker.config.json`
+- Mutates all `src/Neba.Website.Server/**/*.js` (excludes `.tests.js` files)
+- A mutation is **killed** when at least one test *fails* on the mutated code
+- **"Not covered"** → needs a new test that exercises the code path
+- **"Covered, survived"** → test reaches the code but assertions aren't specific enough; sharpen them
+- Be pragmatic: `StringLiteral` mutations inside `console.log/warn/error` are low-value
+- Arithmetic mutations where one operand is `0` are ambiguous (`a - 0 === a + 0`) — ensure test data uses non-zero baseline values for timing, distances, and similar calculations
+- `BlockStatement` mutations (emptying a function body to `{}`) are high-value — they reveal entirely untested code paths and should be prioritized
+
+#### .NET Testing Requirements
+
 - All tests need `[UnitTest]` or `[IntegrationTest]` trait
 - All tests need `[Component("FeatureName")]` trait
 - All Facts/Theories need `DisplayName`
@@ -88,6 +101,8 @@ Before ending a session where significant discoveries were made, consider whethe
 - **Integration tests**: `dotnet test --filter "Category=Integration"`
 - **Specific component**: `dotnet test --filter "Component=Tournaments"`
 - **E2E tests**: `npm run test:e2e`
+- **Mutation tests (full run + summary)**: `npm run mutation:ai`
+- **Mutation report for one file**: `npm run mutation:ai:file -- <FileName>` (e.g. `-- NavMenu`)
 - **CI status**: `gh run list --limit 5`
 - **CI failure details**: `gh run view <run-id> --log-failed`
 
