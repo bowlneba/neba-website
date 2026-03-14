@@ -89,6 +89,33 @@ describe('NebaDocument', () => {
       );
     });
 
+    test('should not populate TOC when headings list is empty', () => {
+      document.body.innerHTML = `
+        <div id="content"><p>No headings here</p></div>
+        <ul id="toc-list"></ul>
+      `;
+
+      initialize(mockDotNetReference, { contentId: 'content', tocListId: 'toc-list' });
+
+      expect(document.getElementById('toc-list').innerHTML).toBe('');
+    });
+
+    test('should apply toc-item-h1 class to h1 and toc-item-h2 to h2', () => {
+      document.body.innerHTML = `
+        <div id="content">
+          <h1 id="title">Title</h1>
+          <h2 id="subtitle">Subtitle</h2>
+        </div>
+        <ul id="toc-list"></ul>
+      `;
+
+      initialize(mockDotNetReference, { contentId: 'content', tocListId: 'toc-list' });
+
+      const tocList = document.getElementById('toc-list');
+      expect(tocList.querySelector('.toc-item-h1')).not.toBeNull();
+      expect(tocList.querySelector('.toc-item-h2')).not.toBeNull();
+    });
+
     test('should initialize successfully even without headings (for link navigation)', () => {
       // Arrange
       document.body.innerHTML = `
@@ -269,6 +296,65 @@ describe('NebaDocument', () => {
       expect(modal.classList.contains('active')).toBe(false);
     });
 
+    test('should not close modal on non-Escape key', () => {
+      document.body.innerHTML = `
+        <div id="content"><h1>Heading 1</h1></div>
+        <ul id="toc-list"></ul>
+        <ul id="toc-mobile-list"></ul>
+        <button id="toc-mobile-button"></button>
+        <div id="toc-modal" class="active"></div>
+        <div id="toc-modal-overlay"></div>
+        <button id="toc-modal-close"></button>
+      `;
+
+      const config = {
+        contentId: 'content',
+        tocListId: 'toc-list',
+        tocMobileListId: 'toc-mobile-list',
+        tocMobileButtonId: 'toc-mobile-button',
+        tocModalId: 'toc-modal',
+        tocModalOverlayId: 'toc-modal-overlay',
+        tocModalCloseId: 'toc-modal-close'
+      };
+
+      initialize(mockDotNetReference, config);
+      const modal = document.getElementById('toc-modal');
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+      expect(modal.classList.contains('active')).toBe(true);
+    });
+
+    test('should not close modal when Escape pressed but modal is not active', () => {
+      document.body.innerHTML = `
+        <div id="content"><h1>Heading 1</h1></div>
+        <ul id="toc-list"></ul>
+        <ul id="toc-mobile-list"></ul>
+        <button id="toc-mobile-button"></button>
+        <div id="toc-modal"></div>
+        <div id="toc-modal-overlay"></div>
+        <button id="toc-modal-close"></button>
+      `;
+
+      const config = {
+        contentId: 'content',
+        tocListId: 'toc-list',
+        tocMobileListId: 'toc-mobile-list',
+        tocMobileButtonId: 'toc-mobile-button',
+        tocModalId: 'toc-modal',
+        tocModalOverlayId: 'toc-modal-overlay',
+        tocModalCloseId: 'toc-modal-close'
+      };
+
+      initialize(mockDotNetReference, config);
+      document.body.style.overflow = 'hidden'; // pre-condition
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+      // overflow should NOT be reset because modal was not active
+      expect(document.body.style.overflow).toBe('hidden');
+    });
+
     test('should populate both desktop and mobile TOC lists', () => {
       // Arrange
       document.body.innerHTML = `
@@ -441,6 +527,41 @@ describe('NebaDocument', () => {
 
       // Assert - function should return early without scrolling
       expect(content.scrollTo).not.toHaveBeenCalled();
+    });
+
+    test('should strip heading= prefix and scroll to matching element', () => {
+      document.body.innerHTML = `
+        <div id="content">
+          <h1 id="section1">Section 1</h1>
+        </div>
+        <ul id="toc-list"></ul>
+      `;
+
+      globalThis.history.replaceState(null, '', 'http://localhost/#heading=section1');
+      const content = document.getElementById('content');
+      content.scrollTo = jest.fn();
+
+      scrollToHash('content', 'toc-list');
+
+      expect(content.scrollTo).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }));
+    });
+
+    test('should not call replaceState when hash already matches target', () => {
+      document.body.innerHTML = `
+        <div id="content">
+          <h1 id="heading1">Heading 1</h1>
+        </div>
+        <ul id="toc-list"></ul>
+      `;
+
+      globalThis.history.replaceState(null, '', 'http://localhost/#heading1');
+      const content = document.getElementById('content');
+      content.scrollTo = jest.fn();
+      const replaceStateSpy = jest.spyOn(globalThis.history, 'replaceState');
+
+      scrollToHash('content', 'toc-list');
+
+      expect(replaceStateSpy).not.toHaveBeenCalled();
     });
 
     test('should update active link in TOC', () => {

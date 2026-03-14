@@ -772,6 +772,56 @@ describe('NebaMap', () => {
       ]);
     });
 
+    test('does not compact route geometry when point count is exactly maxPoints (220)', async () => {
+      await createInitializedMap();
+
+      const points = Array.from({ length: 220 }, (_, i) => ({
+        longitude: -71 + i * 0.001,
+        latitude: 42 + i * 0.001,
+      }));
+
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            routes: [
+              {
+                summary: { lengthInMeters: 5000, travelTimeInSeconds: 300 },
+                guidance: { instructions: [] },
+                legs: [{ points }],
+              },
+            ],
+          }),
+      });
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+      const geoJson = JSON.parse(result.RouteGeoJson);
+
+      expect(geoJson.geometry.coordinates).toHaveLength(220);
+    });
+
+    test('sets RouteGeoJson to null when route has only one coordinate', async () => {
+      await createInitializedMap();
+
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            routes: [
+              {
+                summary: { lengthInMeters: 0, travelTimeInSeconds: 0 },
+                guidance: { instructions: [] },
+                legs: [{ points: [{ longitude: -71, latitude: 42 }] }],
+              },
+            ],
+          }),
+      });
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+
+      expect(result.RouteGeoJson).toBeNull();
+    });
+
     test('filters invalid route geometry points before creating RouteGeoJson', async () => {
       await createInitializedMap();
 

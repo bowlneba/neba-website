@@ -1,6 +1,6 @@
 // NavMenu.razor.tests.js - Unit tests for NavMenu navigation interactivity
 
-import { initialize, dispose, preventBodyScroll } from './NavMenu.razor.js';
+import { initialize, dispose, preventBodyScroll, updateAriaCurrent } from './NavMenu.razor.js';
 
 // Helper to mock CSS custom properties
 function mockBreakpoint(value) {
@@ -178,6 +178,17 @@ describe('NavMenu', () => {
             );
         });
 
+        test('should remove both click handlers (main and dropdown)', () => {
+            setupDOM({ withDropdowns: true });
+            const removeEventListenerSpy = jest.spyOn(document, 'removeEventListener');
+
+            initialize(mockDotNetRef);
+            dispose();
+
+            const clickCalls = removeEventListenerSpy.mock.calls.filter(([event]) => event === 'click');
+            expect(clickCalls).toHaveLength(2);
+        });
+
         test('should be safe to call multiple times', () => {
             setupDOM();
             initialize(mockDotNetRef);
@@ -296,6 +307,16 @@ describe('NavMenu', () => {
             document.body.click();
 
             expect(mockDotNetRef.invokeMethodAsync).not.toHaveBeenCalled();
+        });
+
+        test('should call CloseMenu when innerWidth equals breakpoint (boundary)', () => {
+            setupDOM({ menuActive: true });
+            globalThis.innerWidth = 1024; // Exactly at breakpoint — not > breakpoint, so mobile
+            initialize(mockDotNetRef);
+
+            document.body.click();
+
+            expect(mockDotNetRef.invokeMethodAsync).toHaveBeenCalledWith('CloseMenu');
         });
 
         test('should respect custom breakpoint from CSS variable', () => {
@@ -462,6 +483,20 @@ describe('NavMenu', () => {
             expect(link.getAttribute('aria-expanded')).toBe('false');
         });
 
+        test('should focus the dropdown trigger link after Escape closes it', () => {
+            setupDOM({ withDropdowns: true });
+            initialize(mockDotNetRef);
+
+            const dropdownItem = document.querySelector('[data-action="toggle-dropdown"]');
+            const link = dropdownItem.querySelector('.neba-nav-link');
+            link.click(); // open dropdown
+
+            const focusSpy = jest.spyOn(link, 'focus');
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+            expect(focusSpy).toHaveBeenCalled();
+        });
+
         test('should not close dropdown when clicking inside dropdown menu', () => {
             setupDOM({ withDropdowns: true });
             initialize(mockDotNetRef);
@@ -521,6 +556,41 @@ describe('NavMenu', () => {
             preventBodyScroll(false);
 
             expect(scrollToSpy).toHaveBeenCalledWith(0, 0);
+        });
+    });
+
+    describe('updateAriaCurrent', () => {
+        test('should set aria-current="page" on active nav links', () => {
+            document.body.innerHTML = `
+                <nav class="neba-navbar">
+                    <ul class="neba-nav-menu">
+                        <li><a href="/" class="neba-nav-link active">Home</a></li>
+                        <li><a href="/about" class="neba-nav-link">About</a></li>
+                    </ul>
+                </nav>
+            `;
+
+            updateAriaCurrent();
+
+            const activeLink = document.querySelector('.neba-nav-link.active');
+            const inactiveLink = document.querySelector('.neba-nav-link:not(.active)');
+            expect(activeLink.getAttribute('aria-current')).toBe('page');
+            expect(inactiveLink.getAttribute('aria-current')).toBeNull();
+        });
+
+        test('should remove aria-current from previously active links', () => {
+            document.body.innerHTML = `
+                <nav class="neba-navbar">
+                    <ul class="neba-nav-menu">
+                        <li><a href="/" class="neba-nav-link" aria-current="page">Home</a></li>
+                    </ul>
+                </nav>
+            `;
+
+            updateAriaCurrent();
+
+            const link = document.querySelector('.neba-nav-link');
+            expect(link.getAttribute('aria-current')).toBeNull();
         });
     });
 

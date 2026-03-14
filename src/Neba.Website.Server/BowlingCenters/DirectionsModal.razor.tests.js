@@ -268,6 +268,20 @@ describe('DirectionsModal', () => {
       expect(result).toEqual([]);
     });
 
+    test('should return empty array without error when data.results is null', async () => {
+      globalThis.azureMapsAuthConfig = { subscriptionKey: 'test-key-123' };
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ results: null })
+      });
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      const result = await searchAddress('Boston, MA');
+
+      expect(result).toEqual([]);
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
+
     test('should handle fetch exception gracefully', async () => {
       // Arrange
       globalThis.azureMapsAuthConfig = {

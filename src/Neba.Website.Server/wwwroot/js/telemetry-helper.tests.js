@@ -68,12 +68,13 @@ describe('telemetry-helper', () => {
     });
 
     test('suppresses errors thrown by the bridge', () => {
-      jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       mockDotNet.invokeMethodAsync.mockImplementation(() => {
         throw new Error('interop failure');
       });
       initializeTelemetry(mockDotNet);
       expect(() => trackEvent('test.event')).not.toThrow();
+      expect(consoleSpy).toHaveBeenCalled();
     });
   });
 
@@ -107,12 +108,13 @@ describe('telemetry-helper', () => {
     });
 
     test('suppresses errors thrown by the bridge', () => {
-      jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       mockDotNet.invokeMethodAsync.mockImplementation(() => {
         throw new Error('interop failure');
       });
       initializeTelemetry(mockDotNet);
       expect(() => trackError('err', 'src')).not.toThrow();
+      expect(consoleSpy).toHaveBeenCalled();
     });
   });
 
@@ -320,6 +322,18 @@ describe('telemetry-helper', () => {
       );
     });
 
+    test('calculates dns_time as subtraction when domainLookupStart is non-zero', () => {
+      performance.getEntriesByType.mockReturnValue([
+        { ...makeEntry(), domainLookupStart: 2, domainLookupEnd: 7 },
+      ]);
+      trackResourcePerformance();
+      expect(mockDotNet.invokeMethodAsync).toHaveBeenCalledWith(
+        'TrackEvent',
+        'resource.loaded',
+        expect.objectContaining({ dns_time: 5 }),
+      );
+    });
+
     test('clears the resource timing buffer after tracking', () => {
       trackResourcePerformance();
       expect(performance.clearResourceTimings).toHaveBeenCalled();
@@ -402,6 +416,18 @@ describe('telemetry-helper', () => {
       trackNavigationPerformance();
       expect(addEventListenerSpy).toHaveBeenCalledWith('load', expect.any(Function));
       expect(mockDotNet.invokeMethodAsync).not.toHaveBeenCalled();
+    });
+
+    test('calculates metrics as differences when start values are non-zero', () => {
+      performance.getEntriesByType.mockReturnValue([
+        makeNavEntry({ domainLookupStart: 2, domainLookupEnd: 7, navigationStart: 10, loadEventEnd: 520 }),
+      ]);
+      trackNavigationPerformance();
+      expect(mockDotNet.invokeMethodAsync).toHaveBeenCalledWith(
+        'TrackEvent',
+        'page.performance',
+        expect.objectContaining({ dns_time: 5, total_load_time: 510 }),
+      );
     });
 
     test('warns when navigation timing data is absent', () => {
