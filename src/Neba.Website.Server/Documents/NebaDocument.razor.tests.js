@@ -479,6 +479,23 @@ describe('NebaDocument', () => {
         })
       );
     });
+
+    test('should generate TOC HTML with correct ul and li class structure', () => {
+      document.body.innerHTML = `
+        <div id="content">
+          <h1 id="h1">Title</h1>
+          <h2 id="h2">Subtitle</h2>
+        </div>
+        <ul id="toc-list"></ul>
+      `;
+
+      initialize(mockDotNetReference, { contentId: 'content', tocListId: 'toc-list' });
+
+      const tocList = document.getElementById('toc-list');
+      expect(tocList.querySelector('ul.toc-list')).not.toBeNull();
+      expect(tocList.querySelector('ul.toc-list > li.toc-item-h1')).not.toBeNull();
+      expect(tocList.querySelector('ul.toc-list > li.toc-item-h2')).not.toBeNull();
+    });
   });
 
   describe('scrollToHash', () => {
@@ -796,6 +813,204 @@ describe('NebaDocument', () => {
           behavior: 'smooth'
         })
       );
+
+      jest.useRealTimers();
+    });
+
+    test('should apply active class to initially visible heading in TOC', () => {
+      document.body.innerHTML = `
+        <div id="content">
+          <h1 id="heading1">Heading 1</h1>
+          <h1 id="heading2">Heading 2</h1>
+        </div>
+        <ul id="toc-list"></ul>
+      `;
+
+      initialize(mockDotNetReference, { contentId: 'content', tocListId: 'toc-list' });
+
+      // updateActiveLink() is called once at end of setupScrollSpy.
+      // jsdom getBoundingClientRect returns zeros so distanceFromTop=0 → in active window.
+      const activeLink = document.querySelector('.toc-link.active');
+      expect(activeLink).not.toBeNull();
+      expect(activeLink.dataset.target).toBe('heading1');
+    });
+
+    test('should not mark any heading active when all headings are fully scrolled past', () => {
+      document.body.innerHTML = `
+        <div id="content">
+          <h1 id="heading1">Heading 1</h1>
+        </div>
+        <ul id="toc-list"></ul>
+      `;
+
+      const content = document.getElementById('content');
+      const heading1 = document.getElementById('heading1');
+
+      // distanceFromTop = 50 - 100 = -50; height=30 so -headingRect.height = -30
+      // -50 >= -30 → FALSE → fails primary window; fallback: -50 >= 0 → also FALSE
+      content.getBoundingClientRect = () => ({ top: 100, height: 400, bottom: 500 });
+      heading1.getBoundingClientRect = () => ({ top: 50, height: 30, bottom: 80 });
+
+      initialize(mockDotNetReference, { contentId: 'content', tocListId: 'toc-list' });
+
+      // With `if (activeHeading) → if (true)` mutation, null.id throws — kills that mutation.
+      expect(document.querySelector('.toc-link.active')).toBeNull();
+    });
+
+    test('should select closest heading when multiple are in the active window', () => {
+      document.body.innerHTML = `
+        <div id="content">
+          <h1 id="heading1">Heading 1</h1>
+          <h1 id="heading2">Heading 2</h1>
+        </div>
+        <ul id="toc-list"></ul>
+      `;
+
+      const content = document.getElementById('content');
+      content.getBoundingClientRect = () => ({ top: 0, height: 400, bottom: 400 });
+      document.getElementById('heading1').getBoundingClientRect = () => ({ top: 20, height: 30, bottom: 50 }); // distanceFromTop=20
+      document.getElementById('heading2').getBoundingClientRect = () => ({ top: 60, height: 30, bottom: 90 }); // distanceFromTop=60
+
+      initialize(mockDotNetReference, { contentId: 'content', tocListId: 'toc-list' });
+
+      // |20| < |60| → heading1 wins. With `Math.abs < minDistance → true` mutation,
+      // heading2 (last processed) would overwrite → test fails on that mutant.
+      const activeLink = document.querySelector('.toc-link.active');
+      expect(activeLink).not.toBeNull();
+      expect(activeLink.dataset.target).toBe('heading1');
+    });
+
+    test('should select partially scrolled-past heading still within its own height', () => {
+      document.body.innerHTML = `
+        <div id="content">
+          <h1 id="heading1">Heading 1</h1>
+        </div>
+        <ul id="toc-list"></ul>
+      `;
+
+      const content = document.getElementById('content');
+      content.getBoundingClientRect = () => ({ top: 60, height: 400, bottom: 460 });
+      document.getElementById('heading1').getBoundingClientRect = () => ({ top: 50, height: 30, bottom: 80 });
+      // distanceFromTop = 50 - 60 = -10; -headingRect.height = -30; -10 >= -30 → in window
+      // With `-headingRect.height → +headingRect.height` mutation: -10 >= +30 → FALSE → no active link
+
+      initialize(mockDotNetReference, { contentId: 'content', tocListId: 'toc-list' });
+
+      const activeLink = document.querySelector('.toc-link.active');
+      expect(activeLink).not.toBeNull();
+      expect(activeLink.dataset.target).toBe('heading1');
+    });
+
+    test('should use fallback to select nearest heading below when none are in primary window', () => {
+      document.body.innerHTML = `
+        <div id="content">
+          <h1 id="heading1">Heading 1</h1>
+          <h1 id="heading2">Heading 2</h1>
+        </div>
+        <ul id="toc-list"></ul>
+      `;
+
+      const content = document.getElementById('content');
+      content.getBoundingClientRect = () => ({ top: 0, height: 400, bottom: 400 });
+      document.getElementById('heading1').getBoundingClientRect = () => ({ top: 120, height: 30, bottom: 150 }); // distanceFromTop=120 > 100 → primary fails; fallback: 120 >= 0
+      document.getElementById('heading2').getBoundingClientRect = () => ({ top: 200, height: 30, bottom: 230 }); // farther
+
+      initialize(mockDotNetReference, { contentId: 'content', tocListId: 'toc-list' });
+
+      // With `!activeHeading → false` mutation, fallback never runs → null → test fails.
+      const activeLink = document.querySelector('.toc-link.active');
+      expect(activeLink).not.toBeNull();
+      expect(activeLink.dataset.target).toBe('heading1');
+    });
+
+    test('should scroll the .toc-sticky container to keep active link visible', () => {
+      document.body.innerHTML = `
+        <div class="toc-sticky">
+          <ul id="toc-list"></ul>
+        </div>
+        <div id="content">
+          <h1 id="heading1">Heading 1</h1>
+        </div>
+      `;
+
+      const tocContainer = document.querySelector('.toc-sticky');
+      tocContainer.scrollTo = jest.fn();
+      Object.defineProperty(tocContainer, 'scrollTop', { value: 0, configurable: true });
+
+      initialize(mockDotNetReference, { contentId: 'content', tocListId: 'toc-list' });
+
+      // scrollTocToActiveLink is called from updateActiveLink() at end of setupScrollSpy.
+      // With BlockStatement mutation (body → {}), scrollTo is never called.
+      expect(tocContainer.scrollTo).toHaveBeenCalledWith(
+        expect.objectContaining({ behavior: 'smooth' })
+      );
+    });
+
+    test('should scroll to exact calculated position when clicking desktop TOC link', () => {
+      document.body.innerHTML = `
+        <div id="content">
+          <h1 id="heading1">Heading 1</h1>
+          <h1 id="heading2">Heading 2</h1>
+        </div>
+        <ul id="toc-list"></ul>
+      `;
+
+      initialize(mockDotNetReference, { contentId: 'content', tocListId: 'toc-list' });
+
+      const content = document.getElementById('content');
+      const heading2 = document.getElementById('heading2');
+
+      content.scrollTo = jest.fn();
+      Object.defineProperty(content, 'scrollTop', { value: 50, configurable: true });
+      content.getBoundingClientRect = () => ({ top: 10, height: 400, bottom: 410 });
+      heading2.getBoundingClientRect = () => ({ top: 210, height: 30, bottom: 240 });
+      // scrollPosition = 50 + (210 - 10) - 0 = 250
+      // With `content.scrollTop - (...)` mutation: 50 - 200 = -150
+      // With `targetRect.top + contentRect.top` mutation: 50 + (210 + 10) = 270
+
+      document.querySelector('.toc-link[data-target="heading2"]')
+        .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+      expect(content.scrollTo).toHaveBeenCalledWith({ top: 250, behavior: 'smooth' });
+    });
+
+    test('should scroll to exact calculated position when clicking mobile TOC link', () => {
+      jest.useFakeTimers();
+
+      document.body.innerHTML = `
+        <div id="content">
+          <h1 id="heading1">Heading 1</h1>
+          <h1 id="heading2">Heading 2</h1>
+        </div>
+        <ul id="toc-list"></ul>
+        <ul id="toc-mobile-list"></ul>
+        <button id="toc-mobile-button"></button>
+        <div id="toc-modal" class="active"></div>
+        <div id="toc-modal-overlay"></div>
+        <button id="toc-modal-close"></button>
+      `;
+
+      globalThis.scrollTo = jest.fn();
+      globalThis.pageYOffset = 100; // non-zero: distinguishes + from - in arithmetic mutations
+      // offsetPosition = getBoundingClientRect().top(0) + pageYOffset(100) - navbarHeight(80) = 20
+      // With `+ navbarHeight` mutation: 0 + 100 + 80 = 180
+      // With `- pageYOffset` mutation: 0 - 100 - 80 = -180
+
+      const config = {
+        contentId: 'content',
+        tocListId: 'toc-list',
+        tocMobileListId: 'toc-mobile-list',
+        tocMobileButtonId: 'toc-mobile-button',
+        tocModalId: 'toc-modal',
+        tocModalOverlayId: 'toc-modal-overlay',
+        tocModalCloseId: 'toc-modal-close'
+      };
+      initialize(mockDotNetReference, config);
+
+      document.querySelector('#toc-mobile-list .toc-link[data-target="heading2"]').click();
+      jest.advanceTimersByTime(300);
+
+      expect(globalThis.scrollTo).toHaveBeenCalledWith({ top: 20, behavior: 'smooth' });
 
       jest.useRealTimers();
     });
@@ -1143,6 +1358,134 @@ describe('NebaDocument', () => {
 
       expect(() => emailLink.click()).not.toThrow();
       expect(() => phoneLink.click()).not.toThrow();
+    });
+
+    test('should not intercept external links from other origins', () => {
+      document.body.innerHTML = `
+        <div id="content">
+          <h1>Heading</h1>
+          <a href="https://external.com/page">External</a>
+        </div>
+        <ul id="toc-list"></ul>
+        <div id="slideover"></div>
+      `;
+
+      initialize(mockDotNetReference, {
+        contentId: 'content',
+        tocListId: 'toc-list',
+        slideoverId: 'slideover'
+      });
+
+      const link = document.querySelector('a[href^="https://external.com"]');
+      const defaultPrevented = !link.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true })
+      );
+
+      // With `isInternal → true` mutation, external link opens in slideover
+      expect(defaultPrevented).toBe(false);
+      expect(mockDotNetReference.invokeMethodAsync).not.toHaveBeenCalled();
+    });
+
+    test('should not intercept tel: links', () => {
+      document.body.innerHTML = `
+        <div id="content">
+          <h1>Heading</h1>
+          <a href="tel:+15550001234">Phone</a>
+        </div>
+        <ul id="toc-list"></ul>
+        <div id="slideover"></div>
+      `;
+
+      initialize(mockDotNetReference, {
+        contentId: 'content',
+        tocListId: 'toc-list',
+        slideoverId: 'slideover'
+      });
+
+      const link = document.querySelector('a[href^="tel:"]');
+      const defaultPrevented = !link.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true })
+      );
+
+      expect(defaultPrevented).toBe(false);
+      expect(mockDotNetReference.invokeMethodAsync).not.toHaveBeenCalled();
+    });
+
+    test('should handle same-page hash link by scrolling rather than Blazor callback', () => {
+      document.body.innerHTML = `
+        <div id="content">
+          <h1 id="section1">Section 1</h1>
+          <a href="http://localhost/#section1">Same-page link</a>
+        </div>
+        <ul id="toc-list"></ul>
+        <div id="slideover"></div>
+      `;
+
+      const content = document.getElementById('content');
+      content.scrollTo = jest.fn();
+
+      initialize(mockDotNetReference, {
+        contentId: 'content',
+        tocListId: 'toc-list',
+        slideoverId: 'slideover'
+      });
+
+      document.querySelector('a[href="http://localhost/#section1"]').click();
+
+      // linkUrl.pathname === currentPath ('/') && linkUrl.hash → scrolls, no Blazor call.
+      // With `pathname === currentPath → true` mutation, any internal link triggers scroll.
+      // With `&& linkUrl.hash → || linkUrl.hash` mutation, different-page links also scroll.
+      expect(content.scrollTo).toHaveBeenCalled();
+      expect(mockDotNetReference.invokeMethodAsync).not.toHaveBeenCalled();
+    });
+
+    test('should reset body overflow when closing slideover via close button', () => {
+      document.body.innerHTML = `
+        <div id="content"><h1>Heading</h1></div>
+        <ul id="toc-list"></ul>
+        <div id="slideover" class="active"></div>
+        <div id="slideover-overlay"></div>
+        <button id="slideover-close"></button>
+      `;
+      document.body.style.overflow = 'hidden';
+
+      initialize(mockDotNetReference, {
+        contentId: 'content',
+        tocListId: 'toc-list',
+        slideoverId: 'slideover',
+        slideoverOverlayId: 'slideover-overlay',
+        slideoverCloseId: 'slideover-close'
+      });
+
+      document.getElementById('slideover-close').click();
+
+      // With `'' → "Stryker was here!"` StringLiteral mutation, overflow is not reset to ''
+      expect(document.body.style.overflow).toBe('');
+    });
+
+    test('should not close slideover on Escape when slideover is not active', () => {
+      document.body.innerHTML = `
+        <div id="content"><h1>Heading</h1></div>
+        <ul id="toc-list"></ul>
+        <div id="slideover"></div>
+        <div id="slideover-overlay"></div>
+        <button id="slideover-close"></button>
+      `;
+      document.body.style.overflow = 'hidden';
+
+      initialize(mockDotNetReference, {
+        contentId: 'content',
+        tocListId: 'toc-list',
+        slideoverId: 'slideover',
+        slideoverOverlayId: 'slideover-overlay',
+        slideoverCloseId: 'slideover-close'
+      });
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+      // Slideover was not active — overflow should be unchanged.
+      // Kills `slideover.classList.contains('active') → true` mutation.
+      expect(document.body.style.overflow).toBe('hidden');
     });
   });
 
