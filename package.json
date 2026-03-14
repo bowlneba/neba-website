@@ -11,6 +11,7 @@
     "test:mutation": "stryker run",
     "test:mutation:local": "stryker run --reporters html,json,progress",
     "mutation:ai": "stryker run --reporters html,json,progress && node scripts/mutation-ai.mjs",
+    "mutation:ai:file": "node scripts/mutation-ai.mjs",
     "test:mutation:diff": "stryker run --since origin/main",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
