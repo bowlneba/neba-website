@@ -594,6 +594,35 @@ describe('NavMenu', () => {
         });
     });
 
+    describe('MutationObserver', () => {
+        test('should call updateAriaCurrent when a nav link class attribute changes', async () => {
+            // Verifies the shouldUpdate = true path and the if (shouldUpdate) branch.
+            // Without this test, mutations like `shouldUpdate = false` or removing the
+            // if (shouldUpdate) check survive because updateAriaCurrent is never
+            // triggered through the observer path.
+            document.body.innerHTML = `
+                <nav class="neba-navbar">
+                    <ul class="neba-nav-menu">
+                        <li><a href="/" class="neba-nav-link">Home</a></li>
+                        <li><a href="/about" class="neba-nav-link">About</a></li>
+                    </ul>
+                </nav>
+            `;
+
+            initialize(mockDotNetRef);
+
+            const homeLink = document.querySelector('a[href="/"]');
+
+            // Simulate Blazor adding the 'active' class after navigation
+            homeLink.classList.add('active');
+
+            // MutationObserver callbacks fire as microtasks; yield past them
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(homeLink.getAttribute('aria-current')).toBe('page');
+        });
+    });
+
     describe('edge cases', () => {
         test('should handle null dotNetReference gracefully', () => {
             setupDOM({ menuActive: true });

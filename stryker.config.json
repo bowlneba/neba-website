@@ -18,7 +18,8 @@
   "mutate": [
     "src/Neba.Website.Server/**/*.js",
     "!src/Neba.Website.Server/**/*.tests.js",
-    "!src/Neba.Website.Server/**/*.test.js"
+    "!src/Neba.Website.Server/**/*.test.js",
+    "!src/Neba.Website.Server/wwwroot/js/tailwind.config.js"
   ],
   "ignorePatterns": [
     "node_modules",

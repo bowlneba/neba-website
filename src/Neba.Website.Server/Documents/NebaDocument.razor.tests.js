@@ -1019,6 +1019,104 @@ describe('NebaDocument', () => {
       );
     });
 
+    test('should not throw when mobile modal button is absent but other modal elements exist', () => {
+      // Kills the first || → && mutation in setupMobileModal's guard:
+      // !button || !modal || !overlay || !close
+      // Without this test, mutating the first || to && passes because all-or-none
+      // tests never exercise the partial-present scenario.
+      document.body.innerHTML = `
+        <div id="content"><h1>Heading</h1></div>
+        <ul id="toc-list"></ul>
+        <ul id="toc-mobile-list"></ul>
+        <div id="toc-modal"></div>
+        <div id="toc-modal-overlay"></div>
+        <button id="toc-modal-close"></button>
+      `;
+
+      const config = {
+        contentId: 'content',
+        tocListId: 'toc-list',
+        tocMobileListId: 'toc-mobile-list',
+        tocMobileButtonId: 'nonexistent-button', // absent — getElementById returns null
+        tocModalId: 'toc-modal',
+        tocModalOverlayId: 'toc-modal-overlay',
+        tocModalCloseId: 'toc-modal-close'
+      };
+
+      expect(() => initialize(mockDotNetReference, config)).not.toThrow();
+    });
+
+    test('should not throw when mobile modal is absent but button and overlay exist', () => {
+      // Kills the second || → && mutation: !button || (!modal && !overlay) || !close
+      document.body.innerHTML = `
+        <div id="content"><h1>Heading</h1></div>
+        <ul id="toc-list"></ul>
+        <ul id="toc-mobile-list"></ul>
+        <button id="toc-mobile-button"></button>
+        <div id="toc-modal-overlay"></div>
+        <button id="toc-modal-close"></button>
+      `;
+
+      const config = {
+        contentId: 'content',
+        tocListId: 'toc-list',
+        tocMobileListId: 'toc-mobile-list',
+        tocMobileButtonId: 'toc-mobile-button',
+        tocModalId: 'nonexistent-modal', // absent
+        tocModalOverlayId: 'toc-modal-overlay',
+        tocModalCloseId: 'toc-modal-close'
+      };
+
+      expect(() => initialize(mockDotNetReference, config)).not.toThrow();
+    });
+
+    test('should not throw when mobile modal overlay is absent but other elements exist', () => {
+      // Kills the third || → && mutation: !button || !modal || (!overlay && !close)
+      document.body.innerHTML = `
+        <div id="content"><h1>Heading</h1></div>
+        <ul id="toc-list"></ul>
+        <ul id="toc-mobile-list"></ul>
+        <button id="toc-mobile-button"></button>
+        <div id="toc-modal"></div>
+        <button id="toc-modal-close"></button>
+      `;
+
+      const config = {
+        contentId: 'content',
+        tocListId: 'toc-list',
+        tocMobileListId: 'toc-mobile-list',
+        tocMobileButtonId: 'toc-mobile-button',
+        tocModalId: 'toc-modal',
+        tocModalOverlayId: 'nonexistent-overlay', // absent
+        tocModalCloseId: 'toc-modal-close'
+      };
+
+      expect(() => initialize(mockDotNetReference, config)).not.toThrow();
+    });
+
+    test('should not throw when slideover overlay is present but close button is absent', () => {
+      // Kills the second && → || mutation in setupInternalLinkNavigation:
+      // slideover && slideoverOverlay || slideoverClose
+      // With that mutation, slideover+overlay present makes it truthy → enters block
+      // → slideoverClose.addEventListener on null → crash.
+      document.body.innerHTML = `
+        <div id="content"><h1>Heading</h1></div>
+        <ul id="toc-list"></ul>
+        <div id="slideover"></div>
+        <div id="slideover-overlay"></div>
+      `;
+
+      const config = {
+        contentId: 'content',
+        tocListId: 'toc-list',
+        slideoverId: 'slideover',
+        slideoverOverlayId: 'slideover-overlay',
+        slideoverCloseId: 'nonexistent-close' // absent — getElementById returns null
+      };
+
+      expect(() => initialize(mockDotNetReference, config)).not.toThrow();
+    });
+
     test('should allow external protocol links like mailto and tel', () => {
       // Arrange
       document.body.innerHTML = `
