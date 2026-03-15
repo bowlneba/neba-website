@@ -12,15 +12,14 @@
       "low": 90,
       "break": 85
     },
-    "ignore-mutations": ["string"],
+    "ignore-mutations": ["string", "Update"],
     "additional-timeout": 30000,
     "ignore-methods": [
       "ArgumentNullException.ThrowIfNull",
       "ArgumentException.ThrowIfNullOrEmpty",
       "Guard.*",
       "Log.*",
-      "Logger.*",
-      "LanePairs"
+      "Logger.*"
     ],
     "mutate": [
       "**/*.cs",

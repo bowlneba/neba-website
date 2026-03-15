@@ -58,7 +58,7 @@ Before ending a session where significant discoveries were made, consider whethe
 1. `"test-runner": "mtp"` — **required** for xUnit v3; without it all mutants show as Survived (xUnit v3 runs tests out-of-process; Stryker's VSTest extension never receives events). Shipped in Stryker.NET 4.13.
 2. `"project-info"` (not `"dashboard"`) — the .NET config key for dashboard reporting; `"dashboard"` is JS-only and will throw an unknown key error.
 3. `"reporters": ["html", "json", "progress"]` locally — omit `"dashboard"` from the config; pass `--reporter dashboard` as a CLI flag in CI only (having it in the config requires the API key even locally).
-4. `"ignore-mutations": ["string"]` — always exclude string literals; they generate noise without revealing logic gaps.
+4. `"ignore-mutations": ["string", "Update"]` — always exclude string literals (noise) and update expressions (`i++`/`i--`). The MTP runner in Stryker 4.13 does **not** respect `additional-timeout`, so `i++` → `i--` mutations in `for` loops create infinite loops that hang the entire run. `UpdateExpression` mutations are low-value anyway — loop control infrastructure, not business logic.
 
 **Coverage analysis note**: MTP coverage is partially implemented in 4.13 — uncovered mutants are filtered out, but per-mutant test selection is not yet available. This means runs are slower than they will eventually be (all tests run per mutant), but results are accurate.
 
@@ -140,6 +140,8 @@ Before ending a session where significant discoveries were made, consider whethe
 - **JS mutation tests (full run + summary)**: `npm run mutation:ai`
 - **JS mutation report for one file**: `npm run mutation:ai:file -- <FileName>` (e.g. `-- NavMenu`)
 - **.NET mutation tests — Domain**: `cd tests/Neba.Domain.Tests && dotnet stryker`
+- **.NET mutation summary**: `npm run mutation:ai:dotnet -- Domain`
+- **.NET mutation detail for one file**: `npm run mutation:ai:dotnet -- Domain <FileName>` (e.g. `-- Domain LaneRange`)
 - **CI status**: `gh run list --limit 5`
 - **CI failure details**: `gh run view <run-id> --log-failed`
 

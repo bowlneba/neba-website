@@ -1,11 +1,9 @@
 ---
-name: mutation-score
-description: Deprecated — use /mutation-score-js for JavaScript or /mutation-score-dotnet for .NET
+name: mutation-score-js
+description: Review surviving mutations for a JS file and add/update tests to kill them. Usage: /mutation-score-js <FileName>
 ---
 
-This skill has been superseded. Please use:
-- `/mutation-score-js <FileName>` for JavaScript mutation testing
-- `/mutation-score-dotnet <Layer> <FileName>` for .NET mutation testing
+The user wants to review and fix surviving mutations for a specific JavaScript file.
 
 ## What to do
 
@@ -13,7 +11,7 @@ This skill has been superseded. Please use:
 
 2. **Run the mutation report formatter** to get the surviving mutations for that file:
    ```
-   npm run mutation:ai -- <FileName>
+   npm run mutation:ai:file -- <FileName>
    ```
    Capture the output — it lists each surviving mutation with: mutator type, line number, original code, mutant replacement, and whether it's covered or not covered by tests.
 

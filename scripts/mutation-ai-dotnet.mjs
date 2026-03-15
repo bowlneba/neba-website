@@ -1,0 +1,167 @@
+#!/usr/bin/env node
+// Usage:
+//   node scripts/mutation-ai-dotnet.mjs Domain            → summary of surviving mutations
+//   node scripts/mutation-ai-dotnet.mjs Domain LaneRange  → full LLM-ready output for matching files
+
+import { readFileSync, readdirSync, existsSync, statSync } from 'fs';
+import { resolve, relative, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
+const [layer, fileFilter] = process.argv.slice(2);
+
+if (!layer) {
+  console.error('Usage: node scripts/mutation-ai-dotnet.mjs <Layer> [FileFilter]');
+  console.error('  e.g. node scripts/mutation-ai-dotnet.mjs Domain');
+  console.error('       node scripts/mutation-ai-dotnet.mjs Domain LaneRange');
+  process.exit(1);
+}
+
+// ── find latest report ────────────────────────────────────────────────────────
+
+const outputDir = resolve(ROOT, `tests/Neba.${layer}.Tests/StrykerOutput`);
+
+if (!existsSync(outputDir)) {
+  console.error(`❌  No StrykerOutput found at: ${outputDir}`);
+  console.error(`   Run: cd tests/Neba.${layer}.Tests && dotnet stryker`);
+  process.exit(1);
+}
+
+const runs = readdirSync(outputDir)
+  .map(name => ({ name, mtime: statSync(join(outputDir, name)).mtime }))
+  .sort((a, b) => b.mtime - a.mtime);
+
+const reportPath = join(outputDir, runs[0].name, 'reports', 'mutation-report.json');
+
+if (!existsSync(reportPath)) {
+  console.error(`❌  No mutation-report.json found in latest run: ${runs[0].name}`);
+  process.exit(1);
+}
+
+const reportMtime = statSync(reportPath).mtime;
+const report = JSON.parse(readFileSync(reportPath, 'utf-8'));
+
+// ── helpers ───────────────────────────────────────────────────────────────────
+
+function extractFragment(source, { start, end }) {
+  const lines = source.split('\n');
+  if (start.line === end.line) {
+    return lines[start.line - 1].slice(start.column, end.column);
+  }
+  const parts = [lines[start.line - 1].slice(start.column)];
+  for (let l = start.line + 1; l < end.line; l++) parts.push(lines[l - 1]);
+  parts.push(lines[end.line - 1].slice(0, end.column));
+  return parts.join(' ↵ ');
+}
+
+function contextBlock(source, { start, end }) {
+  const lines = source.split('\n');
+  const from = Math.max(0, start.line - 4);
+  const to = Math.min(lines.length - 1, end.line + 2);
+  const numW = String(to + 1).length;
+  return lines.slice(from, to + 1).map((content, i) => {
+    const lineNum = from + i + 1;
+    const arrow = lineNum >= start.line && lineNum <= end.line ? '→' : ' ';
+    return `${String(lineNum).padStart(numW)} ${arrow} ${content}`;
+  }).join('\n');
+}
+
+// ── collect ───────────────────────────────────────────────────────────────────
+
+let grandTotal = 0;
+let grandSurvived = 0;
+const allFiles = [];
+
+for (const [absPath, fileData] of Object.entries(report.files)) {
+  grandTotal += fileData.mutants.length;
+  const survived = fileData.mutants.filter(m => m.status === 'Survived');
+  grandSurvived += survived.length;
+  if (survived.length === 0) continue;
+  allFiles.push({
+    relPath: relative(ROOT, absPath),
+    source: fileData.source,
+    mutants: survived,
+  });
+}
+
+allFiles.sort((a, b) => b.mutants.length - a.mutants.length);
+
+const score = ((grandTotal - grandSurvived) / grandTotal * 100).toFixed(2);
+
+// ── output ────────────────────────────────────────────────────────────────────
+
+const out = [];
+
+out.push('# Surviving Mutations Report');
+out.push('');
+out.push(`**Layer**: ${layer}  |  **Score**: ${score}%  |  **Survived**: ${grandSurvived} / ${grandTotal}  |  **Report**: ${reportMtime.toLocaleString()}`);
+out.push('');
+
+if (!fileFilter) {
+  out.push('## Files with surviving mutations');
+  out.push('');
+  out.push('| File | Survived |');
+  out.push('|---|---:|');
+  for (const { relPath, mutants } of allFiles) {
+    const name = relPath.split('/').pop();
+    out.push(`| \`${name}\` | ${mutants.length} |`);
+  }
+  out.push('');
+  out.push('**Tip**: Drill into a single file:');
+  out.push('```');
+  out.push(`npm run mutation:ai:dotnet -- ${layer} LaneRange`);
+  out.push(`npm run mutation:ai:dotnet -- ${layer} DistanceCalculator`);
+  out.push('```');
+  console.log(out.join('\n'));
+  process.exit(0);
+}
+
+// Detailed mode
+const matched = allFiles.filter(f =>
+  f.relPath.toLowerCase().includes(fileFilter.toLowerCase())
+);
+
+if (matched.length === 0) {
+  console.error(`❌  No files with surviving mutations matched "${fileFilter}"`);
+  process.exit(1);
+}
+
+out.push('> **Task**: Add or update tests in the test project to kill each surviving mutation.');
+out.push('> A mutation is **killed** when at least one test *fails* on the mutated code.');
+out.push('> **"not covered"** → needs a new test that exercises this code path.');
+out.push('> **"covered, survived"** → needs a sharper assertion on the existing test path.');
+out.push('');
+out.push('---');
+out.push('');
+
+for (const { relPath, source, mutants } of matched) {
+  const sorted = [...mutants].sort((a, b) => a.location.start.line - b.location.start.line);
+
+  out.push(`## \`${relPath}\``);
+  out.push(`**Test project**: \`tests/Neba.${layer}.Tests/\`  |  **Survived**: ${mutants.length}`);
+  out.push('');
+
+  sorted.forEach((m, idx) => {
+    const { start, end } = m.location;
+    const lineLabel = start.line === end.line ? `Line ${start.line}` : `Lines ${start.line}–${end.line}`;
+    const original = extractFragment(source, m.location);
+    const covered = m.coveredBy?.length > 0
+      ? `covered by ${m.coveredBy.length} test(s) — needs sharper assertion`
+      : 'not covered — needs new test path';
+
+    out.push(`### ${idx + 1}. ${m.mutatorName} — ${lineLabel}`);
+    out.push(`- **Original**: \`${original}\``);
+    out.push(`- **Mutant**:   \`${m.replacement}\``);
+    out.push(`- **Coverage**: ${covered}`);
+    out.push('');
+    out.push('```csharp');
+    out.push(contextBlock(source, m.location));
+    out.push('```');
+    out.push('');
+  });
+
+  out.push('---');
+  out.push('');
+}
+
+console.log(out.join('\n'));
