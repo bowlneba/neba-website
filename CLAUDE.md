@@ -140,6 +140,7 @@ Before ending a session where significant discoveries were made, consider whethe
 - **JS mutation tests (full run + summary)**: `npm run mutation:ai`
 - **JS mutation report for one file**: `npm run mutation:ai:file -- <FileName>` (e.g. `-- NavMenu`)
 - **.NET mutation tests — Domain**: `cd tests/Neba.Domain.Tests && dotnet stryker`
+- **.NET mutation tests — Application**: `cd tests/Neba.Application.Tests && dotnet stryker`
 - **.NET mutation summary**: `npm run mutation:ai:dotnet -- Domain`
 - **.NET mutation detail for one file**: `npm run mutation:ai:dotnet -- Domain <FileName>` (e.g. `-- Domain LaneRange`)
 - **CI status**: `gh run list --limit 5`
