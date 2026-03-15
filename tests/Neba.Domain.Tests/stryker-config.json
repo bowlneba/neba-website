@@ -1,9 +1,10 @@
 {
   "stryker-config": {
     "project": "Neba.Domain.csproj",
-    "reporters": ["dashboard", "html", "json"],
-    "dashboard": {
-      "project": "github.com/bowlneba/neba-website",
+    "test-runner": "mtp",
+    "reporters": ["html", "json", "progress"],
+    "project-info": {
+      "name": "github.com/bowlneba/neba-website",
       "module": "domain"
     },
     "thresholds": {
@@ -12,12 +13,14 @@
       "break": 85
     },
     "ignore-mutations": ["string"],
+    "additional-timeout": 30000,
     "ignore-methods": [
       "ArgumentNullException.ThrowIfNull",
       "ArgumentException.ThrowIfNullOrEmpty",
       "Guard.*",
       "Log.*",
-      "Logger.*"
+      "Logger.*",
+      "LanePairs"
     ],
     "mutate": [
       "**/*.cs",

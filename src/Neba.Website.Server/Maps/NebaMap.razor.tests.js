@@ -280,6 +280,116 @@ describe('NebaMap', () => {
         }),
       );
     });
+
+    test('passes correct display config to the Map constructor', async () => {
+      const { atlasMock } = createAtlasMock();
+      globalThis.atlas = atlasMock;
+
+      await initializeMap(
+        defaultAuthConfig,
+        defaultMapConfig,
+        [],
+        { invokeMethodAsync: jest.fn().mockResolvedValue(undefined) },
+      );
+
+      expect(atlasMock.Map).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          language: 'en-US',
+          showLogo: false,
+          showFeedbackLink: false,
+          renderWorldCopies: false,
+          refreshExpiredTiles: false,
+        }),
+      );
+    });
+
+    test('passes subscription key authOptions to the Map constructor', async () => {
+      const { atlasMock } = createAtlasMock();
+      globalThis.atlas = atlasMock;
+
+      await initializeMap(
+        { subscriptionKey: 'test-sub-key' },
+        defaultMapConfig,
+        [],
+        { invokeMethodAsync: jest.fn().mockResolvedValue(undefined) },
+      );
+
+      expect(atlasMock.Map).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          authOptions: expect.objectContaining({
+            authType: 'subscriptionKey',
+            subscriptionKey: 'test-sub-key',
+          }),
+        }),
+      );
+    });
+
+    test('creates DataSource with correct clustering options', async () => {
+      const { atlasMock } = createAtlasMock();
+      globalThis.atlas = atlasMock;
+
+      await initializeMap(
+        defaultAuthConfig,
+        defaultMapConfig,
+        [],
+        { invokeMethodAsync: jest.fn().mockResolvedValue(undefined) },
+      );
+
+      expect(atlasMock.source.DataSource).toHaveBeenCalledWith(
+        null,
+        expect.objectContaining({
+          clusterRadius: 50,
+          clusterMaxZoom: 14,
+          buffer: 64,
+          tolerance: 0.375,
+        }),
+      );
+    });
+
+    test('creates BubbleLayer with correct cluster styling config', async () => {
+      const { atlasMock } = createAtlasMock();
+      globalThis.atlas = atlasMock;
+
+      await initializeMap(
+        defaultAuthConfig,
+        { ...defaultMapConfig, enableClustering: true },
+        [],
+        { invokeMethodAsync: jest.fn().mockResolvedValue(undefined) },
+      );
+
+      expect(atlasMock.layer.BubbleLayer).toHaveBeenCalledWith(
+        expect.anything(),
+        null,
+        expect.objectContaining({
+          radius: 18,
+          strokeWidth: 0,
+          color: ['step', ['get', 'point_count'], '#0066b2', 5, '#004080', 10, '#002040'],
+          filter: ['has', 'point_count'],
+        }),
+      );
+    });
+
+    test('waits for atlas SDK to become available via polling', async () => {
+      jest.useFakeTimers();
+      const { atlasMock } = createAtlasMock();
+      delete globalThis.atlas;
+
+      const dotNetHelper = { invokeMethodAsync: jest.fn().mockResolvedValue(undefined) };
+      const initPromise = initializeMap(defaultAuthConfig, defaultMapConfig, [], dotNetHelper);
+
+      // atlas not yet available — map should not be created yet
+      expect(atlasMock.Map).not.toHaveBeenCalled();
+
+      // set atlas and advance past the 100ms poll interval
+      globalThis.atlas = atlasMock;
+      jest.advanceTimersByTime(100);
+
+      await initPromise;
+
+      expect(atlasMock.Map).toHaveBeenCalled();
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -466,6 +576,33 @@ describe('NebaMap', () => {
       const { mockDataSource } = await createInitializedMap();
 
       updateMarkers([makeLocation({ id: 'str-lng', longitude: '-71.06' })]);
+
+      const features = mockDataSource.add.mock.calls.at(-1)[0];
+      expect(features).toHaveLength(0);
+    });
+
+    test('filters out locations with NaN longitude', async () => {
+      const { mockDataSource } = await createInitializedMap();
+
+      updateMarkers([makeLocation({ id: 'bad-nan-lon', longitude: Number.NaN })]);
+
+      const features = mockDataSource.add.mock.calls.at(-1)[0];
+      expect(features).toHaveLength(0);
+    });
+
+    test('filters out locations with Infinity latitude', async () => {
+      const { mockDataSource } = await createInitializedMap();
+
+      updateMarkers([makeLocation({ id: 'bad-inf-lat', latitude: Infinity })]);
+
+      const features = mockDataSource.add.mock.calls.at(-1)[0];
+      expect(features).toHaveLength(0);
+    });
+
+    test('filters out locations with null longitude', async () => {
+      const { mockDataSource } = await createInitializedMap();
+
+      updateMarkers([makeLocation({ id: 'bad-null-lon', longitude: null })]);
 
       const features = mockDataSource.add.mock.calls.at(-1)[0];
       expect(features).toHaveLength(0);
@@ -888,6 +1025,18 @@ describe('NebaMap', () => {
         Number(lastPoint.longitude.toFixed(6)),
         Number(lastPoint.latitude.toFixed(6)),
       ]);
+
+      // All sampled coordinates must be valid [lon, lat] pairs — catches wrong arithmetic on step
+      expect(coordinates.every(c => Array.isArray(c) && c.length === 2)).toBe(true);
+
+      // Compaction log fires when sampling occurred (originalPointCount > maxPoints)
+      expect(console.log).toHaveBeenCalledWith(
+        '[NebaMap] Compacted route geometry for interop payload:',
+        expect.objectContaining({
+          originalPointCount: 1200,
+          compactPointCount: coordinates.length,
+        }),
+      );
     });
 
     test('does not compact route geometry when point count is exactly maxPoints (220)', async () => {
@@ -1025,6 +1174,56 @@ describe('NebaMap', () => {
 
       expect(geoJson.geometry.coordinates).toEqual([[-71, 42], [-70, 43]]);
     });
+
+    test('filters route leg points with NaN longitude from geometry', async () => {
+      await createInitializedMap();
+
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          routes: [{
+            summary: { lengthInMeters: 1000, travelTimeInSeconds: 60 },
+            guidance: { instructions: [] },
+            legs: [{
+              points: [
+                { longitude: NaN, latitude: 42 },
+                { longitude: -71, latitude: 42 },
+                { longitude: -70, latitude: 43 },
+              ],
+            }],
+          }],
+        }),
+      });
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+      const geoJson = JSON.parse(result.RouteGeoJson);
+      expect(geoJson.geometry.coordinates).toEqual([[-71, 42], [-70, 43]]);
+    });
+
+    test('filters route leg points with null latitude from geometry', async () => {
+      await createInitializedMap();
+
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          routes: [{
+            summary: { lengthInMeters: 1000, travelTimeInSeconds: 60 },
+            guidance: { instructions: [] },
+            legs: [{
+              points: [
+                { longitude: -71, latitude: null },
+                { longitude: -71, latitude: 42 },
+                { longitude: -70, latitude: 43 },
+              ],
+            }],
+          }],
+        }),
+      });
+
+      const result = await showRoute([-71, 42], [-70, 43]);
+      const geoJson = JSON.parse(result.RouteGeoJson);
+      expect(geoJson.geometry.coordinates).toEqual([[-71, 42], [-70, 43]]);
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -1078,6 +1277,76 @@ describe('NebaMap', () => {
           expect.objectContaining({ iconOptions: { opacity: 1 } }),
         );
       });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  describe('notifyBoundsChanged', () => {
+    test('calls NotifyBoundsChanged with north/south/east/west after moveend + 150 ms', async () => {
+      jest.useFakeTimers();
+      const { mockMap, dotNetHelper } = await createInitializedMap();
+
+      const moveendHandler = mockMap.events.add.mock.calls
+        .find(([evt]) => evt === 'moveend')?.[1];
+      moveendHandler();
+
+      jest.advanceTimersByTime(150);
+
+      expect(dotNetHelper.invokeMethodAsync).toHaveBeenCalledWith('NotifyBoundsChanged', {
+        north: 43,
+        south: 41,
+        east: -70,
+        west: -72,
+      });
+    });
+
+    test('debounces rapid moveend events to a single NotifyBoundsChanged call', async () => {
+      jest.useFakeTimers();
+      const { mockMap, dotNetHelper } = await createInitializedMap();
+
+      const moveendHandler = mockMap.events.add.mock.calls
+        .find(([evt]) => evt === 'moveend')?.[1];
+      moveendHandler();
+      moveendHandler();
+      moveendHandler();
+
+      jest.advanceTimersByTime(150);
+
+      const boundsChangedCalls = dotNetHelper.invokeMethodAsync.mock.calls
+        .filter(([method]) => method === 'NotifyBoundsChanged');
+      expect(boundsChangedCalls).toHaveLength(1);
+    });
+
+    test('does not call NotifyBoundsChanged when map is null after dispose', async () => {
+      jest.useFakeTimers();
+      const { mockMap, dotNetHelper } = await createInitializedMap();
+
+      const moveendHandler = mockMap.events.add.mock.calls
+        .find(([evt]) => evt === 'moveend')?.[1];
+
+      dispose();
+      moveendHandler();
+      jest.runAllTimers();
+
+      const boundsChangedCalls = dotNetHelper.invokeMethodAsync.mock.calls
+        .filter(([method]) => method === 'NotifyBoundsChanged');
+      expect(boundsChangedCalls).toHaveLength(0);
+    });
+
+    test('does not call NotifyBoundsChanged when camera has no bounds', async () => {
+      jest.useFakeTimers();
+      const { mockMap, dotNetHelper } = await createInitializedMap();
+      mockMap.getCamera.mockReturnValue({ bounds: null });
+
+      const moveendHandler = mockMap.events.add.mock.calls
+        .find(([evt]) => evt === 'moveend')?.[1];
+      moveendHandler();
+
+      jest.advanceTimersByTime(150);
+
+      const boundsChangedCalls = dotNetHelper.invokeMethodAsync.mock.calls
+        .filter(([method]) => method === 'NotifyBoundsChanged');
+      expect(boundsChangedCalls).toHaveLength(0);
     });
   });
 

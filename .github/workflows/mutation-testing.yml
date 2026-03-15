@@ -96,7 +96,7 @@ jobs:
       - name: Run Stryker (full run)
         if: ${{ !inputs.is_pull_request }}
         working-directory: tests/Neba.Domain.Tests
-        run: dotnet stryker
+        run: dotnet stryker --reporter dashboard
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_KEY }}
           STRYKER_DASHBOARD_VERSION: ${{ inputs.dashboard_version }}
@@ -104,7 +104,7 @@ jobs:
       - name: Run Stryker (diff — PR files only)
         if: ${{ inputs.is_pull_request }}
         working-directory: tests/Neba.Domain.Tests
-        run: dotnet stryker --since origin/main
+        run: dotnet stryker --reporter dashboard --since origin/main
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_KEY }}
           STRYKER_DASHBOARD_VERSION: ${{ inputs.dashboard_version }}

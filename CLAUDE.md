@@ -47,18 +47,36 @@ Before ending a session where significant discoveries were made, consider whethe
 
 #### .NET Mutation Testing
 
-- Uses **dotnet-stryker** (global install); config: `tests/<Layer>.Tests/stryker-config.json`
+- Uses **dotnet-stryker** (global install: `dotnet tool install --global dotnet-stryker`)
+- Config per layer: `tests/<Layer>.Tests/stryker-config.json`
 - Run from the test project directory: `cd tests/Neba.Domain.Tests && dotnet stryker`
 - Diff run (PR): `dotnet stryker --since origin/main`
 - Reports land in `tests/<Layer>.Tests/StrykerOutput/`
-- **Thresholds — Domain**: high 95 / low 90 / break 85
-- **Excluded from mutation** — files with no logic worth mutating:
-  - `**/AssemblyInfo.cs` — source generator attribute
-  - `**/*Id.cs` — `[StronglyTypedId]` empty partial structs (generated logic)
-  - SmartEnum/SmartFlagEnum files are intentionally **included** — review new files as they are added to decide whether exclusion is warranted
-- `ignore-mutations`: `string` (Linq is intentionally kept — LINQ operator mutations in domain logic are high-signal)
-- `ignore-methods`: `ArgumentNullException.ThrowIfNull`, `ArgumentException.ThrowIfNullOrEmpty`, `Guard.*`, `Log.*`, `Logger.*`
-- **High-value mutation targets**: aggregates with business logic, value objects with validation, `DistanceCalculator`, `SmartFlagEnumJsonConverter`
+
+**New layer checklist** — when adding a stryker-config.json for a new layer, every config must have:
+
+1. `"test-runner": "mtp"` — **required** for xUnit v3; without it all mutants show as Survived (xUnit v3 runs tests out-of-process; Stryker's VSTest extension never receives events). Shipped in Stryker.NET 4.13.
+2. `"project-info"` (not `"dashboard"`) — the .NET config key for dashboard reporting; `"dashboard"` is JS-only and will throw an unknown key error.
+3. `"reporters": ["html", "json", "progress"]` locally — omit `"dashboard"` from the config; pass `--reporter dashboard` as a CLI flag in CI only (having it in the config requires the API key even locally).
+4. `"ignore-mutations": ["string"]` — always exclude string literals; they generate noise without revealing logic gaps.
+
+**Coverage analysis note**: MTP coverage is partially implemented in 4.13 — uncovered mutants are filtered out, but per-mutant test selection is not yet available. This means runs are slower than they will eventually be (all tests run per mutant), but results are accurate.
+
+**Per-layer decisions** (make these explicitly for each new layer):
+
+- `ignore-mutations: Linq` — keep for Domain/Application (logic layers); exclude for Infrastructure/API/Blazor (see rationale in learnings below)
+- `mutate` exclusions — inspect actual files; exclude pure declarations (source-generated stubs, SmartEnum tables), not logic
+
+**Thresholds by layer**:
+
+| Layer          | high | low | break |
+|----------------|------|-----|-------|
+| Domain         | 95   | 90  | 85    |
+| Application    | 95   | 90  | 85    |
+| Infrastructure | 60   | 40  | 0     |
+| API            | 80   | 60  | 75    |
+| Blazor         | 80   | 60  | 70    |
+
 - A mutation is **killed** when at least one test *fails* on the mutated code
 - **"Not covered"** → needs a new test exercising the code path
 - **"Covered, survived"** → assertions aren't specific enough; sharpen them
