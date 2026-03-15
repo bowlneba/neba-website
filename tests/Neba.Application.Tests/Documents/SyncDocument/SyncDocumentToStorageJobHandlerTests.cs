@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Application.Clock;
@@ -77,9 +80,41 @@ public sealed class SyncDocumentToStorageJobHandlerTests
                 TestContext.Current.CancellationToken))
             .Returns(Task.CompletedTask);
 
-        // Act & Assert
+        var longMeasurements = new List<(string Instrument, long Value, KeyValuePair<string, object?>[] Tags)>();
+        var doubleMeasurements = new List<(string Instrument, double Value, KeyValuePair<string, object?>[] Tags)>();
+        using var meterListener = SyncDocumentToStorageMetricsTests.BuildListener(longMeasurements, doubleMeasurements);
+
+        var (activityListener, activities) = BuildActivityListener();
+        using var __ = activityListener;
+
+        // Act
         await Should.NotThrowAsync(
             () => _handler.ExecuteAsync(job, TestContext.Current.CancellationToken));
+
+        // Assert metrics — use ShouldContain (not ShouldHaveSingleItem) for parallel-test safety.
+        // Filter by document name to avoid capturing measurements from other parallel test classes.
+        longMeasurements.ShouldContain(m =>
+            m.Instrument == "neba.background_job.sync_document.executions" &&
+            m.Tags.Any(t => t.Key == "document.name" && (string?)t.Value == job.DocumentName));
+
+        longMeasurements.ShouldContain(m =>
+            m.Instrument == "neba.backgroundjob.sync_document.successes" &&
+            m.Tags.Any(t => t.Key == "document.name" && (string?)t.Value == job.DocumentName));
+
+        doubleMeasurements.ShouldContain(m =>
+            m.Instrument == "neba.backgroundjob.sync_document.duration" &&
+            m.Tags.Any(t => t.Key == "document.name" && (string?)t.Value == job.DocumentName) &&
+            m.Tags.Any(t => t.Key == "result" && (string?)t.Value == "success"));
+
+        doubleMeasurements.ShouldContain(m =>
+            m.Instrument == "neba.backgroundjob.sync_document.retrieve.duration" &&
+            m.Tags.Any(t => t.Key == "document.name" && (string?)t.Value == job.DocumentName));
+
+        // Assert activity tags and status
+        var activity = activities.First(a => a.Tags.Any(t => t.Key == "document.name" && t.Value == job.DocumentName));
+        activity.Tags.ShouldContain(kvp => kvp.Key == "document.name" && kvp.Value == job.DocumentName);
+        activity.Tags.ShouldContain(kvp => kvp.Key == "triggered.by" && kvp.Value == job.TriggeredBy);
+        activity.Status.ShouldBe(ActivityStatusCode.Ok);
     }
 
     [Fact(DisplayName = "Should return without throwing when document is not found")]
@@ -96,9 +131,36 @@ public sealed class SyncDocumentToStorageJobHandlerTests
             .Setup(s => s.GetDocumentAsHtmlAsync(job.DocumentName, TestContext.Current.CancellationToken))
             .ReturnsAsync((DocumentDto?)null);
 
-        // Act & Assert
+        var longMeasurements = new List<(string Instrument, long Value, KeyValuePair<string, object?>[] Tags)>();
+        var doubleMeasurements = new List<(string Instrument, double Value, KeyValuePair<string, object?>[] Tags)>();
+        using var meterListener = SyncDocumentToStorageMetricsTests.BuildListener(longMeasurements, doubleMeasurements);
+
+        var (activityListener, activities) = BuildActivityListener();
+        using var __ = activityListener;
+
+        // Act
         await Should.NotThrowAsync(
             () => _handler.ExecuteAsync(job, TestContext.Current.CancellationToken));
+
+        // Assert metrics
+        longMeasurements.ShouldContain(m =>
+            m.Instrument == "neba.background_job.sync_document.executions" &&
+            m.Tags.Any(t => t.Key == "document.name" && (string?)t.Value == job.DocumentName));
+
+        longMeasurements.ShouldContain(m =>
+            m.Instrument == "neba.backgroundjob.sync_document.failures" &&
+            m.Tags.Any(t => t.Key == "document.name" && (string?)t.Value == job.DocumentName) &&
+            m.Tags.Any(t => t.Key == "error.type" && (string?)t.Value == "DocumentNotFound"));
+
+        doubleMeasurements.ShouldContain(m =>
+            m.Instrument == "neba.backgroundjob.sync_document.duration" &&
+            m.Tags.Any(t => t.Key == "document.name" && (string?)t.Value == job.DocumentName) &&
+            m.Tags.Any(t => t.Key == "result" && (string?)t.Value == "failure"));
+
+        // Assert activity status
+        var activity = activities.First(a => a.Tags.Any(t => t.Key == "document.name" && t.Value == job.DocumentName));
+        activity.Status.ShouldBe(ActivityStatusCode.Error);
+        activity.StatusDescription.ShouldBe("Document not found");
     }
 
     [Fact(DisplayName = "Should propagate exception when upload fails")]
@@ -131,11 +193,45 @@ public sealed class SyncDocumentToStorageJobHandlerTests
                 TestContext.Current.CancellationToken))
             .ThrowsAsync(new InvalidOperationException("Storage unavailable"));
 
+        var longMeasurements = new List<(string Instrument, long Value, KeyValuePair<string, object?>[] Tags)>();
+        var doubleMeasurements = new List<(string Instrument, double Value, KeyValuePair<string, object?>[] Tags)>();
+        using var meterListener = SyncDocumentToStorageMetricsTests.BuildListener(longMeasurements, doubleMeasurements);
+
+        var (activityListener, activities) = BuildActivityListener();
+        using var __ = activityListener;
+
         // Act & Assert
         var exception = await Should.ThrowAsync<InvalidOperationException>(
             () => _handler.ExecuteAsync(job, TestContext.Current.CancellationToken));
 
         exception.Message.ShouldBe("Storage unavailable");
+
+        longMeasurements.ShouldContain(m =>
+            m.Instrument == "neba.background_job.sync_document.executions" &&
+            m.Tags.Any(t => t.Key == "document.name" && (string?)t.Value == job.DocumentName));
+
+        longMeasurements.ShouldContain(m =>
+            m.Instrument == "neba.backgroundjob.sync_document.failures" &&
+            m.Tags.Any(t => t.Key == "document.name" && (string?)t.Value == job.DocumentName) &&
+            m.Tags.Any(t => t.Key == "error.type" && (string?)t.Value == "InvalidOperationException"));
+
+        // Assert activity status
+        var activity = activities.First(a => a.Tags.Any(t => t.Key == "document.name" && t.Value == job.DocumentName));
+        activity.Status.ShouldBe(ActivityStatusCode.Error);
+        activity.StatusDescription.ShouldBe("Storage unavailable");
+    }
+
+    private static (ActivityListener Listener, List<Activity> Activities) BuildActivityListener()
+    {
+        var activities = new List<Activity>();
+        var listener = new ActivityListener
+        {
+            ShouldListenTo = source => source.Name == "Neba.BackgroundJobs",
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+            ActivityStopped = activities.Add
+        };
+        ActivitySource.AddActivityListener(listener);
+        return (listener, activities);
     }
 
     [Fact(DisplayName = "Should propagate exception when document retrieval fails")]
@@ -152,10 +248,22 @@ public sealed class SyncDocumentToStorageJobHandlerTests
             .Setup(s => s.GetDocumentAsHtmlAsync(job.DocumentName, TestContext.Current.CancellationToken))
             .ThrowsAsync(new HttpRequestException("Google Drive API error"));
 
+        var longMeasurements = new List<(string Instrument, long Value, KeyValuePair<string, object?>[] Tags)>();
+        using var meterListener = SyncDocumentToStorageMetricsTests.BuildListener(longMeasurements: longMeasurements);
+
         // Act & Assert
         var exception = await Should.ThrowAsync<HttpRequestException>(
             () => _handler.ExecuteAsync(job, TestContext.Current.CancellationToken));
 
         exception.Message.ShouldBe("Google Drive API error");
+
+        longMeasurements.ShouldContain(m =>
+            m.Instrument == "neba.background_job.sync_document.executions" &&
+            m.Tags.Any(t => t.Key == "document.name" && (string?)t.Value == job.DocumentName));
+
+        longMeasurements.ShouldContain(m =>
+            m.Instrument == "neba.backgroundjob.sync_document.failures" &&
+            m.Tags.Any(t => t.Key == "document.name" && (string?)t.Value == job.DocumentName) &&
+            m.Tags.Any(t => t.Key == "error.type" && (string?)t.Value == "HttpRequestException"));
     }
 }
