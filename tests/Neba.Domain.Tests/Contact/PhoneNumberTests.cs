@@ -150,6 +150,28 @@ public sealed class PhoneNumberTests
 
     #region CreateNorthAmerican - Invalid area code
 
+    [Theory(DisplayName = "CreateNorthAmerican succeeds for area codes at valid first-digit boundaries")]
+    [InlineData("2554567890", TestDisplayName = "Area code starting with 2 is valid")]
+    [InlineData("9554567890", TestDisplayName = "Area code starting with 9 is valid")]
+    public void CreateNorthAmerican_ShouldSucceed_WhenAreaCodeIsAtFirstDigitBoundary(string phoneNumber)
+    {
+        // Act
+        var result = PhoneNumber.CreateNorthAmerican(PhoneNumberType.Work, phoneNumber);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "CreateNorthAmerican succeeds when area code has 1 in second position but not third")]
+    public void CreateNorthAmerican_ShouldSucceed_WhenAreaCodeHasOneInSecondPositionOnly()
+    {
+        // Act — area code 215: second='1', third='5' — not an N11 code
+        var result = PhoneNumber.CreateNorthAmerican(PhoneNumberType.Work, "2154567890");
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
     [Theory(DisplayName = "CreateNorthAmerican returns InvalidNorthAmericanAreaCode error when area code is invalid")]
     [InlineData("0554567890", TestDisplayName = "Area code starting with 0 is invalid")]
     [InlineData("1554567890", TestDisplayName = "Area code starting with 1 is invalid")]

@@ -9,6 +9,14 @@ namespace Neba.Domain.Tests.HallOfFame;
 [Component("HallOfFame.HallOfFameCategory")]
 public sealed class HallOfFameCategoryTests
 {
+    [Fact(DisplayName = "Category bit values should be non-overlapping powers of two")]
+    public void HallOfFameCategory_CategoryValues_ShouldBeCorrectPowersOfTwo()
+    {
+        HallOfFameCategory.SuperiorPerformance.Value.ShouldBe(1);
+        HallOfFameCategory.MeritoriousService.Value.ShouldBe(2);
+        HallOfFameCategory.FriendOfNeba.Value.ShouldBe(4);
+    }
+
     [Fact(DisplayName = "Should have 3 Hall of Fame categories")]
     public void HallOfFameCategory_ShouldHave3Categories()
     {
