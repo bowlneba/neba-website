@@ -55,7 +55,7 @@ Before ending a session where significant discoveries were made, consider whethe
 - **Excluded from mutation** — files with no logic worth mutating:
   - `**/AssemblyInfo.cs` — source generator attribute
   - `**/*Id.cs` — `[StronglyTypedId]` empty partial structs (generated logic)
-  - SmartEnum/SmartFlagEnum declaration files (pure lookup tables, private constructors delegate to base): review new files as they are added to decide whether to exclude them using the same criteria
+  - SmartEnum/SmartFlagEnum files are intentionally **included** — review new files as they are added to decide whether exclusion is warranted
 - `ignore-mutations`: `string` (Linq is intentionally kept — LINQ operator mutations in domain logic are high-signal)
 - `ignore-methods`: `ArgumentNullException.ThrowIfNull`, `ArgumentException.ThrowIfNullOrEmpty`, `Guard.*`, `Log.*`, `Logger.*`
 - **High-value mutation targets**: aggregates with business logic, value objects with validation, `DistanceCalculator`, `SmartFlagEnumJsonConverter`
