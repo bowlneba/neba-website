@@ -45,6 +45,24 @@ Before ending a session where significant discoveries were made, consider whethe
 - Arithmetic mutations where one operand is `0` are ambiguous (`a - 0 === a + 0`) — ensure test data uses non-zero baseline values for timing, distances, and similar calculations
 - `BlockStatement` mutations (emptying a function body to `{}`) are high-value — they reveal entirely untested code paths and should be prioritized
 
+#### .NET Mutation Testing
+
+- Uses **dotnet-stryker** (global install); config: `tests/<Layer>.Tests/stryker-config.json`
+- Run from the test project directory: `cd tests/Neba.Domain.Tests && dotnet stryker`
+- Diff run (PR): `dotnet stryker --since origin/main`
+- Reports land in `tests/<Layer>.Tests/StrykerOutput/`
+- **Thresholds — Domain**: high 95 / low 90 / break 85
+- **Excluded from mutation** — files with no logic worth mutating:
+  - `**/AssemblyInfo.cs` — source generator attribute
+  - `**/*Id.cs` — `[StronglyTypedId]` empty partial structs (generated logic)
+  - SmartEnum/SmartFlagEnum declaration files (pure lookup tables, private constructors delegate to base): review new files as they are added to decide whether to exclude them using the same criteria
+- `ignore-mutations`: `string` (Linq is intentionally kept — LINQ operator mutations in domain logic are high-signal)
+- `ignore-methods`: `ArgumentNullException.ThrowIfNull`, `ArgumentException.ThrowIfNullOrEmpty`, `Guard.*`, `Log.*`, `Logger.*`
+- **High-value mutation targets**: aggregates with business logic, value objects with validation, `DistanceCalculator`, `SmartFlagEnumJsonConverter`
+- A mutation is **killed** when at least one test *fails* on the mutated code
+- **"Not covered"** → needs a new test exercising the code path
+- **"Covered, survived"** → assertions aren't specific enough; sharpen them
+
 #### .NET Testing Requirements
 
 - All tests need `[UnitTest]` or `[IntegrationTest]` trait
@@ -101,8 +119,9 @@ Before ending a session where significant discoveries were made, consider whethe
 - **Integration tests**: `dotnet test --filter "Category=Integration"`
 - **Specific component**: `dotnet test --filter "Component=Tournaments"`
 - **E2E tests**: `npm run test:e2e`
-- **Mutation tests (full run + summary)**: `npm run mutation:ai`
-- **Mutation report for one file**: `npm run mutation:ai:file -- <FileName>` (e.g. `-- NavMenu`)
+- **JS mutation tests (full run + summary)**: `npm run mutation:ai`
+- **JS mutation report for one file**: `npm run mutation:ai:file -- <FileName>` (e.g. `-- NavMenu`)
+- **.NET mutation tests — Domain**: `cd tests/Neba.Domain.Tests && dotnet stryker`
 - **CI status**: `gh run list --limit 5`
 - **CI failure details**: `gh run view <run-id> --log-failed`
 

@@ -1,0 +1,28 @@
+{
+  "stryker-config": {
+    "project": "Neba.Domain.csproj",
+    "reporters": ["dashboard", "html", "json"],
+    "dashboard": {
+      "project": "github.com/bowlneba/neba-website",
+      "module": "domain"
+    },
+    "thresholds": {
+      "high": 95,
+      "low": 90,
+      "break": 85
+    },
+    "ignore-mutations": ["string"],
+    "ignore-methods": [
+      "ArgumentNullException.ThrowIfNull",
+      "ArgumentException.ThrowIfNullOrEmpty",
+      "Guard.*",
+      "Log.*",
+      "Logger.*"
+    ],
+    "mutate": [
+      "**/*.cs",
+      "!**/AssemblyInfo.cs",
+      "!**/*Id.cs"
+    ]
+  }
+}
