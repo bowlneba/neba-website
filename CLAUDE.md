@@ -75,7 +75,7 @@ Before ending a session where significant discoveries were made, consider whethe
 | Application    | 95   | 90  | 85    |
 | Infrastructure | 60   | 40  | 0     |
 | API            | 80   | 60  | 75    |
-| Blazor         | 80   | 60  | 70    |
+| Blazor         | 85   | 70  | 65    |
 
 - A mutation is **killed** when at least one test *fails* on the mutated code
 - **"Not covered"** → needs a new test exercising the code path

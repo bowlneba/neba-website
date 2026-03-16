@@ -1,0 +1,35 @@
+{
+  "stryker-config": {
+    "project": "Neba.Website.Server.csproj",
+    "test-runner": "mtp",
+    "reporters": ["html", "json", "progress"],
+    "project-info": {
+      "name": "github.com/bowlneba/neba-website",
+      "module": "blazor"
+    },
+    "thresholds": {
+      "high": 85,
+      "low": 70,
+      "break": 65
+    },
+    "ignore-mutations": ["string", "Update", "Linq"],
+    "additional-timeout": 30000,
+    "ignore-methods": [
+      "ArgumentNullException.ThrowIfNull",
+      "ArgumentException.ThrowIfNullOrEmpty",
+      "Guard.*",
+      "Log.*",
+      "Logger.*",
+      "LogTocInitializationFailed"
+    ],
+    "mutate": [
+      "**/*.cs",
+      "!**/AssemblyInfo.cs",
+      "!**/Program.cs",
+      "!**/*Configuration.cs",
+      "!**/*Settings.cs",
+      "!**/*LogMessages.cs",
+      "!**/*TagNames.cs"
+    ]
+  }
+}
