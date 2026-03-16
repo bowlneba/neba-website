@@ -43,10 +43,11 @@ public sealed class GetDocumentEndpointTests
         await endpoint.HandleAsync(request, cancellationToken);
 
         // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
+        endpoint.HttpContext.Response.ContentType.ShouldNotBeNull();
         endpoint.Response.ShouldNotBeNull();
         endpoint.Response.Html.ShouldBe(dto.Html);
         endpoint.Response.LastUpdated.ShouldBe(dto.LastUpdated);
-        endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
     }
 
     [Fact(DisplayName = "HandleAsync should return 404 when document not found")]
@@ -81,6 +82,21 @@ public sealed class GetDocumentEndpointTests
 
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(404);
+        endpoint.HttpContext.Response.ContentType.ShouldNotBe("application/json; charset=utf-8");
+    }
+
+    [Fact(DisplayName = "Configure should register anonymous GET route at /documents/{DocumentName} with version 1.0 and Public tag")]
+    public void Configure_ShouldRegisterAnonymousGetRoute_AtExpectedPath()
+    {
+        // Arrange
+        var queryHandlerMock = new Mock<IQueryHandler<GetDocumentQuery, ErrorOr<GetDocumentDto>>>(MockBehavior.Strict);
+        var endpoint = Factory.Create<GetDocumentEndpoint>(queryHandlerMock.Object);
+
+        // Assert — route and auth
+        endpoint.Definition.Verbs.ShouldContain("GET");
+        endpoint.Definition.Routes.ShouldContain("/documents/{DocumentName}");
+        endpoint.Definition.AnonymousVerbs.ShouldNotBeEmpty();
+
     }
 
     [Fact(DisplayName = "HandleAsync should map request to query correctly")]

@@ -141,6 +141,7 @@ Before ending a session where significant discoveries were made, consider whethe
 - **JS mutation report for one file**: `npm run mutation:ai:file -- <FileName>` (e.g. `-- NavMenu`)
 - **.NET mutation tests — Domain**: `cd tests/Neba.Domain.Tests && dotnet stryker`
 - **.NET mutation tests — Application**: `cd tests/Neba.Application.Tests && dotnet stryker`
+- **.NET mutation tests — API**: `cd tests/Neba.Api.Tests && dotnet stryker`
 - **.NET mutation summary**: `npm run mutation:ai:dotnet -- Domain`
 - **.NET mutation detail for one file**: `npm run mutation:ai:dotnet -- Domain <FileName>` (e.g. `-- Domain LaneRange`)
 - **CI status**: `gh run list --limit 5`
@@ -152,6 +153,18 @@ Before ending a session where significant discoveries were made, consider whethe
 
 - **No `/api` prefix** — the API is served from `api.bowlneba.com`, so routes start directly with the resource (e.g. `/documents/{DocumentName}`, not `/api/documents/{DocumentName}`)
 - **No version in path** — API versioning is handled via request headers, not URL segments (no `/v1/`, `/api/v1/`, etc.)
+
+### API Layer Mutation Testing — FastEndpoints Unit Test Limitations
+
+When writing Configure tests with `Factory.Create<TEndpoint>()`, two categories of mutations are permanently unkillable:
+
+1. **`Get(...)` calls** — FastEndpoints source generation pre-registers route templates at compile time via `SelfRegisteredExtensions.cs`. Even when `Get(...)` is removed from `Configure()`, `Definition.Routes` still contains the route template. Assert routes using `ShouldContain()`, but the route mutation will always survive.
+
+2. **`Description(...)` and `Options(...)` calls** — Both store `Action<RouteHandlerBuilder>` delegates that are only invoked during real app startup (not in `Factory.Create<>()` unit tests). `EndpointMetadata` is always empty in unit tests, so `TagsAttribute` lookups return 0 items. `endpoint.Definition.Version.Current` is always 0 when using `FastEndpoints.AspVersioning` (not direct FastEndpoints `Version()` call). Add `"Description"` and `"Options"` to `ignore-methods` in the API layer stryker-config.json to skip these unkillable mutations.
+
+3. **`return;` after `Send.NotFoundAsync()`** — FastEndpoints base class swallows exceptions thrown after the response has been set. Even if `result.Value` throws (ErrorOr v2), the 404 status remains and assertions pass. This mutation is unkillable in unit tests.
+
+**Practical limit**: The API layer stryker break threshold is 75%. With `"Description"` and `"Options"` in `ignore-methods`, the score achieves 75% (12/16). The 4 unkillable survivors are: 3 × `Get()` route mutations + 1 × `return;` guard.
 
 ### FusionCache Deserialization Recovery
 

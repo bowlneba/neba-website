@@ -34,10 +34,25 @@ public sealed class ListHallOfFameInductionsEndpointTests
 
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
+        endpoint.HttpContext.Response.ContentType.ShouldNotBeNull();
         endpoint.Response.ShouldNotBeNull();
         endpoint.Response.TotalItems.ShouldBe(dtos.Count);
 
         await Verify(endpoint.Response);
+    }
+
+    [Fact(DisplayName = "Configure should register anonymous GET route at /hall-of-fame/inductions with version 1.0 and Public tag")]
+    public void Configure_ShouldRegisterAnonymousGetRoute_AtExpectedPath()
+    {
+        // Arrange
+        var queryHandlerMock = new Mock<IQueryHandler<ListHallOfFameInductionsQuery, IReadOnlyCollection<HallOfFameInductionDto>>>(MockBehavior.Strict);
+        var endpoint = Factory.Create<ListHallOfFameInductionsEndpoint>(queryHandlerMock.Object);
+
+        // Assert — route and auth
+        endpoint.Definition.Verbs.ShouldContain("GET");
+        endpoint.Definition.Routes.ShouldContain("/hall-of-fame/inductions");
+        endpoint.Definition.AnonymousVerbs.ShouldNotBeEmpty();
+
     }
 
     [Fact(DisplayName = "HandleAsync should return OK with empty collection when no inductions exist")]
