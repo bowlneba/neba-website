@@ -54,4 +54,20 @@ public sealed class MapBoundsTests
 
         bounds.Contains(43.0, -72.0).ShouldBeTrue();
     }
+
+    [Fact(DisplayName = "Contains returns true when latitude is exactly on the south boundary")]
+    public void Contains_ShouldReturnTrue_WhenLatitudeIsExactlyOnSouthBoundary()
+    {
+        var bounds = new MapBounds(North: 43.0, South: 42.0, East: -70.0, West: -72.0);
+
+        bounds.Contains(42.0, -71.0).ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "Contains returns true when longitude is exactly on the east boundary")]
+    public void Contains_ShouldReturnTrue_WhenLongitudeIsExactlyOnEastBoundary()
+    {
+        var bounds = new MapBounds(North: 43.0, South: 42.0, East: -70.0, West: -72.0);
+
+        bounds.Contains(42.5, -70.0).ShouldBeTrue();
+    }
 }

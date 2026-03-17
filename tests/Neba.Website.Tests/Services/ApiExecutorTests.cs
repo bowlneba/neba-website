@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Globalization;
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -5,6 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Services;
+using Neba.Website.Server.Telemetry.Metrics;
 
 using Refit;
 
@@ -411,6 +414,214 @@ public sealed class ApiExecutorTests
         _stopwatchProviderMock.Verify(s => s.GetElapsedTime(startTimestamp), Times.Once);
     }
 
+    [Fact(DisplayName = "Should set activity tags, Ok status, and record call and success metrics on success")]
+    public async Task ExecuteAsync_ShouldSetActivityTagsAndRecordMetrics_OnSuccess()
+    {
+        // Arrange — unique apiName so the activity can be identified across parallel tests
+        var apiName = $"TestApi_{Guid.NewGuid():N}";
+        const string operationName = "GetData";
+        const long startTimestamp = 2000;
+        var duration = TimeSpan.FromMilliseconds(50);
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var capturedActivities = new List<Activity>();
+        using var activityListener = CreateActivityListener(capturedActivities);
+        var longs = new List<(string Name, long Value)>();
+        var doubles = new List<(string Name, double Value)>();
+        using var meterListener = CreateMeterListener(longs, doubles);
+
+        var responseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
+        responseMock.Setup(r => r.IsSuccessStatusCode).Returns(true);
+        responseMock.Setup(r => r.Content).Returns("data");
+        responseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(duration);
+
+        // Act
+        await _executor.ExecuteAsync(apiName, operationName, _ => Task.FromResult(responseMock.Object), cancellationToken);
+
+        // Assert — activity tags
+        var activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
+        activity.GetTagItem("code.function").ShouldBe(operationName);
+        activity.GetTagItem("code.namespace").ShouldBe(apiName);
+        activity.GetTagItem(ApiMetricTagNames.ApiName).ShouldBe(apiName);
+        activity.GetTagItem(ApiMetricTagNames.OperationName).ShouldBe(operationName);
+        activity.GetTagItem("http.status_code").ShouldBe(200);
+        activity.Status.ShouldBe(ActivityStatusCode.Ok);
+
+        // Assert — metrics
+        longs.ShouldContain(m => m.Name == "neba.website.api.calls" && m.Value == 1);
+        doubles.ShouldContain(m => m.Name == "neba.website.api.duration");
+    }
+
+    [Fact(DisplayName = "Should set error activity tags and record error metric on null content")]
+    public async Task ExecuteAsync_ShouldSetErrorTagsAndRecordMetric_OnNullContent()
+    {
+        // Arrange
+        var apiName = $"TestApi_{Guid.NewGuid():N}";
+        const string operationName = "GetData";
+        const long startTimestamp = 2000;
+        var duration = TimeSpan.FromMilliseconds(50);
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var capturedActivities = new List<Activity>();
+        using var activityListener = CreateActivityListener(capturedActivities);
+        var longs = new List<(string Name, long Value)>();
+        var doubles = new List<(string Name, double Value)>();
+        using var meterListener = CreateMeterListener(longs, doubles);
+
+        var responseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
+        responseMock.Setup(r => r.IsSuccessStatusCode).Returns(true);
+        responseMock.Setup(r => r.Content).Returns((string?)null);
+        responseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(duration);
+
+        // Act
+        await _executor.ExecuteAsync(apiName, operationName, _ => Task.FromResult(responseMock.Object), cancellationToken);
+
+        // Assert — activity tags
+        var activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
+        activity.GetTagItem("error.type").ShouldBe("DeserializationFailed");
+        activity.GetTagItem("error.message").ShouldNotBeNull();
+        activity.Status.ShouldBe(ActivityStatusCode.Error);
+
+        // Assert — metric
+        longs.ShouldContain(m => m.Name == "neba.website.api.errors" && m.Value == 1);
+    }
+
+    [Fact(DisplayName = "Should record error metric on HTTP error response")]
+    public async Task ExecuteAsync_ShouldRecordErrorMetric_OnHttpError()
+    {
+        // Arrange
+        const string apiName = "TestApi";
+        const string operationName = "GetData";
+        const long startTimestamp = 2000;
+        var duration = TimeSpan.FromMilliseconds(100);
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var longs = new List<(string Name, long Value)>();
+        var doubles = new List<(string Name, double Value)>();
+        using var meterListener = CreateMeterListener(longs, doubles);
+
+        var responseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
+        responseMock.Setup(r => r.IsSuccessStatusCode).Returns(false);
+        responseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.BadRequest);
+        responseMock.Setup(r => r.Content).Returns((string?)null);
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(duration);
+
+        // Act
+        await _executor.ExecuteAsync(apiName, operationName, _ => Task.FromResult(responseMock.Object), cancellationToken);
+
+        // Assert — metric
+        longs.ShouldContain(m => m.Name == "neba.website.api.errors" && m.Value == 1);
+    }
+
+    [Fact(DisplayName = "Should set error activity status and record error metric on cancellation")]
+    public async Task ExecuteAsync_ShouldSetErrorStatusAndRecordMetric_OnCancellation()
+    {
+        // Arrange
+        var apiName = $"TestApi_{Guid.NewGuid():N}";
+        const string operationName = "GetData";
+        const long startTimestamp = 2000;
+        var duration = TimeSpan.FromMilliseconds(10);
+
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+        var cancellationToken = cts.Token;
+
+        var capturedActivities = new List<Activity>();
+        using var activityListener = CreateActivityListener(capturedActivities);
+        var longs = new List<(string Name, long Value)>();
+        var doubles = new List<(string Name, double Value)>();
+        using var meterListener = CreateMeterListener(longs, doubles);
+
+        var taskCanceledException = new TaskCanceledException("Operation canceled", null, cancellationToken);
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(duration);
+
+        // Act
+        await _executor.ExecuteAsync<string>(apiName, operationName, _ => throw taskCanceledException, cancellationToken);
+
+        // Assert — activity status
+        var activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
+        activity.Status.ShouldBe(ActivityStatusCode.Error);
+
+        // Assert — metric
+        longs.ShouldContain(m => m.Name == "neba.website.api.errors" && m.Value == 1);
+    }
+
+    [Fact(DisplayName = "Should set error activity tags including http status code tag on ApiException")]
+    public async Task ExecuteAsync_ShouldSetErrorTagsIncludingHttpStatusCode_OnApiException()
+    {
+        // Arrange
+        var apiName = $"TestApi_{Guid.NewGuid():N}";
+        const string operationName = "GetData";
+        const long startTimestamp = 2000;
+        var duration = TimeSpan.FromMilliseconds(75);
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var capturedActivities = new List<Activity>();
+        using var activityListener = CreateActivityListener(capturedActivities);
+        var longs = new List<(string Name, long Value)>();
+        var doubles = new List<(string Name, double Value)>();
+        using var meterListener = CreateMeterListener(longs, doubles);
+
+        using var requestMessage = new HttpRequestMessage(HttpMethod.Get, "https://api.example.com/data");
+        using var responseMessage = new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError)
+        {
+            Content = new StringContent("Error")
+        };
+        var apiException = await ApiException.Create(requestMessage, HttpMethod.Get, responseMessage, new RefitSettings());
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(duration);
+
+        // Act
+        await _executor.ExecuteAsync<string>(apiName, operationName, _ => throw apiException, cancellationToken);
+
+        // Assert — activity tags
+        var activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
+        activity.GetTagItem("error.type").ShouldNotBeNull();
+        activity.GetTagItem("error.message").ShouldNotBeNull();
+        activity.Status.ShouldBe(ActivityStatusCode.Error);
+        activity.GetTagItem(ApiMetricTagNames.HttpStatusCode).ShouldBe(500);
+
+        // Assert — metric
+        longs.ShouldContain(m => m.Name == "neba.website.api.errors" && m.Value == 1);
+    }
+
+    [Fact(DisplayName = "Should not set http status code activity tag on exception without status code")]
+    public async Task ExecuteAsync_ShouldNotSetHttpStatusCodeTag_OnExceptionWithoutStatusCode()
+    {
+        // Arrange
+        var apiName = $"TestApi_{Guid.NewGuid():N}";
+        const string operationName = "GetData";
+        const long startTimestamp = 2000;
+        var duration = TimeSpan.FromMilliseconds(120);
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var capturedActivities = new List<Activity>();
+        using var activityListener = CreateActivityListener(capturedActivities);
+
+        var httpException = new HttpRequestException("Connection timeout");
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(duration);
+
+        // Act
+        await _executor.ExecuteAsync<string>(apiName, operationName, _ => throw httpException, cancellationToken);
+
+        // Assert
+        var activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
+        activity.GetTagItem(ApiMetricTagNames.HttpStatusCode).ShouldBeNull();
+    }
+
     [Fact(DisplayName = "Should use default cancellation token when not provided")]
     public async Task ExecuteAsync_ShouldUseDefaultCancellationToken_WhenNotProvided()
     {
@@ -441,5 +652,35 @@ public sealed class ApiExecutorTests
 
         // Assert
         result.IsError.ShouldBeFalse();
+    }
+
+    private static ActivityListener CreateActivityListener(List<Activity> captured)
+    {
+        var listener = new ActivityListener
+        {
+            ShouldListenTo = source => source.Name == "Neba.Website.Server",
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+            ActivityStopped = a => captured.Add(a),
+        };
+        ActivitySource.AddActivityListener(listener);
+        return listener;
+    }
+
+    private static MeterListener CreateMeterListener(
+        List<(string Name, long Value)> longs,
+        List<(string Name, double Value)> doubles)
+    {
+        var listener = new MeterListener();
+        listener.InstrumentPublished = (instrument, l) =>
+        {
+            if (instrument.Meter.Name == "Neba.Website.Api")
+                l.EnableMeasurementEvents(instrument);
+        };
+        listener.SetMeasurementEventCallback<long>((instrument, value, _, _) =>
+            longs.Add((instrument.Name, value)));
+        listener.SetMeasurementEventCallback<double>((instrument, value, _, _) =>
+            doubles.Add((instrument.Name, value)));
+        listener.Start();
+        return listener;
     }
 }
