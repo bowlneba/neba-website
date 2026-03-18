@@ -85,7 +85,7 @@ public sealed class GetDocumentEndpointTests
         endpoint.HttpContext.Response.ContentType.ShouldNotBe("application/json; charset=utf-8");
     }
 
-    [Fact(DisplayName = "Configure should register anonymous GET route at /documents/{DocumentName} with version 1.0 and Public tag")]
+    [Fact(DisplayName = "Configure should register anonymous GET route at /documents/{DocumentName}")]
     public void Configure_ShouldRegisterAnonymousGetRoute_AtExpectedPath()
     {
         // Arrange

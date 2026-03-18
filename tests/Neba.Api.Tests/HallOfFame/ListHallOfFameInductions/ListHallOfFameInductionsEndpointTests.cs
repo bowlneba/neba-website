@@ -41,7 +41,7 @@ public sealed class ListHallOfFameInductionsEndpointTests
         await Verify(endpoint.Response);
     }
 
-    [Fact(DisplayName = "Configure should register anonymous GET route at /hall-of-fame/inductions with version 1.0 and Public tag")]
+    [Fact(DisplayName = "Configure should register anonymous GET route at /hall-of-fame/inductions")]
     public void Configure_ShouldRegisterAnonymousGetRoute_AtExpectedPath()
     {
         // Arrange

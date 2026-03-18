@@ -40,7 +40,7 @@ public sealed class ListBowlingCentersEndpointTests
         await Verify(endpoint.Response);
     }
 
-    [Fact(DisplayName = "Configure should register anonymous GET route at /bowling-centers with version 1.0 and Public tag")]
+    [Fact(DisplayName = "Configure should register anonymous GET route at /bowling-centers")]
     public void Configure_ShouldRegisterAnonymousGetRoute_AtExpectedPath()
     {
         // Arrange
