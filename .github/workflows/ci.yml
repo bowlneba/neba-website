@@ -244,7 +244,7 @@ jobs:
           retention-days: 7
 
   mutation-js:
-    name: Mutation Testing (JavaScript)
+    name: Mutation Testing
     needs: jest
     if: ${{ !cancelled() && !failure() }}
     uses: ./.github/workflows/mutation-testing.yml
