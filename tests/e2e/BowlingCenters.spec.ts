@@ -211,8 +211,8 @@ test.describe('Bowling Centers page', () => {
     await page.locator('button:has-text("123 Main St, Boston, MA 02101")').click();
 
     // RouteData.FormattedDistance = "12.5 mi", FormattedTravelTime = "24 min"
-    await expect(page.locator('text=12.5 mi')).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('text=24 min')).toBeVisible();
+    await expect(page.getByText('12.5 mi', { exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('24 min', { exact: true })).toBeVisible();
   });
 
   test('shows turn-by-turn directions after expanding the directions panel', async ({ page }) => {
