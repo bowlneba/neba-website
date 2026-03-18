@@ -69,13 +69,13 @@ Before ending a session where significant discoveries were made, consider whethe
 
 **Thresholds by layer**:
 
-| Layer          | high | low | break |
-|----------------|------|-----|-------|
-| Domain         | 95   | 90  | 85    |
-| Application    | 95   | 90  | 85    |
-| Infrastructure | 60   | 40  | 0     |
-| API            | 80   | 60  | 75    |
-| Blazor         | 85   | 70  | 65    |
+| Layer          | high | low | break | Notes                                                                                  |
+|----------------|------|-----|-------|----------------------------------------------------------------------------------------|
+| Domain         | 95   | 90  | 85    |                                                                                        |
+| Application    | 95   | 90  | 85    |                                                                                        |
+| Infrastructure | 75   | 65  | 0     | Local only — Testcontainers integration tests crash the MTP runner; not wired into CI |
+| API            | 80   | 60  | 75    |                                                                                        |
+| Blazor         | 85   | 70  | 65    |                                                                                        |
 
 - A mutation is **killed** when at least one test *fails* on the mutated code
 - **"Not covered"** → needs a new test exercising the code path
@@ -141,6 +141,7 @@ Before ending a session where significant discoveries were made, consider whethe
 - **JS mutation report for one file**: `npm run mutation:ai:file -- <FileName>` (e.g. `-- NavMenu`)
 - **.NET mutation tests — Domain**: `cd tests/Neba.Domain.Tests && dotnet stryker`
 - **.NET mutation tests — Application**: `cd tests/Neba.Application.Tests && dotnet stryker`
+- **.NET mutation tests — Infrastructure**: `cd tests/Neba.Infrastructure.Tests && dotnet stryker`
 - **.NET mutation tests — API**: `cd tests/Neba.Api.Tests && dotnet stryker`
 - **.NET mutation summary**: `npm run mutation:ai:dotnet -- Domain`
 - **.NET mutation detail for one file**: `npm run mutation:ai:dotnet -- Domain <FileName>` (e.g. `-- Domain LaneRange`)
