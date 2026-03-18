@@ -3,9 +3,9 @@
 //   npm run mutation:ai              → summary table of surviving mutations by file
 //   npm run mutation:ai -- NavMenu   → full LLM-ready output for files matching "NavMenu"
 
-import { readFileSync, existsSync, statSync } from 'fs';
-import { resolve, relative } from 'path';
-import { fileURLToPath } from 'url';
+import { readFileSync, existsSync, statSync } from 'node:fs';
+import { resolve, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const REPORT_PATH = resolve(ROOT, 'reports/mutation/mutation.json');
@@ -74,28 +74,16 @@ const scoreLabel = score === null ? 'N/A' : `${score}%`;
 
 const out = [];
 
-out.push('# Surviving Mutations Report');
-out.push('');
-out.push(`**Score**: ${scoreLabel}  |  **Survived**: ${grandSurvived} / ${grandTotal}  |  **Report**: ${reportMtime.toLocaleString()}`);
-out.push('');
+out.push('# Surviving Mutations Report', '', `**Score**: ${scoreLabel}  |  **Survived**: ${grandSurvived} / ${grandTotal}  |  **Report**: ${reportMtime.toLocaleString()}`, '');
 
 if (!fileFilter) {
   // Summary mode — list files with counts
-  out.push('## Files with surviving mutations');
-  out.push('');
-  out.push('| File | Survived |');
-  out.push('|---|---:|');
+  out.push('## Files with surviving mutations', '', '| File | Survived |', '|---|---:|');
   for (const { relPath, mutants } of allFiles) {
     const name = relPath.split('/').pop();
     out.push(`| \`${name}\` | ${mutants.length} |`);
   }
-  out.push('');
-  out.push('**Tip**: Drill into a single file:');
-  out.push('```');
-  out.push('npm run mutation:ai -- NavMenu');
-  out.push('npm run mutation:ai -- NebaDocument');
-  out.push('npm run mutation:ai -- telemetry');
-  out.push('```');
+  out.push('', '**Tip**: Drill into a single file:', '```', 'npm run mutation:ai -- NavMenu', 'npm run mutation:ai -- NebaDocument', 'npm run mutation:ai -- telemetry', '```');
   console.log(out.join('\n'));
   process.exit(0);
 }
@@ -108,21 +96,13 @@ if (matched.length === 0) {
   process.exit(1);
 }
 
-out.push('> **Task**: Add or update tests in the test file to kill each surviving mutation.');
-out.push('> A mutation is **killed** when at least one test *fails* on the mutated code.');
-out.push('> **"not covered"** → needs a new test that exercises this code path.');
-out.push('> **"covered, survived"** → needs a sharper assertion on the existing test path.');
-out.push('');
-out.push('---');
-out.push('');
+out.push('> **Task**: Add or update tests in the test file to kill each surviving mutation.', '> A mutation is **killed** when at least one test *fails* on the mutated code.', '> **"not covered"** → needs a new test that exercises this code path.', '> **"covered, survived"** → needs a sharper assertion on the existing test path.', '', '---', '');
 
 for (const { relPath, source, mutants } of matched) {
   const testFile = relPath.replace(/\.js$/, '.tests.js');
   const sorted = [...mutants].sort((a, b) => a.location.start.line - b.location.start.line);
 
-  out.push(`## \`${relPath}\``);
-  out.push(`**Test file**: \`${testFile}\`  |  **Survived**: ${mutants.length}`);
-  out.push('');
+  out.push(`## \`${relPath}\``, `**Test file**: \`${testFile}\`  |  **Survived**: ${mutants.length}`, '');
 
   sorted.forEach((m, idx) => {
     const { start, end } = m.location;
@@ -132,19 +112,10 @@ for (const { relPath, source, mutants } of matched) {
       ? `covered by ${m.coveredBy.length} test(s) — needs sharper assertion`
       : 'not covered — needs new test path';
 
-    out.push(`### ${idx + 1}. ${m.mutatorName} — ${lineLabel}`);
-    out.push(`- **Original**: \`${original}\``);
-    out.push(`- **Mutant**:   \`${m.replacement}\``);
-    out.push(`- **Coverage**: ${covered}`);
-    out.push('');
-    out.push('```js');
-    out.push(contextBlock(source, m.location));
-    out.push('```');
-    out.push('');
+    out.push(`### ${idx + 1}. ${m.mutatorName} — ${lineLabel}`, `- **Original**: \`${original}\``, `- **Mutant**:   \`${m.replacement}\``, `- **Coverage**: ${covered}`, '', '```js', contextBlock(source, m.location), '```', '');
   });
 
-  out.push('---');
-  out.push('');
+  out.push('---', '');
 }
 
 console.log(out.join('\n'));
