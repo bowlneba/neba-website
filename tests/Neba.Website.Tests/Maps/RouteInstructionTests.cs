@@ -44,7 +44,7 @@ public sealed class RouteInstructionTests
     [Fact(DisplayName = "FormattedDistance returns miles when distance is exactly 0.1 miles")]
     public void FormattedDistance_ShouldReturnMiles_WhenDistanceIsExactly0Point1Miles()
     {
-        // 0.1 miles = 160.9344 meters; boundary test: < 0.1 returns miles, <= 0.1 would return feet
+        // 0.1 miles = 160.9344 meters; boundary test: >= 0.1 returns miles, < 0.1 returns feet
         var instruction = new RouteInstruction { DistanceMeters = 160.9344 };
 
         instruction.FormattedDistance.ShouldBe("0.1 mi");
