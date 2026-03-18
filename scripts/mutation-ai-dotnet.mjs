@@ -86,7 +86,10 @@ for (const [absPath, fileData] of Object.entries(report.files)) {
 
 allFiles.sort((a, b) => b.mutants.length - a.mutants.length);
 
-const score = ((grandTotal - grandSurvived) / grandTotal * 100).toFixed(2);
+const score = grandTotal === 0
+  ? null
+  : ((grandTotal - grandSurvived) / grandTotal * 100).toFixed(2);
+const scoreLabel = score === null ? 'N/A' : `${score}%`;
 
 // ── output ────────────────────────────────────────────────────────────────────
 
@@ -94,7 +97,7 @@ const out = [];
 
 out.push('# Surviving Mutations Report');
 out.push('');
-out.push(`**Layer**: ${layer}  |  **Score**: ${score}%  |  **Survived**: ${grandSurvived} / ${grandTotal}  |  **Report**: ${reportMtime.toLocaleString()}`);
+out.push(`**Layer**: ${layer}  |  **Score**: ${scoreLabel}  |  **Survived**: ${grandSurvived} / ${grandTotal}  |  **Report**: ${reportMtime.toLocaleString()}`);
 out.push('');
 
 if (!fileFilter) {
