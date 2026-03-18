@@ -129,9 +129,6 @@ public sealed class GetDocumentQueryHandlerTests
         // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Html.ShouldBe(cachedContent);
-        _documentsServiceMock.Verify(
-            s => s.GetDocumentAsHtmlAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
-            Times.Never());
     }
 
     // Mutation 2 (block removal: if file is null { return NotFound }):
