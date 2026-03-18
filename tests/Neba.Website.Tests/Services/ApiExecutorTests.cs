@@ -426,8 +426,8 @@ public sealed class ApiExecutorTests
 
         var capturedActivities = new List<Activity>();
         using var activityListener = CreateActivityListener(capturedActivities);
-        var longs = new List<(string Name, long Value)>();
-        var doubles = new List<(string Name, double Value)>();
+        var longs = new List<(string Name, long Value, IReadOnlyDictionary<string, object?> Tags)>();
+        var doubles = new List<(string Name, double Value, IReadOnlyDictionary<string, object?> Tags)>();
         using var meterListener = CreateMeterListener(longs, doubles);
 
         var responseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
@@ -451,8 +451,16 @@ public sealed class ApiExecutorTests
         activity.Status.ShouldBe(ActivityStatusCode.Ok);
 
         // Assert — metrics
-        longs.ShouldContain(m => m.Name == "neba.website.api.calls" && m.Value == 1);
-        doubles.ShouldContain(m => m.Name == "neba.website.api.duration");
+        longs.Any(m =>
+            m.Name == "neba.website.api.calls" &&
+            m.Value == 1 &&
+            m.Tags[ApiMetricTagNames.ApiName]?.ToString() == apiName &&
+            m.Tags[ApiMetricTagNames.OperationName]?.ToString() == operationName).ShouldBeTrue();
+        doubles.Any(m =>
+            m.Name == "neba.website.api.duration" &&
+            m.Tags[ApiMetricTagNames.ApiName]?.ToString() == apiName &&
+            m.Tags[ApiMetricTagNames.OperationName]?.ToString() == operationName &&
+            m.Tags[ApiMetricTagNames.ResultStatus]?.ToString() == "success").ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Should set error activity tags and record error metric on null content")]
@@ -467,8 +475,8 @@ public sealed class ApiExecutorTests
 
         var capturedActivities = new List<Activity>();
         using var activityListener = CreateActivityListener(capturedActivities);
-        var longs = new List<(string Name, long Value)>();
-        var doubles = new List<(string Name, double Value)>();
+        var longs = new List<(string Name, long Value, IReadOnlyDictionary<string, object?> Tags)>();
+        var doubles = new List<(string Name, double Value, IReadOnlyDictionary<string, object?> Tags)>();
         using var meterListener = CreateMeterListener(longs, doubles);
 
         var responseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
@@ -489,21 +497,25 @@ public sealed class ApiExecutorTests
         activity.Status.ShouldBe(ActivityStatusCode.Error);
 
         // Assert — metric
-        longs.ShouldContain(m => m.Name == "neba.website.api.errors" && m.Value == 1);
+        longs.Any(m =>
+            m.Name == "neba.website.api.errors" &&
+            m.Value == 1 &&
+            m.Tags[ApiMetricTagNames.ApiName]?.ToString() == apiName &&
+            m.Tags[ApiMetricTagNames.OperationName]?.ToString() == operationName).ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Should record error metric on HTTP error response")]
     public async Task ExecuteAsync_ShouldRecordErrorMetric_OnHttpError()
     {
         // Arrange
-        const string apiName = "TestApi";
+        var apiName = $"TestApi_{Guid.NewGuid():N}";
         const string operationName = "GetData";
         const long startTimestamp = 2000;
         var duration = TimeSpan.FromMilliseconds(100);
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var longs = new List<(string Name, long Value)>();
-        var doubles = new List<(string Name, double Value)>();
+        var longs = new List<(string Name, long Value, IReadOnlyDictionary<string, object?> Tags)>();
+        var doubles = new List<(string Name, double Value, IReadOnlyDictionary<string, object?> Tags)>();
         using var meterListener = CreateMeterListener(longs, doubles);
 
         var responseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
@@ -518,7 +530,11 @@ public sealed class ApiExecutorTests
         await _executor.ExecuteAsync(apiName, operationName, _ => Task.FromResult(responseMock.Object), cancellationToken);
 
         // Assert — metric
-        longs.ShouldContain(m => m.Name == "neba.website.api.errors" && m.Value == 1);
+        longs.Any(m =>
+            m.Name == "neba.website.api.errors" &&
+            m.Value == 1 &&
+            m.Tags[ApiMetricTagNames.ApiName]?.ToString() == apiName &&
+            m.Tags[ApiMetricTagNames.OperationName]?.ToString() == operationName).ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Should set error activity status and record error metric on cancellation")]
@@ -536,8 +552,8 @@ public sealed class ApiExecutorTests
 
         var capturedActivities = new List<Activity>();
         using var activityListener = CreateActivityListener(capturedActivities);
-        var longs = new List<(string Name, long Value)>();
-        var doubles = new List<(string Name, double Value)>();
+        var longs = new List<(string Name, long Value, IReadOnlyDictionary<string, object?> Tags)>();
+        var doubles = new List<(string Name, double Value, IReadOnlyDictionary<string, object?> Tags)>();
         using var meterListener = CreateMeterListener(longs, doubles);
 
         var taskCanceledException = new TaskCanceledException("Operation canceled", null, cancellationToken);
@@ -553,7 +569,11 @@ public sealed class ApiExecutorTests
         activity.Status.ShouldBe(ActivityStatusCode.Error);
 
         // Assert — metric
-        longs.ShouldContain(m => m.Name == "neba.website.api.errors" && m.Value == 1);
+        longs.Any(m =>
+            m.Name == "neba.website.api.errors" &&
+            m.Value == 1 &&
+            m.Tags[ApiMetricTagNames.ApiName]?.ToString() == apiName &&
+            m.Tags[ApiMetricTagNames.OperationName]?.ToString() == operationName).ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Should set error activity tags including http status code tag on ApiException")]
@@ -568,8 +588,8 @@ public sealed class ApiExecutorTests
 
         var capturedActivities = new List<Activity>();
         using var activityListener = CreateActivityListener(capturedActivities);
-        var longs = new List<(string Name, long Value)>();
-        var doubles = new List<(string Name, double Value)>();
+        var longs = new List<(string Name, long Value, IReadOnlyDictionary<string, object?> Tags)>();
+        var doubles = new List<(string Name, double Value, IReadOnlyDictionary<string, object?> Tags)>();
         using var meterListener = CreateMeterListener(longs, doubles);
 
         using var requestMessage = new HttpRequestMessage(HttpMethod.Get, "https://api.example.com/data");
@@ -593,7 +613,11 @@ public sealed class ApiExecutorTests
         activity.GetTagItem(ApiMetricTagNames.HttpStatusCode).ShouldBe(500);
 
         // Assert — metric
-        longs.ShouldContain(m => m.Name == "neba.website.api.errors" && m.Value == 1);
+        longs.Any(m =>
+            m.Name == "neba.website.api.errors" &&
+            m.Value == 1 &&
+            m.Tags[ApiMetricTagNames.ApiName]?.ToString() == apiName &&
+            m.Tags[ApiMetricTagNames.OperationName]?.ToString() == operationName).ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Should not set http status code activity tag on exception without status code")]
@@ -667,8 +691,8 @@ public sealed class ApiExecutorTests
     }
 
     private static MeterListener CreateMeterListener(
-        List<(string Name, long Value)> longs,
-        List<(string Name, double Value)> doubles)
+        List<(string Name, long Value, IReadOnlyDictionary<string, object?> Tags)> longs,
+        List<(string Name, double Value, IReadOnlyDictionary<string, object?> Tags)> doubles)
     {
         var listener = new MeterListener();
         listener.InstrumentPublished = (instrument, l) =>
@@ -676,10 +700,10 @@ public sealed class ApiExecutorTests
             if (instrument.Meter.Name == "Neba.Website.Api")
                 l.EnableMeasurementEvents(instrument);
         };
-        listener.SetMeasurementEventCallback<long>((instrument, value, _, _) =>
-            longs.Add((instrument.Name, value)));
-        listener.SetMeasurementEventCallback<double>((instrument, value, _, _) =>
-            doubles.Add((instrument.Name, value)));
+        listener.SetMeasurementEventCallback<long>((instrument, value, tags, _) =>
+            longs.Add((instrument.Name, value, tags.ToArray().ToDictionary(t => t.Key, t => t.Value))));
+        listener.SetMeasurementEventCallback<double>((instrument, value, tags, _) =>
+            doubles.Add((instrument.Name, value, tags.ToArray().ToDictionary(t => t.Key, t => t.Value))));
         listener.Start();
         return listener;
     }
