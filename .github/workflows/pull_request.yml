@@ -42,6 +42,7 @@ jobs:
       is_pull_request: true
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      STRYKER_DASHBOARD_KEY: ${{ secrets.STRYKER_DASHBOARD_KEY }}
 
   detect-apphost-changes:
     name: Detect AppHost changes
