@@ -10,6 +10,8 @@
   "testRunner": "jest",
   "coverageAnalysis": "perTest",
   "ignoreStatic": true,
+  "timeoutFactor": 1.0,
+  "timeoutMS": 3000,
   "dashboard": {
     "project": "github.com/bowlneba/neba-website",
     "module": "website-js",
