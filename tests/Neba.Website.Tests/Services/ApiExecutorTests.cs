@@ -694,11 +694,13 @@ public sealed class ApiExecutorTests
         List<(string Name, long Value, IReadOnlyDictionary<string, object?> Tags)> longs,
         List<(string Name, double Value, IReadOnlyDictionary<string, object?> Tags)> doubles)
     {
-        var listener = new MeterListener();
-        listener.InstrumentPublished = (instrument, l) =>
+        var listener = new MeterListener
         {
-            if (instrument.Meter.Name == "Neba.Website.Api")
-                l.EnableMeasurementEvents(instrument);
+            InstrumentPublished = (instrument, l) =>
+            {
+                if (instrument.Meter.Name == "Neba.Website.Api")
+                    l.EnableMeasurementEvents(instrument);
+            }
         };
         listener.SetMeasurementEventCallback<long>((instrument, value, tags, _) =>
             longs.Add((instrument.Name, value, tags.ToArray().ToDictionary(t => t.Key, t => t.Value))));

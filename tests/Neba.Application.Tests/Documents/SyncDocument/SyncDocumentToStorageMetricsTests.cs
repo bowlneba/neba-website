@@ -105,20 +105,26 @@ public sealed class SyncDocumentToStorageMetricsTests
         List<(string Instrument, long Value, KeyValuePair<string, object?>[] Tags)>? longMeasurements = null,
         List<(string Instrument, double Value, KeyValuePair<string, object?>[] Tags)>? doubleMeasurements = null)
     {
-        var listener = new MeterListener();
-        listener.InstrumentPublished = (instrument, l) =>
+        var listener = new MeterListener
         {
-            if (instrument.Meter.Name == MeterName)
-                l.EnableMeasurementEvents(instrument);
+            InstrumentPublished = (instrument, l) =>
+            {
+                if (instrument.Meter.Name == MeterName)
+                    l.EnableMeasurementEvents(instrument);
+            }
         };
 
         if (longMeasurements is not null)
+        {
             listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
                 longMeasurements.Add((instrument.Name, measurement, tags.ToArray())));
+        }
 
         if (doubleMeasurements is not null)
+        {
             listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
                 doubleMeasurements.Add((instrument.Name, measurement, tags.ToArray())));
+        }
 
         listener.Start();
         return listener;
