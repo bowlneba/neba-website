@@ -1186,7 +1186,7 @@ describe('NebaMap', () => {
             guidance: { instructions: [] },
             legs: [{
               points: [
-                { longitude: NaN, latitude: 42 },
+                { longitude: Number.NaN, latitude: 42 },
                 { longitude: -71, latitude: 42 },
                 { longitude: -70, latitude: 43 },
               ],
