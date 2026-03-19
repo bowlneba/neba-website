@@ -222,7 +222,7 @@ test.describe('Bowling Centers page', () => {
     await page.fill('#address-input', '123 Main St, Boston');
     await page.locator('button:has-text("123 Main St, Boston, MA 02101")').click();
 
-    await expect(page.locator('text=12.5 mi')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('12.5 mi', { exact: true })).toBeVisible({ timeout: 10_000 });
 
     await page.locator('button:has-text("Turn-by-turn directions")').click();
 
