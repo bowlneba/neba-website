@@ -130,4 +130,42 @@ public sealed class BowlingCenterMappingExtensionsTests
 
         viewModel.Website.ShouldBeNull();
     }
+
+    [Fact(DisplayName = "Selects Work phone number for display when multiple types are present")]
+    public void ToViewModel_ShouldUseWorkPhoneNumber_WhenWorkAndHomePhonePresent()
+    {
+        var homePhone = PhoneNumberResponseFactory.Create(type: PhoneNumberType.Home, number: "15551110000");
+        var workPhone = PhoneNumberResponseFactory.Create(type: PhoneNumberType.Work, number: "15552220000");
+        var response = BowlingCenterSummaryResponseFactory.Create(phoneNumbers: [homePhone, workPhone]);
+
+        var viewModel = response.ToViewModel();
+
+        viewModel.PhoneDisplay.ShouldBe("(555) 222-0000");
+        viewModel.PhoneUri.ToString().ShouldBe("tel:15552220000");
+    }
+
+    [Fact(DisplayName = "Uses first available phone number for display when no Work phone is present")]
+    public void ToViewModel_ShouldUseFirstPhoneNumber_WhenNoWorkPhonePresent()
+    {
+        var homePhone = PhoneNumberResponseFactory.Create(type: PhoneNumberType.Home, number: "15551110000");
+        var mobilePhone = PhoneNumberResponseFactory.Create(type: PhoneNumberType.Mobile, number: "15553330000");
+        var response = BowlingCenterSummaryResponseFactory.Create(phoneNumbers: [homePhone, mobilePhone]);
+
+        var viewModel = response.ToViewModel();
+
+        viewModel.PhoneDisplay.ShouldBe("(555) 111-0000");
+        viewModel.PhoneUri.ToString().ShouldBe("tel:15551110000");
+    }
+
+    [Fact(DisplayName = "Maps website URI when scheme is http")]
+    public void ToViewModel_ShouldMapWebsite_WhenSchemeIsHttp()
+    {
+        var response = BowlingCenterSummaryResponseFactory.Create(
+            website: "http://www.example.com");
+
+        var viewModel = response.ToViewModel();
+
+        viewModel.Website.ShouldNotBeNull();
+        viewModel.Website.Scheme.ShouldBe("http");
+    }
 }

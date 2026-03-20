@@ -8,6 +8,12 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:mutation": "stryker run --incremental",
+    "test:mutation:local": "stryker run --reporters html,json,progress",
+    "mutation:ai": "stryker run --reporters html,json,progress && node scripts/mutation-ai.mjs",
+    "mutation:ai:file": "node scripts/mutation-ai.mjs",
+    "mutation:ai:dotnet": "node scripts/mutation-ai-dotnet.mjs",
+    "test:mutation:diff": "stryker run --incremental",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
@@ -17,11 +23,14 @@
     "@babel/core": "^7.24.0",
     "@babel/preset-env": "^7.24.0",
     "@playwright/test": "^1.58.2",
+    "@stryker-mutator/core": "^9.0.0",
+    "@stryker-mutator/jest-runner": "^9.0.0",
     "@testing-library/jest-dom": "^6.1.5",
     "babel-jest": "^29.7.0",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^30.2.0",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }

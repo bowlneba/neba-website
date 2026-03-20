@@ -171,6 +171,19 @@ public sealed class AddressTests
         result.FirstError.Code.ShouldBe("Address.InvalidPostalCode");
     }
 
+    [Fact(DisplayName = "Create includes the invalid postal code in error metadata for a US address")]
+    public void Create_US_ShouldIncludeInvalidPostalCode_InErrorMetadata()
+    {
+        // Act
+        var result = Address.Create("123 Main St", unit: null, "Hartford", UsState.Connecticut, "ABCDE");
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Metadata.ShouldNotBeNull();
+        result.FirstError.Metadata.ShouldContainKey("InvalidPostalCode");
+        result.FirstError.Metadata["InvalidPostalCode"].ShouldBe("ABCDE");
+    }
+
     [Fact(DisplayName = "Create throws ArgumentNullException when state is null for a US address")]
     public void Create_US_ShouldThrowArgumentNullException_WhenStateIsNull()
     {

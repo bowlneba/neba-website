@@ -167,14 +167,16 @@ describe('DirectionsModal', () => {
     });
 
     test('should return empty array when atlas is not loaded', async () => {
-      // Arrange
+      // Arrange — also set auth config so the code would reach fetch if the atlas check were bypassed
       delete globalThis.atlas;
+      globalThis.azureMapsAuthConfig = { subscriptionKey: 'test-key' };
 
       // Act
       const result = await searchAddress('Boston, MA');
 
       // Assert
       expect(result).toEqual([]);
+      expect(globalThis.fetch).not.toHaveBeenCalled(); // ensures the early return fired before fetch
     });
 
     test('should return empty array when no auth config available', async () => {
@@ -183,6 +185,23 @@ describe('DirectionsModal', () => {
 
       // Assert
       expect(result).toEqual([]);
+    });
+
+    test('should log specific error when auth config is missing', async () => {
+      // Arrange — atlas defined (from beforeEach), authConfig deleted (from top-level beforeEach)
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      // Act
+      await searchAddress('Boston, MA');
+
+      // Assert — if BlockStatement/ConditionalExpression mutant skips this branch,
+      // the outer catch logs a TypeError message instead, failing this specific-message assertion
+      expect(errorSpy).toHaveBeenCalledWith(
+        '[DirectionsModal] No Azure Maps auth configuration available'
+      );
+      expect(globalThis.fetch).not.toHaveBeenCalled();
+
+      errorSpy.mockRestore();
     });
 
     test('should search with subscription key authentication', async () => {
@@ -236,7 +255,8 @@ describe('DirectionsModal', () => {
         ok: false,
         status: 401,
         statusText: 'Unauthorized',
-        text: jest.fn().mockResolvedValue('Unauthorized')
+        text: jest.fn().mockResolvedValue('Unauthorized'),
+        json: jest.fn(), // spy to ensure we don't proceed to parse JSON on error
       };
 
       globalThis.fetch = jest.fn().mockResolvedValue(mockResponse);
@@ -246,6 +266,7 @@ describe('DirectionsModal', () => {
 
       // Assert
       expect(result).toEqual([]);
+      expect(mockResponse.json).not.toHaveBeenCalled(); // ensures early return on !ok
     });
 
     test('should return empty array when no results found', async () => {
@@ -266,6 +287,43 @@ describe('DirectionsModal', () => {
 
       // Assert
       expect(result).toEqual([]);
+    });
+
+    test('should log "no results" message when results array is empty', async () => {
+      // Arrange
+      globalThis.azureMapsAuthConfig = { subscriptionKey: 'test-key-123' };
+      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ results: [] }),
+      });
+
+      // Act
+      const result = await searchAddress('NothingHere');
+
+      // Assert — if ConditionalExpression mutant removes the length===0 check,
+      // map([]) still returns [] but the specific log message won't be called
+      expect(result).toEqual([]);
+      expect(logSpy).toHaveBeenCalledWith(
+        '[DirectionsModal] No results found for query:',
+        'NothingHere'
+      );
+
+      logSpy.mockRestore();
+    });
+
+    test('should return empty array without error when data.results is null', async () => {
+      globalThis.azureMapsAuthConfig = { subscriptionKey: 'test-key-123' };
+      globalThis.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ results: null })
+      });
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      const result = await searchAddress('Boston, MA');
+
+      expect(result).toEqual([]);
+      expect(errorSpy).not.toHaveBeenCalled();
     });
 
     test('should handle fetch exception gracefully', async () => {
@@ -369,7 +427,8 @@ describe('DirectionsModal', () => {
 
       globalThis.fetch = jest.fn().mockResolvedValue({
         ok: false,
-        status: 401
+        status: 401,
+        json: jest.fn(), // spy: must not be called when response is not ok
       });
 
       // Act
@@ -378,6 +437,8 @@ describe('DirectionsModal', () => {
       // Assert
       expect(result).toEqual([]);
       expect(globalThis.fetch).toHaveBeenCalledWith('/.auth/me');
+      // Only one fetch call — no search request should follow a failed auth
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
     });
 
     test('should return empty array when Azure AD token is missing', async () => {
@@ -444,6 +505,7 @@ describe('DirectionsModal', () => {
         layers: { add: jest.fn() },
         setCamera: jest.fn(),
         dispose: jest.fn(),
+        resize: jest.fn(),
       };
       globalThis.atlas = {
         Map: jest.fn(() => mockMap),
@@ -478,7 +540,11 @@ describe('DirectionsModal', () => {
       expect(globalThis.atlas.Map).toHaveBeenCalledWith(
         'map-id',
         expect.objectContaining({
-          authOptions: expect.objectContaining({ subscriptionKey: 'test-key' }),
+          language: 'en-US',
+          authOptions: expect.objectContaining({
+            authType: 'subscriptionKey',
+            subscriptionKey: 'test-key',
+          }),
         }),
       );
     });
@@ -491,7 +557,10 @@ describe('DirectionsModal', () => {
       expect(globalThis.atlas.Map).toHaveBeenCalledWith(
         'map-id',
         expect.objectContaining({
-          authOptions: expect.objectContaining({ clientId: 'my-account' }),
+          authOptions: expect.objectContaining({
+            authType: 'aad',
+            clientId: 'my-account',
+          }),
         }),
       );
     });
@@ -513,7 +582,16 @@ describe('DirectionsModal', () => {
 
       await initializeRouteMap('map-id', [-71, 42], [-70, 43], routeGeoJson);
 
-      expect(globalThis.atlas.layer.LineLayer).toHaveBeenCalled();
+      expect(globalThis.atlas.layer.LineLayer).toHaveBeenCalledWith(
+        mockDataSource,
+        null,
+        expect.objectContaining({
+          strokeColor: '#0066b2',
+          strokeWidth: 4,
+          strokeOpacity: 0.8,
+          filter: ['==', ['geometry-type'], 'LineString'],
+        }),
+      );
     });
 
     test('skips LineLayer when routeGeoJson is null', async () => {
@@ -522,18 +600,169 @@ describe('DirectionsModal', () => {
       expect(globalThis.atlas.layer.LineLayer).not.toHaveBeenCalled();
     });
 
+    test('skips LineLayer when routeGeoJson has non-LineString geometry', async () => {
+      const routeGeoJson = JSON.stringify({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [-71, 42] },
+        properties: {},
+      });
+
+      await initializeRouteMap('map-id', [-71, 42], [-70, 43], routeGeoJson);
+
+      expect(globalThis.atlas.layer.LineLayer).not.toHaveBeenCalled();
+    });
+
+    test('skips LineLayer when routeGeoJson LineString has fewer than 2 coordinates', async () => {
+      const routeGeoJson = JSON.stringify({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: [[-71, 42]] },
+        properties: {},
+      });
+
+      await initializeRouteMap('map-id', [-71, 42], [-70, 43], routeGeoJson);
+
+      expect(globalThis.atlas.layer.LineLayer).not.toHaveBeenCalled();
+    });
+
+    test('skips LineLayer when routeGeoJson has null geometry', async () => {
+      const routeGeoJson = JSON.stringify({
+        type: 'Feature',
+        geometry: null,
+        properties: {},
+      });
+
+      await initializeRouteMap('map-id', [-71, 42], [-70, 43], routeGeoJson);
+
+      expect(globalThis.atlas.layer.LineLayer).not.toHaveBeenCalled();
+    });
+
     test('adds two SymbolLayers for origin and destination', async () => {
       await initializeRouteMap('map-id', [-71, 42], [-70, 43], null);
 
       expect(globalThis.atlas.layer.SymbolLayer).toHaveBeenCalledTimes(2);
+      expect(globalThis.atlas.layer.SymbolLayer).toHaveBeenCalledWith(
+        mockDataSource,
+        null,
+        expect.objectContaining({
+          iconOptions: expect.objectContaining({
+            image: 'pin-blue',
+            anchor: 'center',
+            allowOverlap: true,
+          }),
+          filter: ['==', ['get', 'pointType'], 'origin'],
+        }),
+      );
+      expect(globalThis.atlas.layer.SymbolLayer).toHaveBeenCalledWith(
+        mockDataSource,
+        null,
+        expect.objectContaining({
+          iconOptions: expect.objectContaining({
+            image: 'pin-red',
+            anchor: 'center',
+            allowOverlap: true,
+          }),
+          filter: ['==', ['get', 'pointType'], 'destination'],
+        }),
+      );
     });
 
-    test('fits camera to origin and destination bounds', async () => {
+    test('does not add SymbolLayers when origin is null', async () => {
+      await initializeRouteMap('map-id', null, [-70, 43], null);
+
+      expect(globalThis.atlas.layer.SymbolLayer).not.toHaveBeenCalled();
+    });
+
+    test('does not add SymbolLayers when origin has wrong length', async () => {
+      await initializeRouteMap('map-id', [-71], [-70, 43], null);
+
+      expect(globalThis.atlas.layer.SymbolLayer).not.toHaveBeenCalled();
+    });
+
+    test('does not add SymbolLayers when destination is null', async () => {
+      await initializeRouteMap('map-id', [-71, 42], null, null);
+
+      expect(globalThis.atlas.layer.SymbolLayer).not.toHaveBeenCalled();
+    });
+
+    test('does not add SymbolLayers when destination has wrong length', async () => {
+      await initializeRouteMap('map-id', [-71, 42], [-70], null);
+
+      expect(globalThis.atlas.layer.SymbolLayer).not.toHaveBeenCalled();
+    });
+
+    test('fits camera to origin and destination bounds when no route provided', async () => {
       await initializeRouteMap('map-id', [-71, 42], [-70, 43], null);
 
+      expect(globalThis.atlas.data.BoundingBox.fromData).toHaveBeenCalledWith([
+        expect.objectContaining({ coordinates: [-71, 42] }),
+        expect.objectContaining({ coordinates: [-70, 43] }),
+      ]);
       expect(mockMap.setCamera).toHaveBeenCalledWith(
         expect.objectContaining({ bounds: expect.anything(), padding: 40 }),
       );
+    });
+
+    test('uses route geometry coordinates for camera bounds when routeGeoJson is provided', async () => {
+      // 3 distinct coords so the >= 2 check is unambiguous
+      const routeCoords = [[-72, 41], [-71, 42], [-70, 43]];
+      const routeGeoJson = JSON.stringify({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: routeCoords },
+        properties: {},
+      });
+
+      await initializeRouteMap('map-id', [-71, 42], [-70, 43], routeGeoJson);
+
+      const fromDataArg = globalThis.atlas.data.BoundingBox.fromData.mock.calls[0][0];
+      expect(fromDataArg).toHaveLength(3);
+      expect(fromDataArg[0]).toEqual(expect.objectContaining({ coordinates: [-72, 41] }));
+      expect(fromDataArg[1]).toEqual(expect.objectContaining({ coordinates: [-71, 42] }));
+      expect(fromDataArg[2]).toEqual(expect.objectContaining({ coordinates: [-70, 43] }));
+    });
+
+    test('uses exactly-2-coordinate route for bounds (>= 2 boundary)', async () => {
+      // Exactly 2 coords: satisfies >= 2 but not > 2, killing the EqualityOperator mutant
+      const routeGeoJson = JSON.stringify({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: [[-72, 41], [-71.5, 41.5]] },
+        properties: {},
+      });
+
+      await initializeRouteMap('map-id', [-71, 42], [-70, 43], routeGeoJson);
+
+      const fromDataArg = globalThis.atlas.data.BoundingBox.fromData.mock.calls[0][0];
+      expect(fromDataArg).toHaveLength(2);
+      expect(fromDataArg[0]).toEqual(expect.objectContaining({ coordinates: [-72, 41] }));
+      expect(fromDataArg[1]).toEqual(expect.objectContaining({ coordinates: [-71.5, 41.5] }));
+    });
+
+    test('falls back to origin/destination bounds when route has only 1 coordinate', async () => {
+      const routeGeoJson = JSON.stringify({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: [[-72, 41]] },
+        properties: {},
+      });
+
+      await initializeRouteMap('map-id', [-71, 42], [-70, 43], routeGeoJson);
+
+      const fromDataArg = globalThis.atlas.data.BoundingBox.fromData.mock.calls[0][0];
+      expect(fromDataArg).toHaveLength(2);
+      expect(fromDataArg[0]).toEqual(expect.objectContaining({ coordinates: [-71, 42] }));
+      expect(fromDataArg[1]).toEqual(expect.objectContaining({ coordinates: [-70, 43] }));
+    });
+
+    test('handles errors thrown in the ready handler gracefully', async () => {
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      globalThis.atlas.source.DataSource = jest.fn(() => { throw new Error('DataSource unavailable'); });
+
+      await expect(initializeRouteMap('map-id', [-71, 42], [-70, 43], null)).resolves.toBeUndefined();
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        '[DirectionsModal] Error rendering route mini-map:',
+        expect.any(Error),
+      );
+
+      errorSpy.mockRestore();
     });
   });
 
@@ -550,6 +779,7 @@ describe('DirectionsModal', () => {
         layers: { add: jest.fn() },
         setCamera: jest.fn(),
         dispose: mockDispose,
+        resize: jest.fn(),
       };
       globalThis.atlas = {
         Map: jest.fn(() => mockMap),

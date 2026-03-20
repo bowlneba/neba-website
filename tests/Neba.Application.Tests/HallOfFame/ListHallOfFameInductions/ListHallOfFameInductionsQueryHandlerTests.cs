@@ -95,6 +95,34 @@ public sealed class ListHallOfFameInductionsQueryHandlerTests
         result.ShouldAllBe(i => i.PhotoUri != null);
     }
 
+    // Mutation (&&→||): sets up GetBlobUri to return a non-null URI so that if the mutation
+    // incorrectly calls it (because || makes the condition true), PhotoUri gets set and
+    // ShouldBeNull() fails — avoids relying on MockBehavior.Strict exceptions as kill signal.
+    [Fact(DisplayName = "Should not set PhotoUri when induction has a photo container but no photo path")]
+    public async Task HandleAsync_ShouldNotSetPhotoUri_WhenInductionHasContainerButNoPath()
+    {
+        // Arrange
+        var query = new ListHallOfFameInductionsQuery();
+        var induction = HallOfFameInductionDtoFactory.Create(photoContainer: "hof-photos", photoPath: null);
+        var unexpectedUri = new Uri("https://storage.example.com/hof/should-not-be-set.jpg");
+
+        _hallOfFameQueriesMock
+            .Setup(q => q.GetAllAsync(TestContext.Current.CancellationToken))
+            .ReturnsAsync([induction]);
+
+        // Set up GetBlobUri so mutation detection is assertion-based, not exception-based:
+        _fileStorageServiceMock
+            .Setup(s => s.GetBlobUri(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(unexpectedUri);
+
+        // Act
+        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldHaveSingleItem();
+        result.Single().PhotoUri.ShouldBeNull();
+    }
+
     [Fact(DisplayName = "Should set PhotoUri only on inductions with photos in a mixed collection")]
     public async Task HandleAsync_ShouldSetPhotoUriOnlyForInductionsWithPhotos_WhenCollectionIsMixed()
     {

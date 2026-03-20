@@ -8,7 +8,7 @@
           "type": "aspire",
           "request": "launch",
           "name": "Aspire: Launch default apphost",
-          "program": ""
+          "program": "${workspaceFolder}/src/Neba.AppHost/Neba.AppHost.csproj"
         }
     ]
 }

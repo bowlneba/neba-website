@@ -21,7 +21,7 @@ public sealed class HallOfFameCategory
     /// Indicates superior performance recognition.
     /// This flag has the value <c>1</c> (bit 0).
     /// </summary>
-    public static readonly HallOfFameCategory SuperiorPerformance = new("Superior Performance", 1 << 0);
+    public static readonly HallOfFameCategory SuperiorPerformance = new("Superior Performance", 1);
 
     /// <summary>
     /// Indicates meritorious service recognition.

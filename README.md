@@ -1,4 +1,4 @@
-# neba-website
+# NEBA Website
 
 Centralized platform for managing the New England Bowlers Association (NEBA). Handles tournament operations, enforces NEBA and USBC rules, and streamlines governance and member management.
 
@@ -21,6 +21,8 @@ Centralized platform for managing the New England Bowlers Association (NEBA). Ha
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=bowlneba-website&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=bowlneba-website)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=bowlneba-website&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=bowlneba-website)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bowlneba-website&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=bowlneba-website)
+
+[![Mutation testing badge](https://img.shields.io/endpoint?style=plastic&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2Fbowlneba%2Fneba-website%2Fmain)](https://dashboard.stryker-mutator.io/reports/github.com/bowlneba/neba-website/main)
 
 ## Architecture
 

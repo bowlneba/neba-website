@@ -57,6 +57,15 @@ public sealed class CachedQueryHandlerDecoratorTests
             .HandleAsync(query, CancellationToken.None);
 
         result.ShouldBe(cachedValue);
+        cache.Verify(
+            c => c.GetOrSetAsync<TestResponse>(
+                query.Cache.Key,
+                It.IsAny<Func<FusionCacheFactoryExecutionContext<TestResponse>, CancellationToken, Task<TestResponse>>>(),
+                It.IsAny<MaybeValue<TestResponse>>(),
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once());
     }
 
     [Fact(DisplayName = "Plain response: cache miss calls inner handler and returns result")]
@@ -91,6 +100,21 @@ public sealed class CachedQueryHandlerDecoratorTests
             .HandleAsync(query, CancellationToken.None);
 
         result.ShouldBe(handlerResult);
+    }
+
+    [Fact(DisplayName = "Plain response: constructor succeeds without calling GetInnerType for non-ErrorOr type")]
+    public void Constructor_PlainResponseType_DoesNotThrow()
+    {
+        var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
+        var cache = new Mock<IFusionCache>(MockBehavior.Strict);
+
+        // Mutation forces GetInnerType(typeof(TestResponse)) which throws ArgumentException
+        // because TestResponse is not ErrorOr<T>
+        Should.NotThrow(() =>
+            new CachedQueryHandlerDecorator<PlainQuery, TestResponse>(
+                innerHandler.Object,
+                cache.Object,
+                NullLogger<CachedQueryHandlerDecorator<PlainQuery, TestResponse>>.Instance));
     }
 
     [Fact(DisplayName = "Plain response: deserialization failure falls back to handler and refreshes cache")]
@@ -136,6 +160,14 @@ public sealed class CachedQueryHandlerDecoratorTests
             .HandleAsync(query, CancellationToken.None);
 
         result.ShouldBe(handlerResult);
+        cache.Verify(
+            c => c.SetAsync(
+                query.Cache.Key,
+                handlerResult,
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.Is<IEnumerable<string>>(t => t.SequenceEqual(descriptor.Tags)),
+                It.IsAny<CancellationToken>()),
+            Times.Once());
     }
 
     // ─── ErrorOr response ─────────────────────────────────────────────────────
@@ -161,6 +193,9 @@ public sealed class CachedQueryHandlerDecoratorTests
 
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(innerValue);
+        innerHandler.Verify(
+            h => h.HandleAsync(It.IsAny<ErrorOrQuery>(), It.IsAny<CancellationToken>()),
+            Times.Never());
     }
 
     [Fact(DisplayName = "ErrorOr response: L2 cache hit deserializes JsonElement and returns wrapped value")]
@@ -185,6 +220,9 @@ public sealed class CachedQueryHandlerDecoratorTests
 
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(innerValue);
+        innerHandler.Verify(
+            h => h.HandleAsync(It.IsAny<ErrorOrQuery>(), It.IsAny<CancellationToken>()),
+            Times.Never());
     }
 
     [Fact(DisplayName = "ErrorOr response: cache miss with error result returns error without caching")]
@@ -256,6 +294,20 @@ public sealed class CachedQueryHandlerDecoratorTests
 
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(innerValue);
+        cache.Verify(
+            c => c.TryGetAsync<object>(
+                query.Cache.Key,
+                It.IsAny<FusionCacheEntryOptions?>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once());
+        cache.Verify(
+            c => c.SetAsync(
+                query.Cache.Key,
+                It.Is<object>(v => v.Equals(innerValue)),
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.Is<IEnumerable<string>>(t => t.SequenceEqual(descriptor.Tags)),
+                It.IsAny<CancellationToken>()),
+            Times.Once());
     }
 
     // ─── IsCacheDeserializationException ─────────────────────────────────────
@@ -301,6 +353,14 @@ public sealed class CachedQueryHandlerDecoratorTests
             .HandleAsync(query, CancellationToken.None);
 
         result.ShouldBe(handlerResult);
+        cache.Verify(
+            c => c.SetAsync(
+                query.Cache.Key,
+                handlerResult,
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.Is<IEnumerable<string>>(t => t.SequenceEqual(descriptor.Tags)),
+                It.IsAny<CancellationToken>()),
+            Times.Once());
     }
 
     [Fact(DisplayName = "Plain response: nested JsonException in InnerException chain falls back to handler")]
@@ -344,6 +404,41 @@ public sealed class CachedQueryHandlerDecoratorTests
             .HandleAsync(query, CancellationToken.None);
 
         result.ShouldBe(handlerResult);
+        cache.Verify(
+            c => c.SetAsync(
+                query.Cache.Key,
+                handlerResult,
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.Is<IEnumerable<string>>(t => t.SequenceEqual(descriptor.Tags)),
+                It.IsAny<CancellationToken>()),
+            Times.Once());
+    }
+
+    [Fact(DisplayName = "Plain response: NotSupportedException without 'deserialization' in message propagates without fallback")]
+    public async Task HandleAsync_PlainResponse_NotSupportedExceptionWithUnrelatedMessage_Propagates()
+    {
+        var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
+        var cache = new Mock<IFusionCache>(MockBehavior.Strict);
+
+        var query = new PlainQuery(CacheDescriptorFactory.Create(key: "key:plain:nse-unrelated"), TimeSpan.FromMinutes(5));
+
+        cache
+            .SetupGet(c => c.DefaultEntryOptions)
+            .Returns(new FusionCacheEntryOptions { Duration = TimeSpan.FromHours(1) });
+
+        cache
+            .Setup(c => c.GetOrSetAsync<TestResponse>(
+                query.Cache.Key,
+                It.IsAny<Func<FusionCacheFactoryExecutionContext<TestResponse>, CancellationToken, Task<TestResponse>>>(),
+                It.IsAny<MaybeValue<TestResponse>>(),
+                It.IsAny<FusionCacheEntryOptions>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()))
+            .Throws(new NotSupportedException("Cache serializer is not configured"));
+
+        await Should.ThrowAsync<NotSupportedException>(() =>
+            CreatePlainDecorator(innerHandler.Object, cache.Object)
+                .HandleAsync(query, CancellationToken.None));
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

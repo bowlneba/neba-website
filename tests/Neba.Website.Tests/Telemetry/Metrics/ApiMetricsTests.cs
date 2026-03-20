@@ -77,6 +77,9 @@ public sealed class ApiMetricsTests : IDisposable
         // Assert
         _doubleMeasurements.ShouldHaveSingleItem();
         _doubleMeasurements[0].Value.ShouldBe(durationMs);
+        _doubleMeasurements[0].Tags.ToArray().ShouldContain(tag => tag.Key == ApiMetricTagNames.ApiName && (string)tag.Value! == apiName);
+        _doubleMeasurements[0].Tags.ToArray().ShouldContain(tag => tag.Key == ApiMetricTagNames.OperationName && (string)tag.Value! == operationName);
+        _doubleMeasurements[0].Tags.ToArray().ShouldContain(tag => tag.Key == ApiMetricTagNames.ResultStatus && (string)tag.Value! == "success");
     }
 
     [Fact(DisplayName = "Should record error with duration and error type tags")]

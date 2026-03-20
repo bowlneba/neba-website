@@ -10,6 +10,8 @@ on:
     secrets:
       SONAR_TOKEN:
         required: true
+      STRYKER_DASHBOARD_KEY:
+        required: false
 
 jobs:
   build:
@@ -240,6 +242,18 @@ jobs:
           name: playwright-traces-${{ matrix.project }}
           path: test-results/
           retention-days: 7
+
+  mutation-js:
+    name: Mutation Testing
+    needs: jest
+    if: ${{ !cancelled() && !failure() }}
+    uses: ./.github/workflows/mutation-testing.yml
+    secrets:
+      STRYKER_DASHBOARD_KEY: ${{ secrets.STRYKER_DASHBOARD_KEY }}
+    with:
+      is_pull_request: ${{ inputs.is_pull_request }}
+      dashboard_version: ${{ inputs.is_pull_request && github.head_ref || 'main' }}
+      pr_number: ${{ github.event.pull_request.number && toJson(github.event.pull_request.number) || '' }}
 
   sonarcloud:
     if: github.actor != 'dependabot[bot]'

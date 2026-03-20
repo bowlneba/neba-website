@@ -34,6 +34,55 @@ Before ending a session where significant discoveries were made, consider whethe
 
 ### Testing Requirements
 
+#### JavaScript Mutation Testing
+
+- Uses **Stryker v9** with `@stryker-mutator/jest-runner`; config: `stryker.config.json`
+- Mutates all `src/Neba.Website.Server/**/*.js` (excludes `.tests.js` files)
+- A mutation is **killed** when at least one test *fails* on the mutated code
+- **"Not covered"** → needs a new test that exercises the code path
+- **"Covered, survived"** → test reaches the code but assertions aren't specific enough; sharpen them
+- Be pragmatic: `StringLiteral` mutations inside `console.log/warn/error` are low-value
+- Arithmetic mutations where one operand is `0` are ambiguous (`a - 0 === a + 0`) — ensure test data uses non-zero baseline values for timing, distances, and similar calculations
+- `BlockStatement` mutations (emptying a function body to `{}`) are high-value — they reveal entirely untested code paths and should be prioritized
+
+#### .NET Mutation Testing
+
+- Uses **dotnet-stryker** (global install: `dotnet tool install --global dotnet-stryker`)
+- Config per layer: `tests/<Layer>.Tests/stryker-config.json`
+- Run from the test project directory: `cd tests/Neba.Domain.Tests && dotnet stryker`
+- Diff run (PR): `dotnet stryker --since origin/main`
+- Reports land in `tests/<Layer>.Tests/StrykerOutput/`
+
+**New layer checklist** — when adding a stryker-config.json for a new layer, every config must have:
+
+1. `"test-runner": "mtp"` — **required** for xUnit v3; without it all mutants show as Survived (xUnit v3 runs tests out-of-process; Stryker's VSTest extension never receives events). Shipped in Stryker.NET 4.13.
+2. `"project-info"` (not `"dashboard"`) — the .NET config key for dashboard reporting; `"dashboard"` is JS-only and will throw an unknown key error.
+3. `"reporters": ["html", "json", "progress"]` locally — omit `"dashboard"` from the config; pass `--reporter dashboard` as a CLI flag in CI only (having it in the config requires the API key even locally).
+4. `"ignore-mutations": ["string", "Update"]` — always exclude string literals (noise) and update expressions (`i++`/`i--`). The MTP runner in Stryker 4.13 does **not** respect `additional-timeout`, so `i++` → `i--` mutations in `for` loops create infinite loops that hang the entire run. `UpdateExpression` mutations are low-value anyway — loop control infrastructure, not business logic.
+
+**Coverage analysis note**: MTP coverage is partially implemented in 4.13 — uncovered mutants are filtered out, but per-mutant test selection is not yet available. This means runs are slower than they will eventually be (all tests run per mutant), but results are accurate.
+
+**Per-layer decisions** (make these explicitly for each new layer):
+
+- `ignore-mutations: Linq` — keep for Domain/Application (logic layers); exclude for Infrastructure/API/Blazor (see rationale in learnings below)
+- `mutate` exclusions — inspect actual files; exclude pure declarations (source-generated stubs, SmartEnum tables), not logic
+
+**Thresholds by layer**:
+
+| Layer          | high | low | break | Notes                                                                                  |
+|----------------|------|-----|-------|----------------------------------------------------------------------------------------|
+| Domain         | 95   | 90  | 85    |                                                                                        |
+| Application    | 95   | 90  | 85    |                                                                                        |
+| Infrastructure | 75   | 65  | 0     | Local only — Testcontainers integration tests crash the MTP runner; not wired into CI |
+| API            | 80   | 60  | 75    |                                                                                        |
+| Blazor         | 85   | 70  | 65    |                                                                                        |
+
+- A mutation is **killed** when at least one test *fails* on the mutated code
+- **"Not covered"** → needs a new test exercising the code path
+- **"Covered, survived"** → assertions aren't specific enough; sharpen them
+
+#### .NET Testing Requirements
+
 - All tests need `[UnitTest]` or `[IntegrationTest]` trait
 - All tests need `[Component("FeatureName")]` trait
 - All Facts/Theories need `DisplayName`
@@ -88,6 +137,14 @@ Before ending a session where significant discoveries were made, consider whethe
 - **Integration tests**: `dotnet test --filter "Category=Integration"`
 - **Specific component**: `dotnet test --filter "Component=Tournaments"`
 - **E2E tests**: `npm run test:e2e`
+- **JS mutation tests (full run + summary)**: `npm run mutation:ai`
+- **JS mutation report for one file**: `npm run mutation:ai:file -- <FileName>` (e.g. `-- NavMenu`)
+- **.NET mutation tests — Domain**: `cd tests/Neba.Domain.Tests && dotnet stryker`
+- **.NET mutation tests — Application**: `cd tests/Neba.Application.Tests && dotnet stryker`
+- **.NET mutation tests — Infrastructure**: `cd tests/Neba.Infrastructure.Tests && dotnet stryker`
+- **.NET mutation tests — API**: `cd tests/Neba.Api.Tests && dotnet stryker`
+- **.NET mutation summary**: `npm run mutation:ai:dotnet -- Domain`
+- **.NET mutation detail for one file**: `npm run mutation:ai:dotnet -- Domain <FileName>` (e.g. `-- Domain LaneRange`)
 - **CI status**: `gh run list --limit 5`
 - **CI failure details**: `gh run view <run-id> --log-failed`
 
@@ -97,6 +154,18 @@ Before ending a session where significant discoveries were made, consider whethe
 
 - **No `/api` prefix** — the API is served from `api.bowlneba.com`, so routes start directly with the resource (e.g. `/documents/{DocumentName}`, not `/api/documents/{DocumentName}`)
 - **No version in path** — API versioning is handled via request headers, not URL segments (no `/v1/`, `/api/v1/`, etc.)
+
+### API Layer Mutation Testing — FastEndpoints Unit Test Limitations
+
+When writing Configure tests with `Factory.Create<TEndpoint>()`, two categories of mutations are permanently unkillable:
+
+1. **`Get(...)` calls** — FastEndpoints source generation pre-registers route templates at compile time via `SelfRegisteredExtensions.cs`. Even when `Get(...)` is removed from `Configure()`, `Definition.Routes` still contains the route template. Assert routes using `ShouldContain()`, but the route mutation will always survive.
+
+2. **`Description(...)` and `Options(...)` calls** — Both store `Action<RouteHandlerBuilder>` delegates that are only invoked during real app startup (not in `Factory.Create<>()` unit tests). `EndpointMetadata` is always empty in unit tests, so `TagsAttribute` lookups return 0 items. `endpoint.Definition.Version.Current` is always 0 when using `FastEndpoints.AspVersioning` (not direct FastEndpoints `Version()` call). Add `"Description"` and `"Options"` to `ignore-methods` in the API layer stryker-config.json to skip these unkillable mutations.
+
+3. **`return;` after `Send.NotFoundAsync()`** — FastEndpoints base class swallows exceptions thrown after the response has been set. Even if `result.Value` throws (ErrorOr v2), the 404 status remains and assertions pass. This mutation is unkillable in unit tests.
+
+**Practical limit**: The API layer stryker break threshold is 75%. With `"Description"` and `"Options"` in `ignore-methods`, the score achieves 75% (12/16). The 4 unkillable survivors are: 3 × `Get()` route mutations + 1 × `return;` guard.
 
 ### FusionCache Deserialization Recovery
 
