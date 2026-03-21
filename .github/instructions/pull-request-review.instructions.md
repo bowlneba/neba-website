@@ -28,6 +28,7 @@ Flag when:
 - A child entity owned by an aggregate has a `public static Create(...)` factory — it should be `internal` so construction is only possible through the aggregate root (same assembly)
 - An aggregate's assign/add method validates child entity invariants directly (e.g., checking `blockScore > 0` on `Season`) instead of delegating to the child entity's `internal static Create(...)` factory
 - A child entity is instantiated directly via `new` outside the aggregate root — application or test code must go through the aggregate's assign methods
+- An application handler computes a domain formula and passes the derived result to an aggregate — raw input data should be passed instead; the formula belongs in the domain (e.g., computing `minimumGames = floor(4.5 × count)` in a handler rather than passing `statEligibleTournamentCount` to the aggregate)
 
 ### Application Layer (`Neba.Application`)
 

@@ -61,6 +61,49 @@ public ErrorOr<Success> AssignHighBlockAward(BowlerId bowlerId, int blockScore)
 
 **Why this matters**: If entity validation lived on the aggregate, the aggregate would absorb invariants that have nothing to do with it. If `Create()` were public, the entity could be constructed in an invalid state outside the aggregate. The internal factory gives call-site simplicity (single `ErrorOr` chain) while keeping each invariant owned by the right type.
 
+### Aggregate Invariants Requiring Cross-Aggregate Data
+
+When an assign method's invariant depends on data owned by another aggregate, the application layer queries that data and passes it as a parameter. The aggregate enforces the rule; the application layer provides the facts.
+
+**The deciding factor — persist on aggregate vs. pass as parameter**:
+
+- **Live data owned by another aggregate** → pass as a parameter. The other aggregate remains the single source of truth. Duplicating it creates redundancy. Example: `statEligibleTournamentCount` for `AssignHighAverageWinner` — tournaments own this fact, not Season.
+- **Per-instance formula coefficients** → persist on the aggregate, set at a lifecycle transition. The formula belongs in the domain; the coefficient may legitimately vary per instance and must be frozen with the aggregate's closed state. Example: `_minimumGamesMultiplier` is set at `Season.Close()` because an abbreviated season might use a different threshold than a regular season.
+
+```csharp
+// Application layer provides the cross-aggregate fact; aggregate enforces the rule
+public ErrorOr<Success> AssignHighAverageWinner(
+    BowlerId bowlerId, decimal average, int games, int? tournamentsParticipated,
+    int statEligibleTournamentCount)
+{
+    if (!Complete)
+        return SeasonErrors.SeasonNotComplete;
+
+    var minimumGames = ComputeMinimumGames(statEligibleTournamentCount);
+    if (games < minimumGames)
+        return SeasonErrors.InsufficientGames(games, minimumGames);
+
+    var award = HighAverageAward.Create(bowlerId, average, games, tournamentsParticipated);
+    if (award.IsError) return award.Errors;
+    _highAverageAwards.Add(award.Value);
+    return Result.Success;
+}
+
+// Formula is domain logic — lives on the aggregate, not the application layer
+private int ComputeMinimumGames(int statEligibleTournaments) =>
+    (int)Math.Floor(_minimumGamesMultiplier * statEligibleTournaments);
+```
+
+Application layer orchestrates — queries the cross-aggregate fact once, then drives the aggregate:
+
+```csharp
+var statEligibleCount = await _tournamentRepository.CountStatEligibleAsync(command.SeasonId, ct);
+season.AssignHighAverageWinner(command.BowlerId, command.Average, command.Games,
+    command.TournamentsParticipated, statEligibleCount);
+```
+
+**Anti-pattern**: Computing a domain formula in the application handler and passing the derived result (e.g., pre-computing `minimumGames` and passing it in). When the formula changes, the fix belongs in the domain — not scattered across handlers.
+
 ### Testing Requirements
 
 #### JavaScript Mutation Testing
