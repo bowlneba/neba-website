@@ -4,6 +4,7 @@ using Neba.Domain.Bowlers;
 
 namespace Neba.Domain.Awards;
 
+
 /// <summary>
 /// The temporal boundary over which awards are calculated and assigned.
 /// Must be marked <see cref="Complete"/> before any awards may be assigned to bowlers.
@@ -46,26 +47,143 @@ public sealed class Season
         => _bowlerOfTheYearAwards.AsReadOnly();
 
     /// <summary>
-    /// Assigns a Bowler of the Year award to the specified bowler in the specified category.
+    /// Assigns an Open Bowler of the Year award to the specified bowler.
     /// </summary>
-    /// <param name="bowlerId">The unique identifier of the bowler.</param>
-    /// <param name="category">The category of the Bowler of the Year award.</param>
-    /// <returns>A result indicating success or failure.</returns>
-    public ErrorOr<Success> AddBowlerOfTheYearWinner(BowlerId bowlerId, BowlerOfTheYearCategory category)
+    public ErrorOr<Success> AddOpenBowlerOfTheYearWinner(BowlerId bowlerId)
     {
         if (!Complete)
         {
             return SeasonErrors.SeasonNotComplete;
         }
 
-        var awardResult = BowlerOfTheYearAward.Create(bowlerId, category);
+        var award = BowlerOfTheYearAward.CreateOpen(bowlerId);
 
-        if (awardResult.IsError)
+        if (award.IsError)
         {
-            return awardResult.Errors;
+            return award.Errors;
         }
 
-        _bowlerOfTheYearAwards.Add(awardResult.Value);
+        _bowlerOfTheYearAwards.Add(award.Value);
+
+        return Result.Success;
+    }
+
+    /// <summary>
+    /// Assigns a Woman Bowler of the Year award to the specified bowler.
+    /// </summary>
+    /// <param name="bowlerId">The unique identifier of the bowler.</param>
+    /// <param name="gender">The bowler's gender; must be <see cref="Gender.Female"/>.</param>
+    public ErrorOr<Success> AddWomanOfTheYearWinner(BowlerId bowlerId, Gender gender)
+    {
+        if (!Complete)
+        {
+            return SeasonErrors.SeasonNotComplete;
+        }
+
+        var award = BowlerOfTheYearAward.CreateWoman(bowlerId, gender);
+
+        if (award.IsError)
+        {
+            return award.Errors;
+        }
+
+        _bowlerOfTheYearAwards.Add(award.Value);
+
+        return Result.Success;
+    }
+
+    /// <summary>
+    /// Assigns a Senior Bowler of the Year award to the specified bowler.
+    /// </summary>
+    /// <param name="bowlerId">The unique identifier of the bowler.</param>
+    /// <param name="age">The bowler's age; must be at least 50.</param>
+    public ErrorOr<Success> AddSeniorBowlerOfTheYearWinner(BowlerId bowlerId, int age)
+    {
+        if (!Complete)
+        {
+            return SeasonErrors.SeasonNotComplete;
+        }
+
+        var award = BowlerOfTheYearAward.CreateSenior(bowlerId, age);
+
+        if (award.IsError)
+        {
+            return award.Errors;
+        }
+
+        _bowlerOfTheYearAwards.Add(award.Value);
+
+        return Result.Success;
+    }
+
+    /// <summary>
+    /// Assigns a Super Senior Bowler of the Year award to the specified bowler.
+    /// </summary>
+    /// <param name="bowlerId">The unique identifier of the bowler.</param>
+    /// <param name="age">The bowler's age; must be at least 60.</param>
+    public ErrorOr<Success> AddSuperSeniorBowlerOfTheYearWinner(BowlerId bowlerId, int age)
+    {
+        if (!Complete)
+        {
+            return SeasonErrors.SeasonNotComplete;
+        }
+
+        var award = BowlerOfTheYearAward.CreateSuperSenior(bowlerId, age);
+
+        if (award.IsError)
+        {
+            return award.Errors;
+        }
+
+        _bowlerOfTheYearAwards.Add(award.Value);
+
+        return Result.Success;
+    }
+
+    /// <summary>
+    /// Assigns a Rookie Bowler of the Year award to the specified bowler.
+    /// </summary>
+    /// <param name="bowlerId">The unique identifier of the bowler.</param>
+    /// <param name="isRookie">Whether the bowler holds a New Member membership in the current season.</param>
+    public ErrorOr<Success> AddRookieBowlerOfTheYearWinner(BowlerId bowlerId, bool isRookie)
+    {
+        if (!Complete)
+        {
+            return SeasonErrors.SeasonNotComplete;
+        }
+
+        var award = BowlerOfTheYearAward.CreateRookie(bowlerId, isRookie);
+
+        if (award.IsError)
+        {
+            return award.Errors;
+        }
+
+        _bowlerOfTheYearAwards.Add(award.Value);
+
+        return Result.Success;
+    }
+
+    /// <summary>
+    /// Assigns a Youth Bowler of the Year award to the specified bowler.
+    /// </summary>
+    /// <param name="bowlerId">The unique identifier of the bowler.</param>
+    /// <param name="age">The bowler's age; must be under 18.</param>
+    public ErrorOr<Success> AddYouthBowlerOfTheYearWinner(BowlerId bowlerId, int age)
+    {
+        if (!Complete)
+        {
+            return SeasonErrors.SeasonNotComplete;
+        }
+
+        var award = BowlerOfTheYearAward.CreateYouth(bowlerId, age);
+
+        if (award.IsError)
+        {
+            return award.Errors;
+        }
+
+        _bowlerOfTheYearAwards.Add(award.Value);
 
         return Result.Success;
     }

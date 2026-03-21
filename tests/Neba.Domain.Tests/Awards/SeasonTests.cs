@@ -11,79 +11,315 @@ namespace Neba.Domain.Tests.Awards;
 [Component("Awards.Season")]
 public sealed class SeasonTests
 {
-    [Fact(DisplayName = "AddBowlerOfTheYearWinner should return an error when season is not complete")]
-    public void AddBowlerOfTheYearWinner_ShouldReturnAnError_WhenSeasonNotComplete()
+    // ── AddOpenBowlerOfTheYearWinner ──────────────────────────────────────────
+
+    [Fact(DisplayName = "AddOpenBowlerOfTheYearWinner should return an error when season is not complete")]
+    public void AddOpenBowlerOfTheYearWinner_ShouldReturnError_WhenSeasonNotComplete()
     {
-        // Arrange
         var season = SeasonFactory.Create(complete: false);
 
-        var bowlerId = BowlerId.New();
-        var category = BowlerOfTheYearCategory.Open;
+        var result = season.AddOpenBowlerOfTheYearWinner(BowlerId.New());
 
-        // Act
-        var result = season.AddBowlerOfTheYearWinner(bowlerId, category);
-
-        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.ShouldBe(SeasonErrors.SeasonNotComplete);
     }
 
-    [Fact(DisplayName = "AddBowlerOfTheYearWinner should return an error when BowlerOfTheYearAward creation fails")]
-    public void AddBowlerOfTheYearWinner_ShouldReturnAnError_WhenAwardCreationFails()
+    [Fact(DisplayName = "AddOpenBowlerOfTheYearWinner should return an error when bowler ID is empty")]
+    public void AddOpenBowlerOfTheYearWinner_ShouldReturnError_WhenBowlerIdIsEmpty()
     {
-        // Arrange
         var season = SeasonFactory.Create(complete: true);
 
-        var invalidBowlerId = BowlerId.Empty;
-        var category = BowlerOfTheYearCategory.Open;
+        var result = season.AddOpenBowlerOfTheYearWinner(BowlerId.Empty);
 
-        // Act
-        var result = season.AddBowlerOfTheYearWinner(invalidBowlerId, category);
-
-        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.ShouldBe(BowlerOfTheYearAwardErrors.BowlerIdRequired);
     }
 
-    [Fact(DisplayName = "AddBowlerOfTheYearWinner should add award when season is complete")]
-    public void AddBowlerOfTheYearWinner_ShouldAddAward_WhenSeasonComplete()
+    [Fact(DisplayName = "AddOpenBowlerOfTheYearWinner should add award when inputs are valid")]
+    public void AddOpenBowlerOfTheYearWinner_ShouldAddAward_WhenInputsAreValid()
     {
-        // Arrange
         var season = SeasonFactory.Create(complete: true);
-
         var bowlerId = BowlerId.New();
-        var category = BowlerOfTheYearCategory.Senior;
 
-        // Act
-        var result = season.AddBowlerOfTheYearWinner(bowlerId, category);
+        var result = season.AddOpenBowlerOfTheYearWinner(bowlerId);
 
-        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(Result.Success);
 
         var award = season.BowlerOfTheYearAwards.ShouldHaveSingleItem();
         award.BowlerId.ShouldBe(bowlerId);
-        award.Category.ShouldBe(category);
+        award.Category.ShouldBe(BowlerOfTheYearCategory.Open);
     }
 
-    [Fact(DisplayName = "AddBowlerOfTheYearWinner should allow multiple bowlers to win the same category")]
-    public void AddBowlerOfTheYearWinner_ShouldAddAward_WhenSameCategoryAwardedToMultipleBowlers()
+    [Fact(DisplayName = "AddOpenBowlerOfTheYearWinner should allow multiple bowlers to win the same category")]
+    public void AddOpenBowlerOfTheYearWinner_ShouldAddAward_WhenSameCategoryAwardedToMultipleBowlers()
     {
-        // Arrange
         var season = SeasonFactory.Create(complete: true);
         var bowlerId1 = BowlerId.New();
         var bowlerId2 = BowlerId.New();
-        var category = BowlerOfTheYearCategory.Open;
 
-        season.AddBowlerOfTheYearWinner(bowlerId1, category).ShouldBe(Result.Success);
+        season.AddOpenBowlerOfTheYearWinner(bowlerId1).ShouldBe(Result.Success);
 
-        // Act
-        var result = season.AddBowlerOfTheYearWinner(bowlerId2, category);
+        var result = season.AddOpenBowlerOfTheYearWinner(bowlerId2);
 
-        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(Result.Success);
         season.BowlerOfTheYearAwards.Count.ShouldBe(2);
+    }
+
+    // ── AddWomanOfTheYearWinner ───────────────────────────────────────────────
+
+    [Fact(DisplayName = "AddWomanOfTheYearWinner should return an error when season is not complete")]
+    public void AddWomanOfTheYearWinner_ShouldReturnError_WhenSeasonNotComplete()
+    {
+        var season = SeasonFactory.Create(complete: false);
+
+        var result = season.AddWomanOfTheYearWinner(BowlerId.New(), Gender.Female);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(SeasonErrors.SeasonNotComplete);
+    }
+
+    [Fact(DisplayName = "AddWomanOfTheYearWinner should return an error when bowler ID is empty")]
+    public void AddWomanOfTheYearWinner_ShouldReturnError_WhenBowlerIdIsEmpty()
+    {
+        var season = SeasonFactory.Create(complete: true);
+
+        var result = season.AddWomanOfTheYearWinner(BowlerId.Empty, Gender.Female);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(BowlerOfTheYearAwardErrors.BowlerIdRequired);
+    }
+
+    [Fact(DisplayName = "AddWomanOfTheYearWinner should return an error when gender is not female")]
+    public void AddWomanOfTheYearWinner_ShouldReturnError_WhenGenderIsNotFemale()
+    {
+        var season = SeasonFactory.Create(complete: true);
+
+        var result = season.AddWomanOfTheYearWinner(BowlerId.New(), Gender.Male);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(BowlerOfTheYearAwardErrors.NotFemale);
+    }
+
+    [Fact(DisplayName = "AddWomanOfTheYearWinner should add award when bowler is female")]
+    public void AddWomanOfTheYearWinner_ShouldAddAward_WhenBowlerIsFemale()
+    {
+        var season = SeasonFactory.Create(complete: true);
+        var bowlerId = BowlerId.New();
+
+        var result = season.AddWomanOfTheYearWinner(bowlerId, Gender.Female);
+
+        result.IsError.ShouldBeFalse();
+        result.Value.ShouldBe(Result.Success);
+
+        var award = season.BowlerOfTheYearAwards.ShouldHaveSingleItem();
+        award.BowlerId.ShouldBe(bowlerId);
+        award.Category.ShouldBe(BowlerOfTheYearCategory.Woman);
+    }
+
+    // ── AddSeniorBowlerOfTheYearWinner ────────────────────────────────────────
+
+    [Fact(DisplayName = "AddSeniorBowlerOfTheYearWinner should return an error when season is not complete")]
+    public void AddSeniorBowlerOfTheYearWinner_ShouldReturnError_WhenSeasonNotComplete()
+    {
+        var season = SeasonFactory.Create(complete: false);
+
+        var result = season.AddSeniorBowlerOfTheYearWinner(BowlerId.New(), age: 55);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(SeasonErrors.SeasonNotComplete);
+    }
+
+    [Fact(DisplayName = "AddSeniorBowlerOfTheYearWinner should return an error when bowler ID is empty")]
+    public void AddSeniorBowlerOfTheYearWinner_ShouldReturnError_WhenBowlerIdIsEmpty()
+    {
+        var season = SeasonFactory.Create(complete: true);
+
+        var result = season.AddSeniorBowlerOfTheYearWinner(BowlerId.Empty, age: 55);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(BowlerOfTheYearAwardErrors.BowlerIdRequired);
+    }
+
+    [Fact(DisplayName = "AddSeniorBowlerOfTheYearWinner should return an error when age is below 50")]
+    public void AddSeniorBowlerOfTheYearWinner_ShouldReturnError_WhenAgeIsBelow50()
+    {
+        var season = SeasonFactory.Create(complete: true);
+
+        var result = season.AddSeniorBowlerOfTheYearWinner(BowlerId.New(), age: 49);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(BowlerOfTheYearAwardErrors.InsufficientAgeForSenior);
+    }
+
+    [Fact(DisplayName = "AddSeniorBowlerOfTheYearWinner should add award when age is at least 50")]
+    public void AddSeniorBowlerOfTheYearWinner_ShouldAddAward_WhenAgeIsAtLeast50()
+    {
+        var season = SeasonFactory.Create(complete: true);
+        var bowlerId = BowlerId.New();
+
+        var result = season.AddSeniorBowlerOfTheYearWinner(bowlerId, age: 50);
+
+        result.IsError.ShouldBeFalse();
+        result.Value.ShouldBe(Result.Success);
+
+        var award = season.BowlerOfTheYearAwards.ShouldHaveSingleItem();
+        award.BowlerId.ShouldBe(bowlerId);
+        award.Category.ShouldBe(BowlerOfTheYearCategory.Senior);
+    }
+
+    // ── AddSuperSeniorBowlerOfTheYearWinner ───────────────────────────────────
+
+    [Fact(DisplayName = "AddSuperSeniorBowlerOfTheYearWinner should return an error when season is not complete")]
+    public void AddSuperSeniorBowlerOfTheYearWinner_ShouldReturnError_WhenSeasonNotComplete()
+    {
+        var season = SeasonFactory.Create(complete: false);
+
+        var result = season.AddSuperSeniorBowlerOfTheYearWinner(BowlerId.New(), age: 65);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(SeasonErrors.SeasonNotComplete);
+    }
+
+    [Fact(DisplayName = "AddSuperSeniorBowlerOfTheYearWinner should return an error when bowler ID is empty")]
+    public void AddSuperSeniorBowlerOfTheYearWinner_ShouldReturnError_WhenBowlerIdIsEmpty()
+    {
+        var season = SeasonFactory.Create(complete: true);
+
+        var result = season.AddSuperSeniorBowlerOfTheYearWinner(BowlerId.Empty, age: 65);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(BowlerOfTheYearAwardErrors.BowlerIdRequired);
+    }
+
+    [Fact(DisplayName = "AddSuperSeniorBowlerOfTheYearWinner should return an error when age is below 60")]
+    public void AddSuperSeniorBowlerOfTheYearWinner_ShouldReturnError_WhenAgeIsBelow60()
+    {
+        var season = SeasonFactory.Create(complete: true);
+
+        var result = season.AddSuperSeniorBowlerOfTheYearWinner(BowlerId.New(), age: 59);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(BowlerOfTheYearAwardErrors.InsufficientAgeForSuperSenior);
+    }
+
+    [Fact(DisplayName = "AddSuperSeniorBowlerOfTheYearWinner should add award when age is at least 60")]
+    public void AddSuperSeniorBowlerOfTheYearWinner_ShouldAddAward_WhenAgeIsAtLeast60()
+    {
+        var season = SeasonFactory.Create(complete: true);
+        var bowlerId = BowlerId.New();
+
+        var result = season.AddSuperSeniorBowlerOfTheYearWinner(bowlerId, age: 60);
+
+        result.IsError.ShouldBeFalse();
+        result.Value.ShouldBe(Result.Success);
+
+        var award = season.BowlerOfTheYearAwards.ShouldHaveSingleItem();
+        award.BowlerId.ShouldBe(bowlerId);
+        award.Category.ShouldBe(BowlerOfTheYearCategory.SuperSenior);
+    }
+
+    // ── AddRookieBowlerOfTheYearWinner ────────────────────────────────────────
+
+    [Fact(DisplayName = "AddRookieBowlerOfTheYearWinner should return an error when season is not complete")]
+    public void AddRookieBowlerOfTheYearWinner_ShouldReturnError_WhenSeasonNotComplete()
+    {
+        var season = SeasonFactory.Create(complete: false);
+
+        var result = season.AddRookieBowlerOfTheYearWinner(BowlerId.New(), isRookie: true);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(SeasonErrors.SeasonNotComplete);
+    }
+
+    [Fact(DisplayName = "AddRookieBowlerOfTheYearWinner should return an error when bowler ID is empty")]
+    public void AddRookieBowlerOfTheYearWinner_ShouldReturnError_WhenBowlerIdIsEmpty()
+    {
+        var season = SeasonFactory.Create(complete: true);
+
+        var result = season.AddRookieBowlerOfTheYearWinner(BowlerId.Empty, isRookie: true);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(BowlerOfTheYearAwardErrors.BowlerIdRequired);
+    }
+
+    [Fact(DisplayName = "AddRookieBowlerOfTheYearWinner should return an error when bowler is not a rookie")]
+    public void AddRookieBowlerOfTheYearWinner_ShouldReturnError_WhenBowlerIsNotARookie()
+    {
+        var season = SeasonFactory.Create(complete: true);
+
+        var result = season.AddRookieBowlerOfTheYearWinner(BowlerId.New(), isRookie: false);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(BowlerOfTheYearAwardErrors.NotARookie);
+    }
+
+    [Fact(DisplayName = "AddRookieBowlerOfTheYearWinner should add award when bowler is a new member")]
+    public void AddRookieBowlerOfTheYearWinner_ShouldAddAward_WhenBowlerIsARookie()
+    {
+        var season = SeasonFactory.Create(complete: true);
+        var bowlerId = BowlerId.New();
+
+        var result = season.AddRookieBowlerOfTheYearWinner(bowlerId, isRookie: true);
+
+        result.IsError.ShouldBeFalse();
+        result.Value.ShouldBe(Result.Success);
+
+        var award = season.BowlerOfTheYearAwards.ShouldHaveSingleItem();
+        award.BowlerId.ShouldBe(bowlerId);
+        award.Category.ShouldBe(BowlerOfTheYearCategory.Rookie);
+    }
+
+    // ── AddYouthBowlerOfTheYearWinner ─────────────────────────────────────────
+
+    [Fact(DisplayName = "AddYouthBowlerOfTheYearWinner should return an error when season is not complete")]
+    public void AddYouthBowlerOfTheYearWinner_ShouldReturnError_WhenSeasonNotComplete()
+    {
+        var season = SeasonFactory.Create(complete: false);
+
+        var result = season.AddYouthBowlerOfTheYearWinner(BowlerId.New(), age: 16);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(SeasonErrors.SeasonNotComplete);
+    }
+
+    [Fact(DisplayName = "AddYouthBowlerOfTheYearWinner should return an error when bowler ID is empty")]
+    public void AddYouthBowlerOfTheYearWinner_ShouldReturnError_WhenBowlerIdIsEmpty()
+    {
+        var season = SeasonFactory.Create(complete: true);
+
+        var result = season.AddYouthBowlerOfTheYearWinner(BowlerId.Empty, age: 16);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(BowlerOfTheYearAwardErrors.BowlerIdRequired);
+    }
+
+    [Fact(DisplayName = "AddYouthBowlerOfTheYearWinner should return an error when age is 18 or older")]
+    public void AddYouthBowlerOfTheYearWinner_ShouldReturnError_WhenAgeIs18OrOlder()
+    {
+        var season = SeasonFactory.Create(complete: true);
+
+        var result = season.AddYouthBowlerOfTheYearWinner(BowlerId.New(), age: 18);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(BowlerOfTheYearAwardErrors.AgeExceedsYouthLimit);
+    }
+
+    [Fact(DisplayName = "AddYouthBowlerOfTheYearWinner should add award when age is under 18")]
+    public void AddYouthBowlerOfTheYearWinner_ShouldAddAward_WhenAgeIsUnder18()
+    {
+        var season = SeasonFactory.Create(complete: true);
+        var bowlerId = BowlerId.New();
+
+        var result = season.AddYouthBowlerOfTheYearWinner(bowlerId, age: 17);
+
+        result.IsError.ShouldBeFalse();
+        result.Value.ShouldBe(Result.Success);
+
+        var award = season.BowlerOfTheYearAwards.ShouldHaveSingleItem();
+        award.BowlerId.ShouldBe(bowlerId);
+        award.Category.ShouldBe(BowlerOfTheYearCategory.Youth);
     }
 
     [Fact(DisplayName = "AddHighBlockWinner should return an error when season is not complete")]

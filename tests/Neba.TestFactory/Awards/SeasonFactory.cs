@@ -69,12 +69,24 @@ public static class SeasonFactory
     {
         var bowlerList = bowlerIds.ToList();
 
-        // BowlerOfTheYear: 1–3 bowlers assigned random categories
+        // BowlerOfTheYear: 1–3 bowlers assigned random categories with plausible eligibility values
         var categories = BowlerOfTheYearCategory.List.ToArray();
         foreach (var bowlerId in PickRandom(bowlerList, rng))
         {
             var category = categories[rng.Next(categories.Length)];
-            season.AddBowlerOfTheYearWinner(bowlerId, category);
+
+            if (category == BowlerOfTheYearCategory.Open)
+                season.AddOpenBowlerOfTheYearWinner(bowlerId);
+            else if (category == BowlerOfTheYearCategory.Woman)
+                season.AddWomanOfTheYearWinner(bowlerId, Gender.Female);
+            else if (category == BowlerOfTheYearCategory.Senior)
+                season.AddSeniorBowlerOfTheYearWinner(bowlerId, age: 55);
+            else if (category == BowlerOfTheYearCategory.SuperSenior)
+                season.AddSuperSeniorBowlerOfTheYearWinner(bowlerId, age: 65);
+            else if (category == BowlerOfTheYearCategory.Rookie)
+                season.AddRookieBowlerOfTheYearWinner(bowlerId, isRookie: true);
+            else if (category == BowlerOfTheYearCategory.Youth)
+                season.AddYouthBowlerOfTheYearWinner(bowlerId, age: 16);
         }
 
         // HighAverage: 1–3 bowlers sharing the same average
