@@ -610,7 +610,7 @@ A Season must be marked **Complete** before any awards may be assigned to bowler
 
 **Definition**: A record recognizing a bowler for exceptional achievement within a Season. All season award records share a common identity structure — a system-generated `Id`, a reference to the owning `Season`, and a reference to the `Bowler` receiving the award.
 
-There is no unique constraint on `(SeasonId, AwardType)` — ties produce multiple winners, each represented as a distinct record.
+There is no unique constraint per award type per season — ties produce multiple winners, each represented as a distinct record.
 
 Awards may only be assigned after the owning Season is marked **Complete**.
 
@@ -632,26 +632,8 @@ Awards may only be assigned after the owning Season is marked **Complete**.
 **In Code**:
 
 - Namespace: `Neba.Domain.Awards`
-- Type: `SeasonAward` (abstract entity, base for all season award types)
-- Discriminator: `SeasonAwardType` — stored in column `award_type`
-
----
-
-### SeasonAwardType
-
-**Definition**: Enumeration of the season award types recognized by NEBA.
-
-| Value | Description |
-| --- | --- |
-| `BowlerOfTheYear` | Overall performance award, given per category |
-| `HighAverage` | Awarded to the bowler with the highest pinfall average across Stat-Eligible Tournaments |
-| `HighBlock` | Awarded to the bowler with the highest 5-game qualifying block score |
-
-**In Code**:
-
-- Namespace: `Neba.Domain.Awards`
-- Type: `SeasonAwardType` (SmartEnum, int-valued)
-- Name values are stored as EF Core TPH discriminator column values — defined as explicit string literals, not `nameof()`, so DB values remain stable against C# renames
+- Types: `BowlerOfTheYearAward`, `HighAverageAward`, `HighBlockAward` — three independent entity classes, each mapping to its own table. No shared base class.
+- Shared identity type: `SeasonAwardId` (ULID-backed strongly-typed ID)
 
 ---
 
@@ -673,7 +655,7 @@ Age eligibility for a category is evaluated as of each tournament date during th
 **In Code**:
 
 - Namespace: `Neba.Domain.Awards`
-- Type: `BowlerOfTheYearAward` (entity, extends `SeasonAward`)
+- Type: `BowlerOfTheYearAward` (entity)
 
 ---
 
@@ -721,7 +703,7 @@ Baker team finals games do not count toward a bowler's average or game total.
 **In Code**:
 
 - Namespace: `Neba.Domain.Awards`
-- Type: `HighAverageAward` (entity, extends `SeasonAward`)
+- Type: `HighAverageAward` (entity)
 
 ---
 
@@ -741,7 +723,7 @@ Baker team finals games do not count toward a bowler's average or game total.
 **In Code**:
 
 - Namespace: `Neba.Domain.Awards`
-- Type: `HighBlockAward` (entity, extends `SeasonAward`)
+- Type: `HighBlockAward` (entity)
 
 ---
 

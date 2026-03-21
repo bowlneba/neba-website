@@ -46,5 +46,8 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
         configurationBuilder.Properties<SeasonId>()
             .HaveConversion<UlidTypedIdConverter<SeasonId>>();
+
+        configurationBuilder.Properties<SeasonAwardId>()
+            .HaveConversion<UlidTypedIdConverter<SeasonAwardId>>();
     }
 }
