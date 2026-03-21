@@ -5,7 +5,7 @@ namespace Neba.Domain.Tests.Awards;
 
 public sealed class BowlerOfTheYearAwardTests
 {
-    [Fact]
+    [Fact(DisplayName = "Create should return an error when bowler ID is empty")]
     public void Create_ShouldReturnAnError_WhenBowlerIdIsEmpty()
     {
         // Arrange
@@ -20,7 +20,7 @@ public sealed class BowlerOfTheYearAwardTests
         result.FirstError.ShouldBe(BowlerOfTheYearAwardErrors.BowlerIdRequired);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Create should return a BowlerOfTheYearAward when bowler ID is valid")]
     public void Create_ShouldReturnAward_WhenBowlerIdIsValid()
     {
         // Arrange

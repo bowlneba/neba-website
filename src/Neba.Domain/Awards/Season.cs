@@ -85,6 +85,22 @@ public sealed class Season
     /// </summary>
     public IReadOnlyCollection<HighBlockAward> HighBlockAwards
         => _highBlockAwards.AsReadOnly();
+
+    public ErrorOr<Success> AddHighBlockWinner(BowlerId bowlerId, int score)
+    {
+        if (!Complete)
+        {
+            return SeasonErrors.SeasonNotComplete;
+        }
+
+        // if there is already a high block winner, make sure the bowler id isn't the same, and that the score is the same
+
+        // create high block winner award (define rules in entity)
+
+        // add it to collection
+
+        // return success
+    }
 }
 
 internal static class SeasonErrors
