@@ -38,7 +38,7 @@
     PhotoPath: pula.tao.pdf
   },
   {
-    Year: 2023,
+    Year: 2016,
     BowlerName: {
       FirstName: Kelly,
       LastName: Gottlieb,
@@ -48,17 +48,13 @@
       {
         Name: Meritorious Service,
         Value: 2
-      },
-      {
-        Name: Friend of NEBA,
-        Value: 4
       }
     ],
     PhotoContainer: container-7q17m3bn,
     PhotoPath: primary.cap.pdf
   },
   {
-    Year: 2021,
+    Year: 2019,
     BowlerName: {
       FirstName: Franklin,
       LastName: Barrows,
@@ -69,13 +65,21 @@
       {
         Name: Superior Performance,
         Value: 1
+      },
+      {
+        Name: Meritorious Service,
+        Value: 2
+      },
+      {
+        Name: Friend of NEBA,
+        Value: 4
       }
     ],
     PhotoContainer: container-vz1og4fh,
     PhotoPath: east_caribbean_dollar_withdrawal.msl.gif
   },
   {
-    Year: 2025,
+    Year: 2008,
     BowlerName: {
       FirstName: Sandy,
       LastName: Shanahan,
@@ -83,13 +87,21 @@
     },
     Categories: [
       {
+        Name: Superior Performance,
+        Value: 1
+      },
+      {
+        Name: Meritorious Service,
+        Value: 2
+      },
+      {
         Name: Friend of NEBA,
         Value: 4
       }
     ]
   },
   {
-    Year: 2008,
+    Year: 2010,
     BowlerName: {
       FirstName: Leo,
       LastName: Herzog,
@@ -109,13 +121,21 @@
     PhotoPath: functionality_copying_assimilated.rgb.mp2
   },
   {
-    Year: 2016,
+    Year: 2018,
     BowlerName: {
       FirstName: Yolanda,
       LastName: Kreiger,
       Nickname: Brice
     },
     Categories: [
+      {
+        Name: Superior Performance,
+        Value: 1
+      },
+      {
+        Name: Meritorious Service,
+        Value: 2
+      },
       {
         Name: Friend of NEBA,
         Value: 4
