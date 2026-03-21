@@ -86,20 +86,40 @@ public sealed class Season
     public IReadOnlyCollection<HighBlockAward> HighBlockAwards
         => _highBlockAwards.AsReadOnly();
 
-    public ErrorOr<Success> AddHighBlockWinner(BowlerId bowlerId, int score)
+    /// <summary>
+    /// Assigns a High Block award to the specified bowler with the specified block score.
+    /// </summary>
+    /// <param name="bowlerId">The unique identifier of the bowler.</param>
+    /// <param name="score">The block score achieved by the bowler.</param>
+    /// <param name="games">The number of games in the block.</param>
+    /// <returns>A result indicating success or failure.</returns>
+    public ErrorOr<Success> AddHighBlockWinner(BowlerId bowlerId, int score, int games)
     {
         if (!Complete)
         {
             return SeasonErrors.SeasonNotComplete;
         }
 
-        // if there is already a high block winner, make sure the bowler id isn't the same, and that the score is the same
+        if (_highBlockAwards.Count > 0 && _highBlockAwards[0].BlockScore != score)
+        {
+            return SeasonErrors.HighBlockScoreMismatch;
+        }
 
-        // create high block winner award (define rules in entity)
+        if (_highBlockAwards.Any(award => award.BowlerId == bowlerId))
+        {
+            return SeasonErrors.BowlerAlreadyAwarded;
+        }
 
-        // add it to collection
+        var awardResult = HighBlockAward.Create(bowlerId, score, games);
 
-        // return success
+        if (awardResult.IsError)
+        {
+            return awardResult.Errors;
+        }
+
+        _highBlockAwards.Add(awardResult.Value);
+
+        return Result.Success;
     }
 }
 
@@ -108,4 +128,12 @@ internal static class SeasonErrors
     public static readonly Error SeasonNotComplete = Error.Validation(
         code: "Season.SeasonNotComplete",
         description: "Season must be marked complete before awards can be assigned.");
+
+    public static readonly Error HighBlockScoreMismatch = Error.Validation(
+        code: "Season.HighBlockScoreMismatch",
+        description: "All High Block awards for a season must have the same block score.");
+
+    public static readonly Error BowlerAlreadyAwarded = Error.Validation(
+        code: "Season.BowlerAlreadyAwarded",
+        description: "A bowler cannot receive more than one High Block award in the same season.");
 }
