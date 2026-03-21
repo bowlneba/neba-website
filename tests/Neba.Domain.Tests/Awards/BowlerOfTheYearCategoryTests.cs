@@ -20,10 +20,10 @@ public sealed class BowlerOfTheYearCategoryTests
     [Theory(DisplayName = "Bowler of the year category values should be correct")]
     [InlineData("Open", 1, TestDisplayName = "Open category should have value 1")]
     [InlineData("Woman", 2, TestDisplayName = "Woman category should have value 2")]
-    [InlineData("Senior", 3, TestDisplayName = "Senior category should have value 3")]
-    [InlineData("Super Senior", 4, TestDisplayName = "Super Senior category should have value 4")]
-    [InlineData("Rookie", 5, TestDisplayName = "Rookie category should have value 5")]
-    [InlineData("Youth", 6, TestDisplayName = "Youth category should have value 6")]
+    [InlineData("Senior", 50, TestDisplayName = "Senior category should have value 50")]
+    [InlineData("Super Senior", 60, TestDisplayName = "Super Senior category should have value 60")]
+    [InlineData("Rookie", 3, TestDisplayName = "Rookie category should have value 3")]
+    [InlineData("Youth", 18, TestDisplayName = "Youth category should have value 18")]
     public void BowlerOfTheYearCategory_ShouldHaveCorrectValues(string name, int value)
     {
         // Act

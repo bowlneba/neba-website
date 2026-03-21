@@ -22,22 +22,22 @@ public sealed class BowlerOfTheYearCategory
     /// <summary>
     /// Bowlers age 50 or older.
     /// </summary>
-    public static readonly BowlerOfTheYearCategory Senior = new("Senior", 3);
+    public static readonly BowlerOfTheYearCategory Senior = new("Senior", 50);
 
     /// <summary>
     /// Bowlers age 60 or older.
     /// </summary>
-    public static readonly BowlerOfTheYearCategory SuperSenior = new("Super Senior", 4);
+    public static readonly BowlerOfTheYearCategory SuperSenior = new("Super Senior", 60);
 
     /// <summary>
     /// Bowlers paying a New Member membership in the current season.
     /// </summary>
-    public static readonly BowlerOfTheYearCategory Rookie = new("Rookie", 5);
+    public static readonly BowlerOfTheYearCategory Rookie = new("Rookie", 3);
 
     /// <summary>
     /// Bowlers under age 18.
     /// </summary>
-    public static readonly BowlerOfTheYearCategory Youth = new("Youth", 6);
+    public static readonly BowlerOfTheYearCategory Youth = new("Youth", 18);
 
     private BowlerOfTheYearCategory(string name, int value)
         : base(name, value) { }
