@@ -1,3 +1,7 @@
+using ErrorOr;
+
+using Neba.Domain.Bowlers;
+
 namespace Neba.Domain.Awards;
 
 /// <summary>
@@ -41,6 +45,31 @@ public sealed class Season
     public IReadOnlyCollection<BowlerOfTheYearAward> BowlerOfTheYearAwards
         => _bowlerOfTheYearAwards.AsReadOnly();
 
+    /// <summary>
+    /// Assigns a Bowler of the Year award to the specified bowler in the specified category.
+    /// </summary>
+    /// <param name="bowlerId">The unique identifier of the bowler.</param>
+    /// <param name="category">The category of the Bowler of the Year award.</param>
+    /// <returns>A result indicating success or failure.</returns>
+    public ErrorOr<Success> AddBowlerOfTheYearWinner(BowlerId bowlerId, BowlerOfTheYearCategory category)
+    {
+        if (!Complete)
+        {
+            return SeasonErrors.SeasonNotComplete;
+        }
+
+        var awardResult = BowlerOfTheYearAward.Create(bowlerId, category);
+
+        if (awardResult.IsError)
+        {
+            return awardResult.Errors;
+        }
+
+        _bowlerOfTheYearAwards.Add(awardResult.Value);
+
+        return Result.Success;
+    }
+
     private readonly List<HighAverageAward> _highAverageAwards = [];
 
     /// <summary>
@@ -56,4 +85,11 @@ public sealed class Season
     /// </summary>
     public IReadOnlyCollection<HighBlockAward> HighBlockAwards
         => _highBlockAwards.AsReadOnly();
+}
+
+internal static class SeasonErrors
+{
+    public static readonly Error SeasonNotComplete = Error.Validation(
+        code: "Season.SeasonNotComplete",
+        description: "Season must be marked complete before awards can be assigned.");
 }
