@@ -66,6 +66,26 @@ public sealed class SeasonTests
         award.Category.ShouldBe(category);
     }
 
+    [Fact(DisplayName = "AddBowlerOfTheYearWinner should allow multiple bowlers to win the same category")]
+    public void AddBowlerOfTheYearWinner_ShouldAddAward_WhenSameCategoryAwardedToMultipleBowlers()
+    {
+        // Arrange
+        var season = SeasonFactory.Create(complete: true);
+        var bowlerId1 = BowlerId.New();
+        var bowlerId2 = BowlerId.New();
+        var category = BowlerOfTheYearCategory.Open;
+
+        season.AddBowlerOfTheYearWinner(bowlerId1, category).ShouldBe(Result.Success);
+
+        // Act
+        var result = season.AddBowlerOfTheYearWinner(bowlerId2, category);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.ShouldBe(Result.Success);
+        season.BowlerOfTheYearAwards.Count.ShouldBe(2);
+    }
+
     [Fact(DisplayName = "AddHighBlockWinner should return an error when season is not complete")]
     public void AddHighBlockWinner_ShouldReturnError_WhenSeasonNotComplete()
     {

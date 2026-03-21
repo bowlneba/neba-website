@@ -58,13 +58,13 @@ public sealed class HighBlockAwardTests
         result.FirstError.Metadata!["MaximumBlockScore"].ShouldBe(1500);
     }
 
-    [Fact(DisplayName = "Create should return a HighBlockAward when inputs are valid")]
-    public void Create_ShouldReturnAward_WhenInputsAreValid()
+    [Fact(DisplayName = "Create should return a HighBlockAward when block score equals the maximum possible score")]
+    public void Create_ShouldReturnAward_WhenBlockScoreEqualsMaximum()
     {
         // Arrange
         var bowlerId = BowlerId.New();
-        const int blockScore = 1200;
         const int games = 5;
+        const int blockScore = games * 300; // exactly 1500 — boundary value; > is the invariant, not >=
 
         // Act
         var result = HighBlockAward.Create(bowlerId, blockScore, games);
