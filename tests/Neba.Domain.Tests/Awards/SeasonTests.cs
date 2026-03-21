@@ -2,10 +2,13 @@ using ErrorOr;
 
 using Neba.Domain.Awards;
 using Neba.Domain.Bowlers;
+using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Awards;
 
 namespace Neba.Domain.Tests.Awards;
 
+[UnitTest]
+[Component("Awards.Season")]
 public sealed class SeasonTests
 {
     [Fact(DisplayName = "AddBowlerOfTheYearWinner should return an error when season is not complete")]
@@ -121,10 +124,10 @@ public sealed class SeasonTests
 
         // Assert
         result.IsError.ShouldBeTrue();
-        result.FirstError.ShouldBe(SeasonErrors.BowlerAlreadyAwarded);
+        result.FirstError.ShouldBe(SeasonErrors.BowlerAlreadyAwardedHighBlock);
     }
 
-    [Fact]
+    [Fact(DisplayName = "AddHighBlockWinner should return an error when HighBlockAward creation fails")]
     public void AddHighBlockWinner_ShouldReturnError_WhenHighBlockAwardCreationFails()
     {
         // Arrange
@@ -162,5 +165,123 @@ public sealed class SeasonTests
         var award = season.HighBlockAwards.ShouldHaveSingleItem();
         award.BowlerId.ShouldBe(bowlerId);
         award.BlockScore.ShouldBe(score);
+    }
+
+    [Fact(DisplayName = "AddHighAverageWinner should return an error when season is not complete")]
+    public void AddHighAverageWinner_ShouldReturnError_WhenSeasonNotComplete()
+    {
+        // Arrange
+        var season = SeasonFactory.Create(complete: false);
+        var bowlerId = BowlerId.New();
+
+        // Act
+        var result = season.AddHighAverageWinner(bowlerId, average: 210m, totalGames: 20, tournamentsParticipated: 4, statEligibleTournamentCount: 4);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(SeasonErrors.SeasonNotComplete);
+    }
+
+    [Fact(DisplayName = "AddHighAverageWinner should return an error when averages mismatch")]
+    public void AddHighAverageWinner_ShouldReturnError_WhenAverageMismatch()
+    {
+        // Arrange
+        var season = SeasonFactory.Create(complete: true);
+        const int totalGames = 20;
+        const int tournamentsParticipated = 4;
+        const int statEligibleTournamentCount = 4;
+
+        season.AddHighAverageWinner(BowlerId.New(), average: 210m, totalGames, tournamentsParticipated, statEligibleTournamentCount).ShouldBe(Result.Success);
+
+        // Act
+        var result = season.AddHighAverageWinner(BowlerId.New(), average: 200m, totalGames, tournamentsParticipated, statEligibleTournamentCount);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(SeasonErrors.HighAverageMismatch);
+    }
+
+    [Fact(DisplayName = "AddHighAverageWinner should return an error when bowler has already received a High Average award")]
+    public void AddHighAverageWinner_ShouldReturnError_WhenBowlerAlreadyAwarded()
+    {
+        // Arrange
+        var season = SeasonFactory.Create(complete: true);
+        var bowlerId = BowlerId.New();
+        const decimal average = 210m;
+        const int totalGames = 20;
+        const int tournamentsParticipated = 4;
+        const int statEligibleTournamentCount = 4;
+
+        season.AddHighAverageWinner(bowlerId, average, totalGames, tournamentsParticipated, statEligibleTournamentCount).ShouldBe(Result.Success);
+
+        // Act
+        var result = season.AddHighAverageWinner(bowlerId, average, totalGames, tournamentsParticipated, statEligibleTournamentCount);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(SeasonErrors.BowlerAlreadyAwardedHighAverage);
+    }
+
+    [Fact(DisplayName = "AddHighAverageWinner should return an error when bowler has insufficient games")]
+    public void AddHighAverageWinner_ShouldReturnError_WhenInsufficientGames()
+    {
+        // Arrange
+        var season = SeasonFactory.Create(complete: true);
+        var bowlerId = BowlerId.New();
+        // 6 stat-eligible tournaments → minimum = floor(4.5 × 6) = 27 games
+        const int statEligibleTournamentCount = 6;
+        const int totalGames = 26; // one short of the 27-game minimum
+
+        // Act
+        var result = season.AddHighAverageWinner(bowlerId, average: 210m, totalGames, tournamentsParticipated: 6, statEligibleTournamentCount);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Season.HighAverageInsufficientGames");
+        result.FirstError.Metadata!["MinimumGames"].ShouldBe(27);
+    }
+
+    [Fact(DisplayName = "AddHighAverageWinner should return an error when HighAverageAward creation fails")]
+    public void AddHighAverageWinner_ShouldReturnError_WhenAwardCreationFails()
+    {
+        // Arrange
+        var season = SeasonFactory.Create(complete: true);
+        var invalidBowlerId = BowlerId.Empty;
+        // 4 stat-eligible tournaments → minimum = floor(4.5 × 4) = 18 games; totalGames must clear this before reaching Create()
+        const int statEligibleTournamentCount = 4;
+        const int totalGames = 20;
+
+        // Act
+        var result = season.AddHighAverageWinner(invalidBowlerId, average: 210m, totalGames, tournamentsParticipated: 4, statEligibleTournamentCount);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(HighAverageAwardErrors.BowlerIdRequired);
+    }
+
+    [Fact(DisplayName = "AddHighAverageWinner should add award when inputs are valid")]
+    public void AddHighAverageWinner_ShouldAddAward_WhenInputsAreValid()
+    {
+        // Arrange
+        var season = SeasonFactory.Create(complete: true);
+        var bowlerId = BowlerId.New();
+        const decimal average = 210m;
+        // 4 stat-eligible tournaments → minimum = floor(4.5 × 4) = 18 games
+        const int statEligibleTournamentCount = 4;
+        const int totalGames = 20;
+        const int tournamentsParticipated = 4;
+
+        // Act
+        var result = season.AddHighAverageWinner(bowlerId, average, totalGames, tournamentsParticipated, statEligibleTournamentCount);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.ShouldBe(Result.Success);
+
+        var award = season.HighAverageAwards.ShouldHaveSingleItem();
+        award.BowlerId.ShouldBe(bowlerId);
+        award.Average.ShouldBe(average);
+        award.TotalGames.ShouldBe(totalGames);
+        award.TournamentsParticipated.ShouldBe(tournamentsParticipated);
     }
 }

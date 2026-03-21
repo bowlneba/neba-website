@@ -1,8 +1,11 @@
 using Neba.Domain.Awards;
 using Neba.Domain.Bowlers;
+using Neba.TestFactory.Attributes;
 
 namespace Neba.Domain.Tests.Awards;
 
+[UnitTest]
+[Component("Awards.HighAverageAward")]
 public sealed class HighAverageAwardTests
 {
     [Fact(DisplayName = "Create should return an error when bowler ID is empty")]

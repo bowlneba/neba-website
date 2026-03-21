@@ -78,6 +78,58 @@ public sealed class Season
     public IReadOnlyCollection<HighAverageAward> HighAverageAwards
         => _highAverageAwards.AsReadOnly();
 
+    private static int ComputeMinimumNumberOfGamesForHighAverage(int statElgibleTournamentCount)
+        => (int)Math.Floor(4.5m * statElgibleTournamentCount);
+
+    /// <summary>
+    /// Assigns a High Average award to the specified bowler with the specified average, total games, and tournaments participated.
+    /// </summary>
+    /// <param name="bowlerId">The unique identifier of the bowler.</param>
+    /// <param name="average">The average score of the bowler.</param>
+    /// <param name="totalGames">The total number of games played by the bowler.</param>
+    /// <param name="tournamentsParticipated">The number of tournaments the bowler participated in.</param>
+    /// <param name="statEligibleTournamentCount">The number of stat-eligible tournaments in the season.</param>
+    /// <returns>A result indicating success or failure.</returns>
+    public ErrorOr<Success> AddHighAverageWinner(
+        BowlerId bowlerId,
+        decimal average,
+        int totalGames,
+        int tournamentsParticipated,
+        int statEligibleTournamentCount)
+    {
+        if (!Complete)
+        {
+            return SeasonErrors.SeasonNotComplete;
+        }
+
+        if (_highAverageAwards.Count > 0 && _highAverageAwards[0].Average != average)
+        {
+            return SeasonErrors.HighAverageMismatch;
+        }
+
+        if (_highAverageAwards.Any(award => award.BowlerId == bowlerId))
+        {
+            return SeasonErrors.BowlerAlreadyAwardedHighAverage;
+        }
+
+        var minimumNumberOfGames = ComputeMinimumNumberOfGamesForHighAverage(statEligibleTournamentCount);
+        if (totalGames < minimumNumberOfGames)
+        {
+            return SeasonErrors.HighAverageInsufficientGames(minimumNumberOfGames);
+        }
+
+        var awardResult = HighAverageAward.Create(bowlerId, average, totalGames, tournamentsParticipated);
+
+        if (awardResult.IsError)
+        {
+            return awardResult.Errors;
+        }
+
+        _highAverageAwards.Add(awardResult.Value);
+
+        return Result.Success;
+    }
+
     private readonly List<HighBlockAward> _highBlockAwards = [];
 
     /// <summary>
@@ -107,7 +159,7 @@ public sealed class Season
 
         if (_highBlockAwards.Any(award => award.BowlerId == bowlerId))
         {
-            return SeasonErrors.BowlerAlreadyAwarded;
+            return SeasonErrors.BowlerAlreadyAwardedHighBlock;
         }
 
         var awardResult = HighBlockAward.Create(bowlerId, score, games);
@@ -133,7 +185,20 @@ internal static class SeasonErrors
         code: "Season.HighBlockScoreMismatch",
         description: "All High Block awards for a season must have the same block score.");
 
-    public static readonly Error BowlerAlreadyAwarded = Error.Validation(
-        code: "Season.BowlerAlreadyAwarded",
+    public static readonly Error BowlerAlreadyAwardedHighBlock = Error.Validation(
+        code: "Season.BowlerAlreadyAwardedHighBlock",
         description: "A bowler cannot receive more than one High Block award in the same season.");
+
+    public static readonly Error HighAverageMismatch = Error.Validation(
+        code: "Season.HighAverageMismatch",
+        description: "All High Average awards for a season must have the same average.");
+
+    public static readonly Error BowlerAlreadyAwardedHighAverage = Error.Validation(
+        code: "Season.BowlerAlreadyAwardedHighAverage",
+        description: "A bowler cannot receive more than one High Average award in the same season.");
+
+    public static Error HighAverageInsufficientGames(int minimumGames) => Error.Validation(
+        code: "Season.HighAverageInsufficientGames",
+        description: $"A bowler must have completed at least {minimumGames} games in Stat-Eligible Tournaments during the season to qualify for a High Average award.",
+        metadata: new Dictionary<string, object> { { "MinimumGames", minimumGames } });
 }

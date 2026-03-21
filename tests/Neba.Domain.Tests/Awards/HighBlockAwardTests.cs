@@ -1,8 +1,11 @@
 using Neba.Domain.Awards;
 using Neba.Domain.Bowlers;
+using Neba.TestFactory.Attributes;
 
 namespace Neba.Domain.Tests.Awards;
 
+[UnitTest]
+[Component("Awards.HighBlockAward")]
 public sealed class HighBlockAwardTests
 {
     [Fact(DisplayName = "Create should return an error when bowler ID is empty")]
@@ -51,7 +54,8 @@ public sealed class HighBlockAwardTests
 
         // Assert
         result.IsError.ShouldBeTrue();
-        result.FirstError.ShouldBe(HighBlockAwardErrors.BlockScoreExceedsMaximum(games));
+        result.FirstError.Code.ShouldBe("HighBlockAward.BlockScoreExceedsMaximum");
+        result.FirstError.Metadata!["MaximumBlockScore"].ShouldBe(1500);
     }
 
     [Fact(DisplayName = "Create should return a HighBlockAward when inputs are valid")]

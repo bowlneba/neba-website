@@ -65,5 +65,6 @@ internal static class HighBlockAwardErrors
 
     public static Error BlockScoreExceedsMaximum(int games) => Error.Validation(
         code: "HighBlockAward.BlockScoreExceedsMaximum",
-        description: $"Block score cannot exceed the maximum possible score of {games * 300} for {games} games.");
+        description: $"Block score cannot exceed the maximum possible score of {games * 300} for {games} games.",
+        metadata: new Dictionary<string, object> { { "MaximumBlockScore", games * 300 } });
 }
