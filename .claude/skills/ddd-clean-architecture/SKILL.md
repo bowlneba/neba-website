@@ -138,6 +138,35 @@ public readonly record struct DateRange
 - Reference other aggregates by identity only
 - Keep aggregates small and focused
 
+#### Always-Valid Child Entities
+
+Child entities owned by an aggregate must be constructed only through the aggregate root. Use an `internal static ErrorOr<T> Create(...)` factory on the child entity to validate entity-own invariants. The `internal` modifier ensures the entity cannot be constructed from outside the aggregate's assembly.
+
+The aggregate root's assignment methods take raw properties, delegate entity construction to the internal factory, enforce aggregate-level invariants, and return a single `ErrorOr<Success>`:
+
+```csharp
+// Entity owns its own invariants
+internal static ErrorOr<HighBlockAward> Create(BowlerId bowlerId, int blockScore)
+{
+    if (blockScore <= 0)
+        return Error.Validation("HighBlockAward.BlockScore", "Block score must be greater than zero.");
+    return new HighBlockAward { Id = SeasonAwardId.New(), BowlerId = bowlerId, BlockScore = blockScore };
+}
+
+// Aggregate enforces its own invariant, delegates entity validation to the entity
+public ErrorOr<Success> AssignHighBlockAward(BowlerId bowlerId, int blockScore)
+{
+    if (!Complete)
+        return Error.Conflict("Season.NotComplete", "Awards may only be assigned to a completed season.");
+    var award = HighBlockAward.Create(bowlerId, blockScore);
+    if (award.IsError) return award.Errors;
+    _highBlockAwards.Add(award.Value);
+    return Result.Success;
+}
+```
+
+This pattern separates concerns precisely: entity structural invariants stay on the entity, aggregate state invariants stay on the aggregate, and the caller sees a single `ErrorOr` chain. Avoid putting entity validation on the aggregate (wrong owner) or making `Create()` public (allows invalid construction outside the aggregate).
+
 ### Aggregate Base Class
 
 Minimal base class for domain event mechanics only. No identity property — each aggregate defines its own identity shape.

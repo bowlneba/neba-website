@@ -32,6 +32,35 @@ Before ending a session where significant discoveries were made, consider whethe
 - Queries return DTOs, never domain entities
 - Validators handle structural validation only (no DB lookups, no business rules)
 
+### Always-Valid Entities and Aggregate Assignment
+
+Child entities owned by an aggregate use `internal static ErrorOr<T> Create(...)` factory methods that validate the entity's own structural invariants. The `internal` modifier ensures the entity can only be constructed through the owning aggregate (same assembly) — never directly from application or test code.
+
+The aggregate root's assign methods take raw properties, call the internal factory, enforce aggregate-level invariants (e.g., `Complete == true`), and return a single `ErrorOr<Success>` to the caller:
+
+```csharp
+// Child entity owns its own invariants — internal so only Season can construct it
+internal static ErrorOr<HighBlockAward> Create(BowlerId bowlerId, int blockScore)
+{
+    if (blockScore <= 0)
+        return Error.Validation("HighBlockAward.BlockScore", "Block score must be greater than zero.");
+    return new HighBlockAward { Id = SeasonAwardId.New(), BowlerId = bowlerId, BlockScore = blockScore };
+}
+
+// Aggregate enforces its own invariant and delegates entity validation to the entity
+public ErrorOr<Success> AssignHighBlockAward(BowlerId bowlerId, int blockScore)
+{
+    if (!Complete)
+        return Error.Conflict("Season.NotComplete", "Awards may only be assigned to a completed season.");
+    var award = HighBlockAward.Create(bowlerId, blockScore);
+    if (award.IsError) return award.Errors;
+    _highBlockAwards.Add(award.Value);
+    return Result.Success;
+}
+```
+
+**Why this matters**: If entity validation lived on the aggregate, the aggregate would absorb invariants that have nothing to do with it. If `Create()` were public, the entity could be constructed in an invalid state outside the aggregate. The internal factory gives call-site simplicity (single `ErrorOr` chain) while keeping each invariant owned by the right type.
+
 ### Testing Requirements
 
 #### JavaScript Mutation Testing

@@ -25,6 +25,9 @@ Flag when:
 - Domain entities expose public setters or mutable collections
 - Aggregates lack domain event support when state changes occur
 - Business logic appears outside the domain layer
+- A child entity owned by an aggregate has a `public static Create(...)` factory — it should be `internal` so construction is only possible through the aggregate root (same assembly)
+- An aggregate's assign/add method validates child entity invariants directly (e.g., checking `blockScore > 0` on `Season`) instead of delegating to the child entity's `internal static Create(...)` factory
+- A child entity is instantiated directly via `new` outside the aggregate root — application or test code must go through the aggregate's assign methods
 
 ### Application Layer (`Neba.Application`)
 
