@@ -1,3 +1,5 @@
+using ErrorOr;
+
 using Neba.Domain.Bowlers;
 
 namespace Neba.Domain.Awards;
@@ -28,4 +30,28 @@ public sealed class BowlerOfTheYearAward
     /// Navigation to the bowler. Internal — for EF Core query projections only.
     /// </summary>
     internal Bowler Bowler { get; init; } = null!;
+
+    internal static ErrorOr<BowlerOfTheYearAward> Create(BowlerId bowlerId, BowlerOfTheYearCategory category)
+    {
+        if (bowlerId == BowlerId.Empty)
+        {
+            return BowlerOfTheYearAwardErrors.BowlerIdRequired;
+        }
+
+        var award = new BowlerOfTheYearAward
+        {
+            Id = SeasonAwardId.New(),
+            BowlerId = bowlerId,
+            Category = category
+        };
+
+        return award;
+    }
+}
+
+internal static class BowlerOfTheYearAwardErrors
+{
+    public static readonly Error BowlerIdRequired = Error.Validation(
+        code: "BowlerOfTheYearAward.BowlerIdRequired",
+        description: "Bowler ID is required.");
 }
