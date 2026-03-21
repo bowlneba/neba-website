@@ -558,6 +558,54 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 ---
 
+## Awards
+
+### Season
+
+**Definition**: The temporal boundary over which awards are calculated and assigned. A Season has an explicit start and end date rather than being derived from tournament dates, accommodating non-standard spans such as the combined 2020–2021 Season resulting from tournament cancellations.
+
+A Season must be marked **Complete** before any awards may be assigned to bowlers. This ensures that in-progress award standings — such as a bowler currently leading Bowler of the Year — do not prematurely influence Hall of Fame point totals.
+
+**Properties**:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `Id` | ULID | System-generated unique identifier |
+| `Description` | string | Human-readable label (e.g., `"2022 Season"`, `"2020–2021 Season"`) |
+| `StartDate` | date | First date of the season. Inclusive |
+| `EndDate` | date | Last date of the season. Inclusive |
+| `Complete` | bool | Whether the season has been closed and awards may be assigned. Defaults to `false` |
+
+**Rules**:
+
+- `StartDate` must be earlier than `EndDate`
+- Awards may not be assigned to bowlers until `Complete` is `true`
+- Once marked Complete, a Season may not be reopened
+- A Tournament's dates must fall within the `StartDate` and `EndDate` of its referenced Season *(enforced at Tournament creation/update; see Tournament)*
+
+**Relationships**:
+
+| Related Concept | Relationship | Notes |
+| --- | --- | --- |
+| `Tournament` | references Season by `SeasonId` | Tournament owns the reference; Season has no knowledge of Tournaments |
+| `SeasonAward` | owned by Season | Awards are assigned as children of Season. *(Deferred — see Out of Scope below)* |
+
+**Domain Events**:
+
+| Event | Trigger |
+| --- | --- |
+| `SeasonCompleted` | Raised when a Season is marked Complete. Downstream consumers (e.g., Hall of Fame point calculations) react to this event |
+
+> **Out of Scope (Current)**: Award types, assignment logic, and bowler award records are deferred to a future Awards modeling session. Some of this will be addressed in the current branch; the remainder will follow. No concept of season templates or recurring schedule patterns is modeled at this time.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Awards`
+- Type: `Season` (aggregate root)
+- Identity type: `SeasonId` (ULID-backed strongly-typed ID)
+
+---
+
 ## Hall of Fame
 
 The NEBA program that formally recognizes individuals for exceptional competitive achievement, organizational service, or meaningful contribution to the organization. Inductees are honored at a Hall of Fame Banquet held every two years.
