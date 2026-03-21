@@ -697,8 +697,8 @@ Baker team finals games do not count toward a bowler's average or game total.
 | `SeasonId` | ULID | The Season to which this award belongs |
 | `BowlerId` | ULID | The bowler receiving the award |
 | `Average` | decimal | The winner's pinfall average per game |
-| `TotalGames` | int | Total games bowled across Stat-Eligible Tournaments |
-| `TournamentsParticipated` | int | Number of Stat-Eligible Tournaments the bowler participated in |
+| `TotalGames` | int? | Total games bowled across Stat-Eligible Tournaments. Nullable — not recorded for all historical seasons |
+| `TournamentsParticipated` | int? | Number of Stat-Eligible Tournaments the bowler participated in. Nullable — not recorded for all historical seasons |
 
 **In Code**:
 

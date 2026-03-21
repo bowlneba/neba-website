@@ -27,12 +27,12 @@ public sealed class HighAverageAward
     /// <summary>
     /// Total games bowled across Stat-Eligible Tournaments.
     /// </summary>
-    public required int TotalGames { get; init; }
+    public int? TotalGames { get; init; }
 
     /// <summary>
     /// Number of Stat-Eligible Tournaments the bowler participated in.
     /// </summary>
-    public required int TournamentsParticipated { get; init; }
+    public int? TournamentsParticipated { get; init; }
 
     /// <summary>
     /// Navigation to the bowler. Internal — for EF Core query projections only.
