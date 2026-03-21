@@ -32,6 +32,9 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
         modelBuilder.ApplyConfiguration(new BowlerConfiguration());
         modelBuilder.ApplyConfiguration(new HallOfFameInductionConfiguration());
         modelBuilder.ApplyConfiguration(new SeasonConfiguration());
+        modelBuilder.ApplyConfiguration(new BowlerOfTheYearAwardConfiguration());
+        modelBuilder.ApplyConfiguration(new HighAverageAwardConfiguration());
+        modelBuilder.ApplyConfiguration(new HighBlockAwardConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

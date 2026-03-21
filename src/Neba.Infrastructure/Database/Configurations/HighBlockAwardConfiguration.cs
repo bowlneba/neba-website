@@ -23,7 +23,7 @@ internal sealed class HighBlockAwardConfiguration
             .IsRequired();
 
         builder.HasOne<Season>()
-            .WithMany()
+            .WithMany(season => season.HighBlockAwards)
             .HasForeignKey(SeasonConfiguration.ForeignKeyName)
             .OnDelete(DeleteBehavior.Cascade);
 

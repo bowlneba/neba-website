@@ -23,7 +23,7 @@ internal sealed class HighAverageAwardConfiguration
             .IsRequired();
 
         builder.HasOne<Season>()
-            .WithMany()
+            .WithMany(season => season.HighAverageAwards)
             .HasForeignKey(SeasonConfiguration.ForeignKeyName)
             .OnDelete(DeleteBehavior.Cascade);
 

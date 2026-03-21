@@ -32,4 +32,28 @@ public sealed class Season
     /// Once <see langword="true"/>, a season may not be reopened.
     /// </summary>
     public bool Complete { get; init; }
+
+    private readonly List<BowlerOfTheYearAward> _bowlerOfTheYearAwards = [];
+
+    /// <summary>
+    /// Bowler of the Year awards assigned to this season.
+    /// </summary>
+    public IReadOnlyCollection<BowlerOfTheYearAward> BowlerOfTheYearAwards
+        => _bowlerOfTheYearAwards.AsReadOnly();
+
+    private readonly List<HighAverageAward> _highAverageAwards = [];
+
+    /// <summary>
+    /// High Average awards assigned to this season.
+    /// </summary>
+    public IReadOnlyCollection<HighAverageAward> HighAverageAwards
+        => _highAverageAwards.AsReadOnly();
+
+    private readonly List<HighBlockAward> _highBlockAwards = [];
+
+    /// <summary>
+    /// High Block awards assigned to this season.
+    /// </summary>
+    public IReadOnlyCollection<HighBlockAward> HighBlockAwards
+        => _highBlockAwards.AsReadOnly();
 }

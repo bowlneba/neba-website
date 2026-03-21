@@ -25,7 +25,7 @@ internal sealed class BowlerOfTheYearAwardConfiguration
             .IsRequired();
 
         builder.HasOne<Season>()
-            .WithMany()
+            .WithMany(season => season.BowlerOfTheYearAwards)
             .HasForeignKey(SeasonConfiguration.ForeignKeyName)
             .OnDelete(DeleteBehavior.Cascade);
 
