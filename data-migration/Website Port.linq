@@ -35,11 +35,13 @@ async Task Main()
 	BowlingCenters.RemoveRange(BowlingCenters);
 	Bowlers.RemoveRange(Bowlers);
 	HallsOfFameInductions.RemoveRange(HallsOfFameInductions);
+	Seasons.RemoveRange(Seasons);
 	SaveChanges();
 	
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowling_centers RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowlers RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.hall_of_fame_inductions RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.seasons RESTART IDENTITY CASCADE;");
 	SaveChanges();
 	
 	await MigrateBowlingCentersAsync();
@@ -47,9 +49,53 @@ async Task Main()
 	
 	var bowlerIds = await MigrateBowlersAsync();
 	await MigrateHallOfFameAsync(bowlerIds.Where(i => i.softwareId.HasValue).ToDictionary(i => i.softwareId!.Value, i => i.bowlerId));
+	
+	await GenerateSeasonsAsync();
 }
 
 // You can define other methods, fields, classes and namespaces here
+
+#region
+
+public async Task GenerateSeasonsAsync()
+{
+	for (var i = 1963; i < 2020; i++)
+	{
+		Seasons.Add(new Seasons
+		{
+			DomainId = Guid.AsDomainId(),
+			Description = $"{i} Season",
+			StartDate = new DateOnly(i, 1,1),
+			EndDate = new DateOnly(i, 12,31),
+			Complete = true
+		});
+	}
+
+	Seasons.Add(new Seasons
+	{
+		DomainId = Guid.AsDomainId(),
+		Description = "2020 - 2021 Season",
+		StartDate = new DateOnly(2020, 1,1),
+		EndDate = new DateOnly(2021, 12,31),
+		Complete = true
+	});
+
+	for (var i = 2022; i <= DateTime.Today.Year; i++)
+	{
+		Seasons.Add(new Seasons
+		{
+			DomainId = Guid.AsDomainId(),
+			Description = $"{i} Season",
+			StartDate = new DateOnly(i, 1, 1),
+			EndDate = new DateOnly(i, 12, 31),
+			Complete = DateTime.Today.Year > i
+		});
+	}
+	
+	await SaveChangesAsync();
+}
+
+#endregion
 
 #region Contact
 
