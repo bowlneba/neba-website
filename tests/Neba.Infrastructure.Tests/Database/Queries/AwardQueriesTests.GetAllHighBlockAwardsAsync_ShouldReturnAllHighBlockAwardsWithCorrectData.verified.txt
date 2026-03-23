@@ -1,6 +1,6 @@
 ﻿[
   {
-    Season: Generic port,
+    Season: 1939 Season,
     BowlerName: {
       FirstName: Jane,
       LastName: Bechtelar,
@@ -14,7 +14,7 @@
     Score: 1038
   },
   {
-    Season: Generic port,
+    Season: 1939 Season,
     BowlerName: {
       FirstName: Margarita,
       LastName: Wehner,
@@ -28,7 +28,7 @@
     Score: 1038
   },
   {
-    Season: Generic port,
+    Season: 1939 Season,
     BowlerName: {
       FirstName: Clara,
       LastName: Reynolds,
@@ -37,7 +37,7 @@
     Score: 1038
   },
   {
-    Season: payment portals,
+    Season: 1941 Season,
     BowlerName: {
       FirstName: Boyd,
       LastName: Berge
@@ -45,7 +45,7 @@
     Score: 1182
   },
   {
-    Season: payment portals,
+    Season: 1941 Season,
     BowlerName: {
       FirstName: Lela,
       LastName: Olson,
@@ -58,7 +58,7 @@
     Score: 1182
   },
   {
-    Season: eco-centric invoice,
+    Season: 2014 Season,
     BowlerName: {
       FirstName: Jan,
       LastName: Reilly,
@@ -71,7 +71,7 @@
     Score: 1270
   },
   {
-    Season: eco-centric invoice,
+    Season: 2014 Season,
     BowlerName: {
       FirstName: Chad,
       LastName: Kessler
@@ -79,7 +79,7 @@
     Score: 1270
   },
   {
-    Season: deliverables purple,
+    Season: 2006 Season,
     BowlerName: {
       FirstName: Tracey,
       LastName: Beatty,
@@ -87,70 +87,5 @@
       Nickname: Amaya
     },
     Score: 1241
-  },
-  {
-    Season: SMTP SDD,
-    BowlerName: {
-      FirstName: Linda,
-      LastName: Mertz,
-      MiddleName: Candice
-    },
-    Score: 1023
-  },
-  {
-    Season: SMTP SDD,
-    BowlerName: {
-      FirstName: Boyd,
-      LastName: Berge
-    },
-    Score: 1023
-  },
-  {
-    Season: SMTP SDD,
-    BowlerName: {
-      FirstName: Dianne,
-      LastName: Daniel,
-      MiddleName: Taryn,
-      Suffix: {
-        Name: V,
-        Value: V
-      },
-      Nickname: Boyd
-    },
-    Score: 1023
-  },
-  {
-    Season: RAM Future-proofed,
-    BowlerName: {
-      FirstName: Valerie,
-      LastName: Macejkovic
-    },
-    Score: 1243
-  },
-  {
-    Season: Buckinghamshire Armenian Dram,
-    BowlerName: {
-      FirstName: Kerry,
-      LastName: Ernser,
-      MiddleName: Maybell,
-      Suffix: {
-        Name: IV,
-        Value: IV
-      }
-    },
-    Score: 1048
-  },
-  {
-    Season: Buckinghamshire Armenian Dram,
-    BowlerName: {
-      FirstName: Beverly,
-      LastName: Greenfelder,
-      MiddleName: Ally,
-      Suffix: {
-        Name: V,
-        Value: V
-      }
-    },
-    Score: 1048
   }
 ]

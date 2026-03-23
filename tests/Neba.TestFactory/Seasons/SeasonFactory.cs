@@ -37,7 +37,7 @@ public static class SeasonFactory
             .CustomInstantiator(f => new()
             {
                 Id = new SeasonId(Ulid.Bogus(f)),
-                Description = f.Random.Words(2),
+                Description = $"{f.Date.PastDateOnly(100).Year} Season",
                 StartDate = f.Date.PastDateOnly(5),
                 EndDate = f.Date.FutureDateOnly(5),
                 Complete = f.Random.Bool()

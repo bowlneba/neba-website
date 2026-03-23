@@ -53,4 +53,23 @@ public sealed class AwardQueriesTests
         // Assert
         await Verify(highBlockAwards);
     }
+
+    [Fact(DisplayName = "GetAllHighAverageAwardsAsync returns all High Average awards with correct data")]
+    public async Task GetAllHighAverageAwardsAsync_ShouldReturnAllHighAverageAwardsWithCorrectData()
+    {
+        // Arrange
+        const int seed = 78;
+        var bowlers = BowlerFactory.Bogus(1000, seed);
+        await _dbContext.Bowlers.AddRangeAsync(bowlers, TestContext.Current.CancellationToken);
+
+        var seasons = SeasonFactory.Bogus(10, [.. bowlers.Select(bowler => bowler.Id)], seed);
+        await _dbContext.Seasons.AddRangeAsync(seasons, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var highAverageAwards = await _queries.GetAllHighAverageAwardsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await Verify(highAverageAwards);
+    }
 }

@@ -1,0 +1,184 @@
+﻿[
+  {
+    Season: 1964 Season,
+    BowlerName: {
+      FirstName: Devin,
+      LastName: Vandervort,
+      Nickname: Felicia
+    },
+    Average: 217.00,
+    TotalGames: 30,
+    TournamentsParticipated: 6
+  },
+  {
+    Season: 1964 Season,
+    BowlerName: {
+      FirstName: Brett,
+      LastName: Dickens
+    },
+    Average: 217.00,
+    TotalGames: 30,
+    TournamentsParticipated: 6
+  },
+  {
+    Season: 1937 Season,
+    BowlerName: {
+      FirstName: Marie,
+      LastName: Lubowitz,
+      MiddleName: Jordyn,
+      Suffix: {
+        Name: III,
+        Value: III
+      }
+    },
+    Average: 153.00,
+    TotalGames: 30,
+    TournamentsParticipated: 6
+  },
+  {
+    Season: 1937 Season,
+    BowlerName: {
+      FirstName: Devin,
+      LastName: Macejkovic
+    },
+    Average: 153.00,
+    TotalGames: 30,
+    TournamentsParticipated: 6
+  },
+  {
+    Season: 1937 Season,
+    BowlerName: {
+      FirstName: Owen,
+      LastName: Ledner,
+      MiddleName: Mateo,
+      Suffix: {
+        Name: V,
+        Value: V
+      },
+      Nickname: Daron
+    },
+    Average: 153.00,
+    TotalGames: 30,
+    TournamentsParticipated: 6
+  },
+  {
+    Season: 1995 Season,
+    BowlerName: {
+      FirstName: Ann,
+      LastName: Gorczany,
+      MiddleName: August
+    },
+    Average: 221.00,
+    TotalGames: 30,
+    TournamentsParticipated: 6
+  },
+  {
+    Season: 1995 Season,
+    BowlerName: {
+      FirstName: Glenda,
+      LastName: Parisian,
+      Suffix: {
+        Name: II,
+        Value: II
+      }
+    },
+    Average: 221.00,
+    TotalGames: 30,
+    TournamentsParticipated: 6
+  },
+  {
+    Season: 1982 Season,
+    BowlerName: {
+      FirstName: Keith,
+      LastName: Kutch,
+      MiddleName: Erik
+    },
+    Average: 182.00,
+    TotalGames: 30,
+    TournamentsParticipated: 6
+  },
+  {
+    Season: 1982 Season,
+    BowlerName: {
+      FirstName: Jackie,
+      LastName: Stehr,
+      Suffix: {
+        Name: III,
+        Value: III
+      },
+      Nickname: Genoveva
+    },
+    Average: 182.00,
+    TotalGames: 30,
+    TournamentsParticipated: 6
+  },
+  {
+    Season: 1982 Season,
+    BowlerName: {
+      FirstName: Alberta,
+      LastName: Anderson,
+      MiddleName: Tony,
+      Nickname: Faustino
+    },
+    Average: 182.00,
+    TotalGames: 30,
+    TournamentsParticipated: 6
+  },
+  {
+    Season: 1948 Season,
+    BowlerName: {
+      FirstName: Noah,
+      LastName: Kessler,
+      MiddleName: Vidal,
+      Nickname: Helmer
+    },
+    Average: 173.00,
+    TotalGames: 30,
+    TournamentsParticipated: 6
+  },
+  {
+    Season: 1948 Season,
+    BowlerName: {
+      FirstName: Ernest,
+      LastName: Nitzsche,
+      MiddleName: Jaime,
+      Suffix: {
+        Name: IV,
+        Value: IV
+      },
+      Nickname: Herminio
+    },
+    Average: 173.00,
+    TotalGames: 30,
+    TournamentsParticipated: 6
+  },
+  {
+    Season: 2013 Season,
+    BowlerName: {
+      FirstName: Anne,
+      LastName: Durgan,
+      Suffix: {
+        Name: Sr,
+        Value: Sr.
+      }
+    },
+    Average: 230.00,
+    TotalGames: 30,
+    TournamentsParticipated: 6
+  },
+  {
+    Season: 2013 Season,
+    BowlerName: {
+      FirstName: Chester,
+      LastName: Gibson,
+      MiddleName: Herman,
+      Suffix: {
+        Name: II,
+        Value: II
+      }
+    },
+    Average: 230.00,
+    TotalGames: 30,
+    TournamentsParticipated: 6
+  }
+]
