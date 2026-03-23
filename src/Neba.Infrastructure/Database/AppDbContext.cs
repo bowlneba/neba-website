@@ -26,6 +26,9 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<HallOfFameInduction> HallOfFameInductions
         => Set<HallOfFameInduction>();
 
+    public DbSet<Season> Seasons
+        => Set<Season>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BowlingCenterConfiguration());

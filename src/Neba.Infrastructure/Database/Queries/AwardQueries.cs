@@ -1,0 +1,23 @@
+using Microsoft.EntityFrameworkCore;
+
+using Neba.Application.Awards;
+using Neba.Domain.Seasons;
+
+namespace Neba.Infrastructure.Database.Queries;
+
+internal sealed class AwardQueries(AppDbContext dbContext)
+    : IAwardQueries
+{
+    private readonly IQueryable<Season> _seasons
+        = dbContext.Seasons.AsNoTracking();
+
+    public async Task<IReadOnlyCollection<HighBlockAwardDto>> GetAllHighBlockAwardsAsync(CancellationToken cancellationToken)
+        => await (from season in _seasons
+                  from highBlockAward in season.HighBlockAwards
+                  select new HighBlockAwardDto
+                  {
+                      Season = season.Description,
+                      BowlerName = highBlockAward.Bowler.Name,
+                      Score = highBlockAward.BlockScore
+                  }).ToListAsync(cancellationToken);
+}
