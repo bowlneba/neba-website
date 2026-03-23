@@ -1,6 +1,6 @@
 using Ardalis.SmartEnum;
 
-namespace Neba.Domain.Awards;
+namespace Neba.Domain.Seasons;
 
 /// <summary>
 /// The competitive category under which a Bowler of the Year award is given.

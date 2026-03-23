@@ -26,7 +26,7 @@ namespace Neba.Infrastructure.Database.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Neba.Domain.Awards.Season", b =>
+            modelBuilder.Entity("Neba.Domain.Seasons.Season", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()

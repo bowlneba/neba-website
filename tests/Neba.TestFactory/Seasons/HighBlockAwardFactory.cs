@@ -1,43 +1,37 @@
 using Bogus;
 
-using Neba.Domain.Awards;
+using Neba.Domain.Seasons;
 using Neba.Domain.Bowlers;
 
 namespace Neba.TestFactory.Awards;
 
-public static class HighAverageAwardFactory
+public static class HighBlockAwardFactory
 {
-    public static HighAverageAward Create(
+    public static HighBlockAward Create(
         SeasonAwardId? id = null,
         BowlerId? bowlerId = null,
-        decimal? average = null,
-        int? totalGames = null,
-        int? tournamentsParticipated = null)
+        int? blockScore = null)
     {
-        return new HighAverageAward
+        return new HighBlockAward
         {
             Id = id ?? SeasonAwardId.New(),
             BowlerId = bowlerId ?? BowlerId.New(),
-            Average = average ?? 220.5m,
-            TotalGames = totalGames ?? 50,
-            TournamentsParticipated = tournamentsParticipated ?? 12
+            BlockScore = blockScore ?? 1300
         };
     }
 
-    public static IReadOnlyCollection<HighAverageAward> Bogus(
+    public static IReadOnlyCollection<HighBlockAward> Bogus(
         int count,
         UniquePool<BowlerId>? bowlerIds = null,
         int? seed = null
     )
     {
-        var faker = new Faker<HighAverageAward>()
+        var faker = new Faker<HighBlockAward>()
             .CustomInstantiator(f => new()
             {
                 Id = new SeasonAwardId(Ulid.Bogus(f)),
                 BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.Bogus(f)),
-                Average = f.Random.Decimal(200, 250),
-                TotalGames = f.Random.Int(40, 60),
-                TournamentsParticipated = f.Random.Int(10, 15)
+                BlockScore = f.Random.Int(1250, 1400)
             });
 
         if (seed.HasValue)

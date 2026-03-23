@@ -23,7 +23,7 @@ namespace Neba.Infrastructure.Database.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Neba.Domain.Awards.BowlerOfTheYearAward", b =>
+            modelBuilder.Entity("Neba.Domain.Seasons.BowlerOfTheYearAward", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -69,7 +69,7 @@ namespace Neba.Infrastructure.Database.Migrations
                     b.ToTable("bowler_of_the_year_awards", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Awards.HighAverageAward", b =>
+            modelBuilder.Entity("Neba.Domain.Seasons.HighAverageAward", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -124,7 +124,7 @@ namespace Neba.Infrastructure.Database.Migrations
                     b.ToTable("high_average_awards", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Awards.HighBlockAward", b =>
+            modelBuilder.Entity("Neba.Domain.Seasons.HighBlockAward", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -170,7 +170,7 @@ namespace Neba.Infrastructure.Database.Migrations
                     b.ToTable("high_block_awards", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Awards.Season", b =>
+            modelBuilder.Entity("Neba.Domain.Seasons.Season", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -455,7 +455,7 @@ namespace Neba.Infrastructure.Database.Migrations
                     b.ToTable("hall_of_fame_inductions", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Awards.BowlerOfTheYearAward", b =>
+            modelBuilder.Entity("Neba.Domain.Seasons.BowlerOfTheYearAward", b =>
                 {
                     b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
                         .WithMany()
@@ -465,7 +465,7 @@ namespace Neba.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_bowler_of_the_year_awards_bowlers_bowler_id");
 
-                    b.HasOne("Neba.Domain.Awards.Season", null)
+                    b.HasOne("Neba.Domain.Seasons.Season", null)
                         .WithMany("BowlerOfTheYearAwards")
                         .HasForeignKey("season_id")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -475,7 +475,7 @@ namespace Neba.Infrastructure.Database.Migrations
                     b.Navigation("Bowler");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Awards.HighAverageAward", b =>
+            modelBuilder.Entity("Neba.Domain.Seasons.HighAverageAward", b =>
                 {
                     b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
                         .WithMany()
@@ -485,7 +485,7 @@ namespace Neba.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_high_average_awards_bowlers_bowler_id");
 
-                    b.HasOne("Neba.Domain.Awards.Season", null)
+                    b.HasOne("Neba.Domain.Seasons.Season", null)
                         .WithMany("HighAverageAwards")
                         .HasForeignKey("season_id")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -495,7 +495,7 @@ namespace Neba.Infrastructure.Database.Migrations
                     b.Navigation("Bowler");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Awards.HighBlockAward", b =>
+            modelBuilder.Entity("Neba.Domain.Seasons.HighBlockAward", b =>
                 {
                     b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
                         .WithMany()
@@ -505,7 +505,7 @@ namespace Neba.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_high_block_awards_bowlers_bowler_id");
 
-                    b.HasOne("Neba.Domain.Awards.Season", null)
+                    b.HasOne("Neba.Domain.Seasons.Season", null)
                         .WithMany("HighBlockAwards")
                         .HasForeignKey("season_id")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -674,7 +674,7 @@ namespace Neba.Infrastructure.Database.Migrations
                     b.Navigation("Bowler");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Awards.Season", b =>
+            modelBuilder.Entity("Neba.Domain.Seasons.Season", b =>
                 {
                     b.Navigation("BowlerOfTheYearAwards");
 

@@ -2,7 +2,7 @@ using ErrorOr;
 
 using Neba.Domain.Bowlers;
 
-namespace Neba.Domain.Awards;
+namespace Neba.Domain.Seasons;
 
 /// <summary>
 /// Recognizes overall performance across Stat-Eligible Tournaments during the Season.

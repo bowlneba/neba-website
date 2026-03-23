@@ -2,7 +2,7 @@ using ErrorOr;
 
 using Neba.Domain.Bowlers;
 
-namespace Neba.Domain.Awards;
+namespace Neba.Domain.Seasons;
 
 /// <summary>
 /// Recognizes the highest pinfall average per game across all Stat-Eligible Tournaments in the Season.

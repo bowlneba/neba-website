@@ -2,7 +2,7 @@ using Bogus;
 
 using ErrorOr;
 
-using Neba.Domain.Awards;
+using Neba.Domain.Seasons;
 using Neba.Domain.Bowlers;
 
 namespace Neba.TestFactory.Awards;

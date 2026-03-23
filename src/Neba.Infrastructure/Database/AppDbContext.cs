@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-using Neba.Domain.Awards;
+using Neba.Domain.Seasons;
 using Neba.Domain.Bowlers;
 using Neba.Domain.BowlingCenters;
 using Neba.Domain.HallOfFame;

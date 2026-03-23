@@ -1,4 +1,4 @@
-using Neba.Domain.Awards;
+using Neba.Domain.Seasons;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Domain.Tests.Awards;

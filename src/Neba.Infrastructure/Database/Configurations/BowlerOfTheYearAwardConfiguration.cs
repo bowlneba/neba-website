@@ -3,7 +3,7 @@ using Ardalis.SmartEnum.EFCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-using Neba.Domain.Awards;
+using Neba.Domain.Seasons;
 
 namespace Neba.Infrastructure.Database.Configurations;
 

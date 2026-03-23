@@ -2,7 +2,7 @@ using ErrorOr;
 
 using Neba.Domain.Bowlers;
 
-namespace Neba.Domain.Awards;
+namespace Neba.Domain.Seasons;
 
 /// <summary>
 /// Recognizes the single highest 5-game pinfall total from a qualifying block
