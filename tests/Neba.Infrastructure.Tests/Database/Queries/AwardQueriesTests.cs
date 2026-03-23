@@ -72,4 +72,23 @@ public sealed class AwardQueriesTests
         // Assert
         await Verify(highAverageAwards);
     }
+
+    [Fact(DisplayName = "GetAllBowlerOfTheYearAwardsAsync returns all Bowler of the Year awards with correct data")]
+    public async Task GetAllBowlerOfTheYearAwardsAsync_ShouldReturnAllBowlerOfTheYearAwardsWithCorrectData()
+    {
+        // Arrange
+        const int seed = 79;
+        var bowlers = BowlerFactory.Bogus(1000, seed);
+        await _dbContext.Bowlers.AddRangeAsync(bowlers, TestContext.Current.CancellationToken);
+
+        var seasons = SeasonFactory.Bogus(10, [.. bowlers.Select(bowler => bowler.Id)], seed);
+        await _dbContext.Seasons.AddRangeAsync(seasons, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var awards = await _queries.GetAllBowlerOfTheYearAwardsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await Verify(awards);
+    }
 }

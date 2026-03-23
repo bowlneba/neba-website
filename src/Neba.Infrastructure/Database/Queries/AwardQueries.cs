@@ -32,4 +32,14 @@ internal sealed class AwardQueries(AppDbContext dbContext)
                       TotalGames = highAverageAward.TotalGames,
                       TournamentsParticipated = highAverageAward.TournamentsParticipated
                   }).ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<BowlerOfTheYearAwardDto>> GetAllBowlerOfTheYearAwardsAsync(CancellationToken cancellationToken)
+        => await (from season in _seasons
+                  from award in season.BowlerOfTheYearAwards
+                  select new BowlerOfTheYearAwardDto
+                  {
+                      Season = season.Description,
+                      BowlerName = award.Bowler.Name,
+                      Category = award.Category.Name
+                  }).ToListAsync(cancellationToken);
 }
