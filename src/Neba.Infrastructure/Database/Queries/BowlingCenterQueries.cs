@@ -10,11 +10,11 @@ namespace Neba.Infrastructure.Database.Queries;
 internal sealed class BowlingCenterQueries(AppDbContext dbContext)
         : IBowlingCenterQueries
 {
-    private readonly IQueryable<BowlingCenter> _bowlingCenters = dbContext.BowlingCenters;
+    private readonly IQueryable<BowlingCenter> _bowlingCenters 
+        = dbContext.BowlingCenters.AsNoTracking();
 
     public async Task<IReadOnlyCollection<BowlingCenterSummaryDto>> GetAllAsync(CancellationToken cancellationToken)
         => await _bowlingCenters
-            .AsNoTracking()
             .Select(bowlingCenter => new BowlingCenterSummaryDto
             {
                 CertificationNumber = bowlingCenter.CertificationNumber.Value,
