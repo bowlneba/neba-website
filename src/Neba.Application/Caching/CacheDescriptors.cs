@@ -87,6 +87,16 @@ public static class CacheDescriptors
                 Key = "neba:awards:high-average:list",
                 Tags = ["neba", "neba:awards", "neba:awards:high-average"]
             };
+
+        /// <summary>
+        /// Returns a cache descriptor for the list of Bowler of the Year awards, with a key and tags that allow for efficient caching and invalidation of awards data.
+        /// </summary>
+        public static CacheDescriptor ListBowlerOfTheYearAwards
+            => new()
+            {
+                Key = "neba:awards:bowler-of-the-year:list",
+                Tags = ["neba", "neba:awards", "neba:awards:bowler-of-the-year"]
+            };
     }
 }
 #pragma warning restore CA1724

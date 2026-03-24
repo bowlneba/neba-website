@@ -1,6 +1,6 @@
 using Neba.Domain.Bowlers;
 
-namespace Neba.Application.Awards;
+namespace Neba.Application.Awards.ListBowlerOfTheYearAwards;
 
 /// <summary>
 /// Data Transfer Object representing the Bowler of the Year Award, which recognizes overall performance

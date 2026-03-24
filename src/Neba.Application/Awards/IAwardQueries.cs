@@ -1,3 +1,4 @@
+using Neba.Application.Awards.ListBowlerOfTheYearAwards;
 using Neba.Application.Awards.ListHighAverageAwards;
 using Neba.Application.Awards.ListHighBlockAwards;
 

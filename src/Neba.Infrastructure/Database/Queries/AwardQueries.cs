@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Application.Awards;
+using Neba.Application.Awards.ListBowlerOfTheYearAwards;
 using Neba.Application.Awards.ListHighAverageAwards;
 using Neba.Application.Awards.ListHighBlockAwards;
 using Neba.Domain.Seasons;

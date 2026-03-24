@@ -1,4 +1,4 @@
-using Neba.Application.Awards;
+using Neba.Application.Awards.ListBowlerOfTheYearAwards;
 using Neba.Domain.Bowlers;
 using Neba.Domain.Seasons;
 using Neba.TestFactory.Bowlers;
