@@ -1,5 +1,3 @@
-using System.Reflection;
-
 using Neba.Application.BackgroundJobs;
 using Neba.Application.Messaging;
 using Neba.TestFactory.Attributes;

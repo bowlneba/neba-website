@@ -1,5 +1,3 @@
-using ArchUnitNET.Domain;
-
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 
 namespace Neba.Architecture.Tests;

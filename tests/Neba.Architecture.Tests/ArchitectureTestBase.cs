@@ -1,4 +1,3 @@
-using ArchUnitNET.Domain;
 using ArchUnitNET.Loader;
 
 using Neba.Api;

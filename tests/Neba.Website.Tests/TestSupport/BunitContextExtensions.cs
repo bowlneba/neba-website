@@ -1,7 +1,5 @@
 using Bunit;
 
-using Microsoft.JSInterop;
-
 namespace Neba.Website.Tests.TestSupport;
 
 internal static class BunitContextExtensions

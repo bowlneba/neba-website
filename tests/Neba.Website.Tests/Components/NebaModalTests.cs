@@ -2,7 +2,6 @@ using Bunit;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using Microsoft.JSInterop;
 
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Components;
