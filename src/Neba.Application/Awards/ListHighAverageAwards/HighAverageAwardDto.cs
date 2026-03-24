@@ -1,6 +1,6 @@
 using Neba.Domain.Bowlers;
 
-namespace Neba.Application.Awards;
+namespace Neba.Application.Awards.ListHighAverageAwards;
 
 /// <summary>
 /// Data Transfer Object representing the High Average Award, which recognizes the highest pinfall average per game across all Stat-Eligible Tournaments in a Season. Eligibility requires a minimum of floor(4.5 × Stat-Eligible Tournaments completed) games bowled. Baker team finals games are excluded from average and game total calculations.
