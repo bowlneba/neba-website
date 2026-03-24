@@ -1,6 +1,6 @@
 using Neba.Domain.Bowlers;
 
-namespace Neba.Application.Awards;
+namespace Neba.Application.Awards.ListHighBlockAwards;
 
 /// <summary>
 /// Data Transfer Object representing the recipient of a High Block award for a season.

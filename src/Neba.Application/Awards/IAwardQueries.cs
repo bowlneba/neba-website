@@ -1,3 +1,5 @@
+using Neba.Application.Awards.ListHighBlockAwards;
+
 namespace Neba.Application.Awards;
 
 /// <summary>

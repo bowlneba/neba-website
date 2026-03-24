@@ -62,5 +62,21 @@ public static class CacheDescriptors
                 Tags = ["neba", "neba:hall-of-fame", "neba:hall-of-fame:inductions"]
             };
     }
+
+    /// <summary>
+    /// Cache descriptors for awards data.
+    /// </summary>
+    public static class Awards
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of high block awards, with a key and tags that allow for efficient caching and invalidation of awards data.
+        /// </summary>
+        public static CacheDescriptor ListHighBlockAwards
+            => new()
+            {
+                Key = "neba:awards:high-block:list",
+                Tags = ["neba", "neba:awards", "neba:awards:high-block"]
+            };
+    }
 }
 #pragma warning restore CA1724

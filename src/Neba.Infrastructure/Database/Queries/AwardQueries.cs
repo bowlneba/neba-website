@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Application.Awards;
+using Neba.Application.Awards.ListHighBlockAwards;
 using Neba.Domain.Seasons;
 
 namespace Neba.Infrastructure.Database.Queries;

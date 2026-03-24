@@ -1,4 +1,4 @@
-using Neba.Application.Awards;
+using Neba.Application.Awards.ListHighBlockAwards;
 using Neba.Domain.Bowlers;
 using Neba.TestFactory.Bowlers;
 
