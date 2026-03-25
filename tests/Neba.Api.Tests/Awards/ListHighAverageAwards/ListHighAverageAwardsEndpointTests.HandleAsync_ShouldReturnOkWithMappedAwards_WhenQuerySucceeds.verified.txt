@@ -1,0 +1,26 @@
+﻿{
+  Items: [
+    {
+      Season: SSL back-end,
+      BowlerName: Veronica Cremin,
+      Average: 226.644921568988320,
+      TotalGames: 80,
+      TournamentsParticipated: 16
+    },
+    {
+      Season: Small Concrete Car Stravenue,
+      BowlerName: Allan Christiansen,
+      Average: 229.481465343610140,
+      TotalGames: 72,
+      TournamentsParticipated: 16
+    },
+    {
+      Season: Illinois payment,
+      BowlerName: Sherry Schimmel,
+      Average: 230.164571988938640,
+      TotalGames: 93,
+      TournamentsParticipated: 13
+    }
+  ],
+  TotalItems: 3
+}
