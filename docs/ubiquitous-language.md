@@ -600,7 +600,7 @@ A Season must be marked **Complete** before any awards may be assigned to bowler
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Awards`
+- Namespace: `Neba.Domain.Seasons`
 - Type: `Season` (aggregate root)
 - Identity type: `SeasonId` (ULID-backed strongly-typed ID)
 
