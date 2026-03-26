@@ -1,9 +1,9 @@
 using Neba.Infrastructure.Database;
 using Neba.Infrastructure.Database.Queries;
 using Neba.TestFactory.Attributes;
-using Neba.TestFactory.Awards;
 using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.Infrastructure;
+using Neba.TestFactory.Seasons;
 
 namespace Neba.Infrastructure.Tests.Database.Queries;
 

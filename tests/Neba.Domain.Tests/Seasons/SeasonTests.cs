@@ -3,7 +3,7 @@ using ErrorOr;
 using Neba.Domain.Bowlers;
 using Neba.Domain.Seasons;
 using Neba.TestFactory.Attributes;
-using Neba.TestFactory.Awards;
+using Neba.TestFactory.Seasons;
 
 namespace Neba.Domain.Tests.Seasons;
 

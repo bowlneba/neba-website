@@ -5,7 +5,7 @@ using ErrorOr;
 using Neba.Domain.Bowlers;
 using Neba.Domain.Seasons;
 
-namespace Neba.TestFactory.Awards;
+namespace Neba.TestFactory.Seasons;
 
 public static class BowlerOfTheYearAwardFactory
 {
