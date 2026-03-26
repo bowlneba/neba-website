@@ -2,6 +2,7 @@ using System.Text.Json;
 
 using Microsoft.Extensions.Options;
 
+using Neba.Api.Contracts.Awards;
 using Neba.Api.Contracts.BowlingCenters;
 using Neba.Api.Contracts.Documents;
 using Neba.Api.Contracts.HallOfFame;
@@ -40,6 +41,7 @@ internal static class ApiServicesConfiguration
             services.RegisterApiEndpoint<IDocumentsApi>();
             services.RegisterApiEndpoint<IBowlingCentersApi>();
             services.RegisterApiEndpoint<IHallOfFameApi>();
+            services.RegisterApiEndpoint<IAwardsApi>();
 
             return services;
         }
