@@ -14,6 +14,6 @@ public sealed record ListHighBlockAwardsQuery
         => CacheDescriptors.Awards.ListHighBlockAwards;
 
     /// <inheritdoc />
-    public TimeSpan Expiry 
-        => new (365,0,0,0); // 1 year
+    public TimeSpan Expiry
+        => new(365, 0, 0, 0); // 1 year
 }

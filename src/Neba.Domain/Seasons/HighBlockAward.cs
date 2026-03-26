@@ -45,11 +45,11 @@ public sealed class HighBlockAward
         return blockScore > games * 300
             ? HighBlockAwardErrors.BlockScoreExceedsMaximum(games)
             : new HighBlockAward
-        {
-            Id = SeasonAwardId.New(),
-            BowlerId = bowlerId,
-            BlockScore = blockScore
-        };
+            {
+                Id = SeasonAwardId.New(),
+                BowlerId = bowlerId,
+                BlockScore = blockScore
+            };
     }
 }
 

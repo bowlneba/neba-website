@@ -28,7 +28,7 @@ public static class HighBlockAwardResponseFactory
             {
                 Season = $"{f.Date.PastDateOnly(100).Year} Season",
                 BowlerName = f.Person.FullName,
-                Score = f.Random.Int(1250,1400)
+                Score = f.Random.Int(1250, 1400)
             });
 
         if (seed.HasValue)

@@ -1,5 +1,5 @@
-using Neba.Domain.Seasons;
 using Neba.Domain.Bowlers;
+using Neba.Domain.Seasons;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Domain.Tests.Awards;

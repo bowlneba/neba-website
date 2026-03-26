@@ -1,7 +1,7 @@
 using Bogus;
 
-using Neba.Domain.Seasons;
 using Neba.Domain.Bowlers;
+using Neba.Domain.Seasons;
 
 namespace Neba.TestFactory.Awards;
 
@@ -27,7 +27,7 @@ public static class SeasonFactory
             Complete = complete
         };
     }
-    
+
     public static IReadOnlyCollection<Season> Bogus(
         int count,
         IReadOnlyCollection<BowlerId>? bowlerIds = null,

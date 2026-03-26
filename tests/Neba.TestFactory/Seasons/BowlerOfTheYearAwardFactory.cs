@@ -2,8 +2,8 @@ using Bogus;
 
 using ErrorOr;
 
-using Neba.Domain.Seasons;
 using Neba.Domain.Bowlers;
+using Neba.Domain.Seasons;
 
 namespace Neba.TestFactory.Awards;
 

@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 
-using Neba.Domain.Seasons;
 using Neba.Domain.Bowlers;
 using Neba.Domain.BowlingCenters;
 using Neba.Domain.HallOfFame;
+using Neba.Domain.Seasons;
 using Neba.Infrastructure.Database.Configurations;
 using Neba.Infrastructure.Database.Converters;
 

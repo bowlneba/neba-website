@@ -1,7 +1,7 @@
 using ErrorOr;
 
-using Neba.Domain.Seasons;
 using Neba.Domain.Bowlers;
+using Neba.Domain.Seasons;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Awards;
 

@@ -10,17 +10,17 @@ public sealed record HighAverageAwardDto
     /// <summary>
     /// The season in which the award was earned.
     /// </summary>
-    public required string Season {get; init;}
+    public required string Season { get; init; }
 
     /// <summary>
     /// The name of the bowler receiving the award.
     /// </summary>
-    public required Name BowlerName {get; init;}
+    public required Name BowlerName { get; init; }
 
     /// <summary>
     /// The winner's pinfall average.
     /// </summary>
-    public required decimal Average {get; init;}
+    public required decimal Average { get; init; }
 
     /// <summary>
     /// The total number of games bowled by the winner.

@@ -10,7 +10,7 @@ namespace Neba.Infrastructure.Database.Queries;
 internal sealed class BowlingCenterQueries(AppDbContext dbContext)
         : IBowlingCenterQueries
 {
-    private readonly IQueryable<BowlingCenter> _bowlingCenters 
+    private readonly IQueryable<BowlingCenter> _bowlingCenters
         = dbContext.BowlingCenters.AsNoTracking();
 
     public async Task<IReadOnlyCollection<BowlingCenterSummaryDto>> GetAllAsync(CancellationToken cancellationToken)

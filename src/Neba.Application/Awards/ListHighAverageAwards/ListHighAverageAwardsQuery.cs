@@ -15,5 +15,5 @@ public sealed record ListHighAverageAwardsQuery
 
     /// <inheritdoc />
     public TimeSpan Expiry
-        => new (365,0,0,0); // 1 year
+        => new(365, 0, 0, 0); // 1 year
 }
