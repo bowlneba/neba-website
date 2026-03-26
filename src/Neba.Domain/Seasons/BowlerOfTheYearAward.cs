@@ -33,99 +33,71 @@ public sealed class BowlerOfTheYearAward
 
     internal static ErrorOr<BowlerOfTheYearAward> CreateOpen(BowlerId bowlerId)
     {
-        return bowlerId == BowlerId.Empty
-            ? BowlerOfTheYearAwardErrors.BowlerIdRequired
-            : new BowlerOfTheYearAward
-        {
-            Id = SeasonAwardId.New(),
-            BowlerId = bowlerId,
-            Category = BowlerOfTheYearCategory.Open
-        };
+        if (bowlerId == default)
+            return BowlerOfTheYearAwardErrors.BowlerIdRequired;
+
+        var id = SeasonAwardId.New();
+        return new BowlerOfTheYearAward { Id = id, BowlerId = bowlerId, Category = BowlerOfTheYearCategory.Open };
     }
 
     internal static ErrorOr<BowlerOfTheYearAward> CreateWoman(BowlerId bowlerId, Gender gender)
     {
-        if (bowlerId == BowlerId.Empty)
-        {
+        if (bowlerId == default)
             return BowlerOfTheYearAwardErrors.BowlerIdRequired;
-        }
 
-        return gender != Gender.Female
-            ? BowlerOfTheYearAwardErrors.NotFemale
-            : new BowlerOfTheYearAward
-        {
-            Id = SeasonAwardId.New(),
-            BowlerId = bowlerId,
-            Category = BowlerOfTheYearCategory.Woman
-        };
+        if (gender != Gender.Female)
+            return BowlerOfTheYearAwardErrors.NotFemale;
+
+        var id = SeasonAwardId.New();
+        return new BowlerOfTheYearAward { Id = id, BowlerId = bowlerId, Category = BowlerOfTheYearCategory.Woman };
     }
 
     internal static ErrorOr<BowlerOfTheYearAward> CreateSenior(BowlerId bowlerId, int age)
     {
-        if (bowlerId == BowlerId.Empty)
-        {
+        if (bowlerId == default)
             return BowlerOfTheYearAwardErrors.BowlerIdRequired;
-        }
 
-        return age < 50
-            ? BowlerOfTheYearAwardErrors.InsufficientAgeForSenior
-            : new BowlerOfTheYearAward
-        {
-            Id = SeasonAwardId.New(),
-            BowlerId = bowlerId,
-            Category = BowlerOfTheYearCategory.Senior
-        };
+        if (age < 50)
+            return BowlerOfTheYearAwardErrors.InsufficientAgeForSenior;
+
+        var id = SeasonAwardId.New();
+        return new BowlerOfTheYearAward { Id = id, BowlerId = bowlerId, Category = BowlerOfTheYearCategory.Senior };
     }
 
     internal static ErrorOr<BowlerOfTheYearAward> CreateSuperSenior(BowlerId bowlerId, int age)
     {
-        if (bowlerId == BowlerId.Empty)
-        {
+        if (bowlerId == default)
             return BowlerOfTheYearAwardErrors.BowlerIdRequired;
-        }
 
-        return age < 60
-            ? BowlerOfTheYearAwardErrors.InsufficientAgeForSuperSenior
-            : new BowlerOfTheYearAward
-        {
-            Id = SeasonAwardId.New(),
-            BowlerId = bowlerId,
-            Category = BowlerOfTheYearCategory.SuperSenior
-        };
+        if (age < 60)
+            return BowlerOfTheYearAwardErrors.InsufficientAgeForSuperSenior;
+
+        var id = SeasonAwardId.New();
+        return new BowlerOfTheYearAward { Id = id, BowlerId = bowlerId, Category = BowlerOfTheYearCategory.SuperSenior };
     }
 
     internal static ErrorOr<BowlerOfTheYearAward> CreateRookie(BowlerId bowlerId, bool isRookie)
     {
-        if (bowlerId == BowlerId.Empty)
-        {
+        if (bowlerId == default)
             return BowlerOfTheYearAwardErrors.BowlerIdRequired;
-        }
 
-        return !isRookie
-            ? BowlerOfTheYearAwardErrors.NotARookie
-            : new BowlerOfTheYearAward
-        {
-            Id = SeasonAwardId.New(),
-            BowlerId = bowlerId,
-            Category = BowlerOfTheYearCategory.Rookie
-        };
+        if (!isRookie)
+            return BowlerOfTheYearAwardErrors.NotARookie;
+
+        var id = SeasonAwardId.New();
+        return new BowlerOfTheYearAward { Id = id, BowlerId = bowlerId, Category = BowlerOfTheYearCategory.Rookie };
     }
 
     internal static ErrorOr<BowlerOfTheYearAward> CreateYouth(BowlerId bowlerId, int age)
     {
-        if (bowlerId == BowlerId.Empty)
-        {
+        if (bowlerId == default)
             return BowlerOfTheYearAwardErrors.BowlerIdRequired;
-        }
 
-        return age >= 18
-            ? BowlerOfTheYearAwardErrors.AgeExceedsYouthLimit
-            : new BowlerOfTheYearAward
-        {
-            Id = SeasonAwardId.New(),
-            BowlerId = bowlerId,
-            Category = BowlerOfTheYearCategory.Youth
-        };
+        if (age >= 18)
+            return BowlerOfTheYearAwardErrors.AgeExceedsYouthLimit;
+
+        var id = SeasonAwardId.New();
+        return new BowlerOfTheYearAward { Id = id, BowlerId = bowlerId, Category = BowlerOfTheYearCategory.Youth };
     }
 }
 

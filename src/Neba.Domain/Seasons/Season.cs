@@ -225,7 +225,7 @@ public sealed class Season
             return SeasonErrors.HighAverageMismatch;
         }
 
-        if (_highAverageAwards.Any(award => award.BowlerId == bowlerId))
+        if (_highAverageAwards.Any(award => award.BowlerId.Equals(bowlerId)))
         {
             return SeasonErrors.BowlerAlreadyAwardedHighAverage;
         }
@@ -275,7 +275,7 @@ public sealed class Season
             return SeasonErrors.HighBlockScoreMismatch;
         }
 
-        if (_highBlockAwards.Any(award => award.BowlerId == bowlerId))
+        if (_highBlockAwards.Any(award => award.BowlerId.Equals(bowlerId)))
         {
             return SeasonErrors.BowlerAlreadyAwardedHighBlock;
         }

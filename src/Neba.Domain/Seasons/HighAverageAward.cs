@@ -48,36 +48,27 @@ public sealed class HighAverageAward
         int tournamentsParticipated
     )
     {
-        if (bowlerId == BowlerId.Empty)
-        {
+        if (bowlerId == default)
             return HighAverageAwardErrors.BowlerIdRequired;
-        }
 
         if (average <= 0)
-        {
             return HighAverageAwardErrors.InvalidAverage;
-        }
 
         if (totalGames <= 0)
-        {
             return HighAverageAwardErrors.InvalidTotalGames;
-        }
 
         if (tournamentsParticipated <= 0)
-        {
             return HighAverageAwardErrors.InvalidTournamentsParticipated;
-        }
 
-        var award = new HighAverageAward
+        var id = SeasonAwardId.New();
+        return new HighAverageAward
         {
-            Id = SeasonAwardId.New(),
+            Id = id,
             BowlerId = bowlerId,
             Average = average,
             TotalGames = totalGames,
             TournamentsParticipated = tournamentsParticipated
         };
-
-        return award;
 
     }
 }
