@@ -674,7 +674,7 @@ Age eligibility for a category is evaluated as of each tournament date during th
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Awards`
+- Namespace: `Neba.Domain.Seasons`
 - Type: `BowlerOfTheYearCategory` (SmartEnum, int-valued)
 
 ---
