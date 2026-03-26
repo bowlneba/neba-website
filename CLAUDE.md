@@ -31,6 +31,7 @@ Before ending a session where significant discoveries were made, consider whethe
 - Commands return `ErrorOr<T>`, never throw for business rules
 - Queries return DTOs, never domain entities
 - Validators handle structural validation only (no DB lookups, no business rules)
+- Use `Error.Validation` (422) when the input itself is wrong; use `Error.Conflict` (409) when the input is valid but the system's current state prevents the operation. Retry test: if the caller could resend the exact same payload and succeed after a state change, it's `Conflict`.
 
 ### Always-Valid Entities and Aggregate Assignment
 

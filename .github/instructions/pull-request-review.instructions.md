@@ -125,12 +125,21 @@ Flag when:
 
 Error codes must follow the `Entity.ErrorCode` convention (PascalCase, dot-separated). See [ADR-0004](../../docs/adr/0004-error-code-naming-convention.md).
 
+#### Error Types (`Error.Validation` vs `Error.Conflict`)
+
+Use the **retry test** to choose between them: if the caller could retry the exact same request and succeed — without changing their payload — it is a state conflict, not a validation failure.
+
+- `Error.Validation` (422) — the input itself is structurally wrong; the caller must change their payload to fix it (e.g., a score of 0, a missing required field)
+- `Error.Conflict` (409) — the input is valid but the system's current state prevents the operation (e.g., season not yet closed, bowler already registered)
+
 Flag when:
 
 - Error codes don't follow `Entity.ErrorCode` pattern (e.g., `"documentNotFound"` instead of `"Document.NotFound"`)
 - Error codes use lowercase or camelCase instead of PascalCase
 - Error codes are missing (empty string or generic code)
 - Application error classes are not named `{Entity}Errors` or are not `internal static`
+- `Error.Validation` is used for a state/precondition failure where the caller could retry unchanged (should be `Error.Conflict`)
+- `Error.Conflict` is used for a structural input problem (should be `Error.Validation`)
 
 #### Summary Classes
 
