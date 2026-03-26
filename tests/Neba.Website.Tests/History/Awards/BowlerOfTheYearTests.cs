@@ -109,8 +109,8 @@ public sealed class BowlerOfTheYearTests : IDisposable
     [Fact(DisplayName = "Should show both bowlers when two categories exist in the same season")]
     public void Render_ShouldShowBothBowlers_WhenTwoCategoriesInSameSeason()
     {
-        var open = BowlerOfTheYearAwardResponseFactory.Create(season: "2024 Season", category: "Open", bowlerName: "Alice Adams");
-        var senior = BowlerOfTheYearAwardResponseFactory.Create(season: "2024 Season", category: "Senior", bowlerName: "Bob Baker");
+        var open = BowlerOfTheYearAwardResponseFactory.Create(season: "2024 Season", bowlerName: "Alice Adams", category: "Open");
+        var senior = BowlerOfTheYearAwardResponseFactory.Create(season: "2024 Season", bowlerName: "Bob Baker", category: "Senior");
         SetupSuccessResponse([open, senior]);
 
         var cut = _ctx.Render<BowlerOfTheYearPage>();

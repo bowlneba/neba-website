@@ -27,8 +27,8 @@ public sealed class HighBlockMappingExtensionsTests
     [Fact(DisplayName = "Groups tied awards with same season and score into one view model")]
     public void ToViewModels_ShouldGroupTiedAwards_WhenSameSeasonAndScore()
     {
-        var award1 = HighBlockAwardResponseFactory.Create(season: "2023 Season", score: 1375, bowlerName: "Alice");
-        var award2 = HighBlockAwardResponseFactory.Create(season: "2023 Season", score: 1375, bowlerName: "Bob");
+        var award1 = HighBlockAwardResponseFactory.Create(season: "2023 Season", bowlerName: "Alice", score: 1375);
+        var award2 = HighBlockAwardResponseFactory.Create(season: "2023 Season", bowlerName: "Bob", score: 1375);
 
         var result = new[] { award1, award2 }.ToViewModels();
 
@@ -42,8 +42,8 @@ public sealed class HighBlockMappingExtensionsTests
     [Fact(DisplayName = "Does not group awards with same season but different scores")]
     public void ToViewModels_ShouldNotGroup_WhenSameSeasonDifferentScore()
     {
-        var award1 = HighBlockAwardResponseFactory.Create(season: "2023 Season", score: 1375, bowlerName: "Alice");
-        var award2 = HighBlockAwardResponseFactory.Create(season: "2023 Season", score: 1350, bowlerName: "Bob");
+        var award1 = HighBlockAwardResponseFactory.Create(season: "2023 Season", bowlerName: "Alice", score: 1375);
+        var award2 = HighBlockAwardResponseFactory.Create(season: "2023 Season", bowlerName: "Bob", score: 1350);
 
         var result = new[] { award1, award2 }.ToViewModels();
 
@@ -61,8 +61,8 @@ public sealed class HighBlockMappingExtensionsTests
     [Fact(DisplayName = "Maps season and score correctly for each distinct award")]
     public void ToViewModels_ShouldMapSeasonAndScore_ForEachDistinctAward()
     {
-        var award1 = HighBlockAwardResponseFactory.Create(season: "2022 Season", score: 1300, bowlerName: "Alice");
-        var award2 = HighBlockAwardResponseFactory.Create(season: "2023 Season", score: 1350, bowlerName: "Bob");
+        var award1 = HighBlockAwardResponseFactory.Create(season: "2022 Season", bowlerName: "Alice", score: 1300);
+        var award2 = HighBlockAwardResponseFactory.Create(season: "2023 Season", bowlerName: "Bob", score: 1350);
 
         var result = new[] { award1, award2 }.ToViewModels();
 

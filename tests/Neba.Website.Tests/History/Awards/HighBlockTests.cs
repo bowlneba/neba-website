@@ -98,8 +98,8 @@ public sealed class HighBlockTests : IDisposable
     [Fact(DisplayName = "Should show TIE badge when two bowlers share the same season and score")]
     public void Render_ShouldShowTieBadge_WhenTwoAwardsShareSeasonAndScore()
     {
-        var award1 = HighBlockAwardResponseFactory.Create(season: "2023 Season", score: 1350, bowlerName: "Alice");
-        var award2 = HighBlockAwardResponseFactory.Create(season: "2023 Season", score: 1350, bowlerName: "Bob");
+        var award1 = HighBlockAwardResponseFactory.Create(season: "2023 Season", bowlerName: "Alice", score: 1350);
+        var award2 = HighBlockAwardResponseFactory.Create(season: "2023 Season", bowlerName: "Bob", score: 1350);
         SetupSuccessResponse([award1, award2]);
 
         var cut = _ctx.Render<HighBlockPage>();
@@ -124,8 +124,8 @@ public sealed class HighBlockTests : IDisposable
     [Fact(DisplayName = "Should not show RECORD badge when all awards have the same score")]
     public void Render_ShouldShowRecordBadgeOnEveryRow_WhenAllScoresAreEqual()
     {
-        var award1 = HighBlockAwardResponseFactory.Create(season: "2024 Season", score: 1350, bowlerName: "Alice");
-        var award2 = HighBlockAwardResponseFactory.Create(season: "2023 Season", score: 1350, bowlerName: "Bob");
+        var award1 = HighBlockAwardResponseFactory.Create(season: "2024 Season", bowlerName: "Alice", score: 1350);
+        var award2 = HighBlockAwardResponseFactory.Create(season: "2023 Season", bowlerName: "Bob", score: 1350);
         SetupSuccessResponse([award1, award2]);
 
         var cut = _ctx.Render<HighBlockPage>();

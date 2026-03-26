@@ -11,8 +11,8 @@ public sealed class BowlerOfTheYearMappingExtensionsTests
     [Fact(DisplayName = "Groups awards from the same season into one view model")]
     public void ToViewModels_ShouldGroupBySeason_WhenMultipleAwardsInSameSeason()
     {
-        var open = BowlerOfTheYearAwardResponseFactory.Create(season: "2024 Season", category: "Open", bowlerName: "Alice");
-        var senior = BowlerOfTheYearAwardResponseFactory.Create(season: "2024 Season", category: "Senior", bowlerName: "Bob");
+        var open = BowlerOfTheYearAwardResponseFactory.Create(season: "2024 Season", bowlerName: "Alice", category: "Open");
+        var senior = BowlerOfTheYearAwardResponseFactory.Create(season: "2024 Season", bowlerName: "Bob", category: "Senior");
 
         var result = new[] { open, senior }.ToViewModels();
 
@@ -34,7 +34,7 @@ public sealed class BowlerOfTheYearMappingExtensionsTests
     [Fact(DisplayName = "Maps Open category to Bowler of the Year display label")]
     public void ToViewModels_ShouldMapOpenToBotyDisplayLabel()
     {
-        var award = BowlerOfTheYearAwardResponseFactory.Create(category: "Open", bowlerName: "Jane Smith");
+        var award = BowlerOfTheYearAwardResponseFactory.Create(bowlerName: "Jane Smith", category: "Open");
 
         var result = new[] { award }.ToViewModels();
 
@@ -51,7 +51,7 @@ public sealed class BowlerOfTheYearMappingExtensionsTests
     [InlineData("Youth")]
     public void ToViewModels_ShouldPassNonOpenCategoriesThrough(string category)
     {
-        var award = BowlerOfTheYearAwardResponseFactory.Create(category: category, bowlerName: "Jane Smith");
+        var award = BowlerOfTheYearAwardResponseFactory.Create(bowlerName: "Jane Smith", category: category);
 
         var result = new[] { award }.ToViewModels();
 
@@ -75,8 +75,8 @@ public sealed class BowlerOfTheYearMappingExtensionsTests
     [Fact(DisplayName = "Orders Open before Senior within a season")]
     public void ToViewModels_ShouldOrderOpenBeforeSenior_WithinSeason()
     {
-        var senior = BowlerOfTheYearAwardResponseFactory.Create(season: "2024 Season", category: "Senior", bowlerName: "Bob");
-        var open = BowlerOfTheYearAwardResponseFactory.Create(season: "2024 Season", category: "Open", bowlerName: "Alice");
+        var senior = BowlerOfTheYearAwardResponseFactory.Create(season: "2024 Season", bowlerName: "Bob", category: "Senior");
+        var open = BowlerOfTheYearAwardResponseFactory.Create(season: "2024 Season", bowlerName: "Alice", category: "Open");
 
         var result = new[] { senior, open }.ToViewModels();
 
