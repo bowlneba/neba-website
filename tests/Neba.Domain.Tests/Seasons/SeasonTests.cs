@@ -5,7 +5,7 @@ using Neba.Domain.Seasons;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Awards;
 
-namespace Neba.Domain.Tests.Awards;
+namespace Neba.Domain.Tests.Seasons;
 
 [UnitTest]
 [Component("Awards.Season")]
