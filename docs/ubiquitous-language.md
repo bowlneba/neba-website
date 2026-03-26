@@ -600,7 +600,7 @@ A Season must be marked **Complete** before any awards may be assigned to bowler
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Awards`
+- Namespace: `Neba.Domain.Seasons`
 - Type: `Season` (aggregate root)
 - Identity type: `SeasonId` (ULID-backed strongly-typed ID)
 
@@ -631,7 +631,7 @@ Awards may only be assigned after the owning Season is marked **Complete**.
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Awards`
+- Namespace: `Neba.Domain.Seasons`
 - Types: `BowlerOfTheYearAward`, `HighAverageAward`, `HighBlockAward` — three independent entity classes, each mapping to its own table. No shared base class.
 - Shared identity type: `SeasonAwardId` (ULID-backed strongly-typed ID)
 
@@ -674,7 +674,7 @@ Age eligibility for a category is evaluated as of each tournament date during th
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Awards`
+- Namespace: `Neba.Domain.Seasons`
 - Type: `BowlerOfTheYearCategory` (SmartEnum, int-valued)
 
 ---
