@@ -9,8 +9,6 @@ public static class HighAverageAwardResponseFactory
     public const string ValidSeason = "2025 Season";
     public const string ValidBowlerName = "Joe Bowler";
     public const decimal ValidAverage = 230.55m;
-    public const int ValidTotalGames = 45;
-    public const int ValidTournamentsParticipated = 10;
 
     public static HighAverageAwardResponse Create(
         string? season = null,
@@ -23,8 +21,8 @@ public static class HighAverageAwardResponseFactory
             Season = season ?? ValidSeason,
             BowlerName = bowlerName ?? ValidBowlerName,
             Average = average ?? ValidAverage,
-            TotalGames = totalGames ?? ValidTotalGames,
-            TournamentsParticipated = tournamentsParticipated ?? ValidTournamentsParticipated
+            TotalGames = totalGames,
+            TournamentsParticipated = tournamentsParticipated
         };
 
     public static IReadOnlyCollection<HighAverageAwardResponse> Bogus(int count, int? seed = null)
