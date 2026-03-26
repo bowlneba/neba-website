@@ -3,7 +3,7 @@ using StronglyTypedIds;
 namespace Neba.Domain.Seasons;
 
 /// <summary>
-/// Unique identifier for a season.
+/// Unique identifier for a season award.
 /// </summary>
 [StronglyTypedId("ulid-full")]
 public readonly partial struct SeasonAwardId;

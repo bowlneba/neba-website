@@ -295,8 +295,8 @@ public sealed class Season
 
 internal static class SeasonErrors
 {
-    public static readonly Error SeasonNotComplete = Error.Validation(
-        code: "Season.SeasonNotComplete",
+    public static readonly Error SeasonNotComplete = Error.Conflict(
+        code: "Season.NotComplete",
         description: "Season must be marked complete before awards can be assigned.");
 
     public static readonly Error HighBlockScoreMismatch = Error.Validation(
