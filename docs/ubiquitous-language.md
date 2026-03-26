@@ -631,7 +631,7 @@ Awards may only be assigned after the owning Season is marked **Complete**.
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Awards`
+- Namespace: `Neba.Domain.Seasons`
 - Types: `BowlerOfTheYearAward`, `HighAverageAward`, `HighBlockAward` — three independent entity classes, each mapping to its own table. No shared base class.
 - Shared identity type: `SeasonAwardId` (ULID-backed strongly-typed ID)
 
