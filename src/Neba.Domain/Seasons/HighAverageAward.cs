@@ -48,7 +48,7 @@ public sealed class HighAverageAward
         int tournamentsParticipated
     )
     {
-        if (bowlerId == default)
+        if (bowlerId.Equals(default))
             return HighAverageAwardErrors.BowlerIdRequired;
 
         if (average <= 0)

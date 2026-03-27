@@ -19,7 +19,8 @@
       "ArgumentException.ThrowIfNullOrEmpty",
       "Guard.*",
       "Log.*",
-      "Logger.*"
+      "Logger.*",
+      "*.New"
     ],
     "mutate": [
       "**/*.cs",

@@ -32,7 +32,7 @@ public sealed class HighBlockAward
 
     internal static ErrorOr<HighBlockAward> Create(BowlerId bowlerId, int blockScore, int games)
     {
-        if (bowlerId == default)
+        if (bowlerId.Equals(default))
             return HighBlockAwardErrors.BowlerIdRequired;
 
         if (blockScore <= 0)

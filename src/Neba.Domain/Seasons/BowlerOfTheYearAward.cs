@@ -33,7 +33,7 @@ public sealed class BowlerOfTheYearAward
 
     internal static ErrorOr<BowlerOfTheYearAward> CreateOpen(BowlerId bowlerId)
     {
-        if (bowlerId == default)
+        if (bowlerId.Equals(default))
             return BowlerOfTheYearAwardErrors.BowlerIdRequired;
 
         var id = SeasonAwardId.New();
@@ -42,7 +42,7 @@ public sealed class BowlerOfTheYearAward
 
     internal static ErrorOr<BowlerOfTheYearAward> CreateWoman(BowlerId bowlerId, Gender gender)
     {
-        if (bowlerId == default)
+        if (bowlerId.Equals(default))
             return BowlerOfTheYearAwardErrors.BowlerIdRequired;
 
         if (gender != Gender.Female)
@@ -54,7 +54,7 @@ public sealed class BowlerOfTheYearAward
 
     internal static ErrorOr<BowlerOfTheYearAward> CreateSenior(BowlerId bowlerId, int age)
     {
-        if (bowlerId == default)
+        if (bowlerId.Equals(default))
             return BowlerOfTheYearAwardErrors.BowlerIdRequired;
 
         if (age < 50)
@@ -66,7 +66,7 @@ public sealed class BowlerOfTheYearAward
 
     internal static ErrorOr<BowlerOfTheYearAward> CreateSuperSenior(BowlerId bowlerId, int age)
     {
-        if (bowlerId == default)
+        if (bowlerId.Equals(default))
             return BowlerOfTheYearAwardErrors.BowlerIdRequired;
 
         if (age < 60)
@@ -78,7 +78,7 @@ public sealed class BowlerOfTheYearAward
 
     internal static ErrorOr<BowlerOfTheYearAward> CreateRookie(BowlerId bowlerId, bool isRookie)
     {
-        if (bowlerId == default)
+        if (bowlerId.Equals(default))
             return BowlerOfTheYearAwardErrors.BowlerIdRequired;
 
         if (!isRookie)
@@ -90,7 +90,7 @@ public sealed class BowlerOfTheYearAward
 
     internal static ErrorOr<BowlerOfTheYearAward> CreateYouth(BowlerId bowlerId, int age)
     {
-        if (bowlerId == default)
+        if (bowlerId.Equals(default))
             return BowlerOfTheYearAwardErrors.BowlerIdRequired;
 
         if (age >= 18)
