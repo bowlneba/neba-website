@@ -50,7 +50,7 @@ public sealed class ListHighAverageAwardsEndpointTests
 
         // Assert — route and auth
         endpoint.Definition.Verbs.ShouldContain("GET");
-        endpoint.Definition.Routes.ShouldContain(r => r.Contains("high-average"), "should be under the /awards/high-average group");
+        endpoint.Definition.Routes.ShouldContain("/awards/high-average");
         endpoint.Definition.AnonymousVerbs.ShouldNotBeEmpty();
     }
 

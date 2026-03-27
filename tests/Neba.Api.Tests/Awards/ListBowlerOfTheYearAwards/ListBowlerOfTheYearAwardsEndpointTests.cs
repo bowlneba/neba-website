@@ -50,7 +50,7 @@ public sealed class ListBowlerOfTheYearAwardsEndpointTests
 
         // Assert — route and auth
         endpoint.Definition.Verbs.ShouldContain("GET");
-        endpoint.Definition.Routes.ShouldContain(r => r.Contains("bowler-of-the-year"), "should be under the /awards/bowler-of-the-year group");
+        endpoint.Definition.Routes.ShouldContain("/awards/bowler-of-the-year");
         endpoint.Definition.AnonymousVerbs.ShouldNotBeEmpty();
     }
 

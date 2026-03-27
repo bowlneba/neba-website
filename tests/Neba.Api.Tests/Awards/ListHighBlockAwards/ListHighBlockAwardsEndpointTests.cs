@@ -50,7 +50,7 @@ public sealed class ListHighBlockAwardsEndpointTests
 
         // Assert — route and auth
         endpoint.Definition.Verbs.ShouldContain("GET");
-        endpoint.Definition.Routes.ShouldContain(r => r.Contains("high-block"), "should be under the /awards/high-block group");
+        endpoint.Definition.Routes.ShouldContain("/awards/high-block");
         endpoint.Definition.AnonymousVerbs.ShouldNotBeEmpty();
     }
 
