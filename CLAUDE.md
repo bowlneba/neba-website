@@ -135,6 +135,8 @@ season.AssignHighAverageWinner(command.BowlerId, command.Average, command.Games,
 
 **Coverage analysis note**: MTP coverage is partially implemented in 4.13 — uncovered mutants are filtered out, but per-mutant test selection is not yet available. This means runs are slower than they will eventually be (all tests run per mutant), but results are accurate.
 
+**StronglyTypedId + Stryker limitation** — Stryker's in-memory Roslyn compilation invokes source generators but does not pass `AdditionalFiles` (e.g., `ulid-full.typedid`) to them. The `StronglyTypedIds` generator therefore produces no output, and any domain source file that calls `SomeId.New()` causes a compile error that crashes the entire mutation run. Fix: remove `New()` from the template and define it explicitly in each ID's partial struct body. Every `[StronglyTypedId("ulid-full")]` type must declare its own `New()`. See [ADR-0006](docs/adr/0006-explicit-new-on-stronglytypedid-partial-structs.md).
+
 **Per-layer decisions** (make these explicitly for each new layer):
 
 - `ignore-mutations: Linq` — keep for Domain/Application (logic layers); exclude for Infrastructure/API/Blazor (see rationale in learnings below)

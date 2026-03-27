@@ -412,6 +412,7 @@ Flag when:
 
 - Tests manually instantiate domain entities instead of using factories
 - New entity, value object, DTO, or response type is added without a corresponding factory class in `Neba.TestFactory` (excludes SmartEnums, strongly-typed IDs, and command/query/job input objects — those don't need factories)
+- A new `[StronglyTypedId("ulid-full")]` type is added without an explicit `New()` factory method in its partial struct body (source generators don't run in Stryker's Roslyn compilation; `New()` must be in real source — see [ADR-0006](../../docs/adr/0006-explicit-new-on-stronglytypedid-partial-structs.md))
 - Tests don't follow the Arrange-Act-Assert pattern
 - Integration tests don't use Bogus factories with seeds for reproducibility
 - Missing Verify (snapshot) tests for mapping operations
@@ -605,6 +606,7 @@ When reviewing, verify:
 
 - [ ] Tests use factories, not manual instantiation
 - [ ] New entity/value object/DTO/response has a corresponding factory in `Neba.TestFactory` (SmartEnums, strongly-typed IDs, and input objects are exempt)
+- [ ] New `[StronglyTypedId("ulid-full")]` type has an explicit `New()` factory method in its partial struct body (not relying solely on source generation — see [ADR-0006](../../docs/adr/0006-explicit-new-on-stronglytypedid-partial-structs.md))
 - [ ] Tests have `[UnitTest]` or `[IntegrationTest]` trait
 - [ ] Tests have `[Component]` trait
 - [ ] Tests have `DisplayName` on Facts and Theories

@@ -37,8 +37,6 @@
             Value = value;
         }
 
-        public static PLACEHOLDERID New() => new PLACEHOLDERID(global::System.Ulid.NewUlid(), skipValidation: true);
-
         public static PLACEHOLDERID FromGuid(global::System.Guid guid) => new PLACEHOLDERID(new global::System.Ulid(guid), skipValidation: true);
 
         public static readonly PLACEHOLDERID Empty = new PLACEHOLDERID(global::System.Ulid.Empty, skipValidation: true);
