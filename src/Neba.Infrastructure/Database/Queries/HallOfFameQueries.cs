@@ -10,11 +10,10 @@ internal sealed class HallOfFameQueries(AppDbContext appDbContext)
     : IHallOfFameQueries
 {
     private readonly IQueryable<HallOfFameInduction> _hallOfFameInductions
-        = appDbContext.HallOfFameInductions;
+        = appDbContext.HallOfFameInductions.AsNoTracking();
 
     public async Task<IReadOnlyCollection<HallOfFameInductionDto>> GetAllAsync(CancellationToken cancellationToken)
         => await _hallOfFameInductions
-            .AsNoTracking()
             .Select(induction => new HallOfFameInductionDto
             {
                 Year = induction.Year,

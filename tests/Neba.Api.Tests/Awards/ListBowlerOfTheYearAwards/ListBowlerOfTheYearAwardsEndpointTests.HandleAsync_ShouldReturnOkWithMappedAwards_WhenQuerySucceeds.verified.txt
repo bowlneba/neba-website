@@ -1,0 +1,20 @@
+﻿{
+  Items: [
+    {
+      Season: Season 2022,
+      BowlerName: Carl Zemlak,
+      Category: Open
+    },
+    {
+      Season: Season 2025,
+      BowlerName: Preston Bernier,
+      Category: Super Senior
+    },
+    {
+      Season: Season 2025,
+      BowlerName: Kathy Cassin,
+      Category: Rookie
+    }
+  ],
+  TotalItems: 3
+}

@@ -59,6 +59,8 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
                 options.MigrationsHistoryTable(AppDbContext.MigrationsHistoryTableName, AppDbContext.DefaultSchema))
             .UseSnakeCaseNamingConvention()
             .UseExceptionProcessor()
+            .EnableDetailedErrors()
+            .EnableSensitiveDataLogging()
             .Options;
     }
 

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using Neba.Application.Awards;
 using Neba.Application.BowlingCenters;
 using Neba.Application.HallOfFame;
 using Neba.Infrastructure.Database.Queries;
@@ -113,6 +114,7 @@ internal static class DatabaseConfiguration
         {
             services.AddScoped<IBowlingCenterQueries, BowlingCenterQueries>();
             services.AddScoped<IHallOfFameQueries, HallOfFameQueries>();
+            services.AddScoped<IAwardQueries, AwardQueries>();
         }
     }
 }

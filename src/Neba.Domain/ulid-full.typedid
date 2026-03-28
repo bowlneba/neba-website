@@ -9,8 +9,6 @@
 #endif
         global::System.IComparable<PLACEHOLDERID>, global::System.IEquatable<PLACEHOLDERID>, global::System.IFormattable
     {
-        public global::System.Ulid Value { get; }
-
         public PLACEHOLDERID(string value)
         {
 #if NET7_0_OR_GREATER
@@ -32,16 +30,9 @@
             }
         }
 
-        private PLACEHOLDERID(global::System.Ulid value, bool skipValidation)
-        {
-            Value = value;
-        }
+        public static PLACEHOLDERID FromGuid(global::System.Guid guid) => new PLACEHOLDERID(new global::System.Ulid(guid));
 
-        public static PLACEHOLDERID New() => new PLACEHOLDERID(global::System.Ulid.NewUlid(), skipValidation: true);
-
-        public static PLACEHOLDERID FromGuid(global::System.Guid guid) => new PLACEHOLDERID(new global::System.Ulid(guid), skipValidation: true);
-
-        public static readonly PLACEHOLDERID Empty = new PLACEHOLDERID(global::System.Ulid.Empty, skipValidation: true);
+        public static readonly PLACEHOLDERID Empty = new PLACEHOLDERID(global::System.Ulid.Empty);
 
         /// <inheritdoc cref="global::System.IEquatable{T}"/>
         public bool Equals(PLACEHOLDERID other)
@@ -80,7 +71,7 @@
                 return value switch
                 {
                     string stringValue => new PLACEHOLDERID(stringValue),
-                    global::System.Ulid ulidValue => new PLACEHOLDERID(ulidValue, skipValidation: true),
+                    global::System.Ulid ulidValue => new PLACEHOLDERID(ulidValue),
                     global::System.Guid guidValue => PLACEHOLDERID.FromGuid(guidValue),
                     _ => base.ConvertFrom(context, culture, value)
                 };
@@ -136,11 +127,11 @@
         {
             if (string.IsNullOrEmpty(input))
             {
-                return new PLACEHOLDERID(global::System.Ulid.Empty, skipValidation: true);
+                return new PLACEHOLDERID(global::System.Ulid.Empty);
             }
 
             var ulid = global::System.Ulid.Parse(input);
-            return new PLACEHOLDERID(ulid, skipValidation: true);
+            return new PLACEHOLDERID(ulid);
         }
 
 #if NET7_0_OR_GREATER
@@ -162,13 +153,13 @@
 
             if (string.IsNullOrEmpty(input))
             {
-                result = new PLACEHOLDERID(global::System.Ulid.Empty, skipValidation: true);
+                result = new PLACEHOLDERID(global::System.Ulid.Empty);
                 return true;
             }
 
             if (global::System.Ulid.TryParse(input, out var ulid))
             {
-                result = new PLACEHOLDERID(ulid, skipValidation: true);
+                result = new PLACEHOLDERID(ulid);
                 return true;
             }
 
@@ -186,10 +177,10 @@
         {
             if (input.IsEmpty)
             {
-                return new PLACEHOLDERID(global::System.Ulid.Empty, skipValidation: true);
+                return new PLACEHOLDERID(global::System.Ulid.Empty);
             }
             var ulid = global::System.Ulid.Parse(input);
-            return new PLACEHOLDERID(ulid, skipValidation: true);
+            return new PLACEHOLDERID(ulid);
         }
 #endif
 
@@ -201,10 +192,10 @@
         {
             if (input.IsEmpty)
             {
-                return new PLACEHOLDERID(global::System.Ulid.Empty, skipValidation: true);
+                return new PLACEHOLDERID(global::System.Ulid.Empty);
             }
             var ulid = global::System.Ulid.Parse(input);
-            return new PLACEHOLDERID(ulid, skipValidation: true);
+            return new PLACEHOLDERID(ulid);
         }
 
 #if NET7_0_OR_GREATER
@@ -214,13 +205,13 @@
         {
             if (input.IsEmpty)
             {
-                result = new PLACEHOLDERID(global::System.Ulid.Empty, skipValidation: true);
+                result = new PLACEHOLDERID(global::System.Ulid.Empty);
                 return true;
             }
 
             if (global::System.Ulid.TryParse(input, out var ulid))
             {
-                result = new PLACEHOLDERID(ulid, skipValidation: true);
+                result = new PLACEHOLDERID(ulid);
                 return true;
             }
 

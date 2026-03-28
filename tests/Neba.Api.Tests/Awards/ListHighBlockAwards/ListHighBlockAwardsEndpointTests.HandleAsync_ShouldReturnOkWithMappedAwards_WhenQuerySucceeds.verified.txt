@@ -1,0 +1,20 @@
+﻿{
+  Items: [
+    {
+      Season: Season 2023,
+      BowlerName: Kay Monahan,
+      Score: 1331
+    },
+    {
+      Season: Season 2023,
+      BowlerName: Jeanette Metz,
+      Score: 1359
+    },
+    {
+      Season: Season 2021,
+      BowlerName: Carmen Crooks,
+      Score: 1306
+    }
+  ],
+  TotalItems: 3
+}

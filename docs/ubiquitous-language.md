@@ -558,6 +558,175 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 ---
 
+## Awards
+
+### Season
+
+**Definition**: The temporal boundary over which awards are calculated and assigned. A Season has an explicit start and end date rather than being derived from tournament dates, accommodating non-standard spans such as the combined 2020–2021 Season resulting from tournament cancellations.
+
+A Season must be marked **Complete** before any awards may be assigned to bowlers. This ensures that in-progress award standings — such as a bowler currently leading Bowler of the Year — do not prematurely influence Hall of Fame point totals.
+
+**Properties**:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `Id` | ULID | System-generated unique identifier |
+| `Description` | string | Human-readable label (e.g., `"2022 Season"`, `"2020–2021 Season"`) |
+| `StartDate` | date | First date of the season. Inclusive |
+| `EndDate` | date | Last date of the season. Inclusive |
+| `Complete` | bool | Whether the season has been closed and awards may be assigned. Defaults to `false` |
+
+**Rules**:
+
+- `StartDate` must be earlier than `EndDate`
+- Awards may not be assigned to bowlers until `Complete` is `true`
+- Once marked Complete, a Season may not be reopened
+- A Tournament's dates must fall within the `StartDate` and `EndDate` of its referenced Season *(enforced at Tournament creation/update; see Tournament)*
+
+**Relationships**:
+
+| Related Concept | Relationship | Notes |
+| --- | --- | --- |
+| `Tournament` | references Season by `SeasonId` | Tournament owns the reference; Season has no knowledge of Tournaments |
+| `SeasonAward` | owned by Season | Awards are assigned as children of Season after it is marked Complete |
+
+**Domain Events**:
+
+| Event | Trigger |
+| --- | --- |
+| `SeasonCompleted` | Raised when a Season is marked Complete. Downstream consumers (e.g., Hall of Fame point calculations) react to this event |
+
+> **Out of Scope (Current)**: Hall of Fame point values associated with each award type, membership type definitions (New Member, Renewal, etc.), and the formal definition of Tournament stat-eligibility are deferred to their respective modeling sessions. No concept of season templates or recurring schedule patterns is modeled at this time.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Seasons`
+- Type: `Season` (aggregate root)
+- Identity type: `SeasonId` (ULID-backed strongly-typed ID)
+
+---
+
+### SeasonAward
+
+**Definition**: A record recognizing a bowler for exceptional achievement within a Season. All season award records share a common identity structure — a system-generated `Id`, a reference to the owning `Season`, and a reference to the `Bowler` receiving the award.
+
+There is no unique constraint per award type per season — ties produce multiple winners, each represented as a distinct record.
+
+Awards may only be assigned after the owning Season is marked **Complete**.
+
+**Common Properties**:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `Id` | ULID | System-generated unique identifier |
+| `SeasonId` | ULID | The Season to which this award belongs |
+| `BowlerId` | ULID | The bowler receiving the award |
+
+**Rules**:
+
+- Awards may not be assigned until the owning Season is marked `Complete`
+- Once a Season is marked Complete, awards may not be corrected through the application
+- Only games bowled in Stat-Eligible Tournaments contribute to award calculations
+- Baker team finals games are excluded from High Average calculations
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Seasons`
+- Types: `BowlerOfTheYearAward`, `HighAverageAward`, `HighBlockAward` — three independent entity classes, each mapping to its own table. No shared base class.
+- Shared identity type: `SeasonAwardId` (ULID-backed strongly-typed ID)
+
+---
+
+### Bowler of the Year Award
+
+**Definition**: Recognizes overall performance across Stat-Eligible Tournaments during the Season. Awarded per **Category** — a separate award record exists for each category a bowler wins within a season.
+
+Age eligibility for a category is evaluated as of each tournament date during the season — not as of a fixed season-level date. A bowler may win multiple categories in the same season (e.g., a bowler who is 60 years old and female may win Woman, Senior, and Super Senior).
+
+**Properties**:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `Id` | ULID | System-generated unique identifier |
+| `SeasonId` | ULID | The Season to which this award belongs |
+| `BowlerId` | ULID | The bowler receiving the award |
+| `Category` | `BowlerOfTheYearCategory` | The category in which the award is given |
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Awards`
+- Type: `BowlerOfTheYearAward` (entity)
+
+---
+
+### BowlerOfTheYearCategory
+
+**Definition**: The competitive category under which a Bowler of the Year award is given. Age is evaluated as of each tournament date during the season.
+
+| Value | Eligibility |
+| --- | --- |
+| `Open` | All eligible bowlers |
+| `Woman` | Female bowlers |
+| `Senior` | Age 50 or older |
+| `SuperSenior` | Age 60 or older |
+| `Rookie` | Bowlers paying a **New Member** membership in the current season. All subsequent seasons are renewal memberships and no longer qualify. *(See Membership for full membership type definitions — deferred)* |
+| `Youth` | Bowlers under age 18 |
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Seasons`
+- Type: `BowlerOfTheYearCategory` (SmartEnum, int-valued)
+
+---
+
+### High Average Award
+
+**Definition**: Recognizes the highest pinfall average per game across all Stat-Eligible Tournaments in the Season. Awarded overall — not broken out by category. If two or more bowlers share the highest average, each receives a distinct award record.
+
+**Eligibility**: A bowler must have bowled a minimum number of games to qualify:
+
+> **Minimum Games = floor(4.5 × number of Stat-Eligible Tournaments completed in the Season)**
+
+Baker team finals games do not count toward a bowler's average or game total.
+
+**Properties**:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `Id` | ULID | System-generated unique identifier |
+| `SeasonId` | ULID | The Season to which this award belongs |
+| `BowlerId` | ULID | The bowler receiving the award |
+| `Average` | decimal | The winner's pinfall average per game |
+| `TotalGames` | int? | Total games bowled across Stat-Eligible Tournaments. Nullable — not recorded for all historical seasons |
+| `TournamentsParticipated` | int? | Number of Stat-Eligible Tournaments the bowler participated in. Nullable — not recorded for all historical seasons |
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Awards`
+- Type: `HighAverageAward` (entity)
+
+---
+
+### High Block Award
+
+**Definition**: Recognizes the single highest 5-game pinfall total from a qualifying block (before match play) in any Stat-Eligible Tournament during the Season. Awarded overall — not broken out by category. If two or more bowlers share the highest block score, each receives a distinct award record.
+
+**Properties**:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `Id` | ULID | System-generated unique identifier |
+| `SeasonId` | ULID | The Season to which this award belongs |
+| `BowlerId` | ULID | The bowler receiving the award |
+| `BlockScore` | int | The winning 5-game pinfall total |
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Awards`
+- Type: `HighBlockAward` (entity)
+
+---
+
 ## Hall of Fame
 
 The NEBA program that formally recognizes individuals for exceptional competitive achievement, organizational service, or meaningful contribution to the organization. Inductees are honored at a Hall of Fame Banquet held every two years.

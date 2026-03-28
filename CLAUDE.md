@@ -31,6 +31,79 @@ Before ending a session where significant discoveries were made, consider whethe
 - Commands return `ErrorOr<T>`, never throw for business rules
 - Queries return DTOs, never domain entities
 - Validators handle structural validation only (no DB lookups, no business rules)
+- Use `Error.Validation` (422) when the input itself is wrong; use `Error.Conflict` (409) when the input is valid but the system's current state prevents the operation. Retry test: if the caller could resend the exact same payload and succeed after a state change, it's `Conflict`.
+
+### Always-Valid Entities and Aggregate Assignment
+
+Child entities owned by an aggregate use `internal static ErrorOr<T> Create(...)` factory methods that validate the entity's own structural invariants. The `internal` modifier ensures the entity can only be constructed through the owning aggregate (same assembly) — never directly from application or test code.
+
+The aggregate root's assign methods take raw properties, call the internal factory, enforce aggregate-level invariants (e.g., `Complete == true`), and return a single `ErrorOr<Success>` to the caller:
+
+```csharp
+// Child entity owns its own invariants — internal so only Season can construct it
+internal static ErrorOr<HighBlockAward> Create(BowlerId bowlerId, int blockScore)
+{
+    if (blockScore <= 0)
+        return Error.Validation("HighBlockAward.BlockScore", "Block score must be greater than zero.");
+    return new HighBlockAward { Id = SeasonAwardId.New(), BowlerId = bowlerId, BlockScore = blockScore };
+}
+
+// Aggregate enforces its own invariant and delegates entity validation to the entity
+public ErrorOr<Success> AssignHighBlockAward(BowlerId bowlerId, int blockScore)
+{
+    if (!Complete)
+        return Error.Conflict("Season.NotComplete", "Awards may only be assigned to a completed season.");
+    var award = HighBlockAward.Create(bowlerId, blockScore);
+    if (award.IsError) return award.Errors;
+    _highBlockAwards.Add(award.Value);
+    return Result.Success;
+}
+```
+
+**Why this matters**: If entity validation lived on the aggregate, the aggregate would absorb invariants that have nothing to do with it. If `Create()` were public, the entity could be constructed in an invalid state outside the aggregate. The internal factory gives call-site simplicity (single `ErrorOr` chain) while keeping each invariant owned by the right type.
+
+### Aggregate Invariants Requiring Cross-Aggregate Data
+
+When an assign method's invariant depends on data owned by another aggregate, the application layer queries that data and passes it as a parameter. The aggregate enforces the rule; the application layer provides the facts.
+
+**The deciding factor — persist on aggregate vs. pass as parameter**:
+
+- **Live data owned by another aggregate** → pass as a parameter. The other aggregate remains the single source of truth. Duplicating it creates redundancy. Example: `statEligibleTournamentCount` for `AssignHighAverageWinner` — tournaments own this fact, not Season.
+- **Per-instance formula coefficients** → persist on the aggregate, set at a lifecycle transition. The formula belongs in the domain; the coefficient may legitimately vary per instance and must be frozen with the aggregate's closed state. Example: `_minimumGamesMultiplier` is set at `Season.Close()` because an abbreviated season might use a different threshold than a regular season.
+
+```csharp
+// Application layer provides the cross-aggregate fact; aggregate enforces the rule
+public ErrorOr<Success> AssignHighAverageWinner(
+    BowlerId bowlerId, decimal average, int games, int? tournamentsParticipated,
+    int statEligibleTournamentCount)
+{
+    if (!Complete)
+        return SeasonErrors.SeasonNotComplete;
+
+    var minimumGames = ComputeMinimumGames(statEligibleTournamentCount);
+    if (games < minimumGames)
+        return SeasonErrors.InsufficientGames(games, minimumGames);
+
+    var award = HighAverageAward.Create(bowlerId, average, games, tournamentsParticipated);
+    if (award.IsError) return award.Errors;
+    _highAverageAwards.Add(award.Value);
+    return Result.Success;
+}
+
+// Formula is domain logic — lives on the aggregate, not the application layer
+private int ComputeMinimumGames(int statEligibleTournaments) =>
+    (int)Math.Floor(_minimumGamesMultiplier * statEligibleTournaments);
+```
+
+Application layer orchestrates — queries the cross-aggregate fact once, then drives the aggregate:
+
+```csharp
+var statEligibleCount = await _tournamentRepository.CountStatEligibleAsync(command.SeasonId, ct);
+season.AssignHighAverageWinner(command.BowlerId, command.Average, command.Games,
+    command.TournamentsParticipated, statEligibleCount);
+```
+
+**Anti-pattern**: Computing a domain formula in the application handler and passing the derived result (e.g., pre-computing `minimumGames` and passing it in). When the formula changes, the fix belongs in the domain — not scattered across handlers.
 
 ### Testing Requirements
 
@@ -61,6 +134,8 @@ Before ending a session where significant discoveries were made, consider whethe
 4. `"ignore-mutations": ["string", "Update"]` — always exclude string literals (noise) and update expressions (`i++`/`i--`). The MTP runner in Stryker 4.13 does **not** respect `additional-timeout`, so `i++` → `i--` mutations in `for` loops create infinite loops that hang the entire run. `UpdateExpression` mutations are low-value anyway — loop control infrastructure, not business logic.
 
 **Coverage analysis note**: MTP coverage is partially implemented in 4.13 — uncovered mutants are filtered out, but per-mutant test selection is not yet available. This means runs are slower than they will eventually be (all tests run per mutant), but results are accurate.
+
+**StronglyTypedId + Stryker limitation** — Stryker's in-memory Roslyn compilation invokes source generators but does not pass `AdditionalFiles` (e.g., `ulid-full.typedid`) to them. The `StronglyTypedIds` generator therefore produces no output, causing compile errors when domain source files reference any member that was previously template-generated. Fix: remove `Value { get; }`, the private `(Ulid value)` constructor, and `New()` from the template and define all three explicitly in each ID's partial struct body. Every `[StronglyTypedId("ulid-full")]` type must declare this trio — including test helper structs, not just domain IDs. See [ADR-0006](docs/adr/0006-explicit-new-on-stronglytypedid-partial-structs.md).
 
 **Per-layer decisions** (make these explicitly for each new layer):
 

@@ -1,0 +1,91 @@
+﻿[
+  {
+    Season: 1939 Season,
+    BowlerName: {
+      FirstName: Jane,
+      LastName: Bechtelar,
+      MiddleName: Florida,
+      Suffix: {
+        Name: III,
+        Value: III
+      },
+      Nickname: Eudora
+    },
+    Score: 1038
+  },
+  {
+    Season: 1939 Season,
+    BowlerName: {
+      FirstName: Margarita,
+      LastName: Wehner,
+      MiddleName: Kendra,
+      Suffix: {
+        Name: II,
+        Value: II
+      },
+      Nickname: Halie
+    },
+    Score: 1038
+  },
+  {
+    Season: 1939 Season,
+    BowlerName: {
+      FirstName: Clara,
+      LastName: Reynolds,
+      Nickname: Tristian
+    },
+    Score: 1038
+  },
+  {
+    Season: 1941 Season,
+    BowlerName: {
+      FirstName: Boyd,
+      LastName: Berge
+    },
+    Score: 1182
+  },
+  {
+    Season: 1941 Season,
+    BowlerName: {
+      FirstName: Lela,
+      LastName: Olson,
+      Suffix: {
+        Name: Sr,
+        Value: Sr.
+      },
+      Nickname: Weldon
+    },
+    Score: 1182
+  },
+  {
+    Season: 2014 Season,
+    BowlerName: {
+      FirstName: Jan,
+      LastName: Reilly,
+      Suffix: {
+        Name: Jr,
+        Value: Jr.
+      },
+      Nickname: Janelle
+    },
+    Score: 1270
+  },
+  {
+    Season: 2014 Season,
+    BowlerName: {
+      FirstName: Chad,
+      LastName: Kessler
+    },
+    Score: 1270
+  },
+  {
+    Season: 2006 Season,
+    BowlerName: {
+      FirstName: Tracey,
+      LastName: Beatty,
+      MiddleName: Ashlee,
+      Nickname: Amaya
+    },
+    Score: 1241
+  }
+]

@@ -11,4 +11,13 @@ namespace Neba.Domain.HallOfFame;
 /// Use this type instead of raw strings to ensure type-safety across the domain.
 /// </remarks>
 [StronglyTypedId("ulid-full")]
-public readonly partial struct HallOfFameId;
+public readonly partial struct HallOfFameId
+{
+    /// <summary>Gets the underlying <see cref="Ulid"/> value.</summary>
+    public Ulid Value { get; }
+    private HallOfFameId(Ulid value)
+        => Value = value;
+
+    /// <summary>Creates a new <see cref="HallOfFameId"/> with a randomly generated ULID value.</summary>
+    public static HallOfFameId New() => new(Ulid.NewUlid());
+}

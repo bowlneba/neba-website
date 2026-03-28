@@ -14,24 +14,25 @@ namespace Neba.Infrastructure.Tests.Database.Queries;
 [Collection<PostgreSqlFixture>]
 public sealed class BowlingCenterQueriesTests : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
 {
-    private readonly PostgreSqlFixture _fixture;
+    private readonly PostgreSqlFixture _postgres;
     private readonly AppDbContext _dbContext;
-    private readonly BowlingCenterQueries _sut;
+    private readonly BowlingCenterQueries _queries;
 
     public BowlingCenterQueriesTests(PostgreSqlFixture fixture)
     {
         ArgumentNullException.ThrowIfNull(fixture);
 
-        _fixture = fixture;
+        _postgres = fixture;
         _dbContext = new AppDbContext(fixture.CreateDbContextOptions());
-        _sut = new BowlingCenterQueries(_dbContext);
+        _queries = new BowlingCenterQueries(_dbContext);
     }
 
-    public async ValueTask InitializeAsync() => await _fixture.ResetAsync();
+    public async ValueTask InitializeAsync()
+        => await _postgres.ResetAsync();
 
     public async ValueTask DisposeAsync()
     {
-        await _fixture.ResetAsync();
+        await _postgres.ResetAsync();
         await _dbContext.DisposeAsync();
     }
 
@@ -56,7 +57,7 @@ public sealed class BowlingCenterQueriesTests : IClassFixture<PostgreSqlFixture>
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
-        var result = await _sut.GetAllAsync(TestContext.Current.CancellationToken);
+        var result = await _queries.GetAllAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.Count.ShouldBe(expectedOpenCount);

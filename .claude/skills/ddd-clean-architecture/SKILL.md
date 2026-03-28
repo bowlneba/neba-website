@@ -138,6 +138,70 @@ public readonly record struct DateRange
 - Reference other aggregates by identity only
 - Keep aggregates small and focused
 
+#### Always-Valid Child Entities
+
+Child entities owned by an aggregate must be constructed only through the aggregate root. Use an `internal static ErrorOr<T> Create(...)` factory on the child entity to validate entity-own invariants. The `internal` modifier ensures the entity cannot be constructed from outside the aggregate's assembly.
+
+The aggregate root's assignment methods take raw properties, delegate entity construction to the internal factory, enforce aggregate-level invariants, and return a single `ErrorOr<Success>`:
+
+```csharp
+// Entity owns its own invariants
+internal static ErrorOr<HighBlockAward> Create(BowlerId bowlerId, int blockScore)
+{
+    if (blockScore <= 0)
+        return Error.Validation("HighBlockAward.BlockScore", "Block score must be greater than zero.");
+    return new HighBlockAward { Id = SeasonAwardId.New(), BowlerId = bowlerId, BlockScore = blockScore };
+}
+
+// Aggregate enforces its own invariant, delegates entity validation to the entity
+public ErrorOr<Success> AssignHighBlockAward(BowlerId bowlerId, int blockScore)
+{
+    if (!Complete)
+        return Error.Conflict("Season.NotComplete", "Awards may only be assigned to a completed season.");
+    var award = HighBlockAward.Create(bowlerId, blockScore);
+    if (award.IsError) return award.Errors;
+    _highBlockAwards.Add(award.Value);
+    return Result.Success;
+}
+```
+
+This pattern separates concerns precisely: entity structural invariants stay on the entity, aggregate state invariants stay on the aggregate, and the caller sees a single `ErrorOr` chain. Avoid putting entity validation on the aggregate (wrong owner) or making `Create()` public (allows invalid construction outside the aggregate).
+
+#### Aggregate Invariants Requiring Cross-Aggregate Data
+
+When an assign method's invariant depends on data owned by another aggregate, the application layer queries that data and passes it as a parameter. The aggregate enforces the rule; the application layer provides the facts.
+
+The deciding factor between persisting data on the aggregate vs. passing it as a parameter:
+
+- **Live data owned by another aggregate** → pass as a parameter. Do not duplicate it onto this aggregate — the owning aggregate remains the source of truth.
+- **Per-instance formula coefficients** → persist on the aggregate, set at a lifecycle transition. The formula belongs in the domain; the coefficient may vary per instance and must be frozen with the aggregate's closed state.
+
+```csharp
+// Application layer provides the cross-aggregate fact; aggregate enforces the rule
+public ErrorOr<Success> AssignHighAverageWinner(
+    BowlerId bowlerId, decimal average, int games, int? tournamentsParticipated,
+    int statEligibleTournamentCount)
+{
+    if (!Complete)
+        return SeasonErrors.SeasonNotComplete;
+
+    var minimumGames = ComputeMinimumGames(statEligibleTournamentCount);
+    if (games < minimumGames)
+        return SeasonErrors.InsufficientGames(games, minimumGames);
+
+    var award = HighAverageAward.Create(bowlerId, average, games, tournamentsParticipated);
+    if (award.IsError) return award.Errors;
+    _highAverageAwards.Add(award.Value);
+    return Result.Success;
+}
+
+// Formula coefficient is per-instance — persisted on the aggregate, set at Close()
+private int ComputeMinimumGames(int statEligibleTournaments) =>
+    (int)Math.Floor(_minimumGamesMultiplier * statEligibleTournaments);
+```
+
+Application layer orchestrates — queries the cross-aggregate fact, then drives the aggregate. It must not compute the formula itself; that leaks domain logic into the application layer.
+
 ### Aggregate Base Class
 
 Minimal base class for domain event mechanics only. No identity property — each aggregate defines its own identity shape.

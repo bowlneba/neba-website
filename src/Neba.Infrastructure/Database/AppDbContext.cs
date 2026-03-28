@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Neba.Domain.Bowlers;
 using Neba.Domain.BowlingCenters;
 using Neba.Domain.HallOfFame;
+using Neba.Domain.Seasons;
 using Neba.Infrastructure.Database.Configurations;
 using Neba.Infrastructure.Database.Converters;
 
@@ -25,11 +26,18 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<HallOfFameInduction> HallOfFameInductions
         => Set<HallOfFameInduction>();
 
+    public DbSet<Season> Seasons
+        => Set<Season>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BowlingCenterConfiguration());
         modelBuilder.ApplyConfiguration(new BowlerConfiguration());
         modelBuilder.ApplyConfiguration(new HallOfFameInductionConfiguration());
+        modelBuilder.ApplyConfiguration(new SeasonConfiguration());
+        modelBuilder.ApplyConfiguration(new BowlerOfTheYearAwardConfiguration());
+        modelBuilder.ApplyConfiguration(new HighAverageAwardConfiguration());
+        modelBuilder.ApplyConfiguration(new HighBlockAwardConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -41,5 +49,11 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
         configurationBuilder.Properties<HallOfFameId>()
             .HaveConversion<UlidTypedIdConverter<HallOfFameId>>();
+
+        configurationBuilder.Properties<SeasonId>()
+            .HaveConversion<UlidTypedIdConverter<SeasonId>>();
+
+        configurationBuilder.Properties<SeasonAwardId>()
+            .HaveConversion<UlidTypedIdConverter<SeasonAwardId>>();
     }
 }

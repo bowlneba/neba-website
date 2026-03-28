@@ -25,6 +25,10 @@ Flag when:
 - Domain entities expose public setters or mutable collections
 - Aggregates lack domain event support when state changes occur
 - Business logic appears outside the domain layer
+- A child entity owned by an aggregate has a `public static Create(...)` factory — it should be `internal` so construction is only possible through the aggregate root (same assembly)
+- An aggregate's assign/add method validates child entity invariants directly (e.g., checking `blockScore > 0` on `Season`) instead of delegating to the child entity's `internal static Create(...)` factory
+- A child entity is instantiated directly via `new` outside the aggregate root — application or test code must go through the aggregate's assign methods
+- An application handler computes a domain formula and passes the derived result to an aggregate — raw input data should be passed instead; the formula belongs in the domain (e.g., computing `minimumGames = floor(4.5 × count)` in a handler rather than passing `statEligibleTournamentCount` to the aggregate)
 
 ### Application Layer (`Neba.Application`)
 
@@ -121,12 +125,21 @@ Flag when:
 
 Error codes must follow the `Entity.ErrorCode` convention (PascalCase, dot-separated). See [ADR-0004](../../docs/adr/0004-error-code-naming-convention.md).
 
+#### Error Types (`Error.Validation` vs `Error.Conflict`)
+
+Use the **retry test** to choose between them: if the caller could retry the exact same request and succeed — without changing their payload — it is a state conflict, not a validation failure.
+
+- `Error.Validation` (422) — the input itself is structurally wrong; the caller must change their payload to fix it (e.g., a score of 0, a missing required field)
+- `Error.Conflict` (409) — the input is valid but the system's current state prevents the operation (e.g., season not yet closed, bowler already registered)
+
 Flag when:
 
 - Error codes don't follow `Entity.ErrorCode` pattern (e.g., `"documentNotFound"` instead of `"Document.NotFound"`)
 - Error codes use lowercase or camelCase instead of PascalCase
 - Error codes are missing (empty string or generic code)
 - Application error classes are not named `{Entity}Errors` or are not `internal static`
+- `Error.Validation` is used for a state/precondition failure where the caller could retry unchanged (should be `Error.Conflict`)
+- `Error.Conflict` is used for a structural input problem (should be `Error.Validation`)
 
 #### Summary Classes
 
@@ -399,6 +412,7 @@ Flag when:
 
 - Tests manually instantiate domain entities instead of using factories
 - New entity, value object, DTO, or response type is added without a corresponding factory class in `Neba.TestFactory` (excludes SmartEnums, strongly-typed IDs, and command/query/job input objects — those don't need factories)
+- A new `[StronglyTypedId("ulid-full")]` type is added without an explicit `New()` factory method in its partial struct body (source generators don't run in Stryker's Roslyn compilation; `New()` must be in real source — see [ADR-0006](../../docs/adr/0006-explicit-new-on-stronglytypedid-partial-structs.md))
 - Tests don't follow the Arrange-Act-Assert pattern
 - Integration tests don't use Bogus factories with seeds for reproducibility
 - Missing Verify (snapshot) tests for mapping operations
@@ -592,6 +606,7 @@ When reviewing, verify:
 
 - [ ] Tests use factories, not manual instantiation
 - [ ] New entity/value object/DTO/response has a corresponding factory in `Neba.TestFactory` (SmartEnums, strongly-typed IDs, and input objects are exempt)
+- [ ] New `[StronglyTypedId("ulid-full")]` type has an explicit `New()` factory method in its partial struct body (not relying solely on source generation — see [ADR-0006](../../docs/adr/0006-explicit-new-on-stronglytypedid-partial-structs.md))
 - [ ] Tests have `[UnitTest]` or `[IntegrationTest]` trait
 - [ ] Tests have `[Component]` trait
 - [ ] Tests have `DisplayName` on Facts and Theories

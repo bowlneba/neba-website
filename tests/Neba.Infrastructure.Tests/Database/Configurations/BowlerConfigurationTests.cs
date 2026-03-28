@@ -5,8 +5,6 @@ using Neba.Domain.Bowlers;
 using Neba.Infrastructure.Database;
 using Neba.TestFactory.Attributes;
 
-using Shouldly;
-
 namespace Neba.Infrastructure.Tests.Database.Configurations;
 
 [UnitTest]
