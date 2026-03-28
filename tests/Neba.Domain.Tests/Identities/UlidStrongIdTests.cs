@@ -14,7 +14,13 @@ public sealed partial class UlidStrongIdTests
     [StronglyTypedId("ulid-full")]
     private readonly partial struct TestId
     {
-        public static TestId New() => new(Ulid.NewUlid(), skipValidation: true);
+        /// <summary>Gets the underlying <see cref="Ulid"/> value.</summary>
+        public Ulid Value { get; }
+        private TestId(Ulid value)
+            => Value = value;
+
+        /// <summary>Creates a new <see cref="TestId"/> with a randomly generated ULID value.</summary>
+        public static TestId New() => new(Ulid.NewUlid());
     }
 
     #region Constructor Tests
