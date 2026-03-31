@@ -6,12 +6,15 @@ using Neba.Domain.HallOfFame;
 using Neba.Domain.Seasons;
 using Neba.Infrastructure.Database.Configurations;
 using Neba.Infrastructure.Database.Converters;
+using Neba.Infrastructure.Database.Interceptors;
 
 using SmartEnum.EFCore;
 
 namespace Neba.Infrastructure.Database;
 
-internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
+internal sealed class AppDbContext(
+    DbContextOptions<AppDbContext> options,
+    SlowQueryInterceptor slowQueryInterceptor)
     : DbContext(options)
 {
     public const string DefaultSchema = "app";
@@ -28,6 +31,9 @@ internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<Season> Seasons
         => Set<Season>();
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder.AddInterceptors(slowQueryInterceptor);
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -24,7 +24,7 @@ public sealed class HallOfFameQueriesTests
         ArgumentNullException.ThrowIfNull(fixture);
 
         _fixture = fixture;
-        _dbContext = new AppDbContext(fixture.CreateDbContextOptions());
+        _dbContext = fixture.CreateDbContext();
         _sut = new HallOfFameQueries(_dbContext);
     }
 

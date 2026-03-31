@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Domain.Bowlers;
 using Neba.Infrastructure.Database;
+using Neba.Infrastructure.Database.Interceptors;
+using Neba.Infrastructure.Database.Options;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Infrastructure.Tests.Database.Configurations;
@@ -20,7 +23,8 @@ public sealed class BowlerConfigurationTests
             .UseSqlite("Data Source=:memory:")
             .Options;
 
-        using var context = new AppDbContext(options);
+        var interceptor = new SlowQueryInterceptor(NullLogger<SlowQueryInterceptor>.Instance, new SlowQueryOptions());
+        using var context = new AppDbContext(options, interceptor);
         _bowlerType = context.Model.FindEntityType(typeof(Bowler))!;
         _nameType = _bowlerType.FindNavigation(nameof(Bowler.Name))!.TargetEntityType;
     }

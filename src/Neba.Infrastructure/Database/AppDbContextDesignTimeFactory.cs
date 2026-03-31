@@ -1,6 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
+using Neba.Infrastructure.Database.Interceptors;
+using Neba.Infrastructure.Database.Options;
+
+using OptionsFactory = Microsoft.Extensions.Options.Options;
 
 namespace Neba.Infrastructure.Database;
 
@@ -44,6 +49,10 @@ internal sealed class AppDbContextDesignTimeFactory
                 AppDbContext.DefaultSchema))
                 .UseSnakeCaseNamingConvention();
 
-        return new AppDbContext(optionsBuilder.Options);
+        var slowQueryInterceptor = new SlowQueryInterceptor(
+            NullLogger<SlowQueryInterceptor>.Instance,
+            new SlowQueryOptions());
+
+        return new AppDbContext(optionsBuilder.Options, slowQueryInterceptor);
     }
 }

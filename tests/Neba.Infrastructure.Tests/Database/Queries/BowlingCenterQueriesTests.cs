@@ -23,7 +23,7 @@ public sealed class BowlingCenterQueriesTests : IClassFixture<PostgreSqlFixture>
         ArgumentNullException.ThrowIfNull(fixture);
 
         _postgres = fixture;
-        _dbContext = new AppDbContext(fixture.CreateDbContextOptions());
+        _dbContext = fixture.CreateDbContext();
         _queries = new BowlingCenterQueries(_dbContext);
     }
 

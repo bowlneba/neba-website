@@ -4,10 +4,13 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 using Neba.Application.Awards;
 using Neba.Application.BowlingCenters;
 using Neba.Application.HallOfFame;
+using Neba.Infrastructure.Database.Interceptors;
+using Neba.Infrastructure.Database.Options;
 using Neba.Infrastructure.Database.Queries;
 
 using Npgsql;
@@ -46,6 +49,11 @@ internal static class DatabaseConfiguration
                 options.EnableSensitiveDataLogging();
 #endif
             });
+
+            builder.Services.Configure<SlowQueryOptions>(builder.Configuration.GetSection(SlowQueryOptions.SectionName));
+            builder.Services.AddSingleton(sp => sp.GetRequiredService<IOptions<SlowQueryOptions>>().Value);
+            
+            builder.Services.AddScoped<SlowQueryInterceptor>();
 
             builder.Services.AddQueries();
 

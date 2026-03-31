@@ -1,8 +1,12 @@
 using EntityFramework.Exceptions.PostgreSQL;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 using Neba.Infrastructure.Database;
+using Neba.Infrastructure.Database.Interceptors;
+using Neba.Infrastructure.Database.Options;
 
 using Npgsql;
 
@@ -27,7 +31,10 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
         ConnectionString = _container.GetConnectionString();
 
         var options = CreateDbContextOptions();
-        await using var context = new AppDbContext(options);
+        var slowQueryInterceptor = new SlowQueryInterceptor(
+            NullLogger<SlowQueryInterceptor>.Instance,
+            new SlowQueryOptions());
+        await using var context = new AppDbContext(options, slowQueryInterceptor);
         await context.Database.MigrateAsync();
 
         await using var connection = new NpgsqlConnection(ConnectionString);
@@ -45,6 +52,14 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
         await using var connection = new NpgsqlConnection(ConnectionString);
         await connection.OpenAsync();
         await _respawner.ResetAsync(connection);
+    }
+
+    internal AppDbContext CreateDbContext()
+    {
+        var slowQueryInterceptor = new SlowQueryInterceptor(
+            NullLogger<SlowQueryInterceptor>.Instance,
+            new SlowQueryOptions());
+        return new AppDbContext(CreateDbContextOptions(), slowQueryInterceptor);
     }
 
     internal DbContextOptions<AppDbContext> CreateDbContextOptions()
