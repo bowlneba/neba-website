@@ -36,14 +36,21 @@ internal static class DatabaseConfiguration
                     settings.ConnectionString += ";Ssl Mode=Require";
                 }
             });
-            builder.AddAzureNpgsqlDbContext<AppDbContext>(connectionStringName, configureDbContextOptions: options =>
+            // AddDbContextPool with (IServiceProvider, DbContextOptionsBuilder) overload is required
+            // to resolve DI services (the interceptor) — AddAzureNpgsqlDbContext's configureDbContextOptions
+            // only provides DbContextOptionsBuilder with no IServiceProvider access.
+            builder.Services.AddDbContextPool<AppDbContext>((sp, options) =>
             {
+                var dataSource = sp.GetRequiredService<NpgsqlDataSource>();
+                var interceptor = sp.GetRequiredService<SlowQueryInterceptor>();
+
                 options
-                    .UseNpgsql(npgsqlOptions =>
+                    .UseNpgsql(dataSource, npgsqlOptions =>
                         npgsqlOptions.MigrationsHistoryTable(AppDbContext.MigrationsHistoryTableName, AppDbContext.DefaultSchema))
                     .UseExceptionProcessor()
                     .UseSnakeCaseNamingConvention()
-                    .EnableDetailedErrors();
+                    .EnableDetailedErrors()
+                    .AddInterceptors(interceptor);
 
 #if DEBUG
                 options.EnableSensitiveDataLogging();
@@ -52,8 +59,8 @@ internal static class DatabaseConfiguration
 
             builder.Services.Configure<SlowQueryOptions>(builder.Configuration.GetSection(SlowQueryOptions.SectionName));
             builder.Services.AddSingleton(sp => sp.GetRequiredService<IOptions<SlowQueryOptions>>().Value);
-            
-            builder.Services.AddScoped<SlowQueryInterceptor>();
+
+            builder.Services.AddSingleton<SlowQueryInterceptor>();
 
             builder.Services.AddQueries();
 

@@ -49,10 +49,6 @@ internal sealed class AppDbContextDesignTimeFactory
                 AppDbContext.DefaultSchema))
                 .UseSnakeCaseNamingConvention();
 
-        var slowQueryInterceptor = new SlowQueryInterceptor(
-            NullLogger<SlowQueryInterceptor>.Instance,
-            new SlowQueryOptions());
-
-        return new AppDbContext(optionsBuilder.Options, slowQueryInterceptor);
+        return new AppDbContext(optionsBuilder.Options);
     }
 }
