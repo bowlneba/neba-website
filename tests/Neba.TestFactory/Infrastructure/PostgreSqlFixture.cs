@@ -2,7 +2,6 @@ using EntityFramework.Exceptions.PostgreSQL;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 
 using Neba.Infrastructure.Database;
 using Neba.Infrastructure.Database.Interceptors;

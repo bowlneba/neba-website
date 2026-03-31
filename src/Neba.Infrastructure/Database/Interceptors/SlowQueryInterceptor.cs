@@ -2,7 +2,6 @@ using System.Data.Common;
 
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 using Neba.Infrastructure.Database.Options;
 

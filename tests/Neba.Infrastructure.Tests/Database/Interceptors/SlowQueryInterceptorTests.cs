@@ -1,7 +1,6 @@
 using System.Data.Common;
 
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
 
 using Neba.Infrastructure.Database.Interceptors;
