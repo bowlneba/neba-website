@@ -42,7 +42,8 @@ internal static class DatabaseConfiguration
             builder.Services.AddDbContextPool<AppDbContext>((sp, options) =>
             {
                 var dataSource = sp.GetRequiredService<NpgsqlDataSource>();
-                var interceptor = sp.GetRequiredService<SlowQueryInterceptor>();
+                var slowQuery = sp.GetRequiredService<SlowQueryInterceptor>();
+                var queryTag = sp.GetRequiredService<QueryTagEnrichmentInterceptor>();
 
                 options
                     .UseNpgsql(dataSource, npgsqlOptions =>
@@ -50,7 +51,7 @@ internal static class DatabaseConfiguration
                     .UseExceptionProcessor()
                     .UseSnakeCaseNamingConvention()
                     .EnableDetailedErrors()
-                    .AddInterceptors(interceptor);
+                    .AddInterceptors(slowQuery, queryTag);
 
 #if DEBUG
                 options.EnableSensitiveDataLogging();
@@ -61,6 +62,7 @@ internal static class DatabaseConfiguration
             builder.Services.AddSingleton(sp => sp.GetRequiredService<IOptions<SlowQueryOptions>>().Value);
 
             builder.Services.AddSingleton<SlowQueryInterceptor>();
+            builder.Services.AddSingleton<QueryTagEnrichmentInterceptor>();
 
             builder.Services.AddQueries();
 
