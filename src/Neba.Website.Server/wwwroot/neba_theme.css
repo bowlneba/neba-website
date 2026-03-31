@@ -29,9 +29,11 @@
   --neba-banner-bg: #3E4FD9;
   --neba-banner-gradient-end: #2A3AA0;
 
-  --neba-font-base: var(--tw-font-sans, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+  --neba-font-base: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --neba-font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   --neba-radius: 0.375rem;
   --neba-radius-lg: 0.5rem;
+  --neba-radius-xl: 0.75rem;
   --neba-transition: 150ms ease-in-out;
 
   --neba-bg: var(--neba-gray-050);
@@ -56,6 +58,33 @@
      Adjust this value to match the natural width of your navbar (logo + menu items)
      at maximum spacing. Both navbar and main content will use this value. */
   --neba-content-max-width: 1150px;
+}
+
+/* ==========================================================================
+   Semantic Aliases — map design system concepts to scale tokens
+   Use these in component CSS for design.md alignment.
+   Use scale tokens (--neba-blue-xxx, --neba-gray-xxx) only in theme primitives.
+   ========================================================================== */
+:root {
+  /* Brand primaries */
+  --neba-color-primary:              var(--neba-blue-600);
+  --neba-color-primary-hover:        var(--neba-blue-700);
+  --neba-color-primary-container:    var(--neba-blue-700);
+  --neba-color-on-primary:           #ffffff;
+
+  /* Surface tiers (light mode) */
+  --neba-surface:                    var(--neba-bg-panel);       /* #fff */
+  --neba-surface-low:                var(--neba-gray-050);       /* #fafafa */
+  --neba-surface-high:               var(--neba-gray-100);       /* #f5f5f5 */
+  --neba-surface-highest:            var(--neba-gray-200);       /* #e5e5e5 */
+
+  /* Accent / status */
+  --neba-color-error:                var(--neba-accent-red);
+  --neba-color-alert:                var(--neba-warning);
+
+  /* Ambient shadow (brand-tinted, per design system) */
+  --neba-shadow-ambient:             0 10px 30px -5px rgba(5, 39, 103, 0.08);
+  --neba-shadow-card:                0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
 }
 
 .dark {
@@ -218,10 +247,8 @@ html, body {
   will-change: opacity;
 }
 
-@media (prefers-color-scheme: dark) {
-  .neba-loading-overlay-section {
-    background-color: rgba(31, 41, 55, 0.9);
-  }
+.dark .neba-loading-overlay-section {
+  background-color: rgba(31, 41, 55, 0.9);
 }
 
 @keyframes neba-loading-fade-in {
@@ -337,17 +364,21 @@ html, body {
 /* Card */
 .neba-card {
   background: var(--neba-bg-panel);
-  border: 1px solid var(--neba-border);
   padding: 1rem;
   border-radius: var(--neba-radius-lg);
-   transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--neba-shadow-card);
 }
 
+/* Default card hover: ambient shadow lift only, no translate (safe for dense grids) */
 .neba-card:hover {
+  box-shadow: var(--neba-shadow-ambient);
+}
+
+/* Apply to cards that are interactive and have room to move (e.g., feature cards, not directory rows) */
+.neba-card--interactive:hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  border-color: var(--neba-blue-300);
 }
 
 /* Divider */
@@ -1337,6 +1368,29 @@ a:focus-visible {
 .dark .neba-skeleton {
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
   background-size: 200% 100%;
+}
+
+/* ==========================================================================
+   Brand Gradient & Glassmorphism Utilities
+   ========================================================================== */
+
+/* Hero/banner gradient per design system (15° angle, primary → primary_container) */
+.neba-gradient-brand {
+  background: linear-gradient(15deg, var(--neba-blue-brand) 0%, var(--neba-color-primary-container) 50%, var(--neba-color-primary) 100%);
+}
+
+/* Glassmorphism — for floating elements over busy backgrounds */
+.neba-glass {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Glassmorphism for alerts/toasts over content */
+.neba-glass-alert {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 /* Reduced motion support */

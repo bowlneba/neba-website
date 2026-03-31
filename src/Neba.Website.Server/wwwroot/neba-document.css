@@ -9,6 +9,14 @@
  * DO NOT move this to a .razor.css file.
  */
 
+/*
+ * NOTE ON BORDERS: This file intentionally uses 1px borders for document
+ * content rendering (TOC separators, modal headers, table cells). This is
+ * correct and does NOT violate the design system's no-border rule, which
+ * applies to structural UI components (cards, panels, sections), not to
+ * document typography and content display contexts.
+ */
+
 /* ==========================================================================
    Container Layout
    ========================================================================== */
