@@ -1,6 +1,7 @@
 using System.Diagnostics;
 
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Testing;
+using Microsoft.Extensions.Logging;
 
 using Neba.Application.Clock;
 using Neba.Application.Documents;
@@ -19,6 +20,7 @@ public sealed class SyncDocumentToStorageJobHandlerTests
     private readonly Mock<IFileStorageService> _fileStorageServiceMock;
     private readonly Mock<IStopwatchProvider> _stopwatchProviderMock;
     private readonly Mock<IDateTimeProvider> _dateTimeProviderMock;
+    private readonly FakeLogger<SyncDocumentToStorageJobHandler> _logger;
 
     private readonly SyncDocumentToStorageJobHandler _handler;
 
@@ -37,12 +39,13 @@ public sealed class SyncDocumentToStorageJobHandlerTests
             .Setup(s => s.GetElapsedTime(It.IsAny<long>()))
             .Returns(TimeSpan.FromMilliseconds(50));
 
+        _logger = new FakeLogger<SyncDocumentToStorageJobHandler>();
         _handler = new SyncDocumentToStorageJobHandler(
             _documentsServiceMock.Object,
             _fileStorageServiceMock.Object,
             _stopwatchProviderMock.Object,
             _dateTimeProviderMock.Object,
-            NullLogger<SyncDocumentToStorageJobHandler>.Instance);
+            _logger);
     }
 
     [Fact(DisplayName = "Should retrieve document and upload to storage on success")]
@@ -114,6 +117,8 @@ public sealed class SyncDocumentToStorageJobHandlerTests
         activity.Tags.ShouldContain(kvp => kvp.Key == "document.name" && kvp.Value == job.DocumentName);
         activity.Tags.ShouldContain(kvp => kvp.Key == "triggered.by" && kvp.Value == job.TriggeredBy);
         activity.Status.ShouldBe(ActivityStatusCode.Ok);
+        _logger.Collector.GetSnapshot().ShouldNotContain(l => l.Level >= LogLevel.Warning);
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Debug);
     }
 
     [Fact(DisplayName = "Should return without throwing when document is not found")]
@@ -160,6 +165,9 @@ public sealed class SyncDocumentToStorageJobHandlerTests
         var activity = activities.First(a => a.Tags.Any(t => t.Key == "document.name" && t.Value == job.DocumentName));
         activity.Status.ShouldBe(ActivityStatusCode.Error);
         activity.StatusDescription.ShouldBe("Document not found");
+        _logger.Collector.GetSnapshot().ShouldContain(l =>
+            l.Level == LogLevel.Warning &&
+            l.Message.Contains(job.DocumentName));
     }
 
     [Fact(DisplayName = "Should propagate exception when upload fails")]
@@ -218,6 +226,7 @@ public sealed class SyncDocumentToStorageJobHandlerTests
         var activity = activities.First(a => a.Tags.Any(t => t.Key == "document.name" && t.Value == job.DocumentName));
         activity.Status.ShouldBe(ActivityStatusCode.Error);
         activity.StatusDescription.ShouldBe("Storage unavailable");
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Error);
     }
 
     private static (ActivityListener Listener, List<Activity> Activities) BuildActivityListener()
@@ -264,5 +273,6 @@ public sealed class SyncDocumentToStorageJobHandlerTests
             m.Instrument == "neba.backgroundjob.sync_document.failures" &&
             m.Tags.Any(t => t.Key == "document.name" && (string?)t.Value == job.DocumentName) &&
             m.Tags.Any(t => t.Key == "error.type" && (string?)t.Value == "HttpRequestException"));
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Error);
     }
 }

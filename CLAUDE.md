@@ -244,21 +244,13 @@ When writing Configure tests with `Factory.Create<TEndpoint>()`, two categories 
 
 ### Log-Content Testing with FakeLogger
 
-- Use `FakeLogger<T>` from `Microsoft.Extensions.Diagnostics.Testing` (version `9.0.0` in `Directory.Packages.props`) when a class's primary behavior involves logging and you need to assert on log level, message content, or structured attributes.
+- Use `FakeLogger<T>` from the `Microsoft.Extensions.Diagnostics.Testing` NuGet package (version `9.0.0` in `Directory.Packages.props`) when a class's primary behavior involves logging and you need to assert on log level, message content, or structured attributes.
+- Add `using Microsoft.Extensions.Logging.Testing;` — that is the namespace `FakeLogger<T>` lives in (the NuGet package name and the namespace differ).
 - `FakeLogger<T>` is a real `ILogger<T>` implementation — not a mock — so it satisfies the "never mock ILogger" rule.
 - Assert via `logger.Collector.GetSnapshot()` which returns `IReadOnlyList<FakeLogRecord>`, each with `.Level` and `.Message`.
 - Each test project that uses `FakeLogger<T>` needs `<PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" />` in its `.csproj`.
 
-**Backlog — add `FakeLogger`-based log assertions to existing classes**: All 7 logging classes already have test files. Add `Microsoft.Extensions.Diagnostics.Testing` to each test project and add log-assertion tests for the log paths in each:
-
-| Class | Test project |
-| --- | --- |
-| `AzureBlobStorageService` | `Neba.Infrastructure.Tests` (already has the package) |
-| `GoogleDriveService` | `Neba.Infrastructure.Tests` |
-| `HangfireBackgroundJobScheduler` | `Neba.Infrastructure.Tests` |
-| `SyncDocumentToStorageJobHandler` | `Neba.Application.Tests` |
-| `GlobalExceptionHandler` | `Neba.Api.Tests` |
-| `ApiExecutor` | `Neba.Website.Tests` |
+All classes that use `[LoggerMessage]` source-generated log methods have dedicated log-assertion tests using `FakeLogger<T>`. When adding a new class that logs, add `Microsoft.Extensions.Diagnostics.Testing` to its test project (if not already present) and add log-assertion tests covering every log level/path.
 
 ### FusionCache Deserialization Recovery
 

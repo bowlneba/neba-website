@@ -1,5 +1,5 @@
 ---
-applyTo: '**'
+applyTo: "**"
 ---
 
 # Pull Request Review Guidelines
@@ -218,14 +218,14 @@ Flag when:
 
 ### HTTP Methods
 
-| Operation | Method | URL Pattern | Success Code |
-|-----------|--------|-------------|--------------|
-| List | GET | `/resources` | 200 |
-| Get single | GET | `/resources/{id}` | 200 |
-| Create | POST | `/resources` | 201 |
-| Full update | PUT | `/resources/{id}` | 200 |
-| Partial update | PATCH | `/resources/{id}` | 200 |
-| Delete | DELETE | `/resources/{id}` | 204 |
+| Operation      | Method | URL Pattern       | Success Code |
+| -------------- | ------ | ----------------- | ------------ |
+| List           | GET    | `/resources`      | 200          |
+| Get single     | GET    | `/resources/{id}` | 200          |
+| Create         | POST   | `/resources`      | 201          |
+| Full update    | PUT    | `/resources/{id}` | 200          |
+| Partial update | PATCH  | `/resources/{id}` | 200          |
+| Delete         | DELETE | `/resources/{id}` | 204          |
 
 ### Query Parameters
 
@@ -421,7 +421,7 @@ Flag when:
 - Facts or Theories missing `DisplayName` parameter
 - InlineData missing `TestDisplayName` for theory test cases
 - Test method names not following `<MethodName>_Should<ExpectedOutcome>_When<Condition>` pattern
-- Mocking `ILogger<T>` instead of using `NullLogger<T>.Instance`
+- Mocking `ILogger<T>` instead of using `NullLogger<T>.Instance` (when log content doesn't matter) or `FakeLogger<T>` from `Microsoft.Extensions.Logging.Testing` (when asserting on log output)
 - Using `new Mock<T>()` without `MockBehavior.Strict` parameter
 - Using `null!` instead of `#nullable disable`/`#nullable enable` for null testing
 - Using `.Verify()` calls when `MockBehavior.Strict` already enforces the interaction contract via `Setup`
@@ -442,15 +442,15 @@ public void Method_ShouldThrow_WhenNull()
 
 ### What to Test
 
-| Layer | Required Tests |
-|-------|----------------|
-| Services | Mock Refit interface, verify ErrorOr mapping, error handling |
-| Command handlers | Business rule enforcement, domain event raising, error cases |
-| Query handlers | Correct DTO mapping (use Verify snapshots) |
-| Complex components | bUnit tests for interaction logic, conditional rendering |
-| JS modules | Jest tests for function behavior |
+| Layer              | Required Tests                                               |
+| ------------------ | ------------------------------------------------------------ |
+| Services           | Mock Refit interface, verify ErrorOr mapping, error handling |
+| Command handlers   | Business rule enforcement, domain event raising, error cases |
+| Query handlers     | Correct DTO mapping (use Verify snapshots)                   |
+| Complex components | bUnit tests for interaction logic, conditional rendering     |
+| JS modules         | Jest tests for function behavior                             |
 
-**Logging in tests**: Use `NullLogger<T>.Instance` instead of mocking `ILogger<T>`. Mocking ILogger adds complexity with no benefit — the null logger discards output silently.
+**Logging in tests**: Never mock `ILogger<T>`. Use `NullLogger<T>.Instance` when you don't need to assert on log output. Use `FakeLogger<T>` from `Microsoft.Extensions.Logging.Testing` (namespace inside the `Microsoft.Extensions.Diagnostics.Testing` NuGet package) when you need to assert on log level, message content, or structured attributes — it's a real `ILogger<T>` implementation, not a mock. Assert via `logger.Collector.GetSnapshot()`, which returns `IReadOnlyList<FakeLogRecord>` with `.Level` and `.Message` on each entry.
 
 ### E2E Consideration
 
@@ -525,41 +525,41 @@ See detailed criteria in **API Layer** section above. Additionally flag when:
 
 ## Common Anti-Patterns to Flag
 
-| Anti-Pattern | Correct Approach |
-|--------------|------------------|
-| Throwing exceptions for business rule violations | Return `ErrorOr<T>` with typed errors |
-| Domain entity in API response | Map to response DTO |
-| Service injected into component | Pass data via parameters from page |
-| `async void` methods | `async Task` with proper error handling |
-| Catching generic `Exception` | Catch specific exceptions or use ErrorOr |
-| Magic strings for routes/keys | Constants or strongly-typed alternatives |
-| Public setters on entities | Private setters with behavior methods |
-| `DateTime.Now` / `DateTime.UtcNow` in domain logic | Inject `IDateTimeProvider` / `TimeProvider` |
-| `DateTime` for representing points in time | Use `DateTimeOffset` — unambiguous UTC offset, cleaner serialization |
-| Legacy extension method syntax (`this` parameter) | Use `extension()` blocks (C# 14) |
-| Custom error response body in endpoint | Use `AddError()` + `Send.ErrorsAsync(statusCode)` for ProblemDetails (bare `Send.NotFoundAsync()` is acceptable when status alone is sufficient) |
-| Implicit endpoint authorization | Explicit `AllowAnonymous()`, `Roles()`, or `Policies()` |
-| Validation in endpoint handler | Create separate `Validator<TRequest>` class |
-| Database lookup in validator | Move to Application layer handler |
-| Request properties without Input wrapper | Wrap in `TournamentInput` (for commands) |
-| Separate mapper classes for endpoints | Inline mapping in endpoint |
-| URL-based API versioning (`/api/v1/...`) | Header-based versioning (`X-Api-Version`) |
-| Direct use of Newtonsoft.Json (`JsonConvert`, `JObject`) | System.Text.Json with source generators |
-| AutoMapper, Mapster, or similar mapping libraries | Explicit inline mapping |
-| Unsealed classes without justification | Seal classes by default |
-| Value objects as mutable class | Use `sealed record class` (EF persisted) or `readonly record struct` (transient) |
-| Unbounded database queries | Always use `.Take()` with enforced maximum limits |
-| Inconsistent or missing error codes | Follow `Entity.ErrorCode` convention ([ADR-0004](../../docs/adr/0004-error-code-naming-convention.md)) |
+| Anti-Pattern                                             | Correct Approach                                                                                                                                 |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Throwing exceptions for business rule violations         | Return `ErrorOr<T>` with typed errors                                                                                                            |
+| Domain entity in API response                            | Map to response DTO                                                                                                                              |
+| Service injected into component                          | Pass data via parameters from page                                                                                                               |
+| `async void` methods                                     | `async Task` with proper error handling                                                                                                          |
+| Catching generic `Exception`                             | Catch specific exceptions or use ErrorOr                                                                                                         |
+| Magic strings for routes/keys                            | Constants or strongly-typed alternatives                                                                                                         |
+| Public setters on entities                               | Private setters with behavior methods                                                                                                            |
+| `DateTime.Now` / `DateTime.UtcNow` in domain logic       | Inject `IDateTimeProvider` / `TimeProvider`                                                                                                      |
+| `DateTime` for representing points in time               | Use `DateTimeOffset` — unambiguous UTC offset, cleaner serialization                                                                             |
+| Legacy extension method syntax (`this` parameter)        | Use `extension()` blocks (C# 14)                                                                                                                 |
+| Custom error response body in endpoint                   | Use `AddError()` + `Send.ErrorsAsync(statusCode)` for ProblemDetails (bare `Send.NotFoundAsync()` is acceptable when status alone is sufficient) |
+| Implicit endpoint authorization                          | Explicit `AllowAnonymous()`, `Roles()`, or `Policies()`                                                                                          |
+| Validation in endpoint handler                           | Create separate `Validator<TRequest>` class                                                                                                      |
+| Database lookup in validator                             | Move to Application layer handler                                                                                                                |
+| Request properties without Input wrapper                 | Wrap in `TournamentInput` (for commands)                                                                                                         |
+| Separate mapper classes for endpoints                    | Inline mapping in endpoint                                                                                                                       |
+| URL-based API versioning (`/api/v1/...`)                 | Header-based versioning (`X-Api-Version`)                                                                                                        |
+| Direct use of Newtonsoft.Json (`JsonConvert`, `JObject`) | System.Text.Json with source generators                                                                                                          |
+| AutoMapper, Mapster, or similar mapping libraries        | Explicit inline mapping                                                                                                                          |
+| Unsealed classes without justification                   | Seal classes by default                                                                                                                          |
+| Value objects as mutable class                           | Use `sealed record class` (EF persisted) or `readonly record struct` (transient)                                                                 |
+| Unbounded database queries                               | Always use `.Take()` with enforced maximum limits                                                                                                |
+| Inconsistent or missing error codes                      | Follow `Entity.ErrorCode` convention ([ADR-0004](../../docs/adr/0004-error-code-naming-convention.md))                                           |
 
 ### Banned Libraries
 
 The following libraries are explicitly prohibited from direct use in application code:
 
-| Library                                            | Reason                                                                 | Alternative                              |
-| -------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------- |
-| **AutoMapper**, **Mapster**, **ExpressMapper**     | Runtime reflection, hidden mappings, hard to debug, breaks compile-time safety | Explicit mapping methods                 |
-| **Newtonsoft.Json** (`JsonConvert`, `JObject`)     | Reflection-based, not AOT-compatible, legacy                           | System.Text.Json with source generators  |
-| **BinaryFormatter**                                | Security vulnerabilities, deprecated                                   | System.Text.Json, MessagePack, Protobuf  |
+| Library                                        | Reason                                                                         | Alternative                             |
+| ---------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------- |
+| **AutoMapper**, **Mapster**, **ExpressMapper** | Runtime reflection, hidden mappings, hard to debug, breaks compile-time safety | Explicit mapping methods                |
+| **Newtonsoft.Json** (`JsonConvert`, `JObject`) | Reflection-based, not AOT-compatible, legacy                                   | System.Text.Json with source generators |
+| **BinaryFormatter**                            | Security vulnerabilities, deprecated                                           | System.Text.Json, MessagePack, Protobuf |
 
 **Note on transitive dependencies**: Some packages (e.g., Hangfire) have transitive dependencies on Newtonsoft.Json. The package may exist in the dependency graph, but **direct usage in our code is prohibited**. Flag any `using Newtonsoft.Json` statements or direct calls to `JsonConvert`.
 

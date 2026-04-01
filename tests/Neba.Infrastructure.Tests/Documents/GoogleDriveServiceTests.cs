@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -137,7 +138,7 @@ public sealed class GoogleDriveServiceTests
         // Arrange
         var processor = new HtmlProcessor(_settings);
         var stopwatch = CreateStopwatchProviderMock().Object;
-        var logger = NullLogger<GoogleDriveService>.Instance;
+        var logger = new FakeLogger<GoogleDriveService>();
         using var service = new GoogleDriveService(_settings, processor, stopwatch, logger);
 
         // Act
@@ -145,6 +146,8 @@ public sealed class GoogleDriveServiceTests
 
         // Assert
         result.ShouldBeNull();
+        logger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        logger.Collector.GetSnapshot()[0].Level.ShouldBe(LogLevel.Warning);
     }
 
     [Theory(DisplayName = "GetDocumentAsHtmlAsync should find document case-insensitively")]
@@ -217,5 +220,22 @@ public sealed class GoogleDriveServiceTests
 
         // Act & Assert
         Should.NotThrow(() => service.Dispose());
+    }
+
+    [Fact(DisplayName = "GetDocumentAsHtmlAsync should log error when Google Drive API call fails")]
+    public async Task GetDocumentAsHtmlAsync_ShouldLogError_WhenGoogleDriveApiFails()
+    {
+        // Arrange
+        var processor = new HtmlProcessor(_settings);
+        var mockStopwatch = CreateStopwatchProviderMock();
+        var logger = new FakeLogger<GoogleDriveService>();
+        using var service = new GoogleDriveService(_settings, processor, mockStopwatch.Object, logger);
+
+        // Act — API call fails without real credentials
+        await Should.ThrowAsync<Exception>(
+            () => service.GetDocumentAsHtmlAsync("bylaws", CancellationToken.None));
+
+        // Assert
+        logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Error);
     }
 }
