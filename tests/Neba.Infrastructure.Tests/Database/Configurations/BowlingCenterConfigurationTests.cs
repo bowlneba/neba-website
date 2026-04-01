@@ -22,12 +22,13 @@ public sealed class BowlingCenterConfigurationTests
 
     public BowlingCenterConfigurationTests()
     {
+        var interceptor = new SlowQueryInterceptor(NullLogger<SlowQueryInterceptor>.Instance, new SlowQueryOptions());
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite("Data Source=:memory:")
+            .AddInterceptors(interceptor)
             .Options;
 
-        var interceptor = new SlowQueryInterceptor(NullLogger<SlowQueryInterceptor>.Instance, new SlowQueryOptions());
-        using var context = new AppDbContext(options, interceptor);
+        using var context = new AppDbContext(options);
         _bowlingCenterType = context.Model.FindEntityType(typeof(BowlingCenter))!;
         _phoneNumberType = _bowlingCenterType
             .FindNavigation(nameof(BowlingCenter.PhoneNumbers))!.TargetEntityType;

@@ -19,12 +19,13 @@ public sealed class BowlerConfigurationTests
 
     public BowlerConfigurationTests()
     {
+        var interceptor = new SlowQueryInterceptor(NullLogger<SlowQueryInterceptor>.Instance, new SlowQueryOptions());
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite("Data Source=:memory:")
+            .AddInterceptors(interceptor)
             .Options;
 
-        var interceptor = new SlowQueryInterceptor(NullLogger<SlowQueryInterceptor>.Instance, new SlowQueryOptions());
-        using var context = new AppDbContext(options, interceptor);
+        using var context = new AppDbContext(options);
         _bowlerType = context.Model.FindEntityType(typeof(Bowler))!;
         _nameType = _bowlerType.FindNavigation(nameof(Bowler.Name))!.TargetEntityType;
     }

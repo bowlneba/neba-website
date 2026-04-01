@@ -29,11 +29,7 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
         await _container.StartAsync();
         ConnectionString = _container.GetConnectionString();
 
-        var options = CreateDbContextOptions();
-        var slowQueryInterceptor = new SlowQueryInterceptor(
-            NullLogger<SlowQueryInterceptor>.Instance,
-            new SlowQueryOptions());
-        await using var context = new AppDbContext(options, slowQueryInterceptor);
+        await using var context = new AppDbContext(CreateDbContextOptions());
         await context.Database.MigrateAsync();
 
         await using var connection = new NpgsqlConnection(ConnectionString);
@@ -53,13 +49,7 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
         await _respawner.ResetAsync(connection);
     }
 
-    internal AppDbContext CreateDbContext()
-    {
-        var slowQueryInterceptor = new SlowQueryInterceptor(
-            NullLogger<SlowQueryInterceptor>.Instance,
-            new SlowQueryOptions());
-        return new AppDbContext(CreateDbContextOptions(), slowQueryInterceptor);
-    }
+    internal AppDbContext CreateDbContext() => new(CreateDbContextOptions());
 
     internal DbContextOptions<AppDbContext> CreateDbContextOptions()
     {
@@ -68,6 +58,10 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
             IncludeErrorDetail = true
         };
 
+        var slowQueryInterceptor = new SlowQueryInterceptor(
+            NullLogger<SlowQueryInterceptor>.Instance,
+            new SlowQueryOptions());
+
         return new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(builder.ConnectionString, options =>
                 options.MigrationsHistoryTable(AppDbContext.MigrationsHistoryTableName, AppDbContext.DefaultSchema))
@@ -75,6 +69,7 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
             .UseExceptionProcessor()
             .EnableDetailedErrors()
             .EnableSensitiveDataLogging()
+            .AddInterceptors(slowQueryInterceptor)
             .Options;
     }
 

@@ -23,7 +23,11 @@ public sealed class QueryTagEnrichmentInterceptorTests
 
     private static Mock<DbCommand> CreateCommand(string sql = "SELECT 1")
     {
-        var cmd = new Mock<DbCommand>(MockBehavior.Strict);
+        // MockBehavior.Loose: DbCommand inherits Component whose finalizer calls Dispose(false).
+        // Strict would require a setup for that call, but Protected().Setup can't disambiguate
+        // Dispose(bool) from the public Dispose(). Loose is correct here — the test only asserts
+        // on CommandText, not on which members the interceptor accesses.
+        var cmd = new Mock<DbCommand>(MockBehavior.Loose);
         cmd.SetupProperty(c => c.CommandText, sql);
         return cmd;
     }
@@ -69,7 +73,9 @@ public sealed class QueryTagEnrichmentInterceptorTests
         var ctx = AuthenticatedContext("alice");
         ctx.SetEndpoint(new Endpoint(null, new EndpointMetadataCollection(), "GET /bowlers"));
 
-        using var activity = new Activity("test").Start();
+        var activitySource = new Activity("test");
+        activitySource.Start();
+        using var activity = activitySource;
         var expectedTraceId = Activity.Current!.TraceId.ToString();
 
         CreateInterceptor(ctx).ReaderExecuting(cmd.Object, null!, default);
@@ -84,7 +90,9 @@ public sealed class QueryTagEnrichmentInterceptorTests
         var ctx = AuthenticatedContext("alice");
         ctx.SetEndpoint(new Endpoint(null, new EndpointMetadataCollection(), "GET /bowlers"));
 
-        using var activity = new Activity("test").Start();
+        var activitySource = new Activity("test");
+        activitySource.Start();
+        using var activity = activitySource;
         var expectedTraceId = Activity.Current!.TraceId.ToString();
 
         await CreateInterceptor(ctx).ReaderExecutingAsync(cmd.Object, null!, default, CancellationToken.None);
@@ -149,7 +157,9 @@ public sealed class QueryTagEnrichmentInterceptorTests
 
         CreateInterceptor(ctx).ReaderExecuting(cmd.Object, null!, default);
 
-        cmd.Object.CommandText.ShouldNotContain("*/", "comment breakout must be stripped from userId");
+        // If stripping works, the comment closes once at the end; nothing dangerous leaks after it.
+        var afterComment = cmd.Object.CommandText[(cmd.Object.CommandText.IndexOf("*/", StringComparison.Ordinal) + 2)..];
+        afterComment.ShouldNotContain("DROP TABLE", customMessage: "comment breakout must be stripped from userId");
     }
 
     [Fact(DisplayName = "Strips '*/' from endpoint to prevent comment breakout")]
@@ -163,7 +173,8 @@ public sealed class QueryTagEnrichmentInterceptorTests
 
         CreateInterceptor(ctx).ReaderExecuting(cmd.Object, null!, default);
 
-        cmd.Object.CommandText.ShouldNotContain("*/", "comment breakout must be stripped from endpoint");
+        var afterComment = cmd.Object.CommandText[(cmd.Object.CommandText.IndexOf("*/", StringComparison.Ordinal) + 2)..];
+        afterComment.ShouldNotContain("DROP TABLE", customMessage: "comment breakout must be stripped from endpoint");
     }
 
     [Fact(DisplayName = "Strips '*/' from traceId to prevent comment breakout")]
@@ -177,6 +188,7 @@ public sealed class QueryTagEnrichmentInterceptorTests
 
         CreateInterceptor(ctx).ReaderExecuting(cmd.Object, null!, default);
 
-        cmd.Object.CommandText.ShouldNotContain("*/", "comment breakout must be stripped from traceId");
+        var afterComment = cmd.Object.CommandText[(cmd.Object.CommandText.IndexOf("*/", StringComparison.Ordinal) + 2)..];
+        afterComment.ShouldNotContain("DROP TABLE", customMessage: "comment breakout must be stripped from traceId");
     }
 }

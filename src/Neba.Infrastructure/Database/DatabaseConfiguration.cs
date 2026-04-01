@@ -44,6 +44,7 @@ internal static class DatabaseConfiguration
                 var dataSource = sp.GetRequiredService<NpgsqlDataSource>();
                 var slowQuery = sp.GetRequiredService<SlowQueryInterceptor>();
                 var queryTag = sp.GetRequiredService<QueryTagEnrichmentInterceptor>();
+                var domainEvents = sp.GetRequiredService<DomainEventDispatcherInterceptor>();
 
                 options
                     .UseNpgsql(dataSource, npgsqlOptions =>
@@ -51,7 +52,7 @@ internal static class DatabaseConfiguration
                     .UseExceptionProcessor()
                     .UseSnakeCaseNamingConvention()
                     .EnableDetailedErrors()
-                    .AddInterceptors(slowQuery, queryTag);
+                    .AddInterceptors(slowQuery, queryTag, domainEvents);
 
 #if DEBUG
                 options.EnableSensitiveDataLogging();
@@ -63,6 +64,7 @@ internal static class DatabaseConfiguration
 
             builder.Services.AddSingleton<SlowQueryInterceptor>();
             builder.Services.AddSingleton<QueryTagEnrichmentInterceptor>();
+            builder.Services.AddSingleton<DomainEventDispatcherInterceptor>();
 
             builder.Services.AddQueries();
 
