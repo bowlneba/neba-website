@@ -2,6 +2,7 @@ using System.Data.Common;
 
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Infrastructure.Database.Interceptors;
 using Neba.Infrastructure.Database.Options;
@@ -18,8 +19,8 @@ public sealed class SlowQueryInterceptorTests
     private static readonly TimeSpan AtThreshold = TimeSpan.FromMilliseconds(ThresholdMs);
     private static readonly TimeSpan AboveThreshold = TimeSpan.FromMilliseconds(ThresholdMs + 1);
 
-    private static SlowQueryInterceptor CreateInterceptor(Mock<ILogger<SlowQueryInterceptor>> logger) =>
-        new(logger.Object, new SlowQueryOptions { ThresholdMs = ThresholdMs });
+    private static SlowQueryInterceptor CreateInterceptor(ILogger<SlowQueryInterceptor> logger) =>
+        new(logger, new SlowQueryOptions { ThresholdMs = ThresholdMs });
 
     private static DbCommand CreateCommand(string sql = "SELECT 1")
     {
@@ -58,72 +59,39 @@ public sealed class SlowQueryInterceptorTests
             CommandSource.LinqQuery);
     }
 
-    private static void SetupLogWarning(Mock<ILogger<SlowQueryInterceptor>> logger)
-    {
-        logger
-            .Setup(l => l.IsEnabled(LogLevel.Warning))
-            .Returns(true);
-        logger
-            .Setup(l => l.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
-                It.IsAny<Exception?>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()));
-    }
-
-    private static void VerifyLoggedOnce(Mock<ILogger<SlowQueryInterceptor>> logger) =>
-        logger.Verify(
-            l => l.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
-                It.IsAny<Exception?>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once());
-
     // ── Threshold logic (via ReaderExecuted) ─────────────────────────────────
 
     [Fact(DisplayName = "Logs warning when duration exceeds threshold")]
     public void ReaderExecuted_WhenDurationExceedsThreshold_LogsWarning()
     {
-        var logger = new Mock<ILogger<SlowQueryInterceptor>>(MockBehavior.Strict);
-        SetupLogWarning(logger);
+        var logger = new FakeLogger<SlowQueryInterceptor>();
 
         CreateInterceptor(logger).ReaderExecuted(
             CreateCommand(), MakeEventData(AboveThreshold), null!);
 
-        VerifyLoggedOnce(logger);
+        logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
     }
 
     [Fact(DisplayName = "Does not log when duration is below threshold")]
     public void ReaderExecuted_WhenDurationBelowThreshold_DoesNotLog()
     {
-        var logger = new Mock<ILogger<SlowQueryInterceptor>>(MockBehavior.Strict);
+        var logger = new FakeLogger<SlowQueryInterceptor>();
 
         CreateInterceptor(logger).ReaderExecuted(
             CreateCommand(), MakeEventData(BelowThreshold), null!);
 
-        logger.Verify(
-            l => l.Log(
-                It.IsAny<LogLevel>(),
-                It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
-                It.IsAny<Exception?>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Never());
+        logger.Collector.GetSnapshot().ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Logs warning when duration equals threshold exactly")]
     public void ReaderExecuted_WhenDurationEqualsThreshold_LogsWarning()
     {
-        var logger = new Mock<ILogger<SlowQueryInterceptor>>(MockBehavior.Strict);
-        SetupLogWarning(logger);
+        var logger = new FakeLogger<SlowQueryInterceptor>();
 
         CreateInterceptor(logger).ReaderExecuted(
             CreateCommand(), MakeEventData(AtThreshold), null!);
 
-        VerifyLoggedOnce(logger);
+        logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
     }
 
     // ── Each hook delegates to LogIfSlow ─────────────────────────────────────
@@ -131,60 +99,74 @@ public sealed class SlowQueryInterceptorTests
     [Fact(DisplayName = "ReaderExecutedAsync logs warning when duration exceeds threshold")]
     public async Task ReaderExecutedAsync_WhenDurationExceedsThreshold_LogsWarning()
     {
-        var logger = new Mock<ILogger<SlowQueryInterceptor>>(MockBehavior.Strict);
-        SetupLogWarning(logger);
+        var logger = new FakeLogger<SlowQueryInterceptor>();
 
         await CreateInterceptor(logger).ReaderExecutedAsync(
             CreateCommand(), MakeEventData(AboveThreshold), null!, CancellationToken.None);
 
-        VerifyLoggedOnce(logger);
+        logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
     }
 
     [Fact(DisplayName = "NonQueryExecuted logs warning when duration exceeds threshold")]
     public void NonQueryExecuted_WhenDurationExceedsThreshold_LogsWarning()
     {
-        var logger = new Mock<ILogger<SlowQueryInterceptor>>(MockBehavior.Strict);
-        SetupLogWarning(logger);
+        var logger = new FakeLogger<SlowQueryInterceptor>();
 
         CreateInterceptor(logger).NonQueryExecuted(
             CreateCommand("DELETE FROM x WHERE 1=0"), MakeEventData(AboveThreshold), 0);
 
-        VerifyLoggedOnce(logger);
+        logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
     }
 
     [Fact(DisplayName = "NonQueryExecutedAsync logs warning when duration exceeds threshold")]
     public async Task NonQueryExecutedAsync_WhenDurationExceedsThreshold_LogsWarning()
     {
-        var logger = new Mock<ILogger<SlowQueryInterceptor>>(MockBehavior.Strict);
-        SetupLogWarning(logger);
+        var logger = new FakeLogger<SlowQueryInterceptor>();
 
         await CreateInterceptor(logger).NonQueryExecutedAsync(
             CreateCommand("DELETE FROM x WHERE 1=0"), MakeEventData(AboveThreshold), 0, CancellationToken.None);
 
-        VerifyLoggedOnce(logger);
+        logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
     }
 
     [Fact(DisplayName = "ScalarExecuted logs warning when duration exceeds threshold")]
     public void ScalarExecuted_WhenDurationExceedsThreshold_LogsWarning()
     {
-        var logger = new Mock<ILogger<SlowQueryInterceptor>>(MockBehavior.Strict);
-        SetupLogWarning(logger);
+        var logger = new FakeLogger<SlowQueryInterceptor>();
 
         CreateInterceptor(logger).ScalarExecuted(
             CreateCommand("SELECT COUNT(*)"), MakeEventData(AboveThreshold), null);
 
-        VerifyLoggedOnce(logger);
+        logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
     }
 
     [Fact(DisplayName = "ScalarExecutedAsync logs warning when duration exceeds threshold")]
     public async Task ScalarExecutedAsync_WhenDurationExceedsThreshold_LogsWarning()
     {
-        var logger = new Mock<ILogger<SlowQueryInterceptor>>(MockBehavior.Strict);
-        SetupLogWarning(logger);
+        var logger = new FakeLogger<SlowQueryInterceptor>();
 
         await CreateInterceptor(logger).ScalarExecutedAsync(
             CreateCommand("SELECT COUNT(*)"), MakeEventData(AboveThreshold), null, CancellationToken.None);
 
-        VerifyLoggedOnce(logger);
+        logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
+    }
+
+    // ── Truncation ────────────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Truncates query text exceeding 2000 characters in the log message")]
+    public void ReaderExecuted_WhenCommandTextExceedsLimit_TruncatesInLog()
+    {
+        var logger = new FakeLogger<SlowQueryInterceptor>();
+        var longSql = "SELECT 1 FROM x WHERE id IN (" + new string('x', 2100) + ")";
+
+        CreateInterceptor(logger).ReaderExecuted(
+            CreateCommand(longSql), MakeEventData(AboveThreshold), null!);
+
+        var record = logger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        var commandText = record.GetStructuredStateValue("CommandText")?.ToString();
+
+        commandText.ShouldNotBeNull();
+        commandText.ShouldContain($"... [{longSql.Length - 2000} chars truncated]");
+        commandText.Length.ShouldBeLessThan(longSql.Length);
     }
 }

@@ -11,6 +11,8 @@ internal sealed class SlowQueryInterceptor(
     ILogger<SlowQueryInterceptor> logger,
     SlowQueryOptions options) : DbCommandInterceptor
 {
+    private const int MaxQueryLogLength = 2000;
+
     public override DbDataReader ReaderExecuted(
         DbCommand command, CommandExecutedEventData eventData, DbDataReader result)
     {
@@ -61,9 +63,15 @@ internal sealed class SlowQueryInterceptor(
         var thresholdMs = options.ThresholdMs;
         if (duration.TotalMilliseconds >= thresholdMs)
         {
-            logger.LogSlowQuery((long)duration.TotalMilliseconds, thresholdMs, command.CommandText);
+            logger.LogSlowQuery((long)duration.TotalMilliseconds, thresholdMs, Truncate(command.CommandText));
         }
     }
+
+    private static string Truncate(string commandText) =>
+        commandText.Length <= MaxQueryLogLength
+            ? commandText
+            : string.Concat(commandText.AsSpan(0, MaxQueryLogLength),
+                $"... [{commandText.Length - MaxQueryLogLength} chars truncated]");
 }
 
 internal static partial class SlowQueryLogMessages

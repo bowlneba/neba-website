@@ -70,9 +70,9 @@ public sealed class DomainEventDispatcherInterceptorTests
         var client = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
         var interceptor = CreateInterceptor(client);
 
-        interceptor.SavedChanges(CreateEventData(null), 0);
-
-        client.VerifyNoOtherCalls();
+        // Strict mock: any call without a setup throws immediately — no job was created.
+        // Assert the pass-through return value to satisfy static analysis.
+        interceptor.SavedChanges(CreateEventData(null), 42).ShouldBe(42);
     }
 
     // ── Change tracker filtering ──────────────────────────────────────────────
@@ -105,8 +105,11 @@ public sealed class DomainEventDispatcherInterceptorTests
     [Fact(DisplayName = "Creates one job when aggregate has one domain event (sync)")]
     public void SavedChanges_WithOneDomainEvent_CreatesOneJob()
     {
+        var callCount = 0;
         var client = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
-        client.Setup(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>())).Returns("job-1");
+        client.Setup(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>()))
+              .Callback((Job _, IState _) => callCount++)
+              .Returns("job-1");
 
         using var ctx = CreateContext();
         var aggregate = new TestAggregate { Id = 1 };
@@ -115,14 +118,17 @@ public sealed class DomainEventDispatcherInterceptorTests
 
         CreateInterceptor(client).SavedChanges(CreateEventData(ctx), 0);
 
-        client.Verify(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>()), Times.Once());
+        callCount.ShouldBe(1);
     }
 
     [Fact(DisplayName = "Creates one job when aggregate has one domain event (async)")]
     public async Task SavedChangesAsync_WithOneDomainEvent_CreatesOneJob()
     {
+        var callCount = 0;
         var client = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
-        client.Setup(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>())).Returns("job-1");
+        client.Setup(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>()))
+              .Callback((Job _, IState _) => callCount++)
+              .Returns("job-1");
 
         using var ctx = CreateContext();
         var aggregate = new TestAggregate { Id = 1 };
@@ -131,14 +137,17 @@ public sealed class DomainEventDispatcherInterceptorTests
 
         await CreateInterceptor(client).SavedChangesAsync(CreateEventData(ctx), 0, CancellationToken.None);
 
-        client.Verify(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>()), Times.Once());
+        callCount.ShouldBe(1);
     }
 
     [Fact(DisplayName = "Creates one job per event when aggregate raises multiple domain events")]
     public void SavedChanges_WithMultipleEventsOnOneAggregate_CreatesOneJobPerEvent()
     {
+        var callCount = 0;
         var client = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
-        client.Setup(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>())).Returns("job-id");
+        client.Setup(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>()))
+              .Callback((Job _, IState _) => callCount++)
+              .Returns("job-id");
 
         using var ctx = CreateContext();
         var aggregate = new TestAggregate { Id = 1 };
@@ -149,14 +158,17 @@ public sealed class DomainEventDispatcherInterceptorTests
 
         CreateInterceptor(client).SavedChanges(CreateEventData(ctx), 0);
 
-        client.Verify(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>()), Times.Exactly(3));
+        callCount.ShouldBe(3);
     }
 
     [Fact(DisplayName = "Creates jobs for all events across multiple aggregates")]
     public void SavedChanges_WithMultipleAggregates_CreatesJobsForAllEvents()
     {
+        var callCount = 0;
         var client = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
-        client.Setup(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>())).Returns("job-id");
+        client.Setup(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>()))
+              .Callback((Job _, IState _) => callCount++)
+              .Returns("job-id");
 
         using var ctx = CreateContext();
 
@@ -171,7 +183,7 @@ public sealed class DomainEventDispatcherInterceptorTests
 
         CreateInterceptor(client).SavedChanges(CreateEventData(ctx), 0);
 
-        client.Verify(c => c.Create(It.IsAny<Job>(), It.IsAny<IState>()), Times.Exactly(3));
+        callCount.ShouldBe(3);
     }
 
     // ── Event clearing ────────────────────────────────────────────────────────
