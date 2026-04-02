@@ -43,9 +43,6 @@ internal sealed class DomainEventDispatcherInterceptor(IBackgroundJobClient back
             .SelectMany(a => a.DomainEvents)
             .ToList();
 
-        foreach (var aggregate in aggregates)
-            aggregate.ClearDomainEvents();
-
         foreach (var domainEvent in events)
         {
             var eventType = domainEvent.GetType();
@@ -54,5 +51,8 @@ internal sealed class DomainEventDispatcherInterceptor(IBackgroundJobClient back
             var job = new Job(jobType, method, domainEvent, CancellationToken.None);
             backgroundJobClient.Create(job, new EnqueuedState());
         }
+
+        foreach (var aggregate in aggregates)
+            aggregate.ClearDomainEvents();
     }
 }
