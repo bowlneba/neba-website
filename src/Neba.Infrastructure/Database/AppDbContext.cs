@@ -11,7 +11,8 @@ using SmartEnum.EFCore;
 
 namespace Neba.Infrastructure.Database;
 
-internal sealed class AppDbContext(DbContextOptions<AppDbContext> options)
+internal sealed class AppDbContext(
+    DbContextOptions<AppDbContext> options)
     : DbContext(options)
 {
     public const string DefaultSchema = "app";

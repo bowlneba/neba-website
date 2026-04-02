@@ -1,8 +1,11 @@
 using EntityFramework.Exceptions.PostgreSQL;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Infrastructure.Database;
+using Neba.Infrastructure.Database.Interceptors;
+using Neba.Infrastructure.Database.Options;
 
 using Npgsql;
 
@@ -26,8 +29,7 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
         await _container.StartAsync();
         ConnectionString = _container.GetConnectionString();
 
-        var options = CreateDbContextOptions();
-        await using var context = new AppDbContext(options);
+        await using var context = new AppDbContext(CreateDbContextOptions());
         await context.Database.MigrateAsync();
 
         await using var connection = new NpgsqlConnection(ConnectionString);
@@ -47,12 +49,18 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
         await _respawner.ResetAsync(connection);
     }
 
+    internal AppDbContext CreateDbContext() => new(CreateDbContextOptions());
+
     internal DbContextOptions<AppDbContext> CreateDbContextOptions()
     {
         var builder = new NpgsqlConnectionStringBuilder(ConnectionString)
         {
             IncludeErrorDetail = true
         };
+
+        var slowQueryInterceptor = new SlowQueryInterceptor(
+            NullLogger<SlowQueryInterceptor>.Instance,
+            new SlowQueryOptions());
 
         return new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(builder.ConnectionString, options =>
@@ -61,6 +69,7 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
             .UseExceptionProcessor()
             .EnableDetailedErrors()
             .EnableSensitiveDataLogging()
+            .AddInterceptors(slowQueryInterceptor)
             .Options;
     }
 

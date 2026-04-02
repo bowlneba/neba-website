@@ -4,10 +4,13 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 using Neba.Application.Awards;
 using Neba.Application.BowlingCenters;
 using Neba.Application.HallOfFame;
+using Neba.Infrastructure.Database.Interceptors;
+using Neba.Infrastructure.Database.Options;
 using Neba.Infrastructure.Database.Queries;
 
 using Npgsql;
@@ -33,19 +36,35 @@ internal static class DatabaseConfiguration
                     settings.ConnectionString += ";Ssl Mode=Require";
                 }
             });
-            builder.AddAzureNpgsqlDbContext<AppDbContext>(connectionStringName, configureDbContextOptions: options =>
+            // AddDbContextPool with (IServiceProvider, DbContextOptionsBuilder) overload is required
+            // to resolve DI services (the interceptor) — AddAzureNpgsqlDbContext's configureDbContextOptions
+            // only provides DbContextOptionsBuilder with no IServiceProvider access.
+            builder.Services.AddDbContextPool<AppDbContext>((sp, options) =>
             {
+                var dataSource = sp.GetRequiredService<NpgsqlDataSource>();
+                var slowQuery = sp.GetRequiredService<SlowQueryInterceptor>();
+                var queryTag = sp.GetRequiredService<QueryTagEnrichmentInterceptor>();
+                var domainEvents = sp.GetRequiredService<DomainEventDispatcherInterceptor>();
+
                 options
-                    .UseNpgsql(npgsqlOptions =>
+                    .UseNpgsql(dataSource, npgsqlOptions =>
                         npgsqlOptions.MigrationsHistoryTable(AppDbContext.MigrationsHistoryTableName, AppDbContext.DefaultSchema))
                     .UseExceptionProcessor()
                     .UseSnakeCaseNamingConvention()
-                    .EnableDetailedErrors();
+                    .EnableDetailedErrors()
+                    .AddInterceptors(slowQuery, queryTag, domainEvents);
 
 #if DEBUG
                 options.EnableSensitiveDataLogging();
 #endif
             });
+
+            builder.Services.Configure<SlowQueryOptions>(builder.Configuration.GetSection(SlowQueryOptions.SectionName));
+            builder.Services.AddSingleton(sp => sp.GetRequiredService<IOptions<SlowQueryOptions>>().Value);
+
+            builder.Services.AddSingleton<SlowQueryInterceptor>();
+            builder.Services.AddSingleton<QueryTagEnrichmentInterceptor>();
+            builder.Services.AddSingleton<DomainEventDispatcherInterceptor>();
 
             builder.Services.AddQueries();
 

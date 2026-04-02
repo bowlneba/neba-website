@@ -22,7 +22,7 @@ public sealed class AwardQueriesTests
         ArgumentNullException.ThrowIfNull(fixture);
 
         _postgres = fixture;
-        _dbContext = new AppDbContext(fixture.CreateDbContextOptions());
+        _dbContext = fixture.CreateDbContext();
         _queries = new AwardQueries(_dbContext);
     }
 

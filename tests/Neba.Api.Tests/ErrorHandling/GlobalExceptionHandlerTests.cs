@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.ErrorHandling;
 using Neba.TestFactory.Attributes;
@@ -182,5 +184,29 @@ public sealed class GlobalExceptionHandlerTests
 
         // Assert
         statusCodeWhenWriteCalled.ShouldBe(StatusCodes.Status500InternalServerError);
+    }
+
+    [Fact(DisplayName = "Should log error when exception occurs")]
+    public async Task TryHandleAsync_ShouldLogError_WhenExceptionOccurs()
+    {
+        // Arrange
+        var httpContext = new DefaultHttpContext();
+        var exception = new InvalidOperationException("Test exception");
+        var logger = new FakeLogger<GlobalExceptionHandler>();
+
+        var problemDetailsServiceMock = new Mock<IProblemDetailsService>(MockBehavior.Strict);
+        problemDetailsServiceMock
+            .Setup(s => s.TryWriteAsync(It.IsAny<ProblemDetailsContext>()))
+            .ReturnsAsync(true);
+
+        var handler = new GlobalExceptionHandler(problemDetailsServiceMock.Object, logger);
+
+        // Act
+        await handler.TryHandleAsync(httpContext, exception, CancellationToken.None);
+
+        // Assert
+        var logs = logger.Collector.GetSnapshot();
+        logs.ShouldHaveSingleItem();
+        logs[0].Level.ShouldBe(LogLevel.Error);
     }
 }

@@ -2,7 +2,8 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Globalization;
 
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
 
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Clock;
@@ -19,13 +20,15 @@ public sealed class ApiExecutorTests
 {
     private readonly ApiExecutor _executor;
     private readonly Mock<IStopwatchProvider> _stopwatchProviderMock;
+    private readonly FakeLogger<ApiExecutor> _logger;
 
     public ApiExecutorTests()
     {
         _stopwatchProviderMock = new Mock<IStopwatchProvider>(MockBehavior.Strict);
+        _logger = new FakeLogger<ApiExecutor>();
         _executor = new ApiExecutor(
             _stopwatchProviderMock.Object,
-            NullLogger<ApiExecutor>.Instance
+            _logger
         );
     }
 
@@ -97,6 +100,7 @@ public sealed class ApiExecutorTests
         result.IsError.ShouldBeTrue();
         result.Errors.ShouldHaveSingleItem();
         result.FirstError.Code.ShouldContain("HttpError");
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Error);
     }
 
     [Fact(DisplayName = "Should return failure when API response content is null")]
@@ -133,6 +137,7 @@ public sealed class ApiExecutorTests
         result.Errors.ShouldHaveSingleItem();
         result.FirstError.Code.ShouldBe($"{apiName}.{operationName}.DeserializationFailed");
         result.FirstError.Description.ShouldContain("deserialization failure");
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Error);
     }
 
     [Fact(DisplayName = "Should handle ApiException gracefully")]
@@ -174,6 +179,7 @@ public sealed class ApiExecutorTests
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldContain("Exception");
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Error);
     }
 
     [Fact(DisplayName = "Should handle HttpRequestException gracefully")]
@@ -204,6 +210,7 @@ public sealed class ApiExecutorTests
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Description.ShouldContain("Connection timeout");
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Error);
     }
 
     [Fact(DisplayName = "Should handle operation cancellation by caller")]
@@ -237,6 +244,7 @@ public sealed class ApiExecutorTests
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldContain("Cancelled");
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Warning);
     }
 
     [Fact(DisplayName = "Should handle timeout cancellation")]

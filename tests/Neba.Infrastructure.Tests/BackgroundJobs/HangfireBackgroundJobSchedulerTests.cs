@@ -4,7 +4,9 @@ using Hangfire;
 using Hangfire.InMemory;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Application.BackgroundJobs;
 using Neba.Infrastructure.BackgroundJobs;
@@ -69,7 +71,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         }
     }
 
-    private static HangfireBackgroundJobScheduler CreateScheduler()
+    private static HangfireBackgroundJobScheduler CreateScheduler(
+        ILogger<HangfireBackgroundJobScheduler>? logger = null)
     {
         var mockScopeFactory = new Mock<IServiceScopeFactory>(MockBehavior.Strict);
 
@@ -99,7 +102,7 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
 
         return new HangfireBackgroundJobScheduler(
             mockScopeFactory.Object,
-            NullLogger<HangfireBackgroundJobScheduler>.Instance);
+            logger ?? NullLogger<HangfireBackgroundJobScheduler>.Instance);
     }
 
     [Fact(DisplayName = "Should return job ID when enqueuing valid job")]
@@ -317,5 +320,21 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         jobId1.ShouldNotBeNull();
         jobId2.ShouldNotBeNull();
         jobId1.ShouldNotBe(jobId2);
+    }
+
+    [Fact(DisplayName = "Should log information when job is enqueued")]
+    public void Enqueue_ShouldLogInformation_WhenJobEnqueued()
+    {
+        // Arrange
+        var logger = new FakeLogger<HangfireBackgroundJobScheduler>();
+        HangfireBackgroundJobScheduler scheduler = CreateScheduler(logger);
+        var job = new TestBackgroundJob("Logged Job");
+
+        // Act
+        scheduler.Enqueue(job);
+
+        // Assert
+        logger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        logger.Collector.GetSnapshot()[0].Level.ShouldBe(LogLevel.Information);
     }
 }

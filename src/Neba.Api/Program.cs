@@ -21,6 +21,8 @@ builder.Services
     .AddFastEndpoints(options => options.Assemblies = [typeof(Program).Assembly])
     .AddVersioning();
 
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddOpenApiDocumentation();
 
 builder.Services.AddApplication();

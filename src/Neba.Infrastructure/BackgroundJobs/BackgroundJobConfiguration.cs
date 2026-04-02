@@ -51,6 +51,13 @@ internal static class BackgroundJobsConfiguration
                     .AssignableTo(typeof(IBackgroundJobHandler<>)))
                 .AsImplementedInterfaces()
                 .WithScopedLifetime());
+
+            services.Scan(scan => scan
+                .FromAssemblies(typeof(IApplicationAssemblyMarker).Assembly)
+                .AddClasses(classes => classes
+                    .AssignableTo(typeof(IDomainEventJob<>)))
+                .AsImplementedInterfaces()
+                .WithScopedLifetime());
         }
 
         private void AddHangfireInfrastructure()

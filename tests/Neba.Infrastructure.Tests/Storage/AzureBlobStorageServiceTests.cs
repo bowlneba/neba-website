@@ -1,4 +1,5 @@
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Infrastructure.Clock;
 using Neba.Infrastructure.Storage;
@@ -14,15 +15,17 @@ namespace Neba.Infrastructure.Tests.Storage;
 public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
 {
     private readonly AzureBlobStorageService _sut;
+    private readonly FakeLogger<AzureBlobStorageService> _logger;
 
     public AzureBlobStorageServiceTests(AzuriteFixture fixture)
     {
         ArgumentNullException.ThrowIfNull(fixture);
 
+        _logger = new FakeLogger<AzureBlobStorageService>();
         _sut = new AzureBlobStorageService(
             fixture.BlobServiceClient,
             new StopwatchProvider(),
-            NullLogger<AzureBlobStorageService>.Instance);
+            _logger);
     }
 
     private static string UniqueContainer() => $"test-{Guid.NewGuid():N}";
@@ -73,6 +76,7 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
 
         // Assert
         result.ShouldBeNull();
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Warning);
     }
 
     [Fact(DisplayName = "GetFileAsync should return content and metadata after upload")]
@@ -95,6 +99,8 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
         result.Content.ShouldBe(content);
         result.ContentType.ShouldBe(contentType);
         result.Metadata.ShouldContainKeyAndValue("Source", "GoogleDrive");
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Information && l.Message.Contains("uploaded"));
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Information && l.Message.Contains("downloaded"));
     }
 
     [Fact(DisplayName = "UploadFileAsync should create container if it does not exist")]
@@ -111,6 +117,7 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
             FileContentFactory.ValidContentType,
             new Dictionary<string, string>(FileContentFactory.ValidMetadata),
             CancellationToken.None));
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Information && l.Message.Contains("uploaded"));
     }
 
     [Fact(DisplayName = "UploadFileAsync should overwrite existing file")]
