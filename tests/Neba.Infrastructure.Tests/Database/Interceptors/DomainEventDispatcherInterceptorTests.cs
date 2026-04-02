@@ -130,7 +130,7 @@ public sealed class DomainEventDispatcherInterceptorTests
               .Callback((Job _, IState _) => callCount++)
               .Returns("job-1");
 
-        using var ctx = CreateContext();
+        await using var ctx = CreateContext();
         var aggregate = new TestAggregate { Id = 1 };
         aggregate.Raise(new TestDomainEvent());
         ctx.Entry(aggregate).State = EntityState.Unchanged;
