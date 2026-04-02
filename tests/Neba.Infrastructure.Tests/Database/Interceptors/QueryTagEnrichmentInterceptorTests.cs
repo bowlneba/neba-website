@@ -33,9 +33,11 @@ public sealed class QueryTagEnrichmentInterceptorTests
 
     private static DefaultHttpContext AuthenticatedContext(string userId = "user-123")
     {
-        var ctx = new DefaultHttpContext();
-        ctx.User = new ClaimsPrincipal(new ClaimsIdentity(
-            [new Claim(ClaimTypes.NameIdentifier, userId)]));
+        var ctx = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity(
+                [new Claim(ClaimTypes.NameIdentifier, userId)]))
+        };
         return ctx;
     }
 
@@ -148,10 +150,12 @@ public sealed class QueryTagEnrichmentInterceptorTests
     public void ReaderExecuting_WhenUserIdContainsCommentEnd_StripsIt()
     {
         var cmd = CreateCommand();
-        var ctx = new DefaultHttpContext();
-        ctx.User = new ClaimsPrincipal(new ClaimsIdentity(
-            [new Claim(ClaimTypes.NameIdentifier, "anon */ DROP TABLE users; --")]));
-        ctx.TraceIdentifier = "req-abc";
+        var ctx = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity(
+                [new Claim(ClaimTypes.NameIdentifier, "anon */ DROP TABLE users; --")])),
+            TraceIdentifier = "req-abc"
+        };
         Activity.Current = null;
 
         CreateInterceptor(ctx).ReaderExecuting(cmd.Object, null!, default);
