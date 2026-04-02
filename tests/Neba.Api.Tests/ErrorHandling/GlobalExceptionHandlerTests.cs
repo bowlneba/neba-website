@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.ErrorHandling;
 using Neba.TestFactory.Attributes;

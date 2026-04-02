@@ -1,7 +1,7 @@
 using System.Diagnostics;
 
-using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Application.Clock;
 using Neba.Application.Documents;

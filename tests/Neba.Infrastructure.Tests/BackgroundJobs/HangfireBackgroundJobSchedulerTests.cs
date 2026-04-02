@@ -4,9 +4,9 @@ using Hangfire;
 using Hangfire.InMemory;
 
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Application.BackgroundJobs;
 using Neba.Infrastructure.BackgroundJobs;
