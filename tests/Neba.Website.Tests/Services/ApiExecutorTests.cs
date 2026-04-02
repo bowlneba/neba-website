@@ -3,7 +3,6 @@ using System.Diagnostics.Metrics;
 using System.Globalization;
 
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Testing;
 
 using Neba.TestFactory.Attributes;

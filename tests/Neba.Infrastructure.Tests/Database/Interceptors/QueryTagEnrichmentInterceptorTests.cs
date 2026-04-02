@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Security.Claims;
 
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 
 using Neba.Infrastructure.Database.Interceptors;
 using Neba.TestFactory.Attributes;
