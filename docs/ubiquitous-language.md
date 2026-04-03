@@ -894,6 +894,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 | `FacebookUrl` | string? | No | Sponsor's Facebook page URL |
 | `InstagramUrl` | string? | No | Sponsor's Instagram profile URL |
 | `BusinessAddress` | `Address?` | No | Sponsor's primary business address. Not applicable for individual sponsors |
+| `BusinessEmail` | `EmailAddress?` | No | The sponsor's public-facing business email address (e.g., `inquiries@joesbusiness.com`). Distinct from `SponsorContact.Email`, which is the internal point-of-contact email for NEBA communications. Not applicable for individual sponsors |
 | `BusinessPhone` | `PhoneNumber?` | No | Sponsor's business phone. Not applicable for individual sponsors |
 | `BusinessFax` | `PhoneNumber?` | No | Sponsor's fax number. Not applicable for individual sponsors |
 | `SponsorContact` | `ContactInfo?` | No | Designated point of contact at the sponsor's organization. For individual sponsors, may be the sponsor themselves |
