@@ -15,7 +15,7 @@ internal static class PhoneNumberConfiguration
     extension<TOwner>(OwnedNavigationBuilder<TOwner, PhoneNumber> builder)
         where TOwner : class
     {
-        public OwnedNavigationBuilder<TOwner, PhoneNumber> WithPhoneNumbers()
+        public OwnedNavigationBuilder<TOwner, PhoneNumber> WithPhoneNumbers(Action<OwnedNavigationBuilder<TOwner, PhoneNumber>>? configurePhoneNumber = null)
         {
             builder.Property(phone => phone.Type)
                 .HasColumnName("phone_type")
@@ -37,6 +37,8 @@ internal static class PhoneNumberConfiguration
             builder.Property(phone => phone.Extension)
                 .HasColumnName("phone_extension")
                 .HasMaxLength(10);
+
+            configurePhoneNumber?.Invoke(builder);
 
             return builder;
         }
