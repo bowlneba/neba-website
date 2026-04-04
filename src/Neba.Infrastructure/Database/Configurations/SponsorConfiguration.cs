@@ -81,13 +81,13 @@ internal sealed class SponsorConfiguration
         {
             address.Property(a => a.Street)
                 .HasColumnName("business_street");
-            
+
             address.Property(a => a.Unit)
                 .HasColumnName("business_unit");
 
             address.Property(a => a.City)
                 .HasColumnName("business_city");
-            
+
             address.Property(a => a.Region)
                 .HasColumnName("business_region");
 
@@ -96,6 +96,15 @@ internal sealed class SponsorConfiguration
 
             address.Property(a => a.PostalCode)
                 .HasColumnName("business_postal_code");
+
+            address.ComplexProperty(a => a.Coordinates, coordinates =>
+            {
+                coordinates.Property(c => c.Latitude)
+                    .HasColumnName("business_latitude");
+
+                coordinates.Property(c => c.Longitude)
+                    .HasColumnName("business_longitude");
+            });
         });
 
         builder.HasEmailAddress(sponsor => sponsor.BusinessEmail, email =>
