@@ -955,6 +955,27 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 ---
 
+### SponsorPhoneNumber
+
+**Definition**: A phone number entry in the sponsor's `PhoneNumbers` collection. Each entry is identified by a `PhoneType` discriminator that enforces at most one number per type per sponsor at the schema level. Business phone numbers (e.g., main line, fax) are stored as a keyed collection in the `sponsor_phone_numbers` child table rather than as hardcoded columns on the sponsor record. `SponsorContact` retains a single inline `PhoneNumber` value object — a contact will only ever have one phone number.
+
+**In Code**:
+
+- Uses the shared `PhoneNumber` value object from `Neba.Domain.Contact`
+- Composite PK `(sponsor_id, phone_type)` in `sponsor_phone_numbers` enforces the one-per-type constraint at the database level
+
+---
+
+### PhoneType
+
+**Definition**: A discriminator identifying the role of a phone number on a sponsor record (e.g., Voice, Fax). Stored as a single character in the database. Enforces at most one entry per type in the `PhoneNumbers` collection via the composite primary key `(sponsor_id, phone_type)`.
+
+**In Code**:
+
+- Shared type from `Neba.Domain.Contact`
+
+---
+
 ### ContactInfo
 
 **Definition**: A value object representing the designated point of contact at a sponsor's organization for NEBA communications. Follows the same construction pattern as `Address`, `PhoneNumber`, and `EmailAddress`. Scoped to the Sponsors domain — if needed elsewhere in the future, it will be moved to `Neba.Domain.Contact` and all references updated accordingly.
