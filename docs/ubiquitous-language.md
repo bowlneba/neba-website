@@ -895,15 +895,14 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 | `InstagramUrl` | string? | No | Sponsor's Instagram profile URL |
 | `BusinessAddress` | `Address?` | No | Sponsor's primary business address. Not applicable for individual sponsors |
 | `BusinessEmail` | `EmailAddress?` | No | The sponsor's public-facing business email address (e.g., `inquiries@joesbusiness.com`). Distinct from `SponsorContact.Email`, which is the internal point-of-contact email for NEBA communications. Not applicable for individual sponsors |
-| `BusinessPhone` | `PhoneNumber?` | No | Sponsor's business phone. Not applicable for individual sponsors |
-| `BusinessFax` | `PhoneNumber?` | No | Sponsor's fax number. Not applicable for individual sponsors |
+| `PhoneNumbers` | `IReadOnlyCollection<PhoneNumber>` | No | Sponsor's phone numbers, keyed by type (e.g., Voice, Fax). Stored in a child table `sponsor_phone_numbers`. Not applicable for individual sponsors |
 | `SponsorContact` | `ContactInfo?` | No | Designated point of contact at the sponsor's organization. For individual sponsors, may be the sponsor themselves |
 
 **Display Rules**:
 
 - The Sponsor List page displays all sponsors where `IsCurrentSponsor == true`, ordered by `Priority` ascending, then `SponsorName` alphabetically as a tiebreaker
 - Nullable fields are not displayed on the public site when absent — this accommodates individual sponsors for whom business-oriented fields are not applicable
-- `PromotionalNotes`, `SponsorContact`, `BusinessAddress`, `BusinessPhone`, `BusinessFax`, and `LiveReadText` are internal/admin only — never publicly displayed
+- `PromotionalNotes`, `SponsorContact`, `BusinessAddress`, `PhoneNumbers`, and `LiveReadText` are internal/admin only — never publicly displayed
 
 **In Code**:
 

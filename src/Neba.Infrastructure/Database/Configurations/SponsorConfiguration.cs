@@ -113,37 +113,14 @@ internal sealed class SponsorConfiguration
                 .HasColumnName("business_email_address");
         });
 
-        builder.OwnsOne(sponsor => sponsor.PhoneNumber)
-            .WithPhoneNumbers(phone =>
-            {
-                phone.Property(p => p.Type)
-                    .HasColumnName("business_phone_type");
-
-                phone.Property(p => p.CountryCode)
-                    .HasColumnName("business_phone_country_code");
-
-                phone.Property(p => p.Number)
-                    .HasColumnName("business_phone_number");
-
-                phone.Property(p => p.Extension)
-                    .HasColumnName("business_phone_extension");
-            });
-
-        builder.OwnsOne(sponsor => sponsor.FaxNumber)
-            .WithPhoneNumbers(fax =>
-            {
-                fax.Property(f => f.Type)
-                    .HasColumnName("business_fax_type");
-
-                fax.Property(f => f.CountryCode)
-                    .HasColumnName("business_fax_country_code");
-
-                fax.Property(f => f.Number)
-                    .HasColumnName("business_fax_number");
-
-                fax.Property(f => f.Extension)
-                    .HasColumnName("business_fax_extension");
-            });
+        builder.OwnsMany(sponsor => sponsor.PhoneNumbers, phoneNumbers =>
+        {
+            phoneNumbers.ToTable("sponsor_phone_numbers", AppDbContext.DefaultSchema);
+            phoneNumbers.WithOwner().HasForeignKey(ForeignKeyName);
+            phoneNumbers.HasKey(ForeignKeyName, nameof(PhoneNumber.Type))
+                .HasName("pk_sponsor_phone_numbers");
+            phoneNumbers.WithPhoneNumbers();
+        });
 
         builder.OwnsOne(sponsor => sponsor.SponsorContact, contact =>
         {

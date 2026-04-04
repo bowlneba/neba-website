@@ -95,14 +95,9 @@ public sealed class Sponsor
     public EmailAddress? BusinessEmail { get; init; }
 
     /// <summary>
-    /// Phone number of the sponsor.
+    /// Phone numbers of the sponsor.
     /// </summary>
-    public PhoneNumber? PhoneNumber { get; init; }
-
-    /// <summary>
-    /// Fax number of the sponsor.
-    /// </summary>
-    public PhoneNumber? FaxNumber { get; init; }
+    public IReadOnlyCollection<PhoneNumber> PhoneNumbers { get; init; } = [];
 
     /// <summary>
     /// Contact information for the sponsor.
