@@ -23,8 +23,8 @@ public static class ContactInfoFactory
 
     public static IReadOnlyCollection<ContactInfo> Bogus(int count, int? seed = null)
     {
-        var phoneNumberPool = UniquePool.Create(PhoneNumberFactory.Bogus(count, seed), seed);
-        var emailAddressPool = UniquePool.Create(EmailAddressFactory.Bogus(count, seed), seed);
+        var phoneNumberPool = UniquePool.Create(PhoneNumberFactory.Bogus(count * 10, seed), seed);
+        var emailAddressPool = UniquePool.Create(EmailAddressFactory.Bogus(count * 10, seed), seed);
 
         var faker = new Faker<ContactInfo>()
             .CustomInstantiator(f => new()

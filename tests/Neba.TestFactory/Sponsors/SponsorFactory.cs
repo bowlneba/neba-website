@@ -58,9 +58,7 @@ public static class SponsorFactory
 
     public static IReadOnlyCollection<Sponsor> Bogus(int count, int? seed = null)
     {
-        var logoPool = UniquePool.CreateNullable(StoredFileFactory.Bogus(count, seed), seed);
-        var businessAddressPool = UniquePool.CreateNullable(AddressFactory.BogusUs(count, seed), seed);
-        var sponsorContactPool = UniquePool.CreateNullable(ContactInfoFactory.Bogus(count, seed), seed);
+        var logoPool = UniquePool.CreateNullable(StoredFileFactory.Bogus(count * 10, seed), seed);
 
         var faker = new Faker<Sponsor>()
             .CustomInstantiator(f => new()
@@ -80,14 +78,10 @@ public static class SponsorFactory
                 PromotionalNotes = f.Lorem.Sentences(3),
                 FacebookUrl = new Uri(f.Internet.UrlWithPath("facebook")),
                 InstagramUrl = new Uri(f.Internet.UrlWithPath("instagram")),
-                BusinessAddress = businessAddressPool.GetNextNullable(),
-                BusinessEmail = EmailAddress.Create(f.Internet.Email()).Value,
-                PhoneNumbers =
-                [
-                    PhoneNumber.CreateNorthAmerican(PhoneNumberType.Work, f.Phone.PhoneNumber()).Value,
-                    PhoneNumber.CreateNorthAmerican(PhoneNumberType.Mobile, f.Phone.PhoneNumber()).Value
-                ],
-                SponsorContact = sponsorContactPool.GetNextNullable()
+                BusinessAddress = null,
+                BusinessEmail = null,
+                PhoneNumbers = [],
+                SponsorContact = null
             });
 
         if (seed.HasValue)

@@ -33,11 +33,12 @@ public static class PhoneNumberFactory
 
         var types = faker.Random
             .Shuffle(PhoneNumberType.List.ToArray())
-            .Take(Math.Min(count, PhoneNumberType.List.Count))
             .ToArray();
 
-        return [.. types.Select(type => Create(
-                type: type,
+        return [.. Enumerable.Range(0, count).Select(index => Create(
+                type: index < types.Length
+                    ? types[index]
+                    : faker.PickRandom(types),
                 countryCode: "1",
                 number: faker.Phone.PhoneNumber("##########"),
                 extension: faker.Random.Bool()

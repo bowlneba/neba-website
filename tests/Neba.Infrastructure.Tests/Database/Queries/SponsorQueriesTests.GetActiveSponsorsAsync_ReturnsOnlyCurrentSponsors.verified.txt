@@ -1,0 +1,141 @@
+﻿[
+  {
+    Name: Labadie, Greenholt and Wuckert,
+    Slug: labore-eligendi-quibusdam,
+    IsCurrentSponsor: true,
+    Priority: 2,
+    Tier: {
+      Name: Title Sponsor,
+      Value: 1
+    },
+    Category: {
+      Name: Technology,
+      Value: 5
+    },
+    TagPhrase: Inverse dynamic hub,
+    Description: synergize efficient technologies,
+    WebsiteUrl: http://jared.name/,
+    FacebookUrl: facebook://jacklyn.info/small-rubber-car/portal/granite,
+    InstagramUrl: instagram://mallie.com/open-system/wooden
+  },
+  {
+    Name: Grant - Christiansen,
+    Slug: earum-facilis-et,
+    IsCurrentSponsor: true,
+    Priority: 1,
+    Tier: {
+      Name: Title Sponsor,
+      Value: 1
+    },
+    Category: {
+      Name: Financial Services,
+      Value: 4
+    },
+    TagPhrase: Organic bifurcated application,
+    Description: leverage efficient initiatives,
+    WebsiteUrl: https://haylie.info/,
+    FacebookUrl: facebook://serenity.biz/cotton/handcrafted-plastic-table,
+    InstagramUrl: instagram://eliane.biz/manors
+  },
+  {
+    Name: Ritchie, Monahan and Gutkowski,
+    Slug: ut-temporibus-corporis,
+    IsCurrentSponsor: true,
+    Priority: 4,
+    Tier: {
+      Name: Title Sponsor,
+      Value: 1
+    },
+    Category: {
+      Name: Financial Services,
+      Value: 4
+    },
+    TagPhrase: Cross-platform zero defect policy,
+    Description: target customized models,
+    WebsiteUrl: http://nellie.org/,
+    FacebookUrl: facebook://cullen.com/principal,
+    InstagramUrl: instagram://mylene.name/health
+  },
+  {
+    Name: Legros, Strosin and O'Hara,
+    Slug: doloremque-voluptatum-ad,
+    LogoContainer: container-6ejvaxrt,
+    LogoPath: senior.ra.png,
+    IsCurrentSponsor: true,
+    Priority: 6,
+    Tier: {
+      Name: Title Sponsor,
+      Value: 1
+    },
+    Category: {
+      Name: Media,
+      Value: 6
+    },
+    TagPhrase: Enterprise-wide clear-thinking customer loyalty,
+    Description: revolutionize plug-and-play content,
+    WebsiteUrl: http://monica.name/,
+    FacebookUrl: facebook://kylie.com/red/checking-account,
+    InstagramUrl: instagram://davion.name/demand-driven/bypassing/program
+  },
+  {
+    Name: Dach - Wolff,
+    Slug: laborum-totam-voluptatibus,
+    IsCurrentSponsor: true,
+    Priority: 7,
+    Tier: {
+      Name: Premium,
+      Value: 2
+    },
+    Category: {
+      Name: Bowling Center,
+      Value: 3
+    },
+    TagPhrase: Digitized optimizing middleware,
+    Description: recontextualize dynamic interfaces,
+    WebsiteUrl: https://don.net/,
+    FacebookUrl: facebook://mireille.com/eyeballs,
+    InstagramUrl: instagram://libby.biz/overriding
+  },
+  {
+    Name: Barrows, Corwin and Jacobi,
+    Slug: et-sequi-perspiciatis,
+    LogoContainer: container-8934d8mt,
+    LogoPath: facilitate.dic.png,
+    IsCurrentSponsor: true,
+    Priority: 8,
+    Tier: {
+      Name: Standard,
+      Value: 3
+    },
+    Category: {
+      Name: Manufacturer,
+      Value: 1
+    },
+    TagPhrase: Cross-group contextually-based function,
+    Description: innovate wireless paradigms,
+    WebsiteUrl: http://scot.org/,
+    FacebookUrl: facebook://esperanza.net/direct,
+    InstagramUrl: instagram://lynn.net/personal-loan-account/lodge/seamless
+  },
+  {
+    Name: Quitzon - Pfeffer,
+    Slug: consequatur-sit-assumenda,
+    LogoContainer: container-i2wngurh,
+    LogoPath: intranet_attitude_oriented.clkw.jpe,
+    IsCurrentSponsor: true,
+    Priority: 8,
+    Tier: {
+      Name: Premium,
+      Value: 2
+    },
+    Category: {
+      Name: Financial Services,
+      Value: 4
+    },
+    TagPhrase: Profit-focused clear-thinking model,
+    Description: e-enable value-added partnerships,
+    WebsiteUrl: https://clark.info/,
+    FacebookUrl: facebook://matilde.net/gorgeous-steel-shoes/borders/cambridgeshire,
+    InstagramUrl: instagram://rosario.com/networks/upward-trending/practical
+  }
+]
