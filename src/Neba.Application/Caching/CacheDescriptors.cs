@@ -64,6 +64,22 @@ public static class CacheDescriptors
     }
 
     /// <summary>
+    /// Cache descriptors for sponsor data.
+    /// </summary>
+    public static class Sponsors
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of active sponsors, with a key and tags that allow for efficient caching and invalidation of sponsor data.
+        /// </summary>
+        public static CacheDescriptor ListActiveSponsors
+            => new()
+            {
+                Key = "neba:sponsors:active:list",
+                Tags = ["neba", "neba:sponsors"]
+            };
+    }
+
+    /// <summary>
     /// Cache descriptors for awards data.
     /// </summary>
     public static class Awards
