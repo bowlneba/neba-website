@@ -45,7 +45,7 @@ public sealed class ListActiveSponsorsQueryHandlerTests
 
         // Assert
         result.ShouldBe(sponsors);
-        result.ShouldAllBe(s => s.LogoUri != null);
+        result.ShouldAllBe(s => s.LogoUrl != null);
     }
 
     [Fact(DisplayName = "Should return 5 active sponsors when queries returns 5")]
@@ -68,7 +68,7 @@ public sealed class ListActiveSponsorsQueryHandlerTests
 
         // Assert
         result.Count.ShouldBe(5);
-        result.ShouldAllBe(s => s.LogoUri != null);
+        result.ShouldAllBe(s => s.LogoUrl != null);
     }
 
     [Fact(DisplayName = "Should return empty collection when queries returns no active sponsors")]
@@ -129,7 +129,7 @@ public sealed class ListActiveSponsorsQueryHandlerTests
 
         // Assert
         result.Count.ShouldBe(2);
-        result.ShouldAllBe(s => s.LogoUri == null);
+        result.ShouldAllBe(s => s.LogoUrl == null);
     }
 
     [Fact(DisplayName = "Should return sponsors with logo uri when queries returns sponsors")]
@@ -153,8 +153,8 @@ public sealed class ListActiveSponsorsQueryHandlerTests
         // Assert
         foreach (var sponsor in result)
         {
-            sponsor.LogoUri.ShouldNotBeNull();
-            sponsor.LogoUri.IsAbsoluteUri.ShouldBeTrue();
+            sponsor.LogoUrl.ShouldNotBeNull();
+            sponsor.LogoUrl.IsAbsoluteUri.ShouldBeTrue();
         }
     }
 }

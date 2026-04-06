@@ -1,11 +1,9 @@
-using Neba.Domain.Sponsors;
-
-namespace Neba.Application.Sponsors;
+namespace Neba.Api.Contracts.Sponsors;
 
 /// <summary>
-/// Data transfer object containing summary details for a sponsor.
+/// Response model containing summary details for a sponsor, intended for API responses.
 /// </summary>
-public sealed record SponsorSummaryDto
+public sealed record SponsorSummaryResponse
 {
     /// <summary>
     /// Display name of the sponsor.
@@ -18,19 +16,9 @@ public sealed record SponsorSummaryDto
     public required string Slug { get; init; }
 
     /// <summary>
-    /// URI of the sponsor's logo.
+    /// URL to the sponsor's logo image.
     /// </summary>
-    public Uri? LogoUrl { get; set; }
-
-    /// <summary>
-    /// Blob storage container name where the logo is stored.
-    /// </summary>
-    public string? LogoContainer { get; init; }
-
-    /// <summary>
-    /// Blob storage path to the sponsor logo.
-    /// </summary>
-    public string? LogoPath { get; init; }
+    public Uri? LogoUrl { get; init; }
 
     /// <summary>
     /// Indicates whether the sponsor is currently active.
@@ -45,12 +33,12 @@ public sealed record SponsorSummaryDto
     /// <summary>
     /// Tier of the sponsor.
     /// </summary>
-    public required SponsorTier Tier { get; init; }
+    public required string Tier { get; init; }
 
     /// <summary>
     /// Category of the sponsor.
     /// </summary>
-    public required SponsorCategory Category { get; init; }
+    public required string Category { get; init; }
 
     /// <summary>
     /// Tagline or phrase associated with the sponsor.
@@ -63,17 +51,17 @@ public sealed record SponsorSummaryDto
     public string? Description { get; init; }
 
     /// <summary>
-    /// URL of the sponsor's website.
+    /// URL to the sponsor's website.
     /// </summary>
     public Uri? WebsiteUrl { get; init; }
 
     /// <summary>
-    /// URL of the sponsor's Facebook profile.
+    /// URL to the sponsor's Facebook page.
     /// </summary>
     public Uri? FacebookUrl { get; init; }
 
     /// <summary>
-    /// URL of the sponsor's Instagram profile.
+    /// URL to the sponsor's Instagram page.
     /// </summary>
     public Uri? InstagramUrl { get; init; }
 }

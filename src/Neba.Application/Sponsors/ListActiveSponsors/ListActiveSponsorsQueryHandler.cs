@@ -15,7 +15,7 @@ internal sealed class ListActiveSponsorsQueryHandler(ISponsorQueries sponsorQuer
 
         foreach (var sponsor in sponsors.Where(s => s.LogoContainer is not null && s.LogoPath is not null))
         {
-            sponsor.LogoUri = _fileStorageService.GetBlobUri(sponsor.LogoContainer!, sponsor.LogoPath!);
+            sponsor.LogoUrl = _fileStorageService.GetBlobUri(sponsor.LogoContainer!, sponsor.LogoPath!);
         }
 
         return sponsors;
