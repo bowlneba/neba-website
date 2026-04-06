@@ -9,6 +9,16 @@ namespace Neba.Website.Tests.History.Awards;
 [Component("Website.History.Awards.HighBlockMappingExtensions")]
 public sealed class HighBlockMappingExtensionsTests
 {
+    [Fact(DisplayName = "Maps all fields from response to view model")]
+    public async Task ToViewModels_ShouldMapAllFields()
+    {
+        var responses = HighBlockAwardResponseFactory.Bogus(3, seed: 1);
+
+        var viewModels = responses.ToViewModels();
+
+        await Verify(viewModels);
+    }
+
     [Fact(DisplayName = "Maps single award to single bowler view model")]
     public void ToViewModels_ShouldMapSingleAward_ToSingleBowlerViewModel()
     {

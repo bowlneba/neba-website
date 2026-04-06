@@ -1,0 +1,23 @@
+﻿[
+  {
+    Season: 1951 Season,
+    BowlerName: Neil Russel,
+    Average: 234.978910512281070,
+    TotalGames: 97,
+    TournamentsParticipated: 18
+  },
+  {
+    Season: 1948 Season,
+    BowlerName: Craig Keebler,
+    Average: 234.958699503894290,
+    TotalGames: 73,
+    TournamentsParticipated: 19
+  },
+  {
+    Season: 1995 Season,
+    BowlerName: Cynthia Hamill,
+    Average: 233.231688900027280,
+    TotalGames: 77,
+    TournamentsParticipated: 20
+  }
+]

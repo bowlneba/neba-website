@@ -8,44 +8,14 @@ namespace Neba.Website.Tests.History.Awards;
 [Component("Website.History.Awards.HighAverageMappingExtensions")]
 public sealed class HighAverageMappingExtensionsTests
 {
-    [Fact(DisplayName = "Maps Season from response to view model")]
-    public void ToViewModel_ShouldMapSeason()
+    [Fact(DisplayName = "Maps all fields from response to view model")]
+    public async Task ToViewModel_ShouldMapAllFields()
     {
-        var response = HighAverageAwardResponseFactory.Create(season: "2024 Season");
+        var responses = HighAverageAwardResponseFactory.Bogus(3, seed: 1);
 
-        var vm = response.ToViewModel();
+        var viewModels = responses.Select(r => r.ToViewModel()).ToList();
 
-        vm.Season.ShouldBe("2024 Season");
-    }
-
-    [Fact(DisplayName = "Maps BowlerName from response to view model")]
-    public void ToViewModel_ShouldMapBowlerName()
-    {
-        var response = HighAverageAwardResponseFactory.Create(bowlerName: "Jane Smith");
-
-        var vm = response.ToViewModel();
-
-        vm.BowlerName.ShouldBe("Jane Smith");
-    }
-
-    [Fact(DisplayName = "Maps Average from response to view model")]
-    public void ToViewModel_ShouldMapAverage()
-    {
-        var response = HighAverageAwardResponseFactory.Create(average: 228.75m);
-
-        var vm = response.ToViewModel();
-
-        vm.Average.ShouldBe(228.75m);
-    }
-
-    [Fact(DisplayName = "Maps TotalGames from response to view model when present")]
-    public void ToViewModel_ShouldMapTotalGames_WhenPresent()
-    {
-        var response = HighAverageAwardResponseFactory.Create(totalGames: 63);
-
-        var vm = response.ToViewModel();
-
-        vm.TotalGames.ShouldBe(63);
+        await Verify(viewModels);
     }
 
     [Fact(DisplayName = "Maps TotalGames as null when not present in response")]
@@ -56,16 +26,6 @@ public sealed class HighAverageMappingExtensionsTests
         var vm = response.ToViewModel();
 
         vm.TotalGames.ShouldBeNull();
-    }
-
-    [Fact(DisplayName = "Maps TournamentsParticipated from response to view model when present")]
-    public void ToViewModel_ShouldMapTournamentsParticipated_WhenPresent()
-    {
-        var response = HighAverageAwardResponseFactory.Create(tournamentsParticipated: 14);
-
-        var vm = response.ToViewModel();
-
-        vm.TournamentsParticipated.ShouldBe(14);
     }
 
     [Fact(DisplayName = "Maps TournamentsParticipated as null when not present in response")]

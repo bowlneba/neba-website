@@ -8,6 +8,16 @@ namespace Neba.Website.Tests.History.Awards;
 [Component("Website.History.Awards.BowlerOfTheYearMappingExtensions")]
 public sealed class BowlerOfTheYearMappingExtensionsTests
 {
+    [Fact(DisplayName = "Maps all fields from response to view model")]
+    public async Task ToViewModels_ShouldMapAllFields()
+    {
+        var responses = BowlerOfTheYearAwardResponseFactory.Bogus(3, seed: 1);
+
+        var viewModels = responses.ToViewModels();
+
+        await Verify(viewModels);
+    }
+
     [Fact(DisplayName = "Groups awards from the same season into one view model")]
     public void ToViewModels_ShouldGroupBySeason_WhenMultipleAwardsInSameSeason()
     {
