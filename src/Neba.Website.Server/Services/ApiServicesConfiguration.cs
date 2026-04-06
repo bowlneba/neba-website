@@ -6,6 +6,7 @@ using Neba.Api.Contracts.Awards;
 using Neba.Api.Contracts.BowlingCenters;
 using Neba.Api.Contracts.Documents;
 using Neba.Api.Contracts.HallOfFame;
+using Neba.Api.Contracts.Sponsors;
 
 using Refit;
 
@@ -42,6 +43,7 @@ internal static class ApiServicesConfiguration
             services.RegisterApiEndpoint<IBowlingCentersApi>();
             services.RegisterApiEndpoint<IHallOfFameApi>();
             services.RegisterApiEndpoint<IAwardsApi>();
+            services.RegisterApiEndpoint<ISponsorsApi>();
 
             return services;
         }
