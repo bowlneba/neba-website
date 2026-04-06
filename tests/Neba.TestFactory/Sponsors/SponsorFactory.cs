@@ -31,8 +31,7 @@ public static class SponsorFactory
         Uri? instagramUrl = null,
         Address? businessAddress = null,
         EmailAddress? businessEmail = null,
-        PhoneNumber? phoneNumber = null,
-        PhoneNumber? faxNumber = null,
+        IReadOnlyCollection<PhoneNumber>? phoneNumbers = null,
         ContactInfo? sponsorContact = null)
             => new()
             {
@@ -53,8 +52,7 @@ public static class SponsorFactory
                 InstagramUrl = instagramUrl,
                 BusinessAddress = businessAddress,
                 BusinessEmail = businessEmail,
-                PhoneNumber = phoneNumber,
-                FaxNumber = faxNumber,
+                PhoneNumbers = phoneNumbers ?? [],
                 SponsorContact = sponsorContact
             };
 
@@ -84,8 +82,11 @@ public static class SponsorFactory
                 InstagramUrl = new Uri(f.Internet.UrlWithPath("instagram")),
                 BusinessAddress = businessAddressPool.GetNextNullable(),
                 BusinessEmail = EmailAddress.Create(f.Internet.Email()).Value,
-                PhoneNumber = PhoneNumber.CreateNorthAmerican(PhoneNumberType.Work, f.Phone.PhoneNumber()).Value,
-                FaxNumber = PhoneNumber.CreateNorthAmerican(PhoneNumberType.Fax, f.Phone.PhoneNumber()).Value,
+                PhoneNumbers =
+                [
+                    PhoneNumber.CreateNorthAmerican(PhoneNumberType.Work, f.Phone.PhoneNumber()).Value,
+                    PhoneNumber.CreateNorthAmerican(PhoneNumberType.Mobile, f.Phone.PhoneNumber()).Value
+                ],
                 SponsorContact = sponsorContactPool.GetNextNullable()
             });
 
