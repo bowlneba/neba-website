@@ -23,7 +23,13 @@
   <NuGetReference>Ulid</NuGetReference>
   <NuGetReference>NameParserSharp</NuGetReference>
   <NuGetReference>HtmlAgilityPack</NuGetReference>
+  <NuGetReference>Google.Apis.Sheets.v4</NuGetReference>
+  <NuGetReference>Google.Apis.Auth</NuGetReference>
   <Namespace>Ardalis.SmartEnum</Namespace>
+  <Namespace>Google.Apis.Auth.OAuth2</Namespace>
+  <Namespace>Google.Apis.Services</Namespace>
+  <Namespace>Google.Apis.Sheets.v4</Namespace>
+  <Namespace>Google.Apis.Sheets.v4.Data</Namespace>
   <Namespace>HtmlAgilityPack</Namespace>
   <Namespace>Microsoft.Data.SqlClient</Namespace>
   <Namespace>NameParser</Namespace>
@@ -42,6 +48,7 @@ async Task Main()
 	HighAverageAwards.RemoveRange(HighAverageAwards);
 	HighBlockAwards.RemoveRange(HighBlockAwards);
 	Seasons.RemoveRange(Seasons);
+	Sponsors.RemoveRange(Sponsors);
 	SaveChanges();
 	
 	//Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowling_centers RESTART IDENTITY CASCADE;");
@@ -51,6 +58,7 @@ async Task Main()
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.high_average_awards RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.high_block_awards RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.seasons RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.sponsors RESTART IDENTITY CASCADE;");
 	SaveChanges();
 	
 	//await MigrateBowlingCentersAsync();
@@ -82,6 +90,8 @@ async Task Main()
 		seasonIdByEndYear,
 		bowlerDomainIdByWebsiteName,
 		bowlerDomainIdBySoftwareName);
+	
+	await MigrateSponsorsAsync();
 }
 
 // You can define other methods, fields, classes and namespaces here
@@ -2508,6 +2518,237 @@ public class UsbcBowlingCenterDto
 
 #endregion
 
+#region Sponsors
+
+public async Task MigrateSponsorsAsync()
+{
+	var sheetData = await GetGoogleSheetsDataAsync("NEBA Sponsor Port", "1BGIRzJIzoHDE7HsReII_MbxYKCbSPAxg1LHiBcqDGMM", "Sponsors");
+	var values = sheetData.Values.Skip(1);
+	
+	var sponsorRecords = new List<SponsorRecord>();
+
+	foreach (var row in values)
+	{
+		var sponsorRecord = new SponsorRecord
+		{
+			Name = row[0]?.ToString() ?? throw new ArgumentNullException("Sponsor Name Missing"),
+			Tier = SponsorTier.FromName(row[1]?.ToString() ?? throw new ArgumentNullException("Sponsor Tier is Missing")),
+			Category = SponsorCategory.FromName(row[2]?.ToString() ?? throw new ArgumentNullException("Sponsor Category is Missing")),
+			Priority = int.TryParse(row[3]?.ToString(), out var priority) ? priority : 9999,
+			Website = row[4]?.ToString(),
+			TagPhrase = row[5]?.ToString(),
+			Description = row[6]?.ToString(),
+			LiveTextRead = row[7]?.ToString(),
+			PromotionalNotes = row[8]?.ToString(),
+			Facebook = row[9]?.ToString(),
+			Instagram = row[10]?.ToString(),
+			Street = row[11]?.ToString(),
+			City = row[12]?.ToString(),
+			State = row[13]?.ToString(),
+			Zip = row[14]?.ToString(),
+			Email = row[15]?.ToString(),
+			Phone = row[16]?.ToString(),
+			Fax = row[17]?.ToString(),
+			Contact = row[18]?.ToString(),
+			ContactEmail = row[19]?.ToString(),
+			ContactPhone = row[20]?.ToString(),
+			Slug = row[21]?.ToString() ?? throw new ArgumentNullException("Slug is Missing"),
+		};
+		
+		sponsorRecords.Add(sponsorRecord);
+	}
+
+	foreach (var sponsorRecord in sponsorRecords)
+	{
+		var sponsor = new Sponsors
+		{
+			DomainId = Guid.AsDomainId(),
+			Name = sponsorRecord.Name,
+			Slug = sponsorRecord.Slug,
+			CurrentSponsor = sponsorRecord.Current,
+			Priority = sponsorRecord.Priority,
+			Tier = sponsorRecord.Tier.Value,
+			Category = sponsorRecord.Category.Value,
+
+			WebsiteUrl = sponsorRecord.Website.NullIfWhiteSpace(),
+			TagPhrase = sponsorRecord.TagPhrase.NullIfWhiteSpace(),
+			Description = sponsorRecord.Description.NullIfWhiteSpace(),
+			FacebookUrl = sponsorRecord.Facebook.NullIfWhiteSpace(),
+			InstagramUrl = sponsorRecord.Instagram.NullIfWhiteSpace(),
+			LiveReadText = sponsorRecord.LiveTextRead.NullIfWhiteSpace(),
+			PromotionalNotes = sponsorRecord.PromotionalNotes.NullIfWhiteSpace(),
+
+			BusinessStreet = sponsorRecord.Street.NullIfWhiteSpace(),
+			BusinessCity = sponsorRecord.City.NullIfWhiteSpace(),
+			BusinessRegion = sponsorRecord.State?.ToUpper().NullIfWhiteSpace(),
+			BusinessCountry = !string.IsNullOrWhiteSpace(sponsorRecord.State) ? "US" : null,
+			BusinessPostalCode = sponsorRecord.Zip.NullIfWhiteSpace(),
+			BusinessEmailAddress = sponsorRecord.Email.NullIfWhiteSpace(),
+
+			ContactName = sponsorRecord.Contact.NullIfWhiteSpace(),
+			ContactEmailAddress = sponsorRecord.ContactEmail.NullIfWhiteSpace(),
+
+			ContactPhoneCountryCode = !string.IsNullOrWhiteSpace(sponsorRecord.ContactPhone) ? "1" : null,
+			ContactPhoneNumber = sponsorRecord.ContactPhone?
+				.Replace("-", "")
+				.Replace(" ", "")
+				.Replace("(", "")
+				.Replace(")", "")
+				.NullIfWhiteSpace(),
+
+			ContactPhoneExtension = null
+		};
+
+		if (!string.IsNullOrWhiteSpace(sponsorRecord.Phone))
+		{
+			sponsor.SponsorPhoneNumbers.Add(new()
+			{
+				PhoneCountryCode = "1",
+				PhoneNumber = sponsorRecord.Phone.Replace("-","").Replace(" ","").Replace("(","").Replace(")",""),
+				PhoneType = "W"
+			});
+		}
+
+		if (!string.IsNullOrWhiteSpace(sponsorRecord.Fax))
+		{
+			sponsor.SponsorPhoneNumbers.Add(new()
+			{
+				PhoneCountryCode = "1",
+				PhoneNumber = sponsorRecord.Fax.Replace("-","").Replace(" ","").Replace("(","").Replace(")",""),
+				PhoneType = "F"
+			});
+		}
+		
+		Sponsors.Add(sponsor);
+	}
+	
+	await SaveChangesAsync();
+	
+	"Sponsors Ported".Dump();
+}
+
+public sealed record SponsorRecord
+{ 
+	public required string Name { get; init; }
+	
+	public required string Slug { get; init; }
+	
+	public bool Current { get; } = true;
+	
+	public required SponsorTier Tier { get; init; }
+	
+	public required SponsorCategory Category { get; init; }
+	
+	public required int Priority { get; init; }
+	
+	public string? Website { get; init; }
+	
+	public string? TagPhrase { get; init; }
+	
+	public string? Description { get; init; }
+	
+	public string? LiveTextRead { get; init; }
+	
+	public string? PromotionalNotes { get; init; }
+	
+	public string? Facebook { get; init; }
+	
+	public string? Instagram { get; init; }
+	
+	public string? Street { get; init; }
+	
+	public string? City { get; init; }
+	
+	public string? State { get; init; }
+	
+	public string? Zip { get; init; }
+	
+	public string? Email { get; init; }
+	
+	public string? Phone { get; init; }
+	
+	public string? Fax { get; init; }
+	
+	public string? Contact { get; init; }
+	
+	public string? ContactEmail { get; init; }
+	
+	public string? ContactPhone { get; init; }
+}
+
+public sealed class SponsorCategory
+	: SmartEnum<SponsorCategory>
+{
+	/// <summary>
+	/// Represents the other sponsor category for sponsors that don't fit into the predefined categories.
+	/// </summary>
+	public static readonly SponsorCategory Other = new(nameof(Other), 1);
+
+	/// <summary>
+	/// Represents the manufacturer sponsor category.
+	/// </summary>
+	public static readonly SponsorCategory Manufacturer = new(nameof(Manufacturer), 1 << 1);
+
+	/// <summary>
+	/// Represents the pro shop sponsor category.
+	/// </summary>
+	public static readonly SponsorCategory ProShop = new("Pro Shop", 1 << 2);
+
+	/// <summary>
+	/// Represents the bowling center sponsor category.
+	/// </summary>
+	public static readonly SponsorCategory BowlingCenter = new("Bowling Center", 1 << 3);
+
+	/// <summary>
+	/// Represents the financial services sponsor category.
+	/// </summary>
+	public static readonly SponsorCategory FinancialServices = new("Financial Services", 1 << 4);
+
+	/// <summary>
+	/// Represents the technology sponsor category.
+	/// </summary>
+	public static readonly SponsorCategory Technology = new(nameof(Technology), 1 << 5);
+
+	/// <summary>
+	/// Represents the media sponsor category.
+	/// </summary>
+	public static readonly SponsorCategory Media = new(nameof(Media), 1 << 6);
+
+	/// <summary>
+	/// Represents the individual sponsor category.
+	/// </summary>
+	public static readonly SponsorCategory Individual = new(nameof(Individual), 1 << 7);
+
+	private SponsorCategory(string name, int value)
+		: base(name, value)
+	{ }
+}
+
+public sealed class SponsorTier
+	: SmartEnum<SponsorTier>
+{
+	/// <summary>
+	/// Represents the title sponsor tier.
+	/// </summary>
+	public static readonly SponsorTier TitleSponsor = new("Title", 1);
+
+	/// <summary>
+	/// Represents the premium sponsor tier.
+	/// </summary>
+	public static readonly SponsorTier Premium = new(nameof(Premium), 2);
+
+	/// <summary>
+	/// Represents the standard sponsor tier.
+	/// </summary>
+	public static readonly SponsorTier Standard = new(nameof(Standard), 3);
+
+	private SponsorTier(string name, int value)
+		: base(name, value)
+	{ }
+}
+
+#endregion
+
 #region Database Queries
 
 public async Task<DataTable> QueryStatsDatabaseAsync(string query)
@@ -2533,6 +2774,27 @@ private async Task<DataTable> QueryDatabaseAsync(string connectionString, string
 
 #endregion
 
+#region Google Sheets
+
+public async Task<ValueRange> GetGoogleSheetsDataAsync(string applicationName, string spreadsheetId, string tableName)
+{
+	var json = await Util.GetPasswordAsync("credentials.sheets.google"); //neba-api-dlk-localhost@neba-website.iam.gserviceaccount.com
+	var serviceAccountCredential = CredentialFactory.FromJson<ServiceAccountCredential>(json);
+	var googleCredential = serviceAccountCredential.ToGoogleCredential().CreateScoped(SheetsService.Scope.SpreadsheetsReadonly);
+
+	using var sheetsService = new SheetsService(new BaseClientService.Initializer
+	{
+		HttpClientInitializer = googleCredential,
+		ApplicationName = applicationName
+	});
+	
+	var request = sheetsService.Spreadsheets.Values.Get(spreadsheetId, tableName);
+	
+	return await request.ExecuteAsync();
+}
+
+#endregion
+
 static class IdExtensions
 {
 	extension(Guid)
@@ -2547,4 +2809,10 @@ static class IdExtensions
 			return Guid.AsUlid().ToString();
 		}
 	}
+}
+
+static class StringExtensions
+{
+	public static string? NullIfWhiteSpace(this string? value)
+	   => string.IsNullOrWhiteSpace(value) ? null : value;
 }
