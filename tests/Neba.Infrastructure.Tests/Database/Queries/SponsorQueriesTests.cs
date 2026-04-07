@@ -63,4 +63,40 @@ public sealed class SponsorQueriesTests
 
         await Verify(result);
     }
+
+    [Fact(DisplayName = "GetSponsorAsync - Slug - Returns sponsor details for existing sponsor")]
+    public async Task GetSponsorAsync_Slug_ReturnsSponsorDetailsForExistingSponsor()
+    {
+        // Arrange
+        const int seed = 91;
+        var sponsors = SponsorFactory.Bogus(10, seed);
+        var expected = sponsors.First();
+
+        await _dbContext.Sponsors.AddRangeAsync(sponsors, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _queries.GetSponsorAsync(expected.Slug, TestContext.Current.CancellationToken);
+
+        await Verify(result);
+    }
+
+    [Fact(DisplayName = "GetSponsorAsync - Slug - Returns null for non-existent sponsor")]
+    public async Task GetSponsorAsync_Slug_ReturnsNullForNonExistentSponsor()
+    {
+        // Arrange
+        const int seed = 91;
+        var sponsors = SponsorFactory.Bogus(10, seed);
+
+        await _dbContext.Sponsors.AddRangeAsync(sponsors, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        const string nonExistentSlug = "this-slug-does-not-exist";
+
+        // Act
+        var result = await _queries.GetSponsorAsync(nonExistentSlug, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldBeNull();
+    }
 }
