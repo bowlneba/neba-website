@@ -1,9 +1,7 @@
 using Bogus;
 
 using Neba.Api.Contracts.Sponsors;
-using Neba.Application.Sponsors;
 using Neba.Domain.Sponsors;
-using Neba.Website.Server.Sponsors;
 
 namespace Neba.TestFactory.Sponsors;
 

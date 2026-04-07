@@ -1,5 +1,3 @@
-using Neba.Domain.Sponsors;
-
 namespace Neba.Application.Sponsors;
 
 /// <summary>
