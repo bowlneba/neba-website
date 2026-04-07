@@ -20,5 +20,5 @@ public sealed record ContactInfo
     /// <summary>
     /// The email address of the contact person.
     /// </summary>
-    public required EmailAddress Email {get; init; }
+    public required EmailAddress Email { get; init; }
 }

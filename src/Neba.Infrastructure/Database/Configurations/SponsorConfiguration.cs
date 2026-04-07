@@ -145,7 +145,7 @@ internal sealed class SponsorConfiguration
                         .HasColumnName("contact_phone_extension");
                 });
 
-            contact.OwnsOne(c => c. Email, email => email.Property(e => e.Value)
+            contact.OwnsOne(c => c.Email, email => email.Property(e => e.Value)
                     .HasColumnName("contact_email_address")
                     .HasMaxLength(255)
                     .IsRequired());

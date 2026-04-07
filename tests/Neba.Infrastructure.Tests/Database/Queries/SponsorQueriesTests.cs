@@ -13,7 +13,7 @@ namespace Neba.Infrastructure.Tests.Database.Queries;
 [IntegrationTest]
 [Component("Sponsors")]
 [Collection<PostgreSqlFixture>]
-public sealed class SponsorQueriesTests 
+public sealed class SponsorQueriesTests
     : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
 {
     private readonly PostgreSqlFixture _postgres;
@@ -64,7 +64,7 @@ public sealed class SponsorQueriesTests
         result.Count.ShouldBe(expectedCurrentCount);
         result.ShouldAllBe(s => s.IsCurrentSponsor);
         result.ShouldNotContain(s => s.Name == "Previous Sponsor");
-        
+
         await Verify(result);
     }
 }

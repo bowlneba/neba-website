@@ -54,5 +54,5 @@ public sealed class SponsorCategory
 
     private SponsorCategory(string name, int value)
         : base(name, value)
-    {}
+    { }
 }
