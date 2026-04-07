@@ -18,14 +18,14 @@ public sealed class SponsorCategoryTests
     }
 
     [Theory(DisplayName = "Sponsor category properties should be correct")]
-    [InlineData("Manufacturer", 1, TestDisplayName = "Manufacturer should have value 1")]
-    [InlineData("Pro Shop", 2, TestDisplayName = "Pro Shop should have value 2")]
-    [InlineData("Bowling Center", 3, TestDisplayName = "Bowling Center should have value 3")]
-    [InlineData("Financial Services", 4, TestDisplayName = "Financial Services should have value 4")]
-    [InlineData("Technology", 5, TestDisplayName = "Technology should have value 5")]
-    [InlineData("Media", 6, TestDisplayName = "Media should have value 6")]
-    [InlineData("Individual", 100, TestDisplayName = "Individual should have value 100")]
-    [InlineData("Other", 999, TestDisplayName = "Other should have value 999")]
+    [InlineData("Other", 1, TestDisplayName = "Other should have value 1")]
+    [InlineData("Manufacturer", 2, TestDisplayName = "Manufacturer should have value 2")]
+    [InlineData("Pro Shop", 4, TestDisplayName = "Pro Shop should have value 4")]
+    [InlineData("Bowling Center", 8, TestDisplayName = "Bowling Center should have value 8")]
+    [InlineData("Financial Services", 16, TestDisplayName = "Financial Services should have value 16")]
+    [InlineData("Technology", 32, TestDisplayName = "Technology should have value 32")]
+    [InlineData("Media", 64, TestDisplayName = "Media should have value 64")]
+    [InlineData("Individual", 128, TestDisplayName = "Individual should have value 128")]
     public void SponsorCategory_ShouldHaveCorrectProperties(string categoryName, int expectedValue)
     {
         // Act
