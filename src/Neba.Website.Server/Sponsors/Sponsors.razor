@@ -261,17 +261,17 @@
     private string? _errorMessage;
 
     private SponsorSummaryViewModel? TitleSponsor =>
-        _sponsors.FirstOrDefault(s => s.Tier.Equals("Title", StringComparison.OrdinalIgnoreCase));
+        _sponsors.FirstOrDefault(s => s.Tier == "Title Sponsor");
 
     private IEnumerable<SponsorSummaryViewModel> PremierSponsors =>
         _sponsors
-            .Where(s => s.Tier.Equals("Premier", StringComparison.OrdinalIgnoreCase))
+            .Where(s => s.Tier == "Premium")
             .OrderBy(s => s.Priority)
             .ThenBy(s => s.Name);
 
     private IEnumerable<SponsorSummaryViewModel> AssociationSponsors =>
         _sponsors
-            .Where(s => s.Tier.Equals("Association", StringComparison.OrdinalIgnoreCase))
+            .Where(s => s.Tier == "Standard")
             .OrderBy(s => s.Priority)
             .ThenBy(s => s.Name);
 
