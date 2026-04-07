@@ -45,12 +45,12 @@ public sealed record SponsorSummaryDto
     /// <summary>
     /// Tier of the sponsor.
     /// </summary>
-    public required SponsorTier Tier { get; init; }
+    public required string Tier { get; init; }
 
     /// <summary>
     /// Category of the sponsor.
     /// </summary>
-    public required SponsorCategory Category { get; init; }
+    public required string Category { get; init; }
 
     /// <summary>
     /// Tagline or phrase associated with the sponsor.

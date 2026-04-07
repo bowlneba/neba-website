@@ -103,8 +103,8 @@ public sealed class ListActiveSponsorsQueryHandlerTests
                 LogoPath = null,
                 IsCurrentSponsor = true,
                 Priority = 1,
-                Tier = SponsorTier.Standard,
-                Category = SponsorCategory.Technology
+                Tier = SponsorTier.Standard.Name,
+                Category = SponsorCategory.Technology.Name
             },
             new SponsorSummaryDto
             {
@@ -114,8 +114,8 @@ public sealed class ListActiveSponsorsQueryHandlerTests
                 LogoPath = null,
                 IsCurrentSponsor = true,
                 Priority = 2,
-                Tier = SponsorTier.Standard,
-                Category = SponsorCategory.Technology
+                Tier = SponsorTier.Standard.Name,
+                Category = SponsorCategory.Technology.Name
             }
         ];
         var query = new ListActiveSponsorsQuery();
