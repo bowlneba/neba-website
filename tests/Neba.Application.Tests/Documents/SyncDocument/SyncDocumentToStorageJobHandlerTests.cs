@@ -2,6 +2,7 @@ using System.Diagnostics;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
+using Microsoft.Extensions.Time.Testing;
 
 using Neba.Application.Clock;
 using Neba.Application.Documents;
@@ -19,7 +20,7 @@ public sealed class SyncDocumentToStorageJobHandlerTests
     private readonly Mock<IDocumentsService> _documentsServiceMock;
     private readonly Mock<IFileStorageService> _fileStorageServiceMock;
     private readonly Mock<IStopwatchProvider> _stopwatchProviderMock;
-    private readonly Mock<IDateTimeProvider> _dateTimeProviderMock;
+    private readonly FakeTimeProvider _fakeTimeProvider;
     private readonly FakeLogger<SyncDocumentToStorageJobHandler> _logger;
 
     private readonly SyncDocumentToStorageJobHandler _handler;
@@ -29,7 +30,7 @@ public sealed class SyncDocumentToStorageJobHandlerTests
         _documentsServiceMock = new Mock<IDocumentsService>(MockBehavior.Strict);
         _fileStorageServiceMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         _stopwatchProviderMock = new Mock<IStopwatchProvider>(MockBehavior.Strict);
-        _dateTimeProviderMock = new Mock<IDateTimeProvider>(MockBehavior.Strict);
+        _fakeTimeProvider = new FakeTimeProvider();
 
         _stopwatchProviderMock
             .Setup(s => s.GetTimestamp())
@@ -44,7 +45,7 @@ public sealed class SyncDocumentToStorageJobHandlerTests
             _documentsServiceMock.Object,
             _fileStorageServiceMock.Object,
             _stopwatchProviderMock.Object,
-            _dateTimeProviderMock.Object,
+            _fakeTimeProvider,
             _logger);
     }
 
@@ -65,9 +66,7 @@ public sealed class SyncDocumentToStorageJobHandlerTests
             .Setup(s => s.GetDocumentAsHtmlAsync(job.DocumentName, TestContext.Current.CancellationToken))
             .ReturnsAsync(document);
 
-        _dateTimeProviderMock
-            .Setup(d => d.UtcNow)
-            .Returns(cachedAt);
+        _fakeTimeProvider.SetUtcNow(cachedAt);
 
         _fileStorageServiceMock
             .Setup(s => s.UploadFileAsync(
@@ -186,9 +185,7 @@ public sealed class SyncDocumentToStorageJobHandlerTests
             .Setup(s => s.GetDocumentAsHtmlAsync(job.DocumentName, TestContext.Current.CancellationToken))
             .ReturnsAsync(document);
 
-        _dateTimeProviderMock
-            .Setup(d => d.UtcNow)
-            .Returns(cachedAt);
+        _fakeTimeProvider.SetUtcNow(cachedAt);
 
         _fileStorageServiceMock
             .Setup(s => s.UploadFileAsync(

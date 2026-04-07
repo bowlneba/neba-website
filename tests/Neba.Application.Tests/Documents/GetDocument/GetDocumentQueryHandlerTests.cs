@@ -1,6 +1,7 @@
 using ErrorOr;
 
-using Neba.Application.Clock;
+using Microsoft.Extensions.Time.Testing;
+
 using Neba.Application.Documents;
 using Neba.Application.Documents.GetDocument;
 using Neba.Application.Storage;
@@ -16,7 +17,7 @@ public sealed class GetDocumentQueryHandlerTests
 {
     private readonly Mock<IDocumentsService> _documentsServiceMock;
     private readonly Mock<IFileStorageService> _storageServiceMock;
-    private readonly Mock<IDateTimeProvider> _dateTimeProviderMock;
+    private readonly FakeTimeProvider _fakeTimeProvider;
 
     private readonly GetDocumentQueryHandler _handler;
 
@@ -24,12 +25,12 @@ public sealed class GetDocumentQueryHandlerTests
     {
         _documentsServiceMock = new Mock<IDocumentsService>(MockBehavior.Strict);
         _storageServiceMock = new Mock<IFileStorageService>(MockBehavior.Strict);
-        _dateTimeProviderMock = new Mock<IDateTimeProvider>(MockBehavior.Strict);
+        _fakeTimeProvider = new FakeTimeProvider();
 
         _handler = new GetDocumentQueryHandler(
             _documentsServiceMock.Object,
             _storageServiceMock.Object,
-            _dateTimeProviderMock.Object);
+            _fakeTimeProvider);
     }
 
     [Fact(DisplayName = "Should return cached content and source_last_modified as LastUpdated when file exists in storage")]
@@ -112,9 +113,7 @@ public sealed class GetDocumentQueryHandlerTests
         _documentsServiceMock
             .Setup(s => s.GetDocumentAsHtmlAsync(query.DocumentName, TestContext.Current.CancellationToken))
             .ReturnsAsync(sourceDocument);
-        _dateTimeProviderMock
-            .Setup(d => d.UtcNow)
-            .Returns(new DateTimeOffset(2026, 2, 1, 5, 0, 0, TimeSpan.Zero));
+        _fakeTimeProvider.SetUtcNow(new DateTimeOffset(2026, 2, 1, 5, 0, 0, TimeSpan.Zero));
         _storageServiceMock
             .Setup(s => s.UploadFileAsync(
                 "documents", query.DocumentName,
@@ -185,9 +184,7 @@ public sealed class GetDocumentQueryHandlerTests
             .Setup(s => s.GetDocumentAsHtmlAsync(query.DocumentName, TestContext.Current.CancellationToken))
             .ReturnsAsync(expectedDocument);
 
-        _dateTimeProviderMock
-            .Setup(d => d.UtcNow)
-            .Returns(cachedAt);
+        _fakeTimeProvider.SetUtcNow(cachedAt);
 
         IDictionary<string, string>? capturedMetadata = null;
         _storageServiceMock
@@ -231,9 +228,7 @@ public sealed class GetDocumentQueryHandlerTests
             .Setup(s => s.GetDocumentAsHtmlAsync(query.DocumentName, TestContext.Current.CancellationToken))
             .ReturnsAsync(expectedDocument);
 
-        _dateTimeProviderMock
-            .Setup(d => d.UtcNow)
-            .Returns(cachedAt);
+        _fakeTimeProvider.SetUtcNow(cachedAt);
 
         IDictionary<string, string>? capturedMetadata = null;
         _storageServiceMock

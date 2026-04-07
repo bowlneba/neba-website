@@ -2,7 +2,6 @@ using System.Globalization;
 
 using ErrorOr;
 
-using Neba.Application.Clock;
 using Neba.Application.Messaging;
 using Neba.Application.Storage;
 
@@ -11,12 +10,12 @@ namespace Neba.Application.Documents.GetDocument;
 internal sealed class GetDocumentQueryHandler(
     IDocumentsService documentsService,
     IFileStorageService storageService,
-    IDateTimeProvider dateTimeProvider)
+    TimeProvider timeProvider)
         : IQueryHandler<GetDocumentQuery, ErrorOr<GetDocumentDto>>
 {
     private readonly IDocumentsService _documentsService = documentsService;
     private readonly IFileStorageService _storageService = storageService;
-    private readonly IDateTimeProvider _dateTimeProvider = dateTimeProvider;
+    private readonly TimeProvider _timeProvider = timeProvider;
 
     public async Task<ErrorOr<GetDocumentDto>> HandleAsync(GetDocumentQuery query, CancellationToken cancellationToken)
     {
@@ -46,7 +45,7 @@ internal sealed class GetDocumentQueryHandler(
             return DocumentErrors.DocumentNotFound(query.DocumentName);
         }
 
-        var now = _dateTimeProvider.UtcNow;
+        var now = _timeProvider.GetUtcNow();
 
         await _storageService.UploadFileAsync(
             "documents",

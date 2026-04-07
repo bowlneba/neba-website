@@ -6,8 +6,8 @@ using Microsoft.Extensions.Hosting;
 using Neba.Application.Clock;
 using Neba.Application.Messaging;
 using Neba.Infrastructure.BackgroundJobs;
-using Neba.Infrastructure.Caching;
 using Neba.Infrastructure.Clock;
+using Neba.Infrastructure.Caching;
 using Neba.Infrastructure.Database;
 using Neba.Infrastructure.Documents;
 using Neba.Infrastructure.Storage;
@@ -46,7 +46,7 @@ public static class InfrastructureConfiguration
             builder.Services.AddBackgroundJobs(builder.Configuration);
             builder.Services.AddGoogleDrive(builder.Configuration);
 
-            builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+            builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
 
             return builder;
