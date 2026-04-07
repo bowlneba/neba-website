@@ -162,7 +162,9 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     @foreach (var sponsor in PremierSponsors)
                     {
-                        <div class="neba-card sponsor-card-premier">
+                        <a href="/sponsors/@sponsor.Slug"
+                           class="neba-card sponsor-card-premier block"
+                           aria-label="Learn more about @sponsor.Name">
                             <div class="h-24 flex items-center justify-center mb-4">
                                 <img src="@(sponsor.LogoUrl?.ToString() ?? "/images/neba-logo.png")"
                                      alt="@sponsor.Name logo"
@@ -178,17 +180,7 @@
                                     @sponsor.Description
                                 </p>
                             }
-                            @if (sponsor.WebsiteUrl is not null)
-                            {
-                                <a href="@sponsor.WebsiteUrl.ToString()"
-                                   target="_blank" rel="noopener noreferrer"
-                                   class="neba-link text-sm inline-flex items-center gap-1"
-                                   aria-label="Learn more about @sponsor.Name">
-                                    Learn More
-                                    <span class="material-symbols-outlined" style="font-size: 0.875rem;">open_in_new</span>
-                                </a>
-                            }
-                        </div>
+                        </a>
                     }
                 </div>
             </section>
@@ -209,11 +201,9 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     @foreach (var sponsor in AssociationSponsors)
                     {
-                        <a href="@(sponsor.WebsiteUrl?.ToString() ?? "#")"
-                           target="@(sponsor.WebsiteUrl is not null ? "_blank" : null)"
-                           rel="@(sponsor.WebsiteUrl is not null ? "noopener noreferrer" : null)"
+                        <a href="/sponsors/@sponsor.Slug"
                            class="sponsor-tile neba-card flex flex-col items-center text-center p-4 gap-2"
-                           aria-label="@(sponsor.WebsiteUrl is not null ? $"{sponsor.Name} — opens in new tab" : sponsor.Name)">
+                           aria-label="@sponsor.Name">
                             <span class="material-symbols-outlined text-[var(--neba-blue-500)]"
                                   style="font-size: 2rem;" aria-hidden="true">
                                 storefront
