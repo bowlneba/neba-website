@@ -292,31 +292,33 @@ public sealed class SponsorsTests : IDisposable
         cut.Markup.ShouldContain(SponsorCategory.Technology.Name);
     }
 
-    [Fact(DisplayName = "Should show Learn More link for premier sponsor when website URL provided")]
-    public void Render_ShouldShowLearnMoreLink_WhenPremierSponsorHasWebsiteUrl()
+    [Fact(DisplayName = "Should link to sponsor details page for premier sponsor")]
+    public void Render_ShouldLinkToSponsorDetails_WhenPremierSponsorRendered()
     {
         var sponsor = SponsorSummaryResponseFactory.Create(
             tier: SponsorTier.Premium,
+            slug: "premier-sponsor",
             websiteUrl: new Uri("https://premier.example.com"));
         SetupSuccessResponse([sponsor]);
 
         var cut = _ctx.Render<SponsorsPage>();
 
-        cut.Markup.ShouldContain("Learn More");
-        cut.Markup.ShouldContain("https://premier.example.com");
+        cut.Markup.ShouldContain("/sponsors/premier-sponsor");
+        cut.Markup.ShouldContain("Learn more about");
     }
 
-    [Fact(DisplayName = "Should not show Learn More link for premier sponsor when no website URL")]
-    public void Render_ShouldNotShowLearnMoreLink_WhenPremierSponsorHasNoWebsiteUrl()
+    [Fact(DisplayName = "Should still link to sponsor details page when premier sponsor has no website URL")]
+    public void Render_ShouldLinkToSponsorDetails_WhenPremierSponsorHasNoWebsiteUrl()
     {
         var sponsor = SponsorSummaryResponseFactory.Create(
             tier: SponsorTier.Premium,
+            slug: "premier-no-website",
             websiteUrl: null);
         SetupSuccessResponse([sponsor]);
 
         var cut = _ctx.Render<SponsorsPage>();
 
-        cut.Markup.ShouldNotContain("Learn More");
+        cut.Markup.ShouldContain("/sponsors/premier-no-website");
     }
 
     [Fact(DisplayName = "Should render premier sponsors ordered by priority then name")]
@@ -363,31 +365,33 @@ public sealed class SponsorsTests : IDisposable
         cut.Markup.ShouldNotContain("Association Sponsors");
     }
 
-    [Fact(DisplayName = "Should link to website when association sponsor has website URL")]
-    public void Render_ShouldLinkToWebsite_WhenAssociationSponsorHasWebsiteUrl()
+    [Fact(DisplayName = "Should link to sponsor details page when association sponsor has website URL")]
+    public void Render_ShouldLinkToSponsorDetails_WhenAssociationSponsorHasWebsiteUrl()
     {
         var sponsor = SponsorSummaryResponseFactory.Create(
             tier: SponsorTier.Standard,
+            slug: "association-sponsor",
             websiteUrl: new Uri("https://assoc.example.com"));
         SetupSuccessResponse([sponsor]);
 
         var cut = _ctx.Render<SponsorsPage>();
 
-        cut.Markup.ShouldContain("https://assoc.example.com");
-        cut.Markup.ShouldContain("_blank");
+        cut.Markup.ShouldContain("/sponsors/association-sponsor");
+        cut.Markup.ShouldNotContain("https://assoc.example.com");
     }
 
-    [Fact(DisplayName = "Should use hash href when association sponsor has no website URL")]
-    public void Render_ShouldUseFallbackHref_WhenAssociationSponsorHasNoWebsiteUrl()
+    [Fact(DisplayName = "Should link to sponsor details page when association sponsor has no website URL")]
+    public void Render_ShouldLinkToSponsorDetails_WhenAssociationSponsorHasNoWebsiteUrl()
     {
         var sponsor = SponsorSummaryResponseFactory.Create(
             tier: SponsorTier.Standard,
+            slug: "some-sponsor",
             websiteUrl: null);
         SetupSuccessResponse([sponsor]);
 
         var cut = _ctx.Render<SponsorsPage>();
 
-        cut.Find(".sponsor-tile").GetAttribute("href").ShouldBe("#");
+        cut.Find(".sponsor-tile").GetAttribute("href").ShouldBe("/sponsors/some-sponsor");
     }
 
     [Fact(DisplayName = "Should render association sponsors ordered by priority then name")]
