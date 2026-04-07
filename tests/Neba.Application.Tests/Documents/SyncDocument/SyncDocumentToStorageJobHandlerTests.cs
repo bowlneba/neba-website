@@ -70,8 +70,8 @@ public sealed class SyncDocumentToStorageJobHandlerTests
 
         _fileStorageServiceMock
             .Setup(s => s.UploadFileAsync(
-                "documents",
-                job.DocumentName,
+                "bowlneba-private",
+                $"documents/{job.DocumentName}",
                 document.Content,
                 document.ContentType,
                 It.Is<IDictionary<string, string>>(m =>
@@ -189,8 +189,8 @@ public sealed class SyncDocumentToStorageJobHandlerTests
 
         _fileStorageServiceMock
             .Setup(s => s.UploadFileAsync(
-                "documents",
-                job.DocumentName,
+                "bowlneba-private",
+                $"documents/{job.DocumentName}",
                 document.Content,
                 document.ContentType,
                 It.IsAny<IDictionary<string, string>>(),

@@ -49,11 +49,11 @@ public sealed class GetDocumentQueryHandlerTests
         var query = new GetDocumentQuery { DocumentName = DocumentDtoFactory.ValidName };
 
         _storageServiceMock
-            .Setup(s => s.ExistsAsync("documents", query.DocumentName, TestContext.Current.CancellationToken))
+            .Setup(s => s.ExistsAsync("bowlneba-private", $"documents/{query.DocumentName}", TestContext.Current.CancellationToken))
             .ReturnsAsync(true);
 
         _storageServiceMock
-            .Setup(s => s.GetFileAsync("documents", query.DocumentName, TestContext.Current.CancellationToken))
+            .Setup(s => s.GetFileAsync("bowlneba-private", $"documents/{query.DocumentName}", TestContext.Current.CancellationToken))
             .ReturnsAsync(storedFile);
 
         // Act
@@ -75,11 +75,11 @@ public sealed class GetDocumentQueryHandlerTests
         var query = new GetDocumentQuery { DocumentName = DocumentDtoFactory.ValidName };
 
         _storageServiceMock
-            .Setup(s => s.ExistsAsync("documents", query.DocumentName, TestContext.Current.CancellationToken))
+            .Setup(s => s.ExistsAsync("bowlneba-private", $"documents/{query.DocumentName}", TestContext.Current.CancellationToken))
             .ReturnsAsync(true);
 
         _storageServiceMock
-            .Setup(s => s.GetFileAsync("documents", query.DocumentName, TestContext.Current.CancellationToken))
+            .Setup(s => s.GetFileAsync("bowlneba-private", $"documents/{query.DocumentName}", TestContext.Current.CancellationToken))
             .ReturnsAsync(storedFile);
 
         // Act
@@ -100,11 +100,11 @@ public sealed class GetDocumentQueryHandlerTests
         var query = new GetDocumentQuery { DocumentName = DocumentDtoFactory.ValidName };
 
         _storageServiceMock
-            .Setup(s => s.ExistsAsync("documents", query.DocumentName, TestContext.Current.CancellationToken))
+            .Setup(s => s.ExistsAsync("bowlneba-private", $"documents/{query.DocumentName}", TestContext.Current.CancellationToken))
             .ReturnsAsync(true);
 
         _storageServiceMock
-            .Setup(s => s.GetFileAsync("documents", query.DocumentName, TestContext.Current.CancellationToken))
+            .Setup(s => s.GetFileAsync("bowlneba-private", $"documents/{query.DocumentName}", TestContext.Current.CancellationToken))
             .ReturnsAsync(storedFile);
 
         // Set up non-cached path so no exception is thrown if mutation negates ExistsAsync:
@@ -116,7 +116,7 @@ public sealed class GetDocumentQueryHandlerTests
         _fakeTimeProvider.SetUtcNow(new DateTimeOffset(2026, 2, 1, 5, 0, 0, TimeSpan.Zero));
         _storageServiceMock
             .Setup(s => s.UploadFileAsync(
-                "documents", query.DocumentName,
+                "bowlneba-private", $"documents/{query.DocumentName}",
                 sourceDocument.Content, sourceDocument.ContentType,
                 It.IsAny<IDictionary<string, string>>(),
                 TestContext.Current.CancellationToken))
@@ -140,11 +140,11 @@ public sealed class GetDocumentQueryHandlerTests
         var query = new GetDocumentQuery { DocumentName = DocumentDtoFactory.ValidName };
 
         _storageServiceMock
-            .Setup(s => s.ExistsAsync("documents", query.DocumentName, TestContext.Current.CancellationToken))
+            .Setup(s => s.ExistsAsync("bowlneba-private", $"documents/{query.DocumentName}", TestContext.Current.CancellationToken))
             .ReturnsAsync(true);
 
         _storageServiceMock
-            .Setup(s => s.GetFileAsync("documents", query.DocumentName, TestContext.Current.CancellationToken))
+            .Setup(s => s.GetFileAsync("bowlneba-private", $"documents/{query.DocumentName}", TestContext.Current.CancellationToken))
             .ReturnsAsync((FileContent?)null);
 
         // Act — wrap so any handler exception becomes an assertion failure
@@ -177,7 +177,7 @@ public sealed class GetDocumentQueryHandlerTests
         var query = new GetDocumentQuery { DocumentName = expectedDocument.Name };
 
         _storageServiceMock
-            .Setup(s => s.ExistsAsync("documents", query.DocumentName, TestContext.Current.CancellationToken))
+            .Setup(s => s.ExistsAsync("bowlneba-private", $"documents/{query.DocumentName}", TestContext.Current.CancellationToken))
             .ReturnsAsync(false);
 
         _documentsServiceMock
@@ -189,8 +189,8 @@ public sealed class GetDocumentQueryHandlerTests
         IDictionary<string, string>? capturedMetadata = null;
         _storageServiceMock
             .Setup(s => s.UploadFileAsync(
-                "documents",
-                query.DocumentName,
+                "bowlneba-private",
+                $"documents/{query.DocumentName}",
                 expectedDocument.Content,
                 expectedDocument.ContentType,
                 It.IsAny<IDictionary<string, string>>(),
@@ -221,7 +221,7 @@ public sealed class GetDocumentQueryHandlerTests
         var query = new GetDocumentQuery { DocumentName = expectedDocument.Name };
 
         _storageServiceMock
-            .Setup(s => s.ExistsAsync("documents", query.DocumentName, TestContext.Current.CancellationToken))
+            .Setup(s => s.ExistsAsync("bowlneba-private", $"documents/{query.DocumentName}", TestContext.Current.CancellationToken))
             .ReturnsAsync(false);
 
         _documentsServiceMock
@@ -233,8 +233,8 @@ public sealed class GetDocumentQueryHandlerTests
         IDictionary<string, string>? capturedMetadata = null;
         _storageServiceMock
             .Setup(s => s.UploadFileAsync(
-                "documents",
-                query.DocumentName,
+                "bowlneba-private",
+                $"documents/{query.DocumentName}",
                 expectedDocument.Content,
                 expectedDocument.ContentType,
                 It.IsAny<IDictionary<string, string>>(),
@@ -263,7 +263,7 @@ public sealed class GetDocumentQueryHandlerTests
         var query = new GetDocumentQuery { DocumentName = documentName };
 
         _storageServiceMock
-            .Setup(s => s.ExistsAsync("documents", documentName, TestContext.Current.CancellationToken))
+            .Setup(s => s.ExistsAsync("bowlneba-private", $"documents/{documentName}", TestContext.Current.CancellationToken))
             .ReturnsAsync(false);
 
         _documentsServiceMock

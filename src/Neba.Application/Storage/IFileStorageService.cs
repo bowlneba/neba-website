@@ -13,7 +13,7 @@ public interface IFileStorageService
     /// <summary>
     /// Checks whether a file exists in the specified container.
     /// </summary>
-    /// <param name="container">The storage container name (e.g., "documents").</param>
+    /// <param name="container">The storage container name (e.g., "bowlneba-private").</param>
     /// <param name="path">The blob path within the container.</param>
     /// <param name="cancellationToken">Cancellation token for async operation.</param>
     /// <returns><c>true</c> if the file exists; otherwise, <c>false</c>.</returns>

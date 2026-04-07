@@ -4,14 +4,8 @@
     Slug: labore-eligendi-quibusdam,
     IsCurrentSponsor: true,
     Priority: 2,
-    Tier: {
-      Name: Title Sponsor,
-      Value: 1
-    },
-    Category: {
-      Name: Technology,
-      Value: 5
-    },
+    Tier: Title Sponsor,
+    Category: Technology,
     TagPhrase: Inverse dynamic hub,
     Description: synergize efficient technologies,
     WebsiteUrl: http://jared.name/,
@@ -23,14 +17,8 @@
     Slug: earum-facilis-et,
     IsCurrentSponsor: true,
     Priority: 1,
-    Tier: {
-      Name: Title Sponsor,
-      Value: 1
-    },
-    Category: {
-      Name: Financial Services,
-      Value: 4
-    },
+    Tier: Title Sponsor,
+    Category: Financial Services,
     TagPhrase: Organic bifurcated application,
     Description: leverage efficient initiatives,
     WebsiteUrl: https://haylie.info/,
@@ -42,14 +30,8 @@
     Slug: ut-temporibus-corporis,
     IsCurrentSponsor: true,
     Priority: 4,
-    Tier: {
-      Name: Title Sponsor,
-      Value: 1
-    },
-    Category: {
-      Name: Financial Services,
-      Value: 4
-    },
+    Tier: Title Sponsor,
+    Category: Financial Services,
     TagPhrase: Cross-platform zero defect policy,
     Description: target customized models,
     WebsiteUrl: http://nellie.org/,
@@ -63,14 +45,8 @@
     LogoPath: senior.ra.png,
     IsCurrentSponsor: true,
     Priority: 6,
-    Tier: {
-      Name: Title Sponsor,
-      Value: 1
-    },
-    Category: {
-      Name: Media,
-      Value: 6
-    },
+    Tier: Title Sponsor,
+    Category: Media,
     TagPhrase: Enterprise-wide clear-thinking customer loyalty,
     Description: revolutionize plug-and-play content,
     WebsiteUrl: http://monica.name/,
@@ -82,14 +58,8 @@
     Slug: laborum-totam-voluptatibus,
     IsCurrentSponsor: true,
     Priority: 7,
-    Tier: {
-      Name: Premium,
-      Value: 2
-    },
-    Category: {
-      Name: Bowling Center,
-      Value: 3
-    },
+    Tier: Premium,
+    Category: Bowling Center,
     TagPhrase: Digitized optimizing middleware,
     Description: recontextualize dynamic interfaces,
     WebsiteUrl: https://don.net/,
@@ -103,14 +73,8 @@
     LogoPath: facilitate.dic.png,
     IsCurrentSponsor: true,
     Priority: 8,
-    Tier: {
-      Name: Standard,
-      Value: 3
-    },
-    Category: {
-      Name: Manufacturer,
-      Value: 1
-    },
+    Tier: Standard,
+    Category: Manufacturer,
     TagPhrase: Cross-group contextually-based function,
     Description: innovate wireless paradigms,
     WebsiteUrl: http://scot.org/,
@@ -124,14 +88,8 @@
     LogoPath: intranet_attitude_oriented.clkw.jpe,
     IsCurrentSponsor: true,
     Priority: 8,
-    Tier: {
-      Name: Premium,
-      Value: 2
-    },
-    Category: {
-      Name: Financial Services,
-      Value: 4
-    },
+    Tier: Premium,
+    Category: Financial Services,
     TagPhrase: Profit-focused clear-thinking model,
     Description: e-enable value-added partnerships,
     WebsiteUrl: https://clark.info/,

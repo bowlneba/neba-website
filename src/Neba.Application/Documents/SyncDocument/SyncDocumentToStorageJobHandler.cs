@@ -22,7 +22,7 @@ internal sealed class SyncDocumentToStorageJobHandler(
     private readonly TimeProvider _timeProvider = timeProvider;
     private readonly ILogger<SyncDocumentToStorageJobHandler> _logger = logger;
 
-    private const string Container = "documents";
+    private const string Container = "bowlneba-private";
     private static readonly ActivitySource ActivitySource = new("Neba.BackgroundJobs");
 
     public async Task ExecuteAsync(SyncDocumentToStorageJob job, CancellationToken cancellationToken)
@@ -57,7 +57,7 @@ internal sealed class SyncDocumentToStorageJobHandler(
             var uploadStartTimestamp = _stopwatchProvider.GetTimestamp();
             await _fileStorageService.UploadFileAsync(
                 Container,
-                job.DocumentName,
+                $"documents/{job.DocumentName}",
                 document.Content,
                 document.ContentType,
                 new Dictionary<string, string>
