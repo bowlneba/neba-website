@@ -77,6 +77,18 @@ public static class CacheDescriptors
                 Key = "neba:sponsors:active:list",
                 Tags = ["neba", "neba:sponsors"]
             };
+
+        /// <summary>
+        /// Returns a cache descriptor for sponsor detail data identified by the given slug.
+        /// </summary>
+        /// <param name="slug">The sponsor slug.</param>
+        /// <returns>A cache descriptor for sponsor detail data.</returns>
+        public static CacheDescriptor Detail(string slug)
+            => new()
+            {
+                Key = $"neba:sponsors:{slug}:detail",
+                Tags = ["neba", "neba:sponsors", $"neba:sponsors:{slug}"]
+            };
     }
 
     /// <summary>
