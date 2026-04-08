@@ -1,0 +1,41 @@
+﻿{
+  Id: 01GB2E0JHXE1FHEY75P83VZAXH,
+  Name: Cummings, Ebert and Konopelski,
+  Slug: rerum-neque-explicabo,
+  IsCurrentSponsor: false,
+  Priority: 3,
+  Tier: Standard,
+  Category: Bowling Center,
+  WebsiteUrl: https://tevin.com,
+  TagPhrase: Networked attitude-oriented local area network,
+  Description: generate proactive markets,
+  PromotionalNotes:
+In necessitatibus vero ut iste.
+Distinctio officiis repellendus molestiae quis.
+Consequatur doloremque qui pariatur provident quis.,
+  LiveReadText:
+Voluptatum ut iusto illum voluptas laborum iure dicta.
+Voluptates distinctio beatae cupiditate unde nesciunt voluptatem.,
+  FacebookUrl: facebook://sean.name/calculate,
+  InstagramUrl: instagram://kariane.biz/credit-card-account/withdrawal/jordanian-dinar,
+  BusinessStreet: 95799 Damion Ramp,
+  BusinessCity: New Keshaunhaven,
+  BusinessState: AR,
+  BusinessPostalCode: 92837,
+  BusinessCountry: US,
+  BusinessEmailAddress: Carolyne.Botsford56@yahoo.com,
+  PhoneNumbers: [
+    {
+      PhoneNumberType: Work,
+      PhoneNumber: 14876305960
+    },
+    {
+      PhoneNumberType: Mobile,
+      PhoneNumber: 18792400585
+    }
+  ],
+  SponsorContactName: Kitty Terry,
+  SponsorContactEmailAddress: Bret29@gmail.com,
+  SponsorContactPhoneNumber: 13114370334,
+  SponsorContactPhoneNumberType: Fax
+}
