@@ -1,3 +1,5 @@
+using ErrorOr;
+
 using Neba.Application.Caching;
 using Neba.Application.Messaging;
 
@@ -7,7 +9,7 @@ namespace Neba.Application.Sponsors.GetSponsorDetail;
 /// A query to retrieve sponsor detail information by slug.
 /// </summary>
 public sealed record GetSponsorDetailQuery
-    : ICachedQuery<SponsorDetailDto?>
+    : ICachedQuery<ErrorOr<SponsorDetailDto>>
 {
     /// <inheritdoc />
     public CacheDescriptor Cache
