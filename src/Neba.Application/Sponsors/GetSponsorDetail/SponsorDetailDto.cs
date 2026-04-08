@@ -1,6 +1,5 @@
 using Neba.Application.Contact;
 using Neba.Domain.Sponsors;
-using Neba.Domain.Storage;
 
 namespace Neba.Application.Sponsors.GetSponsorDetail;
 
@@ -45,9 +44,14 @@ public sealed record SponsorDetailDto
     public required string Category { get; init; }
 
     /// <summary>
-    /// Logo of the sponsor. This is a stored file that contains the sponsor's logo image. The logo can be used in various parts of the application, such as listings, detail pages, and promotional materials, to visually represent the sponsor and enhance brand recognition. The logo should be of high quality and appropriately sized for its intended use.
+    /// Blob storage container name where the logo is stored.
     /// </summary>
-    public StoredFile? Logo { get; init; }
+    public string? LogoContainer { get; init; }
+
+    /// <summary>
+    /// Blob storage path to the sponsor logo.
+    /// </summary>
+    public string? LogoPath { get; init; }
 
     /// <summary>
     /// URL of the sponsor's logo. This is the publicly accessible URL where the sponsor's logo image can be accessed. It can be used in the presentation layer to display the sponsor's logo without needing to retrieve the file content directly from storage. This allows for efficient loading of images and reduces the need for additional API calls to fetch the logo content.

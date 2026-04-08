@@ -1,5 +1,5 @@
 
-using Neba.Domain.Bowlers;
+using Neba.Application.Bowlers;
 using Neba.Domain.HallOfFame;
 
 namespace Neba.Application.HallOfFame.ListHallOfFameInductions;
@@ -17,7 +17,7 @@ public sealed record HallOfFameInductionDto
     /// <summary>
     /// The full name of the inducted bowler.
     /// </summary>
-    public required Name BowlerName { get; init; }
+    public required BowlerNameDto BowlerName { get; init; }
 
     /// <summary>
     /// The categories associated with this induction.

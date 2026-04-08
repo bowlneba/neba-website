@@ -5,7 +5,6 @@ using Neba.Application.Sponsors.GetSponsorDetail;
 using Neba.Application.Storage;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Sponsors;
-using Neba.TestFactory.Storage;
 
 namespace Neba.Application.Tests.Sponsors.GetSponsorDetail;
 
@@ -29,7 +28,7 @@ public sealed class GetSponsorDetailQueryHandlerTests
     public async Task HandleAsync_ShouldReturnSponsor_WhenSponsorExists()
     {
         // Arrange
-        var sponsor = SponsorDetailDtoFactory.Create(slug: "acme", logo: null);
+        var sponsor = SponsorDetailDtoFactory.Create(slug: "acme", logoContainer: null, logoPath: null);
         var query = new GetSponsorDetailQuery { Slug = "acme" };
 
         _sponsorQueriesMock
@@ -48,8 +47,7 @@ public sealed class GetSponsorDetailQueryHandlerTests
     public async Task HandleAsync_ShouldResolveLogoUrl_WhenSponsorHasLogo()
     {
         // Arrange
-        var logo = StoredFileFactory.Create(container: "sponsors", path: "logos/acme.png");
-        var sponsor = SponsorDetailDtoFactory.Create(slug: "acme", logo: logo);
+        var sponsor = SponsorDetailDtoFactory.Create(slug: "acme", logoContainer: "sponsors", logoPath: "logos/acme.png");
         var query = new GetSponsorDetailQuery { Slug = "acme" };
         var expectedUrl = new Uri("https://cdn.example.com/sponsors/logos/acme.png");
 
@@ -58,7 +56,7 @@ public sealed class GetSponsorDetailQueryHandlerTests
             .ReturnsAsync(sponsor);
 
         _fileStorageServiceMock
-            .Setup(s => s.GetBlobUri(logo.Container, logo.Path))
+            .Setup(s => s.GetBlobUri("sponsors", "logos/acme.png"))
             .Returns(expectedUrl);
 
         // Act
@@ -73,7 +71,7 @@ public sealed class GetSponsorDetailQueryHandlerTests
     public async Task HandleAsync_ShouldNotSetLogoUrl_WhenSponsorHasNoLogo()
     {
         // Arrange
-        var sponsor = SponsorDetailDtoFactory.Create(slug: "acme", logo: null);
+        var sponsor = SponsorDetailDtoFactory.Create(slug: "acme", logoContainer: null, logoPath: null);
         var query = new GetSponsorDetailQuery { Slug = "acme" };
 
         _sponsorQueriesMock
@@ -115,7 +113,7 @@ public sealed class GetSponsorDetailQueryHandlerTests
     public async Task HandleAsync_ShouldPassCancellationToken_ToSponsorQueries()
     {
         // Arrange
-        var sponsor = SponsorDetailDtoFactory.Create(slug: "acme", logo: null);
+        var sponsor = SponsorDetailDtoFactory.Create(slug: "acme", logoContainer: null, logoPath: null);
         var query = new GetSponsorDetailQuery { Slug = "acme" };
         using var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;

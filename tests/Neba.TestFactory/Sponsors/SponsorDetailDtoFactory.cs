@@ -3,9 +3,7 @@ using Bogus;
 using Neba.Application.Contact;
 using Neba.Application.Sponsors.GetSponsorDetail;
 using Neba.Domain.Sponsors;
-using Neba.Domain.Storage;
 using Neba.TestFactory.Contact;
-using Neba.TestFactory.Storage;
 
 namespace Neba.TestFactory.Sponsors;
 
@@ -22,7 +20,8 @@ public static class SponsorDetailDtoFactory
         int? priority = null,
         SponsorTier? tier = null,
         SponsorCategory? category = null,
-        StoredFile? logo = null,
+        string? logoContainer = null,
+        string? logoPath = null,
         Uri? websiteUrl = null,
         string? tagPhrase = null,
         string? description = null,
@@ -43,7 +42,8 @@ public static class SponsorDetailDtoFactory
                 Priority = priority ?? 1,
                 Tier = tier?.Name ?? SponsorTier.Standard.Name,
                 Category = category?.Name ?? SponsorCategory.Technology.Name,
-                Logo = logo,
+                LogoContainer = logoContainer,
+                LogoPath = logoPath,
                 WebsiteUrl = websiteUrl,
                 TagPhrase = tagPhrase,
                 Description = description,
@@ -59,34 +59,38 @@ public static class SponsorDetailDtoFactory
 
     public static IReadOnlyCollection<SponsorDetailDto> Bogus(int count, int? seed = null)
     {
-        var logoPool = UniquePool.CreateNullable(StoredFileFactory.Bogus(count * 10, seed), seed);
         var businessAddressPool = UniquePool.CreateNullable(AddressDtoFactory.Bogus(count * 10, seed), seed);
         var businessEmailPool = UniquePool.CreateNullable(EmailAddressFactory.Bogus(count * 10, seed), seed);
         var phoneNumberPool = UniquePool.Create(PhoneNumberDtoFactory.Bogus(count * 10, seed), seed);
         var contactInfoPool = UniquePool.CreateNullable(ContactInfoDtoFactory.Bogus(count * 10, seed), seed);
 
         var faker = new Faker<SponsorDetailDto>()
-            .CustomInstantiator(f => new()
+            .CustomInstantiator(f =>
             {
-                Id = new SponsorId(Ulid.Bogus(f)),
-                Name = f.Company.CompanyName(),
-                Slug = f.Lorem.Slug(),
-                IsCurrentSponsor = f.Random.Bool(),
-                Priority = f.Random.Int(1, 10),
-                Tier = f.PickRandom(SponsorTier.List.ToArray()).Name,
-                Category = f.PickRandom(SponsorCategory.List.ToArray()).Name,
-                Logo = logoPool.GetNextNullable(),
-                WebsiteUrl = new Uri(f.Internet.Url()),
-                TagPhrase = f.Company.CatchPhrase(),
-                Description = f.Company.Bs(),
-                LiveReadText = f.Lorem.Sentences(2),
-                PromotionalNotes = f.Lorem.Sentences(3),
-                FacebookUrl = new Uri(f.Internet.UrlWithPath("facebook")),
-                InstagramUrl = new Uri(f.Internet.UrlWithPath("instagram")),
-                BusinessAddress = businessAddressPool.GetNextNullable(),
-                BusinessEmailAddress = businessEmailPool.GetNextNullable()?.Value,
-                PhoneNumbers = [.. new[] { phoneNumberPool.GetNext(), phoneNumberPool.GetNext() }.DistinctBy(p => p.PhoneNumberType)],
-                SponsorContactInfo = contactInfoPool.GetNextNullable()
+                var hasLogo = f.Random.Bool();
+                return new()
+                {
+                    Id = new SponsorId(Ulid.Bogus(f)),
+                    Name = f.Company.CompanyName(),
+                    Slug = f.Lorem.Slug(),
+                    IsCurrentSponsor = f.Random.Bool(),
+                    Priority = f.Random.Int(1, 10),
+                    Tier = f.PickRandom(SponsorTier.List.ToArray()).Name,
+                    Category = f.PickRandom(SponsorCategory.List.ToArray()).Name,
+                    LogoContainer = hasLogo ? f.System.FileName() : null,
+                    LogoPath = hasLogo ? f.System.FilePath() : null,
+                    WebsiteUrl = new Uri(f.Internet.Url()),
+                    TagPhrase = f.Company.CatchPhrase(),
+                    Description = f.Company.Bs(),
+                    LiveReadText = f.Lorem.Sentences(2),
+                    PromotionalNotes = f.Lorem.Sentences(3),
+                    FacebookUrl = new Uri(f.Internet.UrlWithPath("facebook")),
+                    InstagramUrl = new Uri(f.Internet.UrlWithPath("instagram")),
+                    BusinessAddress = businessAddressPool.GetNextNullable(),
+                    BusinessEmailAddress = businessEmailPool.GetNextNullable()?.Value,
+                    PhoneNumbers = [.. new[] { phoneNumberPool.GetNext(), phoneNumberPool.GetNext() }.DistinctBy(p => p.PhoneNumberType)],
+                    SponsorContactInfo = contactInfoPool.GetNextNullable()
+                };
             });
 
         if (seed.HasValue)

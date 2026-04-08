@@ -41,7 +41,7 @@ internal sealed class ListHallOfFameInductionsEndpoint(IQueryHandler<ListHallOfF
                 .Select(i => new HallOfFameInductionResponse
                 {
                     Year = i.Year,
-                    BowlerName = i.BowlerName.ToFormalName(),
+                    BowlerName = $"{i.BowlerName.FirstName} {i.BowlerName.LastName}",
                     Categories = [.. i.Categories.Select(c => c.Name)],
                     PhotoUri = i.PhotoUri,
                 })],
