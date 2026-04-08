@@ -116,7 +116,7 @@ public sealed record SponsorDetailViewModel
     /// Collection of phone numbers for contacting the sponsor, including type (e.g. mobile, office). Displayed on the contact card if any phone numbers are provided.
     /// </summary>
     public required IReadOnlyCollection<PhoneNumberResponse> PhoneNumbers { get; init; }
-    
+
     /// <summary>
     /// Optional internal contact name for the sponsor, intended for authenticated users only. Displayed in a separate section on the sponsor detail page if provided.
     /// </summary>
