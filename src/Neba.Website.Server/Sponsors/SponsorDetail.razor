@@ -1,0 +1,288 @@
+@preservewhitespace false
+@page "/sponsors/{Slug}"
+@using Neba.Api.Contracts.Sponsors
+@using Neba.Website.Server.Services
+@using Neba.Website.Server.Sponsors
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject ApiExecutor ApiExecutor
+@inject ISponsorsApi SponsorsApi
+@inject NavigationManager Navigation
+
+@if (_isLoading)
+{
+    <div class="sponsor-detail-loading">
+        <div class="neba-spinner"></div>
+    </div>
+}
+else
+{
+    <PageTitle>@_model!.Name | NEBA Sponsors</PageTitle>
+
+    <main class="neba-content-wrapper sponsor-detail">
+
+        <header class="sponsor-detail__header">
+            <div class="sponsor-detail__logo-wrap">
+                @if (_model?.LogoUrl is not null)
+                {
+                    <img src="@_model.LogoUrl" alt="@_model.Name logo" class="sponsor-detail__logo-img" />
+                }
+                else
+                {
+                    <div class="sponsor-detail__logo-placeholder">
+                        <span class="material-symbols-outlined">business</span>
+                    </div>
+                }
+            </div>
+
+            <div class="sponsor-detail__header-body">
+                <div class="sponsor-detail__badges">
+                    <span class="sponsor-detail__badge sponsor-detail__badge--tier">@_model?.TierName</span>
+                    @if (_model?.CategoryName is not null)
+                    {
+                        <span class="sponsor-detail__badge sponsor-detail__badge--category">@_model.CategoryName</span>
+                    }
+                </div>
+
+                <h1 class="sponsor-detail__title">@_model?.Name</h1>
+
+                @if (_model?.Tagline is not null)
+                {
+                    <p class="sponsor-detail__tagline">@_model.Tagline</p>
+                }
+
+                @if (_model?.WebsiteUrl is not null)
+                {
+                    <a href="@_model.WebsiteUrl"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="neba-btn neba-btn-primary sponsor-detail__website-btn">
+                        Visit Website
+                        <span class="material-symbols-outlined">open_in_new</span>
+                    </a>
+                }
+            </div>
+        </header>
+
+        <div class="sponsor-detail__body">
+
+            <div class="sponsor-detail__col-main">
+
+                @if (_model?.AboutText is not null)
+                {
+                    <section class="sponsor-detail__about">
+                        <div class="sponsor-detail__section-heading">
+                            <span class="sponsor-detail__step-num" aria-hidden="true">01</span>
+                            <h2>About our Partner</h2>
+                        </div>
+                        <div class="neba-card sponsor-detail__about-card">
+                            <p>@_model.AboutText</p>
+                        </div>
+                    </section>
+                }
+
+                @* TODO: restrict to authenticated users once auth is configured *@
+                @if (_model?.HasPromotionalInfo == true)
+                {
+                    <section class="sponsor-detail__promo" aria-label="Member Exclusive: Promotional Info">
+                        <div class="sponsor-detail__promo-header">
+                            <span class="material-symbols-outlined"
+                                  style="font-variation-settings: 'FILL' 1;">stars</span>
+                            <h2 class="sponsor-detail__promo-title">Member Exclusive: Promotional Info</h2>
+                        </div>
+
+                        @if (_model.PromotionalNotes is not null)
+                        {
+                            <div class="sponsor-detail__promo-block">
+                                <h3 class="sponsor-detail__promo-label">Promotional Notes</h3>
+                                <p>@_model.PromotionalNotes</p>
+                            </div>
+                        }
+
+                        @if (_model.LiveReadScript is not null)
+                        {
+                            <div class="sponsor-detail__promo-block">
+                                <h3 class="sponsor-detail__promo-label">Live Read Script</h3>
+                                <pre class="sponsor-detail__live-read">@_model.LiveReadScript</pre>
+                            </div>
+                        }
+                    </section>
+                }
+
+            </div>
+
+            <div class="sponsor-detail__col-aside">
+
+                <section class="neba-card sponsor-detail__contact-card">
+
+                    @if (_model?.HasAddress == true)
+                    {
+                        <div class="sponsor-detail__contact-section">
+                            <h3 class="sponsor-detail__contact-label">Business Location</h3>
+                            <div class="sponsor-detail__contact-row">
+                                <span class="material-symbols-outlined">location_on</span>
+                                <address class="sponsor-detail__address">
+                                    @if (_model?.BusinessStreet is not null)
+                                    {
+                                        <span>@_model.BusinessStreet</span>
+                                    }
+                                    @if (_model?.BusinessUnit is not null)
+                                    {
+                                        <span>@_model.BusinessUnit</span>
+                                    }
+                                    @if (_model?.BusinessCity is not null || _model?.BusinessState is not null)
+                                    {
+                                        <span>@_model.BusinessCity, @_model.BusinessState @_model.BusinessPostalCode</span>
+                                    }
+                                    @if (_model?.BusinessCountry is not null)
+                                    {
+                                        <span>@_model.BusinessCountry</span>
+                                    }
+                                </address>
+                            </div>
+                        </div>
+                    }
+
+                    @if (_model?.HasContactChannels == true)
+                    {
+                        <div class="sponsor-detail__contact-section">
+                            <h3 class="sponsor-detail__contact-label">Contact Channels</h3>
+                            <ul class="sponsor-detail__channel-list">
+                                @if (_model.ContactEmail is not null)
+                                {
+                                    <li class="sponsor-detail__contact-row">
+                                        <span class="material-symbols-outlined">mail</span>
+                                        <a href="mailto:@_model.ContactEmail"
+                                           class="sponsor-detail__email-link">@_model.ContactEmail</a>
+                                    </li>
+                                }
+                                @foreach (var phone in _model.PhoneNumbers)
+                                {
+                                    <li class="sponsor-detail__contact-row">
+                                        <span class="material-symbols-outlined">call</span>
+                                        <div>
+                                            <p class="sponsor-detail__phone-number">@FormatPhoneNumber(phone.PhoneNumber)</p>
+                                            <p class="sponsor-detail__phone-label">@phone.PhoneNumberType</p>
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    @if (_model?.HasSocialMedia == true)
+                    {
+                        <div class="sponsor-detail__contact-section">
+                            <h3 class="sponsor-detail__contact-label">Social Media</h3>
+                            <div class="sponsor-detail__social-row">
+                                @if (_model.FacebookUrl is not null)
+                                {
+                                    <a href="@_model.FacebookUrl"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       aria-label="Facebook"
+                                       class="sponsor-detail__social-btn">
+                                        <NebaSocialIcon Network="SocialNetwork.Facebook" />
+                                    </a>
+                                }
+                                @if (_model.InstagramUrl is not null)
+                                {
+                                    <a href="@_model.InstagramUrl"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       aria-label="Instagram"
+                                       class="sponsor-detail__social-btn">
+                                        <NebaSocialIcon Network="SocialNetwork.Instagram" />
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                </section>
+
+                @* TODO: restrict to authenticated users once auth is configured *@
+                @if (_model?.HasInternalContact == true)
+                {
+                    <section class="neba-card sponsor-detail__internal-contact"
+                             aria-label="Internal Sponsor Contact">
+                        <div class="sponsor-detail__internal-header">
+                            <span class="material-symbols-outlined">lock</span>
+                            <h3>Internal Sponsor Contact</h3>
+                        </div>
+                        <p class="sponsor-detail__internal-name">@_model.SponsorContactName</p>
+                        <div class="sponsor-detail__internal-details">
+                            @if (_model.SponsorContactEmail is not null)
+                            {
+                                <div class="sponsor-detail__internal-row">
+                                    <span class="material-symbols-outlined">alternate_email</span>
+                                    <span>@_model.SponsorContactEmail</span>
+                                </div>
+                            }
+                            @if (_model.SponsorContactPhone is not null)
+                            {
+                                <div class="sponsor-detail__internal-row">
+                                    <span class="material-symbols-outlined">call</span>
+                                    <span>@FormatPhoneNumber(_model.SponsorContactPhone!)</span>
+                                    @if (_model.SponsorContactPhoneType is not null)
+                                    {
+                                        <span class="sponsor-detail__internal-phone-type">
+                                            @_model.SponsorContactPhoneType
+                                        </span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </section>
+                }
+
+            </div>
+        </div>
+
+        <footer class="sponsor-detail__footer">
+            <a href="/sponsors" class="sponsor-detail__back-link">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Back to Sponsor Directory
+            </a>
+        </footer>
+
+    </main>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = default!;
+
+    private SponsorDetailViewModel? _model;
+    private bool _isLoading = true;
+
+    private static string FormatPhoneNumber(string phoneNumber)
+    {
+        var digits = new string(phoneNumber.Where(char.IsDigit).ToArray());
+        return digits.Length == 10
+            ? $"({digits[..3]}) {digits[3..6]}-{digits[6..]}"
+            : phoneNumber;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync(
+            "Sponsors",
+            "GetSponsorDetail",
+            ct => SponsorsApi.GetSponsorBySlugAsync(Slug, ct));
+
+        if (result.IsError)
+        {
+            Navigation.NavigateTo("/not-found", replace: true);
+            return;
+        }
+
+        if (!result.Value.IsCurrentSponsor)
+        {
+            Navigation.NavigateTo("/not-found", replace: true);
+            return;
+        }
+
+        _model = result.Value.ToViewModel();
+        _isLoading = false;
+    }
+}

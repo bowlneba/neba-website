@@ -1,0 +1,444 @@
+/* Page wrapper */
+
+.sponsor-detail {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+}
+
+.sponsor-detail-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 50vh;
+}
+
+/* Header */
+
+.sponsor-detail__header {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 2rem;
+    margin-bottom: 4rem;
+}
+
+@media (max-width: 767px) {
+    .sponsor-detail__header {
+        flex-direction: column;
+    }
+}
+
+/* Logo */
+
+.sponsor-detail__logo-wrap {
+    width: 12rem;
+    height: 12rem;
+    flex-shrink: 0;
+    background: var(--neba-surface);
+    border-radius: var(--neba-radius-lg);
+    box-shadow: var(--neba-shadow-card);
+    border: 1px solid var(--neba-gray-300);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.sponsor-detail__logo-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.sponsor-detail__logo-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: var(--neba-surface-high);
+    color: var(--neba-gray-400);
+    font-size: 3rem;
+}
+
+/* Header body */
+
+.sponsor-detail__header-body {
+    flex: 1;
+}
+
+.sponsor-detail__badges {
+    margin-bottom: 1rem;
+}
+
+.sponsor-detail__badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+    margin-right: 0.5rem;
+}
+
+.sponsor-detail__badge--tier {
+    background-color: var(--neba-blue-brand);
+    color: #ffffff;
+}
+
+.sponsor-detail__badge--category {
+    background-color: var(--neba-blue-600);
+    color: #ffffff;
+}
+
+.sponsor-detail__title {
+    font-family: var(--neba-font-display);
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--neba-gray-800);
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    margin: 0 0 0.25rem;
+}
+
+.sponsor-detail__tagline {
+    font-family: var(--neba-font-display);
+    font-size: 1.125rem;
+    color: var(--neba-gray-500);
+    font-style: italic;
+    font-weight: 600;
+    margin: 0 0 1.5rem;
+}
+
+.sponsor-detail__website-btn {
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-weight: 700;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-decoration: none;
+}
+
+.sponsor-detail__website-btn .material-symbols-outlined {
+    font-size: 1rem;
+}
+
+/* Body grid */
+
+.sponsor-detail__body {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 3rem;
+}
+
+@media (min-width: 1024px) {
+    .sponsor-detail__body {
+        grid-template-columns: 8fr 4fr;
+    }
+}
+
+.sponsor-detail__col-main {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+}
+
+.sponsor-detail__col-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* About section */
+
+.sponsor-detail__section-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.sponsor-detail__step-num {
+    font-family: var(--neba-font-display);
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--neba-blue-600);
+    opacity: 0.2;
+    line-height: 1;
+}
+
+.sponsor-detail__section-heading h2 {
+    font-family: var(--neba-font-display);
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--neba-gray-800);
+    margin: 0;
+}
+
+.sponsor-detail__about-card {
+    border-left: 4px solid var(--neba-blue-600);
+    padding: 2rem;
+}
+
+.sponsor-detail__about-card p {
+    font-size: 1.125rem;
+    line-height: 1.75;
+    color: var(--neba-gray-600);
+    margin: 0;
+}
+
+/* Promotional info section */
+
+.sponsor-detail__promo {
+    background: var(--neba-surface-low);
+    border-radius: var(--neba-radius-xl);
+    padding: 2rem;
+    border: 1px solid color-mix(in srgb, var(--neba-blue-600) 10%, transparent);
+}
+
+.sponsor-detail__promo-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.sponsor-detail__promo-header .material-symbols-outlined {
+    color: var(--neba-color-primary);
+}
+
+.sponsor-detail__promo-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--neba-color-primary);
+    margin: 0;
+}
+
+.sponsor-detail__promo-block {
+    margin-top: 1.5rem;
+}
+
+.sponsor-detail__promo-block:first-of-type {
+    margin-top: 0;
+}
+
+.sponsor-detail__promo-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--neba-gray-800);
+    margin: 0 0 0.75rem;
+}
+
+.sponsor-detail__live-read {
+    background: var(--neba-surface);
+    padding: 1.5rem;
+    border-radius: var(--neba-radius);
+    border-left: 4px solid var(--neba-gray-300);
+    font-family: monospace;
+    font-size: 0.875rem;
+    color: var(--neba-gray-700);
+    box-shadow: var(--neba-shadow-card);
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+}
+
+/* Contact card */
+
+.sponsor-detail__contact-card {
+    padding: 2rem;
+}
+
+.sponsor-detail__contact-section {
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--neba-gray-300);
+}
+
+.sponsor-detail__contact-section:first-child {
+    padding-top: 0;
+    margin-top: 0;
+    border-top: none;
+}
+
+.sponsor-detail__contact-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--neba-gray-500);
+    margin: 0 0 1rem;
+}
+
+.sponsor-detail__contact-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.sponsor-detail__contact-row .material-symbols-outlined {
+    color: var(--neba-blue-600);
+    flex-shrink: 0;
+}
+
+.sponsor-detail__address {
+    font-style: normal;
+    color: var(--neba-gray-600);
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+}
+
+.sponsor-detail__channel-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.sponsor-detail__email-link {
+    color: var(--neba-color-primary);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.sponsor-detail__email-link:hover {
+    text-decoration: underline;
+}
+
+.sponsor-detail__phone-number {
+    font-weight: 600;
+    color: var(--neba-gray-800);
+    margin: 0;
+}
+
+.sponsor-detail__phone-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--neba-gray-500);
+    margin: 0;
+}
+
+.sponsor-detail__social-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.sponsor-detail__social-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background: var(--neba-surface-high);
+    color: var(--neba-blue-brand);
+    transition: background-color var(--neba-transition), color var(--neba-transition);
+    text-decoration: none;
+}
+
+.sponsor-detail__social-btn:hover {
+    background: var(--neba-blue-600);
+    color: #ffffff;
+}
+
+.sponsor-detail__social-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: currentColor;
+}
+
+/* Internal contact card */
+
+.sponsor-detail__internal-contact {
+    background: var(--neba-blue-brand);
+    color: #ffffff;
+    padding: 2rem;
+}
+
+.sponsor-detail__internal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--neba-blue-200);
+}
+
+.sponsor-detail__internal-header .material-symbols-outlined {
+    font-size: 1rem;
+}
+
+.sponsor-detail__internal-header h3 {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+}
+
+.sponsor-detail__internal-name {
+    font-family: var(--neba-font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 1rem;
+}
+
+.sponsor-detail__internal-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    opacity: 0.9;
+}
+
+.sponsor-detail__internal-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.sponsor-detail__internal-row .material-symbols-outlined {
+    font-size: 1.125rem;
+}
+
+.sponsor-detail__internal-phone-type {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.7;
+    margin-left: 0.25rem;
+}
+
+/* Footer */
+
+.sponsor-detail__footer {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--neba-gray-300);
+}
+
+.sponsor-detail__back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--neba-gray-600);
+    font-weight: 500;
+    text-decoration: none;
+    transition: color var(--neba-transition);
+}
+
+.sponsor-detail__back-link:hover {
+    color: var(--neba-color-primary);
+}

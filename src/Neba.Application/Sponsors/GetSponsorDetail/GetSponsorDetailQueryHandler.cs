@@ -1,20 +1,30 @@
 using ErrorOr;
 
 using Neba.Application.Messaging;
+using Neba.Application.Storage;
 
 namespace Neba.Application.Sponsors.GetSponsorDetail;
 
-internal sealed class GetSponsorDetailQueryHandler(ISponsorQueries sponsorQueries)
+internal sealed class GetSponsorDetailQueryHandler(ISponsorQueries sponsorQueries, IFileStorageService fileStorageService)
     : IQueryHandler<GetSponsorDetailQuery, ErrorOr<SponsorDetailDto>>
 {
     private readonly ISponsorQueries _sponsorQueries = sponsorQueries;
+    private readonly IFileStorageService _fileStorageService = fileStorageService;
 
     public async Task<ErrorOr<SponsorDetailDto>> HandleAsync(GetSponsorDetailQuery query, CancellationToken cancellationToken)
     {
         var sponsor = await _sponsorQueries.GetSponsorAsync(query.Slug, cancellationToken);
 
-        return sponsor is not null
-            ? sponsor
-            : SponsorErrors.SponsorNotFound(query.Slug);
+        if (sponsor is null)
+        {
+            return SponsorErrors.SponsorNotFound(query.Slug);
+        }
+
+        if (sponsor.Logo is not null)
+        {
+            sponsor.LogoUrl = _fileStorageService.GetBlobUri(sponsor.Logo.Container, sponsor.Logo.Path);
+        }
+
+        return sponsor;
     }
 }
