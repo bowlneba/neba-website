@@ -13,17 +13,17 @@ public sealed record SponsorDetailViewModel
     public required string Id { get; init; }
 
     /// <summary>
-    /// Display name of the sponsor.
+    /// URL-friendly identifier for the sponsor.
     /// </summary>
     public required string Slug { get; init; }
 
     /// <summary>
-    /// Indicates whether the sponsor is currently active.
+    /// Display name of the sponsor.
     /// </summary>
     public required string Name { get; init; }
 
     /// <summary>
-    /// URL-friendly identifier for the sponsor.
+    /// Indicates whether the sponsor is currently active.
     /// </summary>
     public required bool IsCurrentSponsor { get; init; }
 
