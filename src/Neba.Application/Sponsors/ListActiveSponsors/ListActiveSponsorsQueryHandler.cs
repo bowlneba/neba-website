@@ -13,10 +13,9 @@ internal sealed class ListActiveSponsorsQueryHandler(ISponsorQueries sponsorQuer
     {
         var sponsors = await _sponsorQueries.GetActiveSponsorsAsync(cancellationToken);
 
-        return sponsors
+        return [.. sponsors
             .Select(sponsor => sponsor.LogoContainer is not null && sponsor.LogoPath is not null
                 ? sponsor with { LogoUrl = _fileStorageService.GetBlobUri(sponsor.LogoContainer, sponsor.LogoPath) }
-                : sponsor)
-            .ToList();
+                : sponsor)];
     }
 }

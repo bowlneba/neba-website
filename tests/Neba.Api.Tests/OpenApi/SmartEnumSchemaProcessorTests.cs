@@ -135,12 +135,11 @@ public sealed class SmartEnumSchemaProcessorTests
         var values = listProperty!.GetValue(null) as System.Collections.IEnumerable;
         values.ShouldNotBeNull($"SmartEnum type '{smartEnumTypeName}' returned null List value.");
 
-        return values!
+        return [.. values!
             .Cast<object>()
             .Select(value => value.GetType().GetProperty("Name", BindingFlags.Public | BindingFlags.Instance)?.GetValue(value) as string)
             .Where(name => !string.IsNullOrWhiteSpace(name))
-            .Select(name => name!)
-            .ToArray();
+            .Select(name => name!)];
     }
 
     private static string GetJsonPropertyName(PropertyInfo property)
