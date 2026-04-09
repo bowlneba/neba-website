@@ -25,7 +25,7 @@ internal sealed class SmartEnumSchemaProcessor : ISchemaProcessor
         }
 
         foreach (PropertyInfo property in modelType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-            .Where(p => p.GetCustomAttributes<OpenApiSmartEnumAttribute>(inherit: true).Length > 0))
+            .Where(p => p.GetCustomAttributes<OpenApiSmartEnumAttribute>(inherit: true).Any()))
         {
             var attributes = property.GetCustomAttributes<OpenApiSmartEnumAttribute>(inherit: true).ToArray();
 
