@@ -1,4 +1,5 @@
 using Neba.Api.Contracts.Contact;
+using Neba.Api.Contracts.OpenApi;
 
 namespace Neba.Api.Contracts.Sponsors;
 
@@ -35,11 +36,13 @@ public sealed record SponsorDetailResponse
     /// <summary>
     /// Sponsorship tier.
     /// </summary>
+    [OpenApiSmartEnum("SponsorTier")]
     public required string Tier { get; init; }
 
     /// <summary>
     /// Sponsor category.
     /// </summary>
+    [OpenApiSmartEnum("SponsorCategory")]
     public required string Category { get; init; }
 
     /// <summary>
@@ -100,6 +103,7 @@ public sealed record SponsorDetailResponse
     /// <summary>
     /// Region or state for the sponsor's business address.
     /// </summary>
+    [OpenApiSmartEnum("UsState")]
     public string? BusinessState { get; init; }
 
     /// <summary>
@@ -110,6 +114,7 @@ public sealed record SponsorDetailResponse
     /// <summary>
     /// Country for the sponsor's business address.
     /// </summary>
+    [OpenApiSmartEnum("Country")]
     public string? BusinessCountry { get; init; }
 
     /// <summary>
@@ -140,5 +145,6 @@ public sealed record SponsorDetailResponse
     /// <summary>
     /// Phone number type of the sponsor's primary contact person.
     /// </summary>
+    [OpenApiSmartEnum("PhoneNumberType")]
     public string? SponsorContactPhoneNumberType { get; init; }
 }

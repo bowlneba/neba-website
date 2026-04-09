@@ -1,3 +1,5 @@
+using Neba.Api.Contracts.OpenApi;
+
 namespace Neba.Api.Contracts.Awards;
 
 /// <summary>
@@ -18,5 +20,6 @@ public sealed record BowlerOfTheYearAwardResponse
     /// <summary>
     /// Gets the category under which the award was given (e.g., "Open", "Woman", "Senior").
     /// </summary>
+    [OpenApiSmartEnum("BowlerOfTheYearCategory")]
     public required string Category { get; init; }
 }

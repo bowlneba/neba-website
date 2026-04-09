@@ -1,6 +1,6 @@
 ﻿{
-  Id: 01GB2E0JHXE1FHEY75P83VZAXH,
-  Name: Cummings, Ebert and Konopelski,
+  Id: 01GC6AP3YHBWBQHSDJ0YZTQCAP,
+  Name: Ebert and Sons,
   Slug: rerum-neque-explicabo,
   IsCurrentSponsor: false,
   Priority: 3,

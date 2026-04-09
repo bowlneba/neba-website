@@ -1,4 +1,4 @@
-{
+﻿{
   Items: [
     {
       Name: Connelly, Cassin and Ledner,
@@ -6,7 +6,7 @@
       LogoUrl: https://picsum.photos/640/480/?image=556,
       IsCurrentSponsor: true,
       Priority: 6,
-      Tier: Premium,
+      Tier: Premier,
       Category: Manufacturer,
       TagPhrase: Expanded incremental algorithm,
       Description: Vel in.,
@@ -20,7 +20,7 @@
       LogoUrl: https://picsum.photos/640/480/?image=679,
       IsCurrentSponsor: true,
       Priority: 7,
-      Tier: Premium,
+      Tier: Premier,
       Category: Bowling Center,
       TagPhrase: Phased incremental analyzer,
       Description: Quam nihil.,

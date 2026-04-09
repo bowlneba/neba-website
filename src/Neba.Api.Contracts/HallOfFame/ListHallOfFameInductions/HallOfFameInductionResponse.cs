@@ -1,3 +1,5 @@
+using Neba.Api.Contracts.OpenApi;
+
 namespace Neba.Api.Contracts.HallOfFame.ListHallOfFameInductions;
 
 /// <summary>
@@ -18,6 +20,7 @@ public sealed record HallOfFameInductionResponse
     /// <summary>
     /// The categories associated with this induction, represented as a collection of strings for easier consumption by API clients. This is a simplified representation compared to the HallOfFameCategory type used internally in the application layer.
     /// </summary>
+    [OpenApiSmartEnum("HallOfFameCategory")]
     public required IReadOnlyCollection<string> Categories { get; init; }
 
     /// <summary>

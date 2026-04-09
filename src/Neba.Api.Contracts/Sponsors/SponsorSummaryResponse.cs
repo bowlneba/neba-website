@@ -1,3 +1,5 @@
+using Neba.Api.Contracts.OpenApi;
+
 namespace Neba.Api.Contracts.Sponsors;
 
 /// <summary>
@@ -33,11 +35,13 @@ public sealed record SponsorSummaryResponse
     /// <summary>
     /// Tier of the sponsor.
     /// </summary>
+    [OpenApiSmartEnum("SponsorTier")]
     public required string Tier { get; init; }
 
     /// <summary>
     /// Category of the sponsor.
     /// </summary>
+    [OpenApiSmartEnum("SponsorCategory")]
     public required string Category { get; init; }
 
     /// <summary>

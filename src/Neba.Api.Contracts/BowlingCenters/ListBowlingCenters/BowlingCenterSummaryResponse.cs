@@ -1,4 +1,5 @@
 using Neba.Api.Contracts.Contact;
+using Neba.Api.Contracts.OpenApi;
 
 namespace Neba.Api.Contracts.BowlingCenters.ListBowlingCenters;
 
@@ -20,6 +21,7 @@ public sealed record BowlingCenterSummaryResponse
     /// <summary>
     /// The current operational status of the bowling center, indicating whether it is open, temporarily closed, permanently closed, or under renovation. This information is crucial for users to know before planning a visit, as it helps them avoid unnecessary trips and allows them to make informed decisions about which centers to visit. The status should be updated regularly to reflect any changes in the center's operational state.
     /// </summary>
+    [OpenApiSmartEnum("BowlingCenterStatus")]
     public required string Status { get; init; }
 
     /// <summary>
@@ -38,8 +40,9 @@ public sealed record BowlingCenterSummaryResponse
     public required string City { get; init; }
 
     /// <summary>
-    /// The state or province where the bowling center is located, used for display and geolocation purposes. This information helps users identify the broader location of the center and can be used for filtering search results by state. It is important for this field to be accurate and consistent with the state or province name as recognized by postal services and mapping applications.
+    /// The state where the bowling center is located, used for display and geolocation purposes. This information helps users identify the broader location of the center and can be used for filtering search results by state. It is important for this field to be accurate and consistent with the state or province name as recognized by postal services and mapping applications.
     /// </summary>
+    [OpenApiSmartEnum("UsState")]
     public required string State { get; init; }
 
     /// <summary>

@@ -28,6 +28,7 @@ internal static class OpenApiConfiguration
                     settings.Version = "v1.0";
                     settings.Description = "NEBA API Service";
                     settings.ApiVersion(new ApiVersion(1, 0));
+                    settings.SchemaSettings.SchemaProcessors.Add(new SmartEnumSchemaProcessor());
                 };
 
                 options.AutoTagPathSegmentIndex = 0;
