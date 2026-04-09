@@ -1,6 +1,7 @@
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -100,9 +101,10 @@ public sealed class SponsorDetailTests : IDisposable
     {
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(name: "Acme Bowling Supply"));
 
-        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "acme-bowling-supply"));
+        _ = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "acme-bowling-supply"));
+        var headOutlet = _ctx.Render<HeadOutlet>();
 
-        cut.Markup.ShouldContain("Acme Bowling Supply | NEBA Sponsors");
+        headOutlet.Find("title").TextContent.ShouldBe("Acme Bowling Supply | NEBA Sponsors");
     }
 
     // ── Header ───────────────────────────────────────────────────────────────
@@ -269,12 +271,14 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should not render address section when all address fields are null")]
     public void Render_ShouldNotRenderAddress_WhenNoAddressFields()
     {
-        SetupSuccessResponse(SponsorDetailResponseFactory.Create(
-            businessStreet: null,
-            businessCity: null,
-            businessState: null,
-            businessPostalCode: null,
-            businessCountry: null));
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create() with
+        {
+            BusinessStreet = null,
+            BusinessCity = null,
+            BusinessState = null,
+            BusinessPostalCode = null,
+            BusinessCountry = null
+        });
 
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
@@ -306,9 +310,11 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should not render contact section when no email or phone numbers")]
     public void Render_ShouldNotRenderContactSection_WhenNoChannels()
     {
-        SetupSuccessResponse(SponsorDetailResponseFactory.Create(
-            businessEmailAddress: null,
-            phoneNumbers: []));
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create() with
+        {
+            BusinessEmailAddress = null,
+            PhoneNumbers = []
+        });
 
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
@@ -371,7 +377,7 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should not render internal contact section when no contact name")]
     public void Render_ShouldNotRenderInternalContact_WhenNoContactName()
     {
-        SetupSuccessResponse(SponsorDetailResponseFactory.Create(contactName: null));
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create() with { SponsorContactName = null });
 
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 

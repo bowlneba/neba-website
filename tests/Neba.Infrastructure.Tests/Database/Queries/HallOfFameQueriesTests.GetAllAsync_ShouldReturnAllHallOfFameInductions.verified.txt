@@ -5,10 +5,7 @@
       FirstName: Felipe,
       LastName: Kshlerin,
       MiddleName: Catalina,
-      Suffix: {
-        Name: II,
-        Value: II
-      }
+      Suffix: II
     },
     Categories: [
       {
@@ -22,10 +19,7 @@
     BowlerName: {
       FirstName: Kristie,
       LastName: Bernhard,
-      Suffix: {
-        Name: Jr,
-        Value: Jr.
-      },
+      Suffix: Jr.,
       Nickname: Lauriane
     },
     Categories: [

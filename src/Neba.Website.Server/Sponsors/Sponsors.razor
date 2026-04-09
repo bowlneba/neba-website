@@ -256,7 +256,7 @@
 
     private IEnumerable<SponsorSummaryViewModel> PremierSponsors =>
         _sponsors
-            .Where(s => s.Tier == "Premium")
+            .Where(s => s.Tier == "Premier")
             .OrderBy(s => s.Priority)
             .ThenBy(s => s.Name);
 

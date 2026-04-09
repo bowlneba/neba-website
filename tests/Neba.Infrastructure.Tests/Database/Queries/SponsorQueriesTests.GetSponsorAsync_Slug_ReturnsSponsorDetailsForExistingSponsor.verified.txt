@@ -6,12 +6,8 @@
   Priority: 2,
   Tier: Standard,
   Category: Technology,
-  Logo: {
-    Container: container-a3brja6o,
-    Path: michigan_leverage_yellow.ecma.mp2a,
-    ContentType: application/pkcs7-mime,
-    SizeInBytes: 5674592
-  },
+  LogoContainer: container-a3brja6o,
+  LogoPath: michigan_leverage_yellow.ecma.mp2a,
   WebsiteUrl: http://gabriella.net/,
   TagPhrase: Polarised 6th generation challenge,
   Description: optimize cross-platform portals,

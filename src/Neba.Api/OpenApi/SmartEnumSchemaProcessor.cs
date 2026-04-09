@@ -82,12 +82,15 @@ internal sealed class SmartEnumSchemaProcessor : ISchemaProcessor
     {
         var smartEnumNamesByTypeName = new Dictionary<string, IReadOnlyCollection<string>>(StringComparer.Ordinal);
 
-        foreach (Type type in GetSmartEnumTypes())
+        foreach ((Type type, IReadOnlyCollection<string>? names) in GetSmartEnumTypes()
+                     .Select(type =>
+                     {
+                         _ = TryGetSmartEnumNames(type, out IReadOnlyCollection<string>? names);
+                         return (type, names);
+                     })
+                     .Where(result => result.names is not null))
         {
-            if (TryGetSmartEnumNames(type, out IReadOnlyCollection<string>? names) && names is not null)
-            {
-                smartEnumNamesByTypeName[type.Name] = names;
-            }
+            smartEnumNamesByTypeName[type.Name] = names!;
         }
 
         return smartEnumNamesByTypeName;

@@ -30,6 +30,15 @@ public sealed class ListActiveSponsorsQueryHandlerTests
     {
         // Arrange
         IReadOnlyCollection<SponsorSummaryDto> sponsors = SponsorSummaryDtoFactory.Bogus(5, seed: 42);
+        IReadOnlyCollection<SponsorSummaryDto> expected =
+        [
+            .. sponsors.Select(sponsor => sponsor with
+            {
+                LogoUrl = sponsor.LogoContainer is not null && sponsor.LogoPath is not null
+                    ? new Uri($"https://storage.example.com/{sponsor.LogoContainer}/{sponsor.LogoPath}")
+                    : sponsor.LogoUrl
+            })
+        ];
         var query = new ListActiveSponsorsQuery();
 
         _sponsorQueriesMock
@@ -44,7 +53,7 @@ public sealed class ListActiveSponsorsQueryHandlerTests
         var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
 
         // Assert
-        result.ShouldBe(sponsors);
+        result.ShouldBe(expected);
         result.ShouldAllBe(s => s.LogoUrl != null);
     }
 
