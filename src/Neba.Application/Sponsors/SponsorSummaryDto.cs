@@ -18,7 +18,7 @@ public sealed record SponsorSummaryDto
     /// <summary>
     /// URI of the sponsor's logo.
     /// </summary>
-    public Uri? LogoUrl { get; set; }
+    public Uri? LogoUrl { get; init; }
 
     /// <summary>
     /// Blob storage container name where the logo is stored.

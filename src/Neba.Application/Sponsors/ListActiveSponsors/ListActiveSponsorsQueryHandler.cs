@@ -13,11 +13,10 @@ internal sealed class ListActiveSponsorsQueryHandler(ISponsorQueries sponsorQuer
     {
         var sponsors = await _sponsorQueries.GetActiveSponsorsAsync(cancellationToken);
 
-        foreach (var sponsor in sponsors.Where(s => s.LogoContainer is not null && s.LogoPath is not null))
-        {
-            sponsor.LogoUrl = _fileStorageService.GetBlobUri(sponsor.LogoContainer!, sponsor.LogoPath!);
-        }
-
-        return sponsors;
+        return sponsors
+            .Select(sponsor => sponsor.LogoContainer is not null && sponsor.LogoPath is not null
+                ? sponsor with { LogoUrl = _fileStorageService.GetBlobUri(sponsor.LogoContainer, sponsor.LogoPath) }
+                : sponsor)
+            .ToList();
     }
 }
