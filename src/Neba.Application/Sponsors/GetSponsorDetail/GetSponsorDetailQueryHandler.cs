@@ -22,7 +22,7 @@ internal sealed class GetSponsorDetailQueryHandler(ISponsorQueries sponsorQuerie
 
         if (sponsor.LogoContainer is not null && sponsor.LogoPath is not null)
         {
-            sponsor.LogoUrl = _fileStorageService.GetBlobUri(sponsor.LogoContainer, sponsor.LogoPath);
+            return sponsor with { LogoUrl = _fileStorageService.GetBlobUri(sponsor.LogoContainer, sponsor.LogoPath) };
         }
 
         return sponsor;

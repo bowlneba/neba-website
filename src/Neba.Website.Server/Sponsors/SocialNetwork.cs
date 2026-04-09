@@ -1,4 +1,4 @@
-namespace Neba.Website.Server.Components;
+namespace Neba.Website.Server.Sponsors;
 
 /// <summary>
 /// Enumeration of supported social networks for sponsor links.

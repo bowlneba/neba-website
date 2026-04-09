@@ -29,7 +29,8 @@ internal sealed class ListActiveSponsorsEndpoint(IQueryHandler<ListActiveSponsor
 
         Description(description => description
             .WithName("ListActiveSponsors")
-            .WithTags("Public"));
+            .WithTags("Public")
+            .Produces<CollectionResponse<SponsorSummaryResponse>>(StatusCodes.Status200OK));
     }
 
     public override async Task HandleAsync(CancellationToken ct)

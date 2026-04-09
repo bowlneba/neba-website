@@ -56,7 +56,7 @@ public sealed record SponsorDetailDto
     /// <summary>
     /// URL of the sponsor's logo. This is the publicly accessible URL where the sponsor's logo image can be accessed. It can be used in the presentation layer to display the sponsor's logo without needing to retrieve the file content directly from storage. This allows for efficient loading of images and reduces the need for additional API calls to fetch the logo content.
     /// </summary>
-    public Uri? LogoUrl { get; internal set; }
+    public Uri? LogoUrl { get; init; }
 
     /// <summary>
     /// Website URL of the sponsor. This is the official website of the sponsor, where users can learn more about the sponsor's products, services, and involvement with the organization. Providing a website URL allows users to easily access additional information about the sponsor and can help drive traffic to the sponsor's site, which can be beneficial for both the sponsor and the organization.
