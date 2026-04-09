@@ -3,6 +3,7 @@ using System.Net.Mime;
 using FastEndpoints;
 
 using Neba.Api.Contracts.Sponsors;
+using Neba.Domain.Sponsors;
 
 namespace Neba.Api.Sponsors.GetSponsorDetail;
 
@@ -23,8 +24,8 @@ internal sealed class GetSponsorDetailEndpointSummary
                 Slug = "acme-bowling-supply",
                 IsCurrentSponsor = true,
                 Priority = 1,
-                Tier = "Gold",
-                Category = "Equipment",
+                Tier = SponsorTier.Premier.Name,
+                Category = SponsorCategory.Manufacturer.Name,
                 TagPhrase = "The best in bowling",
                 PhoneNumbers = [],
             });
