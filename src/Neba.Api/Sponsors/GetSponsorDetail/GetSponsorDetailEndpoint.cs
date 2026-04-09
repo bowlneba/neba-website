@@ -32,7 +32,7 @@ internal sealed class GetSponsorDetailEndpoint(IQueryHandler<GetSponsorDetailQue
             .WithName("GetSponsorDetail")
             .WithTags("Public")
             .Produces<SponsorDetailResponse>(StatusCodes.Status200OK)
-            .ProducesProblemDetails(StatusCodes.Status404NotFound));
+            .Produces(StatusCodes.Status404NotFound));
     }
 
     public override async Task HandleAsync(GetSponsorDetailRequest req, CancellationToken ct)
