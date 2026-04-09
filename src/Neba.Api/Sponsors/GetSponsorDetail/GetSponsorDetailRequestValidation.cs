@@ -10,7 +10,6 @@ internal sealed class GetSponsorDetailRequestValidation
     public GetSponsorDetailRequestValidation()
     {
         RuleFor(request => request.Slug)
-            .NotNull()
             .NotEmpty()
             .WithErrorCode("SponsorDetailRequest.SlugRequired")
             .WithMessage("Sponsor slug is required.");
