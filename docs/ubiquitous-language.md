@@ -918,8 +918,8 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 | Value | Name | Description |
 | --- | --- | --- |
-| 1 | `Title` | The highest sponsorship level. The title sponsor's name is associated with NEBA's premier events (e.g., the TOC). Displayed at the top of the sponsor list with elevated visual prominence. Currently: Storm Products Inc. |
-| 2 | `Premier` | Sponsors contributing above the standard minimum fee. Positioned between Title and Standard in display order |
+| 1 | `Title Sponsor` | The highest sponsorship level. The title sponsor's name is associated with NEBA's premier events (e.g., the TOC). Displayed at the top of the sponsor list with elevated visual prominence. Currently: Storm Products Inc. |
+| 2 | `Premier` | Sponsors contributing above the standard minimum fee. Positioned between Title Sponsor and Standard in display order |
 | 3 | `Standard` | The base tier corresponding to the standard annual fee. The majority of sponsors fall here |
 
 > Future enhancement: promote to a configurable database-backed entity manageable through an admin interface.
@@ -937,21 +937,23 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 | Value | Name | Description |
 | --- | --- | --- |
-| 1 | `BallManufacturer` | Bowling ball and equipment manufacturers (e.g., Storm, Roto Grip, 900 Global, Dexter) |
-| 2 | `ProShop` | Pro shops and bowling retail (e.g., Buddies Pro Shop, Bowl Winkle's Pro Shop) |
-| 3 | `BowlingCenter` | Bowling centers and lanes (e.g., Bowl-O-Rama, Old Mountain Lanes, Yankee Lanes) |
-| 4 | `FinancialServices` | Financial, credit, and business services (e.g., Cambridge Credit Counseling) |
-| 5 | `Technology` | Technology products and apps (e.g., Tournament Sense, Pinwheel.us) |
-| 6 | `Media` | Media and streaming services (e.g., TechVision Live Streaming) |
-| 7 | `Individual` | Individual or personal sponsors (e.g., Tony & Suzanne Reynaud) |
-| 8 | `Other` | Sponsors that do not fit into a defined category |
+| 1 | `Other` | Sponsors that do not fit into a defined category |
+| 2 | `Manufacturer` | Bowling ball and equipment manufacturers (e.g., Storm, Roto Grip, 900 Global, Dexter) |
+| 4 | `ProShop` | Pro shops and bowling retail (e.g., Buddies Pro Shop, Bowl Winkle's Pro Shop) |
+| 8 | `BowlingCenter` | Bowling centers and lanes (e.g., Bowl-O-Rama, Old Mountain Lanes, Yankee Lanes) |
+| 16 | `FinancialServices` | Financial, credit, and business services (e.g., Cambridge Credit Counseling) |
+| 32 | `Technology` | Technology products and apps (e.g., Tournament Sense, Pinwheel.us) |
+| 64 | `Media` | Media and streaming services (e.g., TechVision Live Streaming) |
+| 128 | `Individual` | Individual or personal sponsors (e.g., Tony & Suzanne Reynaud) |
+
+> Values are powers of two to support potential future multi-category assignment via bit flags.
 
 > Future enhancement: promote to a configurable database-backed entity manageable through an admin interface.
 
 **In Code**:
 
 - Namespace: `Neba.Domain.Sponsors`
-- Type: `SponsorCategory` (SmartEnum, int-valued)
+- Type: `SponsorCategory` (SmartEnum, int-valued, power-of-two)
 
 ---
 

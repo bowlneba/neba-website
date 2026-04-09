@@ -16,7 +16,7 @@ public sealed class SponsorTier
     /// <summary>
     /// Represents the premium sponsor tier.
     /// </summary>
-    public static readonly SponsorTier Premium = new(nameof(Premium), 2);
+    public static readonly SponsorTier Premier = new(nameof(Premier), 2);
 
     /// <summary>
     /// Represents the standard sponsor tier.

@@ -110,11 +110,11 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should render tier badge")]
     public void Render_ShouldRenderTierBadge()
     {
-        SetupSuccessResponse(SponsorDetailResponseFactory.Create(tier: SponsorTier.Premium));
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create(tier: SponsorTier.Premier));
 
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "premier-co"));
 
-        cut.Markup.ShouldContain(SponsorTier.Premium.Name);
+        cut.Markup.ShouldContain(SponsorTier.Premier.Name);
     }
 
     [Fact(DisplayName = "Should render sponsor name in h1")]

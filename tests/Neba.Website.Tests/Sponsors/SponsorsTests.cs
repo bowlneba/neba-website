@@ -260,7 +260,7 @@ public sealed class SponsorsTests : IDisposable
     [Fact(DisplayName = "Should show Premier Partners section when premium sponsors exist")]
     public void Render_ShouldShowPremierPartnersSection_WhenPremiumSponsorsExist()
     {
-        var sponsor = SponsorSummaryResponseFactory.Create(name: "Premier Co", tier: SponsorTier.Premium);
+        var sponsor = SponsorSummaryResponseFactory.Create(name: "Premier Co", tier: SponsorTier.Premier);
         SetupSuccessResponse([sponsor]);
 
         var cut = _ctx.Render<SponsorsPage>();
@@ -283,7 +283,7 @@ public sealed class SponsorsTests : IDisposable
     public void Render_ShouldShowPremierSponsorCategory_WhenApiSucceeds()
     {
         var sponsor = SponsorSummaryResponseFactory.Create(
-            tier: SponsorTier.Premium,
+            tier: SponsorTier.Premier,
             category: SponsorCategory.Technology);
         SetupSuccessResponse([sponsor]);
 
@@ -296,7 +296,7 @@ public sealed class SponsorsTests : IDisposable
     public void Render_ShouldLinkToSponsorDetails_WhenPremierSponsorRendered()
     {
         var sponsor = SponsorSummaryResponseFactory.Create(
-            tier: SponsorTier.Premium,
+            tier: SponsorTier.Premier,
             slug: "premier-sponsor",
             websiteUrl: new Uri("https://premier.example.com"));
         SetupSuccessResponse([sponsor]);
@@ -311,7 +311,7 @@ public sealed class SponsorsTests : IDisposable
     public void Render_ShouldLinkToSponsorDetails_WhenPremierSponsorHasNoWebsiteUrl()
     {
         var sponsor = SponsorSummaryResponseFactory.Create(
-            tier: SponsorTier.Premium,
+            tier: SponsorTier.Premier,
             slug: "premier-no-website",
             websiteUrl: null);
         SetupSuccessResponse([sponsor]);
@@ -325,9 +325,9 @@ public sealed class SponsorsTests : IDisposable
     public void Render_ShouldOrderPremierSponsorsByPriorityThenName()
     {
         SetupSuccessResponse([
-            SponsorSummaryResponseFactory.Create(name: "Zebra Co", priority: 1, tier: SponsorTier.Premium),
-            SponsorSummaryResponseFactory.Create(name: "Alpha Co", priority: 2, tier: SponsorTier.Premium),
-            SponsorSummaryResponseFactory.Create(name: "Middle Co", priority: 1, tier: SponsorTier.Premium),
+            SponsorSummaryResponseFactory.Create(name: "Zebra Co", priority: 1, tier: SponsorTier.Premier),
+            SponsorSummaryResponseFactory.Create(name: "Alpha Co", priority: 2, tier: SponsorTier.Premier),
+            SponsorSummaryResponseFactory.Create(name: "Middle Co", priority: 1, tier: SponsorTier.Premier),
         ]);
 
         var cut = _ctx.Render<SponsorsPage>();
