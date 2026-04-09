@@ -24,13 +24,10 @@ internal sealed class SmartEnumSchemaProcessor : ISchemaProcessor
             return;
         }
 
-        foreach (PropertyInfo property in modelType.GetProperties(BindingFlags.Instance | BindingFlags.Public))
+        foreach (PropertyInfo property in modelType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            .Where(p => p.GetCustomAttributes<OpenApiSmartEnumAttribute>(inherit: true).Length > 0))
         {
             var attributes = property.GetCustomAttributes<OpenApiSmartEnumAttribute>(inherit: true).ToArray();
-            if (attributes.Length == 0)
-            {
-                continue;
-            }
 
             string jsonPropertyName = GetJsonPropertyName(property);
             if (!context.Schema.Properties.TryGetValue(jsonPropertyName, out JsonSchemaProperty? propertySchema))
