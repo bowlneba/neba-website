@@ -15,7 +15,6 @@ using Neba.Infrastructure.Telemetry.Tracing;
 
 namespace Neba.Infrastructure;
 
-#pragma warning disable S1144 // Unused private types or members should be removed
 #pragma warning disable CA1708 // Identifiers should differ by more than case
 
 /// <summary>

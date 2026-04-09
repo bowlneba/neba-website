@@ -2,9 +2,6 @@ using Neba.Api.Contracts.Sponsors;
 
 namespace Neba.Website.Server.Sponsors;
 
-#pragma warning disable S1144 // Unused private types or members should be removed
-#pragma warning disable S2325 // Static types should be used
-
 internal static class SponsorMappingExtensions
 {
     extension(SponsorSummaryResponse response)

@@ -12,9 +12,6 @@ using Refit;
 
 namespace Neba.Website.Server.Services;
 
-#pragma warning disable S1144 // Interfaces should not have public constructors
-#pragma warning disable S2325 // Private types or members should not be static
-
 internal static class ApiServicesConfiguration
 {
     private static readonly RefitSettings RefitSettings = new()

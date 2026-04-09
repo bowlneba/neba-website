@@ -7,9 +7,6 @@ using Neba.Domain.Contact;
 
 namespace Neba.Infrastructure.Database.Configurations;
 
-#pragma warning disable S1144 // Unused private types or members should be removed
-#pragma warning disable S2325 // Unused private types or members should be static
-
 internal static class PhoneNumberConfiguration
 {
     extension<TOwner>(OwnedNavigationBuilder<TOwner, PhoneNumber> builder)

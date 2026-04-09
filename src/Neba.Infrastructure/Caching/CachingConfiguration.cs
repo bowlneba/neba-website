@@ -7,9 +7,6 @@ using ZiggyCreatures.Caching.Fusion;
 
 namespace Neba.Infrastructure.Caching;
 
-#pragma warning disable S1144 // Unused private types or members should be removed
-#pragma warning disable S2325 // Methods and properties that don't access instance data should be static
-
 internal static class CachingConfiguration
 {
     extension(IServiceCollection services)

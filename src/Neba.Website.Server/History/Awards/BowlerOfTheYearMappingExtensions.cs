@@ -2,9 +2,6 @@ using Neba.Api.Contracts.Awards;
 
 namespace Neba.Website.Server.History.Awards;
 
-#pragma warning disable S1144 // Remove unused constructor of private type.
-#pragma warning disable S2325 // Static types should be used
-
 internal static class BowlerOfTheYearMappingExtensions
 {
     // Controls category display order within each season card.
