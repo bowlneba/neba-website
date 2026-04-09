@@ -118,10 +118,10 @@ internal sealed class SmartEnumSchemaProcessor : ISchemaProcessor
 
     private static void EnqueueReferencedNebaAssemblies(Assembly assembly, HashSet<string> visited, Queue<Assembly> pending)
     {
-        foreach (AssemblyName reference in assembly.GetReferencedAssemblies())
+        foreach (AssemblyName reference in assembly
+                     .GetReferencedAssemblies()
+                     .Where(reference => reference.Name?.StartsWith("Neba", StringComparison.Ordinal) == true && visited.Add(reference.FullName!)))
         {
-            if (!visited.Add(reference.FullName!)) continue;
-            if (reference.Name?.StartsWith("Neba", StringComparison.Ordinal) != true) continue;
             if (!TryLoadAssembly(reference, out Assembly? loaded) || loaded is null) continue;
 
             pending.Enqueue(loaded);
