@@ -1,0 +1,37 @@
+.debug-banner-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+
+.debug-banner-link {
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--neba-blue-900);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.5rem 0.9rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.debug-banner-link:hover {
+    background: rgba(255, 255, 255, 1);
+    border-color: rgba(255, 255, 255, 1);
+}
+
+.debug-banner-link:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+    .debug-banner-link {
+        font-size: 0.75rem;
+        padding: 0.45rem 0.75rem;
+    }
+}

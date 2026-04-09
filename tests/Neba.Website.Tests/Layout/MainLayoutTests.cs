@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Layout;
+using Neba.Website.Server.Services;
 
 namespace Neba.Website.Tests.Layout;
 
@@ -26,6 +27,11 @@ public sealed class MainLayoutTests : IDisposable
         mockWebHostEnvironment.Setup(x => x.EnvironmentName).Returns("Development");
 
         _ctx.Services.AddSingleton(mockWebHostEnvironment.Object);
+        _ctx.Services.AddHttpClient();
+        _ctx.Services.AddSingleton(new NebaApiConfiguration
+        {
+            BaseUrl = new Uri("https://api.bowlneba.test")
+        });
     }
 
     public void Dispose() => _ctx.Dispose();

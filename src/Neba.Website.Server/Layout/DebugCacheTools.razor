@@ -1,0 +1,100 @@
+@implements IDisposable
+
+@inject Neba.Website.Server.Services.NebaApiConfiguration ApiConfiguration
+@inject IHttpClientFactory HttpClientFactory
+
+@if (IsDebugBuild)
+{
+    <div class="debug-banner-actions">
+        <button class="debug-banner-link" @onclick="ClearApiCacheAsync" type="button">Clear API Cache</button>
+    </div>
+
+    @if (_debugToast is not null)
+    {
+        <NebaToast Title="@_debugToast.Title" Message="@_debugToast.Message" Severity="@_debugToast.Severity"
+                   OnDismiss="DismissToast" />
+    }
+}
+
+@code {
+    private ToastNotification? _debugToast;
+    private CancellationTokenSource? _toastLifetimeCts;
+
+    private static bool IsDebugBuild
+    {
+        get
+        {
+#if DEBUG
+            return true;
+#else
+            return false;
+#endif
+        }
+    }
+
+    private async Task ClearApiCacheAsync()
+    {
+        if (!IsDebugBuild)
+        {
+            return;
+        }
+
+        try
+        {
+            using var client = HttpClientFactory.CreateClient();
+            using var response = await client.GetAsync(new Uri(ApiConfiguration.BaseUrl, "/debug/cache"));
+
+            if (response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync();
+                ShowToast("API Cache Cleared", string.IsNullOrWhiteSpace(message) ? "Cache was cleared." : message,
+NotifySeverity.Success);
+            }
+            else
+            {
+                ShowToast("Cache Clear Failed", $"API returned {(int)response.StatusCode}.", NotifySeverity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowToast("Cache Clear Failed", ex.Message, NotifySeverity.Error);
+        }
+    }
+
+    private void ShowToast(string title, string message, NotifySeverity severity)
+    {
+        _toastLifetimeCts?.Cancel();
+        _toastLifetimeCts?.Dispose();
+        _toastLifetimeCts = new CancellationTokenSource();
+
+        _debugToast = new ToastNotification(title, message, severity);
+
+        _ = AutoDismissToastAsync(_toastLifetimeCts.Token);
+    }
+
+    private async Task AutoDismissToastAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(4), cancellationToken);
+            _debugToast = null;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignored because a newer toast replaced the current one.
+        }
+    }
+
+    private void DismissToast()
+    {
+        _toastLifetimeCts?.Cancel();
+        _debugToast = null;
+    }
+
+    public void Dispose()
+    {
+        _toastLifetimeCts?.Cancel();
+        _toastLifetimeCts?.Dispose();
+    }
+}

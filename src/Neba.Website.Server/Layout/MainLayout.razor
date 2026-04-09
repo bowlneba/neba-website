@@ -1,7 +1,8 @@
 @inherits LayoutComponentBase
 
 <!-- Skip to main content for accessibility -->
-<a href="#main-content" class="skip-link" onclick="setTimeout(() => document.getElementById('main-content')?.focus(), 0)">
+<a href="#main-content" class="skip-link"
+   onclick="setTimeout(() => document.getElementById('main-content')?.focus(), 0)">
     Skip to main content
 </a>
 
@@ -14,6 +15,10 @@
                     <img src="images/neba-logo.png" alt="New England Bowling Association logo" class="banner-logo" />
                 </a>
             </div>
+            @if (IsDebugBuild)
+            {
+                <DebugCacheTools @rendermode="InteractiveServer" />
+            }
         </div>
     </header>
 
@@ -43,3 +48,17 @@
         </div>
     </footer>
 </div>
+
+@code {
+    private static bool IsDebugBuild
+    {
+        get
+        {
+#if DEBUG
+            return true;
+#else
+            return false;
+#endif
+        }
+    }
+}

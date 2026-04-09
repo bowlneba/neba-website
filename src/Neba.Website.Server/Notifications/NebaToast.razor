@@ -1,0 +1,42 @@
+<div class="neba-toast-container" aria-live="polite" aria-atomic="true">
+    <div class="neba-toast neba-toast-@SeverityClass">
+        <div class="neba-toast-content">
+            <div class="neba-toast-title">@Title</div>
+            <div class="neba-toast-message">@Message</div>
+        </div>
+        <button class="neba-toast-dismiss" type="button" @onclick="DismissAsync" aria-label="Dismiss toast">
+            ×
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Message { get; set; } = string.Empty;
+
+    [Parameter]
+    public NotifySeverity Severity { get; set; } = NotifySeverity.Normal;
+
+    [Parameter]
+    public EventCallback OnDismiss { get; set; }
+
+    private string SeverityClass => Severity switch
+    {
+        NotifySeverity.Success => "success",
+        NotifySeverity.Warning => "warning",
+        NotifySeverity.Error => "error",
+        NotifySeverity.Info => "info",
+        _ => "normal"
+    };
+
+    private async Task DismissAsync()
+    {
+        if (OnDismiss.HasDelegate)
+        {
+            await OnDismiss.InvokeAsync();
+        }
+    }
+}
