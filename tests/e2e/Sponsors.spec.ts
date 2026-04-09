@@ -50,7 +50,7 @@ test.describe('Sponsor detail page', () => {
   });
 
   test('renders the tier and category badges', async ({ page }) => {
-    await expect(page.locator('.sponsor-detail__badge--tier')).toContainText('Premium');
+    await expect(page.locator('.sponsor-detail__badge--tier')).toContainText('Premier');
     await expect(page.locator('.sponsor-detail__badge--category')).toContainText('Pro Shop');
   });
 
