@@ -20,6 +20,7 @@ internal sealed class ListActiveSponsorsEndpoint(IQueryHandler<ListActiveSponsor
     {
         Get("active");
         Group<SponsorsGroup>();
+        Version(1);
 
         Options(options => options
             .WithVersionSet("Sponsors")
@@ -29,7 +30,7 @@ internal sealed class ListActiveSponsorsEndpoint(IQueryHandler<ListActiveSponsor
 
         Description(description => description
             .WithName("ListActiveSponsors")
-            .WithTags("Public")
+            .WithTags("Sponsors", "Public")
             .Produces<CollectionResponse<SponsorSummaryResponse>>(StatusCodes.Status200OK));
     }
 
