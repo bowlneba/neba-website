@@ -53,9 +53,7 @@ else
 
                 @if (_model?.WebsiteUrl is not null)
                 {
-                    <a href="@_model.WebsiteUrl"
-                       target="_blank"
-                       rel="noopener noreferrer"
+                    <a href="@_model.WebsiteUrl" target="_blank" rel="noopener noreferrer"
                        class="neba-btn neba-btn-primary sponsor-detail__website-btn">
                         Visit Website
                         <span class="material-symbols-outlined">open_in_new</span>
@@ -86,8 +84,7 @@ else
                 {
                     <section class="sponsor-detail__promo" aria-label="Member Exclusive: Promotional Info">
                         <div class="sponsor-detail__promo-header">
-                            <span class="material-symbols-outlined"
-                                  style="font-variation-settings: 'FILL' 1;">stars</span>
+                            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">stars</span>
                             <h2 class="sponsor-detail__promo-title">Member Exclusive: Promotional Info</h2>
                         </div>
 
@@ -122,19 +119,19 @@ else
                             <div class="sponsor-detail__contact-row">
                                 <span class="material-symbols-outlined">location_on</span>
                                 <address class="sponsor-detail__address">
-                                    @if (_model?.BusinessStreet is not null)
+                                    @if (_model.BusinessStreet is not null)
                                     {
                                         <span>@_model.BusinessStreet</span>
                                     }
-                                    @if (_model?.BusinessUnit is not null)
+                                    @if (_model.BusinessUnit is not null)
                                     {
                                         <span>@_model.BusinessUnit</span>
                                     }
-                                    @if (_model?.BusinessCity is not null || _model?.BusinessState is not null)
+                                    @if (_model.BusinessCity is not null || _model.BusinessState is not null)
                                     {
                                         <span>@_model.BusinessCity, @_model.BusinessState @_model.BusinessPostalCode</span>
                                     }
-                                    @if (_model?.BusinessCountry is not null)
+                                    @if (_model.BusinessCountry is not null)
                                     {
                                         <span>@_model.BusinessCountry</span>
                                     }
@@ -177,20 +174,14 @@ else
                             <div class="sponsor-detail__social-row">
                                 @if (_model.FacebookUrl is not null)
                                 {
-                                    <a href="@_model.FacebookUrl"
-                                       target="_blank"
-                                       rel="noopener noreferrer"
-                                       aria-label="Facebook"
+                                    <a href="@_model.FacebookUrl" target="_blank" rel="noopener noreferrer" aria-label="Facebook"
                                        class="sponsor-detail__social-btn">
                                         <NebaSocialIcon Network="SocialNetwork.Facebook" />
                                     </a>
                                 }
                                 @if (_model.InstagramUrl is not null)
                                 {
-                                    <a href="@_model.InstagramUrl"
-                                       target="_blank"
-                                       rel="noopener noreferrer"
-                                       aria-label="Instagram"
+                                    <a href="@_model.InstagramUrl" target="_blank" rel="noopener noreferrer" aria-label="Instagram"
                                        class="sponsor-detail__social-btn">
                                         <NebaSocialIcon Network="SocialNetwork.Instagram" />
                                     </a>
@@ -204,8 +195,7 @@ else
                 @* TODO: restrict to authenticated users once auth is configured *@
                 @if (_model?.HasInternalContact == true)
                 {
-                    <section class="neba-card sponsor-detail__internal-contact"
-                             aria-label="Internal Sponsor Contact">
+                    <section class="neba-card sponsor-detail__internal-contact" aria-label="Internal Sponsor Contact">
                         <div class="sponsor-detail__internal-header">
                             <span class="material-symbols-outlined">lock</span>
                             <h3>Internal Sponsor Contact</h3>
