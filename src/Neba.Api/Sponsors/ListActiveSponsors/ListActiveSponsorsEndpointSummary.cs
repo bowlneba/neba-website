@@ -4,6 +4,7 @@ using FastEndpoints;
 
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Sponsors;
+using Neba.Domain.Sponsors;
 
 namespace Neba.Api.Sponsors.ListActiveSponsors;
 
@@ -28,8 +29,8 @@ internal sealed class ListActiveSponsorsEndpointSummary
                         LogoUrl = null,
                         IsCurrentSponsor = true,
                         Priority = 1,
-                        Tier = "Gold",
-                        Category = "Equipment",
+                        Tier = SponsorTier.Premier.Name,
+                        Category = SponsorCategory.ProShop.Name,
                         TagPhrase = "The best in bowling",
                         Description = null,
                         WebsiteUrl = null,
