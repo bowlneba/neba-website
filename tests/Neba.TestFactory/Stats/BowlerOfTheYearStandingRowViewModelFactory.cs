@@ -1,5 +1,6 @@
 using Bogus;
 
+using Neba.Domain.Bowlers;
 using Neba.Website.Server.Stats;
 
 namespace Neba.TestFactory.Stats;
@@ -8,7 +9,7 @@ public static class BowlerOfTheYearStandingRowViewModelFactory
 {
     public static BowlerOfTheYearStandingRowViewModel Create(
         int? rank = null,
-        Ulid? bowlerId = null,
+        BowlerId? bowlerId = null,
         string? bowlerName = null,
         int? points = null,
         int? tournaments = null,
@@ -19,7 +20,7 @@ public static class BowlerOfTheYearStandingRowViewModelFactory
         => new()
         {
             Rank = rank ?? 1,
-            BowlerId = bowlerId ?? Ulid.NewUlid(),
+            BowlerId = bowlerId?.Value ?? Ulid.NewUlid(),
             BowlerName = bowlerName ?? "Test Bowler",
             Points = points ?? 100,
             Tournaments = tournaments ?? 5,
@@ -41,7 +42,7 @@ public static class BowlerOfTheYearStandingRowViewModelFactory
                 return new BowlerOfTheYearStandingRowViewModel
                 {
                     Rank = rank,
-                    BowlerId = Ulid.NewUlid(),
+                    BowlerId = Ulid.Bogus(f),
                     BowlerName = f.Name.FullName(),
                     Points = Math.Max(0, count - rank + 1),
                     Tournaments = f.Random.Int(0, 20),
