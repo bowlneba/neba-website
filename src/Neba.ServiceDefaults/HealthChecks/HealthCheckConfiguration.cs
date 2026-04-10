@@ -6,9 +6,6 @@ using Microsoft.Extensions.Hosting;
 
 namespace Neba.ServiceDefaults.HealthChecks;
 
-#pragma warning disable S1144 // Unused private types or members should be removed
-#pragma warning disable S2325 // Private types or members should be static
-
 internal static class HealthCheckConfiguration
 {
     internal const string HealthEndpointPath = "/health";

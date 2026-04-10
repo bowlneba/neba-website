@@ -3,9 +3,6 @@ using Neba.Website.Server.Contact;
 
 namespace Neba.Website.Server.BowlingCenters;
 
-#pragma warning disable S1144 // Unused private types or members should be removed
-#pragma warning disable S2325 // Static types should be used
-
 internal static class BowlingCenterMappingExtensions
 {
     extension(BowlingCenterSummaryResponse response)

@@ -1,0 +1,26 @@
+﻿[
+  {
+    Season: 2013 Season,
+    WinnersByCategory: [
+      {
+        Bowler of the Year: Carmen Bradtke
+      }
+    ]
+  },
+  {
+    Season: 1951 Season,
+    WinnersByCategory: [
+      {
+        Youth: Neil Russel
+      }
+    ]
+  },
+  {
+    Season: 1933 Season,
+    WinnersByCategory: [
+      {
+        Super Senior: Bryan Boehm
+      }
+    ]
+  }
+]

@@ -12,9 +12,6 @@ using OpenTelemetry.Trace;
 
 namespace Neba.ServiceDefaults.Telemetry;
 
-#pragma warning disable S1144 // Unused private types or members should be removed
-#pragma warning disable S2325 // Private types or members should be static
-
 /// <summary>
 /// Extension methods for configuring telemetry in the application.
 /// </summary>

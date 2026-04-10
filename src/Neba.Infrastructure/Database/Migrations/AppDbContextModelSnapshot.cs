@@ -23,196 +23,6 @@ namespace Neba.Infrastructure.Database.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Neba.Domain.Seasons.BowlerOfTheYearAward", b =>
-                {
-                    b.Property<int>("db_id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
-
-                    b.Property<string>("BowlerId")
-                        .IsRequired()
-                        .HasMaxLength(26)
-                        .HasColumnType("character(26)")
-                        .HasColumnName("bowler_id")
-                        .IsFixedLength();
-
-                    b.Property<int>("Category")
-                        .HasColumnType("integer")
-                        .HasColumnName("category");
-
-                    b.Property<string>("Id")
-                        .IsRequired()
-                        .HasMaxLength(26)
-                        .HasColumnType("character(26)")
-                        .HasColumnName("domain_id")
-                        .IsFixedLength();
-
-                    b.Property<int>("season_id")
-                        .HasColumnType("integer")
-                        .HasColumnName("season_id");
-
-                    b.HasKey("db_id")
-                        .HasName("pk_bowler_of_the_year_awards");
-
-                    b.HasAlternateKey("Id")
-                        .HasName("ak_bowler_of_the_year_awards_domain_id");
-
-                    b.HasIndex("BowlerId")
-                        .HasDatabaseName("ix_bowler_of_the_year_awards_bowler_id");
-
-                    b.HasIndex("season_id")
-                        .HasDatabaseName("ix_bowler_of_the_year_awards_season_id");
-
-                    b.ToTable("bowler_of_the_year_awards", "app");
-                });
-
-            modelBuilder.Entity("Neba.Domain.Seasons.HighAverageAward", b =>
-                {
-                    b.Property<int>("db_id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
-
-                    b.Property<decimal>("Average")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)")
-                        .HasColumnName("average");
-
-                    b.Property<string>("BowlerId")
-                        .IsRequired()
-                        .HasMaxLength(26)
-                        .HasColumnType("character(26)")
-                        .HasColumnName("bowler_id")
-                        .IsFixedLength();
-
-                    b.Property<string>("Id")
-                        .IsRequired()
-                        .HasMaxLength(26)
-                        .HasColumnType("character(26)")
-                        .HasColumnName("domain_id")
-                        .IsFixedLength();
-
-                    b.Property<int?>("TotalGames")
-                        .HasColumnType("integer")
-                        .HasColumnName("total_games");
-
-                    b.Property<int?>("TournamentsParticipated")
-                        .HasColumnType("integer")
-                        .HasColumnName("tournaments_participated");
-
-                    b.Property<int>("season_id")
-                        .HasColumnType("integer")
-                        .HasColumnName("season_id");
-
-                    b.HasKey("db_id")
-                        .HasName("pk_high_average_awards");
-
-                    b.HasAlternateKey("Id")
-                        .HasName("ak_high_average_awards_domain_id");
-
-                    b.HasIndex("BowlerId")
-                        .HasDatabaseName("ix_high_average_awards_bowler_id");
-
-                    b.HasIndex("season_id")
-                        .HasDatabaseName("ix_high_average_awards_season_id");
-
-                    b.ToTable("high_average_awards", "app");
-                });
-
-            modelBuilder.Entity("Neba.Domain.Seasons.HighBlockAward", b =>
-                {
-                    b.Property<int>("db_id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
-
-                    b.Property<int>("BlockScore")
-                        .HasColumnType("integer")
-                        .HasColumnName("score");
-
-                    b.Property<string>("BowlerId")
-                        .IsRequired()
-                        .HasMaxLength(26)
-                        .HasColumnType("character(26)")
-                        .HasColumnName("bowler_id")
-                        .IsFixedLength();
-
-                    b.Property<string>("Id")
-                        .IsRequired()
-                        .HasMaxLength(26)
-                        .HasColumnType("character(26)")
-                        .HasColumnName("domain_id")
-                        .IsFixedLength();
-
-                    b.Property<int>("season_id")
-                        .HasColumnType("integer")
-                        .HasColumnName("season_id");
-
-                    b.HasKey("db_id")
-                        .HasName("pk_high_block_awards");
-
-                    b.HasAlternateKey("Id")
-                        .HasName("ak_high_block_awards_domain_id");
-
-                    b.HasIndex("BowlerId")
-                        .HasDatabaseName("ix_high_block_awards_bowler_id");
-
-                    b.HasIndex("season_id")
-                        .HasDatabaseName("ix_high_block_awards_season_id");
-
-                    b.ToTable("high_block_awards", "app");
-                });
-
-            modelBuilder.Entity("Neba.Domain.Seasons.Season", b =>
-                {
-                    b.Property<int>("db_id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
-
-                    b.Property<bool>("Complete")
-                        .HasColumnType("boolean")
-                        .HasColumnName("complete");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(31)
-                        .HasColumnType("character varying(31)")
-                        .HasColumnName("description");
-
-                    b.Property<DateOnly>("EndDate")
-                        .HasColumnType("date")
-                        .HasColumnName("end_date");
-
-                    b.Property<string>("Id")
-                        .IsRequired()
-                        .HasMaxLength(26)
-                        .HasColumnType("character(26)")
-                        .HasColumnName("domain_id")
-                        .IsFixedLength();
-
-                    b.Property<DateOnly>("StartDate")
-                        .HasColumnType("date")
-                        .HasColumnName("start_date");
-
-                    b.HasKey("db_id")
-                        .HasName("pk_seasons");
-
-                    b.HasAlternateKey("Id")
-                        .HasName("ak_seasons_domain_id");
-
-                    b.ToTable("seasons", "app");
-                });
-
             modelBuilder.Entity("Neba.Domain.Bowlers.Bowler", b =>
                 {
                     b.Property<int>("db_id")
@@ -457,62 +267,368 @@ namespace Neba.Infrastructure.Database.Migrations
 
             modelBuilder.Entity("Neba.Domain.Seasons.BowlerOfTheYearAward", b =>
                 {
-                    b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
-                        .WithMany()
-                        .HasForeignKey("BowlerId")
-                        .HasPrincipalKey("Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_bowler_of_the_year_awards_bowlers_bowler_id");
+                    b.Property<int>("db_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
-                    b.HasOne("Neba.Domain.Seasons.Season", null)
-                        .WithMany("BowlerOfTheYearAwards")
-                        .HasForeignKey("season_id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_bowler_of_the_year_awards_seasons_season_id");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
 
-                    b.Navigation("Bowler");
+                    b.Property<string>("BowlerId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("bowler_id")
+                        .IsFixedLength();
+
+                    b.Property<int>("Category")
+                        .HasColumnType("integer")
+                        .HasColumnName("category");
+
+                    b.Property<string>("Id")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("domain_id")
+                        .IsFixedLength();
+
+                    b.Property<int>("season_id")
+                        .HasColumnType("integer")
+                        .HasColumnName("season_id");
+
+                    b.HasKey("db_id")
+                        .HasName("pk_bowler_of_the_year_awards");
+
+                    b.HasAlternateKey("Id")
+                        .HasName("ak_bowler_of_the_year_awards_domain_id");
+
+                    b.HasIndex("BowlerId")
+                        .HasDatabaseName("ix_bowler_of_the_year_awards_bowler_id");
+
+                    b.HasIndex("season_id")
+                        .HasDatabaseName("ix_bowler_of_the_year_awards_season_id");
+
+                    b.ToTable("bowler_of_the_year_awards", "app");
                 });
 
             modelBuilder.Entity("Neba.Domain.Seasons.HighAverageAward", b =>
                 {
-                    b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
-                        .WithMany()
-                        .HasForeignKey("BowlerId")
-                        .HasPrincipalKey("Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_high_average_awards_bowlers_bowler_id");
+                    b.Property<int>("db_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
-                    b.HasOne("Neba.Domain.Seasons.Season", null)
-                        .WithMany("HighAverageAwards")
-                        .HasForeignKey("season_id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_high_average_awards_seasons_season_id");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
 
-                    b.Navigation("Bowler");
+                    b.Property<decimal>("Average")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("average");
+
+                    b.Property<string>("BowlerId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("bowler_id")
+                        .IsFixedLength();
+
+                    b.Property<string>("Id")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("domain_id")
+                        .IsFixedLength();
+
+                    b.Property<int?>("TotalGames")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_games");
+
+                    b.Property<int?>("TournamentsParticipated")
+                        .HasColumnType("integer")
+                        .HasColumnName("tournaments_participated");
+
+                    b.Property<int>("season_id")
+                        .HasColumnType("integer")
+                        .HasColumnName("season_id");
+
+                    b.HasKey("db_id")
+                        .HasName("pk_high_average_awards");
+
+                    b.HasAlternateKey("Id")
+                        .HasName("ak_high_average_awards_domain_id");
+
+                    b.HasIndex("BowlerId")
+                        .HasDatabaseName("ix_high_average_awards_bowler_id");
+
+                    b.HasIndex("season_id")
+                        .HasDatabaseName("ix_high_average_awards_season_id");
+
+                    b.ToTable("high_average_awards", "app");
                 });
 
             modelBuilder.Entity("Neba.Domain.Seasons.HighBlockAward", b =>
                 {
-                    b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
-                        .WithMany()
-                        .HasForeignKey("BowlerId")
-                        .HasPrincipalKey("Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_high_block_awards_bowlers_bowler_id");
+                    b.Property<int>("db_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
-                    b.HasOne("Neba.Domain.Seasons.Season", null)
-                        .WithMany("HighBlockAwards")
-                        .HasForeignKey("season_id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_high_block_awards_seasons_season_id");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
 
-                    b.Navigation("Bowler");
+                    b.Property<int>("BlockScore")
+                        .HasColumnType("integer")
+                        .HasColumnName("score");
+
+                    b.Property<string>("BowlerId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("bowler_id")
+                        .IsFixedLength();
+
+                    b.Property<string>("Id")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("domain_id")
+                        .IsFixedLength();
+
+                    b.Property<int>("season_id")
+                        .HasColumnType("integer")
+                        .HasColumnName("season_id");
+
+                    b.HasKey("db_id")
+                        .HasName("pk_high_block_awards");
+
+                    b.HasAlternateKey("Id")
+                        .HasName("ak_high_block_awards_domain_id");
+
+                    b.HasIndex("BowlerId")
+                        .HasDatabaseName("ix_high_block_awards_bowler_id");
+
+                    b.HasIndex("season_id")
+                        .HasDatabaseName("ix_high_block_awards_season_id");
+
+                    b.ToTable("high_block_awards", "app");
+                });
+
+            modelBuilder.Entity("Neba.Domain.Seasons.Season", b =>
+                {
+                    b.Property<int>("db_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
+
+                    b.Property<bool>("Complete")
+                        .HasColumnType("boolean")
+                        .HasColumnName("complete");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(31)
+                        .HasColumnType("character varying(31)")
+                        .HasColumnName("description");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
+                    b.Property<string>("Id")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("domain_id")
+                        .IsFixedLength();
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.HasKey("db_id")
+                        .HasName("pk_seasons");
+
+                    b.HasAlternateKey("Id")
+                        .HasName("ak_seasons_domain_id");
+
+                    b.ToTable("seasons", "app");
+                });
+
+            modelBuilder.Entity("Neba.Domain.Sponsors.Sponsor", b =>
+                {
+                    b.Property<int>("db_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
+
+                    b.Property<int>("Category")
+                        .HasColumnType("integer")
+                        .HasColumnName("category");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1023)
+                        .HasColumnType("character varying(1023)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("FacebookUrl")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("facebook_url");
+
+                    b.Property<string>("Id")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("domain_id")
+                        .IsFixedLength();
+
+                    b.Property<string>("InstagramUrl")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("instagram_url");
+
+                    b.Property<bool>("IsCurrentSponsor")
+                        .HasColumnType("boolean")
+                        .HasColumnName("current_sponsor");
+
+                    b.Property<string>("LiveReadText")
+                        .HasMaxLength(2047)
+                        .HasColumnType("character varying(2047)")
+                        .HasColumnName("live_read_text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(63)
+                        .HasColumnType("character varying(63)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer")
+                        .HasColumnName("priority");
+
+                    b.Property<string>("PromotionalNotes")
+                        .HasMaxLength(4095)
+                        .HasColumnType("character varying(4095)")
+                        .HasColumnName("promotional_notes");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(63)
+                        .HasColumnType("character varying(63)")
+                        .HasColumnName("slug");
+
+                    b.Property<string>("TagPhrase")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("tag_phrase");
+
+                    b.Property<int>("Tier")
+                        .HasColumnType("integer")
+                        .HasColumnName("tier");
+
+                    b.Property<string>("WebsiteUrl")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("website_url");
+
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "BusinessAddress", "Neba.Domain.Sponsors.Sponsor.BusinessAddress#Address", b1 =>
+                        {
+                            b1.Property<string>("City")
+                                .IsRequired()
+                                .HasMaxLength(50)
+                                .HasColumnType("character varying(50)")
+                                .HasColumnName("business_city");
+
+                            b1.Property<string>("Country")
+                                .IsRequired()
+                                .HasMaxLength(2)
+                                .HasColumnType("character(2)")
+                                .HasColumnName("business_country")
+                                .IsFixedLength();
+
+                            b1.Property<string>("PostalCode")
+                                .IsRequired()
+                                .HasMaxLength(10)
+                                .HasColumnType("character varying(10)")
+                                .HasColumnName("business_postal_code");
+
+                            b1.Property<string>("Region")
+                                .IsRequired()
+                                .HasMaxLength(2)
+                                .HasColumnType("character(2)")
+                                .HasColumnName("business_region")
+                                .IsFixedLength();
+
+                            b1.Property<string>("Street")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)")
+                                .HasColumnName("business_street");
+
+                            b1.Property<string>("Unit")
+                                .HasMaxLength(50)
+                                .HasColumnType("character varying(50)")
+                                .HasColumnName("business_unit");
+
+                            b1.ComplexProperty(typeof(Dictionary<string, object>), "Coordinates", "Neba.Domain.Sponsors.Sponsor.BusinessAddress#Address.Coordinates#Coordinates", b2 =>
+                                {
+                                    b2.Property<double>("Latitude")
+                                        .HasColumnType("double precision")
+                                        .HasColumnName("business_latitude");
+
+                                    b2.Property<double>("Longitude")
+                                        .HasColumnType("double precision")
+                                        .HasColumnName("business_longitude");
+                                });
+                        });
+
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "BusinessEmail", "Neba.Domain.Sponsors.Sponsor.BusinessEmail#EmailAddress", b1 =>
+                        {
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("business_email_address");
+                        });
+
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Logo", "Neba.Domain.Sponsors.Sponsor.Logo#StoredFile", b1 =>
+                        {
+                            b1.Property<string>("Container")
+                                .IsRequired()
+                                .HasMaxLength(63)
+                                .HasColumnType("character varying(63)")
+                                .HasColumnName("logo_container_name");
+
+                            b1.Property<string>("ContentType")
+                                .IsRequired()
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("logo_content_type");
+
+                            b1.Property<string>("Path")
+                                .IsRequired()
+                                .HasMaxLength(1023)
+                                .HasColumnType("character varying(1023)")
+                                .HasColumnName("logo_file_path");
+
+                            b1.Property<long>("SizeInBytes")
+                                .HasColumnType("bigint")
+                                .HasColumnName("logo_size_in_bytes");
+                        });
+
+                    b.HasKey("db_id")
+                        .HasName("pk_sponsors");
+
+                    b.HasAlternateKey("Id")
+                        .HasName("ak_sponsors_domain_id");
+
+                    b.HasAlternateKey("Slug")
+                        .HasName("ak_sponsors_slug");
+
+                    b.ToTable("sponsors", "app");
                 });
 
             modelBuilder.Entity("Neba.Domain.Bowlers.Bowler", b =>
@@ -672,6 +788,199 @@ namespace Neba.Infrastructure.Database.Migrations
                         .HasConstraintName("fk_hall_of_fame_inductions_bowlers_bowler_id");
 
                     b.Navigation("Bowler");
+                });
+
+            modelBuilder.Entity("Neba.Domain.Seasons.BowlerOfTheYearAward", b =>
+                {
+                    b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
+                        .WithMany()
+                        .HasForeignKey("BowlerId")
+                        .HasPrincipalKey("Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_bowler_of_the_year_awards_bowlers_bowler_id");
+
+                    b.HasOne("Neba.Domain.Seasons.Season", null)
+                        .WithMany("BowlerOfTheYearAwards")
+                        .HasForeignKey("season_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_bowler_of_the_year_awards_seasons_season_id");
+
+                    b.Navigation("Bowler");
+                });
+
+            modelBuilder.Entity("Neba.Domain.Seasons.HighAverageAward", b =>
+                {
+                    b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
+                        .WithMany()
+                        .HasForeignKey("BowlerId")
+                        .HasPrincipalKey("Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_high_average_awards_bowlers_bowler_id");
+
+                    b.HasOne("Neba.Domain.Seasons.Season", null)
+                        .WithMany("HighAverageAwards")
+                        .HasForeignKey("season_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_high_average_awards_seasons_season_id");
+
+                    b.Navigation("Bowler");
+                });
+
+            modelBuilder.Entity("Neba.Domain.Seasons.HighBlockAward", b =>
+                {
+                    b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
+                        .WithMany()
+                        .HasForeignKey("BowlerId")
+                        .HasPrincipalKey("Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_high_block_awards_bowlers_bowler_id");
+
+                    b.HasOne("Neba.Domain.Seasons.Season", null)
+                        .WithMany("HighBlockAwards")
+                        .HasForeignKey("season_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_high_block_awards_seasons_season_id");
+
+                    b.Navigation("Bowler");
+                });
+
+            modelBuilder.Entity("Neba.Domain.Sponsors.Sponsor", b =>
+                {
+                    b.OwnsOne("Neba.Domain.Sponsors.ContactInfo", "SponsorContact", b1 =>
+                        {
+                            b1.Property<int>("Sponsordb_id")
+                                .HasColumnType("integer")
+                                .HasColumnName("id");
+
+                            b1.Property<string>("Name")
+                                .IsRequired()
+                                .HasMaxLength(127)
+                                .HasColumnType("character varying(127)")
+                                .HasColumnName("contact_name");
+
+                            b1.HasKey("Sponsordb_id");
+
+                            b1.ToTable("sponsors", "app");
+
+                            b1.WithOwner()
+                                .HasForeignKey("Sponsordb_id")
+                                .HasConstraintName("fk_sponsors_sponsors_id");
+
+                            b1.OwnsOne("Neba.Domain.Contact.EmailAddress", "Email", b2 =>
+                                {
+                                    b2.Property<int>("ContactInfoSponsordb_id")
+                                        .HasColumnType("integer")
+                                        .HasColumnName("id");
+
+                                    b2.Property<string>("Value")
+                                        .IsRequired()
+                                        .HasMaxLength(255)
+                                        .HasColumnType("character varying(255)")
+                                        .HasColumnName("contact_email_address");
+
+                                    b2.HasKey("ContactInfoSponsordb_id");
+
+                                    b2.ToTable("sponsors", "app");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("ContactInfoSponsordb_id")
+                                        .HasConstraintName("fk_sponsors_sponsors_id");
+                                });
+
+                            b1.OwnsOne("Neba.Domain.Contact.PhoneNumber", "Phone", b2 =>
+                                {
+                                    b2.Property<int>("ContactInfoSponsordb_id")
+                                        .HasColumnType("integer")
+                                        .HasColumnName("id");
+
+                                    b2.Property<string>("CountryCode")
+                                        .IsRequired()
+                                        .HasMaxLength(3)
+                                        .HasColumnType("character varying(3)")
+                                        .HasColumnName("contact_phone_country_code");
+
+                                    b2.Property<string>("Extension")
+                                        .HasMaxLength(10)
+                                        .HasColumnType("character varying(10)")
+                                        .HasColumnName("contact_phone_extension");
+
+                                    b2.Property<string>("Number")
+                                        .IsRequired()
+                                        .HasMaxLength(15)
+                                        .HasColumnType("character varying(15)")
+                                        .HasColumnName("contact_phone_number");
+
+                                    b2.Property<string>("Type")
+                                        .IsRequired()
+                                        .HasMaxLength(1)
+                                        .HasColumnType("character(1)")
+                                        .HasColumnName("contact_phone_type")
+                                        .IsFixedLength();
+
+                                    b2.HasKey("ContactInfoSponsordb_id");
+
+                                    b2.ToTable("sponsors", "app");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("ContactInfoSponsordb_id")
+                                        .HasConstraintName("fk_sponsors_sponsors_id");
+                                });
+
+                            b1.Navigation("Email")
+                                .IsRequired();
+
+                            b1.Navigation("Phone")
+                                .IsRequired();
+                        });
+
+                    b.OwnsMany("Neba.Domain.Contact.PhoneNumber", "PhoneNumbers", b1 =>
+                        {
+                            b1.Property<int>("sponsor_id")
+                                .HasColumnType("integer")
+                                .HasColumnName("sponsor_id");
+
+                            b1.Property<string>("Type")
+                                .HasMaxLength(1)
+                                .HasColumnType("character(1)")
+                                .HasColumnName("phone_type")
+                                .IsFixedLength();
+
+                            b1.Property<string>("CountryCode")
+                                .IsRequired()
+                                .HasMaxLength(3)
+                                .HasColumnType("character varying(3)")
+                                .HasColumnName("phone_country_code");
+
+                            b1.Property<string>("Extension")
+                                .HasMaxLength(10)
+                                .HasColumnType("character varying(10)")
+                                .HasColumnName("phone_extension");
+
+                            b1.Property<string>("Number")
+                                .IsRequired()
+                                .HasMaxLength(15)
+                                .HasColumnType("character varying(15)")
+                                .HasColumnName("phone_number");
+
+                            b1.HasKey("sponsor_id", "Type")
+                                .HasName("pk_sponsor_phone_numbers");
+
+                            b1.ToTable("sponsor_phone_numbers", "app");
+
+                            b1.WithOwner()
+                                .HasForeignKey("sponsor_id")
+                                .HasConstraintName("fk_sponsor_phone_numbers_sponsors_sponsor_id");
+                        });
+
+                    b.Navigation("PhoneNumbers");
+
+                    b.Navigation("SponsorContact");
                 });
 
             modelBuilder.Entity("Neba.Domain.Seasons.Season", b =>

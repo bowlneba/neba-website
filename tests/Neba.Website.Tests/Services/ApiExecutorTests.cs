@@ -711,9 +711,15 @@ public sealed class ApiExecutorTests
             }
         };
         listener.SetMeasurementEventCallback<long>((instrument, value, tags, _) =>
-            longs.Add((instrument.Name, value, tags.ToArray().ToDictionary(t => t.Key, t => t.Value))));
+        {
+            var entry = (instrument.Name, value, (IReadOnlyDictionary<string, object?>)tags.ToArray().ToDictionary(t => t.Key, t => t.Value));
+            lock (longs) longs.Add(entry);
+        });
         listener.SetMeasurementEventCallback<double>((instrument, value, tags, _) =>
-            doubles.Add((instrument.Name, value, tags.ToArray().ToDictionary(t => t.Key, t => t.Value))));
+        {
+            var entry = (instrument.Name, value, (IReadOnlyDictionary<string, object?>)tags.ToArray().ToDictionary(t => t.Key, t => t.Value));
+            lock (doubles) doubles.Add(entry);
+        });
         listener.Start();
         return listener;
     }

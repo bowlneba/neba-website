@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Application.Bowlers;
 using Neba.Application.HallOfFame;
 using Neba.Application.HallOfFame.ListHallOfFameInductions;
 using Neba.Domain.HallOfFame;
@@ -17,7 +18,14 @@ internal sealed class HallOfFameQueries(AppDbContext appDbContext)
             .Select(induction => new HallOfFameInductionDto
             {
                 Year = induction.Year,
-                BowlerName = induction.Bowler.Name,
+                BowlerName = new BowlerNameDto
+                {
+                    FirstName = induction.Bowler.Name.FirstName,
+                    LastName = induction.Bowler.Name.LastName,
+                    MiddleName = induction.Bowler.Name.MiddleName,
+                    Suffix = induction.Bowler.Name.Suffix != null ? induction.Bowler.Name.Suffix.Value : null,
+                    Nickname = induction.Bowler.Name.Nickname
+                },
                 Categories = induction.Categories,
                 PhotoContainer = induction.Photo != null ? induction.Photo.Container : null,
                 PhotoPath = induction.Photo != null ? induction.Photo.Path : null

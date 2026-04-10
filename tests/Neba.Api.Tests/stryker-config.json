@@ -21,7 +21,9 @@
       "Log.*",
       "Logger.*",
       "Description",
-      "Options"
+      "Options",
+      "Get",
+      "Version"
     ],
     "mutate": [
       "**/*.cs",

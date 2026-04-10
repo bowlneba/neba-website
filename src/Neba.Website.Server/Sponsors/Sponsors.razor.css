@@ -1,0 +1,31 @@
+/* Title sponsor logo card — editorial clip */
+.editorial-asymmetry {
+    clip-path: polygon(0 0, 100% 0, 95% 100%, 0% 100%);
+}
+
+/* Premier partner card — top accent border */
+/* Shadow transitions are already handled by .neba-card and .neba-card:hover globally */
+.sponsor-card-premier {
+    border-top: 3px solid var(--neba-blue-700);
+}
+
+/* Association sponsor tile — lift on hover */
+.sponsor-tile {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+.sponsor-tile:hover {
+    transform: translateY(-3px);
+}
+
+/* CTA secondary button — white outline on dark gradient background */
+.sponsors-cta .neba-btn-secondary {
+    background-color: transparent;
+    border-color: #ffffff;
+    color: #ffffff;
+}
+
+.sponsors-cta .neba-btn-secondary:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.1);
+}

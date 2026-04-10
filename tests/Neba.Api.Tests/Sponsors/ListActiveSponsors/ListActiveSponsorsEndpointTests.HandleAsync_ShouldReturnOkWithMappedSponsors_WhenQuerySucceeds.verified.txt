@@ -1,0 +1,47 @@
+﻿{
+  Items: [
+    {
+      Name: Connelly, Cassin and Ledner,
+      Slug: dolorem-voluptatem-est,
+      LogoUrl: https://picsum.photos/640/480/?image=556,
+      IsCurrentSponsor: true,
+      Priority: 6,
+      Tier: Premier,
+      Category: Manufacturer,
+      TagPhrase: Expanded incremental algorithm,
+      Description: Vel in.,
+      WebsiteUrl: http://camylle.com,
+      FacebookUrl: facebook://chyna.com/haptic/handmade-wooden-salad/malagasy-ariary,
+      InstagramUrl: instagram://abel.name/stravenue
+    },
+    {
+      Name: Rogahn, Hoppe and Cormier,
+      Slug: accusantium-ab-dolor,
+      LogoUrl: https://picsum.photos/640/480/?image=679,
+      IsCurrentSponsor: true,
+      Priority: 7,
+      Tier: Premier,
+      Category: Bowling Center,
+      TagPhrase: Phased incremental analyzer,
+      Description: Quam nihil.,
+      WebsiteUrl: https://cyrus.com,
+      FacebookUrl: facebook://jamaal.com/actuating/protocol,
+      InstagramUrl: instagram://abdullah.com/mission/avon/backing-up
+    },
+    {
+      Name: Barton - Volkman,
+      Slug: non-praesentium-autem,
+      LogoUrl: https://picsum.photos/640/480/?image=669,
+      IsCurrentSponsor: true,
+      Priority: 8,
+      Tier: Standard,
+      Category: Manufacturer,
+      TagPhrase: Focused transitional matrices,
+      Description: Id sit.,
+      WebsiteUrl: https://vernice.biz,
+      FacebookUrl: facebook://laney.name/ergonomic-cotton-gloves/hack/concrete,
+      InstagramUrl: instagram://mac.com/synthesize/port/wyoming
+    }
+  ],
+  TotalItems: 3
+}

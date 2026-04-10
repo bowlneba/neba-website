@@ -70,3 +70,93 @@ export function createBowlingCenterResponse(
     ...overrides,
   };
 }
+
+export interface SponsorSummaryResponse {
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  isCurrentSponsor: boolean;
+  priority: number;
+  tier: string;
+  category: string;
+  tagPhrase?: string | null;
+  description?: string | null;
+  websiteUrl?: string | null;
+  facebookUrl?: string | null;
+  instagramUrl?: string | null;
+}
+
+export interface SponsorDetailResponse {
+  id: string;
+  name: string;
+  slug: string;
+  isCurrentSponsor: boolean;
+  priority: number;
+  tier: string;
+  category: string;
+  logoUrl?: string | null;
+  websiteUrl?: string | null;
+  tagPhrase?: string | null;
+  description?: string | null;
+  promotionalNotes?: string | null;
+  liveReadText?: string | null;
+  facebookUrl?: string | null;
+  instagramUrl?: string | null;
+  businessStreet?: string | null;
+  businessCity?: string | null;
+  businessState?: string | null;
+  businessPostalCode?: string | null;
+  businessEmailAddress?: string | null;
+  phoneNumbers: PhoneNumberResponse[];
+  sponsorContactName?: string | null;
+}
+
+export function createSponsorSummaryResponse(
+  overrides: Partial<SponsorSummaryResponse> = {}
+): SponsorSummaryResponse {
+  return {
+    name: 'Test Sponsor',
+    slug: 'test-sponsor',
+    logoUrl: null,
+    isCurrentSponsor: true,
+    priority: 1,
+    tier: 'Premier',
+    category: 'Pro Shop',
+    tagPhrase: null,
+    description: null,
+    websiteUrl: null,
+    facebookUrl: null,
+    instagramUrl: null,
+    ...overrides,
+  };
+}
+
+export function createSponsorDetailResponse(
+  overrides: Partial<SponsorDetailResponse> = {}
+): SponsorDetailResponse {
+  return {
+    id: '01JXXXXXXXXXXXXXXXXXXXXXXXXX',
+    name: 'Test Sponsor',
+    slug: 'test-sponsor',
+    isCurrentSponsor: true,
+    priority: 1,
+    tier: 'Premier',
+    category: 'Pro Shop',
+    logoUrl: null,
+    websiteUrl: null,
+    tagPhrase: null,
+    description: null,
+    promotionalNotes: null,
+    liveReadText: null,
+    facebookUrl: null,
+    instagramUrl: null,
+    businessStreet: null,
+    businessCity: null,
+    businessState: null,
+    businessPostalCode: null,
+    businessEmailAddress: null,
+    phoneNumbers: [],
+    sponsorContactName: null,
+    ...overrides,
+  };
+}

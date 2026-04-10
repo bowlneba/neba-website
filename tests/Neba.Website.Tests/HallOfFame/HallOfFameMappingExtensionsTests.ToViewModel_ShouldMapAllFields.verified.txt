@@ -1,0 +1,27 @@
+﻿[
+  {
+    BowlerName: Joe Daugherty,
+    InductionYear: 1988,
+    Categories: [
+      Superior Performance,
+      Meritorious Service
+    ]
+  },
+  {
+    BowlerName: Justin Konopelski,
+    InductionYear: 2009,
+    Categories: [
+      Meritorious Service,
+      Superior Performance
+    ]
+  },
+  {
+    BowlerName: Ellis Powlowski,
+    InductionYear: 1981,
+    Categories: [
+      Meritorious Service,
+      Superior Performance
+    ],
+    PhotoUri: http://yesenia.net
+  }
+]

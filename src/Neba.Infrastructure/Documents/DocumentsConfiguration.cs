@@ -9,8 +9,6 @@ using Neba.Application.Documents.SyncDocument;
 
 namespace Neba.Infrastructure.Documents;
 
-#pragma warning disable S1144 // Unused private methods are used in other implementations of IDocumentsService and may be used in the future as features are added. These methods are not currently used but are intentionally included for future extensibility.
-#pragma warning disable S2325 // Methods that do not access instance data are made static. These methods are not currently used but are intentionally included for future extensibility and may require instance data in the future as features are added.
 internal static class DocumentsConfiguration
 {
     extension(IServiceCollection services)

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Neba.Application.Awards;
 using Neba.Application.BowlingCenters;
 using Neba.Application.HallOfFame;
+using Neba.Application.Sponsors;
 using Neba.Infrastructure.Database.Interceptors;
 using Neba.Infrastructure.Database.Options;
 using Neba.Infrastructure.Database.Queries;
@@ -17,7 +18,6 @@ using Npgsql;
 
 namespace Neba.Infrastructure.Database;
 
-#pragma warning disable S1144 // Unused private types or members should be removed
 internal static class DatabaseConfiguration
 {
     extension(WebApplicationBuilder builder)
@@ -134,6 +134,7 @@ internal static class DatabaseConfiguration
             services.AddScoped<IBowlingCenterQueries, BowlingCenterQueries>();
             services.AddScoped<IHallOfFameQueries, HallOfFameQueries>();
             services.AddScoped<IAwardQueries, AwardQueries>();
+            services.AddScoped<ISponsorQueries, SponsorQueries>();
         }
     }
 }

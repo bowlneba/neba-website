@@ -15,7 +15,6 @@ using Neba.Infrastructure.Telemetry.Tracing;
 
 namespace Neba.Infrastructure;
 
-#pragma warning disable S1144 // Unused private types or members should be removed
 #pragma warning disable CA1708 // Identifiers should differ by more than case
 
 /// <summary>
@@ -46,7 +45,7 @@ public static class InfrastructureConfiguration
             builder.Services.AddBackgroundJobs(builder.Configuration);
             builder.Services.AddGoogleDrive(builder.Configuration);
 
-            builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+            builder.Services.AddSingleton(TimeProvider.System);
             builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
 
             return builder;

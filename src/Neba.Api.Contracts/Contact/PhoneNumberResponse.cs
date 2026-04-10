@@ -1,3 +1,5 @@
+using Neba.Api.Contracts.OpenApi;
+
 namespace Neba.Api.Contracts.Contact;
 
 /// <summary>
@@ -8,6 +10,7 @@ public sealed record PhoneNumberResponse
     /// <summary>
     /// The type of phone number, such as "mobile", "landline", "fax", etc., used for categorizing the phone number and providing context to users. This information helps users understand the nature of the contact number and how it can be used.
     /// </summary>
+    [OpenApiSmartEnum("PhoneNumberType")]
     public required string PhoneNumberType { get; init; }
 
     /// <summary>

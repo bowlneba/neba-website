@@ -1,0 +1,23 @@
+﻿[
+  {
+    Season: 1951 Season,
+    Bowlers: [
+      Neil Russel
+    ],
+    Score: 1400
+  },
+  {
+    Season: 2013 Season,
+    Bowlers: [
+      Carmen Bradtke
+    ],
+    Score: 1269
+  },
+  {
+    Season: 1933 Season,
+    Bowlers: [
+      Bryan Boehm
+    ],
+    Score: 1330
+  }
+]

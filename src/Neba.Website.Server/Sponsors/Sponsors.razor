@@ -1,0 +1,286 @@
+@page "/sponsors"
+@using Neba.Api.Contracts.Sponsors
+@using Neba.Website.Server.Services
+@using Neba.Website.Server.Sponsors
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject ApiExecutor ApiExecutor
+@inject ISponsorsApi SponsorsApi
+@inject ILogger<Sponsors> Logger
+
+<PageTitle>Our Partners - NEBA</PageTitle>
+<HeadContent>
+    <meta name="description"
+          content="Meet the partners who make NEBA bowling possible. Our sponsors support tournaments, awards, and the New England bowling community." />
+</HeadContent>
+
+<div class="neba-space-y-8">
+
+    <!-- 1. Page Header — always visible -->
+    <div>
+        <p class="text-xs font-semibold uppercase tracking-widest text-[var(--neba-blue-500)] mb-1">
+            Excellence In Association
+        </p>
+        <h1 class="text-3xl font-bold text-[var(--neba-blue-700)] border-l-4 border-[var(--neba-blue-700)] pl-3">
+            Our Partners
+        </h1>
+        <p class="mt-3 text-[var(--neba-gray-600)] max-w-2xl leading-relaxed">
+            NEBA's tournaments, awards, and community programs are made possible through the generous support
+            of our sponsors. We're proud to partner with businesses who share our commitment to bowling excellence
+            across New England.
+        </p>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <NebaAlert Severity="NotifySeverity.Error" Title="Error Loading Sponsors" Message="@_errorMessage" Dismissible="true"
+                   OnDismiss="@(() => _errorMessage = null)" />
+    }
+
+    @if (_isLoading)
+    {
+        <!-- Skeleton — mirrors real layout to prevent layout shift -->
+        <div aria-busy="true" aria-label="Loading sponsors" class="neba-space-y-8">
+
+            <!-- Title sponsor skeleton: two-column block -->
+            <div class="rounded-xl p-8 bg-[var(--neba-surface-high)] grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div class="space-y-4">
+                    <NebaSkeletonLoader Type="SkeletonType.Custom" Width="55%" Height="2.5rem" />
+                    <NebaSkeletonLoader Type="SkeletonType.Text" Rows="2" />
+                </div>
+                <NebaSkeletonLoader Type="SkeletonType.Custom" Width="100%" Height="240px" />
+            </div>
+
+            <!-- Premier Partners skeleton: heading + 3 cards -->
+            <div class="space-y-4">
+                <NebaSkeletonLoader Type="SkeletonType.Custom" Width="180px" Height="1.75rem" />
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    @for (var i = 0; i < 3; i++)
+                    {
+                        <div class="neba-card space-y-3">
+                            <div class="neba-skeleton h-20 w-full rounded"></div>
+                            <div class="neba-skeleton h-4 w-3/4"></div>
+                            <div class="neba-skeleton h-3 w-full"></div>
+                            <div class="neba-skeleton h-3 w-1/2"></div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Association Sponsors skeleton: heading + 8 tiles -->
+            <div class="space-y-4">
+                <NebaSkeletonLoader Type="SkeletonType.Custom" Width="220px" Height="1.75rem" />
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    @for (var i = 0; i < 8; i++)
+                    {
+                        <div class="neba-card flex flex-col items-center gap-2 p-4">
+                            <div class="neba-skeleton h-8 w-8 rounded-full"></div>
+                            <div class="neba-skeleton h-3 w-2/3"></div>
+                            <div class="neba-skeleton h-4 w-full"></div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+        </div>
+    }
+    else
+    {
+        <!-- 2. Title Sponsor -->
+        @if (TitleSponsor is not null)
+        {
+            <a href="/sponsors/@TitleSponsor.Slug"
+               class="block rounded-xl p-8 md:p-12 bg-[var(--neba-color-primary-container)] text-white no-underline"
+               aria-label="View details for @TitleSponsor.Name">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-widest text-[var(--neba-blue-200)] mb-2">
+                            Title Sponsor
+                        </p>
+                        <h2 id="title-sponsor-name" class="text-3xl font-bold mb-3">@TitleSponsor.Name</h2>
+                        @if (TitleSponsor.TagPhrase is not null)
+                        {
+                            <p class="text-lg text-[var(--neba-blue-200)] mb-4">@TitleSponsor.TagPhrase</p>
+                        }
+                        @if (TitleSponsor.Description is not null)
+                        {
+                            <p class="mb-6 leading-relaxed">@TitleSponsor.Description</p>
+                        }
+                        <div class="flex flex-wrap gap-3">
+                            @if (TitleSponsor.WebsiteUrl is not null)
+                            {
+                                <a href="@TitleSponsor.WebsiteUrl"
+                                   target="_blank" rel="noopener noreferrer"
+                                   class="neba-btn neba-btn-primary inline-flex items-center gap-2"
+                                   aria-label="Visit @TitleSponsor.Name website">
+                                    Visit Website
+                                    <span class="material-symbols-outlined" style="font-size: 1rem;">open_in_new</span>
+                                </a>
+                            }
+                            @if (TitleSponsor.FacebookUrl is not null)
+                            {
+                                <a href="@TitleSponsor.FacebookUrl"
+                                   target="_blank" rel="noopener noreferrer"
+                                   class="neba-btn inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/30 text-white"
+                                   aria-label="@TitleSponsor.Name on Facebook">
+                                    <NebaSocialIcon Network="SocialNetwork.Facebook" />
+                                </a>
+                            }
+                            @if (TitleSponsor.InstagramUrl is not null)
+                            {
+                                <a href="@TitleSponsor.InstagramUrl"
+                                   target="_blank" rel="noopener noreferrer"
+                                   class="neba-btn inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/30 text-white"
+                                   aria-label="@TitleSponsor.Name on Instagram">
+                                    <NebaSocialIcon Network="SocialNetwork.Instagram" />
+                                </a>
+                            }
+                        </div>
+                    </div>
+                    <div class="flex justify-center md:justify-end">
+                        <div class="editorial-asymmetry bg-white rounded-lg p-6 shadow-lg"
+                             style="transform: rotate(-2deg);">
+                            <img src="@(TitleSponsor.LogoUrl?.ToString() ?? "/images/neba-logo.png")"
+                                 alt="@TitleSponsor.Name logo"
+                                 class="max-h-48 object-contain" />
+                        </div>
+                    </div>
+                </div>
+            </a>
+        }
+
+        <!-- 3. Premier Partners -->
+        @if (PremierSponsors.Any())
+        {
+            <section aria-labelledby="premier-partners-heading">
+                <div class="flex items-center gap-4 mb-6">
+                    <h3 id="premier-partners-heading"
+                        class="text-xl font-bold text-[var(--neba-gray-800)] whitespace-nowrap">
+                        Premier Partners
+                    </h3>
+                    <hr class="flex-1 border-[var(--neba-border)]" />
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    @foreach (var sponsor in PremierSponsors)
+                    {
+                        <a href="/sponsors/@sponsor.Slug"
+                           class="neba-card sponsor-card-premier block"
+                           aria-label="Learn more about @sponsor.Name">
+                            <div class="h-24 flex items-center justify-center mb-4">
+                                <img src="@(sponsor.LogoUrl?.ToString() ?? "/images/neba-logo.png")"
+                                     alt="@sponsor.Name logo"
+                                     class="max-h-20 object-contain" />
+                            </div>
+                            <h4 class="font-semibold text-[var(--neba-text)] mb-1">@sponsor.Name</h4>
+                            <div class="text-xs font-medium uppercase tracking-wide text-[var(--neba-blue-500)] mb-2">
+                                @sponsor.Category
+                            </div>
+                            @if (sponsor.Description is not null)
+                            {
+                                <p class="text-sm text-[var(--neba-gray-600)] mb-4 leading-relaxed">
+                                    @sponsor.Description
+                                </p>
+                            }
+                        </a>
+                    }
+                </div>
+            </section>
+        }
+
+        <!-- 4. Association Sponsors -->
+        @if (AssociationSponsors.Any())
+        {
+            <section aria-labelledby="association-sponsors-heading"
+                     class="rounded-xl p-6 md:p-8 bg-[var(--neba-surface-low)]">
+                <div class="flex items-center gap-4 mb-6">
+                    <h3 id="association-sponsors-heading"
+                        class="text-xl font-bold text-[var(--neba-gray-800)] whitespace-nowrap">
+                        Association Sponsors
+                    </h3>
+                    <hr class="flex-1 border-[var(--neba-border)]" />
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    @foreach (var sponsor in AssociationSponsors)
+                    {
+                        <a href="/sponsors/@sponsor.Slug"
+                           class="sponsor-tile neba-card flex flex-col items-center text-center p-4 gap-2"
+                           aria-label="@sponsor.Name">
+                            <span class="material-symbols-outlined text-[var(--neba-blue-500)]"
+                                  style="font-size: 2rem;" aria-hidden="true">
+                                storefront
+                            </span>
+                            <div class="text-xs font-medium uppercase tracking-wide text-[var(--neba-gray-500)]">
+                                @sponsor.Category
+                            </div>
+                            <h4 class="font-semibold text-sm text-[var(--neba-text)]">@sponsor.Name</h4>
+                        </a>
+                    }
+                </div>
+            </section>
+        }
+    }
+
+    <!-- 5. CTA Section — always visible -->
+    <div class="sponsors-cta neba-gradient-brand rounded-xl p-8 md:p-12 relative overflow-hidden text-white">
+        <!-- Decorative blurred circles -->
+        <div class="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none"
+             style="background: rgba(255,255,255,0.08); filter: blur(48px); transform: translate(4rem, -4rem);"></div>
+        <div class="absolute bottom-0 left-0 w-48 h-48 rounded-full pointer-events-none"
+             style="background: rgba(255,255,255,0.05); filter: blur(32px); transform: translate(-3rem, 3rem);"></div>
+
+        <div class="relative text-center max-w-xl mx-auto">
+            <h2 class="text-2xl md:text-3xl font-bold mb-3">Want to join the legacy?</h2>
+            <p class="text-[var(--neba-blue-200)] mb-8 leading-relaxed">
+                Partner with NEBA and align your brand with 60+ years of bowling excellence in New England.
+            </p>
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="#" class="neba-btn neba-btn-primary neba-btn-lg">
+                    Download Sponsorship Kit
+                </a>
+                <a href="/contact" class="neba-btn neba-btn-secondary neba-btn-lg">
+                    Contact Partnerships
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@code {
+    private List<SponsorSummaryViewModel> _sponsors = [];
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    private SponsorSummaryViewModel? TitleSponsor =>
+        _sponsors.FirstOrDefault(s => s.Tier == "Title Sponsor");
+
+    private IEnumerable<SponsorSummaryViewModel> PremierSponsors =>
+        _sponsors
+            .Where(s => s.Tier == "Premier")
+            .OrderBy(s => s.Priority)
+            .ThenBy(s => s.Name);
+
+    private IEnumerable<SponsorSummaryViewModel> AssociationSponsors =>
+        _sponsors
+            .Where(s => s.Tier == "Standard")
+            .OrderBy(s => s.Priority)
+            .ThenBy(s => s.Name);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync(
+            "Sponsors",
+            "ListActiveSponsors",
+            ct => SponsorsApi.ListActiveSponsorsAsync(ct));
+
+        _isLoading = false;
+
+        if (result.IsError)
+        {
+            _errorMessage = result.FirstError.Description;
+            return;
+        }
+
+        _sponsors = result.Value.Items.Select(s => s.ToViewModel()).ToList();
+    }
+}

@@ -558,6 +558,16 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 ---
 
+## Tournaments
+
+### Tournament of Champions (TOC)
+
+**Definition**: NEBA's premier annual tournament event. The Title Sponsor's name is formally associated with this event for the duration of their sponsorship.
+
+> **Usage**: "TOC" is the accepted abbreviation used throughout NEBA communications and in code identifiers. The full term "Tournament of Champions" is used in formal contexts.
+
+---
+
 ## Awards
 
 ### Season
@@ -853,6 +863,137 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 **Definition**: Any individual who may be inducted into the Hall of Fame — including bowlers with a competitive history in NEBA and non-bowlers recognized under Friend of NEBA (e.g., center owners, sponsors, officials).
 
 > **Dev note**: The UL uses "Person" here to reflect that not all Inductees are competitive bowlers. However, the current system models all Persons as `Bowler` records. Any individual being inducted who does not already have a Bowler record must be added to the system as one before the Induction is recorded. The induction flow does not create Bowler records. This is an acknowledged semantic gap — if a future `Person` entity is introduced to represent non-bowlers, Induction will reference it instead.
+
+---
+
+## Sponsors
+
+### Sponsor
+
+**Definition**: A company or individual that has a formal promotional relationship with NEBA in exchange for recognition and visibility across NEBA events, publications, and digital properties. Sponsors are publicly displayed on the NEBA website and referenced throughout tournament operations (e.g., live read announcements, named tournaments). `Sponsor` is the aggregate root for all sponsorship concepts.
+
+> **"Sponsor" is the correct term.** Do not use *partner*, *advertiser*, or *supporter* as synonyms.
+
+**Properties**:
+
+| Property | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `Id` | ULID | Yes | System-generated unique identifier |
+| `SponsorName` | string | Yes | Display name — company name (e.g., "Storm Products Inc.") or individual name (e.g., "Tony & Suzanne Reynaud") |
+| `Slug` | string | Yes | URL-friendly unique identifier derived from the sponsor name; used to route to the sponsor's individual page (e.g., `/sponsors/storm`) |
+| `IsCurrentSponsor` | bool | Yes | Whether the sponsor is actively associated with NEBA for the current season. Manually managed until Sponsorship Agreement tracking is implemented |
+| `Priority` | int | Yes | Display order on the sponsor list. Lower values appear first. Title sponsors are assigned the highest priority (lowest number) |
+| `Tier` | `SponsorTier` | Yes | Classification of sponsorship level. See SponsorTier |
+| `Category` | `SponsorCategory` | Yes | Classification of the sponsor's industry or type. See SponsorCategory |
+| `Logo` | `StoredFile?` | No | Storage address of the sponsor's logo in Azure Blob Storage. Null for individual sponsors who do not have a logo. Blob path convention: `sponsors/{sponsorId}/logo/{filename}` |
+| `WebsiteUrl` | string? | No | External link to the sponsor's public website |
+| `TagPhrase` | string? | No | Short promotional phrase provided by the sponsor for announcements and the website (e.g., "Know Your Bowling Game"). Not applicable to individual sponsors |
+| `Description` | string? | No | Freeform text displayed on the sponsor's individual detail page. Written by NEBA staff or provided by the sponsor |
+| `LiveReadText` | string? | No | Sponsor-provided promotional text (typically two sentences) read aloud by the Tournament Director during match play finals broadcasts. Operational use only — not publicly displayed |
+| `PromotionalNotes` | string? | No | Internal-only notes capturing sponsor preferences for NEBA promotion (e.g., "QR code poster board at check-in"). Admin-visible only — never publicly displayed |
+| `FacebookUrl` | string? | No | Sponsor's Facebook page URL |
+| `InstagramUrl` | string? | No | Sponsor's Instagram profile URL |
+| `BusinessAddress` | `Address?` | No | Sponsor's primary business address. Not applicable for individual sponsors |
+| `BusinessEmail` | `EmailAddress?` | No | The sponsor's public-facing business email address (e.g., `inquiries@joesbusiness.com`). Distinct from `SponsorContact.Email`, which is the internal point-of-contact email for NEBA communications. Not applicable for individual sponsors |
+| `PhoneNumbers` | `IReadOnlyCollection<PhoneNumber>` | No | Sponsor's phone numbers, keyed by type (e.g., Voice, Fax). Stored in a child table `sponsor_phone_numbers`. Not applicable for individual sponsors |
+| `SponsorContact` | `ContactInfo?` | No | Designated point of contact at the sponsor's organization. For individual sponsors, may be the sponsor themselves |
+
+**Display Rules**:
+
+- The Sponsor List page displays all sponsors where `IsCurrentSponsor == true`, ordered by `Priority` ascending, then `SponsorName` alphabetically as a tiebreaker
+- Nullable fields are not displayed on the public site when absent — this accommodates individual sponsors for whom business-oriented fields are not applicable
+- `PromotionalNotes`, `SponsorContact`, `BusinessAddress`, `PhoneNumbers`, and `LiveReadText` are internal/admin only — never publicly displayed
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Sponsors`
+- Type: `Sponsor` (aggregate root)
+- Identity type: `SponsorId` (ULID-backed strongly-typed ID)
+
+---
+
+### SponsorTier
+
+**Definition**: A SmartEnum classifying the sponsor's level of commitment. Controls display prominence on the sponsor list page.
+
+| Value | Name | Description |
+| --- | --- | --- |
+| 1 | `Title Sponsor` | The highest sponsorship level. The title sponsor's name is associated with NEBA's premier events (e.g., the TOC). Displayed at the top of the sponsor list with elevated visual prominence. Currently: Storm Products Inc. |
+| 2 | `Premier` | Sponsors contributing above the standard minimum fee. Positioned between Title Sponsor and Standard in display order |
+| 3 | `Standard` | The base tier corresponding to the standard annual fee. The majority of sponsors fall here |
+
+> Future enhancement: promote to a configurable database-backed entity manageable through an admin interface.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Sponsors`
+- Type: `SponsorTier` (SmartEnum, int-valued)
+
+---
+
+### SponsorCategory
+
+**Definition**: A SmartEnum classifying the sponsor's industry or type. Used for filtering and grouping on the sponsor list.
+
+| Value | Name | Description |
+| --- | --- | --- |
+| 1 | `Other` | Sponsors that do not fit into a defined category |
+| 2 | `Manufacturer` | Bowling ball and equipment manufacturers (e.g., Storm, Roto Grip, 900 Global, Dexter) |
+| 4 | `ProShop` | Pro shops and bowling retail (e.g., Buddies Pro Shop, Bowl Winkle's Pro Shop) |
+| 8 | `BowlingCenter` | Bowling centers and lanes (e.g., Bowl-O-Rama, Old Mountain Lanes, Yankee Lanes) |
+| 16 | `FinancialServices` | Financial, credit, and business services (e.g., Cambridge Credit Counseling) |
+| 32 | `Technology` | Technology products and apps (e.g., Tournament Sense, Pinwheel.us) |
+| 64 | `Media` | Media and streaming services (e.g., TechVision Live Streaming) |
+| 128 | `Individual` | Individual or personal sponsors (e.g., Tony & Suzanne Reynaud) |
+
+> Values are powers of two to support potential future multi-category assignment via bit flags.
+
+> Future enhancement: promote to a configurable database-backed entity manageable through an admin interface.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Sponsors`
+- Type: `SponsorCategory` (SmartEnum, int-valued, power-of-two)
+
+---
+
+### SponsorPhoneNumber
+
+**Definition**: A phone number entry in the sponsor's `PhoneNumbers` collection. Each entry is identified by a `PhoneType` discriminator that enforces at most one number per type per sponsor at the schema level. Business phone numbers (e.g., main line, fax) are stored as a keyed collection in the `sponsor_phone_numbers` child table rather than as hardcoded columns on the sponsor record. `SponsorContact` retains a single inline `PhoneNumber` value object — a contact will only ever have one phone number.
+
+**In Code**:
+
+- Uses the shared `PhoneNumber` value object from `Neba.Domain.Contact`
+- Composite PK `(sponsor_id, phone_type)` in `sponsor_phone_numbers` enforces the one-per-type constraint at the database level
+
+---
+
+### PhoneType
+
+**Definition**: A discriminator identifying the role of a phone number on a sponsor record (e.g., Voice, Fax). Stored as a single character in the database. Enforces at most one entry per type in the `PhoneNumbers` collection via the composite primary key `(sponsor_id, phone_type)`.
+
+**In Code**:
+
+- Shared type from `Neba.Domain.Contact`
+
+---
+
+### ContactInfo
+
+**Definition**: A value object representing the designated point of contact at a sponsor's organization for NEBA communications. Follows the same construction pattern as `Address`, `PhoneNumber`, and `EmailAddress`. Scoped to the Sponsors domain — if needed elsewhere in the future, it will be moved to `Neba.Domain.Contact` and all references updated accordingly.
+
+**Fields**:
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `Name` | string | Yes | Full name of the contact person |
+| `Phone` | `PhoneNumber` | Yes | Contact's phone number |
+| `Email` | `EmailAddress` | Yes | Contact's email address |
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Sponsors`
+- Type: `ContactInfo` (sealed record, domain value object)
 
 ---
 

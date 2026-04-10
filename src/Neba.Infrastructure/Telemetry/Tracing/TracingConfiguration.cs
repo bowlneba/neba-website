@@ -4,9 +4,6 @@ using Neba.Application.Messaging;
 
 namespace Neba.Infrastructure.Telemetry.Tracing;
 
-#pragma warning disable S1144 // Unused private types or members should be removed
-#pragma warning disable S2325 // Classes should be static
-
 internal static class TracingConfiguration
 {
     extension(IServiceCollection services)

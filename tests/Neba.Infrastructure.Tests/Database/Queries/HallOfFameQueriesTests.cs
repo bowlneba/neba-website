@@ -68,8 +68,8 @@ public sealed class HallOfFameQueriesTests
 
         // Assert
         result.Count.ShouldBe(inductions.Count + 2);
-        result.ShouldContain(r => r.BowlerName == bowlerWithPhoto.Name && r.PhotoContainer != null);
-        result.ShouldContain(r => r.BowlerName == bowlerWithoutPhoto.Name && r.PhotoContainer == null);
+        result.ShouldContain(r => r.BowlerName.FirstName == bowlerWithPhoto.Name.FirstName && r.BowlerName.LastName == bowlerWithPhoto.Name.LastName && r.PhotoContainer != null);
+        result.ShouldContain(r => r.BowlerName.FirstName == bowlerWithoutPhoto.Name.FirstName && r.BowlerName.LastName == bowlerWithoutPhoto.Name.LastName && r.PhotoContainer == null);
 
         await Verify(result);
     }

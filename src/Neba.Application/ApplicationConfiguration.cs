@@ -4,9 +4,6 @@ using Neba.Application.Messaging;
 
 namespace Neba.Application;
 
-#pragma warning disable S1144 // Unused private types or members should be removed
-#pragma warning disable S2325 // Classes should be static
-
 /// <summary>
 /// Extension methods to add application dependencies to the service collection.
 /// </summary>

@@ -2,9 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Neba.Application.Messaging;
 
-#pragma warning disable S1144 // Unused private types or members should be removed
-#pragma warning disable S2325 // Classes should be static
-
 internal static class MessagingConfiguration
 {
     extension(IServiceCollection services)

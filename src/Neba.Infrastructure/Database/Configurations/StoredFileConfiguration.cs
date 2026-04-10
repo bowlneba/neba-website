@@ -7,10 +7,6 @@ using Neba.Domain.Storage;
 
 namespace Neba.Infrastructure.Database.Configurations;
 
-#pragma warning disable S1144 // Unused private types or members should be removed
-#pragma warning disable S2325 // Unused private types or members should be static
-#pragma warning disable CA1034 // Nested types should not be visible
-
 /// <summary>
 /// Provides extension methods for configuring owned <see cref="StoredFile"/> properties in Entity Framework Core entity configurations.
 /// </summary>

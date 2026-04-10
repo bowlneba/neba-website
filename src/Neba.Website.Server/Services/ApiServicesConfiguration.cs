@@ -6,13 +6,11 @@ using Neba.Api.Contracts.Awards;
 using Neba.Api.Contracts.BowlingCenters;
 using Neba.Api.Contracts.Documents;
 using Neba.Api.Contracts.HallOfFame;
+using Neba.Api.Contracts.Sponsors;
 
 using Refit;
 
 namespace Neba.Website.Server.Services;
-
-#pragma warning disable S1144 // Interfaces should not have public constructors
-#pragma warning disable S2325 // Private types or members should not be static
 
 internal static class ApiServicesConfiguration
 {
@@ -42,6 +40,7 @@ internal static class ApiServicesConfiguration
             services.RegisterApiEndpoint<IBowlingCentersApi>();
             services.RegisterApiEndpoint<IHallOfFameApi>();
             services.RegisterApiEndpoint<IAwardsApi>();
+            services.RegisterApiEndpoint<ISponsorsApi>();
 
             return services;
         }

@@ -4,9 +4,6 @@ using FastEndpoints.AspVersioning;
 
 namespace Neba.Api.Versioning;
 
-#pragma warning disable S1144 // Unused private types or members should be removed
-#pragma warning disable S2325 // Private types or members should not be static
-
 internal static class VersioningConfiguration
 {
     extension(IServiceCollection services)

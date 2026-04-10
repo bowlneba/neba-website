@@ -1,0 +1,44 @@
+﻿[
+  {
+    Name: Brown and Sons,
+    Slug: est-expedita-et,
+    LogoUrl: https://picsum.photos/640/480/?image=384,
+    IsCurrentSponsor: false,
+    Priority: 2,
+    Tier: Standard,
+    Category: Bowling Center,
+    TagPhrase: Ergonomic eco-centric website,
+    Description: Soluta expedita.,
+    WebsiteUrl: http://letitia.net,
+    FacebookUrl: facebook://rene.org/security/fantastic-soft-mouse/virtual,
+    InstagramUrl: instagram://jordan.name/feed/jewelery-sports--movies
+  },
+  {
+    Name: Ziemann LLC,
+    Slug: iure-iusto-cum,
+    LogoUrl: https://picsum.photos/640/480/?image=734,
+    IsCurrentSponsor: true,
+    Priority: 3,
+    Tier: Standard,
+    Category: Media,
+    TagPhrase: De-engineered even-keeled open architecture,
+    Description: Qui sequi.,
+    WebsiteUrl: https://arvel.org,
+    FacebookUrl: facebook://asa.biz/checking-account/concrete,
+    InstagramUrl: instagram://dakota.com/workforce/sas
+  },
+  {
+    Name: Keebler Group,
+    Slug: ea-est-rerum,
+    LogoUrl: https://picsum.photos/640/480/?image=132,
+    IsCurrentSponsor: true,
+    Priority: 4,
+    Tier: Premier,
+    Category: Manufacturer,
+    TagPhrase: Horizontal fault-tolerant framework,
+    Description: Consequatur et.,
+    WebsiteUrl: https://russell.net,
+    FacebookUrl: facebook://elisabeth.com/electronics-outdoors--health,
+    InstagramUrl: instagram://freida.name/grow
+  }
+]

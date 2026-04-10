@@ -7,9 +7,6 @@ using Scalar.AspNetCore;
 
 namespace Neba.Api.OpenApi;
 
-#pragma warning disable S1144 // Unused private types or members should be removed
-#pragma warning disable S2325 // Private types or members should not be static
-
 internal static class OpenApiConfiguration
 {
     extension(IServiceCollection services)
@@ -28,6 +25,7 @@ internal static class OpenApiConfiguration
                     settings.Version = "v1.0";
                     settings.Description = "NEBA API Service";
                     settings.ApiVersion(new ApiVersion(1, 0));
+                    settings.SchemaSettings.SchemaProcessors.Add(new SmartEnumSchemaProcessor());
                 };
 
                 options.AutoTagPathSegmentIndex = 0;

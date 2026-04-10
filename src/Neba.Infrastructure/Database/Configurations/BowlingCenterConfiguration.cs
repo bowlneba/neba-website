@@ -53,7 +53,8 @@ internal sealed class BowlingCenterConfiguration
         {
             phoneNumbers.ToTable("bowling_center_phone_numbers", AppDbContext.DefaultSchema);
             phoneNumbers.WithOwner().HasForeignKey(ForeignKeyName);
-            phoneNumbers.HasKey(ForeignKeyName, nameof(PhoneNumber.Type));
+            phoneNumbers.HasKey(ForeignKeyName, nameof(PhoneNumber.Type))
+                .HasName("pk_bowling_center_phone_numbers");
             phoneNumbers.WithPhoneNumbers();
         });
 

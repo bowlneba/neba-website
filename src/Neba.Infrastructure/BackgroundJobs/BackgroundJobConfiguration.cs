@@ -13,9 +13,6 @@ using Npgsql;
 
 namespace Neba.Infrastructure.BackgroundJobs;
 
-#pragma warning disable S1144 // Unused private types or members should be removed
-#pragma warning disable S2325 // Private types or members should be static
-
 internal static class BackgroundJobsConfiguration
 {
     extension(IServiceCollection services)

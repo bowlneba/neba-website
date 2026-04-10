@@ -12,17 +12,17 @@ internal sealed class SyncDocumentToStorageJobHandler(
     IDocumentsService documentsService,
     IFileStorageService fileStorageService,
     IStopwatchProvider stopwatchProvider,
-    IDateTimeProvider dateTimeProvider,
+    TimeProvider timeProvider,
     ILogger<SyncDocumentToStorageJobHandler> logger)
         : IBackgroundJobHandler<SyncDocumentToStorageJob>
 {
     private readonly IDocumentsService _documentsService = documentsService;
     private readonly IFileStorageService _fileStorageService = fileStorageService;
     private readonly IStopwatchProvider _stopwatchProvider = stopwatchProvider;
-    private readonly IDateTimeProvider _dateTimeProvider = dateTimeProvider;
+    private readonly TimeProvider _timeProvider = timeProvider;
     private readonly ILogger<SyncDocumentToStorageJobHandler> _logger = logger;
 
-    private const string Container = "documents";
+    private const string Container = "bowlneba-private";
     private static readonly ActivitySource ActivitySource = new("Neba.BackgroundJobs");
 
     public async Task ExecuteAsync(SyncDocumentToStorageJob job, CancellationToken cancellationToken)
@@ -57,13 +57,13 @@ internal sealed class SyncDocumentToStorageJobHandler(
             var uploadStartTimestamp = _stopwatchProvider.GetTimestamp();
             await _fileStorageService.UploadFileAsync(
                 Container,
-                job.DocumentName,
+                $"documents/{job.DocumentName}",
                 document.Content,
                 document.ContentType,
                 new Dictionary<string, string>
                 {
                     {"source_document_id", document.Id},
-                    {"cached_at", _dateTimeProvider.UtcNow.ToString("o")},
+                    {"cached_at", _timeProvider.GetUtcNow().ToString("o")},
                     {"source_last_modified", document.ModifiedAt?.ToString("o") ?? string.Empty}
                 },
                 cancellationToken
