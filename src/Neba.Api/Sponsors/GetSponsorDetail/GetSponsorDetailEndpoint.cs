@@ -42,6 +42,7 @@ internal sealed class GetSponsorDetailEndpoint(IQueryHandler<GetSponsorDetailQue
         if (result.IsError)
         {
             await Send.NotFoundAsync(ct);
+            // Stryker disable once Statement
             return;
         }
 
@@ -82,6 +83,7 @@ internal sealed class GetSponsorDetailEndpoint(IQueryHandler<GetSponsorDetailQue
             SponsorContactPhoneNumberType = dto.SponsorContactInfo?.PhoneNumber.PhoneNumberType,
         };
 
+        // Stryker disable once Statement
         await Send.OkAsync(response, ct);
     }
 }

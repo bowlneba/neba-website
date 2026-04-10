@@ -107,11 +107,9 @@ internal sealed class SponsorConfiguration
             });
         });
 
-        builder.HasEmailAddress(sponsor => sponsor.BusinessEmail, email =>
-        {
-            email.Property(e => e.Value)
-                .HasColumnName("business_email_address");
-        });
+        builder.HasEmailAddress(sponsor => sponsor.BusinessEmail, email => email
+            .Property(e => e.Value)
+            .HasColumnName("business_email_address"));
 
         builder.OwnsMany(sponsor => sponsor.PhoneNumbers, phoneNumbers =>
         {

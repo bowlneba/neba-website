@@ -20,11 +20,8 @@ internal sealed class GetSponsorDetailQueryHandler(ISponsorQueries sponsorQuerie
             return SponsorErrors.SponsorNotFound(query.Slug);
         }
 
-        if (sponsor.LogoContainer is not null && sponsor.LogoPath is not null)
-        {
-            return sponsor with { LogoUrl = _fileStorageService.GetBlobUri(sponsor.LogoContainer, sponsor.LogoPath) };
-        }
-
-        return sponsor;
+        return sponsor.LogoContainer is not null && sponsor.LogoPath is not null
+            ? sponsor with { LogoUrl = _fileStorageService.GetBlobUri(sponsor.LogoContainer, sponsor.LogoPath) }
+            : sponsor;
     }
 }

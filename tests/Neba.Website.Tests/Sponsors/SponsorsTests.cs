@@ -232,8 +232,8 @@ public sealed class SponsorsTests : IDisposable
     public void Render_ShouldUseFallbackLogo_WhenTitleSponsorHasNoLogoUrl()
     {
         var sponsor = SponsorSummaryResponseFactory.Create(
-            tier: SponsorTier.TitleSponsor,
-            logoUrl: null);
+            logoUrl: null,
+            tier: SponsorTier.TitleSponsor);
         SetupSuccessResponse([sponsor]);
 
         var cut = _ctx.Render<SponsorsPage>();
@@ -245,8 +245,8 @@ public sealed class SponsorsTests : IDisposable
     public void Render_ShouldUseSponsorLogo_WhenTitleSponsorHasLogoUrl()
     {
         var sponsor = SponsorSummaryResponseFactory.Create(
-            tier: SponsorTier.TitleSponsor,
-            logoUrl: new Uri("https://cdn.example.com/acme-logo.png"));
+            logoUrl: new Uri("https://cdn.example.com/acme-logo.png"),
+            tier: SponsorTier.TitleSponsor);
         SetupSuccessResponse([sponsor]);
 
         var cut = _ctx.Render<SponsorsPage>();
@@ -296,8 +296,8 @@ public sealed class SponsorsTests : IDisposable
     public void Render_ShouldLinkToSponsorDetails_WhenPremierSponsorRendered()
     {
         var sponsor = SponsorSummaryResponseFactory.Create(
-            tier: SponsorTier.Premier,
             slug: "premier-sponsor",
+            tier: SponsorTier.Premier,
             websiteUrl: new Uri("https://premier.example.com"));
         SetupSuccessResponse([sponsor]);
 
@@ -311,8 +311,8 @@ public sealed class SponsorsTests : IDisposable
     public void Render_ShouldLinkToSponsorDetails_WhenPremierSponsorHasNoWebsiteUrl()
     {
         var sponsor = SponsorSummaryResponseFactory.Create(
-            tier: SponsorTier.Premier,
             slug: "premier-no-website",
+            tier: SponsorTier.Premier,
             websiteUrl: null);
         SetupSuccessResponse([sponsor]);
 
@@ -369,8 +369,8 @@ public sealed class SponsorsTests : IDisposable
     public void Render_ShouldLinkToSponsorDetails_WhenAssociationSponsorHasWebsiteUrl()
     {
         var sponsor = SponsorSummaryResponseFactory.Create(
-            tier: SponsorTier.Standard,
             slug: "association-sponsor",
+            tier: SponsorTier.Standard,
             websiteUrl: new Uri("https://assoc.example.com"));
         SetupSuccessResponse([sponsor]);
 
@@ -384,8 +384,8 @@ public sealed class SponsorsTests : IDisposable
     public void Render_ShouldLinkToSponsorDetails_WhenAssociationSponsorHasNoWebsiteUrl()
     {
         var sponsor = SponsorSummaryResponseFactory.Create(
-            tier: SponsorTier.Standard,
             slug: "some-sponsor",
+            tier: SponsorTier.Standard,
             websiteUrl: null);
         SetupSuccessResponse([sponsor]);
 

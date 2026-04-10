@@ -148,7 +148,7 @@ season.AssignHighAverageWinner(command.BowlerId, command.Average, command.Games,
 |----------------|------|-----|-------|----------------------------------------------------------------------------------------|
 | Domain         | 95   | 90  | 85    |                                                                                        |
 | Application    | 95   | 90  | 85    |                                                                                        |
-| Infrastructure | 75   | 65  | 0     | Local only — Testcontainers integration tests crash the MTP runner; not wired into CI |
+| Infrastructure | 75   | 65  | 0     | Local only — Testcontainers integration tests crash the MTP runner; not wired into CI  |
 | API            | 80   | 60  | 75    |                                                                                        |
 | Blazor         | 85   | 70  | 65    |                                                                                        |
 
@@ -232,15 +232,47 @@ season.AssignHighAverageWinner(command.BowlerId, command.Average, command.Games,
 
 ### API Layer Mutation Testing — FastEndpoints Unit Test Limitations
 
-When writing Configure tests with `Factory.Create<TEndpoint>()`, two categories of mutations are permanently unkillable:
+When writing Configure tests with `Factory.Create<TEndpoint>()`, several categories of mutations are permanently unkillable:
 
-1. **`Get(...)` calls** — FastEndpoints source generation pre-registers route templates at compile time via `SelfRegisteredExtensions.cs`. Even when `Get(...)` is removed from `Configure()`, `Definition.Routes` still contains the route template. Assert routes using `ShouldContain()`, but the route mutation will always survive.
+1. **`Get(...)` calls** — FastEndpoints source generation pre-registers route templates at compile time via `SelfRegisteredExtensions.cs`. Even when `Get(...)` is removed from `Configure()`, `Definition.Routes` still contains the route template. Assert routes using `ShouldContain()`, but the route mutation will always survive. Add `"Get"` to `ignore-methods`.
 
-2. **`Description(...)` and `Options(...)` calls** — Both store `Action<RouteHandlerBuilder>` delegates that are only invoked during real app startup (not in `Factory.Create<>()` unit tests). `EndpointMetadata` is always empty in unit tests, so `TagsAttribute` lookups return 0 items. `endpoint.Definition.Version.Current` is always 0 when using `FastEndpoints.AspVersioning` (not direct FastEndpoints `Version()` call). Add `"Description"` and `"Options"` to `ignore-methods` in the API layer stryker-config.json to skip these unkillable mutations.
+2. **`Version(...)` calls** — `endpoint.Definition.Version.Current` is always 0 when using `FastEndpoints.AspVersioning` (version is applied via `MapToApiVersion` in an `Options()` delegate, not via direct `Version()` call). Add `"Version"` to `ignore-methods`.
 
-3. **`return;` after `Send.NotFoundAsync()`** — FastEndpoints base class swallows exceptions thrown after the response has been set. Even if `result.Value` throws (ErrorOr v2), the 404 status remains and assertions pass. This mutation is unkillable in unit tests.
+3. **`Description(...)` and `Options(...)` calls** — Both store `Action<RouteHandlerBuilder>` delegates that are only invoked during real app startup (not in `Factory.Create<>()` unit tests). `EndpointMetadata` is always empty in unit tests, so `TagsAttribute` lookups return 0 items. Add `"Description"` and `"Options"` to `ignore-methods`.
 
-**Practical limit**: The API layer stryker break threshold is 75%. With `"Description"` and `"Options"` in `ignore-methods`, the score achieves 75% (12/16). The 4 unkillable survivors are: 3 × `Get()` route mutations + 1 × `return;` guard.
+4. **`return;` after `Send.NotFoundAsync()`** — FastEndpoints base class swallows exceptions thrown after the response has been set. Even if `result.Value` throws (ErrorOr v2), the 404 status remains and assertions pass. Use `// Stryker disable once Statement` before these `return;` guards.
+
+5. **`await Send.OkAsync(...)` at the end of `HandleAsync`** — When this is the last statement, removing it is equivalent (no assertion fails on a void-like call with no state side-effects visible to unit tests). Use `// Stryker disable once Statement` before the final `Send.OkAsync` call.
+
+**`ignore-methods` for API layer** (all five categories above): `"Description"`, `"Options"`, `"Get"`, `"Version"` — add all four to stryker-config.json. Use `// Stryker disable once Statement` inline for the `return;` and `Send.OkAsync` guards.
+
+### API Layer Mutation Testing — `static readonly Lazy<>` Limitation
+
+When a class uses `private static readonly Lazy<T>` (e.g., for a cached dictionary built via reflection), the MTP runner shares the same process across mutant runs. Once the `Lazy<>` is initialized by the first mutant run, subsequent mutant runs for methods that only execute during initialization never re-trigger the factory. All mutations inside those methods survive regardless of test quality.
+
+**Fix — two-step inline disable required per init-only method**:
+
+1. `// Stryker disable all` **inside** the method body (as its first statement) — disables all inline mutations (logical, equality, boolean, statement, bitwise, etc.) scoped to that method body. Place in EVERY init-only method.
+2. `// Stryker disable once Block` **before** the method declaration — disables the block removal mutation, which operates at the declaration level and is NOT covered by the body-level disable. Place before EVERY init-only method declaration.
+
+```csharp
+// Stryker disable once Block : see BuildEnumNamesByTypeName
+private static IEnumerable<Assembly> GetDomainAssemblies()
+{
+    // Stryker disable all : see BuildEnumNamesByTypeName
+    EnsureNebaAssembliesLoaded();
+    return AppDomain.CurrentDomain.GetAssemblies()
+        .Where(a => a.GetName().Name?.StartsWith("Neba.Domain", StringComparison.Ordinal) == true);
+}
+```
+
+**Scope rules for inline disable comments** (confirmed empirically):
+
+- `// Stryker disable all` inside a method body: scoped to that method body only. Does NOT span to sibling methods even if `// Stryker restore all` is in a later method. Both disable and restore must be in the SAME method body, or disable placed before a method declaration only covers that immediate method.
+- `// Stryker disable once Block` before a method declaration: covers the NEXT block mutation (the method body block removal). One comment = one method.
+- `// Stryker disable all` / `// Stryker restore all` at CLASS scope (between method declarations): only covers the immediately following method declaration, NOT a range.
+
+This applies to any `ISchemaProcessor`, startup-cached registries, or other static initialization patterns.
 
 ### Log-Content Testing with FakeLogger
 

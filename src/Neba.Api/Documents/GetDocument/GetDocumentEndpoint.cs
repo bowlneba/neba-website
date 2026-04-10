@@ -45,6 +45,7 @@ internal sealed class GetDocumentEndpoint(IQueryHandler<GetDocumentQuery, ErrorO
         {
             await Send.NotFoundAsync(ct);
 
+            // Stryker disable once Statement
             return;
         }
 
