@@ -114,8 +114,7 @@ public sealed class SmartEnumSchemaProcessorTests
         var enumerableArgument = type
             .GetInterfaces()
             .Append(type)
-            .Where(interfaceType => interfaceType.IsGenericType)
-            .Where(interfaceType => interfaceType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            .Where(interfaceType => interfaceType.IsGenericType && interfaceType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
             .Select(interfaceType => interfaceType.GetGenericArguments()[0])
             .FirstOrDefault();
 
@@ -209,7 +208,7 @@ public sealed class SmartEnumSchemaProcessorTests
     }
 
 #pragma warning disable S2094 // Intentionally empty — used to test schema processor early-exit on types with no properties
-    private sealed class TypeWithNoPublicProperties { }
+    private sealed class TypeWithNoPublicProperties;
 #pragma warning restore S2094
 
     private sealed record TypeWithArraySmartEnum

@@ -179,22 +179,20 @@ internal sealed class SmartEnumSchemaProcessor : ISchemaProcessor
             return false;
         }
 
-        var valueNames = new List<string>();
-        foreach (object value in values)
-        {
-            string? name = value.GetType().GetProperty("Name", BindingFlags.Instance | BindingFlags.Public)?.GetValue(value) as string;
-            if (!string.IsNullOrWhiteSpace(name))
-            {
-                valueNames.Add(name);
-            }
-        }
+        var valueNames = values
+            .Cast<object>()
+            .Select(value => value.GetType().GetProperty("Name", BindingFlags.Instance | BindingFlags.Public)?.GetValue(value) as string)
+            .OfType<string>()
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
 
-        if (valueNames.Count == 0)
+        if (valueNames.Length == 0)
         {
             return false;
         }
 
-        names = [.. valueNames.Distinct(StringComparer.Ordinal)];
+        names = valueNames;
         return true;
     }
 
