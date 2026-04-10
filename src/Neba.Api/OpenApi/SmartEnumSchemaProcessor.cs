@@ -131,12 +131,13 @@ internal sealed class SmartEnumSchemaProcessor : ISchemaProcessor
     private static void EnqueueReferencedNebaAssemblies(Assembly assembly, HashSet<string> visited, Queue<Assembly> pending)
     {
         // Stryker disable all : see BuildEnumNamesByTypeName
-        foreach (AssemblyName reference in assembly
+        foreach (Assembly loaded in assembly
                      .GetReferencedAssemblies()
-                     .Where(reference => reference.Name?.StartsWith("Neba", StringComparison.Ordinal) == true && visited.Add(reference.FullName!)))
+                     .Where(reference => reference.Name?.StartsWith("Neba", StringComparison.Ordinal) == true && visited.Add(reference.FullName!))
+                     .Select(reference => new { Success = TryLoadAssembly(reference, out Assembly? loaded), Loaded = loaded })
+                     .Where(x => x.Success && x.Loaded is not null)
+                     .Select(x => x.Loaded!))
         {
-            if (!TryLoadAssembly(reference, out Assembly? loaded) || loaded is null) continue;
-
             pending.Enqueue(loaded);
         }
     }
