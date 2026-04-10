@@ -36,7 +36,7 @@ public static class BowlerFactory
         var faker = new Faker<Bowler>()
             .CustomInstantiator(f => new()
             {
-                Id = new BowlerId(Ulid.Bogus(f)),
+                Id = new BowlerId(Ulid.BogusString(f)),
                 Name = namePool.GetNext(),
                 WebsiteId = websiteIdPool.GetNextNullable(),
                 LegacyId = legacyIdPool.GetNextNullable()

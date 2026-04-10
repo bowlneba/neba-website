@@ -33,8 +33,8 @@ public static class HighAverageAwardFactory
         var faker = new Faker<HighAverageAward>()
             .CustomInstantiator(f => new()
             {
-                Id = new SeasonAwardId(Ulid.Bogus(f)),
-                BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.Bogus(f)),
+                Id = new SeasonAwardId(Ulid.BogusString(f)),
+                BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.BogusString(f)),
                 Average = f.Random.Decimal(200, 250),
                 TotalGames = f.Random.Int(40, 60),
                 TournamentsParticipated = f.Random.Int(10, 15)

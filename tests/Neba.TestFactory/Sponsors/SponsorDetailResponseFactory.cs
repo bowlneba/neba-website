@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using Bogus;
 
 using Neba.Api.Contracts.Contact;
@@ -54,7 +56,7 @@ public static class SponsorDetailResponseFactory
         string? contactPhoneNumberType = null)
             => new()
             {
-                Id = id?.ToString() ?? ValidId,
+                Id = id?.Value ?? Ulid.Parse(ValidId, CultureInfo.InvariantCulture),
                 Name = name ?? ValidName,
                 Slug = slug ?? ValidSlug,
                 IsCurrentSponsor = isCurrentSponsor ?? true,

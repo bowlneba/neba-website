@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Mime;
 
 using FastEndpoints;
@@ -19,7 +20,7 @@ internal sealed class GetSponsorDetailEndpointSummary
             contentType: MediaTypeNames.Application.Json,
             example: new SponsorDetailResponse
             {
-                Id = "01JWXYZEXAMPLE00000000000",
+                Id = Ulid.Parse("01JWXYZEXAMPLE00000000000", CultureInfo.InvariantCulture),
                 Name = "Acme Bowling Supply",
                 Slug = "acme-bowling-supply",
                 IsCurrentSponsor = true,

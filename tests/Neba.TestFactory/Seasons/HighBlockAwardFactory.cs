@@ -29,8 +29,8 @@ public static class HighBlockAwardFactory
         var faker = new Faker<HighBlockAward>()
             .CustomInstantiator(f => new()
             {
-                Id = new SeasonAwardId(Ulid.Bogus(f)),
-                BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.Bogus(f)),
+                Id = new SeasonAwardId(Ulid.BogusString(f)),
+                BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.BogusString(f)),
                 BlockScore = f.Random.Int(1250, 1400)
             });
 

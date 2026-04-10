@@ -67,7 +67,7 @@ public static class SponsorFactory
         var faker = new Faker<Sponsor>()
             .CustomInstantiator(f => new()
             {
-                Id = new SponsorId(Ulid.Bogus(f)),
+                Id = new SponsorId(Ulid.BogusString(f)),
                 Name = f.Company.CompanyName(),
                 Slug = f.Lorem.Slug(),
                 IsCurrentSponsor = f.Random.Bool(),

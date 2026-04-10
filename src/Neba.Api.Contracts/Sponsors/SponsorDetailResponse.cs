@@ -11,7 +11,7 @@ public sealed record SponsorDetailResponse
     /// <summary>
     /// Unique identifier for the sponsor.
     /// </summary>
-    public required string Id { get; init; }
+    public required Ulid Id { get; init; }
 
     /// <summary>
     /// Display name of the sponsor.

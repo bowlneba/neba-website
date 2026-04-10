@@ -70,7 +70,7 @@ public static class SponsorDetailDtoFactory
                 var hasLogo = f.Random.Bool();
                 return new()
                 {
-                    Id = new SponsorId(Ulid.Bogus(f)),
+                    Id = new SponsorId(Ulid.BogusString(f)),
                     Name = f.Company.CompanyName(),
                     Slug = f.Lorem.Slug(),
                     IsCurrentSponsor = f.Random.Bool(),

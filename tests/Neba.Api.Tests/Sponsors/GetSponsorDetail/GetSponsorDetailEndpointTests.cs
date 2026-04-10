@@ -34,7 +34,7 @@ public sealed class GetSponsorDetailEndpointTests
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
         endpoint.Response.ShouldNotBeNull();
-        endpoint.Response.Id.ShouldBe(dto.Id.Value.ToString());
+        endpoint.Response.Id.ShouldBe(dto.Id.Value);
         endpoint.Response.Slug.ShouldBe(dto.Slug);
         await Verify(endpoint.Response);
     }

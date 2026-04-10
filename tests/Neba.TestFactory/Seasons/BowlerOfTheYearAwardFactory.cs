@@ -52,8 +52,8 @@ public static class BowlerOfTheYearAwardFactory
         var faker = new Faker<BowlerOfTheYearAward>()
             .CustomInstantiator(f => new()
             {
-                Id = new SeasonAwardId(Ulid.Bogus(f)),
-                BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.Bogus(f)),
+                Id = new SeasonAwardId(Ulid.BogusString(f)),
+                BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.BogusString(f)),
                 Category = f.PickRandom(BowlerOfTheYearCategory.List.ToArray())
             });
 

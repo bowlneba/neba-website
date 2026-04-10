@@ -10,7 +10,7 @@ public sealed record SponsorDetailViewModel
     /// <summary>
     /// Unique identifier for the sponsor.
     /// </summary>
-    public required string Id { get; init; }
+    public required Ulid Id { get; init; }
 
     /// <summary>
     /// URL-friendly identifier for the sponsor.

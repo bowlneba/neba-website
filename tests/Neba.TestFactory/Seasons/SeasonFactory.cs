@@ -36,7 +36,7 @@ public static class SeasonFactory
         var faker = new Faker<Season>()
             .CustomInstantiator(f => new()
             {
-                Id = new SeasonId(Ulid.Bogus(f)),
+                Id = new SeasonId(Ulid.BogusString(f)),
                 Description = $"{f.Date.PastDateOnly(100).Year} Season",
                 StartDate = f.Date.PastDateOnly(5),
                 EndDate = f.Date.FutureDateOnly(5),

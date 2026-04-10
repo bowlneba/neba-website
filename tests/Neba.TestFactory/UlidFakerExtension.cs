@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using Bogus;
 
 namespace Neba.TestFactory;
@@ -8,8 +10,11 @@ internal static class UlidFakerExtensions
 
     extension(Ulid)
     {
-        public static string Bogus(Faker f) => Ulid.NewUlid(
+        public static string BogusString(Faker f) => Ulid.NewUlid(
             new DateTimeOffset(f.Date.Past(5, refDate: RefDate)),
             f.Random.Bytes(10)).ToString();
+
+        public static Ulid Bogus(Faker f)
+            => Ulid.Parse(BogusString(f), CultureInfo.InvariantCulture);
     }
 }
