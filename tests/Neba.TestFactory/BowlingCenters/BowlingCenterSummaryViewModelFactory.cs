@@ -8,6 +8,9 @@ namespace Neba.TestFactory.BowlingCenters;
 
 public static class BowlingCenterSummaryViewModelFactory
 {
+    public const string ValidPhoneDisplay = "(555) 123-4567";
+    public static readonly Uri ValidPhoneUri = new("tel:+15551234567");
+
     public static BowlingCenterSummaryViewModel Create(
         string? name = null,
         string? certificationNumber = null,
@@ -33,8 +36,8 @@ public static class BowlingCenterSummaryViewModelFactory
             PostalCode = postalCode ?? AddressFactory.ValidZipCode,
             Latitude = latitude ?? CoordinatesFactory.ValidLatitude,
             Longitude = longitude ?? CoordinatesFactory.ValidLongitude,
-            PhoneDisplay = phoneDisplay ?? "(555) 123-4567",
-            PhoneUri = phoneUri ?? new Uri("tel:+15551234567"),
+            PhoneDisplay = phoneDisplay ?? ValidPhoneDisplay,
+            PhoneUri = phoneUri ?? ValidPhoneUri,
             Website = website
         };
     }

@@ -12,6 +12,10 @@ public static class SponsorFactory
 {
     public const string ValidName = "Joe's Sponsorship Company";
     public const string ValidSlug = "joes-sponsorship-company";
+    public const bool ValidIsCurrentSponsor = true;
+    public const int ValidPriority = 1;
+    public static readonly SponsorTier ValidTier = SponsorTier.Standard;
+    public static readonly SponsorCategory ValidCategory = SponsorCategory.Technology;
 
     public static Sponsor Create(
         SponsorId? id = null,
@@ -38,10 +42,10 @@ public static class SponsorFactory
                 Id = id ?? SponsorId.New(),
                 Name = name ?? ValidName,
                 Slug = slug ?? ValidSlug,
-                IsCurrentSponsor = isCurrentSponsor ?? true,
-                Priority = priority ?? 1,
-                Tier = tier ?? SponsorTier.Standard,
-                Category = category ?? SponsorCategory.Technology,
+                IsCurrentSponsor = isCurrentSponsor ?? ValidIsCurrentSponsor,
+                Priority = priority ?? ValidPriority,
+                Tier = tier ?? ValidTier,
+                Category = category ?? ValidCategory,
                 Logo = logo,
                 WebsiteUrl = websiteUrl,
                 TagPhrase = tagPhrase,

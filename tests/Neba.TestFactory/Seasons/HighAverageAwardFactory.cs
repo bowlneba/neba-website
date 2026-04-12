@@ -7,6 +7,10 @@ namespace Neba.TestFactory.Seasons;
 
 public static class HighAverageAwardFactory
 {
+    public const decimal ValidAverage = 220.5m;
+    public const int ValidTotalGames = 50;
+    public const int ValidTournamentsParticipated = 12;
+
     public static HighAverageAward Create(
         SeasonAwardId? id = null,
         BowlerId? bowlerId = null,
@@ -18,9 +22,9 @@ public static class HighAverageAwardFactory
         {
             Id = id ?? SeasonAwardId.New(),
             BowlerId = bowlerId ?? BowlerId.New(),
-            Average = average ?? 220.5m,
-            TotalGames = totalGames ?? 50,
-            TournamentsParticipated = tournamentsParticipated ?? 12
+            Average = average ?? ValidAverage,
+            TotalGames = totalGames ?? ValidTotalGames,
+            TournamentsParticipated = tournamentsParticipated ?? ValidTournamentsParticipated
         };
     }
 

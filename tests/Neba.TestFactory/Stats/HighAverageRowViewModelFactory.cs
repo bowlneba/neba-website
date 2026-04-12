@@ -7,6 +7,13 @@ namespace Neba.TestFactory.Stats;
 
 public static class HighAverageRowViewModelFactory
 {
+    public const string ValidBowlerName = "Test Bowler";
+    public const int ValidRank = 1;
+    public const decimal ValidAverage = 200m;
+    public const int ValidGames = 10;
+    public const int ValidTournaments = 5;
+    public const decimal ValidFieldAverage = 10.2m;
+
     public static HighAverageRowViewModel Create(
         int? rank = null,
         BowlerId? bowlerId = null,
@@ -17,13 +24,13 @@ public static class HighAverageRowViewModelFactory
         decimal? fieldAverage = null)
         => new()
         {
-            Rank = rank ?? 1,
+            Rank = rank ?? ValidRank,
             BowlerId = bowlerId?.Value ?? Ulid.NewUlid(),
-            BowlerName = bowlerName ?? "Test Bowler",
-            Average = average ?? 200m,
-            Games = games ?? 10,
-            Tournaments = tournaments ?? 5,
-            FieldAverage = fieldAverage ?? 10.2m
+            BowlerName = bowlerName ?? ValidBowlerName,
+            Average = average ?? ValidAverage,
+            Games = games ?? ValidGames,
+            Tournaments = tournaments ?? ValidTournaments,
+            FieldAverage = fieldAverage ?? ValidFieldAverage
         };
 
     public static IReadOnlyCollection<HighAverageRowViewModel> Bogus(int count, int? seed = null)

@@ -10,13 +10,14 @@ public static class SeasonFactory
     public const string ValidDescription = "2025 Season";
     public static readonly DateOnly ValidStartDate = new(2025, 1, 1);
     public static readonly DateOnly ValidEndDate = new(2025, 12, 31);
+    public const bool ValidComplete = false;
 
     public static Season Create(
         SeasonId? id = null,
         string? description = null,
         DateOnly? startDate = null,
         DateOnly? endDate = null,
-        bool complete = false)
+        bool complete = ValidComplete)
     {
         return new Season
         {

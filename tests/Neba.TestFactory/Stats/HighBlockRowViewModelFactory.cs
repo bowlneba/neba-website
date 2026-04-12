@@ -7,6 +7,11 @@ namespace Neba.TestFactory.Stats;
 
 public static class HighBlockRowViewModelFactory
 {
+    public const string ValidBowlerName = "Test Bowler";
+    public const int ValidRank = 1;
+    public const int ValidHighBlock = 600;
+    public const int ValidHighGame = 300;
+
     public static HighBlockRowViewModel Create(
         int? rank = null,
         BowlerId? bowlerId = null,
@@ -15,11 +20,11 @@ public static class HighBlockRowViewModelFactory
         int? highGame = null)
         => new()
         {
-            Rank = rank ?? 1,
+            Rank = rank ?? ValidRank,
             BowlerId = bowlerId?.Value ?? Ulid.NewUlid(),
-            BowlerName = bowlerName ?? "Test Bowler",
-            HighBlock = highBlock ?? 600,
-            HighGame = highGame ?? 300
+            BowlerName = bowlerName ?? ValidBowlerName,
+            HighBlock = highBlock ?? ValidHighBlock,
+            HighGame = highGame ?? ValidHighGame
         };
 
     public static IReadOnlyCollection<HighBlockRowViewModel> Bogus(int count, int? seed = null)

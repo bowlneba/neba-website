@@ -7,6 +7,8 @@ namespace Neba.TestFactory.Seasons;
 
 public static class HighBlockAwardFactory
 {
+    public const int ValidBlockScore = 1300;
+
     public static HighBlockAward Create(
         SeasonAwardId? id = null,
         BowlerId? bowlerId = null,
@@ -16,7 +18,7 @@ public static class HighBlockAwardFactory
         {
             Id = id ?? SeasonAwardId.New(),
             BowlerId = bowlerId ?? BowlerId.New(),
-            BlockScore = blockScore ?? 1300
+            BlockScore = blockScore ?? ValidBlockScore
         };
     }
 

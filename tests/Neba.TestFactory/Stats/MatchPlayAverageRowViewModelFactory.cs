@@ -7,6 +7,14 @@ namespace Neba.TestFactory.Stats;
 
 public static class MatchPlayAverageRowViewModelFactory
 {
+    public const string ValidBowlerName = "Test Bowler";
+    public const int ValidRank = 1;
+    public const decimal ValidMatchPlayAverage = 200m;
+    public const int ValidGames = 10;
+    public const int ValidWins = 5;
+    public const int ValidLoses = 5;
+    public const decimal ValidWinnings = 1000m;
+
     public static MatchPlayAverageRowViewModel Create(
         int? rank = null,
         BowlerId? bowlerId = null,
@@ -18,14 +26,14 @@ public static class MatchPlayAverageRowViewModelFactory
         decimal? winnings = null)
         => new()
         {
-            Rank = rank ?? 1,
+            Rank = rank ?? ValidRank,
             BowlerId = bowlerId?.Value ?? Ulid.NewUlid(),
-            BowlerName = bowlerName ?? "Test Bowler",
-            MatchPlayAverage = matchPlayAverage ?? 200m,
-            Games = games ?? 10,
-            Wins = wins ?? 5,
-            Loses = loses ?? 5,
-            Winnings = winnings ?? 1000m
+            BowlerName = bowlerName ?? ValidBowlerName,
+            MatchPlayAverage = matchPlayAverage ?? ValidMatchPlayAverage,
+            Games = games ?? ValidGames,
+            Wins = wins ?? ValidWins,
+            Loses = loses ?? ValidLoses,
+            Winnings = winnings ?? ValidWinnings
         };
 
     public static IReadOnlyCollection<MatchPlayAverageRowViewModel> Bogus(int count, int? seed = null)

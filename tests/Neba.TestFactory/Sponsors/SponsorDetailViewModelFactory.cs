@@ -53,7 +53,7 @@ public static class SponsorDetailViewModelFactory
             Id = id ?? Ulid.Parse(ValidId, CultureInfo.InvariantCulture),
             Slug = slug ?? ValidSlug,
             Name = name ?? ValidName,
-            IsCurrentSponsor = isCurrentSponsor ?? true,
+            IsCurrentSponsor = isCurrentSponsor ?? SponsorFactory.ValidIsCurrentSponsor,
             TierName = tier?.Name ?? SponsorTier.Standard.Name,
             CategoryName = category?.Name ?? SponsorCategory.Technology.Name,
             LogoUrl = logoUrl,

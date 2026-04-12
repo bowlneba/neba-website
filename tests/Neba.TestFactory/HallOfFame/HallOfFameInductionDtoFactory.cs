@@ -9,6 +9,8 @@ namespace Neba.TestFactory.HallOfFame;
 
 public static class HallOfFameInductionDtoFactory
 {
+    public const int ValidYear = 2025;
+
     public static HallOfFameInductionDto Create(
         int? year = null,
         BowlerNameDto? bowlerName = null,
@@ -18,7 +20,7 @@ public static class HallOfFameInductionDtoFactory
         Uri? photoUri = null)
         => new()
         {
-            Year = year ?? 2025,
+            Year = year ?? ValidYear,
             BowlerName = bowlerName ?? BowlerNameDtoFactory.Create(),
             Categories = categories ?? [HallOfFameCategory.SuperiorPerformance],
             PhotoContainer = photoContainer,

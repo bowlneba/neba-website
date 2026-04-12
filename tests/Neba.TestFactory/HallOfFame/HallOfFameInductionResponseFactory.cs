@@ -8,6 +8,9 @@ namespace Neba.TestFactory.HallOfFame;
 
 public static class HallOfFameInductionResponseFactory
 {
+    public const int ValidYear = 2024;
+    public const string ValidBowlerName = "John Doe";
+
     public static HallOfFameInductionResponse Create(
         int? year = null,
         string? bowlerName = null,
@@ -15,8 +18,8 @@ public static class HallOfFameInductionResponseFactory
         Uri? photoUri = null)
         => new()
         {
-            Year = year ?? 2024,
-            BowlerName = bowlerName ?? "John Doe",
+            Year = year ?? ValidYear,
+            BowlerName = bowlerName ?? ValidBowlerName,
             Categories = categories ?? [HallOfFameCategory.SuperiorPerformance.Name, HallOfFameCategory.MeritoriousService.Name],
             PhotoUri = photoUri
         };

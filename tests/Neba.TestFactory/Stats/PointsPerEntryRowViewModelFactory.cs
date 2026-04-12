@@ -7,6 +7,11 @@ namespace Neba.TestFactory.Stats;
 
 public static class PointsPerEntryRowViewModelFactory
 {
+    public const string ValidBowlerName = "Test Bowler";
+    public const int ValidRank = 1;
+    public const int ValidPoints = 100;
+    public const int ValidEntries = 10;
+
     public static PointsPerEntryRowViewModel Create(
         int? rank = null,
         BowlerId? bowlerId = null,
@@ -15,11 +20,11 @@ public static class PointsPerEntryRowViewModelFactory
         int? entries = null)
         => new()
         {
-            Rank = rank ?? 1,
+            Rank = rank ?? ValidRank,
             BowlerId = bowlerId?.Value ?? Ulid.NewUlid(),
-            BowlerName = bowlerName ?? "Test Bowler",
-            Entries = entries ?? 10,
-            Points = points ?? 100
+            BowlerName = bowlerName ?? ValidBowlerName,
+            Entries = entries ?? ValidEntries,
+            Points = points ?? ValidPoints
         };
 
     public static IReadOnlyCollection<PointsPerEntryRowViewModel> Bogus(int count, int? seed = null)

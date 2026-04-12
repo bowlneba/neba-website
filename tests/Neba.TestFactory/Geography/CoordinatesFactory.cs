@@ -6,8 +6,8 @@ namespace Neba.TestFactory.Geography;
 
 public static class CoordinatesFactory
 {
-    public static double ValidLatitude => 40.7128; // Example: New York City latitude
-    public static double ValidLongitude => -74.0060; // Example: New York City longitude
+    public const double ValidLatitude = 40.7128;
+    public const double ValidLongitude = -74.0060;
 
     public static Coordinates Create(
         double? latitude = null,
