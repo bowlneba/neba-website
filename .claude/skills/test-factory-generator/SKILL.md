@@ -176,18 +176,11 @@ When a ViewModel/Response stores `BowlerId` as a raw `Ulid` (exposed as the `.Va
 - **Nullable optional properties**: default to `null` — no constant, no fallback value.
 - **Complex types** (another domain type): call the corresponding factory's `Create()` — no constant.
 
-## Step 5 — Present for review
+## Step 5 — Write the file
 
-Per project workflow (CLAUDE.md "Show, don't insert"), **display the generated factory in the response** rather than writing it directly to the file. Explain:
-- Where the file should go (`tests/Neba.TestFactory/<Area>/<TypeName>Factory.cs`)
-- Any correlation choices made
-- Any assumptions about domain ranges or defaults
+Write the factory directly to `tests/Neba.TestFactory/<Area>/<TypeName>Factory.cs` using the Write tool. Do not ask for confirmation first. Do not create any other files (no README, no docs).
 
-Ask the user if they want you to apply it.
-
-## Step 6 — Apply if confirmed
-
-If the user confirms, write the file using the Write tool. Do not create any other files (no README, no docs).
+After writing, briefly note the file path and any correlation choices made.
 
 ## Notes
 
