@@ -149,6 +149,20 @@ public static class <TypeName>Factory
 
 When a ViewModel/Response stores `BowlerId` as a raw `Ulid` (exposed as the `.Value` property), use the `bowlerId?.Value ?? Ulid.NewUlid()` pattern in `Create()` and `Ulid.Bogus(f)` in `Bogus()`.
 
+### Nested factory calls in Bogus()
+
+When a property is populated by calling another factory's `Bogus()` method inside `Bogus()`, **always forward the seed**:
+
+```csharp
+// ✅ Correct — seed forwarded
+Results = OtherFactory.Bogus(f.Random.Int(1, 5), seed)
+
+// ❌ Wrong — seed dropped, breaks Verify snapshot tests
+Results = OtherFactory.Bogus(f.Random.Int(1, 5))
+```
+
+This applies whether the call is inside `CustomInstantiator` or in the pre-computation block before the faker. The seed must flow to every nested `Bogus()` call in the method.
+
 ### Bogus value conventions by type
 
 | C# type             | Bogus expression                                 |
