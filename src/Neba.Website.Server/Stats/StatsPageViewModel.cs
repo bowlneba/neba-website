@@ -1,7 +1,7 @@
 namespace Neba.Website.Server.Stats;
 
 /// <summary>
-/// View model for the stats page. Contains all the necessary information to display the stats page, including the award standings, averages & scoring, match play, efficiency, minimum thresholds, sidebar information, and the full stat modal.
+/// View model for the stats page. Contains all the necessary information to display the stats page, including the award standings, averages &amp; scoring, match play, efficiency, minimum thresholds, sidebar information, and the full stat modal.
 /// </summary>
 public record StatsPageViewModel
 {
@@ -14,7 +14,7 @@ public record StatsPageViewModel
     /// A dictionary of available seasons, where the key is the season ID (Ulid) and the value is the season name (string). This is used to populate the season dropdown in the UI and to fetch the stats for the selected season when the user selects a different season from the dropdown. The season name is represented as a string in the format "YYYY-YYYY" (e.g. "2023-2024") to make it more user-friendly and easier to display in the UI. The actual season ID is stored in the key of the dictionary, which is used to fetch the stats for the selected season when the user selects a different season from the dropdown.
     /// </summary>
     public required IReadOnlyDictionary<Ulid, string> AvailableSeasons { get; init; }
-    
+
     /// <summary>
     /// A dictionary of bowlers, where the key is the bowler ID (Ulid) and the value is the bowler name (string). This is used to populate the bowler search list in the full stat modal and to link to the bowler's profile page when the user clicks on a bowler's name in the full stat modal. The bowler name is represented as a string to make it more user-friendly and easier to display in the UI. The actual bowler ID is stored in the key of the dictionary, which is used to link to the bowler's profile page when the user clicks on a bowler's name in the full stat modal.
     /// </summary>

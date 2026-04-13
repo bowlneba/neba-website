@@ -32,7 +32,7 @@ public static class HighBlockRowViewModelFactory
         var rank = 1;
         const int maxHighBlock = 1400;
         const int minHighBlock = 1250;
-        
+
         var step = count > 1
             ? (maxHighBlock - minHighBlock) / (count - 1)
             : 0;

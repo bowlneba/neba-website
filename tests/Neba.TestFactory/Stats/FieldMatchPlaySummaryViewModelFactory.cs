@@ -29,8 +29,8 @@ public static class FieldMatchPlaySummaryViewModelFactory
             .CustomInstantiator(f => new FieldMatchPlaySummaryViewModel
             {
                 HighestWinPercentage = f.Random.Decimal(0, 1),
-                HighestWinPercentageBowlers = new Dictionary<Ulid, string> 
-                { 
+                HighestWinPercentageBowlers = new Dictionary<Ulid, string>
+                {
                     { Ulid.Bogus(f, f.Date.Past()), f.Name.FullName() },
                     { Ulid.Bogus(f, f.Date.Past()), f.Name.FullName() }
                 },

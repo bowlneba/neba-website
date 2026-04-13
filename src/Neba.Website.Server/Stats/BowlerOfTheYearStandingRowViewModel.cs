@@ -28,17 +28,17 @@ public sealed record BowlerOfTheYearStandingRowViewModel
     /// <summary>
     /// The number of tournaments the bowler has participated in during the season.
     /// </summary>
-    public required int Tournaments { get; init;}
+    public required int Tournaments { get; init; }
 
     /// <summary>
     /// The number of tournament entries the bowler has made during the season.
     /// </summary>
-    public required int Entries { get; init;}
+    public required int Entries { get; init; }
 
     /// <summary>
     /// The number of times the bowler has advanced to the finals of a tournament during the season.
     /// </summary>
-    public required int Finals {get; init;}
+    public required int Finals { get; init; }
 
     /// <summary>
     /// The average finish position of the bowler in the tournaments they have participated in during the season.
@@ -47,7 +47,7 @@ public sealed record BowlerOfTheYearStandingRowViewModel
     /// This is calculated as the total of the bowler's finish positions in all tournaments divided by the number of tournaments they have participated in. A lower average finish indicates better performance.
     /// Previously, if a bowler had not advanced to the finals, their finishing position was not tracked, and will be null.  Currently, all bowlers have their finishing position tracked, so this will be null only if the bowler has not participated in any tournaments.
     /// </remarks>
-    public decimal? AverageFinish {get; init;}
+    public decimal? AverageFinish { get; init; }
 
     /// <summary>
     /// The total winnings of the bowler during the season, calculated as the sum of the prize money they have earned from all tournaments they have participated in. This is used for informational purposes and is not a factor in the bowler's ranking in the standings.
