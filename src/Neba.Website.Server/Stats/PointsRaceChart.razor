@@ -1,0 +1,164 @@
+@using ApexCharts
+@rendermode InteractiveServer
+
+@if (Series.Count > 0)
+{
+    <div class="points-race-chart @(ShowCategoryLabels ? "points-race-chart--full" : "points-race-chart--compact")">
+        <ApexChart TItem="PointsRaceTournamentViewModel" @key="_chartRenderKey" @ref="_chart" Title="@Title"
+                   Options="ChartOptions">
+            @foreach (var series in Series)
+            {
+                <ApexPointSeries TItem="PointsRaceTournamentViewModel"
+                                 Items="series.Results.OrderBy(r => r.TournamentDate).ToList()" Name="@series.BowlerName"
+                                 SeriesType="SeriesType.Line" XValue="r => r.TournamentName" YValue="r => r.CumulativePoints" />
+            }
+        </ApexChart>
+
+        @if (ShowCategoryLabels && _hiddenSeriesIds.Count > 0)
+        {
+            <div class="points-race-chart-legend-actions">
+                <button type="button" class="points-race-chart-legend-reset" @onclick="ResetLegend"
+                        @onclick:stopPropagation="true" aria-label="Reset legend visibility">
+                    Reset legend
+                </button>
+            </div>
+        }
+
+        <div class="points-race-chart-legend" aria-label="Chart legend">
+            @foreach (var seriesColor in SeriesColors.Zip(Series, static (color, series) => new { color, series }))
+            {
+                var isHidden = IsSeriesHidden(seriesColor.series.BowlerId);
+
+                <button type="button"
+                        class="@(isHidden ? "points-race-chart-legend-item points-race-chart-legend-item--hidden" : "points-race-chart-legend-item")"
+                        @onclick="() => ToggleSeries(seriesColor.series)" @onclick:stopPropagation="true"
+                        aria-pressed="@(!isHidden)" aria-label="@($"Toggle {seriesColor.series.BowlerName}")">
+                    <span class="points-race-chart-legend-swatch" style="@($"--legend-color: {seriesColor.color}")"
+                          aria-hidden="true"></span>
+                    <span class="points-race-chart-legend-label">@seriesColor.series.BowlerName</span>
+                </button>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public IReadOnlyCollection<PointsRaceSeriesViewModel> Series { get; set; } = [];
+    [Parameter] public string Title { get; set; } = "Points Race";
+    [Parameter] public bool ShowCategoryLabels { get; set; }
+    [Parameter] public double Height { get; set; } = 300;
+
+    private ApexChart<PointsRaceTournamentViewModel>? _chart;
+    private readonly HashSet<Ulid> _hiddenSeriesIds = [];
+    private int _chartRenderKey;
+
+    private IReadOnlyList<string> SeriesColors => BuildSeriesColors(Series.Count);
+
+    protected override void OnParametersSet()
+    {
+        var activeIds = Series.Select(x => x.BowlerId).ToHashSet();
+        _hiddenSeriesIds.RemoveWhere(id => !activeIds.Contains(id));
+    }
+
+    private ApexChartOptions<PointsRaceTournamentViewModel> ChartOptions => new()
+    {
+        Chart = new Chart
+        {
+            Toolbar = new Toolbar { Show = false },
+            Height = Height,
+        },
+        Stroke = new Stroke
+        {
+            Curve = Curve.Smooth,
+        },
+        Colors = SeriesColors.ToList(),
+        Legend = new Legend { Show = false },
+        Markers = new Markers
+        {
+            Size = 0,
+        },
+        Tooltip = new Tooltip
+        {
+            Enabled = true,
+        },
+        Xaxis = new XAxis
+        {
+            Labels = new XAxisLabels
+            {
+                Show = ShowCategoryLabels,
+                Rotate = ShowCategoryLabels ? -45 : 0,
+                RotateAlways = ShowCategoryLabels,
+                HideOverlappingLabels = !ShowCategoryLabels,
+                Trim = !ShowCategoryLabels,
+                MaxHeight = ShowCategoryLabels ? 120 : 0,
+                OffsetY = ShowCategoryLabels ? 10 : 0,
+            },
+            Tooltip = new XAxisTooltip { Enabled = false },
+        },
+    };
+
+    private static IReadOnlyList<string> BuildSeriesColors(int count)
+    {
+        if (count <= 0)
+        {
+            return [];
+        }
+
+        var colors = new List<string>(count);
+
+        for (var index = 0; index < count; index++)
+        {
+            var hue = (index * 137.508) % 360;
+            colors.Add(HslToHex(hue, 0.68, 0.52));
+        }
+
+        return colors;
+    }
+
+    private static string HslToHex(double hue, double saturation, double lightness)
+    {
+        var chroma = (1 - Math.Abs(2 * lightness - 1)) * saturation;
+        var huePrime = hue / 60;
+        var secondComponent = chroma * (1 - Math.Abs(huePrime % 2 - 1));
+
+        var (red, green, blue) = huePrime switch
+        {
+            >= 0 and < 1 => (chroma, secondComponent, 0d),
+            >= 1 and < 2 => (secondComponent, chroma, 0d),
+            >= 2 and < 3 => (0d, chroma, secondComponent),
+            >= 3 and < 4 => (0d, secondComponent, chroma),
+            >= 4 and < 5 => (secondComponent, 0d, chroma),
+            _ => (chroma, 0d, secondComponent),
+        };
+
+        var match = lightness - chroma / 2;
+
+        return $"#{ToRgb(red + match):X2}{ToRgb(green + match):X2}{ToRgb(blue + match):X2}";
+    }
+
+    private static int ToRgb(double channel)
+        => (int)Math.Round(Math.Clamp(channel, 0d, 1d) * 255);
+
+    private bool IsSeriesHidden(Ulid bowlerId)
+        => _hiddenSeriesIds.Contains(bowlerId);
+
+    private async Task ToggleSeries(PointsRaceSeriesViewModel series)
+    {
+        if (_chart is not null)
+        {
+            await _chart.ToggleSeriesAsync(series.BowlerName);
+        }
+
+        if (!_hiddenSeriesIds.Add(series.BowlerId))
+        {
+            _hiddenSeriesIds.Remove(series.BowlerId);
+        }
+    }
+
+    private async Task ResetLegend()
+    {
+        _hiddenSeriesIds.Clear();
+        _chartRenderKey++;
+        await InvokeAsync(StateHasChanged);
+    }
+}

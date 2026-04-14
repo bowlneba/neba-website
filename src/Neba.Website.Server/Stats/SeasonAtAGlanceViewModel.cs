@@ -6,11 +6,6 @@ namespace Neba.Website.Server.Stats;
 public sealed record SeasonAtAGlanceViewModel
 {
     /// <summary>
-    /// The average score for the season.
-    /// </summary>
-    public required decimal FieldAverage { get; init; }
-
-    /// <summary>
     /// The total number of entries for the season.
     /// </summary>
     public required int TotalEntries { get; init; }

@@ -8,6 +8,7 @@ public static class StatsPageViewModelFactory
 {
     public const string ValidSelectedSeason = "2024-2025";
     public const int ValidMinGamesHighAverage = 24;
+    public const int ValidMinMatchPlayGames = 12;
     public const int ValidMinMatchPlayAppearances = 8;
     public const int ValidMinEntries = 6;
 
@@ -31,6 +32,7 @@ public static class StatsPageViewModelFactory
         IReadOnlyCollection<FinalsPerEntryRowViewModel>? finalsPerEntry = null,
         IReadOnlyCollection<AverageFinishRowViewModel>? averageFinishes = null,
         int? minGamesHighAverage = null,
+        int? minMatchPlayGames = null,
         int? minMatchPlayAppearances = null,
         int? minEntries = null,
         SeasonAtAGlanceViewModel? seasonAtAGlance = null,
@@ -59,7 +61,8 @@ public static class StatsPageViewModelFactory
             FinalsPerEntry = finalsPerEntry ?? [FinalsPerEntryRowViewModelFactory.Create()],
             AverageFinishes = averageFinishes ?? [AverageFinishRowViewModelFactory.Create()],
             MinGamesHighAverage = minGamesHighAverage ?? ValidMinGamesHighAverage,
-            MinMatchPlayAppearances = minMatchPlayAppearances ?? ValidMinMatchPlayAppearances,
+            MinMatchPlayGames = minMatchPlayGames ?? ValidMinMatchPlayGames,
+            MinTournaments = minMatchPlayAppearances ?? ValidMinMatchPlayAppearances,
             MinEntries = minEntries ?? ValidMinEntries,
             SeasonAtAGlance = seasonAtAGlance ?? SeasonAtAGlanceViewModelFactory.Create(),
             SeasonsBests = seasonsBests ?? SeasonBestsViewModelFactory.Create(),
@@ -98,7 +101,8 @@ public static class StatsPageViewModelFactory
                     FinalsPerEntry = FinalsPerEntryRowViewModelFactory.Bogus(5, seed),
                     AverageFinishes = AverageFinishRowViewModelFactory.Bogus(5, seed),
                     MinGamesHighAverage = f.Random.Int(10, 50),
-                    MinMatchPlayAppearances = f.Random.Int(2, 15),
+                    MinMatchPlayGames = f.Random.Int(10, 50),
+                    MinTournaments = f.Random.Int(2, 15),
                     MinEntries = f.Random.Int(2, 12),
                     SeasonAtAGlance = SeasonAtAGlanceViewModelFactory.Bogus(1, seed).Single(),
                     SeasonsBests = SeasonBestsViewModelFactory.Bogus(1, seed).Single(),

@@ -46,6 +46,7 @@
 | Result Handling | ErrorOr |
 | Authentication | JWT, ASP.NET Core Identity |
 | Backend API | Fast Endpoints (separate `Neba.Api` project) |
+| Charts | Blazor-ApexCharts v6.1.0 — registered via `builder.Services.AddApexCharts()`. Chart components must carry `@rendermode InteractiveServer` (or inherit it from the page). No manual `<script>` tags required — the package resolves its own JS module. |
 
 ---
 

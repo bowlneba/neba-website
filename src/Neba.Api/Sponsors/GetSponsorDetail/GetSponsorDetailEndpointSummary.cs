@@ -20,7 +20,7 @@ internal sealed class GetSponsorDetailEndpointSummary
             contentType: MediaTypeNames.Application.Json,
             example: new SponsorDetailResponse
             {
-                Id = Ulid.Parse("01JWXYZEXAMPLE00000000000", CultureInfo.InvariantCulture),
+                Id = Ulid.Parse("01JWXYZEXAMPLE000000000000", CultureInfo.InvariantCulture),
                 Name = "Acme Bowling Supply",
                 Slug = "acme-bowling-supply",
                 IsCurrentSponsor = true,
