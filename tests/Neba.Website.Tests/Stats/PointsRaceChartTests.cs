@@ -70,4 +70,41 @@ public sealed class PointsRaceChartTests : IDisposable
         cut.FindAll(".points-race-chart-legend-reset").Count.ShouldBe(0);
         cut.FindAll(".points-race-chart-legend-item--hidden").Count.ShouldBe(0);
     }
+
+    [Fact(DisplayName = "Should render static non-interactive legend items when AllowSeriesToggle is false")]
+    public void Render_ShouldRenderStaticLegendItems_WhenAllowSeriesToggleIsFalse()
+    {
+        // Arrange
+        var series = PointsRaceSeriesViewModelFactory.Bogus(2, seed: 1104);
+
+        // Act
+        var cut = _ctx.Render<PointsRaceChartComponent>(p => p
+            .Add(x => x.Series, series)
+            .Add(x => x.AllowSeriesToggle, false));
+
+        // Assert
+        cut.FindAll(".points-race-chart-legend-item--static").Count.ShouldBe(2);
+        cut.FindAll("[aria-pressed]").Count.ShouldBe(0);
+        cut.FindAll(".points-race-chart-legend-reset").Count.ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "Should remove hidden series IDs and hide the reset button when the series list is updated to exclude them")]
+    public async Task OnParametersSet_ShouldRemoveStaleHiddenSeries_WhenSeriesRemoved()
+    {
+        // Arrange
+        var series = PointsRaceSeriesViewModelFactory.Bogus(2, seed: 1105);
+        var cut = _ctx.Render<PointsRaceChartComponent>(p => p
+            .Add(x => x.Series, series)
+            .Add(x => x.ShowCategoryLabels, true));
+
+        await cut.FindAll(".points-race-chart-legend-item")[0].ClickAsync(new());
+        cut.FindAll(".points-race-chart-legend-reset").Count.ShouldBe(1);
+
+        // Act — remove the series that was hidden
+        cut.Render(p => p.Add(x => x.Series, series.Skip(1).ToList()));
+
+        // Assert
+        cut.FindAll(".points-race-chart-legend-reset").Count.ShouldBe(0);
+        cut.FindAll(".points-race-chart-legend-item--hidden").Count.ShouldBe(0);
+    }
 }

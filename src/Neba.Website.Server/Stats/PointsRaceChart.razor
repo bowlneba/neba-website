@@ -14,7 +14,7 @@
             }
         </ApexChart>
 
-        @if (ShowCategoryLabels && _hiddenSeriesIds.Count > 0)
+        @if (AllowSeriesToggle && ShowCategoryLabels && _hiddenSeriesIds.Count > 0)
         {
             <div class="points-race-chart-legend-actions">
                 <button type="button" class="points-race-chart-legend-reset" @onclick="ResetLegend"
@@ -27,16 +27,26 @@
         <div class="points-race-chart-legend" aria-label="Chart legend">
             @foreach (var seriesColor in SeriesColors.Zip(Series, static (color, series) => new { color, series }))
             {
-                var isHidden = IsSeriesHidden(seriesColor.series.BowlerId);
-
-                <button type="button"
-                        class="@(isHidden ? "points-race-chart-legend-item points-race-chart-legend-item--hidden" : "points-race-chart-legend-item")"
-                        @onclick="() => ToggleSeries(seriesColor.series)" @onclick:stopPropagation="true"
-                        aria-pressed="@(!isHidden)" aria-label="@($"Toggle {seriesColor.series.BowlerName}")">
-                    <span class="points-race-chart-legend-swatch" style="@($"--legend-color: {seriesColor.color}")"
-                          aria-hidden="true"></span>
-                    <span class="points-race-chart-legend-label">@seriesColor.series.BowlerName</span>
-                </button>
+                @if (AllowSeriesToggle)
+                {
+                    var isHidden = IsSeriesHidden(seriesColor.series.BowlerId);
+                    <button type="button"
+                            class="@(isHidden ? "points-race-chart-legend-item points-race-chart-legend-item--hidden" : "points-race-chart-legend-item")"
+                            @onclick="() => ToggleSeries(seriesColor.series)" @onclick:stopPropagation="true"
+                            aria-pressed="@(!isHidden)" aria-label="@($"Toggle {seriesColor.series.BowlerName}")">
+                        <span class="points-race-chart-legend-swatch" style="@($"--legend-color: {seriesColor.color}")"
+                              aria-hidden="true"></span>
+                        <span class="points-race-chart-legend-label">@seriesColor.series.BowlerName</span>
+                    </button>
+                }
+                else
+                {
+                    <span class="points-race-chart-legend-item points-race-chart-legend-item--static">
+                        <span class="points-race-chart-legend-swatch" style="@($"--legend-color: {seriesColor.color}")"
+                              aria-hidden="true"></span>
+                        <span class="points-race-chart-legend-label">@seriesColor.series.BowlerName</span>
+                    </span>
+                }
             }
         </div>
     </div>
@@ -46,6 +56,7 @@
     [Parameter] public IReadOnlyCollection<PointsRaceSeriesViewModel> Series { get; set; } = [];
     [Parameter] public string Title { get; set; } = "Points Race";
     [Parameter] public bool ShowCategoryLabels { get; set; }
+    [Parameter] public bool AllowSeriesToggle { get; set; } = true;
     [Parameter] public double Height { get; set; } = 300;
 
     private ApexChart<PointsRaceTournamentViewModel>? _chart;

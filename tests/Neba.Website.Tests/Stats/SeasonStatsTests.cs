@@ -176,7 +176,8 @@ public sealed class SeasonStatsTests : IDisposable
             bowlerOfTheYearPointsRace: PointsRaceSeriesViewModelFactory.Bogus(3, seed: 1103));
     }
 
-    private sealed class FakeStatsApiService : IStatsApiService
+    private sealed class FakeStatsApiService
+        : IStatsApiService
     {
         private readonly Queue<Task<StatsPageViewModel>> _results = [];
 
@@ -190,6 +191,11 @@ public sealed class SeasonStatsTests : IDisposable
         public void EnqueueTask(Task<StatsPageViewModel> modelTask)
         {
             _results.Enqueue(modelTask);
+        }
+
+        public Task<IndividualStatsPageViewModel?> GetIndividualStatsAsync(Ulid bowlerId, Ulid? seasonId = null, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
         }
 
         public Task<StatsPageViewModel> GetStatsAsync(Ulid? seasonId = null, CancellationToken ct = default)

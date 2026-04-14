@@ -1,0 +1,343 @@
+@page "/stats/{BowlerId}"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject IStatsApiService StatsApi
+@inject NavigationManager Nav
+
+<PageTitle>@(_model is not null ? $"{_model.BowlerName} Stats - NEBA" : "Bowler Stats - NEBA")</PageTitle>
+<HeadContent>
+    <meta name="description"
+          content="@(_model is not null ? $"Individual NEBA season statistics for {_model.BowlerName}." : "Individual NEBA bowler statistics.")" />
+</HeadContent>
+
+<div class="neba-content-wrapper">
+
+    <!-- ── Hero ─────────────────────────────────────────────────── -->
+    <div class="indiv-hero">
+        <a href="/stats" class="indiv-back-link">← Season Stats</a>
+        <div class="indiv-hero-body">
+            <div class="indiv-hero-title">
+                @if (_isLoading)
+                {
+                    <NebaSkeletonLoader Type="SkeletonType.Custom" Width="260px" Height="2.25rem" />
+                }
+                else if (_model is not null)
+                {
+                    <h1 class="indiv-bowler-name">@_model.BowlerName</h1>
+                    <span class="indiv-season-label">@_model.SelectedSeason</span>
+                }
+            </div>
+            <div class="stats-season-selector" role="group" aria-label="Select season">
+                @foreach (var (id, name) in _initialAvailableSeasons)
+                {
+                    <button class="@(id == _selectedSeasonId ? "stats-season-btn active" : "stats-season-btn")"
+                            aria-pressed="@(id == _selectedSeasonId ? "true" : "false")" @onclick="() => OnSeasonChanged(id)">
+                        @name
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Loading / Not Found ───────────────────────────────────── -->
+    @if (_isLoading)
+    {
+        <div class="neba-space-y-4">
+            <NebaSkeletonLoader Type="SkeletonType.Custom" Width="100%" Height="88px" />
+            <NebaSkeletonLoader Type="SkeletonType.Custom" Width="100%" Height="480px" />
+        </div>
+    }
+    else if (_model is null)
+    {
+        <div class="text-center py-12">
+            <p class="text-gray-500">Bowler not found.</p>
+            <a href="/stats" class="mt-4 inline-block text-[var(--neba-blue-700)] hover:underline">
+                Back to Season Stats
+            </a>
+        </div>
+    }
+    else
+    {
+        <!-- ── Stats strip ───────────────────────────────────────── -->
+        <div class="indiv-stat-strip">
+            <div class="indiv-stat-card">
+                <span class="indiv-stat-value">@_model.Points.ToString("N0")</span>
+                <span class="indiv-stat-label">Points</span>
+            </div>
+            <div class="indiv-stat-card">
+                <span class="indiv-stat-value">@_model.Average.ToString("F2")</span>
+                <span class="indiv-stat-label">Average</span>
+            </div>
+            <div class="indiv-stat-card">
+                <span class="indiv-stat-value">@_model.Games.ToString("N0")</span>
+                <span class="indiv-stat-label">Games</span>
+            </div>
+            <div class="indiv-stat-card">
+                <span class="indiv-stat-value">@_model.Finals.ToString("N0")</span>
+                <span class="indiv-stat-label">Finals</span>
+            </div>
+            <div class="indiv-stat-card">
+                <span class="indiv-stat-value">@_model.Entries.ToString("N0")</span>
+                <span class="indiv-stat-label">Entries</span>
+            </div>
+            <div class="indiv-stat-card">
+                <span class="indiv-stat-value">@_model.Tournaments.ToString("N0")</span>
+                <span class="indiv-stat-label">Tournaments</span>
+            </div>
+            <div class="indiv-stat-card" aria-label="@($"Winnings: {_model.Winnings:C0}")">
+                <span class="indiv-stat-value">@_model.Winnings.ToString("C0")</span>
+                <span class="indiv-stat-label">$ Won</span>
+            </div>
+            @if (_model.MatchPlayWins + _model.MatchPlayLosses > 0)
+            {
+                <div class="indiv-stat-card">
+                    <span class="indiv-stat-value">@_model.MatchPlayWins–@_model.MatchPlayLosses</span>
+                    <span class="indiv-stat-label">MP Record</span>
+                </div>
+            }
+        </div>
+
+        <!-- ── Two-column layout ────────────────────────────────── -->
+        <div class="indiv-layout">
+
+            <main class="indiv-main neba-space-y-6">
+
+                <!-- ── Award Standings ──────────────────────────── -->
+                <section class="indiv-section">
+                    <div class="indiv-section-header indiv-accent-blue-500">
+                        <h2 class="indiv-section-title">Award Standings</h2>
+                    </div>
+                    <div class="indiv-rank-grid">
+                        @foreach (var (title, rank) in new (string, int?)[]
+                        {
+                            ("Bowler of the Year", _model.BowlerOfTheYearRank),
+                            ("Senior of the Year", _model.SeniorOfTheYearRank),
+                            ("Super Senior of the Year", _model.SuperSeniorOfTheYearRank),
+                            ("Woman of the Year", _model.WomanOfTheYearRank),
+                            ("Rookie of the Year", _model.RookieOfTheYearRank),
+                            ("Youth of the Year", _model.YouthOfTheYearRank),
+                        })
+                        {
+                            <div
+                                class="@(rank.HasValue ? "indiv-rank-card indiv-rank-card--blue-500" : "indiv-rank-card indiv-rank-card--unranked")">
+                                <span class="indiv-rank-number">@(rank.HasValue ? $"#{rank.Value}" : "—")</span>
+                                <span class="indiv-rank-title">@title</span>
+                            </div>
+                        }
+                    </div>
+                </section>
+
+                <!-- ── Averages & Scoring ────────────────────────── -->
+                <section class="indiv-section">
+                    <div class="indiv-section-header indiv-accent-primary">
+                        <h2 class="indiv-section-title">Averages &amp; Scoring</h2>
+                    </div>
+                    <div class="indiv-rank-grid">
+                        @foreach (var (title, rank) in new (string, int?)[]
+                        {
+                            ("High Average", _model.HighAverageRank),
+                            ("High Block", _model.HighBlockRank),
+                            ("Match Play Avg", _model.MatchPlayAverageRank),
+                        })
+                        {
+                            <div
+                                class="@(rank.HasValue ? "indiv-rank-card indiv-rank-card--primary" : "indiv-rank-card indiv-rank-card--unranked")">
+                                <span class="indiv-rank-number">@(rank.HasValue ? $"#{rank.Value}" : "—")</span>
+                                <span class="indiv-rank-title">@title</span>
+                            </div>
+                        }
+                    </div>
+                    @if (_model.MatchPlayAverage.HasValue)
+                    {
+                        <div class="indiv-detail-row">
+                            <span class="indiv-detail-label">Match Play Average</span>
+                            <span class="indiv-detail-value">@_model.MatchPlayAverage.Value.ToString("F2")</span>
+                        </div>
+                    }
+                </section>
+
+                <!-- ── Match Play ────────────────────────────────── -->
+                <section class="indiv-section">
+                    <div class="indiv-section-header indiv-accent-red">
+                        <h2 class="indiv-section-title">Match Play</h2>
+                    </div>
+                    <div class="indiv-rank-grid">
+                        @foreach (var (title, rank) in new (string, int?)[]
+                        {
+                            ("Match Play Record", _model.MatchPlayRecordRank),
+                            ("Match Play Appearances", _model.MatchPlayAppearancesRank),
+                        })
+                        {
+                            <div
+                                class="@(rank.HasValue ? "indiv-rank-card indiv-rank-card--red" : "indiv-rank-card indiv-rank-card--unranked")">
+                                <span class="indiv-rank-number">@(rank.HasValue ? $"#{rank.Value}" : "—")</span>
+                                <span class="indiv-rank-title">@title</span>
+                            </div>
+                        }
+                    </div>
+                    @if (_model.WinPercentage.HasValue)
+                    {
+                        <div class="indiv-detail-row">
+                            <span class="indiv-detail-label">Win Percentage</span>
+                            <span class="indiv-detail-value">@_model.WinPercentage.Value.ToString("F1")%</span>
+                        </div>
+                    }
+                </section>
+
+                <!-- ── Efficiency ────────────────────────────────── -->
+                <section class="indiv-section">
+                    <div class="indiv-section-header indiv-accent-blue-300">
+                        <h2 class="indiv-section-title">Efficiency</h2>
+                    </div>
+                    <div class="indiv-rank-grid">
+                        @foreach (var (title, rank) in new (string, int?)[]
+                        {
+                            ("Points Per Entry", _model.PointsPerEntryRank),
+                            ("Points Per Tourn.", _model.PointsPerTournamentRank),
+                            ("Finals Per Entry", _model.FinalsPerEntryRank),
+                            ("Average Finish", _model.AverageFinishRank),
+                        })
+                        {
+                            <div
+                                class="@(rank.HasValue ? "indiv-rank-card indiv-rank-card--blue-300" : "indiv-rank-card indiv-rank-card--unranked")">
+                                <span class="indiv-rank-number">@(rank.HasValue ? $"#{rank.Value}" : "—")</span>
+                                <span class="indiv-rank-title">@title</span>
+                            </div>
+                        }
+                    </div>
+                </section>
+
+            </main>
+
+            <!-- ── Sidebar ───────────────────────────────────────── -->
+            <aside class="indiv-sidebar">
+
+                <!-- vs. Field -->
+                <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">vs. Field</h2>
+                    <div class="indiv-vs-field">
+                        <span class="indiv-vs-field-value @FieldAvgClass(_model.FieldAverage)"
+                              aria-label="@FieldAvgAriaLabel(_model.FieldAverage)">
+                            @FormatFieldAvg(_model.FieldAverage)
+                        </span>
+                        <span class="indiv-vs-field-label">vs. field average</span>
+                    </div>
+                </div>
+
+                @if (_model.BowlerOfTheYearPointsRace is not null)
+                {
+                    <div class="indiv-points-race-card"
+                         role="button"
+                         tabindex="0"
+                         aria-label="Open Bowler of the Year race chart"
+                         @onclick="OpenPointsRaceModal"
+                         @onkeydown="OnPointsRaceWidgetKeyDown">
+                        <div class="indiv-points-race-card-header">
+                            <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Points Race</h2>
+                            <span class="indiv-points-race-card-hint">Open full chart</span>
+                        </div>
+                        <PointsRaceChart Series="@(new[] { _model.BowlerOfTheYearPointsRace! })" Height="240" AllowSeriesToggle="false" />
+                    </div>
+                }
+
+            </aside>
+        </div>
+
+        @if (_modalOpen)
+        {
+            <div class="indiv-modal-backdrop" @onclick="CloseModal" role="dialog" aria-modal="true"
+                 aria-label="@_modalTitle">
+                <div class="indiv-modal" @onclick:stopPropagation>
+                    <div class="indiv-modal-header">
+                        <h2 class="indiv-modal-title">@_modalTitle</h2>
+                        <button class="indiv-modal-close" @onclick="CloseModal" aria-label="Close">&#x2715;</button>
+                    </div>
+                    <div class="indiv-modal-body">
+                        @_modalContent
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public string BowlerId { get; set; } = "";
+
+    private IndividualStatsPageViewModel? _model;
+    private bool _isLoading = true;
+    private Ulid _selectedSeasonId;
+    private IReadOnlyDictionary<Ulid, string> _initialAvailableSeasons = new Dictionary<Ulid, string>();
+
+    private bool _modalOpen;
+    private string _modalTitle = "";
+    private RenderFragment _modalContent = builder => { };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Ulid.TryParse(BowlerId, null, out var bowlerId))
+        {
+            _isLoading = false;
+            return;
+        }
+
+        _model = await StatsApi.GetIndividualStatsAsync(bowlerId);
+        if (_model is not null)
+        {
+            _initialAvailableSeasons = _model.AvailableSeasons;
+            _selectedSeasonId = _initialAvailableSeasons.Keys.First();
+        }
+
+        _isLoading = false;
+    }
+
+    private async Task OnSeasonChanged(Ulid seasonId)
+    {
+        if (!Ulid.TryParse(BowlerId, null, out var bowlerId))
+            return;
+
+        _isLoading = true;
+        _selectedSeasonId = seasonId;
+        StateHasChanged();
+
+        _model = await StatsApi.GetIndividualStatsAsync(bowlerId, seasonId);
+        _isLoading = false;
+    }
+
+    private void OpenPointsRaceModal()
+    {
+        if (_model is null) return;
+        _modalTitle = "Bowler of the Year Race";
+        _modalContent = RenderPointsRaceModal();
+        _modalOpen = true;
+    }
+
+    private void CloseModal()
+    {
+        _modalOpen = false;
+    }
+
+    private void OnPointsRaceWidgetKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or " ")
+            OpenPointsRaceModal();
+    }
+
+    private RenderFragment RenderPointsRaceModal() => @<div class="indiv-chart-modal">
+        <PointsRaceChart Series="@(new[] { _model!.BowlerOfTheYearPointsRace! })"
+                         Title=""
+                         ShowCategoryLabels="true"
+                         AllowSeriesToggle="false"
+                         Height="520" />
+    </div>;
+
+    private static string FormatFieldAvg(decimal value)
+        => value >= 0 ? $"+{value:F2}" : value.ToString("F2");
+
+    private static string FieldAvgClass(decimal value)
+        => value >= 0 ? "text-[var(--neba-success)]" : "text-gray-400";
+
+    private static string FieldAvgAriaLabel(decimal value)
+        => value >= 0
+            ? $"{Math.Abs(value):F2} above field average"
+            : $"{Math.Abs(value):F2} below field average";
+}
