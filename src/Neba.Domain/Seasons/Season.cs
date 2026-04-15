@@ -1,6 +1,7 @@
 using ErrorOr;
 
 using Neba.Domain.Bowlers;
+using Neba.Domain.Stats;
 
 namespace Neba.Domain.Seasons;
 
@@ -31,6 +32,10 @@ public sealed class Season
     /// The last date of the season. Inclusive.
     /// </summary>
     public required DateOnly EndDate { get; init; }
+
+    private readonly List<BowlerSeasonStats> _bowlerStats = [];
+    internal IReadOnlyCollection<BowlerSeasonStats> BowlerStats 
+        => _bowlerStats.AsReadOnly();
 
     /// <summary>
     /// Whether the season has been closed and awards may be assigned.

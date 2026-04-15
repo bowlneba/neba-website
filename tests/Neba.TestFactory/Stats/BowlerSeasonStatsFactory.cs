@@ -38,7 +38,7 @@ public static class BowlerSeasonStatsFactory
     public const decimal ValidTournamentWinnings = 2500m;
     public const decimal ValidCupEarnings = 500m;
     public const decimal ValidCredits = 100m;
-    public static readonly DateTimeOffset ValidUpdatedAtUtc = new(2025, 9, 1, 0, 0, 0, TimeSpan.Zero);
+    public static readonly DateTimeOffset ValidLastUpdatedUtc = new(2025, 9, 1, 0, 0, 0, TimeSpan.Zero);
 
     public static BowlerSeasonStats Create(
         SeasonId? seasonId = null,
@@ -75,7 +75,7 @@ public static class BowlerSeasonStatsFactory
         decimal? tournamentWinnings = null,
         decimal? cupEarnings = null,
         decimal? credits = null,
-        DateTimeOffset? updatedAtUtc = null)
+        DateTimeOffset? lastUpdatedUtc = null)
         => new()
         {
             SeasonId = seasonId ?? SeasonId.New(),
@@ -112,7 +112,7 @@ public static class BowlerSeasonStatsFactory
             TournamentWinnings = tournamentWinnings ?? ValidTournamentWinnings,
             CupEarnings = cupEarnings ?? ValidCupEarnings,
             Credits = credits ?? ValidCredits,
-            UpdatedAtUtc = updatedAtUtc ?? ValidUpdatedAtUtc,
+            LastUpdatedUtc = lastUpdatedUtc ?? ValidLastUpdatedUtc,
         };
 
     public static IReadOnlyCollection<BowlerSeasonStats> Bogus(int count, int? seed = null)
@@ -171,7 +171,7 @@ public static class BowlerSeasonStatsFactory
                     TournamentWinnings = f.Random.Decimal(0, 10000),
                     CupEarnings = f.Random.Decimal(0, 5000),
                     Credits = f.Random.Decimal(0, 1000),
-                    UpdatedAtUtc = f.Date.PastOffset(2),
+                    LastUpdatedUtc = f.Date.PastOffset(2),
                 };
             });
 

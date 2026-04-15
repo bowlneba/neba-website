@@ -1,4 +1,6 @@
 
+using Neba.Domain.Stats;
+
 namespace Neba.Domain.Bowlers;
 
 /// <summary>
@@ -31,4 +33,8 @@ public sealed class Bowler
     /// Gets the legacy identifier from the existing organization management software (used for data migration; maintained for historical reference).
     /// </summary>
     public int? LegacyId { get; init; }
+
+    private readonly List<BowlerSeasonStats> _seasonStats = [];
+    internal IReadOnlyCollection<BowlerSeasonStats> SeasonStats
+        => _seasonStats.AsReadOnly();
 }

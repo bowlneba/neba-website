@@ -182,5 +182,5 @@ public sealed class BowlerSeasonStats
     /// <summary>
     /// Gets the date and time when the bowler's season statistics were last updated. This is a required property that helps track the freshness of the data and can be used for caching and display purposes in the application.
     /// </summary>
-    public DateTimeOffset UpdatedAtUtc { get; init; }
+    public DateTimeOffset LastUpdatedUtc { get; init; }
 }
