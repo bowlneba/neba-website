@@ -10,6 +10,7 @@ using Neba.Application.Awards;
 using Neba.Application.BowlingCenters;
 using Neba.Application.HallOfFame;
 using Neba.Application.Sponsors;
+using Neba.Application.Stats;
 using Neba.Infrastructure.Database.Interceptors;
 using Neba.Infrastructure.Database.Options;
 using Neba.Infrastructure.Database.Queries;
@@ -135,6 +136,7 @@ internal static class DatabaseConfiguration
             services.AddScoped<IHallOfFameQueries, HallOfFameQueries>();
             services.AddScoped<IAwardQueries, AwardQueries>();
             services.AddScoped<ISponsorQueries, SponsorQueries>();
+            services.AddScoped<IStatsQueries, StatsQueries>();
         }
     }
 }
