@@ -58,6 +58,55 @@ internal sealed class SeasonStatsService(
 
         return stats;
     }
+
+    public SeasonStatsSummaryDto CalculateSeasonStatsSummary(IReadOnlyCollection<BowlerSeasonStatsDto> bowlerStats)
+    {
+        var qualifyingHighGame = bowlerStats.Max(stat => stat.QualifyingHighGame);
+        var matchPlayHighGame = bowlerStats.Max(stat => stat.MatchPlayHighGame);
+        var highGame = Math.Max(qualifyingHighGame, matchPlayHighGame);
+        var bowlersWithHighGame = bowlerStats
+            .Where(stat => stat.QualifyingHighGame == highGame || stat.MatchPlayHighGame == highGame)
+            .ToDictionary(stat => stat.BowlerId, stat => stat.BowlerName);
+
+        var highBlock = bowlerStats.Max(stat => stat.HighBlock);
+        var bowlersWithHighBlock = bowlerStats
+            .Where(stat => stat.HighBlock == highBlock)
+            .ToDictionary(stat => stat.BowlerId, stat => stat.BowlerName);
+
+        var highAverage = bowlerStats.Max(stat => stat.TotalPinfall / stat.TotalGames * 1m);
+        var bowlersWithHighAverage = bowlerStats
+            .Where(stat => stat.TotalPinfall / stat.TotalGames * 1m == highAverage)
+            .ToDictionary(stat => stat.BowlerId, stat => stat.BowlerName);
+
+        var highestMatchPlayWinPercentage = bowlerStats.Max(stat =>
+            stat.MatchPlayWins + stat.MatchPlayLosses > 0
+                ? stat.MatchPlayWins * 1m / (stat.MatchPlayWins + stat.MatchPlayLosses)
+                : 0);
+        var bowlersWithHighestMatchPlayWinPercentage = bowlerStats
+            .Where(stat => stat.MatchPlayWins + stat.MatchPlayLosses > 0 && stat.MatchPlayWins * 1m / (stat.MatchPlayWins + stat.MatchPlayLosses) == highestMatchPlayWinPercentage)
+            .ToDictionary(stat => stat.BowlerId, stat => stat.BowlerName);
+
+        var mostFinals = bowlerStats.Max(stat => stat.Finals);
+        var bowlersWithMostFinals = bowlerStats
+            .Where(stat => stat.Finals == mostFinals)
+            .ToDictionary(stat => stat.BowlerId, stat => stat.BowlerName);
+
+        return new SeasonStatsSummaryDto
+        {
+            TotalEntries = bowlerStats.Sum(stat => stat.TotalEntries),
+            TotalPrizeMoney = bowlerStats.Sum(stat => stat.TournamentWinnings),
+            HighGame = highGame,
+            HighGameBowlers = bowlersWithHighGame,
+            HighBlock = highBlock,
+            HighBlockBowlers = bowlersWithHighBlock,
+            HighAverage = highAverage,
+            HighAverageBowlers = bowlersWithHighAverage,
+            HighestMatchPlayWinPercentage = highestMatchPlayWinPercentage,
+            HighestMatchPlayWinPercentageBowlers = bowlersWithHighestMatchPlayWinPercentage,
+            MostFinals = mostFinals,
+            MostFinalsBowlers = bowlersWithMostFinals
+        };
+    }
 }
 
 internal interface ISeasonStatsService
@@ -65,6 +114,8 @@ internal interface ISeasonStatsService
     Task<IReadOnlyCollection<SeasonDto>> GetSeasonsWithStatsAsync(CancellationToken cancellationToken);
 
     Task<IReadOnlyCollection<BowlerSeasonStatsDto>> GetBowlerSeasonStatsAsync(SeasonId seasonId, CancellationToken cancellationToken);
+
+    SeasonStatsSummaryDto CalculateSeasonStatsSummary(IReadOnlyCollection<BowlerSeasonStatsDto> bowlerStats);
 }
 
 internal static partial class SeasonStatsServiceLogMessages

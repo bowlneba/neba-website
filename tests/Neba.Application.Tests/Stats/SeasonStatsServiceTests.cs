@@ -12,6 +12,7 @@ using Neba.Application.Stats;
 using Neba.Domain.Bowlers;
 using Neba.Domain.Seasons;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Stats;
 
@@ -174,5 +175,170 @@ public sealed class SeasonStatsServiceTests
 
         // Assert
         callCount.ShouldBe(2, "each season should have its own cache entry and require a separate query");
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should sum TotalEntries across all bowlers")]
+    public void CalculateSeasonStatsSummary_ShouldSumTotalEntries()
+    {
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(totalEntries: 10),
+            BowlerSeasonStatsDtoFactory.Create(totalEntries: 15),
+            BowlerSeasonStatsDtoFactory.Create(totalEntries: 5),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+
+        result.TotalEntries.ShouldBe(30);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should sum TournamentWinnings as TotalPrizeMoney")]
+    public void CalculateSeasonStatsSummary_ShouldSumTournamentWinningsAsTotalPrizeMoney()
+    {
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(tournamentWinnings: 500m),
+            BowlerSeasonStatsDtoFactory.Create(tournamentWinnings: 1250m),
+            BowlerSeasonStatsDtoFactory.Create(tournamentWinnings: 750m),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+
+        result.TotalPrizeMoney.ShouldBe(2500m);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should return the highest qualifying game and include all tied bowlers")]
+    public void CalculateSeasonStatsSummary_ShouldReturnHighGameFromQualifyingAndBowlers()
+    {
+        var bowler1Id = BowlerId.New();
+        var bowler1Name = NameFactory.Create();
+        var bowler2Id = BowlerId.New();
+        var bowler2Name = NameFactory.Create();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: bowler1Id, bowlerName: bowler1Name, qualifyingHighGame: 299, matchPlayHighGame: 240),
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: bowler2Id, bowlerName: bowler2Name, qualifyingHighGame: 299, matchPlayHighGame: 250),
+            BowlerSeasonStatsDtoFactory.Create(qualifyingHighGame: 270, matchPlayHighGame: 280),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+
+        result.HighGame.ShouldBe(299);
+        result.HighGameBowlers.Count.ShouldBe(2);
+        result.HighGameBowlers.ShouldContainKeyAndValue(bowler1Id, bowler1Name);
+        result.HighGameBowlers.ShouldContainKeyAndValue(bowler2Id, bowler2Name);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should return the highest match play game when it exceeds qualifying and include all tied bowlers")]
+    public void CalculateSeasonStatsSummary_ShouldReturnHighGameFromMatchPlayAndBowlers()
+    {
+        var bowler1Id = BowlerId.New();
+        var bowler1Name = NameFactory.Create();
+        var bowler2Id = BowlerId.New();
+        var bowler2Name = NameFactory.Create();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: bowler1Id, bowlerName: bowler1Name, qualifyingHighGame: 260, matchPlayHighGame: 299),
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: bowler2Id, bowlerName: bowler2Name, qualifyingHighGame: 270, matchPlayHighGame: 299),
+            BowlerSeasonStatsDtoFactory.Create(qualifyingHighGame: 280, matchPlayHighGame: 265),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+
+        result.HighGame.ShouldBe(299);
+        result.HighGameBowlers.Count.ShouldBe(2);
+        result.HighGameBowlers.ShouldContainKeyAndValue(bowler1Id, bowler1Name);
+        result.HighGameBowlers.ShouldContainKeyAndValue(bowler2Id, bowler2Name);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should return the highest block and include all tied bowlers")]
+    public void CalculateSeasonStatsSummary_ShouldReturnHighBlockAndBowlers()
+    {
+        var bowler1Id = BowlerId.New();
+        var bowler1Name = NameFactory.Create();
+        var bowler2Id = BowlerId.New();
+        var bowler2Name = NameFactory.Create();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: bowler1Id, bowlerName: bowler1Name, highBlock: 1380),
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: bowler2Id, bowlerName: bowler2Name, highBlock: 1380),
+            BowlerSeasonStatsDtoFactory.Create(highBlock: 1250),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+
+        result.HighBlock.ShouldBe(1380);
+        result.HighBlockBowlers.Count.ShouldBe(2);
+        result.HighBlockBowlers.ShouldContainKeyAndValue(bowler1Id, bowler1Name);
+        result.HighBlockBowlers.ShouldContainKeyAndValue(bowler2Id, bowler2Name);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should return the highest average and include all tied bowlers")]
+    public void CalculateSeasonStatsSummary_ShouldReturnHighAverageAndBowlers()
+    {
+        // 24000 * 1m / 80 = 300; 22800 * 1m / 76 = 300; 20000 * 1m / 100 = 200
+        var bowler1Id = BowlerId.New();
+        var bowler1Name = NameFactory.Create();
+        var bowler2Id = BowlerId.New();
+        var bowler2Name = NameFactory.Create();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: bowler1Id, bowlerName: bowler1Name, totalGames: 80, totalPinfall: 24000),
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: bowler2Id, bowlerName: bowler2Name, totalGames: 76, totalPinfall: 22800),
+            BowlerSeasonStatsDtoFactory.Create(totalGames: 100, totalPinfall: 20000),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+
+        result.HighAverage.ShouldBe(300m);
+        result.HighAverageBowlers.Count.ShouldBe(2);
+        result.HighAverageBowlers.ShouldContainKeyAndValue(bowler1Id, bowler1Name);
+        result.HighAverageBowlers.ShouldContainKeyAndValue(bowler2Id, bowler2Name);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should return the highest match play win percentage and include all tied bowlers")]
+    public void CalculateSeasonStatsSummary_ShouldReturnHighestMatchPlayWinPercentageAndBowlers()
+    {
+        // 8 * 1m / 10 = 0.8; 4 * 1m / 5 = 0.8; 6 * 1m / 10 = 0.6; 0 wins+losses excluded
+        var bowler1Id = BowlerId.New();
+        var bowler1Name = NameFactory.Create();
+        var bowler2Id = BowlerId.New();
+        var bowler2Name = NameFactory.Create();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: bowler1Id, bowlerName: bowler1Name, matchPlayWins: 8, matchPlayLosses: 2),
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: bowler2Id, bowlerName: bowler2Name, matchPlayWins: 4, matchPlayLosses: 1),
+            BowlerSeasonStatsDtoFactory.Create(matchPlayWins: 6, matchPlayLosses: 4),
+            BowlerSeasonStatsDtoFactory.Create(matchPlayWins: 0, matchPlayLosses: 0),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+
+        result.HighestMatchPlayWinPercentage.ShouldBe(0.8m);
+        result.HighestMatchPlayWinPercentageBowlers.Count.ShouldBe(2);
+        result.HighestMatchPlayWinPercentageBowlers.ShouldContainKeyAndValue(bowler1Id, bowler1Name);
+        result.HighestMatchPlayWinPercentageBowlers.ShouldContainKeyAndValue(bowler2Id, bowler2Name);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should return the most finals and include all tied bowlers")]
+    public void CalculateSeasonStatsSummary_ShouldReturnMostFinalsAndBowlers()
+    {
+        var bowler1Id = BowlerId.New();
+        var bowler1Name = NameFactory.Create();
+        var bowler2Id = BowlerId.New();
+        var bowler2Name = NameFactory.Create();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: bowler1Id, bowlerName: bowler1Name, finals: 9),
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: bowler2Id, bowlerName: bowler2Name, finals: 9),
+            BowlerSeasonStatsDtoFactory.Create(finals: 5),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+
+        result.MostFinals.ShouldBe(9);
+        result.MostFinalsBowlers.Count.ShouldBe(2);
+        result.MostFinalsBowlers.ShouldContainKeyAndValue(bowler1Id, bowler1Name);
+        result.MostFinalsBowlers.ShouldContainKeyAndValue(bowler2Id, bowler2Name);
     }
 }
