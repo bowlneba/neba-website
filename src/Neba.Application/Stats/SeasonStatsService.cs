@@ -63,6 +63,8 @@ internal sealed class SeasonStatsService(
 internal interface ISeasonStatsService
 {
     Task<IReadOnlyCollection<SeasonDto>> GetSeasonsWithStatsAsync(CancellationToken cancellationToken);
+
+    Task<IReadOnlyCollection<BowlerSeasonStatsDto>> GetBowlerSeasonStatsAsync(SeasonId seasonId, CancellationToken cancellationToken);
 }
 
 internal static partial class SeasonStatsServiceLogMessages
