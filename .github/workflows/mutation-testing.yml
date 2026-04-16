@@ -89,6 +89,8 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+    env:
+      HUSKY: 0
 
     steps:
       - uses: actions/checkout@v5
@@ -138,6 +140,8 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+    env:
+      HUSKY: 0
 
     steps:
       - uses: actions/checkout@v5
@@ -187,6 +191,8 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+    env:
+      HUSKY: 0
 
     steps:
       - uses: actions/checkout@v5
@@ -236,6 +242,8 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+    env:
+      HUSKY: 0
 
     steps:
       - uses: actions/checkout@v5
@@ -281,7 +289,14 @@ jobs:
 
   mutation-summary:
     name: PR Comment — Mutation Results
-    needs: [mutation-js, mutation-domain, mutation-application, mutation-api, mutation-blazor]
+    needs:
+      [
+        mutation-js,
+        mutation-domain,
+        mutation-application,
+        mutation-api,
+        mutation-blazor,
+      ]
     if: ${{ always() && inputs.is_pull_request && inputs.pr_number != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
