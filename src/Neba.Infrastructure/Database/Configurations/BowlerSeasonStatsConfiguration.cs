@@ -56,13 +56,15 @@ internal sealed class BowlerSeasonStatsConfiguration
             .IsRequired();
 
         // Participation
-        builder.Property(stat => stat.Tournaments)
+        builder.Property(stat => stat.EligibleTournaments)
+            .HasColumnName("tournaments")
             .IsRequired();
 
         builder.Property(stat => stat.TotalTournaments)
             .IsRequired();
 
-        builder.Property(stat => stat.Entries)
+        builder.Property(stat => stat.EligibleEntries)
+            .HasColumnName("entries")
             .IsRequired();
 
         builder.Property(stat => stat.TotalEntries)

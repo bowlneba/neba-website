@@ -4,183 +4,217 @@ using Neba.Domain.Seasons;
 namespace Neba.Domain.Stats;
 
 /// <summary>
-/// Represents a bowler's season statistics, including performance metrics and points for various awards. This class serves as an aggregate root for accessing and managing a bowler's season stats in the application.
+/// An aggregate capturing all performance metrics, classification flags, award points, and financial totals
+/// for a single bowler within a single Season.
 /// </summary>
 public sealed class BowlerSeasonStats
     : AggregateRoot
 {
     /// <summary>
-    /// Gets the unique identifier for the season these statistics pertain to. This is a required property that links the stats to a specific season in the application.
+    /// The unique identifier of the Season to which these statistics belong.
     /// </summary>
     public required SeasonId SeasonId { get; init; }
 
     /// <summary>
-    /// Gets the unique identifier for the bowler these statistics pertain to. This is a required property that links the stats to a specific bowler in the application.
+    /// The unique identifier of the Bowler to whom these statistics belong.
     /// </summary>
     public required BowlerId BowlerId { get; init; }
 
     /// <summary>
-    /// Gets a value indicating whether the bowler was a member during the season. This is a required property that helps determine eligibility for certain awards and rankings in the application.
+    /// Indicates whether the bowler held active NEBA membership during this Season. Membership status affects
+    /// award eligibility and whether participation counts toward official statistics.
     /// </summary>
     public bool IsMember { get; init; }
 
     /// <summary>
-    /// Gets a value indicating whether the bowler is classified as a rookie for the season. This is a required property that helps determine eligibility for rookie-specific awards and rankings in the application.
+    /// Indicates whether the bowler is classified as a Rookie for this Season. A Rookie is a bowler competing in
+    /// their first season as a paid NEBA member. A bowler may participate as a non-member prior to their rookie
+    /// season; the rookie classification begins with the first paid membership.
     /// </summary>
     public bool IsRookie { get; init; }
 
     /// <summary>
-    /// Gets a value indicating whether the bowler is classified as a senior for the season. This is a required property that helps determine eligibility for senior-specific awards and rankings in the application.
+    /// Indicates whether the bowler is classified as a Senior for this Season. Seniors are bowlers who are age 50 or older.
     /// </summary>
     public bool IsSenior { get; init; }
 
     /// <summary>
-    /// Gets a value indicating whether the bowler is classified as a super senior for the season. This is a required property that helps determine eligibility for super senior-specific awards and rankings in the application.
+    /// Indicates whether the bowler is classified as a Super Senior for this Season. Super Seniors are bowlers who are
+    /// age 60 or older. Super Senior is not mutually exclusive with Senior — a Super Senior satisfies both
+    /// classifications and is eligible for both award tracks.
     /// </summary>
     public bool IsSuperSenior { get; init; }
 
     /// <summary>
-    /// Gets a value indicating whether the bowler is classified as a woman for the season. This is a required property that helps determine eligibility for woman-specific awards and rankings in the application.
+    /// Indicates whether the bowler competes under the Women's classification, making them eligible for
+    /// Woman of the Year standings.
     /// </summary>
     public bool IsWoman { get; init; }
 
     /// <summary>
-    /// Gets a value indicating whether the bowler is classified as a youth for the season. This is a required property that helps determine eligibility for youth-specific awards and rankings in the application.
+    /// Indicates whether the bowler is classified as a Youth for this Season. NEBA defines Youth as bowlers
+    /// under the age of 18.
     /// </summary>
     public bool IsYouth { get; init; }
 
     /// <summary>
-    /// Gets the number of tournaments the bowler participated in during the season that were eligible towards statistics and awards. This is a required property that contributes to various performance metrics and points calculations in the application.
+    /// The number of distinct tournaments the bowler participated in during the Season that count toward official
+    /// season statistics and award calculations. Tournaments that are not open to the full membership
+    /// (e.g., the Non-Champions event) are excluded.
     /// </summary>
-    public int Tournaments { get; init; }
+    public int EligibleTournaments { get; init; }
 
     /// <summary>
-    /// Gets the total number of tournaments the bowler participated in during the season, including those that may not have been eligible towards statistics and awards. This is a required property that provides additional context about the bowler's activity during the season in the application.
+    /// The total number of distinct tournaments the bowler participated in during the Season, including those
+    /// not eligible toward official statistics or award calculations.
     /// </summary>
     public int TotalTournaments { get; init; }
 
     /// <summary>
-    /// Gets the number of tournament entries the bowler had during the season that were eligible towards statistics and awards. This is a required property that contributes to various performance metrics and points calculations in the application.
+    /// The number of tournament entries during the Season that count toward official season statistics and award
+    /// calculations. A bowler may have multiple entries in a single tournament. Entries in non-eligible
+    /// tournaments are excluded.
     /// </summary>
-    public int Entries { get; init; }
+    public int EligibleEntries { get; init; }
 
     /// <summary>
-    /// Gets the total number of tournament entries the bowler had during the season, including those that may not have been eligible towards statistics and awards. This is a required property that provides additional context about the bowler's activity during the season in the application.
+    /// The total number of tournament entries during the Season, including entries in tournaments not eligible
+    /// toward official statistics or award calculations.
     /// </summary>
     public int TotalEntries { get; init; }
 
     /// <summary>
-    /// Gets the number of times the bowler cashed in a tournament during the season. This is a required property that contributes to various performance metrics and points calculations in the application, and is often used as an indicator of consistent performance across tournaments.
+    /// The number of times the bowler achieved a qualifying score high enough to earn prize money across all
+    /// tournaments in the Season. Cashing is distinct from advancing to the Finals.
     /// </summary>
     public int Cashes { get; init; }
 
     /// <summary>
-    /// Gets the number of times the bowler made the finals in a tournament during the season. This is a required property that contributes to various performance metrics and points calculations in the application, and is often used as an indicator of high-level performance across tournaments.
+    /// The number of tournaments in which the bowler advanced to the Finals (match play round) during the Season.
     /// </summary>
     public int Finals { get; init; }
 
     /// <summary>
-    /// Gets the highest qualifying game the bowler achieved during the season. This is a required property that contributes to various performance metrics and points calculations in the application, and is often used as an indicator of a bowler's peak performance during the season.
+    /// The highest single game the bowler bowled during the qualifying portion of any tournament in the Season.
+    /// Does not include match play games.
     /// </summary>
     public int QualifyingHighGame { get; init; }
 
     /// <summary>
-    /// Gets the highest block of games the bowler achieved during the season. This is a required property that contributes to various performance metrics and points calculations in the application, and is often used as an indicator of a bowler's consistency and endurance during the season.
+    /// The highest score the bowler achieved across a 5-game qualifying block in the Season. Only tournaments
+    /// with 5 or more qualifying games contribute. For tournaments with more than 5 qualifying games, each
+    /// sequential group of 5 games is evaluated independently.
     /// </summary>
     public int HighBlock { get; init; }
 
     /// <summary>
-    /// Gets the number of match play wins the bowler achieved during the season. This is a required property that contributes to various performance metrics and points calculations in the application, and is often used as an indicator of a bowler's head-to-head performance during the season.
+    /// The total number of head-to-head match play victories recorded across all Finals appearances in the Season.
     /// </summary>
     public int MatchPlayWins { get; init; }
 
     /// <summary>
-    /// Gets the number of match play losses the bowler had during the season. This is a required property that contributes to various performance metrics and points calculations in the application, and is often used as an indicator of a bowler's head-to-head performance during the season.
+    /// The total number of head-to-head match play defeats recorded across all Finals appearances in the Season.
     /// </summary>
     public int MatchPlayLosses { get; init; }
 
     /// <summary>
-    /// Gets the number of match play games the bowler participated in during the season. This is a required property that contributes to various performance metrics and points calculations in the application, and is often used as an indicator of a bowler's head-to-head performance during the season.
+    /// The total number of individual match play games bowled across all Finals appearances in the Season.
     /// </summary>
     public int MatchPlayGames { get; init; }
 
     /// <summary>
-    /// Gets the total pinfall the bowler achieved in match play games during the season. This is a required property that contributes to various performance metrics and points calculations in the application, and is often used as an indicator of a bowler's head-to-head performance during the season.
+    /// The cumulative total pins knocked down across all match play games in the Season.
     /// </summary>
     public int MatchPlayPinfall { get; init; }
 
     /// <summary>
-    /// Gets the highest game the bowler achieved in match play during the season. This is a required property that contributes to various performance metrics and points calculations in the application, and is often used as an indicator of a bowler's peak head-to-head performance during the season.
+    /// The highest single game bowled during match play in any tournament in the Season.
     /// </summary>
     public int MatchPlayHighGame { get; init; }
 
     /// <summary>
-    /// Gets the total number of games the bowler played during the season. This is a required property that contributes to various performance metrics and points calculations in the application, and is often used as an indicator of a bowler's overall activity and experience during the season.
+    /// The cumulative count of all games bowled across all tournaments in the Season, spanning both qualifying
+    /// and match play.
     /// </summary>
     public int TotalGames { get; init; }
 
     /// <summary>
-    /// Gets the total pinfall the bowler achieved during the season. This is a required property that contributes to various performance metrics and points calculations in the application, and is often used as an indicator of a bowler's overall scoring performance during the season.
+    /// The cumulative total pins knocked down across all games in the Season.
     /// </summary>
     public int TotalPinfall { get; init; }
 
     /// <summary>
-    /// Gets the differential of the bowler's average compared to the field in the tournaments in which they bowled. This is a required property that contributes to various performance metrics and points calculations in the application, and is often used as an indicator of a bowler's performance relative to their peers during the season.
+    /// The bowler's average performance relative to the competitive field across tournaments in the Season.
+    /// Calculated as: (bowler's total qualifying pinfall / bowler's qualifying games) minus (all qualifying
+    /// pinfall / all qualifying games) for each tournament entered, expressed as a signed decimal where a
+    /// positive value indicates above-field performance.
     /// </summary>
     public decimal FieldAverage { get; init; }
 
     /// <summary>
-    /// Gets the highest finish position the bowler achieved in a tournament during the season. This is a required property that contributes to various performance metrics and points calculations in the application, and is often used as an indicator of a bowler's best performance in terms of final standings during the season.
+    /// The best finishing position the bowler achieved in any single tournament during the Season (e.g., 1 for
+    /// first place). Null if the bowler did not receive a finishing position in any tournament.
     /// </summary>
     public int? HighFinish { get; init; }
 
     /// <summary>
-    /// Gets the average finish position of the bowler in tournaments during the season. This is a required property that contributes to various performance metrics and points calculations in the application, and is often used as an indicator of a bowler's overall consistency and performance in terms of final standings during the season.
+    /// The mean finishing position across all tournaments in which the bowler received a finishing position
+    /// during the Season. Null if no finishing positions were recorded.
     /// </summary>
     public decimal? AverageFinish { get; init; }
 
     /// <summary>
-    /// Gets the points the bowler earned towards the Bowler of the Year award for the season. This is a required property that contributes to the bowler's overall ranking and eligibility for the Bowler of the Year award in the application.
+    /// Points accumulated toward the Bowler of the Year (Open) award for the Season.
     /// </summary>
     public int BowlerOfTheYearPoints { get; init; }
 
     /// <summary>
-    /// Gets the points the bowler earned towards the Senior of the Year award for the season. This is a required property that contributes to the bowler's overall ranking and eligibility for the Senior of the Year award in the application.
+    /// Points accumulated toward the Senior of the Year award for the Season. Applicable when
+    /// <see cref="IsSenior"/> is true.
     /// </summary>
     public int SeniorOfTheYearPoints { get; init; }
 
     /// <summary>
-    /// Gets the points the bowler earned towards the Super Senior of the Year award for the season. This is a required property that contributes to the bowler's overall ranking and eligibility for the Super Senior of the Year award in the application.
+    /// Points accumulated toward the Super Senior of the Year award for the Season. Applicable when
+    /// <see cref="IsSuperSenior"/> is true.
     /// </summary>
     public int SuperSeniorOfTheYearPoints { get; init; }
 
     /// <summary>
-    /// Gets the points the bowler earned towards the Woman of the Year award for the season. This is a required property that contributes to the bowler's overall ranking and eligibility for the Woman of the Year award in the application.
+    /// Points accumulated toward the Woman of the Year award for the Season. Applicable when
+    /// <see cref="IsWoman"/> is true.
     /// </summary>
     public int WomanOfTheYearPoints { get; init; }
 
     /// <summary>
-    /// Gets the points the bowler earned towards the Youth of the Year award for the season. This is a required property that contributes to the bowler's overall ranking and eligibility for the Youth of the Year award in the application.
+    /// Points accumulated toward the Youth of the Year award for the Season. Applicable when
+    /// <see cref="IsYouth"/> is true.
     /// </summary>
     public int YouthOfTheYearPoints { get; init; }
 
     /// <summary>
-    /// Gets the total tournament winnings for the bowler in the given season
+    /// The total cash prize money earned by the bowler across all tournaments in the Season, excluding
+    /// Cup earnings.
     /// </summary>
     public decimal TournamentWinnings { get; init; }
 
     /// <summary>
-    /// Gets the total winnings during Cup events during the course of the season. This is a required property that contributes to various performance metrics and points calculations in the application, and is often used as an indicator of a bowler's success in high-profile events during the season.
+    /// The total prize money earned by the bowler through Cup events during the Season. A Cup is a competition
+    /// in which points earned across a set of pre-designated tournaments are accumulated, and prize money is paid
+    /// to the top point earners at the conclusion of those tournaments.
     /// </summary>
     public decimal CupEarnings { get; init; }
 
     /// <summary>
-    /// Gets the total amount of Credits earned throughout the course of the season
+    /// The total Credits earned by the bowler during the Season. A Credit is a non-cash award applied as a
+    /// discount toward a future tournament entry fee. Credits may be earned by achieving a qualifying score above
+    /// a defined threshold without advancing to Finals, or may be granted by the Tournament Director for any
+    /// reason at their discretion.
     /// </summary>
     public decimal Credits { get; init; }
 
     /// <summary>
-    /// Gets the date and time when the bowler's season statistics were last updated. This is a required property that helps track the freshness of the data and can be used for caching and display purposes in the application.
+    /// The UTC timestamp of the most recent update to these statistics.
     /// </summary>
     public DateTimeOffset LastUpdatedUtc { get; init; }
 }

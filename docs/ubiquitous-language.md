@@ -997,6 +997,175 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 ---
 
+## Stats
+
+### Bowler Season Stats
+
+**Definition**: An aggregate capturing all performance metrics, classification flags, award points, and financial totals for a single bowler within a single Season.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Stats`
+- Type: `BowlerSeasonStats` (aggregate root)
+
+---
+
+### Member
+
+**Definition**: A bowler who holds active NEBA membership for the Season. Membership status affects award eligibility and determines whether tournament participation counts toward official statistics.
+
+> **"Member" in this context is Season-scoped.** See also: [Bowler](#bowler) for the distinction between a Bowler record and membership status.
+
+---
+
+### Rookie
+
+**Definition**: A bowler competing in their first season as a paid NEBA member. A bowler may participate as a non-member prior to their Rookie season; the classification begins only with the first paid membership.
+
+---
+
+### Senior
+
+**Definition**: A bowler who is age 50 or older.
+
+---
+
+### Super Senior
+
+**Definition**: A bowler who is age 60 or older. Super Senior is not mutually exclusive with Senior — a bowler who is a Super Senior satisfies both classifications simultaneously and is eligible for both award tracks.
+
+---
+
+### Woman
+
+**Definition**: A bowler competing under the Women's classification, making them eligible for Woman of the Year standings.
+
+---
+
+### Youth
+
+**Definition**: A bowler under the age of 18, as defined by NEBA.
+
+---
+
+### Eligible Tournament
+
+**Definition**: A tournament that counts toward official season statistics and award calculations. Tournaments that are not open to the full membership (e.g., the Non-Champions event) are not eligible.
+
+**In Code**: `BowlerSeasonStats.EligibleTournaments`
+
+---
+
+### Eligible Entry
+
+**Definition**: A tournament entry that counts toward official season statistics and award calculations. A bowler may have multiple entries in a single tournament. Entries in non-eligible tournaments are excluded.
+
+**In Code**: `BowlerSeasonStats.EligibleEntries`
+
+---
+
+### Cash
+
+**Definition**: To achieve a qualifying score sufficient to earn prize money in a tournament. Each occurrence is recorded as a Cash. Cashing is distinct from advancing to the Finals.
+
+**In Code**: `BowlerSeasonStats.Cashes`
+
+---
+
+### Finals (Stats context)
+
+**Definition**: The match play round of a tournament, contested by the top qualifiers. A bowler who advances to the Finals competes in head-to-head matches.
+
+**In Code**: `BowlerSeasonStats.Finals`
+
+---
+
+### Qualifying High Game
+
+**Definition**: The highest single game a bowler bowled during the qualifying portion of any tournament in the Season. Excludes match play.
+
+**In Code**: `BowlerSeasonStats.QualifyingHighGame`
+
+---
+
+### High Block
+
+**Definition**: The highest score a bowler achieved across a 5-game qualifying block in the Season. Only tournaments with 5 or more qualifying games contribute. For tournaments with more than 5 qualifying games, each sequential 5-game group is evaluated independently.
+
+**In Code**: `BowlerSeasonStats.HighBlock`
+
+---
+
+### Match Play Win
+
+**Definition**: A head-to-head victory in the Finals round of a tournament, typically determined by higher single-game pinfall.
+
+**In Code**: `BowlerSeasonStats.MatchPlayWins`
+
+---
+
+### Match Play Loss
+
+**Definition**: A head-to-head defeat in the Finals round of a tournament.
+
+**In Code**: `BowlerSeasonStats.MatchPlayLosses`
+
+---
+
+### Field Average
+
+**Definition**: A measure of a bowler's average performance relative to the competitive field. Calculated as the bowler's qualifying average minus the field qualifying average for each tournament entered. A positive value indicates above-field performance.
+
+**In Code**: `BowlerSeasonStats.FieldAverage`
+
+---
+
+### High Finish
+
+**Definition**: The best finishing position a bowler achieved in any single tournament during the Season (e.g., 1 for first place).
+
+**In Code**: `BowlerSeasonStats.HighFinish`
+
+---
+
+### Average Finish
+
+**Definition**: The mean finishing position across all tournaments in which the bowler received a finishing position during the Season.
+
+**In Code**: `BowlerSeasonStats.AverageFinish`
+
+---
+
+### Tournament Winnings
+
+**Definition**: Total cash prize money earned across all tournaments in the Season, excluding Cup earnings.
+
+**In Code**: `BowlerSeasonStats.TournamentWinnings`
+
+---
+
+### Cup
+
+**Definition**: A competition in which points earned across a set of pre-designated tournaments are accumulated over the Season, with prize money paid to the top point earners at conclusion.
+
+---
+
+### Cup Earnings
+
+**Definition**: Prize money earned specifically through Cup events during the Season.
+
+**In Code**: `BowlerSeasonStats.CupEarnings`
+
+---
+
+### Credit
+
+**Definition**: A non-cash award applied as a discount toward a future tournament entry fee. Credits may be earned by achieving a qualifying score above a defined threshold without advancing to Finals, or may be granted by the Tournament Director at their discretion.
+
+**In Code**: `BowlerSeasonStats.Credits`
+
+---
+
 ## Maintaining This Document
 
 This is a **living document**. As the project evolves:

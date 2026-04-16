@@ -671,7 +671,7 @@ namespace Neba.Infrastructure.Database.Migrations
                         .HasColumnType("numeric(7,2)")
                         .HasColumnName("cup_earnings");
 
-                    b.Property<int>("Entries")
+                    b.Property<int>("EligibleEntries")
                         .HasColumnType("integer")
                         .HasColumnName("entries");
 
@@ -769,7 +769,7 @@ namespace Neba.Infrastructure.Database.Migrations
                         .HasColumnType("numeric(7,2)")
                         .HasColumnName("tournament_winnings");
 
-                    b.Property<int>("Tournaments")
+                    b.Property<int>("EligibleTournaments")
                         .HasColumnType("integer")
                         .HasColumnName("tournaments");
 

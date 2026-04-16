@@ -14,9 +14,9 @@ public static class BowlerSeasonStatsFactory
     public const bool ValidIsSuperSenior = false;
     public const bool ValidIsWoman = false;
     public const bool ValidIsYouth = false;
-    public const int ValidTournaments = 10;
+    public const int ValidEligibleTournaments = 10;
     public const int ValidTotalTournaments = 12;
-    public const int ValidEntries = 15;
+    public const int ValidEligibleEntries = 15;
     public const int ValidTotalEntries = 18;
     public const int ValidCashes = 8;
     public const int ValidFinals = 3;
@@ -49,9 +49,9 @@ public static class BowlerSeasonStatsFactory
         bool? isSuperSenior = null,
         bool? isWoman = null,
         bool? isYouth = null,
-        int? tournaments = null,
+        int? eligibleTournaments = null,
         int? totalTournaments = null,
-        int? entries = null,
+        int? eligibleEntries = null,
         int? totalEntries = null,
         int? cashes = null,
         int? finals = null,
@@ -86,9 +86,9 @@ public static class BowlerSeasonStatsFactory
             IsSuperSenior = isSuperSenior ?? ValidIsSuperSenior,
             IsWoman = isWoman ?? ValidIsWoman,
             IsYouth = isYouth ?? ValidIsYouth,
-            Tournaments = tournaments ?? ValidTournaments,
+            EligibleTournaments = eligibleTournaments ?? ValidEligibleTournaments,
             TotalTournaments = totalTournaments ?? ValidTotalTournaments,
-            Entries = entries ?? ValidEntries,
+            EligibleEntries = eligibleEntries ?? ValidEligibleEntries,
             TotalEntries = totalEntries ?? ValidTotalEntries,
             Cashes = cashes ?? ValidCashes,
             Finals = finals ?? ValidFinals,
@@ -145,9 +145,9 @@ public static class BowlerSeasonStatsFactory
                     IsSuperSenior = f.Random.Bool(),
                     IsWoman = f.Random.Bool(),
                     IsYouth = f.Random.Bool(),
-                    Tournaments = tournaments,
+                    EligibleTournaments = tournaments,
                     TotalTournaments = totalTournaments,
-                    Entries = entries,
+                    EligibleEntries = entries,
                     TotalEntries = totalEntries,
                     Cashes = cashes,
                     Finals = finals,

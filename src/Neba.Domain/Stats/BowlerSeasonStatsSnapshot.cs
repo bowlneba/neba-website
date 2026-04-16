@@ -38,7 +38,7 @@ public record BowlerSeasonStatsSnapshot
     /// <summary>
     /// Gets the number of tournaments the bowler participated in during the season that were eligible towards statistics and awards. This is a required property that contributes to various performance metrics and points calculations in the application.
     /// </summary>
-    public int Tournaments { get; init; }
+    public int EligibleTournaments { get; init; }
 
     /// <summary>
     /// Gets the total number of tournaments the bowler participated in during the season, including those that may not have been eligible towards statistics and awards. This is a required property that provides additional context about the bowler's activity during the season in the application.
@@ -48,7 +48,7 @@ public record BowlerSeasonStatsSnapshot
     /// <summary>
     /// Gets the number of tournament entries the bowler had during the season that were eligible towards statistics and awards. This is a required property that contributes to various performance metrics and points calculations in the application.
     /// </summary>
-    public int Entries { get; init; }
+    public int EligibleEntries { get; init; }
 
     /// <summary>
     /// Gets the total number of tournament entries the bowler had during the season, including those that may not have been eligible towards statistics and awards. This is a required property that provides additional context about the bowler's activity during the season in the application.
