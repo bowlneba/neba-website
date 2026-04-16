@@ -126,5 +126,21 @@ public static class CacheDescriptors
                 Tags = ["neba", "neba:awards", "neba:awards:bowler-of-the-year"]
             };
     }
+
+    /// <summary>
+    /// Cache descriptors for stats data.
+    /// </summary>
+    public static class Stats
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of seasons with stats.
+        /// </summary>
+        public static CacheDescriptor ListSeasonsWithStats
+            => new()
+            {
+                Key = "neba:stats:seasons:list",
+                Tags = ["neba", "neba:stats", "neba:stats:seasons"]
+            };
+    }
 }
 #pragma warning restore CA1724

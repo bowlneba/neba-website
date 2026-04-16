@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Application.Messaging;
+using Neba.Application.Stats;
 
 namespace Neba.Application;
 
@@ -18,8 +19,14 @@ public static class ApplicationConfiguration
         public IServiceCollection AddApplication()
         {
             services.AddMessaging();
-
+            services.AddServices();
+            
             return services;
+        }
+
+        internal void AddServices()
+        {
+            services.AddScoped<ISeasonStatsService, SeasonStatsService>();
         }
     }
 }
