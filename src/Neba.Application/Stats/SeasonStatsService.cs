@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 
 using Neba.Application.Caching;
 using Neba.Application.Seasons;
+using Neba.Application.Stats.GetSeasonStats;
+using Neba.Domain.Seasons;
 
 namespace Neba.Application.Stats;
 
@@ -34,6 +36,27 @@ internal sealed class SeasonStatsService(
             cancellationToken: cancellationToken);
 
         return seasons;
+    }
+
+    public async Task<IReadOnlyCollection<BowlerSeasonStatsDto>> GetBowlerSeasonStatsAsync(SeasonId seasonId, CancellationToken cancellationToken)
+    {
+        var stats = await _cache.GetOrCreateAsync(
+            key: CacheDescriptors.Stats.BowlerSeasonStats(seasonId).Key,
+            factory: async (cancel) =>
+            {
+                _logger.LogCacheMiss(CacheDescriptors.Stats.BowlerSeasonStats(seasonId).Key);
+
+                return await _statsQueries.GetBowlerSeasonStatsAsync(seasonId, cancel);
+            },
+            options: new HybridCacheEntryOptions
+            {
+                Expiration = TimeSpan.FromDays(14)
+            },
+            tags: CacheDescriptors.Stats.BowlerSeasonStats(seasonId).Tags,
+            cancellationToken: cancellationToken
+        );
+
+        return stats;
     }
 }
 

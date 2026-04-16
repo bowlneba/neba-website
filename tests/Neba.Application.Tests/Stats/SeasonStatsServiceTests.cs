@@ -1,3 +1,7 @@
+using System.Text.Json;
+
+using Ardalis.SmartEnum.SystemTextJson;
+
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -5,8 +9,11 @@ using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Application.Caching;
 using Neba.Application.Stats;
+using Neba.Domain.Bowlers;
+using Neba.Domain.Seasons;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Seasons;
+using Neba.TestFactory.Stats;
 
 namespace Neba.Application.Tests.Stats;
 
@@ -25,6 +32,12 @@ public sealed class SeasonStatsServiceTests
 
         var services = new ServiceCollection();
         services.AddHybridCache();
+        services.AddKeyedSingleton<JsonSerializerOptions>(
+            typeof(IHybridCacheSerializer<>),
+            new JsonSerializerOptions
+            {
+                Converters = { new SmartEnumNameConverter<NameSuffix, string>() }
+            });
         var cache = services.BuildServiceProvider().GetRequiredService<HybridCache>();
 
         _service = new SeasonStatsService(_statsQueriesMock.Object, cache, _logger);
@@ -81,5 +94,85 @@ public sealed class SeasonStatsServiceTests
         logs.ShouldContain(l =>
             l.Level == LogLevel.Information &&
             l.Message.Contains(CacheDescriptors.Stats.ListSeasonsWithStats.Key));
+    }
+
+    [Fact(DisplayName = "GetBowlerSeasonStatsAsync should return stats from query on cache miss")]
+    public async Task GetBowlerSeasonStatsAsync_ShouldReturnStatsFromQuery_OnCacheMiss()
+    {
+        // Arrange
+        var seasonId = SeasonId.New();
+        var expectedStats = BowlerSeasonStatsDtoFactory.Bogus(5);
+        _statsQueriesMock
+            .Setup(x => x.GetBowlerSeasonStatsAsync(seasonId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedStats);
+
+        // Act
+        var result = await _service.GetBowlerSeasonStatsAsync(seasonId, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldBe(expectedStats);
+    }
+
+    [Fact(DisplayName = "GetBowlerSeasonStatsAsync should not call query on second invocation when cache is warm")]
+    public async Task GetBowlerSeasonStatsAsync_ShouldNotCallQuery_OnCacheHit()
+    {
+        // Arrange
+        var seasonId = SeasonId.New();
+        var stats = BowlerSeasonStatsDtoFactory.Bogus(5);
+        var callCount = 0;
+        _statsQueriesMock
+            .Setup(x => x.GetBowlerSeasonStatsAsync(seasonId, It.IsAny<CancellationToken>()))
+            .Callback(() => callCount++)
+            .ReturnsAsync(stats);
+
+        // Act
+        await _service.GetBowlerSeasonStatsAsync(seasonId, TestContext.Current.CancellationToken);
+        await _service.GetBowlerSeasonStatsAsync(seasonId, TestContext.Current.CancellationToken);
+
+        // Assert
+        callCount.ShouldBe(1, "query should only be invoked once; second call should be served from cache");
+    }
+
+    [Fact(DisplayName = "GetBowlerSeasonStatsAsync should log cache miss with the correct cache key")]
+    public async Task GetBowlerSeasonStatsAsync_ShouldLogCacheMiss_WithCorrectKey()
+    {
+        // Arrange
+        var seasonId = SeasonId.New();
+        _statsQueriesMock
+            .Setup(x => x.GetBowlerSeasonStatsAsync(seasonId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BowlerSeasonStatsDtoFactory.Bogus(1));
+
+        // Act
+        await _service.GetBowlerSeasonStatsAsync(seasonId, TestContext.Current.CancellationToken);
+
+        // Assert
+        var logs = _logger.Collector.GetSnapshot();
+        logs.ShouldContain(l =>
+            l.Level == LogLevel.Information &&
+            l.Message.Contains(CacheDescriptors.Stats.BowlerSeasonStats(seasonId).Key));
+    }
+
+    [Fact(DisplayName = "GetBowlerSeasonStatsAsync should cache results independently per season")]
+    public async Task GetBowlerSeasonStatsAsync_ShouldCacheIndependently_PerSeason()
+    {
+        // Arrange
+        var seasonId1 = SeasonId.New();
+        var seasonId2 = SeasonId.New();
+        var callCount = 0;
+        _statsQueriesMock
+            .Setup(x => x.GetBowlerSeasonStatsAsync(seasonId1, It.IsAny<CancellationToken>()))
+            .Callback(() => callCount++)
+            .ReturnsAsync(BowlerSeasonStatsDtoFactory.Bogus(3));
+        _statsQueriesMock
+            .Setup(x => x.GetBowlerSeasonStatsAsync(seasonId2, It.IsAny<CancellationToken>()))
+            .Callback(() => callCount++)
+            .ReturnsAsync(BowlerSeasonStatsDtoFactory.Bogus(3));
+
+        // Act
+        await _service.GetBowlerSeasonStatsAsync(seasonId1, TestContext.Current.CancellationToken);
+        await _service.GetBowlerSeasonStatsAsync(seasonId2, TestContext.Current.CancellationToken);
+
+        // Assert
+        callCount.ShouldBe(2, "each season should have its own cache entry and require a separate query");
     }
 }

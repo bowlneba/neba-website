@@ -101,7 +101,7 @@ public sealed class PointsRaceChartTests : IDisposable
         cut.FindAll(".points-race-chart-legend-reset").Count.ShouldBe(1);
 
         // Act — remove the series that was hidden
-        cut.Render(p => p.Add(x => x.Series, series.Skip(1).ToList()));
+        cut.Render(p => p.Add(x => x.Series, [.. series.Skip(1)]));
 
         // Assert
         cut.FindAll(".points-race-chart-legend-reset").Count.ShouldBe(0);

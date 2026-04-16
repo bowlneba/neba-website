@@ -20,7 +20,7 @@ public static class ApplicationConfiguration
         {
             services.AddMessaging();
             services.AddServices();
-            
+
             return services;
         }
 
