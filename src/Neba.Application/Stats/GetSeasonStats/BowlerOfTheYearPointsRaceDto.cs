@@ -1,9 +1,9 @@
 namespace Neba.Application.Stats.GetSeasonStats;
 
 /// <summary>
-/// View model for the points race tournament statistics.
+/// Data transfer object for the Bowler of the Year points race tournament statistics.
 /// </summary>
-public sealed record PointsRaceTournamentDto
+public sealed record BowlerOfTheYearPointsRaceTournamentDto
 {
     /// <summary>
     /// Gets the name of the tournament.

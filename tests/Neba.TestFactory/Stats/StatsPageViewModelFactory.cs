@@ -1,5 +1,6 @@
 using Bogus;
 
+using Neba.Application.Stats.GetSeasonStats;
 using Neba.Website.Server.Stats;
 
 namespace Neba.TestFactory.Stats;
