@@ -1,6 +1,5 @@
 using Bogus;
 
-using Neba.Application.Bowlers;
 using Neba.Application.Stats.GetSeasonStats;
 using Neba.Domain.Bowlers;
 using Neba.TestFactory.Bowlers;
@@ -43,7 +42,7 @@ public static class BowlerSeasonStatsDtoFactory
 
     public static BowlerSeasonStatsDto Create(
         BowlerId? bowlerId = null,
-        BowlerNameDto? bowlerName = null,
+        Name? bowlerName = null,
         bool? isMember = null,
         bool? isRookie = null,
         bool? isSenior = null,
@@ -80,7 +79,7 @@ public static class BowlerSeasonStatsDtoFactory
         => new()
         {
             BowlerId = bowlerId ?? BowlerId.New(),
-            BowlerName = bowlerName ?? BowlerNameDtoFactory.Create(),
+            BowlerName = bowlerName ?? NameFactory.Create(),
             IsMember = isMember ?? ValidIsMember,
             IsRookie = isRookie ?? ValidIsRookie,
             IsSenior = isSenior ?? ValidIsSenior,
@@ -139,14 +138,7 @@ public static class BowlerSeasonStatsDtoFactory
                 return new BowlerSeasonStatsDto
                 {
                     BowlerId = new BowlerId(Ulid.BogusString(f)),
-                    BowlerName = new BowlerNameDto
-                    {
-                        FirstName = f.Person.FirstName,
-                        LastName = f.Person.LastName,
-                        MiddleName = f.Random.Bool() ? f.Name.FirstName() : null,
-                        Suffix = null,
-                        Nickname = null,
-                    },
+                    BowlerName = NameFactory.Bogus(1, seed).Single(),
                     IsMember = f.Random.Bool(),
                     IsRookie = f.Random.Bool(),
                     IsSenior = f.Random.Bool(),

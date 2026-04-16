@@ -1,4 +1,3 @@
-using Neba.Application.Bowlers;
 using Neba.Domain.Bowlers;
 
 namespace Neba.Application.Stats.GetSeasonStats;
@@ -17,7 +16,7 @@ public sealed record BowlerSeasonStatsDto
     /// <summary>
     /// The bowler's display name, split into structured name parts for API and UI consumers.
     /// </summary>
-    public required BowlerNameDto BowlerName { get; init; }
+    public required Name BowlerName { get; init; }
 
     /// <summary>
     /// Indicates whether the bowler held active NEBA membership during this Season. Membership status affects
