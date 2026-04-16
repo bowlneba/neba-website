@@ -15,6 +15,8 @@ public sealed class BowlerSeasonStats
     /// </summary>
     public required SeasonId SeasonId { get; init; }
 
+    internal Season Season { get; init; } = null!;
+
     /// <summary>
     /// The unique identifier of the Bowler to whom these statistics belong.
     /// </summary>

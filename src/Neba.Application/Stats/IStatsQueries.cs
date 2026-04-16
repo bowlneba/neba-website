@@ -18,4 +18,11 @@ public interface IStatsQueries
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A read-only collection of bowler season statistics.</returns>
     Task<IReadOnlyCollection<BowlerSeasonStatsDto>> GetBowlerSeasonStatsAsync(SeasonId seasonId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Retrieves a dictionary of seasons that have associated statistics, with the season ID as the key and the season description as the value.
+    /// </summary>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A dictionary mapping season IDs to season descriptions for seasons with statistics.</returns>
+    Task<IDictionary<SeasonId, string>> GetSeasonsWithStatsAsync(CancellationToken cancellationToken);
 }

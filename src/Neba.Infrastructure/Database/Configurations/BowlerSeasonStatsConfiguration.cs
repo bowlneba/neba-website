@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-using Neba.Domain.Seasons;
 using Neba.Domain.Stats;
 
 namespace Neba.Infrastructure.Database.Configurations;
@@ -15,7 +14,7 @@ internal sealed class BowlerSeasonStatsConfiguration
 
         builder.HasKey(stat => new { stat.SeasonId, stat.BowlerId });
 
-        builder.HasOne<Season>()
+        builder.HasOne(stat => stat.Season)
             .WithMany(season => season.BowlerStats)
             .HasForeignKey(stat => stat.SeasonId)
             .HasPrincipalKey(season => season.Id)

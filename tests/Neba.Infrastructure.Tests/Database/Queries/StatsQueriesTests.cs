@@ -149,4 +149,52 @@ public sealed class StatsQueriesTests
 
         await Verify(result);
     }
+
+    [Fact(DisplayName = "GetSeasonsWithStatsAsync returns empty dictionary when no stats exist")]
+    public async Task GetSeasonsWithStatsAsync_ShouldReturnEmptyDictionary_WhenNoStatsExist()
+    {
+        // Arrange — database is reset in InitializeAsync, no data seeded
+
+        // Act
+        var result = await _queries.GetSeasonsWithStatsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "GetSeasonsWithStatsAsync returns only seasons that have stats, each once")]
+    public async Task GetSeasonsWithStatsAsync_ShouldReturnDistinctSeasonsWithStats_WhenMixedDataExists()
+    {
+        // Arrange
+        var seasonWithStats = SeasonFactory.Create(description: "2024 Season");
+        var anotherSeasonWithStats = SeasonFactory.Create(id: SeasonId.New(), description: "2023 Season");
+        var seasonWithoutStats = SeasonFactory.Create(id: SeasonId.New(), description: "2022 Season");
+
+        var bowler1 = BowlerFactory.Create();
+        var bowler2 = BowlerFactory.Create();
+        var bowler3 = BowlerFactory.Create();
+
+        // Two stats entries for the same season — should appear only once in the result
+        var stats1 = BowlerSeasonStatsFactory.Create(seasonId: seasonWithStats.Id, bowlerId: bowler1.Id);
+        var stats2 = BowlerSeasonStatsFactory.Create(seasonId: seasonWithStats.Id, bowlerId: bowler2.Id);
+        var stats3 = BowlerSeasonStatsFactory.Create(seasonId: anotherSeasonWithStats.Id, bowlerId: bowler3.Id);
+
+        await _dbContext.Bowlers.AddRangeAsync([bowler1, bowler2, bowler3], TestContext.Current.CancellationToken);
+        await _dbContext.Seasons.AddRangeAsync(
+            [seasonWithStats, anotherSeasonWithStats, seasonWithoutStats],
+            TestContext.Current.CancellationToken);
+        await _dbContext.BowlerSeasonStats.AddRangeAsync([stats1, stats2, stats3], TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _queries.GetSeasonsWithStatsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Count.ShouldBe(2);
+        result.ShouldContainKey(seasonWithStats.Id);
+        result.ShouldContainKey(anotherSeasonWithStats.Id);
+        result.ShouldNotContainKey(seasonWithoutStats.Id);
+        result[seasonWithStats.Id].ShouldBe("2024 Season");
+        result[anotherSeasonWithStats.Id].ShouldBe("2023 Season");
+    }
 }

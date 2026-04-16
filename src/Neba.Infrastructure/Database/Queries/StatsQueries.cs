@@ -54,4 +54,10 @@ internal sealed class StatsQueries(AppDbContext appDbContext)
                 Credits = stat.Credits,
                 LastUpdatedUtc = stat.LastUpdatedUtc
             }).ToListAsync(cancellationToken);
+
+    public async Task<IDictionary<SeasonId, string>> GetSeasonsWithStatsAsync(CancellationToken cancellationToken)
+        => await _bowlerSeasonStats.
+            Select(stat => new { stat.SeasonId, stat.Season.Description })
+            .Distinct()
+            .ToDictionaryAsync(x => x.SeasonId, x => x.Description, cancellationToken);
 }
