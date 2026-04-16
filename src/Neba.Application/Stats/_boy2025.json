@@ -1,0 +1,1202 @@
+[
+  {
+    "Season": 2025,
+    "BowlerId": 2453,
+    "TournamentId": 132,
+    "TournamentName": "Grog Monster Sports Trios",
+    "TournamentDate": "2025-02-15",
+    "CumulativePoints": 17
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2453,
+    "TournamentId": 133,
+    "TournamentName": "East Coast Sports Investors Doubles",
+    "TournamentDate": "2025-02-16",
+    "CumulativePoints": 22
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2453,
+    "TournamentId": 134,
+    "TournamentName": "Rip Callahan Memorial - Hall of Fame Classic Singles",
+    "TournamentDate": "2025-03-23",
+    "CumulativePoints": 71
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2453,
+    "TournamentId": 137,
+    "TournamentName": "Buddies Pro Shop Classic Open Singles",
+    "TournamentDate": "2025-04-27",
+    "CumulativePoints": 143
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2453,
+    "TournamentId": 138,
+    "TournamentName": "Bowl Winkles Pro Shop Open Singles",
+    "TournamentDate": "2025-05-18",
+    "CumulativePoints": 173
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2453,
+    "TournamentId": 139,
+    "TournamentName": "Ace Mitchell Over/Under 50 Doubles",
+    "TournamentDate": "2025-06-21",
+    "CumulativePoints": 185
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2453,
+    "TournamentId": 140,
+    "TournamentName": "Many Stylessssss of Bowling Open Singles",
+    "TournamentDate": "2025-06-22",
+    "CumulativePoints": 200
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2453,
+    "TournamentId": 141,
+    "TournamentName": "Dexter \u0026 Turbo Grips Open Singles",
+    "TournamentDate": "2025-07-13",
+    "CumulativePoints": 205
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2453,
+    "TournamentId": 142,
+    "TournamentName": "Yankee Lanes Keene Doubles",
+    "TournamentDate": "2025-08-02",
+    "CumulativePoints": 222
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2453,
+    "TournamentId": 143,
+    "TournamentName": "Yankee Lanes Keene Singles",
+    "TournamentDate": "2025-08-03",
+    "CumulativePoints": 227
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2453,
+    "TournamentId": 144,
+    "TournamentName": "iAM Bowling Open Singles",
+    "TournamentDate": "2025-08-24",
+    "CumulativePoints": 254
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2453,
+    "TournamentId": 145,
+    "TournamentName": "Yankee Lanes Manchester Open Singles",
+    "TournamentDate": "2025-09-14",
+    "CumulativePoints": 276
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2453,
+    "TournamentId": 146,
+    "TournamentName": "Lang\u0027s 65th Anniversary, DJBT \u0026 NE Megabuck Open",
+    "TournamentDate": "2025-10-12",
+    "CumulativePoints": 325
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2453,
+    "TournamentId": 148,
+    "TournamentName": "SPI Bowling Products Tournament of Champions",
+    "TournamentDate": "2025-11-16",
+    "CumulativePoints": 381
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2453,
+    "TournamentId": 149,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2025-12-21",
+    "CumulativePoints": 436
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2524,
+    "TournamentId": 131,
+    "TournamentName": "DJ\u0027s Pro Shop Open Singles",
+    "TournamentDate": "2025-01-19",
+    "CumulativePoints": 72
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2524,
+    "TournamentId": 132,
+    "TournamentName": "Grog Monster Sports Trios",
+    "TournamentDate": "2025-02-15",
+    "CumulativePoints": 77
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2524,
+    "TournamentId": 133,
+    "TournamentName": "East Coast Sports Investors Doubles",
+    "TournamentDate": "2025-02-16",
+    "CumulativePoints": 82
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2524,
+    "TournamentId": 134,
+    "TournamentName": "Rip Callahan Memorial - Hall of Fame Classic Singles",
+    "TournamentDate": "2025-03-23",
+    "CumulativePoints": 97
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2524,
+    "TournamentId": 137,
+    "TournamentName": "Buddies Pro Shop Classic Open Singles",
+    "TournamentDate": "2025-04-27",
+    "CumulativePoints": 146
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2524,
+    "TournamentId": 138,
+    "TournamentName": "Bowl Winkles Pro Shop Open Singles",
+    "TournamentDate": "2025-05-18",
+    "CumulativePoints": 206
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2524,
+    "TournamentId": 139,
+    "TournamentName": "Ace Mitchell Over/Under 50 Doubles",
+    "TournamentDate": "2025-06-21",
+    "CumulativePoints": 211
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2524,
+    "TournamentId": 140,
+    "TournamentName": "Many Stylessssss of Bowling Open Singles",
+    "TournamentDate": "2025-06-22",
+    "CumulativePoints": 226
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2524,
+    "TournamentId": 141,
+    "TournamentName": "Dexter \u0026 Turbo Grips Open Singles",
+    "TournamentDate": "2025-07-13",
+    "CumulativePoints": 241
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2524,
+    "TournamentId": 142,
+    "TournamentName": "Yankee Lanes Keene Doubles",
+    "TournamentDate": "2025-08-02",
+    "CumulativePoints": 246
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2524,
+    "TournamentId": 143,
+    "TournamentName": "Yankee Lanes Keene Singles",
+    "TournamentDate": "2025-08-03",
+    "CumulativePoints": 268
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2524,
+    "TournamentId": 144,
+    "TournamentName": "iAM Bowling Open Singles",
+    "TournamentDate": "2025-08-24",
+    "CumulativePoints": 283
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2524,
+    "TournamentId": 145,
+    "TournamentName": "Yankee Lanes Manchester Open Singles",
+    "TournamentDate": "2025-09-14",
+    "CumulativePoints": 305
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2524,
+    "TournamentId": 146,
+    "TournamentName": "Lang\u0027s 65th Anniversary, DJBT \u0026 NE Megabuck Open",
+    "TournamentDate": "2025-10-12",
+    "CumulativePoints": 344
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2524,
+    "TournamentId": 148,
+    "TournamentName": "SPI Bowling Products Tournament of Champions",
+    "TournamentDate": "2025-11-16",
+    "CumulativePoints": 364
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2524,
+    "TournamentId": 149,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2025-12-21",
+    "CumulativePoints": 419
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4209,
+    "TournamentId": 131,
+    "TournamentName": "DJ\u0027s Pro Shop Open Singles",
+    "TournamentDate": "2025-01-19",
+    "CumulativePoints": 49
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4209,
+    "TournamentId": 132,
+    "TournamentName": "Grog Monster Sports Trios",
+    "TournamentDate": "2025-02-15",
+    "CumulativePoints": 54
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4209,
+    "TournamentId": 133,
+    "TournamentName": "East Coast Sports Investors Doubles",
+    "TournamentDate": "2025-02-16",
+    "CumulativePoints": 71
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4209,
+    "TournamentId": 134,
+    "TournamentName": "Rip Callahan Memorial - Hall of Fame Classic Singles",
+    "TournamentDate": "2025-03-23",
+    "CumulativePoints": 120
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4209,
+    "TournamentId": 137,
+    "TournamentName": "Buddies Pro Shop Classic Open Singles",
+    "TournamentDate": "2025-04-27",
+    "CumulativePoints": 125
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4209,
+    "TournamentId": 138,
+    "TournamentName": "Bowl Winkles Pro Shop Open Singles",
+    "TournamentDate": "2025-05-18",
+    "CumulativePoints": 130
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4209,
+    "TournamentId": 139,
+    "TournamentName": "Ace Mitchell Over/Under 50 Doubles",
+    "TournamentDate": "2025-06-21",
+    "CumulativePoints": 135
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4209,
+    "TournamentId": 140,
+    "TournamentName": "Many Stylessssss of Bowling Open Singles",
+    "TournamentDate": "2025-06-22",
+    "CumulativePoints": 140
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4209,
+    "TournamentId": 141,
+    "TournamentName": "Dexter \u0026 Turbo Grips Open Singles",
+    "TournamentDate": "2025-07-13",
+    "CumulativePoints": 145
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4209,
+    "TournamentId": 142,
+    "TournamentName": "Yankee Lanes Keene Doubles",
+    "TournamentDate": "2025-08-02",
+    "CumulativePoints": 150
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4209,
+    "TournamentId": 143,
+    "TournamentName": "Yankee Lanes Keene Singles",
+    "TournamentDate": "2025-08-03",
+    "CumulativePoints": 172
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4209,
+    "TournamentId": 144,
+    "TournamentName": "iAM Bowling Open Singles",
+    "TournamentDate": "2025-08-24",
+    "CumulativePoints": 211
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4209,
+    "TournamentId": 145,
+    "TournamentName": "Yankee Lanes Manchester Open Singles",
+    "TournamentDate": "2025-09-14",
+    "CumulativePoints": 226
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4209,
+    "TournamentId": 146,
+    "TournamentName": "Lang\u0027s 65th Anniversary, DJBT \u0026 NE Megabuck Open",
+    "TournamentDate": "2025-10-12",
+    "CumulativePoints": 298
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4209,
+    "TournamentId": 148,
+    "TournamentName": "SPI Bowling Products Tournament of Champions",
+    "TournamentDate": "2025-11-16",
+    "CumulativePoints": 323
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4209,
+    "TournamentId": 149,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2025-12-21",
+    "CumulativePoints": 363
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4539,
+    "TournamentId": 132,
+    "TournamentName": "Grog Monster Sports Trios",
+    "TournamentDate": "2025-02-15",
+    "CumulativePoints": 30
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4539,
+    "TournamentId": 133,
+    "TournamentName": "East Coast Sports Investors Doubles",
+    "TournamentDate": "2025-02-16",
+    "CumulativePoints": 52
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4539,
+    "TournamentId": 134,
+    "TournamentName": "Rip Callahan Memorial - Hall of Fame Classic Singles",
+    "TournamentDate": "2025-03-23",
+    "CumulativePoints": 91
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4539,
+    "TournamentId": 137,
+    "TournamentName": "Buddies Pro Shop Classic Open Singles",
+    "TournamentDate": "2025-04-27",
+    "CumulativePoints": 96
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4539,
+    "TournamentId": 138,
+    "TournamentName": "Bowl Winkles Pro Shop Open Singles",
+    "TournamentDate": "2025-05-18",
+    "CumulativePoints": 126
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4539,
+    "TournamentId": 140,
+    "TournamentName": "Many Stylessssss of Bowling Open Singles",
+    "TournamentDate": "2025-06-22",
+    "CumulativePoints": 141
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4539,
+    "TournamentId": 141,
+    "TournamentName": "Dexter \u0026 Turbo Grips Open Singles",
+    "TournamentDate": "2025-07-13",
+    "CumulativePoints": 168
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4539,
+    "TournamentId": 142,
+    "TournamentName": "Yankee Lanes Keene Doubles",
+    "TournamentDate": "2025-08-02",
+    "CumulativePoints": 173
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4539,
+    "TournamentId": 143,
+    "TournamentName": "Yankee Lanes Keene Singles",
+    "TournamentDate": "2025-08-03",
+    "CumulativePoints": 188
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4539,
+    "TournamentId": 144,
+    "TournamentName": "iAM Bowling Open Singles",
+    "TournamentDate": "2025-08-24",
+    "CumulativePoints": 193
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4539,
+    "TournamentId": 145,
+    "TournamentName": "Yankee Lanes Manchester Open Singles",
+    "TournamentDate": "2025-09-14",
+    "CumulativePoints": 253
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4539,
+    "TournamentId": 146,
+    "TournamentName": "Lang\u0027s 65th Anniversary, DJBT \u0026 NE Megabuck Open",
+    "TournamentDate": "2025-10-12",
+    "CumulativePoints": 292
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4539,
+    "TournamentId": 148,
+    "TournamentName": "SPI Bowling Products Tournament of Champions",
+    "TournamentDate": "2025-11-16",
+    "CumulativePoints": 297
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4539,
+    "TournamentId": 149,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2025-12-21",
+    "CumulativePoints": 344
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4295,
+    "TournamentId": 131,
+    "TournamentName": "DJ\u0027s Pro Shop Open Singles",
+    "TournamentDate": "2025-01-19",
+    "CumulativePoints": 39
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4295,
+    "TournamentId": 132,
+    "TournamentName": "Grog Monster Sports Trios",
+    "TournamentDate": "2025-02-15",
+    "CumulativePoints": 62
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4295,
+    "TournamentId": 133,
+    "TournamentName": "East Coast Sports Investors Doubles",
+    "TournamentDate": "2025-02-16",
+    "CumulativePoints": 74
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4295,
+    "TournamentId": 137,
+    "TournamentName": "Buddies Pro Shop Classic Open Singles",
+    "TournamentDate": "2025-04-27",
+    "CumulativePoints": 104
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4295,
+    "TournamentId": 140,
+    "TournamentName": "Many Stylessssss of Bowling Open Singles",
+    "TournamentDate": "2025-06-22",
+    "CumulativePoints": 109
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4295,
+    "TournamentId": 141,
+    "TournamentName": "Dexter \u0026 Turbo Grips Open Singles",
+    "TournamentDate": "2025-07-13",
+    "CumulativePoints": 131
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4295,
+    "TournamentId": 142,
+    "TournamentName": "Yankee Lanes Keene Doubles",
+    "TournamentDate": "2025-08-02",
+    "CumulativePoints": 148
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4295,
+    "TournamentId": 143,
+    "TournamentName": "Yankee Lanes Keene Singles",
+    "TournamentDate": "2025-08-03",
+    "CumulativePoints": 178
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4295,
+    "TournamentId": 144,
+    "TournamentName": "iAM Bowling Open Singles",
+    "TournamentDate": "2025-08-24",
+    "CumulativePoints": 193
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4295,
+    "TournamentId": 145,
+    "TournamentName": "Yankee Lanes Manchester Open Singles",
+    "TournamentDate": "2025-09-14",
+    "CumulativePoints": 215
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4295,
+    "TournamentId": 146,
+    "TournamentName": "Lang\u0027s 65th Anniversary, DJBT \u0026 NE Megabuck Open",
+    "TournamentDate": "2025-10-12",
+    "CumulativePoints": 254
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4295,
+    "TournamentId": 148,
+    "TournamentName": "SPI Bowling Products Tournament of Champions",
+    "TournamentDate": "2025-11-16",
+    "CumulativePoints": 296
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4295,
+    "TournamentId": 149,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2025-12-21",
+    "CumulativePoints": 343
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 418,
+    "TournamentId": 131,
+    "TournamentName": "DJ\u0027s Pro Shop Open Singles",
+    "TournamentDate": "2025-01-19",
+    "CumulativePoints": 30
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 418,
+    "TournamentId": 132,
+    "TournamentName": "Grog Monster Sports Trios",
+    "TournamentDate": "2025-02-15",
+    "CumulativePoints": 35
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 418,
+    "TournamentId": 133,
+    "TournamentName": "East Coast Sports Investors Doubles",
+    "TournamentDate": "2025-02-16",
+    "CumulativePoints": 47
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 418,
+    "TournamentId": 134,
+    "TournamentName": "Rip Callahan Memorial - Hall of Fame Classic Singles",
+    "TournamentDate": "2025-03-23",
+    "CumulativePoints": 69
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 418,
+    "TournamentId": 137,
+    "TournamentName": "Buddies Pro Shop Classic Open Singles",
+    "TournamentDate": "2025-04-27",
+    "CumulativePoints": 84
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 418,
+    "TournamentId": 138,
+    "TournamentName": "Bowl Winkles Pro Shop Open Singles",
+    "TournamentDate": "2025-05-18",
+    "CumulativePoints": 99
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 418,
+    "TournamentId": 139,
+    "TournamentName": "Ace Mitchell Over/Under 50 Doubles",
+    "TournamentDate": "2025-06-21",
+    "CumulativePoints": 116
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 418,
+    "TournamentId": 140,
+    "TournamentName": "Many Stylessssss of Bowling Open Singles",
+    "TournamentDate": "2025-06-22",
+    "CumulativePoints": 121
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 418,
+    "TournamentId": 141,
+    "TournamentName": "Dexter \u0026 Turbo Grips Open Singles",
+    "TournamentDate": "2025-07-13",
+    "CumulativePoints": 143
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 418,
+    "TournamentId": 142,
+    "TournamentName": "Yankee Lanes Keene Doubles",
+    "TournamentDate": "2025-08-02",
+    "CumulativePoints": 173
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 418,
+    "TournamentId": 143,
+    "TournamentName": "Yankee Lanes Keene Singles",
+    "TournamentDate": "2025-08-03",
+    "CumulativePoints": 195
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 418,
+    "TournamentId": 144,
+    "TournamentName": "iAM Bowling Open Singles",
+    "TournamentDate": "2025-08-24",
+    "CumulativePoints": 255
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 418,
+    "TournamentId": 145,
+    "TournamentName": "Yankee Lanes Manchester Open Singles",
+    "TournamentDate": "2025-09-14",
+    "CumulativePoints": 260
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 418,
+    "TournamentId": 146,
+    "TournamentName": "Lang\u0027s 65th Anniversary, DJBT \u0026 NE Megabuck Open",
+    "TournamentDate": "2025-10-12",
+    "CumulativePoints": 282
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 418,
+    "TournamentId": 148,
+    "TournamentName": "SPI Bowling Products Tournament of Champions",
+    "TournamentDate": "2025-11-16",
+    "CumulativePoints": 287
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 418,
+    "TournamentId": 149,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2025-12-21",
+    "CumulativePoints": 334
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4252,
+    "TournamentId": 131,
+    "TournamentName": "DJ\u0027s Pro Shop Open Singles",
+    "TournamentDate": "2025-01-19",
+    "CumulativePoints": 30
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4252,
+    "TournamentId": 132,
+    "TournamentName": "Grog Monster Sports Trios",
+    "TournamentDate": "2025-02-15",
+    "CumulativePoints": 35
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4252,
+    "TournamentId": 133,
+    "TournamentName": "East Coast Sports Investors Doubles",
+    "TournamentDate": "2025-02-16",
+    "CumulativePoints": 40
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4252,
+    "TournamentId": 134,
+    "TournamentName": "Rip Callahan Memorial - Hall of Fame Classic Singles",
+    "TournamentDate": "2025-03-23",
+    "CumulativePoints": 79
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4252,
+    "TournamentId": 138,
+    "TournamentName": "Bowl Winkles Pro Shop Open Singles",
+    "TournamentDate": "2025-05-18",
+    "CumulativePoints": 84
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4252,
+    "TournamentId": 139,
+    "TournamentName": "Ace Mitchell Over/Under 50 Doubles",
+    "TournamentDate": "2025-06-21",
+    "CumulativePoints": 96
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4252,
+    "TournamentId": 140,
+    "TournamentName": "Many Stylessssss of Bowling Open Singles",
+    "TournamentDate": "2025-06-22",
+    "CumulativePoints": 135
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4252,
+    "TournamentId": 141,
+    "TournamentName": "Dexter \u0026 Turbo Grips Open Singles",
+    "TournamentDate": "2025-07-13",
+    "CumulativePoints": 174
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4252,
+    "TournamentId": 142,
+    "TournamentName": "Yankee Lanes Keene Doubles",
+    "TournamentDate": "2025-08-02",
+    "CumulativePoints": 179
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4252,
+    "TournamentId": 143,
+    "TournamentName": "Yankee Lanes Keene Singles",
+    "TournamentDate": "2025-08-03",
+    "CumulativePoints": 209
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4252,
+    "TournamentId": 144,
+    "TournamentName": "iAM Bowling Open Singles",
+    "TournamentDate": "2025-08-24",
+    "CumulativePoints": 258
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4252,
+    "TournamentId": 145,
+    "TournamentName": "Yankee Lanes Manchester Open Singles",
+    "TournamentDate": "2025-09-14",
+    "CumulativePoints": 273
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4252,
+    "TournamentId": 146,
+    "TournamentName": "Lang\u0027s 65th Anniversary, DJBT \u0026 NE Megabuck Open",
+    "TournamentDate": "2025-10-12",
+    "CumulativePoints": 288
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4252,
+    "TournamentId": 148,
+    "TournamentName": "SPI Bowling Products Tournament of Champions",
+    "TournamentDate": "2025-11-16",
+    "CumulativePoints": 293
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 4252,
+    "TournamentId": 149,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2025-12-21",
+    "CumulativePoints": 333
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 3554,
+    "TournamentId": 131,
+    "TournamentName": "DJ\u0027s Pro Shop Open Singles",
+    "TournamentDate": "2025-01-19",
+    "CumulativePoints": 39
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 3554,
+    "TournamentId": 132,
+    "TournamentName": "Grog Monster Sports Trios",
+    "TournamentDate": "2025-02-15",
+    "CumulativePoints": 61
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 3554,
+    "TournamentId": 133,
+    "TournamentName": "East Coast Sports Investors Doubles",
+    "TournamentDate": "2025-02-16",
+    "CumulativePoints": 78
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 3554,
+    "TournamentId": 134,
+    "TournamentName": "Rip Callahan Memorial - Hall of Fame Classic Singles",
+    "TournamentDate": "2025-03-23",
+    "CumulativePoints": 93
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 3554,
+    "TournamentId": 137,
+    "TournamentName": "Buddies Pro Shop Classic Open Singles",
+    "TournamentDate": "2025-04-27",
+    "CumulativePoints": 142
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 3554,
+    "TournamentId": 138,
+    "TournamentName": "Bowl Winkles Pro Shop Open Singles",
+    "TournamentDate": "2025-05-18",
+    "CumulativePoints": 147
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 3554,
+    "TournamentId": 139,
+    "TournamentName": "Ace Mitchell Over/Under 50 Doubles",
+    "TournamentDate": "2025-06-21",
+    "CumulativePoints": 164
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 3554,
+    "TournamentId": 140,
+    "TournamentName": "Many Stylessssss of Bowling Open Singles",
+    "TournamentDate": "2025-06-22",
+    "CumulativePoints": 186
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 3554,
+    "TournamentId": 142,
+    "TournamentName": "Yankee Lanes Keene Doubles",
+    "TournamentDate": "2025-08-02",
+    "CumulativePoints": 198
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 3554,
+    "TournamentId": 143,
+    "TournamentName": "Yankee Lanes Keene Singles",
+    "TournamentDate": "2025-08-03",
+    "CumulativePoints": 228
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 3554,
+    "TournamentId": 144,
+    "TournamentName": "iAM Bowling Open Singles",
+    "TournamentDate": "2025-08-24",
+    "CumulativePoints": 258
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 3554,
+    "TournamentId": 145,
+    "TournamentName": "Yankee Lanes Manchester Open Singles",
+    "TournamentDate": "2025-09-14",
+    "CumulativePoints": 280
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 3554,
+    "TournamentId": 146,
+    "TournamentName": "Lang\u0027s 65th Anniversary, DJBT \u0026 NE Megabuck Open",
+    "TournamentDate": "2025-10-12",
+    "CumulativePoints": 285
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 3554,
+    "TournamentId": 148,
+    "TournamentName": "SPI Bowling Products Tournament of Champions",
+    "TournamentDate": "2025-11-16",
+    "CumulativePoints": 290
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 3554,
+    "TournamentId": 149,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2025-12-21",
+    "CumulativePoints": 330
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 498,
+    "TournamentId": 131,
+    "TournamentName": "DJ\u0027s Pro Shop Open Singles",
+    "TournamentDate": "2025-01-19",
+    "CumulativePoints": 30
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 498,
+    "TournamentId": 132,
+    "TournamentName": "Grog Monster Sports Trios",
+    "TournamentDate": "2025-02-15",
+    "CumulativePoints": 35
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 498,
+    "TournamentId": 133,
+    "TournamentName": "East Coast Sports Investors Doubles",
+    "TournamentDate": "2025-02-16",
+    "CumulativePoints": 47
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 498,
+    "TournamentId": 134,
+    "TournamentName": "Rip Callahan Memorial - Hall of Fame Classic Singles",
+    "TournamentDate": "2025-03-23",
+    "CumulativePoints": 69
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 498,
+    "TournamentId": 137,
+    "TournamentName": "Buddies Pro Shop Classic Open Singles",
+    "TournamentDate": "2025-04-27",
+    "CumulativePoints": 91
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 498,
+    "TournamentId": 138,
+    "TournamentName": "Bowl Winkles Pro Shop Open Singles",
+    "TournamentDate": "2025-05-18",
+    "CumulativePoints": 140
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 498,
+    "TournamentId": 139,
+    "TournamentName": "Ace Mitchell Over/Under 50 Doubles",
+    "TournamentDate": "2025-06-21",
+    "CumulativePoints": 170
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 498,
+    "TournamentId": 140,
+    "TournamentName": "Many Stylessssss of Bowling Open Singles",
+    "TournamentDate": "2025-06-22",
+    "CumulativePoints": 185
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 498,
+    "TournamentId": 142,
+    "TournamentName": "Yankee Lanes Keene Doubles",
+    "TournamentDate": "2025-08-02",
+    "CumulativePoints": 190
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 498,
+    "TournamentId": 143,
+    "TournamentName": "Yankee Lanes Keene Singles",
+    "TournamentDate": "2025-08-03",
+    "CumulativePoints": 205
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 498,
+    "TournamentId": 144,
+    "TournamentName": "iAM Bowling Open Singles",
+    "TournamentDate": "2025-08-24",
+    "CumulativePoints": 235
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 498,
+    "TournamentId": 145,
+    "TournamentName": "Yankee Lanes Manchester Open Singles",
+    "TournamentDate": "2025-09-14",
+    "CumulativePoints": 250
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 498,
+    "TournamentId": 146,
+    "TournamentName": "Lang\u0027s 65th Anniversary, DJBT \u0026 NE Megabuck Open",
+    "TournamentDate": "2025-10-12",
+    "CumulativePoints": 265
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 498,
+    "TournamentId": 148,
+    "TournamentName": "SPI Bowling Products Tournament of Champions",
+    "TournamentDate": "2025-11-16",
+    "CumulativePoints": 270
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 498,
+    "TournamentId": 149,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2025-12-21",
+    "CumulativePoints": 325
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2203,
+    "TournamentId": 131,
+    "TournamentName": "DJ\u0027s Pro Shop Open Singles",
+    "TournamentDate": "2025-01-19",
+    "CumulativePoints": 5
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2203,
+    "TournamentId": 132,
+    "TournamentName": "Grog Monster Sports Trios",
+    "TournamentDate": "2025-02-15",
+    "CumulativePoints": 10
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2203,
+    "TournamentId": 133,
+    "TournamentName": "East Coast Sports Investors Doubles",
+    "TournamentDate": "2025-02-16",
+    "CumulativePoints": 15
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2203,
+    "TournamentId": 134,
+    "TournamentName": "Rip Callahan Memorial - Hall of Fame Classic Singles",
+    "TournamentDate": "2025-03-23",
+    "CumulativePoints": 20
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2203,
+    "TournamentId": 137,
+    "TournamentName": "Buddies Pro Shop Classic Open Singles",
+    "TournamentDate": "2025-04-27",
+    "CumulativePoints": 50
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2203,
+    "TournamentId": 138,
+    "TournamentName": "Bowl Winkles Pro Shop Open Singles",
+    "TournamentDate": "2025-05-18",
+    "CumulativePoints": 55
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2203,
+    "TournamentId": 140,
+    "TournamentName": "Many Stylessssss of Bowling Open Singles",
+    "TournamentDate": "2025-06-22",
+    "CumulativePoints": 85
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2203,
+    "TournamentId": 141,
+    "TournamentName": "Dexter \u0026 Turbo Grips Open Singles",
+    "TournamentDate": "2025-07-13",
+    "CumulativePoints": 100
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2203,
+    "TournamentId": 142,
+    "TournamentName": "Yankee Lanes Keene Doubles",
+    "TournamentDate": "2025-08-02",
+    "CumulativePoints": 117
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2203,
+    "TournamentId": 143,
+    "TournamentName": "Yankee Lanes Keene Singles",
+    "TournamentDate": "2025-08-03",
+    "CumulativePoints": 122
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2203,
+    "TournamentId": 144,
+    "TournamentName": "iAM Bowling Open Singles",
+    "TournamentDate": "2025-08-24",
+    "CumulativePoints": 127
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2203,
+    "TournamentId": 145,
+    "TournamentName": "Yankee Lanes Manchester Open Singles",
+    "TournamentDate": "2025-09-14",
+    "CumulativePoints": 142
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2203,
+    "TournamentId": 146,
+    "TournamentName": "Lang\u0027s 65th Anniversary, DJBT \u0026 NE Megabuck Open",
+    "TournamentDate": "2025-10-12",
+    "CumulativePoints": 157
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2203,
+    "TournamentId": 147,
+    "TournamentName": "Ideal Bowling Concepts Non-Champs Singles",
+    "TournamentDate": "2025-11-15",
+    "CumulativePoints": 196
+  },
+  {
+    "Season": 2025,
+    "BowlerId": 2203,
+    "TournamentId": 149,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2025-12-21",
+    "CumulativePoints": 321
+  }
+]

@@ -1,0 +1,1178 @@
+[
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 107,
+    "TournamentName": "Many Styles of Bowling Open Singles",
+    "TournamentDate": "2024-01-21",
+    "CumulativePoints": 5
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 108,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2024-02-24",
+    "CumulativePoints": 10
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 109,
+    "TournamentName": "KR Strikeforce Doubles",
+    "TournamentDate": "2024-02-25",
+    "CumulativePoints": 33
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 110,
+    "TournamentName": "Bowl Winkle\u0027s Pro Shop \u0026 Ace Mitchell Open Singles",
+    "TournamentDate": "2024-03-17",
+    "CumulativePoints": 48
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 114,
+    "TournamentName": "Buddies Pro Shop Open Singles",
+    "TournamentDate": "2024-04-28",
+    "CumulativePoints": 63
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 115,
+    "TournamentName": "Green Mountain Open Singles",
+    "TournamentDate": "2024-05-19",
+    "CumulativePoints": 85
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 116,
+    "TournamentName": "GMS Decorative Concrete \u0026 Turbo Grips O/U Doubles",
+    "TournamentDate": "2024-06-08",
+    "CumulativePoints": 108
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 117,
+    "TournamentName": "GMS Decorative Concrete \u0026 Strike F/X Doubles",
+    "TournamentDate": "2024-06-09",
+    "CumulativePoints": 120
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 119,
+    "TournamentName": "Savage Arms Open Singles",
+    "TournamentDate": "2024-06-30",
+    "CumulativePoints": 142
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 121,
+    "TournamentName": "Rip Callahan Memorial Open Singles",
+    "TournamentDate": "2024-07-21",
+    "CumulativePoints": 157
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 122,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2024-08-03",
+    "CumulativePoints": 174
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 123,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-08-04",
+    "CumulativePoints": 234
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 125,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-09-08",
+    "CumulativePoints": 278
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 126,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2024-10-06",
+    "CumulativePoints": 368
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 127,
+    "TournamentName": "Dexter Bowling Open Singles",
+    "TournamentDate": "2024-10-20",
+    "CumulativePoints": 398
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 129,
+    "TournamentName": "NEBA Tournament of Champions",
+    "TournamentDate": "2024-11-17",
+    "CumulativePoints": 403
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 339,
+    "TournamentId": 130,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2024-12-08",
+    "CumulativePoints": 448
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4138,
+    "TournamentId": 107,
+    "TournamentName": "Many Styles of Bowling Open Singles",
+    "TournamentDate": "2024-01-21",
+    "CumulativePoints": 72
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4138,
+    "TournamentId": 108,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2024-02-24",
+    "CumulativePoints": 95
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4138,
+    "TournamentId": 109,
+    "TournamentName": "KR Strikeforce Doubles",
+    "TournamentDate": "2024-02-25",
+    "CumulativePoints": 100
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4138,
+    "TournamentId": 110,
+    "TournamentName": "Bowl Winkle\u0027s Pro Shop \u0026 Ace Mitchell Open Singles",
+    "TournamentDate": "2024-03-17",
+    "CumulativePoints": 130
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4138,
+    "TournamentId": 114,
+    "TournamentName": "Buddies Pro Shop Open Singles",
+    "TournamentDate": "2024-04-28",
+    "CumulativePoints": 145
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4138,
+    "TournamentId": 116,
+    "TournamentName": "GMS Decorative Concrete \u0026 Turbo Grips O/U Doubles",
+    "TournamentDate": "2024-06-08",
+    "CumulativePoints": 150
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4138,
+    "TournamentId": 117,
+    "TournamentName": "GMS Decorative Concrete \u0026 Strike F/X Doubles",
+    "TournamentDate": "2024-06-09",
+    "CumulativePoints": 162
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4138,
+    "TournamentId": 119,
+    "TournamentName": "Savage Arms Open Singles",
+    "TournamentDate": "2024-06-30",
+    "CumulativePoints": 192
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4138,
+    "TournamentId": 121,
+    "TournamentName": "Rip Callahan Memorial Open Singles",
+    "TournamentDate": "2024-07-21",
+    "CumulativePoints": 197
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4138,
+    "TournamentId": 122,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2024-08-03",
+    "CumulativePoints": 202
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4138,
+    "TournamentId": 123,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-08-04",
+    "CumulativePoints": 224
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4138,
+    "TournamentId": 125,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-09-08",
+    "CumulativePoints": 254
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4138,
+    "TournamentId": 126,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2024-10-06",
+    "CumulativePoints": 259
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4138,
+    "TournamentId": 127,
+    "TournamentName": "Dexter Bowling Open Singles",
+    "TournamentDate": "2024-10-20",
+    "CumulativePoints": 289
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4138,
+    "TournamentId": 129,
+    "TournamentName": "NEBA Tournament of Champions",
+    "TournamentDate": "2024-11-17",
+    "CumulativePoints": 331
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4138,
+    "TournamentId": 130,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2024-12-08",
+    "CumulativePoints": 376
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4278,
+    "TournamentId": 107,
+    "TournamentName": "Many Styles of Bowling Open Singles",
+    "TournamentDate": "2024-01-21",
+    "CumulativePoints": 5
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4278,
+    "TournamentId": 108,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2024-02-24",
+    "CumulativePoints": 22
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4278,
+    "TournamentId": 109,
+    "TournamentName": "KR Strikeforce Doubles",
+    "TournamentDate": "2024-02-25",
+    "CumulativePoints": 27
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4278,
+    "TournamentId": 110,
+    "TournamentName": "Bowl Winkle\u0027s Pro Shop \u0026 Ace Mitchell Open Singles",
+    "TournamentDate": "2024-03-17",
+    "CumulativePoints": 49
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4278,
+    "TournamentId": 114,
+    "TournamentName": "Buddies Pro Shop Open Singles",
+    "TournamentDate": "2024-04-28",
+    "CumulativePoints": 79
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4278,
+    "TournamentId": 115,
+    "TournamentName": "Green Mountain Open Singles",
+    "TournamentDate": "2024-05-19",
+    "CumulativePoints": 139
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4278,
+    "TournamentId": 116,
+    "TournamentName": "GMS Decorative Concrete \u0026 Turbo Grips O/U Doubles",
+    "TournamentDate": "2024-06-08",
+    "CumulativePoints": 144
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4278,
+    "TournamentId": 117,
+    "TournamentName": "GMS Decorative Concrete \u0026 Strike F/X Doubles",
+    "TournamentDate": "2024-06-09",
+    "CumulativePoints": 149
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4278,
+    "TournamentId": 119,
+    "TournamentName": "Savage Arms Open Singles",
+    "TournamentDate": "2024-06-30",
+    "CumulativePoints": 171
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4278,
+    "TournamentId": 121,
+    "TournamentName": "Rip Callahan Memorial Open Singles",
+    "TournamentDate": "2024-07-21",
+    "CumulativePoints": 193
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4278,
+    "TournamentId": 122,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2024-08-03",
+    "CumulativePoints": 198
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4278,
+    "TournamentId": 125,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-09-08",
+    "CumulativePoints": 203
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4278,
+    "TournamentId": 126,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2024-10-06",
+    "CumulativePoints": 208
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4278,
+    "TournamentId": 127,
+    "TournamentName": "Dexter Bowling Open Singles",
+    "TournamentDate": "2024-10-20",
+    "CumulativePoints": 268
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4278,
+    "TournamentId": 129,
+    "TournamentName": "NEBA Tournament of Champions",
+    "TournamentDate": "2024-11-17",
+    "CumulativePoints": 298
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4278,
+    "TournamentId": 130,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2024-12-08",
+    "CumulativePoints": 343
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 498,
+    "TournamentId": 107,
+    "TournamentName": "Many Styles of Bowling Open Singles",
+    "TournamentDate": "2024-01-21",
+    "CumulativePoints": 22
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 498,
+    "TournamentId": 108,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2024-02-24",
+    "CumulativePoints": 27
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 498,
+    "TournamentId": 109,
+    "TournamentName": "KR Strikeforce Doubles",
+    "TournamentDate": "2024-02-25",
+    "CumulativePoints": 32
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 498,
+    "TournamentId": 114,
+    "TournamentName": "Buddies Pro Shop Open Singles",
+    "TournamentDate": "2024-04-28",
+    "CumulativePoints": 62
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 498,
+    "TournamentId": 115,
+    "TournamentName": "Green Mountain Open Singles",
+    "TournamentDate": "2024-05-19",
+    "CumulativePoints": 77
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 498,
+    "TournamentId": 119,
+    "TournamentName": "Savage Arms Open Singles",
+    "TournamentDate": "2024-06-30",
+    "CumulativePoints": 107
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 498,
+    "TournamentId": 120,
+    "TournamentName": "Callahan\u0027s Seniors \u0026 Women\u0027s Singles",
+    "TournamentDate": "2024-07-20",
+    "CumulativePoints": 146
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 498,
+    "TournamentId": 121,
+    "TournamentName": "Rip Callahan Memorial Open Singles",
+    "TournamentDate": "2024-07-21",
+    "CumulativePoints": 168
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 498,
+    "TournamentId": 122,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2024-08-03",
+    "CumulativePoints": 185
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 498,
+    "TournamentId": 123,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-08-04",
+    "CumulativePoints": 190
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 498,
+    "TournamentId": 125,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-09-08",
+    "CumulativePoints": 205
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 498,
+    "TournamentId": 126,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2024-10-06",
+    "CumulativePoints": 313
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 498,
+    "TournamentId": 127,
+    "TournamentName": "Dexter Bowling Open Singles",
+    "TournamentDate": "2024-10-20",
+    "CumulativePoints": 335
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4500,
+    "TournamentId": 107,
+    "TournamentName": "Many Styles of Bowling Open Singles",
+    "TournamentDate": "2024-01-21",
+    "CumulativePoints": 22
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4500,
+    "TournamentId": 108,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2024-02-24",
+    "CumulativePoints": 27
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4500,
+    "TournamentId": 109,
+    "TournamentName": "KR Strikeforce Doubles",
+    "TournamentDate": "2024-02-25",
+    "CumulativePoints": 32
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4500,
+    "TournamentId": 110,
+    "TournamentName": "Bowl Winkle\u0027s Pro Shop \u0026 Ace Mitchell Open Singles",
+    "TournamentDate": "2024-03-17",
+    "CumulativePoints": 71
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4500,
+    "TournamentId": 115,
+    "TournamentName": "Green Mountain Open Singles",
+    "TournamentDate": "2024-05-19",
+    "CumulativePoints": 98
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4500,
+    "TournamentId": 119,
+    "TournamentName": "Savage Arms Open Singles",
+    "TournamentDate": "2024-06-30",
+    "CumulativePoints": 158
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4500,
+    "TournamentId": 121,
+    "TournamentName": "Rip Callahan Memorial Open Singles",
+    "TournamentDate": "2024-07-21",
+    "CumulativePoints": 202
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4500,
+    "TournamentId": 122,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2024-08-03",
+    "CumulativePoints": 219
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4500,
+    "TournamentId": 123,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-08-04",
+    "CumulativePoints": 241
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4500,
+    "TournamentId": 128,
+    "TournamentName": "Better Bowling Concepts Non-Champs Singles",
+    "TournamentDate": "2024-11-16",
+    "CumulativePoints": 263
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4500,
+    "TournamentId": 130,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2024-12-08",
+    "CumulativePoints": 322
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4252,
+    "TournamentId": 108,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2024-02-24",
+    "CumulativePoints": 12
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4252,
+    "TournamentId": 109,
+    "TournamentName": "KR Strikeforce Doubles",
+    "TournamentDate": "2024-02-25",
+    "CumulativePoints": 17
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4252,
+    "TournamentId": 110,
+    "TournamentName": "Bowl Winkle\u0027s Pro Shop \u0026 Ace Mitchell Open Singles",
+    "TournamentDate": "2024-03-17",
+    "CumulativePoints": 89
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4252,
+    "TournamentId": 116,
+    "TournamentName": "GMS Decorative Concrete \u0026 Turbo Grips O/U Doubles",
+    "TournamentDate": "2024-06-08",
+    "CumulativePoints": 94
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4252,
+    "TournamentId": 117,
+    "TournamentName": "GMS Decorative Concrete \u0026 Strike F/X Doubles",
+    "TournamentDate": "2024-06-09",
+    "CumulativePoints": 99
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4252,
+    "TournamentId": 119,
+    "TournamentName": "Savage Arms Open Singles",
+    "TournamentDate": "2024-06-30",
+    "CumulativePoints": 129
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4252,
+    "TournamentId": 121,
+    "TournamentName": "Rip Callahan Memorial Open Singles",
+    "TournamentDate": "2024-07-21",
+    "CumulativePoints": 159
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4252,
+    "TournamentId": 122,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2024-08-03",
+    "CumulativePoints": 164
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4252,
+    "TournamentId": 123,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-08-04",
+    "CumulativePoints": 186
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4252,
+    "TournamentId": 125,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-09-08",
+    "CumulativePoints": 201
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4252,
+    "TournamentId": 126,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2024-10-06",
+    "CumulativePoints": 260
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4252,
+    "TournamentId": 127,
+    "TournamentName": "Dexter Bowling Open Singles",
+    "TournamentDate": "2024-10-20",
+    "CumulativePoints": 265
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4252,
+    "TournamentId": 129,
+    "TournamentName": "NEBA Tournament of Champions",
+    "TournamentDate": "2024-11-17",
+    "CumulativePoints": 270
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4252,
+    "TournamentId": 130,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2024-12-08",
+    "CumulativePoints": 315
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 934,
+    "TournamentId": 108,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2024-02-24",
+    "CumulativePoints": 17
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 934,
+    "TournamentId": 109,
+    "TournamentName": "KR Strikeforce Doubles",
+    "TournamentDate": "2024-02-25",
+    "CumulativePoints": 29
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 934,
+    "TournamentId": 116,
+    "TournamentName": "GMS Decorative Concrete \u0026 Turbo Grips O/U Doubles",
+    "TournamentDate": "2024-06-08",
+    "CumulativePoints": 34
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 934,
+    "TournamentId": 117,
+    "TournamentName": "GMS Decorative Concrete \u0026 Strike F/X Doubles",
+    "TournamentDate": "2024-06-09",
+    "CumulativePoints": 51
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 934,
+    "TournamentId": 121,
+    "TournamentName": "Rip Callahan Memorial Open Singles",
+    "TournamentDate": "2024-07-21",
+    "CumulativePoints": 100
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 934,
+    "TournamentId": 122,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2024-08-03",
+    "CumulativePoints": 112
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 934,
+    "TournamentId": 123,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-08-04",
+    "CumulativePoints": 134
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 934,
+    "TournamentId": 125,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-09-08",
+    "CumulativePoints": 194
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 934,
+    "TournamentId": 126,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2024-10-06",
+    "CumulativePoints": 227
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 934,
+    "TournamentId": 127,
+    "TournamentName": "Dexter Bowling Open Singles",
+    "TournamentDate": "2024-10-20",
+    "CumulativePoints": 257
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 934,
+    "TournamentId": 129,
+    "TournamentName": "NEBA Tournament of Champions",
+    "TournamentDate": "2024-11-17",
+    "CumulativePoints": 277
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 934,
+    "TournamentId": 130,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2024-12-08",
+    "CumulativePoints": 310
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 2203,
+    "TournamentId": 107,
+    "TournamentName": "Many Styles of Bowling Open Singles",
+    "TournamentDate": "2024-01-21",
+    "CumulativePoints": 15
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 2203,
+    "TournamentId": 108,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2024-02-24",
+    "CumulativePoints": 20
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 2203,
+    "TournamentId": 109,
+    "TournamentName": "KR Strikeforce Doubles",
+    "TournamentDate": "2024-02-25",
+    "CumulativePoints": 32
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 2203,
+    "TournamentId": 110,
+    "TournamentName": "Bowl Winkle\u0027s Pro Shop \u0026 Ace Mitchell Open Singles",
+    "TournamentDate": "2024-03-17",
+    "CumulativePoints": 37
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 2203,
+    "TournamentId": 114,
+    "TournamentName": "Buddies Pro Shop Open Singles",
+    "TournamentDate": "2024-04-28",
+    "CumulativePoints": 67
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 2203,
+    "TournamentId": 115,
+    "TournamentName": "Green Mountain Open Singles",
+    "TournamentDate": "2024-05-19",
+    "CumulativePoints": 106
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 2203,
+    "TournamentId": 116,
+    "TournamentName": "GMS Decorative Concrete \u0026 Turbo Grips O/U Doubles",
+    "TournamentDate": "2024-06-08",
+    "CumulativePoints": 111
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 2203,
+    "TournamentId": 117,
+    "TournamentName": "GMS Decorative Concrete \u0026 Strike F/X Doubles",
+    "TournamentDate": "2024-06-09",
+    "CumulativePoints": 123
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 2203,
+    "TournamentId": 121,
+    "TournamentName": "Rip Callahan Memorial Open Singles",
+    "TournamentDate": "2024-07-21",
+    "CumulativePoints": 162
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 2203,
+    "TournamentId": 122,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2024-08-03",
+    "CumulativePoints": 167
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 2203,
+    "TournamentId": 123,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-08-04",
+    "CumulativePoints": 172
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 2203,
+    "TournamentId": 125,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-09-08",
+    "CumulativePoints": 177
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 2203,
+    "TournamentId": 126,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2024-10-06",
+    "CumulativePoints": 210
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 2203,
+    "TournamentId": 127,
+    "TournamentName": "Dexter Bowling Open Singles",
+    "TournamentDate": "2024-10-20",
+    "CumulativePoints": 240
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 2203,
+    "TournamentId": 128,
+    "TournamentName": "Better Bowling Concepts Non-Champs Singles",
+    "TournamentDate": "2024-11-16",
+    "CumulativePoints": 245
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 2203,
+    "TournamentId": 130,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2024-12-08",
+    "CumulativePoints": 304
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4234,
+    "TournamentId": 108,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2024-02-24",
+    "CumulativePoints": 5
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4234,
+    "TournamentId": 109,
+    "TournamentName": "KR Strikeforce Doubles",
+    "TournamentDate": "2024-02-25",
+    "CumulativePoints": 17
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4234,
+    "TournamentId": 110,
+    "TournamentName": "Bowl Winkle\u0027s Pro Shop \u0026 Ace Mitchell Open Singles",
+    "TournamentDate": "2024-03-17",
+    "CumulativePoints": 32
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4234,
+    "TournamentId": 114,
+    "TournamentName": "Buddies Pro Shop Open Singles",
+    "TournamentDate": "2024-04-28",
+    "CumulativePoints": 81
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4234,
+    "TournamentId": 117,
+    "TournamentName": "GMS Decorative Concrete \u0026 Strike F/X Doubles",
+    "TournamentDate": "2024-06-09",
+    "CumulativePoints": 86
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4234,
+    "TournamentId": 119,
+    "TournamentName": "Savage Arms Open Singles",
+    "TournamentDate": "2024-06-30",
+    "CumulativePoints": 108
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4234,
+    "TournamentId": 121,
+    "TournamentName": "Rip Callahan Memorial Open Singles",
+    "TournamentDate": "2024-07-21",
+    "CumulativePoints": 113
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4234,
+    "TournamentId": 122,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2024-08-03",
+    "CumulativePoints": 118
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4234,
+    "TournamentId": 123,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-08-04",
+    "CumulativePoints": 123
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4234,
+    "TournamentId": 125,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-09-08",
+    "CumulativePoints": 138
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4234,
+    "TournamentId": 126,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2024-10-06",
+    "CumulativePoints": 161
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4234,
+    "TournamentId": 127,
+    "TournamentName": "Dexter Bowling Open Singles",
+    "TournamentDate": "2024-10-20",
+    "CumulativePoints": 183
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4234,
+    "TournamentId": 129,
+    "TournamentName": "NEBA Tournament of Champions",
+    "TournamentDate": "2024-11-17",
+    "CumulativePoints": 213
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 4234,
+    "TournamentId": 130,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2024-12-08",
+    "CumulativePoints": 303
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 107,
+    "TournamentName": "Many Styles of Bowling Open Singles",
+    "TournamentDate": "2024-01-21",
+    "CumulativePoints": 5
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 108,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2024-02-24",
+    "CumulativePoints": 10
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 109,
+    "TournamentName": "KR Strikeforce Doubles",
+    "TournamentDate": "2024-02-25",
+    "CumulativePoints": 33
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 110,
+    "TournamentName": "Bowl Winkle\u0027s Pro Shop \u0026 Ace Mitchell Open Singles",
+    "TournamentDate": "2024-03-17",
+    "CumulativePoints": 63
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 114,
+    "TournamentName": "Buddies Pro Shop Open Singles",
+    "TournamentDate": "2024-04-28",
+    "CumulativePoints": 102
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 115,
+    "TournamentName": "Green Mountain Open Singles",
+    "TournamentDate": "2024-05-19",
+    "CumulativePoints": 132
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 116,
+    "TournamentName": "GMS Decorative Concrete \u0026 Turbo Grips O/U Doubles",
+    "TournamentDate": "2024-06-08",
+    "CumulativePoints": 137
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 117,
+    "TournamentName": "GMS Decorative Concrete \u0026 Strike F/X Doubles",
+    "TournamentDate": "2024-06-09",
+    "CumulativePoints": 154
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 119,
+    "TournamentName": "Savage Arms Open Singles",
+    "TournamentDate": "2024-06-30",
+    "CumulativePoints": 159
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 120,
+    "TournamentName": "Callahan\u0027s Seniors \u0026 Women\u0027s Singles",
+    "TournamentDate": "2024-07-20",
+    "CumulativePoints": 174
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 121,
+    "TournamentName": "Rip Callahan Memorial Open Singles",
+    "TournamentDate": "2024-07-21",
+    "CumulativePoints": 179
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 122,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2024-08-03",
+    "CumulativePoints": 196
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 123,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-08-04",
+    "CumulativePoints": 201
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 125,
+    "TournamentName": "Yankee Lanes Open Singles",
+    "TournamentDate": "2024-09-08",
+    "CumulativePoints": 223
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 126,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2024-10-06",
+    "CumulativePoints": 238
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 127,
+    "TournamentName": "Dexter Bowling Open Singles",
+    "TournamentDate": "2024-10-20",
+    "CumulativePoints": 243
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 129,
+    "TournamentName": "NEBA Tournament of Champions",
+    "TournamentDate": "2024-11-17",
+    "CumulativePoints": 248
+  },
+  {
+    "Season": 2024,
+    "BowlerId": 3032,
+    "TournamentId": 130,
+    "TournamentName": "Cambridge Credit Counseling Invitational",
+    "TournamentDate": "2024-12-08",
+    "CumulativePoints": 281
+  }
+]
