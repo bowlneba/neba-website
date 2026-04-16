@@ -1,0 +1,14 @@
+﻿[
+  {
+    Id: 01JDPPBVW9YM78H9C40YEBDRSN,
+    Description: 1979 Season,
+    StartDate: Date_1,
+    EndDate: Date_2
+  },
+  {
+    Id: 01G7H7HN096B779GB3138WYYMV,
+    Description: 2001 Season,
+    StartDate: Date_3,
+    EndDate: Date_4
+  }
+]

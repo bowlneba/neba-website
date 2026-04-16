@@ -166,9 +166,10 @@ public sealed class StatsQueriesTests
     public async Task GetSeasonsWithStatsAsync_ShouldReturnDistinctSeasonsWithStats_WhenMixedDataExists()
     {
         // Arrange
-        var seasonWithStats = SeasonFactory.Create(description: "2024 Season");
-        var anotherSeasonWithStats = SeasonFactory.Create(id: SeasonId.New(), description: "2023 Season");
-        var seasonWithoutStats = SeasonFactory.Create(id: SeasonId.New(), description: "2022 Season");
+        const int seed = 400;
+        var seasonWithStats = SeasonFactory.Bogus(1, seed: seed).Single();
+        var anotherSeasonWithStats = SeasonFactory.Bogus(1, seed: seed + 1).Single();
+        var seasonWithoutStats = SeasonFactory.Bogus(1, seed: seed + 2).Single();
 
         var bowler1 = BowlerFactory.Create();
         var bowler2 = BowlerFactory.Create();
@@ -191,10 +192,7 @@ public sealed class StatsQueriesTests
 
         // Assert
         result.Count.ShouldBe(2);
-        result.ShouldContainKey(seasonWithStats.Id);
-        result.ShouldContainKey(anotherSeasonWithStats.Id);
-        result.ShouldNotContainKey(seasonWithoutStats.Id);
-        result[seasonWithStats.Id].ShouldBe("2024 Season");
-        result[anotherSeasonWithStats.Id].ShouldBe("2023 Season");
+
+        await Verify(result);
     }
 }

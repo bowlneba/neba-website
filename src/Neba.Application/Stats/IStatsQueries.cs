@@ -1,3 +1,4 @@
+using Neba.Application.Seasons;
 using Neba.Application.Stats.GetSeasonStats;
 using Neba.Domain.Seasons;
 
@@ -20,9 +21,9 @@ public interface IStatsQueries
     Task<IReadOnlyCollection<BowlerSeasonStatsDto>> GetBowlerSeasonStatsAsync(SeasonId seasonId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Retrieves a dictionary of seasons that have associated statistics, with the season ID as the key and the season description as the value.
+    /// Retrieves a collection of seasons for which bowler statistics are available. This method is useful for populating season selection interfaces and ensuring that users can only select seasons with existing data. Each season in the returned collection includes its unique identifier, description, and date range.
     /// </summary>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A dictionary mapping season IDs to season descriptions for seasons with statistics.</returns>
-    Task<IDictionary<SeasonId, string>> GetSeasonsWithStatsAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<SeasonDto>> GetSeasonsWithStatsAsync(CancellationToken cancellationToken);
 }

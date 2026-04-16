@@ -34,7 +34,7 @@ public sealed class Season
     public required DateOnly EndDate { get; init; }
 
     private readonly List<BowlerSeasonStats> _bowlerStats = [];
-    internal IReadOnlyCollection<BowlerSeasonStats> BowlerStats 
+    internal IReadOnlyCollection<BowlerSeasonStats> BowlerStats
         => _bowlerStats.AsReadOnly();
 
     /// <summary>

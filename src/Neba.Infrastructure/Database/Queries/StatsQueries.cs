@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Application.Seasons;
 using Neba.Application.Stats;
 using Neba.Application.Stats.GetSeasonStats;
 using Neba.Domain.Seasons;
@@ -55,9 +56,25 @@ internal sealed class StatsQueries(AppDbContext appDbContext)
                 LastUpdatedUtc = stat.LastUpdatedUtc
             }).ToListAsync(cancellationToken);
 
-    public async Task<IDictionary<SeasonId, string>> GetSeasonsWithStatsAsync(CancellationToken cancellationToken)
-        => await _bowlerSeasonStats.
-            Select(stat => new { stat.SeasonId, stat.Season.Description })
+    public async Task<IReadOnlyCollection<SeasonDto>> GetSeasonsWithStatsAsync(CancellationToken cancellationToken)
+    {
+        var seasons = await _bowlerSeasonStats
+            .Select(stat => new
+            {
+                stat.Season.Id,
+                stat.Season.Description,
+                stat.Season.StartDate,
+                stat.Season.EndDate
+            })
             .Distinct()
-            .ToDictionaryAsync(x => x.SeasonId, x => x.Description, cancellationToken);
+            .ToListAsync(cancellationToken);
+
+        return [.. seasons.Select(season => new SeasonDto
+        {
+            Id = season.Id,
+            Description = season.Description,
+            StartDate = season.StartDate,
+            EndDate = season.EndDate
+        })];
+    }
 }
