@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-using Neba.Domain.Bowlers;
 using Neba.Domain.Seasons;
 using Neba.Domain.Stats;
 
@@ -22,7 +21,7 @@ internal sealed class BowlerSeasonStatsConfiguration
             .HasPrincipalKey(season => season.Id)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<Bowler>()
+        builder.HasOne(stat => stat.Bowler)
             .WithMany(bowler => bowler.SeasonStats)
             .HasForeignKey(stat => stat.BowlerId)
             .HasPrincipalKey(bowler => bowler.Id)

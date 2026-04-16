@@ -1,0 +1,41 @@
+﻿[
+  {
+    BowlerId: 01HFE7V9XGXRK8F4FF6C27RH9A,
+    BowlerName: {
+      FirstName: Robert,
+      LastName: Conroy,
+      MiddleName: Vada
+    },
+    IsMember: false,
+    IsRookie: true,
+    IsSenior: true,
+    IsSuperSenior: false,
+    IsWoman: true,
+    IsYouth: false,
+    EligibleTournaments: 7,
+    TotalTournaments: 9,
+    EligibleEntries: 10,
+    TotalEntries: 13,
+    Cashes: 4,
+    Finals: 2,
+    QualifyingHighGame: 298,
+    HighBlock: 1197,
+    MatchPlayWins: 5,
+    MatchPlayLosses: 3,
+    MatchPlayGames: 8,
+    MatchPlayPinfall: 1685,
+    MatchPlayHighGame: 267,
+    TotalGames: 99,
+    TotalPinfall: 20123,
+    FieldAverage: 8.75,
+    HighFinish: 1,
+    AverageFinish: 6.2,
+    BowlerOfTheYearPoints: 601,
+    SeniorOfTheYearPoints: 444,
+    WomanOfTheYearPoints: 333,
+    TournamentWinnings: 3210.50,
+    CupEarnings: 910.25,
+    Credits: 45.75,
+    LastUpdatedUtc: DateTimeOffset_1
+  }
+]

@@ -20,6 +20,8 @@ public sealed class BowlerSeasonStats
     /// </summary>
     public required BowlerId BowlerId { get; init; }
 
+    internal Bowler Bowler { get; init; } = null!;
+
     /// <summary>
     /// Indicates whether the bowler held active NEBA membership during this Season. Membership status affects
     /// award eligibility and whether participation counts toward official statistics.
