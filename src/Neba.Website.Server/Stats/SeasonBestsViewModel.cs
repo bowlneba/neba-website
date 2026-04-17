@@ -13,7 +13,7 @@ public sealed record SeasonBestsViewModel
     /// <summary>
     /// A dictionary mapping bowler IDs to their names for those who achieved the highest game score during the season.
     /// </summary>
-    public required IReadOnlyDictionary<Ulid, string> HighGameBowlers { get; init; }
+    public required IReadOnlyDictionary<string, string> HighGameBowlers { get; init; }
 
     /// <summary>
     /// The highest block score achieved during the season.
@@ -23,7 +23,7 @@ public sealed record SeasonBestsViewModel
     /// <summary>
     /// A dictionary mapping bowler IDs to their names for those who achieved the highest block score during the season.
     /// </summary>
-    public required IReadOnlyDictionary<Ulid, string> HighBlockBowlers { get; init; }
+    public required IReadOnlyDictionary<string, string> HighBlockBowlers { get; init; }
 
     /// <summary>
     /// The highest average score achieved during the season.
@@ -33,5 +33,5 @@ public sealed record SeasonBestsViewModel
     /// <summary>
     /// A dictionary mapping bowler IDs to their names for those who achieved the highest average score during the season.
     /// </summary>
-    public required IReadOnlyDictionary<Ulid, string> HighAverageBowlers { get; init; }
+    public required IReadOnlyDictionary<string, string> HighAverageBowlers { get; init; }
 }

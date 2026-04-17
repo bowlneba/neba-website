@@ -8,7 +8,7 @@ public sealed record PointsRaceSeriesViewModel
     /// <summary>
     /// The unique identifier of the bowler participating in the points race series.
     /// </summary>
-    public required Ulid BowlerId { get; init; }
+    public required string BowlerId { get; init; }
 
     /// <summary>
     /// The name of the bowler participating in the points race series.

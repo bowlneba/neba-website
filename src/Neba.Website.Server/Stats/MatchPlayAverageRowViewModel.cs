@@ -13,7 +13,7 @@ public sealed record MatchPlayAverageRowViewModel
     /// <summary>
     /// The unique identifier of the bowler, used for linking to the bowler's profile page. This allows users to click on the bowler's name in the Match Play Average table and navigate to their profile for more detailed information about their performance throughout the season.
     /// </summary>
-    public required Ulid BowlerId { get; init; }
+    public required string BowlerId { get; init; }
 
     /// <summary>
     /// The name of the bowler, displayed in the Match Play Average table and linked to the bowler's profile page. This provides a user-friendly way to identify the bowler and access more information about their performance in the season.

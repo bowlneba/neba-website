@@ -13,7 +13,7 @@ public sealed record FinalsPerEntryRowViewModel
     /// <summary>
     /// The unique identifier of the bowler, represented as an Ulid. This is used to link to the bowler's profile page in the stats table, allowing users to view more detailed information about the bowler's performance and history. The BowlerId is essential for maintaining the connection between the stats data and the corresponding bowler's profile, ensuring that users can easily navigate to the relevant information when viewing the stats page.
     /// </summary>
-    public required Ulid BowlerId { get; init; }
+    public required string BowlerId { get; init; }
 
     /// <summary>
     /// The name of the bowler. This is displayed in the stats table and linked to the bowler's profile page using the BowlerId. The BowlerName provides a user-friendly way to identify the bowler in the stats table, allowing users to quickly recognize and compare bowlers based on their names while also providing a direct link to their profiles for more detailed information.

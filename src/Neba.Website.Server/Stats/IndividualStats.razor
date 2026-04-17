@@ -29,8 +29,8 @@
             <div class="stats-season-selector" role="group" aria-label="Select season">
                 @foreach (var (id, name) in _initialAvailableSeasons)
                 {
-                    <button class="@(id == _selectedSeasonId ? "stats-season-btn active" : "stats-season-btn")"
-                            aria-pressed="@(id == _selectedSeasonId ? "true" : "false")" @onclick="() => OnSeasonChanged(id)">
+                    <button class="@(id == _selectedSeasonYear ? "stats-season-btn active" : "stats-season-btn")"
+                            aria-pressed="@(id == _selectedSeasonYear ? "true" : "false")" @onclick="() => OnSeasonChanged(id)">
                         @name
                     </button>
                 }
@@ -265,8 +265,8 @@
 
     private IndividualStatsPageViewModel? _model;
     private bool _isLoading = true;
-    private Ulid _selectedSeasonId;
-    private IReadOnlyDictionary<Ulid, string> _initialAvailableSeasons = new Dictionary<Ulid, string>();
+    private int _selectedSeasonYear;
+    private IReadOnlyDictionary<int, string> _initialAvailableSeasons = new Dictionary<int, string>();
 
     private bool _modalOpen;
     private string _modalTitle = "";
@@ -274,32 +274,29 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (!Ulid.TryParse(BowlerId, null, out var bowlerId))
+        if (string.IsNullOrWhiteSpace(BowlerId))
         {
             _isLoading = false;
             return;
         }
 
-        _model = await StatsApi.GetIndividualStatsAsync(bowlerId);
+        _model = await StatsApi.GetIndividualStatsAsync(BowlerId);
         if (_model is not null)
         {
             _initialAvailableSeasons = _model.AvailableSeasons;
-            _selectedSeasonId = _initialAvailableSeasons.Keys.First();
+            _selectedSeasonYear = _initialAvailableSeasons.Keys.First();
         }
 
         _isLoading = false;
     }
 
-    private async Task OnSeasonChanged(Ulid seasonId)
+    private async Task OnSeasonChanged(int year)
     {
-        if (!Ulid.TryParse(BowlerId, null, out var bowlerId))
-            return;
-
         _isLoading = true;
-        _selectedSeasonId = seasonId;
+        _selectedSeasonYear = year;
         StateHasChanged();
 
-        _model = await StatsApi.GetIndividualStatsAsync(bowlerId, seasonId);
+        _model = await StatsApi.GetIndividualStatsAsync(BowlerId, year);
         _isLoading = false;
     }
 

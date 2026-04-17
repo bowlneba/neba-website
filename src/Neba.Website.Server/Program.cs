@@ -14,7 +14,7 @@ builder.AddServiceDefaults();
 builder.Services.AddApiServices(builder.Configuration);
 builder.Services.AddMaps(builder.Configuration);
 builder.Services.AddApexCharts();
-builder.Services.AddScoped<IStatsApiService, MockStatsApiService>();
+builder.Services.AddScoped<IStatsApiService, StatsApiService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

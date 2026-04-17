@@ -13,7 +13,7 @@ public sealed record PointsPerEntryRowViewModel
     /// <summary>
     /// The unique identifier of the bowler, represented as a ULID (Universally Unique Lexicographically Sortable Identifier). This ID is used to associate the row with a specific bowler in the database and can be used for linking to the bowler's profile or for other data retrieval purposes.
     /// </summary>
-    public Ulid BowlerId { get; init; }
+    public string BowlerId { get; init; } = null!;
 
     /// <summary>
     /// The full name of the bowler, which is displayed in the statistics table. This field provides a human-readable identifier for the bowler, allowing users to easily recognize and differentiate between bowlers in the standings.

@@ -13,7 +13,7 @@ public sealed record FullStatModalRowViewModel
     /// <summary>
     /// The unique identifier of the bowler. This is used to link to the bowler's profile page and to fetch additional information about the bowler if needed.
     /// </summary>
-    public required Ulid BowlerId { get; init; }
+    public required string BowlerId { get; init; }
 
     /// <summary>
     /// The name of the bowler. This is displayed in the full stat modal and is also used to link to the bowler's profile page.

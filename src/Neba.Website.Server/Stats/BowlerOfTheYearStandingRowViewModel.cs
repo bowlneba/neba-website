@@ -13,7 +13,7 @@ public sealed record BowlerOfTheYearStandingRowViewModel
     /// <summary>
     /// The unique identifier of the bowler, used for linking to the bowler's profile page.
     /// </summary>
-    public required Ulid BowlerId { get; init; }
+    public required string BowlerId { get; init; }
 
     /// <summary>
     /// The name of the bowler, displayed in the standings table and linked to the bowler's profile page.

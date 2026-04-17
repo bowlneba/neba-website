@@ -1,6 +1,5 @@
 using Bogus;
 
-using Neba.Domain.Bowlers;
 using Neba.Website.Server.Stats;
 
 namespace Neba.TestFactory.Stats;
@@ -14,14 +13,14 @@ public static class PointsPerEntryRowViewModelFactory
 
     public static PointsPerEntryRowViewModel Create(
         int? rank = null,
-        BowlerId? bowlerId = null,
+        string? bowlerId = null,
         string? bowlerName = null,
         int? points = null,
         int? entries = null)
         => new()
         {
             Rank = rank ?? ValidRank,
-            BowlerId = bowlerId?.Value ?? Ulid.NewUlid(),
+            BowlerId = bowlerId ?? Ulid.NewUlid().ToString(),
             BowlerName = bowlerName ?? ValidBowlerName,
             Entries = entries ?? ValidEntries,
             Points = points ?? ValidPoints
@@ -41,7 +40,7 @@ public static class PointsPerEntryRowViewModelFactory
                 return new PointsPerEntryRowViewModel
                 {
                     Rank = currentRank,
-                    BowlerId = Ulid.Bogus(f),
+                    BowlerId = Ulid.BogusString(f),
                     BowlerName = f.Name.FullName(),
                     Points = points,
                     Entries = entries

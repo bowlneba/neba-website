@@ -8,23 +8,24 @@ public static class SeasonBestsResponseFactory
     public const int ValidHighGame = 279;
     public const int ValidHighBlock = 1250;
     public const decimal ValidHighAverage = 225.35m;
+    public const string ValidBowlerId = "01JWXYZTEST000000000000002";
     public const string ValidBowlerName = "Jane Smith";
 
     public static SeasonBestsResponse Create(
         int? highGame = null,
-        IReadOnlyCollection<string>? highGameBowlers = null,
+        IReadOnlyDictionary<string, string>? highGameBowlers = null,
         int? highBlock = null,
-        IReadOnlyCollection<string>? highBlockBowlers = null,
+        IReadOnlyDictionary<string, string>? highBlockBowlers = null,
         decimal? highAverage = null,
-        IReadOnlyCollection<string>? highAverageBowlers = null)
+        IReadOnlyDictionary<string, string>? highAverageBowlers = null)
         => new()
         {
             HighGame = highGame ?? ValidHighGame,
-            HighGameBowlers = highGameBowlers ?? [ValidBowlerName],
+            HighGameBowlers = highGameBowlers ?? new Dictionary<string, string> { { ValidBowlerId, ValidBowlerName } },
             HighBlock = highBlock ?? ValidHighBlock,
-            HighBlockBowlers = highBlockBowlers ?? [ValidBowlerName],
+            HighBlockBowlers = highBlockBowlers ?? new Dictionary<string, string> { { ValidBowlerId, ValidBowlerName } },
             HighAverage = highAverage ?? ValidHighAverage,
-            HighAverageBowlers = highAverageBowlers ?? [ValidBowlerName]
+            HighAverageBowlers = highAverageBowlers ?? new Dictionary<string, string> { { ValidBowlerId, ValidBowlerName } }
         };
 
     public static IReadOnlyCollection<SeasonBestsResponse> Bogus(int count, int? seed = null)
@@ -33,11 +34,11 @@ public static class SeasonBestsResponseFactory
             .CustomInstantiator(f => new SeasonBestsResponse
             {
                 HighGame = f.Random.Int(270, 300),
-                HighGameBowlers = [f.Name.FullName()],
+                HighGameBowlers = new Dictionary<string, string> { { Ulid.BogusString(f), f.Name.FullName() } },
                 HighBlock = f.Random.Int(1200, 1400),
-                HighBlockBowlers = [f.Name.FullName()],
+                HighBlockBowlers = new Dictionary<string, string> { { Ulid.BogusString(f), f.Name.FullName() } },
                 HighAverage = f.Random.Decimal(210, 240),
-                HighAverageBowlers = [f.Name.FullName()]
+                HighAverageBowlers = new Dictionary<string, string> { { Ulid.BogusString(f), f.Name.FullName() } }
             });
 
         if (seed.HasValue)
@@ -48,3 +49,4 @@ public static class SeasonBestsResponseFactory
         return faker.Generate(count);
     }
 }
+

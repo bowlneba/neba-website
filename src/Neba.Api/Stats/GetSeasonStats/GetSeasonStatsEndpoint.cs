@@ -214,6 +214,6 @@ internal sealed class GetSeasonStatsEndpoint(IQueryHandler<GetSeasonStatsQuery, 
             Winnings = s.Winnings
         })];
 
-    private static IReadOnlyDictionary<string, string> MapBowlerNames(IReadOnlyDictionary<BowlerId, Name> bowlers) =>
+    private static Dictionary<string, string> MapBowlerNames(IReadOnlyDictionary<BowlerId, Name> bowlers) =>
         bowlers.ToDictionary(kvp => kvp.Key.Value.ToString(), kvp => kvp.Value.ToDisplayName());
 }

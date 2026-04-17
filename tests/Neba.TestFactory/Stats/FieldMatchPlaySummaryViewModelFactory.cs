@@ -12,15 +12,15 @@ public static class FieldMatchPlaySummaryViewModelFactory
 
     public static FieldMatchPlaySummaryViewModel Create(
         decimal? highestWinPercentage = null,
-        IReadOnlyDictionary<Ulid, string>? highestWinPercentageBowlers = null,
+        IReadOnlyDictionary<string, string>? highestWinPercentageBowlers = null,
         int? mostFinals = null,
-        IReadOnlyDictionary<Ulid, string>? mostFinalsBowlers = null)
+        IReadOnlyDictionary<string, string>? mostFinalsBowlers = null)
         => new()
         {
             HighestWinPercentage = highestWinPercentage ?? ValidHighestWinPercentage,
-            HighestWinPercentageBowlers = highestWinPercentageBowlers ?? new Dictionary<Ulid, string> { { Ulid.NewUlid(), ValidBowlerName } },
+            HighestWinPercentageBowlers = highestWinPercentageBowlers ?? new Dictionary<string, string> { { Ulid.NewUlid().ToString(), ValidBowlerName } },
             MostFinals = mostFinals ?? ValidMostFinals,
-            MostFinalsBowlers = mostFinalsBowlers ?? new Dictionary<Ulid, string> { { Ulid.NewUlid(), ValidBowlerName } },
+            MostFinalsBowlers = mostFinalsBowlers ?? new Dictionary<string, string> { { Ulid.NewUlid().ToString(), ValidBowlerName } },
         };
 
     public static IReadOnlyCollection<FieldMatchPlaySummaryViewModel> Bogus(int count, int? seed = null)
@@ -29,13 +29,13 @@ public static class FieldMatchPlaySummaryViewModelFactory
             .CustomInstantiator(f => new FieldMatchPlaySummaryViewModel
             {
                 HighestWinPercentage = f.Random.Decimal(0, 1),
-                HighestWinPercentageBowlers = new Dictionary<Ulid, string>
+                HighestWinPercentageBowlers = new Dictionary<string, string>
                 {
-                    { Ulid.Bogus(f, f.Date.Past()), f.Name.FullName() },
-                    { Ulid.Bogus(f, f.Date.Past()), f.Name.FullName() }
+                    { Ulid.BogusString(f), f.Name.FullName() },
+                    { Ulid.BogusString(f), f.Name.FullName() }
                 },
                 MostFinals = f.Random.Int(0, 20),
-                MostFinalsBowlers = new Dictionary<Ulid, string> { { Ulid.Bogus(f), f.Name.FullName() } },
+                MostFinalsBowlers = new Dictionary<string, string> { { Ulid.BogusString(f), f.Name.FullName() } },
             });
 
         if (seed.HasValue)

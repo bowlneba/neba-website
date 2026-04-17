@@ -15,9 +15,9 @@ namespace Neba.Website.Tests.Stats;
 [Component("Website.Stats.SeasonStats")]
 public sealed class SeasonStatsTests : IDisposable
 {
-    private static readonly Ulid s_firstSeasonId = Ulid.Parse("01JX0000011111111111111111", System.Globalization.CultureInfo.InvariantCulture);
-    private static readonly Ulid s_secondSeasonId = Ulid.Parse("01JX0000022222222222222222", System.Globalization.CultureInfo.InvariantCulture);
-    private static readonly Ulid s_searchBowlerId = Ulid.Parse("01JX0000033333333333333333", System.Globalization.CultureInfo.InvariantCulture);
+    private const int s_firstSeasonYear = 2024;
+    private const int s_secondSeasonYear = 2023;
+    private const string s_searchBowlerId = "01JX0000033333333333333333";
 
     private readonly BunitContext _ctx;
     private readonly FakeStatsApiService _statsApi;
@@ -108,7 +108,7 @@ public sealed class SeasonStatsTests : IDisposable
         markup.ShouldContain("Bravo Bowler");
         markup.ShouldNotContain("Alpha Bowler");
         (cut.FindAll(".stats-season-btn.active").Single().TextContent ?? string.Empty).ShouldContain("2023-2024");
-        _statsApi.RequestedSeasonIds.ShouldBe([null, s_secondSeasonId]);
+        _statsApi.RequestedSeasonYears.ShouldBe([null, s_secondSeasonYear]);
     }
 
     [Fact(DisplayName = "Should navigate to selected bowler page when search value matches a bowler")]
@@ -135,15 +135,15 @@ public sealed class SeasonStatsTests : IDisposable
         string secondSeasonName = "2023-2024")
     {
         return StatsPageViewModelFactory.Create(
-            availableSeasons: new Dictionary<Ulid, string>
+            availableSeasons: new Dictionary<int, string>
             {
-                [s_firstSeasonId] = firstSeasonName,
-                [s_secondSeasonId] = secondSeasonName,
+                [s_firstSeasonYear] = firstSeasonName,
+                [s_secondSeasonYear] = secondSeasonName,
             },
-            bowlerSearchList: new Dictionary<Ulid, string>
+            bowlerSearchList: new Dictionary<string, string>
             {
                 [s_searchBowlerId] = "Search Target",
-                [Ulid.NewUlid()] = "Another Bowler",
+                [Ulid.NewUlid().ToString()] = "Another Bowler",
             },
             bowlerOfTheYear:
             [
@@ -170,9 +170,6 @@ public sealed class SeasonStatsTests : IDisposable
             [
                 BowlerOfTheYearStandingRowViewModelFactory.Create(bowlerName: firstRowName),
             ],
-            minGamesHighAverage: 12,
-            minMatchPlayAppearances: 4,
-            minEntries: 2,
             bowlerOfTheYearPointsRace: PointsRaceSeriesViewModelFactory.Bogus(3, seed: 1103));
     }
 
@@ -181,7 +178,7 @@ public sealed class SeasonStatsTests : IDisposable
     {
         private readonly Queue<Task<StatsPageViewModel>> _results = [];
 
-        public List<Ulid?> RequestedSeasonIds { get; } = [];
+        public List<int?> RequestedSeasonYears { get; } = [];
 
         public void EnqueueResult(StatsPageViewModel model)
         {
@@ -193,14 +190,14 @@ public sealed class SeasonStatsTests : IDisposable
             _results.Enqueue(modelTask);
         }
 
-        public Task<IndividualStatsPageViewModel?> GetIndividualStatsAsync(Ulid bowlerId, Ulid? seasonId = null, CancellationToken ct = default)
+        public Task<IndividualStatsPageViewModel?> GetIndividualStatsAsync(string bowlerId, int? year = null, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<StatsPageViewModel> GetStatsAsync(Ulid? seasonId = null, CancellationToken ct = default)
+        public Task<StatsPageViewModel> GetStatsAsync(int? year = null, CancellationToken ct = default)
         {
-            RequestedSeasonIds.Add(seasonId);
+            RequestedSeasonYears.Add(year);
 
             if (_results.Count == 0)
             {

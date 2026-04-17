@@ -13,7 +13,7 @@ public sealed record MatchPlayRecordRowViewModel
     /// <summary>
     /// Gets the unique identifier of the bowler associated with this match play record. This identifier is used to link the record to the specific bowler's profile and statistics.
     /// </summary>
-    public required Ulid BowlerId { get; init; }
+    public required string BowlerId { get; init; }
 
     /// <summary>
     /// Gets the name of the bowler associated with this match play record. This is typically the full name of the bowler and is used for display purposes in the statistics table.

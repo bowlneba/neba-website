@@ -13,7 +13,7 @@ public sealed record PointsPerTournamentRowViewModel
     /// <summary>
     /// The unique identifier of the bowler, represented as an Ulid. This is used to link to the bowler's profile page.
     /// </summary>
-    public required Ulid BowlerId { get; init; }
+    public required string BowlerId { get; init; }
 
     /// <summary>
     /// The name of the bowler. This is displayed in the stats table and linked to the bowler's profile page.

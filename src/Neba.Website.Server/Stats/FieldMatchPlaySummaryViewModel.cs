@@ -13,7 +13,7 @@ public sealed record FieldMatchPlaySummaryViewModel
     /// <summary>
     /// Gets the bowlers with the highest win percentage, along with their names.
     /// </summary>
-    public required IReadOnlyDictionary<Ulid, string> HighestWinPercentageBowlers { get; init; }
+    public required IReadOnlyDictionary<string, string> HighestWinPercentageBowlers { get; init; }
 
     /// <summary>
     /// Gets the most finals appearances among bowlers who have played at least 10 matches.
@@ -23,5 +23,5 @@ public sealed record FieldMatchPlaySummaryViewModel
     /// <summary>
     /// Gets the bowlers with the most finals appearances, along with their names.
     /// </summary>
-    public required IReadOnlyDictionary<Ulid, string> MostFinalsBowlers { get; init; }
+    public required IReadOnlyDictionary<string, string> MostFinalsBowlers { get; init; }
 }

@@ -1,6 +1,5 @@
 using Bogus;
 
-using Neba.Application.Stats.GetSeasonStats;
 using Neba.Website.Server.Stats;
 
 namespace Neba.TestFactory.Stats;
@@ -8,15 +7,11 @@ namespace Neba.TestFactory.Stats;
 public static class StatsPageViewModelFactory
 {
     public const string ValidSelectedSeason = "2024-2025";
-    public const int ValidMinGamesHighAverage = 24;
-    public const int ValidMinMatchPlayGames = 12;
-    public const int ValidMinMatchPlayAppearances = 8;
-    public const int ValidMinEntries = 6;
 
     public static StatsPageViewModel Create(
         string? selectedSeason = null,
-        IReadOnlyDictionary<Ulid, string>? availableSeasons = null,
-        IReadOnlyDictionary<Ulid, string>? bowlerSearchList = null,
+        IReadOnlyDictionary<int, string>? availableSeasons = null,
+        IReadOnlyDictionary<string, string>? bowlerSearchList = null,
         IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel>? bowlerOfTheYear = null,
         IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel>? seniorOfTheYear = null,
         IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel>? superSeniorOfTheYear = null,
@@ -32,10 +27,6 @@ public static class StatsPageViewModelFactory
         IReadOnlyCollection<PointsPerTournamentRowViewModel>? pointsPerTournament = null,
         IReadOnlyCollection<FinalsPerEntryRowViewModel>? finalsPerEntry = null,
         IReadOnlyCollection<AverageFinishRowViewModel>? averageFinishes = null,
-        int? minGamesHighAverage = null,
-        int? minMatchPlayGames = null,
-        int? minMatchPlayAppearances = null,
-        int? minEntries = null,
         SeasonAtAGlanceViewModel? seasonAtAGlance = null,
         SeasonBestsViewModel? seasonsBests = null,
         FieldMatchPlaySummaryViewModel? fieldMatchPlaySummary = null,
@@ -44,8 +35,8 @@ public static class StatsPageViewModelFactory
         => new()
         {
             SelectedSeason = selectedSeason ?? ValidSelectedSeason,
-            AvailableSeasons = availableSeasons ?? new Dictionary<Ulid, string> { [Ulid.NewUlid()] = ValidSelectedSeason },
-            BowlerSearchList = bowlerSearchList ?? new Dictionary<Ulid, string> { [Ulid.NewUlid()] = BowlerOfTheYearStandingRowViewModelFactory.ValidBowlerName },
+            AvailableSeasons = availableSeasons ?? new Dictionary<int, string> { [DateTime.Now.Year] = ValidSelectedSeason },
+            BowlerSearchList = bowlerSearchList ?? new Dictionary<string, string> { [Ulid.NewUlid().ToString()] = BowlerOfTheYearStandingRowViewModelFactory.ValidBowlerName },
             BowlerOfTheYear = bowlerOfTheYear ?? [BowlerOfTheYearStandingRowViewModelFactory.Create()],
             SeniorOfTheYear = seniorOfTheYear ?? [BowlerOfTheYearStandingRowViewModelFactory.Create()],
             SuperSeniorOfTheYear = superSeniorOfTheYear ?? [BowlerOfTheYearStandingRowViewModelFactory.Create()],
@@ -61,10 +52,6 @@ public static class StatsPageViewModelFactory
             PointsPerTournament = pointsPerTournament ?? [PointsPerTournamentRowViewModelFactory.Create()],
             FinalsPerEntry = finalsPerEntry ?? [FinalsPerEntryRowViewModelFactory.Create()],
             AverageFinishes = averageFinishes ?? [AverageFinishRowViewModelFactory.Create()],
-            MinGamesHighAverage = minGamesHighAverage ?? ValidMinGamesHighAverage,
-            MinMatchPlayGames = minMatchPlayGames ?? ValidMinMatchPlayGames,
-            MinTournaments = minMatchPlayAppearances ?? ValidMinMatchPlayAppearances,
-            MinEntries = minEntries ?? ValidMinEntries,
             SeasonAtAGlance = seasonAtAGlance ?? SeasonAtAGlanceViewModelFactory.Create(),
             SeasonsBests = seasonsBests ?? SeasonBestsViewModelFactory.Create(),
             FieldMatchPlaySummary = fieldMatchPlaySummary ?? FieldMatchPlaySummaryViewModelFactory.Create(),
@@ -83,9 +70,9 @@ public static class StatsPageViewModelFactory
                 {
                     SelectedSeason = $"{year} Season",
                     AvailableSeasons = Enumerable.Range(0, f.Random.Int(1, 5))
-                        .ToDictionary(_ => Ulid.Bogus(f), _ => $"{f.Date.Past(50).Year}-{f.Date.Past(50).Year + 1}"),
+                        .ToDictionary(i => year - i, i => $"{year - i}-{year - i + 1}"),
                     BowlerSearchList = Enumerable.Range(0, f.Random.Int(1, 10))
-                        .ToDictionary(_ => Ulid.Bogus(f), _ => f.Name.FullName()),
+                        .ToDictionary(_ => Ulid.BogusString(f), _ => f.Name.FullName()),
                     BowlerOfTheYear = BowlerOfTheYearStandingRowViewModelFactory.Bogus(10, seed),
                     SeniorOfTheYear = BowlerOfTheYearStandingRowViewModelFactory.Bogus(5, seed),
                     SuperSeniorOfTheYear = BowlerOfTheYearStandingRowViewModelFactory.Bogus(5, seed),
@@ -101,10 +88,6 @@ public static class StatsPageViewModelFactory
                     PointsPerTournament = PointsPerTournamentRowViewModelFactory.Bogus(5, seed),
                     FinalsPerEntry = FinalsPerEntryRowViewModelFactory.Bogus(5, seed),
                     AverageFinishes = AverageFinishRowViewModelFactory.Bogus(5, seed),
-                    MinGamesHighAverage = f.Random.Int(10, 50),
-                    MinMatchPlayGames = f.Random.Int(10, 50),
-                    MinTournaments = f.Random.Int(2, 15),
-                    MinEntries = f.Random.Int(2, 12),
                     SeasonAtAGlance = SeasonAtAGlanceViewModelFactory.Bogus(1, seed).Single(),
                     SeasonsBests = SeasonBestsViewModelFactory.Bogus(1, seed).Single(),
                     FieldMatchPlaySummary = FieldMatchPlaySummaryViewModelFactory.Bogus(1, seed).Single(),

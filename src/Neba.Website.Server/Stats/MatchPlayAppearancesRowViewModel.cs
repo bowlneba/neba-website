@@ -13,7 +13,7 @@ public sealed record MatchPlayAppearancesRowViewModel
     /// <summary>
     /// Gets the unique identifier of the bowler. This is a required property that serves as a reference to the bowler's identity in the system, allowing for association with other data related to the bowler.
     /// </summary>
-    public required Ulid BowlerId { get; init; }
+    public required string BowlerId { get; init; }
 
     /// <summary>
     /// Gets the name of the bowler. This is a required property that provides a human-readable name for the bowler, which can be displayed in the user interface and used for identification purposes in the context of match play appearance statistics.

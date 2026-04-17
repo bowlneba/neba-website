@@ -13,12 +13,12 @@ public record StatsPageViewModel
     /// <summary>
     /// A dictionary of available seasons, where the key is the season ID (Ulid) and the value is the season name (string). This is used to populate the season dropdown in the UI and to fetch the stats for the selected season when the user selects a different season from the dropdown. The season name is represented as a string in the format "YYYY-YYYY" (e.g. "2023-2024") to make it more user-friendly and easier to display in the UI. The actual season ID is stored in the key of the dictionary, which is used to fetch the stats for the selected season when the user selects a different season from the dropdown.
     /// </summary>
-    public required IReadOnlyDictionary<Ulid, string> AvailableSeasons { get; init; }
+    public required IReadOnlyDictionary<int, string> AvailableSeasons { get; init; }
 
     /// <summary>
     /// A dictionary of bowlers, where the key is the bowler ID (Ulid) and the value is the bowler name (string). This is used to populate the bowler search list in the full stat modal and to link to the bowler's profile page when the user clicks on a bowler's name in the full stat modal. The bowler name is represented as a string to make it more user-friendly and easier to display in the UI. The actual bowler ID is stored in the key of the dictionary, which is used to link to the bowler's profile page when the user clicks on a bowler's name in the full stat modal.
     /// </summary>
-    public required IReadOnlyDictionary<Ulid, string> BowlerSearchList { get; init; }
+    public required IReadOnlyDictionary<string, string> BowlerSearchList { get; init; }
 
     // Award Standings
 
@@ -103,29 +103,6 @@ public record StatsPageViewModel
     /// A collection of average finish rows, where each item in the collection represents a single bowler's average finish for the selected season. This is used to display the average finish leaderboard in the UI and to determine the bowlers with the highest average finish for the selected season. Each item in the collection contains information about the bowler's rank, name, average finish, and other relevant information that is used to determine the bowler's standing in the average finish leaderboard and to display the bowler's performance in terms of average finish for the selected season.
     /// </summary>
     public required IReadOnlyCollection<AverageFinishRowViewModel> AverageFinishes { get; init; }
-
-
-    // Minimum Threshholds
-
-    /// <summary>
-    /// The minimum number of games required to be eligible for the high average leaderboard. This is used to determine if a bowler is eligible to be ranked in the high average leaderboard for the selected season. If a bowler has played fewer games than the minimum threshold, they will not be ranked in the high average leaderboard, even if their average is high enough to be ranked. This is used to ensure that only bowlers who have played a sufficient number of games are ranked in the high average leaderboard, which helps to maintain the integrity of the leaderboard and to ensure that it accurately reflects the performance of bowlers who have participated in a significant portion of the season.
-    /// </summary>
-    public required int MinGamesHighAverage { get; init; }
-
-    /// <summary>
-    /// The minimum number of match play appearances required to be eligible for the match play average and match play record leaderboards. This is used to determine if a bowler is eligible to be ranked in the match play average and match play record leaderboards for the selected season. If a bowler has participated in fewer match play appearances than the minimum threshold, they will not be ranked in the match play average and match play record leaderboards, even if their match play average or match play record is good enough to be ranked. This is used to ensure that only bowlers who have participated in a sufficient number of match play appearances are ranked in the match play average and match play record leaderboards, which helps to maintain the integrity of the leaderboards and to ensure that they accurately reflect the performance of bowlers who have participated in a significant portion of the season's match play.
-    /// </summary>
-    public required int MinMatchPlayGames { get; init; }
-
-    /// <summary>
-    /// The minimum number of tournaments required to be eligible for the match play average and match play record leaderboards. This is used to determine if a bowler is eligible to be ranked in the match play average and match play record leaderboards for the selected season. If a bowler has participated in fewer tournaments than the minimum threshold, they will not be ranked in the match play average and match play record leaderboards, even if their match play average or match play record is good enough to be ranked. This is used to ensure that only bowlers who have participated in a sufficient number of tournaments are ranked in the match play average and match play record leaderboards, which helps to maintain the integrity of the leaderboards and to ensure that they accurately reflect the performance of bowlers who have participated in a significant portion of the season.
-    /// </summary>
-    public required int MinTournaments { get; init; }
-
-    /// <summary>
-    /// The minimum number of entries required to be eligible for the bowler of the year standings. This is used to determine if a bowler is eligible to be ranked in the bowler of the year standings for the selected season. If a bowler has fewer entries than the minimum threshold, they will not be ranked in the bowler of the year standings, even if their points and average are high enough to be ranked. This is used to ensure that only bowlers who have participated in a sufficient number of tournaments are ranked in the bowler of the year standings, which helps to maintain the integrity of the standings and to ensure that it accurately reflects the performance of bowlers who have participated in a significant portion of the season.
-    /// </summary>
-    public required int MinEntries { get; init; }
 
 
     // Sidebar

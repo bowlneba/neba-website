@@ -2,6 +2,6 @@ namespace Neba.Website.Server.Stats;
 
 internal interface IStatsApiService
 {
-    Task<StatsPageViewModel> GetStatsAsync(Ulid? seasonId = null, CancellationToken ct = default);
-    Task<IndividualStatsPageViewModel?> GetIndividualStatsAsync(Ulid bowlerId, Ulid? seasonId = null, CancellationToken ct = default);
+    Task<StatsPageViewModel> GetStatsAsync(int? year = null, CancellationToken ct = default);
+    Task<IndividualStatsPageViewModel?> GetIndividualStatsAsync(string bowlerId, int? year = null, CancellationToken ct = default);
 }

@@ -16,9 +16,9 @@ namespace Neba.Website.Tests.Stats;
 [Component("Website.Stats.IndividualStats")]
 public sealed class IndividualStatsTests : IDisposable
 {
-    private static readonly Ulid s_bowlerId = Ulid.Parse("01JX0000011111111111111111", System.Globalization.CultureInfo.InvariantCulture);
-    private static readonly Ulid s_season1Id = Ulid.Parse("01JX0000022222222222222222", System.Globalization.CultureInfo.InvariantCulture);
-    private static readonly Ulid s_season2Id = Ulid.Parse("01JX0000033333333333333333", System.Globalization.CultureInfo.InvariantCulture);
+    private const string BowlerId = "01JX0000011111111111111111";
+    private const int Season1Year = 2024;
+    private const int Season2Year = 2023;
 
     private readonly BunitContext _ctx;
     private readonly FakeStatsApiService _statsApi;
@@ -42,18 +42,18 @@ public sealed class IndividualStatsTests : IDisposable
 
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Assert
         cut.FindAll(".neba-skeleton").Count.ShouldBeGreaterThan(0);
     }
 
-    [Fact(DisplayName = "Should show not-found state and skip API call when BowlerId is not a valid ULID")]
-    public void Render_ShouldShowNotFound_WhenBowlerIdIsInvalidUlid()
+    [Fact(DisplayName = "Should show not-found state and skip API call when BowlerId is empty")]
+    public void Render_ShouldShowNotFound_WhenBowlerIdIsEmpty()
     {
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, "not-a-valid-ulid"));
+            .Add(x => x.BowlerId, " "));
 
         // Assert
         cut.Markup.ShouldContain("Bowler not found");
@@ -68,7 +68,7 @@ public sealed class IndividualStatsTests : IDisposable
 
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Assert
         cut.Markup.ShouldContain("Bowler not found");
@@ -85,7 +85,7 @@ public sealed class IndividualStatsTests : IDisposable
 
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Assert
         cut.Find(".indiv-bowler-name").TextContent.ShouldBe("Jane Doe");
@@ -108,7 +108,7 @@ public sealed class IndividualStatsTests : IDisposable
 
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Assert
         var markup = cut.Markup;
@@ -127,7 +127,7 @@ public sealed class IndividualStatsTests : IDisposable
 
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Assert
         cut.Markup.ShouldNotContain("MP Record");
@@ -142,7 +142,7 @@ public sealed class IndividualStatsTests : IDisposable
 
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Assert
         cut.Markup.ShouldContain("MP Record");
@@ -159,7 +159,7 @@ public sealed class IndividualStatsTests : IDisposable
 
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Assert — "Match Play Average" (detail label) is distinct from "Match Play Avg" (rank card title)
         cut.Markup.ShouldContain("Match Play Average");
@@ -175,7 +175,7 @@ public sealed class IndividualStatsTests : IDisposable
 
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Assert — "Match Play Average" (label) only appears in the detail row, not in rank card titles
         cut.Markup.ShouldNotContain("Match Play Average");
@@ -190,7 +190,7 @@ public sealed class IndividualStatsTests : IDisposable
 
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Assert — WinPercentage = 8/10 * 100 = 80.0
         cut.Markup.ShouldContain("Win Percentage");
@@ -206,7 +206,7 @@ public sealed class IndividualStatsTests : IDisposable
 
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Assert
         cut.Markup.ShouldNotContain("Win Percentage");
@@ -221,7 +221,7 @@ public sealed class IndividualStatsTests : IDisposable
 
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Assert
         var fieldVal = cut.Find(".indiv-vs-field-value");
@@ -238,7 +238,7 @@ public sealed class IndividualStatsTests : IDisposable
 
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Assert
         var fieldVal = cut.Find(".indiv-vs-field-value");
@@ -256,7 +256,7 @@ public sealed class IndividualStatsTests : IDisposable
 
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Assert
         cut.FindAll(".indiv-points-race-card").Count.ShouldBe(1);
@@ -271,7 +271,7 @@ public sealed class IndividualStatsTests : IDisposable
 
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Assert
         cut.FindAll(".indiv-points-race-card").Count.ShouldBe(0);
@@ -285,7 +285,7 @@ public sealed class IndividualStatsTests : IDisposable
             bowlerOfTheYearPointsRace: PointsRaceSeriesViewModelFactory.Bogus(1, seed: 1202).Single());
         _statsApi.EnqueueIndividualResult(model);
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Act
         await cut.Find(".indiv-points-race-card").ClickAsync(new());
@@ -303,7 +303,7 @@ public sealed class IndividualStatsTests : IDisposable
             bowlerOfTheYearPointsRace: PointsRaceSeriesViewModelFactory.Bogus(1, seed: 1203).Single());
         _statsApi.EnqueueIndividualResult(model);
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         await cut.Find(".indiv-points-race-card").ClickAsync(new());
         cut.FindAll(".indiv-modal-backdrop").Count.ShouldBe(1);
@@ -323,7 +323,7 @@ public sealed class IndividualStatsTests : IDisposable
             bowlerOfTheYearPointsRace: PointsRaceSeriesViewModelFactory.Bogus(1, seed: 1204).Single());
         _statsApi.EnqueueIndividualResult(model);
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         await cut.Find(".indiv-points-race-card").ClickAsync(new());
 
@@ -342,7 +342,7 @@ public sealed class IndividualStatsTests : IDisposable
             bowlerOfTheYearPointsRace: PointsRaceSeriesViewModelFactory.Bogus(1, seed: 1205).Single());
         _statsApi.EnqueueIndividualResult(model);
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Act
         await cut.Find(".indiv-points-race-card")
@@ -360,7 +360,7 @@ public sealed class IndividualStatsTests : IDisposable
             bowlerOfTheYearPointsRace: PointsRaceSeriesViewModelFactory.Bogus(1, seed: 1206).Single());
         _statsApi.EnqueueIndividualResult(model);
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Act
         await cut.Find(".indiv-points-race-card")
@@ -375,17 +375,17 @@ public sealed class IndividualStatsTests : IDisposable
     {
         // Arrange
         var model = IndividualStatsPageViewModelFactory.Create(
-            availableSeasons: new Dictionary<Ulid, string>
+            availableSeasons: new Dictionary<int, string>
             {
-                [s_season1Id] = "2024-2025",
-                [s_season2Id] = "2023-2024",
+                [Season1Year] = "2024-2025",
+                [Season2Year] = "2023-2024",
             },
             selectedSeason: "2024-2025");
         _statsApi.EnqueueIndividualResult(model);
 
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Assert
         var buttons = cut.FindAll(".stats-season-btn");
@@ -393,14 +393,14 @@ public sealed class IndividualStatsTests : IDisposable
         (buttons[1].ClassName ?? string.Empty).ShouldNotContain("active");
     }
 
-    [Fact(DisplayName = "Should call API with the selected season ID, update the active button, and display new data when a season is changed")]
+    [Fact(DisplayName = "Should call API with the selected season year, update the active button, and display new data when a season is changed")]
     public async Task SeasonSelection_ShouldLoadNewSeason_WhenSeasonButtonClicked()
     {
         // Arrange
-        var seasons = new Dictionary<Ulid, string>
+        var seasons = new Dictionary<int, string>
         {
-            [s_season1Id] = "2024-2025",
-            [s_season2Id] = "2023-2024",
+            [Season1Year] = "2024-2025",
+            [Season2Year] = "2023-2024",
         };
 
         _statsApi.EnqueueIndividualResult(IndividualStatsPageViewModelFactory.Create(
@@ -414,7 +414,7 @@ public sealed class IndividualStatsTests : IDisposable
             availableSeasons: seasons));
 
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Act
         await cut.FindAll(".stats-season-btn")[1].ClickAsync(new());
@@ -424,8 +424,8 @@ public sealed class IndividualStatsTests : IDisposable
         (cut.FindAll(".stats-season-btn.active").Single().TextContent ?? string.Empty).ShouldContain("2023-2024");
         _statsApi.IndividualStatsCalls.ShouldBe(
         [
-            (s_bowlerId, null),
-            (s_bowlerId, s_season2Id),
+            (BowlerId, null),
+            (BowlerId, Season2Year),
         ]);
     }
 
@@ -444,7 +444,7 @@ public sealed class IndividualStatsTests : IDisposable
 
         // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, s_bowlerId.ToString()));
+            .Add(x => x.BowlerId, BowlerId));
 
         // Assert
         cut.Markup.ShouldContain("#3");
@@ -457,7 +457,7 @@ public sealed class IndividualStatsTests : IDisposable
         private readonly Queue<Task<IndividualStatsPageViewModel?>> _results = [];
 
         public int TotalIndividualCalls { get; private set; }
-        public List<(Ulid BowlerId, Ulid? SeasonId)> IndividualStatsCalls { get; } = [];
+        public List<(string BowlerId, int? Year)> IndividualStatsCalls { get; } = [];
 
         public void EnqueueIndividualResult(IndividualStatsPageViewModel? model)
             => _results.Enqueue(Task.FromResult(model));
@@ -465,13 +465,13 @@ public sealed class IndividualStatsTests : IDisposable
         public void EnqueueIndividualTask(Task<IndividualStatsPageViewModel?> task)
             => _results.Enqueue(task);
 
-        public Task<StatsPageViewModel> GetStatsAsync(Ulid? seasonId = null, CancellationToken ct = default)
+        public Task<StatsPageViewModel> GetStatsAsync(int? year = null, CancellationToken ct = default)
             => throw new NotImplementedException();
 
-        public Task<IndividualStatsPageViewModel?> GetIndividualStatsAsync(Ulid bowlerId, Ulid? seasonId = null, CancellationToken ct = default)
+        public Task<IndividualStatsPageViewModel?> GetIndividualStatsAsync(string bowlerId, int? year = null, CancellationToken ct = default)
         {
             TotalIndividualCalls++;
-            IndividualStatsCalls.Add((bowlerId, seasonId));
+            IndividualStatsCalls.Add((bowlerId, year));
 
             if (_results.Count == 0)
                 throw new InvalidOperationException("No queued individual stats result.");

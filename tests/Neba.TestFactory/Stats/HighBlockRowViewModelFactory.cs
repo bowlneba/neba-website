@@ -1,6 +1,5 @@
 using Bogus;
 
-using Neba.Domain.Bowlers;
 using Neba.Website.Server.Stats;
 
 namespace Neba.TestFactory.Stats;
@@ -14,14 +13,14 @@ public static class HighBlockRowViewModelFactory
 
     public static HighBlockRowViewModel Create(
         int? rank = null,
-        BowlerId? bowlerId = null,
+        string? bowlerId = null,
         string? bowlerName = null,
         int? highBlock = null,
         int? highGame = null)
         => new()
         {
             Rank = rank ?? ValidRank,
-            BowlerId = bowlerId?.Value ?? Ulid.NewUlid(),
+            BowlerId = bowlerId ?? Ulid.NewUlid().ToString(),
             BowlerName = bowlerName ?? ValidBowlerName,
             HighBlock = highBlock ?? ValidHighBlock,
             HighGame = highGame ?? ValidHighGame
@@ -45,7 +44,7 @@ public static class HighBlockRowViewModelFactory
                 return new HighBlockRowViewModel
                 {
                     Rank = currentRank,
-                    BowlerId = Ulid.Bogus(f),
+                    BowlerId = Ulid.BogusString(f),
                     BowlerName = f.Name.FullName(),
                     HighBlock = maxHighBlock - ((currentRank - 1) * step),
                     HighGame = f.Random.Int(200, 300)

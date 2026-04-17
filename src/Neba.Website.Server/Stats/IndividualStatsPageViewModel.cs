@@ -8,7 +8,7 @@ public record IndividualStatsPageViewModel
     /// <summary>
     /// The unique identifier for the bowler.
     /// </summary>
-    public required Ulid BowlerId { get; init; }
+    public required string BowlerId { get; init; }
 
     /// <summary>
     /// The name of the bowler.
@@ -23,7 +23,7 @@ public record IndividualStatsPageViewModel
     /// <summary>
     /// The available seasons for the bowler.
     /// </summary>
-    public required IReadOnlyDictionary<Ulid, string> AvailableSeasons { get; init; }
+    public required IReadOnlyDictionary<int, string> AvailableSeasons { get; init; }
 
     // Season stats
 

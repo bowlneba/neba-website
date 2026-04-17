@@ -1,6 +1,5 @@
 using Bogus;
 
-using Neba.Domain.Bowlers;
 using Neba.Website.Server.Stats;
 
 namespace Neba.TestFactory.Stats;
@@ -16,7 +15,7 @@ public static class HighAverageRowViewModelFactory
 
     public static HighAverageRowViewModel Create(
         int? rank = null,
-        BowlerId? bowlerId = null,
+        string? bowlerId = null,
         string? bowlerName = null,
         decimal? average = null,
         int? games = null,
@@ -25,7 +24,7 @@ public static class HighAverageRowViewModelFactory
         => new()
         {
             Rank = rank ?? ValidRank,
-            BowlerId = bowlerId?.Value ?? Ulid.NewUlid(),
+            BowlerId = bowlerId ?? Ulid.NewUlid().ToString(),
             BowlerName = bowlerName ?? ValidBowlerName,
             Average = average ?? ValidAverage,
             Games = games ?? ValidGames,
@@ -50,7 +49,7 @@ public static class HighAverageRowViewModelFactory
                 return new HighAverageRowViewModel
                 {
                     Rank = currentRank,
-                    BowlerId = Ulid.Bogus(f),
+                    BowlerId = Ulid.BogusString(f),
                     BowlerName = f.Name.FullName(),
                     Average = decimal.Round(maxAverage - ((currentRank - 1) * step), 3),
                     Games = f.Random.Int(0, 20),

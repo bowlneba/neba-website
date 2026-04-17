@@ -18,8 +18,8 @@
             <div class="stats-season-selector" role="group" aria-label="Select season">
                 @foreach (var (id, name) in _initialAvailableSeasons)
                 {
-                    <button class="@(id == _selectedSeasonId ? "stats-season-btn active" : "stats-season-btn")"
-                            aria-pressed="@(id == _selectedSeasonId ? "true" : "false")" @onclick="() => OnSeasonChanged(id)">
+                    <button class="@(id == _selectedSeasonYear ? "stats-season-btn active" : "stats-season-btn")"
+                            aria-pressed="@(id == _selectedSeasonYear ? "true" : "false")" @onclick="() => OnSeasonChanged(id)">
                         @name
                     </button>
                 }
@@ -132,10 +132,7 @@
 
                             <section class="stats-section">
                                 <div class="stats-section-header stats-accent-primary">
-                                    <h2 class="stats-section-title">
-                                        High Average <span class="stats-section-qualifier">(min. @_model.MinGamesHighAverage
-                                        games)</span>
-                                    </h2>
+                                    <h2 class="stats-section-title">High Average</h2>
                                 </div>
                                 <div class="stats-table-wrapper">
                                     <table class="stats-table">
@@ -221,10 +218,7 @@
 
                                         <section class="stats-section">
                                             <div class="stats-section-header stats-accent-primary">
-                                                <h2 class="stats-section-title">
-                                                    Match Play Average <span class="stats-section-qualifier">(min. @_model.MinMatchPlayGames
-                                                    games)</span>
-                                                </h2>
+                                                <h2 class="stats-section-title">Match Play Average</h2>
                                             </div>
                                             <div class="stats-table-wrapper">
                                                 <table class="stats-table">
@@ -279,10 +273,7 @@
 
                                                 <section class="stats-section">
                                                     <div class="stats-section-header stats-accent-red">
-                                                        <h2 class="stats-section-title">
-                                                            Match Play Record <span class="stats-section-qualifier">(min.
-                                                            @_model.MinTournaments tournaments)</span>
-                                                        </h2>
+                                                        <h2 class="stats-section-title">Match Play Record</h2>
                                                     </div>
                                                     <div class="stats-table-wrapper">
                                                         <table class="stats-table">
@@ -330,10 +321,7 @@
 
                                                         <section class="stats-section">
                                                             <div class="stats-section-header stats-accent-red">
-                                                                <h2 class="stats-section-title">
-                                                                    Match Play Appearances <span class="stats-section-qualifier">(min.
-                                                                    @_model.MinTournaments tournaments)</span>
-                                                                </h2>
+                                                                <h2 class="stats-section-title">Match Play Appearances</h2>
                                                             </div>
                                                             <div class="stats-table-wrapper">
                                                                 <table class="stats-table">
@@ -380,10 +368,7 @@
 
                                                                 <section class="stats-section">
                                                                     <div class="stats-section-header stats-accent-blue-300">
-                                                                        <h2 class="stats-section-title">
-                                                                            Points Per Entry <span class="stats-section-qualifier">(min. @_model.MinEntries
-                                                                            entries)</span>
-                                                                        </h2>
+                                                                        <h2 class="stats-section-title">Points Per Entry</h2>
                                                                     </div>
                                                                     <div class="stats-table-wrapper">
                                                                         <table class="stats-table">
@@ -426,10 +411,7 @@
 
                                                                     <section class="stats-section">
                                                                         <div class="stats-section-header stats-accent-blue-300">
-                                                                            <h2 class="stats-section-title">
-                                                                                Points Per Tournament <span class="stats-section-qualifier">(min. @_model.MinEntries
-                                                                                entries)</span>
-                                                                            </h2>
+                                                                            <h2 class="stats-section-title">Points Per Tournament</h2>
                                                                         </div>
                                                                         <div class="stats-table-wrapper">
                                                                             <table class="stats-table">
@@ -472,10 +454,7 @@
 
                                                                         <section class="stats-section">
                                                                             <div class="stats-section-header stats-accent-blue-300">
-                                                                                <h2 class="stats-section-title">
-                                                                                    Finals Per Entry <span class="stats-section-qualifier">(min. @_model.MinEntries
-                                                                                    entries)</span>
-                                                                                </h2>
+                                                                                <h2 class="stats-section-title">Finals Per Entry</h2>
                                                                             </div>
                                                                             <div class="stats-table-wrapper">
                                                                                 <table class="stats-table">
@@ -518,10 +497,7 @@
 
                                                                             <section class="stats-section">
                                                                                 <div class="stats-section-header stats-accent-blue-300">
-                                                                                    <h2 class="stats-section-title">
-                                                                                        Average Finish <span class="stats-section-qualifier">(min. @_model.MinEntries
-                                                                                        entries)</span>
-                                                                                    </h2>
+                                                                                    <h2 class="stats-section-title">Average Finish</h2>
                                                                                 </div>
                                                                                 <div class="stats-table-wrapper">
                                                                                     <table class="stats-table">
@@ -742,8 +718,8 @@
     private StatsPageViewModel? _model;
     private bool _isLoading = true;
     private string _activeTab = "award-standings";
-    private Ulid _selectedSeasonId;
-    private IReadOnlyDictionary<Ulid, string> _initialAvailableSeasons = new Dictionary<Ulid, string>();
+    private int _selectedSeasonYear;
+    private IReadOnlyDictionary<int, string> _initialAvailableSeasons = new Dictionary<int, string>();
     private string _bowlerSearchText = "";
 
     private bool _modalOpen;
@@ -755,18 +731,18 @@
     {
         _model = await StatsApi.GetStatsAsync();
         _initialAvailableSeasons = _model.AvailableSeasons;
-        _selectedSeasonId = _initialAvailableSeasons.Keys.First();
+        _selectedSeasonYear = _initialAvailableSeasons.Keys.First();
         _isLoading = false;
     }
 
-    private async Task OnSeasonChanged(Ulid seasonId)
+    private async Task OnSeasonChanged(int year)
     {
         _isLoading = true;
-        _selectedSeasonId = seasonId;
+        _selectedSeasonYear = year;
         CloseModal();
         StateHasChanged();
 
-        _model = await StatsApi.GetStatsAsync(seasonId);
+        _model = await StatsApi.GetStatsAsync(year);
         _isLoading = false;
     }
 
@@ -787,11 +763,11 @@
         if (string.IsNullOrWhiteSpace(value) || _model is null) return;
         var match = _model.BowlerSearchList
             .FirstOrDefault(kvp => kvp.Value.Equals(value, StringComparison.OrdinalIgnoreCase));
-        if (match.Key != default)
+        if (match.Key != null)
             Nav.NavigateTo($"/stats/{match.Key}");
     }
 
-    private IEnumerable<KeyValuePair<Ulid, string>> FilteredBowlers()
+    private IEnumerable<KeyValuePair<string, string>> FilteredBowlers()
     {
         if (_model is null) return [];
         if (string.IsNullOrWhiteSpace(_bowlerSearchText))

@@ -1,7 +1,5 @@
 using Bogus;
 
-using Neba.Application.Stats.GetSeasonStats;
-using Neba.Domain.Bowlers;
 using Neba.Website.Server.Stats;
 
 namespace Neba.TestFactory.Stats;
@@ -22,10 +20,10 @@ public static class IndividualStatsPageViewModelFactory
     public const int ValidMatchPlayLosses = 4;
 
     public static IndividualStatsPageViewModel Create(
-        BowlerId? bowlerId = null,
+        string? bowlerId = null,
         string? bowlerName = null,
         string? selectedSeason = null,
-        IReadOnlyDictionary<Ulid, string>? availableSeasons = null,
+        IReadOnlyDictionary<int, string>? availableSeasons = null,
         int? points = null,
         decimal? average = null,
         int? games = null,
@@ -55,10 +53,10 @@ public static class IndividualStatsPageViewModelFactory
         PointsRaceSeriesViewModel? bowlerOfTheYearPointsRace = null)
         => new()
         {
-            BowlerId = bowlerId?.Value ?? Ulid.NewUlid(),
+            BowlerId = bowlerId ?? Ulid.NewUlid().ToString(),
             BowlerName = bowlerName ?? ValidBowlerName,
             SelectedSeason = selectedSeason ?? ValidSelectedSeason,
-            AvailableSeasons = availableSeasons ?? new Dictionary<Ulid, string> { [Ulid.NewUlid()] = ValidSelectedSeason },
+            AvailableSeasons = availableSeasons ?? new Dictionary<int, string> { [DateTime.Now.Year] = ValidSelectedSeason },
             Points = points ?? ValidPoints,
             Average = average ?? ValidAverage,
             Games = games ?? ValidGames,
@@ -100,11 +98,11 @@ public static class IndividualStatsPageViewModelFactory
 
                 return new IndividualStatsPageViewModel
                 {
-                    BowlerId = Ulid.Bogus(f),
+                    BowlerId = Ulid.BogusString(f),
                     BowlerName = f.Name.FullName(),
                     SelectedSeason = $"{year}-{year + 1}",
                     AvailableSeasons = Enumerable.Range(0, f.Random.Int(1, 5))
-                        .ToDictionary(_ => Ulid.Bogus(f), _ => $"{f.Date.Past(50).Year}-{f.Date.Past(50).Year + 1}"),
+                        .ToDictionary(i => year - i, i => $"{year - i}-{year - i + 1}"),
                     Points = f.Random.Int(0, 200),
                     Average = f.Random.Decimal(150, 250),
                     Games = entries * f.Random.Int(3, 6),

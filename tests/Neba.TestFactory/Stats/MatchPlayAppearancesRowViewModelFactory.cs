@@ -1,6 +1,5 @@
 using Bogus;
 
-using Neba.Domain.Bowlers;
 using Neba.Website.Server.Stats;
 
 namespace Neba.TestFactory.Stats;
@@ -15,7 +14,7 @@ public static class MatchPlayAppearancesRowViewModelFactory
 
     public static MatchPlayAppearancesRowViewModel Create(
         int? rank = null,
-        BowlerId? bowlerId = null,
+        string? bowlerId = null,
         string? bowlerName = null,
         int? finals = null,
         int? tournaments = null,
@@ -23,7 +22,7 @@ public static class MatchPlayAppearancesRowViewModelFactory
         => new()
         {
             Rank = rank ?? ValidRank,
-            BowlerId = bowlerId?.Value ?? Ulid.NewUlid(),
+            BowlerId = bowlerId ?? Ulid.NewUlid().ToString(),
             BowlerName = bowlerName ?? ValidBowlerName,
             Finals = finals ?? ValidFinals,
             Tournaments = tournaments ?? ValidTournaments,
@@ -45,7 +44,7 @@ public static class MatchPlayAppearancesRowViewModelFactory
                 return new MatchPlayAppearancesRowViewModel
                 {
                     Rank = currentRank,
-                    BowlerId = Ulid.Bogus(f),
+                    BowlerId = Ulid.BogusString(f),
                     BowlerName = f.Name.FullName(),
                     Finals = finals,
                     Tournaments = tournaments,
