@@ -35,6 +35,9 @@ public static class StatsPageViewModelFactory
         => new()
         {
             SelectedSeason = selectedSeason ?? ValidSelectedSeason,
+            MinimumNumberOfGames = 45m,
+            MinimumNumberOfTournaments = 5m,
+            MinimumNumberOfEntries = 7.5m,
             AvailableSeasons = availableSeasons ?? new Dictionary<int, string> { [DateTime.Now.Year] = ValidSelectedSeason },
             BowlerSearchList = bowlerSearchList ?? new Dictionary<string, string> { [Ulid.NewUlid().ToString()] = BowlerOfTheYearStandingRowViewModelFactory.ValidBowlerName },
             BowlerOfTheYear = bowlerOfTheYear ?? [BowlerOfTheYearStandingRowViewModelFactory.Create()],
@@ -93,6 +96,9 @@ public static class StatsPageViewModelFactory
                     FieldMatchPlaySummary = FieldMatchPlaySummaryViewModelFactory.Bogus(1, seed).Single(),
                     BowlerOfTheYearPointsRace = PointsRaceSeriesViewModelFactory.Bogus(f.Random.Int(1, 5), seed),
                     AllBowlers = FullStatModalRowViewModelFactory.Bogus(25, seed),
+                    MinimumNumberOfGames = f.Random.Decimal(10, 60),
+                    MinimumNumberOfTournaments = f.Random.Decimal(2, 8),
+                    MinimumNumberOfEntries = f.Random.Decimal(3, 12),
                 };
             });
 

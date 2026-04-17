@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging.Testing;
 using Neba.Application.Bowlers;
 using Neba.Application.Caching;
 using Neba.Application.Stats;
+using Neba.Application.Tournaments;
 using Neba.Domain.Bowlers;
 using Neba.Domain.Seasons;
 using Neba.TestFactory.Attributes;
@@ -25,6 +26,7 @@ public sealed class SeasonStatsServiceTests
 {
     private readonly Mock<IStatsQueries> _statsQueriesMock;
     private readonly Mock<IBowlerQueries> _bowlerQueriesMock;
+    private readonly Mock<ITournamentQueries> _tournamentQueriesMock;
     private readonly FakeLogger<SeasonStatsService> _logger;
     private readonly SeasonStatsService _service;
 
@@ -32,6 +34,7 @@ public sealed class SeasonStatsServiceTests
     {
         _statsQueriesMock = new Mock<IStatsQueries>(MockBehavior.Strict);
         _bowlerQueriesMock = new Mock<IBowlerQueries>(MockBehavior.Strict);
+        _tournamentQueriesMock = new Mock<ITournamentQueries>(MockBehavior.Strict);
         _logger = new FakeLogger<SeasonStatsService>();
 
         var services = new ServiceCollection();
@@ -44,7 +47,9 @@ public sealed class SeasonStatsServiceTests
             });
         var cache = services.BuildServiceProvider().GetRequiredService<HybridCache>();
 
-        _service = new SeasonStatsService(_statsQueriesMock.Object, _bowlerQueriesMock.Object, cache, _logger);
+        _service = new SeasonStatsService(
+            _statsQueriesMock.Object, _bowlerQueriesMock.Object,
+            _tournamentQueriesMock.Object, cache, _logger);
     }
 
     [Fact(DisplayName = "GetSeasonsWithStatsAsync should return seasons from query on cache miss")]
@@ -192,7 +197,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(totalEntries: 5),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.TotalEntries.ShouldBe(30);
     }
@@ -207,7 +212,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(tournamentWinnings: 750m),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.TotalPrizeMoney.ShouldBe(2500m);
     }
@@ -228,7 +233,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(qualifyingHighGame: 270, matchPlayHighGame: 280),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.HighGame.ShouldBe(299);
         result.HighGameBowlers.Count.ShouldBe(2);
@@ -250,7 +255,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(qualifyingHighGame: 280, matchPlayHighGame: 265),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.HighGame.ShouldBe(299);
         result.HighGameBowlers.Count.ShouldBe(2);
@@ -272,7 +277,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(highBlock: 1250),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.HighBlock.ShouldBe(1380);
         result.HighBlockBowlers.Count.ShouldBe(2);
@@ -295,7 +300,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(totalGames: 100, totalPinfall: 20000),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.HighAverage.ShouldBe(300m);
         result.HighAverageBowlers.Count.ShouldBe(2);
@@ -321,7 +326,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(matchPlayWins: 0, matchPlayLosses: 0),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.HighestMatchPlayWinPercentage.ShouldBe(0.8m);
         result.HighestMatchPlayWinPercentageBowlers.Count.ShouldBe(2);
@@ -343,7 +348,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(finals: 5),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.MostFinals.ShouldBe(9);
         result.MostFinalsBowlers.Count.ShouldBe(2);
@@ -365,7 +370,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(bowlerOfTheYearPoints: 0),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.BowlerOfTheYear.Count.ShouldBe(2);
         result.BowlerOfTheYear.First().BowlerId.ShouldBe(bowler2Id);
@@ -382,7 +387,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(isSenior: false, seniorOfTheYearPoints: 600),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.SeniorOfTheYear.Count.ShouldBe(1);
         result.SeniorOfTheYear.Single().BowlerId.ShouldBe(seniorId);
@@ -398,7 +403,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(isSuperSenior: false, superSeniorOfTheYearPoints: 700),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.SuperSeniorOfTheYear.Count.ShouldBe(1);
         result.SuperSeniorOfTheYear.Single().BowlerId.ShouldBe(superSeniorId);
@@ -414,7 +419,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(isWoman: false, womanOfTheYearPoints: 800),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.WomanOfTheYear.Count.ShouldBe(1);
         result.WomanOfTheYear.Single().BowlerId.ShouldBe(womanId);
@@ -430,7 +435,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(isRookie: false, bowlerOfTheYearPoints: 500),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.RookieOfTheYear.Count.ShouldBe(1);
         result.RookieOfTheYear.Single().BowlerId.ShouldBe(rookieId);
@@ -447,7 +452,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(isYouth: false, youthOfTheYearPoints: 300),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.YouthOfTheYear.Count.ShouldBe(1);
         result.YouthOfTheYear.Single().BowlerId.ShouldBe(youthId);
@@ -468,7 +473,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(bowlerName: baker1),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.BowlerSearchList.Count.ShouldBe(3);
         var names = result.BowlerSearchList.Select(e => e.BowlerName).ToArray();
@@ -490,7 +495,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(totalGames: 0, totalPinfall: 0),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.HighAverageLeaderboard.Count.ShouldBe(2);
         result.HighAverageLeaderboard.First().BowlerId.ShouldBe(highId);
@@ -511,7 +516,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(highBlock: 0),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.HighBlockLeaderboard.Count.ShouldBe(2);
         result.HighBlockLeaderboard.First().BowlerId.ShouldBe(topId);
@@ -531,7 +536,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(matchPlayGames: 0, matchPlayPinfall: 0),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.MatchPlayAverageLeaderboard.Count.ShouldBe(2);
         result.MatchPlayAverageLeaderboard.First().BowlerId.ShouldBe(topId);
@@ -547,7 +552,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(matchPlayGames: 4, matchPlayPinfall: 800, matchPlayWins: 3, matchPlayLosses: 1),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.MatchPlayAverageLeaderboard.Single().WinPercentage.ShouldBe(75.00m);
     }
@@ -565,7 +570,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(matchPlayWins: 0, matchPlayLosses: 0),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.MatchPlayRecordLeaderboard.Count.ShouldBe(2);
         result.MatchPlayRecordLeaderboard.First().BowlerId.ShouldBe(topId);
@@ -585,7 +590,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(finals: 0),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.MatchPlayAppearancesLeaderboard.Count.ShouldBe(2);
         result.MatchPlayAppearancesLeaderboard.First().BowlerId.ShouldBe(topId);
@@ -606,7 +611,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(eligibleEntries: 5, bowlerOfTheYearPoints: 0),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.PointsPerEntryLeaderboard.Count.ShouldBe(2);
         result.PointsPerEntryLeaderboard.First().BowlerId.ShouldBe(topId);
@@ -626,7 +631,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(eligibleTournaments: 0, bowlerOfTheYearPoints: 300),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.PointsPerTournamentLeaderboard.Count.ShouldBe(2);
         result.PointsPerTournamentLeaderboard.First().BowlerId.ShouldBe(topId);
@@ -647,7 +652,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(eligibleEntries: 5, finals: 0),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.FinalsPerEntryLeaderboard.Count.ShouldBe(2);
         result.FinalsPerEntryLeaderboard.First().BowlerId.ShouldBe(topId);
@@ -667,7 +672,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(averageFinish: null),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.AverageFinishesLeaderboard.Count.ShouldBe(2);
         result.AverageFinishesLeaderboard.First().BowlerId.ShouldBe(bestId);
@@ -687,7 +692,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(bowlerOfTheYearPoints: 500),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.AllBowlers.Count.ShouldBe(3);
         result.AllBowlers.First().BowlerId.ShouldBe(highId);
@@ -702,7 +707,7 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(totalGames: 0, totalPinfall: 0),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.AllBowlers.Single().Average.ShouldBe(0m);
     }
@@ -715,8 +720,87 @@ public sealed class SeasonStatsServiceTests
             BowlerSeasonStatsDtoFactory.Create(matchPlayGames: 0, matchPlayPinfall: 0),
         };
 
-        var result = _service.CalculateSeasonStatsSummary(bowlerStats);
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
         result.AllBowlers.Single().MatchPlayAverage.ShouldBe(0m);
+    }
+
+    // CalculateSeasonStatsSummary — Minimum Thresholds
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should exclude bowlers below minimum games from HighAverageLeaderboard")]
+    public void CalculateSeasonStatsSummary_ShouldExcludeBowlersBelowMinGames_FromHighAverageLeaderboard()
+    {
+        var eligibleId = BowlerId.New();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: eligibleId, totalGames: 45, totalPinfall: 9000),
+            BowlerSeasonStatsDtoFactory.Create(totalGames: 44, totalPinfall: 8800),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 45, minimumTournaments: 0, minimumEntries: 0);
+
+        result.HighAverageLeaderboard.Count.ShouldBe(1);
+        result.HighAverageLeaderboard.Single().BowlerId.ShouldBe(eligibleId);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should use EligibleTournaments for Tournaments column in HighAverageLeaderboard")]
+    public void CalculateSeasonStatsSummary_ShouldUseEligibleTournaments_InHighAverageLeaderboard()
+    {
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(totalGames: 50, totalPinfall: 10000, eligibleTournaments: 8, totalTournaments: 12),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
+
+        result.HighAverageLeaderboard.Single().Tournaments.ShouldBe(8);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should exclude bowlers below minimum entries from PointsPerEntryLeaderboard")]
+    public void CalculateSeasonStatsSummary_ShouldExcludeBowlersBelowMinEntries_FromPointsPerEntryLeaderboard()
+    {
+        var eligibleId = BowlerId.New();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: eligibleId, eligibleEntries: 8, bowlerOfTheYearPoints: 400),
+            BowlerSeasonStatsDtoFactory.Create(eligibleEntries: 7, bowlerOfTheYearPoints: 500),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 8);
+
+        result.PointsPerEntryLeaderboard.Count.ShouldBe(1);
+        result.PointsPerEntryLeaderboard.Single().BowlerId.ShouldBe(eligibleId);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should exclude bowlers below minimum tournaments from PointsPerTournamentLeaderboard")]
+    public void CalculateSeasonStatsSummary_ShouldExcludeBowlersBelowMinTournaments_FromPointsPerTournamentLeaderboard()
+    {
+        var eligibleId = BowlerId.New();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: eligibleId, eligibleTournaments: 5, bowlerOfTheYearPoints: 300),
+            BowlerSeasonStatsDtoFactory.Create(eligibleTournaments: 4, bowlerOfTheYearPoints: 400),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 5, minimumEntries: 0);
+
+        result.PointsPerTournamentLeaderboard.Count.ShouldBe(1);
+        result.PointsPerTournamentLeaderboard.Single().BowlerId.ShouldBe(eligibleId);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should exclude bowlers below minimum entries from FinalsPerEntryLeaderboard")]
+    public void CalculateSeasonStatsSummary_ShouldExcludeBowlersBelowMinEntries_FromFinalsPerEntryLeaderboard()
+    {
+        var eligibleId = BowlerId.New();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: eligibleId, eligibleEntries: 8, finals: 3),
+            BowlerSeasonStatsDtoFactory.Create(eligibleEntries: 7, finals: 4),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 8);
+
+        result.FinalsPerEntryLeaderboard.Count.ShouldBe(1);
+        result.FinalsPerEntryLeaderboard.Single().BowlerId.ShouldBe(eligibleId);
     }
 }

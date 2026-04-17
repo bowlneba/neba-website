@@ -28,9 +28,11 @@ internal sealed class GetSeasonStatsQueryHandler(ISeasonStatsService seasonStats
             return StatsErrors.SeasonHasNoStats;
         }
 
+        var (numberOfGames, numberOfTournaments, numberOfEntries) = await _seasonStatsService.GetStatMinimumsForSeasonAsync(season, cancellationToken);
         var bowlerStats = await _seasonStatsService.GetBowlerSeasonStatsAsync(season.Id, cancellationToken);
         var bowlerOfTheYearRace = await _seasonStatsService.GetBowlerOfTheYearRaceAsync(season, _bowlerQueries, cancellationToken);
-        var seasonSummary = _seasonStatsService.CalculateSeasonStatsSummary(bowlerStats);
+        var seasonSummary = _seasonStatsService.CalculateSeasonStatsSummary(
+            bowlerStats, numberOfGames, numberOfTournaments, numberOfEntries);
 
         return new SeasonStatsDto
         {
@@ -38,7 +40,10 @@ internal sealed class GetSeasonStatsQueryHandler(ISeasonStatsService seasonStats
             SeasonsWithStats = [.. seasonsWithStats.OrderByDescending(s => s.EndDate)],
             BowlerStats = bowlerStats,
             BowlerOfTheYearRace = bowlerOfTheYearRace,
-            Summary = seasonSummary
+            Summary = seasonSummary,
+            MinimumNumberOfGames = numberOfGames,
+            MinimumNumberOfTournaments = numberOfTournaments,
+            MinimumNumberOfEntries = numberOfEntries
         };
     }
 }

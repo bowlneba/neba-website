@@ -20,6 +20,15 @@ public record StatsPageViewModel
     /// </summary>
     public required IReadOnlyDictionary<string, string> BowlerSearchList { get; init; }
 
+    /// <summary>Minimum games required for a bowler to appear in the High Average leaderboard.</summary>
+    public required decimal MinimumNumberOfGames { get; init; }
+
+    /// <summary>Minimum eligible tournaments required for a bowler to appear in tournament-based leaderboards.</summary>
+    public required decimal MinimumNumberOfTournaments { get; init; }
+
+    /// <summary>Minimum eligible entries required for a bowler to appear in entry-based leaderboards.</summary>
+    public required decimal MinimumNumberOfEntries { get; init; }
+
     // Award Standings
 
     /// <summary>

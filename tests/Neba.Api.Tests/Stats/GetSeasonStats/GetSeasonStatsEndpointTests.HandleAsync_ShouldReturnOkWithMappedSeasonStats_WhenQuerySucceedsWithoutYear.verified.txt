@@ -21,6 +21,9 @@
     01J414S9V7K3G42141HBCG9DRW: Dakota Spinka,
     01K36MG3D45KX6P7F8414N3D7N: Myra Lebsack
   },
+  MinimumNumberOfGames: 27.460989727387650,
+  MinimumNumberOfTournaments: 2.892885331480244,
+  MinimumNumberOfEntries: 11.684631710259534,
   BowlerOfTheYear: [
     {
       BowlerId: 01FTWDVS49N0YDXQJPPC53NX2Z,

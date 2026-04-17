@@ -13,7 +13,8 @@ public static class SeasonStatsDtoFactory
         IReadOnlyCollection<SeasonDto>? seasonsWithStats = null,
         IReadOnlyCollection<BowlerSeasonStatsDto>? bowlerStats = null,
         IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>? bowlerOfTheYearRace = null,
-        SeasonStatsSummaryDto? summary = null)
+        SeasonStatsSummaryDto? summary = null,
+        (decimal games, decimal tournaments, decimal entries)? minimums = null)
         => new()
         {
             Season = season ?? SeasonDtoFactory.Create(),
@@ -21,6 +22,9 @@ public static class SeasonStatsDtoFactory
             BowlerStats = bowlerStats ?? [BowlerSeasonStatsDtoFactory.Create()],
             BowlerOfTheYearRace = bowlerOfTheYearRace ?? [BowlerOfTheYearPointsRaceSeriesDtoFactory.Create()],
             Summary = summary ?? SeasonStatsSummaryDtoFactory.Create(),
+            MinimumNumberOfGames = minimums?.games ?? 0m,
+            MinimumNumberOfTournaments = minimums?.tournaments ?? 0m,
+            MinimumNumberOfEntries = minimums?.entries ?? 0m,
         };
 
     public static IReadOnlyCollection<SeasonStatsDto> Bogus(int count, int? seed = null)
@@ -41,6 +45,9 @@ public static class SeasonStatsDtoFactory
                     BowlerStats = BowlerSeasonStatsDtoFactory.Bogus(f.Random.Int(1, 10), bowlerStatsSeed),
                     BowlerOfTheYearRace = BowlerOfTheYearPointsRaceSeriesDtoFactory.Bogus(f.Random.Int(1, 5), bowlerOfTheYearRaceSeed),
                     Summary = SeasonStatsSummaryDtoFactory.Bogus(1, summarySeed).Single(),
+                    MinimumNumberOfGames = f.Random.Decimal(10, 60),
+                    MinimumNumberOfTournaments = f.Random.Decimal(2, 8),
+                    MinimumNumberOfEntries = f.Random.Decimal(3, 12),
                 };
             });
 

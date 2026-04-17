@@ -41,6 +41,9 @@ internal sealed class StatsApiService(ApiExecutor executor, IStatsApi statsApi) 
         new()
         {
             SelectedSeason = response.SelectedSeason,
+            MinimumNumberOfGames = response.MinimumNumberOfGames,
+            MinimumNumberOfTournaments = response.MinimumNumberOfTournaments,
+            MinimumNumberOfEntries = response.MinimumNumberOfEntries,
             AvailableSeasons = response.AvailableSeasons,
             BowlerSearchList = response.BowlerSearchList,
             BowlerOfTheYear = MapBotyStandings(response.BowlerOfTheYear),
@@ -278,6 +281,9 @@ internal sealed class StatsApiService(ApiExecutor executor, IStatsApi statsApi) 
         new()
         {
             SelectedSeason = "",
+            MinimumNumberOfGames = 0,
+            MinimumNumberOfTournaments = 0,
+            MinimumNumberOfEntries = 0,
             AvailableSeasons = new Dictionary<int, string>(),
             BowlerSearchList = new Dictionary<string, string>(),
             BowlerOfTheYear = [],

@@ -92,7 +92,10 @@ public sealed class GetSeasonStatsQueryHandlerTests
             .Setup(s => s.GetBowlerOfTheYearRaceAsync(newerSeason, _bowlerQueriesMock.Object, TestContext.Current.CancellationToken))
             .ReturnsAsync(botyRace);
         _seasonStatsServiceMock
-            .Setup(s => s.CalculateSeasonStatsSummary(bowlerStats))
+            .Setup(s => s.GetStatMinimumsForSeasonAsync(newerSeason, TestContext.Current.CancellationToken))
+            .ReturnsAsync((45m, 5m, 7.5m));
+        _seasonStatsServiceMock
+            .Setup(s => s.CalculateSeasonStatsSummary(bowlerStats, 45m, 5m, 7.5m))
             .Returns(summary);
 
         var query = new GetSeasonStatsQuery { SeasonYear = null };
@@ -128,7 +131,10 @@ public sealed class GetSeasonStatsQueryHandlerTests
             .Setup(s => s.GetBowlerOfTheYearRaceAsync(season, _bowlerQueriesMock.Object, TestContext.Current.CancellationToken))
             .ReturnsAsync(botyRace);
         _seasonStatsServiceMock
-            .Setup(s => s.CalculateSeasonStatsSummary(bowlerStats))
+            .Setup(s => s.GetStatMinimumsForSeasonAsync(season, TestContext.Current.CancellationToken))
+            .ReturnsAsync((45m, 5m, 7.5m));
+        _seasonStatsServiceMock
+            .Setup(s => s.CalculateSeasonStatsSummary(bowlerStats, 45m, 5m, 7.5m))
             .Returns(summary);
 
         var query = new GetSeasonStatsQuery { SeasonYear = 2025 };
@@ -164,7 +170,10 @@ public sealed class GetSeasonStatsQueryHandlerTests
             .Setup(s => s.GetBowlerOfTheYearRaceAsync(season, _bowlerQueriesMock.Object, TestContext.Current.CancellationToken))
             .ReturnsAsync(botyRace);
         _seasonStatsServiceMock
-            .Setup(s => s.CalculateSeasonStatsSummary(bowlerStats))
+            .Setup(s => s.GetStatMinimumsForSeasonAsync(season, TestContext.Current.CancellationToken))
+            .ReturnsAsync((45m, 5m, 7.5m));
+        _seasonStatsServiceMock
+            .Setup(s => s.CalculateSeasonStatsSummary(bowlerStats, 45m, 5m, 7.5m))
             .Returns(summary);
 
         var query = new GetSeasonStatsQuery { SeasonYear = 2024 };
@@ -197,7 +206,10 @@ public sealed class GetSeasonStatsQueryHandlerTests
             .Setup(s => s.GetBowlerOfTheYearRaceAsync(season, _bowlerQueriesMock.Object, TestContext.Current.CancellationToken))
             .ReturnsAsync(botyRace);
         _seasonStatsServiceMock
-            .Setup(s => s.CalculateSeasonStatsSummary(bowlerStats))
+            .Setup(s => s.GetStatMinimumsForSeasonAsync(season, TestContext.Current.CancellationToken))
+            .ReturnsAsync((45m, 5m, 7.5m));
+        _seasonStatsServiceMock
+            .Setup(s => s.CalculateSeasonStatsSummary(bowlerStats, 45m, 5m, 7.5m))
             .Returns(summary);
 
         var query = new GetSeasonStatsQuery { SeasonYear = null };
@@ -212,5 +224,8 @@ public sealed class GetSeasonStatsQueryHandlerTests
         result.Value.BowlerStats.ShouldBe(bowlerStats);
         result.Value.BowlerOfTheYearRace.ShouldBe(botyRace);
         result.Value.Summary.ShouldBe(summary);
+        result.Value.MinimumNumberOfGames.ShouldBe(45m);
+        result.Value.MinimumNumberOfTournaments.ShouldBe(5m);
+        result.Value.MinimumNumberOfEntries.ShouldBe(7.5m);
     }
 }

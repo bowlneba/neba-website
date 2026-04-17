@@ -18,6 +18,9 @@ internal sealed class GetSeasonStatsEndpointSummary : Summary<GetSeasonStatsEndp
             example: new GetSeasonStatsResponse
             {
                 SelectedSeason = "2024-2025 Season",
+                MinimumNumberOfGames = 45m,
+                MinimumNumberOfTournaments = 5m,
+                MinimumNumberOfEntries = 7.5m,
                 AvailableSeasons = new Dictionary<int, string> { { 2025, "2024-2025 Season" } },
                 BowlerSearchList = new Dictionary<string, string> { { "01JWXYZEXAMPLE000000000002", "Jane Smith" } },
                 BowlerOfTheYear = [new BowlerOfTheYearStandingResponse { BowlerId = "01JWXYZEXAMPLE000000000002", BowlerName = "Jane Smith", Points = 320, Tournaments = 10, Entries = 12, Finals = 5, AverageFinish = 3.2m, Winnings = 1500m }],

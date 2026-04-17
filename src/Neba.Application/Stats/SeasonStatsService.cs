@@ -5,6 +5,7 @@ using Neba.Application.Bowlers;
 using Neba.Application.Caching;
 using Neba.Application.Seasons;
 using Neba.Application.Stats.GetSeasonStats;
+using Neba.Application.Tournaments;
 using Neba.Domain.Seasons;
 
 namespace Neba.Application.Stats;
@@ -12,12 +13,15 @@ namespace Neba.Application.Stats;
 internal sealed class SeasonStatsService(
     IStatsQueries statsQueries,
     IBowlerQueries bowlerQueries,
+    ITournamentQueries tournamentQueries,
     HybridCache cache,
     ILogger<SeasonStatsService> logger)
         : ISeasonStatsService
 {
     private readonly IStatsQueries _statsQueries = statsQueries;
     private readonly IBowlerQueries _bowlerQueries = bowlerQueries;
+    private readonly ITournamentQueries _tournamentQueries = tournamentQueries;
+
     private readonly HybridCache _cache = cache;
     private readonly ILogger<SeasonStatsService> _logger = logger;
 
@@ -62,7 +66,11 @@ internal sealed class SeasonStatsService(
         return stats;
     }
 
-    public SeasonStatsSummaryDto CalculateSeasonStatsSummary(IReadOnlyCollection<BowlerSeasonStatsDto> bowlerStats)
+    public SeasonStatsSummaryDto CalculateSeasonStatsSummary(
+        IReadOnlyCollection<BowlerSeasonStatsDto> bowlerStats,
+        decimal minimumGames,
+        decimal minimumTournaments,
+        decimal minimumEntries)
     {
         // Season Bests
 
@@ -79,12 +87,12 @@ internal sealed class SeasonStatsService(
             .ToDictionary(stat => stat.BowlerId, stat => stat.BowlerName);
 
         var highAverage = bowlerStats
-            .Where(stat => stat.TotalGames > 0)
+            .Where(stat => stat.TotalGames > 0 && stat.TotalGames >= minimumGames)
             .Select(stat => stat.TotalPinfall / stat.TotalGames * 1m)
             .DefaultIfEmpty(0m)
             .Max();
         var highAverageBowlers = bowlerStats
-            .Where(stat => stat.TotalGames > 0 && stat.TotalPinfall / stat.TotalGames * 1m == highAverage)
+            .Where(stat => stat.TotalGames > 0 && stat.TotalGames >= minimumGames && stat.TotalPinfall / stat.TotalGames * 1m == highAverage)
             .ToDictionary(stat => stat.BowlerId, stat => stat.BowlerName);
 
         // Field Match Play Summary
@@ -122,7 +130,7 @@ internal sealed class SeasonStatsService(
         // Leaderboards
 
         var highAverageLeaderboard = bowlerStats
-            .Where(bs => bs.TotalGames > 0)
+            .Where(bs => bs.TotalGames > 0 && bs.TotalGames >= minimumGames)
             .OrderByDescending(bs => (decimal)bs.TotalPinfall / bs.TotalGames)
             .Select(bs => new HighAverageDto
             {
@@ -130,7 +138,7 @@ internal sealed class SeasonStatsService(
                 BowlerName = bs.BowlerName,
                 Average = Math.Round((decimal)bs.TotalPinfall / bs.TotalGames, 2),
                 Games = bs.TotalGames,
-                Tournaments = bs.TotalTournaments,
+                Tournaments = bs.EligibleTournaments,
                 FieldAverage = bs.FieldAverage
             })
             .ToArray();
@@ -195,7 +203,7 @@ internal sealed class SeasonStatsService(
             .ToArray();
 
         var pointsPerEntryLeaderboard = bowlerStats
-            .Where(bs => bs.EligibleEntries > 0 && bs.BowlerOfTheYearPoints > 0)
+            .Where(bs => bs.EligibleEntries > 0 && bs.EligibleEntries >= minimumEntries && bs.BowlerOfTheYearPoints > 0)
             .OrderByDescending(bs => (decimal)bs.BowlerOfTheYearPoints / bs.EligibleEntries)
             .Select(bs => new PointsPerEntryDto
             {
@@ -208,7 +216,7 @@ internal sealed class SeasonStatsService(
             .ToArray();
 
         var pointsPerTournamentLeaderboard = bowlerStats
-            .Where(bs => bs.EligibleTournaments > 0 && bs.BowlerOfTheYearPoints > 0)
+            .Where(bs => bs.EligibleTournaments > 0 && bs.EligibleTournaments >= minimumTournaments && bs.BowlerOfTheYearPoints > 0)
             .OrderByDescending(bs => (decimal)bs.BowlerOfTheYearPoints / bs.EligibleTournaments)
             .Select(bs => new PointsPerTournamentDto
             {
@@ -221,7 +229,7 @@ internal sealed class SeasonStatsService(
             .ToArray();
 
         var finalsPerEntryLeaderboard = bowlerStats
-            .Where(bs => bs.EligibleEntries > 0 && bs.Finals > 0)
+            .Where(bs => bs.EligibleEntries > 0 && bs.EligibleEntries >= minimumEntries && bs.Finals > 0)
             .OrderByDescending(bs => (decimal)bs.Finals / bs.EligibleEntries)
             .Select(bs => new FinalsPerEntryDto
             {
@@ -302,6 +310,17 @@ internal sealed class SeasonStatsService(
         };
     }
 
+    public async Task<(decimal NumberOfGames, decimal NumberOfTournaments, decimal NumberOfEntries)> GetStatMinimumsForSeasonAsync(SeasonDto season, CancellationToken cancellationToken)
+    {
+        var tournamentCount = await _tournamentQueries.GetTournamentCountForSeasonAsync(season, cancellationToken);
+
+        return (
+            NumberOfGames: tournamentCount * 4.5m,
+            NumberOfTournaments: tournamentCount / 2m,
+            NumberOfEntries: tournamentCount * .75m
+        );
+    }
+
     /// <summary>
     /// This is a temporary method to get the progression of the bowler of the year points race until tournaments and points come into the application. Once that happens, this can be reworked to pull from the database instead of a json file and the temporary file can be deleted.
     /// </summary>
@@ -340,7 +359,19 @@ internal interface ISeasonStatsService
 
     Task<IReadOnlyCollection<BowlerSeasonStatsDto>> GetBowlerSeasonStatsAsync(SeasonId seasonId, CancellationToken cancellationToken);
 
-    SeasonStatsSummaryDto CalculateSeasonStatsSummary(IReadOnlyCollection<BowlerSeasonStatsDto> bowlerStats);
+    SeasonStatsSummaryDto CalculateSeasonStatsSummary(
+        IReadOnlyCollection<BowlerSeasonStatsDto> bowlerStats,
+        decimal minimumGames,
+        decimal minimumTournaments,
+        decimal minimumEntries);
+
+    /// <summary>
+    /// This will take in seasonId when tournaments are in the database, until then it will take in season to pull the minimum
+    /// </summary>
+    /// <param name="season"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<(decimal NumberOfGames, decimal NumberOfTournaments, decimal NumberOfEntries)> GetStatMinimumsForSeasonAsync(SeasonDto season, CancellationToken cancellationToken);
 
     /// <summary>
     /// This is a temporary method to get the progression of the bowler of the year points race until tournaments and points come into the application. Once that happens, this can be reworked to pull from the database instead of a json file and the temporary file can be deleted.

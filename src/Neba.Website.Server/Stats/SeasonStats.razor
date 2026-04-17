@@ -139,6 +139,10 @@
                             <section class="stats-section">
                                 <div class="stats-section-header stats-accent-primary">
                                     <h2 class="stats-section-title">High Average</h2>
+                                    @if (_model.MinimumNumberOfGames > 0)
+                                    {
+                                        <span class="stats-section-qualifier">min @((int)_model.MinimumNumberOfGames) games</span>
+                                    }
                                 </div>
                                 <div class="stats-table-wrapper">
                                     <table class="stats-table">
@@ -375,6 +379,10 @@
                                                                 <section class="stats-section">
                                                                     <div class="stats-section-header stats-accent-blue-300">
                                                                         <h2 class="stats-section-title">Points Per Entry</h2>
+                                                                        @if (_model.MinimumNumberOfEntries > 0)
+                                                                        {
+                                                                            <span class="stats-section-qualifier">min @(_model.MinimumNumberOfEntries.ToString("F1")) entries</span>
+                                                                        }
                                                                     </div>
                                                                     <div class="stats-table-wrapper">
                                                                         <table class="stats-table">
@@ -418,6 +426,10 @@
                                                                     <section class="stats-section">
                                                                         <div class="stats-section-header stats-accent-blue-300">
                                                                             <h2 class="stats-section-title">Points Per Tournament</h2>
+                                                                            @if (_model.MinimumNumberOfTournaments > 0)
+                                                                            {
+                                                                                <span class="stats-section-qualifier">min @(_model.MinimumNumberOfTournaments.ToString("F1")) tournaments</span>
+                                                                            }
                                                                         </div>
                                                                         <div class="stats-table-wrapper">
                                                                             <table class="stats-table">
@@ -461,6 +473,10 @@
                                                                         <section class="stats-section">
                                                                             <div class="stats-section-header stats-accent-blue-300">
                                                                                 <h2 class="stats-section-title">Finals Per Entry</h2>
+                                                                                @if (_model.MinimumNumberOfEntries > 0)
+                                                                                {
+                                                                                    <span class="stats-section-qualifier">min @(_model.MinimumNumberOfEntries.ToString("F1")) entries</span>
+                                                                                }
                                                                             </div>
                                                                             <div class="stats-table-wrapper">
                                                                                 <table class="stats-table">

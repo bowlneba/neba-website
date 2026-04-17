@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using Neba.Application.Bowlers;
 using Neba.Application.Seasons;
 using Neba.Application.Stats.GetSeasonStats;
+using Neba.Domain.Seasons;
 
 public sealed record BowlerTournamentPoints(
     int Season,

@@ -59,6 +59,9 @@ internal sealed class GetSeasonStatsEndpoint(IQueryHandler<GetSeasonStatsQuery, 
     private static GetSeasonStatsResponse MapToResponse(SeasonStatsDto dto) => new()
     {
         SelectedSeason = dto.Season.Description,
+        MinimumNumberOfGames = dto.MinimumNumberOfGames,
+        MinimumNumberOfTournaments = dto.MinimumNumberOfTournaments,
+        MinimumNumberOfEntries = dto.MinimumNumberOfEntries,
         AvailableSeasons = dto.SeasonsWithStats
             .ToDictionary(s => s.EndDate.Year, s => s.Description),
         BowlerSearchList = dto.Summary.BowlerSearchList
