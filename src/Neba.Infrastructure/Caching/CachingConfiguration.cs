@@ -22,34 +22,34 @@ internal static class HybridCacheSerializerOptionsKey
 
 internal static class CachingConfiguration
 {
-    internal static IServiceCollection DecorateCachedQueryHandlers(this IServiceCollection services)
-    {
-        var descriptors = services
-            .Where(d =>
-                d.ServiceType.IsGenericType &&
-                d.ServiceType.GetGenericTypeDefinition() == typeof(IQueryHandler<,>))
-            .ToList();
-
-        foreach (var serviceType in descriptors.Select(descriptor => descriptor.ServiceType))
-        {
-            var queryType = serviceType.GetGenericArguments()[0];
-            var responseType = serviceType.GetGenericArguments()[1];
-
-            var isCachedQuery = queryType.GetInterfaces()
-                .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ICachedQuery<>));
-
-            if (!isCachedQuery)
-                continue;
-
-            var decoratorType = typeof(CachedQueryHandlerDecorator<,>).MakeGenericType(queryType, responseType);
-            services.Decorate(serviceType, decoratorType);
-        }
-
-        return services;
-    }
-
     extension(IServiceCollection services)
     {
+        internal IServiceCollection DecorateCachedQueryHandlers()
+        {
+            var descriptors = services
+                .Where(d =>
+                    d.ServiceType.IsGenericType &&
+                    d.ServiceType.GetGenericTypeDefinition() == typeof(IQueryHandler<,>))
+                .ToList();
+
+            foreach (var serviceType in descriptors.Select(descriptor => descriptor.ServiceType))
+            {
+                var queryType = serviceType.GetGenericArguments()[0];
+                var responseType = serviceType.GetGenericArguments()[1];
+
+                var isCachedQuery = queryType.GetInterfaces()
+                    .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ICachedQuery<>));
+
+                if (!isCachedQuery)
+                    continue;
+
+                var decoratorType = typeof(CachedQueryHandlerDecorator<,>).MakeGenericType(queryType, responseType);
+                services.Decorate(serviceType, decoratorType);
+            }
+
+            return services;
+        }
+
         public void AddCaching(IConfiguration config)
         {
             var connectionString = config.GetConnectionString("bowlneba")
