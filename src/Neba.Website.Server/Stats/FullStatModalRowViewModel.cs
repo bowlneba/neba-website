@@ -51,10 +51,12 @@ public sealed record FullStatModalRowViewModel
     public int Loses { get; init; }
 
     /// <summary>
-    /// This is the win percentage of the bowler in the current season. This is calculated based on the number of wins and losses of the bowler in the current season and is used to determine the bowler's performance in the current season and is also used to determine the bowler's rank in the current season.
+    /// This is the win percentage of the bowler in the current season, expressed as a percentage (0–100). This is calculated based on the number of wins and losses of the bowler in the current season and is used to determine the bowler's performance in the current season and is also used to determine the bowler's rank in the current season.
     /// </summary>
     public decimal? WinPercentage
-        => (Wins + Loses) > 0 ? (decimal)Wins / (Wins + Loses) : null;
+        => (Wins + Loses) > 0
+            ? decimal.Round(Wins * 100m / (Wins + Loses), 2)
+            : null;
 
     /// <summary>
     /// This is the match play average of the bowler in the current season. This is calculated based on the bowler's performance in match play games in the current season and is used to determine the bowler's performance in match play games in the current season and is also used to determine the bowler's rank in match play games in the current season.

@@ -1269,10 +1269,7 @@ BoyStandingsSections()
         => value >= 0 ? $"+{value:F2}" : value.ToString("F2");
 
     private static string FormatWinPercentage(decimal? value)
-        => value.HasValue ? $"{NormalizeWinPercentage(value.Value):F1}%" : "—";
-
-    private static decimal NormalizeWinPercentage(decimal value)
-        => value is >= 0m and <= 1m ? value * 100m : value;
+        => value.HasValue ? $"{value.Value:F1}%" : "—";
 
     private static string FieldAvgClass(decimal value)
         => value >= 0 ? "text-[var(--neba-success)]" : "text-gray-400";
