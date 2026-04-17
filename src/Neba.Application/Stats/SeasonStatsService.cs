@@ -88,11 +88,11 @@ internal sealed class SeasonStatsService(
 
         var highAverage = bowlerStats
             .Where(stat => stat.TotalGames > 0 && stat.TotalGames >= minimumGames)
-            .Select(stat => stat.TotalPinfall / stat.TotalGames * 1m)
+            .Select(stat => stat.TotalPinfall * 1m / stat.TotalGames)
             .DefaultIfEmpty(0m)
             .Max();
         var highAverageBowlers = bowlerStats
-            .Where(stat => stat.TotalGames > 0 && stat.TotalGames >= minimumGames && stat.TotalPinfall / stat.TotalGames * 1m == highAverage)
+            .Where(stat => stat.TotalGames > 0 && stat.TotalGames >= minimumGames && stat.TotalPinfall * 1m / stat.TotalGames == highAverage)
             .ToDictionary(stat => stat.BowlerId, stat => stat.BowlerName);
 
         // Field Match Play Summary
@@ -131,12 +131,12 @@ internal sealed class SeasonStatsService(
 
         var highAverageLeaderboard = bowlerStats
             .Where(bs => bs.TotalGames > 0 && bs.TotalGames >= minimumGames)
-            .OrderByDescending(bs => (decimal)bs.TotalPinfall / bs.TotalGames)
+            .OrderByDescending(bs => bs.TotalPinfall * 1m / bs.TotalGames)
             .Select(bs => new HighAverageDto
             {
                 BowlerId = bs.BowlerId,
                 BowlerName = bs.BowlerName,
-                Average = Math.Round((decimal)bs.TotalPinfall / bs.TotalGames, 2),
+                Average = Math.Round(bs.TotalPinfall * 1m / bs.TotalGames, 2),
                 Games = bs.TotalGames,
                 Tournaments = bs.EligibleTournaments,
                 FieldAverage = bs.FieldAverage
@@ -157,12 +157,12 @@ internal sealed class SeasonStatsService(
 
         var matchPlayAverageLeaderboard = bowlerStats
             .Where(bs => bs.MatchPlayGames > 0)
-            .OrderByDescending(bs => (decimal)bs.MatchPlayPinfall / bs.MatchPlayGames)
+            .OrderByDescending(bs => bs.MatchPlayPinfall * 1m / bs.MatchPlayGames)
             .Select(bs => new MatchPlayAverageDto
             {
                 BowlerId = bs.BowlerId,
                 BowlerName = bs.BowlerName,
-                MatchPlayAverage = Math.Round((decimal)bs.MatchPlayPinfall / bs.MatchPlayGames, 2),
+                MatchPlayAverage = Math.Round(bs.MatchPlayPinfall * 1m / bs.MatchPlayGames, 2),
                 Games = bs.MatchPlayGames,
                 Wins = bs.MatchPlayWins,
                 Losses = bs.MatchPlayLosses,
@@ -183,7 +183,7 @@ internal sealed class SeasonStatsService(
                 WinPercentage = ComputeWinPercentage(bs.MatchPlayWins, bs.MatchPlayLosses),
                 Finals = bs.Finals,
                 MatchPlayAverage = bs.MatchPlayGames > 0
-                    ? Math.Round((decimal)bs.MatchPlayPinfall / bs.MatchPlayGames, 2)
+                    ? Math.Round(bs.MatchPlayPinfall * 1m / bs.MatchPlayGames, 2)
                     : 0m,
                 Winnings = bs.TournamentWinnings
             })
@@ -204,12 +204,12 @@ internal sealed class SeasonStatsService(
 
         var pointsPerEntryLeaderboard = bowlerStats
             .Where(bs => bs.EligibleEntries > 0 && bs.EligibleEntries >= minimumEntries && bs.BowlerOfTheYearPoints > 0)
-            .OrderByDescending(bs => (decimal)bs.BowlerOfTheYearPoints / bs.EligibleEntries)
+            .OrderByDescending(bs => bs.BowlerOfTheYearPoints * 1m / bs.EligibleEntries)
             .Select(bs => new PointsPerEntryDto
             {
                 BowlerId = bs.BowlerId,
                 BowlerName = bs.BowlerName,
-                PointsPerEntry = Math.Round((decimal)bs.BowlerOfTheYearPoints / bs.EligibleEntries, 2),
+                PointsPerEntry = Math.Round(bs.BowlerOfTheYearPoints * 1m / bs.EligibleEntries, 2),
                 Points = bs.BowlerOfTheYearPoints,
                 Entries = bs.EligibleEntries
             })
@@ -217,27 +217,27 @@ internal sealed class SeasonStatsService(
 
         var pointsPerTournamentLeaderboard = bowlerStats
             .Where(bs => bs.EligibleTournaments > 0 && bs.EligibleTournaments >= minimumTournaments && bs.BowlerOfTheYearPoints > 0)
-            .OrderByDescending(bs => (decimal)bs.BowlerOfTheYearPoints / bs.EligibleTournaments)
+            .OrderByDescending(bs => bs.BowlerOfTheYearPoints * 1m / bs.EligibleTournaments)
             .Select(bs => new PointsPerTournamentDto
             {
                 BowlerId = bs.BowlerId,
                 BowlerName = bs.BowlerName,
                 Points = bs.BowlerOfTheYearPoints,
                 Tournaments = bs.EligibleTournaments,
-                PointsPerTournament = Math.Round((decimal)bs.BowlerOfTheYearPoints / bs.EligibleTournaments, 2)
+                PointsPerTournament = Math.Round(bs.BowlerOfTheYearPoints * 1m / bs.EligibleTournaments, 2)
             })
             .ToArray();
 
         var finalsPerEntryLeaderboard = bowlerStats
             .Where(bs => bs.EligibleEntries > 0 && bs.EligibleEntries >= minimumEntries && bs.Finals > 0)
-            .OrderByDescending(bs => (decimal)bs.Finals / bs.EligibleEntries)
+            .OrderByDescending(bs => bs.Finals * 1m / bs.EligibleEntries)
             .Select(bs => new FinalsPerEntryDto
             {
                 BowlerId = bs.BowlerId,
                 BowlerName = bs.BowlerName,
                 Finals = bs.Finals,
                 Entries = bs.EligibleEntries,
-                FinalsPerEntry = Math.Round((decimal)bs.Finals / bs.EligibleEntries, 2)
+                FinalsPerEntry = Math.Round(bs.Finals * 1m / bs.EligibleEntries, 2)
             })
             .ToArray();
 
@@ -261,14 +261,14 @@ internal sealed class SeasonStatsService(
                 BowlerId = bs.BowlerId,
                 BowlerName = bs.BowlerName,
                 Points = bs.BowlerOfTheYearPoints,
-                Average = bs.TotalGames > 0 ? Math.Round((decimal)bs.TotalPinfall / bs.TotalGames, 2) : 0m,
+                Average = bs.TotalGames > 0 ? Math.Round(bs.TotalPinfall * 1m / bs.TotalGames, 2) : 0m,
                 Games = bs.TotalGames,
                 Finals = bs.Finals,
                 Wins = bs.MatchPlayWins,
                 Losses = bs.MatchPlayLosses,
                 WinPercentage = ComputeWinPercentage(bs.MatchPlayWins, bs.MatchPlayLosses),
                 MatchPlayAverage = bs.MatchPlayGames > 0
-                    ? Math.Round((decimal)bs.MatchPlayPinfall / bs.MatchPlayGames, 2)
+                    ? Math.Round(bs.MatchPlayPinfall * 1m / bs.MatchPlayGames, 2)
                     : 0m,
                 Winnings = bs.TournamentWinnings,
                 FieldAverage = bs.FieldAverage,
@@ -349,7 +349,7 @@ internal sealed class SeasonStatsService(
     private static decimal ComputeWinPercentage(int wins, int losses)
     {
         var total = wins + losses;
-        return total > 0 ? Math.Round((decimal)wins / total * 100, 2) : 0m;
+        return total > 0 ? Math.Round(wins * 1m / total * 100, 2) : 0m;
     }
 }
 
