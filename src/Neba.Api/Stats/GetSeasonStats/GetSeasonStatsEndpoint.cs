@@ -30,7 +30,7 @@ internal sealed class GetSeasonStatsEndpoint(IQueryHandler<GetSeasonStatsQuery, 
 
         Description(description => description
             .WithName("GetSeasonStats")
-            .WithTags("Public")
+            .WithTags("Stats", "Public")
             .Produces<GetSeasonStatsResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound));
     }
