@@ -46,7 +46,7 @@ public static class FullStatModalRowViewModelFactory
             MatchPlayAverage = matchPlayAverage,
             Winnings = winnings ?? ValidWinnings,
             FieldAverage = fieldAverage ?? ValidFieldAverage,
-            Touranments = touranments ?? ValidTouranments
+            Tournaments = touranments ?? ValidTouranments
         };
 
     public static IReadOnlyCollection<FullStatModalRowViewModel> Bogus(int count, int? seed = null)
@@ -75,7 +75,7 @@ public static class FullStatModalRowViewModelFactory
                     MatchPlayAverage = f.Random.Bool() ? f.Random.Decimal(150, 250) : null,
                     Winnings = f.Random.Decimal(0, 10000),
                     FieldAverage = f.Random.Decimal(150, 250),
-                    Touranments = f.Random.Int(1, 20)
+                    Tournaments = f.Random.Int(1, 20)
                 };
             });
 

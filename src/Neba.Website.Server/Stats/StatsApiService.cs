@@ -180,7 +180,7 @@ internal sealed class StatsApiService(ApiExecutor executor, IStatsApi statsApi) 
                 MatchPlayAverage = b.MatchPlayAverage == 0 ? null : b.MatchPlayAverage,
                 Winnings = b.Winnings,
                 FieldAverage = b.FieldAverage,
-                Touranments = b.Tournaments
+                Tournaments = b.Tournaments
             })]
         };
 

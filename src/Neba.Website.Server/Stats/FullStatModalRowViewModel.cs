@@ -76,5 +76,5 @@ public sealed record FullStatModalRowViewModel
     /// <summary>
     /// This is the number of tournaments the bowler has competed in during the current season. This is used to determine the bowler's experience and consistency in the current season and is also used to determine the bowler's rank in the current season.
     /// </summary>
-    public required int Touranments { get; init; }
+    public required int Tournaments { get; init; }
 }
