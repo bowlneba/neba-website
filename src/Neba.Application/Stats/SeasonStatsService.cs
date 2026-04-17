@@ -47,11 +47,13 @@ internal sealed class SeasonStatsService(
 
     public async Task<IReadOnlyCollection<BowlerSeasonStatsDto>> GetBowlerSeasonStatsAsync(SeasonId seasonId, CancellationToken cancellationToken)
     {
+        var cacheDescriptor = CacheDescriptors.Stats.BowlerSeasonStats(seasonId);
+
         var stats = await _cache.GetOrCreateAsync(
-            key: CacheDescriptors.Stats.BowlerSeasonStats(seasonId).Key,
+            key: cacheDescriptor.Key,
             factory: async (cancel) =>
             {
-                _logger.LogCacheMiss(CacheDescriptors.Stats.BowlerSeasonStats(seasonId).Key);
+                _logger.LogCacheMiss(cacheDescriptor.Key);
 
                 return await _statsQueries.GetBowlerSeasonStatsAsync(seasonId, cancel);
             },
@@ -59,7 +61,7 @@ internal sealed class SeasonStatsService(
             {
                 Expiration = TimeSpan.FromDays(14)
             },
-            tags: CacheDescriptors.Stats.BowlerSeasonStats(seasonId).Tags,
+            tags: cacheDescriptor.Tags,
             cancellationToken: cancellationToken
         );
 
@@ -98,11 +100,9 @@ internal sealed class SeasonStatsService(
         // Field Match Play Summary
 
         var highestMatchPlayWinPercentage = bowlerStats.Max(stat =>
-            stat.MatchPlayWins + stat.MatchPlayLosses > 0
-                ? stat.MatchPlayWins * 1m / (stat.MatchPlayWins + stat.MatchPlayLosses)
-                : 0);
+            ComputeRawWinRate(stat.MatchPlayWins, stat.MatchPlayLosses));
         var highestMatchPlayWinPercentageBowlers = bowlerStats
-            .Where(stat => stat.MatchPlayWins + stat.MatchPlayLosses > 0 && stat.MatchPlayWins * 1m / (stat.MatchPlayWins + stat.MatchPlayLosses) == highestMatchPlayWinPercentage)
+            .Where(stat => ComputeRawWinRate(stat.MatchPlayWins, stat.MatchPlayLosses) == highestMatchPlayWinPercentage)
             .ToDictionary(stat => stat.BowlerId, stat => stat.BowlerName);
 
         var mostFinals = bowlerStats.Max(stat => stat.Finals);
@@ -353,6 +353,12 @@ internal sealed class SeasonStatsService(
     {
         var total = wins + losses;
         return total > 0 ? Math.Round(wins * 1m / total * 100, 2) : 0m;
+    }
+
+    private static decimal ComputeRawWinRate(int wins, int losses)
+    {
+        var total = wins + losses;
+        return total > 0 ? wins * 1m / total : 0m;
     }
 }
 
