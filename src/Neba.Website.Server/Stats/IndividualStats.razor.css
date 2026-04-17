@@ -19,17 +19,16 @@
 
 .indiv-hero-body {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
 }
 
 .indiv-hero-title {
     display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.625rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.125rem;
 }
 
 .indiv-bowler-name {
@@ -44,12 +43,14 @@
     font-size: 0.9375rem;
     color: #6b7280;
     font-weight: 500;
+    line-height: 1.2;
 }
 
 /* ── Season selector (redeclared from SeasonStats scope) ─────── */
 
 .stats-season-selector {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.25rem;
     background: #f3f4f6;
     border-radius: 0.5rem;

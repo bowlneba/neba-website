@@ -92,6 +92,30 @@ public sealed class IndividualStatsTests : IDisposable
         cut.Find(".indiv-season-label").TextContent.ShouldBe("2024-2025");
     }
 
+    [Fact(DisplayName = "Should render season selector above bowler heading when model loads")]
+    public void Render_ShouldPlaceSeasonSelectorAboveBowlerHeading_WhenModelLoads()
+    {
+        // Arrange
+        var model = IndividualStatsPageViewModelFactory.Create(
+            bowlerName: "Jane Doe",
+            selectedSeason: "2020-2021 Season",
+            availableSeasons: new Dictionary<int, string>
+            {
+                [Season1Year] = "2024-2025",
+                [Season2Year] = "2020-2021 Season",
+            });
+        _statsApi.EnqueueIndividualResult(model);
+
+        // Act
+        var cut = _ctx.Render<IndividualStatsPage>(p => p
+            .Add(x => x.BowlerId, BowlerId));
+
+        // Assert
+        var heroBody = cut.Find(".indiv-hero-body");
+        heroBody.Children[0].ClassList.Contains("stats-season-selector").ShouldBeTrue();
+        heroBody.Children[1].ClassList.Contains("indiv-hero-title").ShouldBeTrue();
+    }
+
     [Fact(DisplayName = "Should render stat strip with points, average, games, finals, entries, tournaments, and winnings label")]
     public void Render_ShouldShowStatStrip_WhenModelLoads()
     {

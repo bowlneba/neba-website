@@ -13,19 +13,8 @@
 
     <!-- ── Hero ─────────────────────────────────────────────────── -->
     <div class="indiv-hero">
-        <a href="/stats" class="indiv-back-link">← Season Stats</a>
+        <a href="@GetSeasonStatsUrl()" class="indiv-back-link">← Season Stats</a>
         <div class="indiv-hero-body">
-            <div class="indiv-hero-title">
-                @if (_isLoading)
-                {
-                    <NebaSkeletonLoader Type="SkeletonType.Custom" Width="260px" Height="2.25rem" />
-                }
-                else if (_model is not null)
-                {
-                    <h1 class="indiv-bowler-name">@_model.BowlerName</h1>
-                    <span class="indiv-season-label">@_model.SelectedSeason</span>
-                }
-            </div>
             <div class="stats-season-selector" role="group" aria-label="Select season">
                 @foreach (var (id, name) in _initialAvailableSeasons)
                 {
@@ -33,6 +22,17 @@
                             aria-pressed="@(id == _selectedSeasonYear ? "true" : "false")" @onclick="() => OnSeasonChanged(id)">
                         @name
                     </button>
+                }
+            </div>
+            <div class="indiv-hero-title">
+                @if (_isLoading)
+                {
+                    <NebaSkeletonLoader Type="SkeletonType.Custom" Width="260px" Height="2.25rem" />
+                }
+                else if (_model is not null)
+                {
+                    <span class="indiv-season-label">@_model.SelectedSeason</span>
+                    <h1 class="indiv-bowler-name">@_model.BowlerName</h1>
                 }
             </div>
         </div>
@@ -50,7 +50,7 @@
     {
         <div class="text-center py-12">
             <p class="text-gray-500">Bowler not found.</p>
-            <a href="/stats" class="mt-4 inline-block text-[var(--neba-blue-700)] hover:underline">
+            <a href="@GetSeasonStatsUrl()" class="mt-4 inline-block text-[var(--neba-blue-700)] hover:underline">
                 Back to Season Stats
             </a>
         </div>
@@ -263,6 +263,9 @@
 @code {
     [Parameter] public string BowlerId { get; set; } = "";
 
+    [SupplyParameterFromQuery(Name = "season")]
+    public int? Season { get; set; }
+
     private IndividualStatsPageViewModel? _model;
     private bool _isLoading = true;
     private int _selectedSeasonYear;
@@ -280,11 +283,11 @@
             return;
         }
 
-        _model = await StatsApi.GetIndividualStatsAsync(BowlerId);
+        _model = await StatsApi.GetIndividualStatsAsync(BowlerId, Season);
         if (_model is not null)
         {
             _initialAvailableSeasons = _model.AvailableSeasons;
-            _selectedSeasonYear = _initialAvailableSeasons.Keys.First();
+            _selectedSeasonYear = ResolveSelectedSeasonYear(_model, Season);
         }
 
         _isLoading = false;
@@ -297,7 +300,32 @@
         StateHasChanged();
 
         _model = await StatsApi.GetIndividualStatsAsync(BowlerId, year);
+        SetSeasonQuery(year);
         _isLoading = false;
+    }
+
+    private static int ResolveSelectedSeasonYear(IndividualStatsPageViewModel model, int? requestedSeason)
+    {
+        if (requestedSeason.HasValue && model.AvailableSeasons.ContainsKey(requestedSeason.Value))
+        {
+            return requestedSeason.Value;
+        }
+
+        var selectedSeason = model.AvailableSeasons
+            .FirstOrDefault(season => season.Value == model.SelectedSeason);
+
+        return selectedSeason.Key != 0
+            ? selectedSeason.Key
+            : model.AvailableSeasons.Keys.First();
+    }
+
+    private string GetSeasonStatsUrl()
+        => $"/stats?season={_selectedSeasonYear}";
+
+    private void SetSeasonQuery(int year)
+    {
+        var uri = Nav.GetUriWithQueryParameter("season", year);
+        Nav.NavigateTo(uri, replace: true);
     }
 
     private void OpenPointsRaceModal()

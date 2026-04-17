@@ -108,7 +108,7 @@
                                             <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                                                 <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-blue-500" : "rank-cell")">
                                                     @row.Rank</td>
-                                                    <td><a href="/stats/@row.BowlerId" class="stats-name-link">@row.BowlerName</a></td>
+                                                    <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link">@row.BowlerName</a></td>
                                                     <td class="text-right tabular-nums">@row.Points</td>
                                                     <td class="text-right tabular-nums">@row.Tournaments</td>
                                                     <td class="text-right tabular-nums">@row.Entries</td>
@@ -162,7 +162,7 @@
                                                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                                                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-primary" : "rank-cell")">
                                                         @row.Rank</td>
-                                                        <td><a href="/stats/@row.BowlerId" class="stats-name-link">@row.BowlerName</a></td>
+                                                        <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link">@row.BowlerName</a></td>
                                                         <td
                                                             class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-color-primary)]" : "")">
                                                             @row.Average.ToString("F2")
@@ -207,7 +207,7 @@
                                                     <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                                                         <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-primary" : "rank-cell")">
                                                             @row.Rank</td>
-                                                            <td><a href="/stats/@row.BowlerId" class="stats-name-link">@row.BowlerName</a></td>
+                                                            <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link">@row.BowlerName</a></td>
                                                             <td
                                                                 class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-color-primary)]" : "")">
                                                                 @row.HighBlock</td>
@@ -249,7 +249,7 @@
                                                             <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                                                                 <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-primary" : "rank-cell")">
                                                                     @row.Rank</td>
-                                                                    <td><a href="/stats/@row.BowlerId" class="stats-name-link">@row.BowlerName</a></td>
+                                                                    <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link">@row.BowlerName</a></td>
                                                                     <td
                                                                         class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-color-primary)]" : "")">
                                                                         @row.MatchPlayAverage.ToString("F2")
@@ -304,7 +304,7 @@
                                                                     <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                                                                         <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-red" : "rank-cell")">
                                                                             @row.Rank</td>
-                                                                            <td><a href="/stats/@row.BowlerId" class="stats-name-link">@row.BowlerName</a></td>
+                                                                            <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link">@row.BowlerName</a></td>
                                                                             <td
                                                                                 class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-color-error)]" : "")">
                                                                                 @($"{row.Wins}–{row.Loses}")
@@ -350,7 +350,7 @@
                                                                             <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                                                                                 <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-red" : "rank-cell")">
                                                                                     @row.Rank</td>
-                                                                                    <td><a href="/stats/@row.BowlerId" class="stats-name-link">@row.BowlerName</a></td>
+                                                                                    <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link">@row.BowlerName</a></td>
                                                                                     <td
                                                                                         class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-color-error)]" : "")">
                                                                                         @row.Finals</td>
@@ -401,7 +401,7 @@
                                                                                     <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                                                                                         <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-blue-300" : "rank-cell")">
                                                                                             @row.Rank</td>
-                                                                                            <td><a href="/stats/@row.BowlerId" class="stats-name-link">@row.BowlerName</a></td>
+                                                                                            <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link">@row.BowlerName</a></td>
                                                                                             <td
                                                                                                 class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-blue-300)]" : "")">
                                                                                                 @row.PointsPerEntry.ToString("F3")
@@ -448,7 +448,7 @@
                                                                                         <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                                                                                             <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-blue-300" : "rank-cell")">
                                                                                                 @row.Rank</td>
-                                                                                                <td><a href="/stats/@row.BowlerId" class="stats-name-link">@row.BowlerName</a></td>
+                                                                                                <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link">@row.BowlerName</a></td>
                                                                                                 <td
                                                                                                     class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-blue-300)]" : "")">
                                                                                                     @row.PointsPerTournament.ToString("F2")
@@ -495,7 +495,7 @@
                                                                                             <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                                                                                                 <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-blue-300" : "rank-cell")">
                                                                                                     @row.Rank</td>
-                                                                                                    <td><a href="/stats/@row.BowlerId" class="stats-name-link">@row.BowlerName</a></td>
+                                                                                                    <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link">@row.BowlerName</a></td>
                                                                                                     <td
                                                                                                         class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-blue-300)]" : "")">
                                                                                                         @row.FinalsPerEntry.ToString("F3")
@@ -538,7 +538,7 @@
                                                                                                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                                                                                                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-blue-300" : "rank-cell")">
                                                                                                         @row.Rank</td>
-                                                                                                        <td><a href="/stats/@row.BowlerId" class="stats-name-link">@row.BowlerName</a></td>
+                                                                                                        <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link">@row.BowlerName</a></td>
                                                                                                         <td
                                                                                                             class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-blue-300)]" : "")">
                                                                                                             @row.AverageFinish.ToString("F1")
@@ -608,7 +608,7 @@
                                                                                                         {
                                                                                                             <span class="mx-0.5">/</span>
                                                                                                         }
-                                                                                                        <a href="/stats/@hg[i].Key" class="stats-name-link">@hg[i].Value</a>
+                                                                                                        <a href="@GetIndividualStatsUrl(hg[i].Key)" class="stats-name-link">@hg[i].Value</a>
                                                                                                     }
                                                                                                 </span>
                                                                                             </dd>
@@ -627,7 +627,7 @@
                                                                                                         {
                                                                                                             <span class="mx-0.5">/</span>
                                                                                                         }
-                                                                                                        <a href="/stats/@hb[i].Key" class="stats-name-link">@hb[i].Value</a>
+                                                                                                        <a href="@GetIndividualStatsUrl(hb[i].Key)" class="stats-name-link">@hb[i].Value</a>
                                                                                                     }
                                                                                                 </span>
                                                                                             </dd>
@@ -646,7 +646,7 @@
                                                                                                         {
                                                                                                             <span class="mx-0.5">/</span>
                                                                                                         }
-                                                                                                        <a href="/stats/@ha[i].Key" class="stats-name-link">@ha[i].Value</a>
+                                                                                                        <a href="@GetIndividualStatsUrl(ha[i].Key)" class="stats-name-link">@ha[i].Value</a>
                                                                                                     }
                                                                                                 </span>
                                                                                             </dd>
@@ -673,7 +673,7 @@
                                                                                                         {
                                                                                                             <span class="mx-0.5">/</span>
                                                                                                         }
-                                                                                                        <a href="/stats/@wp[i].Key" class="stats-name-link">@wp[i].Value</a>
+                                                                                                        <a href="@GetIndividualStatsUrl(wp[i].Key)" class="stats-name-link">@wp[i].Value</a>
                                                                                                     }
                                                                                                 </span>
                                                                                             </dd>
@@ -692,7 +692,7 @@
                                                                                                         {
                                                                                                             <span class="mx-0.5">/</span>
                                                                                                         }
-                                                                                                        <a href="/stats/@mf[i].Key" class="stats-name-link">@mf[i].Value</a>
+                                                                                                        <a href="@GetIndividualStatsUrl(mf[i].Key)" class="stats-name-link">@mf[i].Value</a>
                                                                                                     }
                                                                                                 </span>
                                                                                             </dd>
@@ -737,6 +737,9 @@
                                                                         }
 
 @code {
+    [SupplyParameterFromQuery(Name = "season")]
+    public int? Season { get; set; }
+
     private StatsPageViewModel? _model;
     private bool _isLoading = true;
     private bool _loadError;
@@ -754,7 +757,7 @@
     {
         try
         {
-            _model = await StatsApi.GetStatsAsync();
+            _model = await StatsApi.GetStatsAsync(Season);
             _initialAvailableSeasons = _model.AvailableSeasons;
 
             if (_initialAvailableSeasons.Count == 0)
@@ -763,7 +766,7 @@
                 return;
             }
 
-            _selectedSeasonYear = _initialAvailableSeasons.Keys.First();
+            _selectedSeasonYear = ResolveSelectedSeasonYear(_model, Season);
         }
         catch
         {
@@ -786,6 +789,7 @@
         try
         {
             _model = await StatsApi.GetStatsAsync(year);
+            SetStatsPageSeasonQuery(year);
         }
         catch
         {
@@ -815,7 +819,31 @@
         var match = _model.BowlerSearchList
             .FirstOrDefault(kvp => kvp.Value.Equals(value, StringComparison.OrdinalIgnoreCase));
         if (match.Key != null)
-            Nav.NavigateTo($"/stats/{match.Key}");
+            Nav.NavigateTo(GetIndividualStatsUrl(match.Key));
+    }
+
+    private static int ResolveSelectedSeasonYear(StatsPageViewModel model, int? requestedSeason)
+    {
+        if (requestedSeason.HasValue && model.AvailableSeasons.ContainsKey(requestedSeason.Value))
+        {
+            return requestedSeason.Value;
+        }
+
+        var selectedSeason = model.AvailableSeasons
+            .FirstOrDefault(season => season.Value == model.SelectedSeason);
+
+        return selectedSeason.Key != 0
+            ? selectedSeason.Key
+            : model.AvailableSeasons.Keys.First();
+    }
+
+    private string GetIndividualStatsUrl(string bowlerId)
+        => $"/stats/{bowlerId}?season={_selectedSeasonYear}";
+
+    private void SetStatsPageSeasonQuery(int year)
+    {
+        var uri = Nav.GetUriWithQueryParameter("season", year);
+        Nav.NavigateTo(uri, replace: true);
     }
 
     private IEnumerable<KeyValuePair<string, string>> FilteredBowlers()
@@ -992,7 +1020,7 @@ BoyStandingsSections()
             {
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-blue-500" : "rank-cell")">@row.Rank</td>
-                    <td><a href="/stats/@row.BowlerId" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
+                    <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
                     <td class="text-right tabular-nums">@row.Points</td>
                     <td class="text-right tabular-nums">@row.Tournaments</td>
                     <td class="text-right tabular-nums">@row.Entries</td>
@@ -1020,7 +1048,7 @@ BoyStandingsSections()
             {
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-primary" : "rank-cell")">@row.Rank</td>
-                    <td><a href="/stats/@row.BowlerId" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
+                    <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
                     <td class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-color-primary)]" : "")">@row.Average.ToString("F2")</td>
                     <td class="text-right tabular-nums">@row.Games</td>
                     <td class="text-right tabular-nums">@row.Tournaments</td>
@@ -1044,7 +1072,7 @@ BoyStandingsSections()
             {
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-primary" : "rank-cell")">@row.Rank</td>
-                    <td><a href="/stats/@row.BowlerId" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
+                    <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
                     <td class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-color-primary)]" : "")">@row.HighBlock</td>
                     <td class="text-right tabular-nums">@row.HighGame</td>
                 </tr>
@@ -1069,7 +1097,7 @@ BoyStandingsSections()
             {
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-primary" : "rank-cell")">@row.Rank</td>
-                    <td><a href="/stats/@row.BowlerId" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
+                    <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
                     <td class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-color-primary)]" : "")">@row.MatchPlayAverage.ToString("F2")</td>
                     <td class="text-right tabular-nums">@row.Games</td>
                     <td class="text-right tabular-nums">@($"{row.Wins}–{row.Loses}")</td>
@@ -1097,7 +1125,7 @@ BoyStandingsSections()
             {
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-red" : "rank-cell")">@row.Rank</td>
-                    <td><a href="/stats/@row.BowlerId" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
+                    <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
                     <td class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-color-error)]" : "")">@($"{row.Wins}–{row.Loses}")</td>
                     <td class="text-right tabular-nums">@FormatWinPercentage(row.WinPercentage)</td>
                     <td class="text-right tabular-nums">@row.Finals</td>
@@ -1123,7 +1151,7 @@ BoyStandingsSections()
             {
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-red" : "rank-cell")">@row.Rank</td>
-                    <td><a href="/stats/@row.BowlerId" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
+                    <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
                     <td class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-color-error)]" : "")">@row.Finals</td>
                     <td class="text-right tabular-nums">@row.Tournaments</td>
                     <td class="text-right tabular-nums">@row.Entries</td>
@@ -1147,7 +1175,7 @@ BoyStandingsSections()
             {
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-blue-300" : "rank-cell")">@row.Rank</td>
-                    <td><a href="/stats/@row.BowlerId" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
+                    <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
                     <td class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-blue-300)]" : "")">@row.PointsPerEntry.ToString("F3")</td>
                     <td class="text-right tabular-nums">@row.Points</td>
                     <td class="text-right tabular-nums">@row.Entries</td>
@@ -1171,7 +1199,7 @@ BoyStandingsSections()
             {
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-blue-300" : "rank-cell")">@row.Rank</td>
-                    <td><a href="/stats/@row.BowlerId" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
+                    <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
                     <td class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-blue-300)]" : "")">@row.PointsPerTournament.ToString("F2")</td>
                     <td class="text-right tabular-nums">@row.Points</td>
                     <td class="text-right tabular-nums">@row.Tournaments</td>
@@ -1195,7 +1223,7 @@ BoyStandingsSections()
             {
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-blue-300" : "rank-cell")">@row.Rank</td>
-                    <td><a href="/stats/@row.BowlerId" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
+                    <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
                     <td class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-blue-300)]" : "")">@row.FinalsPerEntry.ToString("F3")</td>
                     <td class="text-right tabular-nums">@row.Finals</td>
                     <td class="text-right tabular-nums">@row.Entries</td>
@@ -1219,7 +1247,7 @@ BoyStandingsSections()
             {
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-blue-300" : "rank-cell")">@row.Rank</td>
-                    <td><a href="/stats/@row.BowlerId" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
+                    <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
                     <td class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-blue-300)]" : "")">@row.AverageFinish.ToString("F1")</td>
                     <td class="text-right tabular-nums">@row.Finals</td>
                     <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings:C0}")">@row.Winnings.ToString("C0")</td>
