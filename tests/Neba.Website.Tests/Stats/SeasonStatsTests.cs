@@ -66,6 +66,26 @@ public sealed class SeasonStatsTests : IDisposable
         cut.FindAll(".neba-skeleton").Count.ShouldBeGreaterThan(0);
     }
 
+    [Fact(DisplayName = "Should show load error when API returns no available seasons")]
+    public void Render_ShouldShowLoadError_WhenAvailableSeasonsIsEmpty()
+    {
+        // Arrange
+        var model = StatsPageViewModelFactory.Create(
+            availableSeasons: new Dictionary<int, string>(),
+            bowlerOfTheYear:
+            [
+                BowlerOfTheYearStandingRowViewModelFactory.Create(bowlerName: "Alpha Bowler"),
+            ]);
+
+        _statsApi.EnqueueResult(model);
+
+        // Act
+        var cut = _ctx.Render<SeasonStatsPage>();
+
+        // Assert
+        cut.Markup.ShouldContain("Unable to load season stats right now.");
+    }
+
     [Fact(DisplayName = "Should switch active tab panel when a different tab is clicked")]
     public async Task Tabs_ShouldSwitchVisiblePanel_WhenTabClicked()
     {

@@ -71,6 +71,12 @@
             {
                 <NebaSkeletonLoader Type="SkeletonType.Custom" Width="100%" Height="500px" />
             }
+            else if (_loadError)
+            {
+                <div class="stats-loading" role="alert" aria-live="assertive">
+                    Unable to load season stats right now.
+                </div>
+            }
             else if (_model is not null)
             {
                 <!-- ── Award Standings ─────────────────────────────── -->
@@ -717,6 +723,7 @@
 @code {
     private StatsPageViewModel? _model;
     private bool _isLoading = true;
+    private bool _loadError;
     private string _activeTab = "award-standings";
     private int _selectedSeasonYear;
     private IReadOnlyDictionary<int, string> _initialAvailableSeasons = new Dictionary<int, string>();
@@ -729,21 +736,49 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _model = await StatsApi.GetStatsAsync();
-        _initialAvailableSeasons = _model.AvailableSeasons;
-        _selectedSeasonYear = _initialAvailableSeasons.Keys.First();
-        _isLoading = false;
+        try
+        {
+            _model = await StatsApi.GetStatsAsync();
+            _initialAvailableSeasons = _model.AvailableSeasons;
+
+            if (_initialAvailableSeasons.Count == 0)
+            {
+                _loadError = true;
+                return;
+            }
+
+            _selectedSeasonYear = _initialAvailableSeasons.Keys.First();
+        }
+        catch
+        {
+            _loadError = true;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
     }
 
     private async Task OnSeasonChanged(int year)
     {
         _isLoading = true;
+        _loadError = false;
         _selectedSeasonYear = year;
         CloseModal();
         StateHasChanged();
 
-        _model = await StatsApi.GetStatsAsync(year);
-        _isLoading = false;
+        try
+        {
+            _model = await StatsApi.GetStatsAsync(year);
+        }
+        catch
+        {
+            _loadError = true;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
     }
 
     private void SetActiveTab(string tab) => _activeTab = tab;
