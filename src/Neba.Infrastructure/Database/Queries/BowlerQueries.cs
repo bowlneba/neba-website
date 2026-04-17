@@ -15,4 +15,8 @@ internal sealed class BowlerQueries(AppDbContext appDbContext)
         => await _bowlers
             .Where(b => b.LegacyId.HasValue)
             .ToDictionaryAsync(b => b.LegacyId!.Value, b => b.Id, cancellationToken);
+
+    public async Task<IReadOnlyDictionary<BowlerId, Name>> GetBowlerNamesByIdAsync(CancellationToken cancellationToken)
+        => await _bowlers
+            .ToDictionaryAsync(b => b.Id, b => b.Name, cancellationToken);
 }

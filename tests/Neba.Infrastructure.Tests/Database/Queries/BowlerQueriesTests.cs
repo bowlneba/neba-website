@@ -106,4 +106,35 @@ public sealed class BowlerQueriesTests
         // Assert
         result.ShouldBeEmpty();
     }
+
+    [Fact(DisplayName = "GetBowlerNamesByIdAsync returns name for every bowler")]
+    public async Task GetBowlerNamesByIdAsync_ShouldReturnNameForEveryBowler()
+    {
+        // Arrange
+        var bowlerA = BowlerFactory.Create(name: NameFactory.Create(firstName: "Alice", lastName: "Webb"));
+        var bowlerB = BowlerFactory.Create(name: NameFactory.Create(firstName: "Brian", lastName: "Cole"));
+
+        await _dbContext.Bowlers.AddRangeAsync(
+            [bowlerA, bowlerB],
+            TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetBowlerNamesByIdAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Count.ShouldBe(2);
+        result[bowlerA.Id].ShouldBe(bowlerA.Name);
+        result[bowlerB.Id].ShouldBe(bowlerB.Name);
+    }
+
+    [Fact(DisplayName = "GetBowlerNamesByIdAsync returns empty dictionary when no bowlers exist")]
+    public async Task GetBowlerNamesByIdAsync_ShouldReturnEmptyDictionary_WhenNoBowlersExist()
+    {
+        // Act
+        var result = await _sut.GetBowlerNamesByIdAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldBeEmpty();
+    }
 }

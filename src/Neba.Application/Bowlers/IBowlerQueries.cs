@@ -13,4 +13,11 @@ public interface IBowlerQueries
     /// <param name="cancellationToken">Cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>A dictionary mapping legacy bowler IDs to current bowler IDs.</returns>
     Task<IReadOnlyDictionary<int, BowlerId>> GetBowlerIdByLegacyIdAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Retrieves a mapping of bowler IDs to their corresponding names. This is useful for displaying bowler information in the user interface or for any functionality that requires associating a bowler's identifier with their name.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>A dictionary mapping bowler IDs to their corresponding names.</returns>
+    Task<IReadOnlyDictionary<BowlerId, Name>> GetBowlerNamesByIdAsync(CancellationToken cancellationToken);
 }
