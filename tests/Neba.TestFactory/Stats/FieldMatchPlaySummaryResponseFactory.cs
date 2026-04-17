@@ -1,4 +1,5 @@
 using Bogus;
+
 using Neba.Api.Contracts.Stats.GetSeasonStats;
 
 namespace Neba.TestFactory.Stats;
@@ -42,4 +43,3 @@ public static class FieldMatchPlaySummaryResponseFactory
         return faker.Generate(count);
     }
 }
-

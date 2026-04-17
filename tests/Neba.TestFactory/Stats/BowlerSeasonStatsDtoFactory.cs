@@ -134,7 +134,7 @@ public static class BowlerSeasonStatsDtoFactory
                 var entries = f.Random.Int(tournaments, tournaments * 2);
                 var totalEntries = entries + f.Random.Int(0, 5);
                 var finals = f.Random.Int(0, entries);
-                var cashes  =f.Random.Int(finals, entries);
+                var cashes = f.Random.Int(finals, entries);
 
                 var totalGames = f.Random.Int(60, 300);
                 var totalPinfall = totalGames * f.Random.Int(150, 280);

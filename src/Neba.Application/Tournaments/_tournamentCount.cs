@@ -6,7 +6,7 @@ using Neba.Application.Seasons;
 using Neba.Domain.Seasons;
 
 namespace Neba.Application.Tournaments;
-    
+
 [ExcludeFromCodeCoverage(Justification = "This is a temporary implementation until tournaments are in the database, at which point this will be deleted and the query handler will pull from the database instead of this hardcoded implementation.")]
 internal class TournamentCount
     : ITournamentQueries

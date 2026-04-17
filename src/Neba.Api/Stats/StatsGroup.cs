@@ -1,4 +1,5 @@
 using Asp.Versioning;
+
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
