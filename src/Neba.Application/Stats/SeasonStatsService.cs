@@ -171,8 +171,10 @@ internal sealed class SeasonStatsService(
             })
             .ToArray();
 
+        var minimumMatchPlayGames = minimumTournaments * 2m;
+
         var matchPlayRecordLeaderboard = bowlerStats
-            .Where(bs => bs.MatchPlayWins + bs.MatchPlayLosses > 0)
+            .Where(bs => bs.MatchPlayWins + bs.MatchPlayLosses >= minimumMatchPlayGames)
             .OrderByDescending(bs => ComputeWinPercentage(bs.MatchPlayWins, bs.MatchPlayLosses))
             .ThenByDescending(bs => bs.MatchPlayWins)
             .Select(bs => new MatchPlayRecordDto
@@ -204,7 +206,7 @@ internal sealed class SeasonStatsService(
             .ToArray();
 
         var pointsPerEntryLeaderboard = bowlerStats
-            .Where(bs => bs.EligibleEntries > 0 && bs.EligibleEntries >= minimumEntries && bs.BowlerOfTheYearPoints > 0)
+            .Where(bs => bs.EligibleEntries >= minimumEntries && bs.BowlerOfTheYearPoints > 0)
             .OrderByDescending(bs => bs.BowlerOfTheYearPoints * 1m / bs.EligibleEntries)
             .Select(bs => new PointsPerEntryDto
             {
@@ -217,7 +219,7 @@ internal sealed class SeasonStatsService(
             .ToArray();
 
         var pointsPerTournamentLeaderboard = bowlerStats
-            .Where(bs => bs.EligibleTournaments > 0 && bs.EligibleTournaments >= minimumTournaments && bs.BowlerOfTheYearPoints > 0)
+            .Where(bs => bs.EligibleTournaments >= minimumTournaments && bs.BowlerOfTheYearPoints > 0)
             .OrderByDescending(bs => bs.BowlerOfTheYearPoints * 1m / bs.EligibleTournaments)
             .Select(bs => new PointsPerTournamentDto
             {
@@ -230,7 +232,7 @@ internal sealed class SeasonStatsService(
             .ToArray();
 
         var finalsPerEntryLeaderboard = bowlerStats
-            .Where(bs => bs.EligibleEntries > 0 && bs.EligibleEntries >= minimumEntries && bs.Finals > 0)
+            .Where(bs => bs.EligibleEntries >= minimumEntries && bs.Finals > 0)
             .OrderByDescending(bs => bs.Finals * 1m / bs.EligibleEntries)
             .Select(bs => new FinalsPerEntryDto
             {

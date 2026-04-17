@@ -594,6 +594,22 @@ public sealed class SeasonStatsServiceTests
         result.MatchPlayRecordLeaderboard.First().Wins.ShouldBe(9);
     }
 
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should exclude match play records below minimum games derived from minimum tournaments")]
+    public void CalculateSeasonStatsSummary_ShouldExcludeMatchPlayRecordsBelowMinimumGames_DerivedFromMinimumTournaments()
+    {
+        var eligibleId = BowlerId.New();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: eligibleId, matchPlayWins: 3, matchPlayLosses: 1),
+            BowlerSeasonStatsDtoFactory.Create(matchPlayWins: 2, matchPlayLosses: 1),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 2, minimumEntries: 0);
+
+        result.MatchPlayRecordLeaderboard.Count.ShouldBe(1);
+        result.MatchPlayRecordLeaderboard.Single().BowlerId.ShouldBe(eligibleId);
+    }
+
     // CalculateSeasonStatsSummary — Match Play Appearances Leaderboard
 
     [Fact(DisplayName = "CalculateSeasonStatsSummary should return MatchPlayAppearancesLeaderboard ordered by finals descending excluding bowlers with no finals")]

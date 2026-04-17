@@ -284,6 +284,10 @@
                                                 <section class="stats-section">
                                                     <div class="stats-section-header stats-accent-red">
                                                         <h2 class="stats-section-title">Match Play Record</h2>
+                                                        @if (_model.MinimumNumberOfTournaments > 0)
+                                                        {
+                                                            <span class="stats-section-qualifier">min @((int)(_model.MinimumNumberOfTournaments * 2m)) games</span>
+                                                        }
                                                     </div>
                                                     <div class="stats-table-wrapper">
                                                         <table class="stats-table">

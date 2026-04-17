@@ -149,6 +149,27 @@ public sealed class SeasonStatsTests : IDisposable
         nav.Uri.ShouldEndWith($"/stats/{s_searchBowlerId}?season={s_firstSeasonYear}");
     }
 
+    [Fact(DisplayName = "Should show match play record minimum games qualifier based on minimum tournaments")]
+    public async Task Render_ShouldShowMatchPlayRecordMinimumGamesQualifier_BasedOnMinimumTournaments()
+    {
+        // Arrange
+        var model = CreateStatsModel(firstRowName: "Alpha Bowler") with
+        {
+            MinimumNumberOfTournaments = 2m,
+        };
+
+        _statsApi.EnqueueResult(model);
+
+        var cut = _ctx.Render<SeasonStatsPage>();
+
+        // Act
+        await cut.Find("#tab-match-play").ClickAsync(new());
+
+        // Assert
+        cut.Markup.ShouldContain("Match Play Record");
+        cut.Markup.ShouldContain("min 4 games");
+    }
+
     private static StatsPageViewModel CreateStatsModel(
         string firstRowName,
         string firstSeasonName = "2024-2025",
