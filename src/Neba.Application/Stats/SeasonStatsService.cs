@@ -16,17 +16,6 @@ internal sealed class SeasonStatsService(
     ILogger<SeasonStatsService> logger)
         : ISeasonStatsService
 {
-
-    /// <summary>
-    /// Once tournaments and result stats come into the software this can be reworked to pull from the database instead of a json file. Until then, this will allow us to show the progression of the bowler of the
-    /// </summary>
-    /// <param name="season"></param>
-    /// <param name="bowlerQueries"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    public Task<IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>> GetBowlerOfTheYearRaceAsync(SeasonDto season, IBowlerQueries bowlerQueries, CancellationToken cancellationToken)
-        => _BowlerOfTheYearProgression.GetBowlerOfTheYearProgressionAsync(season, _bowlerQueries, cancellationToken);
-
     private readonly IStatsQueries _statsQueries = statsQueries;
     private readonly IBowlerQueries _bowlerQueries = bowlerQueries;
     private readonly HybridCache _cache = cache;
@@ -75,51 +64,273 @@ internal sealed class SeasonStatsService(
 
     public SeasonStatsSummaryDto CalculateSeasonStatsSummary(IReadOnlyCollection<BowlerSeasonStatsDto> bowlerStats)
     {
+        // Season Bests
+
         var qualifyingHighGame = bowlerStats.Max(stat => stat.QualifyingHighGame);
         var matchPlayHighGame = bowlerStats.Max(stat => stat.MatchPlayHighGame);
         var highGame = Math.Max(qualifyingHighGame, matchPlayHighGame);
-        var bowlersWithHighGame = bowlerStats
+        var highGameBowlers = bowlerStats
             .Where(stat => stat.QualifyingHighGame == highGame || stat.MatchPlayHighGame == highGame)
             .ToDictionary(stat => stat.BowlerId, stat => stat.BowlerName);
 
         var highBlock = bowlerStats.Max(stat => stat.HighBlock);
-        var bowlersWithHighBlock = bowlerStats
+        var highBlockBowlers = bowlerStats
             .Where(stat => stat.HighBlock == highBlock)
             .ToDictionary(stat => stat.BowlerId, stat => stat.BowlerName);
 
-        var highAverage = bowlerStats.Max(stat => stat.TotalPinfall / stat.TotalGames * 1m);
-        var bowlersWithHighAverage = bowlerStats
-            .Where(stat => stat.TotalPinfall / stat.TotalGames * 1m == highAverage)
+        var highAverage = bowlerStats
+            .Where(stat => stat.TotalGames > 0)
+            .Select(stat => stat.TotalPinfall / stat.TotalGames * 1m)
+            .DefaultIfEmpty(0m)
+            .Max();
+        var highAverageBowlers = bowlerStats
+            .Where(stat => stat.TotalGames > 0 && stat.TotalPinfall / stat.TotalGames * 1m == highAverage)
             .ToDictionary(stat => stat.BowlerId, stat => stat.BowlerName);
+
+        // Field Match Play Summary
 
         var highestMatchPlayWinPercentage = bowlerStats.Max(stat =>
             stat.MatchPlayWins + stat.MatchPlayLosses > 0
                 ? stat.MatchPlayWins * 1m / (stat.MatchPlayWins + stat.MatchPlayLosses)
                 : 0);
-        var bowlersWithHighestMatchPlayWinPercentage = bowlerStats
+        var highestMatchPlayWinPercentageBowlers = bowlerStats
             .Where(stat => stat.MatchPlayWins + stat.MatchPlayLosses > 0 && stat.MatchPlayWins * 1m / (stat.MatchPlayWins + stat.MatchPlayLosses) == highestMatchPlayWinPercentage)
             .ToDictionary(stat => stat.BowlerId, stat => stat.BowlerName);
 
         var mostFinals = bowlerStats.Max(stat => stat.Finals);
-        var bowlersWithMostFinals = bowlerStats
+        var mostFinalsBowlers = bowlerStats
             .Where(stat => stat.Finals == mostFinals)
             .ToDictionary(stat => stat.BowlerId, stat => stat.BowlerName);
+
+        // Award Standings
+
+        var bowlerOfTheYear = ComputeBotyStandings(bowlerStats, bs => bs.BowlerOfTheYearPoints, _ => true);
+        var seniorOfTheYear = ComputeBotyStandings(bowlerStats, bs => bs.SeniorOfTheYearPoints, bs => bs.IsSenior);
+        var superSeniorOfTheYear = ComputeBotyStandings(bowlerStats, bs => bs.SuperSeniorOfTheYearPoints, bs => bs.IsSuperSenior);
+        var womanOfTheYear = ComputeBotyStandings(bowlerStats, bs => bs.WomanOfTheYearPoints, bs => bs.IsWoman);
+        var rookieOfTheYear = ComputeBotyStandings(bowlerStats, bs => bs.BowlerOfTheYearPoints, bs => bs.IsRookie);
+        var youthOfTheYear = ComputeBotyStandings(bowlerStats, bs => bs.YouthOfTheYearPoints, bs => bs.IsYouth);
+
+        // Bowler Search List
+
+        var bowlerSearchList = bowlerStats
+            .OrderBy(bs => bs.BowlerName.LastName)
+            .ThenBy(bs => bs.BowlerName.FirstName)
+            .Select(bs => new BowlerSearchEntryDto { BowlerId = bs.BowlerId, BowlerName = bs.BowlerName })
+            .ToArray();
+
+        // Leaderboards
+
+        var highAverageLeaderboard = bowlerStats
+            .Where(bs => bs.TotalGames > 0)
+            .OrderByDescending(bs => (decimal)bs.TotalPinfall / bs.TotalGames)
+            .Select(bs => new HighAverageDto
+            {
+                BowlerId = bs.BowlerId,
+                BowlerName = bs.BowlerName,
+                Average = Math.Round((decimal)bs.TotalPinfall / bs.TotalGames, 2),
+                Games = bs.TotalGames,
+                Tournaments = bs.TotalTournaments,
+                FieldAverage = bs.FieldAverage
+            })
+            .ToArray();
+
+        var highBlockLeaderboard = bowlerStats
+            .Where(bs => bs.HighBlock > 0)
+            .OrderByDescending(bs => bs.HighBlock)
+            .Select(bs => new HighBlockDto
+            {
+                BowlerId = bs.BowlerId,
+                BowlerName = bs.BowlerName,
+                HighBlock = bs.HighBlock,
+                HighGame = bs.QualifyingHighGame
+            })
+            .ToArray();
+
+        var matchPlayAverageLeaderboard = bowlerStats
+            .Where(bs => bs.MatchPlayGames > 0)
+            .OrderByDescending(bs => (decimal)bs.MatchPlayPinfall / bs.MatchPlayGames)
+            .Select(bs => new MatchPlayAverageDto
+            {
+                BowlerId = bs.BowlerId,
+                BowlerName = bs.BowlerName,
+                MatchPlayAverage = Math.Round((decimal)bs.MatchPlayPinfall / bs.MatchPlayGames, 2),
+                Games = bs.MatchPlayGames,
+                Wins = bs.MatchPlayWins,
+                Losses = bs.MatchPlayLosses,
+                WinPercentage = ComputeWinPercentage(bs.MatchPlayWins, bs.MatchPlayLosses),
+                Winnings = bs.TournamentWinnings
+            })
+            .ToArray();
+
+        var matchPlayRecordLeaderboard = bowlerStats
+            .Where(bs => bs.MatchPlayWins + bs.MatchPlayLosses > 0)
+            .OrderByDescending(bs => ComputeWinPercentage(bs.MatchPlayWins, bs.MatchPlayLosses))
+            .Select(bs => new MatchPlayRecordDto
+            {
+                BowlerId = bs.BowlerId,
+                BowlerName = bs.BowlerName,
+                Wins = bs.MatchPlayWins,
+                Losses = bs.MatchPlayLosses,
+                WinPercentage = ComputeWinPercentage(bs.MatchPlayWins, bs.MatchPlayLosses),
+                Finals = bs.Finals,
+                MatchPlayAverage = bs.MatchPlayGames > 0
+                    ? Math.Round((decimal)bs.MatchPlayPinfall / bs.MatchPlayGames, 2)
+                    : 0m,
+                Winnings = bs.TournamentWinnings
+            })
+            .ToArray();
+
+        var matchPlayAppearancesLeaderboard = bowlerStats
+            .Where(bs => bs.Finals > 0)
+            .OrderByDescending(bs => bs.Finals)
+            .Select(bs => new MatchPlayAppearancesDto
+            {
+                BowlerId = bs.BowlerId,
+                BowlerName = bs.BowlerName,
+                Finals = bs.Finals,
+                Tournaments = bs.TotalTournaments,
+                Entries = bs.TotalEntries
+            })
+            .ToArray();
+
+        var pointsPerEntryLeaderboard = bowlerStats
+            .Where(bs => bs.EligibleEntries > 0 && bs.BowlerOfTheYearPoints > 0)
+            .OrderByDescending(bs => (decimal)bs.BowlerOfTheYearPoints / bs.EligibleEntries)
+            .Select(bs => new PointsPerEntryDto
+            {
+                BowlerId = bs.BowlerId,
+                BowlerName = bs.BowlerName,
+                PointsPerEntry = Math.Round((decimal)bs.BowlerOfTheYearPoints / bs.EligibleEntries, 2),
+                Points = bs.BowlerOfTheYearPoints,
+                Entries = bs.EligibleEntries
+            })
+            .ToArray();
+
+        var pointsPerTournamentLeaderboard = bowlerStats
+            .Where(bs => bs.EligibleTournaments > 0 && bs.BowlerOfTheYearPoints > 0)
+            .OrderByDescending(bs => (decimal)bs.BowlerOfTheYearPoints / bs.EligibleTournaments)
+            .Select(bs => new PointsPerTournamentDto
+            {
+                BowlerId = bs.BowlerId,
+                BowlerName = bs.BowlerName,
+                Points = bs.BowlerOfTheYearPoints,
+                Tournaments = bs.EligibleTournaments,
+                PointsPerTournament = Math.Round((decimal)bs.BowlerOfTheYearPoints / bs.EligibleTournaments, 2)
+            })
+            .ToArray();
+
+        var finalsPerEntryLeaderboard = bowlerStats
+            .Where(bs => bs.EligibleEntries > 0 && bs.Finals > 0)
+            .OrderByDescending(bs => (decimal)bs.Finals / bs.EligibleEntries)
+            .Select(bs => new FinalsPerEntryDto
+            {
+                BowlerId = bs.BowlerId,
+                BowlerName = bs.BowlerName,
+                Finals = bs.Finals,
+                Entries = bs.EligibleEntries,
+                FinalsPerEntry = Math.Round((decimal)bs.Finals / bs.EligibleEntries, 2)
+            })
+            .ToArray();
+
+        var averageFinishesLeaderboard = bowlerStats
+            .Where(bs => bs.AverageFinish.HasValue)
+            .OrderBy(bs => bs.AverageFinish!.Value)
+            .Select(bs => new AverageFinishDto
+            {
+                BowlerId = bs.BowlerId,
+                BowlerName = bs.BowlerName,
+                AverageFinish = bs.AverageFinish!.Value,
+                Finals = bs.Finals,
+                Winnings = bs.TournamentWinnings
+            })
+            .ToArray();
+
+        var allBowlers = bowlerStats
+            .OrderByDescending(bs => bs.BowlerOfTheYearPoints)
+            .Select(bs => new FullStatModalRowDto
+            {
+                BowlerId = bs.BowlerId,
+                BowlerName = bs.BowlerName,
+                Points = bs.BowlerOfTheYearPoints,
+                Average = bs.TotalGames > 0 ? Math.Round((decimal)bs.TotalPinfall / bs.TotalGames, 2) : 0m,
+                Games = bs.TotalGames,
+                Finals = bs.Finals,
+                Wins = bs.MatchPlayWins,
+                Losses = bs.MatchPlayLosses,
+                WinPercentage = ComputeWinPercentage(bs.MatchPlayWins, bs.MatchPlayLosses),
+                MatchPlayAverage = bs.MatchPlayGames > 0
+                    ? Math.Round((decimal)bs.MatchPlayPinfall / bs.MatchPlayGames, 2)
+                    : 0m,
+                Winnings = bs.TournamentWinnings,
+                FieldAverage = bs.FieldAverage,
+                Tournaments = bs.TotalTournaments
+            })
+            .ToArray();
 
         return new SeasonStatsSummaryDto
         {
             TotalEntries = bowlerStats.Sum(stat => stat.TotalEntries),
             TotalPrizeMoney = bowlerStats.Sum(stat => stat.TournamentWinnings),
             HighGame = highGame,
-            HighGameBowlers = bowlersWithHighGame,
+            HighGameBowlers = highGameBowlers,
             HighBlock = highBlock,
-            HighBlockBowlers = bowlersWithHighBlock,
+            HighBlockBowlers = highBlockBowlers,
             HighAverage = highAverage,
-            HighAverageBowlers = bowlersWithHighAverage,
+            HighAverageBowlers = highAverageBowlers,
             HighestMatchPlayWinPercentage = highestMatchPlayWinPercentage,
-            HighestMatchPlayWinPercentageBowlers = bowlersWithHighestMatchPlayWinPercentage,
+            HighestMatchPlayWinPercentageBowlers = highestMatchPlayWinPercentageBowlers,
             MostFinals = mostFinals,
-            MostFinalsBowlers = bowlersWithMostFinals
+            MostFinalsBowlers = mostFinalsBowlers,
+            BowlerOfTheYear = bowlerOfTheYear,
+            SeniorOfTheYear = seniorOfTheYear,
+            SuperSeniorOfTheYear = superSeniorOfTheYear,
+            WomanOfTheYear = womanOfTheYear,
+            RookieOfTheYear = rookieOfTheYear,
+            YouthOfTheYear = youthOfTheYear,
+            BowlerSearchList = bowlerSearchList,
+            HighAverageLeaderboard = highAverageLeaderboard,
+            HighBlockLeaderboard = highBlockLeaderboard,
+            MatchPlayAverageLeaderboard = matchPlayAverageLeaderboard,
+            MatchPlayRecordLeaderboard = matchPlayRecordLeaderboard,
+            MatchPlayAppearancesLeaderboard = matchPlayAppearancesLeaderboard,
+            PointsPerEntryLeaderboard = pointsPerEntryLeaderboard,
+            PointsPerTournamentLeaderboard = pointsPerTournamentLeaderboard,
+            FinalsPerEntryLeaderboard = finalsPerEntryLeaderboard,
+            AverageFinishesLeaderboard = averageFinishesLeaderboard,
+            AllBowlers = allBowlers
         };
+    }
+
+    /// <summary>
+    /// This is a temporary method to get the progression of the bowler of the year points race until tournaments and points come into the application. Once that happens, this can be reworked to pull from the database instead of a json file and the temporary file can be deleted.
+    /// </summary>
+    public Task<IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>> GetBowlerOfTheYearRaceAsync(SeasonDto season, IBowlerQueries bowlerQueries, CancellationToken cancellationToken)
+        => _BowlerOfTheYearProgression.GetBowlerOfTheYearProgressionAsync(season, _bowlerQueries, cancellationToken);
+
+    private static IReadOnlyCollection<BowlerOfTheYearStandingDto> ComputeBotyStandings(
+        IReadOnlyCollection<BowlerSeasonStatsDto> bowlerStats,
+        Func<BowlerSeasonStatsDto, int> pointsSelector,
+        Func<BowlerSeasonStatsDto, bool> categoryFilter) =>
+        [.. bowlerStats
+            .Where(bs => categoryFilter(bs) && pointsSelector(bs) > 0)
+            .OrderByDescending(pointsSelector)
+            .Select(bs => new BowlerOfTheYearStandingDto
+            {
+                BowlerId = bs.BowlerId,
+                BowlerName = bs.BowlerName,
+                Points = pointsSelector(bs),
+                Tournaments = bs.EligibleTournaments,
+                Entries = bs.EligibleEntries,
+                Finals = bs.Finals,
+                AverageFinish = bs.AverageFinish,
+                Winnings = bs.TournamentWinnings
+            })];
+
+    private static decimal ComputeWinPercentage(int wins, int losses)
+    {
+        var total = wins + losses;
+        return total > 0 ? Math.Round((decimal)wins / total * 100, 2) : 0m;
     }
 }
 
@@ -134,10 +345,6 @@ internal interface ISeasonStatsService
     /// <summary>
     /// This is a temporary method to get the progression of the bowler of the year points race until tournaments and points come into the application. Once that happens, this can be reworked to pull from the database instead of a json file and the temporary file can be deleted.
     /// </summary>
-    /// <param name="season"></param>
-    /// <param name="bowlerQueries"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
     Task<IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>> GetBowlerOfTheYearRaceAsync(SeasonDto season, IBowlerQueries bowlerQueries, CancellationToken cancellationToken);
 }
 

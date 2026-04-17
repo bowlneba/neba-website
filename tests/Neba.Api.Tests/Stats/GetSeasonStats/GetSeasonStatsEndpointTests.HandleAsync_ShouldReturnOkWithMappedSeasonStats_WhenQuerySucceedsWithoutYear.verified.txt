@@ -1,0 +1,1481 @@
+﻿{
+  SelectedSeason: 2024 Season,
+  AvailableSeasons: {
+    2021: 2020 Season,
+    2022: 2021 Season,
+    2023: 2022 Season,
+    2024: 2023 Season,
+    2025: 2024 Season
+  },
+  BowlerSearchList: {
+    01EZGDZRMWARMF0DNGNNBFCB3J: Marilyn Orn,
+    01F3YXSCMJQPF0M4TJ61HWTQZM: Marilyn Orn,
+    01FAQGNJSFSRH15EP23WFP94VT: Marilyn Orn,
+    01FKN1NNGBWXV7PSM9NWYNYVQ9: Marilyn Orn,
+    01FT61X88F0D4B4D8CSNM4SWJR: Marilyn Orn,
+    01FYNYZ92JGTGN7HC87GR3DAZ7: Marilyn Orn,
+    01GC2K7BEBDEYQT9F37RK2J5RY: Marilyn Orn,
+    01GH60K6BKEJPP3JQHE8RHY6DT: Marilyn Orn,
+    01GN8J4P21XQF6D9KRD2Y5R7XZ: Marilyn Orn,
+    01GQK6YRWGKXCWW8ZPXCVXDJ6Z: Marilyn Orn,
+    01GYNB26ZTCJF21FMWYC4JK5BA: Marilyn Orn,
+    01GYP952NV4SWHTXG9Z8KTCDAS: Marilyn Orn,
+    01H515W132NK17A565T02PM5VW: Marilyn Orn,
+    01HA9S9T6T1C998VZGFKYCGYFF: Marilyn Orn,
+    01HNZDBT01S7GKKS5FJDXRD5R1: Marilyn Orn,
+    01J1CWDESXQEPPAPFQ5PPK4X30: Marilyn Orn,
+    01J51KJC7PX8H1RHN1V8D36G5M: Marilyn Orn,
+    01K0982NG1VWBQWTYPDB6FGQXY: Marilyn Orn,
+    01K9J5PA19KB65P07N6NBA1JJ2: Marilyn Orn
+  },
+  BowlerOfTheYear: [
+    {
+      BowlerId: 01EZGDZRMWARMF0DNGNNBFCB3J,
+      BowlerName: Marilyn Orn,
+      Points: 562,
+      Tournaments: 6,
+      Entries: 10,
+      Finals: 10,
+      AverageFinish: 9.084494513033191,
+      Winnings: 4976.398933202215000
+    },
+    {
+      BowlerId: 01HNCWT44XMRTNKDPE489BNGGZ,
+      BowlerName: Marilyn Orn,
+      Points: 636,
+      Tournaments: 2,
+      Entries: 16,
+      Finals: 5,
+      AverageFinish: 6.045038469622396,
+      Winnings: 483.8262547197875000
+    },
+    {
+      BowlerId: 01FEPTT2T02K2X01BA2XY16X5D,
+      BowlerName: Marilyn Orn,
+      Points: 72,
+      Tournaments: 14,
+      Entries: 9,
+      Winnings: 1477.91571751140000
+    },
+    {
+      BowlerId: 01FFCRSJKAQB0SYPEE4FVEPDYP,
+      BowlerName: Marilyn Orn,
+      Points: 91,
+      Tournaments: 3,
+      Entries: 1,
+      Finals: 9,
+      Winnings: 4412.862872431455000
+    },
+    {
+      BowlerId: 01GK5SD2SNYMTND86A88XBQBB5,
+      BowlerName: Marilyn Orn,
+      Points: 893,
+      Tournaments: 11,
+      Entries: 15,
+      Finals: 6,
+      AverageFinish: 5.485836278873422,
+      Winnings: 3244.546280822040000
+    },
+    {
+      BowlerId: 01J51KJC7PX8H1RHN1V8D36G5M,
+      BowlerName: Marilyn Orn,
+      Points: 487,
+      Tournaments: 13,
+      Entries: 10,
+      AverageFinish: 8.39008122281641,
+      Winnings: 3303.09539255830000
+    },
+    {
+      BowlerId: 01J7CC10CAS1WYYZV4KRGBX77K,
+      BowlerName: Marilyn Orn,
+      Points: 727,
+      Tournaments: 3,
+      Entries: 15,
+      Finals: 7,
+      AverageFinish: 6.439891944844225,
+      Winnings: 4804.861475622680000
+    },
+    {
+      BowlerId: 01K644X0QWWJQS6YW6JW0RB1N1,
+      BowlerName: Marilyn Orn,
+      Points: 57,
+      Tournaments: 12,
+      Entries: 14,
+      Finals: 9,
+      Winnings: 271.506435364255000
+    },
+    {
+      BowlerId: 01FH25X0WAWZGPQFBX4QHKW9H9,
+      BowlerName: Marilyn Orn,
+      Points: 485,
+      Tournaments: 13,
+      Entries: 16,
+      Finals: 4,
+      Winnings: 641.735014804515000
+    },
+    {
+      BowlerId: 01EXPSRBNE1K6PGK7JB1ZDY5VY,
+      BowlerName: Marilyn Orn,
+      Points: 65,
+      Tournaments: 6,
+      Entries: 13,
+      Finals: 8,
+      AverageFinish: 7.061389370384338,
+      Winnings: 4116.117802502640000
+    },
+    {
+      BowlerId: 01FKN1NNGBWXV7PSM9NWYNYVQ9,
+      BowlerName: Marilyn Orn,
+      Points: 942,
+      Tournaments: 2,
+      Entries: 8,
+      Finals: 1,
+      Winnings: 3587.823702761820000
+    },
+    {
+      BowlerId: 01GYMZ59BBCF6NZX49XQF6D9KR,
+      BowlerName: Marilyn Orn,
+      Points: 234,
+      Tournaments: 4,
+      Entries: 11,
+      Finals: 2,
+      AverageFinish: 9.675991342717777,
+      Winnings: 3088.05935694280000
+    }
+  ],
+  SeniorOfTheYear: [
+    {
+      BowlerId: 01EZGDZRMWARMF0DNGNNBFCB3J,
+      BowlerName: Marilyn Orn,
+      Points: 562,
+      Tournaments: 6,
+      Entries: 10,
+      Finals: 10,
+      AverageFinish: 9.084494513033191,
+      Winnings: 4976.398933202215000
+    },
+    {
+      BowlerId: 01HNCWT44XMRTNKDPE489BNGGZ,
+      BowlerName: Marilyn Orn,
+      Points: 636,
+      Tournaments: 2,
+      Entries: 16,
+      Finals: 5,
+      AverageFinish: 6.045038469622396,
+      Winnings: 483.8262547197875000
+    },
+    {
+      BowlerId: 01FEPTT2T02K2X01BA2XY16X5D,
+      BowlerName: Marilyn Orn,
+      Points: 72,
+      Tournaments: 14,
+      Entries: 9,
+      Winnings: 1477.91571751140000
+    },
+    {
+      BowlerId: 01FFCRSJKAQB0SYPEE4FVEPDYP,
+      BowlerName: Marilyn Orn,
+      Points: 91,
+      Tournaments: 3,
+      Entries: 1,
+      Finals: 9,
+      Winnings: 4412.862872431455000
+    }
+  ],
+  WomanOfTheYear: [
+    {
+      BowlerId: 01EZGDZRMWARMF0DNGNNBFCB3J,
+      BowlerName: Marilyn Orn,
+      Points: 562,
+      Tournaments: 6,
+      Entries: 10,
+      Finals: 10,
+      AverageFinish: 9.084494513033191,
+      Winnings: 4976.398933202215000
+    }
+  ],
+  YouthOfTheYear: [
+    {
+      BowlerId: 01EZGDZRMWARMF0DNGNNBFCB3J,
+      BowlerName: Marilyn Orn,
+      Points: 562,
+      Tournaments: 6,
+      Entries: 10,
+      Finals: 10,
+      AverageFinish: 9.084494513033191,
+      Winnings: 4976.398933202215000
+    },
+    {
+      BowlerId: 01HNCWT44XMRTNKDPE489BNGGZ,
+      BowlerName: Marilyn Orn,
+      Points: 636,
+      Tournaments: 2,
+      Entries: 16,
+      Finals: 5,
+      AverageFinish: 6.045038469622396,
+      Winnings: 483.8262547197875000
+    },
+    {
+      BowlerId: 01FEPTT2T02K2X01BA2XY16X5D,
+      BowlerName: Marilyn Orn,
+      Points: 72,
+      Tournaments: 14,
+      Entries: 9,
+      Winnings: 1477.91571751140000
+    }
+  ],
+  HighAverage: [
+    {
+      BowlerId: 01EZGDZRMWARMF0DNGNNBFCB3J,
+      BowlerName: Marilyn Orn,
+      Average: 193.100737465126800,
+      Games: 88,
+      Tournaments: 8,
+      FieldAverage: 14.483445635756225
+    },
+    {
+      BowlerId: 01H6Z0A9KP17X2F9HNB6VCW8GJ,
+      BowlerName: Marilyn Orn,
+      Average: 222.841203023139920,
+      Games: 137,
+      Tournaments: 3,
+      FieldAverage: 5.426725517225800
+    },
+    {
+      BowlerId: 01JYE6TRJXJDX8QB62EMACBM05,
+      BowlerName: Marilyn Orn,
+      Average: 189.868501815883680,
+      Games: 80,
+      Tournaments: 9,
+      FieldAverage: 5.767392744667550
+    },
+    {
+      BowlerId: 01FFNPNJHBNNGWNWBJ64FHKEP1,
+      BowlerName: Marilyn Orn,
+      Average: 171.342712613447920,
+      Games: 146,
+      Tournaments: 7,
+      FieldAverage: 2.750548537704425
+    },
+    {
+      BowlerId: 01K881MDP7XCVXDJ6ZD6DCRPR0,
+      BowlerName: Marilyn Orn,
+      Average: 179.391269287742320,
+      Games: 115,
+      Tournaments: 10,
+      FieldAverage: 9.008906567007725
+    },
+    {
+      BowlerId: 01GMVZKY2088XBQBB5B7VJVB9J,
+      BowlerName: Marilyn Orn,
+      Average: 189.874100256652640,
+      Games: 137,
+      Tournaments: 5,
+      FieldAverage: 14.337666982010775
+    },
+    {
+      BowlerId: 01FKX0GXXC3H3A3PGT6D0B8D0B,
+      BowlerName: Marilyn Orn,
+      Average: 188.170796129000720,
+      Games: 36,
+      Tournaments: 1,
+      FieldAverage: 10.52800339671225
+    },
+    {
+      BowlerId: 01GCSACPB3ZK47KVVZCJF21FMW,
+      BowlerName: Marilyn Orn,
+      Average: 176.484822754973920,
+      Games: 148,
+      Tournaments: 3,
+      FieldAverage: 8.194724872333350
+    },
+    {
+      BowlerId: 01GB1B9DYB134Y2EF4NY9QQ1MQ,
+      BowlerName: Marilyn Orn,
+      Average: 185.729370171078160,
+      Games: 156,
+      Tournaments: 14,
+      FieldAverage: 10.304640031095900
+    },
+    {
+      BowlerId: 01KCN2ETSERP43RC1PNFKY2TXX,
+      BowlerName: Marilyn Orn,
+      Average: 214.210009493031520,
+      Games: 86,
+      Tournaments: 15,
+      FieldAverage: 3.704473508384300
+    },
+    {
+      BowlerId: 01FCG172ZF54BHXJ8392S3A36D,
+      BowlerName: Marilyn Orn,
+      Average: 205.455116357400640,
+      Games: 147,
+      Tournaments: 9,
+      FieldAverage: -8.4369506120853825
+    },
+    {
+      BowlerId: 01K0982NG1VWBQWTYPDB6FGQXY,
+      BowlerName: Marilyn Orn,
+      Average: 216.534014971244160,
+      Games: 189,
+      Tournaments: 8,
+      FieldAverage: -5.328946467642175
+    },
+    {
+      BowlerId: 01GEGY459NH6QKTQVEX5KBV7GA,
+      BowlerName: Marilyn Orn,
+      Average: 203.524037140199920,
+      Games: 149,
+      Tournaments: 9,
+      FieldAverage: 2.656660046268550
+    },
+    {
+      BowlerId: 01HRSHGC9SBZT8KVEYCTK7GT5W,
+      BowlerName: Marilyn Orn,
+      Average: 193.145307173554480,
+      Games: 64,
+      Tournaments: 3,
+      FieldAverage: 14.099975951993825
+    },
+    {
+      BowlerId: 01GK3H58ZNC0XVN9A3Q47S5TCM,
+      BowlerName: Marilyn Orn,
+      Average: 171.53185338784560,
+      Games: 91,
+      Tournaments: 9,
+      FieldAverage: 12.028003270750875
+    },
+    {
+      BowlerId: 01G96R7V272YE994JZ5DF8K700,
+      BowlerName: Marilyn Orn,
+      Average: 185.914362797473760,
+      Games: 149,
+      Tournaments: 4,
+      FieldAverage: 0.515265579109675
+    },
+    {
+      BowlerId: 01GBT8TBF7SAKV5EX9V2BRM7RM,
+      BowlerName: Marilyn Orn,
+      Average: 217.472050780184560,
+      Games: 40,
+      Tournaments: 12,
+      FieldAverage: -4.047616873424325
+    },
+    {
+      BowlerId: 01HMPFYWNM1F2HH9D4R252SAXP,
+      BowlerName: Marilyn Orn,
+      Average: 197.813758946868480,
+      Games: 95,
+      Tournaments: 4,
+      FieldAverage: -0.289262991998925
+    },
+    {
+      BowlerId: 01JYMGP0MEG8XEZP69T2M29DZA,
+      BowlerName: Marilyn Orn,
+      Average: 229.321913718861520,
+      Games: 100,
+      Tournaments: 12,
+      FieldAverage: -9.76509960822998525
+    }
+  ],
+  HighBlock: [
+    {
+      BowlerId: 01EZGDZRMWARMF0DNGNNBFCB3J,
+      BowlerName: Marilyn Orn,
+      HighBlock: 1223,
+      HighGame: 238
+    },
+    {
+      BowlerId: 01H53V7G6Q3NV0KYH7MRTNKDPE,
+      BowlerName: Marilyn Orn,
+      HighBlock: 1200,
+      HighGame: 285
+    },
+    {
+      BowlerId: 01F82BKG8PR8FHYS4KFA5TSGKN,
+      BowlerName: Marilyn Orn,
+      HighBlock: 1219,
+      HighGame: 247
+    },
+    {
+      BowlerId: 01G1EKFPX30NN1EZ0KEJPP3JQH,
+      BowlerName: Marilyn Orn,
+      HighBlock: 916,
+      HighGame: 279
+    },
+    {
+      BowlerId: 01J2DMWCHW36XC37TSSRHZDTSQ,
+      BowlerName: Marilyn Orn,
+      HighBlock: 1340,
+      HighGame: 204
+    },
+    {
+      BowlerId: 01JMQMYP4SD6DCRPR0YMTND86A,
+      BowlerName: Marilyn Orn,
+      HighBlock: 928,
+      HighGame: 230
+    },
+    {
+      BowlerId: 01HWD607HWNNJNKXSDNMS78R6H,
+      BowlerName: Marilyn Orn,
+      HighBlock: 1485,
+      HighGame: 283
+    },
+    {
+      BowlerId: 01JNG8BJ818TGXM6HK82T382RJ,
+      BowlerName: Marilyn Orn,
+      HighBlock: 953,
+      HighGame: 203
+    },
+    {
+      BowlerId: 01FN6NRH24FKYCGYFFFXJ9W85Y,
+      BowlerName: Marilyn Orn,
+      HighBlock: 991,
+      HighGame: 233
+    },
+    {
+      BowlerId: 01G54QEJDB56APM269W4WY9BWK,
+      BowlerName: Marilyn Orn,
+      HighBlock: 1469,
+      HighGame: 255
+    },
+    {
+      BowlerId: 01GX2K57D1062RD8AKRP43RC1P,
+      BowlerName: Marilyn Orn,
+      HighBlock: 1410,
+      HighGame: 255
+    },
+    {
+      BowlerId: 01GC2K7BEBDEYQT9F37RK2J5RY,
+      BowlerName: Marilyn Orn,
+      HighBlock: 1373,
+      HighGame: 245
+    },
+    {
+      BowlerId: 01FDM4SGMYP8TGSKB89KS5GZPZ,
+      BowlerName: Marilyn Orn,
+      HighBlock: 1192,
+      HighGame: 295
+    },
+    {
+      BowlerId: 01KBDFYYZFTSNCSY2ZQRGEEXKV,
+      BowlerName: Marilyn Orn,
+      HighBlock: 1289,
+      HighGame: 287
+    }
+  ],
+  MatchPlayAverage: [
+    {
+      BowlerId: 01EZGDZRMWARMF0DNGNNBFCB3J,
+      BowlerName: Marilyn Orn,
+      MatchPlayAverage: 193.100737465126800,
+      Games: 9,
+      Wins: 5,
+      Losses: 10,
+      WinPercentage: 48.245662007595200,
+      Winnings: 4491.385840573995000
+    },
+    {
+      BowlerId: 01EVKT31BW4YK3APDPSRH15EP2,
+      BowlerName: Marilyn Orn,
+      MatchPlayAverage: 163.449202744965040,
+      Games: 13,
+      Wins: 1,
+      Losses: 8,
+      WinPercentage: 50.956850988304600,
+      Winnings: 2478.030648770755000
+    },
+    {
+      BowlerId: 01GVFS2SPAR9TH9HEG0NN1EZ0K,
+      BowlerName: Marilyn Orn,
+      MatchPlayAverage: 218.700737538142480,
+      Games: 8,
+      Losses: 10,
+      WinPercentage: 43.825184620835400,
+      Winnings: 140.0497230421985000
+    },
+    {
+      BowlerId: 01FSYRR7M43WCVNGCZB7727XQB,
+      BowlerName: Marilyn Orn,
+      MatchPlayAverage: 185.400249639246720,
+      Games: 15,
+      Losses: 1,
+      WinPercentage: 2.9190708431038400,
+      Winnings: 4410.794141893645000
+    },
+    {
+      BowlerId: 01F4HP1JGCBC0FADAPM3544ENV,
+      BowlerName: Marilyn Orn,
+      MatchPlayAverage: 201.340328963166240,
+      Games: 11,
+      Wins: 9,
+      Losses: 8,
+      WinPercentage: 72.986318810370900,
+      Winnings: 2945.295380402960000
+    },
+    {
+      BowlerId: 01HZD1ZCYSEHGD3TH23H3A3PGT,
+      BowlerName: Marilyn Orn,
+      MatchPlayAverage: 154.4682521766369440,
+      Games: 13,
+      Wins: 6,
+      Losses: 5,
+      WinPercentage: 82.956851079574200,
+      Winnings: 2385.674758062545000
+    },
+    {
+      BowlerId: 01K0QEW9CJDZR7SZ68F7QQYS4Y,
+      BowlerName: Marilyn Orn,
+      MatchPlayAverage: 210.814944534010720,
+      Games: 2,
+      Wins: 1,
+      Losses: 3,
+      WinPercentage: 71.263993238687500,
+      Winnings: 715.45848889065000
+    },
+    {
+      BowlerId: 01G2XG559CD84CKR9SWJQS6YW6,
+      BowlerName: Marilyn Orn,
+      MatchPlayAverage: 193.98018447867600,
+      Games: 10,
+      Wins: 8,
+      Losses: 9,
+      WinPercentage: 81.218560124383600,
+      Winnings: 40.782287270195000
+    },
+    {
+      BowlerId: 01FRP70TZ4H0Y30DNBWZGPQFBX,
+      BowlerName: Marilyn Orn,
+      MatchPlayAverage: 179.500686130253920,
+      Games: 19,
+      Wins: 6,
+      Losses: 9,
+      WinPercentage: 34.321321982108700,
+      Winnings: 2291.92560412545000
+    },
+    {
+      BowlerId: 01FNMN2RDZS41MHCHN1K6PGK7J,
+      BowlerName: Marilyn Orn,
+      MatchPlayAverage: 155.0017580413267760,
+      Games: 3,
+      Wins: 2,
+      Losses: 5,
+      WinPercentage: 94.800120543129800,
+      Winnings: 82.8703749379470000
+    }
+  ],
+  MatchPlayRecord: [
+    {
+      BowlerId: 01EZGDZRMWARMF0DNGNNBFCB3J,
+      BowlerName: Marilyn Orn,
+      Wins: 5,
+      Losses: 4,
+      WinPercentage: 49.503880436301200,
+      Finals: 15,
+      MatchPlayAverage: 188.596529606076160,
+      Winnings: 4491.385840573995000
+    },
+    {
+      BowlerId: 01EVKT31BW4YK3APDPSRH15EP2,
+      BowlerName: Marilyn Orn,
+      Wins: 1,
+      Losses: 6,
+      WinPercentage: 10.489873779234400,
+      Finals: 12,
+      MatchPlayAverage: 190.765480790643680,
+      Winnings: 2478.030648770755000
+    },
+    {
+      BowlerId: 01GVFS2SPAR9TH9HEG0NN1EZ0K,
+      BowlerName: Marilyn Orn,
+      Wins: 9,
+      Losses: 3,
+      WinPercentage: 2.3798272490407500,
+      Finals: 14,
+      MatchPlayAverage: 185.060147696668320,
+      Winnings: 140.0497230421985000
+    },
+    {
+      BowlerId: 01FSYRR7M43WCVNGCZB7727XQB,
+      BowlerName: Marilyn Orn,
+      Wins: 4,
+      Losses: 8,
+      WinPercentage: 4.39154841210300,
+      Finals: 3,
+      MatchPlayAverage: 152.3352566744830720,
+      Winnings: 4410.794141893645000
+    },
+    {
+      BowlerId: 01F4HP1JGCBC0FADAPM3544ENV,
+      BowlerName: Marilyn Orn,
+      Wins: 7,
+      Losses: 5,
+      WinPercentage: 88.671676529884200,
+      Finals: 11,
+      MatchPlayAverage: 208.389055048296720,
+      Winnings: 2945.295380402960000
+    },
+    {
+      BowlerId: 01HZD1ZCYSEHGD3TH23H3A3PGT,
+      BowlerName: Marilyn Orn,
+      Losses: 6,
+      WinPercentage: 54.593607249946200,
+      Finals: 7,
+      MatchPlayAverage: 216.365480863659360,
+      Winnings: 2385.674758062545000
+    },
+    {
+      BowlerId: 01K0QEW9CJDZR7SZ68F7QQYS4Y,
+      BowlerName: Marilyn Orn,
+      Wins: 8,
+      WinPercentage: 15.143365978795700,
+      Finals: 5,
+      MatchPlayAverage: 207.011194590950000,
+      Winnings: 715.45848889065000
+    },
+    {
+      BowlerId: 01G2XG559CD84CKR9SWJQS6YW6,
+      BowlerName: Marilyn Orn,
+      Wins: 6,
+      Losses: 4,
+      WinPercentage: 75.661558180889800,
+      Finals: 14,
+      MatchPlayAverage: 214.974848099506880,
+      Winnings: 40.782287270195000
+    },
+    {
+      BowlerId: 01FRP70TZ4H0Y30DNBWZGPQFBX,
+      BowlerName: Marilyn Orn,
+      Wins: 4,
+      Losses: 10,
+      WinPercentage: 54.817894033537200,
+      Finals: 14,
+      MatchPlayAverage: 177.457057585686960,
+      Winnings: 2291.92560412545000
+    },
+    {
+      BowlerId: 01FNMN2RDZS41MHCHN1K6PGK7J,
+      BowlerName: Marilyn Orn,
+      Losses: 1,
+      WinPercentage: 20.76166715508400,
+      Finals: 8,
+      MatchPlayAverage: 225.840096434503840,
+      Winnings: 82.8703749379470000
+    },
+    {
+      BowlerId: 01HSTT5GBBDB6FGQXY43KQCYV6,
+      BowlerName: Marilyn Orn,
+      Wins: 9,
+      Losses: 6,
+      WinPercentage: 39.866521833402300,
+      Finals: 11,
+      MatchPlayAverage: 166.523126892989120,
+      Winnings: 4941.160031566935000
+    },
+    {
+      BowlerId: 01F3YXSCMJQPF0M4TJ61HWTQZM,
+      BowlerName: Marilyn Orn,
+      Wins: 6,
+      Losses: 3,
+      WinPercentage: 65.813241836527900,
+      Finals: 5,
+      MatchPlayAverage: 183.660589695750080,
+      Winnings: 4585.030956466230000
+    },
+    {
+      BowlerId: 01JHAKC7GZQHE1ZFRAW9G3QEN5,
+      BowlerName: Marilyn Orn,
+      Wins: 6,
+      WinPercentage: 30.361700770613600,
+      Finals: 14,
+      MatchPlayAverage: 218.478631148337680,
+      Winnings: 520.550357420255000
+    }
+  ],
+  MatchPlayAppearances: [
+    {
+      BowlerId: 01EZGDZRMWARMF0DNGNNBFCB3J,
+      BowlerName: Marilyn Orn,
+      Finals: 9,
+      Tournaments: 6,
+      Entries: 10
+    },
+    {
+      BowlerId: 01EXYRNZD2ER4ZM9X66NCVDKH2,
+      BowlerName: Marilyn Orn,
+      Finals: 13,
+      Tournaments: 14,
+      Entries: 13
+    },
+    {
+      BowlerId: 01JN4ZEGST3XJ96YMBNK17A565,
+      BowlerName: Marilyn Orn,
+      Finals: 12,
+      Tournaments: 5,
+      Entries: 10
+    },
+    {
+      BowlerId: 01HWTRSQVMFG9Q9BB1SBRQ4C8Z,
+      BowlerName: Marilyn Orn,
+      Finals: 13,
+      Tournaments: 4,
+      Entries: 12
+    },
+    {
+      BowlerId: 01J6N1YJTDB7727XQB6ZBCHQV9,
+      BowlerName: Marilyn Orn,
+      Finals: 14,
+      Tournaments: 15,
+      Entries: 18
+    },
+    {
+      BowlerId: 01GK5SD2SNYMTND86A88XBQBB5,
+      BowlerName: Marilyn Orn,
+      Finals: 14,
+      Tournaments: 11,
+      Entries: 15
+    },
+    {
+      BowlerId: 01GQ9S4YF369T61MFA48E4D8ET,
+      BowlerName: Marilyn Orn,
+      Finals: 4,
+      Tournaments: 1,
+      Entries: 13
+    },
+    {
+      BowlerId: 01GXMHB1QB6G5H553FY1YFSJ3S,
+      BowlerName: Marilyn Orn,
+      Finals: 10,
+      Tournaments: 9,
+      Entries: 20
+    },
+    {
+      BowlerId: 01HRG7RX0242Z9SWR956APM269,
+      BowlerName: Marilyn Orn,
+      Finals: 15,
+      Tournaments: 1,
+      Entries: 10
+    },
+    {
+      BowlerId: 01JAT9P4GQJDXRD5R1GP3A2MY5,
+      BowlerName: Marilyn Orn,
+      Finals: 11,
+      Tournaments: 14,
+      Entries: 19
+    },
+    {
+      BowlerId: 01K5W3KPJFNFKY2TXXFMJY6FH6,
+      BowlerName: Marilyn Orn,
+      Finals: 6,
+      Tournaments: 7,
+      Entries: 17
+    },
+    {
+      BowlerId: 01FT61X88F0D4B4D8CSNM4SWJR,
+      BowlerName: Marilyn Orn,
+      Finals: 2,
+      Tournaments: 4,
+      Entries: 10
+    },
+    {
+      BowlerId: 01F2J3GS8ZDFB6NK7RBYZ21SVP,
+      BowlerName: Marilyn Orn,
+      Finals: 3,
+      Tournaments: 10,
+      Entries: 18
+    },
+    {
+      BowlerId: 01GGHGJ0RF7NFPXTB6QPF0M4TJ,
+      BowlerName: Marilyn Orn,
+      Finals: 9,
+      Tournaments: 8,
+      Entries: 8
+    },
+    {
+      BowlerId: 01JR85Q1K4YJ4YVQK6MSW6HF2W,
+      BowlerName: Marilyn Orn,
+      Finals: 4,
+      Tournaments: 3,
+      Entries: 20
+    }
+  ],
+  PointsPerEntry: [
+    {
+      BowlerId: 01EZGDZRMWARMF0DNGNNBFCB3J,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 58.488329648267650,
+      Points: 409,
+      Entries: 10
+    },
+    {
+      BowlerId: 01EXYRNZD2ER4ZM9X66NCVDKH2,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 86.012667015200740,
+      Points: 915,
+      Entries: 13
+    },
+    {
+      BowlerId: 01JN4ZEGST3XJ96YMBNK17A565,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 76.398672268911610,
+      Points: 311,
+      Entries: 10
+    },
+    {
+      BowlerId: 01HWTRSQVMFG9Q9BB1SBRQ4C8Z,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 87.459332834677420,
+      Points: 257,
+      Entries: 12
+    },
+    {
+      BowlerId: 01J6N1YJTDB7727XQB6ZBCHQV9,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 89.394294554085610,
+      Points: 938,
+      Entries: 18
+    },
+    {
+      BowlerId: 01GK5SD2SNYMTND86A88XBQBB5,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 89.804508876895780,
+      Points: 746,
+      Entries: 15
+    },
+    {
+      BowlerId: 01GQ9S4YF369T61MFA48E4D8ET,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 29.029887821073610,
+      Points: 103,
+      Entries: 13
+    },
+    {
+      BowlerId: 01GXMHB1QB6G5H553FY1YFSJ3S,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 65.104685335003150,
+      Points: 562,
+      Entries: 20
+    },
+    {
+      BowlerId: 01HRG7RX0242Z9SWR956APM269,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 96.487506561208240,
+      Points: 100,
+      Entries: 10
+    },
+    {
+      BowlerId: 01JAT9P4GQJDXRD5R1GP3A2MY5,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 72.873720891249220,
+      Points: 914,
+      Entries: 19
+    },
+    {
+      BowlerId: 01K5W3KPJFNFKY2TXXFMJY6FH6,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 40.889189783897830,
+      Points: 485,
+      Entries: 17
+    },
+    {
+      BowlerId: 01FT61X88F0D4B4D8CSNM4SWJR,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 18.310787001769420,
+      Points: 247,
+      Entries: 10
+    },
+    {
+      BowlerId: 01F2J3GS8ZDFB6NK7RBYZ21SVP,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 26.815792716488170,
+      Points: 666,
+      Entries: 18
+    },
+    {
+      BowlerId: 01GGHGJ0RF7NFPXTB6QPF0M4TJ,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 58.513449080527480,
+      Points: 531,
+      Entries: 8
+    },
+    {
+      BowlerId: 01JR85Q1K4YJ4YVQK6MSW6HF2W,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 31.936007855430280,
+      Points: 187,
+      Entries: 20
+    },
+    {
+      BowlerId: 01GK3H58ZNC0XVN9A3Q47S5TCM,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 34.22333506132630,
+      Points: 427,
+      Entries: 12
+    },
+    {
+      BowlerId: 01FCCJ9MTZR8BSS54JBWNNX2CW,
+      BowlerName: Marilyn Orn,
+      PointsPerEntry: 39.923646463977040,
+      Points: 476,
+      Entries: 15
+    }
+  ],
+  PointsPerTournament: [
+    {
+      BowlerId: 01EZGDZRMWARMF0DNGNNBFCB3J,
+      BowlerName: Marilyn Orn,
+      Points: 562,
+      Tournaments: 6,
+      PointsPerTournament: 79.305432610821680
+    },
+    {
+      BowlerId: 01EXYRNZD2ER4ZM9X66NCVDKH2,
+      BowlerName: Marilyn Orn,
+      Points: 853,
+      Tournaments: 14,
+      PointsPerTournament: 100.778275304836280
+    },
+    {
+      BowlerId: 01JN4ZEGST3XJ96YMBNK17A565,
+      BowlerName: Marilyn Orn,
+      Points: 751,
+      Tournaments: 5,
+      PointsPerTournament: 79.769878177796440
+    },
+    {
+      BowlerId: 01HWTRSQVMFG9Q9BB1SBRQ4C8Z,
+      BowlerName: Marilyn Orn,
+      Points: 868,
+      Tournaments: 4,
+      PointsPerTournament: 92.187441094865820
+    },
+    {
+      BowlerId: 01J6N1YJTDB7727XQB6ZBCHQV9,
+      BowlerName: Marilyn Orn,
+      Points: 888,
+      Tournaments: 15,
+      PointsPerTournament: 133.560160428080740
+    },
+    {
+      BowlerId: 01GK5SD2SNYMTND86A88XBQBB5,
+      BowlerName: Marilyn Orn,
+      Points: 893,
+      Tournaments: 11,
+      PointsPerTournament: 112.180846334519260
+    },
+    {
+      BowlerId: 01GQ9S4YF369T61MFA48E4D8ET,
+      BowlerName: Marilyn Orn,
+      Points: 251,
+      Tournaments: 1,
+      PointsPerTournament: 94.20675460445080
+    },
+    {
+      BowlerId: 01GXMHB1QB6G5H553FY1YFSJ3S,
+      BowlerName: Marilyn Orn,
+      Points: 632,
+      Tournaments: 9,
+      PointsPerTournament: 144.992515470363460
+    },
+    {
+      BowlerId: 01HRG7RX0242Z9SWR956APM269,
+      BowlerName: Marilyn Orn,
+      Points: 963,
+      Tournaments: 1,
+      PointsPerTournament: 73.198156945034020
+    },
+    {
+      BowlerId: 01JAT9P4GQJDXRD5R1GP3A2MY5,
+      BowlerName: Marilyn Orn,
+      Points: 714,
+      Tournaments: 14,
+      PointsPerTournament: 139.981599659650340
+    },
+    {
+      BowlerId: 01K5W3KPJFNFKY2TXXFMJY6FH6,
+      BowlerName: Marilyn Orn,
+      Points: 376,
+      Tournaments: 7,
+      PointsPerTournament: 124.540590864857920
+    },
+    {
+      BowlerId: 01FT61X88F0D4B4D8CSNM4SWJR,
+      BowlerName: Marilyn Orn,
+      Points: 137,
+      Tournaments: 4,
+      PointsPerTournament: 78.084770780096140
+    },
+    {
+      BowlerId: 01F2J3GS8ZDFB6NK7RBYZ21SVP,
+      BowlerName: Marilyn Orn,
+      Points: 227,
+      Tournaments: 10,
+      PointsPerTournament: 131.756166863141720
+    },
+    {
+      BowlerId: 01GGHGJ0RF7NFPXTB6QPF0M4TJ,
+      BowlerName: Marilyn Orn,
+      Points: 562,
+      Tournaments: 8,
+      PointsPerTournament: 60.555726564748160
+    }
+  ],
+  FinalsPerEntry: [
+    {
+      BowlerId: 01EZGDZRMWARMF0DNGNNBFCB3J,
+      BowlerName: Marilyn Orn,
+      Finals: 9,
+      Entries: 8,
+      FinalsPerEntry: 0.52028686414486140
+    },
+    {
+      BowlerId: 01EXYRNZD2ER4ZM9X66NCVDKH2,
+      BowlerName: Marilyn Orn,
+      Finals: 13,
+      Entries: 19,
+      FinalsPerEntry: 0.66599543956853190
+    },
+    {
+      BowlerId: 01JN4ZEGST3XJ96YMBNK17A565,
+      BowlerName: Marilyn Orn,
+      Finals: 12,
+      Entries: 6,
+      FinalsPerEntry: 0.52343845906361870
+    },
+    {
+      BowlerId: 01HWTRSQVMFG9Q9BB1SBRQ4C8Z,
+      BowlerName: Marilyn Orn,
+      Finals: 13,
+      Entries: 5,
+      FinalsPerEntry: 0.60770049314373235
+    },
+    {
+      BowlerId: 01J6N1YJTDB7727XQB6ZBCHQV9,
+      BowlerName: Marilyn Orn,
+      Finals: 14,
+      Entries: 19,
+      FinalsPerEntry: 0.88844394576197645
+    }
+  ],
+  AverageFinishes: [
+    {
+      BowlerId: 01EZGDZRMWARMF0DNGNNBFCB3J,
+      BowlerName: Marilyn Orn,
+      AverageFinish: 8.542629056397190,
+      Finals: 6,
+      Winnings: 2475.194021815060000
+    },
+    {
+      BowlerId: 01EXYRNZD2ER4ZM9X66NCVDKH2,
+      BowlerName: Marilyn Orn,
+      AverageFinish: 12.824192646809004,
+      Finals: 14,
+      Winnings: 3242.081260887010000
+    },
+    {
+      BowlerId: 01JN4ZEGST3XJ96YMBNK17A565,
+      BowlerName: Marilyn Orn,
+      AverageFinish: 11.328682352941806,
+      Finals: 5,
+      Winnings: 2491.781363492730000
+    },
+    {
+      BowlerId: 01HWTRSQVMFG9Q9BB1SBRQ4C8Z,
+      BowlerName: Marilyn Orn,
+      AverageFinish: 13.049229552060932,
+      Finals: 4,
+      Winnings: 2935.265753388065000
+    },
+    {
+      BowlerId: 01J6N1YJTDB7727XQB6ZBCHQV9,
+      BowlerName: Marilyn Orn,
+      AverageFinish: 13.350223597302206,
+      Finals: 15,
+      Winnings: 4412.862872431455000
+    },
+    {
+      BowlerId: 01GK5SD2SNYMTND86A88XBQBB5,
+      BowlerName: Marilyn Orn,
+      AverageFinish: 13.414034714183788,
+      Finals: 11,
+      Winnings: 3649.315940518545000
+    },
+    {
+      BowlerId: 01GQ9S4YF369T61MFA48E4D8ET,
+      BowlerName: Marilyn Orn,
+      AverageFinish: 3.960204772167006,
+      Finals: 1,
+      Winnings: 3007.38409301610000
+    },
+    {
+      BowlerId: 01GXMHB1QB6G5H553FY1YFSJ3S,
+      BowlerName: Marilyn Orn,
+      AverageFinish: 9.571839941000490,
+      Finals: 9,
+      Winnings: 4821.161266798695000
+    },
+    {
+      BowlerId: 01HRG7RX0242Z9SWR956APM269,
+      BowlerName: Marilyn Orn,
+      AverageFinish: 14.453612131743504,
+      Finals: 1,
+      Winnings: 2257.077033751215000
+    }
+  ],
+  SeasonAtAGlance: {
+    TotalEntries: 486,
+    TotalPrizeMoney: 8800.16881125055000
+  },
+  SeasonsBests: {
+    HighGame: 290,
+    HighGameBowlers: [
+      Marilyn Orn
+    ],
+    HighBlock: 1396,
+    HighBlockBowlers: [
+      Adrian Hilll
+    ],
+    HighAverage: 237.315451133677470,
+    HighAverageBowlers: [
+      Dovie Bergnaum
+    ]
+  },
+  FieldMatchPlaySummary: {
+    HighestWinPercentage: 73.416637011532050,
+    HighestWinPercentageBowlers: [
+      Royal Runolfsdottir
+    ],
+    MostFinals: 1,
+    MostFinalsBowlers: [
+      Floyd Koepp
+    ]
+  },
+  BowlerOfTheYearPointsRace: [
+    {
+      BowlerId: 01EZGDZRMWARMF0DNGNNBFCB3J,
+      BowlerName: Marilyn Orn,
+      Results: [
+        {
+          TournamentName: Orn Group,
+          TournamentDate: Date_1,
+          CumulativePoints: 20
+        },
+        {
+          TournamentName: Monahan, Heller and Cormier,
+          TournamentDate: Date_2,
+          CumulativePoints: 40
+        },
+        {
+          TournamentName: Kunze - Wuckert,
+          TournamentDate: Date_3,
+          CumulativePoints: 53
+        }
+      ]
+    },
+    {
+      BowlerId: 01HPB7ZV3DF4EQC2FT4YK3APDP,
+      BowlerName: Marilyn Orn,
+      Results: [
+        {
+          TournamentName: Orn Group,
+          TournamentDate: Date_1,
+          CumulativePoints: 20
+        },
+        {
+          TournamentName: Monahan, Heller and Cormier,
+          TournamentDate: Date_2,
+          CumulativePoints: 40
+        },
+        {
+          TournamentName: Kunze - Wuckert,
+          TournamentDate: Date_3,
+          CumulativePoints: 53
+        },
+        {
+          TournamentName: Hoppe, Barton and Braun,
+          TournamentDate: Date_4,
+          CumulativePoints: 72
+        },
+        {
+          TournamentName: Kutch, Sporer and Vandervort,
+          TournamentDate: Date_5,
+          CumulativePoints: 91
+        }
+      ]
+    },
+    {
+      BowlerId: 01H4A3HJP62AXC47RZCJ9QN2XC,
+      BowlerName: Marilyn Orn,
+      Results: [
+        {
+          TournamentName: Orn Group,
+          TournamentDate: Date_1,
+          CumulativePoints: 20
+        }
+      ]
+    },
+    {
+      BowlerId: 01FEPTT2T02K2X01BA2XY16X5D,
+      BowlerName: Marilyn Orn,
+      Results: [
+        {
+          TournamentName: Orn Group,
+          TournamentDate: Date_1,
+          CumulativePoints: 20
+        }
+      ]
+    }
+  ],
+  AllBowlers: [
+    {
+      BowlerId: 01EZGDZRMWARMF0DNGNNBFCB3J,
+      BowlerName: Marilyn Orn,
+      Points: 539,
+      Average: 180.22119665063040,
+      Games: 109,
+      Finals: 15,
+      Wins: 5,
+      Losses: 9,
+      WinPercentage: 99.527978664044300,
+      MatchPlayAverage: 180.737582720228240,
+      Winnings: 175.4001668539830000,
+      FieldAverage: -7.400956727751050,
+      Tournaments: 6
+    },
+    {
+      BowlerId: 01FAQGNJSFSRH15EP23WFP94VT,
+      BowlerName: Marilyn Orn,
+      Points: 496,
+      Average: 194.844786396643520,
+      Games: 37,
+      Finals: 13,
+      Wins: 5,
+      Losses: 5,
+      WinPercentage: 73.776302521012900,
+      MatchPlayAverage: 171.977901655239040,
+      Winnings: 2491.781363492730000,
+      FieldAverage: -1.659310188451450,
+      Tournaments: 9
+    },
+    {
+      BowlerId: 01GH60K6BKEJPP3JQHE8RHY6DT,
+      BowlerName: Marilyn Orn,
+      Points: 587,
+      Average: 171.342712613447920,
+      Games: 146,
+      Finals: 6,
+      Wins: 5,
+      WinPercentage: 6.3280572678558800,
+      MatchPlayAverage: 185.400249639246720,
+      Winnings: 3660.753869293610000,
+      FieldAverage: -8.90211289697425,
+      Tournaments: 3
+    },
+    {
+      BowlerId: 01K9J5PA19KB65P07N6NBA1JJ2,
+      BowlerName: Marilyn Orn,
+      Points: 302,
+      Average: 176.921393697579120,
+      Games: 136,
+      Finals: 7,
+      Wins: 9,
+      Losses: 8,
+      WinPercentage: 72.986318810370900,
+      MatchPlayAverage: 197.124726086447360,
+      Winnings: 1580.632446138485000,
+      FieldAverage: 2.460656330203950,
+      Tournaments: 10
+    },
+    {
+      BowlerId: 01J51KJC7PX8H1RHN1V8D36G5M,
+      BowlerName: Marilyn Orn,
+      Points: 460,
+      Average: 216.365480863659360,
+      Games: 106,
+      Finals: 1,
+      Losses: 9,
+      WinPercentage: 66.06190785116600,
+      MatchPlayAverage: 170.946016172387680,
+      Winnings: 3245.631923547775000,
+      FieldAverage: -7.492425224041775,
+      Tournaments: 10
+    },
+    {
+      BowlerId: 01GYNB26ZTCJF21FMWYC4JK5BA,
+      BowlerName: Marilyn Orn,
+      Points: 380,
+      Average: 198.354595065282000,
+      Games: 193,
+      Wins: 4,
+      Losses: 2,
+      WinPercentage: 56.863624768733800,
+      MatchPlayAverage: 225.747532693551680,
+      Winnings: 2744.56532334190000,
+      FieldAverage: 3.74380764958625,
+      Tournaments: 7
+    },
+    {
+      BowlerId: 01FYNYZ92JGTGN7HC87GR3DAZ7,
+      BowlerName: Marilyn Orn,
+      Points: 666,
+      Average: 184.763797947561280,
+      Games: 176,
+      Finals: 12,
+      Wins: 4,
+      Losses: 10,
+      WinPercentage: 54.817894033537200,
+      MatchPlayAverage: 220.430633085980400,
+      Winnings: 1716.066099105435000,
+      FieldAverage: 1.45962802062725,
+      Tournaments: 13
+    },
+    {
+      BowlerId: 01FT61X88F0D4B4D8CSNM4SWJR,
+      BowlerName: Marilyn Orn,
+      Points: 92,
+      Average: 166.60933372406720,
+      Games: 108,
+      Finals: 15,
+      Losses: 3,
+      WinPercentage: 63.246338564551600,
+      MatchPlayAverage: 214.311750412132480,
+      Winnings: 1073.258501045990000,
+      FieldAverage: 6.837192695512050,
+      Tournaments: 13
+    },
+    {
+      BowlerId: 01FKN1NNGBWXV7PSM9NWYNYVQ9,
+      BowlerName: Marilyn Orn,
+      Points: 939,
+      Average: 157.1639036048035600,
+      Games: 85,
+      Finals: 2,
+      Wins: 7,
+      Losses: 7,
+      WinPercentage: 53.903832311697200,
+      MatchPlayAverage: 190.501312148059360,
+      Winnings: 1805.561663026720000,
+      FieldAverage: -6.324558938538925,
+      Tournaments: 15
+    },
+    {
+      BowlerId: 01GN8J4P21XQF6D9KRD2Y5R7XZ,
+      BowlerName: Marilyn Orn,
+      Points: 964,
+      Average: 199.40894971108480,
+      Games: 189,
+      Finals: 9,
+      Wins: 8,
+      Losses: 7,
+      WinPercentage: 55.248668955289100,
+      MatchPlayAverage: 154.6506378448804080,
+      Winnings: 1518.085038530680000,
+      FieldAverage: 12.071494381908100,
+      Tournaments: 13
+    },
+    {
+      BowlerId: 01JYHXFXDJF1DE0R622YE994JZ,
+      BowlerName: Marilyn Orn,
+      Points: 835,
+      Average: 176.884015736581760,
+      Games: 53,
+      Finals: 8,
+      Wins: 3,
+      Losses: 4,
+      WinPercentage: 71.804979011325600,
+      MatchPlayAverage: 166.361797645856560,
+      Winnings: 2103.053115821935000,
+      FieldAverage: 6.680568662323325,
+      Tournaments: 12
+    },
+    {
+      BowlerId: 01FS72XCXFPAXTKP4QH8FH8KV2,
+      BowlerName: Marilyn Orn,
+      Points: 747,
+      Average: 169.047626005042160,
+      Games: 90,
+      Finals: 14,
+      Wins: 9,
+      WinPercentage: 50.915701943876100,
+      MatchPlayAverage: 176.641670626886960,
+      Winnings: 1372.288913173735000,
+      FieldAverage: 3.383703056435900,
+      Tournaments: 13
+    },
+    {
+      BowlerId: 01J3J8YKQJPR1B47N5C213NVYR,
+      BowlerName: Marilyn Orn,
+      Points: 359,
+      Average: 188.027122634475680,
+      Games: 69,
+      Finals: 13,
+      Wins: 7,
+      Losses: 6,
+      WinPercentage: 99.152392148576900,
+      MatchPlayAverage: 185.73877399588880,
+      Winnings: 3773.027930303025000,
+      FieldAverage: -9.76509960822998525,
+      Tournaments: 13
+    },
+    {
+      BowlerId: 01G41MNZ2YQRQKDX0X3RQZYMA0,
+      BowlerName: Marilyn Orn,
+      Points: 962,
+      Average: 217.020530955409920,
+      Games: 194,
+      Finals: 9,
+      Wins: 7,
+      Losses: 7,
+      WinPercentage: 42.969440176603100,
+      MatchPlayAverage: 218.017804617070480,
+      Winnings: 4814.480882982945000,
+      FieldAverage: 8.607652440484450,
+      Tournaments: 10
+    },
+    {
+      BowlerId: 01GVTY2N3FHYAP7830Q8JAW5DE,
+      BowlerName: Marilyn Orn,
+      Points: 455,
+      Average: 155.0440590479616320,
+      Games: 21,
+      Finals: 7,
+      Wins: 1,
+      Losses: 10,
+      WinPercentage: 49.02823280963500,
+      MatchPlayAverage: 202.633556263816320,
+      Winnings: 2018.645429992420000,
+      FieldAverage: -0.633514705409075,
+      Tournaments: 12
+    },
+    {
+      BowlerId: 01JQQZMCBMAPGHY4E40RPB9V7T,
+      BowlerName: Marilyn Orn,
+      Points: 68,
+      Average: 152.4732681747867120,
+      Games: 32,
+      Finals: 3,
+      Wins: 8,
+      Losses: 6,
+      WinPercentage: 32.566603940244100,
+      MatchPlayAverage: 214.325270235689920,
+      Winnings: 3730.463894889905000,
+      FieldAverage: 4.126046404301200,
+      Tournaments: 7
+    },
+    {
+      BowlerId: 01JSFJM3X3DCBP58WH6HYJW2W2,
+      BowlerName: Marilyn Orn,
+      Points: 762,
+      Average: 208.241825354398160,
+      Games: 92,
+      Finals: 3,
+      Wins: 1,
+      Losses: 3,
+      WinPercentage: 92.286765106155900,
+      MatchPlayAverage: 150.62939755647880880,
+      Winnings: 4053.414172517795000,
+      FieldAverage: 11.908987696240175,
+      Tournaments: 12
+    }
+  ]
+}

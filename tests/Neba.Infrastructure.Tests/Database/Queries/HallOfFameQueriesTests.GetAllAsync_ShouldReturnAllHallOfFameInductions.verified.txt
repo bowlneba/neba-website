@@ -54,7 +54,7 @@
     PhotoPath: primary.cap.pdf
   },
   {
-    Year: 2019,
+    Year: 2020,
     BowlerName: {
       FirstName: Franklin,
       LastName: Barrows,

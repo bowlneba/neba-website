@@ -9,7 +9,7 @@ internal sealed class GetSeasonStatsQueryHandler(ISeasonStatsService seasonStats
         : IQueryHandler<GetSeasonStatsQuery, ErrorOr<SeasonStatsDto>>
 {
     private readonly ISeasonStatsService _seasonStatsService = seasonStatsService;
-    
+
     /// <summary>
     /// This will be removed when tournaments and result stats come into the software, until then it is needed to show the progression of the bowler of the
     /// </summary>
@@ -35,7 +35,7 @@ internal sealed class GetSeasonStatsQueryHandler(ISeasonStatsService seasonStats
         return new SeasonStatsDto
         {
             Season = season,
-            SeasonsWithStats = seasonsWithStats,
+            SeasonsWithStats = [.. seasonsWithStats.OrderByDescending(s => s.EndDate)],
             BowlerStats = bowlerStats,
             BowlerOfTheYearRace = bowlerOfTheYearRace,
             Summary = seasonSummary

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using Neba.Application.Messaging;
 using Neba.Domain.Bowlers;
 
 using ZiggyCreatures.Caching.Fusion;
@@ -21,6 +22,32 @@ internal static class HybridCacheSerializerOptionsKey
 
 internal static class CachingConfiguration
 {
+    internal static IServiceCollection DecorateCachedQueryHandlers(this IServiceCollection services)
+    {
+        var descriptors = services
+            .Where(d =>
+                d.ServiceType.IsGenericType &&
+                d.ServiceType.GetGenericTypeDefinition() == typeof(IQueryHandler<,>))
+            .ToList();
+
+        foreach (var serviceType in descriptors.Select(descriptor => descriptor.ServiceType))
+        {
+            var queryType = serviceType.GetGenericArguments()[0];
+            var responseType = serviceType.GetGenericArguments()[1];
+
+            var isCachedQuery = queryType.GetInterfaces()
+                .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ICachedQuery<>));
+
+            if (!isCachedQuery)
+                continue;
+
+            var decoratorType = typeof(CachedQueryHandlerDecorator<,>).MakeGenericType(queryType, responseType);
+            services.Decorate(serviceType, decoratorType);
+        }
+
+        return services;
+    }
+
     extension(IServiceCollection services)
     {
         public void AddCaching(IConfiguration config)
@@ -36,6 +63,8 @@ internal static class CachingConfiguration
             // Keyed registration: consumed by DefaultJsonSerializerFactory in Microsoft.Extensions.Caching.Hybrid.
             services.AddKeyedSingleton<System.Text.Json.JsonSerializerOptions>(
                 HybridCacheSerializerOptionsKey.Key, cacheJsonOptions);
+
+            services.AddHybridCache();
 
             services.AddDistributedPostgreSqlCache(options =>
             {

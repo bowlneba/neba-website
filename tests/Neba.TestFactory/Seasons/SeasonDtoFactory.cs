@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Application.Seasons;
 using Neba.Domain.Seasons;
 
@@ -26,20 +24,21 @@ public static class SeasonDtoFactory
 
     public static IReadOnlyCollection<SeasonDto> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<SeasonDto>()
-            .CustomInstantiator(f => new()
+#pragma warning disable CA5394 // test data only, not security-sensitive
+        var startYear = (seed.HasValue ? new Random(seed.Value) : Random.Shared).Next(2000, 2025 - count + 1);
+#pragma warning restore CA5394
+
+        return [.. Enumerable.Range(0, count)
+            .Select(i =>
             {
-                Id = new SeasonId(Ulid.BogusString(f)),
-                Description = $"{f.Date.PastDateOnly(100).Year} Season",
-                StartDate = f.Date.PastDateOnly(5),
-                EndDate = f.Date.FutureDateOnly(5),
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+                var year = startYear + i;
+                return new SeasonDto
+                {
+                    Id = SeasonId.New(),
+                    Description = $"{year} Season",
+                    StartDate = new DateOnly(year, 9, 1),
+                    EndDate = new DateOnly(year + 1, 8, 31),
+                };
+            })];
     }
 }
