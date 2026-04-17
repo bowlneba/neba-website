@@ -459,7 +459,7 @@
                                                                                                 <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link">@row.BowlerName</a></td>
                                                                                                 <td
                                                                                                     class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-blue-300)]" : "")">
-                                                                                                    @row.PointsPerTournament.ToString("F2")
+                                                                                                    @row.PointsPerTournament.ToString("F3")
                                                                                                 </td>
                                                                                                 <td class="text-right tabular-nums">@row.Points</td>
                                                                                                 <td class="text-right tabular-nums">@row.Tournaments</td>
@@ -1210,7 +1210,7 @@ BoyStandingsSections()
                 <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
                     <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-blue-300" : "rank-cell")">@row.Rank</td>
                     <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
-                    <td class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-blue-300)]" : "")">@row.PointsPerTournament.ToString("F2")</td>
+                    <td class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-blue-300)]" : "")">@row.PointsPerTournament.ToString("F3")</td>
                     <td class="text-right tabular-nums">@row.Points</td>
                     <td class="text-right tabular-nums">@row.Tournaments</td>
                 </tr>
