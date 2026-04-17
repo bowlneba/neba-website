@@ -2,6 +2,7 @@
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inject IStatsApiService StatsApi
 @inject NavigationManager Nav
+@inject ILogger<SeasonStats> Logger
 
 <PageTitle>Season Stats - NEBA</PageTitle>
 <HeadContent>
@@ -776,8 +777,9 @@
 
             _selectedSeasonYear = ResolveSelectedSeasonYear(_model, Season);
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogFailedToLoadSeasonStats(ex);
             _loadError = true;
         }
         finally
@@ -799,8 +801,9 @@
             _model = await StatsApi.GetStatsAsync(year);
             SetStatsPageSeasonQuery(year);
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogFailedToLoadSeasonStatsForYear(ex, year);
             _loadError = true;
         }
         finally
