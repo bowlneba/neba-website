@@ -577,6 +577,23 @@ public sealed class SeasonStatsServiceTests
         result.MatchPlayRecordLeaderboard.First().WinPercentage.ShouldBe(80.00m);
     }
 
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should return MatchPlayRecordLeaderboard ordered by wins descending when win percentage is equal")]
+    public void CalculateSeasonStatsSummary_ShouldReturnMatchPlayRecordLeaderboard_OrderedByWinsDescending_WhenWinPercentageIsEqual()
+    {
+        var topId = BowlerId.New();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(matchPlayWins: 6, matchPlayLosses: 4),
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: topId, matchPlayWins: 9, matchPlayLosses: 6),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
+
+        result.MatchPlayRecordLeaderboard.Count.ShouldBe(2);
+        result.MatchPlayRecordLeaderboard.First().BowlerId.ShouldBe(topId);
+        result.MatchPlayRecordLeaderboard.First().Wins.ShouldBe(9);
+    }
+
     // CalculateSeasonStatsSummary — Match Play Appearances Leaderboard
 
     [Fact(DisplayName = "CalculateSeasonStatsSummary should return MatchPlayAppearancesLeaderboard ordered by finals descending excluding bowlers with no finals")]

@@ -174,6 +174,7 @@ internal sealed class SeasonStatsService(
         var matchPlayRecordLeaderboard = bowlerStats
             .Where(bs => bs.MatchPlayWins + bs.MatchPlayLosses > 0)
             .OrderByDescending(bs => ComputeWinPercentage(bs.MatchPlayWins, bs.MatchPlayLosses))
+            .ThenByDescending(bs => bs.MatchPlayWins)
             .Select(bs => new MatchPlayRecordDto
             {
                 BowlerId = bs.BowlerId,
