@@ -61,7 +61,7 @@ public record StatsPageViewModel
     /// </summary>
     public required IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> YouthOfTheYear { get; init; }
 
-    // Averages & Scoring
+    // Qualifying
 
     /// <summary>
     /// A collection of high average rows, where each item in the collection represents a single bowler's high average for the selected season. This is used to display the high average leaderboard in the UI and to determine the bowlers with the highest averages for the selected season. Each item in the collection contains information about the bowler's rank, name, average, games played, and other relevant information that is used to determine the bowler's standing in the high average leaderboard and to display the bowler's performance in terms of average for the selected season.

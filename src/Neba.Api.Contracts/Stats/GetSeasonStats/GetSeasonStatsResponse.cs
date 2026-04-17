@@ -44,7 +44,7 @@ public sealed record GetSeasonStatsResponse
     /// <summary>Youth of the Year standings for the Season (bowlers under 18), ordered by points descending.</summary>
     public required IReadOnlyCollection<BowlerOfTheYearStandingResponse> YouthOfTheYear { get; init; }
 
-    // Averages & Scoring
+    // Qualifying
 
     /// <summary>High average leaderboard for the Season, ordered by average descending. Only includes bowlers with at least one game.</summary>
     public required IReadOnlyCollection<HighAverageResponse> HighAverage { get; init; }

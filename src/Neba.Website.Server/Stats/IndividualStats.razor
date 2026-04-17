@@ -126,17 +126,16 @@
                     </div>
                 </section>
 
-                <!-- ── Averages & Scoring ────────────────────────── -->
+                <!-- ── Qualifying ────────────────────────────────── -->
                 <section class="indiv-section">
                     <div class="indiv-section-header indiv-accent-primary">
-                        <h2 class="indiv-section-title">Averages &amp; Scoring</h2>
+                        <h2 class="indiv-section-title">Qualifying</h2>
                     </div>
                     <div class="indiv-rank-grid">
                         @foreach (var (title, rank) in new (string, int?)[]
                         {
                             ("High Average", _model.HighAverageRank),
                             ("High Block", _model.HighBlockRank),
-                            ("Match Play Avg", _model.MatchPlayAverageRank),
                         })
                         {
                             <div
@@ -146,13 +145,6 @@
                             </div>
                         }
                     </div>
-                    @if (_model.MatchPlayAverage.HasValue)
-                    {
-                        <div class="indiv-detail-row">
-                            <span class="indiv-detail-label">Match Play Average</span>
-                            <span class="indiv-detail-value">@_model.MatchPlayAverage.Value.ToString("F2")</span>
-                        </div>
-                    }
                 </section>
 
                 <!-- ── Match Play ────────────────────────────────── -->
@@ -163,6 +155,7 @@
                     <div class="indiv-rank-grid">
                         @foreach (var (title, rank) in new (string, int?)[]
                         {
+                            ("Match Play Avg", _model.MatchPlayAverageRank),
                             ("Match Play Record", _model.MatchPlayRecordRank),
                             ("Match Play Appearances", _model.MatchPlayAppearancesRank),
                         })
@@ -179,6 +172,13 @@
                         <div class="indiv-detail-row">
                             <span class="indiv-detail-label">Win Percentage</span>
                             <span class="indiv-detail-value">@_model.WinPercentage.Value.ToString("F1")%</span>
+                        </div>
+                    }
+                    @if (_model.MatchPlayAverage.HasValue)
+                    {
+                        <div class="indiv-detail-row">
+                            <span class="indiv-detail-label">Match Play Average</span>
+                            <span class="indiv-detail-value">@_model.MatchPlayAverage.Value.ToString("F2")</span>
                         </div>
                     }
                 </section>

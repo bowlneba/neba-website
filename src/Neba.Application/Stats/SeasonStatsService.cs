@@ -155,8 +155,10 @@ internal sealed class SeasonStatsService(
             })
             .ToArray();
 
+        var minimumMatchPlayGames = minimumTournaments * 2m;
+
         var matchPlayAverageLeaderboard = bowlerStats
-            .Where(bs => bs.MatchPlayGames > 0)
+            .Where(bs => bs.MatchPlayGames >= minimumMatchPlayGames)
             .OrderByDescending(bs => bs.MatchPlayPinfall * 1m / bs.MatchPlayGames)
             .Select(bs => new MatchPlayAverageDto
             {
@@ -170,8 +172,6 @@ internal sealed class SeasonStatsService(
                 Winnings = bs.TournamentWinnings
             })
             .ToArray();
-
-        var minimumMatchPlayGames = minimumTournaments * 2m;
 
         var matchPlayRecordLeaderboard = bowlerStats
             .Where(bs => bs.MatchPlayWins + bs.MatchPlayLosses >= minimumMatchPlayGames)

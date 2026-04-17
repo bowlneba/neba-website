@@ -45,11 +45,11 @@
                 class="@TabClass("award-standings")" @onclick='() => SetActiveTab("award-standings")'>
             Award Standings
         </button>
-        <button role="tab" id="tab-averages-scoring"
-                aria-selected="@(_activeTab == "averages-scoring" ? "true" : "false")"
-                aria-controls="panel-averages-scoring" class="@TabClass("averages-scoring")"
-                @onclick='() => SetActiveTab("averages-scoring")'>
-            Averages &amp; Scoring
+        <button role="tab" id="tab-qualifying"
+                aria-selected="@(_activeTab == "qualifying" ? "true" : "false")"
+                aria-controls="panel-qualifying" class="@TabClass("qualifying")"
+                @onclick='() => SetActiveTab("qualifying")'>
+            Qualifying
         </button>
         <button role="tab" id="tab-match-play" aria-selected="@(_activeTab == "match-play" ? "true" : "false")"
                 aria-controls="panel-match-play" class="@TabClass("match-play")"
@@ -132,9 +132,9 @@
                             }
                         </div>
 
-                        <!-- ── Averages & Scoring ──────────────────────────── -->
-                        <div id="panel-averages-scoring" role="tabpanel" aria-labelledby="tab-averages-scoring"
-                             class="@PanelClass("averages-scoring") neba-space-y-6">
+                        <!-- ── Qualifying ──────────────────────────── -->
+                        <div id="panel-qualifying" role="tabpanel" aria-labelledby="tab-qualifying"
+                             class="@PanelClass("qualifying") neba-space-y-6">
 
                             <section class="stats-section">
                                 <div class="stats-section-header stats-accent-primary">
@@ -225,57 +225,7 @@
                                                 </button>
                                             }
                                         </section>
-
-                                        <section class="stats-section">
-                                            <div class="stats-section-header stats-accent-primary">
-                                                <h2 class="stats-section-title">Match Play Average</h2>
-                                            </div>
-                                            <div class="stats-table-wrapper">
-                                                <table class="stats-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th scope="col">Rank</th>
-                                                            <th scope="col">Name</th>
-                                                            <th scope="col" class="text-right">MP Avg</th>
-                                                            <th scope="col" class="text-right">Games</th>
-                                                            <th scope="col" class="text-right">Record</th>
-                                                            <th scope="col" class="text-right">Win %</th>
-                                                            <th scope="col" class="text-right">$ Won</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach (var row in _model.MatchPlayAverage.Take(10))
-                                                        {
-                                                            <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
-                                                                <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-primary" : "rank-cell")">
-                                                                    @row.Rank</td>
-                                                                    <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link">@row.BowlerName</a></td>
-                                                                    <td
-                                                                        class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-color-primary)]" : "")">
-                                                                        @row.MatchPlayAverage.ToString("F2")
-                                                                    </td>
-                                                                    <td class="text-right tabular-nums">@row.Games</td>
-                                                                    <td class="text-right tabular-nums">@($"{row.Wins}–{row.Loses}")</td>
-                                                                    <td class="text-right tabular-nums">
-                                                                        @FormatWinPercentage(row.WinPercentage)
-                                                                    </td>
-                                                                    <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings:C0}")">
-                                                                        @row.Winnings.ToString("C0")</td>
-                                                                    </tr>
-                                                                }
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                    @if (_model.MatchPlayAverage.Count > 10)
-                                                    {
-                                                        <button class="stats-expand-btn"
-                                                                aria-label="@($"Show all {_model.MatchPlayAverage.Count} Match Play Average standings")"
-                                                                @onclick="OpenMatchPlayAverageModal">
-                                                            Show all @_model.MatchPlayAverage.Count
-                                                        </button>
-                                                    }
-                                                </section>
-                                            </div>
+                                    </div>
 
                                             <!-- ── Match Play ──────────────────────────────────── -->
                                             <div id="panel-match-play" role="tabpanel" aria-labelledby="tab-match-play"
@@ -374,7 +324,61 @@
                                                                         </button>
                                                                     }
                                                                 </section>
-                                                            </div>
+
+                                                                <section class="stats-section">
+                                                                    <div class="stats-section-header stats-accent-red">
+                                                                        <h2 class="stats-section-title">Match Play Average</h2>
+                                                                        @if (_model.MinimumNumberOfTournaments > 0)
+                                                                        {
+                                                                            <span class="stats-section-qualifier">min @((int)(_model.MinimumNumberOfTournaments * 2m)) games</span>
+                                                                        }
+                                                                    </div>
+                                                                    <div class="stats-table-wrapper">
+                                                                        <table class="stats-table">
+                                                                            <thead>
+                                                                                <tr>
+                                                                                    <th scope="col">Rank</th>
+                                                                                    <th scope="col">Name</th>
+                                                                                    <th scope="col" class="text-right">MP Avg</th>
+                                                                                    <th scope="col" class="text-right">Games</th>
+                                                                                    <th scope="col" class="text-right">Record</th>
+                                                                                    <th scope="col" class="text-right">Win %</th>
+                                                                                    <th scope="col" class="text-right">$ Won</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody>
+                                                                                @foreach (var row in _model.MatchPlayAverage.Take(10))
+                                                                                {
+                                                                                    <tr class="@(row.Rank == 1 ? "stats-row-first" : "stats-row")">
+                                                                                        <td class="@(row.Rank == 1 ? "rank-cell rank-cell-accent-red" : "rank-cell")">
+                                                                                            @row.Rank</td>
+                                                                                            <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link">@row.BowlerName</a></td>
+                                                                                            <td
+                                                                                                class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-color-error)]" : "")">
+                                                                                                @row.MatchPlayAverage.ToString("F2")
+                                                                                            </td>
+                                                                                            <td class="text-right tabular-nums">@row.Games</td>
+                                                                                            <td class="text-right tabular-nums">@($"{row.Wins}–{row.Loses}")</td>
+                                                                                            <td class="text-right tabular-nums">
+                                                                                                @FormatWinPercentage(row.WinPercentage)
+                                                                                            </td>
+                                                                                            <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings:C0}")">
+                                                                                                @row.Winnings.ToString("C0")</td>
+                                                                                            </tr>
+                                                                                        }
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                            @if (_model.MatchPlayAverage.Count > 10)
+                                                                            {
+                                                                                <button class="stats-expand-btn"
+                                                                                        aria-label="@($"Show all {_model.MatchPlayAverage.Count} Match Play Average standings")"
+                                                                                        @onclick="OpenMatchPlayAverageModal">
+                                                                                    Show all @_model.MatchPlayAverage.Count
+                                                                                </button>
+                                                                            }
+                                                                        </section>
+                                                                    </div>
 
                                                             <!-- ── Efficiency ──────────────────────────────────── -->
                                                             <div id="panel-efficiency" role="tabpanel" aria-labelledby="tab-efficiency"
