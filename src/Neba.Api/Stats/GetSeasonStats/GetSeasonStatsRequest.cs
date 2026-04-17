@@ -2,5 +2,5 @@ namespace Neba.Api.Stats.GetSeasonStats;
 
 internal sealed class GetSeasonStatsRequest
 {
-    public int? Year { get; set; }
+    public int? Year { get; init; }
 }

@@ -128,27 +128,27 @@ public record BowlerSeasonStatsSnapshot
     /// <summary>
     /// Gets the points the bowler earned towards the Bowler of the Year award for the season. This is a required property that contributes to the bowler's overall ranking and eligibility for the Bowler of the Year award in the application.
     /// </summary>
-    public int BowlerOfYearPoints { get; init; }
+    public int BowlerOfTheYearPoints { get; init; }
 
     /// <summary>
     /// Gets the points the bowler earned towards the Senior of the Year award for the season. This is a required property that contributes to the bowler's overall ranking and eligibility for the Senior of the Year award in the application.
     /// </summary>
-    public int SeniorOfYearPoints { get; init; }
+    public int SeniorOfTheYearPoints { get; init; }
 
     /// <summary>
     /// Gets the points the bowler earned towards the Super Senior of the Year award for the season. This is a required property that contributes to the bowler's overall ranking and eligibility for the Super Senior of the Year award in the application.
     /// </summary>
-    public int SuperSeniorOfYearPoints { get; init; }
+    public int SuperSeniorOfTheYearPoints { get; init; }
 
     /// <summary>
     /// Gets the points the bowler earned towards the Woman of the Year award for the season. This is a required property that contributes to the bowler's overall ranking and eligibility for the Woman of the Year award in the application.
     /// </summary>
-    public int WomanOfYearPoints { get; init; }
+    public int WomanOfTheYearPoints { get; init; }
 
     /// <summary>
     /// Gets the points the bowler earned towards the Youth of the Year award for the season. This is a required property that contributes to the bowler's overall ranking and eligibility for the Youth of the Year award in the application.
     /// </summary>
-    public int YouthOfYearPoints { get; init; }
+    public int YouthOfTheYearPoints { get; init; }
 
     /// <summary>
     /// Gets the total tournament winnings for the bowler in the given season
