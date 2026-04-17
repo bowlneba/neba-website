@@ -23,12 +23,14 @@ public static class BowlerOfTheYearPointsRaceSeriesDtoFactory
 
     public static IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto> Bogus(int count, int? seed = null)
     {
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
+
         var faker = new Faker<BowlerOfTheYearPointsRaceSeriesDto>()
             .CustomInstantiator(f => new BowlerOfTheYearPointsRaceSeriesDto
             {
                 BowlerId = new BowlerId(Ulid.BogusString(f)),
-                BowlerName = NameFactory.Bogus(1, seed).Single(),
-                Results = BowlerOfTheYearPointsRaceTournamentDtoFactory.Bogus(f.Random.Int(1, 5), seed)
+                BowlerName = bowlerNamePool.GetNext(),
+                Results = BowlerOfTheYearPointsRaceTournamentDtoFactory.Bogus(f.Random.Int(1, 5), f.Random.Int(1, int.MaxValue))
             });
 
         if (seed.HasValue)

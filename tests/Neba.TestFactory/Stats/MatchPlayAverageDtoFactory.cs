@@ -38,11 +38,13 @@ public static class MatchPlayAverageDtoFactory
 
     public static IReadOnlyCollection<MatchPlayAverageDto> Bogus(int count, int? seed = null)
     {
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
+
         var faker = new Faker<MatchPlayAverageDto>()
             .CustomInstantiator(f => new MatchPlayAverageDto
             {
                 BowlerId = new BowlerId(Ulid.BogusString(f)),
-                BowlerName = NameFactory.Bogus(1, seed).Single(),
+                BowlerName = bowlerNamePool.GetNext(),
                 MatchPlayAverage = f.Random.Decimal(150, 230),
                 Games = f.Random.Int(2, 20),
                 Wins = f.Random.Int(0, 10),

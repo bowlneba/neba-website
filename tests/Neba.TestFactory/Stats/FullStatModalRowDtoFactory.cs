@@ -53,11 +53,13 @@ public static class FullStatModalRowDtoFactory
 
     public static IReadOnlyCollection<FullStatModalRowDto> Bogus(int count, int? seed = null)
     {
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
+
         var faker = new Faker<FullStatModalRowDto>()
             .CustomInstantiator(f => new FullStatModalRowDto
             {
                 BowlerId = new BowlerId(Ulid.BogusString(f)),
-                BowlerName = NameFactory.Bogus(1, seed).Single(),
+                BowlerName = bowlerNamePool.GetNext(),
                 Points = f.Random.Int(0, 1000),
                 Average = f.Random.Decimal(150, 230),
                 Games = f.Random.Int(20, 200),

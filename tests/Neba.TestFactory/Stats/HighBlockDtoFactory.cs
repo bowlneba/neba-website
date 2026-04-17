@@ -26,11 +26,13 @@ public static class HighBlockDtoFactory
 
     public static IReadOnlyCollection<HighBlockDto> Bogus(int count, int? seed = null)
     {
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
+
         var faker = new Faker<HighBlockDto>()
             .CustomInstantiator(f => new HighBlockDto
             {
                 BowlerId = new BowlerId(Ulid.BogusString(f)),
-                BowlerName = NameFactory.Bogus(1, seed).Single(),
+                BowlerName = bowlerNamePool.GetNext(),
                 HighBlock = f.Random.Int(900, 1500),
                 HighGame = f.Random.Int(200, 300)
             });

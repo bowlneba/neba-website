@@ -1,5 +1,7 @@
 using ErrorOr;
+
 using FastEndpoints;
+
 using Neba.Api.Stats.GetSeasonStats;
 using Neba.Application.Messaging;
 using Neba.Application.Stats.GetSeasonStats;
@@ -76,6 +78,26 @@ public sealed class GetSeasonStatsEndpointTests
 
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(404);
+    }
+
+    [Fact(DisplayName = "HandleAsync should return 500 when query returns a null success payload")]
+    public async Task HandleAsync_ShouldReturn500_WhenQueryReturnsNullPayload()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var queryHandlerMock = new Mock<IQueryHandler<GetSeasonStatsQuery, ErrorOr<SeasonStatsDto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<GetSeasonStatsQuery>(), cancellationToken))
+            .ReturnsAsync(default(ErrorOr<SeasonStatsDto>));
+
+        var endpoint = Factory.Create<GetSeasonStatsEndpoint>(queryHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(new GetSeasonStatsRequest { Year = null }, cancellationToken);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(500);
     }
 
     [Fact(DisplayName = "Configure should register anonymous GET route under /stats path")]

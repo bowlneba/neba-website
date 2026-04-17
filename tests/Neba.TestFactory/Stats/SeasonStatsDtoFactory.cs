@@ -26,13 +26,22 @@ public static class SeasonStatsDtoFactory
     public static IReadOnlyCollection<SeasonStatsDto> Bogus(int count, int? seed = null)
     {
         var faker = new Faker<SeasonStatsDto>()
-            .CustomInstantiator(f => new SeasonStatsDto
+            .CustomInstantiator(f =>
             {
-                Season = SeasonDtoFactory.Bogus(1, seed).Single(),
-                SeasonsWithStats = SeasonDtoFactory.Bogus(f.Random.Int(1, 5), seed),
-                BowlerStats = BowlerSeasonStatsDtoFactory.Bogus(f.Random.Int(1, 10), seed),
-                BowlerOfTheYearRace = BowlerOfTheYearPointsRaceSeriesDtoFactory.Bogus(f.Random.Int(1, 5), seed),
-                Summary = SeasonStatsSummaryDtoFactory.Bogus(1, seed).Single(),
+                var seasonSeed = f.Random.Int(1, int.MaxValue);
+                var seasonsWithStatsSeed = f.Random.Int(1, int.MaxValue);
+                var bowlerStatsSeed = f.Random.Int(1, int.MaxValue);
+                var bowlerOfTheYearRaceSeed = f.Random.Int(1, int.MaxValue);
+                var summarySeed = f.Random.Int(1, int.MaxValue);
+
+                return new SeasonStatsDto
+                {
+                    Season = SeasonDtoFactory.Bogus(1, seasonSeed).Single(),
+                    SeasonsWithStats = SeasonDtoFactory.Bogus(f.Random.Int(1, 5), seasonsWithStatsSeed),
+                    BowlerStats = BowlerSeasonStatsDtoFactory.Bogus(f.Random.Int(1, 10), bowlerStatsSeed),
+                    BowlerOfTheYearRace = BowlerOfTheYearPointsRaceSeriesDtoFactory.Bogus(f.Random.Int(1, 5), bowlerOfTheYearRaceSeed),
+                    Summary = SeasonStatsSummaryDtoFactory.Bogus(1, summarySeed).Single(),
+                };
             });
 
         if (seed.HasValue)

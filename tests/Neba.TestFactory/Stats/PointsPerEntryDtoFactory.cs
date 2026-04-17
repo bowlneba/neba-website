@@ -29,11 +29,13 @@ public static class PointsPerEntryDtoFactory
 
     public static IReadOnlyCollection<PointsPerEntryDto> Bogus(int count, int? seed = null)
     {
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
+
         var faker = new Faker<PointsPerEntryDto>()
             .CustomInstantiator(f => new PointsPerEntryDto
             {
                 BowlerId = new BowlerId(Ulid.BogusString(f)),
-                BowlerName = NameFactory.Bogus(1, seed).Single(),
+                BowlerName = bowlerNamePool.GetNext(),
                 PointsPerEntry = f.Random.Decimal(10, 100),
                 Points = f.Random.Int(50, 1000),
                 Entries = f.Random.Int(1, 20)

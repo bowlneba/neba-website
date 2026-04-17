@@ -29,11 +29,13 @@ public static class AverageFinishDtoFactory
 
     public static IReadOnlyCollection<AverageFinishDto> Bogus(int count, int? seed = null)
     {
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
+
         var faker = new Faker<AverageFinishDto>()
             .CustomInstantiator(f => new AverageFinishDto
             {
                 BowlerId = new BowlerId(Ulid.BogusString(f)),
-                BowlerName = NameFactory.Bogus(1, seed).Single(),
+                BowlerName = bowlerNamePool.GetNext(),
                 AverageFinish = f.Random.Decimal(1, 15),
                 Finals = f.Random.Int(1, 15),
                 Winnings = f.Random.Decimal(0, 5000)

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using Bogus;
 
 using Neba.Application.Stats.GetSeasonStats;
@@ -117,6 +119,8 @@ public static class BowlerSeasonStatsDtoFactory
 
     public static IReadOnlyCollection<BowlerSeasonStatsDto> Bogus(int count, int? seed = null)
     {
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
+
         var faker = new Faker<BowlerSeasonStatsDto>()
             .CustomInstantiator(f =>
             {
@@ -130,15 +134,15 @@ public static class BowlerSeasonStatsDtoFactory
                 var entries = f.Random.Int(tournaments, tournaments * 2);
                 var totalEntries = entries + f.Random.Int(0, 5);
                 var finals = f.Random.Int(0, entries);
-                var cashes = f.Random.Int(finals, entries);
+                var cashes  =f.Random.Int(finals, entries);
 
                 var totalGames = f.Random.Int(60, 300);
                 var totalPinfall = totalGames * f.Random.Int(150, 280);
 
                 return new BowlerSeasonStatsDto
                 {
-                    BowlerId = new BowlerId(Ulid.BogusString(f)),
-                    BowlerName = NameFactory.Bogus(1, seed).Single(),
+                    BowlerId = BowlerId.Parse(Ulid.BogusString(f, f.Date.Past()), CultureInfo.InvariantCulture),
+                    BowlerName = bowlerNamePool.GetNext(),
                     IsMember = f.Random.Bool(),
                     IsRookie = f.Random.Bool(),
                     IsSenior = f.Random.Bool(),

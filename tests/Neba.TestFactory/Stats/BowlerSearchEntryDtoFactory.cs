@@ -19,11 +19,13 @@ public static class BowlerSearchEntryDtoFactory
 
     public static IReadOnlyCollection<BowlerSearchEntryDto> Bogus(int count, int? seed = null)
     {
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
+
         var faker = new Faker<BowlerSearchEntryDto>()
             .CustomInstantiator(f => new BowlerSearchEntryDto
             {
                 BowlerId = new BowlerId(Ulid.BogusString(f)),
-                BowlerName = NameFactory.Bogus(1, seed).Single()
+                BowlerName = bowlerNamePool.GetNext()
             });
 
         if (seed.HasValue)

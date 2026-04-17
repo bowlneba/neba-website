@@ -32,11 +32,13 @@ public static class HighAverageDtoFactory
 
     public static IReadOnlyCollection<HighAverageDto> Bogus(int count, int? seed = null)
     {
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
+
         var faker = new Faker<HighAverageDto>()
             .CustomInstantiator(f => new HighAverageDto
             {
                 BowlerId = new BowlerId(Ulid.BogusString(f)),
-                BowlerName = NameFactory.Bogus(1, seed).Single(),
+                BowlerName = bowlerNamePool.GetNext(),
                 Average = f.Random.Decimal(150, 230),
                 Games = f.Random.Int(20, 200),
                 Tournaments = f.Random.Int(1, 15),

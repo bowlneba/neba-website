@@ -29,11 +29,13 @@ public static class MatchPlayAppearancesDtoFactory
 
     public static IReadOnlyCollection<MatchPlayAppearancesDto> Bogus(int count, int? seed = null)
     {
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
+
         var faker = new Faker<MatchPlayAppearancesDto>()
             .CustomInstantiator(f => new MatchPlayAppearancesDto
             {
                 BowlerId = new BowlerId(Ulid.BogusString(f)),
-                BowlerName = NameFactory.Bogus(1, seed).Single(),
+                BowlerName = bowlerNamePool.GetNext(),
                 Finals = f.Random.Int(1, 15),
                 Tournaments = f.Random.Int(1, 15),
                 Entries = f.Random.Int(1, 20)
