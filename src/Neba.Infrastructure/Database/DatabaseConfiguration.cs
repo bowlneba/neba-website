@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using Neba.Application.Awards;
+using Neba.Application.Bowlers;
 using Neba.Application.BowlingCenters;
 using Neba.Application.HallOfFame;
 using Neba.Application.Sponsors;
@@ -132,6 +133,7 @@ internal static class DatabaseConfiguration
     {
         public void AddQueries()
         {
+            services.AddScoped<IBowlerQueries, BowlerQueries>();
             services.AddScoped<IBowlingCenterQueries, BowlingCenterQueries>();
             services.AddScoped<IHallOfFameQueries, HallOfFameQueries>();
             services.AddScoped<IAwardQueries, AwardQueries>();
