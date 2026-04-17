@@ -13,12 +13,12 @@ public sealed record PointsPerEntryRowViewModel
     /// <summary>
     /// The unique identifier of the bowler, represented as a ULID (Universally Unique Lexicographically Sortable Identifier). This ID is used to associate the row with a specific bowler in the database and can be used for linking to the bowler's profile or for other data retrieval purposes.
     /// </summary>
-    public string BowlerId { get; init; } = null!;
+    public required string BowlerId { get; init; }
 
     /// <summary>
     /// The full name of the bowler, which is displayed in the statistics table. This field provides a human-readable identifier for the bowler, allowing users to easily recognize and differentiate between bowlers in the standings.
     /// </summary>
-    public string BowlerName { get; init; } = null!;
+    public required string BowlerName { get; init; }
 
     /// <summary>
     /// The average points earned per tournament entry for the bowler, calculated as the total points divided by the total entries. This value is rounded to three decimal places for display purposes. If the bowler has no entries, this value defaults to 0 to avoid division by zero errors. This metric provides insight into the efficiency of the bowler's performance across their tournament participations.
