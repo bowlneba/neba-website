@@ -26,7 +26,7 @@ public sealed record BowlerOfTheYearStandingResponse
     public required int Finals { get; init; }
 
     /// <summary>The bowler's mean finishing position across all Finals appearances. Null if the bowler did not receive a finishing position.</summary>
-    public required decimal? AverageFinish { get; init; }
+    public decimal? AverageFinish { get; init; }
 
     /// <summary>Total tournament cash prize money earned by the bowler during the Season, excluding Cup earnings.</summary>
     public required decimal Winnings { get; init; }

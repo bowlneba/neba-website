@@ -41,7 +41,7 @@ public sealed class ListActiveSponsorsEndpointTests
         await Verify(endpoint.Response);
     }
 
-    [Fact(DisplayName = "Configure should register anonymous GET route at /sponsors/active")]
+    [Fact(DisplayName = "Configure should register anonymous GET route at /sponsors")]
     public void Configure_ShouldRegisterAnonymousGetRoute_AtExpectedPath()
     {
         // Arrange
@@ -50,7 +50,7 @@ public sealed class ListActiveSponsorsEndpointTests
 
         // Assert — route and auth
         endpoint.Definition.Verbs.ShouldContain("GET");
-        endpoint.Definition.Routes.ShouldContain(r => r.Contains("sponsors/active"), "should be under the /sponsors/active path");
+        endpoint.Definition.Routes.ShouldContain(r => r.Contains("sponsors"), "should be under the /sponsors path");
         endpoint.Definition.AnonymousVerbs.ShouldNotBeEmpty();
     }
 

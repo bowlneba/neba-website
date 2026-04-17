@@ -183,7 +183,7 @@ const routes: Record<string, unknown> = {
   '/documents/tournament-rules': { html: MOCK_TOURNAMENT_RULES_HTML },
   '/documents/bylaws': { html: MOCK_BYLAWS_HTML },
   '/bowling-centers': MOCK_BOWLING_CENTERS,
-  '/sponsors/active': MOCK_SPONSORS_ACTIVE,
+  '/sponsors': MOCK_SPONSORS_ACTIVE,
   '/sponsors/pro-shop-plus': MOCK_SPONSOR_PRO_SHOP_PLUS,
   '/sponsors/old-sponsor': MOCK_SPONSOR_OLD_SPONSOR,
 };
