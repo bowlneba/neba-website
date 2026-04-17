@@ -146,7 +146,7 @@ public sealed class SeasonStatsTests : IDisposable
             .ChangeAsync(new ChangeEventArgs { Value = targetName });
 
         // Assert
-        nav.Uri.ShouldEndWith($"/stats/{s_searchBowlerId}");
+        nav.Uri.ShouldEndWith($"/stats/{s_searchBowlerId}?season={s_firstSeasonYear}");
     }
 
     private static StatsPageViewModel CreateStatsModel(

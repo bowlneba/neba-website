@@ -838,7 +838,9 @@
     }
 
     private string GetIndividualStatsUrl(string bowlerId)
-        => $"/stats/{bowlerId}?season={_selectedSeasonYear}";
+        => _selectedSeasonYear > 0
+            ? $"/stats/{bowlerId}?season={_selectedSeasonYear}"
+            : $"/stats/{bowlerId}";
 
     private void SetStatsPageSeasonQuery(int year)
     {

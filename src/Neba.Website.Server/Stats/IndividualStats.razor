@@ -225,17 +225,15 @@
 
                 @if (_model.BowlerOfTheYearPointsRace is not null)
                 {
-                    <div class="indiv-points-race-card"
-                         role="button"
-                         tabindex="0"
-                         aria-label="Open Bowler of the Year race chart"
-                         @onclick="OpenPointsRaceModal"
+                    <div class="indiv-points-race-card" role="button" tabindex="0"
+                         aria-label="Open Bowler of the Year race chart" @onclick="OpenPointsRaceModal"
                          @onkeydown="OnPointsRaceWidgetKeyDown">
                         <div class="indiv-points-race-card-header">
                             <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Points Race</h2>
                             <span class="indiv-points-race-card-hint">Open full chart</span>
                         </div>
-                        <PointsRaceChart Series="@(new[] { _model.BowlerOfTheYearPointsRace! })" Height="240" AllowSeriesToggle="false" />
+                        <PointsRaceChart Series="@(new[] { _model.BowlerOfTheYearPointsRace! })" Height="240"
+                                         AllowSeriesToggle="false" />
                     </div>
                 }
 
@@ -244,8 +242,7 @@
 
         @if (_modalOpen)
         {
-            <div class="indiv-modal-backdrop" @onclick="CloseModal" role="dialog" aria-modal="true"
-                 aria-label="@_modalTitle">
+            <div class="indiv-modal-backdrop" @onclick="CloseModal" role="dialog" aria-modal="true" aria-label="@_modalTitle">
                 <div class="indiv-modal" @onclick:stopPropagation>
                     <div class="indiv-modal-header">
                         <h2 class="indiv-modal-title">@_modalTitle</h2>
@@ -320,7 +317,9 @@
     }
 
     private string GetSeasonStatsUrl()
-        => $"/stats?season={_selectedSeasonYear}";
+        => _selectedSeasonYear > 0
+            ? $"/stats?season={_selectedSeasonYear}"
+            : "/stats";
 
     private void SetSeasonQuery(int year)
     {
@@ -348,11 +347,8 @@
     }
 
     private RenderFragment RenderPointsRaceModal() => @<div class="indiv-chart-modal">
-        <PointsRaceChart Series="@(new[] { _model!.BowlerOfTheYearPointsRace! })"
-                         Title=""
-                         ShowCategoryLabels="true"
-                         AllowSeriesToggle="false"
-                         Height="520" />
+        <PointsRaceChart Series="@(new[] { _model!.BowlerOfTheYearPointsRace! })" Title="" ShowCategoryLabels="true"
+                         AllowSeriesToggle="false" Height="520" />
     </div>;
 
     private static string FormatFieldAvg(decimal value)
