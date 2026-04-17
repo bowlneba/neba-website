@@ -43,5 +43,11 @@
     "dotnet.unitTests.runSettingsPath": "${workspaceFolder}/.runsettings",
     "chat.tools.terminal.autoApprove": {
       "dotnet ef": true
+    },
+    "[csharp]": {
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+      }
     }
 }
