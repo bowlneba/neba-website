@@ -49,5 +49,9 @@
       "editor.codeActionsOnSave": {
         "source.organizeImports": "explicit"
       }
+    },
+    "razor.format.enable": false,
+    "[razor]": {
+      "editor.formatOnSave": false
     }
 }
