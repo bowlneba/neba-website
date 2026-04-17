@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
 
+using Neba.Application.Bowlers;
 using Neba.Application.Caching;
 using Neba.Application.Seasons;
 using Neba.Application.Stats.GetSeasonStats;
@@ -10,11 +11,24 @@ namespace Neba.Application.Stats;
 
 internal sealed class SeasonStatsService(
     IStatsQueries statsQueries,
+    IBowlerQueries bowlerQueries,
     HybridCache cache,
     ILogger<SeasonStatsService> logger)
         : ISeasonStatsService
 {
+
+    /// <summary>
+    /// Once tournaments and result stats come into the software this can be reworked to pull from the database instead of a json file. Until then, this will allow us to show the progression of the bowler of the
+    /// </summary>
+    /// <param name="season"></param>
+    /// <param name="bowlerQueries"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public Task<IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>> GetBowlerOfTheYearRaceAsync(SeasonDto season, IBowlerQueries bowlerQueries, CancellationToken cancellationToken)
+        => _BowlerOfTheYearProgression.GetBowlerOfTheYearProgressionAsync(season, _bowlerQueries, cancellationToken);
+
     private readonly IStatsQueries _statsQueries = statsQueries;
+    private readonly IBowlerQueries _bowlerQueries = bowlerQueries;
     private readonly HybridCache _cache = cache;
     private readonly ILogger<SeasonStatsService> _logger = logger;
 
@@ -116,6 +130,15 @@ internal interface ISeasonStatsService
     Task<IReadOnlyCollection<BowlerSeasonStatsDto>> GetBowlerSeasonStatsAsync(SeasonId seasonId, CancellationToken cancellationToken);
 
     SeasonStatsSummaryDto CalculateSeasonStatsSummary(IReadOnlyCollection<BowlerSeasonStatsDto> bowlerStats);
+
+    /// <summary>
+    /// This is a temporary method to get the progression of the bowler of the year points race until tournaments and points come into the application. Once that happens, this can be reworked to pull from the database instead of a json file and the temporary file can be deleted.
+    /// </summary>
+    /// <param name="season"></param>
+    /// <param name="bowlerQueries"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task<IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>> GetBowlerOfTheYearRaceAsync(SeasonDto season, IBowlerQueries bowlerQueries, CancellationToken cancellationToken);
 }
 
 internal static partial class SeasonStatsServiceLogMessages
