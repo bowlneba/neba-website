@@ -19,7 +19,7 @@ internal sealed class GetSeasonStatsEndpoint(IQueryHandler<GetSeasonStatsQuery, 
 
     public override void Configure()
     {
-        Get("{year?}");
+        Get("");
         Group<StatsGroup>();
 
         Options(options => options
@@ -214,6 +214,6 @@ internal sealed class GetSeasonStatsEndpoint(IQueryHandler<GetSeasonStatsQuery, 
             Winnings = s.Winnings
         })];
 
-    private static IReadOnlyCollection<string> MapBowlerNames(IReadOnlyDictionary<BowlerId, Name> bowlers) =>
-        [.. bowlers.Values.Select(n => n.ToDisplayName())];
+    private static IReadOnlyDictionary<string, string> MapBowlerNames(IReadOnlyDictionary<BowlerId, Name> bowlers) =>
+        bowlers.ToDictionary(kvp => kvp.Key.Value.ToString(), kvp => kvp.Value.ToDisplayName());
 }
