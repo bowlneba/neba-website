@@ -67,6 +67,7 @@ internal sealed class StatsQueries(AppDbContext appDbContext)
                 stat.Season.EndDate
             })
             .Distinct()
+            .OrderByDescending(s => s.StartDate)
             .ToListAsync(cancellationToken);
 
         return [.. seasons.Select(season => new SeasonDto
