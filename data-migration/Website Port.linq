@@ -2650,7 +2650,85 @@ private async Task<IReadOnlyCollection<BowlingCenters>> ManualBowlingCenterAddit
 	};
 	
 	manualBowlingCenters.Add(madisonSquareGarden);
+
+	var townLine = new BowlingCenters
+	{
+		CertificationNumber = "x0003",
+		Name = "Town Line Luxury Lanes",
+		Street = "665 Broadway Route 99",
+		City = "Malden",
+		State = "MA",
+		PostalCode = "021482041",
+		Latitude = 42.4426,
+		Longitude = -71.03027,
+		BowlingCenterPhoneNumbers =
+		[
+			new BowlingCenterPhoneNumbers
+			{
+				PhoneType = PhoneNumberType.Work,
+				PhoneCountryCode = "1",
+				PhoneNumber = "7913247120"
+			}
+		],
+		Country = "US",
+		EmailAddress = "townlinebowling@aol.com",
+		Status = BowlingCenterStatus.Uncertified,
+		WebsiteId = 30
+	};
 	
+	manualBowlingCenters.Add(townLine);
+
+	var saybrook = new BowlingCenters
+	{
+		CertificationNumber = "x0004",
+		Name = "AMF Saybrook Lanes",
+		Street = "925 Boston Post Rd",
+		City = "Old Saybrook",
+		State = "CT",
+		PostalCode = "064752148",
+		Latitude = 41.2896,
+		Longitude = -72.38717,
+		BowlingCenterPhoneNumbers =
+		[
+			new BowlingCenterPhoneNumbers
+			{
+				PhoneType = PhoneNumberType.Work,
+				PhoneCountryCode = "1",
+				PhoneNumber = "8603883488"
+			}
+		],
+		Country = "US",
+		Status = BowlingCenterStatus.Closed,
+		WebsiteId = 27
+	};
+	
+	manualBowlingCenters.AddRange(saybrook);
+
+	var airway = new BowlingCenters
+	{
+		CertificationNumber = "x0005",
+		Name = "AMF Airway Lanes",
+		Street = "1387 Liberty St",
+		City = "Springfield",
+		State = "MA",
+		PostalCode = "011041170",
+		Latitude = 42.13811,
+		Longitude = -72.58287,
+		BowlingCenterPhoneNumbers =
+		[
+			new BowlingCenterPhoneNumbers
+			{
+				PhoneType = PhoneNumberType.Work,
+				PhoneCountryCode = "1",
+				PhoneNumber = "4137337865"
+			}
+		],
+		Country = "US",
+		Status = BowlingCenterStatus.Closed,
+		WebsiteId = 1
+	};
+
+
 	return manualBowlingCenters;
 }
 
@@ -2697,6 +2775,8 @@ public sealed class BowlingCenterStatus
 	public static readonly BowlingCenterStatus Open = new(nameof(Open), 0);
 
 	public static readonly BowlingCenterStatus Closed = new(nameof(Closed), 1);
+	
+	public static readonly BowlingCenterStatus Uncertified = new(nameof(Uncertified), 2);
 
 	private BowlingCenterStatus(string name, int value)
 		: base(name, value)
