@@ -20,7 +20,8 @@ internal static class ApiServicesConfiguration
         ContentSerializer = new SystemTextJsonContentSerializer(
             new JsonSerializerOptions
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Converters = { new Cysharp.Serialization.Json.UlidJsonConverter() }
             }
         )
     };
