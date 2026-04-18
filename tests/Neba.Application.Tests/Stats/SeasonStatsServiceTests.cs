@@ -836,4 +836,162 @@ public sealed class SeasonStatsServiceTests
         result.FinalsPerEntryLeaderboard.Count.ShouldBe(1);
         result.FinalsPerEntryLeaderboard.Single().BowlerId.ShouldBe(eligibleId);
     }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should compute HighAverage from bowlers meeting minimum games and exclude zero-game bowlers")]
+    public void CalculateSeasonStatsSummary_ShouldComputeHighAverage_FromEligibleBowlers_WhenMinimumGamesApplied()
+    {
+        var expectedId = BowlerId.New();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: expectedId, totalGames: 10, totalPinfall: 1900),
+            BowlerSeasonStatsDtoFactory.Create(totalGames: 11, totalPinfall: 1980),
+            BowlerSeasonStatsDtoFactory.Create(totalGames: 0, totalPinfall: 3000),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 10, minimumTournaments: 0, minimumEntries: 0);
+
+        result.HighAverage.ShouldBe(190m);
+        result.HighAverageBowlers.Count.ShouldBe(1);
+        result.HighAverageBowlers.ShouldContainKey(expectedId);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should include only exact-threshold match play games in MatchPlayAverageLeaderboard")]
+    public void CalculateSeasonStatsSummary_ShouldIncludeOnlyEligibleMatchPlayAverageRows_WhenMinimumMatchPlayGamesApplied()
+    {
+        var expectedId = BowlerId.New();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: expectedId, matchPlayGames: 4, matchPlayPinfall: 860),
+            BowlerSeasonStatsDtoFactory.Create(matchPlayGames: 3, matchPlayPinfall: 900),
+            BowlerSeasonStatsDtoFactory.Create(matchPlayGames: 0, matchPlayPinfall: 0),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 2, minimumEntries: 0);
+
+        result.MatchPlayAverageLeaderboard.Count.ShouldBe(1);
+        result.MatchPlayAverageLeaderboard.Single().BowlerId.ShouldBe(expectedId);
+        result.MatchPlayAverageLeaderboard.Single().MatchPlayAverage.ShouldBe(215m);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should exclude zero-entry bowlers from PointsPerEntryLeaderboard when minimum entries is zero")]
+    public void CalculateSeasonStatsSummary_ShouldExcludeZeroEntries_FromPointsPerEntryLeaderboard_WhenMinimumIsZero()
+    {
+        var expectedId = BowlerId.New();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: expectedId, eligibleEntries: 4, bowlerOfTheYearPoints: 400),
+            BowlerSeasonStatsDtoFactory.Create(eligibleEntries: 0, bowlerOfTheYearPoints: 500),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
+
+        result.PointsPerEntryLeaderboard.Count.ShouldBe(1);
+        result.PointsPerEntryLeaderboard.Single().BowlerId.ShouldBe(expectedId);
+        result.PointsPerEntryLeaderboard.Single().PointsPerEntry.ShouldBe(100m);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should exclude zero-tournament and zero-point bowlers from PointsPerTournamentLeaderboard")]
+    public void CalculateSeasonStatsSummary_ShouldExcludeZeroTournamentAndZeroPointRows_FromPointsPerTournamentLeaderboard()
+    {
+        var expectedId = BowlerId.New();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: expectedId, eligibleTournaments: 4, bowlerOfTheYearPoints: 300),
+            BowlerSeasonStatsDtoFactory.Create(eligibleTournaments: 0, bowlerOfTheYearPoints: 700),
+            BowlerSeasonStatsDtoFactory.Create(eligibleTournaments: 10, bowlerOfTheYearPoints: 0),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
+
+        result.PointsPerTournamentLeaderboard.Count.ShouldBe(1);
+        result.PointsPerTournamentLeaderboard.Single().BowlerId.ShouldBe(expectedId);
+        result.PointsPerTournamentLeaderboard.Single().PointsPerTournament.ShouldBe(75m);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should exclude zero-entry bowlers from FinalsPerEntryLeaderboard when minimum entries is zero")]
+    public void CalculateSeasonStatsSummary_ShouldExcludeZeroEntries_FromFinalsPerEntryLeaderboard_WhenMinimumIsZero()
+    {
+        var expectedId = BowlerId.New();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: expectedId, eligibleEntries: 4, finals: 3),
+            BowlerSeasonStatsDtoFactory.Create(eligibleEntries: 0, finals: 5),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
+
+        result.FinalsPerEntryLeaderboard.Count.ShouldBe(1);
+        result.FinalsPerEntryLeaderboard.Single().BowlerId.ShouldBe(expectedId);
+        result.FinalsPerEntryLeaderboard.Single().FinalsPerEntry.ShouldBe(0.75m);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should compute MatchPlayAverage in MatchPlayRecordLeaderboard for positive and zero match play games")]
+    public void CalculateSeasonStatsSummary_ShouldComputeMatchPlayAverage_InMatchPlayRecordLeaderboard()
+    {
+        var highAvgId = BowlerId.New();
+        var zeroAvgId = BowlerId.New();
+
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(
+                bowlerId: highAvgId,
+                matchPlayWins: 8,
+                matchPlayLosses: 2,
+                matchPlayGames: 4,
+                matchPlayPinfall: 860),
+            BowlerSeasonStatsDtoFactory.Create(
+                bowlerId: zeroAvgId,
+                matchPlayWins: 1,
+                matchPlayLosses: 1,
+                matchPlayGames: 0,
+                matchPlayPinfall: 0),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
+
+        result.MatchPlayRecordLeaderboard.Count.ShouldBe(2);
+        result.MatchPlayRecordLeaderboard.First().BowlerId.ShouldBe(highAvgId);
+        result.MatchPlayRecordLeaderboard.First().MatchPlayAverage.ShouldBe(215m);
+
+        var zeroAvgRow = result.MatchPlayRecordLeaderboard.Single(r => r.BowlerId == zeroAvgId);
+        zeroAvgRow.MatchPlayAverage.ShouldBe(0m);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should compute AllBowlers averages and win percentage from non-trivial values")]
+    public void CalculateSeasonStatsSummary_ShouldComputeAllBowlersDerivedValues_FromNonTrivialInputs()
+    {
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(
+                bowlerOfTheYearPoints: 600,
+                totalGames: 4,
+                totalPinfall: 876,
+                matchPlayGames: 5,
+                matchPlayPinfall: 1000,
+                matchPlayWins: 3,
+                matchPlayLosses: 2),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
+        var row = result.AllBowlers.Single();
+
+        row.Average.ShouldBe(219m);
+        row.MatchPlayAverage.ShouldBe(200m);
+        row.WinPercentage.ShouldBe(60m);
+    }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should compute zero highest match play win percentage when all bowlers have no record")]
+    public void CalculateSeasonStatsSummary_ShouldComputeZeroHighestMatchPlayWinPercentage_WhenAllRecordsAreZero()
+    {
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(matchPlayWins: 0, matchPlayLosses: 0),
+            BowlerSeasonStatsDtoFactory.Create(matchPlayWins: 0, matchPlayLosses: 0),
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
+
+        result.HighestMatchPlayWinPercentage.ShouldBe(0m);
+        result.HighestMatchPlayWinPercentageBowlers.Count.ShouldBe(2);
+    }
 }
