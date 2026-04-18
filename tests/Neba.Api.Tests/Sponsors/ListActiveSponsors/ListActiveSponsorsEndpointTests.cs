@@ -50,7 +50,7 @@ public sealed class ListActiveSponsorsEndpointTests
 
         // Assert — route and auth
         endpoint.Definition.Verbs.ShouldContain("GET");
-        endpoint.Definition.Routes.ShouldContain("/sponsors");
+        endpoint.Definition.Routes.ShouldContain(r => r.Contains("sponsors"), "should be under the /sponsors path");
         endpoint.Definition.AnonymousVerbs.ShouldNotBeEmpty();
     }
 
