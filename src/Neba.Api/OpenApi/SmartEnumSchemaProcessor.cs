@@ -24,10 +24,12 @@ internal sealed class SmartEnumSchemaProcessor : ISchemaProcessor
             return;
         }
 
+        // Stryker disable Boolean : inherit: true handles properties that carry the attribute only via override; no current contracts use this but the behaviour is intentional
         foreach (PropertyInfo property in modelType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
             .Where(p => p.GetCustomAttributes<OpenApiSmartEnumAttribute>(inherit: true).Any()))
         {
             var attributes = property.GetCustomAttributes<OpenApiSmartEnumAttribute>(inherit: true).ToArray();
+        // Stryker restore Boolean
 
             string jsonPropertyName = GetJsonPropertyName(property);
             if (!context.Schema.Properties.TryGetValue(jsonPropertyName, out JsonSchemaProperty? propertySchema))

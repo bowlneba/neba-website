@@ -98,6 +98,7 @@ public sealed class GetSeasonStatsEndpointTests
 
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(500);
+        endpoint.ValidationFailures.ShouldContain(f => f.ErrorMessage == "Season stats payload was null.");
     }
 
     [Fact(DisplayName = "Configure should register anonymous GET route under /stats path")]

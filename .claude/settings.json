@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet-stryker --verbosity diagnostic)",
+      "Bash(dotnet-stryker --verbosity Trace)",
+      "Bash(tests/Neba.Api.Tests/bin/Debug/net10.0/Neba.Api.Tests.dll)",
+      "Bash(dotnet-stryker)"
+    ]
+  }
+}

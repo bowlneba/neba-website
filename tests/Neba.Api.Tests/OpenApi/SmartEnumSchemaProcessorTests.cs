@@ -224,7 +224,8 @@ public sealed class SmartEnumSchemaProcessorTests
         withInheritance[0].SmartEnumTypeName.ShouldBe("SponsorTier");
     }
 
-    [Fact(DisplayName = "GetJsonPropertyName should use camelCase when JsonPropertyName is whitespace")]
+
+[Fact(DisplayName = "GetJsonPropertyName should use camelCase when JsonPropertyName is whitespace")]
     public void GetJsonPropertyName_ShouldUseCamelCase_WhenJsonPropertyNameAttributeIsWhitespace()
     {
         // Arrange
