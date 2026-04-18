@@ -29,7 +29,7 @@ internal sealed class SmartEnumSchemaProcessor : ISchemaProcessor
             .Where(p => p.GetCustomAttributes<OpenApiSmartEnumAttribute>(inherit: true).Any()))
         {
             var attributes = property.GetCustomAttributes<OpenApiSmartEnumAttribute>(inherit: true).ToArray();
-        // Stryker restore Boolean
+            // Stryker restore Boolean
 
             string jsonPropertyName = GetJsonPropertyName(property);
             if (!context.Schema.Properties.TryGetValue(jsonPropertyName, out JsonSchemaProperty? propertySchema))
