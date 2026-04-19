@@ -15,6 +15,6 @@ internal static class UlidFakerExtensions
             f.Random.Bytes(10)).ToString();
 
         public static Ulid Bogus(Faker f, DateTime? refDate = null)
-            => Ulid.Parse(BogusString(f), CultureInfo.InvariantCulture);
+            => Ulid.Parse(BogusString(f, refDate), CultureInfo.InvariantCulture);
     }
 }
