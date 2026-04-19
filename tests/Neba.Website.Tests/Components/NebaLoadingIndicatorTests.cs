@@ -142,7 +142,7 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.Scope, LoadingIndicatorScope.FullScreen)
             .Add(p => p.OnOverlayClick, () => clicked = true));
 
-        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay").Count > 0);
+        await cut.WaitForStateAsync(() => cut.FindAll(".neba-loading-overlay").Count > 0);
 
         // Act
         var overlay = cut.Find(".neba-loading-overlay");
@@ -369,7 +369,7 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.DelayMs, 0)
             .Add(p => p.MinimumDisplayMs, 300));
 
-        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count > 0);
+        await cut.WaitForStateAsync(() => cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count > 0);
         cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count.ShouldBe(1);
 
         // Act - immediately try to hide it (before minimum time elapsed)
