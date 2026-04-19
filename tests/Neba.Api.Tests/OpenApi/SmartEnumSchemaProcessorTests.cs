@@ -326,20 +326,13 @@ public sealed class SmartEnumSchemaProcessorTests
             }
 
             var contextualTypeCtor = parameterType.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, binder: null, [typeof(Type)], modifiers: null);
-            if (contextualTypeCtor is not null)
-            {
-                return contextualTypeCtor.Invoke([modelType]);
-            }
 
-            return null;
+            return contextualTypeCtor?.Invoke([modelType]);
         }
 
-        if (parameterType.IsValueType)
-        {
-            return Activator.CreateInstance(parameterType);
-        }
-
-        return null;
+        return parameterType.IsValueType
+            ? Activator.CreateInstance(parameterType)
+            : null;
     }
 
 #pragma warning disable S2094 // Intentionally empty — used to test schema processor early-exit on types with no properties
