@@ -240,12 +240,9 @@ public sealed class SeasonStatsTests : IDisposable
         {
             RequestedSeasonYears.Add(year);
 
-            if (_results.Count == 0)
-            {
-                throw new InvalidOperationException("No queued stats result available for GetStatsAsync.");
-            }
-
-            return _results.Dequeue();
+            return _results.Count == 0
+                ? throw new InvalidOperationException("No queued stats result available for GetStatsAsync.")
+                : _results.Dequeue();
         }
     }
 }
