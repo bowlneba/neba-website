@@ -139,7 +139,7 @@ public sealed class SeasonStatsTests : IDisposable
 
         var cut = _ctx.Render<SeasonStatsPage>();
         var nav = _ctx.Services.GetRequiredService<NavigationManager>();
-        var targetName = "Search Target";
+        const string targetName = "Search Target";
 
         // Act
         await cut.Find(".stats-search-input")
