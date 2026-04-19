@@ -855,6 +855,24 @@ public sealed class SeasonStatsServiceTests
         result.HighAverageBowlers.ShouldContainKey(expectedId);
     }
 
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should exclude bowlers with games below minimum from HighAverage even when their average is higher")]
+    public void CalculateSeasonStatsSummary_ShouldExcludeBelowMinimumGamesBowlers_FromHighAverage_EvenWithHigherAverage()
+    {
+        var eligibleId = BowlerId.New();
+        var bowlerStats = new[]
+        {
+            BowlerSeasonStatsDtoFactory.Create(bowlerId: eligibleId, totalGames: 45, totalPinfall: 8100), // avg=180, eligible
+            BowlerSeasonStatsDtoFactory.Create(totalGames: 5, totalPinfall: 2000),                        // avg=400, games>0 but <45
+        };
+
+        var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 45m, minimumTournaments: 0, minimumEntries: 0);
+
+        // || mutation on line 92: "5 > 0 || 5 >= 45" = true → ineligible bowler included → highAverage = 400 not 180
+        result.HighAverage.ShouldBe(180m);
+        result.HighAverageBowlers.Count.ShouldBe(1);
+        result.HighAverageBowlers.ShouldContainKey(eligibleId);
+    }
+
     [Fact(DisplayName = "CalculateSeasonStatsSummary should include only exact-threshold match play games in MatchPlayAverageLeaderboard")]
     public void CalculateSeasonStatsSummary_ShouldIncludeOnlyEligibleMatchPlayAverageRows_WhenMinimumMatchPlayGamesApplied()
     {

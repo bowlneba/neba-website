@@ -78,6 +78,12 @@ public sealed class GetSponsorDetailQueryHandlerTests
             .Setup(q => q.GetSponsorAsync(query.Slug, TestContext.Current.CancellationToken))
             .ReturnsAsync(sponsor);
 
+        // Canary: if Conditional(true) mutation fires, GetBlobUri(null, null) is called.
+        // Returning a URL here lets the assertion below catch the mutation rather than relying on MockException.
+        _fileStorageServiceMock
+            .Setup(s => s.GetBlobUri(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new Uri("https://unexpected.example.com/logo.png"));
+
         // Act
         var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
 
@@ -107,6 +113,33 @@ public sealed class GetSponsorDetailQueryHandlerTests
         metadata.ShouldNotBeNull();
         metadata.ShouldContainKey("slug");
         metadata["slug"]?.ShouldBe(query.Slug);
+    }
+
+    [Fact(DisplayName = "HandleAsync should not set logo URL when sponsor has container but no path")]
+    public async Task HandleAsync_ShouldNotSetLogoUrl_WhenSponsorHasContainerButNoPath()
+    {
+        // Arrange — only LogoContainer set; LogoPath null.
+        // The && guard means this should NOT resolve a URL. The || mutation would call
+        // GetBlobUri(container, null) — MockBehavior.Strict would throw, killing the mutation.
+        var sponsor = SponsorDetailDtoFactory.Create(slug: "acme", logoContainer: "sponsors", logoPath: null);
+        var query = new GetSponsorDetailQuery { Slug = "acme" };
+
+        _sponsorQueriesMock
+            .Setup(q => q.GetSponsorAsync(query.Slug, TestContext.Current.CancellationToken))
+            .ReturnsAsync(sponsor);
+
+        // Canary: if || mutation fires, GetBlobUri("sponsors", null) is called.
+        // Returning a URL here lets the assertion below catch the mutation rather than relying on MockException.
+        _fileStorageServiceMock
+            .Setup(s => s.GetBlobUri(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new Uri("https://unexpected.example.com/logo.png"));
+
+        // Act
+        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LogoUrl.ShouldBeNull();
     }
 
     [Fact(DisplayName = "HandleAsync should pass cancellation token to sponsor queries")]

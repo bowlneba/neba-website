@@ -133,12 +133,58 @@ public sealed class ListActiveSponsorsQueryHandlerTests
             .Setup(q => q.GetActiveSponsorsAsync(TestContext.Current.CancellationToken))
             .ReturnsAsync(sponsors);
 
+        // Canary: if Conditional(true) mutation fires, GetBlobUri(null, null) is called.
+        // Returning a URL here lets the assertion below catch the mutation rather than relying on MockException.
+        _fileStorageServiceMock
+            .Setup(s => s.GetBlobUri(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new Uri("https://unexpected.example.com/logo.png"));
+
         // Act
         var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
 
         // Assert
         result.Count.ShouldBe(2);
         result.ShouldAllBe(s => s.LogoUrl == null);
+    }
+
+    [Fact(DisplayName = "Should not set logo URL when sponsor has container but no path")]
+    public async Task HandleAsync_ShouldNotSetLogoUrl_WhenSponsorHasContainerButNoPath()
+    {
+        // Arrange — LogoContainer set but LogoPath null.
+        // The && guard means no URL should be resolved. The || mutation would call
+        // GetBlobUri(container, null) — MockBehavior.Strict would throw, killing the mutation.
+        // Note: factory coalesces null→ValidLogoPath, so the DTO is constructed directly.
+        IReadOnlyCollection<SponsorSummaryDto> sponsors =
+        [
+            new SponsorSummaryDto
+            {
+                Name = "Acme Corp",
+                Slug = "acme-corp",
+                LogoContainer = "sponsors",
+                LogoPath = null,
+                IsCurrentSponsor = true,
+                Priority = 1,
+                Tier = SponsorTier.Standard.Name,
+                Category = SponsorCategory.Technology.Name
+            }
+        ];
+        var query = new ListActiveSponsorsQuery();
+
+        _sponsorQueriesMock
+            .Setup(q => q.GetActiveSponsorsAsync(TestContext.Current.CancellationToken))
+            .ReturnsAsync(sponsors);
+
+        // Canary: if || mutation fires, GetBlobUri("sponsors", null) is called.
+        // Returning a URL here lets the assertion below catch the mutation rather than relying on MockException.
+        _fileStorageServiceMock
+            .Setup(s => s.GetBlobUri(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new Uri("https://unexpected.example.com/logo.png"));
+
+        // Act
+        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Single().LogoUrl.ShouldBeNull();
     }
 
     [Fact(DisplayName = "Should return sponsors with logo uri when queries returns sponsors")]
