@@ -10,13 +10,14 @@ public static class SeasonFactory
     public const string ValidDescription = "2025 Season";
     public static readonly DateOnly ValidStartDate = new(2025, 1, 1);
     public static readonly DateOnly ValidEndDate = new(2025, 12, 31);
+    public const bool ValidComplete = false;
 
     public static Season Create(
         SeasonId? id = null,
         string? description = null,
         DateOnly? startDate = null,
         DateOnly? endDate = null,
-        bool complete = false)
+        bool complete = ValidComplete)
     {
         return new Season
         {
@@ -36,7 +37,7 @@ public static class SeasonFactory
         var faker = new Faker<Season>()
             .CustomInstantiator(f => new()
             {
-                Id = new SeasonId(Ulid.Bogus(f)),
+                Id = new SeasonId(Ulid.BogusString(f)),
                 Description = $"{f.Date.PastDateOnly(100).Year} Season",
                 StartDate = f.Date.PastDateOnly(5),
                 EndDate = f.Date.FutureDateOnly(5),

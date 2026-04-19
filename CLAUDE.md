@@ -284,6 +284,27 @@ This applies to any `ISchemaProcessor`, startup-cached registries, or other stat
 
 All classes that use `[LoggerMessage]` source-generated log methods have dedicated log-assertion tests using `FakeLogger<T>`. When adding a new class that logs, add `Microsoft.Extensions.Diagnostics.Testing` to its test project (if not already present) and add log-assertion tests covering every log level/path.
 
+### Blazor Layer Mutation Testing — C# 14 Extension Block Limitation
+
+Stryker 4.14.1 (latest as of April 2026) **cannot run mutation tests on `Neba.Website.Server`** because its internal Roslyn version does not support C# 14 `extension` block syntax (`extension(T t) { ... }` inside a `static class`). The compile error is a rollback failure after Stryker tries to include these files in compilation.
+
+**Root cause**: Stryker packages its own Roslyn. The C# 14 `extension` block feature requires a Roslyn version newer than Stryker ships.
+
+**Affected files** (use `extension(` blocks):
+
+- `BowlingCenters/BowlingCenterMappingExtensions.cs`
+- `HallOfFame/HallOfFameMappingExtensions.cs`
+- `History/Awards/BowlerOfTheYearMappingExtensions.cs`
+- `History/Awards/HighAverageMappingExtensions.cs`
+- `History/Awards/HighBlockMappingExtensions.cs`
+- `Sponsors/SponsorMappingExtensions.cs`
+- `Services/ApiServicesConfiguration.cs`
+- `Maps/MapsConfiguration.cs`
+
+**Workaround**: None until Stryker updates its Roslyn package. Do not attempt to rewrite these files to traditional extension methods — the `extension` block syntax is the project convention per Architecture Patterns.
+
+**What to do**: Skip the Blazor mutation run. When Stryker ships a version that supports C# 14 extension blocks, run `cd tests/Neba.Website.Tests && dotnet stryker` to get the baseline score.
+
 ### FusionCache Deserialization Recovery
 
 - Cached query DTOs should use serialization-safe types; do not store domain `SmartEnum` instances directly in cached DTO properties.

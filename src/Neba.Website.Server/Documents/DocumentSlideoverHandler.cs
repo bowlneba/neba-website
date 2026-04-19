@@ -27,6 +27,7 @@ internal sealed class DocumentSlideoverHandler(
             Content = new MarkupString($"<p>Document not found for route: {pathname}</p>");
             IsLoading = false;
             stateHasChanged();
+            // Stryker disable once Statement : NullReferenceException from GetDocumentTitle(null); MTP runner swallows thrown exceptions
             return;
         }
 

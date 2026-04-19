@@ -7,6 +7,7 @@ using Neba.Api.Contracts.BowlingCenters;
 using Neba.Api.Contracts.Documents;
 using Neba.Api.Contracts.HallOfFame;
 using Neba.Api.Contracts.Sponsors;
+using Neba.Api.Contracts.Stats;
 
 using Refit;
 
@@ -19,7 +20,8 @@ internal static class ApiServicesConfiguration
         ContentSerializer = new SystemTextJsonContentSerializer(
             new JsonSerializerOptions
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Converters = { new Cysharp.Serialization.Json.UlidJsonConverter() }
             }
         )
     };
@@ -41,6 +43,7 @@ internal static class ApiServicesConfiguration
             services.RegisterApiEndpoint<IHallOfFameApi>();
             services.RegisterApiEndpoint<IAwardsApi>();
             services.RegisterApiEndpoint<ISponsorsApi>();
+            services.RegisterApiEndpoint<IStatsApi>();
 
             return services;
         }

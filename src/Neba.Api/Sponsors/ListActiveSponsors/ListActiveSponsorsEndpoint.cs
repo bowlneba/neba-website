@@ -18,9 +18,8 @@ internal sealed class ListActiveSponsorsEndpoint(IQueryHandler<ListActiveSponsor
 
     public override void Configure()
     {
-        Get("active");
+        Get(string.Empty);
         Group<SponsorsGroup>();
-        Version(1);
 
         Options(options => options
             .WithVersionSet("Sponsors")

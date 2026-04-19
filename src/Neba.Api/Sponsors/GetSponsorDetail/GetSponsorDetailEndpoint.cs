@@ -50,7 +50,7 @@ internal sealed class GetSponsorDetailEndpoint(IQueryHandler<GetSponsorDetailQue
 
         var response = new SponsorDetailResponse
         {
-            Id = dto.Id.Value.ToString(),
+            Id = dto.Id.Value,
             Name = dto.Name,
             Slug = dto.Slug,
             IsCurrentSponsor = dto.IsCurrentSponsor,

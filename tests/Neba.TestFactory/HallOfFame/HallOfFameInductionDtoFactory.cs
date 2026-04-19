@@ -1,7 +1,7 @@
 using Bogus;
 
-using Neba.Application.Bowlers;
 using Neba.Application.HallOfFame.ListHallOfFameInductions;
+using Neba.Domain.Bowlers;
 using Neba.Domain.HallOfFame;
 using Neba.TestFactory.Bowlers;
 
@@ -9,17 +9,19 @@ namespace Neba.TestFactory.HallOfFame;
 
 public static class HallOfFameInductionDtoFactory
 {
+    public const int ValidYear = 2025;
+
     public static HallOfFameInductionDto Create(
         int? year = null,
-        BowlerNameDto? bowlerName = null,
+        Name? bowlerName = null,
         IReadOnlyCollection<HallOfFameCategory>? categories = null,
         string? photoContainer = null,
         string? photoPath = null,
         Uri? photoUri = null)
         => new()
         {
-            Year = year ?? 2025,
-            BowlerName = bowlerName ?? BowlerNameDtoFactory.Create(),
+            Year = year ?? ValidYear,
+            BowlerName = bowlerName ?? NameFactory.Create(),
             Categories = categories ?? [HallOfFameCategory.SuperiorPerformance],
             PhotoContainer = photoContainer,
             PhotoPath = photoPath,
@@ -28,7 +30,7 @@ public static class HallOfFameInductionDtoFactory
 
     public static IReadOnlyCollection<HallOfFameInductionDto> Bogus(int count, int? seed = null)
     {
-        var bowlerNames = UniquePool.Create(BowlerNameDtoFactory.Bogus(count, seed), seed);
+        var bowlerNames = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
 
         var faker = new Faker<HallOfFameInductionDto>()
             .CustomInstantiator(f =>

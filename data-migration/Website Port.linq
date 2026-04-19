@@ -33,6 +33,7 @@
   <Namespace>HtmlAgilityPack</Namespace>
   <Namespace>Microsoft.Data.SqlClient</Namespace>
   <Namespace>NameParser</Namespace>
+  <Namespace>System.Globalization</Namespace>
   <Namespace>System.Net.Http</Namespace>
   <Namespace>System.Text.Json</Namespace>
   <Namespace>System.Text.Json.Serialization</Namespace>
@@ -49,6 +50,7 @@ async Task Main()
 	HighBlockAwards.RemoveRange(HighBlockAwards);
 	Seasons.RemoveRange(Seasons);
 	Sponsors.RemoveRange(Sponsors);
+	BowlerSeasonStats.RemoveRange(BowlerSeasonStats);
 	SaveChanges();
 	
 	//Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowling_centers RESTART IDENTITY CASCADE;");
@@ -66,8 +68,8 @@ async Task Main()
 	
 	var bowlerIds = await MigrateBowlersAsync();
 	
-	var bowlerIdBySoftwareId = bowlerIds.Where(i => i.softwareId.HasValue).ToDictionary(i => i.softwareId!.Value, i => i.bowlerId);
-	await MigrateHallOfFameAsync(bowlerIdBySoftwareId);
+	var bowlerDomainIdBySoftwareId = bowlerIds.Where(i => i.softwareId.HasValue).ToDictionary(i => i.softwareId!.Value, i => i.bowlerId);
+	await MigrateHallOfFameAsync(bowlerDomainIdBySoftwareId);
 	
 	await GenerateSeasonsAsync();
 	
@@ -92,6 +94,8 @@ async Task Main()
 		bowlerDomainIdBySoftwareName);
 	
 	await MigrateSponsorsAsync();
+	
+	await MigrateBowlerSeasonStatsAsync(bowlerDomainIdBySoftwareId);
 }
 
 // You can define other methods, fields, classes and namespaces here
@@ -476,6 +480,279 @@ public static class HighBlockScraper
 
 		return results.OrderBy(r => r.year).ToList();
 	}
+}
+
+
+#endregion
+
+#region Bowler Season Stats
+
+public async Task MigrateBowlerSeasonStatsAsync(IDictionary<int, Ulid> bowlerDomainIdBySoftwareId)
+{
+	var seasons = await Seasons.Where(s => s.StartDate.Year >= 2019 && s.EndDate.Year < 2026).ToListAsync();
+	
+	foreach (var season in seasons)
+	{
+		await MigrateBowlerSeasonStatsAsync(season, bowlerDomainIdBySoftwareId);
+	}
+	
+	await SaveChangesAsync();
+	
+	"Bowler Season Stats Migrated".Dump();
+}
+
+private async Task MigrateBowlerSeasonStatsAsync(Seasons season, IDictionary<int, Ulid> bowlerDomainIdBySoftwareId)
+{
+	var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+	
+	await using var stream = File.OpenRead($"/Users/kippermand/Projects/bowlneba/neba-website/data-migration/Stat{season.EndDate.Year}.json");
+	var items = await JsonSerializer.DeserializeAsync<List<BowlerSeasonStatsJson>>(stream, options);
+
+	var stats = items!.Select(item => new BowlerSeasonStats
+	{
+		SeasonId = season.DomainId,
+		BowlerId = bowlerDomainIdBySoftwareId[item.BowlerId].ToString(),
+		IsMember = item.IsMember,
+		IsRookie = item.IsRookie,
+		IsSenior = item.IsSenior,
+		IsSuperSenior = item.IsSuperSenior,
+		IsWoman = item.IsWoman,
+		IsYouth = item.IsYouth,
+		Tournaments = item.Tournaments,
+		TotalTournaments = item.TotalTournaments,
+		Entries = item.Entries,
+		TotalEntries = item.TotalEntries,
+		Cashes = item.Cashes,
+		Finals = item.Finals,
+		TotalGames = item.TotalGames,
+		TotalPinfall = item.TotalPinfall,
+		FieldAverage = item.FieldAverage,
+		QualifyingHighGame = item.QualifyingHighGame,
+		HighBlock = item.HighBlock,
+		HighFinish = item.HighFinish,
+		AverageFinish = item.AverageFinish,
+		MatchPlayWins = item.MatchPlayWins,
+		MatchPlayLosses = item.MatchPlayLosses,
+		MatchPlayGames = item.MatchPlayGames,
+		MatchPlayPinfall = item.MatchPlayPinfall,
+		MatchPlayHighGame = item.MatchPlayHighGame,
+		BowlerOfTheYearPoints = item.BowlerOfTheYearPoints,
+		SeniorOfTheYearPoints = item.SeniorOfTheYearPoints,
+		SuperSeniorOfTheYearPoints = item.SuperSeniorOfTheYearPoints,
+		WomanOfTheYearPoints = item.WomanOfTheYearPoints,
+		YouthOfTheYearPoints = item.YouthOfTheYearPoints,
+		TournamentWinnings = item.TournamentWinnings,
+		CupEarnings = item.CupEarnings,
+		Credits = item.Credits,
+		LastUpdatedUtc = item.LastUpdatedUtc.UtcDateTime
+	}).ToList();
+	
+	BowlerSeasonStats.AddRange(stats);
+}
+
+public sealed class BowlerSeasonStatsJson
+{
+	[JsonPropertyName("BowlerId")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public required int BowlerId { get; init; }
+
+	[JsonPropertyName("Member")]
+	[JsonConverter(typeof(ZeroOneBoolConverter))]
+	public bool IsMember { get; init; }
+
+	[JsonPropertyName("Rookie")]
+	[JsonConverter(typeof(ZeroOneBoolConverter))]
+	public bool IsRookie { get; init; }
+
+	[JsonPropertyName("Sr")]
+	[JsonConverter(typeof(ZeroOneBoolConverter))]
+	public bool IsSenior { get; init; }
+
+	[JsonPropertyName("SuperSr")]
+	[JsonConverter(typeof(ZeroOneBoolConverter))]
+	public bool IsSuperSenior { get; init; }
+
+	[JsonPropertyName("Woman")]
+	[JsonConverter(typeof(ZeroOneBoolConverter))]
+	public bool IsWoman { get; init; }
+
+	[JsonPropertyName("Youth")]
+	[JsonConverter(typeof(ZeroOneBoolConverter))]
+	public bool IsYouth { get; init; }
+
+	[JsonPropertyName("Tournaments")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int Tournaments { get; init; }
+
+	[JsonPropertyName("TotalTrns")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int TotalTournaments { get; init; }
+
+	[JsonPropertyName("Entries")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int Entries { get; init; }
+
+	[JsonPropertyName("Total Entries")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int TotalEntries { get; init; }
+
+	[JsonPropertyName("Cash")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int Cashes { get; init; }
+
+	[JsonPropertyName("Finals")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int Finals { get; init; }
+
+	[JsonPropertyName("QHighGame")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int QualifyingHighGame { get; init; }
+
+	[JsonPropertyName("HighBlock")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int HighBlock { get; init; }
+
+	[JsonPropertyName("MPWon")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int MatchPlayWins { get; init; }
+
+	[JsonPropertyName("MPLost")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int MatchPlayLosses { get; init; }
+
+	[JsonPropertyName("MGms")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int MatchPlayGames { get; init; }
+
+	[JsonPropertyName("MP PF")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int MatchPlayPinfall { get; init; }
+
+	[JsonPropertyName("MHighGame")]
+	[JsonConverter(typeof(EmptyStringIntConverter))]
+	public int MatchPlayHighGame { get; init; }
+
+	[JsonPropertyName("TotalGames")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int TotalGames { get; init; }
+
+	[JsonPropertyName("Pinfall")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int TotalPinfall { get; init; }
+
+	[JsonPropertyName("FieldAvg")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public decimal FieldAverage { get; init; }
+
+	[JsonPropertyName("HighFin")]
+	[JsonConverter(typeof(EmptyStringNullableIntConverter))]
+	public int? HighFinish { get; init; }
+
+	[JsonPropertyName("AvgFinCutMade")]
+	[JsonConverter(typeof(EmptyStringNullableDecimalConverter))]
+	public decimal? AverageFinish { get; init; }
+
+	[JsonPropertyName("PointsTotal")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int BowlerOfTheYearPoints { get; init; }
+
+	[JsonPropertyName("SeniorPoints")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int SeniorOfTheYearPoints { get; init; }
+
+	[JsonPropertyName("SuperSeniorPoints")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int SuperSeniorOfTheYearPoints { get; init; }
+
+	[JsonPropertyName("WomensPoints")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int WomanOfTheYearPoints { get; init; }
+
+	[JsonPropertyName("YouthPoints")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public int YouthOfTheYearPoints { get; init; }
+
+	[JsonPropertyName("Winnings")]
+	[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+	public decimal TournamentWinnings { get; init; }
+
+	[JsonIgnore]
+	public decimal CupEarnings { get; init; }
+
+	[JsonIgnore]
+	public decimal Credits { get; init; }
+
+	[JsonPropertyName("LastUpdated")]
+	[JsonConverter(typeof(StatDumpDateConverter))]
+	public DateTimeOffset LastUpdatedUtc { get; init; }
+}
+
+/// <summary>Converts "0"/"1" string values to bool.</summary>
+public sealed class ZeroOneBoolConverter : JsonConverter<bool>
+{
+	public override bool Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+		=> reader.GetString() == "1";
+
+	public override void Write(Utf8JsonWriter writer, bool value, JsonSerializerOptions options)
+		=> writer.WriteStringValue(value ? "1" : "0");
+}
+
+/// <summary>Parses a string-encoded int, returning 0 for empty or unparseable values.</summary>
+public sealed class EmptyStringIntConverter : JsonConverter<int>
+{
+	public override int Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+	{
+		var raw = reader.GetString();
+		return int.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var result) ? result : 0;
+	}
+
+	public override void Write(Utf8JsonWriter writer, int value, JsonSerializerOptions options)
+		=> writer.WriteStringValue(value.ToString());
+}
+
+/// <summary>Parses a string-encoded int?, returning null for empty or unparseable values.</summary>
+public sealed class EmptyStringNullableIntConverter : JsonConverter<int?>
+{
+	public override int? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+	{
+		var raw = reader.GetString();
+		if (string.IsNullOrWhiteSpace(raw)) return null;
+		return int.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var result) ? result : null;
+	}
+
+	public override void Write(Utf8JsonWriter writer, int? value, JsonSerializerOptions options)
+		=> writer.WriteStringValue(value?.ToString());
+}
+
+/// <summary>Parses a string-encoded decimal?, returning null for empty or unparseable values.</summary>
+public sealed class EmptyStringNullableDecimalConverter : JsonConverter<decimal?>
+{
+	public override decimal? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+	{
+		var raw = reader.GetString();
+		if (string.IsNullOrWhiteSpace(raw)) return null;
+		return decimal.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var result) ? result : null;
+	}
+
+	public override void Write(Utf8JsonWriter writer, decimal? value, JsonSerializerOptions options)
+		=> writer.WriteStringValue(value?.ToString());
+}
+
+/// <summary>Parses the StatDump date format "MM/dd/yyyy HH:mm" into a DateTimeOffset.</summary>
+public sealed class StatDumpDateConverter : JsonConverter<DateTimeOffset>
+{
+	private const string Format = "MM/dd/yyyy HH:mm";
+
+	public override DateTimeOffset Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+	{
+		var raw = reader.GetString();
+		return DateTimeOffset.TryParseExact(raw, Format, CultureInfo.InvariantCulture, DateTimeStyles.None, out var result)
+			? result
+			: DateTimeOffset.MinValue;
+	}
+
+	public override void Write(Utf8JsonWriter writer, DateTimeOffset value, JsonSerializerOptions options)
+		=> writer.WriteStringValue(value.ToString(Format, CultureInfo.InvariantCulture));
 }
 
 
@@ -1755,6 +2032,9 @@ static List<(int? websiteId, int? softwareId)> s_manualMatch = new()
 	new(null, 733),   // Dennis J Hamm
 	new(null, 5028),  // Kyle Allison
 	new(null, 5062),  // Deondre Rogers
+	new(null, 5063),  // Ned Robinson
+	new(null, 5065),  // James Fortier
+	new(null, 5069),  // Brianna Cote
 };
 
 #endregion
@@ -2370,7 +2650,85 @@ private async Task<IReadOnlyCollection<BowlingCenters>> ManualBowlingCenterAddit
 	};
 	
 	manualBowlingCenters.Add(madisonSquareGarden);
+
+	var townLine = new BowlingCenters
+	{
+		CertificationNumber = "x0003",
+		Name = "Town Line Luxury Lanes",
+		Street = "665 Broadway Route 99",
+		City = "Malden",
+		State = "MA",
+		PostalCode = "021482041",
+		Latitude = 42.4426,
+		Longitude = -71.03027,
+		BowlingCenterPhoneNumbers =
+		[
+			new BowlingCenterPhoneNumbers
+			{
+				PhoneType = PhoneNumberType.Work,
+				PhoneCountryCode = "1",
+				PhoneNumber = "7913247120"
+			}
+		],
+		Country = "US",
+		EmailAddress = "townlinebowling@aol.com",
+		Status = BowlingCenterStatus.Uncertified,
+		WebsiteId = 30
+	};
 	
+	manualBowlingCenters.Add(townLine);
+
+	var saybrook = new BowlingCenters
+	{
+		CertificationNumber = "x0004",
+		Name = "AMF Saybrook Lanes",
+		Street = "925 Boston Post Rd",
+		City = "Old Saybrook",
+		State = "CT",
+		PostalCode = "064752148",
+		Latitude = 41.2896,
+		Longitude = -72.38717,
+		BowlingCenterPhoneNumbers =
+		[
+			new BowlingCenterPhoneNumbers
+			{
+				PhoneType = PhoneNumberType.Work,
+				PhoneCountryCode = "1",
+				PhoneNumber = "8603883488"
+			}
+		],
+		Country = "US",
+		Status = BowlingCenterStatus.Closed,
+		WebsiteId = 27
+	};
+	
+	manualBowlingCenters.AddRange(saybrook);
+
+	var airway = new BowlingCenters
+	{
+		CertificationNumber = "x0005",
+		Name = "AMF Airway Lanes",
+		Street = "1387 Liberty St",
+		City = "Springfield",
+		State = "MA",
+		PostalCode = "011041170",
+		Latitude = 42.13811,
+		Longitude = -72.58287,
+		BowlingCenterPhoneNumbers =
+		[
+			new BowlingCenterPhoneNumbers
+			{
+				PhoneType = PhoneNumberType.Work,
+				PhoneCountryCode = "1",
+				PhoneNumber = "4137337865"
+			}
+		],
+		Country = "US",
+		Status = BowlingCenterStatus.Closed,
+		WebsiteId = 1
+	};
+
+
 	return manualBowlingCenters;
 }
 
@@ -2417,6 +2775,8 @@ public sealed class BowlingCenterStatus
 	public static readonly BowlingCenterStatus Open = new(nameof(Open), 0);
 
 	public static readonly BowlingCenterStatus Closed = new(nameof(Closed), 1);
+	
+	public static readonly BowlingCenterStatus Uncertified = new(nameof(Uncertified), 2);
 
 	private BowlingCenterStatus(string name, int value)
 		: base(name, value)

@@ -18,6 +18,11 @@ public sealed class BowlingCenterStatus
     /// </summary>
     public static readonly BowlingCenterStatus Closed = new(nameof(Closed), 1);
 
+    /// <summary>
+    /// Indicates that the bowling center is uncertified, meaning it does not have a valid certification number issued by the governing body. Bowling centers with this status may be operational but are not recognized as certified venues. This status can be used to filter out uncertified centers from certain listings or to provide additional information to users about the certification status of the center.
+    /// </summary>
+    public static readonly BowlingCenterStatus Uncertified = new(nameof(Uncertified), 2);
+
     private BowlingCenterStatus(string name, int value)
         : base(name, value)
     { }

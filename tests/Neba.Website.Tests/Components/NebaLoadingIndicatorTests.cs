@@ -25,23 +25,21 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
     }
 
     [Fact(DisplayName = "Should render loading indicator after delay when IsVisible is true")]
-    public async Task Render_ShouldShowOverlay_WhenIsVisibleIsTrue()
+    public void Render_ShouldShowOverlay_WhenIsVisibleIsTrue()
     {
         // Arrange & Act
         var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
             .Add(p => p.IsVisible, true)
-            .Add(p => p.DelayMs, 0)); // No delay for immediate rendering
+            .Add(p => p.DelayMs, 0));
 
-        // Wait for the component to render
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count > 0);
 
-        // Assert - should have the overlay element
+        // Assert
         cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count.ShouldBe(1);
     }
 
     [Fact(DisplayName = "Should display custom text when provided")]
-    public async Task Render_ShouldDisplayText_WhenTextProvided()
+    public void Render_ShouldDisplayText_WhenTextProvided()
     {
         // Arrange
         const string customText = "Loading data...";
@@ -51,8 +49,7 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.DelayMs, 0)
             .Add(p => p.Text, customText));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count > 0);
 
         // Assert
         cut.Markup.ShouldContain(customText);
@@ -60,7 +57,7 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
     }
 
     [Fact(DisplayName = "Should not display text element when Text is null")]
-    public async Task Render_ShouldHideTextElement_WhenTextIsNull()
+    public void Render_ShouldHideTextElement_WhenTextIsNull()
     {
         // Arrange
         var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
@@ -68,30 +65,28 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.DelayMs, 0)
             .Add(p => p.Text, null));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count > 0);
 
         // Assert
         cut.FindAll(".neba-loading-text").Count.ShouldBe(0);
     }
 
     [Fact(DisplayName = "Should apply page scope class by default")]
-    public async Task Render_ShouldApplyPageScopeClass_WhenScopeIsDefault()
+    public void Render_ShouldApplyPageScopeClass_WhenScopeIsDefault()
     {
         // Arrange & Act
         var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.DelayMs, 0));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay-page").Count > 0);
 
         // Assert
         cut.Find(".neba-loading-overlay-page").ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "Should apply fullscreen scope class")]
-    public async Task Render_ShouldApplyFullscreenClass_WhenScopeIsFullScreen()
+    public void Render_ShouldApplyFullscreenClass_WhenScopeIsFullScreen()
     {
         // Arrange & Act
         var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
@@ -99,15 +94,14 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.DelayMs, 0)
             .Add(p => p.Scope, LoadingIndicatorScope.FullScreen));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay-fullscreen").Count > 0);
 
         // Assert
         cut.Find(".neba-loading-overlay-fullscreen").ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "Should apply section scope class")]
-    public async Task Render_ShouldApplySectionClass_WhenScopeIsSection()
+    public void Render_ShouldApplySectionClass_WhenScopeIsSection()
     {
         // Arrange & Act
         var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
@@ -115,23 +109,21 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.DelayMs, 0)
             .Add(p => p.Scope, LoadingIndicatorScope.Section));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay-section").Count > 0);
 
         // Assert
         cut.Find(".neba-loading-overlay-section").ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "Should render loading wave animation")]
-    public async Task Render_ShouldShowLoadingWave_WhenVisible()
+    public void Render_ShouldShowLoadingWave_WhenVisible()
     {
         // Arrange & Act
         var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.DelayMs, 0));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-wave").Count > 0);
 
         // Assert
         cut.Find(".neba-loading-wave").ShouldNotBeNull();
@@ -150,8 +142,7 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.Scope, LoadingIndicatorScope.FullScreen)
             .Add(p => p.OnOverlayClick, () => clicked = true));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        await cut.WaitForStateAsync(() => cut.FindAll(".neba-loading-overlay").Count > 0);
 
         // Act
         var overlay = cut.Find(".neba-loading-overlay");
@@ -174,15 +165,14 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
     }
 
     [Fact(DisplayName = "Should hide indicator when IsVisible changes from true to false")]
-    public async Task Render_ShouldHideOverlay_WhenIsVisibleChangesFromTrueToFalse()
+    public void Render_ShouldHideOverlay_WhenIsVisibleChangesFromTrueToFalse()
     {
         // Arrange
         var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.DelayMs, 0));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count > 0);
         cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count.ShouldBe(1);
 
         // Act - render again with IsVisible false
@@ -195,7 +185,7 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
     }
 
     [Fact(DisplayName = "Should display empty text element when text is empty string")]
-    public async Task Render_ShouldNotDisplayEmptyTextElement_WhenTextIsEmptyString()
+    public void Render_ShouldNotDisplayEmptyTextElement_WhenTextIsEmptyString()
     {
         // Arrange
         var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
@@ -203,15 +193,14 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.DelayMs, 0)
             .Add(p => p.Text, ""));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count > 0);
 
         // Assert
         cut.FindAll(".neba-loading-text").Count.ShouldBe(0);
     }
 
     [Fact(DisplayName = "Should display whitespace text element when text is whitespace")]
-    public async Task Render_ShouldNotDisplayWhitespaceTextElement_WhenTextIsWhitespace()
+    public void Render_ShouldNotDisplayWhitespaceTextElement_WhenTextIsWhitespace()
     {
         // Arrange
         var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
@@ -219,8 +208,7 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.DelayMs, 0)
             .Add(p => p.Text, "   "));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count > 0);
 
         // Assert
         cut.FindAll(".neba-loading-text").Count.ShouldBe(0);
@@ -230,7 +218,7 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
     [InlineData(LoadingIndicatorScope.Page, "neba-loading-overlay neba-loading-overlay-page", TestDisplayName = "Page scope")]
     [InlineData(LoadingIndicatorScope.FullScreen, "neba-loading-overlay neba-loading-overlay-fullscreen", TestDisplayName = "FullScreen scope")]
     [InlineData(LoadingIndicatorScope.Section, "neba-loading-overlay-section", TestDisplayName = "Section scope")]
-    public async Task Render_ShouldApplyCorrectScopeClass_ForEachScope(LoadingIndicatorScope scope, string expectedClass)
+    public void Render_ShouldApplyCorrectScopeClass_ForEachScope(LoadingIndicatorScope scope, string expectedClass)
     {
         // Arrange
         var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
@@ -238,8 +226,7 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.DelayMs, 0)
             .Add(p => p.Scope, scope));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll("[class*='neba-loading-overlay']").Count > 0);
 
         // Assert
         var overlay = cut.Find("[class*='neba-loading-overlay']");
@@ -247,15 +234,14 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
     }
 
     [Fact(DisplayName = "Should render five wave divs for animation")]
-    public async Task Render_ShouldRenderFiveWaveDivs_WhenVisible()
+    public void Render_ShouldRenderFiveWaveDivs_WhenVisible()
     {
         // Arrange & Act
         var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.DelayMs, 0));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-wave").Count > 0);
 
         // Assert
         var wave = cut.Find(".neba-loading-wave");
@@ -264,7 +250,7 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
     }
 
     [Fact(DisplayName = "Should not invoke OnOverlayClick when overlay is not clicked")]
-    public async Task OnOverlayClick_ShouldNotInvokeCallback_WhenNotClicked()
+    public void OnOverlayClick_ShouldNotInvokeCallback_WhenNotClicked()
     {
         // Arrange
         var clicked = false;
@@ -274,15 +260,14 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.DelayMs, 0)
             .Add(p => p.OnOverlayClick, () => clicked = true));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count > 0);
 
         // Assert - no click action performed
         clicked.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "Should maintain state consistency when visibility toggled multiple times")]
-    public async Task Render_ShouldMaintainStateConsistency_WhenToggledMultipleTimes()
+    public void Render_ShouldMaintainStateConsistency_WhenToggledMultipleTimes()
     {
         // Arrange & Act - first render with IsVisible false
         var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
@@ -295,7 +280,7 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
         cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.DelayMs, 0));
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count > 0);
         cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count.ShouldBe(1);
 
         // Re-render with IsVisible false
@@ -308,12 +293,12 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
         cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.DelayMs, 0));
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count > 0);
         cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count.ShouldBe(1);
     }
 
     [Fact(DisplayName = "Should display different text in different renders")]
-    public async Task Render_ShouldDisplayDifferentText_InDifferentRenders()
+    public void Render_ShouldDisplayDifferentText_InDifferentRenders()
     {
         // Arrange & Act - first render with text
         var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
@@ -321,8 +306,7 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.DelayMs, 0)
             .Add(p => p.Text, "Loading..."));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count > 0);
         cut.Find(".neba-loading-text").TextContent.ShouldBe("Loading...");
 
         // Re-render with different text
@@ -331,13 +315,12 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.DelayMs, 0)
             .Add(p => p.Text, "Processing..."));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count > 0);
         cut.Find(".neba-loading-text").TextContent.ShouldBe("Processing...");
     }
 
     [Fact(DisplayName = "Should apply different scopes in different renders")]
-    public async Task Render_ShouldApplyDifferentScopes_InDifferentRenders()
+    public void Render_ShouldApplyDifferentScopes_InDifferentRenders()
     {
         // Arrange & Act - first render with Page scope
         var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
@@ -345,8 +328,7 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.DelayMs, 0)
             .Add(p => p.Scope, LoadingIndicatorScope.Page));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay-page").Count > 0);
         cut.Find(".neba-loading-overlay-page").ShouldNotBeNull();
 
         // Re-render with FullScreen scope
@@ -355,21 +337,19 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.DelayMs, 0)
             .Add(p => p.Scope, LoadingIndicatorScope.FullScreen));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay-fullscreen").Count > 0);
         cut.Find(".neba-loading-overlay-fullscreen").ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "Should handle immediate visibility toggle")]
-    public async Task Render_ShouldHandleImmediateToggle_WithoutDelay()
+    public void Render_ShouldHandleImmediateToggle_WithoutDelay()
     {
         // Arrange
         var cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.DelayMs, 0));
 
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count > 0);
 
         // Act - toggle immediately
         cut = _ctx.Render<NebaLoadingIndicator>(parameters => parameters
@@ -389,9 +369,7 @@ public sealed class NebaLoadingIndicatorTests : IDisposable
             .Add(p => p.DelayMs, 0)
             .Add(p => p.MinimumDisplayMs, 300));
 
-        // Wait for it to show
-        await Task.Delay(50, Xunit.TestContext.Current.CancellationToken);
-        cut.Render();
+        await cut.WaitForStateAsync(() => cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count > 0);
         cut.FindAll(".neba-loading-overlay, .neba-loading-overlay-section").Count.ShouldBe(1);
 
         // Act - immediately try to hide it (before minimum time elapsed)

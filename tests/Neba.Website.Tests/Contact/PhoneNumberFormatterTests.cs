@@ -26,6 +26,7 @@ public sealed class PhoneNumberFormatterTests
     [InlineData("1")]
     [InlineData("555")]
     [InlineData("x2035550430")]
+    [InlineData("x")]
     [InlineData("22035550430")]
     [InlineData("32035550430")]
     public void FormatForDisplay_ShouldReturnRawNumber_WhenPhoneCannotBeFormatted(string rawNumber)

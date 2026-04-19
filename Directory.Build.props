@@ -34,4 +34,10 @@
     <PackageReference Include="Ulid" />
   </ItemGroup>
 
+
+  <Target Name="HuskyInstall" AfterTargets="Restore" Condition="'$(HUSKY)' != '0' AND '$(CI)' != 'true'">
+    <Exec Command="dotnet husky install" StandardOutputImportance="Low" StandardErrorImportance="Normal"
+          WorkingDirectory="$(MSBuildThisFileDirectory)" />
+  </Target>
+
 </Project>

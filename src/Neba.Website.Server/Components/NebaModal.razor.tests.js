@@ -106,6 +106,33 @@ describe('NebaModal', () => {
             expect(firstFocusSpy).toHaveBeenCalledWith({ preventScroll: true });
         });
 
+        test('should not wrap Tab when focus is in the middle focusable element', () => {
+            document.body.innerHTML = `
+                <div id="dialog">
+                    <button id="first">First</button>
+                    <button id="middle">Middle</button>
+                    <button id="last">Last</button>
+                </div>
+            `;
+            const dialog = document.getElementById('dialog');
+            const first = document.getElementById('first');
+            const middle = document.getElementById('middle');
+            const last = document.getElementById('last');
+            makeVisible(first);
+            makeVisible(middle);
+            makeVisible(last);
+
+            enableFocusTrap(dialog);
+            middle.focus();
+
+            const firstFocusSpy = jest.spyOn(first, 'focus');
+            const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+            const wasNotCanceled = dialog.dispatchEvent(event);
+
+            expect(wasNotCanceled).toBe(true);
+            expect(firstFocusSpy).not.toHaveBeenCalled();
+        });
+
         test('should wrap Shift+Tab backward from first focusable to last', () => {
             document.body.innerHTML = `
                 <div id="dialog">
@@ -126,6 +153,63 @@ describe('NebaModal', () => {
             dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true }));
 
             expect(lastFocusSpy).toHaveBeenCalledWith({ preventScroll: true });
+        });
+
+        test('should not wrap Shift+Tab when focus is in the middle focusable element', () => {
+            document.body.innerHTML = `
+                <div id="dialog">
+                    <button id="first">First</button>
+                    <button id="middle">Middle</button>
+                    <button id="last">Last</button>
+                </div>
+            `;
+            const dialog = document.getElementById('dialog');
+            const first = document.getElementById('first');
+            const middle = document.getElementById('middle');
+            const last = document.getElementById('last');
+            makeVisible(first);
+            makeVisible(middle);
+            makeVisible(last);
+
+            enableFocusTrap(dialog);
+            middle.focus();
+
+            const lastFocusSpy = jest.spyOn(last, 'focus');
+            const event = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
+            const wasNotCanceled = dialog.dispatchEvent(event);
+
+            expect(wasNotCanceled).toBe(true);
+            expect(lastFocusSpy).not.toHaveBeenCalled();
+        });
+
+        test('should return early when lastFocusable cannot be resolved', () => {
+            document.body.innerHTML = `
+                <button id="outside">Outside</button>
+                <div id="dialog">
+                    <button id="first">First</button>
+                    <button id="last">Last</button>
+                </div>
+            `;
+            const dialog = document.getElementById('dialog');
+            const outside = document.getElementById('outside');
+            const first = document.getElementById('first');
+            const last = document.getElementById('last');
+            makeVisible(first);
+            makeVisible(last);
+
+            const atSpy = jest.spyOn(Array.prototype, 'at').mockReturnValue(undefined);
+
+            enableFocusTrap(dialog);
+            outside.focus();
+
+            const firstFocusSpy = jest.spyOn(first, 'focus');
+            const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+            const wasNotCanceled = dialog.dispatchEvent(event);
+
+            expect(wasNotCanceled).toBe(true);
+            expect(firstFocusSpy).not.toHaveBeenCalled();
+
+            atSpy.mockRestore();
         });
 
         test('should redirect Tab to first focusable when focus is outside dialog', () => {
@@ -267,6 +351,30 @@ describe('NebaModal', () => {
             dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
 
             expect(visibleFocusSpy).toHaveBeenCalledWith({ preventScroll: true });
+        });
+
+        test('should exclude non-HTMLElement elements from focusable set', () => {
+            document.body.innerHTML = `
+                <div id="dialog">
+                    <button id="btn">Only Html Button</button>
+                    <svg id="icon" tabindex="0"></svg>
+                </div>
+            `;
+
+            const dialog = document.getElementById('dialog');
+            const btn = document.getElementById('btn');
+            const icon = document.getElementById('icon');
+
+            makeVisible(btn);
+            icon.getClientRects = () => [{}];
+
+            enableFocusTrap(dialog);
+            btn.focus();
+
+            const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+            const wasNotCanceled = dialog.dispatchEvent(event);
+
+            expect(wasNotCanceled).toBe(false);
         });
     });
 

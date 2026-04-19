@@ -9,6 +9,8 @@ public static class BowlerOfTheYearAwardResponseFactory
 {
     public const string ValidSeason = "2025 Season";
     public const string ValidBowlerName = "Joe Bowler";
+    public static string ValidCategory
+        => BowlerOfTheYearCategory.Open.Name;
 
     public static BowlerOfTheYearAwardResponse Create(
         string? season = null,
@@ -18,7 +20,7 @@ public static class BowlerOfTheYearAwardResponseFactory
         {
             Season = season ?? ValidSeason,
             BowlerName = bowlerName ?? ValidBowlerName,
-            Category = category ?? BowlerOfTheYearCategory.Open.Name
+            Category = category ?? ValidCategory
         };
 
     public static IReadOnlyCollection<BowlerOfTheYearAwardResponse> Bogus(int count, int? seed = null)

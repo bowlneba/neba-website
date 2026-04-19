@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using Bogus;
 
 using Neba.Api.Contracts.Contact;
@@ -20,7 +22,7 @@ public static class SponsorDetailViewModelFactory
     public const string ValidContactEmail = "info@joessponsor.com";
 
     public static SponsorDetailViewModel Create(
-        string? id = null,
+        Ulid? id = null,
         string? slug = null,
         string? name = null,
         bool? isCurrentSponsor = null,
@@ -48,10 +50,10 @@ public static class SponsorDetailViewModelFactory
         string? sponsorContactPhoneType = null)
         => new()
         {
-            Id = id ?? ValidId,
+            Id = id ?? Ulid.Parse(ValidId, CultureInfo.InvariantCulture),
             Slug = slug ?? ValidSlug,
             Name = name ?? ValidName,
-            IsCurrentSponsor = isCurrentSponsor ?? true,
+            IsCurrentSponsor = isCurrentSponsor ?? SponsorFactory.ValidIsCurrentSponsor,
             TierName = tier?.Name ?? SponsorTier.Standard.Name,
             CategoryName = category?.Name ?? SponsorCategory.Technology.Name,
             LogoUrl = logoUrl,

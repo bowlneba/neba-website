@@ -5,6 +5,7 @@ using Neba.Domain.BowlingCenters;
 using Neba.Domain.HallOfFame;
 using Neba.Domain.Seasons;
 using Neba.Domain.Sponsors;
+using Neba.Domain.Stats;
 using Neba.Infrastructure.Database.Configurations;
 using Neba.Infrastructure.Database.Converters;
 
@@ -34,6 +35,9 @@ internal sealed class AppDbContext(
     public DbSet<Sponsor> Sponsors
         => Set<Sponsor>();
 
+    public DbSet<BowlerSeasonStats> BowlerSeasonStats
+        => Set<BowlerSeasonStats>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BowlingCenterConfiguration());
@@ -44,6 +48,7 @@ internal sealed class AppDbContext(
         modelBuilder.ApplyConfiguration(new HighAverageAwardConfiguration());
         modelBuilder.ApplyConfiguration(new HighBlockAwardConfiguration());
         modelBuilder.ApplyConfiguration(new SponsorConfiguration());
+        modelBuilder.ApplyConfiguration(new BowlerSeasonStatsConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

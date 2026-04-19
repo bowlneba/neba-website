@@ -12,7 +12,7 @@ public interface ISponsorsApi
     /// </summary>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A collection of active sponsor summaries.</returns>
-    [Get("/sponsors/active")]
+    [Get("/sponsors")]
     Task<IApiResponse<CollectionResponse<SponsorSummaryResponse>>> ListActiveSponsorsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>

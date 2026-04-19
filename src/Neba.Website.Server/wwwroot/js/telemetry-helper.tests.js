@@ -63,8 +63,10 @@ describe('telemetry-helper', () => {
     });
 
     test('does nothing when bridge is not initialised', () => {
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       expect(() => trackEvent('test.event')).not.toThrow();
       expect(mockDotNet.invokeMethodAsync).not.toHaveBeenCalled();
+      expect(consoleSpy).not.toHaveBeenCalled();
     });
 
     test('suppresses errors thrown by the bridge', () => {
@@ -103,8 +105,10 @@ describe('telemetry-helper', () => {
     });
 
     test('does nothing when bridge is not initialised', () => {
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       expect(() => trackError('Error', 'source')).not.toThrow();
       expect(mockDotNet.invokeMethodAsync).not.toHaveBeenCalled();
+      expect(consoleSpy).not.toHaveBeenCalled();
     });
 
     test('suppresses errors thrown by the bridge', () => {
@@ -346,6 +350,41 @@ describe('telemetry-helper', () => {
       expect(consoleSpy).toHaveBeenCalledWith('[Telemetry] Performance API not available');
       expect(mockDotNet.invokeMethodAsync).not.toHaveBeenCalled();
     });
+
+    test('warns and returns early when performance object is unavailable', () => {
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const originalPerformance = globalThis.performance;
+
+      delete globalThis.performance;
+
+      expect(() => trackResourcePerformance()).not.toThrow();
+      expect(consoleSpy).toHaveBeenCalledWith('[Telemetry] Performance API not available');
+      expect(mockDotNet.invokeMethodAsync).not.toHaveBeenCalled();
+
+      Object.defineProperty(globalThis, 'performance', {
+        configurable: true,
+        writable: true,
+        value: originalPerformance,
+      });
+    });
+
+    test('uses resource timing entry type when querying performance API', () => {
+      trackResourcePerformance();
+
+      expect(performance.getEntriesByType).toHaveBeenCalledWith('resource');
+    });
+
+    test('does not throw when clearResourceTimings is unavailable', () => {
+      performance.getEntriesByType.mockReturnValue([makeEntry()]);
+      performance.clearResourceTimings = undefined;
+
+      expect(() => trackResourcePerformance()).not.toThrow();
+      expect(mockDotNet.invokeMethodAsync).toHaveBeenCalledWith(
+        'TrackEvent',
+        'resource.loaded',
+        expect.any(Object),
+      );
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -412,7 +451,7 @@ describe('telemetry-helper', () => {
     test('defers via load listener when document is not complete', () => {
       // jsdom exposes readyState as an accessor on Document.prototype
       jest.spyOn(Document.prototype, 'readyState', 'get').mockReturnValue('loading');
-      const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+      const addEventListenerSpy = jest.spyOn(globalThis, 'addEventListener');
       trackNavigationPerformance();
       expect(addEventListenerSpy).toHaveBeenCalledWith('load', expect.any(Function));
       expect(mockDotNet.invokeMethodAsync).not.toHaveBeenCalled();
@@ -442,6 +481,30 @@ describe('telemetry-helper', () => {
       performance.getEntriesByType = undefined;
       trackNavigationPerformance();
       expect(consoleSpy).toHaveBeenCalledWith('[Telemetry] Navigation Timing API not available');
+    });
+
+    test('warns and returns early when performance object is unavailable', () => {
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const originalPerformance = globalThis.performance;
+
+      delete globalThis.performance;
+
+      expect(() => trackNavigationPerformance()).not.toThrow();
+      expect(consoleSpy).toHaveBeenCalledWith('[Telemetry] Navigation Timing API not available');
+
+      Object.defineProperty(globalThis, 'performance', {
+        configurable: true,
+        writable: true,
+        value: originalPerformance,
+      });
+    });
+
+    test('uses navigation entry type when querying performance API', () => {
+      performance.getEntriesByType.mockReturnValue([makeNavEntry()]);
+
+      trackNavigationPerformance();
+
+      expect(performance.getEntriesByType).toHaveBeenCalledWith('navigation');
     });
   });
 
@@ -543,8 +606,11 @@ describe('telemetry-helper', () => {
     });
 
     test('does nothing when PerformanceObserver is not available', () => {
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       delete globalThis.PerformanceObserver;
+
       expect(() => trackWebVitals()).not.toThrow();
+      expect(consoleSpy).not.toHaveBeenCalled();
     });
 
     test('warns when PerformanceObserver throws during setup', () => {

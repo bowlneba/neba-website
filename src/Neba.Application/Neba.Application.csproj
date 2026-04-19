@@ -7,10 +7,12 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Neba.Application.Tests" />
     <InternalsVisibleTo Include="Neba.TestFactory" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
   
   <ItemGroup>
     <PackageReference Include="ErrorOr" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Scrutor.AspNetCore" />
   </ItemGroup>

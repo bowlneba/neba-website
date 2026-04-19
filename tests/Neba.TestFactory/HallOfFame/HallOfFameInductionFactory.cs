@@ -36,9 +36,9 @@ public static class HallOfFameInductionFactory
         var faker = new Faker<HallOfFameInduction>()
             .CustomInstantiator(f => new()
             {
-                Id = new HallOfFameId(Ulid.Bogus(f)),
+                Id = new HallOfFameId(Ulid.BogusString(f)),
                 Year = f.Date.PastDateOnly(20).Year,
-                BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.Bogus(f)),
+                BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.BogusString(f)),
                 Categories = [.. f.PickRandom(HallOfFameCategory.List, f.Random.Int(1, HallOfFameCategory.List.Count))],
                 Photo = uniquePhotos.GetNextNullable()
             });

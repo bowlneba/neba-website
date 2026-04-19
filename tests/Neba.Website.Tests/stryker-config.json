@@ -29,7 +29,8 @@
       "!**/*Configuration.cs",
       "!**/*Settings.cs",
       "!**/*LogMessages.cs",
-      "!**/*TagNames.cs"
+      "!**/*TagNames.cs",
+      "!**/*MappingExtensions.cs"
     ]
   }
 }

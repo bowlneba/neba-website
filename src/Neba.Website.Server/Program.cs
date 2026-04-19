@@ -1,7 +1,10 @@
+using ApexCharts;
+
 using Neba.Website.Server;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Maps;
 using Neba.Website.Server.Services;
+using Neba.Website.Server.Stats;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +13,8 @@ builder.AddServiceDefaults();
 
 builder.Services.AddApiServices(builder.Configuration);
 builder.Services.AddMaps(builder.Configuration);
+builder.Services.AddApexCharts();
+builder.Services.AddScoped<IStatsApiService, StatsApiService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

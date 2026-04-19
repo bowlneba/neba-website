@@ -1,4 +1,6 @@
 
+using Neba.Domain.Seasons;
+
 namespace Neba.Application.Caching;
 
 #pragma warning disable CA1724 // Nested type name intentionally mirrors domain for API clarity
@@ -124,6 +126,34 @@ public static class CacheDescriptors
             {
                 Key = "neba:awards:bowler-of-the-year:list",
                 Tags = ["neba", "neba:awards", "neba:awards:bowler-of-the-year"]
+            };
+    }
+
+    /// <summary>
+    /// Cache descriptors for stats data.
+    /// </summary>
+    public static class Stats
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of seasons with stats.
+        /// </summary>
+        public static CacheDescriptor ListSeasonsWithStats
+            => new()
+            {
+                Key = "neba:stats:seasons:list",
+                Tags = ["neba", "neba:stats", "neba:stats:seasons"]
+            };
+
+        /// <summary>
+        /// Returns a cache descriptor for bowler season stats for the given season.
+        /// </summary>
+        /// <param name="seasonId">The season identifier.</param>
+        /// <returns>A cache descriptor for bowler season stats.</returns>
+        public static CacheDescriptor BowlerSeasonStats(SeasonId seasonId)
+            => new()
+            {
+                Key = $"neba:stats:seasons:{seasonId}:bowlers",
+                Tags = ["neba", "neba:stats", "neba:stats:seasons", $"neba:stats:seasons:{seasonId}"]
             };
     }
 }

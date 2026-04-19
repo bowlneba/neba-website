@@ -1,0 +1,1234 @@
+[
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 1,
+    "TournamentName": "Hall of Fame Silver Lanes Open",
+    "TournamentDate": "2019-01-27",
+    "CumulativePoints": 22
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 3,
+    "TournamentName": "123Bowl.com Open",
+    "TournamentDate": "2019-02-10",
+    "CumulativePoints": 44
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 4,
+    "TournamentName": "Ken\u0027s Bowl Open",
+    "TournamentDate": "2019-03-10",
+    "CumulativePoints": 83
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 5,
+    "TournamentName": "Many Stylesssss of Bowling Open",
+    "TournamentDate": "2019-03-24",
+    "CumulativePoints": 148
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 7,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2019-04-28",
+    "CumulativePoints": 170
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 8,
+    "TournamentName": "Westgate Lanes Singles Open",
+    "TournamentDate": "2019-05-19",
+    "CumulativePoints": 192
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 10,
+    "TournamentName": "GMS Concrete Doubles",
+    "TournamentDate": "2019-06-09",
+    "CumulativePoints": 230
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 12,
+    "TournamentName": "Bud Callahan Memorial Open",
+    "TournamentDate": "2019-06-30",
+    "CumulativePoints": 235
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 13,
+    "TournamentName": "Carol Ann Viale Memorial Open",
+    "TournamentDate": "2019-07-21",
+    "CumulativePoints": 274
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 14,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2019-08-03",
+    "CumulativePoints": 279
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 15,
+    "TournamentName": "Yankee Lanes Singles",
+    "TournamentDate": "2019-08-04",
+    "CumulativePoints": 309
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 18,
+    "TournamentName": "Chester Electric/Bloomfield Electric Masters",
+    "TournamentDate": "2019-08-25",
+    "CumulativePoints": 386
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 19,
+    "TournamentName": "Strike F/X Over/Under Doubles",
+    "TournamentDate": "2019-09-28",
+    "CumulativePoints": 416
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 20,
+    "TournamentName": "Turbo Driven to Bowl Doubles",
+    "TournamentDate": "2019-09-29",
+    "CumulativePoints": 454
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 21,
+    "TournamentName": "Dexter Bowl for the Cure Presented by DJ\u0027s Pro Shop",
+    "TournamentDate": "2019-10-20",
+    "CumulativePoints": 459
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 22,
+    "TournamentName": "Logo Infusion Open",
+    "TournamentDate": "2019-11-10",
+    "CumulativePoints": 474
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 24,
+    "TournamentName": "Brunswick Tournament of Champions",
+    "TournamentDate": "2019-11-24",
+    "CumulativePoints": 494
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3253,
+    "TournamentId": 26,
+    "TournamentName": "Bowl Winkle\u0027s Pro Shop Open",
+    "TournamentDate": "2019-12-15",
+    "CumulativePoints": 509
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 1,
+    "TournamentName": "Hall of Fame Silver Lanes Open",
+    "TournamentDate": "2019-01-27",
+    "CumulativePoints": 22
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 3,
+    "TournamentName": "123Bowl.com Open",
+    "TournamentDate": "2019-02-10",
+    "CumulativePoints": 44
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 4,
+    "TournamentName": "Ken\u0027s Bowl Open",
+    "TournamentDate": "2019-03-10",
+    "CumulativePoints": 74
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 5,
+    "TournamentName": "Many Stylesssss of Bowling Open",
+    "TournamentDate": "2019-03-24",
+    "CumulativePoints": 96
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 7,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2019-04-28",
+    "CumulativePoints": 111
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 8,
+    "TournamentName": "Westgate Lanes Singles Open",
+    "TournamentDate": "2019-05-19",
+    "CumulativePoints": 131
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 9,
+    "TournamentName": "Strike F/X Over/Under 50 Doubles",
+    "TournamentDate": "2019-06-08",
+    "CumulativePoints": 161
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 10,
+    "TournamentName": "GMS Concrete Doubles",
+    "TournamentDate": "2019-06-09",
+    "CumulativePoints": 183
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 12,
+    "TournamentName": "Bud Callahan Memorial Open",
+    "TournamentDate": "2019-06-30",
+    "CumulativePoints": 232
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 13,
+    "TournamentName": "Carol Ann Viale Memorial Open",
+    "TournamentDate": "2019-07-21",
+    "CumulativePoints": 292
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 14,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2019-08-03",
+    "CumulativePoints": 309
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 15,
+    "TournamentName": "Yankee Lanes Singles",
+    "TournamentDate": "2019-08-04",
+    "CumulativePoints": 324
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 18,
+    "TournamentName": "Chester Electric/Bloomfield Electric Masters",
+    "TournamentDate": "2019-08-25",
+    "CumulativePoints": 347
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 19,
+    "TournamentName": "Strike F/X Over/Under Doubles",
+    "TournamentDate": "2019-09-28",
+    "CumulativePoints": 352
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 20,
+    "TournamentName": "Turbo Driven to Bowl Doubles",
+    "TournamentDate": "2019-09-29",
+    "CumulativePoints": 382
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 21,
+    "TournamentName": "Dexter Bowl for the Cure Presented by DJ\u0027s Pro Shop",
+    "TournamentDate": "2019-10-20",
+    "CumulativePoints": 397
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 22,
+    "TournamentName": "Logo Infusion Open",
+    "TournamentDate": "2019-11-10",
+    "CumulativePoints": 419
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 24,
+    "TournamentName": "Brunswick Tournament of Champions",
+    "TournamentDate": "2019-11-24",
+    "CumulativePoints": 424
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3032,
+    "TournamentId": 26,
+    "TournamentName": "Bowl Winkle\u0027s Pro Shop Open",
+    "TournamentDate": "2019-12-15",
+    "CumulativePoints": 463
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2524,
+    "TournamentId": 1,
+    "TournamentName": "Hall of Fame Silver Lanes Open",
+    "TournamentDate": "2019-01-27",
+    "CumulativePoints": 15
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2524,
+    "TournamentId": 3,
+    "TournamentName": "123Bowl.com Open",
+    "TournamentDate": "2019-02-10",
+    "CumulativePoints": 54
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2524,
+    "TournamentId": 5,
+    "TournamentName": "Many Stylesssss of Bowling Open",
+    "TournamentDate": "2019-03-24",
+    "CumulativePoints": 103
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2524,
+    "TournamentId": 7,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2019-04-28",
+    "CumulativePoints": 125
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2524,
+    "TournamentId": 9,
+    "TournamentName": "Strike F/X Over/Under 50 Doubles",
+    "TournamentDate": "2019-06-08",
+    "CumulativePoints": 130
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2524,
+    "TournamentId": 10,
+    "TournamentName": "GMS Concrete Doubles",
+    "TournamentDate": "2019-06-09",
+    "CumulativePoints": 142
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2524,
+    "TournamentId": 12,
+    "TournamentName": "Bud Callahan Memorial Open",
+    "TournamentDate": "2019-06-30",
+    "CumulativePoints": 164
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2524,
+    "TournamentId": 14,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2019-08-03",
+    "CumulativePoints": 207
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2524,
+    "TournamentId": 15,
+    "TournamentName": "Yankee Lanes Singles",
+    "TournamentDate": "2019-08-04",
+    "CumulativePoints": 229
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2524,
+    "TournamentId": 18,
+    "TournamentName": "Chester Electric/Bloomfield Electric Masters",
+    "TournamentDate": "2019-08-25",
+    "CumulativePoints": 244
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2524,
+    "TournamentId": 20,
+    "TournamentName": "Turbo Driven to Bowl Doubles",
+    "TournamentDate": "2019-09-29",
+    "CumulativePoints": 256
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2524,
+    "TournamentId": 21,
+    "TournamentName": "Dexter Bowl for the Cure Presented by DJ\u0027s Pro Shop",
+    "TournamentDate": "2019-10-20",
+    "CumulativePoints": 278
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2524,
+    "TournamentId": 22,
+    "TournamentName": "Logo Infusion Open",
+    "TournamentDate": "2019-11-10",
+    "CumulativePoints": 317
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2524,
+    "TournamentId": 24,
+    "TournamentName": "Brunswick Tournament of Champions",
+    "TournamentDate": "2019-11-24",
+    "CumulativePoints": 389
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2524,
+    "TournamentId": 26,
+    "TournamentName": "Bowl Winkle\u0027s Pro Shop Open",
+    "TournamentDate": "2019-12-15",
+    "CumulativePoints": 411
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 41,
+    "TournamentId": 1,
+    "TournamentName": "Hall of Fame Silver Lanes Open",
+    "TournamentDate": "2019-01-27",
+    "CumulativePoints": 60
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 41,
+    "TournamentId": 4,
+    "TournamentName": "Ken\u0027s Bowl Open",
+    "TournamentDate": "2019-03-10",
+    "CumulativePoints": 99
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 41,
+    "TournamentId": 5,
+    "TournamentName": "Many Stylesssss of Bowling Open",
+    "TournamentDate": "2019-03-24",
+    "CumulativePoints": 129
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 41,
+    "TournamentId": 7,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2019-04-28",
+    "CumulativePoints": 151
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 41,
+    "TournamentId": 12,
+    "TournamentName": "Bud Callahan Memorial Open",
+    "TournamentDate": "2019-06-30",
+    "CumulativePoints": 223
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 41,
+    "TournamentId": 14,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2019-08-03",
+    "CumulativePoints": 235
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 41,
+    "TournamentId": 15,
+    "TournamentName": "Yankee Lanes Singles",
+    "TournamentDate": "2019-08-04",
+    "CumulativePoints": 257
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 41,
+    "TournamentId": 18,
+    "TournamentName": "Chester Electric/Bloomfield Electric Masters",
+    "TournamentDate": "2019-08-25",
+    "CumulativePoints": 280
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 41,
+    "TournamentId": 19,
+    "TournamentName": "Strike F/X Over/Under Doubles",
+    "TournamentDate": "2019-09-28",
+    "CumulativePoints": 285
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 41,
+    "TournamentId": 20,
+    "TournamentName": "Turbo Driven to Bowl Doubles",
+    "TournamentDate": "2019-09-29",
+    "CumulativePoints": 290
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 41,
+    "TournamentId": 21,
+    "TournamentName": "Dexter Bowl for the Cure Presented by DJ\u0027s Pro Shop",
+    "TournamentDate": "2019-10-20",
+    "CumulativePoints": 320
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 41,
+    "TournamentId": 22,
+    "TournamentName": "Logo Infusion Open",
+    "TournamentDate": "2019-11-10",
+    "CumulativePoints": 359
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 41,
+    "TournamentId": 24,
+    "TournamentName": "Brunswick Tournament of Champions",
+    "TournamentDate": "2019-11-24",
+    "CumulativePoints": 364
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1429,
+    "TournamentId": 1,
+    "TournamentName": "Hall of Fame Silver Lanes Open",
+    "TournamentDate": "2019-01-27",
+    "CumulativePoints": 39
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1429,
+    "TournamentId": 3,
+    "TournamentName": "123Bowl.com Open",
+    "TournamentDate": "2019-02-10",
+    "CumulativePoints": 69
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1429,
+    "TournamentId": 4,
+    "TournamentName": "Ken\u0027s Bowl Open",
+    "TournamentDate": "2019-03-10",
+    "CumulativePoints": 91
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1429,
+    "TournamentId": 5,
+    "TournamentName": "Many Stylesssss of Bowling Open",
+    "TournamentDate": "2019-03-24",
+    "CumulativePoints": 121
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1429,
+    "TournamentId": 7,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2019-04-28",
+    "CumulativePoints": 170
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1429,
+    "TournamentId": 8,
+    "TournamentName": "Westgate Lanes Singles Open",
+    "TournamentDate": "2019-05-19",
+    "CumulativePoints": 185
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1429,
+    "TournamentId": 9,
+    "TournamentName": "Strike F/X Over/Under 50 Doubles",
+    "TournamentDate": "2019-06-08",
+    "CumulativePoints": 190
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1429,
+    "TournamentId": 10,
+    "TournamentName": "GMS Concrete Doubles",
+    "TournamentDate": "2019-06-09",
+    "CumulativePoints": 213
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1429,
+    "TournamentId": 12,
+    "TournamentName": "Bud Callahan Memorial Open",
+    "TournamentDate": "2019-06-30",
+    "CumulativePoints": 235
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1429,
+    "TournamentId": 13,
+    "TournamentName": "Carol Ann Viale Memorial Open",
+    "TournamentDate": "2019-07-21",
+    "CumulativePoints": 240
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1429,
+    "TournamentId": 14,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2019-08-03",
+    "CumulativePoints": 252
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1429,
+    "TournamentId": 15,
+    "TournamentName": "Yankee Lanes Singles",
+    "TournamentDate": "2019-08-04",
+    "CumulativePoints": 274
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1429,
+    "TournamentId": 18,
+    "TournamentName": "Chester Electric/Bloomfield Electric Masters",
+    "TournamentDate": "2019-08-25",
+    "CumulativePoints": 289
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1429,
+    "TournamentId": 19,
+    "TournamentName": "Strike F/X Over/Under Doubles",
+    "TournamentDate": "2019-09-28",
+    "CumulativePoints": 327
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1429,
+    "TournamentId": 20,
+    "TournamentName": "Turbo Driven to Bowl Doubles",
+    "TournamentDate": "2019-09-29",
+    "CumulativePoints": 344
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1429,
+    "TournamentId": 26,
+    "TournamentName": "Bowl Winkle\u0027s Pro Shop Open",
+    "TournamentDate": "2019-12-15",
+    "CumulativePoints": 349
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2151,
+    "TournamentId": 1,
+    "TournamentName": "Hall of Fame Silver Lanes Open",
+    "TournamentDate": "2019-01-27",
+    "CumulativePoints": 15
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2151,
+    "TournamentId": 3,
+    "TournamentName": "123Bowl.com Open",
+    "TournamentDate": "2019-02-10",
+    "CumulativePoints": 20
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2151,
+    "TournamentId": 7,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2019-04-28",
+    "CumulativePoints": 59
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2151,
+    "TournamentId": 8,
+    "TournamentName": "Westgate Lanes Singles Open",
+    "TournamentDate": "2019-05-19",
+    "CumulativePoints": 74
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2151,
+    "TournamentId": 10,
+    "TournamentName": "GMS Concrete Doubles",
+    "TournamentDate": "2019-06-09",
+    "CumulativePoints": 86
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2151,
+    "TournamentId": 12,
+    "TournamentName": "Bud Callahan Memorial Open",
+    "TournamentDate": "2019-06-30",
+    "CumulativePoints": 125
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2151,
+    "TournamentId": 18,
+    "TournamentName": "Chester Electric/Bloomfield Electric Masters",
+    "TournamentDate": "2019-08-25",
+    "CumulativePoints": 184
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2151,
+    "TournamentId": 21,
+    "TournamentName": "Dexter Bowl for the Cure Presented by DJ\u0027s Pro Shop",
+    "TournamentDate": "2019-10-20",
+    "CumulativePoints": 223
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2151,
+    "TournamentId": 22,
+    "TournamentName": "Logo Infusion Open",
+    "TournamentDate": "2019-11-10",
+    "CumulativePoints": 295
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2151,
+    "TournamentId": 26,
+    "TournamentName": "Bowl Winkle\u0027s Pro Shop Open",
+    "TournamentDate": "2019-12-15",
+    "CumulativePoints": 317
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2046,
+    "TournamentId": 1,
+    "TournamentName": "Hall of Fame Silver Lanes Open",
+    "TournamentDate": "2019-01-27",
+    "CumulativePoints": 5
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2046,
+    "TournamentId": 3,
+    "TournamentName": "123Bowl.com Open",
+    "TournamentDate": "2019-02-10",
+    "CumulativePoints": 35
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2046,
+    "TournamentId": 5,
+    "TournamentName": "Many Stylesssss of Bowling Open",
+    "TournamentDate": "2019-03-24",
+    "CumulativePoints": 107
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2046,
+    "TournamentId": 7,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2019-04-28",
+    "CumulativePoints": 167
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2046,
+    "TournamentId": 8,
+    "TournamentName": "Westgate Lanes Singles Open",
+    "TournamentDate": "2019-05-19",
+    "CumulativePoints": 189
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2046,
+    "TournamentId": 9,
+    "TournamentName": "Strike F/X Over/Under 50 Doubles",
+    "TournamentDate": "2019-06-08",
+    "CumulativePoints": 194
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2046,
+    "TournamentId": 10,
+    "TournamentName": "GMS Concrete Doubles",
+    "TournamentDate": "2019-06-09",
+    "CumulativePoints": 211
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2046,
+    "TournamentId": 12,
+    "TournamentName": "Bud Callahan Memorial Open",
+    "TournamentDate": "2019-06-30",
+    "CumulativePoints": 216
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2046,
+    "TournamentId": 13,
+    "TournamentName": "Carol Ann Viale Memorial Open",
+    "TournamentDate": "2019-07-21",
+    "CumulativePoints": 238
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2046,
+    "TournamentId": 14,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2019-08-03",
+    "CumulativePoints": 250
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2046,
+    "TournamentId": 15,
+    "TournamentName": "Yankee Lanes Singles",
+    "TournamentDate": "2019-08-04",
+    "CumulativePoints": 265
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2046,
+    "TournamentId": 18,
+    "TournamentName": "Chester Electric/Bloomfield Electric Masters",
+    "TournamentDate": "2019-08-25",
+    "CumulativePoints": 270
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2046,
+    "TournamentId": 19,
+    "TournamentName": "Strike F/X Over/Under Doubles",
+    "TournamentDate": "2019-09-28",
+    "CumulativePoints": 282
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2046,
+    "TournamentId": 20,
+    "TournamentName": "Turbo Driven to Bowl Doubles",
+    "TournamentDate": "2019-09-29",
+    "CumulativePoints": 287
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2046,
+    "TournamentId": 21,
+    "TournamentName": "Dexter Bowl for the Cure Presented by DJ\u0027s Pro Shop",
+    "TournamentDate": "2019-10-20",
+    "CumulativePoints": 292
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 2046,
+    "TournamentId": 24,
+    "TournamentName": "Brunswick Tournament of Champions",
+    "TournamentDate": "2019-11-24",
+    "CumulativePoints": 312
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 1,
+    "TournamentName": "Hall of Fame Silver Lanes Open",
+    "TournamentDate": "2019-01-27",
+    "CumulativePoints": 5
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 3,
+    "TournamentName": "123Bowl.com Open",
+    "TournamentDate": "2019-02-10",
+    "CumulativePoints": 10
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 4,
+    "TournamentName": "Ken\u0027s Bowl Open",
+    "TournamentDate": "2019-03-10",
+    "CumulativePoints": 32
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 5,
+    "TournamentName": "Many Stylesssss of Bowling Open",
+    "TournamentDate": "2019-03-24",
+    "CumulativePoints": 47
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 7,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2019-04-28",
+    "CumulativePoints": 62
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 8,
+    "TournamentName": "Westgate Lanes Singles Open",
+    "TournamentDate": "2019-05-19",
+    "CumulativePoints": 92
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 9,
+    "TournamentName": "Strike F/X Over/Under 50 Doubles",
+    "TournamentDate": "2019-06-08",
+    "CumulativePoints": 97
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 10,
+    "TournamentName": "GMS Concrete Doubles",
+    "TournamentDate": "2019-06-09",
+    "CumulativePoints": 109
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 12,
+    "TournamentName": "Bud Callahan Memorial Open",
+    "TournamentDate": "2019-06-30",
+    "CumulativePoints": 131
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 13,
+    "TournamentName": "Carol Ann Viale Memorial Open",
+    "TournamentDate": "2019-07-21",
+    "CumulativePoints": 146
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 14,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2019-08-03",
+    "CumulativePoints": 163
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 15,
+    "TournamentName": "Yankee Lanes Singles",
+    "TournamentDate": "2019-08-04",
+    "CumulativePoints": 223
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 18,
+    "TournamentName": "Chester Electric/Bloomfield Electric Masters",
+    "TournamentDate": "2019-08-25",
+    "CumulativePoints": 228
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 19,
+    "TournamentName": "Strike F/X Over/Under Doubles",
+    "TournamentDate": "2019-09-28",
+    "CumulativePoints": 233
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 21,
+    "TournamentName": "Dexter Bowl for the Cure Presented by DJ\u0027s Pro Shop",
+    "TournamentDate": "2019-10-20",
+    "CumulativePoints": 248
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 22,
+    "TournamentName": "Logo Infusion Open",
+    "TournamentDate": "2019-11-10",
+    "CumulativePoints": 263
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 24,
+    "TournamentName": "Brunswick Tournament of Champions",
+    "TournamentDate": "2019-11-24",
+    "CumulativePoints": 293
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 3554,
+    "TournamentId": 26,
+    "TournamentName": "Bowl Winkle\u0027s Pro Shop Open",
+    "TournamentDate": "2019-12-15",
+    "CumulativePoints": 308
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 1,
+    "TournamentName": "Hall of Fame Silver Lanes Open",
+    "TournamentDate": "2019-01-27",
+    "CumulativePoints": 5
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 3,
+    "TournamentName": "123Bowl.com Open",
+    "TournamentDate": "2019-02-10",
+    "CumulativePoints": 20
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 4,
+    "TournamentName": "Ken\u0027s Bowl Open",
+    "TournamentDate": "2019-03-10",
+    "CumulativePoints": 25
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 5,
+    "TournamentName": "Many Stylesssss of Bowling Open",
+    "TournamentDate": "2019-03-24",
+    "CumulativePoints": 55
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 7,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2019-04-28",
+    "CumulativePoints": 85
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 8,
+    "TournamentName": "Westgate Lanes Singles Open",
+    "TournamentDate": "2019-05-19",
+    "CumulativePoints": 115
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 9,
+    "TournamentName": "Strike F/X Over/Under 50 Doubles",
+    "TournamentDate": "2019-06-08",
+    "CumulativePoints": 120
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 10,
+    "TournamentName": "GMS Concrete Doubles",
+    "TournamentDate": "2019-06-09",
+    "CumulativePoints": 158
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 12,
+    "TournamentName": "Bud Callahan Memorial Open",
+    "TournamentDate": "2019-06-30",
+    "CumulativePoints": 173
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 13,
+    "TournamentName": "Carol Ann Viale Memorial Open",
+    "TournamentDate": "2019-07-21",
+    "CumulativePoints": 212
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 14,
+    "TournamentName": "Yankee Lanes Doubles",
+    "TournamentDate": "2019-08-03",
+    "CumulativePoints": 217
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 15,
+    "TournamentName": "Yankee Lanes Singles",
+    "TournamentDate": "2019-08-04",
+    "CumulativePoints": 222
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 18,
+    "TournamentName": "Chester Electric/Bloomfield Electric Masters",
+    "TournamentDate": "2019-08-25",
+    "CumulativePoints": 227
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 19,
+    "TournamentName": "Strike F/X Over/Under Doubles",
+    "TournamentDate": "2019-09-28",
+    "CumulativePoints": 232
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 20,
+    "TournamentName": "Turbo Driven to Bowl Doubles",
+    "TournamentDate": "2019-09-29",
+    "CumulativePoints": 237
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 21,
+    "TournamentName": "Dexter Bowl for the Cure Presented by DJ\u0027s Pro Shop",
+    "TournamentDate": "2019-10-20",
+    "CumulativePoints": 259
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 22,
+    "TournamentName": "Logo Infusion Open",
+    "TournamentDate": "2019-11-10",
+    "CumulativePoints": 274
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 23,
+    "TournamentName": "Radical Non-Champions",
+    "TournamentDate": "2019-11-23",
+    "CumulativePoints": 296
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 934,
+    "TournamentId": 26,
+    "TournamentName": "Bowl Winkle\u0027s Pro Shop Open",
+    "TournamentDate": "2019-12-15",
+    "CumulativePoints": 301
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1917,
+    "TournamentId": 4,
+    "TournamentName": "Ken\u0027s Bowl Open",
+    "TournamentDate": "2019-03-10",
+    "CumulativePoints": 22
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1917,
+    "TournamentId": 5,
+    "TournamentName": "Many Stylesssss of Bowling Open",
+    "TournamentDate": "2019-03-24",
+    "CumulativePoints": 27
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1917,
+    "TournamentId": 7,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2019-04-28",
+    "CumulativePoints": 66
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1917,
+    "TournamentId": 8,
+    "TournamentName": "Westgate Lanes Singles Open",
+    "TournamentDate": "2019-05-19",
+    "CumulativePoints": 105
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1917,
+    "TournamentId": 10,
+    "TournamentName": "GMS Concrete Doubles",
+    "TournamentDate": "2019-06-09",
+    "CumulativePoints": 117
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1917,
+    "TournamentId": 13,
+    "TournamentName": "Carol Ann Viale Memorial Open",
+    "TournamentDate": "2019-07-21",
+    "CumulativePoints": 166
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1917,
+    "TournamentId": 18,
+    "TournamentName": "Chester Electric/Bloomfield Electric Masters",
+    "TournamentDate": "2019-08-25",
+    "CumulativePoints": 171
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1917,
+    "TournamentId": 21,
+    "TournamentName": "Dexter Bowl for the Cure Presented by DJ\u0027s Pro Shop",
+    "TournamentDate": "2019-10-20",
+    "CumulativePoints": 186
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1917,
+    "TournamentId": 22,
+    "TournamentName": "Logo Infusion Open",
+    "TournamentDate": "2019-11-10",
+    "CumulativePoints": 235
+  },
+  {
+    "Season": 2019,
+    "BowlerId": 1917,
+    "TournamentId": 24,
+    "TournamentName": "Brunswick Tournament of Champions",
+    "TournamentDate": "2019-11-24",
+    "CumulativePoints": 291
+  }
+]

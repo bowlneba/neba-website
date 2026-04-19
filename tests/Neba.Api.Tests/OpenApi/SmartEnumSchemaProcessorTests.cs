@@ -156,21 +156,21 @@ public sealed class SmartEnumSchemaProcessorTests
     [Fact(DisplayName = "Process should not duplicate enum values when processor runs twice on same schema")]
     public void Process_ShouldNotDuplicateEnumValues_WhenProcessorRunsMultipleTimes()
     {
-        // Arrange — generate a fresh schema and pre-populate a property's enumeration manually
-        var schema = GenerateSchemaFor(typeof(SponsorDetailResponse));
-        var tierProperty = schema.Properties["tier"];
-        var expectedCount = tierProperty.Enumeration.Count;
-        expectedCount.ShouldBeGreaterThan(0);
+        // Arrange
+        var setEnumeration = typeof(SmartEnumSchemaProcessor)
+            .GetMethod("SetEnumeration", BindingFlags.NonPublic | BindingFlags.Static);
+        setEnumeration.ShouldNotBeNull();
 
-        // Act — manually add a duplicate to simulate stale data, then re-generate
-        tierProperty.Enumeration.Add("Stale");
+        var schema = new JsonSchema();
+        schema.Enumeration.Add("Stale");
 
-        // Re-generate on a fresh schema to simulate a second processor run
-        var freshSchema = GenerateSchemaFor(typeof(SponsorDetailResponse));
-        var freshCount = freshSchema.Properties["tier"].Enumeration.Count;
+        var expectedValues = new[] { "Premier", "Standard", "Title Sponsor" };
 
-        // Assert — fresh schema has exact expected count (Clear was called, not doubled)
-        freshCount.ShouldBe(expectedCount);
+        // Act
+        Should.NotThrow(() => setEnumeration!.Invoke(null, [schema, expectedValues]));
+
+        // Assert — stale value was removed and exact set was applied
+        schema.Enumeration.OfType<string>().ShouldBe(expectedValues);
     }
 
     [Fact(DisplayName = "Process should populate item enumeration for array-typed SmartEnum properties")]
@@ -207,6 +207,134 @@ public sealed class SmartEnumSchemaProcessorTests
         customProperty!.Enumeration.ShouldNotBeEmpty();
     }
 
+    [Fact(DisplayName = "Process should populate enum values when OpenApiSmartEnum attribute is inherited from base property")]
+    public void Process_ShouldPopulateEnumValues_WhenOpenApiSmartEnumAttributeIsInherited()
+    {
+        // Arrange
+        var property = typeof(TypeWithInheritedTierValue).GetProperty(nameof(TypeWithInheritedTierValue.Tier));
+        property.ShouldNotBeNull();
+
+        // Act
+        var withoutInheritance = property!.GetCustomAttributes<OpenApiSmartEnumAttribute>(inherit: false).ToArray();
+        var withInheritance = property.GetCustomAttributes<OpenApiSmartEnumAttribute>(inherit: true).ToArray();
+
+        // Assert
+        withoutInheritance.ShouldBeEmpty();
+        withInheritance.Length.ShouldBe(1);
+        withInheritance[0].SmartEnumTypeName.ShouldBe("SponsorTier");
+    }
+
+
+    [Fact(DisplayName = "GetJsonPropertyName should use camelCase when JsonPropertyName is whitespace")]
+    public void GetJsonPropertyName_ShouldUseCamelCase_WhenJsonPropertyNameAttributeIsWhitespace()
+    {
+        // Arrange
+        var property = typeof(TypeWithWhitespaceJsonPropertyName).GetProperty(nameof(TypeWithWhitespaceJsonPropertyName.Tiers));
+        property.ShouldNotBeNull();
+
+        var getJsonPropertyName = typeof(SmartEnumSchemaProcessor)
+            .GetMethod("GetJsonPropertyName", BindingFlags.NonPublic | BindingFlags.Static);
+        getJsonPropertyName.ShouldNotBeNull();
+
+        // Act
+        var jsonPropertyName = getJsonPropertyName!.Invoke(null, [property!]) as string;
+
+        // Assert
+        jsonPropertyName.ShouldBe("tiers");
+    }
+
+    [Fact(DisplayName = "Process should return when contextual type is null")]
+    public void Process_ShouldReturn_WhenContextualTypeIsNull()
+    {
+        // Arrange
+        var schema = new JsonSchema();
+        schema.Properties["tier"] = new JsonSchemaProperty();
+
+        var processor = new SmartEnumSchemaProcessor();
+        var context = CreateSchemaProcessorContext(null, schema);
+
+        // Act
+        Should.NotThrow(() => processor.Process(context));
+
+        // Assert
+        schema.Properties["tier"].Enumeration.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Process should apply enum values to root schema when array schema item is null")]
+    public void Process_ShouldApplyEnumValuesToRootSchema_WhenArraySchemaItemIsNull()
+    {
+        // Arrange
+        var applyEnumValues = typeof(SmartEnumSchemaProcessor)
+            .GetMethod("ApplyEnumValues", BindingFlags.NonPublic | BindingFlags.Static);
+        applyEnumValues.ShouldNotBeNull();
+
+        var schema = new JsonSchema
+        {
+            Type = JsonObjectType.Array,
+            Item = null
+        };
+        var expectedEnumValues = new[] { "A", "B" };
+
+        // Act
+        Should.NotThrow(() => applyEnumValues!.Invoke(null, [schema, expectedEnumValues]));
+
+        // Assert
+        schema.Enumeration.OfType<string>().ShouldBe(expectedEnumValues);
+        schema.Item.ShouldBeNull();
+    }
+
+    private static SchemaProcessorContext CreateSchemaProcessorContext(Type? modelType, JsonSchema schema)
+    {
+        var ctor = typeof(SchemaProcessorContext)
+            .GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .OrderByDescending(c => c.GetParameters().Length)
+            .First();
+
+        var args = ctor
+            .GetParameters()
+            .Select(parameter => CreateConstructorArgument(parameter.ParameterType, modelType, schema))
+            .ToArray();
+
+        return (SchemaProcessorContext)ctor.Invoke(args);
+    }
+
+    private static object? CreateConstructorArgument(Type parameterType, Type? modelType, JsonSchema schema)
+    {
+        if (parameterType == typeof(JsonSchema))
+        {
+            return schema;
+        }
+
+        if (parameterType == typeof(Type))
+        {
+            return modelType;
+        }
+
+        if (parameterType.FullName?.Contains("ContextualType", StringComparison.Ordinal) == true)
+        {
+            if (modelType is null)
+            {
+                return null;
+            }
+
+            var fromType = parameterType.GetMethods(BindingFlags.Public | BindingFlags.Static)
+                .FirstOrDefault(method => method.Name is "FromType" && method.GetParameters() is [{ ParameterType: var pt }] && pt == typeof(Type));
+
+            if (fromType is not null)
+            {
+                return fromType.Invoke(null, [modelType]);
+            }
+
+            var contextualTypeCtor = parameterType.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, binder: null, [typeof(Type)], modifiers: null);
+
+            return contextualTypeCtor?.Invoke([modelType]);
+        }
+
+        return parameterType.IsValueType
+            ? Activator.CreateInstance(parameterType)
+            : null;
+    }
+
 #pragma warning disable S2094 // Intentionally empty — used to test schema processor early-exit on types with no properties
     private sealed class TypeWithNoPublicProperties;
 #pragma warning restore S2094
@@ -220,6 +348,24 @@ public sealed class SmartEnumSchemaProcessorTests
     private sealed record TypeWithExplicitJsonName
     {
         [JsonPropertyName("custom-tiers")]
+        [OpenApiSmartEnum("SponsorTier")]
+        public string? Tiers { get; init; }
+    }
+
+    public abstract class TypeWithInheritedTierBase
+    {
+        [OpenApiSmartEnum("SponsorTier")]
+        public virtual string? Tier { get; set; }
+    }
+
+    public sealed class TypeWithInheritedTierValue : TypeWithInheritedTierBase
+    {
+        public override string? Tier { get; set; }
+    }
+
+    private sealed record TypeWithWhitespaceJsonPropertyName
+    {
+        [JsonPropertyName("   ")]
         [OpenApiSmartEnum("SponsorTier")]
         public string? Tiers { get; init; }
     }

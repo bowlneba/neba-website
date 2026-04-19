@@ -7,6 +7,8 @@ namespace Neba.TestFactory.Seasons;
 
 public static class HighBlockAwardFactory
 {
+    public const int ValidBlockScore = 1300;
+
     public static HighBlockAward Create(
         SeasonAwardId? id = null,
         BowlerId? bowlerId = null,
@@ -16,7 +18,7 @@ public static class HighBlockAwardFactory
         {
             Id = id ?? SeasonAwardId.New(),
             BowlerId = bowlerId ?? BowlerId.New(),
-            BlockScore = blockScore ?? 1300
+            BlockScore = blockScore ?? ValidBlockScore
         };
     }
 
@@ -29,8 +31,8 @@ public static class HighBlockAwardFactory
         var faker = new Faker<HighBlockAward>()
             .CustomInstantiator(f => new()
             {
-                Id = new SeasonAwardId(Ulid.Bogus(f)),
-                BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.Bogus(f)),
+                Id = new SeasonAwardId(Ulid.BogusString(f)),
+                BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.BogusString(f)),
                 BlockScore = f.Random.Int(1250, 1400)
             });
 

@@ -38,10 +38,10 @@ public static class SponsorDetailDtoFactory
                 Id = id ?? SponsorId.New(),
                 Name = name ?? ValidName,
                 Slug = slug ?? ValidSlug,
-                IsCurrentSponsor = isCurrentSponsor ?? true,
-                Priority = priority ?? 1,
-                Tier = tier?.Name ?? SponsorTier.Standard.Name,
-                Category = category?.Name ?? SponsorCategory.Technology.Name,
+                IsCurrentSponsor = isCurrentSponsor ?? SponsorFactory.ValidIsCurrentSponsor,
+                Priority = priority ?? SponsorFactory.ValidPriority,
+                Tier = tier?.Name ?? SponsorFactory.ValidTier.Name,
+                Category = category?.Name ?? SponsorFactory.ValidCategory.Name,
                 LogoContainer = logoContainer,
                 LogoPath = logoPath,
                 WebsiteUrl = websiteUrl,
@@ -70,7 +70,7 @@ public static class SponsorDetailDtoFactory
                 var hasLogo = f.Random.Bool();
                 return new()
                 {
-                    Id = new SponsorId(Ulid.Bogus(f)),
+                    Id = new SponsorId(Ulid.BogusString(f)),
                     Name = f.Company.CompanyName(),
                     Slug = f.Lorem.Slug(),
                     IsCurrentSponsor = f.Random.Bool(),

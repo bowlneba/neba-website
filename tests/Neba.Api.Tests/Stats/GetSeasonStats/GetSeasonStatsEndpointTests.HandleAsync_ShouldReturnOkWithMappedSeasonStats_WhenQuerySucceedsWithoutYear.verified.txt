@@ -1,0 +1,1815 @@
+﻿{
+  SelectedSeason: 2008 Season,
+  AvailableSeasons: {
+    2017: 2016 Season,
+    2018: 2017 Season,
+    2019: 2018 Season,
+    2020: 2019 Season,
+    2021: 2020 Season
+  },
+  BowlerSearchList: {
+    01FC7817BX3H81XZWRCTABXRG3: Esther Swift,
+    01FTYB3611WQHZBWD7R0TQ4W16: Lela Stark,
+    01FW700P1FV2PMYB2Q2XGSV10P: Forrest Collier,
+    01FZGF0TBY322H49AVWT30CS0M: Elmer Willms,
+    01G7GWNQBR1QH3HJXQ6709823S: Raoul Schmeler,
+    01GA4S551RJ4DCR7PA5KAJAXBS: Jeannette Altenwerth,
+    01HV73Z0C430S52C7FH2YAPZ6X: Sylvester Bernhard,
+    01HY6M2VE24WEZ4SK0D08XYTEC: Tommie Keebler,
+    01HZ29CAZT6FRXGAKKF1KK619E: Shirley Bogisich,
+    01HZMYW678WTP69N9EHXQABHMF: Ada Stehr,
+    01J414S9V7K3G42141HBCG9DRW: Dakota Spinka,
+    01K36MG3D45KX6P7F8414N3D7N: Myra Lebsack
+  },
+  MinimumNumberOfGames: 27.460989727387650,
+  MinimumNumberOfTournaments: 2.892885331480244,
+  MinimumNumberOfEntries: 11.684631710259534,
+  BowlerOfTheYear: [
+    {
+      BowlerId: 01FTWDVS49N0YDXQJPPC53NX2Z,
+      BowlerName: Randal Carter,
+      Points: 979,
+      Tournaments: 2,
+      Entries: 20,
+      Finals: 5,
+      AverageFinish: 1.4840922707152048,
+      Winnings: 2128.224534507945000
+    },
+    {
+      BowlerId: 01FNDM3XT11MBS1Q3K42HM7EJ7,
+      BowlerName: Norma Cremin,
+      Points: 378,
+      Tournaments: 15,
+      Entries: 20,
+      Finals: 7,
+      Winnings: 482.6999620919580000
+    },
+    {
+      BowlerId: 01GRW5V5A8F4K9AW019CQE0NQR,
+      BowlerName: Erik Spinka,
+      Points: 986,
+      Tournaments: 9,
+      Entries: 18,
+      Winnings: 1569.370004147930000
+    },
+    {
+      BowlerId: 01K6H18BXARQJZXJY9QRXH5YE3,
+      BowlerName: Gennaro Crooks,
+      Points: 999,
+      Tournaments: 10,
+      Entries: 8,
+      Finals: 3,
+      AverageFinish: 8.709180964021558,
+      Winnings: 4661.534819594370000
+    },
+    {
+      BowlerId: 01F4B29GAWHJQMC36CC7Y1T9ZT,
+      BowlerName: Antonina Stehr,
+      Points: 207,
+      Tournaments: 13,
+      Entries: 15,
+      Finals: 8,
+      Winnings: 4673.401396569520000
+    },
+    {
+      BowlerId: 01F4YKNZ0S7MME3C38B9F0H237,
+      BowlerName: Clay Armstrong,
+      Points: 801,
+      Tournaments: 10,
+      Entries: 3,
+      Finals: 5,
+      Winnings: 4827.447133058425000
+    },
+    {
+      BowlerId: 01K40QE3MAT9291E8SKK7TQ5J0,
+      BowlerName: Mack Braun,
+      Points: 389,
+      Tournaments: 7,
+      Entries: 8,
+      Finals: 2,
+      Winnings: 2223.719713382290000
+    },
+    {
+      BowlerId: 01HKMH44F9TH6CC7H4AQKG6H7T,
+      BowlerName: Byron Ward,
+      Points: 693,
+      Tournaments: 8,
+      Entries: 16,
+      Finals: 1,
+      AverageFinish: 8.59189114048699,
+      Winnings: 3409.236503489890000
+    },
+    {
+      BowlerId: 01F6636WAX6VK2Y8WB282D46KC,
+      BowlerName: Brandi Smith,
+      Points: 941,
+      Tournaments: 15,
+      Entries: 7,
+      Finals: 9,
+      AverageFinish: 7.498262390726368,
+      Winnings: 3283.765170855340000
+    },
+    {
+      BowlerId: 01HG37Z4EWHN0TXVX9PQAT4BEM,
+      BowlerName: Glennie Howell,
+      Points: 442,
+      Tournaments: 4,
+      Entries: 18,
+      Finals: 6,
+      Winnings: 1476.194528618920000
+    },
+    {
+      BowlerId: 01FXC7GED7P69B1G5K3993PYHN,
+      BowlerName: Muriel D'Amore,
+      Points: 131,
+      Tournaments: 13,
+      Entries: 17,
+      Finals: 2,
+      AverageFinish: 5.507961477389542,
+      Winnings: 206.4890089475035000
+    },
+    {
+      BowlerId: 01EYSZTB0WEY94EFBS9VMY8BRP,
+      BowlerName: Otilia Waters,
+      Points: 845,
+      Tournaments: 15,
+      Entries: 7,
+      Finals: 3,
+      AverageFinish: 1.5462946088734528,
+      Winnings: 3604.174842408010000
+    },
+    {
+      BowlerId: 01FJQQTECG22GDM9TVPCQ7YVTW,
+      BowlerName: Nathan Luettgen,
+      Points: 761,
+      Tournaments: 4,
+      Entries: 8,
+      Finals: 8,
+      Winnings: 3212.993709935340000
+    },
+    {
+      BowlerId: 01H1FD5T0KVY6Q6632TZ7EMEZX,
+      BowlerName: Erling Franecki,
+      Points: 82,
+      Tournaments: 10,
+      Entries: 17,
+      Finals: 9,
+      Winnings: 2738.189209596340000
+    },
+    {
+      BowlerId: 01JD2BDDYKJ5RG4KSPJC7ZNQMC,
+      BowlerName: Claire Swaniawski,
+      Points: 254,
+      Tournaments: 10,
+      Entries: 6,
+      AverageFinish: 7.105390120812412,
+      Winnings: 3769.430186957785000
+    },
+    {
+      BowlerId: 01J7ERZ115XP4DXBP91CYJ1DN2,
+      BowlerName: Christy Barrows,
+      Points: 916,
+      Tournaments: 11,
+      Entries: 19,
+      Finals: 10,
+      Winnings: 641.440197658465000
+    },
+    {
+      BowlerId: 01K7KNC9TPZBR2NAFTCCF86JP5,
+      BowlerName: Arnold Kunde,
+      Points: 612,
+      Tournaments: 8,
+      Entries: 7,
+      Finals: 10,
+      Winnings: 291.4244124160260000
+    },
+    {
+      BowlerId: 01GTMKT9MFX6K7KRX7YR91DQ3D,
+      BowlerName: Guy Bednar,
+      Points: 552,
+      Tournaments: 2,
+      Entries: 9,
+      Finals: 2,
+      Winnings: 799.690839275575000
+    },
+    {
+      BowlerId: 01K8NYKXD5H0DMDEFJ4K02MZJ6,
+      BowlerName: Jesus DuBuque,
+      Points: 589,
+      Tournaments: 11,
+      Entries: 5,
+      Finals: 1,
+      Winnings: 3308.942275265670000
+    },
+    {
+      BowlerId: 01HPJ73F1F3FASKH2KZ4C947QP,
+      BowlerName: Kaylie Boyer,
+      Points: 927,
+      Tournaments: 9,
+      Entries: 12,
+      Finals: 1,
+      Winnings: 1609.926205878110000
+    }
+  ],
+  SeniorOfTheYear: [
+    {
+      BowlerId: 01KAE6G516JPWYZTS5MNWCRNWF,
+      BowlerName: Ralph Bartell,
+      Points: 138,
+      Tournaments: 9,
+      Entries: 10,
+      Finals: 5,
+      AverageFinish: 9.830116567122805,
+      Winnings: 1320.588994454865000
+    },
+    {
+      BowlerId: 01K8ZHEFVP69XECKM5FEPZMKRJ,
+      BowlerName: Lia Franecki,
+      Points: 205,
+      Tournaments: 6,
+      Entries: 5,
+      Winnings: 3771.736698118845000
+    },
+    {
+      BowlerId: 01GSPJYTRNSW4JAX65GKK8BPA5,
+      BowlerName: Cedrick Moore,
+      Points: 59,
+      Tournaments: 6,
+      Entries: 8,
+      Finals: 6,
+      AverageFinish: 9.250642873463518,
+      Winnings: 4414.910382784395000
+    },
+    {
+      BowlerId: 01F5GRMRDSQ7XMCCVK7RNNCS8P,
+      BowlerName: Floyd Purdy,
+      Points: 400,
+      Tournaments: 13,
+      Entries: 1,
+      Finals: 6,
+      Winnings: 4716.715041881760000
+    },
+    {
+      BowlerId: 01J3DW9NXY424YEVFNZZ4TPDJN,
+      BowlerName: Isabel Sawayn,
+      Points: 70,
+      Tournaments: 4,
+      Entries: 2,
+      Finals: 1,
+      AverageFinish: 4.018251081471445,
+      Winnings: 641.50523889880000
+    }
+  ],
+  SuperSeniorOfTheYear: [
+    {
+      BowlerId: 01H552JGZ65ES1MR39GX013SZV,
+      BowlerName: Justice Batz,
+      Points: 522,
+      Tournaments: 12,
+      Entries: 17,
+      Finals: 1,
+      AverageFinish: 4.150503645721129,
+      Winnings: 4405.626423845825000
+    }
+  ],
+  WomanOfTheYear: [
+    {
+      BowlerId: 01HKHEKY42Z6SR4E9M1Z6HC1HB,
+      BowlerName: Priscilla Moen,
+      Points: 348,
+      Tournaments: 4,
+      Entries: 6,
+      Finals: 9,
+      Winnings: 1011.265910235825000
+    },
+    {
+      BowlerId: 01J2HQA2M3TJJ51KZX1DZ2VGKR,
+      BowlerName: German Rice,
+      Points: 384,
+      Tournaments: 14,
+      Entries: 14,
+      Finals: 9,
+      AverageFinish: 5.807572266928654,
+      Winnings: 3428.665165989040000
+    },
+    {
+      BowlerId: 01FGEEXH5AC5BPEZFTHEA6EYXN,
+      BowlerName: Conrad Rice,
+      Points: 68,
+      Tournaments: 14,
+      Entries: 6,
+      Finals: 10,
+      Winnings: 3402.71666804455000
+    },
+    {
+      BowlerId: 01FKFZX11E2H40VZ580C5Q55KV,
+      BowlerName: Ada Gorczany,
+      Points: 386,
+      Tournaments: 3,
+      Entries: 15,
+      Winnings: 2962.841730547530000
+    },
+    {
+      BowlerId: 01KDR92YFMP18XPNN9RGXSD3Y8,
+      BowlerName: Dianne Quitzon,
+      Points: 274,
+      Tournaments: 8,
+      Entries: 6,
+      Finals: 4,
+      AverageFinish: 9.964131191821828,
+      Winnings: 372.9698669039505000
+    }
+  ],
+  RookieOfTheYear: [
+    {
+      BowlerId: 01HBAVRNNAHGRKX0W47EQKJN9G,
+      BowlerName: Robin Keebler,
+      Points: 909,
+      Tournaments: 3,
+      Entries: 2,
+      Finals: 10,
+      AverageFinish: 9.407573147866672,
+      Winnings: 308.8358744554390000
+    },
+    {
+      BowlerId: 01GSAAHBGG2P47TX4XVXP3AMST,
+      BowlerName: Marvin Moen,
+      Points: 414,
+      Tournaments: 7,
+      Entries: 17,
+      Finals: 4,
+      Winnings: 3290.475622420420000
+    },
+    {
+      BowlerId: 01GVCMK66X6PP4R59YZN80SG3M,
+      BowlerName: Lynette Nikolaus,
+      Points: 315,
+      Tournaments: 14,
+      Entries: 4,
+      Finals: 5,
+      AverageFinish: 2.16126785853937,
+      Winnings: 1268.918866416865000
+    }
+  ],
+  YouthOfTheYear: [
+    {
+      BowlerId: 01FHN1M9JWXPPBRKC36MJ2SWGH,
+      BowlerName: Emerald Keebler,
+      Points: 348,
+      Tournaments: 14,
+      Entries: 7,
+      Finals: 6,
+      Winnings: 758.847180175990000
+    }
+  ],
+  HighAverage: [
+    {
+      BowlerId: 01EX76JZFD86XV0CP4SQVYH11E,
+      BowlerName: Bernadette Mertz,
+      Average: 203.024979519203760,
+      Games: 33,
+      Tournaments: 15,
+      FieldAverage: 10.572145944727650
+    },
+    {
+      BowlerId: 01JXA8ZMAW6S83S97NPQHWQATV,
+      BowlerName: Claudia Berge,
+      Average: 161.692945329329440,
+      Games: 56,
+      Tournaments: 11,
+      FieldAverage: -6.263964472461475
+    },
+    {
+      BowlerId: 01FK9P6TMBZ9FSF30JVSPHPT6W,
+      BowlerName: Marion Kreiger,
+      Average: 168.870784686352480,
+      Games: 60,
+      Tournaments: 6,
+      FieldAverage: 12.335312269784200
+    },
+    {
+      BowlerId: 01G8VYM2G1TYDV130W1TW0WF8K,
+      BowlerName: Megan Grant,
+      Average: 150.061610862641414080,
+      Games: 29,
+      Tournaments: 7,
+      FieldAverage: -3.131942031035175
+    },
+    {
+      BowlerId: 01G6VPPSN0E6G6HQHKQ0AYD9G8,
+      BowlerName: Kolby Ortiz,
+      Average: 221.34852204068960,
+      Games: 20,
+      Tournaments: 7,
+      FieldAverage: -7.5020802568188300
+    },
+    {
+      BowlerId: 01FEC9ZP3590DT0QW4JENWJRWR,
+      BowlerName: Horace Gerlach,
+      Average: 193.622992096293280,
+      Games: 65,
+      Tournaments: 8,
+      FieldAverage: -3.090869564605350
+    },
+    {
+      BowlerId: 01H9BQ4GERXSMM9MVBJ02EKXMM,
+      BowlerName: Homer Moen,
+      Average: 170.531919049346800,
+      Games: 134,
+      Tournaments: 3,
+      FieldAverage: -3.376152167737550
+    },
+    {
+      BowlerId: 01FQ8QTQWHV7JMAYEB897TAMG2,
+      BowlerName: Stephen Corkery,
+      Average: 153.0260445936704240,
+      Games: 119,
+      Tournaments: 4,
+      FieldAverage: 2.521822069548925
+    },
+    {
+      BowlerId: 01HDPK0Q7SCYY6SW8SBZR00Q9K,
+      BowlerName: Kristy Okuneva,
+      Average: 195.240719451215440,
+      Games: 125,
+      Tournaments: 4,
+      FieldAverage: 12.672300912752900
+    },
+    {
+      BowlerId: 01JXAHAK9YVPGMA3XZBG5XZBBJ,
+      BowlerName: Maximillia Greenholt,
+      Average: 206.720386695452240,
+      Games: 49,
+      Tournaments: 6,
+      FieldAverage: 14.27913491813425
+    },
+    {
+      BowlerId: 01K9KPVYF7QBZT611D0H41GTQM,
+      BowlerName: Allan Gibson,
+      Average: 187.743367272309680,
+      Games: 60,
+      Tournaments: 15,
+      FieldAverage: 5.56041918953900
+    },
+    {
+      BowlerId: 01KAN9TKJJ1YKDN3S44J8FB1MP,
+      BowlerName: Cora Baumbach,
+      Average: 214.961818300635440,
+      Games: 147,
+      Tournaments: 1,
+      FieldAverage: 5.433318908528100
+    },
+    {
+      BowlerId: 01JK08WJD5KFZJZE3R8J7A97DY,
+      BowlerName: Luther Schulist,
+      Average: 228.234163112116160,
+      Games: 46,
+      Tournaments: 5,
+      FieldAverage: -0.114435234626025
+    },
+    {
+      BowlerId: 01EVMNECR4ERH9J9B2Z3MP3B40,
+      BowlerName: Brandon Ullrich,
+      Average: 176.064216245927040,
+      Games: 141,
+      Tournaments: 11,
+      FieldAverage: -7.470291167250975
+    },
+    {
+      BowlerId: 01H84NGQ34524SHVTRX6TK1KA3,
+      BowlerName: Vernie Cartwright,
+      Average: 210.005927113818880,
+      Games: 168,
+      Tournaments: 10,
+      FieldAverage: 2.008317763455350
+    }
+  ],
+  HighBlock: [
+    {
+      BowlerId: 01FMJKQ0PMPJWANVJKYSSFG7MY,
+      BowlerName: Candace Zulauf,
+      HighBlock: 1138,
+      HighGame: 296
+    },
+    {
+      BowlerId: 01GENA6GDDK9PPS9PHGKG5WTTN,
+      BowlerName: Madisyn Robel,
+      HighBlock: 1430,
+      HighGame: 271
+    },
+    {
+      BowlerId: 01H7H8AV40SZXVC6TBEJE44VXQ,
+      BowlerName: Dora Johns,
+      HighBlock: 1271,
+      HighGame: 260
+    },
+    {
+      BowlerId: 01GBYJMYBFFY2C7DD7VPHFV1HW,
+      BowlerName: Beverly Moen,
+      HighBlock: 1489,
+      HighGame: 207
+    },
+    {
+      BowlerId: 01EVMDY0C4YD9KCJ32K6M1G9KQ,
+      BowlerName: Vivien Dickens,
+      HighBlock: 1485,
+      HighGame: 267
+    },
+    {
+      BowlerId: 01J4A8VBVDVG0R2ANPXFV5T1AV,
+      BowlerName: Jada Kulas,
+      HighBlock: 1434,
+      HighGame: 229
+    },
+    {
+      BowlerId: 01J2SP94246EHKRJDYBM8T10A9,
+      BowlerName: Marguerite Christiansen,
+      HighBlock: 1327,
+      HighGame: 297
+    },
+    {
+      BowlerId: 01JY9G8FGMWW35RP8DG6RN8051,
+      BowlerName: Will Donnelly,
+      HighBlock: 988,
+      HighGame: 244
+    },
+    {
+      BowlerId: 01FPZXWPC4DM9MVVQQKE9B8S85,
+      BowlerName: Giovanni Wehner,
+      HighBlock: 1435,
+      HighGame: 291
+    },
+    {
+      BowlerId: 01HX96AVFKWKSB4PXQEM1P217G,
+      BowlerName: Jamar Bartoletti,
+      HighBlock: 1483,
+      HighGame: 294
+    },
+    {
+      BowlerId: 01HBAZYM033425JCG2R3Q3FW7X,
+      BowlerName: Bruce Keebler,
+      HighBlock: 1130,
+      HighGame: 282
+    },
+    {
+      BowlerId: 01JGB92RF9E2AA1081G1Y597DZ,
+      BowlerName: Tracy Wiza,
+      HighBlock: 1122,
+      HighGame: 288
+    },
+    {
+      BowlerId: 01HQGKAXYP0SBJAT129N1AH0ME,
+      BowlerName: Paulette MacGyver,
+      HighBlock: 1139,
+      HighGame: 210
+    },
+    {
+      BowlerId: 01HXA2FSEZ3FQ85WZMC346A1BF,
+      BowlerName: Owen Waters,
+      HighBlock: 1096,
+      HighGame: 214
+    },
+    {
+      BowlerId: 01JEXTQ15MG0QZMYT5Q26HHEMP,
+      BowlerName: Nina Terry,
+      HighBlock: 1225,
+      HighGame: 214
+    },
+    {
+      BowlerId: 01KBCBGEBV0N8AKVG58S7FTS4D,
+      BowlerName: Scott Skiles,
+      HighBlock: 1014,
+      HighGame: 236
+    },
+    {
+      BowlerId: 01H4ABD5G183DR6077CQJK7K0J,
+      BowlerName: Katrine Stark,
+      HighBlock: 1245,
+      HighGame: 253
+    },
+    {
+      BowlerId: 01JPR23QGFM6JYMR2QE1NHJPVR,
+      BowlerName: Johnnie Crona,
+      HighBlock: 999,
+      HighGame: 254
+    }
+  ],
+  MatchPlayAverage: [
+    {
+      BowlerId: 01FSEDP3F0YAAQY45VY48684A3,
+      BowlerName: Dion Bashirian,
+      MatchPlayAverage: 218.181551950136960,
+      Games: 6,
+      Wins: 1,
+      WinPercentage: 8.1636402793990600,
+      Winnings: 3003.973051907480000
+    },
+    {
+      BowlerId: 01GJY51XN3CW9ZTHX39RC48W95,
+      BowlerName: Jody Miller,
+      MatchPlayAverage: 226.588273903628960,
+      Games: 5,
+      Wins: 4,
+      Losses: 9,
+      WinPercentage: 14.459944988815100,
+      Winnings: 2439.970992244765000
+    },
+    {
+      BowlerId: 01HQBHNAJ03Z38CZCN1JYJWZCE,
+      BowlerName: Henry Pouros,
+      MatchPlayAverage: 166.275471493730080,
+      Games: 13,
+      Wins: 1,
+      Losses: 6,
+      WinPercentage: 46.128421531118600,
+      Winnings: 155.7093789594755000
+    },
+    {
+      BowlerId: 01FGHTMK8JARQ91TTE8SKCRJPB,
+      BowlerName: Darrel Wuckert,
+      MatchPlayAverage: 189.101166482596240,
+      Games: 12,
+      Wins: 10,
+      Losses: 8,
+      WinPercentage: 70.766994948856100,
+      Winnings: 3819.764763498570000
+    },
+    {
+      BowlerId: 01G1PPCMX3NW0Z5T6H0X01G9E0,
+      BowlerName: Kay Bailey,
+      MatchPlayAverage: 155.6810971748461440,
+      Games: 20,
+      Wins: 5,
+      Losses: 4,
+      WinPercentage: 49.606920848417500,
+      Winnings: 694.953198868295000
+    },
+    {
+      BowlerId: 01GZ0R8QHSJ7NQG0YHFWFV2JT1,
+      BowlerName: Mamie Waters,
+      MatchPlayAverage: 199.257958070029520,
+      Games: 10,
+      Wins: 9,
+      Losses: 3,
+      WinPercentage: 49.577344418306500,
+      Winnings: 4127.327431518270000
+    },
+    {
+      BowlerId: 01HES3TY7435SGNEW44X8D6A46,
+      BowlerName: Bernardo Schowalter,
+      MatchPlayAverage: 220.694677229362880,
+      Games: 6,
+      Wins: 6,
+      Losses: 6,
+      WinPercentage: 99.269537254827800,
+      Winnings: 2009.72582074335000
+    },
+    {
+      BowlerId: 01HPNP8YA4SBGP1R6YGB9KF1P5,
+      BowlerName: Monica Streich,
+      MatchPlayAverage: 212.984428286079520,
+      Games: 13,
+      Losses: 10,
+      WinPercentage: 57.524027050251200,
+      Winnings: 860.044153342045000
+    },
+    {
+      BowlerId: 01JXV0HYJ08JPZ8ERCRGM2ZA7R,
+      BowlerName: Geoffrey Price,
+      MatchPlayAverage: 217.608537072133520,
+      Games: 7,
+      Wins: 4,
+      Losses: 7,
+      WinPercentage: 62.30291033270900,
+      Winnings: 256.826491214720000
+    },
+    {
+      BowlerId: 01H7AD5HYECWSG051TY4V89ZB1,
+      BowlerName: Ismael Ankunding,
+      MatchPlayAverage: 181.106684930206560,
+      Games: 3,
+      Wins: 6,
+      Losses: 6,
+      WinPercentage: 30.844319486452400,
+      Winnings: 201.2557444168515000
+    },
+    {
+      BowlerId: 01H3BY1VKT56N7EGDX3GWB0DC9,
+      BowlerName: Dean Stamm,
+      MatchPlayAverage: 177.472828751184400,
+      Games: 5,
+      Wins: 3,
+      Losses: 1,
+      WinPercentage: 16.427625024890400,
+      Winnings: 2760.120612923110000
+    },
+    {
+      BowlerId: 01GPQFK7RD4VQTD409QJYVE3K2,
+      BowlerName: Clyde Hahn,
+      MatchPlayAverage: 177.508238157028480,
+      Games: 18,
+      Wins: 10,
+      Losses: 3,
+      WinPercentage: 53.666351853714500,
+      Winnings: 1173.325670498110000
+    },
+    {
+      BowlerId: 01F2N7DN41N90Y4JD92V468137,
+      BowlerName: Samir Russel,
+      MatchPlayAverage: 196.552575364034880,
+      Games: 8,
+      Wins: 7,
+      Losses: 6,
+      WinPercentage: 22.455731137867900,
+      Winnings: 2645.945866893020000
+    },
+    {
+      BowlerId: 01F0SRFT8TT8F7AYGZXPX8NBXT,
+      BowlerName: Jeffery Conroy,
+      MatchPlayAverage: 212.287038668192480,
+      Games: 7,
+      Wins: 10,
+      Losses: 1,
+      WinPercentage: 80.674684085266100,
+      Winnings: 4625.437536568120000
+    },
+    {
+      BowlerId: 01HV9C65GY8Z7HAHVWV3EJR12N,
+      BowlerName: Eunice Blick,
+      MatchPlayAverage: 191.434501764101200,
+      Games: 16,
+      Wins: 9,
+      Losses: 9,
+      WinPercentage: 11.929566558417700,
+      Winnings: 1672.934979048060000
+    },
+    {
+      BowlerId: 01F1G9WWHF5Q25R54AAGMBZYJV,
+      BowlerName: Asa Ernser,
+      MatchPlayAverage: 155.5447234984229920,
+      Games: 18,
+      Wins: 10,
+      Losses: 4,
+      WinPercentage: 77.516035119777600,
+      Winnings: 2057.117084999160000
+    },
+    {
+      BowlerId: 01HT79D52E4XS74CJP8PC4W6WR,
+      BowlerName: Virgie Cremin,
+      MatchPlayAverage: 210.721552996300880,
+      Games: 18,
+      Wins: 4,
+      Losses: 7,
+      WinPercentage: 65.929231776822900,
+      Winnings: 4815.487179353595000
+    }
+  ],
+  MatchPlayRecord: [
+    {
+      BowlerId: 01JHJVF6N8MVAYQ9PV29BFVGG6,
+      BowlerName: Cornelius Sawayn,
+      Wins: 3,
+      Losses: 6,
+      WinPercentage: 19.797285795117400,
+      Finals: 2,
+      MatchPlayAverage: 174.251484807697840,
+      Winnings: 4522.816953027070000
+    },
+    {
+      BowlerId: 01FKVPC5NNJ70ZWM4JQQYA7EMZ,
+      BowlerName: Foster Hartmann,
+      Wins: 3,
+      Losses: 4,
+      WinPercentage: 17.493982947195900,
+      Finals: 3,
+      MatchPlayAverage: 184.692166761817520,
+      Winnings: 460.5881685673205000
+    },
+    {
+      BowlerId: 01F2RK0Y3ZQDWEJPCRTJQT7E06,
+      BowlerName: Abraham Gulgowski,
+      Wins: 7,
+      Losses: 1,
+      WinPercentage: 14.299629355920300,
+      Finals: 5,
+      MatchPlayAverage: 197.217532343798080,
+      Winnings: 150.3396756715790000
+    },
+    {
+      BowlerId: 01H1ZNPBJ1Y3695R8M33Q068BK,
+      BowlerName: Ressie Senger,
+      Wins: 9,
+      Losses: 2,
+      WinPercentage: 47.340453950381100,
+      Finals: 13,
+      MatchPlayAverage: 217.825317749672240,
+      Winnings: 2516.208559980715000
+    },
+    {
+      BowlerId: 01J8XKZH3QT83CHFFSXH7TVPNP,
+      BowlerName: Madie Jenkins,
+      Losses: 10,
+      WinPercentage: 57.468651261864500,
+      Finals: 12,
+      MatchPlayAverage: 205.250887747505120,
+      Winnings: 2051.628253912380000
+    },
+    {
+      BowlerId: 01GD2TT1JP9P5JATD7BZX5AXV0,
+      BowlerName: Vicky Hauck,
+      Wins: 3,
+      Losses: 8,
+      WinPercentage: 66.782767915531400,
+      Finals: 2,
+      MatchPlayAverage: 213.73904328036080,
+      Winnings: 3168.135892212455000
+    },
+    {
+      BowlerId: 01FAV2NRNR1RC5DR7PVX138EB2,
+      BowlerName: Judy Bergnaum,
+      Wins: 9,
+      Losses: 8,
+      WinPercentage: 46.659651420386300,
+      Finals: 15,
+      MatchPlayAverage: 161.407406260914800,
+      Winnings: 4155.053374895385000
+    },
+    {
+      BowlerId: 01FP4BBPRMFDZ4VZ9AMV76F0MC,
+      BowlerName: Jesse Mueller,
+      Wins: 1,
+      Losses: 4,
+      WinPercentage: 68.140604984080700,
+      Finals: 1,
+      MatchPlayAverage: 173.091905016029200,
+      Winnings: 1637.172192166175000
+    },
+    {
+      BowlerId: 01G9FWTWNQNSJB4AAPNFH3AVFX,
+      BowlerName: Kirsten Pacocha,
+      Wins: 6,
+      Losses: 10,
+      WinPercentage: 62.623217265411800,
+      Finals: 11,
+      MatchPlayAverage: 161.145255198304160,
+      Winnings: 4884.777669741205000
+    },
+    {
+      BowlerId: 01FGGPAZFJRAEBCXF3EA47GX2K,
+      BowlerName: Mckenna Klein,
+      Wins: 9,
+      Losses: 3,
+      WinPercentage: 17.252540410148200,
+      Finals: 1,
+      MatchPlayAverage: 194.366858957506160,
+      Winnings: 2147.931872004610000
+    },
+    {
+      BowlerId: 01FTQ9N3KY0ZCHHT15T9NCHFD8,
+      BowlerName: Geoffrey Ernser,
+      Wins: 5,
+      Losses: 9,
+      WinPercentage: 12.771729199575100,
+      Finals: 10,
+      MatchPlayAverage: 228.196855968887360,
+      Winnings: 2057.057538562015000
+    },
+    {
+      BowlerId: 01FM4GCM5FPMG6ZY6AY8NB3RJQ,
+      BowlerName: Arely Schoen,
+      Wins: 10,
+      Losses: 9,
+      WinPercentage: 45.202177085542200,
+      Finals: 12,
+      MatchPlayAverage: 154.1384271551568160,
+      Winnings: 2424.930209491835000
+    },
+    {
+      BowlerId: 01FJ1ADAAEMFEEK8MXS55TT9P9,
+      BowlerName: Kari Yundt,
+      Wins: 10,
+      Losses: 4,
+      WinPercentage: 11.147548636024600,
+      Finals: 15,
+      MatchPlayAverage: 217.805683718903760,
+      Winnings: 4753.199498985520000
+    },
+    {
+      BowlerId: 01HV9BCCF66GW45PHWWZQ3CGVT,
+      BowlerName: Samanta Will,
+      Wins: 10,
+      Losses: 1,
+      WinPercentage: 86.904278950255500,
+      Finals: 11,
+      MatchPlayAverage: 183.503545538291120,
+      Winnings: 1847.170666720330000
+    },
+    {
+      BowlerId: 01J3Z7304J7Q4F840QAWHMN918,
+      BowlerName: Patsy Reinger,
+      Wins: 5,
+      Losses: 9,
+      WinPercentage: 95.837995128630600,
+      Finals: 14,
+      MatchPlayAverage: 160.977112954006080,
+      Winnings: 4683.802965881210000
+    },
+    {
+      BowlerId: 01JY05RAA3VX8RF2B7YKX6PPJE,
+      BowlerName: Matt Harber,
+      Wins: 10,
+      Losses: 5,
+      WinPercentage: 72.593508415200500,
+      Finals: 14,
+      MatchPlayAverage: 193.001348880585920,
+      Winnings: 414.5565188557640000
+    },
+    {
+      BowlerId: 01FMDP3X0J6HX86E8WW4FS15XZ,
+      BowlerName: Doug Mraz,
+      Wins: 10,
+      Losses: 1,
+      WinPercentage: 16.713315675367300,
+      Finals: 15,
+      MatchPlayAverage: 215.584103756390560,
+      Winnings: 889.337361273045000
+    },
+    {
+      BowlerId: 01FY0KASD2PM7SGQYPTKWT9F88,
+      BowlerName: Elmer Jenkins,
+      Wins: 5,
+      Losses: 9,
+      WinPercentage: 65.36881670605800,
+      Finals: 11,
+      MatchPlayAverage: 228.878815732374240,
+      Winnings: 3704.076238770075000
+    }
+  ],
+  MatchPlayAppearances: [
+    {
+      BowlerId: 01HKEFE3GNCCN572T1Y2RTHFNM,
+      BowlerName: Jeannie Klein,
+      Finals: 13,
+      Tournaments: 14,
+      Entries: 14
+    },
+    {
+      BowlerId: 01J6MTPCNHEGB9H963N99TTSH2,
+      BowlerName: Hugh Hilll,
+      Finals: 15,
+      Tournaments: 9,
+      Entries: 9
+    },
+    {
+      BowlerId: 01KAAV5444H8RC301M200PFR8P,
+      BowlerName: Kelley Wuckert,
+      Finals: 2,
+      Tournaments: 14,
+      Entries: 20
+    },
+    {
+      BowlerId: 01KCHNH745BAFWQG9GQNSJEF5G,
+      BowlerName: Sherri Crooks,
+      Finals: 15,
+      Tournaments: 1,
+      Entries: 18
+    },
+    {
+      BowlerId: 01FM9Z6XGDRGRMQ6YPXMF8VWWR,
+      BowlerName: Traci Jaskolski,
+      Finals: 7,
+      Tournaments: 13,
+      Entries: 7
+    },
+    {
+      BowlerId: 01EW3FE2DN6P0YE9BPZD9WCNVY,
+      BowlerName: Isabel Durgan,
+      Finals: 1,
+      Tournaments: 9,
+      Entries: 16
+    },
+    {
+      BowlerId: 01HM9K48XRYC8YNPNY9JHV1JH1,
+      BowlerName: Allen Mitchell,
+      Finals: 2,
+      Tournaments: 8,
+      Entries: 11
+    },
+    {
+      BowlerId: 01H3770633NGS7YJWKCVSBQJ3G,
+      BowlerName: Torey Vandervort,
+      Finals: 12,
+      Tournaments: 6,
+      Entries: 10
+    }
+  ],
+  PointsPerEntry: [
+    {
+      BowlerId: 01HCP7T98ARXC9BNA2579CVZG8,
+      BowlerName: Kyla Hegmann,
+      PointsPerEntry: 81.513481625129260,
+      Points: 185,
+      Entries: 14
+    },
+    {
+      BowlerId: 01JQMM0WD0Z4RJZBHM393T4N16,
+      BowlerName: Jett Feil,
+      PointsPerEntry: 17.9477215967828980,
+      Points: 220,
+      Entries: 12
+    },
+    {
+      BowlerId: 01JDYJ0R5QAQ3VZH7P3T86FCN7,
+      BowlerName: Tammy Walsh,
+      PointsPerEntry: 79.13924095646440,
+      Points: 587,
+      Entries: 17
+    },
+    {
+      BowlerId: 01FM3HZA2PF9DN1Z461J5TTMDY,
+      BowlerName: Karl Feil,
+      PointsPerEntry: 66.975617905601680,
+      Points: 382,
+      Entries: 15
+    },
+    {
+      BowlerId: 01FAKHPXAV0HQ7T0R055VKCJ6M,
+      BowlerName: Beryl Harvey,
+      PointsPerEntry: 40.081803589166050,
+      Points: 800,
+      Entries: 18
+    },
+    {
+      BowlerId: 01H5Q9BGB5FT45K6MDRCKZHNJV,
+      BowlerName: Cecelia Spinka,
+      PointsPerEntry: 77.423285836085320,
+      Points: 903,
+      Entries: 6
+    },
+    {
+      BowlerId: 01FSD6SGN6ER0ME17JDDHM8AAH,
+      BowlerName: Loy Mosciski,
+      PointsPerEntry: 35.153215436801890,
+      Points: 251,
+      Entries: 17
+    },
+    {
+      BowlerId: 01G1M6FFJZ2DXTPTBFZ8QCGS73,
+      BowlerName: Eleazar Kuhic,
+      PointsPerEntry: 48.014673626988460,
+      Points: 861,
+      Entries: 19
+    }
+  ],
+  PointsPerTournament: [
+    {
+      BowlerId: 01F180FT208D1Q4V92XS2CGXP2,
+      BowlerName: Ole Wiza,
+      Points: 869,
+      Tournaments: 2,
+      PointsPerTournament: 134.933921231391860
+    },
+    {
+      BowlerId: 01F3PD803ZN9YQVAGQX2F4XBZB,
+      BowlerName: Kristy Murray,
+      Points: 995,
+      Tournaments: 14,
+      PointsPerTournament: 27.378545188055660
+    },
+    {
+      BowlerId: 01KD84BH8EC5WG7YTNS12PQPJD,
+      BowlerName: Randal Hansen,
+      Points: 638,
+      Tournaments: 7,
+      PointsPerTournament: 129.555900655480100
+    },
+    {
+      BowlerId: 01F5ET2D4AETZ2ARSMYC1SS9PC,
+      BowlerName: Merle Wuckert,
+      Points: 607,
+      Tournaments: 7,
+      PointsPerTournament: 87.276953736914820
+    },
+    {
+      BowlerId: 01FYGZPB81JJ35Z02P2HKZVFH8,
+      BowlerName: Warren Ruecker,
+      Points: 305,
+      Tournaments: 7,
+      PointsPerTournament: 85.733183527241100
+    },
+    {
+      BowlerId: 01HXT0MHFWMCQV442DX3CF1HNA,
+      BowlerName: Destiny Fritsch,
+      Points: 396,
+      Tournaments: 3,
+      PointsPerTournament: 147.836385321727260
+    },
+    {
+      BowlerId: 01FN5R2QS7TCVN6QNHA3BN7VKR,
+      BowlerName: Deborah Muller,
+      Points: 842,
+      Tournaments: 10,
+      PointsPerTournament: 132.118287460002260
+    },
+    {
+      BowlerId: 01JFEJZ91QZZYY9H3NRKWQE6MR,
+      BowlerName: Jovan Kovacek,
+      Points: 775,
+      Tournaments: 2,
+      PointsPerTournament: 53.526265082660220
+    },
+    {
+      BowlerId: 01HCJVV002R2TH5CQ7M8MRFN10,
+      BowlerName: Domenico Padberg,
+      Points: 578,
+      Tournaments: 14,
+      PointsPerTournament: 116.913535141811440
+    }
+  ],
+  FinalsPerEntry: [
+    {
+      BowlerId: 01HB4QH1W5REMF98RQCAXSE9Z5,
+      BowlerName: Wilson McClure,
+      Finals: 15,
+      Entries: 15,
+      FinalsPerEntry: 0.80650658933748760
+    },
+    {
+      BowlerId: 01HVPVW7MAK8NBZPNBKA3G4FPW,
+      BowlerName: Gina Veum,
+      Finals: 3,
+      Entries: 2,
+      FinalsPerEntry: 0.52102629492107120
+    },
+    {
+      BowlerId: 01JXJ5J34VE63ACAR2Z79TVFXJ,
+      BowlerName: Mindy Schmidt,
+      Finals: 10,
+      Entries: 12,
+      FinalsPerEntry: 0.5028562915524735
+    },
+    {
+      BowlerId: 01K9GZ7XY96XBXXHC48Y7X5W7N,
+      BowlerName: Aditya Medhurst,
+      Finals: 14,
+      Entries: 6,
+      FinalsPerEntry: 0.34007239182948735
+    },
+    {
+      BowlerId: 01FZ2XSFHPD8BJCH57ZCKA2FMP,
+      BowlerName: Vivian Hamill,
+      Finals: 9,
+      Entries: 9,
+      FinalsPerEntry: 0.2287647608335895
+    },
+    {
+      BowlerId: 01GPNF88SBD86XEDRGDF5YDZNQ,
+      BowlerName: Kiana Kirlin,
+      Finals: 2,
+      Entries: 16,
+      FinalsPerEntry: 0.77622442018530525
+    },
+    {
+      BowlerId: 01HDBJN2CDJTR7GAY7291TH35X,
+      BowlerName: Jordan Fay,
+      Finals: 6,
+      Entries: 14,
+      FinalsPerEntry: 0.88910448103635830
+    },
+    {
+      BowlerId: 01JH9MGXZ9353N8KGYM5KY47KV,
+      BowlerName: Lola Hartmann,
+      Finals: 9,
+      Entries: 4,
+      FinalsPerEntry: 0.46169344911430695
+    },
+    {
+      BowlerId: 01GPZHXWCY35QFCCYBGR58T7A4,
+      BowlerName: Desiree Wunsch,
+      Finals: 6,
+      Entries: 16,
+      FinalsPerEntry: 0.52100941332569785
+    },
+    {
+      BowlerId: 01HAHQ6B4ZG4CPQ0VN6Q6VCRQZ,
+      BowlerName: Buster Wunsch,
+      Finals: 5,
+      Entries: 1,
+      FinalsPerEntry: 0.73480264625270020
+    },
+    {
+      BowlerId: 01HQX47DTEJBYPDZRWQY71VHMR,
+      BowlerName: Kendra Wintheiser,
+      Finals: 10,
+      Entries: 4,
+      FinalsPerEntry: 0.24355510074810810
+    },
+    {
+      BowlerId: 01J3MB80B0548DY1ZQMNG08422,
+      BowlerName: Gilberto Lakin,
+      Finals: 15,
+      Entries: 7,
+      FinalsPerEntry: 0.107335242702316120
+    },
+    {
+      BowlerId: 01JJZ0CMQR1FVXWF2EAZXJ1QKF,
+      BowlerName: Ian Hayes,
+      Finals: 13,
+      Entries: 20,
+      FinalsPerEntry: 0.125467114837592055
+    }
+  ],
+  AverageFinishes: [
+    {
+      BowlerId: 01GN804E7SE69YKPXEK2KDXN2B,
+      BowlerName: Maia Bergnaum,
+      AverageFinish: 3.728694204580358,
+      Finals: 3,
+      Winnings: 2457.90628830805000
+    },
+    {
+      BowlerId: 01J7Q0K0FPX3GAFTTTN1EDFM2W,
+      BowlerName: Leonard Fisher,
+      AverageFinish: 10.136031427018356,
+      Finals: 5,
+      Winnings: 647.698876283925000
+    },
+    {
+      BowlerId: 01FC7AKDJBK4948KPAMHQ9VZFN,
+      BowlerName: Camila Sporer,
+      AverageFinish: 2.870996504030654,
+      Finals: 12,
+      Winnings: 4443.182910067580000
+    },
+    {
+      BowlerId: 01G7MNVM1R54ZGDX4YN6AJRWCS,
+      BowlerName: Destiney Cole,
+      AverageFinish: 3.171229601917432,
+      Finals: 15,
+      Winnings: 3132.986527929540000
+    },
+    {
+      BowlerId: 01JN12S9CHRE61X81KMH2C41YP,
+      BowlerName: Ashley Rau,
+      AverageFinish: 1.5829812654214822,
+      Finals: 8,
+      Winnings: 4368.760501671935000
+    },
+    {
+      BowlerId: 01HJ3Y6A45WARQJ75QHTQ90NP8,
+      BowlerName: Xavier Schultz,
+      AverageFinish: 7.292379384065222,
+      Finals: 11,
+      Winnings: 3918.696895203880000
+    },
+    {
+      BowlerId: 01HK7P5Z0JM2N4W4KRTQD73NPH,
+      BowlerName: Ephraim Boyer,
+      AverageFinish: 10.18738491329708,
+      Finals: 11,
+      Winnings: 4322.456442435485000
+    },
+    {
+      BowlerId: 01HP8WJ7KV70QS7JPD995BY873,
+      BowlerName: Tiffany Ziemann,
+      AverageFinish: 1.4036707879992536,
+      Finals: 6,
+      Winnings: 2997.885892632365000
+    },
+    {
+      BowlerId: 01GFA3T4WS6SB34XSQTWGNV22E,
+      BowlerName: Cordie McKenzie,
+      AverageFinish: 2.586832647019452,
+      Finals: 10,
+      Winnings: 2646.122834480425000
+    },
+    {
+      BowlerId: 01K5YE4X6RVAM12TR48XBJCDD4,
+      BowlerName: Zita Cole,
+      AverageFinish: 3.100597026804738,
+      Finals: 2,
+      Winnings: 1845.675193167140000
+    },
+    {
+      BowlerId: 01GQC0CJ5YH9N15PZAN0X817MK,
+      BowlerName: Roxanne Kshlerin,
+      AverageFinish: 4.311849970981412,
+      Finals: 7,
+      Winnings: 1682.254239768840000
+    },
+    {
+      BowlerId: 01HFEY8MMYMX26XHPVV3J7FMMM,
+      BowlerName: Paul Breitenberg,
+      AverageFinish: 14.012371583381842,
+      Finals: 7,
+      Winnings: 3499.709876952560000
+    },
+    {
+      BowlerId: 01FVXK9WX54678J5DM7Z91WF41,
+      BowlerName: Jill Kertzmann,
+      AverageFinish: 1.5543620030183172,
+      Finals: 5,
+      Winnings: 4814.319142519645000
+    },
+    {
+      BowlerId: 01JESCX4H215Z5CM80FHZF2D97,
+      BowlerName: Holly Toy,
+      AverageFinish: 14.006815180651292,
+      Finals: 6,
+      Winnings: 191.959135789405000
+    },
+    {
+      BowlerId: 01G22SV12EK1YM4HYD55FH02FZ,
+      BowlerName: Kathy Green,
+      AverageFinish: 6.169016827442230,
+      Finals: 14,
+      Winnings: 4124.519249482320000
+    },
+    {
+      BowlerId: 01F68E4P3A0ZPTM4X2H9Q56FJ6,
+      BowlerName: Veronica McKenzie,
+      AverageFinish: 8.753588067252930,
+      Finals: 3,
+      Winnings: 4227.27201563645000
+    }
+  ],
+  SeasonAtAGlance: {
+    TotalEntries: 491,
+    TotalPrizeMoney: 43933.758803146806000
+  },
+  SeasonsBests: {
+    HighGame: 271,
+    HighGameBowlers: {
+      01KANS0B38PKAKCP4QDM9B3513: Randy Swaniawski
+    },
+    HighBlock: 1329,
+    HighBlockBowlers: {
+      01F13B0FZBYZ5CFQHG2E8K6BZ1: Bradford Rippin
+    },
+    HighAverage: 216.419699097247650,
+    HighAverageBowlers: {
+      01H8BM5NWY78VXENG3SJM55WMJ: Alejandro Murray
+    }
+  },
+  FieldMatchPlaySummary: {
+    HighestWinPercentage: 71.371268467684850,
+    HighestWinPercentageBowlers: {
+      01HNHRP8EZW0E59N067H8SY9F8: Kristina Wisoky
+    },
+    MostFinals: 15,
+    MostFinalsBowlers: {
+      01F44Y1VX1S98JDSDNJ05X7PT9: Alvina Stamm
+    }
+  },
+  BowlerOfTheYearPointsRace: [
+    {
+      BowlerId: 01F1233600TV8CRNCY77N03529,
+      BowlerName: Aida Bayer,
+      Results: [
+        {
+          TournamentName: Beahan LLC,
+          TournamentDate: Date_1,
+          CumulativePoints: 20
+        },
+        {
+          TournamentName: Mitchell, Cummerata and Jones,
+          TournamentDate: Date_2,
+          CumulativePoints: 32
+        },
+        {
+          TournamentName: Murazik - Daugherty,
+          TournamentDate: Date_3,
+          CumulativePoints: 43
+        }
+      ]
+    },
+    {
+      BowlerId: 01JP86WGZYFHG32QHM5K738NNW,
+      BowlerName: Jackie Mayer,
+      Results: [
+        {
+          TournamentName: Wilkinson - D'Amore,
+          TournamentDate: Date_4,
+          CumulativePoints: 15
+        },
+        {
+          TournamentName: Lakin - Padberg,
+          TournamentDate: Date_5,
+          CumulativePoints: 27
+        },
+        {
+          TournamentName: Mohr, Hackett and Pagac,
+          TournamentDate: Date_6,
+          CumulativePoints: 37
+        }
+      ]
+    },
+    {
+      BowlerId: 01JY6ZS5JJGC2EB1JEK79P8H28,
+      BowlerName: Maryam Zulauf,
+      Results: [
+        {
+          TournamentName: Mann, Graham and Cummings,
+          TournamentDate: Date_7,
+          CumulativePoints: 8
+        },
+        {
+          TournamentName: Stoltenberg and Sons,
+          TournamentDate: Date_8,
+          CumulativePoints: 23
+        },
+        {
+          TournamentName: Legros and Sons,
+          TournamentDate: Date_9,
+          CumulativePoints: 41
+        },
+        {
+          TournamentName: Thiel, Hansen and Schuster,
+          TournamentDate: Date_10,
+          CumulativePoints: 58
+        }
+      ]
+    },
+    {
+      BowlerId: 01J15DS7YX9H25C78049ATWPAV,
+      BowlerName: Tiara Watsica,
+      Results: [
+        {
+          TournamentName: Nikolaus Group,
+          TournamentDate: Date_11,
+          CumulativePoints: 12
+        },
+        {
+          TournamentName: Mante - Ferry,
+          TournamentDate: Date_12,
+          CumulativePoints: 18
+        },
+        {
+          TournamentName: Stroman, Jones and Mante,
+          TournamentDate: Date_13,
+          CumulativePoints: 32
+        }
+      ]
+    }
+  ],
+  AllBowlers: [
+    {
+      BowlerId: 01GAFS68XQRVNZMY3EXF9Z9ASN,
+      BowlerName: Armando Feest,
+      Points: 256,
+      Average: 155.0801391550712960,
+      Games: 42,
+      Finals: 7,
+      Wins: 1,
+      Losses: 5,
+      WinPercentage: 71.717921631279400,
+      MatchPlayAverage: 215.327016443632080,
+      Winnings: 4331.073502232820000,
+      FieldAverage: 2.415575858864725,
+      Tournaments: 13
+    },
+    {
+      BowlerId: 01GQMPG6RP8TVK4VEJTZAD9K5A,
+      BowlerName: Cecil Schmitt,
+      Points: 251,
+      Average: 217.811345117078800,
+      Games: 190,
+      Finals: 8,
+      Wins: 9,
+      Losses: 6,
+      WinPercentage: 43.878740977439400,
+      MatchPlayAverage: 223.281516578645200,
+      Winnings: 4456.327729605290000,
+      FieldAverage: -7.9853822025402375,
+      Tournaments: 11
+    },
+    {
+      BowlerId: 01HKQSTN4MQQEJWK0W3V1D4K13,
+      BowlerName: Lucia Witting,
+      Points: 876,
+      Average: 213.823450349189120,
+      Games: 45,
+      Finals: 14,
+      Wins: 10,
+      Losses: 7,
+      WinPercentage: 46.362675422040100,
+      MatchPlayAverage: 222.401971664466880,
+      Winnings: 4612.594917236170000,
+      FieldAverage: 12.73036491718625,
+      Tournaments: 8
+    },
+    {
+      BowlerId: 01FZSG53X2EDH7DZNBPTASSAYR,
+      BowlerName: Janice Littel,
+      Points: 869,
+      Average: 159.746696096727040,
+      Games: 51,
+      Finals: 15,
+      Wins: 6,
+      WinPercentage: 93.24699318653300,
+      MatchPlayAverage: 177.712399562686880,
+      Winnings: 2886.416953004160000,
+      FieldAverage: -4.594961472132700,
+      Tournaments: 4
+    },
+    {
+      BowlerId: 01HV6VRE0TP4CC89AKJBD4TVYB,
+      BowlerName: Ed Parker,
+      Points: 896,
+      Average: 210.996576128991600,
+      Games: 121,
+      Finals: 9,
+      Wins: 7,
+      Losses: 9,
+      WinPercentage: 19.491725563766300,
+      MatchPlayAverage: 188.646021354313040,
+      Winnings: 3335.281751740390000,
+      FieldAverage: -1.786212668188950,
+      Tournaments: 5
+    },
+    {
+      BowlerId: 01JQ46PARTGDY4HW62JD06NHBF,
+      BowlerName: Corey Homenick,
+      Points: 520,
+      Average: 187.422131019375360,
+      Games: 75,
+      Finals: 5,
+      Wins: 2,
+      Losses: 6,
+      WinPercentage: 42.464082055941300,
+      MatchPlayAverage: 199.780874350006160,
+      Winnings: 2489.017701004175000,
+      FieldAverage: 5.477914707957725,
+      Tournaments: 9
+    },
+    {
+      BowlerId: 01K539J4XKENJYPWNGKN10BFDE,
+      BowlerName: Howard Ledner,
+      Points: 43,
+      Average: 215.424226143129280,
+      Games: 58,
+      Finals: 5,
+      Wins: 3,
+      Losses: 8,
+      WinPercentage: 64.491210162868400,
+      MatchPlayAverage: 152.734997534535360,
+      Winnings: 68.430930873580000,
+      FieldAverage: 4.548793488437675,
+      Tournaments: 8
+    },
+    {
+      BowlerId: 01GKXZWPJDSA8HRXZ3XJN3NV0T,
+      BowlerName: Sterling Lueilwitz,
+      Points: 592,
+      Average: 219.573087687405280,
+      Games: 163,
+      Finals: 4,
+      Wins: 5,
+      Losses: 1,
+      WinPercentage: 6.6941605446367400,
+      MatchPlayAverage: 224.079767611846240,
+      Winnings: 2123.131250088630000,
+      FieldAverage: -4.056922939632525,
+      Tournaments: 12
+    },
+    {
+      BowlerId: 01GJRAN0RQPNDCNWDAZWRQPM34,
+      BowlerName: Oscar Torp,
+      Points: 583,
+      Average: 199.136182688705680,
+      Games: 50,
+      Finals: 5,
+      Wins: 8,
+      WinPercentage: 38.259252597698600,
+      MatchPlayAverage: 196.963237136119600,
+      Winnings: 178.8683865120955000,
+      FieldAverage: 2.608744244840350,
+      Tournaments: 2
+    },
+    {
+      BowlerId: 01HRPP7ZP9CEA43Y2XG1HPKQ26,
+      BowlerName: Robin Schulist,
+      Points: 878,
+      Average: 199.77698022954960,
+      Games: 141,
+      Finals: 12,
+      Wins: 1,
+      Losses: 8,
+      WinPercentage: 22.244921430128100,
+      MatchPlayAverage: 180.826384216000480,
+      Winnings: 337.2329661330360000,
+      FieldAverage: -0.821702948688400,
+      Tournaments: 2
+    },
+    {
+      BowlerId: 01GKZ40FA8GBB4HAZTNBND4S9E,
+      BowlerName: Armando Cremin,
+      Points: 551,
+      Average: 154.9938266375073360,
+      Games: 67,
+      Finals: 12,
+      Wins: 2,
+      Losses: 3,
+      WinPercentage: 41.861756258579800,
+      MatchPlayAverage: 184.647232943515840,
+      Winnings: 2481.851036419090000,
+      FieldAverage: 2.943532777923875,
+      Tournaments: 13
+    },
+    {
+      BowlerId: 01HVDNEPGGKQP7X4WBRW9V0YTG,
+      BowlerName: Garrett Wisoky,
+      Points: 285,
+      Average: 199.106291145601440,
+      Games: 30,
+      Finals: 6,
+      Wins: 9,
+      Losses: 1,
+      WinPercentage: 19.503873875133600,
+      MatchPlayAverage: 223.930480253850320,
+      Winnings: 2721.422609277730000,
+      FieldAverage: -2.00650740741125,
+      Tournaments: 1
+    },
+    {
+      BowlerId: 01GEQYMA03AMQCMXT1J03NCPF2,
+      BowlerName: Clifford Luettgen,
+      Points: 789,
+      Average: 225.51238339185360,
+      Games: 99,
+      Finals: 9,
+      Wins: 5,
+      Losses: 4,
+      WinPercentage: 19.481469606739200,
+      MatchPlayAverage: 228.190232626251040,
+      Winnings: 2364.972679580085000,
+      FieldAverage: 3.787638262746700,
+      Tournaments: 12
+    },
+    {
+      BowlerId: 01FH7RR86WDRGJ6H00Y0NNTT3Z,
+      BowlerName: Tania Jacobson,
+      Points: 306,
+      Average: 157.1550295162736560,
+      Games: 105,
+      Finals: 1,
+      Wins: 5,
+      Losses: 5,
+      WinPercentage: 1.4197292744273900,
+      MatchPlayAverage: 190.056710336383760,
+      Winnings: 3418.658172441020000,
+      FieldAverage: 10.063674878358700,
+      Tournaments: 13
+    },
+    {
+      BowlerId: 01G33KR7AMT33K4NC53YDNPJ9C,
+      BowlerName: Lemuel Gaylord,
+      Points: 854,
+      Average: 167.889130570874160,
+      Games: 170,
+      Finals: 13,
+      Wins: 6,
+      Losses: 7,
+      WinPercentage: 35.04223303638500,
+      MatchPlayAverage: 201.764708446229200,
+      Winnings: 1981.522541950235000,
+      FieldAverage: -2.536938233551075,
+      Tournaments: 9
+    },
+    {
+      BowlerId: 01J3YMPB9AYKZW9Q4W16E3R2WD,
+      BowlerName: Dalton Purdy,
+      Points: 16,
+      Average: 154.0560443345718320,
+      Games: 168,
+      Finals: 10,
+      Wins: 9,
+      Losses: 2,
+      WinPercentage: 70.343165598038200,
+      MatchPlayAverage: 183.042669721433280,
+      Winnings: 4214.614485024760000,
+      FieldAverage: 0.163754380850,
+      Tournaments: 10
+    },
+    {
+      BowlerId: 01FNBZTKDSGX5S0860H7S93YFT,
+      BowlerName: Ewell Jast,
+      Points: 141,
+      Average: 193.20657057836960,
+      Games: 106,
+      Finals: 9,
+      Wins: 1,
+      Losses: 2,
+      WinPercentage: 92.269438641271300,
+      MatchPlayAverage: 151.1228711163266000,
+      Winnings: 3018.629994717720000,
+      FieldAverage: 11.861487776907850,
+      Tournaments: 10
+    },
+    {
+      BowlerId: 01FF095XX37AP5HXQAWPP1YEKC,
+      BowlerName: Katie O'Kon,
+      Points: 629,
+      Average: 215.445001528339920,
+      Games: 41,
+      Finals: 13,
+      Wins: 1,
+      Losses: 3,
+      WinPercentage: 85.57750325909700,
+      MatchPlayAverage: 201.284476058224480,
+      Winnings: 4109.995539351365000,
+      FieldAverage: 10.777527927783100,
+      Tournaments: 9
+    },
+    {
+      BowlerId: 01H6THJE1D602RNQGTR642YKH8,
+      BowlerName: Clyde Bauch,
+      Points: 202,
+      Average: 179.767154580805040,
+      Games: 27,
+      Finals: 7,
+      Wins: 6,
+      Losses: 9,
+      WinPercentage: 52.577598324314500,
+      MatchPlayAverage: 154.963026533351760,
+      Winnings: 465.2278965642805000,
+      FieldAverage: 0.57428374680425,
+      Tournaments: 2
+    },
+    {
+      BowlerId: 01F0E3ESM4ZC3VP62X0S4TNGN5,
+      BowlerName: Heather Emard,
+      Points: 279,
+      Average: 207.896939617533680,
+      Games: 177,
+      Finals: 12,
+      Wins: 9,
+      Losses: 5,
+      WinPercentage: 95.631990346886200,
+      MatchPlayAverage: 185.210589596634080,
+      Winnings: 2464.660758834640000,
+      FieldAverage: 5.667814140053375,
+      Tournaments: 6
+    },
+    {
+      BowlerId: 01FHGDK3V8R4A6ET5KFSTKV5NV,
+      BowlerName: Bailee Pollich,
+      Points: 406,
+      Average: 225.762793829554080,
+      Games: 86,
+      Finals: 8,
+      Wins: 8,
+      Losses: 9,
+      WinPercentage: 48.251871973393400,
+      MatchPlayAverage: 219.349703858303680,
+      Winnings: 3353.130758438785000,
+      FieldAverage: 11.003853201867950,
+      Tournaments: 11
+    },
+    {
+      BowlerId: 01HGWJPVGMTKQ6EXAXJ91FGGDN,
+      BowlerName: Lura Anderson,
+      Points: 587,
+      Average: 155.2258952358858160,
+      Games: 27,
+      Finals: 12,
+      Wins: 4,
+      Losses: 3,
+      WinPercentage: 88.439730689134300,
+      MatchPlayAverage: 164.126432321093280,
+      Winnings: 4236.950403655390000,
+      FieldAverage: -2.687521824933375,
+      Tournaments: 1
+    },
+    {
+      BowlerId: 01JWKQKC18SF04KTQ9S631A8VS,
+      BowlerName: Favian Tillman,
+      Points: 116,
+      Average: 166.099837951408640,
+      Games: 137,
+      Finals: 8,
+      Wins: 1,
+      Losses: 10,
+      WinPercentage: 93.444515854792900,
+      MatchPlayAverage: 158.212193366238960,
+      Winnings: 3271.216740026705000,
+      FieldAverage: -7.8714417889115600,
+      Tournaments: 4
+    },
+    {
+      BowlerId: 01F1GJC2R5C8T3RZ2HE0Q1RVF2,
+      BowlerName: Davonte Ruecker,
+      Points: 366,
+      Average: 228.073120116290240,
+      Games: 20,
+      Finals: 10,
+      Wins: 4,
+      Losses: 7,
+      WinPercentage: 28.626008717634700,
+      MatchPlayAverage: 151.8367240213960080,
+      Winnings: 3476.497795654690000,
+      FieldAverage: -2.40054138582225,
+      Tournaments: 8
+    }
+  ]
+}

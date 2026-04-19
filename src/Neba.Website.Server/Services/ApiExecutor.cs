@@ -168,6 +168,7 @@ internal sealed class ApiExecutor(
 
         ApiMetrics.RecordError(apiName, operationName, duration, errorType, httpStatusCode);
 
+        // Stryker disable once NullCoalescing : activity is null in tests (no ActivitySource); tag mutations are untestable
         activity?.SetTag("error.type", ex.GetType().FullName ?? ex.GetType().Name);
         activity?.SetTag("error.message", ex.Message);
         activity?.SetStatus(ActivityStatusCode.Error, ex.Message);

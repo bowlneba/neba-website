@@ -8,7 +8,7 @@ public static class HighBlockAwardResponseFactory
 {
     public const string ValidSeason = "2025 Season";
     public const string ValidBowlerName = "Joe Bowler";
-    public const int ValidSocre = 1300;
+    public const int ValidScore = 1300;
 
     public static HighBlockAwardResponse Create(
         string? season = null,
@@ -18,7 +18,7 @@ public static class HighBlockAwardResponseFactory
         {
             Season = season ?? ValidSeason,
             BowlerName = bowlerName ?? ValidBowlerName,
-            Score = score ?? ValidSocre
+            Score = score ?? ValidScore
         };
 
     public static IReadOnlyCollection<HighBlockAwardResponse> Bogus(int count, int? seed = null)

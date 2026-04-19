@@ -1,0 +1,1290 @@
+[
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 57,
+    "TournamentName": "Many Styles of Bowling Open",
+    "TournamentDate": "2022-01-30",
+    "CumulativePoints": 30
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 58,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2022-02-26",
+    "CumulativePoints": 60
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 59,
+    "TournamentName": "Strike FX Doubles",
+    "TournamentDate": "2022-02-27",
+    "CumulativePoints": 65
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 60,
+    "TournamentName": "Bowl Winkles Pro Shop Open",
+    "TournamentDate": "2022-03-20",
+    "CumulativePoints": 137
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 61,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2022-04-10",
+    "CumulativePoints": 167
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 64,
+    "TournamentName": "Green Mountain Open",
+    "TournamentDate": "2022-05-15",
+    "CumulativePoints": 227
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 65,
+    "TournamentName": "Savage Arms Open",
+    "TournamentDate": "2022-06-05",
+    "CumulativePoints": 242
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 66,
+    "TournamentName": "Turbo Driven to Bowl Over/Under 50 Doubles",
+    "TournamentDate": "2022-06-25",
+    "CumulativePoints": 254
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 67,
+    "TournamentName": "Grog Monster Sports Regular Doubles",
+    "TournamentDate": "2022-06-26",
+    "CumulativePoints": 266
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 68,
+    "TournamentName": "Rip Callahan Memorial Open",
+    "TournamentDate": "2022-07-17",
+    "CumulativePoints": 288
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 69,
+    "TournamentName": "Yankee Doubles",
+    "TournamentDate": "2022-07-30",
+    "CumulativePoints": 293
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 70,
+    "TournamentName": "Yankee Lanes Singles",
+    "TournamentDate": "2022-07-31",
+    "CumulativePoints": 353
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 73,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2022-08-21",
+    "CumulativePoints": 412
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 74,
+    "TournamentName": "Vincent Hall Memorial Over / Under 50 Doubles",
+    "TournamentDate": "2022-09-18",
+    "CumulativePoints": 424
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 75,
+    "TournamentName": "KR Strikeforce Open",
+    "TournamentDate": "2022-10-02",
+    "CumulativePoints": 429
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 78,
+    "TournamentName": "Yankee Lanes Singles Open",
+    "TournamentDate": "2022-10-23",
+    "CumulativePoints": 468
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 80,
+    "TournamentName": "Storm, Roto Grip \u0026 900 Global Tournament of Champion",
+    "TournamentDate": "2022-11-13",
+    "CumulativePoints": 473
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 418,
+    "TournamentId": 82,
+    "TournamentName": "Ideal Bowling Concepts Singles Open",
+    "TournamentDate": "2022-12-11",
+    "CumulativePoints": 495
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 2453,
+    "TournamentId": 57,
+    "TournamentName": "Many Styles of Bowling Open",
+    "TournamentDate": "2022-01-30",
+    "CumulativePoints": 39
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 2453,
+    "TournamentId": 58,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2022-02-26",
+    "CumulativePoints": 56
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 2453,
+    "TournamentId": 59,
+    "TournamentName": "Strike FX Doubles",
+    "TournamentDate": "2022-02-27",
+    "CumulativePoints": 61
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 2453,
+    "TournamentId": 60,
+    "TournamentName": "Bowl Winkles Pro Shop Open",
+    "TournamentDate": "2022-03-20",
+    "CumulativePoints": 100
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 2453,
+    "TournamentId": 61,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2022-04-10",
+    "CumulativePoints": 139
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 2453,
+    "TournamentId": 65,
+    "TournamentName": "Savage Arms Open",
+    "TournamentDate": "2022-06-05",
+    "CumulativePoints": 211
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 2453,
+    "TournamentId": 66,
+    "TournamentName": "Turbo Driven to Bowl Over/Under 50 Doubles",
+    "TournamentDate": "2022-06-25",
+    "CumulativePoints": 228
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 2453,
+    "TournamentId": 67,
+    "TournamentName": "Grog Monster Sports Regular Doubles",
+    "TournamentDate": "2022-06-26",
+    "CumulativePoints": 233
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 2453,
+    "TournamentId": 68,
+    "TournamentName": "Rip Callahan Memorial Open",
+    "TournamentDate": "2022-07-17",
+    "CumulativePoints": 238
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 2453,
+    "TournamentId": 69,
+    "TournamentName": "Yankee Doubles",
+    "TournamentDate": "2022-07-30",
+    "CumulativePoints": 250
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 2453,
+    "TournamentId": 70,
+    "TournamentName": "Yankee Lanes Singles",
+    "TournamentDate": "2022-07-31",
+    "CumulativePoints": 265
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 2453,
+    "TournamentId": 73,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2022-08-21",
+    "CumulativePoints": 270
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 2453,
+    "TournamentId": 74,
+    "TournamentName": "Vincent Hall Memorial Over / Under 50 Doubles",
+    "TournamentDate": "2022-09-18",
+    "CumulativePoints": 300
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 2453,
+    "TournamentId": 75,
+    "TournamentName": "KR Strikeforce Open",
+    "TournamentDate": "2022-10-02",
+    "CumulativePoints": 360
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 2453,
+    "TournamentId": 78,
+    "TournamentName": "Yankee Lanes Singles Open",
+    "TournamentDate": "2022-10-23",
+    "CumulativePoints": 380
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 2453,
+    "TournamentId": 82,
+    "TournamentName": "Ideal Bowling Concepts Singles Open",
+    "TournamentDate": "2022-12-11",
+    "CumulativePoints": 385
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1429,
+    "TournamentId": 57,
+    "TournamentName": "Many Styles of Bowling Open",
+    "TournamentDate": "2022-01-30",
+    "CumulativePoints": 22
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1429,
+    "TournamentId": 58,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2022-02-26",
+    "CumulativePoints": 27
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1429,
+    "TournamentId": 59,
+    "TournamentName": "Strike FX Doubles",
+    "TournamentDate": "2022-02-27",
+    "CumulativePoints": 32
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1429,
+    "TournamentId": 60,
+    "TournamentName": "Bowl Winkles Pro Shop Open",
+    "TournamentDate": "2022-03-20",
+    "CumulativePoints": 71
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1429,
+    "TournamentId": 61,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2022-04-10",
+    "CumulativePoints": 86
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1429,
+    "TournamentId": 64,
+    "TournamentName": "Green Mountain Open",
+    "TournamentDate": "2022-05-15",
+    "CumulativePoints": 116
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1429,
+    "TournamentId": 66,
+    "TournamentName": "Turbo Driven to Bowl Over/Under 50 Doubles",
+    "TournamentDate": "2022-06-25",
+    "CumulativePoints": 133
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1429,
+    "TournamentId": 67,
+    "TournamentName": "Grog Monster Sports Regular Doubles",
+    "TournamentDate": "2022-06-26",
+    "CumulativePoints": 185
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1429,
+    "TournamentId": 68,
+    "TournamentName": "Rip Callahan Memorial Open",
+    "TournamentDate": "2022-07-17",
+    "CumulativePoints": 200
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1429,
+    "TournamentId": 73,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2022-08-21",
+    "CumulativePoints": 277
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1429,
+    "TournamentId": 74,
+    "TournamentName": "Vincent Hall Memorial Over / Under 50 Doubles",
+    "TournamentDate": "2022-09-18",
+    "CumulativePoints": 282
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1429,
+    "TournamentId": 75,
+    "TournamentName": "KR Strikeforce Open",
+    "TournamentDate": "2022-10-02",
+    "CumulativePoints": 312
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1429,
+    "TournamentId": 78,
+    "TournamentName": "Yankee Lanes Singles Open",
+    "TournamentDate": "2022-10-23",
+    "CumulativePoints": 327
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1429,
+    "TournamentId": 80,
+    "TournamentName": "Storm, Roto Grip \u0026 900 Global Tournament of Champion",
+    "TournamentDate": "2022-11-13",
+    "CumulativePoints": 347
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1429,
+    "TournamentId": 82,
+    "TournamentName": "Ideal Bowling Concepts Singles Open",
+    "TournamentDate": "2022-12-11",
+    "CumulativePoints": 362
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 538,
+    "TournamentId": 57,
+    "TournamentName": "Many Styles of Bowling Open",
+    "TournamentDate": "2022-01-30",
+    "CumulativePoints": 10
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 538,
+    "TournamentId": 58,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2022-02-26",
+    "CumulativePoints": 33
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 538,
+    "TournamentId": 59,
+    "TournamentName": "Strike FX Doubles",
+    "TournamentDate": "2022-02-27",
+    "CumulativePoints": 38
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 538,
+    "TournamentId": 60,
+    "TournamentName": "Bowl Winkles Pro Shop Open",
+    "TournamentDate": "2022-03-20",
+    "CumulativePoints": 68
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 538,
+    "TournamentId": 61,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2022-04-10",
+    "CumulativePoints": 90
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 538,
+    "TournamentId": 65,
+    "TournamentName": "Savage Arms Open",
+    "TournamentDate": "2022-06-05",
+    "CumulativePoints": 95
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 538,
+    "TournamentId": 66,
+    "TournamentName": "Turbo Driven to Bowl Over/Under 50 Doubles",
+    "TournamentDate": "2022-06-25",
+    "CumulativePoints": 138
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 538,
+    "TournamentId": 67,
+    "TournamentName": "Grog Monster Sports Regular Doubles",
+    "TournamentDate": "2022-06-26",
+    "CumulativePoints": 150
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 538,
+    "TournamentId": 68,
+    "TournamentName": "Rip Callahan Memorial Open",
+    "TournamentDate": "2022-07-17",
+    "CumulativePoints": 172
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 538,
+    "TournamentId": 69,
+    "TournamentName": "Yankee Doubles",
+    "TournamentDate": "2022-07-30",
+    "CumulativePoints": 184
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 538,
+    "TournamentId": 70,
+    "TournamentName": "Yankee Lanes Singles",
+    "TournamentDate": "2022-07-31",
+    "CumulativePoints": 199
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 538,
+    "TournamentId": 73,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2022-08-21",
+    "CumulativePoints": 204
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 538,
+    "TournamentId": 75,
+    "TournamentName": "KR Strikeforce Open",
+    "TournamentDate": "2022-10-02",
+    "CumulativePoints": 219
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 538,
+    "TournamentId": 78,
+    "TournamentName": "Yankee Lanes Singles Open",
+    "TournamentDate": "2022-10-23",
+    "CumulativePoints": 224
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 538,
+    "TournamentId": 80,
+    "TournamentName": "Storm, Roto Grip \u0026 900 Global Tournament of Champion",
+    "TournamentDate": "2022-11-13",
+    "CumulativePoints": 296
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 538,
+    "TournamentId": 82,
+    "TournamentName": "Ideal Bowling Concepts Singles Open",
+    "TournamentDate": "2022-12-11",
+    "CumulativePoints": 335
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 57,
+    "TournamentName": "Many Styles of Bowling Open",
+    "TournamentDate": "2022-01-30",
+    "CumulativePoints": 5
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 58,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2022-02-26",
+    "CumulativePoints": 10
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 59,
+    "TournamentName": "Strike FX Doubles",
+    "TournamentDate": "2022-02-27",
+    "CumulativePoints": 33
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 60,
+    "TournamentName": "Bowl Winkles Pro Shop Open",
+    "TournamentDate": "2022-03-20",
+    "CumulativePoints": 63
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 61,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2022-04-10",
+    "CumulativePoints": 102
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 64,
+    "TournamentName": "Green Mountain Open",
+    "TournamentDate": "2022-05-15",
+    "CumulativePoints": 117
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 65,
+    "TournamentName": "Savage Arms Open",
+    "TournamentDate": "2022-06-05",
+    "CumulativePoints": 139
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 66,
+    "TournamentName": "Turbo Driven to Bowl Over/Under 50 Doubles",
+    "TournamentDate": "2022-06-25",
+    "CumulativePoints": 151
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 67,
+    "TournamentName": "Grog Monster Sports Regular Doubles",
+    "TournamentDate": "2022-06-26",
+    "CumulativePoints": 168
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 68,
+    "TournamentName": "Rip Callahan Memorial Open",
+    "TournamentDate": "2022-07-17",
+    "CumulativePoints": 190
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 69,
+    "TournamentName": "Yankee Doubles",
+    "TournamentDate": "2022-07-30",
+    "CumulativePoints": 195
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 70,
+    "TournamentName": "Yankee Lanes Singles",
+    "TournamentDate": "2022-07-31",
+    "CumulativePoints": 200
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 73,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2022-08-21",
+    "CumulativePoints": 259
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 74,
+    "TournamentName": "Vincent Hall Memorial Over / Under 50 Doubles",
+    "TournamentDate": "2022-09-18",
+    "CumulativePoints": 276
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 75,
+    "TournamentName": "KR Strikeforce Open",
+    "TournamentDate": "2022-10-02",
+    "CumulativePoints": 281
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 78,
+    "TournamentName": "Yankee Lanes Singles Open",
+    "TournamentDate": "2022-10-23",
+    "CumulativePoints": 296
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 80,
+    "TournamentName": "Storm, Roto Grip \u0026 900 Global Tournament of Champion",
+    "TournamentDate": "2022-11-13",
+    "CumulativePoints": 301
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 498,
+    "TournamentId": 82,
+    "TournamentName": "Ideal Bowling Concepts Singles Open",
+    "TournamentDate": "2022-12-11",
+    "CumulativePoints": 306
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 57,
+    "TournamentName": "Many Styles of Bowling Open",
+    "TournamentDate": "2022-01-30",
+    "CumulativePoints": 5
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 58,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2022-02-26",
+    "CumulativePoints": 35
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 59,
+    "TournamentName": "Strike FX Doubles",
+    "TournamentDate": "2022-02-27",
+    "CumulativePoints": 40
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 60,
+    "TournamentName": "Bowl Winkles Pro Shop Open",
+    "TournamentDate": "2022-03-20",
+    "CumulativePoints": 62
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 61,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2022-04-10",
+    "CumulativePoints": 77
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 64,
+    "TournamentName": "Green Mountain Open",
+    "TournamentDate": "2022-05-15",
+    "CumulativePoints": 92
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 65,
+    "TournamentName": "Savage Arms Open",
+    "TournamentDate": "2022-06-05",
+    "CumulativePoints": 114
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 66,
+    "TournamentName": "Turbo Driven to Bowl Over/Under 50 Doubles",
+    "TournamentDate": "2022-06-25",
+    "CumulativePoints": 131
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 67,
+    "TournamentName": "Grog Monster Sports Regular Doubles",
+    "TournamentDate": "2022-06-26",
+    "CumulativePoints": 154
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 68,
+    "TournamentName": "Rip Callahan Memorial Open",
+    "TournamentDate": "2022-07-17",
+    "CumulativePoints": 159
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 69,
+    "TournamentName": "Yankee Doubles",
+    "TournamentDate": "2022-07-30",
+    "CumulativePoints": 171
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 70,
+    "TournamentName": "Yankee Lanes Singles",
+    "TournamentDate": "2022-07-31",
+    "CumulativePoints": 176
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 73,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2022-08-21",
+    "CumulativePoints": 221
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 74,
+    "TournamentName": "Vincent Hall Memorial Over / Under 50 Doubles",
+    "TournamentDate": "2022-09-18",
+    "CumulativePoints": 233
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 75,
+    "TournamentName": "KR Strikeforce Open",
+    "TournamentDate": "2022-10-02",
+    "CumulativePoints": 255
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 78,
+    "TournamentName": "Yankee Lanes Singles Open",
+    "TournamentDate": "2022-10-23",
+    "CumulativePoints": 270
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 80,
+    "TournamentName": "Storm, Roto Grip \u0026 900 Global Tournament of Champion",
+    "TournamentDate": "2022-11-13",
+    "CumulativePoints": 275
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3032,
+    "TournamentId": 82,
+    "TournamentName": "Ideal Bowling Concepts Singles Open",
+    "TournamentDate": "2022-12-11",
+    "CumulativePoints": 305
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1236,
+    "TournamentId": 57,
+    "TournamentName": "Many Styles of Bowling Open",
+    "TournamentDate": "2022-01-30",
+    "CumulativePoints": 5
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1236,
+    "TournamentId": 58,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2022-02-26",
+    "CumulativePoints": 17
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1236,
+    "TournamentId": 59,
+    "TournamentName": "Strike FX Doubles",
+    "TournamentDate": "2022-02-27",
+    "CumulativePoints": 34
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1236,
+    "TournamentId": 60,
+    "TournamentName": "Bowl Winkles Pro Shop Open",
+    "TournamentDate": "2022-03-20",
+    "CumulativePoints": 56
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1236,
+    "TournamentId": 61,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2022-04-10",
+    "CumulativePoints": 116
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1236,
+    "TournamentId": 64,
+    "TournamentName": "Green Mountain Open",
+    "TournamentDate": "2022-05-15",
+    "CumulativePoints": 121
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1236,
+    "TournamentId": 65,
+    "TournamentName": "Savage Arms Open",
+    "TournamentDate": "2022-06-05",
+    "CumulativePoints": 143
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1236,
+    "TournamentId": 67,
+    "TournamentName": "Grog Monster Sports Regular Doubles",
+    "TournamentDate": "2022-06-26",
+    "CumulativePoints": 181
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1236,
+    "TournamentId": 68,
+    "TournamentName": "Rip Callahan Memorial Open",
+    "TournamentDate": "2022-07-17",
+    "CumulativePoints": 203
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1236,
+    "TournamentId": 73,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2022-08-21",
+    "CumulativePoints": 208
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1236,
+    "TournamentId": 75,
+    "TournamentName": "KR Strikeforce Open",
+    "TournamentDate": "2022-10-02",
+    "CumulativePoints": 213
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1236,
+    "TournamentId": 78,
+    "TournamentName": "Yankee Lanes Singles Open",
+    "TournamentDate": "2022-10-23",
+    "CumulativePoints": 243
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1236,
+    "TournamentId": 80,
+    "TournamentName": "Storm, Roto Grip \u0026 900 Global Tournament of Champion",
+    "TournamentDate": "2022-11-13",
+    "CumulativePoints": 285
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1236,
+    "TournamentId": 82,
+    "TournamentName": "Ideal Bowling Concepts Singles Open",
+    "TournamentDate": "2022-12-11",
+    "CumulativePoints": 290
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 4278,
+    "TournamentId": 57,
+    "TournamentName": "Many Styles of Bowling Open",
+    "TournamentDate": "2022-01-30",
+    "CumulativePoints": 5
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 4278,
+    "TournamentId": 58,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2022-02-26",
+    "CumulativePoints": 10
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 4278,
+    "TournamentId": 59,
+    "TournamentName": "Strike FX Doubles",
+    "TournamentDate": "2022-02-27",
+    "CumulativePoints": 15
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 4278,
+    "TournamentId": 60,
+    "TournamentName": "Bowl Winkles Pro Shop Open",
+    "TournamentDate": "2022-03-20",
+    "CumulativePoints": 69
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 4278,
+    "TournamentId": 61,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2022-04-10",
+    "CumulativePoints": 91
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 4278,
+    "TournamentId": 65,
+    "TournamentName": "Savage Arms Open",
+    "TournamentDate": "2022-06-05",
+    "CumulativePoints": 96
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 4278,
+    "TournamentId": 66,
+    "TournamentName": "Turbo Driven to Bowl Over/Under 50 Doubles",
+    "TournamentDate": "2022-06-25",
+    "CumulativePoints": 108
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 4278,
+    "TournamentId": 67,
+    "TournamentName": "Grog Monster Sports Regular Doubles",
+    "TournamentDate": "2022-06-26",
+    "CumulativePoints": 120
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 4278,
+    "TournamentId": 68,
+    "TournamentName": "Rip Callahan Memorial Open",
+    "TournamentDate": "2022-07-17",
+    "CumulativePoints": 125
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 4278,
+    "TournamentId": 69,
+    "TournamentName": "Yankee Doubles",
+    "TournamentDate": "2022-07-30",
+    "CumulativePoints": 130
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 4278,
+    "TournamentId": 70,
+    "TournamentName": "Yankee Lanes Singles",
+    "TournamentDate": "2022-07-31",
+    "CumulativePoints": 152
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 4278,
+    "TournamentId": 73,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2022-08-21",
+    "CumulativePoints": 197
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 4278,
+    "TournamentId": 75,
+    "TournamentName": "KR Strikeforce Open",
+    "TournamentDate": "2022-10-02",
+    "CumulativePoints": 212
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 4278,
+    "TournamentId": 78,
+    "TournamentName": "Yankee Lanes Singles Open",
+    "TournamentDate": "2022-10-23",
+    "CumulativePoints": 234
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 4278,
+    "TournamentId": 79,
+    "TournamentName": "DJ\u0027s Pro Shop Non-Champions ",
+    "TournamentDate": "2022-11-12",
+    "CumulativePoints": 256
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 4278,
+    "TournamentId": 82,
+    "TournamentName": "Ideal Bowling Concepts Singles Open",
+    "TournamentDate": "2022-12-11",
+    "CumulativePoints": 261
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1997,
+    "TournamentId": 58,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2022-02-26",
+    "CumulativePoints": 5
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1997,
+    "TournamentId": 59,
+    "TournamentName": "Strike FX Doubles",
+    "TournamentDate": "2022-02-27",
+    "CumulativePoints": 22
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1997,
+    "TournamentId": 60,
+    "TournamentName": "Bowl Winkles Pro Shop Open",
+    "TournamentDate": "2022-03-20",
+    "CumulativePoints": 37
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1997,
+    "TournamentId": 61,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2022-04-10",
+    "CumulativePoints": 52
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1997,
+    "TournamentId": 65,
+    "TournamentName": "Savage Arms Open",
+    "TournamentDate": "2022-06-05",
+    "CumulativePoints": 82
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1997,
+    "TournamentId": 67,
+    "TournamentName": "Grog Monster Sports Regular Doubles",
+    "TournamentDate": "2022-06-26",
+    "CumulativePoints": 87
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1997,
+    "TournamentId": 68,
+    "TournamentName": "Rip Callahan Memorial Open",
+    "TournamentDate": "2022-07-17",
+    "CumulativePoints": 102
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1997,
+    "TournamentId": 73,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2022-08-21",
+    "CumulativePoints": 210
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1997,
+    "TournamentId": 74,
+    "TournamentName": "Vincent Hall Memorial Over / Under 50 Doubles",
+    "TournamentDate": "2022-09-18",
+    "CumulativePoints": 215
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1997,
+    "TournamentId": 75,
+    "TournamentName": "KR Strikeforce Open",
+    "TournamentDate": "2022-10-02",
+    "CumulativePoints": 220
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1997,
+    "TournamentId": 78,
+    "TournamentName": "Yankee Lanes Singles Open",
+    "TournamentDate": "2022-10-23",
+    "CumulativePoints": 250
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1997,
+    "TournamentId": 80,
+    "TournamentName": "Storm, Roto Grip \u0026 900 Global Tournament of Champion",
+    "TournamentDate": "2022-11-13",
+    "CumulativePoints": 255
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 1997,
+    "TournamentId": 82,
+    "TournamentName": "Ideal Bowling Concepts Singles Open",
+    "TournamentDate": "2022-12-11",
+    "CumulativePoints": 260
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 57,
+    "TournamentName": "Many Styles of Bowling Open",
+    "TournamentDate": "2022-01-30",
+    "CumulativePoints": 5
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 58,
+    "TournamentName": "East Coast Sports Investors Trios",
+    "TournamentDate": "2022-02-26",
+    "CumulativePoints": 10
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 59,
+    "TournamentName": "Strike FX Doubles",
+    "TournamentDate": "2022-02-27",
+    "CumulativePoints": 27
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 60,
+    "TournamentName": "Bowl Winkles Pro Shop Open",
+    "TournamentDate": "2022-03-20",
+    "CumulativePoints": 32
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 61,
+    "TournamentName": "BuddiesProShop.com Open",
+    "TournamentDate": "2022-04-10",
+    "CumulativePoints": 62
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 64,
+    "TournamentName": "Green Mountain Open",
+    "TournamentDate": "2022-05-15",
+    "CumulativePoints": 67
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 65,
+    "TournamentName": "Savage Arms Open",
+    "TournamentDate": "2022-06-05",
+    "CumulativePoints": 116
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 66,
+    "TournamentName": "Turbo Driven to Bowl Over/Under 50 Doubles",
+    "TournamentDate": "2022-06-25",
+    "CumulativePoints": 121
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 67,
+    "TournamentName": "Grog Monster Sports Regular Doubles",
+    "TournamentDate": "2022-06-26",
+    "CumulativePoints": 133
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 68,
+    "TournamentName": "Rip Callahan Memorial Open",
+    "TournamentDate": "2022-07-17",
+    "CumulativePoints": 143
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 70,
+    "TournamentName": "Yankee Lanes Singles",
+    "TournamentDate": "2022-07-31",
+    "CumulativePoints": 158
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 73,
+    "TournamentName": "NEBA Masters",
+    "TournamentDate": "2022-08-21",
+    "CumulativePoints": 163
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 74,
+    "TournamentName": "Vincent Hall Memorial Over / Under 50 Doubles",
+    "TournamentDate": "2022-09-18",
+    "CumulativePoints": 175
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 75,
+    "TournamentName": "KR Strikeforce Open",
+    "TournamentDate": "2022-10-02",
+    "CumulativePoints": 180
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 78,
+    "TournamentName": "Yankee Lanes Singles Open",
+    "TournamentDate": "2022-10-23",
+    "CumulativePoints": 185
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 80,
+    "TournamentName": "Storm, Roto Grip \u0026 900 Global Tournament of Champion",
+    "TournamentDate": "2022-11-13",
+    "CumulativePoints": 241
+  },
+  {
+    "Season": 2022,
+    "BowlerId": 3554,
+    "TournamentId": 82,
+    "TournamentName": "Ideal Bowling Concepts Singles Open",
+    "TournamentDate": "2022-12-11",
+    "CumulativePoints": 246
+  }
+]
