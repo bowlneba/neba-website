@@ -119,7 +119,7 @@ const MOCK_SPONSORS_ACTIVE = {
 };
 
 const MOCK_SPONSOR_PRO_SHOP_PLUS = {
-  id: '01JXXXXXXXXXXXXXXXXXXXXXXXXX',
+  id: '01JX0000000000000000000001',
   name: 'Pro Shop Plus',
   slug: 'pro-shop-plus',
   isCurrentSponsor: true,
@@ -149,7 +149,7 @@ const MOCK_SPONSOR_PRO_SHOP_PLUS = {
 };
 
 const MOCK_SPONSOR_OLD_SPONSOR = {
-  id: '01JXXXXXXXXXXXXXXXXXXXXXXXXY',
+  id: '01JX0000000000000000000002',
   name: 'Old Sponsor',
   slug: 'old-sponsor',
   isCurrentSponsor: false,
