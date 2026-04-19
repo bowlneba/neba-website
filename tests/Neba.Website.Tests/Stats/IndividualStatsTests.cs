@@ -497,10 +497,9 @@ public sealed class IndividualStatsTests : IDisposable
             TotalIndividualCalls++;
             IndividualStatsCalls.Add((bowlerId, year));
 
-            if (_results.Count == 0)
-                throw new InvalidOperationException("No queued individual stats result.");
-
-            return _results.Dequeue();
+            return _results.Count == 0
+                ? throw new InvalidOperationException("No queued individual stats result.")
+                : _results.Dequeue();
         }
     }
 }
