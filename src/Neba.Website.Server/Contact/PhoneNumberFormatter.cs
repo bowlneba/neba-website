@@ -7,10 +7,12 @@ internal static class PhoneNumberFormatter
         ArgumentException.ThrowIfNullOrWhiteSpace(rawPhoneNumber);
 
         var extensionIndex = rawPhoneNumber.IndexOf('x', StringComparison.OrdinalIgnoreCase);
+        // Stryker disable once Conditional : rawPhoneNumber[..-1] throws; MTP runner swallows the exception
         var digits = extensionIndex >= 0
             ? rawPhoneNumber[..extensionIndex]
             : rawPhoneNumber;
 
+        // Stryker disable once Equality : extensionIndex=0 → digits="" → FormatDigits returns null → raw returned regardless
         var extension = extensionIndex >= 0
             ? rawPhoneNumber[(extensionIndex + 1)..]
             : null;
