@@ -32,7 +32,7 @@ public sealed class GetSeasonStatsQueryHandlerTests
         // Arrange
         _seasonStatsServiceMock
             .Setup(s => s.GetSeasonsWithStatsAsync(TestContext.Current.CancellationToken))
-            .ReturnsAsync(Array.Empty<SeasonDto>());
+            .ReturnsAsync([]);
 
         var query = new GetSeasonStatsQuery { SeasonYear = null };
 
