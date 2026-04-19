@@ -399,12 +399,12 @@ public sealed class IndividualStatsTests : IDisposable
     {
         // Arrange
         var model = IndividualStatsPageViewModelFactory.Create(
+            selectedSeason: "2024-2025",
             availableSeasons: new Dictionary<int, string>
             {
                 [Season1Year] = "2024-2025",
                 [Season2Year] = "2023-2024",
-            },
-            selectedSeason: "2024-2025");
+            });
         _statsApi.EnqueueIndividualResult(model);
 
         // Act

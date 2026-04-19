@@ -549,7 +549,7 @@ public sealed class SeasonStatsServiceTests
     {
         var bowlerStats = new[]
         {
-            BowlerSeasonStatsDtoFactory.Create(matchPlayGames: 4, matchPlayPinfall: 800, matchPlayWins: 3, matchPlayLosses: 1),
+            BowlerSeasonStatsDtoFactory.Create(matchPlayWins: 3, matchPlayLosses: 1, matchPlayGames: 4, matchPlayPinfall: 800),
         };
 
         var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
@@ -781,7 +781,7 @@ public sealed class SeasonStatsServiceTests
     {
         var bowlerStats = new[]
         {
-            BowlerSeasonStatsDtoFactory.Create(totalGames: 50, totalPinfall: 10000, eligibleTournaments: 8, totalTournaments: 12),
+            BowlerSeasonStatsDtoFactory.Create(eligibleTournaments: 8, totalTournaments: 12, totalGames: 50, totalPinfall: 10000),
         };
 
         var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
@@ -981,13 +981,13 @@ public sealed class SeasonStatsServiceTests
         var bowlerStats = new[]
         {
             BowlerSeasonStatsDtoFactory.Create(
-                bowlerOfTheYearPoints: 600,
-                totalGames: 4,
-                totalPinfall: 876,
+                matchPlayWins: 3,
+                matchPlayLosses: 2,
                 matchPlayGames: 5,
                 matchPlayPinfall: 1000,
-                matchPlayWins: 3,
-                matchPlayLosses: 2),
+                totalGames: 4,
+                totalPinfall: 876,
+                bowlerOfTheYearPoints: 600),
         };
 
         var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
