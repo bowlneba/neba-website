@@ -1,6 +1,7 @@
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 
 using Neba.TestFactory.Attributes;
@@ -149,6 +150,165 @@ public sealed class SeasonStatsTests : IDisposable
         nav.Uri.ShouldEndWith($"/stats/{s_searchBowlerId}?season={s_firstSeasonYear}");
     }
 
+    [Fact(DisplayName = "Should show load error when initial API call throws an exception")]
+    public void Render_ShouldShowLoadError_WhenInitialApiCallThrows()
+    {
+        _statsApi.EnqueueException(new HttpRequestException("API down"));
+
+        var cut = _ctx.Render<SeasonStatsPage>();
+
+        cut.Markup.ShouldContain("Unable to load season stats right now.");
+    }
+
+    [Fact(DisplayName = "Should show load error when API throws during a season change")]
+    public async Task SeasonSelection_ShouldShowLoadError_WhenSeasonChangeThrows()
+    {
+        _statsApi.EnqueueResult(CreateStatsModel(firstRowName: "Alpha Bowler"));
+        _statsApi.EnqueueException(new HttpRequestException("API down"));
+        var cut = _ctx.Render<SeasonStatsPage>();
+
+        await cut.FindAll(".stats-season-btn")[1].ClickAsync(new());
+
+        cut.Markup.ShouldContain("Unable to load season stats right now.");
+    }
+
+    [Fact(DisplayName = "Should use Season query parameter to set the active season button")]
+    public void Render_ShouldSetActiveSeasonFromQueryParam_WhenSeasonParamIsValid()
+    {
+        _statsApi.EnqueueResult(CreateStatsModel(firstRowName: "Alpha Bowler", firstSeasonName: "2024-2025", secondSeasonName: "2023-2024"));
+        _ctx.Services.GetRequiredService<NavigationManager>()
+            .NavigateTo($"http://localhost/?season={s_secondSeasonYear}");
+
+        var cut = _ctx.Render<SeasonStatsPage>();
+
+        cut.FindAll(".stats-season-btn.active").Single().TextContent.Trim().ShouldContain("2023-2024");
+    }
+
+    [Fact(DisplayName = "Should fall back to first available season when selected season name does not match any entry")]
+    public void Render_ShouldFallbackToFirstSeason_WhenSelectedSeasonNameHasNoMatch()
+    {
+        var model = StatsPageViewModelFactory.Create(
+            selectedSeason: "No Match",
+            availableSeasons: new Dictionary<int, string>
+            {
+                [s_firstSeasonYear] = "2024-2025",
+                [s_secondSeasonYear] = "2023-2024",
+            });
+        _statsApi.EnqueueResult(model);
+
+        var cut = _ctx.Render<SeasonStatsPage>();
+
+        cut.FindAll(".stats-season-btn.active").Single().TextContent.Trim().ShouldContain("2024-2025");
+    }
+
+    [Fact(DisplayName = "Should open high average modal and display title when expand button is clicked")]
+    public async Task Modal_ShouldOpenHighAverageModal_WhenExpandButtonClicked()
+    {
+        var model = CreateStatsModel(firstRowName: "Alpha Bowler") with
+        {
+            HighAverage = HighAverageRowViewModelFactory.Bogus(11, seed: 1201)
+        };
+        _statsApi.EnqueueResult(model);
+        var cut = _ctx.Render<SeasonStatsPage>();
+        await cut.Find("#tab-qualifying").ClickAsync(new());
+
+        await cut.Find("[aria-label^='Show all'][aria-label*='High Average']").ClickAsync(new());
+
+        cut.Find(".stats-modal-backdrop").ShouldNotBeNull();
+        cut.Find(".stats-modal-title").TextContent.ShouldContain("High Average");
+    }
+
+    [Fact(DisplayName = "Should close modal when the close button is clicked")]
+    public async Task Modal_ShouldCloseModal_WhenCloseButtonClicked()
+    {
+        var model = CreateStatsModel(firstRowName: "Alpha Bowler") with
+        {
+            HighAverage = HighAverageRowViewModelFactory.Bogus(11, seed: 1202)
+        };
+        _statsApi.EnqueueResult(model);
+        var cut = _ctx.Render<SeasonStatsPage>();
+        await cut.Find("#tab-qualifying").ClickAsync(new());
+        await cut.Find("[aria-label^='Show all'][aria-label*='High Average']").ClickAsync(new());
+
+        await cut.Find(".stats-modal-close").ClickAsync(new());
+
+        cut.FindAll(".stats-modal-backdrop").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should open points race modal when the widget is clicked")]
+    public async Task Modal_ShouldOpenPointsRaceModal_WhenWidgetClicked()
+    {
+        _statsApi.EnqueueResult(CreateStatsModel(firstRowName: "Alpha Bowler"));
+        var cut = _ctx.Render<SeasonStatsPage>();
+
+        await cut.Find("[aria-label='Open Bowler of the Year race chart']").ClickAsync(new());
+
+        cut.Find(".stats-modal-backdrop").ShouldNotBeNull();
+        cut.Find(".stats-modal-title").TextContent.ShouldContain("Bowler of the Year Race");
+    }
+
+    [Fact(DisplayName = "Should open points race modal when Enter key is pressed on the widget")]
+    public async Task Modal_ShouldOpenPointsRaceModal_WhenEnterKeyPressed()
+    {
+        _statsApi.EnqueueResult(CreateStatsModel(firstRowName: "Alpha Bowler"));
+        var cut = _ctx.Render<SeasonStatsPage>();
+
+        await cut.Find("[aria-label='Open Bowler of the Year race chart']")
+            .TriggerEventAsync("onkeydown", new KeyboardEventArgs { Key = "Enter" });
+
+        cut.Find(".stats-modal-backdrop").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should not open modal when an unrecognized key is pressed on the widget")]
+    public async Task Modal_ShouldNotOpenModal_WhenOtherKeyPressed()
+    {
+        _statsApi.EnqueueResult(CreateStatsModel(firstRowName: "Alpha Bowler"));
+        var cut = _ctx.Render<SeasonStatsPage>();
+
+        await cut.Find("[aria-label='Open Bowler of the Year race chart']")
+            .TriggerEventAsync("onkeydown", new KeyboardEventArgs { Key = "Escape" });
+
+        cut.FindAll(".stats-modal-backdrop").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should filter datalist options by search text when oninput fires")]
+    public async Task OnBowlerSearchInput_ShouldFilterDatalist_WhenTextEntered()
+    {
+        _statsApi.EnqueueResult(CreateStatsModel(firstRowName: "Alpha Bowler"));
+        var cut = _ctx.Render<SeasonStatsPage>();
+
+        await cut.Find(".stats-search-input").InputAsync(new ChangeEventArgs { Value = "Search" });
+
+        cut.Markup.ShouldContain("Search Target");
+        cut.Markup.ShouldNotContain("Another Bowler");
+    }
+
+    [Fact(DisplayName = "Should not navigate when search value is empty")]
+    public async Task OnBowlerSearchChanged_ShouldNotNavigate_WhenValueIsEmpty()
+    {
+        _statsApi.EnqueueResult(CreateStatsModel(firstRowName: "Alpha Bowler"));
+        var cut = _ctx.Render<SeasonStatsPage>();
+        var nav = _ctx.Services.GetRequiredService<NavigationManager>();
+        var initialUri = nav.Uri;
+
+        await cut.Find(".stats-search-input").ChangeAsync(new ChangeEventArgs { Value = "" });
+
+        nav.Uri.ShouldBe(initialUri);
+    }
+
+    [Fact(DisplayName = "Should not navigate when search value does not match any bowler")]
+    public async Task OnBowlerSearchChanged_ShouldNotNavigate_WhenNoMatchFound()
+    {
+        _statsApi.EnqueueResult(CreateStatsModel(firstRowName: "Alpha Bowler"));
+        var cut = _ctx.Render<SeasonStatsPage>();
+        var nav = _ctx.Services.GetRequiredService<NavigationManager>();
+        var initialUri = nav.Uri;
+
+        await cut.Find(".stats-search-input").ChangeAsync(new ChangeEventArgs { Value = "ZZZ Does Not Exist" });
+
+        nav.Uri.ShouldBe(initialUri);
+    }
+
     [Fact(DisplayName = "Should show match play record minimum games qualifier based on minimum tournaments")]
     public async Task Render_ShouldShowMatchPlayRecordMinimumGamesQualifier_BasedOnMinimumTournaments()
     {
@@ -230,6 +390,9 @@ public sealed class SeasonStatsTests : IDisposable
         {
             _results.Enqueue(modelTask);
         }
+
+        public void EnqueueException(Exception ex)
+            => _results.Enqueue(Task.FromException<StatsPageViewModel>(ex));
 
         public Task<IndividualStatsPageViewModel?> GetIndividualStatsAsync(string bowlerId, int? year = null, CancellationToken ct = default)
         {

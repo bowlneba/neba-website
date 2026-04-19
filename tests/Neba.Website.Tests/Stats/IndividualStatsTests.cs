@@ -394,6 +394,43 @@ public sealed class IndividualStatsTests : IDisposable
         cut.FindAll(".indiv-modal-backdrop").Count.ShouldBe(0);
     }
 
+    [Fact(DisplayName = "Should use Season query parameter to set the active season button when param is valid")]
+    public void Render_ShouldSetActiveSeasonFromQueryParam_WhenSeasonParamIsValid()
+    {
+        var model = IndividualStatsPageViewModelFactory.Create(
+            selectedSeason: "2024-2025",
+            availableSeasons: new Dictionary<int, string>
+            {
+                [Season1Year] = "2024-2025",
+                [Season2Year] = "2023-2024",
+            });
+        _statsApi.EnqueueIndividualResult(model);
+        _ctx.Services.GetRequiredService<NavigationManager>()
+            .NavigateTo($"http://localhost/stats/{BowlerId}?season={Season2Year}");
+
+        var cut = _ctx.Render<IndividualStatsPage>(p => p.Add(x => x.BowlerId, BowlerId));
+
+        cut.FindAll(".stats-season-btn.active").Single().TextContent.Trim().ShouldContain("2023-2024");
+    }
+
+    [Fact(DisplayName = "Should fall back to first available season when selected season name has no match")]
+    public void Render_ShouldFallbackToFirstSeason_WhenSelectedSeasonNameHasNoMatch()
+    {
+        var model = IndividualStatsPageViewModelFactory.Create(
+            selectedSeason: "No Match",
+            availableSeasons: new Dictionary<int, string>
+            {
+                [Season1Year] = "2024-2025",
+                [Season2Year] = "2023-2024",
+            });
+        _statsApi.EnqueueIndividualResult(model);
+
+        var cut = _ctx.Render<IndividualStatsPage>(p => p
+            .Add(x => x.BowlerId, BowlerId));
+
+        cut.FindAll(".stats-season-btn.active").Single().TextContent.Trim().ShouldContain("2024-2025");
+    }
+
     [Fact(DisplayName = "Should highlight first season as active and show additional seasons as inactive on initial load")]
     public void Render_ShouldSetFirstSeasonAsActive_OnInitialLoad()
     {
