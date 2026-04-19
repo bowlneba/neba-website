@@ -30,10 +30,9 @@ internal sealed class StatsApiService(ApiExecutor executor, IStatsApi statsApi) 
             token => statsApi.GetSeasonStatsAsync(year, token),
             ct);
 
-        if (result.IsError)
-            return null;
-
-        return MapToIndividualStatsPageViewModel(result.Value, bowlerId);
+        return result.IsError
+            ? null
+            : MapToIndividualStatsPageViewModel(result.Value, bowlerId);
     }
 
     private static StatsPageViewModel MapToStatsPageViewModel(GetSeasonStatsResponse response) =>
