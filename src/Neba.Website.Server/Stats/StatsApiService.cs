@@ -16,10 +16,9 @@ internal sealed class StatsApiService(ApiExecutor executor, IStatsApi statsApi) 
             token => statsApi.GetSeasonStatsAsync(year, token),
             ct);
 
-        if (result.IsError)
-            return EmptyStatsPageViewModel();
-
-        return MapToStatsPageViewModel(result.Value);
+        return result.IsError
+            ? EmptyStatsPageViewModel()
+            : MapToStatsPageViewModel(result.Value);
     }
 
     public async Task<IndividualStatsPageViewModel?> GetIndividualStatsAsync(
