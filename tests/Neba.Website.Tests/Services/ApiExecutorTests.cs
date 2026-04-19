@@ -615,7 +615,7 @@ public sealed class ApiExecutorTests
 
         // Assert — activity tags
         var activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
-        activity.GetTagItem("error.type").ShouldNotBeNull();
+        activity.GetTagItem("error.type").ShouldBe(typeof(ApiException).FullName);
         activity.GetTagItem("error.message").ShouldNotBeNull();
         activity.Status.ShouldBe(ActivityStatusCode.Error);
         activity.GetTagItem(ApiMetricTagNames.HttpStatusCode).ShouldBe(500);

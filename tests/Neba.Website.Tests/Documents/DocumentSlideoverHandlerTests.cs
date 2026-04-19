@@ -128,6 +128,7 @@ public sealed class DocumentSlideoverHandlerTests
         // Assert
         handler.Content.ShouldNotBeNull();
         handler.Content.Value.Value.ShouldContain("Document not found for route");
+        handler.Title.ShouldBeNull();
         handler.IsLoading.ShouldBeFalse();
         stateChangedCount.ShouldBe(2); // Once for loading, once for not-found result
     }
