@@ -35,6 +35,7 @@
   <Namespace>NameParser</Namespace>
   <Namespace>System.Globalization</Namespace>
   <Namespace>System.Net.Http</Namespace>
+  <Namespace>System.Security.Cryptography</Namespace>
   <Namespace>System.Text.Json</Namespace>
   <Namespace>System.Text.Json.Serialization</Namespace>
   <Namespace>System.Threading.Tasks</Namespace>
@@ -42,7 +43,7 @@
 
 async Task Main()
 {
-	BowlingCenters.RemoveRange(BowlingCenters);
+	//BowlingCenters.RemoveRange(BowlingCenters);
 	Bowlers.RemoveRange(Bowlers);
 	HallsOfFameInductions.RemoveRange(HallsOfFameInductions);
 	BowlersOfTheYearAwards.RemoveRange(BowlersOfTheYearAwards);
@@ -51,9 +52,10 @@ async Task Main()
 	Seasons.RemoveRange(Seasons);
 	Sponsors.RemoveRange(Sponsors);
 	BowlerSeasonStats.RemoveRange(BowlerSeasonStats);
+	Tournaments.RemoveRange(Tournaments);
 	SaveChanges();
 	
-	Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowling_centers RESTART IDENTITY CASCADE;");
+	//Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowling_centers RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowlers RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.hall_of_fame_inductions RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowler_of_the_year_awards RESTART IDENTITY CASCADE;");
@@ -61,9 +63,10 @@ async Task Main()
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.high_block_awards RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.seasons RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.sponsors RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.tournaments RESTART IDENTITY CASCADE;");
 	SaveChanges();
 	
-	await MigrateBowlingCentersAsync();
+	//await MigrateBowlingCentersAsync();
 	var bowlingCenterIds = BowlingCenters.ToList().Select(b => (b.Id, b.CertificationNumber, b.LegacyId, b.WebsiteId)).ToList().AsReadOnly();
 	
 	var bowlerIds = await MigrateBowlersAsync();
@@ -96,6 +99,8 @@ async Task Main()
 	await MigrateSponsorsAsync();
 	
 	await MigrateBowlerSeasonStatsAsync(bowlerDomainIdBySoftwareId);
+	
+	await MigrateTournamentsAsync();
 }
 
 // You can define other methods, fields, classes and namespaces here
@@ -2437,8 +2442,17 @@ public record AddressRanges
 
 private void ManualLocationUpdates(IReadOnlyCollection<BowlingCenters> bowlingCenters)
 {
+	var kensBowl = bowlingCenters.Single(bc => bc.Name == "Ken's Bowl");
+	kensBowl.CertificationNumber = "9906";
+	
 	var amity = bowlingCenters.Single(bc => bc.Name == "Amity Bowl");
 	amity.Street = "30 Selden Street";
+	
+	var eastProvidence = bowlingCenters.Single(bc => bc.Name == "East Providence Lanes");
+	eastProvidence.City = "Rumford";
+	eastProvidence.PostalCode = "029162068";
+	eastProvidence.Latitude = 41.85705;
+	eastProvidence.Longitude = -71.35454;
 
 	var tbowl = bowlingCenters.Single(bc => bc.Name == "Bowlero Wallingford");
 	tbowl.Latitude = 41.488968;
@@ -2727,6 +2741,8 @@ private async Task<IReadOnlyCollection<BowlingCenters>> ManualBowlingCenterAddit
 		Status = BowlingCenterStatus.Closed,
 		WebsiteId = 1
 	};
+	
+	manualBowlingCenters.Add(airway);
 
 
 	return manualBowlingCenters;
@@ -2874,6 +2890,314 @@ public class UsbcBowlingCenterDto
 
 	[JsonPropertyName("coach")]
 	public bool Coach { get; set; }
+}
+
+#endregion
+
+#region Tournaments
+
+public async Task MigrateTournamentsAsync()
+{
+	var spreadsheetTournaments = await GetTournamentsFromSpreadsheetAsync();
+	var softwareTournaments = await GetTournamentsFromSoftwareAsync();
+
+	foreach (var spreadsheetTournament in spreadsheetTournaments)
+	{
+		var softwareTournament = softwareTournaments.SingleOrDefault(t => t.Id == spreadsheetTournament.SoftwareId);
+
+		var tournament = new Tournaments
+		{
+			DomainId = Ulid.NewUlid(spreadsheetTournament.StartDate.ToDateTime(TimeOnly.MinValue).ToUniversalTime(), RandomNumberGenerator.GetBytes(10)).ToString(),
+			Name = spreadsheetTournament.TournamentName,
+			TournamentType =  TournamentType.FromName(spreadsheetTournament.TournamentType).Value,
+			StartDate = spreadsheetTournament.StartDate,
+			EndDate = spreadsheetTournament.EndDate,
+			BowlingCenterId = string.IsNullOrWhiteSpace(spreadsheetTournament.BowlingCenterCertificationNumber) ? null : spreadsheetTournament.BowlingCenterCertificationNumber,
+			LegacyId = softwareTournament?.Id,
+			PatternLengthCategory = GetPatternLengthCategory(softwareTournament?.OilPatternLength)?.Value,
+			PatternRatioCategory = GetPatternRatioCategory(softwareTournament?.OilPatternLeftRatio, softwareTournament?.OilPatternRightRatio)?.Value
+		};
+		
+		Tournaments.Add(tournament);
+	}
+	
+	await SaveChangesAsync();
+	
+	"Tournaments Migrated".Dump();
+}
+
+private PatternRatioCategory? GetPatternRatioCategory(decimal? leftRatio, decimal? rightRatio)
+{
+	if (leftRatio is null && rightRatio is null)
+	{
+		return null;
+	}
+	
+	decimal? ratioToTest = null;
+
+	if (leftRatio is null)
+	{
+		ratioToTest = rightRatio!.Value;
+	}
+
+	if (rightRatio is null)
+	{
+		ratioToTest = leftRatio!.Value;
+	}
+
+	if (ratioToTest is null)
+	{
+		ratioToTest = (leftRatio!.Value + rightRatio!.Value) / 2m;
+	}
+
+	if (ratioToTest < 4m)
+	{
+		return PatternRatioCategory.Sport;
+	}
+
+	if (ratioToTest >= 8)
+	{
+		return PatternRatioCategory.Recreation;
+	}
+	
+	return PatternRatioCategory.Challenge;
+}
+
+public sealed class PatternRatioCategory
+	: SmartEnum<PatternRatioCategory>
+{
+	public static readonly PatternRatioCategory Sport = new(nameof(Sport), 1, null, 4m);
+
+	public static readonly PatternRatioCategory Challenge = new(nameof(Challenge), 2, 4m, 8m);
+
+	public static readonly PatternRatioCategory Recreation = new(nameof(Recreation), 3, 8m, null);
+
+	private PatternRatioCategory(
+		string name,
+		int value,
+		decimal? minimumRatio,
+		decimal? maximumRatio)
+		: base(name, value)
+	{
+		MinimumRatio = minimumRatio;
+		MaximumRatio = maximumRatio;
+	}
+
+	public decimal? MinimumRatio { get; }
+
+	public decimal? MaximumRatio { get; }
+}
+
+private PatternLengthCategory? GetPatternLengthCategory(int? patternLength)
+{
+	if (patternLength is null)
+	{
+		return null;
+	}
+
+	if (patternLength <= 37)
+	{
+		return PatternLengthCategory.ShortPattern;
+	}
+
+	if (patternLength >= 43)
+	{
+		return PatternLengthCategory.LongPattern;
+	}
+	
+	return PatternLengthCategory.MediumPattern;
+}
+
+public sealed class PatternLengthCategory
+	: SmartEnum<PatternLengthCategory>
+{
+	public static readonly PatternLengthCategory ShortPattern = new("Short", 1, null, 37);
+
+	public static readonly PatternLengthCategory MediumPattern = new("Medium", 2, 38, 42);
+
+	public static readonly PatternLengthCategory LongPattern = new("Long", 3, 43, null);
+
+	private PatternLengthCategory(
+		string name,
+		int value,
+		int? minimumLength,
+		int? maximumLength)
+		: base(name, value)
+	{
+		MinimumLength = minimumLength;
+		MaximumLength = maximumLength;
+	}
+
+	public int? MinimumLength { get; }
+
+	public int? MaximumLength { get; }
+}
+public sealed class TournamentType
+	: SmartEnum<TournamentType>
+{
+	public static readonly TournamentType Singles = new(nameof(Singles), 100, 1, true);
+
+	public static readonly TournamentType Doubles = new(nameof(Doubles), 200, 2, true);
+
+	public static readonly TournamentType Trios = new(nameof(Trios), 300, 3, true);
+
+	public static readonly TournamentType Baker = new(nameof(Baker), 500, 5, true);
+
+	public static readonly TournamentType NonChampions = new("Non-Champions", 101, 1, true);
+
+	public static readonly TournamentType TournamentOfChampions = new("Tournament of Champions", 102, 1, true);
+
+	public static readonly TournamentType Invitational = new(nameof(Invitational), 103, 1, true);
+
+	public static readonly TournamentType Masters = new(nameof(Masters), 104, 1, true);
+
+	public static readonly TournamentType HighRoller = new("High Roller", 105, 1, false);
+
+	public static readonly TournamentType Senior = new(nameof(Senior), 106, 1, true);
+
+	public static readonly TournamentType Women = new(nameof(Women), 107, 1, true);
+
+	public static readonly TournamentType OverForty = new("Over 40", 108, 1, false);
+
+	public static readonly TournamentType FortyToFortyNine = new("40 - 49", 109, 1, false);
+
+	public static readonly TournamentType Youth = new(nameof(Youth), 110, 1, true);
+
+	public static readonly TournamentType Eliminator = new(nameof(Eliminator), 111, 1, false);
+
+	public static readonly TournamentType SeniorAndWomen = new("Senior / Women", 112, 1, true);
+
+	public static readonly TournamentType OverUnderFiftyDoubles = new("Over/Under 50 Doubles", 201, 2, true);
+
+	public static readonly TournamentType OverUnderFortyDoubles = new("Under/Over 40", 202, 2, false);
+
+	private TournamentType(string name, int value, int teamSize, bool activeFormat)
+		: base(name, value)
+	{
+		TeamSize = teamSize;
+		ActiveFormat = activeFormat;
+	}
+
+	public int TeamSize { get; }
+
+	public bool ActiveFormat { get; }
+}
+
+private async Task<IReadOnlyCollection<SpreadsheetTournament>> GetTournamentsFromSpreadsheetAsync()
+{
+	var json = await Util.GetPasswordAsync("credentials.sheets.google");
+	var serviceAccountCredential = CredentialFactory.FromJson<ServiceAccountCredential>(json);
+	var googleCredential = serviceAccountCredential.ToGoogleCredential().CreateScoped(SheetsService.Scope.SpreadsheetsReadonly);
+
+	using var sheetsService = new SheetsService(new BaseClientService.Initializer
+	{
+		HttpClientInitializer = googleCredential,
+		ApplicationName = "NEBA Tournament Port"
+	});
+
+	const string spreadsheetId = "1dMTZ4OiXqkFmQNXBUjREVKH_cduwLmZDIcpWmhJY6ds";
+	const string tableName = "Tournaments";
+
+	var request = sheetsService.Spreadsheets.Values.Get(spreadsheetId, tableName);
+	ValueRange response = await request.ExecuteAsync();
+
+	var values = response.Values.Skip(1);
+
+	var tournaments = new List<SpreadsheetTournament>();
+
+	foreach (var row in values)
+	{
+		var tournamentRecord = new SpreadsheetTournament
+		{
+			OverallTournamentCount = int.TryParse(row[0]?.ToString(), out var overallCount) ? overallCount : 0,
+			SinglesTournamentCount = int.TryParse(row[1]?.ToString(), out var singleCount) ? singleCount : null,
+			Month = int.TryParse(row[2]?.ToString(), out var month) ? month : 0,
+			Year = int.TryParse(row[3]?.ToString(), out var year) ? year : 0,
+			SoftwareId = int.TryParse(row[4]?.ToString(), out var softwareId) ? softwareId : null,
+			TournamentName = row[5]?.ToString() ?? string.Empty,
+			StartDate = DateOnly.TryParse(row[6]?.ToString(), out var startDate) ? startDate : DateOnly.MinValue,
+			EndDate = DateOnly.TryParse(row[7]?.ToString(), out var endDate) ? endDate : DateOnly.MaxValue,
+			TournamentType = row[8]?.ToString() ?? string.Empty,
+			BowlingCenter = row[9]?.ToString() ?? string.Empty,
+			BowlingCenterCertificationNumber = row[14]?.ToString() ?? string.Empty,
+			CityState = row[10]?.ToString() ?? string.Empty,
+			Entries = int.TryParse(row[12]?.ToString(), out var entries) ? entries : 0,
+			Winners = row[13]?.ToString()?.Split("/").Select(id => int.TryParse(id, out var idValue) ? idValue : 0).ToList().AsReadOnly() ?? []
+		};
+
+		tournaments.Add(tournamentRecord);
+	}
+
+	return tournaments;
+}
+
+private async Task<IReadOnlyCollection<SoftwareTournament>> GetTournamentsFromSoftwareAsync()
+{
+	var tournamentsDataTable = await QuerySoftwareDatabaseAsync("""
+	SELECT
+		*
+	FROM
+		dbo.Tournaments
+	""");
+
+	var tournaments = tournamentsDataTable.AsEnumerable()
+		.Select(row => new SoftwareTournament
+		{
+			Id = row.Field<int>("Id"),
+			Name = row.Field<string>("Name") ?? string.Empty,
+			OilPatternLength = row.Field<int?>("OilPattern_Length"),
+			OilPatternLeftRatio = row.Field<decimal?>("OilPattern_LeftRatio"),
+			OilPatternRightRatio = row.Field<decimal?>("OilPattern_RightRatio")
+		})
+		.ToList();
+		
+	return tournaments;
+}
+
+public sealed class SpreadsheetTournament
+{
+	public Ulid DomainId { get; set; }
+
+	public required int OverallTournamentCount { get; init; }
+
+	public int? SinglesTournamentCount { get; init; }
+
+	public required int Month { get; init; }
+
+	public required int Year { get; init; }
+
+	public int? SoftwareId { get; init; }
+
+	public required string TournamentName { get; init; }
+
+	public required DateOnly StartDate { get; init; }
+
+	public required DateOnly EndDate { get; init; }
+
+	public required string TournamentType { get; init; }
+
+	public required string BowlingCenter { get; init; }
+
+	public required string BowlingCenterCertificationNumber { get; init; }
+
+	public required string CityState { get; init; }
+
+	public int? Entries { get; init; }
+
+	public IReadOnlyCollection<int>? Winners { get; init; }
+}
+
+public sealed class SoftwareTournament
+{ 
+	public int Id { get; init; }
+	
+	public string Name { get; init; } = string.Empty;
+	
+	public decimal? OilPatternLeftRatio { get; init; }
+	
+	public decimal? OilPatternRightRatio { get; init; }
+	
+	public int? OilPatternLength { get; init; }
 }
 
 #endregion
