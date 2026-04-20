@@ -560,11 +560,90 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 ## Tournaments
 
+### Tournament
+
+**Definition**: A USBC sanctioned scratch bowling competition consisting of one or more qualifying squads followed by a single-elimination match play championship round to determine a winner. Each tournament has a Tournament Type that governs format, team size, and eligibility. Lane conditions are characterized by a Pattern Length Category and Pattern Ratio Category, which may not be known at the time of tournament creation.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `Tournament` (aggregate root)
+- Identity type: `TournamentId` (ULID-backed strongly-typed ID)
+
+---
+
+### Tournament Type
+
+**Definition**: The format classification of a NEBA tournament. Determines the number of bowlers per entry (Team Size), eligibility restrictions, and match play structure. Tournament types are categorized as either active formats (currently offered by NEBA) or inactive formats (retained for historical data integrity only).
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `TournamentType` (SmartEnum)
+
+---
+
+### Team Size
+
+**Definition**: The number of bowlers who compete as a single entry unit within a given Tournament Type. Singles and most specialty formats have a Team Size of 1; Doubles formats have a Team Size of 2; Trios have 3; Baker has 5.
+
+**In Code**: `TournamentType.TeamSize`
+
+---
+
+### Active Format
+
+**Definition**: A Tournament Type designation indicating whether the format is currently offered by NEBA. Inactive formats are not available for new tournament creation but are preserved in the system to maintain historical accuracy for past tournaments.
+
+**In Code**: `TournamentType.ActiveFormat`
+
+---
+
+### Pattern Length Category
+
+**Definition**: A classification of the distance (in feet) over which oil is applied to tournament lanes. Three categories are defined: **Short** (37 feet or less), **Medium** (38–42 feet), and **Long** (43 feet or more). Pattern Length Category is one of two dimensions used to characterize tournament lane conditions alongside Pattern Ratio Category. May be unknown at the time of tournament creation.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `PatternLengthCategory` (SmartEnum)
+- Property on `Tournament`: `PatternLengthCategory` (nullable)
+
+---
+
+### Pattern Ratio Category
+
+**Definition**: A classification of the oil-to-dry ratio of the lane condition used in a tournament. Three categories are defined: **Sport** (ratio < 4.0), **Challenge** (4.0–8.0), and **Recreation** (≥ 8.0). Pattern Ratio Category is one of two dimensions used to characterize tournament lane conditions alongside Pattern Length Category. Sport and Challenge map directly to USBC lane condition designations of the same names; Recreation is NEBA's term for the USBC Standard/House designation. May be unknown at the time of tournament creation.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `PatternRatioCategory` (SmartEnum)
+- Property on `Tournament`: `PatternRatioCategory` (nullable)
+
+---
+
+### Non-Champions
+
+**Definition**: A tournament format restricted to bowlers who have not previously won a NEBA title. Provides competitive opportunity for bowlers who have never achieved a championship win.
+
+**In Code**: `TournamentType.NonChampions`
+
+---
+
 ### Tournament of Champions (TOC)
 
-**Definition**: NEBA's premier annual tournament event. The Title Sponsor's name is formally associated with this event for the duration of their sponsorship.
+**Definition**: NEBA's premier annual tournament event, restricted to past NEBA title winners. Entry eligibility is determined by whether the bowler appears on the historical NEBA champions list. The Title Sponsor's name is formally associated with this event for the duration of their sponsorship.
 
 > **Usage**: "TOC" is the accepted abbreviation used throughout NEBA communications and in code identifiers. The full term "Tournament of Champions" is used in formal contexts.
+
+**In Code**: `TournamentType.TournamentOfChampions`
+
+---
+
+### Major
+
+**Definition**: A designation applied to NEBA's most prestigious tournament formats: the **Tournament of Champions**, the **Masters**, and the **Invitational**. The Major designation is a characteristic of the Tournament Type, not a separate entity.
 
 ---
 
@@ -977,7 +1056,6 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 | 128 | `Individual` | Individual or personal sponsors (e.g., Tony & Suzanne Reynaud) |
 
 > Values are powers of two to support potential future multi-category assignment via bit flags.
-
 > Future enhancement: promote to a configurable database-backed entity manageable through an admin interface.
 
 **In Code**:
