@@ -29,6 +29,9 @@ Flag when:
 - An aggregate's assign/add method validates child entity invariants directly (e.g., checking `blockScore > 0` on `Season`) instead of delegating to the child entity's `internal static Create(...)` factory
 - A child entity is instantiated directly via `new` outside the aggregate root — application or test code must go through the aggregate's assign methods
 - An application handler computes a domain formula and passes the derived result to an aggregate — raw input data should be passed instead; the formula belongs in the domain (e.g., computing `minimumGames = floor(4.5 × count)` in a handler rather than passing `statEligibleTournamentCount` to the aggregate)
+- A new aggregate, entity, or value object is introduced without a corresponding entry in `docs/ubiquitous-language.md` — every new domain type needs a UL definition so the vocabulary stays shared across code, docs, and conversation
+- A new aggregate, entity, or value object has an XML `<summary>` comment that contradicts or omits the purpose described in the UL — comments don't need to be word-for-word matches, but must convey the same concept to an engineer reading the code cold
+- An existing domain type is touched and its XML `<summary>` is absent or misleading relative to its UL entry — take a quick pass over the UL when reviewing domain changes and flag any pre-existing gaps encountered along the way
 
 ### Application Layer (`Neba.Application`)
 
@@ -576,6 +579,12 @@ When reviewing, verify:
 - [ ] Queries return DTOs, not entities
 - [ ] Extension methods use `extension()` block syntax, not legacy `this` parameter
 - [ ] `DateTimeOffset` used instead of `DateTime` for points in time
+
+### Ubiquitous Language
+
+- [ ] Every new aggregate, entity, and value object has an entry in `docs/ubiquitous-language.md`
+- [ ] XML `<summary>` comments on new domain types convey the same concept as their UL entry (not word-for-word, but purpose-aligned)
+- [ ] A quick scan of existing UL entries and XML comments for domain types touched in this PR — flag any pre-existing gaps or contradictions found in passing
 
 ### API Endpoints
 
