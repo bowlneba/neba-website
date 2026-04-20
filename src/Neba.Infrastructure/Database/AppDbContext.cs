@@ -78,6 +78,9 @@ internal sealed class AppDbContext(
         configurationBuilder.Properties<OilPatternId>()
             .HaveConversion<UlidTypedIdConverter<OilPatternId>>();
 
+        configurationBuilder.Properties<TournamentId>()
+            .HaveConversion<UlidTypedIdConverter<TournamentId>>();
+
         configurationBuilder.Properties<Uri>()
             .HaveConversion<UriToStringConverter>();
     }
