@@ -9,7 +9,7 @@ public sealed class OilPattern
     /// Gets or sets the unique identifier for the oil pattern.
     /// </summary>
     public required OilPatternId Id { get; init; }
-    
+
     /// <summary>
     /// Gets or sets the name of the oil pattern.
     /// This is a required property that should be set when creating an instance of <see cref="OilPattern"/>.

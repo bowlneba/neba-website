@@ -29,15 +29,15 @@ internal sealed class OilPatternConfiguration
             .IsRequired();
 
         builder.Property(pattern => pattern.Volume)
-            .HasPrecision(5,3)
+            .HasPrecision(5, 3)
             .IsRequired();
 
         builder.Property(pattern => pattern.LeftRatio)
-            .HasPrecision(4,2)
+            .HasPrecision(4, 2)
             .IsRequired();
 
         builder.Property(pattern => pattern.RightRatio)
-            .HasPrecision(4,2)
+            .HasPrecision(4, 2)
             .IsRequired();
 
         builder.Property(pattern => pattern.KegelId)
