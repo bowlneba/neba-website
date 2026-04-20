@@ -27,6 +27,9 @@ internal sealed class AppDbContext(
     public DbSet<Bowler> Bowlers
         => Set<Bowler>();
 
+    public DbSet<Tournament> Tournaments
+        => Set<Tournament>();
+
     public DbSet<HallOfFameInduction> HallOfFameInductions
         => Set<HallOfFameInduction>();
 
@@ -54,6 +57,7 @@ internal sealed class AppDbContext(
         modelBuilder.ApplyConfiguration(new SponsorConfiguration());
         modelBuilder.ApplyConfiguration(new BowlerSeasonStatsConfiguration());
         modelBuilder.ApplyConfiguration(new OilPatternConfiguration());
+        modelBuilder.ApplyConfiguration(new TournamentConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
