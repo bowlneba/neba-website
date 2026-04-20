@@ -39,6 +39,9 @@ internal sealed class AppDbContext(
     public DbSet<BowlerSeasonStats> BowlerSeasonStats
         => Set<BowlerSeasonStats>();
 
+    public DbSet<OilPattern> OilPatterns
+        => Set<OilPattern>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BowlingCenterConfiguration());
@@ -50,6 +53,7 @@ internal sealed class AppDbContext(
         modelBuilder.ApplyConfiguration(new HighBlockAwardConfiguration());
         modelBuilder.ApplyConfiguration(new SponsorConfiguration());
         modelBuilder.ApplyConfiguration(new BowlerSeasonStatsConfiguration());
+        modelBuilder.ApplyConfiguration(new OilPatternConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
