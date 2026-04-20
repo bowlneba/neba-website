@@ -6,6 +6,7 @@ using Neba.Domain.HallOfFame;
 using Neba.Domain.Seasons;
 using Neba.Domain.Sponsors;
 using Neba.Domain.Stats;
+using Neba.Domain.Tournaments;
 using Neba.Infrastructure.Database.Configurations;
 using Neba.Infrastructure.Database.Converters;
 
@@ -69,6 +70,9 @@ internal sealed class AppDbContext(
 
         configurationBuilder.Properties<SponsorId>()
             .HaveConversion<UlidTypedIdConverter<SponsorId>>();
+
+        configurationBuilder.Properties<OilPatternId>()
+            .HaveConversion<UlidTypedIdConverter<OilPatternId>>();
 
         configurationBuilder.Properties<Uri>()
             .HaveConversion<UriToStringConverter>();

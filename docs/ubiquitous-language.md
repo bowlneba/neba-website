@@ -568,6 +568,36 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 ---
 
+### Left Ratio
+
+**Definition**: The X:1 ratio of average oil volume on the inner lane boards (L18–R18) to the left outside boards (L3–L7), stored as the decimal multiplier X. A symmetric pattern has equal left and right ratios.
+
+**In Code**: `OilPattern.LeftRatio`
+
+---
+
+### Right Ratio
+
+**Definition**: The X:1 ratio of average oil volume on the inner lane boards (L18–R18) to the right outside boards (R3–R7), stored as the decimal multiplier X. A symmetric pattern has equal left and right ratios.
+
+**In Code**: `OilPattern.RightRatio`
+
+---
+
+### Kegel Pattern ID
+
+**Definition**: A GUID uniquely identifying a pattern in the Kegel public pattern library. Null when the pattern is custom-defined and has no corresponding Kegel catalog entry.
+
+**In Code**: `OilPattern.KegelId`
+
+---
+
+### Custom Pattern
+
+**Definition**: An oil pattern created outside the Kegel catalog, typically configured directly by a tournament director or house mechanic. Identified by the absence of a Kegel Pattern ID.
+
+---
+
 ## Awards
 
 ### Season
