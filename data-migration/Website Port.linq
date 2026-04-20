@@ -42,7 +42,7 @@
 
 async Task Main()
 {
-	//BowlingCenters.RemoveRange(BowlingCenters);
+	BowlingCenters.RemoveRange(BowlingCenters);
 	Bowlers.RemoveRange(Bowlers);
 	HallsOfFameInductions.RemoveRange(HallsOfFameInductions);
 	BowlersOfTheYearAwards.RemoveRange(BowlersOfTheYearAwards);
@@ -53,7 +53,7 @@ async Task Main()
 	BowlerSeasonStats.RemoveRange(BowlerSeasonStats);
 	SaveChanges();
 	
-	//Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowling_centers RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowling_centers RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowlers RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.hall_of_fame_inductions RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowler_of_the_year_awards RESTART IDENTITY CASCADE;");
@@ -63,7 +63,7 @@ async Task Main()
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.sponsors RESTART IDENTITY CASCADE;");
 	SaveChanges();
 	
-	//await MigrateBowlingCentersAsync();
+	await MigrateBowlingCentersAsync();
 	var bowlingCenterIds = BowlingCenters.ToList().Select(b => (b.Id, b.CertificationNumber, b.LegacyId, b.WebsiteId)).ToList().AsReadOnly();
 	
 	var bowlerIds = await MigrateBowlersAsync();
