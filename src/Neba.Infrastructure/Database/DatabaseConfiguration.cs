@@ -12,9 +12,11 @@ using Neba.Application.BowlingCenters;
 using Neba.Application.HallOfFame;
 using Neba.Application.Sponsors;
 using Neba.Application.Stats;
+using Neba.Domain.Seasons;
 using Neba.Infrastructure.Database.Interceptors;
 using Neba.Infrastructure.Database.Options;
 using Neba.Infrastructure.Database.Queries;
+using Neba.Infrastructure.Database.Repositories;
 
 using Npgsql;
 
@@ -69,6 +71,7 @@ internal static class DatabaseConfiguration
             builder.Services.AddSingleton<DomainEventDispatcherInterceptor>();
 
             builder.Services.AddQueries();
+            builder.Services.AddRepositories();
 
             return builder;
         }
@@ -139,6 +142,11 @@ internal static class DatabaseConfiguration
             services.AddScoped<IAwardQueries, AwardQueries>();
             services.AddScoped<ISponsorQueries, SponsorQueries>();
             services.AddScoped<IStatsQueries, StatsQueries>();
+        }
+
+        public void AddRepositories()
+        {
+            services.AddScoped<ISeasonRepository, SeasonRepository>();
         }
     }
 }
