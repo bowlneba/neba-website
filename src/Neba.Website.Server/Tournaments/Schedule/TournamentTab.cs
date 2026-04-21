@@ -1,4 +1,4 @@
-namespace Neba.Website.Server.Tournaments;
+namespace Neba.Website.Server.Tournaments.Schedule;
 
 /// <summary>Active schedule tab on the Tournaments page.</summary>
 public enum TournamentTab

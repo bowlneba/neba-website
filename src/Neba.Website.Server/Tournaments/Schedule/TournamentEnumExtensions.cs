@@ -1,4 +1,4 @@
-namespace Neba.Website.Server.Tournaments;
+namespace Neba.Website.Server.Tournaments.Schedule;
 
 /// <summary>Human-readable display labels for tournament enum values.</summary>
 internal static class TournamentEnumExtensions

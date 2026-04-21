@@ -1,4 +1,4 @@
-namespace Neba.Website.Server.Tournaments;
+namespace Neba.Website.Server.Tournaments.Schedule;
 
 /// <summary>Eligibility restriction for a NEBA tournament entry.</summary>
 public enum TournamentEligibility

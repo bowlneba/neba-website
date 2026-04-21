@@ -1,4 +1,4 @@
-namespace Neba.Website.Server.Tournaments;
+namespace Neba.Website.Server.Tournaments.Schedule;
 
 /// <summary>Visual variant of the tournament logo tile.</summary>
 public enum LogoTileVariant

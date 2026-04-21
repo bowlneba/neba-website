@@ -1,4 +1,4 @@
-namespace Neba.Website.Server.Tournaments;
+namespace Neba.Website.Server.Tournaments.Schedule;
 
 /// <summary>Current registration state of a tournament.</summary>
 public enum RegistrationStatus

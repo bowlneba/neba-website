@@ -3,6 +3,8 @@ using System.Text.Json.Serialization;
 
 using Microsoft.Extensions.FileProviders;
 
+using Neba.Website.Server.Tournaments.Schedule;
+
 namespace Neba.Website.Server.Tournaments;
 
 internal sealed class TournamentDataService(IWebHostEnvironment env) : ITournamentDataService

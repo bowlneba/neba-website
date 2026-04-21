@@ -1,3 +1,5 @@
+using Neba.Website.Server.Tournaments.Schedule;
+
 namespace Neba.Website.Server.Tournaments;
 
 internal interface ITournamentDataService
