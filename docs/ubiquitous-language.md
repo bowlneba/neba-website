@@ -572,6 +572,34 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 ---
 
+### Tournament Sponsor
+
+**Definition**: The sponsorship association between a specific Tournament and a specific Sponsor. A Tournament Sponsor records sponsor participation for that event, including whether the sponsor is the tournament's Title Sponsor (the main sponsor) and the sponsorship amount.
+
+**Properties**:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `TournamentId` | ULID | The tournament being sponsored |
+| `SponsorId` | ULID | The sponsor providing support for the tournament |
+| `TitleSponsor` | bool | Whether this sponsor is the tournament's main sponsor |
+| `SponsorshipAmount` | decimal | The amount contributed for that tournament sponsorship |
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `TournamentSponsor` (association entity)
+
+---
+
+### Title Sponsor (Tournament context)
+
+**Definition**: The main sponsor for a specific Tournament. The Title Sponsor receives primary naming and promotional placement for that event (for example, being formally associated with the tournament name in schedules and marketing).
+
+> **Scope note**: This is a per-tournament designation from `TournamentSponsor.TitleSponsor` and is distinct from the sponsor program's `SponsorTier.Title Sponsor` value.
+
+---
+
 ### Tournament Type
 
 **Definition**: The format classification of a NEBA tournament. Determines the number of bowlers per entry (Team Size), eligibility restrictions, and match play structure. Tournament types are categorized as either active formats (currently offered by NEBA) or inactive formats (retained for historical data integrity only).
@@ -633,7 +661,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 ### Tournament of Champions (TOC)
 
-**Definition**: NEBA's premier annual tournament event, restricted to past NEBA title winners. Entry eligibility is determined by whether the bowler appears on the historical NEBA champions list. The Title Sponsor's name is formally associated with this event for the duration of their sponsorship.
+**Definition**: NEBA's premier annual tournament event, restricted to past NEBA title winners. Entry eligibility is determined by whether the bowler appears on the historical NEBA champions list. The tournament's Title Sponsor (main sponsor) is formally associated with this event for the duration of their sponsorship.
 
 > **Usage**: "TOC" is the accepted abbreviation used throughout NEBA communications and in code identifiers. The full term "Tournament of Champions" is used in formal contexts.
 
@@ -1024,6 +1052,8 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 ### SponsorTier
 
 **Definition**: A SmartEnum classifying the sponsor's level of commitment. Controls display prominence on the sponsor list page.
+
+> **Terminology note**: `SponsorTier.Title Sponsor` is the top level in the overall sponsorship program. It is not automatically the same as a specific tournament's Title Sponsor designation, which is modeled on `TournamentSponsor.TitleSponsor`.
 
 | Value | Name | Description |
 | --- | --- | --- |
