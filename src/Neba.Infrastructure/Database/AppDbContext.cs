@@ -58,6 +58,7 @@ internal sealed class AppDbContext(
         modelBuilder.ApplyConfiguration(new BowlerSeasonStatsConfiguration());
         modelBuilder.ApplyConfiguration(new OilPatternConfiguration());
         modelBuilder.ApplyConfiguration(new TournamentConfiguration());
+        modelBuilder.ApplyConfiguration(new TournamentSponsorConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

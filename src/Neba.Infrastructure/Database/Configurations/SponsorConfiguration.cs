@@ -148,5 +148,11 @@ internal sealed class SponsorConfiguration
                     .HasMaxLength(255)
                     .IsRequired());
         });
+
+        builder.HasMany(sponsor => sponsor.TournamentsSponsored)
+            .WithOne(tournamentSponsor => tournamentSponsor.Sponsor)
+            .HasForeignKey(tournamentSponsor => tournamentSponsor.SponsorId)
+            .HasPrincipalKey(sponsor => sponsor.Id)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -1,5 +1,6 @@
 using Neba.Domain.Contact;
 using Neba.Domain.Storage;
+using Neba.Domain.Tournaments;
 
 namespace Neba.Domain.Sponsors;
 
@@ -103,4 +104,6 @@ public sealed class Sponsor
     /// Contact information for the sponsor.
     /// </summary>
     public ContactInfo? SponsorContact { get; init; }
+
+    internal IReadOnlyCollection<TournamentSponsor> TournamentsSponsored { get; init; } = [];
 }

@@ -78,6 +78,14 @@ public sealed class Tournament
     public required SeasonId SeasonId { get; init; }
 
     internal Season Season { get; init; } = null!;
+
+    private readonly List<TournamentSponsor> _sponsors = [];
+
+    /// <summary>
+    /// Gets the collection of sponsors associated with this tournament, along with details about
+    /// </summary>
+    public IReadOnlyCollection<TournamentSponsor> Sponsors
+        => _sponsors;
 }
 
 internal static class TournamentErrors

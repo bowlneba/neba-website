@@ -10,11 +10,6 @@ public sealed class TournamentSponsor
     /// <summary>
     /// The unique identifier of the tournament associated with this sponsorship. This is a foreign key that links to the Tournament entity, allowing us to retrieve tournament details such as name and dates when needed. It is required to establish the relationship between the tournament and its sponsor in the database.
     /// </summary>
-    public required TournamentId TournamentId { get; init; }
-
-    /// <summary>
-    /// The tournament associated with this sponsorship. This navigation property allows us to access the tournament details from the sponsorship entity. It is marked as internal to restrict access to the domain layer, ensuring that external layers interact with tournaments and sponsors through their respective repositories and services rather than directly through this association entity.
-    /// </summary>
     internal Tournament Tournament { get; init; } = null!;
 
     /// <summary>

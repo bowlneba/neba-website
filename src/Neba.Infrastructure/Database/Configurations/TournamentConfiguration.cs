@@ -64,5 +64,10 @@ internal sealed class TournamentConfiguration
             .HasForeignKey(tournament => tournament.SeasonId)
             .HasPrincipalKey(season => season.Id)
             .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasMany(tournament => tournament.Sponsors)
+            .WithOne(tournamentSponsor => tournamentSponsor.Tournament)
+            .HasForeignKey(ForeignKeyName)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

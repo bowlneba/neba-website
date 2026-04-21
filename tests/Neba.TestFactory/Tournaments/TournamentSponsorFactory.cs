@@ -20,7 +20,6 @@ public static class TournamentSponsorFactory
 
         return new()
         {
-            TournamentId = tournamentToUse.Id,
             Tournament = tournamentToUse,
             SponsorId = sponsorToUse.Id,
             Sponsor = sponsorToUse,
@@ -46,7 +45,6 @@ public static class TournamentSponsorFactory
 
                 return new TournamentSponsor
                 {
-                    TournamentId = tournament.Id,
                     Tournament = tournament,
                     SponsorId = sponsor.Id,
                     Sponsor = sponsor,
