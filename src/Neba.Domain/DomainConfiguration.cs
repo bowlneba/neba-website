@@ -1,0 +1,25 @@
+using Microsoft.Extensions.DependencyInjection;
+
+using Neba.Domain.Tournaments;
+
+namespace Neba.Domain;
+
+/// <summary>
+/// Extension methods to add application dependencies to the service collection.
+/// </summary>
+public static class DomainConfiguration
+{
+    extension(IServiceCollection services)
+    {
+        /// <summary>
+        /// Adds application dependencies to the service collection.
+        /// </summary>
+        /// <returns>The updated service collection.</returns>
+        public IServiceCollection AddDomain()
+        {        
+            services.AddScoped<ITournamentValidationService, TournamentValidationService>();
+
+            return services;
+        }
+    }
+}

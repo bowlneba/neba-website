@@ -327,4 +327,13 @@ internal static class SeasonErrors
         code: "Season.HighAverageInsufficientGames",
         description: $"A bowler must have completed at least {minimumGames} games in Stat-Eligible Tournaments during the season to qualify for a High Average award.",
         metadata: new Dictionary<string, object> { { "MinimumGames", minimumGames } });
+
+    public static Error SeasonNotFound(SeasonId id)
+        => Error.NotFound(
+        code: "Season.NotFound",
+        description: "Season not found.",
+        metadata: new()
+        {
+            {"id", id.Value}
+        });
 }

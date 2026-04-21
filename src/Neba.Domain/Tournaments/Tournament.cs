@@ -1,3 +1,7 @@
+using System.Globalization;
+
+using ErrorOr;
+
 using Neba.Domain.BowlingCenters;
 using Neba.Domain.Seasons;
 
@@ -74,4 +78,19 @@ public sealed class Tournament
     public required SeasonId SeasonId { get; init; }
 
     internal Season Season { get; init; } = null!;
+}
+
+internal static class TournamentErrors
+{
+    public static Error InvalidTournamentDatesForSeason(DateOnly seasonStartDate, DateOnly seasonEndDate)
+    {
+        return Error.Validation(
+            code: "Tournaments.InvalidDatesForSeason",
+            description: "Tournament dates must fall within the season dates.",
+            metadata: new Dictionary<string, object>
+            {
+                { "SeasonStartDate", seasonStartDate.ToString("yyyy-MM-dd", CultureInfo.CurrentCulture) },
+                { "SeasonEndDate", seasonEndDate.ToString("yyyy-MM-dd", CultureInfo.CurrentCulture) },
+            });
+    }
 }
