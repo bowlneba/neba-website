@@ -1,0 +1,55 @@
+.tournament-filter-bar {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.tournament-filter-bar__search-wrapper {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+}
+
+.tournament-filter-bar__search-icon {
+    position: absolute;
+    left: 0.625rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.125rem;
+    color: var(--neba-gray-400);
+    pointer-events: none;
+}
+
+.tournament-filter-bar__search {
+    padding-left: 2.25rem;
+}
+
+.tournament-filter-bar__type-filter {
+    flex-shrink: 0;
+}
+
+.tournament-filter-bar__eligibility-filter {
+    flex-shrink: 0;
+    min-width: 160px;
+}
+
+@media (max-width: 767px) {
+    .tournament-filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .tournament-filter-bar__search-wrapper {
+        min-width: unset;
+    }
+
+    .tournament-filter-bar__type-filter {
+        overflow-x: auto;
+    }
+
+    .tournament-filter-bar__eligibility-filter {
+        min-width: unset;
+    }
+}

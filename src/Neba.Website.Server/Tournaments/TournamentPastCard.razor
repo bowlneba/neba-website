@@ -1,0 +1,69 @@
+@namespace Neba.Website.Server.Tournaments
+
+<div class="neba-card tournament-past-card">
+    <div class="tournament-past-card__grid">
+        <div class="tournament-past-card__logo">
+            <TournamentLogoTile TournamentType="Tournament.TournamentType"
+                                Season="Tournament.Season"
+                                TournamentName="Tournament.Name"
+                                Variant="LogoTileVariant.Muted" />
+        </div>
+
+        <div class="tournament-past-card__content">
+            <div class="tournament-past-card__eyebrow">
+                @if (Tournament.HasSponsor)
+                {
+                    <span class="tournament-past-card__sponsor">@Tournament.Sponsor</span>
+                    <span aria-hidden="true">·</span>
+                }
+                <time>@Tournament.FormatDateRange()</time>
+            </div>
+
+            <h3 class="tournament-past-card__title">
+                <a href="/tournaments/@Tournament.Season/@Tournament.Id">@Tournament.Name</a>
+            </h3>
+
+            @if (Tournament.HasHost)
+            {
+                <p class="tournament-past-card__host">
+                    <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+                    @Tournament.DisplayLocation
+                </p>
+            }
+
+            <div class="tournament-past-card__chips">
+                <span class="tournament-past-card__chip">@Tournament.TournamentType.ToDisplayString()</span>
+                @if (Tournament.Eligibility != TournamentEligibility.Open)
+                {
+                    <span class="tournament-past-card__chip">@Tournament.Eligibility.ToDisplayString()</span>
+                }
+            </div>
+        </div>
+
+        <div class="tournament-past-card__champion">
+            @if (Tournament.Winner is not null)
+            {
+                <div class="tournament-past-card__champion-pill">
+                    <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
+                    <span class="tournament-past-card__champion-name">@Tournament.Winner</span>
+                    @if (Tournament.WinnerScore.HasValue)
+                    {
+                        <span class="tournament-past-card__champion-score">@Tournament.WinnerScore</span>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="tournament-past-card__results-pending">Results pending</p>
+            }
+            <a href="/tournaments/@Tournament.Season/@Tournament.Id" class="neba-link tournament-past-card__results-link">
+                View results →
+            </a>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public TournamentSummaryViewModel Tournament { get; set; } = default!;
+}

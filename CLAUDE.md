@@ -311,3 +311,15 @@ Stryker 4.14.1 (latest as of April 2026) **cannot run mutation tests on `Neba.We
 - Map SmartEnum values to primitives in query projections (for example, `Status.Name` as `string`) before caching.
 - `CachedQueryHandlerDecorator` catches cache deserialization failures on plain cached queries, logs a warning, executes the inner handler, and rewrites the cache entry.
 - Keep the cache key stable unless explicitly directed otherwise; deserialization fallback handles stale entry recovery.
+
+### Razor @code Block — Parser Limitations
+
+Two patterns that break Razor's lexer even inside `@code { }` blocks:
+
+1. **Relational patterns `< N =>` in switch expressions** — `<` followed by a space then a digit is misread as an HTML tag start, causing the brace tracker to prematurely close the `@code` block. Use `if`/`else` with `>=` instead (e.g., `if (pct >= 90) return "full";`). `<=` (less-than-or-equal) is NOT affected — only bare `<` followed by a space.
+
+2. **String interpolation with `{}` inside @code** — `$"prefix:{expr}suffix"` braces inside string interpolations in `@code` can confuse the Razor brace counter. Use string concatenation instead: `"prefix:" + expr + "suffix"`.
+
+3. **Component attribute values always need `@` for C# expressions** — `Foo="fieldName"` passes the literal string `"fieldName"`, not the field's value. Always write `Foo="@fieldName"` for fields/properties, `Foo="@(expr)"` for expressions with operators (e.g. null-forgiving `!`, null-coalescing `??`).
+
+4. **Blazor parameters use `[EditorRequired]` not C# `required`** — the `required` keyword on Blazor `[Parameter]` properties causes compile errors (CS0246/CS7014). Always use `[Parameter, EditorRequired]` with a default initializer (`= default!;`, `= string.Empty;`, `= [];`).

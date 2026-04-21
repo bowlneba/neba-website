@@ -1,0 +1,146 @@
+@namespace Neba.Website.Server.Tournaments
+
+<div class="season-timeline"
+     role="img"
+     aria-label="Season timeline for @Season season. @Tournaments.Count tournaments.">
+
+    <div class="season-timeline__header">
+        <div class="season-timeline__legend" aria-hidden="true">
+            <span class="season-timeline__legend-item season-timeline__legend-item--upcoming">● Upcoming</span>
+            <span class="season-timeline__legend-item season-timeline__legend-item--tentative">◌ Tentative</span>
+            <span class="season-timeline__legend-item season-timeline__legend-item--completed">● Completed</span>
+        </div>
+    </div>
+
+    <div class="season-timeline__track-wrapper">
+        <div class="season-timeline__months">
+            @foreach (var m in _months)
+            {
+                <span class="season-timeline__month-label">@m</span>
+            }
+        </div>
+
+        <div class="season-timeline__track" style="position:relative; height:32px;">
+            <div class="season-timeline__baseline"></div>
+
+            @foreach (var t in Tournaments)
+            {
+                <div class="@GetDotClass(t)"
+                     style="@GetDotStyle(t)"
+                     tabindex="0"
+                     aria-label="@t.Name, @t.FormatDateRange(), @GetStatusLabel(t)"
+                     data-tooltip="@t.Name · @t.FormatDateRange()">
+                </div>
+            }
+
+            @if (_showToday)
+            {
+                <div class="season-timeline__today-marker" style="@_todayStyle">
+                    <span class="season-timeline__today-label">Today</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<TournamentSummaryViewModel> Tournaments { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public string Season { get; set; } = string.Empty;
+
+    private bool _isMergedSeason;
+    private int _startYear;
+    private bool _showToday;
+    private string _todayStyle = string.Empty;
+    private List<string> _months = [];
+
+    protected override void OnParametersSet()
+    {
+        _isMergedSeason = Season == "2020-21";
+        _startYear = GetStartYear(Season);
+        _months = _isMergedSeason ? BuildMergedMonths() : BuildNormalMonths();
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var seasonStart = new DateOnly(_startYear, 1, 1);
+        var seasonEnd = new DateOnly(GetEndYear(Season), 12, 31);
+
+        _showToday = today >= seasonStart && today <= seasonEnd;
+        _todayStyle = _showToday
+            ? "left:" + GetXPercent(today, _startYear, _isMergedSeason).ToString("F2", System.Globalization.CultureInfo.CurrentCulture) + "%"
+            : string.Empty;
+    }
+
+    private string GetDotStyle(TournamentSummaryViewModel t) =>
+        "left:" + GetXPercent(t.StartDate, _startYear, _isMergedSeason).ToString("F2", System.Globalization.CultureInfo.CurrentCulture) + "%";
+
+    private static string GetDotClass(TournamentSummaryViewModel t)
+    {
+        if (t.Tentative)
+        {
+            return "season-timeline__dot season-timeline__dot--tentative";
+        }
+
+        if (t.IsPast)
+        {
+            return "season-timeline__dot season-timeline__dot--completed";
+        }
+
+        return "season-timeline__dot season-timeline__dot--upcoming";
+    }
+
+    private static string GetStatusLabel(TournamentSummaryViewModel t)
+    {
+        if (t.Tentative)
+        {
+            return "tentative";
+        }
+
+        if (t.IsPast)
+        {
+            return "completed";
+        }
+
+        return "upcoming";
+    }
+
+    private static double GetXPercent(DateOnly date, int startYear, bool isMerged)
+    {
+        var yearStart = new DateOnly(startYear, 1, 1);
+        var yearEnd = isMerged
+            ? new DateOnly(startYear + 1, 12, 31)
+            : new DateOnly(startYear, 12, 31);
+
+        int totalDays = (yearEnd.DayNumber - yearStart.DayNumber) + 1;
+        int elapsed = date.DayNumber - yearStart.DayNumber;
+
+        return Math.Clamp((double)elapsed / totalDays * 100, 0, 100);
+    }
+
+    private static int GetStartYear(string season)
+    {
+        var parts = season.Split('-');
+        return int.Parse(parts[0], System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private static int GetEndYear(string season)
+    {
+        var parts = season.Split('-');
+        return parts.Length == 2
+            ? int.Parse(parts[0], System.Globalization.CultureInfo.InvariantCulture) + 1
+            : int.Parse(parts[0], System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private static List<string> BuildNormalMonths() =>
+    [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+
+    private static List<string> BuildMergedMonths() =>
+    [
+        "Sep", "Oct", "Nov", "Dec", "Jan", "Feb",
+        "Mar", "Apr", "May", "Jun", "Jul", "Aug"
+    ];
+}

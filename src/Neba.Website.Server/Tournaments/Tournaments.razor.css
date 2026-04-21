@@ -1,0 +1,63 @@
+/* ── Page-scoped tokens ── */
+:root {
+    --tournaments-max-width: 1240px;
+    --tournaments-gold: #B8860B;
+    --tournaments-gold-light: #FFD580;
+    --tournaments-hero-gradient: linear-gradient(135deg, #052767 0%, #2A3AA0 60%, #3E4FD9 100%);
+    --tournaments-champion-gradient: linear-gradient(135deg, #92400e, #d97706);
+    --tournaments-logo-muted-gradient: linear-gradient(135deg, #1a1a2e, #374151);
+}
+
+/* ── Layout ── */
+.tournaments-page {
+    width: 100%;
+}
+
+.tournaments-content {
+    max-width: var(--tournaments-max-width);
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* ── Compact page header (non-hero state) ── */
+.tournaments-page__header {
+    margin-bottom: 1.5rem;
+}
+
+.tournaments-page__eyebrow {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--neba-blue-700);
+    margin: 0 0 0.25rem;
+}
+
+.tournaments-page__title {
+    font-family: var(--neba-font-display);
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--neba-text);
+    margin: 0;
+}
+
+/* ── List container ── */
+.tournaments-page__list {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Empty state ── */
+.tournaments-page__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 3rem 1rem;
+    color: var(--neba-gray-400);
+    text-align: center;
+}
+
+.tournaments-page__empty-icon {
+    font-size: 3rem;
+}

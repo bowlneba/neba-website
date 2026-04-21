@@ -5,6 +5,7 @@ using Neba.Website.Server.Clock;
 using Neba.Website.Server.Maps;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Stats;
+using Neba.Website.Server.Tournaments;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddOutputCache();
 
 builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
+builder.Services.AddSingleton<ITournamentDataService, TournamentDataService>();
 
 var app = builder.Build();
 

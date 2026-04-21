@@ -1,0 +1,44 @@
+.tournament-logo-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1rem;
+    border-radius: var(--neba-radius-lg);
+    overflow: hidden;
+    user-select: none;
+}
+
+.tournament-logo-tile--default {
+    background: var(--tournaments-hero-gradient);
+}
+
+.tournament-logo-tile--muted {
+    background: var(--tournaments-logo-muted-gradient);
+}
+
+.tournament-logo-tile__logo-mark {
+    font-family: var(--neba-font-display);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+}
+
+.tournament-logo-tile__type {
+    font-family: var(--neba-font-display);
+    font-size: clamp(1.5rem, 2.5vw, 2.25rem);
+    font-weight: 800;
+    color: white;
+    text-align: center;
+    line-height: 1.1;
+    word-break: break-word;
+}
+
+.tournament-logo-tile__year {
+    font-family: var(--neba-font-display);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+}

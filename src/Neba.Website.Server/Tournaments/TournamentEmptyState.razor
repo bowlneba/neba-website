@@ -1,0 +1,33 @@
+@namespace Neba.Website.Server.Tournaments
+
+<div class="tournaments-page__empty" role="status">
+    <span class="material-symbols-outlined tournaments-page__empty-icon" aria-hidden="true">
+        @(Tab == TournamentTab.Upcoming ? "event_available" : "history")
+    </span>
+    @if (HasActiveFilters)
+    {
+        <p>No tournaments match your current filters.</p>
+        <button class="neba-btn neba-btn-secondary neba-btn-sm" @onclick="OnClearFilters">
+            Clear filters
+        </button>
+    }
+    else if (Tab == TournamentTab.Upcoming)
+    {
+        <p>No upcoming tournaments are scheduled for this season.</p>
+    }
+    else
+    {
+        <p>No tournaments have been completed this season yet.</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public TournamentTab Tab { get; set; }
+
+    [Parameter, EditorRequired]
+    public bool HasActiveFilters { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnClearFilters { get; set; }
+}

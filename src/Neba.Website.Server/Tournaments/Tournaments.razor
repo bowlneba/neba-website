@@ -1,0 +1,256 @@
+@page "/tournaments"
+@page "/tournaments/{Season}"
+@namespace Neba.Website.Server.Tournaments
+@implements IAsyncDisposable
+@inject ITournamentDataService DataService
+@inject NavigationManager Nav
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@preservewhitespace false
+
+<PageTitle>Tournaments - NEBA</PageTitle>
+<HeadContent>
+    <meta name="description"
+          content="NEBA tournament schedule – upcoming and past scratch bowling tournaments in New England." />
+</HeadContent>
+
+<div class="tournaments-page">
+    <div class="tournaments-content">
+
+        @if (ShowHero)
+        {
+            <TournamentHero Tournament="@(NextUpcomingTournament!)" />
+        }
+        else
+        {
+            <header class="tournaments-page__header">
+                <p class="tournaments-page__eyebrow">@_activeSeason Season</p>
+                <h1 class="tournaments-page__title">Tournaments</h1>
+            </header>
+        }
+
+        @if (_allTournaments is not null)
+        {
+            <SeasonTimeline Tournaments="@_allTournaments" Season="@_activeSeason" />
+        }
+
+        <TournamentTabBar ActiveTab="@_activeTab"
+                          IsCurrentSeason="@_isCurrentSeason"
+                          AvailableSeasons="@(_availableSeasons ?? [])"
+                          ActiveSeason="@_activeSeason"
+                          OnTabChanged="HandleTabChanged"
+                          OnSeasonChanged="HandleSeasonChanged" />
+
+        <TournamentFilterBar SearchTerm="@_searchTerm"
+                             SearchTermChanged="@(v => _searchTerm = v)"
+                             TypeFilter="@_typeFilter"
+                             TypeFilterChanged="@(v => _typeFilter = v)"
+                             EligibilityFilter="@_eligibilityFilter"
+                             EligibilityFilterChanged="@(v => _eligibilityFilter = v)" />
+
+        @if (_isLoading)
+        {
+            <TournamentListSkeleton ShowHeroSkeleton="@ShowHero" />
+        }
+        else
+        {
+            <div class="tournaments-page__list"
+                 id="tournament-list"
+                 role="list"
+                 aria-live="polite"
+                 aria-label="@($"{FilteredTournaments.Count()} tournaments")">
+
+                @foreach (var t in FilteredTournaments)
+                {
+                    @if (_activeTab == TournamentTab.Upcoming)
+                    {
+                        <TournamentUpcomingCard Tournament="@t" />
+                    }
+                    else
+                    {
+                        <TournamentPastCard Tournament="@t" />
+                    }
+                }
+
+                @if (!FilteredTournaments.Any())
+                {
+                    <TournamentEmptyState Tab="@_activeTab"
+                                         HasActiveFilters="@HasActiveFilters"
+                                         OnClearFilters="ClearFilters" />
+                }
+            </div>
+
+            @if (_isMergedSeason)
+            {
+                <MergedSeasonNote />
+            }
+        }
+
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? Season { get; set; }
+
+    // ── Route-driven state ─────────────────────────────────────────────────
+    private string _activeSeason = DateTime.Today.Year.ToString();
+    private bool _isCurrentSeason = true;
+    private bool _isMergedSeason;
+
+    // ── UI state ───────────────────────────────────────────────────────────
+    private TournamentTab _activeTab = TournamentTab.Upcoming;
+
+    // ── Filter state ───────────────────────────────────────────────────────
+    private string _searchTerm = string.Empty;
+    private TournamentType? _typeFilter;
+    private TournamentEligibility? _eligibilityFilter;
+
+    // ── Data ───────────────────────────────────────────────────────────────
+    private List<TournamentSummaryViewModel>? _allTournaments;
+    private List<string>? _availableSeasons;
+    private bool _isLoading = true;
+
+    private CancellationTokenSource _cts = new();
+    private bool _disposed;
+
+    // ── Computed ───────────────────────────────────────────────────────────
+    private TournamentSummaryViewModel? NextUpcomingTournament =>
+        _allTournaments?
+            .Where(t => !t.IsPast)
+            .OrderBy(t => t.StartDate)
+            .FirstOrDefault();
+
+    private bool ShowHero =>
+        _isCurrentSeason &&
+        _activeTab == TournamentTab.Upcoming &&
+        NextUpcomingTournament is not null;
+
+    private bool HasActiveFilters =>
+        !string.IsNullOrWhiteSpace(_searchTerm) ||
+        _typeFilter.HasValue ||
+        _eligibilityFilter.HasValue;
+
+    private IEnumerable<TournamentSummaryViewModel> FilteredTournaments
+    {
+        get
+        {
+            if (_allTournaments is null)
+            {
+                return [];
+            }
+
+            var query = _allTournaments
+                .Where(t => _activeTab == TournamentTab.Upcoming ? !t.IsPast : t.IsPast);
+
+            if (!string.IsNullOrWhiteSpace(_searchTerm))
+            {
+                query = query.Where(t =>
+                    t.Name.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    (t.BowlingCenterName?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (t.Sponsor?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
+            }
+
+            if (_typeFilter.HasValue)
+            {
+                query = query.Where(t => t.TournamentType == _typeFilter);
+            }
+
+            if (_eligibilityFilter.HasValue)
+            {
+                query = query.Where(t => t.Eligibility == _eligibilityFilter);
+            }
+
+            return query.OrderBy(t => t.StartDate);
+        }
+    }
+
+    // ── Lifecycle ──────────────────────────────────────────────────────────
+    protected override async Task OnParametersSetAsync()
+    {
+        await _cts.CancelAsync();
+        _cts.Dispose();
+        _cts = new CancellationTokenSource();
+        var ct = _cts.Token;
+
+        _isLoading = true;
+        _allTournaments = null;
+
+        try
+        {
+            // Resolve available seasons (cached after first load)
+            _availableSeasons ??= await DataService.GetAvailableSeasonsAsync(ct);
+
+            var currentYear = DateTime.Today.Year.ToString();
+
+            if (Season is null || Season == currentYear)
+            {
+                _activeSeason = currentYear;
+                _isCurrentSeason = true;
+                _isMergedSeason = false;
+                _activeTab = TournamentTab.Upcoming;
+            }
+            else if (_availableSeasons.Contains(Season))
+            {
+                _activeSeason = Season;
+                _isCurrentSeason = false;
+                _isMergedSeason = Season == "2020-21";
+                _activeTab = TournamentTab.Past;
+            }
+            else
+            {
+                Nav.NavigateTo("/tournaments");
+                return;
+            }
+
+            _searchTerm = string.Empty;
+            _typeFilter = null;
+            _eligibilityFilter = null;
+
+            _allTournaments = await DataService.GetTournamentsForSeasonAsync(_activeSeason, ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return;
+        }
+
+        if (ct.IsCancellationRequested || _disposed)
+        {
+            return;
+        }
+
+        _isLoading = false;
+    }
+
+    // ── Handlers ───────────────────────────────────────────────────────────
+    private void HandleTabChanged(TournamentTab tab)
+    {
+        if (tab == TournamentTab.Upcoming && !_isCurrentSeason)
+        {
+            return;
+        }
+
+        _activeTab = tab;
+        _searchTerm = string.Empty;
+    }
+
+    private void HandleSeasonChanged(string season)
+    {
+        var currentYear = DateTime.Today.Year.ToString();
+        Nav.NavigateTo(season == currentYear ? "/tournaments" : $"/tournaments/{season}");
+    }
+
+    private void ClearFilters()
+    {
+        _searchTerm = string.Empty;
+        _typeFilter = null;
+        _eligibilityFilter = null;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _disposed = true;
+        await _cts.CancelAsync();
+        _cts.Dispose();
+    }
+}

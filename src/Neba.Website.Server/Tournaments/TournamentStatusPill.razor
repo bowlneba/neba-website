@@ -1,0 +1,41 @@
+@namespace Neba.Website.Server.Tournaments
+
+<span class="tournament-status-pill tournament-status-pill--@_modifier">
+    @if (_showPulseDot)
+    {
+        <span class="tournament-status-pill__dot" aria-hidden="true"></span>
+    }
+    @_label
+</span>
+
+@code {
+    [Parameter]
+    public RegistrationStatus? Status { get; set; }
+
+    [Parameter]
+    public bool Tentative { get; set; }
+
+    private string _modifier => Tentative ? "tentative" :
+        Status switch
+        {
+            RegistrationStatus.Open => "open",
+            RegistrationStatus.ClosingSoon => "closing",
+            RegistrationStatus.Closed => "closed",
+            RegistrationStatus.Full => "full",
+            RegistrationStatus.Completed => "completed",
+            _ => "soon",
+        };
+
+    private string _label => Tentative ? "Dates tentative" :
+        Status switch
+        {
+            RegistrationStatus.Open => "Registration open",
+            RegistrationStatus.ClosingSoon => "Closing soon",
+            RegistrationStatus.Closed => "Closed",
+            RegistrationStatus.Full => "Full",
+            RegistrationStatus.Completed => "Completed",
+            _ => "Registration opens soon",
+        };
+
+    private bool _showPulseDot => _modifier == "open";
+}
