@@ -19,7 +19,7 @@
 
         @if (ShowHero)
         {
-            <TournamentHero Tournament="@(NextUpcomingTournament!)" />
+            <TournamentHero Tournament="@(HeroTournament!)" />
         }
         else
         {
@@ -108,8 +108,7 @@
 
     // ── Data ───────────────────────────────────────────────────────────────
     private List<TournamentSummaryViewModel>? _allTournaments;
-    private List<string>? _availableSeasons;
-    private bool _isLoading = true;
+    private List<string>? _availableSeasons;    private TournamentSummaryViewModel? _nextSeasonHeroTournament;    private bool _isLoading = true;
 
     private CancellationTokenSource _cts = new();
     private bool _disposed;
@@ -121,10 +120,13 @@
             .OrderBy(t => t.StartDate)
             .FirstOrDefault();
 
+    private TournamentSummaryViewModel? HeroTournament =>
+        NextUpcomingTournament ?? _nextSeasonHeroTournament;
+
     private bool ShowHero =>
         _isCurrentSeason &&
         _activeTab == TournamentTab.Upcoming &&
-        NextUpcomingTournament is not null;
+        HeroTournament is not null;
 
     private bool HasActiveFilters =>
         !string.IsNullOrWhiteSpace(_searchTerm) ||
@@ -206,8 +208,29 @@
             _searchTerm = string.Empty;
             _typeFilter = null;
             _eligibilityFilter = null;
+            _nextSeasonHeroTournament = null;
 
             _allTournaments = await DataService.GetTournamentsForSeasonAsync(_activeSeason, ct);
+
+            // When the current season has no upcoming tournaments, look ahead to the
+            // next season so the hero can surface the first scheduled tournament.
+            if (_isCurrentSeason && _allTournaments.TrueForAll(t => t.IsPast))
+            {
+                var currentYear = DateTime.Today.Year.ToString();
+                var nextSeason = _availableSeasons
+                    ?.Where(s => string.Compare(s, currentYear, StringComparison.Ordinal) > 0)
+                    .Order()
+                    .FirstOrDefault();
+
+                if (nextSeason is not null)
+                {
+                    var nextTournaments = await DataService.GetTournamentsForSeasonAsync(nextSeason, ct);
+                    _nextSeasonHeroTournament = nextTournaments
+                        .Where(t => !t.IsPast)
+                        .OrderBy(t => t.StartDate)
+                        .FirstOrDefault();
+                }
+            }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
