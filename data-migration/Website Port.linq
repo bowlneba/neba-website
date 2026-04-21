@@ -14,8 +14,8 @@
       <EncryptSqlTraffic>True</EncryptSqlTraffic>
       <PreserveNumeric1>True</PreserveNumeric1>
       <EFProvider>Npgsql.EntityFrameworkCore.PostgreSQL</EFProvider>
-      <Port>19630</Port>
       <ExtraCxOptions>Include Error Detail=true;</ExtraCxOptions>
+      <Port>62677</Port>
     </DriverData>
   </Connection>
   <NuGetReference>Microsoft.Data.SqlClient</NuGetReference>
@@ -77,6 +77,7 @@ async Task Main()
 	await GenerateSeasonsAsync();
 	
 	var seasonIdByEndYear = Seasons.ToDictionary(s => s.EndDate.Year, s => s.Id);
+	var seasonDomainIdByEndYear = Seasons.ToDictionary(s => s.EndDate.Year, s => s.DomainId);
 	
 	var bowlerDomainIdByWebsiteName = bowlerIds.Where(b => b.websiteName is not null).ToDictionary(b => b.websiteName!, b => b.bowlerId);
 	var bowlerDomainIdBySoftwareName = bowlerIds.Where(b => b.softwareName is not null).ToDictionary(b => b.softwareName!, b => b.bowlerId);
@@ -100,7 +101,7 @@ async Task Main()
 	
 	await MigrateBowlerSeasonStatsAsync(bowlerDomainIdBySoftwareId);
 	
-	await MigrateTournamentsAsync();
+	await MigrateTournamentsAsync(seasonDomainIdByEndYear);
 }
 
 // You can define other methods, fields, classes and namespaces here
@@ -2896,7 +2897,7 @@ public class UsbcBowlingCenterDto
 
 #region Tournaments
 
-public async Task MigrateTournamentsAsync()
+public async Task MigrateTournamentsAsync(IDictionary<int, string> seasonDomainIdByEndYear)
 {
 	var spreadsheetTournaments = await GetTournamentsFromSpreadsheetAsync();
 	var softwareTournaments = await GetTournamentsFromSoftwareAsync();
@@ -2915,7 +2916,8 @@ public async Task MigrateTournamentsAsync()
 			BowlingCenterId = string.IsNullOrWhiteSpace(spreadsheetTournament.BowlingCenterCertificationNumber) ? null : spreadsheetTournament.BowlingCenterCertificationNumber,
 			LegacyId = softwareTournament?.Id,
 			PatternLengthCategory = GetPatternLengthCategory(softwareTournament?.OilPatternLength)?.Value,
-			PatternRatioCategory = GetPatternRatioCategory(softwareTournament?.OilPatternLeftRatio, softwareTournament?.OilPatternRightRatio)?.Value
+			PatternRatioCategory = GetPatternRatioCategory(softwareTournament?.OilPatternLeftRatio, softwareTournament?.OilPatternRightRatio)?.Value,
+			SeasonId = spreadsheetTournament.EndDate.Year == 2020 ? seasonDomainIdByEndYear[2021] : seasonDomainIdByEndYear[spreadsheetTournament.EndDate.Year]
 		};
 		
 		Tournaments.Add(tournament);
