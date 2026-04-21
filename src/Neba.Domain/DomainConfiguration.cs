@@ -16,7 +16,7 @@ public static class DomainConfiguration
         /// </summary>
         /// <returns>The updated service collection.</returns>
         public IServiceCollection AddDomain()
-        {        
+        {
             services.AddScoped<ITournamentValidationService, TournamentValidationService>();
 
             return services;
