@@ -3,10 +3,16 @@
 <div class="neba-card tournament-upcoming-card">
     <div class="tournament-upcoming-card__grid">
         <div class="tournament-upcoming-card__logo">
-            <TournamentLogoTile TournamentType="Tournament.TournamentType"
-                                Season="Tournament.Season"
-                                TournamentName="Tournament.Name"
-                                Variant="LogoTileVariant.Default" />
+            @if (Tournament.TournamentLogoUrl is not null)
+            {
+                <img src="@Tournament.TournamentLogoUrl" alt="@Tournament.Name logo"
+                     class="tournament-upcoming-card__logo-img" />
+            }
+            else
+            {
+                <TournamentLogoTile TournamentType="Tournament.TournamentType" Season="Tournament.Season"
+                                    TournamentName="Tournament.Name" Variant="LogoTileVariant.Default" />
+            }
         </div>
 
         <div class="tournament-upcoming-card__content">
@@ -57,13 +63,9 @@
                 {
                     <span class="tournament-upcoming-card__chip">@Tournament.Eligibility.ToDisplayString()</span>
                 }
-                @if (Tournament.PatternName is not null)
+                @if (Tournament.PatternDisplay is not null)
                 {
-                    <span class="tournament-upcoming-card__chip">@Tournament.PatternName · @Tournament.PatternLength ft</span>
-                }
-                @if (Tournament.Tentative)
-                {
-                    <span class="tournament-upcoming-card__chip tournament-upcoming-card__chip--tentative">Tentative</span>
+                    <span class="tournament-upcoming-card__chip">@Tournament.PatternDisplay</span>
                 }
             </div>
         </div>
@@ -72,57 +74,63 @@
             <div class="tournament-upcoming-card__price">
                 @if (Tournament.DisplayPrice.HasValue)
                 {
-                    <span class="tournament-upcoming-card__price-value @(Tournament.HasAddedMoney ? "tournament-upcoming-card__price-value--gold" : "")">
+                    <span
+                        class="tournament-upcoming-card__price-value @(Tournament.HasAddedMoney ? "tournament-upcoming-card__price-value--gold" : "")">
                         @Tournament.DisplayPrice.Value.ToString("C0", System.Globalization.CultureInfo.CurrentCulture)
                     </span>
                     <span class="tournament-upcoming-card__price-label">@Tournament.DisplayPriceLabel</span>
-                    @if (!Tournament.HasAddedMoney)
+                    @if (Tournament.HasAddedMoney)
+                    {
+                        @if (Tournament.EntryFee.HasValue)
+                        {
+                            <span class="tournament-upcoming-card__price-sub">
+                                @Tournament.EntryFee.Value.ToString("C0", System.Globalization.CultureInfo.CurrentCulture) entry fee
+                            </span>
+                        }
+                    }
+                    else
                     {
                         <span class="tournament-upcoming-card__price-sub">per bowler</span>
                     }
                 }
             </div>
 
-            <TournamentStatusPill Status="Tournament.RegistrationStatus" Tentative="Tournament.Tentative" />
+            <TournamentStatusPill Status="Tournament.RegistrationStatus" />
 
             @if (Tournament.HasCapacityData)
             {
                 <div class="tournament-upcoming-card__capacity">
-                    <span class="tournament-upcoming-card__capacity-label">@Tournament.Entries of @Tournament.MaxEntries</span>
-                    <div class="tournament-upcoming-card__capacity-track">
-                        <div class="tournament-upcoming-card__capacity-fill"
-                             style="@GetCapacityStyle()"
-                             role="progressbar"
-                             aria-valuenow="@Tournament.Entries"
-                             aria-valuemin="0"
-                             aria-valuemax="@Tournament.MaxEntries"
-                             aria-label="@Tournament.Entries of @Tournament.MaxEntries entries filled">
+                    <span class="tournament-upcoming-card__capacity-label">@Tournament.Entries of
+                        @Tournament.MaxEntries</span>
+                        <div class="tournament-upcoming-card__capacity-track">
+                            <div class="tournament-upcoming-card__capacity-fill" style="@GetCapacityStyle()" role="progressbar"
+                                 aria-valuenow="@Tournament.Entries" aria-valuemin="0" aria-valuemax="@Tournament.MaxEntries"
+                                 aria-label="@Tournament.Entries of @Tournament.MaxEntries entries filled">
+                            </div>
                         </div>
                     </div>
-                </div>
-            }
+                }
 
-            @if (Tournament.CanRegister)
-            {
-                <a href="@Tournament.RegistrationUrl"
-                   target="_blank"
-                   rel="noopener noreferrer"
-                   class="neba-btn neba-btn-primary neba-btn-sm">
-                    Register →
-                </a>
-            }
-            else
-            {
-                <p class="tournament-upcoming-card__reg-later">Registration opens later</p>
-            }
+                @if (Tournament.CanRegister)
+                {
+                    <a href="@Tournament.RegistrationUrl" target="_blank" rel="noopener noreferrer"
+                       class="neba-btn neba-btn-primary neba-btn-sm">
+                        Register →
+                    </a>
+                }
+                else
+                {
+                    <p class="tournament-upcoming-card__reg-later">Registration opens later</p>
+                }
+            </div>
         </div>
     </div>
-</div>
 
 @code {
     [Parameter, EditorRequired]
     public TournamentSummaryViewModel Tournament { get; set; } = default!;
 
     private string GetCapacityStyle() =>
-        "width:" + ((double)Tournament.Entries!.Value / Tournament.MaxEntries!.Value * 100).ToString("F0", System.Globalization.CultureInfo.CurrentCulture) + "%";
+        "width:" + ((double)Tournament.Entries!.Value / Tournament.MaxEntries!.Value * 100).ToString("F0",
+System.Globalization.CultureInfo.CurrentCulture) + "%";
 }

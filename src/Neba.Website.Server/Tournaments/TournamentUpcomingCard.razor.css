@@ -125,12 +125,6 @@
     font-weight: 500;
 }
 
-.tournament-upcoming-card__chip--tentative {
-    background: transparent;
-    border: 1px dashed var(--neba-warning);
-    color: var(--neba-warning);
-}
-
 /* Actions column */
 .tournament-upcoming-card__actions {
     display: flex;

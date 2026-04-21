@@ -8,7 +8,6 @@
     "tournamentType": "SpecialEvent",
     "eligibility": "Open",
     "entryFee": 120,
-    "tentative": false,
     "registrationStatus": "Completed",
     "registrationUrl": null,
     "bowlingCenterName": "Sparetime Recreation",
@@ -19,8 +18,10 @@
     "maxEntries": null,
     "patternName": "PBA Shark",
     "patternLength": 44,
-    "winner": "DiBonaventura",
-    "winnerScore": 1320
+    "winners": [
+      "DiBonaventura"
+    ],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKA00000000000000000002",
@@ -31,7 +32,6 @@
     "tournamentType": "Women",
     "eligibility": "Women",
     "entryFee": 75,
-    "tentative": false,
     "registrationStatus": "Completed",
     "registrationUrl": null,
     "bowlingCenterName": "Ryan Family Amusements",
@@ -42,8 +42,10 @@
     "maxEntries": null,
     "patternName": "PBA Wolf",
     "patternLength": 33,
-    "winner": "Sullivan",
-    "winnerScore": 1148
+    "winners": [
+      "Sullivan"
+    ],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKA00000000000000000003",
@@ -54,7 +56,6 @@
     "tournamentType": "Doubles",
     "eligibility": "Open",
     "entryFee": 85,
-    "tentative": false,
     "registrationStatus": "Completed",
     "registrationUrl": null,
     "bowlingCenterName": "Sammy White's Brighton Bowl",
@@ -65,8 +66,11 @@
     "maxEntries": null,
     "patternName": "PBA Cheetah",
     "patternLength": 35,
-    "winner": "Clark / Martinez",
-    "winnerScore": 2204
+    "winners": [
+      "Clark",
+      "Martinez"
+    ],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKA00000000000000000004",
@@ -77,7 +81,6 @@
     "tournamentType": "Senior",
     "eligibility": "Senior50Plus",
     "entryFee": 65,
-    "tentative": false,
     "registrationStatus": "Completed",
     "registrationUrl": null,
     "bowlingCenterName": "Bowlmor Lanes",
@@ -88,8 +91,10 @@
     "maxEntries": null,
     "patternName": "PBA Viper",
     "patternLength": 37,
-    "winner": "Brooks",
-    "winnerScore": 1262
+    "winners": [
+      "Brooks"
+    ],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKA00000000000000000005",
@@ -100,7 +105,6 @@
     "tournamentType": "Singles",
     "eligibility": "Open",
     "entryFee": 75,
-    "tentative": false,
     "registrationStatus": "Open",
     "registrationUrl": "https://bowlneba.com/register/2026-singles",
     "bowlingCenterName": "Sparetime Recreation",
@@ -111,8 +115,8 @@
     "maxEntries": 80,
     "patternName": "PBA Scorpion",
     "patternLength": 42,
-    "winner": null,
-    "winnerScore": null
+    "winners": [],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKA00000000000000000006",
@@ -123,7 +127,6 @@
     "tournamentType": "Singles",
     "eligibility": "NonChampions",
     "entryFee": 65,
-    "tentative": false,
     "registrationStatus": null,
     "registrationUrl": null,
     "bowlingCenterName": null,
@@ -134,8 +137,8 @@
     "maxEntries": null,
     "patternName": null,
     "patternLength": null,
-    "winner": null,
-    "winnerScore": null
+    "winners": [],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKA00000000000000000007",
@@ -146,7 +149,6 @@
     "tournamentType": "Team",
     "eligibility": "Open",
     "entryFee": 60,
-    "tentative": false,
     "registrationStatus": null,
     "registrationUrl": null,
     "bowlingCenterName": "Jillian's",
@@ -157,8 +159,8 @@
     "maxEntries": 24,
     "patternName": null,
     "patternLength": null,
-    "winner": null,
-    "winnerScore": null
+    "winners": [],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKA00000000000000000008",
@@ -169,7 +171,6 @@
     "tournamentType": "Doubles",
     "eligibility": "Open",
     "entryFee": 80,
-    "tentative": true,
     "registrationStatus": null,
     "registrationUrl": null,
     "bowlingCenterName": null,
@@ -180,8 +181,8 @@
     "maxEntries": null,
     "patternName": null,
     "patternLength": null,
-    "winner": null,
-    "winnerScore": null
+    "winners": [],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKA00000000000000000009",
@@ -192,7 +193,6 @@
     "tournamentType": "Trios",
     "eligibility": "Open",
     "entryFee": 55,
-    "tentative": false,
     "registrationStatus": null,
     "registrationUrl": null,
     "bowlingCenterName": "Ryan Family Amusements",
@@ -203,8 +203,8 @@
     "maxEntries": null,
     "patternName": null,
     "patternLength": null,
-    "winner": null,
-    "winnerScore": null
+    "winners": [],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKA00000000000000000010",
@@ -215,7 +215,6 @@
     "tournamentType": "SpecialEvent",
     "eligibility": "Open",
     "entryFee": 100,
-    "tentative": false,
     "registrationStatus": null,
     "registrationUrl": null,
     "bowlingCenterName": null,
@@ -226,8 +225,8 @@
     "maxEntries": null,
     "patternName": null,
     "patternLength": null,
-    "winner": null,
-    "winnerScore": null
+    "winners": [],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKA00000000000000000011",
@@ -238,7 +237,6 @@
     "tournamentType": "Women",
     "eligibility": "Women",
     "entryFee": 75,
-    "tentative": false,
     "registrationStatus": null,
     "registrationUrl": null,
     "bowlingCenterName": null,
@@ -249,8 +247,8 @@
     "maxEntries": null,
     "patternName": null,
     "patternLength": null,
-    "winner": null,
-    "winnerScore": null
+    "winners": [],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKA00000000000000000012",
@@ -261,7 +259,6 @@
     "tournamentType": "SpecialEvent",
     "eligibility": "Open",
     "entryFee": 90,
-    "tentative": false,
     "registrationStatus": null,
     "registrationUrl": null,
     "bowlingCenterName": null,
@@ -272,7 +269,7 @@
     "maxEntries": null,
     "patternName": null,
     "patternLength": null,
-    "winner": null,
-    "winnerScore": null
+    "winners": [],
+    "tournamentLogoUrl": null
   }
 ]

@@ -121,12 +121,6 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.tournament-hero__chip--tentative {
-    background: transparent;
-    border: 1px dashed var(--neba-warning);
-    color: var(--neba-warning);
-}
-
 /* CTA row */
 .tournament-hero__cta {
     display: flex;

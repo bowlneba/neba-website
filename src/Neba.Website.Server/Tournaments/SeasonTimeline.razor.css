@@ -24,10 +24,6 @@
     color: var(--neba-blue-600);
 }
 
-.season-timeline__legend-item--tentative {
-    color: var(--neba-warning);
-}
-
 .season-timeline__legend-item--completed {
     color: var(--neba-gray-400);
 }
@@ -88,13 +84,6 @@
 
 .season-timeline__dot--upcoming {
     background: var(--neba-blue-600);
-}
-
-.season-timeline__dot--tentative {
-    background: transparent;
-    border: 2px dashed var(--neba-warning);
-    width: 12px;
-    height: 12px;
 }
 
 .season-timeline__dot--completed {

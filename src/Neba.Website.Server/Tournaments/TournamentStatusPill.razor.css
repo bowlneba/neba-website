@@ -25,7 +25,6 @@
     color: var(--neba-blue-700);
 }
 
-.tournament-status-pill--tentative,
 .tournament-status-pill--closed,
 .tournament-status-pill--full {
     background: var(--neba-gray-100);

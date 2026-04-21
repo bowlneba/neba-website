@@ -3,10 +3,16 @@
 <div class="neba-card tournament-past-card">
     <div class="tournament-past-card__grid">
         <div class="tournament-past-card__logo">
-            <TournamentLogoTile TournamentType="Tournament.TournamentType"
-                                Season="Tournament.Season"
-                                TournamentName="Tournament.Name"
-                                Variant="LogoTileVariant.Muted" />
+            @if (Tournament.TournamentLogoUrl is not null)
+            {
+                <img src="@Tournament.TournamentLogoUrl" alt="@Tournament.Name logo"
+                     class="tournament-past-card__logo-img" />
+            }
+            else
+            {
+                <TournamentLogoTile TournamentType="Tournament.TournamentType" Season="Tournament.Season"
+                                    TournamentName="Tournament.Name" Variant="LogoTileVariant.Muted" />
+            }
         </div>
 
         <div class="tournament-past-card__content">
@@ -41,22 +47,19 @@
         </div>
 
         <div class="tournament-past-card__champion">
-            @if (Tournament.Winner is not null)
+            @if (Tournament.HasWinners)
             {
                 <div class="tournament-past-card__champion-pill">
                     <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
-                    <span class="tournament-past-card__champion-name">@Tournament.Winner</span>
-                    @if (Tournament.WinnerScore.HasValue)
-                    {
-                        <span class="tournament-past-card__champion-score">@Tournament.WinnerScore</span>
-                    }
+                    <span class="tournament-past-card__champion-name">@string.Join(" / ", Tournament.Winners)</span>
                 </div>
             }
             else
             {
                 <p class="tournament-past-card__results-pending">Results pending</p>
             }
-            <a href="/tournaments/@Tournament.Season/@Tournament.Id" class="neba-link tournament-past-card__results-link">
+            <a href="/tournaments/@Tournament.Season/@Tournament.Id"
+               class="neba-link tournament-past-card__results-link">
                 View results →
             </a>
         </div>

@@ -56,38 +56,30 @@
                 {
                     <span class="tournament-hero__chip">@Tournament.Eligibility.ToDisplayString()</span>
                 }
-                @if (Tournament.PatternName is not null)
+                @if (Tournament.PatternDisplay is not null)
                 {
-                    <span class="tournament-hero__chip">@Tournament.PatternName · @Tournament.PatternLength ft</span>
-                }
-                @if (Tournament.Tentative)
-                {
-                    <span class="tournament-hero__chip tournament-hero__chip--tentative">Tentative</span>
+                    <span class="tournament-hero__chip">@Tournament.PatternDisplay</span>
                 }
             </div>
 
             <div class="tournament-hero__cta">
                 @if (Tournament.CanRegister)
                 {
-                    <a href="@Tournament.RegistrationUrl"
-                       target="_blank"
-                       rel="noopener noreferrer"
+                    <a href="@Tournament.RegistrationUrl" target="_blank" rel="noopener noreferrer"
                        class="neba-btn neba-btn-primary neba-btn-lg">
                         Register Now
                     </a>
                 }
                 else
                 {
-                    <button class="neba-btn neba-btn-lg tournament-hero__cta-disabled"
-                            disabled
-                            aria-disabled="true">
+                    <button class="neba-btn neba-btn-lg tournament-hero__cta-disabled" disabled aria-disabled="true">
                         Registration opens soon
                     </button>
                 }
                 <a href="/tournaments/@Tournament.Season/@Tournament.Id" class="tournament-hero__details-link">
                     View details →
                 </a>
-                <TournamentStatusPill Status="Tournament.RegistrationStatus" Tentative="Tournament.Tentative" />
+                <TournamentStatusPill Status="Tournament.RegistrationStatus" />
             </div>
 
             @if (Tournament.HasCapacityData)
@@ -97,11 +89,8 @@
                         @Tournament.Entries of @Tournament.MaxEntries entries
                     </span>
                     <div class="tournament-hero__progress-track">
-                        <div class="tournament-hero__progress-fill @GetCapacityClass()"
-                             style="@GetCapacityStyle()"
-                             role="progressbar"
-                             aria-valuenow="@Tournament.Entries"
-                             aria-valuemin="0"
+                        <div class="tournament-hero__progress-fill @GetCapacityClass()" style="@GetCapacityStyle()"
+                             role="progressbar" aria-valuenow="@Tournament.Entries" aria-valuemin="0"
                              aria-valuemax="@Tournament.MaxEntries"
                              aria-label="@Tournament.Entries of @Tournament.MaxEntries entries filled">
                         </div>
@@ -111,10 +100,8 @@
         </div>
 
         <div class="tournament-hero__tile-wrapper">
-            <TournamentLogoTile TournamentType="Tournament.TournamentType"
-                                Season="Tournament.Season"
-                                TournamentName="Tournament.Name"
-                                Variant="LogoTileVariant.Default" />
+            <TournamentLogoTile TournamentType="Tournament.TournamentType" Season="Tournament.Season"
+                                TournamentName="Tournament.Name" Variant="LogoTileVariant.Default" />
         </div>
     </div>
 </section>

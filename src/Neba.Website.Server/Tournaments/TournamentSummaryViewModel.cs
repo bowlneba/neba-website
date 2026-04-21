@@ -29,9 +29,6 @@ public sealed record TournamentSummaryViewModel
     /// <summary>Per-bowler entry fee in dollars, if applicable.</summary>
     public decimal? EntryFee { get; init; }
 
-    /// <summary>Indicates the date or venue has not yet been confirmed.</summary>
-    public bool Tentative { get; init; }
-
     /// <summary>Current registration state; null means registration has not opened yet.</summary>
     public RegistrationStatus? RegistrationStatus { get; init; }
 
@@ -48,6 +45,9 @@ public sealed record TournamentSummaryViewModel
 
     /// <summary>Primary sponsor name.</summary>
     public string? Sponsor { get; init; }
+
+    /// <summary>URL to the tournament logo image; null when unavailable.</summary>
+    public Uri? TournamentLogoUrl { get; init; }
 
     /// <summary>Total prize money added by the sponsor.</summary>
     public decimal? AddedMoney { get; init; }
@@ -66,13 +66,13 @@ public sealed record TournamentSummaryViewModel
     /// <summary>Pattern length in feet.</summary>
     public int? PatternLength { get; init; }
 
+    /// <summary>Pattern ratio category (public portion only).</summary>
+    public string? PatternLengthCategory { get; init; }
+
     // ── Past only ─────────────────────────────────────────────────────────────
 
-    /// <summary>Winner's name (last/first for team events).</summary>
-    public string? Winner { get; init; }
-
-    /// <summary>Winner's combined qualifying + finals total.</summary>
-    public int? WinnerScore { get; init; }
+    /// <summary>Names of the winning bowler(s); empty when results are not yet available.</summary>
+    public IReadOnlyCollection<string> Winners { get; init; } = [];
 
     // ── Computed convenience ──────────────────────────────────────────────────
 
@@ -90,6 +90,9 @@ public sealed record TournamentSummaryViewModel
 
     /// <summary>True when a sponsor is assigned.</summary>
     public bool HasSponsor => Sponsor is not null;
+
+    /// <summary>True when winner(s) have been recorded for this tournament.</summary>
+    public bool HasWinners => Winners.Count > 0;
 
     /// <summary>True when a registration URL is available.</summary>
     public bool CanRegister => RegistrationUrl is not null;
@@ -147,5 +150,18 @@ public sealed record TournamentSummaryViewModel
         }
 
         return $"{StartDate.ToString("MMM d", System.Globalization.CultureInfo.CurrentCulture)} – {EndDate.ToString("MMM d, yyyy", System.Globalization.CultureInfo.CurrentCulture)}";
+    }
+
+    /// <summary>
+    /// Pattern descriptor for UI chips, preferring name + length and falling back to length category.
+    /// </summary>
+    public string? PatternDisplay
+    {
+        get
+        {
+            return PatternName is not null && PatternLength.HasValue
+                ? PatternName + " · " + PatternLength.Value.ToString(System.Globalization.CultureInfo.CurrentCulture) + " ft"
+                : PatternLengthCategory;
+        }
     }
 }

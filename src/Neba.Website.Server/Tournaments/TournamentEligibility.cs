@@ -14,4 +14,7 @@ public enum TournamentEligibility
 
     /// <summary>Restricted to bowlers who have not previously won a NEBA title.</summary>
     NonChampions,
+
+    /// <summary>Restricted to bowlers who have previously won a NEBA title.</summary>
+    Champions
 }

@@ -8,7 +8,6 @@
     "tournamentType": "SpecialEvent",
     "eligibility": "Open",
     "entryFee": 120,
-    "tentative": false,
     "registrationStatus": "Completed",
     "registrationUrl": null,
     "bowlingCenterName": "Sparetime Recreation",
@@ -19,8 +18,10 @@
     "maxEntries": null,
     "patternName": "PBA Viper",
     "patternLength": 37,
-    "winner": "Johnson",
-    "winnerScore": 1304
+    "winners": [
+      "Johnson"
+    ],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKB00000000000000000002",
@@ -31,7 +32,6 @@
     "tournamentType": "Women",
     "eligibility": "Women",
     "entryFee": 75,
-    "tentative": false,
     "registrationStatus": "Completed",
     "registrationUrl": null,
     "bowlingCenterName": "Ryan Family Amusements",
@@ -42,8 +42,10 @@
     "maxEntries": null,
     "patternName": "PBA Chameleon",
     "patternLength": 39,
-    "winner": "Brown",
-    "winnerScore": 1198
+    "winners": [
+      "Brown"
+    ],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKB00000000000000000003",
@@ -54,7 +56,6 @@
     "tournamentType": "Singles",
     "eligibility": "Open",
     "entryFee": 75,
-    "tentative": false,
     "registrationStatus": "Completed",
     "registrationUrl": null,
     "bowlingCenterName": "Sparetime Recreation",
@@ -65,8 +66,10 @@
     "maxEntries": 80,
     "patternName": "PBA Scorpion",
     "patternLength": 42,
-    "winner": "Davis",
-    "winnerScore": 1356
+    "winners": [
+      "Davis"
+    ],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKB00000000000000000004",
@@ -77,7 +80,6 @@
     "tournamentType": "Doubles",
     "eligibility": "Open",
     "entryFee": 85,
-    "tentative": false,
     "registrationStatus": "Completed",
     "registrationUrl": null,
     "bowlingCenterName": "Sammy White's Brighton Bowl",
@@ -88,8 +90,11 @@
     "maxEntries": null,
     "patternName": "PBA Shark",
     "patternLength": 44,
-    "winner": "Wilson / Garcia",
-    "winnerScore": 2186
+    "winners": [
+      "Wilson",
+      "Garcia"
+    ],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKB00000000000000000005",
@@ -100,7 +105,6 @@
     "tournamentType": "Singles",
     "eligibility": "NonChampions",
     "entryFee": 65,
-    "tentative": false,
     "registrationStatus": "Completed",
     "registrationUrl": null,
     "bowlingCenterName": "Bowlmor Lanes",
@@ -111,8 +115,10 @@
     "maxEntries": null,
     "patternName": "PBA Wolf",
     "patternLength": 33,
-    "winner": "Lopez",
-    "winnerScore": 1278
+    "winners": [
+      "Lopez"
+    ],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKB00000000000000000006",
@@ -123,7 +129,6 @@
     "tournamentType": "Senior",
     "eligibility": "Senior50Plus",
     "entryFee": 65,
-    "tentative": false,
     "registrationStatus": "Completed",
     "registrationUrl": null,
     "bowlingCenterName": "Ryan Family Amusements",
@@ -134,8 +139,10 @@
     "maxEntries": null,
     "patternName": "PBA Cheetah",
     "patternLength": 35,
-    "winner": "Clark",
-    "winnerScore": 1242
+    "winners": [
+      "Clark"
+    ],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKB00000000000000000007",
@@ -146,7 +153,6 @@
     "tournamentType": "SpecialEvent",
     "eligibility": "Open",
     "entryFee": 100,
-    "tentative": false,
     "registrationStatus": "Completed",
     "registrationUrl": null,
     "bowlingCenterName": "Sparetime Recreation",
@@ -157,8 +163,10 @@
     "maxEntries": 32,
     "patternName": "PBA Shark",
     "patternLength": 44,
-    "winner": "Williams",
-    "winnerScore": 1389
+    "winners": [
+      "Williams"
+    ],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKB00000000000000000008",
@@ -169,7 +177,6 @@
     "tournamentType": "Team",
     "eligibility": "Open",
     "entryFee": 60,
-    "tentative": false,
     "registrationStatus": "Completed",
     "registrationUrl": null,
     "bowlingCenterName": "Jillian's",
@@ -180,8 +187,14 @@
     "maxEntries": 24,
     "patternName": "PBA Scorpion",
     "patternLength": 42,
-    "winner": "Smith / Jones / Brown / Davis / Wilson",
-    "winnerScore": 892
+    "winners": [
+      "Smith",
+      "Jones",
+      "Brown",
+      "Davis",
+      "Wilson"
+    ],
+    "tournamentLogoUrl": null
   },
   {
     "id": "01JQKB00000000000000000009",
@@ -192,7 +205,6 @@
     "tournamentType": "SpecialEvent",
     "eligibility": "Open",
     "entryFee": 90,
-    "tentative": false,
     "registrationStatus": "Completed",
     "registrationUrl": null,
     "bowlingCenterName": "Sparetime Recreation",
@@ -203,7 +215,9 @@
     "maxEntries": null,
     "patternName": "PBA Scorpion",
     "patternLength": 42,
-    "winner": "Thomas",
-    "winnerScore": 1341
+    "winners": [
+      "Thomas"
+    ],
+    "tournamentLogoUrl": null
   }
 ]

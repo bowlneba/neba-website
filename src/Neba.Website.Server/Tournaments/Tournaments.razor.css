@@ -1,13 +1,3 @@
-/* ── Page-scoped tokens ── */
-:root {
-    --tournaments-max-width: 1240px;
-    --tournaments-gold: #B8860B;
-    --tournaments-gold-light: #FFD580;
-    --tournaments-hero-gradient: linear-gradient(135deg, #052767 0%, #2A3AA0 60%, #3E4FD9 100%);
-    --tournaments-champion-gradient: linear-gradient(135deg, #92400e, #d97706);
-    --tournaments-logo-muted-gradient: linear-gradient(135deg, #1a1a2e, #374151);
-}
-
 /* ── Layout ── */
 .tournaments-page {
     width: 100%;

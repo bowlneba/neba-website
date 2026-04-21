@@ -7,7 +7,6 @@
     <div class="season-timeline__header">
         <div class="season-timeline__legend" aria-hidden="true">
             <span class="season-timeline__legend-item season-timeline__legend-item--upcoming">● Upcoming</span>
-            <span class="season-timeline__legend-item season-timeline__legend-item--tentative">◌ Tentative</span>
             <span class="season-timeline__legend-item season-timeline__legend-item--completed">● Completed</span>
         </div>
     </div>
@@ -75,35 +74,13 @@
     private string GetDotStyle(TournamentSummaryViewModel t) =>
         "left:" + GetXPercent(t.StartDate, _startYear, _isMergedSeason).ToString("F2", System.Globalization.CultureInfo.CurrentCulture) + "%";
 
-    private static string GetDotClass(TournamentSummaryViewModel t)
-    {
-        if (t.Tentative)
-        {
-            return "season-timeline__dot season-timeline__dot--tentative";
-        }
+    private static string GetDotClass(TournamentSummaryViewModel t) =>
+        t.IsPast
+            ? "season-timeline__dot season-timeline__dot--completed"
+            : "season-timeline__dot season-timeline__dot--upcoming";
 
-        if (t.IsPast)
-        {
-            return "season-timeline__dot season-timeline__dot--completed";
-        }
-
-        return "season-timeline__dot season-timeline__dot--upcoming";
-    }
-
-    private static string GetStatusLabel(TournamentSummaryViewModel t)
-    {
-        if (t.Tentative)
-        {
-            return "tentative";
-        }
-
-        if (t.IsPast)
-        {
-            return "completed";
-        }
-
-        return "upcoming";
-    }
+    private static string GetStatusLabel(TournamentSummaryViewModel t) =>
+        t.IsPast ? "completed" : "upcoming";
 
     private static double GetXPercent(DateOnly date, int startYear, bool isMerged)
     {

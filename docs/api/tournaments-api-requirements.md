@@ -44,7 +44,6 @@ All fields that the website reads, mapped to `TournamentSummaryViewModel`:
 | `tournamentType`      | string (enum)   | No       | One of: `Singles`, `Doubles`, `Trios`, `Team`, `Senior`, `Women`, `SpecialEvent` |
 | `eligibility`         | string (enum)   | No       | One of: `Open`, `Senior50Plus`, `Women`, `NonChampions`              |
 | `entryFee`            | decimal         | Yes      | Per-bowler entry fee in USD; null if not set                          |
-| `tentative`           | boolean         | No       | True when date or venue is unconfirmed                                |
 | `registrationStatus`  | string (enum)   | Yes      | One of: `Open`, `ClosingSoon`, `Closed`, `Full`, `Completed`; null when registration hasn't opened |
 | `registrationUrl`     | string (uri)    | Yes      | Full URL for the external registration form; null if not available    |
 | `bowlingCenterName`   | string          | Yes      | Host center name; null until confirmed                                |
@@ -55,8 +54,8 @@ All fields that the website reads, mapped to `TournamentSummaryViewModel`:
 | `maxEntries`          | integer         | Yes      | Entry cap; null if uncapped                                           |
 | `patternName`         | string          | Yes      | Oil pattern name (public portion only); null until set                |
 | `patternLength`       | integer         | Yes      | Pattern length in feet; null until set                                |
-| `winner`              | string          | Yes      | Winner display name (past events only); null for pending/upcoming     |
-| `winnerScore`         | integer         | Yes      | Winner's combined qualifying + finals total; null if not recorded     |
+| `tournamentLogoUrl`   | string (uri)    | Yes      | URL to the tournament logo image; null when unavailable               |
+| `winners`             | string[]        | No       | Names of the winning bowler(s); empty array for pending/upcoming events. Single-winner events have one element; doubles/trios/team events have multiple. |
 
 **Enum serialization**: all enum fields are serialized as their string name (e.g., `"Singles"`, not `0`). The website uses `JsonStringEnumConverter`.
 
@@ -83,6 +82,7 @@ These are **not** returned by the API — the website computes them from the fie
 | `DisplayLocation`     | `"{BowlingCenterName} · {BowlingCenterCity}"` or just the name       |
 | `DisplayPriceLabel`   | `"Added money"` if `HasAddedMoney`, else `"Entry fee"`                |
 | `DisplayPrice`        | `AddedMoney` if set, else `EntryFee`                                  |
+| `HasWinners`          | `Winners.Count > 0`                                                   |
 
 ---
 
@@ -94,7 +94,8 @@ The API layer maps from the `Tournament` aggregate. Notable mappings:
 - **`season`** → Derived from the tournament's season relationship or a `Season` value object
 - **`tournamentType`** / **`eligibility`** → Value objects or enums on the `Tournament` aggregate
 - **`registrationStatus`** → Computed from registration state (open date, close date, entry count vs. cap)
-- **`winner`** / **`winnerScore`** → From a `TournamentResult` or equivalent child entity; populated after the event concludes
+- **`winners`** → From a `TournamentResult` or equivalent child entity; populated after the event concludes. Empty array until results are recorded.
+- **`tournamentLogoUrl`** → Stored on the `Tournament` aggregate; the URL points to an externally hosted or CDN-served image.
 - **`entries`** / **`maxEntries`** → From the `TournamentSponsors` table (see migration `20260421202302_TournamentSponsors_Init`): `maxEntries` maps to the cap on entries; `entries` is a live count from the entries table
 
 ---
