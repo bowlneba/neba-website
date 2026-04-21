@@ -1,4 +1,5 @@
 using Neba.Domain.BowlingCenters;
+using Neba.Domain.Seasons;
 
 namespace Neba.Domain.Tournaments;
 
@@ -66,4 +67,11 @@ public sealed class Tournament
     /// system. <see langword="null"/> for tournaments created after the system migration.
     /// </summary>
     public int? LegacyId { get; init; }
+
+    /// <summary>
+    /// Gets the unique identifier of the season in which this tournament takes place.
+    /// </summary>
+    public required SeasonId SeasonId { get; init; }
+
+    internal Season Season { get; init; } = null!;
 }

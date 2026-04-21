@@ -2,6 +2,7 @@ using ErrorOr;
 
 using Neba.Domain.Bowlers;
 using Neba.Domain.Stats;
+using Neba.Domain.Tournaments;
 
 namespace Neba.Domain.Seasons;
 
@@ -42,6 +43,8 @@ public sealed class Season
     /// Once <see langword="true"/>, a season may not be reopened.
     /// </summary>
     public bool Complete { get; init; }
+
+    internal IReadOnlyCollection<Tournament> Tournaments { get; init; } = [];
 
     private readonly List<BowlerOfTheYearAward> _bowlerOfTheYearAwards = [];
 

@@ -3,8 +3,10 @@ using System.Globalization;
 using Bogus;
 
 using Neba.Domain.BowlingCenters;
+using Neba.Domain.Seasons;
 using Neba.Domain.Tournaments;
 using Neba.TestFactory.BowlingCenters;
+using Neba.TestFactory.Seasons;
 
 namespace Neba.TestFactory.Tournaments;
 
@@ -24,7 +26,8 @@ public static class TournamentFactory
         CertificationNumber? bowlingCenterId = null,
         PatternRatioCategory? patternRatioCategory = null,
         PatternLengthCategory? patternLengthCategory = null,
-        int? legacyId = null)
+        int? legacyId = null,
+        SeasonId? seasonId = null)
         => new()
         {
             Id = id ?? TournamentId.New(),
@@ -35,12 +38,14 @@ public static class TournamentFactory
             BowlingCenterId = bowlingCenterId,
             PatternRatioCategory = patternRatioCategory,
             PatternLengthCategory = patternLengthCategory,
-            LegacyId = legacyId
+            LegacyId = legacyId,
+            SeasonId = seasonId ?? SeasonId.New()
         };
 
     public static IReadOnlyCollection<Tournament> Bogus(int count, int? seed = null)
     {
         var certificationNumberPool = UniquePool.CreateNullable(CertificationNumberFactory.Bogus(count, seed), seed);
+        var seasons = UniquePool.Create(SeasonFactory.Bogus(count, seed: seed), seed);
         var faker = new Faker<Tournament>()
             .CustomInstantiator(f =>
             {
@@ -57,7 +62,8 @@ public static class TournamentFactory
                     BowlingCenterId = certificationNumberPool.GetNextNullable(),
                     PatternRatioCategory = f.Random.Bool() ? f.PickRandom(PatternRatioCategory.List.ToArray()) : null,
                     PatternLengthCategory = f.Random.Bool() ? f.PickRandom(PatternLengthCategory.List.ToArray()) : null,
-                    LegacyId = f.Random.Bool() ? f.Random.Int(1, 9999) : null
+                    LegacyId = f.Random.Bool() ? f.Random.Int(1, 9999) : null,
+                    SeasonId = seasons.GetNext().Id
                 };
             });
 

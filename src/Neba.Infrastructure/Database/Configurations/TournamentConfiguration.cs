@@ -55,5 +55,14 @@ internal sealed class TournamentConfiguration
         builder.HasIndex(tournament => tournament.LegacyId)
             .IsUnique()
             .AreNullsDistinct();
+
+        builder.Property(tournament => tournament.SeasonId)
+            .IsUlid(SeasonConfiguration.ForeignKeyName);
+
+        builder.HasOne(tournament => tournament.Season)
+            .WithMany(season => season.Tournaments)
+            .HasForeignKey(tournament => tournament.SeasonId)
+            .HasPrincipalKey(season => season.Id)
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }
