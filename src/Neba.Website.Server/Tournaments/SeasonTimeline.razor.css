@@ -4,7 +4,6 @@
     border-radius: var(--neba-radius-lg);
     padding: 1rem 1.25rem;
     margin-bottom: 1.25rem;
-    overflow: hidden;
 }
 
 .season-timeline__header {
@@ -26,6 +25,25 @@
 
 .season-timeline__legend-item--completed {
     color: var(--neba-gray-400);
+}
+
+/* Tooltip */
+.season-timeline__body {
+    position: relative;
+}
+
+.season-timeline__tooltip {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    transform: translateX(-50%);
+    background: var(--neba-gray-800);
+    color: white;
+    padding: 0.375rem 0.625rem;
+    border-radius: var(--neba-radius);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 10;
 }
 
 .season-timeline__track-wrapper {
@@ -88,24 +106,6 @@
 
 .season-timeline__dot--completed {
     background: var(--neba-gray-400);
-}
-
-/* Tooltip */
-.season-timeline__dot:hover::after,
-.season-timeline__dot:focus-visible::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--neba-gray-800);
-    color: white;
-    padding: 0.375rem 0.625rem;
-    border-radius: var(--neba-radius);
-    font-size: 0.75rem;
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 10;
 }
 
 /* Today marker */

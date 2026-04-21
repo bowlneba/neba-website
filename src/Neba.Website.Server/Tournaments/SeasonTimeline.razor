@@ -1,7 +1,6 @@
 @namespace Neba.Website.Server.Tournaments
 
-<div class="season-timeline"
-     role="img"
+<div class="season-timeline" role="img"
      aria-label="Season timeline for @Season season. @Tournaments.Count tournaments.">
 
     <div class="season-timeline__header">
@@ -11,33 +10,44 @@
         </div>
     </div>
 
-    <div class="season-timeline__track-wrapper">
-        <div class="season-timeline__months">
-            @foreach (var m in _months)
-            {
-                <span class="season-timeline__month-label">@m</span>
-            }
-        </div>
+    <div class="season-timeline__body">
+        @if (_activeTooltip is not null)
+        {
+            <div class="season-timeline__tooltip"
+                 style="@("left:" + _tooltipLeft.ToString("F2", System.Globalization.CultureInfo.CurrentCulture) + "%")"
+                 role="tooltip" aria-hidden="true">
+                @(_activeTooltip.Name + " · " + _activeTooltip.FormatDateRange())
+            </div>
+        }
 
-        <div class="season-timeline__track" style="position:relative; height:32px;">
-            <div class="season-timeline__baseline"></div>
+        <div class="season-timeline__track-wrapper">
+            <div class="season-timeline__months">
+                @foreach (var m in _months)
+                {
+                    <span class="season-timeline__month-label">@m</span>
+                }
+            </div>
 
-            @foreach (var t in Tournaments)
-            {
-                <div class="@GetDotClass(t)"
-                     style="@GetDotStyle(t)"
-                     tabindex="0"
-                     aria-label="@t.Name, @t.FormatDateRange(), @GetStatusLabel(t)"
-                     data-tooltip="@t.Name · @t.FormatDateRange()">
-                </div>
-            }
+            <div class="season-timeline__track" style="position:relative; height:32px;">
+                <div class="season-timeline__baseline"></div>
 
-            @if (_showToday)
-            {
-                <div class="season-timeline__today-marker" style="@_todayStyle">
-                    <span class="season-timeline__today-label">Today</span>
-                </div>
-            }
+                @foreach (var t in Tournaments)
+                {
+                    var tournament = t;
+                    <div class="@GetDotClass(t)" style="@GetDotStyle(t)" tabindex="0"
+                         aria-label="@t.Name, @t.FormatDateRange(), @GetStatusLabel(t)"
+                         @onmouseover="@(() => ShowTooltip(tournament))" @onmouseout="@HideTooltip"
+                         @onfocus="@(() => ShowTooltip(tournament))" @onblur="@HideTooltip">
+                    </div>
+                }
+
+                @if (_showToday)
+                {
+                    <div class="season-timeline__today-marker" style="@_todayStyle">
+                        <span class="season-timeline__today-label">Today</span>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 </div>
@@ -55,6 +65,9 @@
     private string _todayStyle = string.Empty;
     private List<string> _months = [];
 
+    private TournamentSummaryViewModel? _activeTooltip;
+    private double _tooltipLeft;
+
     protected override void OnParametersSet()
     {
         _isMergedSeason = Season == "2020-21";
@@ -67,12 +80,14 @@
 
         _showToday = today >= seasonStart && today <= seasonEnd;
         _todayStyle = _showToday
-            ? "left:" + GetXPercent(today, _startYear, _isMergedSeason).ToString("F2", System.Globalization.CultureInfo.CurrentCulture) + "%"
+            ? "left:" + GetXPercent(today, _startYear, _isMergedSeason).ToString("F2",
+System.Globalization.CultureInfo.CurrentCulture) + "%"
             : string.Empty;
     }
 
     private string GetDotStyle(TournamentSummaryViewModel t) =>
-        "left:" + GetXPercent(t.StartDate, _startYear, _isMergedSeason).ToString("F2", System.Globalization.CultureInfo.CurrentCulture) + "%";
+        "left:" + GetXPercent(t.StartDate, _startYear, _isMergedSeason).ToString("F2",
+System.Globalization.CultureInfo.CurrentCulture) + "%";
 
     private static string GetDotClass(TournamentSummaryViewModel t) =>
         t.IsPast
@@ -92,7 +107,18 @@
         int totalDays = (yearEnd.DayNumber - yearStart.DayNumber) + 1;
         int elapsed = date.DayNumber - yearStart.DayNumber;
 
-        return Math.Clamp((double)elapsed / totalDays * 100, 0, 100);
+        return Math.Clamp((double)elapsed / totalDays * 100, 1, 99);
+    }
+
+    private void ShowTooltip(TournamentSummaryViewModel tournament)
+    {
+        _activeTooltip = tournament;
+        _tooltipLeft = GetXPercent(tournament.StartDate, _startYear, _isMergedSeason);
+    }
+
+    private void HideTooltip()
+    {
+        _activeTooltip = null;
     }
 
     private static int GetStartYear(string season)
