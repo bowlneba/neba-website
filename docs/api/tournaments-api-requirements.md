@@ -42,7 +42,7 @@ All fields that the website reads, mapped to `TournamentSummaryViewModel`:
 | `startDate`           | string (date)   | No       | ISO 8601 date-only: `"2026-05-03"`                                   |
 | `endDate`             | string (date)   | No       | Same format; equals `startDate` for single-day events                 |
 | `tournamentType`      | string (enum)   | No       | One of: `Singles`, `Doubles`, `Trios`, `Team`, `Senior`, `Women`, `SpecialEvent` |
-| `eligibility`         | string (enum)   | No       | One of: `Open`, `Senior50Plus`, `Women`, `NonChampions`              |
+| `eligibility`         | string (enum)   | No       | One of: `Open`, `Senior50Plus`, `Women`, `NonChampions`, `Champions` |
 | `entryFee`            | decimal         | Yes      | Per-bowler entry fee in USD; null if not set                          |
 | `registrationStatus`  | string (enum)   | Yes      | One of: `Open`, `ClosingSoon`, `Closed`, `Full`, `Completed`; null when registration hasn't opened |
 | `registrationUrl`     | string (uri)    | Yes      | Full URL for the external registration form; null if not available    |
@@ -54,6 +54,7 @@ All fields that the website reads, mapped to `TournamentSummaryViewModel`:
 | `maxEntries`          | integer         | Yes      | Entry cap; null if uncapped                                           |
 | `patternName`         | string          | Yes      | Oil pattern name (public portion only); null until set                |
 | `patternLength`       | integer         | Yes      | Pattern length in feet; null until set                                |
+| `patternLengthCategory` | string        | Yes      | Pattern difficulty/length bucket label used when exact pattern details are not published |
 | `tournamentLogoUrl`   | string (uri)    | Yes      | URL to the tournament logo image; null when unavailable               |
 | `winners`             | string[]        | No       | Names of the winning bowler(s); empty array for pending/upcoming events. Single-winner events have one element; doubles/trios/team events have multiple. |
 
@@ -82,6 +83,7 @@ These are **not** returned by the API — the website computes them from the fie
 | `DisplayLocation`     | `"{BowlingCenterName} · {BowlingCenterCity}"` or just the name       |
 | `DisplayPriceLabel`   | `"Added money"` if `HasAddedMoney`, else `"Entry fee"`                |
 | `DisplayPrice`        | `AddedMoney` if set, else `EntryFee`                                  |
+| `PatternDisplay`      | `"{PatternName} · {PatternLength} ft"` when both exist, else `PatternLengthCategory` |
 | `HasWinners`          | `Winners.Count > 0`                                                   |
 
 ---
@@ -114,6 +116,8 @@ The API layer maps from the `Tournament` aggregate. Notable mappings:
 When the API is ready, replace `TournamentDataService` (currently reads from `wwwroot/data/tournaments/*.json`) with an `HttpClient`-backed implementation of `ITournamentDataService`:
 
 ```csharp
+using Neba.Website.Server.Tournaments.Schedule;
+
 internal interface ITournamentDataService
 {
     Task<List<TournamentSummaryViewModel>> GetTournamentsForSeasonAsync(string season, CancellationToken ct = default);
@@ -121,4 +125,4 @@ internal interface ITournamentDataService
 }
 ```
 
-The `Singleton` registration in `Program.cs` remains; the JSON reader just swaps for an HTTP reader. `TournamentSummaryViewModel` is the website's own type — the API client maps `TournamentSummaryDto` → `TournamentSummaryViewModel` in the service layer (or the DTO can be identical if field names match).
+The `Singleton` registration in `Program.cs` remains; the JSON reader just swaps for an HTTP reader. `TournamentSummaryViewModel` now lives under `Neba.Website.Server.Tournaments.Schedule`, so the service keeps the interface in `Neba.Website.Server.Tournaments` and imports the schedule namespace for model mapping.
