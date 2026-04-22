@@ -10,6 +10,7 @@ using Neba.Application.Awards;
 using Neba.Application.Bowlers;
 using Neba.Application.BowlingCenters;
 using Neba.Application.HallOfFame;
+using Neba.Application.Seasons;
 using Neba.Application.Sponsors;
 using Neba.Application.Stats;
 using Neba.Domain.Seasons;
@@ -142,6 +143,7 @@ internal static class DatabaseConfiguration
             services.AddScoped<IAwardQueries, AwardQueries>();
             services.AddScoped<ISponsorQueries, SponsorQueries>();
             services.AddScoped<IStatsQueries, StatsQueries>();
+            services.AddScoped<ISeasonQueries, SeasonQueries>();
         }
 
         public void AddRepositories()
