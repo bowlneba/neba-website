@@ -76,7 +76,7 @@ public static class TournamentSummaryDtoFactory
                 EntryFee = f.Random.Decimal(50, 200),
                 RegistrationUrl = new Uri(f.Internet.Url()),
                 BowlingCenter = f.PickRandom(bowlingCenters),
-                Sponsors = [.. f.PickRandom(sponsors, f.Random.Int(0,2))],
+                Sponsors = [.. f.PickRandom(sponsors, f.Random.Int(0, 2))],
                 AddedMoney = f.Random.Decimal(0, 5000),
                 Reservations = f.Random.Int(0, 100),
                 PatternLengthCategory = f.PickRandom(PatternLengthCategory.List.ToArray())?.Name,
@@ -85,7 +85,7 @@ public static class TournamentSummaryDtoFactory
                 LogoUrl = f.Random.Bool() ? new Uri(f.Internet.Url()) : null,
                 LogoContainer = f.Random.Bool() ? f.System.FilePath() : null,
                 LogoPath = f.Random.Bool() ? f.System.FilePath() : null,
-                Winners = [.. f.PickRandom(winners, f.Random.Int(0,3))]
+                Winners = [.. f.PickRandom(winners, f.Random.Int(0, 3))]
             });
 
         if (seed.HasValue)
