@@ -1,7 +1,5 @@
 using System.Globalization;
 
-using Bogus;
-
 using Neba.Api.Contracts.Contact;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Domain.Contact;

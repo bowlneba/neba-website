@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Application.Stats.GetSeasonStats;
 using Neba.Domain.Bowlers;
 using Neba.TestFactory.Bowlers;

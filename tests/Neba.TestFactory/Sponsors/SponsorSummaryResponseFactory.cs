@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Api.Contracts.Sponsors;
 using Neba.Domain.Sponsors;
 

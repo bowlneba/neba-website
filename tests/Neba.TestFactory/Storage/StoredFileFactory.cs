@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Domain.Storage;
 
 namespace Neba.TestFactory.Storage;

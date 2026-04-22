@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Application.HallOfFame.ListHallOfFameInductions;
 using Neba.Domain.Bowlers;
 using Neba.Domain.HallOfFame;

@@ -22,4 +22,8 @@
       <InternalsVisibleTo Include="Neba.Infrastructure.Tests" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Using Include="Bogus" />
+    </ItemGroup>
+
 </Project>

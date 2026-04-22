@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Api.Contracts.Awards;
 
 namespace Neba.TestFactory.Awards;

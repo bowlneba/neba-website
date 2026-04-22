@@ -1,7 +1,5 @@
 using System.Globalization;
 
-using Bogus;
-
 namespace Neba.TestFactory;
 
 internal static class UlidFakerExtensions

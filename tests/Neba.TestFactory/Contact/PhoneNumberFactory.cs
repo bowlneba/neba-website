@@ -1,7 +1,5 @@
 using System.Globalization;
 
-using Bogus;
-
 using Neba.Domain.Contact;
 
 namespace Neba.TestFactory.Contact;

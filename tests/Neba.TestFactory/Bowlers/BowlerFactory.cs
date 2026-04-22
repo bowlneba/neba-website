@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Domain.Bowlers;
 
 namespace Neba.TestFactory.Bowlers;

@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Domain.Sponsors;
 using Neba.Domain.Tournaments;
 using Neba.TestFactory.Sponsors;

@@ -1,7 +1,3 @@
-using System.Globalization;
-
-using Bogus;
-
 using Neba.Domain.BowlingCenters;
 using Neba.Domain.Seasons;
 using Neba.Domain.Tournaments;

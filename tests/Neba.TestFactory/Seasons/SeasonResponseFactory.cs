@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Api.Contracts.Seasons.ListSeasons;
 using Neba.Domain.Seasons;
 

@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Website.Server.Tournaments.Schedule;
 
 namespace Neba.TestFactory.Tournaments;

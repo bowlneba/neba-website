@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Domain.HallOfFame;
 using Neba.Website.Server.HallOfFame;
 
