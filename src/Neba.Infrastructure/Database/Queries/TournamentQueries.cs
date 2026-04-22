@@ -92,16 +92,20 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
         // We will need to do a separate query to get the champions from tournaments that we have full stats (2026+)
         var dbIds = tournaments.ConvertAll(t => t.DbId);
 
-        var winners = await _historicalTournamentChampions
+        var historicalWinners = await _historicalTournamentChampions
             .Where(tc => dbIds.Contains(tc.TournamentId))
             .Select(tc => new { tc.TournamentId, tc.Bowler.Name })
             .ToListAsync(cancellationToken);
 
-        Dictionary<int, IReadOnlyCollection<Name>> winnersByTournamentDbId = winners
-            .GroupBy(w => w.TournamentId)
-            .ToDictionary(g => g.Key, g => (IReadOnlyCollection<Name>)[.. g.Select(w => w.Name)]);
+        Dictionary<int, IReadOnlyCollection<Name>> historicalWinnersByTournamentDbId = 
+            historicalWinners
+                .GroupBy(w => w.TournamentId)
+                .ToDictionary(g => g.Key, g => (IReadOnlyCollection<Name>)[.. g.Select(w => w.Name)]);
 
         return tournaments
-            .ConvertAll(t => t.Dto with { Winners = winnersByTournamentDbId.GetValueOrDefault(t.DbId, []) });
+            .ConvertAll(t => t.Dto with
+            { 
+                Winners = historicalWinnersByTournamentDbId.GetValueOrDefault(t.DbId, [])
+            });
     }
 }
