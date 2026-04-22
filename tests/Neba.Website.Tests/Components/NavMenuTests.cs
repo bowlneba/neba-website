@@ -230,14 +230,15 @@ public sealed class NavMenuTests : IDisposable
         menu.ShouldNotBeNull();
     }
 
-    [Fact(DisplayName = "Should render Future Tournaments link")]
-    public void Render_ShouldContainFutureTournamentsLink_WhenRendered()
+    [Fact(DisplayName = "Should render Tournament Schedule link")]
+    public void Render_ShouldContainTournamentScheduleLink_WhenRendered()
     {
         // Arrange & Act
         var cut = _ctx.Render<NavMenu>();
 
         // Assert
-        cut.Markup.ShouldContain("Future Tournaments");
+        var scheduleLink = cut.Find("a[href='tournaments']");
+        scheduleLink.TextContent.ShouldContain("Schedule");
     }
 
     [Fact(DisplayName = "Should render Tournament Rules link")]
@@ -335,15 +336,15 @@ public sealed class NavMenuTests : IDisposable
         dropdowns.Count.ShouldBeGreaterThan(0);
     }
 
-    [Fact(DisplayName = "Should display Past Tournaments link with current year")]
-    public void Render_ShouldContainPastTournamentsLink_WithCurrentYear()
+    [Fact(DisplayName = "Should navigate Tournament Schedule link to tournaments route")]
+    public void Render_ShouldNavigateTournamentScheduleLink_ToTournamentsRoute()
     {
         // Arrange & Act
         var cut = _ctx.Render<NavMenu>();
-        var currentYear = DateTime.Now.Year;
 
         // Assert
-        cut.Markup.ShouldContain($"tournaments?year={currentYear}");
+        var scheduleLink = cut.Find("a[href='tournaments']");
+        scheduleLink.GetAttribute("href").ShouldBe("tournaments");
     }
 
     [Fact(DisplayName = "Should render navbar with correct CSS class")]
