@@ -3,16 +3,16 @@ using Neba.Domain.Contact;
 using Neba.Domain.Geography;
 using Neba.Domain.Tournaments;
 using Neba.Infrastructure.Database;
+using Neba.Infrastructure.Database.Configurations;
 using Neba.Infrastructure.Database.Queries;
 using Neba.TestFactory.Attributes;
-using Neba.TestFactory.BowlingCenters;
 using Neba.TestFactory.Bowlers;
+using Neba.TestFactory.BowlingCenters;
 using Neba.TestFactory.Contact;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Sponsors;
 using Neba.TestFactory.Tournaments;
-using Neba.Infrastructure.Database.Configurations;
 
 namespace Neba.Infrastructure.Tests.Database.Queries;
 

@@ -97,14 +97,14 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
             .Select(tc => new { tc.TournamentId, tc.Bowler.Name })
             .ToListAsync(cancellationToken);
 
-        Dictionary<int, IReadOnlyCollection<Name>> historicalWinnersByTournamentDbId = 
+        Dictionary<int, IReadOnlyCollection<Name>> historicalWinnersByTournamentDbId =
             historicalWinners
                 .GroupBy(w => w.TournamentId)
                 .ToDictionary(g => g.Key, g => (IReadOnlyCollection<Name>)[.. g.Select(w => w.Name)]);
 
         return tournaments
             .ConvertAll(t => t.Dto with
-            { 
+            {
                 Winners = historicalWinnersByTournamentDbId.GetValueOrDefault(t.DbId, [])
             });
     }
