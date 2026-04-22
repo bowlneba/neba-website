@@ -39,7 +39,7 @@ public sealed record TournamentSummaryDto
     /// <summary>
     /// Format category of the tournament.
     /// </summary>
-    public required TournamentType TournamentType { get; init; }
+    public required string TournamentType { get; init; }
 
     /// <summary>
     /// Per-bowler entry fee in USD; null if not set.
@@ -49,7 +49,7 @@ public sealed record TournamentSummaryDto
     /// <summary>
     /// External URL for online registration.
     /// </summary>
-    public required Uri RegistrationUrl { get; init; }
+    public required Uri? RegistrationUrl { get; init; }
 
     /// <summary>
     /// Host bowling center; null until confirmed.
@@ -74,12 +74,12 @@ public sealed record TournamentSummaryDto
     /// <summary>
     /// Pattern length bucket label; null until set.
     /// </summary>
-    public PatternLengthCategory? PatternLengthCategory { get; init; }
+    public string? PatternLengthCategory { get; init; }
 
     /// <summary>
     /// Pattern ratio category; null until set.
     /// </summary>
-    public PatternRatioCategory? PatternRatioCategory { get; init; }
+    public string? PatternRatioCategory { get; init; }
 
     /// <summary>
     /// Oil pattern details; null until published.

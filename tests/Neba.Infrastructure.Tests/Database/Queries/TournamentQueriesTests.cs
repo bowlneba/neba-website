@@ -1,8 +1,14 @@
+using Neba.Domain.BowlingCenters;
+using Neba.Domain.Contact;
+using Neba.Domain.Tournaments;
 using Neba.Infrastructure.Database;
 using Neba.Infrastructure.Database.Queries;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.BowlingCenters;
+using Neba.TestFactory.Contact;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
+using Neba.TestFactory.Sponsors;
 using Neba.TestFactory.Tournaments;
 
 namespace Neba.Infrastructure.Tests.Database.Queries;
@@ -90,5 +96,249 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
 
         // Assert
         result.ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "GetTournamentsInSeasonAsync returns only tournaments for the requested season")]
+    public async Task GetTournamentsInSeasonAsync_ReturnsOnlyTournamentsForRequestedSeason()
+    {
+        // Arrange
+        var requestedSeason = SeasonFactory.Create(description: "Requested Season");
+        var otherSeason = SeasonFactory.Create(description: "Other Season");
+
+        var requestedTournaments = new[]
+        {
+            TournamentFactory.Create(name: "Tournament A", seasonId: requestedSeason.Id),
+            TournamentFactory.Create(name: "Tournament B", seasonId: requestedSeason.Id),
+        };
+        var otherTournament = TournamentFactory.Create(name: "Other Tournament", seasonId: otherSeason.Id);
+
+        await _dbContext.Seasons.AddRangeAsync([requestedSeason, otherSeason], TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddRangeAsync(requestedTournaments, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddAsync(otherTournament, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentsInSeasonAsync(requestedSeason.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Count.ShouldBe(2);
+        result.ShouldAllBe(t => t.Season.Id == requestedSeason.Id);
+        result.ShouldNotContain(t => t.Name == "Other Tournament");
+    }
+
+    [Fact(DisplayName = "GetTournamentsInSeasonAsync returns empty collection when season has no tournaments")]
+    public async Task GetTournamentsInSeasonAsync_ReturnsEmptyCollection_WhenSeasonHasNoTournaments()
+    {
+        // Arrange
+        var requestedSeason = SeasonFactory.Create(description: "Empty Season");
+        var otherSeason = SeasonFactory.Create(description: "Other Season");
+        var otherTournament = TournamentFactory.Create(name: "Other Tournament", seasonId: otherSeason.Id);
+
+        await _dbContext.Seasons.AddRangeAsync([requestedSeason, otherSeason], TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddAsync(otherTournament, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentsInSeasonAsync(requestedSeason.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "GetTournamentsInSeasonAsync maps core tournament and season fields correctly")]
+    public async Task GetTournamentsInSeasonAsync_MapsCoreFields()
+    {
+        // Arrange
+        var season = SeasonFactory.Create(
+            description: "2026 Season",
+            startDate: new DateOnly(2026, 1, 1),
+            endDate: new DateOnly(2026, 12, 31));
+
+        var tournament = TournamentFactory.Create(
+            name: "NEBA Singles",
+            tournamentType: TournamentType.Singles,
+            startDate: new DateOnly(2026, 3, 15),
+            endDate: new DateOnly(2026, 3, 16),
+            seasonId: season.Id);
+
+        await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentsInSeasonAsync(season.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldHaveSingleItem();
+        var dto = result.Single();
+        dto.Id.ShouldBe(tournament.Id);
+        dto.Name.ShouldBe("NEBA Singles");
+        dto.TournamentType.ShouldBe(TournamentType.Singles.Name);
+        dto.StartDate.ShouldBe(new DateOnly(2026, 3, 15));
+        dto.EndDate.ShouldBe(new DateOnly(2026, 3, 16));
+        dto.Season.Id.ShouldBe(season.Id);
+        dto.Season.Description.ShouldBe("2026 Season");
+        dto.Season.StartDate.ShouldBe(new DateOnly(2026, 1, 1));
+        dto.Season.EndDate.ShouldBe(new DateOnly(2026, 12, 31));
+    }
+
+    [Fact(DisplayName = "GetTournamentsInSeasonAsync maps BowlingCenter as null when not assigned")]
+    public async Task GetTournamentsInSeasonAsync_MapsBowlingCenterAsNull_WhenNotAssigned()
+    {
+        // Arrange
+        var season = SeasonFactory.Create();
+        var tournament = TournamentFactory.Create(seasonId: season.Id, bowlingCenterId: null);
+
+        await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentsInSeasonAsync(season.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldHaveSingleItem();
+        result.Single().BowlingCenter.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "GetTournamentsInSeasonAsync maps BowlingCenter fields when assigned")]
+    public async Task GetTournamentsInSeasonAsync_MapsBowlingCenterFields_WhenAssigned()
+    {
+        // Arrange
+        var bowlingCenter = BowlingCenterFactory.Create(
+            certificationNumber: CertificationNumberFactory.Create("12345"),
+            name: "Test Bowl",
+            status: BowlingCenterStatus.Open,
+            address: AddressFactory.CreateUsAddress(
+                street: "100 Strike Way",
+                city: "Hartford",
+                state: UsState.Connecticut,
+                postalCode: "06103"));
+
+        var season = SeasonFactory.Create();
+        var tournament = TournamentFactory.Create(
+            seasonId: season.Id,
+            bowlingCenterId: bowlingCenter.CertificationNumber);
+
+        await _dbContext.BowlingCenters.AddAsync(bowlingCenter, TestContext.Current.CancellationToken);
+        await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentsInSeasonAsync(season.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldHaveSingleItem();
+        var bc = result.Single().BowlingCenter;
+        bc.ShouldNotBeNull();
+        bc.CertificationNumber.ShouldBe("12345");
+        bc.Name.ShouldBe("Test Bowl");
+        bc.Status.ShouldBe(BowlingCenterStatus.Open.Name);
+        bc.Address.Street.ShouldBe("100 Strike Way");
+        bc.Address.City.ShouldBe("Hartford");
+        bc.Address.Region.ShouldBe(UsState.Connecticut.Value);
+        bc.Address.Country.ShouldBe(Country.UnitedStates.Value);
+        bc.Address.PostalCode.ShouldBe("06103");
+        bc.Address.Unit.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "GetTournamentsInSeasonAsync returns empty sponsors when tournament has no sponsors")]
+    public async Task GetTournamentsInSeasonAsync_ReturnsEmptySponsors_WhenNoSponsors()
+    {
+        // Arrange
+        var season = SeasonFactory.Create();
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+
+        await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentsInSeasonAsync(season.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldHaveSingleItem();
+        var dto = result.Single();
+        dto.Sponsors.ShouldBeEmpty();
+        dto.AddedMoney.ShouldBe(0m);
+    }
+
+    [Fact(DisplayName = "GetTournamentsInSeasonAsync maps sponsor names and slugs and sums AddedMoney")]
+    public async Task GetTournamentsInSeasonAsync_MapsSponsorsAndAddedMoney()
+    {
+        // Arrange
+        var season = SeasonFactory.Create();
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        var sponsor1 = SponsorFactory.Create(name: "Acme Corp", slug: "acme-corp");
+        var sponsor2 = SponsorFactory.Create(name: "Bowling Unlimited", slug: "bowling-unlimited");
+
+        await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
+        await _dbContext.Sponsors.AddRangeAsync([sponsor1, sponsor2], TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        _dbContext.Add(TournamentSponsorFactory.Create(tournament: tournament, sponsor: sponsor1, sponsorshipAmount: 1000m));
+        _dbContext.Add(TournamentSponsorFactory.Create(tournament: tournament, sponsor: sponsor2, sponsorshipAmount: 2500m));
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentsInSeasonAsync(season.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldHaveSingleItem();
+        var dto = result.Single();
+        dto.Sponsors.Count.ShouldBe(2);
+        dto.Sponsors.ShouldContain(s => s.Name == "Acme Corp" && s.Slug == "acme-corp");
+        dto.Sponsors.ShouldContain(s => s.Name == "Bowling Unlimited" && s.Slug == "bowling-unlimited");
+        dto.AddedMoney.ShouldBe(3500m);
+    }
+
+    [Fact(DisplayName = "GetTournamentsInSeasonAsync maps pattern categories as null when not set")]
+    public async Task GetTournamentsInSeasonAsync_MapsPatternCategoriesAsNull_WhenNotSet()
+    {
+        // Arrange
+        var season = SeasonFactory.Create();
+        var tournament = TournamentFactory.Create(
+            seasonId: season.Id,
+            patternLengthCategory: null,
+            patternRatioCategory: null);
+
+        await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentsInSeasonAsync(season.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldHaveSingleItem();
+        var dto = result.Single();
+        dto.PatternLengthCategory.ShouldBeNull();
+        dto.PatternRatioCategory.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "GetTournamentsInSeasonAsync maps pattern categories when set")]
+    public async Task GetTournamentsInSeasonAsync_MapsPatternCategories_WhenSet()
+    {
+        // Arrange
+        var season = SeasonFactory.Create();
+        var tournament = TournamentFactory.Create(
+            seasonId: season.Id,
+            patternLengthCategory: PatternLengthCategory.MediumPattern,
+            patternRatioCategory: PatternRatioCategory.Challenge);
+
+        await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentsInSeasonAsync(season.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldHaveSingleItem();
+        var dto = result.Single();
+        dto.PatternLengthCategory.ShouldBe(PatternLengthCategory.MediumPattern.Name);
+        dto.PatternRatioCategory.ShouldBe(PatternRatioCategory.Challenge.Name);
     }
 }

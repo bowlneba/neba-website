@@ -33,22 +33,22 @@ public sealed record SponsorSummaryDto
     /// <summary>
     /// Indicates whether the sponsor is currently active.
     /// </summary>
-    public required bool IsCurrentSponsor { get; init; }
+    public bool IsCurrentSponsor { get; init; }
 
     /// <summary>
     /// Priority of the sponsor.
     /// </summary>
-    public required int Priority { get; init; }
+    public int Priority { get; init; }
 
     /// <summary>
     /// Tier of the sponsor.
     /// </summary>
-    public required string Tier { get; init; }
+    public string Tier { get; init; } = string.Empty;
 
     /// <summary>
     /// Category of the sponsor.
     /// </summary>
-    public required string Category { get; init; }
+    public string Category { get; init; } = string.Empty;
 
     /// <summary>
     /// Tagline or phrase associated with the sponsor.

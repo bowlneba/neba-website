@@ -1,4 +1,3 @@
-using Neba.Domain.Seasons;
 using Neba.Infrastructure.Database;
 using Neba.Infrastructure.Database.Queries;
 using Neba.TestFactory.Attributes;
