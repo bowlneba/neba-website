@@ -3,11 +3,17 @@ using System.Text.Json.Serialization;
 
 using Microsoft.Extensions.FileProviders;
 
+using Neba.Api.Contracts.Seasons;
+using Neba.Api.Contracts.Seasons.ListSeasons;
+using Neba.Website.Server.Services;
 using Neba.Website.Server.Tournaments.Schedule;
 
 namespace Neba.Website.Server.Tournaments;
 
-internal sealed class TournamentDataService(IWebHostEnvironment env) : ITournamentDataService
+internal sealed class TournamentDataService(
+    IWebHostEnvironment env,
+    ApiExecutor executor,
+    ISeasonsApi seasonsApi) : ITournamentDataService
 {
     private static readonly JsonSerializerOptions s_options = new()
     {
@@ -30,24 +36,24 @@ internal sealed class TournamentDataService(IWebHostEnvironment env) : ITourname
 
     public async Task<List<SeasonViewModel>> GetSeasonsAsync(CancellationToken ct = default)
     {
-        var fileInfo = GetFileInfo("data/tournaments/seasons.json");
-        if (!fileInfo.Exists)
-        {
-            return [];
-        }
+        var result = await executor.ExecuteAsync(
+            "SeasonsApi",
+            nameof(GetSeasonsAsync),
+            token => seasonsApi.ListSeasonsAsync(token),
+            ct);
 
-        await using var stream = fileInfo.CreateReadStream();
-        var responses = await JsonSerializer.DeserializeAsync<List<SeasonApiResponse>>(stream, s_options, ct) ?? [];
-        return responses.ConvertAll(r => new SeasonViewModel
-        {
-            Id = r.SeasonId,
-            Description = r.Description,
-            StartDate = r.StartDate,
-            EndDate = r.EndDate,
-        });
+        return result.IsError
+            ? []
+            : [.. result.Value.Items.Select(MapToViewModel)];
     }
 
-    private IFileInfo GetFileInfo(string path) => env.WebRootFileProvider.GetFileInfo(path);
+    private static SeasonViewModel MapToViewModel(SeasonResponse r) => new()
+    {
+        Id = r.Id,
+        Description = r.Description,
+        StartDate = r.StartDate,
+        EndDate = r.EndDate,
+    };
 
-    private sealed record SeasonApiResponse(string SeasonId, string Description, DateOnly StartDate, DateOnly EndDate);
+    private IFileInfo GetFileInfo(string path) => env.WebRootFileProvider.GetFileInfo(path);
 }
