@@ -89,6 +89,7 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
             })
             .ToListAsync(cancellationToken);
 
+        // We will need to do a separate query to get the champions from tournaments that we have full stats (2026+)
         var dbIds = tournaments.ConvertAll(t => t.DbId);
 
         var winners = await _historicalTournamentChampions
