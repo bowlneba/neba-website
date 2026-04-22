@@ -343,7 +343,7 @@ public sealed class NavMenuTests : IDisposable
         var currentYear = DateTime.Now.Year;
 
         // Assert
-        cut.Markup.ShouldContain($"tournaments/{currentYear}");
+        cut.Markup.ShouldContain($"tournaments?year={currentYear}");
     }
 
     [Fact(DisplayName = "Should render navbar with correct CSS class")]

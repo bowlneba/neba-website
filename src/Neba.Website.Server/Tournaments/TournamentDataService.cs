@@ -16,9 +16,9 @@ internal sealed class TournamentDataService(IWebHostEnvironment env) : ITourname
     };
 
     public async Task<List<TournamentSummaryViewModel>> GetTournamentsForSeasonAsync(
-        string season, CancellationToken ct = default)
+        SeasonViewModel season, CancellationToken ct = default)
     {
-        var fileInfo = GetFileInfo($"data/tournaments/{season}.json");
+        var fileInfo = GetFileInfo($"data/tournaments/{season.Label}.json");
         if (!fileInfo.Exists)
         {
             return [];
@@ -28,7 +28,7 @@ internal sealed class TournamentDataService(IWebHostEnvironment env) : ITourname
         return await JsonSerializer.DeserializeAsync<List<TournamentSummaryViewModel>>(stream, s_options, ct) ?? [];
     }
 
-    public async Task<List<string>> GetAvailableSeasonsAsync(CancellationToken ct = default)
+    public async Task<List<SeasonViewModel>> GetSeasonsAsync(CancellationToken ct = default)
     {
         var fileInfo = GetFileInfo("data/tournaments/seasons.json");
         if (!fileInfo.Exists)
@@ -37,8 +37,17 @@ internal sealed class TournamentDataService(IWebHostEnvironment env) : ITourname
         }
 
         await using var stream = fileInfo.CreateReadStream();
-        return await JsonSerializer.DeserializeAsync<List<string>>(stream, s_options, ct) ?? [];
+        var responses = await JsonSerializer.DeserializeAsync<List<SeasonApiResponse>>(stream, s_options, ct) ?? [];
+        return responses.ConvertAll(r => new SeasonViewModel
+        {
+            Id = r.SeasonId,
+            Description = r.Description,
+            StartDate = r.StartDate,
+            EndDate = r.EndDate,
+        });
     }
 
     private IFileInfo GetFileInfo(string path) => env.WebRootFileProvider.GetFileInfo(path);
+
+    private sealed record SeasonApiResponse(string SeasonId, string Description, DateOnly StartDate, DateOnly EndDate);
 }

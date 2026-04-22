@@ -23,6 +23,7 @@ public sealed class TournamentsPageTests : IDisposable
     {
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        _ctx.Services.AddRouting();
 
         _dataService = new FakeTournamentDataService();
         _ctx.Services.AddSingleton<ITournamentDataService>(_dataService);
@@ -34,43 +35,68 @@ public sealed class TournamentsPageTests : IDisposable
     public void Render_ShouldShowHeroAndUpcomingCard_WhenCurrentSeasonLoaded()
     {
         // Arrange
-        var currentYear = DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var currentYear = DateTime.Today.Year;
+        var currentSeason = MakeSeason(currentYear);
+        var nextSeason = MakeSeason(currentYear + 1);
+
         var upcoming = TournamentSummaryViewModelFactory.Create(
             id: "upcoming",
             name: "Spring Classic",
-            season: currentYear,
+            season: currentSeason.Label,
             startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(10)),
             endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(10)));
         var past = TournamentSummaryViewModelFactory.Create(
             id: "past",
             name: "Last Winter Open",
-            season: currentYear,
+            season: currentSeason.Label,
             startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(-40)),
             endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(-38)));
 
-        _dataService.AvailableSeasons = [currentYear, (DateTime.Today.Year + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)];
-        _dataService.SeasonData[currentYear] = [upcoming, past];
+        _dataService.Seasons = [currentSeason, nextSeason];
+        _dataService.SeasonData[currentSeason.Label] = [upcoming, past];
 
-        // Act
-        var cut = _ctx.Render<TournamentsPage>(parameters => parameters
-            .Add(p => p.Season, currentYear));
+        // Act — no year param → defaults to current season
+        var cut = _ctx.Render<TournamentsPage>();
 
         // Assert
         cut.Markup.ShouldContain("Next upcoming tournament");
         cut.Markup.ShouldContain("Spring Classic");
-        _dataService.RequestedSeasons.ShouldContain(currentYear);
+        _dataService.RequestedSeasons.ShouldContain(currentSeason.Label);
     }
 
-    [Fact(DisplayName = "Should default to past tab and render merged season note when season route is 2020-21")]
-    public void Render_ShouldShowPastState_WhenMergedSeasonRouteSelected()
+    [Fact(DisplayName = "Should display the season description in the header eyebrow")]
+    public void Render_ShouldShowSeasonDescription_WhenCurrentSeasonLoaded()
     {
         // Arrange
-        _dataService.AvailableSeasons = ["2020-21", DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture)];
-        _dataService.SeasonData["2020-21"] =
+        var currentYear = DateTime.Today.Year;
+        var currentSeason = MakeSeason(currentYear);
+        _dataService.Seasons = [currentSeason];
+        _dataService.SeasonData[currentSeason.Label] = [TournamentSummaryViewModelFactory.Create(
+            startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(5)),
+            endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(5)))];
+
+        // Act
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Assert — description is shown (not raw year)
+        cut.Markup.ShouldContain(currentSeason.Description);
+    }
+
+    [Fact(DisplayName = "Should default to past tab and render merged season note when year matches merged season")]
+    public void Render_ShouldShowPastState_WhenMergedSeasonYearSelected()
+    {
+        // Arrange
+        var currentYear = DateTime.Today.Year;
+        var currentSeason = MakeSeason(currentYear);
+        var mergedSeason = MakeMergedSeason();
+
+        _dataService.Seasons = [currentSeason, mergedSeason];
+        _dataService.SeasonData[currentSeason.Label] = [];
+        _dataService.SeasonData[mergedSeason.Label] =
         [
             TournamentSummaryViewModelFactory.Create(
                 id: "merged-past",
-                season: "2020-21",
+                season: mergedSeason.Label,
                 startDate: DateOnly.FromDateTime(DateTime.Today.AddYears(-5)),
                 endDate: DateOnly.FromDateTime(DateTime.Today.AddYears(-5).AddDays(1))) with
             {
@@ -78,9 +104,10 @@ public sealed class TournamentsPageTests : IDisposable
             },
         ];
 
-        // Act
-        var cut = _ctx.Render<TournamentsPage>(parameters => parameters
-            .Add(p => p.Season, "2020-21"));
+        // Act — navigate to year=2020 (start year of the merged 2020-21 season)
+        var nav = _ctx.Services.GetRequiredService<NavigationManager>();
+        var cut = _ctx.Render<TournamentsPage>();
+        nav.NavigateTo(nav.GetUriWithQueryParameter("year", 2020));
 
         // Assert
         cut.Markup.ShouldContain("Merged Winner");
@@ -88,44 +115,80 @@ public sealed class TournamentsPageTests : IDisposable
         cut.Markup.ShouldNotContain("Next upcoming tournament");
     }
 
-    [Fact(DisplayName = "Should redirect to base tournaments route when requested season is unavailable")]
-    public void Render_ShouldNavigateToBaseRoute_WhenSeasonIsInvalid()
+    [Fact(DisplayName = "Should match merged season when year=2021 (end year) is requested")]
+    public void Render_ShouldMatchMergedSeason_WhenEndYearOfMergedSeasonRequested()
     {
         // Arrange
-        _dataService.AvailableSeasons = [DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture)];
+        var currentYear = DateTime.Today.Year;
+        var currentSeason = MakeSeason(currentYear);
+        var mergedSeason = MakeMergedSeason();
+
+        _dataService.Seasons = [currentSeason, mergedSeason];
+        _dataService.SeasonData[currentSeason.Label] = [];
+        _dataService.SeasonData[mergedSeason.Label] =
+        [
+            TournamentSummaryViewModelFactory.Create(
+                id: "merged-past",
+                season: mergedSeason.Label,
+                startDate: DateOnly.FromDateTime(DateTime.Today.AddYears(-5)),
+                endDate: DateOnly.FromDateTime(DateTime.Today.AddYears(-5))) with
+            {
+                Winners = ["End Year Winner"],
+            },
+        ];
+
+        // Act — navigate to year=2021 (end year of 2020-21 merged season)
+        var nav = _ctx.Services.GetRequiredService<NavigationManager>();
+        var cut = _ctx.Render<TournamentsPage>();
+        nav.NavigateTo(nav.GetUriWithQueryParameter("year", 2021));
+
+        // Assert — still shows the merged season content
+        cut.Markup.ShouldContain("End Year Winner");
+        cut.Markup.ShouldContain("Combined Season");
+    }
+
+    [Fact(DisplayName = "Should redirect to base tournaments route when requested year matches no season")]
+    public void Render_ShouldNavigateToBaseRoute_WhenYearMatchesNoSeason()
+    {
+        // Arrange
+        _dataService.Seasons = [MakeSeason(DateTime.Today.Year)];
+        _dataService.SeasonData[MakeSeason(DateTime.Today.Year).Label] = [];
+
+        var nav = _ctx.Services.GetRequiredService<NavigationManager>();
+        _ctx.Render<TournamentsPage>();
+
         // Act
-        _ctx.Render<TournamentsPage>(parameters => parameters
-            .Add(p => p.Season, "1999"));
+        nav.NavigateTo(nav.GetUriWithQueryParameter("year", 1999));
 
         // Assert
-        var uri = _ctx.Services.GetRequiredService<NavigationManager>().Uri;
-        uri.ShouldEndWith("/tournaments");
+        nav.Uri.ShouldEndWith("/tournaments");
     }
 
     [Fact(DisplayName = "Should use next season upcoming event as hero when current season has only past tournaments")]
     public void Render_ShouldUseNextSeasonHero_WhenCurrentSeasonHasNoUpcoming()
     {
         // Arrange
-        var currentYear = DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var nextYear = (DateTime.Today.Year + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var currentYear = DateTime.Today.Year;
+        var currentSeason = MakeSeason(currentYear);
+        var nextSeason = MakeSeason(currentYear + 1);
 
-        _dataService.AvailableSeasons = [currentYear, nextYear];
-        _dataService.SeasonData[currentYear] =
+        _dataService.Seasons = [currentSeason, nextSeason];
+        _dataService.SeasonData[currentSeason.Label] =
         [
             TournamentSummaryViewModelFactory.Create(
                 id: "all-past",
                 name: "Finished Event",
-                season: currentYear,
+                season: currentSeason.Label,
                 startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(-20)),
                 endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(-19))),
         ];
 
-        _dataService.SeasonData[nextYear] =
+        _dataService.SeasonData[nextSeason.Label] =
         [
             TournamentSummaryViewModelFactory.Create(
                 id: "next-hero",
                 name: "Future Kickoff",
-                season: nextYear,
+                season: nextSeason.Label,
                 startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(35)),
                 endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(35))),
         ];
@@ -135,38 +198,55 @@ public sealed class TournamentsPageTests : IDisposable
 
         // Assert
         cut.Markup.ShouldContain("Future Kickoff");
-        _dataService.RequestedSeasons.ShouldContain(currentYear);
-        _dataService.RequestedSeasons.ShouldContain(nextYear);
+        _dataService.RequestedSeasons.ShouldContain(currentSeason.Label);
+        _dataService.RequestedSeasons.ShouldContain(nextSeason.Label);
     }
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+
+    private static SeasonViewModel MakeSeason(int year) => SeasonViewModelFactory.Create(
+        id: $"01JBMS0000000000000000{year % 100:D4}",
+        description: $"{year} Season",
+        startDate: new DateOnly(year, 1, 1),
+        endDate: new DateOnly(year, 12, 31));
+
+    private static SeasonViewModel MakeMergedSeason() => SeasonViewModelFactory.Create(
+        id: "01JBMS00000000000000FF00",
+        description: "2020-21 Season",
+        startDate: new DateOnly(2020, 1, 1),
+        endDate: new DateOnly(2021, 12, 31));
+
+    // ── Fake service ───────────────────────────────────────────────────────
 
     private sealed class FakeTournamentDataService : ITournamentDataService
     {
-        public List<string> AvailableSeasons { get; set; } = [];
+        public List<SeasonViewModel> Seasons { get; set; } = [];
 
         public Dictionary<string, List<TournamentSummaryViewModel>> SeasonData { get; } =
             new(StringComparer.Ordinal);
 
         public List<string> RequestedSeasons { get; } = [];
 
-        Task<List<string>> ITournamentDataService.GetAvailableSeasonsAsync(CancellationToken ct)
+        Task<List<SeasonViewModel>> ITournamentDataService.GetSeasonsAsync(CancellationToken ct)
         {
             if (ct.IsCancellationRequested)
             {
-                return Task.FromCanceled<List<string>>(ct);
+                return Task.FromCanceled<List<SeasonViewModel>>(ct);
             }
 
-            return Task.FromResult(AvailableSeasons);
+            return Task.FromResult(Seasons);
         }
 
-        Task<List<TournamentSummaryViewModel>> ITournamentDataService.GetTournamentsForSeasonAsync(string season, CancellationToken ct)
+        Task<List<TournamentSummaryViewModel>> ITournamentDataService.GetTournamentsForSeasonAsync(
+            SeasonViewModel season, CancellationToken ct)
         {
             if (ct.IsCancellationRequested)
             {
                 return Task.FromCanceled<List<TournamentSummaryViewModel>>(ct);
             }
 
-            RequestedSeasons.Add(season);
-            return Task.FromResult(SeasonData.TryGetValue(season, out var data) ? data : []);
+            RequestedSeasons.Add(season.Label);
+            return Task.FromResult(SeasonData.TryGetValue(season.Label, out var data) ? data : []);
         }
     }
 }

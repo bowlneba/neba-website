@@ -1,5 +1,4 @@
 @page "/tournaments"
-@page "/tournaments/{Season}"
 @namespace Neba.Website.Server.Tournaments.Schedule
 @implements IAsyncDisposable
 @inject ITournamentDataService DataService
@@ -24,14 +23,14 @@
         else
         {
             <header class="tournaments-page__header">
-                <p class="tournaments-page__eyebrow">@_activeSeason Season</p>
+                <p class="tournaments-page__eyebrow">@_activeSeason?.Description</p>
                 <h1 class="tournaments-page__title">Tournaments</h1>
             </header>
         }
 
         @if (_allTournaments is not null)
         {
-            <SeasonTimeline Tournaments="@_allTournaments" Season="@_activeSeason" />
+            <SeasonTimeline Tournaments="@_allTournaments" Season="@(_activeSeason?.Label ?? string.Empty)" />
         }
 
         <TournamentTabBar ActiveTab="@_activeTab" IsCurrentSeason="@_isCurrentSeason"
@@ -80,11 +79,11 @@
 </div>
 
 @code {
-    [Parameter]
-    public string? Season { get; set; }
+    [SupplyParameterFromQuery(Name = "year")]
+    public int? Year { get; set; }
 
     // ── Route-driven state ─────────────────────────────────────────────────
-    private string _activeSeason = DateTime.Today.Year.ToString();
+    private SeasonViewModel? _activeSeason;
     private bool _isCurrentSeason = true;
     private bool _isMergedSeason;
 
@@ -98,8 +97,9 @@
 
     // ── Data ───────────────────────────────────────────────────────────────
     private List<TournamentSummaryViewModel>? _allTournaments;
-    private List<string>? _availableSeasons; private TournamentSummaryViewModel? _nextSeasonHeroTournament; private bool
-_isLoading = true;
+    private List<SeasonViewModel>? _availableSeasons;
+    private TournamentSummaryViewModel? _nextSeasonHeroTournament;
+    private bool _isLoading = true;
 
     private CancellationTokenSource _cts = new();
     private bool _disposed;
@@ -172,29 +172,24 @@ _isLoading = true;
         try
         {
             // Resolve available seasons (cached after first load)
-            _availableSeasons ??= await DataService.GetAvailableSeasonsAsync(ct);
+            _availableSeasons ??= await DataService.GetSeasonsAsync(ct);
 
-            var currentYear = DateTime.Today.Year.ToString();
+            var today = DateTime.Today;
+            var requestedYear = Year ?? today.Year;
 
-            if (Season is null || Season == currentYear)
-            {
-                _activeSeason = currentYear;
-                _isCurrentSeason = true;
-                _isMergedSeason = false;
-                _activeTab = TournamentTab.Upcoming;
-            }
-            else if (_availableSeasons.Contains(Season))
-            {
-                _activeSeason = Season;
-                _isCurrentSeason = false;
-                _isMergedSeason = Season == "2020-21";
-                _activeTab = TournamentTab.Past;
-            }
-            else
+            var matched = _availableSeasons.FirstOrDefault(s => s.ContainsYear(requestedYear));
+            var current = _availableSeasons.FirstOrDefault(s => s.ContainsYear(today.Year));
+
+            if (matched is null)
             {
                 Nav.NavigateTo("/tournaments");
                 return;
             }
+
+            _activeSeason = matched;
+            _isCurrentSeason = matched == current;
+            _isMergedSeason = matched.IsMergedSeason;
+            _activeTab = _isCurrentSeason ? TournamentTab.Upcoming : TournamentTab.Past;
 
             _searchTerm = string.Empty;
             _typeFilter = null;
@@ -208,8 +203,8 @@ _isLoading = true;
             if (_isCurrentSeason && _allTournaments.TrueForAll(t => t.IsPast))
             {
                 var nextSeason = _availableSeasons
-                    ?.Where(s => string.Compare(s, currentYear, StringComparison.Ordinal) > 0)
-                    .Order()
+                    .Where(s => s.StartDate > _activeSeason.EndDate)
+                    .OrderBy(s => s.StartDate)
                     .FirstOrDefault();
 
                 if (nextSeason is not null)
@@ -247,10 +242,9 @@ _isLoading = true;
         _searchTerm = string.Empty;
     }
 
-    private void HandleSeasonChanged(string season)
+    private void HandleSeasonChanged(int year)
     {
-        var currentYear = DateTime.Today.Year.ToString();
-        Nav.NavigateTo(season == currentYear ? "/tournaments" : $"/tournaments/{season}");
+        Nav.NavigateTo(year == DateTime.Today.Year ? "/tournaments" : $"/tournaments?year={year}");
     }
 
     private void ClearFilters()

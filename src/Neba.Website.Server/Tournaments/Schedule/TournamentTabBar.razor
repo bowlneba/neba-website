@@ -23,12 +23,12 @@
     @if (ActiveTab == TournamentTab.Past)
     {
         <select class="neba-select tournament-tab-bar__season-select"
-                value="@ActiveSeason"
-                @onchange="e => OnSeasonChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty)"
+                value="@ActiveSeason?.StartDate.Year"
+                @onchange="OnSelectChanged"
                 aria-label="Select season">
             @foreach (var season in AvailableSeasons)
             {
-                <option value="@season" selected="@(season == ActiveSeason)">@season Season</option>
+                <option value="@season.StartDate.Year" selected="@(season == ActiveSeason)">@season.Description</option>
             }
         </select>
     }
@@ -42,14 +42,22 @@
     public bool IsCurrentSeason { get; set; }
 
     [Parameter, EditorRequired]
-    public List<string> AvailableSeasons { get; set; } = [];
+    public List<SeasonViewModel> AvailableSeasons { get; set; } = [];
 
     [Parameter, EditorRequired]
-    public string ActiveSeason { get; set; } = string.Empty;
+    public SeasonViewModel? ActiveSeason { get; set; }
 
     [Parameter, EditorRequired]
     public EventCallback<TournamentTab> OnTabChanged { get; set; }
 
     [Parameter, EditorRequired]
-    public EventCallback<string> OnSeasonChanged { get; set; }
+    public EventCallback<int> OnSeasonChanged { get; set; }
+
+    private void OnSelectChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var year))
+        {
+            OnSeasonChanged.InvokeAsync(year);
+        }
+    }
 }
