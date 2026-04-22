@@ -44,6 +44,7 @@
 async Task Main()
 {
 	//BowlingCenters.RemoveRange(BowlingCenters);
+	TournamentChampions.RemoveRange(TournamentChampions);
 	Bowlers.RemoveRange(Bowlers);
 	HallsOfFameInductions.RemoveRange(HallsOfFameInductions);
 	BowlersOfTheYearAwards.RemoveRange(BowlersOfTheYearAwards);
@@ -101,7 +102,11 @@ async Task Main()
 	
 	await MigrateBowlerSeasonStatsAsync(bowlerDomainIdBySoftwareId);
 	
-	await MigrateTournamentsAsync(seasonDomainIdByEndYear);
+	var spreadsheetTournaments = await MigrateTournamentsAsync(seasonDomainIdByEndYear);
+	
+	var tournamentDbIdByDomainId = Tournaments.ToDictionary(tournament => Ulid.Parse(tournament.DomainId), tournament => tournament.Id);
+	var bowlerDbIdByWebsiteId = Bowlers.Where(bowler => bowler.WebsiteId.HasValue).ToDictionary(bowler => bowler.WebsiteId!.Value, bowler => bowler.Id);
+	await MigrateTournamentChampions(bowlerDbIdByWebsiteId, spreadsheetTournaments, tournamentDbIdByDomainId);
 }
 
 // You can define other methods, fields, classes and namespaces here
@@ -2897,7 +2902,7 @@ public class UsbcBowlingCenterDto
 
 #region Tournaments
 
-public async Task MigrateTournamentsAsync(IDictionary<int, string> seasonDomainIdByEndYear)
+public async Task<IReadOnlyCollection<SpreadsheetTournament>> MigrateTournamentsAsync(IDictionary<int, string> seasonDomainIdByEndYear)
 {
 	var spreadsheetTournaments = await GetTournamentsFromSpreadsheetAsync();
 	var softwareTournaments = await GetTournamentsFromSoftwareAsync();
@@ -2920,12 +2925,42 @@ public async Task MigrateTournamentsAsync(IDictionary<int, string> seasonDomainI
 			SeasonId = spreadsheetTournament.EndDate.Year == 2020 ? seasonDomainIdByEndYear[2021] : seasonDomainIdByEndYear[spreadsheetTournament.EndDate.Year]
 		};
 		
+		spreadsheetTournament.DomainId =  Ulid.Parse(tournament.DomainId);
+		
 		Tournaments.Add(tournament);
 	}
 	
 	await SaveChangesAsync();
 	
 	"Tournaments Migrated".Dump();
+	
+	return spreadsheetTournaments;
+}
+
+public async Task MigrateTournamentChampions(
+	Dictionary<int, int> bowlerDbIdByWebsiteId, 
+	IReadOnlyCollection<SpreadsheetTournament> tournaments,
+	Dictionary<Ulid, int> tournamentDbIdByDomainId)
+{
+	foreach (var tournament in tournaments
+		.Where(t => t.TournamentType != TournamentType.Youth.Name)
+		.Where(t => t.EndDate.Year < 2026)) // 2026 and forward will be determined the new way via stat records
+	{
+		foreach (var champion in (tournament.Winners ?? []).Where(id => id > 0))
+		{
+			var tournamentChampion = new TournamentChampions
+			{
+				TournamentId = tournamentDbIdByDomainId[tournament.DomainId],
+				BowlerId = bowlerDbIdByWebsiteId[champion]
+			};
+			
+			TournamentChampions.Add(tournamentChampion);
+		}
+	}
+	
+	await SaveChangesAsync();
+	
+	"Tournament Champions Migrated".Dump();
 }
 
 private PatternRatioCategory? GetPatternRatioCategory(decimal? leftRatio, decimal? rightRatio)

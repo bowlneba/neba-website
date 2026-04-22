@@ -312,6 +312,32 @@ Stryker 4.14.1 (latest as of April 2026) **cannot run mutation tests on `Neba.We
 - `CachedQueryHandlerDecorator` catches cache deserialization failures on plain cached queries, logs a warning, executes the inner handler, and rewrites the cache entry.
 - Keep the cache key stable unless explicitly directed otherwise; deserialization fallback handles stale entry recovery.
 
+### EF Core Navigation Fixup — `= []` Collection Initializers Cause `Collection was of a fixed size`
+
+When a domain entity initializes a collection navigation property with `= []` (C# 12 collection expression), the CLR resolves `IReadOnlyCollection<T> Prop { get; init; } = []` to `T[]` (a fixed-size array). EF Core 10's `ClrCollectionAccessorFactory` picks up this array type as `TCollection`, and when navigation fixup tries to call `AddStandalone(array, value)`, it hits `SZArrayHelper.Add` which throws `System.NotSupportedException: Collection was of a fixed size`.
+
+This affects **both sides** of a relationship: adding a `TournamentSponsor` with a concrete `SponsorId` set causes EF to fix up `Sponsor.TournamentsSponsored` (also `= []`), even if you never set `Tournament = tournament` on the dependent.
+
+**Symptom**: `NotSupportedException: Collection was of a fixed size` in the EF Core navigation fixup stack during integration test seeding.
+
+**Fix in tests**: After saving the principal entities, call `_dbContext.ChangeTracker.Clear()` before adding dependent entities. With no tracked principals in the change tracker, EF has nothing to fixup against.
+
+```csharp
+await _dbContext.SaveChangesAsync(ct);
+
+var tournamentDbId = _dbContext.Entry(tournament)
+    .Property<int>(ShadowIdConfiguration.DefaultPropertyName).CurrentValue;
+
+_dbContext.ChangeTracker.Clear(); // prevents fixup against tracked sponsors/tournaments
+
+var ts = _dbContext.Set<TournamentSponsor>().Add(new TournamentSponsor { SponsorId = sponsorId, ... });
+ts.Property<int>(TournamentConfiguration.ForeignKeyName).CurrentValue = tournamentDbId;
+
+await _dbContext.SaveChangesAsync(ct);
+```
+
+**Note**: `PropertyAccessMode.Field` / `Navigation().HasField("_sponsors")` does NOT help — EF still determines `TCollection` from the property type, not the backing field type.
+
 ### Razor @code Block — Parser Limitations
 
 Two patterns that break Razor's lexer even inside `@code { }` blocks:

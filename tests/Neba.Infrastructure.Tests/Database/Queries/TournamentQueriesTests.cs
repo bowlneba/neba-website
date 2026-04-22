@@ -1,15 +1,18 @@
 using Neba.Domain.BowlingCenters;
 using Neba.Domain.Contact;
+using Neba.Domain.Geography;
 using Neba.Domain.Tournaments;
 using Neba.Infrastructure.Database;
 using Neba.Infrastructure.Database.Queries;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.BowlingCenters;
+using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.Contact;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Sponsors;
 using Neba.TestFactory.Tournaments;
+using Neba.Infrastructure.Database.Configurations;
 
 namespace Neba.Infrastructure.Tests.Database.Queries;
 
@@ -213,7 +216,8 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
                 street: "100 Strike Way",
                 city: "Hartford",
                 state: UsState.Connecticut,
-                postalCode: "06103"));
+                postalCode: "06103",
+                coordinates: AddressFactory.ValidCoordinates));
 
         var season = SeasonFactory.Create();
         var tournament = TournamentFactory.Create(
@@ -278,8 +282,27 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
         await _dbContext.Sponsors.AddRangeAsync([sponsor1, sponsor2], TestContext.Current.CancellationToken);
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        _dbContext.Add(TournamentSponsorFactory.Create(tournament: tournament, sponsor: sponsor1, sponsorshipAmount: 1000m));
-        _dbContext.Add(TournamentSponsorFactory.Create(tournament: tournament, sponsor: sponsor2, sponsorshipAmount: 2500m));
+        var tournamentDbId = _dbContext.Entry(tournament)
+            .Property<int>(ShadowIdConfiguration.DefaultPropertyName).CurrentValue;
+
+        _dbContext.ChangeTracker.Clear();
+
+        var ts1 = _dbContext.Set<TournamentSponsor>().Add(new TournamentSponsor
+        {
+            SponsorId = sponsor1.Id,
+            TitleSponsor = false,
+            SponsorshipAmount = 1000m,
+        });
+        ts1.Property<int>(TournamentConfiguration.ForeignKeyName).CurrentValue = tournamentDbId;
+
+        var ts2 = _dbContext.Set<TournamentSponsor>().Add(new TournamentSponsor
+        {
+            SponsorId = sponsor2.Id,
+            TitleSponsor = false,
+            SponsorshipAmount = 2500m,
+        });
+        ts2.Property<int>(TournamentConfiguration.ForeignKeyName).CurrentValue = tournamentDbId;
+
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
@@ -340,5 +363,87 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
         var dto = result.Single();
         dto.PatternLengthCategory.ShouldBe(PatternLengthCategory.MediumPattern.Name);
         dto.PatternRatioCategory.ShouldBe(PatternRatioCategory.Challenge.Name);
+    }
+
+    [Fact(DisplayName = "GetTournamentsInSeasonAsync returns empty winners when tournament has no historical champions")]
+    public async Task GetTournamentsInSeasonAsync_ReturnsEmptyWinners_WhenNoChampionsExist()
+    {
+        // Arrange
+        var season = SeasonFactory.Create();
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+
+        await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentsInSeasonAsync(season.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldHaveSingleItem();
+        result.Single().Winners.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "GetTournamentsInSeasonAsync maps winners from historical champions")]
+    public async Task GetTournamentsInSeasonAsync_MapsWinners_WhenChampionsExist()
+    {
+        // Arrange
+        var season = SeasonFactory.Create();
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        var bowler1 = BowlerFactory.Create(name: NameFactory.Create(firstName: "Alice", lastName: "Smith"));
+        var bowler2 = BowlerFactory.Create(name: NameFactory.Create(firstName: "Bob", lastName: "Jones"));
+
+        await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
+        await _dbContext.Bowlers.AddRangeAsync([bowler1, bowler2], TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        _dbContext.Add(HistoricalTournamentChampionFactory.Create(bowler: bowler1, tournament: tournament));
+        _dbContext.Add(HistoricalTournamentChampionFactory.Create(bowler: bowler2, tournament: tournament));
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentsInSeasonAsync(season.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldHaveSingleItem();
+        var winners = result.Single().Winners;
+        winners.Count.ShouldBe(2);
+        winners.ShouldContain(n => n.FirstName == "Alice" && n.LastName == "Smith");
+        winners.ShouldContain(n => n.FirstName == "Bob" && n.LastName == "Jones");
+    }
+
+    [Fact(DisplayName = "GetTournamentsInSeasonAsync does not mix winners across tournaments")]
+    public async Task GetTournamentsInSeasonAsync_DoesNotMixWinners_AcrossTournaments()
+    {
+        // Arrange
+        var season = SeasonFactory.Create();
+        var tournamentA = TournamentFactory.Create(name: "Tournament A", seasonId: season.Id);
+        var tournamentB = TournamentFactory.Create(name: "Tournament B", seasonId: season.Id);
+        var bowlerA = BowlerFactory.Create(name: NameFactory.Create(firstName: "Alice", lastName: "Smith"));
+        var bowlerB = BowlerFactory.Create(name: NameFactory.Create(firstName: "Bob", lastName: "Jones"));
+
+        await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddRangeAsync([tournamentA, tournamentB], TestContext.Current.CancellationToken);
+        await _dbContext.Bowlers.AddRangeAsync([bowlerA, bowlerB], TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        _dbContext.Add(HistoricalTournamentChampionFactory.Create(bowler: bowlerA, tournament: tournamentA));
+        _dbContext.Add(HistoricalTournamentChampionFactory.Create(bowler: bowlerB, tournament: tournamentB));
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentsInSeasonAsync(season.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Count.ShouldBe(2);
+        var dtoA = result.Single(t => t.Name == "Tournament A");
+        var dtoB = result.Single(t => t.Name == "Tournament B");
+
+        dtoA.Winners.ShouldHaveSingleItem();
+        dtoA.Winners.Single().FirstName.ShouldBe("Alice");
+
+        dtoB.Winners.ShouldHaveSingleItem();
+        dtoB.Winners.Single().FirstName.ShouldBe("Bob");
     }
 }

@@ -9,6 +9,7 @@ using Neba.Domain.Stats;
 using Neba.Domain.Tournaments;
 using Neba.Infrastructure.Database.Configurations;
 using Neba.Infrastructure.Database.Converters;
+using Neba.Infrastructure.Database.Entities;
 
 using SmartEnum.EFCore;
 
@@ -19,6 +20,8 @@ internal sealed class AppDbContext(
     : DbContext(options)
 {
     public const string DefaultSchema = "app";
+    public const string HistoricalSchema = "historical";
+
     public const string MigrationsHistoryTableName = "__EFMigrationsHistory";
 
     public DbSet<BowlingCenter> BowlingCenters
@@ -29,6 +32,9 @@ internal sealed class AppDbContext(
 
     public DbSet<Tournament> Tournaments
         => Set<Tournament>();
+
+    internal DbSet<HistoricalTournamentChampion> HistoricalTournamentChampions
+        => Set<HistoricalTournamentChampion>();
 
     public DbSet<HallOfFameInduction> HallOfFameInductions
         => Set<HallOfFameInduction>();
@@ -59,6 +65,8 @@ internal sealed class AppDbContext(
         modelBuilder.ApplyConfiguration(new OilPatternConfiguration());
         modelBuilder.ApplyConfiguration(new TournamentConfiguration());
         modelBuilder.ApplyConfiguration(new TournamentSponsorConfiguration());
+
+        modelBuilder.ApplyConfiguration(new HistoricalTournamentChampionsConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
