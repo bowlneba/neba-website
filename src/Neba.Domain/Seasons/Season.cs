@@ -45,7 +45,7 @@ public sealed class Season
     public bool Complete { get; init; }
 
     private readonly List<Tournament> _tournaments = [];
-    internal IReadOnlyCollection<Tournament> Tournaments 
+    internal IReadOnlyCollection<Tournament> Tournaments
         => _tournaments.AsReadOnly();
 
     private readonly List<BowlerOfTheYearAward> _bowlerOfTheYearAwards = [];
