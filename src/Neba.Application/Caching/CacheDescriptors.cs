@@ -130,6 +130,22 @@ public static class CacheDescriptors
     }
 
     /// <summary>
+    /// Cache descriptors for season data.
+    /// </summary>
+    public static class Seasons
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of seasons, with a key and tags that allow for efficient caching and invalidation of season data.
+        /// </summary>
+        public static CacheDescriptor List
+            => new()
+            {
+                Key = "neba:seasons:list",
+                Tags = ["neba", "neba:seasons"]
+            };
+    }
+
+    /// <summary>
     /// Cache descriptors for stats data.
     /// </summary>
     public static class Stats
