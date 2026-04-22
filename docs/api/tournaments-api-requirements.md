@@ -26,7 +26,6 @@ All fields that the website reads, mapped to `TournamentSummaryViewModel`:
 | `startDate`           | string (date)   | No       | ISO 8601 date-only: `"2026-05-03"`                                   |
 | `endDate`             | string (date)   | No       | Same format; equals `startDate` for single-day events                 |
 | `tournamentType`      | string (enum)   | No       | One of: `Singles`, `Doubles`, `Trios`, `Team`, `Senior`, `Women`, `SpecialEvent` |
-| `eligibility`         | string (enum)   | No       | One of: `Open`, `Senior50Plus`, `Women`, `NonChampions`, `Champions` |
 | `entryFee`            | decimal         | Yes      | Per-bowler entry fee in USD; null if not set                          |
 | `registrationStatus`  | string (enum)   | Yes      | One of: `Open`, `ClosingSoon`, `Closed`, `Full`, `Completed`; null when registration hasn't opened |
 | `registrationUrl`     | string (uri)    | Yes      | Full URL for the external registration form; null if not available    |

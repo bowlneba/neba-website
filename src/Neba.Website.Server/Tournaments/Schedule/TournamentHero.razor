@@ -52,10 +52,6 @@
 
             <div class="tournament-hero__chips">
                 <span class="tournament-hero__chip">@Tournament.TournamentType.ToDisplayString()</span>
-                @if (Tournament.Eligibility != TournamentEligibility.Open)
-                {
-                    <span class="tournament-hero__chip">@Tournament.Eligibility.ToDisplayString()</span>
-                }
                 @if (Tournament.PatternDisplay is not null)
                 {
                     <span class="tournament-hero__chip">@Tournament.PatternDisplay</span>

@@ -38,8 +38,7 @@
                           OnSeasonChanged="HandleSeasonChanged" />
 
         <TournamentFilterBar SearchTerm="@_searchTerm" SearchTermChanged="@(v => _searchTerm = v)"
-                             TypeFilter="@_typeFilter" TypeFilterChanged="@(v => _typeFilter = v)"
-                             EligibilityFilter="@_eligibilityFilter" EligibilityFilterChanged="@(v => _eligibilityFilter = v)" />
+                             TypeFilter="@_typeFilter" TypeFilterChanged="@(v => _typeFilter = v)" />
 
         @if (_isLoading)
         {
@@ -93,7 +92,6 @@
     // ── Filter state ───────────────────────────────────────────────────────
     private string _searchTerm = string.Empty;
     private TournamentType? _typeFilter;
-    private TournamentEligibility? _eligibilityFilter;
 
     // ── Data ───────────────────────────────────────────────────────────────
     private List<TournamentSummaryViewModel>? _allTournaments;
@@ -121,8 +119,7 @@
 
     private bool HasActiveFilters =>
         !string.IsNullOrWhiteSpace(_searchTerm) ||
-        _typeFilter.HasValue ||
-        _eligibilityFilter.HasValue;
+        _typeFilter.HasValue;
 
     private IEnumerable<TournamentSummaryViewModel> FilteredTournaments
     {
@@ -147,11 +144,6 @@
             if (_typeFilter.HasValue)
             {
                 query = query.Where(t => t.TournamentType == _typeFilter);
-            }
-
-            if (_eligibilityFilter.HasValue)
-            {
-                query = query.Where(t => t.Eligibility == _eligibilityFilter);
             }
 
             return query.OrderBy(t => t.StartDate);
@@ -193,7 +185,6 @@
 
             _searchTerm = string.Empty;
             _typeFilter = null;
-            _eligibilityFilter = null;
             _nextSeasonHeroTournament = null;
 
             _allTournaments = await DataService.GetTournamentsForSeasonAsync(_activeSeason, ct);
@@ -251,7 +242,6 @@
     {
         _searchTerm = string.Empty;
         _typeFilter = null;
-        _eligibilityFilter = null;
     }
 
     public async ValueTask DisposeAsync()

@@ -23,9 +23,6 @@ public sealed record TournamentSummaryViewModel
     /// <summary>Format category of the tournament.</summary>
     public required TournamentType TournamentType { get; init; }
 
-    /// <summary>Entry eligibility restriction.</summary>
-    public required TournamentEligibility Eligibility { get; init; }
-
     /// <summary>Per-bowler entry fee in dollars, if applicable.</summary>
     public decimal? EntryFee { get; init; }
 

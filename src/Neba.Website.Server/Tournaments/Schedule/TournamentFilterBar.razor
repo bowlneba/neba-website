@@ -22,15 +22,6 @@
                 @onclick="() => TypeFilterChanged.InvokeAsync(TournamentType.Trios)">Trios</button>
     </div>
 
-    <select class="neba-select tournament-filter-bar__eligibility-filter"
-            @onchange="OnEligibilityChanged"
-            aria-label="Filter by eligibility">
-        <option value="">All eligibility</option>
-        <option value="Open" selected="@(EligibilityFilter == TournamentEligibility.Open)">Open</option>
-        <option value="Senior50Plus" selected="@(EligibilityFilter == TournamentEligibility.Senior50Plus)">Senior 50+</option>
-        <option value="Women" selected="@(EligibilityFilter == TournamentEligibility.Women)">Women</option>
-        <option value="NonChampions" selected="@(EligibilityFilter == TournamentEligibility.NonChampions)">Non-Champions</option>
-    </select>
 </div>
 
 @code {
@@ -46,24 +37,4 @@
     [Parameter, EditorRequired]
     public EventCallback<TournamentType?> TypeFilterChanged { get; set; }
 
-    [Parameter]
-    public TournamentEligibility? EligibilityFilter { get; set; }
-
-    [Parameter, EditorRequired]
-    public EventCallback<TournamentEligibility?> EligibilityFilterChanged { get; set; }
-
-    private void OnEligibilityChanged(ChangeEventArgs e)
-    {
-        var value = e.Value?.ToString();
-        if (string.IsNullOrEmpty(value))
-        {
-            EligibilityFilterChanged.InvokeAsync(null);
-            return;
-        }
-
-        if (Enum.TryParse<TournamentEligibility>(value, out var parsed))
-        {
-            EligibilityFilterChanged.InvokeAsync(parsed);
-        }
-    }
 }

@@ -24,8 +24,7 @@ public sealed class TournamentFilterBarTests : IDisposable
         var cut = _ctx.Render<TournamentFilterBar>(parameters => parameters
             .Add(p => p.SearchTerm, string.Empty)
             .Add(p => p.SearchTermChanged, EventCallback.Factory.Create<string>(this, value => observed = value))
-            .Add(p => p.TypeFilterChanged, EventCallback.Factory.Create<TournamentType?>(this, _ => { }))
-            .Add(p => p.EligibilityFilterChanged, EventCallback.Factory.Create<TournamentEligibility?>(this, _ => { })));
+            .Add(p => p.TypeFilterChanged, EventCallback.Factory.Create<TournamentType?>(this, _ => { })));
 
         cut.Find("input[type='search']").Input("classic");
 
@@ -40,27 +39,10 @@ public sealed class TournamentFilterBarTests : IDisposable
         var cut = _ctx.Render<TournamentFilterBar>(parameters => parameters
             .Add(p => p.SearchTerm, string.Empty)
             .Add(p => p.SearchTermChanged, EventCallback.Factory.Create<string>(this, _ => { }))
-            .Add(p => p.TypeFilterChanged, EventCallback.Factory.Create<TournamentType?>(this, value => observed = value))
-            .Add(p => p.EligibilityFilterChanged, EventCallback.Factory.Create<TournamentEligibility?>(this, _ => { })));
+            .Add(p => p.TypeFilterChanged, EventCallback.Factory.Create<TournamentType?>(this, value => observed = value)));
 
         await cut.FindAll("button").First(b => b.TextContent.Contains("Doubles", StringComparison.Ordinal)).ClickAsync(new MouseEventArgs());
 
         observed.ShouldBe(TournamentType.Doubles);
-    }
-
-    [Fact(DisplayName = "Should emit EligibilityFilterChanged with parsed enum value when select changes")]
-    public void EligibilityFilter_ShouldEmitParsedValue_WhenSelectChanges()
-    {
-        TournamentEligibility? observed = null;
-
-        var cut = _ctx.Render<TournamentFilterBar>(parameters => parameters
-            .Add(p => p.SearchTerm, string.Empty)
-            .Add(p => p.SearchTermChanged, EventCallback.Factory.Create<string>(this, _ => { }))
-            .Add(p => p.TypeFilterChanged, EventCallback.Factory.Create<TournamentType?>(this, _ => { }))
-            .Add(p => p.EligibilityFilterChanged, EventCallback.Factory.Create<TournamentEligibility?>(this, value => observed = value)));
-
-        cut.Find("select").Change("Women");
-
-        observed.ShouldBe(TournamentEligibility.Women);
     }
 }

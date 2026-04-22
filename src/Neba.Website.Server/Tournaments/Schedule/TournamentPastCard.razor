@@ -31,10 +31,6 @@
 
             <div class="tournament-past-card__chips">
                 <span class="tournament-past-card__chip">@Tournament.TournamentType.ToDisplayString()</span>
-                @if (Tournament.Eligibility != TournamentEligibility.Open)
-                {
-                    <span class="tournament-past-card__chip">@Tournament.Eligibility.ToDisplayString()</span>
-                }
             </div>
         </div>
 

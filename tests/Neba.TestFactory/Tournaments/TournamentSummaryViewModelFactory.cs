@@ -14,7 +14,6 @@ public static class TournamentSummaryViewModelFactory
     public static readonly DateOnly ValidStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(14));
     public static readonly DateOnly ValidEndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(14));
     public static readonly TournamentType ValidTournamentType = TournamentType.Singles;
-    public static readonly TournamentEligibility ValidEligibility = TournamentEligibility.Open;
 
     public static TournamentSummaryViewModel Create(
         string? id = null,
@@ -22,8 +21,7 @@ public static class TournamentSummaryViewModelFactory
         string? season = null,
         DateOnly? startDate = null,
         DateOnly? endDate = null,
-        TournamentType? tournamentType = null,
-        TournamentEligibility? eligibility = null)
+        TournamentType? tournamentType = null)
         => new()
         {
             Id = id ?? ValidId,
@@ -32,7 +30,6 @@ public static class TournamentSummaryViewModelFactory
             StartDate = startDate ?? ValidStartDate,
             EndDate = endDate ?? ValidEndDate,
             TournamentType = tournamentType ?? ValidTournamentType,
-            Eligibility = eligibility ?? ValidEligibility,
             EntryFee = 95m,
             RegistrationStatus = RegistrationStatus.Open,
             RegistrationUrl = new Uri("https://www.bowlneba.com/register", UriKind.Absolute),
@@ -67,7 +64,6 @@ public static class TournamentSummaryViewModelFactory
                     StartDate = start,
                     EndDate = end,
                     TournamentType = f.PickRandom<TournamentType>(),
-                    Eligibility = f.PickRandom<TournamentEligibility>(),
                     EntryFee = f.Random.Decimal(60, 180),
                     RegistrationStatus = f.PickRandom<RegistrationStatus>(),
                     RegistrationUrl = new Uri(f.Internet.UrlWithPath(), UriKind.Absolute),
