@@ -22,9 +22,6 @@ public static class ApplicationConfiguration
             services.AddMessaging();
             services.AddServices();
 
-            // This is a place holder until we have tournaments in the database.  It provides the number of tournaments for a given season, which is used in the stats calculations.
-            services.AddSingleton<ITournamentQueries, TournamentCount>();
-
             return services;
         }
 

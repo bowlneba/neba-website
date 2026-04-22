@@ -11,8 +11,8 @@ public interface ITournamentQueries
     /// <summary>
     /// Gets the number of tournaments that took place in a given season.  This will change to SeasonId when Tournaments are in the database
     /// </summary>
-    /// <param name="season"></param>
+    /// <param name="seasonId">The ID of the season for which to count tournaments.</param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    Task<int> GetTournamentCountForSeasonAsync(SeasonDto season, CancellationToken cancellationToken);
+    /// <returns>The number of tournaments in the specified season.</returns>
+    Task<int> GetTournamentCountForSeasonAsync(SeasonId seasonId, CancellationToken cancellationToken);
 }

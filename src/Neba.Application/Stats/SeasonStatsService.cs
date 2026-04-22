@@ -315,7 +315,7 @@ internal sealed class SeasonStatsService(
 
     public async Task<(decimal NumberOfGames, decimal NumberOfTournaments, decimal NumberOfEntries)> GetStatMinimumsForSeasonAsync(SeasonDto season, CancellationToken cancellationToken)
     {
-        var tournamentCount = await _tournamentQueries.GetTournamentCountForSeasonAsync(season, cancellationToken);
+        var tournamentCount = await _tournamentQueries.GetTournamentCountForSeasonAsync(season.Id, cancellationToken);
 
         return (
             NumberOfGames: tournamentCount * 4.5m,
