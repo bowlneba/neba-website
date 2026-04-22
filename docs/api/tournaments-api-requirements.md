@@ -4,34 +4,6 @@ This document describes what the API layer needs to expose so the website's `Tou
 
 ## Endpoints Required
 
-### 1. `GET /seasons`
-
-Returns the list of season labels available for display in the season selector.
-
-#### Response
-
-```json
-[
-    {
-        "seasonId": "<ulid>",
-        "startDate": "2026-01-01",
-        "endDate": "2026-12-31",
-        "description": "2026 Season"
-    },
-    {
-        "seasonId": "<ulid>",
-        "startDate": "2020-01-01",
-        "endDate": "2021-12-31",
-        "description": "2020 - 2021 Season"
-    },
-]
-```
-
-- Ordered newest-first (the UI picks the first entry as "current season" default).
-- The merged COVID season appears as the string `"2020-21"` — the website renders `IsMergedSeason` when this value is active.
-
----
-
 ### 2. `GET /seasons/{seasonId}/tournaments`
 
 Returns all tournaments belonging to a given season.
