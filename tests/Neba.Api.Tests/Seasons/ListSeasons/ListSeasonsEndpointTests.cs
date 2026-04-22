@@ -48,7 +48,7 @@ public sealed class ListSeasonsEndpointTests
 
         // Assert
         endpoint.Definition.Verbs.ShouldContain("GET");
-        endpoint.Definition.Routes.ShouldContain("/seasons");
+        endpoint.Definition.Routes.ShouldContain("/seasons/");
         endpoint.Definition.AnonymousVerbs.ShouldNotBeEmpty();
     }
 
