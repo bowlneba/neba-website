@@ -45,6 +45,7 @@ async Task Main()
 {
 	//BowlingCenters.RemoveRange(BowlingCenters);
 	TournamentChampions.RemoveRange(TournamentChampions);
+	TournamentEntries.RemoveRange(TournamentEntries);
 	Bowlers.RemoveRange(Bowlers);
 	HallsOfFameInductions.RemoveRange(HallsOfFameInductions);
 	BowlersOfTheYearAwards.RemoveRange(BowlersOfTheYearAwards);
@@ -106,7 +107,9 @@ async Task Main()
 	
 	var tournamentDbIdByDomainId = Tournaments.ToDictionary(tournament => Ulid.Parse(tournament.DomainId), tournament => tournament.Id);
 	var bowlerDbIdByWebsiteId = Bowlers.Where(bowler => bowler.WebsiteId.HasValue).ToDictionary(bowler => bowler.WebsiteId!.Value, bowler => bowler.Id);
+	
 	await MigrateTournamentChampions(bowlerDbIdByWebsiteId, spreadsheetTournaments, tournamentDbIdByDomainId);
+	await MigrateTournamentEntries(spreadsheetTournaments, tournamentDbIdByDomainId);
 }
 
 // You can define other methods, fields, classes and namespaces here
@@ -2960,7 +2963,27 @@ public async Task MigrateTournamentChampions(
 	
 	await SaveChangesAsync();
 	
-	"Tournament Champions Migrated".Dump();
+	"Historical Tournament Champions Migrated".Dump();
+}
+
+public async Task MigrateTournamentEntries(
+	IReadOnlyCollection<SpreadsheetTournament> tournaments,
+	Dictionary<Ulid, int> tournamentDbIdByDomainId)
+{
+	foreach (var tournament in tournaments.Where(t => t.EndDate.Year < 2026))
+	{
+		var tournamentEntry = new TournamentEntries
+		{
+			TournamentId = tournamentDbIdByDomainId[tournament.DomainId],
+			Entries = tournament.Entries
+		};
+		
+		TournamentEntries.Add(tournamentEntry);
+	}
+	
+	await SaveChangesAsync();
+	
+	"Historical Tournament Entries Migrated".Dump();
 }
 
 private PatternRatioCategory? GetPatternRatioCategory(decimal? leftRatio, decimal? rightRatio)
@@ -3158,7 +3181,7 @@ private async Task<IReadOnlyCollection<SpreadsheetTournament>> GetTournamentsFro
 			BowlingCenter = row[9]?.ToString() ?? string.Empty,
 			BowlingCenterCertificationNumber = row[14]?.ToString() ?? string.Empty,
 			CityState = row[10]?.ToString() ?? string.Empty,
-			Entries = int.TryParse(row[12]?.ToString(), out var entries) ? entries : 0,
+			Entries = int.TryParse(row[12]?.ToString(), out var entries) ? entries : -1,
 			Winners = row[13]?.ToString()?.Split("/").Select(id => int.TryParse(id, out var idValue) ? idValue : 0).ToList().AsReadOnly() ?? []
 		};
 
@@ -3219,7 +3242,7 @@ public sealed class SpreadsheetTournament
 
 	public required string CityState { get; init; }
 
-	public int? Entries { get; init; }
+	public int Entries { get; init; }
 
 	public IReadOnlyCollection<int>? Winners { get; init; }
 }
