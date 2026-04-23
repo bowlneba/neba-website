@@ -84,7 +84,7 @@ public sealed record TournamentSummaryDto
     /// <summary>
     /// Oil pattern details; null until published.
     /// </summary>
-    public OilPatternDto? OilPattern { get; init; }
+    public IReadOnlyCollection<TournamentOilPatternDto> OilPatterns { get; init; } = [];
 
     /// <summary>
     /// URL to the tournament logo image; null when unavailable.

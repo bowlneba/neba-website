@@ -7,6 +7,7 @@ namespace Neba.Domain.Tournaments;
 /// </summary>
 public sealed class TournamentOilPattern
 {
+
     /// <summary>
     /// The tournament associated with this oil pattern. This is a reference to the Tournament entity, allowing us to access tournament details such as name, dates, and location when needed. It is marked as internal to restrict access to the domain layer, ensuring that external layers interact with tournaments through their respective repositories and services rather than directly through this association entity.
     /// </summary>

@@ -58,4 +58,12 @@ public sealed class OilPattern
     /// Null for custom patterns not derived from the Kegel catalog.
     /// </summary>
     public Guid? KegelId { get; init; }
+
+    private readonly List<TournamentOilPattern> _tournaments = [];
+
+    /// <summary>
+    /// Navigation property for the tournaments that use this oil pattern. This collection will be empty until the relationship is properly established in the database and loaded into memory.
+    /// </summary>
+    public IReadOnlyCollection<TournamentOilPattern> Tournaments
+        => _tournaments;
 }

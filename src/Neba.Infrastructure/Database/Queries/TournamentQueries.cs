@@ -109,9 +109,22 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
                     RegistrationUrl = tournament.ExternalRegistrationUrl,
                     LogoContainer = tournament.Logo != null ? tournament.Logo.Container : null,
                     LogoPath = tournament.Logo != null ? tournament.Logo.Path : null,
+                    OilPatterns = tournament.OilPatterns.Select(tournamentOilPattern => new TournamentOilPatternDto
+                    {
+                        OilPattern = new OilPatternDto
+                        {
+                            Id = tournamentOilPattern.OilPattern.Id,
+                            Name = tournamentOilPattern.OilPattern.Name,
+                            Length = tournamentOilPattern.OilPattern.Length,
+                            Volume = tournamentOilPattern.OilPattern.Volume,
+                            LeftRatio = tournamentOilPattern.OilPattern.LeftRatio,
+                            RightRatio = tournamentOilPattern.OilPattern.RightRatio,
+                            KegelId = tournamentOilPattern.OilPattern.KegelId,
+                        },
+                        TournamentRounds = tournamentOilPattern.TournamentRounds.Select(tournamentRound => tournamentRound.Name).ToList()
+                    }).ToList(),
 
                     Reservations = 999, // need to replace once actual column exists
-                    OilPattern = null, // need to replace once actual relationship exists
                 }
             })
             .ToListAsync(cancellationToken);

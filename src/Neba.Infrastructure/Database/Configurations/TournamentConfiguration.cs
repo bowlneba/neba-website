@@ -83,5 +83,10 @@ internal sealed class TournamentConfiguration
             filePathColumnName: "logo_file_path",
             contentTypeColumnName: "logo_content_type",
             sizeInBytesColumnName: "logo_size_in_bytes");
+
+        builder.HasMany(tournament => tournament.OilPatterns)
+            .WithOne(tournamentOilPattern => tournamentOilPattern.Tournament)
+            .HasForeignKey(ForeignKeyName)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

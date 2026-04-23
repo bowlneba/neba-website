@@ -8,7 +8,7 @@ namespace Neba.Infrastructure.Database.Configurations;
 internal sealed class OilPatternConfiguration
     : IEntityTypeConfiguration<OilPattern>
 {
-    internal const string ForignKeyName = "oil_pattern_id";
+    internal const string ForeignKeyName = "oil_pattern_id";
 
     public void Configure(EntityTypeBuilder<OilPattern> builder)
     {
@@ -46,5 +46,10 @@ internal sealed class OilPatternConfiguration
         builder.HasIndex(pattern => pattern.KegelId)
             .IsUnique()
             .AreNullsDistinct();
+
+        builder.HasMany(oilPattern => oilPattern.Tournaments)
+            .WithOne(tournamentOilPattern => tournamentOilPattern.OilPattern)
+            .HasForeignKey(tournamentOilPattern => tournamentOilPattern.OilPatternId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
