@@ -28,7 +28,7 @@ public static class AddressFactory
             city ?? ValidCity,
             state ?? ValidUsState,
             postalCode ?? ValidZipCode,
-            coordinates ?? ValidCoordinates
+            coordinates
         ).Value;
 
     public static Address BogusUs(int? seed = null)
