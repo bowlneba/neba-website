@@ -22,8 +22,36 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
     private readonly IQueryable<HistoricalTournamentChampion> _historicalTournamentChampions
         = appDbContext.HistoricalTournamentChampions.AsNoTracking();
 
+    private readonly IQueryable<HistoricalTournamentEntries> _historicalTournamentEntries
+        = appDbContext.HistoricalTournamentEntries.AsNoTracking();
+
     public async Task<int> GetTournamentCountForSeasonAsync(SeasonId seasonId, CancellationToken cancellationToken)
         => await _tournaments.CountAsync(tournament => tournament.SeasonId == seasonId, cancellationToken);
+
+    public async Task<IReadOnlyDictionary<TournamentId, int>> GetTournamentEntryCountsAsync(IEnumerable<TournamentId> tournamentIds, CancellationToken cancellationToken)
+    {
+        var tournamentIdsByDatabaseId = await _tournaments
+            .Where(tournament => tournamentIds.Contains(tournament.Id))
+            .Select(tournament => new
+            {
+                DatabaseId = EF.Property<int>(tournament, ShadowIdConfiguration.DefaultPropertyName),
+                TournamentId = tournament.Id
+            })
+            .ToDictionaryAsync(t => t.DatabaseId, t => t.TournamentId, cancellationToken);
+
+        var entryCounts = await _historicalTournamentEntries
+            .Where(tournament => tournamentIdsByDatabaseId.Keys.Contains(tournament.TournamentId))
+            .ToDictionaryAsync(tournament => tournament.TournamentId, tournament => tournament.Entries, cancellationToken);
+
+        // we will need to look into the stats tables for 2026+ tournaments once they come over
+        return tournamentIdsByDatabaseId.Values.ToDictionary(
+            tournamentId => tournamentId,
+            tournamentId =>
+            {
+                var databaseId = tournamentIdsByDatabaseId.First(t => t.Value == tournamentId).Key;
+                return entryCounts.GetValueOrDefault(databaseId, 0);
+            });
+    }
 
     public async Task<IReadOnlyCollection<TournamentSummaryDto>> GetTournamentsInSeasonAsync(SeasonId seasonId, CancellationToken cancellationToken)
     {

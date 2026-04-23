@@ -101,6 +101,89 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
         result.ShouldBe(0);
     }
 
+    [Fact(DisplayName = "GetTournamentEntryCountsAsync returns counts for requested tournaments")]
+    public async Task GetTournamentEntryCountsAsync_ShouldReturnCounts_WhenRequestedTournamentsHaveHistoricalEntries()
+    {
+        // Arrange
+        var season = SeasonFactory.Create();
+        var tournamentA = TournamentFactory.Create(name: "Tournament A", seasonId: season.Id);
+        var tournamentB = TournamentFactory.Create(name: "Tournament B", seasonId: season.Id);
+
+        await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddRangeAsync([tournamentA, tournamentB], TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        _dbContext.Add(HistoricalTournamentEntriesFactory.Create(tournament: tournamentA, entries: 125));
+        _dbContext.Add(HistoricalTournamentEntriesFactory.Create(tournament: tournamentB, entries: 231));
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentEntryCountsAsync(
+            [tournamentA.Id, tournamentB.Id],
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Count.ShouldBe(2);
+        result[tournamentA.Id].ShouldBe(125);
+        result[tournamentB.Id].ShouldBe(231);
+    }
+
+    [Fact(DisplayName = "GetTournamentEntryCountsAsync returns zero for requested tournaments without historical entries")]
+    public async Task GetTournamentEntryCountsAsync_ShouldReturnZero_WhenRequestedTournamentHasNoHistoricalEntry()
+    {
+        // Arrange
+        var season = SeasonFactory.Create();
+        var tournamentWithEntries = TournamentFactory.Create(name: "With Entries", seasonId: season.Id);
+        var tournamentWithoutEntries = TournamentFactory.Create(name: "Without Entries", seasonId: season.Id);
+
+        await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddRangeAsync(
+            [tournamentWithEntries, tournamentWithoutEntries],
+            TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        _dbContext.Add(HistoricalTournamentEntriesFactory.Create(tournament: tournamentWithEntries, entries: 180));
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentEntryCountsAsync(
+            [tournamentWithEntries.Id, tournamentWithoutEntries.Id],
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Count.ShouldBe(2);
+        result[tournamentWithEntries.Id].ShouldBe(180);
+        result[tournamentWithoutEntries.Id].ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "GetTournamentEntryCountsAsync does not return tournaments that were not requested")]
+    public async Task GetTournamentEntryCountsAsync_ShouldReturnOnlyRequestedTournaments_WhenOtherTournamentsHaveHistoricalEntries()
+    {
+        // Arrange
+        var season = SeasonFactory.Create();
+        var requestedTournament = TournamentFactory.Create(name: "Requested", seasonId: season.Id);
+        var otherTournament = TournamentFactory.Create(name: "Other", seasonId: season.Id);
+
+        await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddRangeAsync([requestedTournament, otherTournament], TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        _dbContext.Add(HistoricalTournamentEntriesFactory.Create(tournament: requestedTournament, entries: 90));
+        _dbContext.Add(HistoricalTournamentEntriesFactory.Create(tournament: otherTournament, entries: 333));
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentEntryCountsAsync(
+            [requestedTournament.Id],
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Count.ShouldBe(1);
+        result.ShouldContainKey(requestedTournament.Id);
+        result[requestedTournament.Id].ShouldBe(90);
+        result.ShouldNotContainKey(otherTournament.Id);
+    }
+
     [Fact(DisplayName = "GetTournamentsInSeasonAsync returns only tournaments for the requested season")]
     public async Task GetTournamentsInSeasonAsync_ReturnsOnlyTournamentsForRequestedSeason()
     {
