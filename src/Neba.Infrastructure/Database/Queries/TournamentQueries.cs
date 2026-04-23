@@ -110,7 +110,6 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
                     RegistrationUrl = null, // need to replace once actual column exists
                     Reservations = 999, // need to replace once actual column exists
                     OilPattern = null, // need to replace once actual relationship exists
-                    LogoUrl = null, // need to replace once actual relationship exists
                     LogoContainer = null, // need to replace once actual relationship exists
                     LogoPath = null, // need to replace once actual relationship exists
                 }

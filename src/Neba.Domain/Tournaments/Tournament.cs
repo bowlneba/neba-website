@@ -4,6 +4,8 @@ using ErrorOr;
 
 using Neba.Domain.BowlingCenters;
 using Neba.Domain.Seasons;
+using Neba.Domain.Sponsors;
+using Neba.Domain.Storage;
 
 namespace Neba.Domain.Tournaments;
 
@@ -79,6 +81,21 @@ public sealed class Tournament
 
     internal Season Season { get; init; } = null!;
 
+    /// <summary>
+    /// Gets the entry fee amount for this tournament, which is the cost for a team to participate.
+    /// </summary>
+    public decimal EntryFee { get; init; }
+
+    /// <summary>
+    /// Gets the URL where teams can register for the tournament, or <see langword="null"/> if registration
+    /// </summary>
+    public Uri? ExternalRegistrationUrl { get; init; }
+
+    /// <summary>
+    /// Gets an optional logo image for the tournament, which can be used in promotional materials and on the website. This is represented as a <see cref="StoredFile"/> value object, which contains information about the file's storage location, content type, and other relevant metadata. This allows for flexible handling of associated media while keeping the core tournament data focused on the essential attributes of the event.
+    /// </summary>
+    public StoredFile? Logo { get; init; }
+
     private readonly List<TournamentSponsor> _sponsors = [];
 
     /// <summary>
@@ -86,6 +103,35 @@ public sealed class Tournament
     /// </summary>
     public IReadOnlyCollection<TournamentSponsor> Sponsors
         => _sponsors;
+
+    /// <summary>
+    /// Adds a sponsor to the tournament with the specified sponsorship amount and title sponsor status. If the sponsor has already been added to the tournament, or if a title sponsor has already been designated and the new sponsor is also marked as a title sponsor, an appropriate error is returned. Otherwise, the sponsor is added successfully.
+    /// </summary>
+    /// <param name="sponsorId">The unique identifier of the sponsor.</param>
+    /// <param name="titleSponsor">Indicates whether the sponsor is a title sponsor.</param>
+    /// <param name="sponsorshipAmount">The amount of the sponsorship.</param>
+    /// <returns>An <see cref="ErrorOr{Success}"/> indicating the result of the operation.</returns>
+    public ErrorOr<Success> AddSponsor(SponsorId sponsorId, bool titleSponsor, decimal sponsorshipAmount)
+    {
+        if (_sponsors.Any(tournamentSponsor => tournamentSponsor.SponsorId == sponsorId))
+        {
+            return TournamentErrors.SponsorAlreadyAdded(sponsorId);
+        }
+
+        if (titleSponsor && _sponsors.Any(tournamentSponsor => tournamentSponsor.TitleSponsor))
+        {
+            return TournamentErrors.TitleSponsorAlreadyAdded(_sponsors.Single(tournamentSponsor => tournamentSponsor.TitleSponsor).SponsorId);
+        }
+
+        _sponsors.Add(new TournamentSponsor
+        {
+            SponsorId = sponsorId,
+            TitleSponsor = titleSponsor,
+            SponsorshipAmount = sponsorshipAmount
+        });
+
+        return Result.Success;
+    }
 }
 
 internal static class TournamentErrors
@@ -99,6 +145,28 @@ internal static class TournamentErrors
             {
                 { "SeasonStartDate", seasonStartDate.ToString("yyyy-MM-dd", CultureInfo.CurrentCulture) },
                 { "SeasonEndDate", seasonEndDate.ToString("yyyy-MM-dd", CultureInfo.CurrentCulture) },
+            });
+    }
+
+    public static Error SponsorAlreadyAdded(SponsorId sponsorId)
+    {
+        return Error.Validation(
+            code: "Tournaments.SponsorAlreadyAdded",
+            description: "The specified sponsor has already been added to this tournament.",
+            metadata: new Dictionary<string, object>
+            {
+                { "SponsorId", sponsorId.ToString() }
+            });
+    }
+
+    public static Error TitleSponsorAlreadyAdded(SponsorId titleSponsorId)
+    {
+        return Error.Validation(
+            code: "Tournaments.TitleSponsorAlreadyAdded",
+            description: "A title sponsor has already been added to this tournament.",
+            metadata: new Dictionary<string, object>
+            {
+                { "TitleSponsorId", titleSponsorId.ToString() }
             });
     }
 }
