@@ -1,4 +1,5 @@
 using Neba.Domain.Tournaments;
+using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 
 namespace Neba.Domain.Tests.Tournaments;
@@ -7,6 +8,55 @@ namespace Neba.Domain.Tests.Tournaments;
 [Component("Tournaments.TournamentOilPattern")]
 public sealed class TournamentOilPatternTests
 {
+    [Fact(DisplayName = "Create returns TournamentOilPattern with correct OilPatternId")]
+    public void Create_ShouldReturnOilPattern_WithCorrectOilPatternId()
+    {
+        var id = OilPatternId.New();
+
+        var result = TournamentOilPattern.Create(id, [TournamentRound.Qualifying]);
+
+        result.IsError.ShouldBeFalse();
+        result.Value.OilPatternId.ShouldBe(id);
+    }
+
+    [Fact(DisplayName = "Create returns TournamentOilPattern with all specified rounds")]
+    public void Create_ShouldReturnOilPattern_WithSpecifiedRounds()
+    {
+        var result = TournamentOilPattern.Create(OilPatternId.New(), [TournamentRound.Qualifying, TournamentRound.MatchPlay]);
+
+        result.IsError.ShouldBeFalse();
+        result.Value.TournamentRounds.Count.ShouldBe(2);
+        result.Value.TournamentRounds.ShouldContain(TournamentRound.Qualifying);
+        result.Value.TournamentRounds.ShouldContain(TournamentRound.MatchPlay);
+    }
+
+    [Fact(DisplayName = "Create returns Tournaments.NoTournamentRoundsSpecified when rounds collection is empty")]
+    public void Create_ShouldReturnError_WhenRoundsIsEmpty()
+    {
+        var result = TournamentOilPattern.Create(OilPatternId.New(), []);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournaments.NoTournamentRoundsSpecified");
+    }
+
+    [Fact(DisplayName = "Create throws ArgumentException when duplicate rounds are provided")]
+    public void Create_ShouldThrow_WhenDuplicateRoundsProvided()
+    {
+        Action act = () => TournamentOilPattern.Create(OilPatternId.New(), [TournamentRound.Qualifying, TournamentRound.Qualifying]);
+
+        act.ShouldThrow<ArgumentException>().ParamName.ShouldBe("tournamentRounds");
+    }
+
+#nullable disable
+    [Fact(DisplayName = "Create throws ArgumentNullException when tournamentRounds is null")]
+    public void Create_ShouldThrow_WhenTournamentRoundsIsNull()
+    {
+        Action act = () => TournamentOilPattern.Create(OilPatternId.New(), null);
+
+        act.ShouldThrow<ArgumentNullException>();
+    }
+#nullable enable
+
     [Fact(DisplayName = "AddTournamentRound returns Updated when round is new")]
     public void AddTournamentRound_ShouldReturnUpdated_WhenRoundIsNew()
     {
@@ -73,6 +123,7 @@ public sealed class TournamentOilPatternTests
         var result = oilPattern.AddTournamentRound(TournamentRound.Qualifying);
 
         // Assert
+        result.FirstError.Metadata.ShouldNotBeNull();
         result.FirstError.Metadata.ShouldContainKey("TournamentRoundName");
         result.FirstError.Metadata["TournamentRoundName"].ShouldBe(TournamentRound.Qualifying.Name);
     }
