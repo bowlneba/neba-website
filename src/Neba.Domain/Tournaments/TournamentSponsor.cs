@@ -1,3 +1,5 @@
+using ErrorOr;
+
 using Neba.Domain.Sponsors;
 
 namespace Neba.Domain.Tournaments;
@@ -31,4 +33,24 @@ public sealed class TournamentSponsor
     /// The amount of the sponsorship provided by the sponsor for this tournament. This decimal property allows us to capture the financial contribution of the sponsor to the tournament, which can be used for reporting, analytics, and determining sponsorship tiers. It is required to quantify the sponsorship relationship in the database.
     /// </summary>
     public required decimal SponsorshipAmount { get; init; }
+
+    internal static ErrorOr<TournamentSponsor> Create(SponsorId sponsorId, bool titleSponsor, decimal sponsorshipAmount)
+    {
+        if (sponsorshipAmount < 0)
+            return TournamentSponsorErrors.NegativeSponsorshipAmount;
+
+        return new TournamentSponsor
+        {
+            SponsorId = sponsorId,
+            TitleSponsor = titleSponsor,
+            SponsorshipAmount = sponsorshipAmount
+        };
+    }
+}
+
+internal static class TournamentSponsorErrors
+{
+    public static readonly Error NegativeSponsorshipAmount = Error.Validation(
+        code: "Tournaments.TournamentSponsor.NegativeSponsorshipAmount",
+        description: "Sponsorship amount must be zero or greater.");
 }

@@ -1,5 +1,6 @@
 using Neba.Domain.Sponsors;
 using Neba.Domain.Tournaments;
+using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 
 namespace Neba.Domain.Tests.Tournaments;
@@ -66,6 +67,7 @@ public sealed class TournamentTests
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Tournaments.SponsorAlreadyAdded");
+        result.FirstError.Metadata.ShouldNotBeNull();
         result.FirstError.Metadata.ShouldContainKey("SponsorId");
         result.FirstError.Metadata["SponsorId"].ShouldBe(sponsorId.ToString());
     }
@@ -86,6 +88,7 @@ public sealed class TournamentTests
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Tournaments.TitleSponsorAlreadyAdded");
+        result.FirstError.Metadata.ShouldNotBeNull();
         result.FirstError.Metadata.ShouldContainKey("TitleSponsorId");
         result.FirstError.Metadata["TitleSponsorId"].ShouldBe(existingTitleSponsorId.ToString());
     }
@@ -120,5 +123,88 @@ public sealed class TournamentTests
         // Assert
         result.IsError.ShouldBeFalse();
         tournament.Sponsors.Count.ShouldBe(3);
+    }
+
+    [Fact(DisplayName = "AddSponsor returns Tournaments.TournamentSponsor.NegativeSponsorshipAmount when sponsorship amount is negative")]
+    public void AddSponsor_ShouldReturnError_WhenSponsorshipAmountIsNegative()
+    {
+        var tournament = TournamentFactory.Create();
+
+        var result = tournament.AddSponsor(SponsorId.New(), titleSponsor: false, sponsorshipAmount: -1m);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournaments.TournamentSponsor.NegativeSponsorshipAmount");
+    }
+
+    [Fact(DisplayName = "AddOilPattern returns Success when oil pattern is new")]
+    public void AddOilPattern_ShouldReturnSuccess_WhenOilPatternIsNew()
+    {
+        var tournament = TournamentFactory.Create();
+
+        var result = tournament.AddOilPattern(OilPatternId.New(), TournamentRound.Qualifying);
+
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "AddOilPattern adds oil pattern to collection when pattern is new")]
+    public void AddOilPattern_ShouldAddToCollection_WhenOilPatternIsNew()
+    {
+        var tournament = TournamentFactory.Create();
+        var oilPatternId = OilPatternId.New();
+
+        tournament.AddOilPattern(oilPatternId, TournamentRound.Qualifying);
+
+        tournament.OilPatterns.ShouldContain(op => op.OilPatternId == oilPatternId);
+    }
+
+    [Fact(DisplayName = "AddOilPattern adds specified rounds to the new oil pattern")]
+    public void AddOilPattern_ShouldAddSpecifiedRounds_WhenOilPatternIsNew()
+    {
+        var tournament = TournamentFactory.Create();
+        var oilPatternId = OilPatternId.New();
+
+        tournament.AddOilPattern(oilPatternId, TournamentRound.Qualifying, TournamentRound.MatchPlay);
+
+        var added = tournament.OilPatterns.Single(op => op.OilPatternId == oilPatternId);
+        added.TournamentRounds.ShouldContain(TournamentRound.Qualifying);
+        added.TournamentRounds.ShouldContain(TournamentRound.MatchPlay);
+    }
+
+    [Fact(DisplayName = "AddOilPattern returns Success and adds round to existing pattern without creating a duplicate")]
+    public void AddOilPattern_ShouldAddRoundToExistingPattern_WhenPatternAlreadyExists()
+    {
+        var tournament = TournamentFactory.Create();
+        var oilPatternId = OilPatternId.New();
+        tournament.AddOilPattern(oilPatternId, TournamentRound.Qualifying);
+
+        var result = tournament.AddOilPattern(oilPatternId, TournamentRound.MatchPlay);
+
+        result.IsError.ShouldBeFalse();
+        tournament.OilPatterns.Count.ShouldBe(1);
+        tournament.OilPatterns.Single().TournamentRounds.ShouldContain(TournamentRound.MatchPlay);
+    }
+
+    [Fact(DisplayName = "AddOilPattern returns Tournaments.TournamentOilPattern.TournamentRoundAlreadyAssociated when round is already on the existing pattern")]
+    public void AddOilPattern_ShouldReturnError_WhenRoundAlreadyAssociatedWithExistingPattern()
+    {
+        var tournament = TournamentFactory.Create();
+        var oilPatternId = OilPatternId.New();
+        tournament.AddOilPattern(oilPatternId, TournamentRound.Qualifying);
+
+        var result = tournament.AddOilPattern(oilPatternId, TournamentRound.Qualifying);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournaments.TournamentOilPattern.TournamentRoundAlreadyAssociated");
+    }
+
+    [Fact(DisplayName = "AddOilPattern returns Tournaments.NoTournamentRoundsSpecified when no rounds are provided")]
+    public void AddOilPattern_ShouldReturnError_WhenNoRoundsSpecified()
+    {
+        var tournament = TournamentFactory.Create();
+
+        var result = tournament.AddOilPattern(OilPatternId.New());
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournaments.NoTournamentRoundsSpecified");
     }
 }

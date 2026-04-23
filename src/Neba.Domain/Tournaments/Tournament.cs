@@ -123,12 +123,59 @@ public sealed class Tournament
             return TournamentErrors.TitleSponsorAlreadyAdded(_sponsors.Single(tournamentSponsor => tournamentSponsor.TitleSponsor).SponsorId);
         }
 
-        _sponsors.Add(new TournamentSponsor
+        var sponsor = TournamentSponsor.Create(sponsorId, titleSponsor, sponsorshipAmount);
+        if (sponsor.IsError) return sponsor.Errors;
+
+        _sponsors.Add(sponsor.Value);
+
+        return Result.Success;
+    }
+
+    private readonly List<TournamentOilPattern> _oilPatterns = [];
+
+    /// <summary>
+    /// Gets the collection of oil patterns associated with this tournament, along with the specific rounds to which each pattern was applied. This allows us to track the oil conditions for each round of the tournament, providing valuable context for tournament results and historical records. Each <see cref="TournamentOilPattern"/> in the collection includes a reference to the associated <see cref="OilPattern"/>, as well as the specific <see cref="TournamentRound"/> values that indicate which rounds of the tournament used that oil pattern.
+    /// </summary>
+    public IReadOnlyCollection<TournamentOilPattern> OilPatterns
+        => _oilPatterns;
+
+    /// <summary>
+    /// Associates an oil pattern with this tournament for the specified tournament rounds. If the oil pattern is already associated with the tournament, the specified rounds will be added to the existing association. If any of the specified rounds are already associated with the oil pattern, an appropriate error is returned to prevent duplicate associations. Otherwise, the oil pattern and round associations are added successfully.
+    /// </summary>
+    /// <param name="oilPatternId">The unique identifier of the oil pattern to associate with the tournament.</param>
+    /// <param name="tournamentRounds">The collection of tournament rounds to associate with the oil pattern.</param>
+    /// <returns>An <see cref="ErrorOr{Success}"/> indicating the result of the operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when tournamentRounds is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when duplicate tournament rounds are provided for an existing oil pattern association.</exception>
+
+    public ErrorOr<Success> AddOilPattern(OilPatternId oilPatternId, params TournamentRound[] tournamentRounds)
+    {
+        ArgumentNullException.ThrowIfNull(tournamentRounds);
+
+        var existingOilPattern = _oilPatterns.SingleOrDefault(top => top.OilPatternId == oilPatternId);
+        if (existingOilPattern is not null)
         {
-            SponsorId = sponsorId,
-            TitleSponsor = titleSponsor,
-            SponsorshipAmount = sponsorshipAmount
-        });
+            foreach (var round in tournamentRounds)
+            {
+                var result = existingOilPattern.AddTournamentRound(round);
+
+                if (result.IsError)
+                {
+                    return result.Errors;
+                }
+            }
+
+            return Result.Success;
+        }
+
+        var newOilPatternResult = TournamentOilPattern.Create(oilPatternId, tournamentRounds);
+
+        if (newOilPatternResult.IsError)
+        {
+            return newOilPatternResult.Errors;
+        }
+
+        _oilPatterns.Add(newOilPatternResult.Value);
 
         return Result.Success;
     }
