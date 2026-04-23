@@ -108,8 +108,8 @@ async Task Main()
 	var tournamentDbIdByDomainId = Tournaments.ToDictionary(tournament => Ulid.Parse(tournament.DomainId), tournament => tournament.Id);
 	var bowlerDbIdByWebsiteId = Bowlers.Where(bowler => bowler.WebsiteId.HasValue).ToDictionary(bowler => bowler.WebsiteId!.Value, bowler => bowler.Id);
 	
-	await MigrateTournamentChampions(bowlerDbIdByWebsiteId, spreadsheetTournaments, tournamentDbIdByDomainId);
-	await MigrateTournamentEntries(spreadsheetTournaments, tournamentDbIdByDomainId);
+	await MigrateHistoricalTournamentChampions(bowlerDbIdByWebsiteId, spreadsheetTournaments, tournamentDbIdByDomainId);
+	await MigrateHistoricalTournamentEntries(spreadsheetTournaments, tournamentDbIdByDomainId);
 }
 
 // You can define other methods, fields, classes and namespaces here
@@ -2940,7 +2940,7 @@ public async Task<IReadOnlyCollection<SpreadsheetTournament>> MigrateTournaments
 	return spreadsheetTournaments;
 }
 
-public async Task MigrateTournamentChampions(
+public async Task MigrateHistoricalTournamentChampions(
 	Dictionary<int, int> bowlerDbIdByWebsiteId, 
 	IReadOnlyCollection<SpreadsheetTournament> tournaments,
 	Dictionary<Ulid, int> tournamentDbIdByDomainId)
@@ -2966,7 +2966,7 @@ public async Task MigrateTournamentChampions(
 	"Historical Tournament Champions Migrated".Dump();
 }
 
-public async Task MigrateTournamentEntries(
+public async Task MigrateHistoricalTournamentEntries(
 	IReadOnlyCollection<SpreadsheetTournament> tournaments,
 	Dictionary<Ulid, int> tournamentDbIdByDomainId)
 {
