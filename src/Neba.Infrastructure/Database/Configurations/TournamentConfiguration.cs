@@ -69,5 +69,19 @@ internal sealed class TournamentConfiguration
             .WithOne(tournamentSponsor => tournamentSponsor.Tournament)
             .HasForeignKey(ForeignKeyName)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property(tournament => tournament.EntryFee)
+            .HasPrecision(5,2)
+            .IsRequired();
+
+        builder.Property(tournament => tournament.ExternalRegistrationUrl)
+            .HasColumnName("external_registration_url")
+            .HasMaxLength(511);
+
+        builder.HasStoredFile(tournament => tournament.Logo,
+            containerColumnName: "logo_container",
+            filePathColumnName: "logo_file_path",
+            contentTypeColumnName: "logo_content_type",
+            sizeInBytesColumnName: "logo_size_in_bytes");
     }
 }

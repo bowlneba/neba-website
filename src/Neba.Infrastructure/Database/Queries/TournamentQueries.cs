@@ -105,13 +105,13 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
                     PatternRatioCategory = tournament.PatternRatioCategory == null
                         ? null
                         : tournament.PatternRatioCategory.Name,
+                    EntryFee = tournament.EntryFee,
+                    RegistrationUrl = tournament.ExternalRegistrationUrl,
+                    LogoContainer = tournament.Logo != null ? tournament.Logo.Container : null,
+                    LogoPath = tournament.Logo != null ? tournament.Logo.Path : null,
 
-                    EntryFee = 9999.99m, // need to replace once actual column exists
-                    RegistrationUrl = null, // need to replace once actual column exists
                     Reservations = 999, // need to replace once actual column exists
                     OilPattern = null, // need to replace once actual relationship exists
-                    LogoContainer = null, // need to replace once actual relationship exists
-                    LogoPath = null, // need to replace once actual relationship exists
                 }
             })
             .ToListAsync(cancellationToken);

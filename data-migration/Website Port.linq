@@ -2925,7 +2925,8 @@ public async Task<IReadOnlyCollection<SpreadsheetTournament>> MigrateTournaments
 			LegacyId = softwareTournament?.Id,
 			PatternLengthCategory = GetPatternLengthCategory(softwareTournament?.OilPatternLength)?.Value,
 			PatternRatioCategory = GetPatternRatioCategory(softwareTournament?.OilPatternLeftRatio, softwareTournament?.OilPatternRightRatio)?.Value,
-			SeasonId = spreadsheetTournament.EndDate.Year == 2020 ? seasonDomainIdByEndYear[2021] : seasonDomainIdByEndYear[spreadsheetTournament.EndDate.Year]
+			SeasonId = spreadsheetTournament.EndDate.Year == 2020 ? seasonDomainIdByEndYear[2021] : seasonDomainIdByEndYear[spreadsheetTournament.EndDate.Year],
+			EntryFee = softwareTournament?.EntryFee ?? 0
 		};
 		
 		spreadsheetTournament.DomainId =  Ulid.Parse(tournament.DomainId);
@@ -3207,7 +3208,8 @@ private async Task<IReadOnlyCollection<SoftwareTournament>> GetTournamentsFromSo
 			Name = row.Field<string>("Name") ?? string.Empty,
 			OilPatternLength = row.Field<int?>("OilPattern_Length"),
 			OilPatternLeftRatio = row.Field<decimal?>("OilPattern_LeftRatio"),
-			OilPatternRightRatio = row.Field<decimal?>("OilPattern_RightRatio")
+			OilPatternRightRatio = row.Field<decimal?>("OilPattern_RightRatio"),
+			EntryFee = row.Field<decimal>("EntryFee")
 		})
 		.ToList();
 		
@@ -3258,6 +3260,8 @@ public sealed class SoftwareTournament
 	public decimal? OilPatternRightRatio { get; init; }
 	
 	public int? OilPatternLength { get; init; }
+	
+	public decimal EntryFee { get; init; }
 }
 
 #endregion

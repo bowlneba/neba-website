@@ -338,6 +338,16 @@ await _dbContext.SaveChangesAsync(ct);
 
 **Note**: `PropertyAccessMode.Field` / `Navigation().HasField("_sponsors")` does NOT help — EF still determines `TCollection` from the property type, not the backing field type.
 
+**Ordering constraint when combining TournamentSponsors + other dependents in the same test**: Any entities added via navigation properties to already-saved aggregates (e.g. `HistoricalTournamentChampion { Tournament = tournament }`) must be added and saved **before** `ChangeTracker.Clear()`. After the clear, detached entities passed as navigation properties are re-tracked as `Added`, causing a unique constraint violation on re-insert. The required save order for a fully-populated tournament test is:
+
+1. Save all principals (season, bowling center, tournament, sponsors, bowlers)
+2. Add `HistoricalTournamentChampion` entries (tournament + bowlers still tracked) → `SaveChangesAsync`
+3. Read `tournamentDbId` from shadow property
+4. `ChangeTracker.Clear()`
+5. Add `TournamentSponsor` entries via shadow FK → `SaveChangesAsync`
+
+**Stable Verify snapshots for tournaments**: Use explicit IDs via the source-generated `TournamentId(string)` constructor (the `ulid-full.typedid` template generates `public PLACEHOLDERID(string value)`). All-numeric ULID strings are valid (e.g. `"01000000000000000000000001"`). Apply the same to `SeasonId`, `BowlerId`, `SponsorId` — any ID that will appear in the snapshot output.
+
 ### Razor @code Block — Parser Limitations
 
 Two patterns that break Razor's lexer even inside `@code { }` blocks:
