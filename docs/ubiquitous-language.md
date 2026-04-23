@@ -592,6 +592,24 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 ---
 
+### Tournament Round
+
+**Definition**: The phase of a tournament in which a group of squads is contested. Rounds are classified by format and their role in the tournament structure. A single tournament may include one or more rounds.
+
+| Value | Name | Description |
+| --- | --- | --- |
+| `Qualifying` | Qualifying | Bowlers establish a pinfall score to determine advancement eligibility. All qualifying squads within a tournament use the same oil pattern. Bowlers may bowl one or more squads depending on tournament entry rules |
+| `Cashers` | Cashers | An intermediate round after qualifying for bowlers who made an initial cut, competing for a secondary cut. Bowlers eliminated here still earn a cash prize. Not currently used by NEBA; supported for compatibility with external tournament formats |
+| `MatchPlay` | Match Play | A bracket-based finals round with head-to-head competition. Advancement is determined by individual game outcomes rather than cumulative pinfall. Bracket structure may be traditional or eliminator format |
+| `StepLadder` | Step Ladder | A finals round in which a small number of advancing bowlers compete in sequenced single elimination. The lowest seed bowls the next lowest, with the winner advancing up the ladder until a champion is determined |
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `TournamentRound` (SmartFlagEnum — bitmask, powers of two)
+
+---
+
 ### Title Sponsor (Tournament context)
 
 **Definition**: The main sponsor for a specific Tournament. The Title Sponsor receives primary naming and promotional placement for that event (for example, being formally associated with the tournament name in schedules and marketing).
