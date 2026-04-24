@@ -1,5 +1,6 @@
-using Neba.Domain.BowlingCenters;
 using Neba.Domain.Bowlers;
+using Neba.Domain.BowlingCenters;
+using Neba.Domain.Contact;
 using Neba.Domain.Geography;
 using Neba.Domain.Seasons;
 using Neba.Domain.Sponsors;
@@ -16,7 +17,6 @@ using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Sponsors;
 using Neba.TestFactory.Storage;
 using Neba.TestFactory.Tournaments;
-using Neba.Domain.Contact;
 
 namespace Neba.Infrastructure.Tests.Database.Queries;
 

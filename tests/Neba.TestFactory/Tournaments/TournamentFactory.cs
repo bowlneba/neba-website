@@ -69,7 +69,7 @@ public static class TournamentFactory
         var seasons = UniquePool.Create(SeasonFactory.Bogus(count, seed: seed), seed);
         var sponsors = UniquePool.Create(SponsorFactory.Bogus(count, seed: seed), seed);
         var logos = UniquePool.CreateNullable(StoredFileFactory.Bogus(count, seed), seed);
-        
+
         var faker = new Faker<Tournament>()
             .CustomInstantiator(f =>
             {

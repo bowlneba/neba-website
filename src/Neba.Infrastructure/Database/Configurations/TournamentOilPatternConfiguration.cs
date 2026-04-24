@@ -13,7 +13,7 @@ internal sealed class TournamentOilPatternConfiguration
     {
         builder.ToTable("tournament_oil_patterns", AppDbContext.DefaultSchema);
 
-        builder.HasKey(TournamentConfiguration.ForeignKeyName , nameof(TournamentOilPattern.OilPatternId));
+        builder.HasKey(TournamentConfiguration.ForeignKeyName, nameof(TournamentOilPattern.OilPatternId));
 
         builder.Property(tournamentOilPattern => tournamentOilPattern.TournamentRounds)
             .HasColumnName("tournament_rounds")

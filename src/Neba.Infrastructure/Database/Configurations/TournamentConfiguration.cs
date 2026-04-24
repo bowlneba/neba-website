@@ -71,7 +71,7 @@ internal sealed class TournamentConfiguration
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Property(tournament => tournament.EntryFee)
-            .HasPrecision(5,2)
+            .HasPrecision(5, 2)
             .IsRequired();
 
         builder.Property(tournament => tournament.ExternalRegistrationUrl)
