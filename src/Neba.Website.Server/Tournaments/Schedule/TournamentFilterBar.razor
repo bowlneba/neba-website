@@ -1,42 +1,41 @@
 @namespace Neba.Website.Server.Tournaments.Schedule
 
 <div class="tournament-filter-bar">
-    <div class="tournament-filter-bar__search-wrapper">
-        <span class="material-symbols-outlined tournament-filter-bar__search-icon" aria-hidden="true">search</span>
-        <input type="search"
-               class="neba-input tournament-filter-bar__search"
-               placeholder="Search tournaments…"
-               value="@SearchTerm"
-               @oninput="e => SearchTermChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty)"
-               aria-label="Search tournaments" />
-    </div>
+        <div class="tournament-filter-bar__search-wrapper">
+                <span class="material-symbols-outlined tournament-filter-bar__search-icon"
+                      aria-hidden="true">search</span>
+                <input type="search" class="neba-input tournament-filter-bar__search" placeholder="Search tournaments…"
+                       value="@SearchTerm"
+                       @oninput="e => SearchTermChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty)"
+                       aria-label="Search tournaments" />
+        </div>
 
-    <div class="neba-segmented-control tournament-filter-bar__type-filter" aria-label="Filter by format">
-        <button class="neba-segment-button @GetSelectedClass(null)"
-                @onclick="() => TypeFilterChanged.InvokeAsync(null)">All</button>
-        <button class="neba-segment-button @GetSelectedClass("Singles")"
-                @onclick="() => TypeFilterChanged.InvokeAsync("Singles")">Singles</button>
-        <button class="neba-segment-button @GetSelectedClass("Doubles")"
-                @onclick="() => TypeFilterChanged.InvokeAsync("Doubles")">Doubles</button>
-        <button class="neba-segment-button @GetSelectedClass("Trios")"
-                @onclick="() => TypeFilterChanged.InvokeAsync("Trios")">Trios</button>
-    </div>
+        <div class="neba-segmented-control tournament-filter-bar__type-filter" aria-label="Filter by format">
+                <button class="neba-segment-button @GetSelectedClass(null)"
+                        @onclick='() => TypeFilterChanged.InvokeAsync(null)'>All</button>
+                <button class="neba-segment-button @GetSelectedClass("Singles")"
+                        @onclick='() => TypeFilterChanged.InvokeAsync("Singles")'>Singles</button>
+                <button class="neba-segment-button @GetSelectedClass("Doubles")"
+                        @onclick='() => TypeFilterChanged.InvokeAsync("Doubles")'>Doubles</button>
+                <button class="neba-segment-button @GetSelectedClass("Trios")"
+                        @onclick='() => TypeFilterChanged.InvokeAsync("Trios")'>Trios</button>
+        </div>
 
 </div>
 
 @code {
-    [Parameter, EditorRequired]
-    public string SearchTerm { get; set; } = string.Empty;
+        [Parameter, EditorRequired]
+        public string SearchTerm { get; set; } = string.Empty;
 
-    [Parameter, EditorRequired]
-    public EventCallback<string> SearchTermChanged { get; set; }
+        [Parameter, EditorRequired]
+        public EventCallback<string> SearchTermChanged { get; set; }
 
-    [Parameter]
-    public string? TypeFilter { get; set; }
+        [Parameter]
+        public string? TypeFilter { get; set; }
 
-    [Parameter, EditorRequired]
-    public EventCallback<string?> TypeFilterChanged { get; set; }
+        [Parameter, EditorRequired]
+        public EventCallback<string?> TypeFilterChanged { get; set; }
 
-    private string GetSelectedClass(string? value) =>
-        (TypeFilter?.Equals(value) ?? value is null) ? "neba-segment-selected" : "";
+        private string GetSelectedClass(string? value) =>
+            TypeFilter == value ? "neba-segment-selected" : "";
 }

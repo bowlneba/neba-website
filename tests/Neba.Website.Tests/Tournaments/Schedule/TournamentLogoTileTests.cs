@@ -19,7 +19,7 @@ public sealed class TournamentLogoTileTests : IDisposable
         var cut = _ctx.Render<TournamentLogoTile>(parameters => parameters
             .Add(p => p.TournamentName, "Granite Open")
             .Add(p => p.Season, "2026")
-            .Add(p => p.TournamentType, TournamentType.Trios)
+            .Add(p => p.TournamentType, "Trios")
             .Add(p => p.Variant, LogoTileVariant.Muted)
             .Add(p => p.CssClass, "extra-class"));
 
