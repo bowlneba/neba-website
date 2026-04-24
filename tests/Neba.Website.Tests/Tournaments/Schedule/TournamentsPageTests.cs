@@ -39,13 +39,13 @@ public sealed class TournamentsPageTests : IDisposable
         var currentSeason = MakeSeason(currentYear);
         var nextSeason = MakeSeason(currentYear + 1);
 
-        var upcoming = TournamentSummaryViewModelFactory.Create(
+        var upcoming = SeasonTournamentViewModelFactory.Create(
             id: "upcoming",
             name: "Spring Classic",
             season: currentSeason.Label,
             startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(10)),
             endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(10)));
-        var past = TournamentSummaryViewModelFactory.Create(
+        var past = SeasonTournamentViewModelFactory.Create(
             id: "past",
             name: "Last Winter Open",
             season: currentSeason.Label,
@@ -71,7 +71,7 @@ public sealed class TournamentsPageTests : IDisposable
         var currentYear = DateTime.Today.Year;
         var currentSeason = MakeSeason(currentYear);
         _dataService.Seasons = [currentSeason];
-        _dataService.SeasonData[currentSeason.Label] = [TournamentSummaryViewModelFactory.Create(
+        _dataService.SeasonData[currentSeason.Label] = [SeasonTournamentViewModelFactory.Create(
             startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(5)),
             endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(5)))];
 
@@ -94,7 +94,7 @@ public sealed class TournamentsPageTests : IDisposable
         _dataService.SeasonData[currentSeason.Label] = [];
         _dataService.SeasonData[mergedSeason.Label] =
         [
-            TournamentSummaryViewModelFactory.Create(
+            SeasonTournamentViewModelFactory.Create(
                 id: "merged-past",
                 season: mergedSeason.Label,
                 startDate: DateOnly.FromDateTime(DateTime.Today.AddYears(-5)),
@@ -127,7 +127,7 @@ public sealed class TournamentsPageTests : IDisposable
         _dataService.SeasonData[currentSeason.Label] = [];
         _dataService.SeasonData[mergedSeason.Label] =
         [
-            TournamentSummaryViewModelFactory.Create(
+            SeasonTournamentViewModelFactory.Create(
                 id: "merged-past",
                 season: mergedSeason.Label,
                 startDate: DateOnly.FromDateTime(DateTime.Today.AddYears(-5)),
@@ -175,7 +175,7 @@ public sealed class TournamentsPageTests : IDisposable
         _dataService.Seasons = [currentSeason, nextSeason];
         _dataService.SeasonData[currentSeason.Label] =
         [
-            TournamentSummaryViewModelFactory.Create(
+            SeasonTournamentViewModelFactory.Create(
                 id: "all-past",
                 name: "Finished Event",
                 season: currentSeason.Label,
@@ -185,7 +185,7 @@ public sealed class TournamentsPageTests : IDisposable
 
         _dataService.SeasonData[nextSeason.Label] =
         [
-            TournamentSummaryViewModelFactory.Create(
+            SeasonTournamentViewModelFactory.Create(
                 id: "next-hero",
                 name: "Future Kickoff",
                 season: nextSeason.Label,
@@ -222,7 +222,7 @@ public sealed class TournamentsPageTests : IDisposable
     {
         public List<SeasonViewModel> Seasons { get; set; } = [];
 
-        public Dictionary<string, List<TournamentSummaryViewModel>> SeasonData { get; } =
+        public Dictionary<string, List<SeasonTournamentViewModel>> SeasonData { get; } =
             new(StringComparer.Ordinal);
 
         public List<string> RequestedSeasons { get; } = [];
@@ -237,12 +237,12 @@ public sealed class TournamentsPageTests : IDisposable
             return Task.FromResult(Seasons);
         }
 
-        Task<List<TournamentSummaryViewModel>> ITournamentDataService.GetTournamentsForSeasonAsync(
+        Task<List<SeasonTournamentViewModel>> ITournamentDataService.GetTournamentsForSeasonAsync(
             SeasonViewModel season, CancellationToken ct)
         {
             if (ct.IsCancellationRequested)
             {
-                return Task.FromCanceled<List<TournamentSummaryViewModel>>(ct);
+                return Task.FromCanceled<List<SeasonTournamentViewModel>>(ct);
             }
 
             RequestedSeasons.Add(season.Label);

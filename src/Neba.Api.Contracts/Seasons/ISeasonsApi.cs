@@ -25,7 +25,7 @@ public interface ISeasonsApi
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A collection of tournament summaries.</returns>
     [Get("/seasons/{seasonId}/tournaments")]
-    Task<IApiResponse<CollectionResponse<TournamentSummaryResponse>>> ListTournamentsInSeasonAsync(
+    Task<IApiResponse<CollectionResponse<SeasonTournamentResponse>>> ListTournamentsInSeasonAsync(
         string seasonId,
         CancellationToken cancellationToken = default);
 }

@@ -5,6 +5,7 @@ using Neba.Application.Contact;
 using Neba.Application.Seasons;
 using Neba.Application.Sponsors;
 using Neba.Application.Tournaments;
+using Neba.Application.Tournaments.ListTournamentsInSeason;
 using Neba.Domain.Bowlers;
 using Neba.Domain.Seasons;
 using Neba.Domain.Tournaments;
@@ -53,14 +54,14 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
             });
     }
 
-    public async Task<IReadOnlyCollection<TournamentSummaryDto>> GetTournamentsInSeasonAsync(SeasonId seasonId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<SeasonTournamentDto>> GetTournamentsInSeasonAsync(SeasonId seasonId, CancellationToken cancellationToken)
     {
         var tournaments = await _tournaments
             .Where(tournament => tournament.SeasonId == seasonId)
             .Select(tournament => new
             {
                 DbId = EF.Property<int>(tournament, ShadowIdConfiguration.DefaultPropertyName),
-                Dto = new TournamentSummaryDto
+                Dto = new SeasonTournamentDto
                 {
                     Id = tournament.Id,
                     Name = tournament.Name,

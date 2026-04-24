@@ -27,7 +27,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests
     {
         // Arrange
         var seasonId = SeasonId.New();
-        var tournaments = TournamentSummaryDtoFactory.Bogus(3);
+        var tournaments = SeasonTournamentDtoFactory.Bogus(3);
         var query = new ListTournamentsInSeasonQuery { SeasonId = seasonId };
 
         _tournamentQueriesMock
@@ -46,7 +46,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests
     {
         // Arrange
         var seasonId = SeasonId.New();
-        var tournaments = TournamentSummaryDtoFactory.Bogus(3);
+        var tournaments = SeasonTournamentDtoFactory.Bogus(3);
         var query = new ListTournamentsInSeasonQuery { SeasonId = seasonId };
 
         _tournamentQueriesMock
@@ -65,7 +65,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests
     {
         // Arrange
         var seasonId = SeasonId.New();
-        IReadOnlyCollection<TournamentSummaryDto> empty = [];
+        IReadOnlyCollection<SeasonTournamentDto> empty = [];
         var query = new ListTournamentsInSeasonQuery { SeasonId = seasonId };
 
         _tournamentQueriesMock

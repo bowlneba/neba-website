@@ -20,10 +20,10 @@ public sealed class ListTournamentsInSeasonEndpointTests
     {
         // Arrange
         var seasonId = new SeasonId("01000000000000000000000001");
-        var dtos = TournamentSummaryDtoFactory.Bogus(3, 42);
+        var dtos = SeasonTournamentDtoFactory.Bogus(3, 42);
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var queryHandlerMock = new Mock<IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<TournamentSummaryDto>>>(MockBehavior.Strict);
+        var queryHandlerMock = new Mock<IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<SeasonTournamentDto>>>(MockBehavior.Strict);
         queryHandlerMock
             .Setup(h => h.HandleAsync(It.Is<ListTournamentsInSeasonQuery>(q => q.SeasonId == seasonId), cancellationToken))
             .ReturnsAsync(dtos);
@@ -46,7 +46,7 @@ public sealed class ListTournamentsInSeasonEndpointTests
     public void Configure_ShouldRegisterAnonymousGetRoute_AtExpectedPath()
     {
         // Arrange
-        var queryHandlerMock = new Mock<IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<TournamentSummaryDto>>>(MockBehavior.Strict);
+        var queryHandlerMock = new Mock<IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<SeasonTournamentDto>>>(MockBehavior.Strict);
         var endpoint = Factory.Create<ListTournamentsInSeasonEndpoint>(queryHandlerMock.Object);
 
         // Assert
@@ -62,7 +62,7 @@ public sealed class ListTournamentsInSeasonEndpointTests
         var seasonId = SeasonId.New();
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var queryHandlerMock = new Mock<IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<TournamentSummaryDto>>>(MockBehavior.Strict);
+        var queryHandlerMock = new Mock<IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<SeasonTournamentDto>>>(MockBehavior.Strict);
         queryHandlerMock
             .Setup(h => h.HandleAsync(It.IsAny<ListTournamentsInSeasonQuery>(), cancellationToken))
             .ReturnsAsync([]);
@@ -88,7 +88,7 @@ public sealed class ListTournamentsInSeasonEndpointTests
 
         ListTournamentsInSeasonQuery? capturedQuery = null;
 
-        var queryHandlerMock = new Mock<IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<TournamentSummaryDto>>>(MockBehavior.Strict);
+        var queryHandlerMock = new Mock<IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<SeasonTournamentDto>>>(MockBehavior.Strict);
         queryHandlerMock
             .Setup(h => h.HandleAsync(It.IsAny<ListTournamentsInSeasonQuery>(), cancellationToken))
             .Callback<ListTournamentsInSeasonQuery, CancellationToken>((q, _) => capturedQuery = q)

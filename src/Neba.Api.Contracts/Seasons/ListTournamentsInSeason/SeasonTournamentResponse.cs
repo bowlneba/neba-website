@@ -3,7 +3,7 @@ namespace Neba.Api.Contracts.Seasons.ListTournamentsInSeason;
 /// <summary>
 /// Summary details for a tournament returned by the list tournaments in season endpoint.
 /// </summary>
-public sealed record TournamentSummaryResponse
+public sealed record SeasonTournamentResponse
 {
     /// <summary>
     /// The unique tournament identifier as a ULID string.

@@ -54,7 +54,7 @@
 
 @code {
     [Parameter, EditorRequired]
-    public List<TournamentSummaryViewModel> Tournaments { get; set; } = [];
+    public List<SeasonTournamentViewModel> Tournaments { get; set; } = [];
 
     [Parameter, EditorRequired]
     public string Season { get; set; } = string.Empty;
@@ -65,7 +65,7 @@
     private string _todayStyle = string.Empty;
     private List<string> _months = [];
 
-    private TournamentSummaryViewModel? _activeTooltip;
+    private SeasonTournamentViewModel? _activeTooltip;
     private double _tooltipLeft;
 
     protected override void OnParametersSet()
@@ -85,16 +85,16 @@ System.Globalization.CultureInfo.CurrentCulture) + "%"
             : string.Empty;
     }
 
-    private string GetDotStyle(TournamentSummaryViewModel t) =>
+    private string GetDotStyle(SeasonTournamentViewModel t) =>
         "left:" + GetXPercent(t.StartDate, _startYear, _isMergedSeason).ToString("F2",
 System.Globalization.CultureInfo.CurrentCulture) + "%";
 
-    private static string GetDotClass(TournamentSummaryViewModel t) =>
+    private static string GetDotClass(SeasonTournamentViewModel t) =>
         t.IsPast
             ? "season-timeline__dot season-timeline__dot--completed"
             : "season-timeline__dot season-timeline__dot--upcoming";
 
-    private static string GetStatusLabel(TournamentSummaryViewModel t) =>
+    private static string GetStatusLabel(SeasonTournamentViewModel t) =>
         t.IsPast ? "completed" : "upcoming";
 
     private static double GetXPercent(DateOnly date, int startYear, bool isMerged)
@@ -110,7 +110,7 @@ System.Globalization.CultureInfo.CurrentCulture) + "%";
         return Math.Clamp((double)elapsed / totalDays * 100, 1, 99);
     }
 
-    private void ShowTooltip(TournamentSummaryViewModel tournament)
+    private void ShowTooltip(SeasonTournamentViewModel tournament)
     {
         _activeTooltip = tournament;
         _tooltipLeft = GetXPercent(tournament.StartDate, _startYear, _isMergedSeason);

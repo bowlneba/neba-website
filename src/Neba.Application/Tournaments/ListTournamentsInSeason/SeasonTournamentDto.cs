@@ -4,12 +4,12 @@ using Neba.Application.Sponsors;
 using Neba.Domain.Bowlers;
 using Neba.Domain.Tournaments;
 
-namespace Neba.Application.Tournaments;
+namespace Neba.Application.Tournaments.ListTournamentsInSeason;
 
 /// <summary>
 /// Summary of a tournament returned by list queries.
 /// </summary>
-public sealed record TournamentSummaryDto
+public sealed record SeasonTournamentDto
 {
     /// <summary>
     /// Unique tournament identifier.

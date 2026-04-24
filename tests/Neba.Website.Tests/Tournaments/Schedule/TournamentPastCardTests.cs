@@ -17,7 +17,7 @@ public sealed class TournamentPastCardTests : IDisposable
     [Fact(DisplayName = "Should render winners pill when winners are present")]
     public void Render_ShouldShowWinners_WhenWinnersExist()
     {
-        var tournament = TournamentSummaryViewModelFactory.Create() with
+        var tournament = SeasonTournamentViewModelFactory.Create() with
         {
             Winners = ["Alex Example", "Jamie Sample"],
         };
@@ -32,7 +32,7 @@ public sealed class TournamentPastCardTests : IDisposable
     [Fact(DisplayName = "Should show results pending message when no winners are present")]
     public void Render_ShouldShowResultsPending_WhenWinnersMissing()
     {
-        var tournament = TournamentSummaryViewModelFactory.Create() with
+        var tournament = SeasonTournamentViewModelFactory.Create() with
         {
             Winners = [],
         };

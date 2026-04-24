@@ -1,7 +1,7 @@
 namespace Neba.Website.Server.Tournaments.Schedule;
 
 /// <summary>Summary of a single tournament for display in the tournament schedule.</summary>
-public sealed record TournamentSummaryViewModel
+public sealed record SeasonTournamentViewModel
 {
     // ── Core ─────────────────────────────────────────────────────────────────
 

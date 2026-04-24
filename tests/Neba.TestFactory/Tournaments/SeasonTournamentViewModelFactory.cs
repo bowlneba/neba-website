@@ -2,7 +2,7 @@ using Neba.Website.Server.Tournaments.Schedule;
 
 namespace Neba.TestFactory.Tournaments;
 
-public static class TournamentSummaryViewModelFactory
+public static class SeasonTournamentViewModelFactory
 {
     public const string ValidId = "2026-01-singles";
     public const string ValidName = "Granite State Open";
@@ -13,7 +13,7 @@ public static class TournamentSummaryViewModelFactory
     public static readonly DateOnly ValidEndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(14));
     public static readonly TournamentType ValidTournamentType = TournamentType.Singles;
 
-    public static TournamentSummaryViewModel Create(
+    public static SeasonTournamentViewModel Create(
         string? id = null,
         string? name = null,
         string? season = null,
@@ -44,9 +44,9 @@ public static class TournamentSummaryViewModelFactory
             Winners = ["Alex Example"],
         };
 
-    public static IReadOnlyCollection<TournamentSummaryViewModel> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<SeasonTournamentViewModel> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<TournamentSummaryViewModel>()
+        var faker = new Faker<SeasonTournamentViewModel>()
             .CustomInstantiator(f =>
             {
                 var start = f.Date.BetweenDateOnly(DateOnly.FromDateTime(DateTime.Today.AddDays(-180)), DateOnly.FromDateTime(DateTime.Today.AddDays(180)));
@@ -54,7 +54,7 @@ public static class TournamentSummaryViewModelFactory
                 var entries = f.Random.Int(20, 120);
                 var maxEntries = entries + f.Random.Int(0, 40);
 
-                return new TournamentSummaryViewModel
+                return new SeasonTournamentViewModel
                 {
                     Id = f.Random.ReplaceNumbers("####-##-???"),
                     Name = f.Company.CompanyName() + " Open",

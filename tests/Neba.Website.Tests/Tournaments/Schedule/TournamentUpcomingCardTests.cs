@@ -17,7 +17,7 @@ public sealed class TournamentUpcomingCardTests : IDisposable
     [Fact(DisplayName = "Should render register action when registration URL exists")]
     public void Render_ShouldShowRegisterLink_WhenRegistrationAvailable()
     {
-        var tournament = TournamentSummaryViewModelFactory.Create();
+        var tournament = SeasonTournamentViewModelFactory.Create();
 
         var cut = _ctx.Render<TournamentUpcomingCard>(parameters => parameters
             .Add(p => p.Tournament, tournament));
@@ -29,7 +29,7 @@ public sealed class TournamentUpcomingCardTests : IDisposable
     [Fact(DisplayName = "Should show registration later and sponsor fallback when registration and sponsor are missing")]
     public void Render_ShouldShowFallbackCopy_WhenOptionalDataMissing()
     {
-        var tournament = TournamentSummaryViewModelFactory.Create() with
+        var tournament = SeasonTournamentViewModelFactory.Create() with
         {
             RegistrationUrl = null,
             Sponsor = null,

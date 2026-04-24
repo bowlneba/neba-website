@@ -2,6 +2,7 @@ using Neba.Application.BowlingCenters.ListBowlingCenters;
 using Neba.Application.Seasons;
 using Neba.Application.Sponsors;
 using Neba.Application.Tournaments;
+using Neba.Application.Tournaments.ListTournamentsInSeason;
 using Neba.Domain.Bowlers;
 using Neba.Domain.Tournaments;
 using Neba.TestFactory.Bowlers;
@@ -11,9 +12,9 @@ using Neba.TestFactory.Sponsors;
 
 namespace Neba.TestFactory.Tournaments;
 
-public static class TournamentSummaryDtoFactory
+public static class SeasonTournamentDtoFactory
 {
-    public static TournamentSummaryDto Create(
+    public static SeasonTournamentDto Create(
         TournamentId? id = null,
         string? name = null,
         SeasonDto? season = null,
@@ -56,7 +57,7 @@ public static class TournamentSummaryDtoFactory
                 Winners = winners ?? []
             };
 
-    public static IReadOnlyCollection<TournamentSummaryDto> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<SeasonTournamentDto> Bogus(int count, int? seed = null)
     {
         var seasons = SeasonDtoFactory.Bogus(5, seed).ToArray();
         var winners = NameFactory.Bogus(count * 200, seed).ToArray();
@@ -64,7 +65,7 @@ public static class TournamentSummaryDtoFactory
         var sponsors = SponsorSummaryDtoFactory.Bogus(25, seed).ToArray();
         var oilPatterns = TournamentOilPatternDtoFactory.Bogus(20, seed).ToArray();
 
-        var faker = new Faker<TournamentSummaryDto>()
+        var faker = new Faker<SeasonTournamentDto>()
             .CustomInstantiator(f => new()
             {
                 Id = new TournamentId(Ulid.BogusString(f)),

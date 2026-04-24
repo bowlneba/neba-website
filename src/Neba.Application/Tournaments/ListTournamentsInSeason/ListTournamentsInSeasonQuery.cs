@@ -8,7 +8,7 @@ namespace Neba.Application.Tournaments.ListTournamentsInSeason;
 /// A query to list all tournaments for a given season.
 /// </summary>
 public sealed record ListTournamentsInSeasonQuery
-    : ICachedQuery<IReadOnlyCollection<TournamentSummaryDto>>
+    : ICachedQuery<IReadOnlyCollection<SeasonTournamentDto>>
 {
     /// <summary>
     /// The ID of the season to list tournaments for.

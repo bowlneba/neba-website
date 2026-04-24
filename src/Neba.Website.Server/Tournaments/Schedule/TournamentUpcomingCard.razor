@@ -116,7 +116,7 @@
 
 @code {
     [Parameter, EditorRequired]
-    public TournamentSummaryViewModel Tournament { get; set; } = default!;
+    public SeasonTournamentViewModel Tournament { get; set; } = default!;
 
     private string GetCapacityStyle() =>
         "width:" + ((double)Tournament.Entries!.Value / Tournament.MaxEntries!.Value * 100).ToString("F0",

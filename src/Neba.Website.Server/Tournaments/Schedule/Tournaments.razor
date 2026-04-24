@@ -94,22 +94,22 @@
     private TournamentType? _typeFilter;
 
     // ── Data ───────────────────────────────────────────────────────────────
-    private List<TournamentSummaryViewModel>? _allTournaments;
+    private List<SeasonTournamentViewModel>? _allTournaments;
     private List<SeasonViewModel>? _availableSeasons;
-    private TournamentSummaryViewModel? _nextSeasonHeroTournament;
+    private SeasonTournamentViewModel? _nextSeasonHeroTournament;
     private bool _isLoading = true;
 
     private CancellationTokenSource _cts = new();
     private bool _disposed;
 
     // ── Computed ───────────────────────────────────────────────────────────
-    private TournamentSummaryViewModel? NextUpcomingTournament =>
+    private SeasonTournamentViewModel? NextUpcomingTournament =>
         _allTournaments?
             .Where(t => !t.IsPast)
             .OrderBy(t => t.StartDate)
             .FirstOrDefault();
 
-    private TournamentSummaryViewModel? HeroTournament =>
+    private SeasonTournamentViewModel? HeroTournament =>
         NextUpcomingTournament ?? _nextSeasonHeroTournament;
 
     private bool ShowHero =>
@@ -121,7 +121,7 @@
         !string.IsNullOrWhiteSpace(_searchTerm) ||
         _typeFilter.HasValue;
 
-    private IEnumerable<TournamentSummaryViewModel> FilteredTournaments
+    private IEnumerable<SeasonTournamentViewModel> FilteredTournaments
     {
         get
         {

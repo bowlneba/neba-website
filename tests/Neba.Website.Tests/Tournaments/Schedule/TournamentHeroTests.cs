@@ -17,7 +17,7 @@ public sealed class TournamentHeroTests : IDisposable
     [Fact(DisplayName = "Should render register CTA and status pill when registration is available")]
     public void Render_ShouldShowRegisterLink_WhenRegistrationUrlExists()
     {
-        var tournament = TournamentSummaryViewModelFactory.Create();
+        var tournament = SeasonTournamentViewModelFactory.Create();
 
         var cut = _ctx.Render<TournamentHero>(parameters => parameters
             .Add(p => p.Tournament, tournament));
@@ -30,7 +30,7 @@ public sealed class TournamentHeroTests : IDisposable
     [Fact(DisplayName = "Should render disabled registration CTA when registration is unavailable")]
     public void Render_ShouldShowDisabledRegistration_WhenRegistrationUrlMissing()
     {
-        var tournament = TournamentSummaryViewModelFactory.Create() with
+        var tournament = SeasonTournamentViewModelFactory.Create() with
         {
             RegistrationUrl = null,
             RegistrationStatus = null,
@@ -45,7 +45,7 @@ public sealed class TournamentHeroTests : IDisposable
     [Fact(DisplayName = "Should show sponsorship available and host TBA fallbacks when data missing")]
     public void Render_ShouldShowFallbackCopy_WhenSponsorAndHostMissing()
     {
-        var tournament = TournamentSummaryViewModelFactory.Create() with
+        var tournament = SeasonTournamentViewModelFactory.Create() with
         {
             Sponsor = null,
             BowlingCenterName = null,

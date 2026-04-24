@@ -14,10 +14,10 @@ using Neba.Domain.Seasons;
 namespace Neba.Api.Seasons.ListTournamentsInSeason;
 
 internal sealed class ListTournamentsInSeasonEndpoint(
-    IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<TournamentSummaryDto>> queryHandler)
-    : Endpoint<ListTournamentsInSeasonRequest, CollectionResponse<TournamentSummaryResponse>>
+    IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<SeasonTournamentDto>> queryHandler)
+    : Endpoint<ListTournamentsInSeasonRequest, CollectionResponse<SeasonTournamentResponse>>
 {
-    private readonly IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<TournamentSummaryDto>> _queryHandler = queryHandler;
+    private readonly IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<SeasonTournamentDto>> _queryHandler = queryHandler;
 
     public override void Configure()
     {
@@ -40,9 +40,9 @@ internal sealed class ListTournamentsInSeasonEndpoint(
         var query = new ListTournamentsInSeasonQuery { SeasonId = new SeasonId(req.SeasonId) };
         var result = await _queryHandler.HandleAsync(query, ct);
 
-        var response = new CollectionResponse<TournamentSummaryResponse>
+        var response = new CollectionResponse<SeasonTournamentResponse>
         {
-            Items = [.. result.Select(t => new TournamentSummaryResponse
+            Items = [.. result.Select(t => new SeasonTournamentResponse
             {
                 Id = t.Id.Value.ToString(),
                 Name = t.Name,

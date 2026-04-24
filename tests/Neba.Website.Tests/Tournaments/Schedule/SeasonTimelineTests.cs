@@ -19,7 +19,7 @@ public sealed class SeasonTimelineTests : IDisposable
     [Fact(DisplayName = "Should render one timeline dot per tournament")]
     public void Render_ShouldShowOneDotPerTournament_WhenTournamentsProvided()
     {
-        var tournaments = TournamentSummaryViewModelFactory.Bogus(3, seed: 2101).ToList();
+        var tournaments = SeasonTournamentViewModelFactory.Bogus(3, seed: 2101).ToList();
 
         var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
             .Add(p => p.Season, DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture))
@@ -31,7 +31,7 @@ public sealed class SeasonTimelineTests : IDisposable
     [Fact(DisplayName = "Should show tooltip on dot hover and hide on mouse out")]
     public void Tooltip_ShouldShowAndHide_WhenDotHoveredThenMouseOut()
     {
-        var tournament = TournamentSummaryViewModelFactory.Create();
+        var tournament = SeasonTournamentViewModelFactory.Create();
 
         var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
             .Add(p => p.Season, DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture))
@@ -50,7 +50,7 @@ public sealed class SeasonTimelineTests : IDisposable
     [Fact(DisplayName = "Should render merged season month order when season is 2020-21")]
     public void Render_ShouldUseMergedMonthLabels_WhenSeasonIsMerged()
     {
-        var tournament = TournamentSummaryViewModelFactory.Create(season: "2020-21");
+        var tournament = SeasonTournamentViewModelFactory.Create(season: "2020-21");
 
         var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
             .Add(p => p.Season, "2020-21")

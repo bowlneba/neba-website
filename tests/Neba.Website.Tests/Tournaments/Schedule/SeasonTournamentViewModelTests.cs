@@ -5,16 +5,16 @@ using Neba.Website.Server.Tournaments.Schedule;
 namespace Neba.Website.Tests.Tournaments.Schedule;
 
 [UnitTest]
-[Component("Website.Tournaments.Schedule.TournamentSummaryViewModel")]
-public sealed class TournamentSummaryViewModelTests
+[Component("Website.Tournaments.Schedule.SeasonTournamentViewModel")]
+public sealed class SeasonTournamentViewModelTests
 {
     [Fact(DisplayName = "Should identify multi day and single day tournaments correctly")]
     public void IsMultiDay_ShouldReflectDateRange_WhenEndDateComparedToStartDate()
     {
-        var singleDay = TournamentSummaryViewModelFactory.Create(
+        var singleDay = SeasonTournamentViewModelFactory.Create(
             startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(5)),
             endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(5)));
-        var multiDay = TournamentSummaryViewModelFactory.Create(
+        var multiDay = SeasonTournamentViewModelFactory.Create(
             startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(5)),
             endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(7)));
 
@@ -25,7 +25,7 @@ public sealed class TournamentSummaryViewModelTests
     [Fact(DisplayName = "Should choose added money over entry fee for display price")]
     public void DisplayPrice_ShouldPreferAddedMoney_WhenAddedMoneyIsPositive()
     {
-        var model = TournamentSummaryViewModelFactory.Create() with
+        var model = SeasonTournamentViewModelFactory.Create() with
         {
             AddedMoney = 1200m,
             EntryFee = 95m,
@@ -39,7 +39,7 @@ public sealed class TournamentSummaryViewModelTests
     [Fact(DisplayName = "Should fall back to entry fee when added money is not positive")]
     public void DisplayPrice_ShouldUseEntryFee_WhenAddedMoneyIsZeroOrNull()
     {
-        var zeroAddedMoney = TournamentSummaryViewModelFactory.Create() with
+        var zeroAddedMoney = SeasonTournamentViewModelFactory.Create() with
         {
             AddedMoney = 0m,
             EntryFee = 110m,
@@ -53,7 +53,7 @@ public sealed class TournamentSummaryViewModelTests
     [Fact(DisplayName = "Should report capacity data only when entries and max entries are present")]
     public void HasCapacityData_ShouldRequireBothCounts_WhenEvaluated()
     {
-        var fullData = TournamentSummaryViewModelFactory.Create() with
+        var fullData = SeasonTournamentViewModelFactory.Create() with
         {
             Entries = 40,
             MaxEntries = 72,
@@ -69,7 +69,7 @@ public sealed class TournamentSummaryViewModelTests
     [Fact(DisplayName = "Should compute host and sponsor convenience flags from nullable values")]
     public void HostAndSponsorFlags_ShouldReflectBackingValues_WhenEvaluated()
     {
-        var model = TournamentSummaryViewModelFactory.Create() with
+        var model = SeasonTournamentViewModelFactory.Create() with
         {
             BowlingCenterName = "King Pin Lanes",
             Sponsor = "Acme",
@@ -87,7 +87,7 @@ public sealed class TournamentSummaryViewModelTests
     [Fact(DisplayName = "Should expose winner convenience flag based on collection count")]
     public void HasWinners_ShouldBeTrueOnlyWhenWinnersExist_WhenEvaluated()
     {
-        var withWinners = TournamentSummaryViewModelFactory.Create() with
+        var withWinners = SeasonTournamentViewModelFactory.Create() with
         {
             Winners = ["A Winner"],
         };
@@ -100,10 +100,10 @@ public sealed class TournamentSummaryViewModelTests
     [Fact(DisplayName = "Should compute merged season and past flags from season and end date")]
     public void SeasonalFlags_ShouldReflectSeasonAndEndDate_WhenEvaluated()
     {
-        var mergedPast = TournamentSummaryViewModelFactory.Create(
+        var mergedPast = SeasonTournamentViewModelFactory.Create(
             season: "2020-21",
             endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
-        var currentOrFuture = TournamentSummaryViewModelFactory.Create(
+        var currentOrFuture = SeasonTournamentViewModelFactory.Create(
             season: DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture),
             endDate: DateOnly.FromDateTime(DateTime.Today));
 
@@ -117,16 +117,16 @@ public sealed class TournamentSummaryViewModelTests
     [Fact(DisplayName = "Should compute days until start with zero floor and urgent window")]
     public void StartDateConvenience_ShouldApplyZeroFloorAndUrgencyWindow_WhenEvaluated()
     {
-        var today = TournamentSummaryViewModelFactory.Create(
+        var today = SeasonTournamentViewModelFactory.Create(
             startDate: DateOnly.FromDateTime(DateTime.Today),
             endDate: DateOnly.FromDateTime(DateTime.Today));
-        var in21Days = TournamentSummaryViewModelFactory.Create(
+        var in21Days = SeasonTournamentViewModelFactory.Create(
             startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(21)),
             endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(21)));
-        var in22Days = TournamentSummaryViewModelFactory.Create(
+        var in22Days = SeasonTournamentViewModelFactory.Create(
             startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(22)),
             endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(22)));
-        var yesterday = TournamentSummaryViewModelFactory.Create(
+        var yesterday = SeasonTournamentViewModelFactory.Create(
             startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(-1)),
             endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
 
@@ -143,7 +143,7 @@ public sealed class TournamentSummaryViewModelTests
     [Fact(DisplayName = "Should build location text from host and city combinations")]
     public void DisplayLocation_ShouldReturnExpectedText_WhenHostAndCityVary()
     {
-        var fullLocation = TournamentSummaryViewModelFactory.Create() with
+        var fullLocation = SeasonTournamentViewModelFactory.Create() with
         {
             BowlingCenterName = "North Bowl",
             BowlingCenterCity = "Lynn",
@@ -159,13 +159,13 @@ public sealed class TournamentSummaryViewModelTests
     [Fact(DisplayName = "Should format date range for single day and multi month spans")]
     public void FormatDateRange_ShouldHandleSingleAndMultiMonthSpans_WhenCalled()
     {
-        var singleDay = TournamentSummaryViewModelFactory.Create(
+        var singleDay = SeasonTournamentViewModelFactory.Create(
             startDate: new DateOnly(2026, 4, 10),
             endDate: new DateOnly(2026, 4, 10));
-        var sameMonth = TournamentSummaryViewModelFactory.Create(
+        var sameMonth = SeasonTournamentViewModelFactory.Create(
             startDate: new DateOnly(2026, 4, 10),
             endDate: new DateOnly(2026, 4, 12));
-        var acrossMonths = TournamentSummaryViewModelFactory.Create(
+        var acrossMonths = SeasonTournamentViewModelFactory.Create(
             startDate: new DateOnly(2026, 4, 30),
             endDate: new DateOnly(2026, 5, 2));
 
@@ -177,7 +177,7 @@ public sealed class TournamentSummaryViewModelTests
     [Fact(DisplayName = "Should return pattern display with name and length when both exist")]
     public void PatternDisplay_ShouldPreferNameAndLength_WhenLengthExists()
     {
-        var model = TournamentSummaryViewModelFactory.Create() with
+        var model = SeasonTournamentViewModelFactory.Create() with
         {
             PatternName = "Scorpion",
             PatternLength = 42,
@@ -190,14 +190,14 @@ public sealed class TournamentSummaryViewModelTests
     [Fact(DisplayName = "Should fall back to pattern length category when name or length is missing")]
     public void PatternDisplay_ShouldFallbackToCategory_WhenNameOrLengthMissing()
     {
-        var missingLength = TournamentSummaryViewModelFactory.Create() with
+        var missingLength = SeasonTournamentViewModelFactory.Create() with
         {
             PatternName = "Scorpion",
             PatternLength = null,
             PatternLengthCategory = "Medium",
         };
 
-        var missingName = TournamentSummaryViewModelFactory.Create() with
+        var missingName = SeasonTournamentViewModelFactory.Create() with
         {
             PatternName = null,
             PatternLength = 42,

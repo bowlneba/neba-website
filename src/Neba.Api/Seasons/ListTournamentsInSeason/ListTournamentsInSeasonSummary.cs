@@ -17,11 +17,11 @@ internal sealed class ListTournamentsInSeasonSummary
 
         Response(200, "The list of tournaments.",
             contentType: MediaTypeNames.Application.Json,
-            example: new CollectionResponse<TournamentSummaryResponse>
+            example: new CollectionResponse<SeasonTournamentResponse>
             {
                 Items =
                 [
-                    new TournamentSummaryResponse
+                    new SeasonTournamentResponse
                     {
                         Id = "01JSTX1234567890ABCDEFGHIJ",
                         Name = "Spring Open",

@@ -21,7 +21,7 @@ internal sealed class TournamentDataService(
         Converters = { new JsonStringEnumConverter() },
     };
 
-    public async Task<List<TournamentSummaryViewModel>> GetTournamentsForSeasonAsync(
+    public async Task<List<SeasonTournamentViewModel>> GetTournamentsForSeasonAsync(
         SeasonViewModel season, CancellationToken ct = default)
     {
         var fileInfo = GetFileInfo($"data/tournaments/{season.Label}.json");
@@ -31,7 +31,7 @@ internal sealed class TournamentDataService(
         }
 
         await using var stream = fileInfo.CreateReadStream();
-        return await JsonSerializer.DeserializeAsync<List<TournamentSummaryViewModel>>(stream, s_options, ct) ?? [];
+        return await JsonSerializer.DeserializeAsync<List<SeasonTournamentViewModel>>(stream, s_options, ct) ?? [];
     }
 
     public async Task<List<SeasonViewModel>> GetSeasonsAsync(CancellationToken ct = default)
