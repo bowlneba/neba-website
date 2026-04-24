@@ -172,5 +172,23 @@ public static class CacheDescriptors
                 Tags = ["neba", "neba:stats", "neba:stats:seasons", $"neba:stats:seasons:{seasonId}"]
             };
     }
+
+    /// <summary>
+    /// Cache descriptors for tournament data.
+    /// </summary>
+    public static class Tournaments
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of tournaments in a given season.
+        /// </summary>
+        /// <param name="seasonId">The season identifier.</param>
+        /// <returns>A cache descriptor for the tournaments in the season.</returns>
+        public static CacheDescriptor ListForSeason(SeasonId seasonId)
+            => new()
+            {
+                Key = $"neba:tournaments:{seasonId}:list",
+                Tags = ["neba", "neba:tournaments", $"neba:tournaments:{seasonId}"]
+            };
+    }
 }
 #pragma warning restore CA1724
