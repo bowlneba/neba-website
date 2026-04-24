@@ -2,12 +2,12 @@ using Neba.Application.Caching;
 using Neba.Application.Messaging;
 using Neba.Domain.Seasons;
 
-namespace Neba.Application.Tournaments.ListTournamentsForSeason;
+namespace Neba.Application.Tournaments.ListTournamentsInSeason;
 
 /// <summary>
 /// A query to list all tournaments for a given season.
 /// </summary>
-public sealed record ListTournamentsForSeasonQuery
+public sealed record ListTournamentsInSeasonQuery
     : ICachedQuery<IReadOnlyCollection<TournamentSummaryDto>>
 {
     /// <summary>
