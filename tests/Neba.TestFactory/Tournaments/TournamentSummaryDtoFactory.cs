@@ -28,7 +28,7 @@ public static class TournamentSummaryDtoFactory
         int? reservations = null,
         PatternLengthCategory? patternLengthCategory = null,
         PatternRatioCategory? patternRatioCategory = null,
-        OilPatternDto? oilPattern = null,
+        IReadOnlyCollection<TournamentOilPatternDto>? oilPatterns = null,
         Uri? logoUrl = null,
         string? logoContainer = null,
         string? logoPath = null,
@@ -49,7 +49,7 @@ public static class TournamentSummaryDtoFactory
                 Reservations = reservations,
                 PatternLengthCategory = patternLengthCategory?.Name,
                 PatternRatioCategory = patternRatioCategory?.Name,
-                OilPattern = oilPattern,
+                OilPatterns = oilPatterns ?? [],
                 LogoUrl = logoUrl,
                 LogoContainer = logoContainer,
                 LogoPath = logoPath,
@@ -62,7 +62,7 @@ public static class TournamentSummaryDtoFactory
         var winners = NameFactory.Bogus(count * 200, seed).ToArray();
         var bowlingCenters = BowlingCenterSummaryDtoFactory.Bogus(10, seed).ToArray();
         var sponsors = SponsorSummaryDtoFactory.Bogus(25, seed).ToArray();
-        var oilPatterns = OilPatternDtoFactory.Bogus(20, seed).ToArray();
+        var oilPatterns = TournamentOilPatternDtoFactory.Bogus(20, seed).ToArray();
 
         var faker = new Faker<TournamentSummaryDto>()
             .CustomInstantiator(f => new()
@@ -81,7 +81,7 @@ public static class TournamentSummaryDtoFactory
                 Reservations = f.Random.Int(0, 100),
                 PatternLengthCategory = f.PickRandom(PatternLengthCategory.List.ToArray())?.Name,
                 PatternRatioCategory = f.PickRandom(PatternRatioCategory.List.ToArray())?.Name,
-                OilPattern = f.PickRandom(oilPatterns),
+                OilPatterns = [.. f.PickRandom(oilPatterns, f.Random.Int(0, 2))],
                 LogoUrl = f.Random.Bool() ? new Uri(f.Internet.Url()) : null,
                 LogoContainer = f.Random.Bool() ? f.System.FilePath() : null,
                 LogoPath = f.Random.Bool() ? f.System.FilePath() : null,

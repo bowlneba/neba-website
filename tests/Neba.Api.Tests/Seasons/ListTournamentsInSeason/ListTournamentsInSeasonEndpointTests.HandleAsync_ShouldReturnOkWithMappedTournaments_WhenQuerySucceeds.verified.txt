@@ -1,0 +1,123 @@
+﻿{
+  Items: [
+    {
+      Id: 01GBP3VHXR2YX9DBG4SMXSK1MY,
+      Name: impactful function incremental,
+      StartDate: Date_1,
+      EndDate: Date_2,
+      TournamentType: Non-Champions,
+      EntryFee: 72.828962035863200,
+      RegistrationUrl: http://meaghan.net,
+      AddedMoney: 3555.772948803275000,
+      Reservations: 14,
+      PatternLengthCategory: Short,
+      PatternRatioCategory: Sport,
+      LogoUrl: http://kristopher.net,
+      Winners: [
+        Phillip Wunsch
+      ],
+      BowlingCenter: {
+        Name: Erdman - Ankunding,
+        City: West Jules,
+        State: SD
+      },
+      OilPatterns: [
+        {
+          Name: Dragon,
+          Length: 40,
+          Volume: 25.0,
+          LeftRatio: 3.0,
+          RightRatio: 3.0,
+          Rounds: [
+            Qualifying,
+            Step Ladder
+          ]
+        }
+      ]
+    },
+    {
+      Id: 01JRR0XZMR8VC2FEQD4WHFQEF4,
+      Name: actuating protocol Branch,
+      StartDate: Date_3,
+      EndDate: Date_4,
+      TournamentType: Over 40,
+      EntryFee: 51.34293637300978250,
+      RegistrationUrl: https://adolphus.com,
+      AddedMoney: 4567.570988818805000,
+      Reservations: 93,
+      PatternLengthCategory: Medium,
+      PatternRatioCategory: Recreation,
+      LogoUrl: http://hugh.net,
+      BowlingCenter: {
+        Name: Reilly LLC,
+        City: North Rhoda,
+        State: AL
+      },
+      Sponsors: [
+        {
+          Name: Connelly, Cassin and Ledner,
+          Slug: dolorem-voluptatem-est,
+          LogoUrl: https://picsum.photos/640/480/?image=556
+        }
+      ],
+      OilPatterns: [
+        {
+          Name: Dragon,
+          Length: 40,
+          Volume: 25.0,
+          LeftRatio: 3.0,
+          RightRatio: 3.0,
+          Rounds: [
+            Qualifying,
+            Cashers,
+            Step Ladder
+          ]
+        }
+      ]
+    },
+    {
+      Id: 01JT23Z35FSXTR0E5NQTG602ZR,
+      Name: deposit plug-and-play Computers,
+      StartDate: Date_5,
+      EndDate: Date_6,
+      TournamentType: Non-Champions,
+      EntryFee: 64.0599162150453350,
+      RegistrationUrl: https://bobby.com,
+      AddedMoney: 3755.756958274060000,
+      Reservations: 83,
+      PatternLengthCategory: Long,
+      PatternRatioCategory: Challenge,
+      BowlingCenter: {
+        Name: Schuster - Abernathy,
+        City: New Coryfurt,
+        State: MT
+      },
+      OilPatterns: [
+        {
+          Name: Dragon,
+          Length: 40,
+          Volume: 25.0,
+          LeftRatio: 3.0,
+          RightRatio: 3.0,
+          Rounds: [
+            Match Play,
+            Cashers,
+            Qualifying
+          ]
+        },
+        {
+          Name: Dragon,
+          Length: 40,
+          Volume: 25.0,
+          LeftRatio: 3.0,
+          RightRatio: 3.0,
+          Rounds: [
+            Cashers,
+            Match Play
+          ]
+        }
+      ]
+    }
+  ],
+  TotalItems: 3
+}
