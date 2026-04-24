@@ -91,7 +91,7 @@
 
     // ── Filter state ───────────────────────────────────────────────────────
     private string _searchTerm = string.Empty;
-    private TournamentType? _typeFilter;
+    private string? _typeFilter;
 
     // ── Data ───────────────────────────────────────────────────────────────
     private List<SeasonTournamentViewModel>? _allTournaments;
@@ -119,7 +119,7 @@
 
     private bool HasActiveFilters =>
         !string.IsNullOrWhiteSpace(_searchTerm) ||
-        _typeFilter.HasValue;
+        _typeFilter is not null;
 
     private IEnumerable<SeasonTournamentViewModel> FilteredTournaments
     {
@@ -141,7 +141,7 @@
                     (t.Sponsor?.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
             }
 
-            if (_typeFilter.HasValue)
+            if (_typeFilter is not null)
             {
                 query = query.Where(t => t.TournamentType == _typeFilter);
             }

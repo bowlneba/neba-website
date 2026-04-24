@@ -8,10 +8,10 @@ public static class SeasonTournamentViewModelFactory
     public const string ValidName = "Granite State Open";
     public const string ValidSeason = "2026";
     public const string ValidPatternName = "Shark";
+    public const string ValidTournamentType = "Singles";
 
     public static readonly DateOnly ValidStartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(14));
     public static readonly DateOnly ValidEndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(14));
-    public static readonly TournamentType ValidTournamentType = TournamentType.Singles;
 
     public static SeasonTournamentViewModel Create(
         string? id = null,
@@ -19,7 +19,7 @@ public static class SeasonTournamentViewModelFactory
         string? season = null,
         DateOnly? startDate = null,
         DateOnly? endDate = null,
-        TournamentType? tournamentType = null)
+        string? tournamentType = null)
         => new()
         {
             Id = id ?? ValidId,
@@ -46,6 +46,8 @@ public static class SeasonTournamentViewModelFactory
 
     public static IReadOnlyCollection<SeasonTournamentViewModel> Bogus(int count, int? seed = null)
     {
+        var tournamentTypeOptions = new[] { "Singles", "Doubles", "Trios", "Team", "Senior", "Women", "Senior / Women", "Special Event" };
+
         var faker = new Faker<SeasonTournamentViewModel>()
             .CustomInstantiator(f =>
             {
@@ -61,7 +63,7 @@ public static class SeasonTournamentViewModelFactory
                     Season = f.Random.Int(2019, 2030).ToString(System.Globalization.CultureInfo.InvariantCulture),
                     StartDate = start,
                     EndDate = end,
-                    TournamentType = f.PickRandom<TournamentType>(),
+                    TournamentType = f.PickRandom(tournamentTypeOptions),
                     EntryFee = f.Random.Decimal(60, 180),
                     RegistrationStatus = f.PickRandom<RegistrationStatus>(),
                     RegistrationUrl = new Uri(f.Internet.UrlWithPath(), UriKind.Absolute),

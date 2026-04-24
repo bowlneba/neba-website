@@ -20,8 +20,8 @@ public sealed record SeasonTournamentViewModel
     /// <summary>Date the final round concludes; equals StartDate for single-day events.</summary>
     public required DateOnly EndDate { get; init; }
 
-    /// <summary>Format category of the tournament.</summary>
-    public required TournamentType TournamentType { get; init; }
+    /// <summary>Format category of the tournament (e.g., "Singles", "Doubles", "Senior / Women").</summary>
+    public required string TournamentType { get; init; }
 
     /// <summary>Per-bowler entry fee in dollars, if applicable.</summary>
     public decimal? EntryFee { get; init; }

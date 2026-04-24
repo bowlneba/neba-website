@@ -60,7 +60,7 @@ internal sealed class TournamentDataService(
             Season = seasonLabel,
             StartDate = response.StartDate,
             EndDate = response.EndDate,
-            TournamentType = Enum.Parse<TournamentType>(response.TournamentType, ignoreCase: true),
+            TournamentType = response.TournamentType,
             EntryFee = response.EntryFee,
             RegistrationUrl = response.RegistrationUrl,
             AddedMoney = response.AddedMoney,

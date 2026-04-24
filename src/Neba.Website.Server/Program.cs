@@ -25,7 +25,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddOutputCache();
 
 builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
-builder.Services.AddSingleton<ITournamentDataService, TournamentDataService>();
+builder.Services.AddScoped<ITournamentDataService, TournamentDataService>();
 
 var app = builder.Build();
 

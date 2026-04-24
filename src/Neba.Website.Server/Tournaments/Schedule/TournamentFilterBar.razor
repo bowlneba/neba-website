@@ -12,14 +12,14 @@
     </div>
 
     <div class="neba-segmented-control tournament-filter-bar__type-filter" aria-label="Filter by format">
-        <button class="neba-segment-button @(TypeFilter == null ? "neba-segment-selected" : "")"
+        <button class="neba-segment-button @GetSelectedClass(null)"
                 @onclick="() => TypeFilterChanged.InvokeAsync(null)">All</button>
-        <button class="neba-segment-button @(TypeFilter == TournamentType.Singles ? "neba-segment-selected" : "")"
-                @onclick="() => TypeFilterChanged.InvokeAsync(TournamentType.Singles)">Singles</button>
-        <button class="neba-segment-button @(TypeFilter == TournamentType.Doubles ? "neba-segment-selected" : "")"
-                @onclick="() => TypeFilterChanged.InvokeAsync(TournamentType.Doubles)">Doubles</button>
-        <button class="neba-segment-button @(TypeFilter == TournamentType.Trios ? "neba-segment-selected" : "")"
-                @onclick="() => TypeFilterChanged.InvokeAsync(TournamentType.Trios)">Trios</button>
+        <button class="neba-segment-button @GetSelectedClass("Singles")"
+                @onclick="() => TypeFilterChanged.InvokeAsync("Singles")">Singles</button>
+        <button class="neba-segment-button @GetSelectedClass("Doubles")"
+                @onclick="() => TypeFilterChanged.InvokeAsync("Doubles")">Doubles</button>
+        <button class="neba-segment-button @GetSelectedClass("Trios")"
+                @onclick="() => TypeFilterChanged.InvokeAsync("Trios")">Trios</button>
     </div>
 
 </div>
@@ -32,9 +32,11 @@
     public EventCallback<string> SearchTermChanged { get; set; }
 
     [Parameter]
-    public TournamentType? TypeFilter { get; set; }
+    public string? TypeFilter { get; set; }
 
     [Parameter, EditorRequired]
-    public EventCallback<TournamentType?> TypeFilterChanged { get; set; }
+    public EventCallback<string?> TypeFilterChanged { get; set; }
 
+    private string GetSelectedClass(string? value) =>
+        (TypeFilter?.Equals(value) ?? value is null) ? "neba-segment-selected" : "";
 }
