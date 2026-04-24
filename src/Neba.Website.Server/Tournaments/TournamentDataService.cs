@@ -1,37 +1,30 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
-using Microsoft.Extensions.FileProviders;
-
 using Neba.Api.Contracts.Seasons;
 using Neba.Api.Contracts.Seasons.ListSeasons;
+using Neba.Api.Contracts.Seasons.ListTournamentsInSeason;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Tournaments.Schedule;
 
 namespace Neba.Website.Server.Tournaments;
 
 internal sealed class TournamentDataService(
-    IWebHostEnvironment env,
     ApiExecutor executor,
     ISeasonsApi seasonsApi) : ITournamentDataService
 {
-    private static readonly JsonSerializerOptions s_options = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        Converters = { new JsonStringEnumConverter() },
-    };
-
     public async Task<List<SeasonTournamentViewModel>> GetTournamentsForSeasonAsync(
         SeasonViewModel season, CancellationToken ct = default)
     {
-        var fileInfo = GetFileInfo($"data/tournaments/{season.Label}.json");
-        if (!fileInfo.Exists)
+        var result = await executor.ExecuteAsync(
+            "SeasonsApi",
+            nameof(GetTournamentsForSeasonAsync),
+            token => seasonsApi.ListTournamentsInSeasonAsync(season.Id, token),
+            ct);
+
+        if (result.IsError)
         {
             return [];
         }
 
-        await using var stream = fileInfo.CreateReadStream();
-        return await JsonSerializer.DeserializeAsync<List<SeasonTournamentViewModel>>(stream, s_options, ct) ?? [];
+        return [.. result.Value.Items.Select(r => MapToViewModel(r, season.Label))];
     }
 
     public async Task<List<SeasonViewModel>> GetSeasonsAsync(CancellationToken ct = default)
@@ -55,5 +48,30 @@ internal sealed class TournamentDataService(
         EndDate = r.EndDate,
     };
 
-    private IFileInfo GetFileInfo(string path) => env.WebRootFileProvider.GetFileInfo(path);
+    private static SeasonTournamentViewModel MapToViewModel(
+        SeasonTournamentResponse response, string seasonLabel)
+    {
+        var firstOilPattern = response.OilPatterns.FirstOrDefault();
+
+        return new SeasonTournamentViewModel
+        {
+            Id = response.Id,
+            Name = response.Name,
+            Season = seasonLabel,
+            StartDate = response.StartDate,
+            EndDate = response.EndDate,
+            TournamentType = Enum.Parse<TournamentType>(response.TournamentType, ignoreCase: true),
+            EntryFee = response.EntryFee,
+            RegistrationUrl = response.RegistrationUrl,
+            AddedMoney = response.AddedMoney,
+            TournamentLogoUrl = response.LogoUrl,
+            BowlingCenterName = response.BowlingCenter?.Name,
+            BowlingCenterCity = response.BowlingCenter?.City,
+            Sponsor = response.Sponsors.FirstOrDefault()?.Name,
+            Winners = response.Winners,
+            PatternName = firstOilPattern?.Name,
+            PatternLength = firstOilPattern?.Length,
+            PatternLengthCategory = response.PatternLengthCategory,
+        };
+    }
 }
