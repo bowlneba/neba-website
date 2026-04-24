@@ -49,7 +49,9 @@ internal sealed class OilPatternConfiguration
 
         builder.HasMany(oilPattern => oilPattern.Tournaments)
             .WithOne(tournamentOilPattern => tournamentOilPattern.OilPattern)
+            .HasPrincipalKey(pattern => pattern.Id)
             .HasForeignKey(tournamentOilPattern => tournamentOilPattern.OilPatternId)
             .OnDelete(DeleteBehavior.Cascade);
+
     }
 }
