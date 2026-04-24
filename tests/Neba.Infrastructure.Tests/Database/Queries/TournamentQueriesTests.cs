@@ -288,10 +288,23 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
             id: new BowlerId("01000000000000000000000004"),
             name: NameFactory.Create(firstName: "Bob", lastName: "Jones"));
 
+        var oilPattern = OilPatternFactory.Create(
+            id: new OilPatternId("01000000000000000000000007"),
+            name: "Dragon",
+            length: 40,
+            volume: 25.0m,
+            leftRatio: 3.0m,
+            rightRatio: 3.0m,
+            kegelId: null);
+
+        tournament.AddOilPattern(oilPattern.Id, TournamentRound.Qualifying, TournamentRound.StepLadder)
+            .IsError.ShouldBeFalse();
+
         await _dbContext.BowlingCenters.AddAsync(bowlingCenter, TestContext.Current.CancellationToken);
         await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
         await _dbContext.Sponsors.AddRangeAsync([sponsor1, sponsor2], TestContext.Current.CancellationToken);
         await _dbContext.Bowlers.AddRangeAsync([bowler1, bowler2], TestContext.Current.CancellationToken);
+        await _dbContext.OilPatterns.AddAsync(oilPattern, TestContext.Current.CancellationToken);
         await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 

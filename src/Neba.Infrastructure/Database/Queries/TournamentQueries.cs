@@ -110,23 +110,22 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
                     RegistrationUrl = tournament.ExternalRegistrationUrl,
                     LogoContainer = tournament.Logo != null ? tournament.Logo.Container : null,
                     LogoPath = tournament.Logo != null ? tournament.Logo.Path : null,
-                    OilPatterns = tournament.OilPatterns.Select(tournamentOilPattern => new TournamentOilPatternDto
-                    {
-                        OilPattern = new OilPatternDto
-                        {
-                            Id = tournamentOilPattern.OilPattern.Id,
-                            Name = tournamentOilPattern.OilPattern.Name,
-                            Length = tournamentOilPattern.OilPattern.Length,
-                            Volume = tournamentOilPattern.OilPattern.Volume,
-                            LeftRatio = tournamentOilPattern.OilPattern.LeftRatio,
-                            RightRatio = tournamentOilPattern.OilPattern.RightRatio,
-                            KegelId = tournamentOilPattern.OilPattern.KegelId,
-                        },
-                        TournamentRounds = tournamentOilPattern.TournamentRounds.Select(tournamentRound => tournamentRound.Name).ToList()
-                    }).ToList(),
-
                     Reservations = 999, // need to replace once actual column exists
-                }
+                },
+                OilPatternsRaw = tournament.OilPatterns.Select(tournamentOilPattern => new
+                {
+                    OilPattern = new OilPatternDto
+                    {
+                        Id = tournamentOilPattern.OilPattern.Id,
+                        Name = tournamentOilPattern.OilPattern.Name,
+                        Length = tournamentOilPattern.OilPattern.Length,
+                        Volume = tournamentOilPattern.OilPattern.Volume,
+                        LeftRatio = tournamentOilPattern.OilPattern.LeftRatio,
+                        RightRatio = tournamentOilPattern.OilPattern.RightRatio,
+                        KegelId = tournamentOilPattern.OilPattern.KegelId,
+                    },
+                    tournamentOilPattern.TournamentRounds
+                }).ToList()
             })
             .ToListAsync(cancellationToken);
 
@@ -146,6 +145,12 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
         return tournaments
             .ConvertAll(t => t.Dto with
             {
+                OilPatterns = t.OilPatternsRaw
+                    .ConvertAll(op => new TournamentOilPatternDto
+                    {
+                        OilPattern = op.OilPattern,
+                        TournamentRounds = [.. op.TournamentRounds.Select(tr => tr.Name)]
+                    }),
                 Winners = historicalWinnersByTournamentDbId.GetValueOrDefault(t.DbId, [])
             });
     }

@@ -44,6 +44,22 @@
   Reservations: 999,
   PatternLengthCategory: Medium,
   PatternRatioCategory: Challenge,
+  OilPatterns: [
+    {
+      OilPattern: {
+        Id: 01000000000000000000000007,
+        Name: Dragon,
+        Length: 40,
+        Volume: 25.000,
+        LeftRatio: 3.00,
+        RightRatio: 3.00
+      },
+      TournamentRounds: [
+        Qualifying,
+        Step Ladder
+      ]
+    }
+  ],
   LogoContainer: tournament-logos,
   LogoPath: singles-2026.png,
   Winners: [
