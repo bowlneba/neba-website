@@ -100,9 +100,9 @@ internal sealed class SeasonStatsService(
         // Field Match Play Summary
 
         var highestMatchPlayWinPercentage = bowlerStats.Max(stat =>
-            ComputeRawWinRate(stat.MatchPlayWins, stat.MatchPlayLosses));
+            ComputeRawWinRate(stat.MatchPlayWins, stat.MatchPlayLosses)) * 100m;
         var highestMatchPlayWinPercentageBowlers = bowlerStats
-            .Where(stat => ComputeRawWinRate(stat.MatchPlayWins, stat.MatchPlayLosses) == highestMatchPlayWinPercentage)
+            .Where(stat => ComputeRawWinRate(stat.MatchPlayWins, stat.MatchPlayLosses) * 100m == highestMatchPlayWinPercentage)
             .ToDictionary(stat => stat.BowlerId, stat => stat.BowlerName);
 
         var mostFinals = bowlerStats.Max(stat => stat.Finals);
