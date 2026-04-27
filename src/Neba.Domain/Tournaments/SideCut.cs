@@ -1,5 +1,7 @@
 using System.Drawing;
 
+using ErrorOr;
+
 namespace Neba.Domain.Tournaments;
 
 /// <summary>
@@ -35,4 +37,12 @@ public sealed class SideCut
     /// Whether this Side Cut is active and available for use in tournament configuration.
     /// </summary>
     public required bool Active { get; init; }
+
+    private readonly List<SideCutCriteriaGroup> _criteriaGroups = [];
+
+    /// <summary>
+    /// The collection of criteria groups associated with this Side Cut. Each criteria group defines a specific set of qualifiers and how they are combined with the Main Cut qualifiers. This collection is read-only to ensure that criteria groups are managed through the appropriate methods on the tournament round configuration, which maintain the integrity of the relationships and the uniqueness of Sort Order values within the same round.
+    /// </summary>
+    public IReadOnlyCollection<SideCutCriteriaGroup> CriteriaGroups
+        => _criteriaGroups.AsReadOnly();
 }

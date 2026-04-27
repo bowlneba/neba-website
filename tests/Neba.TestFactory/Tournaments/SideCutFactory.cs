@@ -15,8 +15,10 @@ public static class SideCutFactory
         string? name = null,
         Color? indicator = null,
         LogicalOperator? logicalOperator = null,
-        bool active = true)
-        => new()
+        bool active = true,
+        IReadOnlyCollection<SideCutCriteriaGroup>? criteriaGroups = null)
+    {
+        var sideCut = new SideCut
         {
             Id = id ?? SideCutId.New(),
             Name = name ?? "Test Side Cut",
@@ -24,6 +26,9 @@ public static class SideCutFactory
             Indicator = indicator ?? Color.Red,
             Active = active
         };
+
+        return sideCut;
+    }
 
     public static IReadOnlyCollection<SideCut> Bogus(int count, int? seed = null)
     {
