@@ -1,0 +1,45 @@
+using System.Drawing;
+using System.Globalization;
+
+using Neba.Domain;
+using Neba.Domain.Tournaments;
+
+namespace Neba.TestFactory.Tournaments;
+
+public static class SideCutFactory
+{
+    public static SideCut Create(
+        SideCutId? id = null,
+        string? name = null,
+        Color? indicator = null,
+        LogicalOperator? logicalOperator = null,
+        bool active = true)
+        => new()
+        {
+            Id = id ?? SideCutId.New(),
+            Name = name ?? "Test Side Cut",
+            LogicalOperator = logicalOperator ?? LogicalOperator.And,
+            Indicator = indicator ?? Color.Red,
+            Active = active
+        };
+
+    public static IReadOnlyCollection<SideCut> Bogus(int count, int? seed = null)
+    {
+        var faker = new Faker<SideCut>()
+            .CustomInstantiator(f => new SideCut
+            {
+                Id = SideCutId.Parse(Ulid.BogusString(f), CultureInfo.InvariantCulture),
+                Name = f.Lorem.Word(),
+                Indicator = ColorTranslator.FromHtml(f.Internet.Color()),
+                LogicalOperator = f.PickRandom(LogicalOperator.List.ToArray()),
+                Active = f.Random.Bool()
+            });
+
+        if (seed.HasValue)
+        {
+            faker.UseSeed(seed.Value);
+        }
+
+        return faker.Generate(count);
+    }
+}

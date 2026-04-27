@@ -723,6 +723,96 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 ---
 
+## Side Cuts
+
+### Side Cut
+
+**Definition**: A named, reusable eligibility predicate that identifies a subgroup of bowlers who qualify for an alternative advancement path in a tournament round. A Side Cut has its own Cut Line, evaluated independently of the Main Cut. Each Side Cut is assigned a Display Color used to visually identify qualifying entries on operational screens such as check-in.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `SideCut` (sealed class)
+- Identity type: `SideCutId` (ULID-backed strongly-typed ID)
+
+---
+
+### Display Color
+
+**Definition**: A color value assigned to a Side Cut used to visually distinguish its qualifying entries in tournament management interfaces. Display Color is a property of the Side Cut itself, not of the bowler or the entry.
+
+**In Code**: `SideCut.Indicator` (`System.Drawing.Color`)
+
+---
+
+### Cut Line
+
+**Definition**: The minimum score required to advance through a cut. Each Side Cut has its own Cut Line, evaluated independently of the Main Cut. See also: **Main Cut**.
+
+**In Code**: Not yet modeled.
+
+---
+
+### Main Cut
+
+**Definition**: The primary advancement threshold for a tournament round, applied to all competing bowlers regardless of Side Cut eligibility.
+
+**In Code**: Not yet modeled.
+
+---
+
+### Side Cut Criterion Group
+
+**Definition**: An ordered collection of one or more Criteria within a Side Cut, evaluated together using the group's own Group Operator. A Side Cut contains one or more Criterion Groups. The results of all groups are combined at the top level using the Side Cut's Group Composition Operator.
+
+**In Code**: Not yet modeled.
+
+---
+
+### Group Composition Operator
+
+**Definition**: The `LogicalOperator` applied at the Side Cut level to combine the results of its Criterion Groups. Uses `And` (every group must match) or `Or` (at least one group must match).
+
+**In Code**: Not yet modeled. Uses `LogicalOperator` from `Neba.Domain`.
+
+---
+
+### Group Operator
+
+**Definition**: The `LogicalOperator` applied within a Criterion Group to combine its individual Criteria. Uses `And` (every criterion must match) or `Or` (at least one criterion must match).
+
+**In Code**: Not yet modeled. Uses `LogicalOperator` from `Neba.Domain`.
+
+---
+
+### Criterion
+
+**Definition**: A single, testable condition evaluated against a bowler to determine eligibility within a Criterion Group. A Criterion consists of a Criterion Type, a Criterion Value, and an Age Operator (for age-based Criterion Types only).
+
+**Criterion Types**:
+
+| Type | Evaluation | Notes |
+| --- | --- | --- |
+| `MinimumAge` | `Participation Age >= CriterionValue` | Examples: Senior (50), Super Senior (60) |
+| `MaximumAge` | `Participation Age <= CriterionValue` | Value is the oldest eligible age. "Under 18" stores `17` |
+| `Gender` | Bowler's registered gender must match the specified value | |
+
+> **Convention**: Both `MinimumAge` and `MaximumAge` are stored and evaluated as **inclusive** bounds. When NEBA rules express eligibility as "under 18," the stored criterion value is `17` — the oldest eligible age — not `18`. The Criterion Type name (`MaximumAge`) is the authoritative semantic; the stored value is always inclusive.
+
+**In Code**: Not yet modeled.
+
+---
+
+### Participation Age
+
+**Definition**: A bowler's age as computed on the specific date they bowl. Used exclusively for Side Cut eligibility evaluation. A bowler who does not satisfy an age-based Criterion on their participation date is ineligible for that Side Cut on that date, regardless of whether they would qualify on a different date within the same tournament.
+
+> **Example**: In a two-day Senior tournament, a bowler who turns 50 on day two is ineligible for the Senior Side Cut on day one and eligible on day two.
+
+**In Code**: Not yet modeled. Computed at evaluation time from bowler date of birth and squad date.
+
+---
+
 ## Awards
 
 ### Season
