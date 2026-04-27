@@ -1,6 +1,8 @@
 using System.Drawing;
 using System.Globalization;
 
+using Bogus.DataSets;
+
 using Neba.Domain;
 using Neba.Domain.Tournaments;
 
@@ -30,7 +32,7 @@ public static class SideCutFactory
             {
                 Id = SideCutId.Parse(Ulid.BogusString(f), CultureInfo.InvariantCulture),
                 Name = f.Lorem.Word(),
-                Indicator = ColorTranslator.FromHtml(f.Internet.Color()),
+                Indicator = ColorTranslator.FromHtml(f.Internet.Color(format: ColorFormat.Hex)),
                 LogicalOperator = f.PickRandom(LogicalOperator.List.ToArray()),
                 Active = f.Random.Bool()
             });
