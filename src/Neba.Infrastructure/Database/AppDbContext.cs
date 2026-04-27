@@ -1,3 +1,5 @@
+using System.Drawing;
+
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Domain.Bowlers;
@@ -99,7 +101,14 @@ internal sealed class AppDbContext(
         configurationBuilder.Properties<TournamentId>()
             .HaveConversion<UlidTypedIdConverter<TournamentId>>();
 
+        configurationBuilder.Properties<SideCutId>()
+            .HaveConversion<UlidTypedIdConverter<SideCutId>>();
+
+
         configurationBuilder.Properties<Uri>()
             .HaveConversion<UriToStringConverter>();
+
+        configurationBuilder.Properties<Color>()
+            .HaveConversion<Converters.ColorConverter>();
     }
 }
