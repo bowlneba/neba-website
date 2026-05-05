@@ -45,4 +45,48 @@ public sealed class SideCut
     /// </summary>
     public IReadOnlyCollection<SideCutCriteriaGroup> CriteriaGroups
         => _criteriaGroups.AsReadOnly();
+
+    //todo: need to rethink this w/ some help w/ claude about how to handle add new group vs add new criteria to existing group.
+    public ErrorOr<Success> AddCriteria(int sortOrder, LogicalOperator logicalOperator, int? minimumAge, int? maximumAge)
+    {
+        var criteriaSortOrderLookup = _criteriaGroups.Where(group => group.SortOrder == sortOrder).ToList();
+
+        if (criteriaSortOrderLookup.Count > 1)
+        {
+            return SideCutCriteriaGroupErrors.MultipleCriteriaGroupsWithSameSortOrder(sortOrder);
+        }
+
+        var criteriaGroupResult = criteriaSortOrderLookup.Count == 1
+            ? criteriaSortOrderLookup.Single()
+            : SideCutCriteriaGroup.Create(Id, logicalOperator, sortOrder);
+
+        if (criteriaGroupResult.IsError)
+        {
+            return criteriaGroupResult.Errors;
+        }
+
+        var criteriaGroup = criteriaGroupResult.Value;
+
+        var result = criteriaGroup.AddCriteria(minimumAge, maximumAge);
+
+        if (result.IsError)
+        {
+            return result.Errors;
+        }
+
+
+    }
+}
+
+internal static class SideCutCriteriaGroupErrors
+{
+    public static Error MultipleCriteriaGroupsWithSameSortOrder(int sortOrder)
+        => Error.Validation(
+        code: "SideCutCriteriaGroup.DuplicateSortOrder",
+        description: "Multiple Side Cut Criteria Groups with the same Sort Order value exist within the same tournament round, which violates the requirement for unique Sort Order values to ensure a clear and deterministic evaluation sequence.",
+        metadata: new Dictionary<string, object>
+        {
+            {"sortOrder", sortOrder}
+        }
+    );
 }
