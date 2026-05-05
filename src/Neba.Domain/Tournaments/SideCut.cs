@@ -77,7 +77,7 @@ public sealed class SideCut
     {
         var group = _criteriaGroups.SingleOrDefault(g => g.Id.Equals(groupId));
 
-        return group is null 
+        return group is null
             ? SideCutErrors.CriteriaGroupNotFound(groupId)
             : group.AddCriteria(minimumAge, maximumAge);
     }
