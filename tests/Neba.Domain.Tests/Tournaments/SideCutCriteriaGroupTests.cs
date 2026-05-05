@@ -1,6 +1,7 @@
 using Neba.Domain.Bowlers;
 using Neba.Domain.Tournaments;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Tournaments;
 
 namespace Neba.Domain.Tests.Tournaments;
 
@@ -8,205 +9,203 @@ namespace Neba.Domain.Tests.Tournaments;
 [Component("Tournaments.SideCutCriteriaGroup")]
 public sealed class SideCutCriteriaGroupTests
 {
-    // ── Create ────────────────────────────────────────────────────────────────
+    // ── AddCriteriaGroup (group creation) ────────────────────────────────────
 
-    [Fact(DisplayName = "Create should return a group with the specified SideCutId")]
-    public void Create_ShouldSetSideCutId()
+    [Fact(DisplayName = "AddCriteriaGroup returns a non-default SideCutCriteriaGroupId")]
+    public void AddCriteriaGroup_ShouldReturnNewId()
     {
-        // Arrange
-        var sideCutId = SideCutId.New();
+        var sideCut = SideCutFactory.Create();
 
-        // Act
-        var result = SideCutCriteriaGroup.Create(sideCutId, LogicalOperator.And, sortOrder: 1);
+        var result = sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1);
 
-        // Assert
         result.IsError.ShouldBeFalse();
-        result.Value.SideCutId.ShouldBe(sideCutId);
+        result.Value.ShouldNotBe(default(SideCutCriteriaGroupId));
     }
 
-    [Fact(DisplayName = "Create should return a group with the specified LogicalOperator")]
-    public void Create_ShouldSetLogicalOperator()
+    [Fact(DisplayName = "AddCriteriaGroup adds the group to CriteriaGroups")]
+    public void AddCriteriaGroup_ShouldAddGroupToCollection()
     {
-        // Act
-        var result = SideCutCriteriaGroup.Create(SideCutId.New(), LogicalOperator.Or, sortOrder: 1);
+        var sideCut = SideCutFactory.Create();
 
-        // Assert
-        result.IsError.ShouldBeFalse();
-        result.Value.LogicalOperator.ShouldBe(LogicalOperator.Or);
+        sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1);
+
+        sideCut.CriteriaGroups.Count.ShouldBe(1);
     }
 
-    [Fact(DisplayName = "Create should return a group with the specified SortOrder")]
-    public void Create_ShouldSetSortOrder()
+    [Fact(DisplayName = "AddCriteriaGroup sets the correct LogicalOperator on the new group")]
+    public void AddCriteriaGroup_ShouldSetLogicalOperator()
     {
-        // Act
-        var result = SideCutCriteriaGroup.Create(SideCutId.New(), LogicalOperator.And, sortOrder: 3);
+        var sideCut = SideCutFactory.Create();
 
-        // Assert
-        result.IsError.ShouldBeFalse();
-        result.Value.SortOrder.ShouldBe(3);
+        var result = sideCut.AddCriteriaGroup(LogicalOperator.Or, sortOrder: 1);
+
+        sideCut.CriteriaGroups.Single(g => g.Id.Equals(result.Value)).LogicalOperator.ShouldBe(LogicalOperator.Or);
     }
 
-    [Fact(DisplayName = "Create should return a group with an empty Criteria collection")]
-    public void Create_ShouldReturnEmptyCriteria()
+    [Fact(DisplayName = "AddCriteriaGroup sets the correct SortOrder on the new group")]
+    public void AddCriteriaGroup_ShouldSetSortOrder()
     {
-        // Act
-        var result = SideCutCriteriaGroup.Create(SideCutId.New(), LogicalOperator.And, sortOrder: 1);
+        var sideCut = SideCutFactory.Create();
 
-        // Assert
-        result.IsError.ShouldBeFalse();
-        result.Value.Criteria.ShouldBeEmpty();
+        var result = sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 5);
+
+        sideCut.CriteriaGroups.Single(g => g.Id.Equals(result.Value)).SortOrder.ShouldBe(5);
     }
 
-    // ── AddCriteria(int?, int?) ───────────────────────────────────────────────
+    [Fact(DisplayName = "AddCriteriaGroup returns error when sort order is already in use")]
+    public void AddCriteriaGroup_ShouldReturnError_WhenSortOrderIsDuplicate()
+    {
+        var sideCut = SideCutFactory.Create();
+        sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1);
 
-    [Fact(DisplayName = "AddCriteria should add age criteria to the group when minimumAge only is provided")]
+        var result = sideCut.AddCriteriaGroup(LogicalOperator.Or, sortOrder: 1);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("SideCut.DuplicateSortOrder");
+    }
+
+    [Fact(DisplayName = "AddCriteriaGroup allows two groups with different sort orders")]
+    public void AddCriteriaGroup_ShouldAllowMultipleGroupsWithUniqueSortOrders()
+    {
+        var sideCut = SideCutFactory.Create();
+
+        sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1);
+        sideCut.AddCriteriaGroup(LogicalOperator.Or, sortOrder: 2);
+
+        sideCut.CriteriaGroups.Count.ShouldBe(2);
+    }
+
+    // ── AddCriteria(groupId, int?, int?) ─────────────────────────────────────
+
+    [Fact(DisplayName = "AddCriteria adds age criteria to the group when minimumAge only is provided")]
     public void AddCriteria_Age_ShouldAddCriteria_WhenMinimumAgeProvided()
     {
-        // Arrange
-        var group = SideCutCriteriaGroup.Create(SideCutId.New(), LogicalOperator.And, sortOrder: 1).Value;
+        var sideCut = SideCutFactory.Create();
+        var groupId = sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1).Value;
 
-        // Act
-        var result = group.AddCriteria(minimumAge: 50, maximumAge: null);
+        var result = sideCut.AddCriteria(groupId, minimumAge: 50, maximumAge: null);
 
-        // Assert
         result.IsError.ShouldBeFalse();
-        group.Criteria.Count.ShouldBe(1);
-        group.Criteria.Single().MinimumAge.ShouldBe(50);
+        sideCut.CriteriaGroups.Single().Criteria.Single().MinimumAge.ShouldBe(50);
     }
 
-    [Fact(DisplayName = "AddCriteria should add age criteria to the group when maximumAge only is provided")]
+    [Fact(DisplayName = "AddCriteria adds age criteria to the group when maximumAge only is provided")]
     public void AddCriteria_Age_ShouldAddCriteria_WhenMaximumAgeProvided()
     {
-        // Arrange
-        var group = SideCutCriteriaGroup.Create(SideCutId.New(), LogicalOperator.And, sortOrder: 1).Value;
+        var sideCut = SideCutFactory.Create();
+        var groupId = sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1).Value;
 
-        // Act
-        var result = group.AddCriteria(minimumAge: null, maximumAge: 17);
+        var result = sideCut.AddCriteria(groupId, minimumAge: null, maximumAge: 17);
 
-        // Assert
         result.IsError.ShouldBeFalse();
+        sideCut.CriteriaGroups.Single().Criteria.Single().MaximumAge.ShouldBe(17);
+    }
+
+    [Fact(DisplayName = "AddCriteria replaces existing age criteria when called again on the same group")]
+    public void AddCriteria_Age_ShouldReplaceExistingAgeCriteria()
+    {
+        var sideCut = SideCutFactory.Create();
+        var groupId = sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1).Value;
+        sideCut.AddCriteria(groupId, minimumAge: 50, maximumAge: null);
+
+        sideCut.AddCriteria(groupId, minimumAge: 60, maximumAge: 80);
+
+        var group = sideCut.CriteriaGroups.Single();
         group.Criteria.Count.ShouldBe(1);
-        group.Criteria.Single().MaximumAge.ShouldBe(17);
+        group.Criteria.Single().MinimumAge.ShouldBe(60);
+        group.Criteria.Single().MaximumAge.ShouldBe(80);
     }
 
-    [Fact(DisplayName = "AddCriteria should add age criteria to the group when both ages are provided")]
-    public void AddCriteria_Age_ShouldAddCriteria_WhenBothAgesProvided()
+    [Fact(DisplayName = "AddCriteria returns error when age criteria is invalid")]
+    public void AddCriteria_Age_ShouldReturnError_WhenAgeRangeIsInvalid()
     {
-        // Arrange
-        var group = SideCutCriteriaGroup.Create(SideCutId.New(), LogicalOperator.And, sortOrder: 1).Value;
+        var sideCut = SideCutFactory.Create();
+        var groupId = sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1).Value;
 
-        // Act
-        var result = group.AddCriteria(minimumAge: 14, maximumAge: 17);
+        var result = sideCut.AddCriteria(groupId, minimumAge: 60, maximumAge: 50);
 
-        // Assert
-        result.IsError.ShouldBeFalse();
-        group.Criteria.Count.ShouldBe(1);
-    }
-
-    [Fact(DisplayName = "AddCriteria should accumulate multiple age criteria")]
-    public void AddCriteria_Age_ShouldAccumulateCriteria()
-    {
-        // Arrange
-        var group = SideCutCriteriaGroup.Create(SideCutId.New(), LogicalOperator.And, sortOrder: 1).Value;
-
-        // Act
-        group.AddCriteria(minimumAge: 50, maximumAge: null);
-        group.AddCriteria(minimumAge: null, maximumAge: 17);
-
-        // Assert
-        group.Criteria.Count.ShouldBe(2);
-    }
-
-    [Fact(DisplayName = "AddCriteria should return an error and not add criteria when minimumAge is negative")]
-    public void AddCriteria_Age_ShouldReturnError_WhenMinimumAgeIsNegative()
-    {
-        // Arrange
-        var group = SideCutCriteriaGroup.Create(SideCutId.New(), LogicalOperator.And, sortOrder: 1).Value;
-
-        // Act
-        var result = group.AddCriteria(minimumAge: -1, maximumAge: null);
-
-        // Assert
-        result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("SideCutCriteria.MinimumAgeInvalid");
-        group.Criteria.ShouldBeEmpty();
-    }
-
-    [Fact(DisplayName = "AddCriteria should return an error and not add criteria when maximumAge is negative")]
-    public void AddCriteria_Age_ShouldReturnError_WhenMaximumAgeIsNegative()
-    {
-        // Arrange
-        var group = SideCutCriteriaGroup.Create(SideCutId.New(), LogicalOperator.And, sortOrder: 1).Value;
-
-        // Act
-        var result = group.AddCriteria(minimumAge: null, maximumAge: -1);
-
-        // Assert
-        result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("SideCutCriteria.MaximumAgeInvalid");
-        group.Criteria.ShouldBeEmpty();
-    }
-
-    [Fact(DisplayName = "AddCriteria should return an error and not add criteria when minimumAge is greater than maximumAge")]
-    public void AddCriteria_Age_ShouldReturnError_WhenMinimumAgeExceedsMaximumAge()
-    {
-        // Arrange
-        var group = SideCutCriteriaGroup.Create(SideCutId.New(), LogicalOperator.And, sortOrder: 1).Value;
-
-        // Act
-        var result = group.AddCriteria(minimumAge: 60, maximumAge: 50);
-
-        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("SideCutCriteria.AgeRangeInvalid");
-        group.Criteria.ShouldBeEmpty();
     }
 
-    // ── AddCriteria(Gender) ───────────────────────────────────────────────────
+    [Fact(DisplayName = "AddCriteria returns error when age criteria group is not found")]
+    public void AddCriteria_Age_ShouldReturnError_WhenGroupNotFound()
+    {
+        var sideCut = SideCutFactory.Create();
+        var unknownGroupId = SideCutCriteriaGroupId.New();
 
-    [Theory(DisplayName = "AddCriteria should add gender criteria to the group for each gender")]
+        var result = sideCut.AddCriteria(unknownGroupId, minimumAge: 50, maximumAge: null);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("SideCut.CriteriaGroupNotFound");
+    }
+
+    // ── AddCriteria(groupId, Gender) ─────────────────────────────────────────
+
+    [Theory(DisplayName = "AddCriteria adds gender criteria to the group for each gender")]
     [MemberData(nameof(AllGenders))]
     public void AddCriteria_Gender_ShouldAddCriteria(Gender gender)
     {
-        // Arrange
-        var group = SideCutCriteriaGroup.Create(SideCutId.New(), LogicalOperator.Or, sortOrder: 1).Value;
+        var sideCut = SideCutFactory.Create();
+        var groupId = sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1).Value;
 
-        // Act
-        var result = group.AddCriteria(gender);
+        var result = sideCut.AddCriteria(groupId, gender);
 
-        // Assert
         result.IsError.ShouldBeFalse();
-        group.Criteria.Count.ShouldBe(1);
-        group.Criteria.Single().GenderRequirement.ShouldBe(gender);
+        sideCut.CriteriaGroups.Single().Criteria.Single().GenderRequirement.ShouldBe(gender);
     }
 
-    [Fact(DisplayName = "AddCriteria should accumulate multiple gender criteria")]
-    public void AddCriteria_Gender_ShouldAccumulateCriteria()
+    [Fact(DisplayName = "AddCriteria replaces existing gender criteria when called again on the same group")]
+    public void AddCriteria_Gender_ShouldReplaceExistingGenderCriteria()
     {
-        // Arrange
-        var group = SideCutCriteriaGroup.Create(SideCutId.New(), LogicalOperator.Or, sortOrder: 1).Value;
+        var sideCut = SideCutFactory.Create();
+        var groupId = sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1).Value;
+        sideCut.AddCriteria(groupId, Gender.Female);
 
-        // Act
-        group.AddCriteria(Gender.Female);
-        group.AddCriteria(Gender.Male);
+        sideCut.AddCriteria(groupId, Gender.Male);
 
-        // Assert
-        group.Criteria.Count.ShouldBe(2);
+        var group = sideCut.CriteriaGroups.Single();
+        group.Criteria.Count.ShouldBe(1);
+        group.Criteria.Single().GenderRequirement.ShouldBe(Gender.Male);
     }
 
-    [Fact(DisplayName = "AddCriteria should leave MinimumAge and MaximumAge null on the added gender criteria")]
+    [Fact(DisplayName = "AddCriteria leaves age limits null on the added gender criteria")]
     public void AddCriteria_Gender_ShouldLeaveAgeLimitsNull()
     {
-        // Arrange
-        var group = SideCutCriteriaGroup.Create(SideCutId.New(), LogicalOperator.And, sortOrder: 1).Value;
+        var sideCut = SideCutFactory.Create();
+        var groupId = sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1).Value;
 
-        // Act
-        group.AddCriteria(Gender.Female);
+        sideCut.AddCriteria(groupId, Gender.Female);
 
-        // Assert
-        var criteria = group.Criteria.Single();
+        var criteria = sideCut.CriteriaGroups.Single().Criteria.Single();
         criteria.MinimumAge.ShouldBeNull();
         criteria.MaximumAge.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "AddCriteria returns error when gender criteria group is not found")]
+    public void AddCriteria_Gender_ShouldReturnError_WhenGroupNotFound()
+    {
+        var sideCut = SideCutFactory.Create();
+        var unknownGroupId = SideCutCriteriaGroupId.New();
+
+        var result = sideCut.AddCriteria(unknownGroupId, Gender.Female);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("SideCut.CriteriaGroupNotFound");
+    }
+
+    // ── Mixed criteria ────────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "AddCriteria allows one age and one gender criteria in the same group")]
+    public void AddCriteria_ShouldAllowOneAgeAndOneGenderInSameGroup()
+    {
+        var sideCut = SideCutFactory.Create();
+        var groupId = sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1).Value;
+
+        sideCut.AddCriteria(groupId, Gender.Female);
+        sideCut.AddCriteria(groupId, minimumAge: 60, maximumAge: null);
+
+        sideCut.CriteriaGroups.Single().Criteria.Count.ShouldBe(2);
     }
 
     public static TheoryData<Gender> AllGenders() => [.. Gender.List];

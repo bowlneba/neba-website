@@ -2,6 +2,8 @@ using System.Drawing;
 
 using ErrorOr;
 
+using Neba.Domain.Bowlers;
+
 namespace Neba.Domain.Tournaments;
 
 /// <summary>
@@ -23,8 +25,7 @@ public sealed class SideCut
 
     /// <summary>
     /// The Display Color assigned to this Side Cut, used to visually distinguish qualifying
-    /// entries in tournament management interfaces. Display Color is a property of the Side Cut,
-    /// not of the bowler or the entry.
+    /// entries in tournament management interfaces.
     /// </summary>
     public required Color Indicator { get; init; }
 
@@ -41,52 +42,70 @@ public sealed class SideCut
     private readonly List<SideCutCriteriaGroup> _criteriaGroups = [];
 
     /// <summary>
-    /// The collection of criteria groups associated with this Side Cut. Each criteria group defines a specific set of qualifiers and how they are combined with the Main Cut qualifiers. This collection is read-only to ensure that criteria groups are managed through the appropriate methods on the tournament round configuration, which maintain the integrity of the relationships and the uniqueness of Sort Order values within the same round.
+    /// The collection of criteria groups associated with this Side Cut.
     /// </summary>
     public IReadOnlyCollection<SideCutCriteriaGroup> CriteriaGroups
         => _criteriaGroups.AsReadOnly();
 
-    //todo: need to rethink this w/ some help w/ claude about how to handle add new group vs add new criteria to existing group.
-    public ErrorOr<Success> AddCriteria(int sortOrder, LogicalOperator logicalOperator, int? minimumAge, int? maximumAge)
+    /// <summary>
+    /// Adds a new criteria group to this Side Cut with the given logical operator and sort order.
+    /// Returns the new group's ID so callers can subsequently add criteria to it.
+    /// Sort order must be unique among all groups on this Side Cut.
+    /// </summary>
+    public ErrorOr<SideCutCriteriaGroupId> AddCriteriaGroup(LogicalOperator logicalOperator, int sortOrder)
     {
-        var criteriaSortOrderLookup = _criteriaGroups.Where(group => group.SortOrder == sortOrder).ToList();
-
-        if (criteriaSortOrderLookup.Count > 1)
+        if (_criteriaGroups.Any(g => g.SortOrder == sortOrder))
         {
-            return SideCutCriteriaGroupErrors.MultipleCriteriaGroupsWithSameSortOrder(sortOrder);
+            return SideCutErrors.DuplicateSortOrder(sortOrder);
         }
 
-        var criteriaGroupResult = criteriaSortOrderLookup.Count == 1
-            ? criteriaSortOrderLookup.Single()
-            : SideCutCriteriaGroup.Create(Id, logicalOperator, sortOrder);
-
-        if (criteriaGroupResult.IsError)
+        var groupResult = SideCutCriteriaGroup.Create(Id, logicalOperator, sortOrder);
+        if (groupResult.IsError)
         {
-            return criteriaGroupResult.Errors;
+            return groupResult.Errors;
         }
 
-        var criteriaGroup = criteriaGroupResult.Value;
+        _criteriaGroups.Add(groupResult.Value);
 
-        var result = criteriaGroup.AddCriteria(minimumAge, maximumAge);
+        return groupResult.Value.Id;
+    }
 
-        if (result.IsError)
-        {
-            return result.Errors;
-        }
+    /// <summary>
+    /// Adds or replaces the age requirement on the identified criteria group.
+    /// </summary>
+    public ErrorOr<Success> AddCriteria(SideCutCriteriaGroupId groupId, int? minimumAge, int? maximumAge)
+    {
+        var group = _criteriaGroups.SingleOrDefault(g => g.Id.Equals(groupId));
 
+        return group is null 
+            ? SideCutErrors.CriteriaGroupNotFound(groupId)
+            : group.AddCriteria(minimumAge, maximumAge);
+    }
 
+    /// <summary>
+    /// Adds or replaces the gender requirement on the identified criteria group.
+    /// </summary>
+    public ErrorOr<Success> AddCriteria(SideCutCriteriaGroupId groupId, Gender gender)
+    {
+        var group = _criteriaGroups.SingleOrDefault(g => g.Id.Equals(groupId));
+
+        return group is null
+            ? SideCutErrors.CriteriaGroupNotFound(groupId)
+            : group.AddCriteria(gender);
     }
 }
 
-internal static class SideCutCriteriaGroupErrors
+internal static class SideCutErrors
 {
-    public static Error MultipleCriteriaGroupsWithSameSortOrder(int sortOrder)
-        => Error.Validation(
-        code: "SideCutCriteriaGroup.DuplicateSortOrder",
-        description: "Multiple Side Cut Criteria Groups with the same Sort Order value exist within the same tournament round, which violates the requirement for unique Sort Order values to ensure a clear and deterministic evaluation sequence.",
-        metadata: new Dictionary<string, object>
-        {
-            {"sortOrder", sortOrder}
-        }
-    );
+    public static Error DuplicateSortOrder(int sortOrder)
+        => Error.Conflict(
+            code: "SideCut.DuplicateSortOrder",
+            description: $"A criteria group with sort order {sortOrder} already exists on this Side Cut.",
+            metadata: new Dictionary<string, object> { { "sortOrder", sortOrder } });
+
+    public static Error CriteriaGroupNotFound(SideCutCriteriaGroupId groupId)
+        => Error.NotFound(
+            code: "SideCut.CriteriaGroupNotFound",
+            description: $"No criteria group with ID {groupId} exists on this Side Cut.",
+            metadata: new Dictionary<string, object> { { "groupId", groupId.Value.ToString() } });
 }

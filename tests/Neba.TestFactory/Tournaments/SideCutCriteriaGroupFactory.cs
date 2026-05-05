@@ -13,11 +13,13 @@ public static class SideCutCriteriaGroupFactory
     public static SideCutCriteriaGroup Create(
         SideCut? sideCut = null,
         LogicalOperator? logicalOperator = null,
-        int? sortOrder = null)
+        int? sortOrder = null,
+        SideCutCriteriaGroupId? id = null)
     {
         var resolvedSideCut = sideCut ?? SideCutFactory.Create();
         return new()
         {
+            Id = id ?? SideCutCriteriaGroupId.New(),
             SideCutId = resolvedSideCut.Id,
             SideCut = resolvedSideCut,
             LogicalOperator = logicalOperator ?? ValidLogicalOperator,
@@ -49,6 +51,7 @@ public static class SideCutCriteriaGroupFactory
 
                 return new SideCutCriteriaGroup
                 {
+                    Id = SideCutCriteriaGroupId.New(),
                     SideCutId = sideCut.Id,
                     SideCut = sideCut,
                     LogicalOperator = f.PickRandom(new[] { LogicalOperator.And, LogicalOperator.Or }.ToArray()),
