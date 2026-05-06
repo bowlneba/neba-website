@@ -15,7 +15,7 @@
       <PreserveNumeric1>True</PreserveNumeric1>
       <EFProvider>Npgsql.EntityFrameworkCore.PostgreSQL</EFProvider>
       <ExtraCxOptions>Include Error Detail=true;</ExtraCxOptions>
-      <Port>62677</Port>
+      <Port>19630</Port>
     </DriverData>
   </Connection>
   <NuGetReference>Microsoft.Data.SqlClient</NuGetReference>
@@ -55,6 +55,9 @@ async Task Main()
 	Sponsors.RemoveRange(Sponsors);
 	BowlerSeasonStats.RemoveRange(BowlerSeasonStats);
 	Tournaments.RemoveRange(Tournaments);
+	SideCutCriterias.RemoveRange(SideCutCriterias);
+	SideCutCriteriaGroups.RemoveRange(SideCutCriteriaGroups);
+	SideCuts.RemoveRange(SideCuts);
 	SaveChanges();
 	
 	//Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowling_centers RESTART IDENTITY CASCADE;");
@@ -66,6 +69,9 @@ async Task Main()
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.seasons RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.sponsors RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.tournaments RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.side_cuts RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.side_cut_criteria_groups RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.side_cut_criteria RESTART IDENTITY CASCADE;");
 	SaveChanges();
 	
 	//await MigrateBowlingCentersAsync();
@@ -105,11 +111,15 @@ async Task Main()
 	
 	var spreadsheetTournaments = await MigrateTournamentsAsync(seasonDomainIdByEndYear);
 	
+	await MigrateSideCuts();
+	
 	var tournamentDbIdByDomainId = Tournaments.ToDictionary(tournament => Ulid.Parse(tournament.DomainId), tournament => tournament.Id);
 	var bowlerDbIdByWebsiteId = Bowlers.Where(bowler => bowler.WebsiteId.HasValue).ToDictionary(bowler => bowler.WebsiteId!.Value, bowler => bowler.Id);
 	
 	await MigrateHistoricalTournamentChampions(bowlerDbIdByWebsiteId, spreadsheetTournaments, tournamentDbIdByDomainId);
 	await MigrateHistoricalTournamentEntries(spreadsheetTournaments, tournamentDbIdByDomainId);
+	
+	"Migration Complete".Dump();
 }
 
 // You can define other methods, fields, classes and namespaces here
@@ -2049,6 +2059,8 @@ static List<(int? websiteId, int? softwareId)> s_manualMatch = new()
 	new(null, 5063),  // Ned Robinson
 	new(null, 5065),  // James Fortier
 	new(null, 5069),  // Brianna Cote
+	new(null, 5085),  // Christian Forry
+	new(null, 5090),  // Caitlyn Smith
 };
 
 #endregion
@@ -3262,6 +3274,100 @@ public sealed class SoftwareTournament
 	public int? OilPatternLength { get; init; }
 	
 	public decimal EntryFee { get; init; }
+}
+
+#endregion
+
+#region Side Cuts
+
+public async Task MigrateSideCuts()
+{
+	var senior = new SideCuts
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "Senior",
+		Active = true,
+		ColorIndicator = System.Drawing.ColorTranslator.FromHtml("#fbf592").ToArgb(), //light yellow
+		LogicalOperator = "AND",
+		SideCutCriteriaGroups =
+		[
+			new SideCutCriteriaGroups
+			{
+				DomainId = Guid.AsDomainId(),
+				LogicalOperator = "AND",
+				SortOrder = 10,
+				SideCutCriteriaGroupSideCutCriterias =
+				[
+					new SideCutCriteria
+					{
+						GenderRequirement = null,
+						MinimumAge = 50,
+						MaximumAge = null
+					}
+				]
+			}
+		]
+	};
+
+	var superSenior = new SideCuts
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "Super Senior",
+		Active = true,
+		ColorIndicator = System.Drawing.ColorTranslator.FromHtml("#9298fb").ToArgb(), //light blue
+		LogicalOperator = "AND",
+		SideCutCriteriaGroups =
+		[
+			new SideCutCriteriaGroups
+			{
+				DomainId = Guid.AsDomainId(),
+				LogicalOperator = "AND",
+				SortOrder = 10,
+				SideCutCriteriaGroupSideCutCriterias =
+				[
+					new SideCutCriteria
+					{
+						GenderRequirement = null,
+						MinimumAge = 60,
+						MaximumAge = null
+					}
+				]
+			}
+		]
+	};
+
+	var women = new SideCuts
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "Women",
+		Active = true,
+		ColorIndicator = System.Drawing.ColorTranslator.FromHtml("#f9a6d8").ToArgb(), //light pink
+		LogicalOperator = "AND",
+		SideCutCriteriaGroups =
+		[
+			new SideCutCriteriaGroups
+			{
+				DomainId = Guid.AsDomainId(),
+				LogicalOperator = "AND",
+				SortOrder = 10,
+				SideCutCriteriaGroupSideCutCriterias =
+				[
+					new SideCutCriteria
+					{
+						GenderRequirement = "F",
+						MinimumAge = null,
+						MaximumAge = null
+					}
+				]
+			}
+		]
+	};
+	
+	SideCuts.AddRange([senior, superSenior, women]);
+	
+	await SaveChangesAsync();
+	
+	"Side Cuts Migrated".Dump();
 }
 
 #endregion
