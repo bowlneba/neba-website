@@ -15,11 +15,6 @@ public sealed class SideCutCriteriaGroup
     public required SideCutCriteriaGroupId Id { get; init; }
 
     /// <summary>
-    /// The Side Cut this group belongs to.
-    /// </summary>
-    public required SideCutId SideCutId { get; init; }
-
-    /// <summary>
     /// The Side Cut associated with this criteria group.
     /// </summary>
     internal SideCut SideCut { get; init; } = null!;
@@ -42,12 +37,11 @@ public sealed class SideCutCriteriaGroup
     public IReadOnlyCollection<SideCutCriteria> Criteria
         => _criteria;
 
-    internal static ErrorOr<SideCutCriteriaGroup> Create(SideCutId sideCutId, LogicalOperator logicalOperator, int sortOrder)
+    internal static ErrorOr<SideCutCriteriaGroup> Create(LogicalOperator logicalOperator, int sortOrder)
     {
         return new SideCutCriteriaGroup
         {
             Id = SideCutCriteriaGroupId.New(),
-            SideCutId = sideCutId,
             LogicalOperator = logicalOperator,
             SortOrder = sortOrder
         };

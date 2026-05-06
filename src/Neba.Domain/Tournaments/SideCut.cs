@@ -59,7 +59,7 @@ public sealed class SideCut
             return SideCutErrors.DuplicateSortOrder(sortOrder);
         }
 
-        var groupResult = SideCutCriteriaGroup.Create(Id, logicalOperator, sortOrder);
+        var groupResult = SideCutCriteriaGroup.Create(logicalOperator, sortOrder);
         if (groupResult.IsError)
         {
             return groupResult.Errors;

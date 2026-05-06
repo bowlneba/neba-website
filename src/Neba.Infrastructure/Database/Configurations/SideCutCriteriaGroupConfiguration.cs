@@ -1,0 +1,36 @@
+using Ardalis.SmartEnum.EFCore;
+
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+using Neba.Domain;
+using Neba.Domain.Tournaments;
+
+namespace Neba.Infrastructure.Database.Configurations;
+
+internal sealed class SideCutCriteriaGroupConfiguration
+    : IEntityTypeConfiguration<SideCutCriteriaGroup>
+{
+    internal const string ForeignKey = "side_cut_criteria_group_id";
+
+    public void Configure(EntityTypeBuilder<SideCutCriteriaGroup> builder)
+    {
+        builder.ToTable("side_cut_criteria_groups", AppDbContext.DefaultSchema);
+
+        builder.ConfigureShadowId();
+
+        builder.Property(group => group.Id)
+            .IsUlid();
+
+        builder.HasAlternateKey(group => group.Id);
+
+        builder.Property(group => group.LogicalOperator)
+            .HasConversion<SmartEnumConverter<LogicalOperator, string>>()
+            .IsRequired();
+
+        builder.Property(group => group.SortOrder)
+            .IsRequired();
+
+        builder.HasIndex(SideCutConfiguration.ForeignKey);
+    }
+}

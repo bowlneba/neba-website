@@ -20,7 +20,6 @@ public static class SideCutCriteriaGroupFactory
         return new()
         {
             Id = id ?? SideCutCriteriaGroupId.New(),
-            SideCutId = resolvedSideCut.Id,
             SideCut = resolvedSideCut,
             LogicalOperator = logicalOperator ?? ValidLogicalOperator,
             SortOrder = sortOrder ?? ValidSortOrder,
@@ -52,7 +51,6 @@ public static class SideCutCriteriaGroupFactory
                 return new SideCutCriteriaGroup
                 {
                     Id = SideCutCriteriaGroupId.New(),
-                    SideCutId = sideCut.Id,
                     SideCut = sideCut,
                     LogicalOperator = f.PickRandom(new[] { LogicalOperator.And, LogicalOperator.Or }.ToArray()),
                     SortOrder = sortOrder,

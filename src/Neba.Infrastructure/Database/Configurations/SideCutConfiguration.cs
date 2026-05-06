@@ -38,5 +38,11 @@ internal sealed class SideCutConfiguration
 
         builder.Property(sideCut => sideCut.Active)
             .IsRequired();
+
+        builder.HasMany(sideCut => sideCut.CriteriaGroups)
+            .WithOne(group => group.SideCut)
+            .HasForeignKey(ForeignKey)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
