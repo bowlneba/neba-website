@@ -31,7 +31,9 @@ public sealed class SideCut
     public required Color Indicator { get; init; }
 
     /// <summary>
-    /// The logical operator that defines how this Side Cut's qualifiers are combined with the Main Cut qualifiers
+    /// The Group Composition Operator — the logical operator applied at the Side Cut level to combine
+    /// the Boolean results of its Criterion Groups (e.g., <c>And</c> requires all groups to match;
+    /// <c>Or</c> requires at least one to match).
     /// </summary>
     public required LogicalOperator LogicalOperator { get; init; }
 

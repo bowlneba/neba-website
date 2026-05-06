@@ -5,7 +5,9 @@ using Neba.Domain.Tournaments;
 namespace Neba.Domain.Sponsors;
 
 /// <summary>
-/// Represents a sponsor that supports the NEBA organization. Sponsors can be categorized by their tier and category, and can have various contact and promotional information associated with them.
+/// A company or individual with a formal promotional relationship with NEBA, receiving recognition
+/// and visibility across NEBA events, publications, and digital properties. Aggregate root for all
+/// sponsorship concepts.
 /// </summary>
 public sealed class Sponsor
     : AggregateRoot
@@ -16,7 +18,8 @@ public sealed class Sponsor
     public required SponsorId Id { get; init; }
 
     /// <summary>
-    /// Name of the sponsor.
+    /// The display name of the sponsor — company name (e.g., "Storm Products Inc.") or individual
+    /// name (e.g., "Tony &amp; Suzanne Reynaud").
     /// </summary>
     public required string Name { get; init; }
 

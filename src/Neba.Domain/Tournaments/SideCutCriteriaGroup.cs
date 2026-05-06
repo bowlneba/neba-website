@@ -20,7 +20,9 @@ public sealed class SideCutCriteriaGroup
     internal SideCut SideCut { get; init; } = null!;
 
     /// <summary>
-    /// The logical operator that defines how this Side Cut's qualifiers are combined with the Main Cut qualifiers.
+    /// The Group Operator — the logical operator applied within this Criterion Group to combine its
+    /// individual Criteria (e.g., <c>And</c> requires all criteria to match; <c>Or</c> requires at
+    /// least one to match).
     /// </summary>
     public required LogicalOperator LogicalOperator { get; init; }
 
