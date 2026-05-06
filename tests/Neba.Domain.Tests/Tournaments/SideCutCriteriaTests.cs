@@ -102,7 +102,6 @@ public sealed class SideCutCriteriaTests
         result.FirstError.Code.ShouldBe("SideCutCriteria.AgeRangeInvalid");
     }
 
-#nullable disable
     [Fact(DisplayName = "CreateAgeRequirement returns SideCutCriteria.BothAgesRequired when both minimumAge and maximumAge are null")]
     public void CreateAgeRequirement_ShouldReturnError_WhenBothAgesAreNull()
     {
@@ -111,7 +110,6 @@ public sealed class SideCutCriteriaTests
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("SideCutCriteria.BothAgesRequired");
     }
-#nullable enable
 
     // ── CreateGenderRequirement ───────────────────────────────────────────────
 

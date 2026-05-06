@@ -119,13 +119,36 @@ public static class SideCutFactory
     public static IReadOnlyCollection<SideCut> Bogus(int count, int? seed = null)
     {
         var faker = new Faker<SideCut>()
-            .CustomInstantiator(f => new SideCut
+            .CustomInstantiator(f =>
             {
-                Id = SideCutId.Parse(Ulid.BogusString(f), CultureInfo.InvariantCulture),
-                Name = f.Lorem.Word(),
-                Indicator = ColorTranslator.FromHtml(f.Internet.Color(format: ColorFormat.Hex)),
-                LogicalOperator = f.PickRandom(LogicalOperator.List.ToArray()),
-                Active = f.Random.Bool()
+                var sideCut = new SideCut
+                {
+                    Id = SideCutId.Parse(Ulid.BogusString(f), CultureInfo.InvariantCulture),
+                    Name = f.Lorem.Word(),
+                    Indicator = ColorTranslator.FromHtml(f.Internet.Color(format: ColorFormat.Hex)),
+                    LogicalOperator = f.PickRandom(new[] { LogicalOperator.And, LogicalOperator.Or }),
+                    Active = f.Random.Bool()
+                };
+
+                var groupCount = f.Random.Int(1, 3);
+                var usedSortOrders = new HashSet<int>();
+
+                for (var i = 0; i < groupCount; i++)
+                {
+                    int sortOrder;
+                    do { sortOrder = f.Random.Int(1, 20); } while (!usedSortOrders.Add(sortOrder));
+
+                    var groupId = sideCut.AddCriteriaGroup(
+                        f.PickRandom(new[] { LogicalOperator.And, LogicalOperator.Or }),
+                        sortOrder).Value;
+
+                    if (f.Random.Bool())
+                        sideCut.AddCriteria(groupId, f.Random.Int(1, 65), null);
+                    else
+                        sideCut.AddCriteria(groupId, f.PickRandom(Gender.List.ToArray()));
+                }
+
+                return sideCut;
             });
 
         if (seed.HasValue)
