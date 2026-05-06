@@ -25,7 +25,6 @@ internal sealed class SideCutCriteriaGroupConfiguration
         builder.HasAlternateKey(group => group.Id);
 
         builder.Property(group => group.LogicalOperator)
-            .HasConversion<SmartEnumConverter<LogicalOperator, string>>()
             .IsRequired();
 
         builder.Property(group => group.SortOrder)

@@ -29,11 +29,11 @@ internal sealed class SideCutConfiguration
             .IsRequired();
 
         builder.Property(sideCut => sideCut.Indicator)
+            .HasColumnName("color_indicator")
             .HasConversion<ColorConverter>()
             .IsRequired();
 
         builder.Property(sideCut => sideCut.LogicalOperator)
-            .HasConversion<SmartEnumConverter<LogicalOperator, string>>()
             .IsRequired();
 
         builder.Property(sideCut => sideCut.Active)

@@ -22,7 +22,7 @@ internal sealed class SideCutCriteriaConfiguration
         builder.Property(criteria => criteria.MaximumAge);
 
         builder.Property(criteria => criteria.GenderRequirement)
-            .HasConversion<SmartEnumConverter<Gender, string>>();
+            .HasMaxLength(1);
 
         builder.HasIndex(SideCutCriteriaGroupConfiguration.ForeignKey);
     }

@@ -1,7 +1,10 @@
 using System.Drawing;
 
+using Ardalis.SmartEnum.EFCore;
+
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Domain;
 using Neba.Domain.Bowlers;
 using Neba.Domain.BowlingCenters;
 using Neba.Domain.HallOfFame;
@@ -115,5 +118,13 @@ internal sealed class AppDbContext(
 
         configurationBuilder.Properties<Color>()
             .HaveConversion<Converters.ColorConverter>();
+
+        configurationBuilder.Properties<LogicalOperator>()
+            .HaveConversion<SmartEnumConverter<LogicalOperator, string>>()
+            .HaveMaxLength(7);
+
+        configurationBuilder.Properties<Gender>()
+            .HaveConversion<SmartEnumConverter<Gender, string>>()
+            .HaveMaxLength(1);
     }
 }
