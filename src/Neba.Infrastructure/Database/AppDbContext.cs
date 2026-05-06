@@ -71,6 +71,7 @@ internal sealed class AppDbContext(
         modelBuilder.ApplyConfiguration(new TournamentConfiguration());
         modelBuilder.ApplyConfiguration(new TournamentSponsorConfiguration());
         modelBuilder.ApplyConfiguration(new TournamentOilPatternConfiguration());
+        modelBuilder.ApplyConfiguration(new SideCutConfiguration());
 
         modelBuilder.ApplyConfiguration(new HistoricalTournamentChampionsConfiguration());
         modelBuilder.ApplyConfiguration(new HistoricalTournamentEntriesConfiguration());
@@ -104,6 +105,8 @@ internal sealed class AppDbContext(
         configurationBuilder.Properties<SideCutId>()
             .HaveConversion<UlidTypedIdConverter<SideCutId>>();
 
+        configurationBuilder.Properties<SideCutCriteriaGroupId>()
+            .HaveConversion<UlidTypedIdConverter<SideCutCriteriaGroupId>>();
 
         configurationBuilder.Properties<Uri>()
             .HaveConversion<UriToStringConverter>();
