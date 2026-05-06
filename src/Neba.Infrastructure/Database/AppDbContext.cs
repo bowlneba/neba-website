@@ -38,6 +38,9 @@ internal sealed class AppDbContext(
     public DbSet<Tournament> Tournaments
         => Set<Tournament>();
 
+    public DbSet<SideCut> SideCuts
+        => Set<SideCut>();
+
     internal DbSet<HistoricalTournamentChampion> HistoricalTournamentChampions
         => Set<HistoricalTournamentChampion>();
 
