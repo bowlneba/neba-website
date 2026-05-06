@@ -4,6 +4,7 @@ using System.Globalization;
 using Bogus.DataSets;
 
 using Neba.Domain;
+using Neba.Domain.Bowlers;
 using Neba.Domain.Tournaments;
 
 namespace Neba.TestFactory.Tournaments;
@@ -29,6 +30,60 @@ public static class SideCutFactory
 
         return sideCut;
     }
+
+    public static SideCut Senior()
+    {
+        var sideCut = new SideCut
+        {
+            Id = SideCutId.New(),
+            Name = "Senior",
+            LogicalOperator = LogicalOperator.And,
+            Indicator = Color.Blue,
+            Active = true
+        };
+
+        var groupId = sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1).Value;
+        sideCut.AddCriteria(groupId, minimumAge: 50, maximumAge: null);
+
+        return sideCut;
+    }
+
+    public static SideCut SuperSenior()
+    {
+        var sideCut = new SideCut
+        {
+            Id = SideCutId.New(),
+            Name = "Super Senior",
+            LogicalOperator = LogicalOperator.And,
+            Indicator = Color.Green,
+            Active = true
+        };
+
+        var groupId = sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1).Value;
+        sideCut.AddCriteria(groupId, minimumAge: 60, maximumAge: null);
+
+        return sideCut;
+    }
+
+    public static SideCut Women()
+    {
+        var sideCut = new SideCut
+        {
+            Id = SideCutId.New(),
+            Name = "Women",
+            LogicalOperator = LogicalOperator.And,
+            Indicator = Color.Pink,
+            Active = true
+        };
+
+        var groupId = sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1).Value;
+        sideCut.AddCriteria(groupId, Gender.Female);
+
+        return sideCut;
+    }
+
+    public static IReadOnlyCollection<SideCut> StandardNebaSideCuts() =>
+        [Senior(), SuperSenior(), Women()];
 
     public static IReadOnlyCollection<SideCut> Bogus(int count, int? seed = null)
     {
