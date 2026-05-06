@@ -126,7 +126,7 @@ public static class SideCutFactory
                     Id = SideCutId.Parse(Ulid.BogusString(f), CultureInfo.InvariantCulture),
                     Name = f.Lorem.Word(),
                     Indicator = ColorTranslator.FromHtml(f.Internet.Color(format: ColorFormat.Hex)),
-                    LogicalOperator = f.PickRandom(new[] { LogicalOperator.And, LogicalOperator.Or }),
+                    LogicalOperator = f.PickRandom(LogicalOperator.And, LogicalOperator.Or),
                     Active = f.Random.Bool()
                 };
 
@@ -139,7 +139,7 @@ public static class SideCutFactory
                     do { sortOrder = f.Random.Int(1, 20); } while (!usedSortOrders.Add(sortOrder));
 
                     var groupId = sideCut.AddCriteriaGroup(
-                        f.PickRandom(new[] { LogicalOperator.And, LogicalOperator.Or }),
+                        f.PickRandom(LogicalOperator.And, LogicalOperator.Or),
                         sortOrder).Value;
 
                     if (f.Random.Bool())
