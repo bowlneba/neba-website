@@ -5,7 +5,7 @@ using Neba.Domain.Bowlers;
 namespace Neba.Domain.Tournaments;
 
 /// <summary>
-/// Represents the criteria for a side cut in a tournament, such
+/// Represents a single eligibility criterion within a Side Cut criteria group, such as an age range or gender requirement.
 /// </summary>
 public sealed class SideCutCriteria
 {
@@ -27,17 +27,16 @@ public sealed class SideCutCriteria
     public Gender? GenderRequirement { get; private set; }
 
     /// <summary>
-    /// Creates a new instance of SideCutCriteria with the specified age requirements. At least one of minimumAge or maximumAge must be provided, and both must be greater than or equal to zero if provided. Additionally, if both minimumAge and maximumAge are provided, minimumAge cannot be greater than maximumAge. This method returns an ErrorOr&lt;SideCutCriteria&gt; to handle validation errors gracefully.
+    /// Creates a new age-based criterion. At least one age bound must be supplied, bounds must be non-negative, and the minimum cannot exceed the maximum.
     /// </summary>
     /// <param name="minimumAge">The minimum age requirement for the side cut, if applicable.</param>
     /// <param name="maximumAge">The maximum age requirement for the side cut, if applicable.</param>
     /// <returns>An ErrorOr&lt;SideCutCriteria&gt; representing the result of the creation attempt.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if both minimumAge and maximumAge are null.</exception>
-    public static ErrorOr<SideCutCriteria> CreateAgeRequirement(int? minimumAge, int? maximumAge)
+    internal static ErrorOr<SideCutCriteria> CreateAgeRequirement(int? minimumAge, int? maximumAge)
     {
         if (minimumAge == null && maximumAge == null)
         {
-            throw new ArgumentNullException(nameof(minimumAge), "At least one of minimumAge or maximumAge must be provided.");
+            return SideCutCriteriaErrors.BothAgesRequired;
         }
 
         if (minimumAge < 0)
@@ -60,12 +59,12 @@ public sealed class SideCutCriteria
     }
 
     /// <summary>
-    /// Creates a new instance of SideCutCriteria with the specified gender requirement. The gender parameter must not be null. This method returns an ErrorOr&lt;SideCutCriteria&gt; to handle validation errors gracefully.
+    /// Creates a new gender-based criterion.
     /// </summary>
     /// <param name="gender">The gender requirement for the side cut.</param>
     /// <returns>An ErrorOr&lt;SideCutCriteria&gt; representing the result of the creation attempt.</returns>
     /// <exception cref="ArgumentNullException">Thrown if the gender parameter is null.</exception>
-    public static ErrorOr<SideCutCriteria> CreateGenderRequirement(Gender gender)
+    internal static ErrorOr<SideCutCriteria> CreateGenderRequirement(Gender gender)
     {
         ArgumentNullException.ThrowIfNull(gender);
 
@@ -78,6 +77,11 @@ public sealed class SideCutCriteria
 
 internal static class SideCutCriteriaErrors
 {
+    public static readonly Error BothAgesRequired
+        = Error.Validation(
+            code: "SideCutCriteria.BothAgesRequired",
+            description: "At least one of minimum age or maximum age must be provided.");
+
     public static readonly Error MinimumAgeMustBeGreaterThanZero
         = Error.Validation(
             code: "SideCutCriteria.MinimumAgeInvalid",

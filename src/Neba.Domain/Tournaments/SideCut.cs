@@ -12,6 +12,7 @@ namespace Neba.Domain.Tournaments;
 /// evaluated independently of the Main Cut.
 /// </summary>
 public sealed class SideCut
+    : AggregateRoot
 {
     /// <summary>
     /// The unique identifier for this Side Cut.
@@ -59,7 +60,7 @@ public sealed class SideCut
             return SideCutErrors.DuplicateSortOrder(sortOrder);
         }
 
-        var groupResult = SideCutCriteriaGroup.Create(logicalOperator, sortOrder);
+        var groupResult = SideCutCriteriaGroup.Create(this, logicalOperator, sortOrder);
         if (groupResult.IsError)
         {
             return groupResult.Errors;

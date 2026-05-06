@@ -3,6 +3,8 @@ using System.Globalization;
 
 using Bogus.DataSets;
 
+using ErrorOr;
+
 using Neba.Domain;
 using Neba.Domain.Bowlers;
 using Neba.Domain.Tournaments;
@@ -11,6 +13,16 @@ namespace Neba.TestFactory.Tournaments;
 
 public static class SideCutFactory
 {
+    private static void EnsureSuccess(ErrorOr<Success> result)
+    {
+        if (!result.IsError)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(result.FirstError.Description);
+    }
+
     public static SideCut Create(
         SideCutId? id = null,
         string? name = null,
@@ -27,6 +39,25 @@ public static class SideCutFactory
             Indicator = indicator ?? Color.Red,
             Active = active
         };
+
+        if (criteriaGroups is not null)
+        {
+            foreach (var criteriaGroup in criteriaGroups.OrderBy(group => group.SortOrder))
+            {
+                var groupId = sideCut.AddCriteriaGroup(criteriaGroup.LogicalOperator, criteriaGroup.SortOrder).Value;
+
+                foreach (var criterion in criteriaGroup.Criteria)
+                {
+                    if (criterion.GenderRequirement is not null)
+                    {
+                        EnsureSuccess(sideCut.AddCriteria(groupId, criterion.GenderRequirement));
+                        continue;
+                    }
+
+                    EnsureSuccess(sideCut.AddCriteria(groupId, criterion.MinimumAge, criterion.MaximumAge));
+                }
+            }
+        }
 
         return sideCut;
     }

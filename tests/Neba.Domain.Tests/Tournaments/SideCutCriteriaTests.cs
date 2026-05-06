@@ -103,12 +103,13 @@ public sealed class SideCutCriteriaTests
     }
 
 #nullable disable
-    [Fact(DisplayName = "CreateAgeRequirement throws ArgumentNullException when both minimumAge and maximumAge are null")]
-    public void CreateAgeRequirement_ShouldThrow_WhenBothAgesAreNull()
+    [Fact(DisplayName = "CreateAgeRequirement returns SideCutCriteria.BothAgesRequired when both minimumAge and maximumAge are null")]
+    public void CreateAgeRequirement_ShouldReturnError_WhenBothAgesAreNull()
     {
-        Action act = () => SideCutCriteria.CreateAgeRequirement(null, null);
+        var result = SideCutCriteria.CreateAgeRequirement(null, null);
 
-        act.ShouldThrow<ArgumentNullException>().ParamName.ShouldBe("minimumAge");
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("SideCutCriteria.BothAgesRequired");
     }
 #nullable enable
 

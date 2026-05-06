@@ -18,13 +18,11 @@ public static class SideCutCriteriaGroupFactory
         IReadOnlyCollection<SideCutCriteria>? criteria = null)
     {
         var resolvedSideCut = sideCut ?? SideCutFactory.Create();
-        var group = new SideCutCriteriaGroup
-        {
-            Id = id ?? SideCutCriteriaGroupId.New(),
-            SideCut = resolvedSideCut,
-            LogicalOperator = logicalOperator ?? ValidLogicalOperator,
-            SortOrder = sortOrder ?? ValidSortOrder,
-        };
+        var group = SideCutCriteriaGroup.Create(
+            resolvedSideCut,
+            logicalOperator ?? ValidLogicalOperator,
+            sortOrder ?? ValidSortOrder,
+            id).Value;
 
         if (criteria is not null)
         {
@@ -62,13 +60,10 @@ public static class SideCutCriteriaGroupFactory
                 int sortOrder;
                 do { sortOrder = f.Random.Int(1, 1000); } while (!used.Add(sortOrder));
 
-                var group = new SideCutCriteriaGroup
-                {
-                    Id = SideCutCriteriaGroupId.New(),
-                    SideCut = sideCut,
-                    LogicalOperator = f.PickRandom(new[] { LogicalOperator.And, LogicalOperator.Or }.ToArray()),
-                    SortOrder = sortOrder,
-                };
+                var group = SideCutCriteriaGroup.Create(
+                    sideCut,
+                    f.PickRandom(new[] { LogicalOperator.And, LogicalOperator.Or }.ToArray()),
+                    sortOrder).Value;
 
                 foreach (var criterion in SideCutCriteriaFactory.Bogus(f.Random.Int(1, 3)))
                 {

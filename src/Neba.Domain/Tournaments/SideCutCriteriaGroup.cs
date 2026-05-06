@@ -5,7 +5,7 @@ using Neba.Domain.Bowlers;
 namespace Neba.Domain.Tournaments;
 
 /// <summary>
-/// Associates a Side Cut with a specific tournament round and defines how its qualifiers are combined with the Main Cut qualifiers.
+/// Represents an ordered collection of one or more criteria within a Side Cut, evaluated together using the group's logical operator.
 /// </summary>
 public sealed class SideCutCriteriaGroup
 {
@@ -37,11 +37,18 @@ public sealed class SideCutCriteriaGroup
     public IReadOnlyCollection<SideCutCriteria> Criteria
         => _criteria;
 
-    internal static ErrorOr<SideCutCriteriaGroup> Create(LogicalOperator logicalOperator, int sortOrder)
+    internal static ErrorOr<SideCutCriteriaGroup> Create(
+        SideCut sideCut,
+        LogicalOperator logicalOperator,
+        int sortOrder,
+        SideCutCriteriaGroupId? id = null)
     {
+        ArgumentNullException.ThrowIfNull(sideCut);
+
         return new SideCutCriteriaGroup
         {
-            Id = SideCutCriteriaGroupId.New(),
+            Id = id ?? SideCutCriteriaGroupId.New(),
+            SideCut = sideCut,
             LogicalOperator = logicalOperator,
             SortOrder = sortOrder
         };

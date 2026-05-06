@@ -765,7 +765,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **Definition**: An ordered collection of one or more Criteria within a Side Cut, evaluated together using the group's own Group Operator. A Side Cut contains one or more Criterion Groups. The results of all groups are combined at the top level using the Side Cut's Group Composition Operator.
 
-**In Code**: Not yet modeled.
+**In Code**: `SideCutCriteriaGroup` in `Neba.Domain.Tournaments`.
 
 ---
 
@@ -773,7 +773,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **Definition**: The `LogicalOperator` applied at the Side Cut level to combine the results of its Criterion Groups. Uses `And` (every group must match) or `Or` (at least one group must match).
 
-**In Code**: Not yet modeled. Uses `LogicalOperator` from `Neba.Domain`.
+**In Code**: `SideCut.LogicalOperator` in `Neba.Domain.Tournaments`. Uses `LogicalOperator` from `Neba.Domain`.
 
 ---
 
@@ -781,7 +781,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **Definition**: The `LogicalOperator` applied within a Criterion Group to combine its individual Criteria. Uses `And` (every criterion must match) or `Or` (at least one criterion must match).
 
-**In Code**: Not yet modeled. Uses `LogicalOperator` from `Neba.Domain`.
+**In Code**: `SideCutCriteriaGroup.LogicalOperator` in `Neba.Domain.Tournaments`. Uses `LogicalOperator` from `Neba.Domain`.
 
 ---
 
@@ -799,7 +799,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 > **Convention**: Both `MinimumAge` and `MaximumAge` are stored and evaluated as **inclusive** bounds. When NEBA rules express eligibility as "under 18," the stored criterion value is `17` — the oldest eligible age — not `18`. The Criterion Type name (`MaximumAge`) is the authoritative semantic; the stored value is always inclusive.
 
-**In Code**: Not yet modeled.
+**In Code**: `SideCutCriteria` in `Neba.Domain.Tournaments`. The current implementation models criteria as nullable fields on a single type: `MinimumAge`, `MaximumAge`, and `GenderRequirement`.
 
 ---
 
