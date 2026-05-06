@@ -1,7 +1,7 @@
 ﻿{
   Items: [
     {
-      Season: Season 2022,
+      Season: Season 2023,
       BowlerName: Carl Zemlak,
       Category: Open
     },
