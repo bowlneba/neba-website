@@ -106,15 +106,15 @@ test.describe('NavMenu Keyboard Accessibility', () => {
 
   test.describe('Arrow key navigation within dropdown', () => {
     test.beforeEach(async ({ page }) => {
-      // Open the Tournaments dropdown
-      const tournamentsLink = page.locator('.neba-nav-item [aria-haspopup="true"]').first();
-      await tournamentsLink.focus();
+      // Open the History dropdown (4 links: Champions, Bowler of the Year, High Average, High Block)
+      const historyLink = page.locator('.neba-nav-item [aria-haspopup="true"]').nth(2);
+      await historyLink.focus();
       await page.keyboard.press('Enter');
       await page.waitForTimeout(250);
     });
 
     test('ArrowDown moves focus to next item', async ({ page }) => {
-      const navItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]').first();
+      const navItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]').nth(2);
       const dropdownLinks = navItem.locator('.neba-dropdown-link');
 
       // First item should be focused after opening
@@ -128,7 +128,7 @@ test.describe('NavMenu Keyboard Accessibility', () => {
     });
 
     test('ArrowUp moves focus to previous item', async ({ page }) => {
-      const navItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]').first();
+      const navItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]').nth(2);
       const dropdownLinks = navItem.locator('.neba-dropdown-link');
 
       // Navigate down first
@@ -141,7 +141,7 @@ test.describe('NavMenu Keyboard Accessibility', () => {
     });
 
     test('Home moves focus to first item', async ({ page }) => {
-      const navItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]').first();
+      const navItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]').nth(2);
       const dropdownLinks = navItem.locator('.neba-dropdown-link');
 
       // Navigate down to third item
@@ -154,7 +154,7 @@ test.describe('NavMenu Keyboard Accessibility', () => {
     });
 
     test('End moves focus to last item', async ({ page }) => {
-      const navItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]').first();
+      const navItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]').nth(2);
       const dropdownLinks = navItem.locator('.neba-dropdown-link');
       const lastIndex = (await dropdownLinks.count()) - 1;
 
