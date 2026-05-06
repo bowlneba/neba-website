@@ -31,6 +31,13 @@ internal sealed class SideCutCriteriaGroupConfiguration
         builder.Property(group => group.SortOrder)
             .IsRequired();
 
-        builder.HasIndex(SideCutConfiguration.ForeignKey);
+        builder.HasIndex(SideCutConfiguration.ForeignKey, nameof(SideCutCriteriaGroup.SortOrder))
+            .IsUnique();
+
+        builder.HasMany(group => group.Criteria)
+            .WithOne(criteria => criteria.CriteriaGroup)
+            .HasForeignKey(ForeignKey)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

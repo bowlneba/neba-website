@@ -9,6 +9,8 @@ namespace Neba.Domain.Tournaments;
 /// </summary>
 public sealed class SideCutCriteria
 {
+    internal SideCutCriteriaGroup CriteriaGroup { get; init; } = null!;
+
     /// <summary>
     /// The minimum age requirement for the side cut, if applicable. A value of null indicates no minimum age requirement.
     /// </summary>

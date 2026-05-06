@@ -14,16 +14,30 @@ public static class SideCutCriteriaGroupFactory
         SideCut? sideCut = null,
         LogicalOperator? logicalOperator = null,
         int? sortOrder = null,
-        SideCutCriteriaGroupId? id = null)
+        SideCutCriteriaGroupId? id = null,
+        IReadOnlyCollection<SideCutCriteria>? criteria = null)
     {
         var resolvedSideCut = sideCut ?? SideCutFactory.Create();
-        return new()
+        var group = new SideCutCriteriaGroup
         {
             Id = id ?? SideCutCriteriaGroupId.New(),
             SideCut = resolvedSideCut,
             LogicalOperator = logicalOperator ?? ValidLogicalOperator,
             SortOrder = sortOrder ?? ValidSortOrder,
         };
+
+        if (criteria is not null)
+        {
+            foreach (var criterion in criteria)
+            {
+                if (criterion.GenderRequirement is not null)
+                    group.AddCriteria(criterion.GenderRequirement);
+                else
+                    group.AddCriteria(criterion.MinimumAge, criterion.MaximumAge);
+            }
+        }
+
+        return group;
     }
 
     public static IReadOnlyCollection<SideCutCriteriaGroup> Bogus(
@@ -48,13 +62,23 @@ public static class SideCutCriteriaGroupFactory
                 int sortOrder;
                 do { sortOrder = f.Random.Int(1, 1000); } while (!used.Add(sortOrder));
 
-                return new SideCutCriteriaGroup
+                var group = new SideCutCriteriaGroup
                 {
                     Id = SideCutCriteriaGroupId.New(),
                     SideCut = sideCut,
                     LogicalOperator = f.PickRandom(new[] { LogicalOperator.And, LogicalOperator.Or }.ToArray()),
                     SortOrder = sortOrder,
                 };
+
+                foreach (var criterion in SideCutCriteriaFactory.Bogus(f.Random.Int(1, 3)))
+                {
+                    if (criterion.GenderRequirement is not null)
+                        group.AddCriteria(criterion.GenderRequirement);
+                    else
+                        group.AddCriteria(criterion.MinimumAge, criterion.MaximumAge);
+                }
+
+                return group;
             });
 
         if (seed.HasValue)
