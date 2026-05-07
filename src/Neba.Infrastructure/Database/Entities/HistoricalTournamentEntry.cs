@@ -2,7 +2,7 @@ using Neba.Domain.Tournaments;
 
 namespace Neba.Infrastructure.Database.Entities;
 
-internal sealed class HistoricalTournamentEntries
+internal sealed class HistoricalTournamentEntry
 {
     public int TournamentId { get; init; }
 

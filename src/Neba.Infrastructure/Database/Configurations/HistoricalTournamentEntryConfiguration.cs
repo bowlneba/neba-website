@@ -5,10 +5,10 @@ using Neba.Infrastructure.Database.Entities;
 
 namespace Neba.Infrastructure.Database.Configurations;
 
-internal sealed class HistoricalTournamentEntriesConfiguration
-    : IEntityTypeConfiguration<HistoricalTournamentEntries>
+internal sealed class HistoricalTournamentEntryConfiguration
+    : IEntityTypeConfiguration<HistoricalTournamentEntry>
 {
-    public void Configure(EntityTypeBuilder<HistoricalTournamentEntries> builder)
+    public void Configure(EntityTypeBuilder<HistoricalTournamentEntry> builder)
     {
         builder.ToTable("tournament_entries", AppDbContext.HistoricalSchema);
 

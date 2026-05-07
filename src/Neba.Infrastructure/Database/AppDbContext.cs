@@ -44,8 +44,8 @@ internal sealed class AppDbContext(
     internal DbSet<HistoricalTournamentChampion> HistoricalTournamentChampions
         => Set<HistoricalTournamentChampion>();
 
-    internal DbSet<HistoricalTournamentEntries> HistoricalTournamentEntries
-        => Set<HistoricalTournamentEntries>();
+    internal DbSet<HistoricalTournamentEntry> HistoricalTournamentEntries
+        => Set<HistoricalTournamentEntry>();
 
     public DbSet<HallOfFameInduction> HallOfFameInductions
         => Set<HallOfFameInduction>();
@@ -82,7 +82,7 @@ internal sealed class AppDbContext(
         modelBuilder.ApplyConfiguration(new SideCutCriteriaConfiguration());
 
         modelBuilder.ApplyConfiguration(new HistoricalTournamentChampionsConfiguration());
-        modelBuilder.ApplyConfiguration(new HistoricalTournamentEntriesConfiguration());
+        modelBuilder.ApplyConfiguration(new HistoricalTournamentEntryConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

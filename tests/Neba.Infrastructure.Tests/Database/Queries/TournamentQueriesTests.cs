@@ -117,8 +117,8 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
         await _dbContext.Tournaments.AddRangeAsync([tournamentA, tournamentB], TestContext.Current.CancellationToken);
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        _dbContext.Add(HistoricalTournamentEntriesFactory.Create(tournament: tournamentA, entries: 125));
-        _dbContext.Add(HistoricalTournamentEntriesFactory.Create(tournament: tournamentB, entries: 231));
+        _dbContext.Add(HistoricalTournamentEntryFactory.Create(tournament: tournamentA, entries: 125));
+        _dbContext.Add(HistoricalTournamentEntryFactory.Create(tournament: tournamentB, entries: 231));
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
@@ -146,7 +146,7 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
             TestContext.Current.CancellationToken);
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        _dbContext.Add(HistoricalTournamentEntriesFactory.Create(tournament: tournamentWithEntries, entries: 180));
+        _dbContext.Add(HistoricalTournamentEntryFactory.Create(tournament: tournamentWithEntries, entries: 180));
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act
@@ -172,8 +172,8 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
         await _dbContext.Tournaments.AddRangeAsync([requestedTournament, otherTournament], TestContext.Current.CancellationToken);
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        _dbContext.Add(HistoricalTournamentEntriesFactory.Create(tournament: requestedTournament, entries: 90));
-        _dbContext.Add(HistoricalTournamentEntriesFactory.Create(tournament: otherTournament, entries: 333));
+        _dbContext.Add(HistoricalTournamentEntryFactory.Create(tournament: requestedTournament, entries: 90));
+        _dbContext.Add(HistoricalTournamentEntryFactory.Create(tournament: otherTournament, entries: 333));
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Act

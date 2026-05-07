@@ -23,7 +23,7 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
     private readonly IQueryable<HistoricalTournamentChampion> _historicalTournamentChampions
         = appDbContext.HistoricalTournamentChampions.AsNoTracking();
 
-    private readonly IQueryable<HistoricalTournamentEntries> _historicalTournamentEntries
+    private readonly IQueryable<HistoricalTournamentEntry> _historicalTournamentEntries
         = appDbContext.HistoricalTournamentEntries.AsNoTracking();
 
     public async Task<int> GetTournamentCountForSeasonAsync(SeasonId seasonId, CancellationToken cancellationToken)

@@ -1163,7 +1163,7 @@ namespace Neba.Infrastructure.Database.Migrations
                     b.ToTable("tournament_champions", "historical");
                 });
 
-            modelBuilder.Entity("Neba.Infrastructure.Database.Entities.HistoricalTournamentEntries", b =>
+            modelBuilder.Entity("Neba.Infrastructure.Database.Entities.HistoricalTournamentEntry", b =>
                 {
                     b.Property<int>("TournamentId")
                         .HasColumnType("integer")
@@ -1665,7 +1665,7 @@ namespace Neba.Infrastructure.Database.Migrations
                     b.Navigation("Tournament");
                 });
 
-            modelBuilder.Entity("Neba.Infrastructure.Database.Entities.HistoricalTournamentEntries", b =>
+            modelBuilder.Entity("Neba.Infrastructure.Database.Entities.HistoricalTournamentEntry", b =>
                 {
                     b.HasOne("Neba.Domain.Tournaments.Tournament", "Tournament")
                         .WithMany()
