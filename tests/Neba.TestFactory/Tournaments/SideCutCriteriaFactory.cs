@@ -7,8 +7,8 @@ namespace Neba.TestFactory.Tournaments;
 
 public static class SideCutCriteriaFactory
 {
-    public const int ValidMinimumAge = 50;
-    public const int ValidMaximumAge = 17;
+    public const int ValidMinimumAge = 17;
+    public const int ValidMaximumAge = 50;
     public static readonly Gender ValidGender = Gender.Female;
 
     /// <summary>
