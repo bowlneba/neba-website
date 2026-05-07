@@ -74,6 +74,7 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
                     },
                     StartDate = tournament.StartDate,
                     EndDate = tournament.EndDate,
+                    StatsEligible = tournament.StatsEligible,
                     TournamentType = tournament.TournamentType.Name,
                     BowlingCenter = tournament.BowlingCenter == null
                         ? null

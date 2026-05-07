@@ -37,6 +37,11 @@ public sealed record SeasonTournamentDto
     public required DateOnly EndDate { get; init; }
 
     /// <summary>
+    /// Whether the tournament is eligible for season-long stats and awards (typically false for non-standard events like match play or special formats).
+    /// </summary>
+    public required bool StatsEligible { get; init; }
+
+    /// <summary>
     /// Format category of the tournament.
     /// </summary>
     public required string TournamentType { get; init; }
