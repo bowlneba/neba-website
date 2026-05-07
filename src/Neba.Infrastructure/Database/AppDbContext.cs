@@ -47,6 +47,9 @@ internal sealed class AppDbContext(
     internal DbSet<HistoricalTournamentEntry> HistoricalTournamentEntries
         => Set<HistoricalTournamentEntry>();
 
+    internal DbSet<HistoricalTournamentResult> HistoricalTournamentResults
+        => Set<HistoricalTournamentResult>();
+
     public DbSet<HallOfFameInduction> HallOfFameInductions
         => Set<HallOfFameInduction>();
 
@@ -83,6 +86,7 @@ internal sealed class AppDbContext(
 
         modelBuilder.ApplyConfiguration(new HistoricalTournamentChampionConfiguration());
         modelBuilder.ApplyConfiguration(new HistoricalTournamentEntryConfiguration());
+        modelBuilder.ApplyConfiguration(new HistoricalTournamentResultConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
