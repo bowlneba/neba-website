@@ -55,6 +55,11 @@ public sealed class Tournament
     internal BowlingCenter? BowlingCenter { get; init; }
 
     /// <summary>
+    /// Gets a value indicating whether this tournament is eligible to be included in bowler season stats calculations. This is determined based on the tournament type and other factors, and is used to ensure that only appropriate tournaments are included in season statistics and awards calculations.
+    /// </summary>
+    public bool StatsEligible { get; init; }
+
+    /// <summary>
     /// Gets the oil-to-dry ratio category of the lane condition used in this tournament,
     /// or <see langword="null"/> if the pattern has not yet been designated.
     /// See <see cref="PatternRatioCategory"/> for valid values.

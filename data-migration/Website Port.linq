@@ -2942,10 +2942,11 @@ public async Task<IReadOnlyCollection<SpreadsheetTournament>> MigrateTournaments
 			PatternLengthCategory = GetPatternLengthCategory(softwareTournament?.OilPatternLength)?.Value,
 			PatternRatioCategory = GetPatternRatioCategory(softwareTournament?.OilPatternLeftRatio, softwareTournament?.OilPatternRightRatio)?.Value,
 			SeasonId = spreadsheetTournament.EndDate.Year == 2020 ? seasonDomainIdByEndYear[2021] : seasonDomainIdByEndYear[spreadsheetTournament.EndDate.Year],
-			EntryFee = softwareTournament?.EntryFee ?? 0
+			EntryFee = softwareTournament?.EntryFee ?? 0,
+			StatsEligible = softwareTournament?.StatsEligible ?? false
 		};
 		
-		spreadsheetTournament.DomainId =  Ulid.Parse(tournament.DomainId);
+		spreadsheetTournament.DomainId = Ulid.Parse(tournament.DomainId);
 		
 		Tournaments.Add(tournament);
 	}
@@ -3278,7 +3279,8 @@ private async Task<IReadOnlyCollection<SoftwareTournament>> GetTournamentsFromSo
 			OilPatternLength = row.Field<int?>("OilPattern_Length"),
 			OilPatternLeftRatio = row.Field<decimal?>("OilPattern_LeftRatio"),
 			OilPatternRightRatio = row.Field<decimal?>("OilPattern_RightRatio"),
-			EntryFee = row.Field<decimal>("EntryFee")
+			EntryFee = row.Field<decimal>("EntryFee"),
+			StatsEligible = row.Field<bool>("YearlyStatEligible")
 		})
 		.ToList();
 		
@@ -3331,6 +3333,8 @@ public sealed class SoftwareTournament
 	public int? OilPatternLength { get; init; }
 	
 	public decimal EntryFee { get; init; }
+	
+	public bool StatsEligible { get; init; }
 }
 
 #endregion
