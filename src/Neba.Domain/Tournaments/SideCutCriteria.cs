@@ -9,6 +9,9 @@ namespace Neba.Domain.Tournaments;
 /// </summary>
 public sealed class SideCutCriteria
 {
+    /// <summary>
+    /// The criteria group to which this side cut criterion belongs.  This association is required for the criterion to be evaluated as part of the side cut's eligibility determination process.
+    /// </summary>
     internal SideCutCriteriaGroup CriteriaGroup { get; init; } = null!;
 
     /// <summary>
