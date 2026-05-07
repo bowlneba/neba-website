@@ -17,17 +17,28 @@ public sealed class SideCutCriteria
     /// <summary>
     /// The minimum age requirement for the side cut, if applicable. A value of null indicates no minimum age requirement.
     /// </summary>
-    public int? MinimumAge { get; private set; }
+    public int? MinimumAge { get; }
 
     /// <summary>
     /// The maximum age requirement for the side cut, if applicable. A value of null indicates no maximum age requirement.
     /// </summary>
-    public int? MaximumAge { get; private set; }
+    public int? MaximumAge { get; }
 
     /// <summary>
     /// The gender requirement for the side cut, if applicable. A value of null indicates no gender requirement.
     /// </summary>
-    public Gender? GenderRequirement { get; private set; }
+    public Gender? GenderRequirement { get; }
+
+    private SideCutCriteria(int? minimumAge, int? maximumAge)
+    {
+        MinimumAge = minimumAge;
+        MaximumAge = maximumAge;
+    }
+
+    private SideCutCriteria(Gender gender)
+    {
+        GenderRequirement = gender;
+    }
 
     /// <summary>
     /// Creates a new age-based criterion. At least one age bound must be supplied, bounds must be non-negative, and the minimum cannot exceed the maximum.
@@ -42,23 +53,19 @@ public sealed class SideCutCriteria
             return SideCutCriteriaErrors.BothAgesRequired;
         }
 
-        if (minimumAge < 0)
+        if (minimumAge <= 0)
         {
             return SideCutCriteriaErrors.MinimumAgeMustBeGreaterThanZero;
         }
 
-        if (maximumAge < 0)
+        if (maximumAge <= 0)
         {
             return SideCutCriteriaErrors.MaximumAgeMustBeGreaterThanZero;
         }
 
         return minimumAge != null && maximumAge != null && minimumAge > maximumAge
             ? SideCutCriteriaErrors.AgeRangeInvalid
-            : new SideCutCriteria
-            {
-                MinimumAge = minimumAge,
-                MaximumAge = maximumAge
-            };
+            : new SideCutCriteria(minimumAge, maximumAge);
     }
 
     /// <summary>
@@ -71,10 +78,7 @@ public sealed class SideCutCriteria
     {
         ArgumentNullException.ThrowIfNull(gender);
 
-        return new SideCutCriteria
-        {
-            GenderRequirement = gender
-        };
+        return new SideCutCriteria(gender);
     }
 }
 
@@ -88,12 +92,12 @@ internal static class SideCutCriteriaErrors
     public static readonly Error MinimumAgeMustBeGreaterThanZero
         = Error.Validation(
             code: "SideCutCriteria.MinimumAgeInvalid",
-            description: "Minimum age must be greater than or equal to zero.");
+            description: "Minimum age must be greater than zero.");
 
     public static readonly Error MaximumAgeMustBeGreaterThanZero
         = Error.Validation(
             code: "SideCutCriteria.MaximumAgeInvalid",
-            description: "Maximum age must be greater than or equal to zero.");
+            description: "Maximum age must be greater than zero.");
 
     public static readonly Error AgeRangeInvalid
         = Error.Validation(

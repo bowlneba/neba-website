@@ -66,13 +66,22 @@ public sealed class SideCutCriteriaTests
         result.Value.MaximumAge.ShouldBe(18);
     }
 
-    [Fact(DisplayName = "CreateAgeRequirement returns SideCutCriteria when minimumAge is zero")]
-    public void CreateAgeRequirement_ShouldReturnSuccess_WhenMinimumAgeIsZero()
+    [Fact(DisplayName = "CreateAgeRequirement returns SideCutCriteria.MinimumAgeInvalid when minimumAge is zero")]
+    public void CreateAgeRequirement_ShouldReturnError_WhenMinimumAgeIsZero()
     {
         var result = SideCutCriteria.CreateAgeRequirement(minimumAge: 0, maximumAge: null);
 
-        result.IsError.ShouldBeFalse();
-        result.Value.MinimumAge.ShouldBe(0);
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("SideCutCriteria.MinimumAgeInvalid");
+    }
+
+    [Fact(DisplayName = "CreateAgeRequirement returns SideCutCriteria.MaximumAgeInvalid when maximumAge is zero")]
+    public void CreateAgeRequirement_ShouldReturnError_WhenMaximumAgeIsZero()
+    {
+        var result = SideCutCriteria.CreateAgeRequirement(minimumAge: null, maximumAge: 0);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("SideCutCriteria.MaximumAgeInvalid");
     }
 
     [Fact(DisplayName = "CreateAgeRequirement returns SideCutCriteria.MinimumAgeInvalid when minimumAge is negative")]
