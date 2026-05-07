@@ -543,6 +543,19 @@ A Bowler record may represent a fully registered active participant or a histori
 
 ---
 
+### Gender
+
+**Definition**: The registered gender of a Bowler. Used in Side Cut eligibility evaluation (Gender Criterion) and Bowler of the Year category eligibility (Woman category). Two values are defined: `Male` and `Female`.
+
+> **Usage note**: Gender is a registration attribute stored on the Bowler record. When used in Side Cut criteria, a bowler's gender is compared against the criterion's `GenderRequirement` value on the date they bowl.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Bowlers`
+- Type: `Gender` (SmartEnum, string-valued)
+
+---
+
 ### NameSuffix
 
 **Definition**: An enumeration of valid generational name suffixes for a Bowler. Used in legal and official contexts (e.g., 1099 tax reporting).
@@ -723,6 +736,137 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 ---
 
+### Oil Pattern
+
+**Definition**: A named, catalogued set of lane oil application parameters used in a tournament. Characterised by its length (feet), total oil volume (mL), Left Ratio, and Right Ratio. May correspond to a Kegel public pattern (identified by a Kegel Pattern ID) or be a Custom Pattern.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `OilPattern` (entity)
+- Identity type: `OilPatternId` (ULID-backed strongly-typed ID)
+
+---
+
+### Tournament Oil Pattern
+
+**Definition**: The association between a Tournament and an Oil Pattern for one or more specific Tournament Rounds. A tournament may use different oil patterns for different rounds (e.g., a fresh pattern for qualifying, a different one for match play). Each Tournament Oil Pattern records the oil pattern ID and the set of rounds to which it was applied.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `TournamentOilPattern` (association entity)
+
+---
+
+## Side Cuts
+
+### Side Cut
+
+**Definition**: A named, reusable eligibility predicate that identifies a subgroup of bowlers who qualify for an alternative advancement path in a tournament round. A Side Cut has its own Cut Line, evaluated independently of the Main Cut. Each Side Cut is assigned a Display Color used to visually identify qualifying entries on operational screens such as check-in. A Side Cut may be marked **inactive** to exclude it from tournament configuration without deleting it.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `SideCut` (sealed class)
+- Identity type: `SideCutId` (ULID-backed strongly-typed ID)
+
+---
+
+### Display Color
+
+**Definition**: A color value assigned to a Side Cut used to visually distinguish its qualifying entries in tournament management interfaces. Display Color is a property of the Side Cut itself, not of the bowler or the entry.
+
+**In Code**: `SideCut.Indicator` (`System.Drawing.Color`)
+
+---
+
+### Cut Line
+
+**Definition**: The minimum score required to advance through a cut. Each Side Cut has its own Cut Line, evaluated independently of the Main Cut. See also: **Main Cut**.
+
+**In Code**: Not yet modeled.
+
+---
+
+### Main Cut
+
+**Definition**: The primary advancement threshold for a tournament round, applied to all competing bowlers regardless of Side Cut eligibility.
+
+**In Code**: Not yet modeled.
+
+---
+
+### Side Cut Criterion Group
+
+**Definition**: An ordered collection of one or more Criteria within a Side Cut, evaluated together using the group's own Group Operator. A Side Cut contains one or more Criterion Groups. The results of all groups are combined at the top level using the Side Cut's Group Composition Operator.
+
+**In Code**: `SideCutCriteriaGroup` in `Neba.Domain.Tournaments`.
+
+---
+
+### Group Composition Operator
+
+**Definition**: The `LogicalOperator` applied at the Side Cut level to combine the results of its Criterion Groups. Uses `And` (every group must match) or `Or` (at least one group must match).
+
+**In Code**: `SideCut.LogicalOperator` in `Neba.Domain.Tournaments`. Uses `LogicalOperator` from `Neba.Domain`.
+
+---
+
+### Group Operator
+
+**Definition**: The `LogicalOperator` applied within a Criterion Group to combine its individual Criteria. Uses `And` (every criterion must match) or `Or` (at least one criterion must match).
+
+**In Code**: `SideCutCriteriaGroup.LogicalOperator` in `Neba.Domain.Tournaments`. Uses `LogicalOperator` from `Neba.Domain`.
+
+---
+
+### LogicalOperator
+
+**Definition**: A SmartEnum used by both the Group Operator and the Group Composition Operator to express how conditions are combined. Two values are actively used in Side Cut eligibility evaluation:
+
+| Value | Meaning |
+| --- | --- |
+| `And` | All conditions in the group must be satisfied |
+| `Or` | At least one condition in the group must be satisfied |
+
+> `Not` is defined in code but is **not used** in Side Cut eligibility evaluation — reserved for possible future use.
+
+**In Code**:
+
+- Namespace: `Neba.Domain`
+- Type: `LogicalOperator` (SmartEnum, string-valued)
+
+---
+
+### Criterion
+
+**Definition**: A single, testable condition evaluated against a bowler to determine eligibility within a Criterion Group. A Criterion consists of a Criterion Type, a Criterion Value, and an Age Operator (for age-based Criterion Types only).
+
+**Criterion Types**:
+
+| Type | Evaluation | Notes |
+| --- | --- | --- |
+| `MinimumAge` | `Participation Age >= CriterionValue` | Examples: Senior (50), Super Senior (60) |
+| `MaximumAge` | `Participation Age <= CriterionValue` | Value is the oldest eligible age. "Under 18" stores `17` |
+| `Gender` | Bowler's registered gender must match the specified value | |
+
+> **Convention**: Both `MinimumAge` and `MaximumAge` are stored and evaluated as **inclusive** bounds. When NEBA rules express eligibility as "under 18," the stored criterion value is `17` — the oldest eligible age — not `18`. The Criterion Type name (`MaximumAge`) is the authoritative semantic; the stored value is always inclusive.
+
+**In Code**: `SideCutCriteria` in `Neba.Domain.Tournaments`. The current implementation models criteria as nullable fields on a single type: `MinimumAge`, `MaximumAge`, and `GenderRequirement`.
+
+---
+
+### Participation Age
+
+**Definition**: A bowler's age as computed on the specific date they bowl. Used exclusively for Side Cut eligibility evaluation. A bowler who does not satisfy an age-based Criterion on their participation date is ineligible for that Side Cut on that date, regardless of whether they would qualify on a different date within the same tournament.
+
+> **Example**: In a two-day Senior tournament, a bowler who turns 50 on day two is ineligible for the Senior Side Cut on day one and eligible on day two.
+
+**In Code**: Not yet modeled. Computed at evaluation time from bowler date of birth and squad date.
+
+---
+
 ## Awards
 
 ### Season
@@ -819,7 +963,7 @@ Age eligibility for a category is evaluated as of each tournament date during th
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Awards`
+- Namespace: `Neba.Domain.Seasons`
 - Type: `BowlerOfTheYearAward` (entity)
 
 ---
@@ -867,7 +1011,7 @@ Baker team finals games do not count toward a bowler's average or game total.
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Awards`
+- Namespace: `Neba.Domain.Seasons`
 - Type: `HighAverageAward` (entity)
 
 ---
@@ -887,7 +1031,7 @@ Baker team finals games do not count toward a bowler's average or game total.
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Awards`
+- Namespace: `Neba.Domain.Seasons`
 - Type: `HighBlockAward` (entity)
 
 ---
@@ -1034,7 +1178,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `Id` | ULID | Yes | System-generated unique identifier |
-| `SponsorName` | string | Yes | Display name — company name (e.g., "Storm Products Inc.") or individual name (e.g., "Tony & Suzanne Reynaud") |
+| `Name` | string | Yes | Display name — company name (e.g., "Storm Products Inc.") or individual name (e.g., "Tony & Suzanne Reynaud") |
 | `Slug` | string | Yes | URL-friendly unique identifier derived from the sponsor name; used to route to the sponsor's individual page (e.g., `/sponsors/storm`) |
 | `IsCurrentSponsor` | bool | Yes | Whether the sponsor is actively associated with NEBA for the current season. Manually managed until Sponsorship Agreement tracking is implemented |
 | `Priority` | int | Yes | Display order on the sponsor list. Lower values appear first. Title sponsors are assigned the highest priority (lowest number) |
@@ -1055,7 +1199,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 **Display Rules**:
 
-- The Sponsor List page displays all sponsors where `IsCurrentSponsor == true`, ordered by `Priority` ascending, then `SponsorName` alphabetically as a tiebreaker
+- The Sponsor List page displays all sponsors where `IsCurrentSponsor == true`, ordered by `Priority` ascending, then `Name` alphabetically as a tiebreaker
 - Nullable fields are not displayed on the public site when absent — this accommodates individual sponsors for whom business-oriented fields are not applicable
 - `PromotionalNotes`, `SponsorContact`, `BusinessAddress`, `PhoneNumbers`, and `LiveReadText` are internal/admin only — never publicly displayed
 
@@ -1130,7 +1274,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 **In Code**:
 
-- Shared type from `Neba.Domain.Contact`
+- Type: `PhoneNumberType` (SmartEnum) in `Neba.Domain.Contact`
 
 ---
 

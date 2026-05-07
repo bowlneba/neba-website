@@ -153,7 +153,7 @@
     TournamentsParticipated: 6
   },
   {
-    Season: 2013 Season,
+    Season: 2014 Season,
     BowlerName: {
       FirstName: Anne,
       LastName: Durgan,
@@ -167,7 +167,7 @@
     TournamentsParticipated: 6
   },
   {
-    Season: 2013 Season,
+    Season: 2014 Season,
     BowlerName: {
       FirstName: Chester,
       LastName: Gibson,

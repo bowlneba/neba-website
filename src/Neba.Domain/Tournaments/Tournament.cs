@@ -99,7 +99,8 @@ public sealed class Tournament
     private readonly List<TournamentSponsor> _sponsors = [];
 
     /// <summary>
-    /// Gets the collection of sponsors associated with this tournament, along with details about
+    /// The sponsors associated with this tournament, including title sponsorship designation and
+    /// sponsorship amount for each.
     /// </summary>
     public IReadOnlyCollection<TournamentSponsor> Sponsors
         => _sponsors;

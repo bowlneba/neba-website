@@ -1,5 +1,10 @@
+using System.Drawing;
+
+using Ardalis.SmartEnum.EFCore;
+
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Domain;
 using Neba.Domain.Bowlers;
 using Neba.Domain.BowlingCenters;
 using Neba.Domain.HallOfFame;
@@ -32,6 +37,9 @@ internal sealed class AppDbContext(
 
     public DbSet<Tournament> Tournaments
         => Set<Tournament>();
+
+    public DbSet<SideCut> SideCuts
+        => Set<SideCut>();
 
     internal DbSet<HistoricalTournamentChampion> HistoricalTournamentChampions
         => Set<HistoricalTournamentChampion>();
@@ -69,6 +77,9 @@ internal sealed class AppDbContext(
         modelBuilder.ApplyConfiguration(new TournamentConfiguration());
         modelBuilder.ApplyConfiguration(new TournamentSponsorConfiguration());
         modelBuilder.ApplyConfiguration(new TournamentOilPatternConfiguration());
+        modelBuilder.ApplyConfiguration(new SideCutConfiguration());
+        modelBuilder.ApplyConfiguration(new SideCutCriteriaGroupConfiguration());
+        modelBuilder.ApplyConfiguration(new SideCutCriteriaConfiguration());
 
         modelBuilder.ApplyConfiguration(new HistoricalTournamentChampionsConfiguration());
         modelBuilder.ApplyConfiguration(new HistoricalTournamentEntriesConfiguration());
@@ -99,7 +110,24 @@ internal sealed class AppDbContext(
         configurationBuilder.Properties<TournamentId>()
             .HaveConversion<UlidTypedIdConverter<TournamentId>>();
 
+        configurationBuilder.Properties<SideCutId>()
+            .HaveConversion<UlidTypedIdConverter<SideCutId>>();
+
+        configurationBuilder.Properties<SideCutCriteriaGroupId>()
+            .HaveConversion<UlidTypedIdConverter<SideCutCriteriaGroupId>>();
+
         configurationBuilder.Properties<Uri>()
             .HaveConversion<UriToStringConverter>();
+
+        configurationBuilder.Properties<Color>()
+            .HaveConversion<Converters.ColorConverter>();
+
+        configurationBuilder.Properties<LogicalOperator>()
+            .HaveConversion<SmartEnumConverter<LogicalOperator, string>>()
+            .HaveMaxLength(7);
+
+        configurationBuilder.Properties<Gender>()
+            .HaveConversion<SmartEnumConverter<Gender, string>>()
+            .HaveMaxLength(1);
     }
 }

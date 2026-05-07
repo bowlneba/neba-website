@@ -3,30 +3,30 @@ using StronglyTypedIds;
 namespace Neba.Domain.Tournaments;
 
 /// <summary>
-/// Unique identifier for a tournament.
+/// Unique identifier for a side cut criteria group.
 /// </summary>
 [StronglyTypedId("ulid-full")]
-public readonly partial struct TournamentId
+public readonly partial struct SideCutCriteriaGroupId
 {
     /// <summary>
     /// Gets the underlying <see cref="Ulid"/> value.
     /// </summary>
     public Ulid Value { get; }
 
-    private TournamentId(Ulid value)
+    private SideCutCriteriaGroupId(Ulid value)
         => Value = value;
 
     /// <summary>
-    /// Creates a new <see cref="TournamentId"/> with a randomly generated ULID value.
+    /// Creates a new <see cref="SideCutCriteriaGroupId"/> with a randomly generated ULID value.
     /// </summary>
-    public static TournamentId New()
+    public static SideCutCriteriaGroupId New()
         => new(Ulid.NewUlid());
 
     /// <inheritdoc/>
-    public bool Equals(TournamentId other) => Value.Equals(other.Value);
+    public bool Equals(SideCutCriteriaGroupId other) => Value.Equals(other.Value);
 
     /// <inheritdoc/>
-    public override bool Equals(object? obj) => obj is TournamentId other && Equals(other);
+    public override bool Equals(object? obj) => obj is SideCutCriteriaGroupId other && Equals(other);
 
     /// <inheritdoc/>
     public override int GetHashCode() => Value.GetHashCode();
@@ -34,10 +34,10 @@ public readonly partial struct TournamentId
     /// <summary>
     /// Returns <see langword="true"/> if the two values are equal.
     /// </summary>
-    public static bool operator ==(TournamentId a, TournamentId b) => a.Equals(b);
+    public static bool operator ==(SideCutCriteriaGroupId a, SideCutCriteriaGroupId b) => a.Equals(b);
 
     /// <summary>
     /// Returns <see langword="true"/> if the two values are not equal.
     /// </summary>
-    public static bool operator !=(TournamentId a, TournamentId b) => !(a == b);
+    public static bool operator !=(SideCutCriteriaGroupId a, SideCutCriteriaGroupId b) => !(a == b);
 }

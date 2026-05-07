@@ -313,7 +313,7 @@ public sealed class SeasonStatsServiceTests
     [Fact(DisplayName = "CalculateSeasonStatsSummary should return the highest match play win percentage and include all tied bowlers")]
     public void CalculateSeasonStatsSummary_ShouldReturnHighestMatchPlayWinPercentageAndBowlers()
     {
-        // 8 * 1m / 10 = 0.8; 4 * 1m / 5 = 0.8; 6 * 1m / 10 = 0.6; 0 wins+losses excluded
+        // 8 * 1m / 10 = 80.0%; 4 * 1m / 5 = 80.0%; 6 * 1m / 10 = 60.0%; 0 wins+losses excluded
         var bowler1Id = BowlerId.New();
         var bowler1Name = NameFactory.Create();
         var bowler2Id = BowlerId.New();
@@ -328,7 +328,7 @@ public sealed class SeasonStatsServiceTests
 
         var result = _service.CalculateSeasonStatsSummary(bowlerStats, minimumGames: 0, minimumTournaments: 0, minimumEntries: 0);
 
-        result.HighestMatchPlayWinPercentage.ShouldBe(0.8m);
+        result.HighestMatchPlayWinPercentage.ShouldBe(80.0m);
         result.HighestMatchPlayWinPercentageBowlers.Count.ShouldBe(2);
         result.HighestMatchPlayWinPercentageBowlers.ShouldContainKeyAndValue(bowler1Id, bowler1Name);
         result.HighestMatchPlayWinPercentageBowlers.ShouldContainKeyAndValue(bowler2Id, bowler2Name);

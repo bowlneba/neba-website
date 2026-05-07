@@ -58,7 +58,7 @@
     Score: 1182
   },
   {
-    Season: 2014 Season,
+    Season: 2015 Season,
     BowlerName: {
       FirstName: Jan,
       LastName: Reilly,
@@ -71,7 +71,7 @@
     Score: 1270
   },
   {
-    Season: 2014 Season,
+    Season: 2015 Season,
     BowlerName: {
       FirstName: Chad,
       LastName: Kessler
