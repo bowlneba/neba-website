@@ -5,7 +5,7 @@ using Neba.Infrastructure.Database.Entities;
 
 namespace Neba.Infrastructure.Database.Configurations;
 
-internal sealed class HistoricalTournamentChampionsConfiguration
+internal sealed class HistoricalTournamentChampionConfiguration
     : IEntityTypeConfiguration<HistoricalTournamentChampion>
 {
     public void Configure(EntityTypeBuilder<HistoricalTournamentChampion> builder)

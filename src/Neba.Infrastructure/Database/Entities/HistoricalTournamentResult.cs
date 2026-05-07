@@ -17,7 +17,7 @@ internal sealed class HistoricalTournamentResult
 
     public decimal PrizeMoney { get; init; }
 
-    public SideCutId? SideCutId { get; init; }
+    public int? SideCutId { get; init; }
 
     public SideCut? SideCut { get; init; }
 }

@@ -81,7 +81,7 @@ internal sealed class AppDbContext(
         modelBuilder.ApplyConfiguration(new SideCutCriteriaGroupConfiguration());
         modelBuilder.ApplyConfiguration(new SideCutCriteriaConfiguration());
 
-        modelBuilder.ApplyConfiguration(new HistoricalTournamentChampionsConfiguration());
+        modelBuilder.ApplyConfiguration(new HistoricalTournamentChampionConfiguration());
         modelBuilder.ApplyConfiguration(new HistoricalTournamentEntryConfiguration());
     }
 
