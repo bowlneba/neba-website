@@ -135,7 +135,20 @@ season.AssignHighAverageWinner(command.BowlerId, command.Average, command.Games,
 
 **Coverage analysis note**: MTP coverage is partially implemented in 4.13 — uncovered mutants are filtered out, but per-mutant test selection is not yet available. This means runs are slower than they will eventually be (all tests run per mutant), but results are accurate.
 
-**StronglyTypedId + Stryker limitation** — Stryker's in-memory Roslyn compilation invokes source generators but does not pass `AdditionalFiles` (e.g., `ulid-full.typedid`) to them. The `StronglyTypedIds` generator therefore produces no output, causing compile errors when domain source files reference any member that was previously template-generated. Fix: remove `Value { get; }`, the private `(Ulid value)` constructor, and `New()` from the template and define all three explicitly in each ID's partial struct body. Every `[StronglyTypedId("ulid-full")]` type must declare this trio — including test helper structs, not just domain IDs. See [ADR-0006](docs/adr/0006-explicit-new-on-stronglytypedid-partial-structs.md).
+**StronglyTypedId + Stryker limitation** — Stryker's in-memory Roslyn compilation invokes source generators but does not pass `AdditionalFiles` (e.g., `ulid-full.typedid`) to them. The `StronglyTypedIds` generator therefore produces no output, causing compile errors when domain source files reference any member that was previously template-generated. Fix: remove the member from the template and define it explicitly in each ID's partial struct body. Every `[StronglyTypedId("ulid-full")]` type must declare the following — including test helper structs, not just domain IDs. See [ADR-0006](docs/adr/0006-explicit-new-on-stronglytypedid-partial-structs.md).
+
+Required explicit members (removed from `ulid-full.typedid`, must be in every partial struct):
+
+- `public Ulid Value { get; }`
+- `private T(Ulid value) => Value = value;`
+- `public static T New() => new(Ulid.NewUlid());`
+- `public bool Equals(T other) => Value.Equals(other.Value);`
+- `public override bool Equals(object? obj) => obj is T other && Equals(other);`
+- `public override int GetHashCode() => Value.GetHashCode();`
+- `public static bool operator ==(T a, T b) => a.Equals(b);`
+- `public static bool operator !=(T a, T b) => !(a == b);`
+
+The equality members (`Equals`, `GetHashCode`, `==`, `!=`) are needed because Stryker mutates equality expressions (e.g., `==` → `!=`). Without them visible in Stryker's compilation, mutated code produces `CS0019` and aborts the run rather than producing a killable mutation.
 
 **Per-layer decisions** (make these explicitly for each new layer):
 
