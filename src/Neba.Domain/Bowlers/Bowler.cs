@@ -34,6 +34,16 @@ public sealed class Bowler
     /// </summary>
     public int? LegacyId { get; init; }
 
+    /// <summary>
+    /// Gets the bowler's gender (used for agent-specific side cut criteria; will be populated during data migration from the organization management software).
+    /// </summary>
+    public Gender? Gender { get; init; }
+
+    /// <summary>
+    /// Gets the bowler's date of birth (used for age-based side cut criteria; will be populated during data migration from the organization management software).
+    /// </summary>
+    public DateOnly? DateOfBirth { get; init; }
+
     private readonly List<BowlerSeasonStats> _seasonStats = [];
     internal IReadOnlyCollection<BowlerSeasonStats> SeasonStats
         => _seasonStats.AsReadOnly();

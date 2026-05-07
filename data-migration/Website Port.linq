@@ -1301,7 +1301,7 @@ public sealed class PhoneNumberType
 public async Task<IReadOnlyCollection<(int id, Ulid bowlerId, int? websiteId, int? softwareId, HumanName? websiteName, HumanName? softwareName)>> MigrateBowlersAsync()
 {
 	DataTable websiteChampionsTable = await QueryStatsDatabaseAsync("select Id, FName, LName from dbo.champions");
-	DataTable softwareBowlersTable = await QuerySoftwareDatabaseAsync("select Id, FirstName, MiddleInitial, LastName, Suffix, Champion from dbo.Bowlers");
+	DataTable softwareBowlersTable = await QuerySoftwareDatabaseAsync("select * from dbo.Bowlers");
 
 	var websiteBowlers = websiteChampionsTable.AsEnumerable().Select(row => new
 	{
@@ -1321,12 +1321,16 @@ public async Task<IReadOnlyCollection<(int id, Ulid bowlerId, int? websiteId, in
 	{
 		Id = row.Field<int>("Id"),
 		Champion = row.Field<bool>("Champion"),
-		Name = new NameParser.HumanName($"{row.Field<string>("FirstName")} {row.Field<string>("MiddleInitial")} {row.Field<string>("LastName")} {row.Field<string>("Suffix")}")
+		Name = new NameParser.HumanName($"{row.Field<string>("FirstName")} {row.Field<string>("MiddleInitial")} {row.Field<string>("LastName")} {row.Field<string>("Suffix")}"),
+		Gender = row.Field<int>("Gender") == 0 ? "M" : "F",
+		DateOfBirth = row.Field<DateTime?>("DateOfBirth").HasValue ? DateOnly.FromDateTime(row.Field<DateTime>("DateOfBirth")) : (DateOnly?)null
 	}).Shuffle().ToList();
 
 	int championCount = softwareBowlers.Count(b => b.Champion);
 
-	var mergedBowlers = new List<(Ulid bowlerId, int? websiteId, int? softwareId, HumanName? softwareName, HumanName? websiteName)>();
+	var mergedBowlers = new List<
+	(Ulid bowlerId, int? websiteId, int? softwareId, HumanName? softwareName, HumanName? websiteName,
+	string? Gender, DateOnly? DateOfBirth)>();
 
 	foreach (var manualMatch in s_manualMatch)
 	{
@@ -1390,12 +1394,12 @@ public async Task<IReadOnlyCollection<(int id, Ulid bowlerId, int? websiteId, in
 		}
 
 		// no website match
-		mergedBowlers.Add(new(Guid.AsUlid(), null, softwareBowler.Id, softwareBowler.Name, null));
+		mergedBowlers.Add(new(Guid.AsUlid(), null, softwareBowler.Id, softwareBowler.Name, null, softwareBowler.Gender, softwareBowler.DateOfBirth));
 	}
 
 	foreach (var websiteBowler in websiteBowlers)
 	{
-		mergedBowlers.Add(new(Guid.AsUlid(), websiteBowler.Id, null, null, websiteBowler.Name));
+		mergedBowlers.Add(new(Guid.AsUlid(), websiteBowler.Id, null, null, websiteBowler.Name, null, null));
 	}
 
 
@@ -1410,6 +1414,8 @@ public async Task<IReadOnlyCollection<(int id, Ulid bowlerId, int? websiteId, in
 		LastName = mergedBowler.softwareName?.Last ?? mergedBowler.websiteName?.Last ?? throw new InvalidOperationException($"No Last Name for {mergedBowler.softwareId ?? mergedBowler.websiteId}"),
 		Suffix = !string.IsNullOrWhiteSpace(mergedBowler.softwareName?.Suffix) ? NameSuffix.FromName(mergedBowler.softwareName.Suffix.Replace(".", "").Trim()).Value : !string.IsNullOrWhiteSpace(mergedBowler.websiteName?.Suffix) ? NameSuffix.FromName(mergedBowler.websiteName.Suffix.Replace(".", "").Trim()).Value : null,
 		Nickname = !string.IsNullOrWhiteSpace(mergedBowler.softwareName?.Nickname) ? mergedBowler.softwareName.Nickname : !string.IsNullOrWhiteSpace(mergedBowler.websiteName?.Nickname) ? mergedBowler.websiteName?.Nickname : null,
+		Gender = mergedBowler.Gender,
+		DateOfBirth = mergedBowler.DateOfBirth
 	}).ToList();
 
 
