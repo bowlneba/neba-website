@@ -13,11 +13,13 @@ Eventually the service returns progressions for all six BOY race categories in a
 | Category | Bowler eligibility requirement | Notes |
 |----------|-------------------------------|-------|
 | Open | Any bowler | All stat-eligible tournaments |
-| Senior | Age ≥ 50 at tournament date | Stat-eligible + Senior/SeniorAndWomen tournaments |
-| Super Senior | Age ≥ 60 at tournament date | Stat-eligible tournaments only |
+| Senior | Age ≥ 50 **by each tournament's end date** | Stat-eligible + Senior/SeniorAndWomen tournaments |
+| Super Senior | Age ≥ 60 **by each tournament's end date** | Stat-eligible tournaments only |
 | Woman | Gender = Female | Stat-eligible + Women/SeniorAndWomen tournaments |
 | Rookie | First-year NEBA member | Stat-eligible tournaments; requires membership data — see Phase 2 notes |
-| Youth | Age < 18 at tournament date | Stat-eligible tournaments only |
+| Youth | Age < 18 **by each tournament's end date** | Stat-eligible tournaments only |
+
+> **Age eligibility is evaluated against `Tournament.EndDate`, not `StartDate`.** A bowler who turns 50 on the second day of a two-day tournament is eligible — they can bowl day 2 and earn Senior BOY points for that event. A bowler who turns 50 in June earns no Senior BOY points for tournaments that concluded before their birthday. The same rule applies to Super Senior (60) and Youth (under 18).
 
 ---
 
@@ -187,7 +189,7 @@ Single call; returns one progression collection per category. The caller (stats 
 
 ### Bowler eligibility evaluation
 
-Age-gated races evaluate eligibility at each individual `Tournament.StartDate` (not a single age at the start of the season). A bowler who turns 50 mid-season earns Senior BOY points only for tournaments that start on or after their 50th birthday.
+Age-gated races evaluate eligibility against `Tournament.EndDate` (not `StartDate`, and not a fixed age at season start). A bowler who turns 50 mid-season earns Senior BOY points only for tournaments whose `EndDate` falls on or after their 50th birthday. This correctly handles multi-day tournaments: a bowler turning 50 on day 2 of a two-day event is eligible for that event.
 
 ### Per-race point computation
 
