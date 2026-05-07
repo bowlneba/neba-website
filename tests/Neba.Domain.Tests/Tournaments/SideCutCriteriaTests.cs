@@ -161,6 +161,6 @@ public sealed class SideCutCriteriaTests
     }
 #nullable enable
 
-    public static TheoryData<string> AllGenderValues() 
+    public static TheoryData<string> AllGenderValues()
         => [.. Gender.List.Select(static gender => gender.Value)];
 }
