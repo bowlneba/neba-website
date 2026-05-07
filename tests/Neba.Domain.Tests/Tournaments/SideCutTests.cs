@@ -26,7 +26,7 @@ public sealed class SideCutTests
         var result = sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1);
 
         result.IsError.ShouldBeFalse();
-        result.Value.ShouldNotBe(default(SideCutCriteriaGroupId));
+        result.Value.ShouldNotBe(default);
     }
 
     [Fact(DisplayName = "AddCriteriaGroup adds the group to CriteriaGroups")]
