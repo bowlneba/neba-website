@@ -17,6 +17,9 @@ internal sealed class HistoricalTournamentResultConfiguration
         builder.Property(tournamentResult => tournamentResult.Place)
             .IsRequired(false);
 
+        builder.Property(tournamentResult => tournamentResult.Points)
+            .IsRequired();
+
         builder.Property(tournamentResult => tournamentResult.PrizeMoney)
             .HasPrecision(6, 2)
             .IsRequired();

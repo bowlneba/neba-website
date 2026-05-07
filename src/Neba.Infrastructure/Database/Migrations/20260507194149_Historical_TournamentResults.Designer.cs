@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Neba.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260507180354_Historical_TournamentResults")]
+    [Migration("20260507194149_Historical_TournamentResults")]
     partial class Historical_TournamentResults
     {
         /// <inheritdoc />
@@ -1192,6 +1192,10 @@ namespace Neba.Infrastructure.Database.Migrations
                     b.Property<int?>("Place")
                         .HasColumnType("integer")
                         .HasColumnName("place");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("integer")
+                        .HasColumnName("points");
 
                     b.Property<decimal>("PrizeMoney")
                         .HasPrecision(6, 2)

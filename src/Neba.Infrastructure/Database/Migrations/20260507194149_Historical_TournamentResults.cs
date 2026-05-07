@@ -19,6 +19,7 @@ namespace Neba.Infrastructure.Database.Migrations
                     tournament_id = table.Column<int>(type: "integer", nullable: false),
                     place = table.Column<int>(type: "integer", nullable: true),
                     prize_money = table.Column<decimal>(type: "numeric(6,2)", precision: 6, scale: 2, nullable: false),
+                    points = table.Column<int>(type: "integer", nullable: false),
                     side_cut_id = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>

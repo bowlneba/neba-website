@@ -1190,6 +1190,10 @@ namespace Neba.Infrastructure.Database.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("place");
 
+                    b.Property<int>("Points")
+                        .HasColumnType("integer")
+                        .HasColumnName("points");
+
                     b.Property<decimal>("PrizeMoney")
                         .HasPrecision(6, 2)
                         .HasColumnType("numeric(6,2)")
