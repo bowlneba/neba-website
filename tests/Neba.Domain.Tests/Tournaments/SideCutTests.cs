@@ -216,15 +216,15 @@ public sealed class SideCutTests
         var criteriaGroups = new[]
         {
             SideCutCriteriaGroupFactory.Create(
-                sortOrder: 2,
                 logicalOperator: LogicalOperator.Or,
+                sortOrder: 2,
                 criteria:
                 [
                     SideCutCriteriaFactory.CreateGenderRequirement(Gender.Female)
                 ]),
             SideCutCriteriaGroupFactory.Create(
-                sortOrder: 1,
                 logicalOperator: LogicalOperator.And,
+                sortOrder: 1,
                 criteria:
                 [
                     SideCutCriteriaFactory.CreateAgeRequirement(minimumAge: 50)
