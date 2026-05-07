@@ -119,6 +119,10 @@ async Task Main()
 	await MigrateHistoricalTournamentChampions(bowlerDbIdByWebsiteId, spreadsheetTournaments, tournamentDbIdByDomainId);
 	await MigrateHistoricalTournamentEntries(spreadsheetTournaments, tournamentDbIdByDomainId);
 	
+	var bowlerDbIdBySoftwareId = bowlerIds.Where(b => b.softwareId.HasValue).ToDictionary(b => b.softwareId!.Value, b => b.id);
+	var tournamentDbIdBySoftwareId = Tournaments.Where(t => t.LegacyId.HasValue).ToDictionary(t => t.LegacyId!.Value, t => t.Id);
+	await MigrateHistoricalTournamentResults(tournamentDbIdBySoftwareId, bowlerDbIdBySoftwareId);
+	
 	"Migration Complete".Dump();
 }
 
@@ -2951,6 +2955,59 @@ public async Task<IReadOnlyCollection<SpreadsheetTournament>> MigrateTournaments
 	"Tournaments Migrated".Dump();
 	
 	return spreadsheetTournaments;
+}
+
+public async Task MigrateHistoricalTournamentResults(
+	IDictionary<int, int> tournamentIdBySoftwareId,
+	IDictionary<int, int> bowlerIdBySoftwareId)
+{
+	var resultStatsDataTable = await QuerySoftwareDatabaseAsync("""
+		SELECT
+			s.BowlerId as BowlerId,
+			s.TournamentId as TournamentId,
+			r.Place as Place,
+			r.Payout as Payout,
+			r.Points as Points,
+			r.SideCut as SideCut
+		FROM
+			Stats s
+		INNER JOIN
+			Stats_ResultsStats r
+			ON
+				s.Id = r.Id
+		INNER JOIN
+			Tournaments t
+			ON
+			t.Id = s.TournamentId
+		WHERE
+			Year(t.Start) < 2026
+	""");
+
+	var resultStats = resultStatsDataTable.AsEnumerable().Select(row => new
+	{
+		BowlerId = row.Field<int>("BowlerId"),
+		TournamentId = row.Field<int>("TournamentId"),
+		Place = row.Field<int?>("Place"),
+		PrizeMoney = row.Field<decimal>("Payout"),
+		Points = row.Field<int>("Points"),
+		SideCutId = row.Field<int?>("SideCut")
+	}).ToList();
+
+	var results = resultStats.Select(s => new TournamentResults
+	{
+		BowlerId = bowlerIdBySoftwareId[s.BowlerId],
+		TournamentId = tournamentIdBySoftwareId[s.TournamentId],
+		Place = s.Place,
+		PrizeMoney = s.PrizeMoney,
+		Points = s.Points,
+		SideCutId = s.SideCutId
+	}).ToList();
+	
+	TournamentResults.AddRange(results);
+	
+	await SaveChangesAsync();
+	
+	"Historical Tournament Results Migrated".Dump();
 }
 
 public async Task MigrateHistoricalTournamentChampions(
