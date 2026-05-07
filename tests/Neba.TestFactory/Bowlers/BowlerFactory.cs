@@ -18,7 +18,7 @@ public static class BowlerFactory
             WebsiteId = websiteId,
             LegacyId = legacyId,
             Gender = gender ?? Gender.Male,
-            DateOfBirth = dateOfBirth ?? new DateOnly(2000,5,1)
+            DateOfBirth = dateOfBirth ?? new DateOnly(2000, 5, 1)
         };
 
     public static IReadOnlyCollection<Bowler> Bogus(int count, int? seed = null)
@@ -43,7 +43,7 @@ public static class BowlerFactory
                 WebsiteId = websiteIdPool.GetNextNullable(),
                 LegacyId = legacyIdPool.GetNextNullable(),
                 Gender = f.PickRandom(Gender.List.ToArray()),
-                DateOfBirth = f.Date.PastDateOnly(f.Random.Int(20,80))
+                DateOfBirth = f.Date.PastDateOnly(f.Random.Int(20, 80))
             });
 
         if (seed.HasValue)
