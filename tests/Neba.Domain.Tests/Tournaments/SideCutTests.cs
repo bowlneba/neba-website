@@ -146,9 +146,10 @@ public sealed class SideCutTests
     }
 
     [Theory(DisplayName = "AddCriteria adds gender criteria to the group for each gender")]
-    [MemberData(nameof(AllGenders))]
-    public void AddCriteria_Gender_ShouldAddCriteria(Gender gender)
+    [MemberData(nameof(AllGenderValues))]
+    public void AddCriteria_Gender_ShouldAddCriteria(string genderValue)
     {
+        var gender = Gender.FromValue(genderValue);
         var sideCut = SideCutFactory.Create();
         var groupId = sideCut.AddCriteriaGroup(LogicalOperator.And, sortOrder: 1).Value;
 
@@ -238,5 +239,5 @@ public sealed class SideCutTests
         sideCut.CriteriaGroups.Single(group => group.SortOrder == 2).Criteria.Single().GenderRequirement.ShouldBe(Gender.Female);
     }
 
-    public static TheoryData<Gender> AllGenders() => [.. Gender.List];
+    public static TheoryData<string> AllGenderValues() => [.. Gender.List.Select(static gender => gender.Value)];
 }

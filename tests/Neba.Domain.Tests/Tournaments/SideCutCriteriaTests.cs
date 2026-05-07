@@ -123,9 +123,10 @@ public sealed class SideCutCriteriaTests
     // ── CreateGenderRequirement ───────────────────────────────────────────────
 
     [Theory(DisplayName = "CreateGenderRequirement returns SideCutCriteria with GenderRequirement set")]
-    [MemberData(nameof(AllGenders))]
-    public void CreateGenderRequirement_ShouldSetGenderRequirement(Gender gender)
+    [MemberData(nameof(AllGenderValues))]
+    public void CreateGenderRequirement_ShouldSetGenderRequirement(string genderValue)
     {
+        var gender = Gender.FromValue(genderValue);
         var result = SideCutCriteria.CreateGenderRequirement(gender);
 
         result.IsError.ShouldBeFalse();
@@ -160,5 +161,6 @@ public sealed class SideCutCriteriaTests
     }
 #nullable enable
 
-    public static TheoryData<Gender> AllGenders() => [.. Gender.List];
+    public static TheoryData<string> AllGenderValues() 
+        => [.. Gender.List.Select(static gender => gender.Value)];
 }
