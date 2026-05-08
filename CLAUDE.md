@@ -7,10 +7,6 @@ For detailed architectural context:
 - Backend: `docs/architecture/backend.md` (or wherever you put ARCHITECTURE.md)
 - Blazor: `docs/architecture/blazor.md`
 
-## Workflow Preferences
-
-- **Show, don't insert**: When suggesting code changes, display the implementation in the response for review rather than directly inserting it into files. Only insert code directly when explicitly requested. Documentation files (`.md`, skill files, architecture docs) are exempt — insert those directly.
-
 ## Self-Maintenance
 
 This file is a **living document** and should be kept current as the project evolves. Both Claude and GitHub Copilot can leverage these learnings to provide better assistance.
