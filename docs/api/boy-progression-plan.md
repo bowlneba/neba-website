@@ -14,7 +14,7 @@ Eventually the service returns progressions for all six BOY race categories in a
 |----------|-------------------------------|-------|
 | Open | Any bowler | All stat-eligible tournaments |
 | Senior | Age ≥ 50 **by each tournament's end date** | Stat-eligible + Senior/SeniorAndWomen tournaments |
-| Super Senior | Age ≥ 60 **by each tournament's end date** | Stat-eligible tournaments only |
+| Super Senior | Age ≥ 60 **by each tournament's end date** | Stat-eligible + Senior/SeniorAndWomen tournaments |
 | Woman | Gender = Female | Stat-eligible + Women/SeniorAndWomen tournaments |
 | Rookie | First-year NEBA member | Stat-eligible tournaments; requires membership data — see Phase 2 notes |
 | Youth | Age < 18 **by each tournament's end date** | Stat-eligible tournaments only |
@@ -33,7 +33,7 @@ These rules apply to a single `HistoricalTournamentResult` row when computing po
 |------|-----------------------------|
 | Open | `Tournament.StatsEligible = true` |
 | Senior | `Tournament.StatsEligible = true` **OR** `TournamentType` ∈ {`Senior`, `SeniorAndWomen`} |
-| Super Senior | `Tournament.StatsEligible = true` |
+| Super Senior | `Tournament.StatsEligible = true` **OR** `TournamentType` ∈ {`Senior`, `SeniorAndWomen`} |
 | Woman | `Tournament.StatsEligible = true` **OR** `TournamentType` ∈ {`Women`, `SeniorAndWomen`} |
 | Rookie | `Tournament.StatsEligible = true` |
 | Youth | `Tournament.StatsEligible = true` |
@@ -61,7 +61,7 @@ If the bowler is not eligible for race R → **0 points** (row excluded).
 |------|-----------|--------|
 | Open | No — tournament not stat-eligible | 0 |
 | Senior | Yes — Senior tournament | 5 — bowler is in a side cut whose category ≠ Senior |
-| Super Senior | Yes — stat-eligible check bypassed? No — Senior tournament is not stat-eligible. However, the bowler competed in a SuperSenior side cut, which IS the target race → listed Points? | **listed 40** |
+| Super Senior | Yes — Senior tournaments count for the Super Senior race, and the side cut targets SuperSenior | **listed 40** |
 | Woman | No — bowler presumed not female in this example | 0 |
 
 > Simpler example: stat-eligible Singles tournament, bowler in a Senior side cut (`Points = 10`).
