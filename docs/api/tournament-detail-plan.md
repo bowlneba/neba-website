@@ -54,7 +54,6 @@ Contains all fields currently in `SeasonTournamentDto` plus:
 | Property | Type | Notes |
 |----------|------|-------|
 | `Results` | `IReadOnlyCollection<TournamentResultDto>` | Ordered by Place (nulls last), then bowler last name |
-| `HasResults` | `bool` | `true` when `Results` is non-empty; drives UI section visibility |
 | `EntryCount` | `int?` | Total entry count; null when unknown |
 
 > **Note**: `SeasonTournamentDto` stays as-is for the list endpoint. `TournamentDetailDto` is a separate type — it carries more data and the list endpoint should stay lean.
@@ -120,7 +119,6 @@ Wraps `TournamentDetailResponse` and computes display states:
 
 | Property | Computed from |
 |----------|---------------|
-| `HasResults` | `Response.HasResults` |
 | `HasRegistrationUrl` | `RegistrationUrl != null` |
 | `IsUpcoming` | `StartDate >= today` |
 | `IsPast` | `EndDate < today` |

@@ -1,5 +1,6 @@
 using ErrorOr;
 
+using Neba.Application.Storage;
 using Neba.Application.Tournaments;
 using Neba.Application.Tournaments.GetTournament;
 using Neba.Domain.Tournaments;
@@ -13,18 +14,22 @@ namespace Neba.Application.Tests.Tournaments.GetTournament;
 public sealed class GetTournamentQueryHandlerTests
 {
     private readonly Mock<ITournamentQueries> _tournamentQueriesMock;
+    private readonly Mock<IFileStorageService> _fileStorageServiceMock;
     private readonly GetTournamentQueryHandler _handler;
 
     public GetTournamentQueryHandlerTests()
     {
         _tournamentQueriesMock = new Mock<ITournamentQueries>(MockBehavior.Strict);
-        _handler = new GetTournamentQueryHandler(_tournamentQueriesMock.Object);
+        _fileStorageServiceMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        _handler = new GetTournamentQueryHandler(
+            _tournamentQueriesMock.Object,
+            _fileStorageServiceMock.Object);
     }
 
     [Fact(DisplayName = "HandleAsync should return tournament detail when tournament exists")]
     public async Task HandleAsync_ShouldReturnTournamentDetail_WhenTournamentExists()
     {
-        // Arrange
+        // Arrange — Create() defaults logoContainer/logoPath to null, so no logo URL resolution occurs.
         var dto = TournamentDetailDtoFactory.Create();
         var query = new GetTournamentQuery { Id = dto.Id };
 
@@ -67,7 +72,7 @@ public sealed class GetTournamentQueryHandlerTests
     [Fact(DisplayName = "HandleAsync should pass cancellation token to tournament queries")]
     public async Task HandleAsync_ShouldPassCancellationToken_ToTournamentQueries()
     {
-        // Arrange
+        // Arrange — Create() defaults logoContainer/logoPath to null, so no logo URL resolution occurs.
         var dto = TournamentDetailDtoFactory.Create();
         var query = new GetTournamentQuery { Id = dto.Id };
         using var cancellationTokenSource = new CancellationTokenSource();
@@ -83,5 +88,82 @@ public sealed class GetTournamentQueryHandlerTests
         // Assert
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(dto);
+    }
+
+    [Fact(DisplayName = "HandleAsync should resolve logo URL when tournament has both container and path")]
+    public async Task HandleAsync_ShouldResolveLogoUrl_WhenTournamentHasBothContainerAndPath()
+    {
+        // Arrange
+        const string logoContainer = "tournament-logos";
+        const string logoPath = "spring-open/logo.png";
+        var expectedLogoUrl = new Uri($"https://storage.example.com/{logoContainer}/{logoPath}");
+        var dto = TournamentDetailDtoFactory.Create(logoContainer: logoContainer, logoPath: logoPath, logoUrl: null);
+        var query = new GetTournamentQuery { Id = dto.Id };
+
+        _tournamentQueriesMock
+            .Setup(q => q.GetTournamentDetailAsync(query.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(dto);
+
+        _fileStorageServiceMock
+            .Setup(s => s.GetBlobUri(logoContainer, logoPath))
+            .Returns(expectedLogoUrl);
+
+        // Act
+        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LogoUrl.ShouldBe(expectedLogoUrl);
+    }
+
+    [Fact(DisplayName = "HandleAsync should keep logo URL null when tournament has no logo container")]
+    public async Task HandleAsync_ShouldKeepLogoUrlNull_WhenTournamentHasNoLogoContainer()
+    {
+        // Arrange
+        // Canary: if the && guard is mutated to ||, GetBlobUri(null, path) is called.
+        // Returning a URL here lets the assertion catch the mutation rather than relying on MockException.
+        var dto = TournamentDetailDtoFactory.Create(logoContainer: null, logoPath: "spring-open/logo.png", logoUrl: null);
+        var query = new GetTournamentQuery { Id = dto.Id };
+
+        _tournamentQueriesMock
+            .Setup(q => q.GetTournamentDetailAsync(query.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(dto);
+
+        _fileStorageServiceMock
+            .Setup(s => s.GetBlobUri(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new Uri("https://unexpected.example.com/logo.png"));
+
+        // Act
+        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LogoUrl.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "HandleAsync should not set logo URL when tournament has container but no path")]
+    public async Task HandleAsync_ShouldNotSetLogoUrl_WhenTournamentHasContainerButNoPath()
+    {
+        // Arrange — LogoContainer set but LogoPath null.
+        // The && guard means no URL should be resolved. The || mutation would call
+        // GetBlobUri(container, null) — the assertion below catches the mutation.
+        var dto = TournamentDetailDtoFactory.Create(logoContainer: "tournament-logos", logoPath: null, logoUrl: null);
+        var query = new GetTournamentQuery { Id = dto.Id };
+
+        _tournamentQueriesMock
+            .Setup(q => q.GetTournamentDetailAsync(query.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(dto);
+
+        // Canary: if || mutation fires, GetBlobUri("tournament-logos", null) is called.
+        _fileStorageServiceMock
+            .Setup(s => s.GetBlobUri(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new Uri("https://unexpected.example.com/logo.png"));
+
+        // Act
+        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LogoUrl.ShouldBeNull();
     }
 }
