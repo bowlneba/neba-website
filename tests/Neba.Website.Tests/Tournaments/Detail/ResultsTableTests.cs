@@ -96,4 +96,64 @@ public sealed class ResultsTableTests : IDisposable
         headers[2].TextContent.ShouldBe("Prize Money");
         headers[3].TextContent.ShouldBe("Points");
     }
+
+    [Fact(DisplayName = "Should combine same-place results into a single row")]
+    public void Render_ShouldCombineSamePlaceResults_IntoOneRow()
+    {
+        var results = new[]
+        {
+            TournamentResultViewModelFactory.Create(place: 1, bowlerName: "Alice"),
+            TournamentResultViewModelFactory.Create(place: 1, bowlerName: "Bob"),
+            TournamentResultViewModelFactory.Create(place: 1, bowlerName: "Carol"),
+        };
+
+        var cut = _ctx.Render<ResultsTable>(p => p.Add(x => x.Results, (IEnumerable<TournamentResultViewModel>)results));
+
+        cut.FindAll("tbody tr").Count.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "Should stack all bowler names in the bowler column for a team row")]
+    public void Render_ShouldStackBowlerNames_ForTeamRow()
+    {
+        var results = new[]
+        {
+            TournamentResultViewModelFactory.Create(place: 1, bowlerName: "Alice"),
+            TournamentResultViewModelFactory.Create(place: 1, bowlerName: "Bob"),
+        };
+
+        var cut = _ctx.Render<ResultsTable>(p => p.Add(x => x.Results, (IEnumerable<TournamentResultViewModel>)results));
+
+        var nameCell = cut.Find("tbody tr td:nth-child(2)");
+        nameCell.QuerySelectorAll("div").Select(d => d.TextContent)
+            .ShouldBe(["Alice", "Bob"], ignoreOrder: false);
+    }
+
+    [Fact(DisplayName = "Should sum prize money for combined team rows")]
+    public void Render_ShouldSumPrizeMoney_ForTeamRow()
+    {
+        var results = new[]
+        {
+            TournamentResultViewModelFactory.Create(place: 1, prizeMoney: 950m),
+            TournamentResultViewModelFactory.Create(place: 1, prizeMoney: 950m),
+            TournamentResultViewModelFactory.Create(place: 1, prizeMoney: 950m),
+        };
+
+        var cut = _ctx.Render<ResultsTable>(p => p.Add(x => x.Results, (IEnumerable<TournamentResultViewModel>)results));
+
+        cut.Find("tbody tr td:nth-child(3)").TextContent.ShouldBe("$2,850");
+    }
+
+    [Fact(DisplayName = "Should keep null-place results as separate rows")]
+    public void Render_ShouldKeepNullPlaceResults_AsSeparateRows()
+    {
+        var results = new[]
+        {
+            TournamentResultViewModelFactory.Create(place: null, bowlerName: "Alice"),
+            TournamentResultViewModelFactory.Create(place: null, bowlerName: "Bob"),
+        };
+
+        var cut = _ctx.Render<ResultsTable>(p => p.Add(x => x.Results, (IEnumerable<TournamentResultViewModel>)results));
+
+        cut.FindAll("tbody tr").Count.ShouldBe(2);
+    }
 }
