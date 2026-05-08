@@ -78,6 +78,12 @@ public sealed record TournamentDetailViewModel
     /// <summary>True when added money is greater than zero.</summary>
     public bool HasAddedMoney => AddedMoney is > 0;
 
+    /// <summary>Sum of all prize money across results.</summary>
+    public decimal TotalPayout => Results.Sum(r => r.PrizeMoney);
+
+    /// <summary>True when total payout is greater than zero.</summary>
+    public bool HasPayout => TotalPayout > 0;
+
     /// <summary>True when at least one sponsor is present.</summary>
     public bool HasSponsors => Sponsors.Count > 0;
 
@@ -132,97 +138,4 @@ public sealed record TournamentDetailViewModel
         return StartDate.ToString("MMM d", System.Globalization.CultureInfo.CurrentCulture)
             + " – " + EndDate.ToString("MMM d, yyyy", System.Globalization.CultureInfo.CurrentCulture);
     }
-}
-
-/// <summary>Per-bowler result row for display in the results table.</summary>
-public sealed record TournamentResultViewModel
-{
-    /// <summary>Display name of the bowler.</summary>
-    public required string BowlerName { get; init; }
-
-    /// <summary>Finishing place; null when place was not recorded.</summary>
-    public int? Place { get; init; }
-
-    /// <summary>Prize money awarded in USD.</summary>
-    public decimal PrizeMoney { get; init; }
-
-    /// <summary>Season points awarded.</summary>
-    public int Points { get; init; }
-
-    /// <summary>Name of the side cut the bowler competed in; null for the main cut.</summary>
-    public string? SideCutName { get; init; }
-
-    /// <summary>CSS hex color for the side cut indicator; null for the main cut.</summary>
-    public string? SideCutIndicator { get; init; }
-
-    /// <summary>Place formatted for display; em dash when no place was recorded.</summary>
-    public string FormattedPlace =>
-        Place.HasValue
-            ? Place.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)
-            : "—";
-
-    /// <summary>Prize money formatted as currency.</summary>
-    public string FormattedPrizeMoney =>
-        PrizeMoney.ToString("C0", System.Globalization.CultureInfo.CurrentCulture);
-}
-
-/// <summary>Sponsor summary for display on the tournament detail page.</summary>
-public sealed record TournamentDetailSponsorViewModel
-{
-    /// <summary>Display name of the sponsor.</summary>
-    public required string Name { get; init; }
-
-    /// <summary>URL-friendly slug for linking to the sponsor detail page.</summary>
-    public required string Slug { get; init; }
-
-    /// <summary>URL to the sponsor's logo image; null if not available.</summary>
-    public Uri? LogoUrl { get; init; }
-
-    /// <summary>Sponsor's website URL; null if not available.</summary>
-    public Uri? WebsiteUrl { get; init; }
-
-    /// <summary>Short tagline for the sponsor; null if not set.</summary>
-    public string? TagPhrase { get; init; }
-}
-
-/// <summary>Oil pattern summary for display on the tournament detail page.</summary>
-public sealed record TournamentDetailOilPatternViewModel
-{
-    /// <summary>Name of the pattern (e.g., "Kegel Broadway").</summary>
-    public required string Name { get; init; }
-
-    /// <summary>Length of the pattern in feet.</summary>
-    public required int Length { get; init; }
-
-    /// <summary>Volume of oil applied in milliliters.</summary>
-    public required decimal Volume { get; init; }
-
-    /// <summary>Ratio of inner boards to left outside boards.</summary>
-    public required decimal LeftRatio { get; init; }
-
-    /// <summary>Ratio of inner boards to right outside boards.</summary>
-    public required decimal RightRatio { get; init; }
-
-    /// <summary>Optional GUID identifying this pattern in the Kegel public pattern library.</summary>
-    public Guid? KegelId { get; init; }
-
-    /// <summary>Tournament rounds that use this pattern.</summary>
-    public IReadOnlyCollection<string> Rounds { get; init; } = [];
-
-    /// <summary>Name and length formatted for display chips.</summary>
-    public string Display =>
-        Name + " · " + Length.ToString(System.Globalization.CultureInfo.CurrentCulture) + " ft";
-}
-
-/// <summary>A side cut section containing all results for one named side cut.</summary>
-public sealed record SideCutGroupViewModel
-{
-    /// <summary>Name of the side cut.</summary>
-    public required string Name { get; init; }
-
-    /// <summary>CSS hex color for the side cut indicator; null if not set.</summary>
-    public string? Indicator { get; init; }
-
-    /// <summary>Results belonging to this side cut.</summary>
-    public required IReadOnlyCollection<TournamentResultViewModel> Results { get; init; }
 }

@@ -2,6 +2,7 @@ using System.Text.Json;
 
 using ErrorOr;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Application.Caching;
@@ -18,6 +19,8 @@ namespace Neba.Infrastructure.Tests.Caching;
 [Component("Infrastructure.Caching")]
 public sealed class CachedQueryHandlerDecoratorTests
 {
+    private static readonly IServiceProvider ServiceProvider = new ServiceCollection().BuildServiceProvider();
+
     public sealed record TestResponse(string Value);
 
     public sealed record PlainQuery(
@@ -114,7 +117,8 @@ public sealed class CachedQueryHandlerDecoratorTests
             new CachedQueryHandlerDecorator<PlainQuery, TestResponse>(
                 innerHandler.Object,
                 cache.Object,
-                NullLogger<CachedQueryHandlerDecorator<PlainQuery, TestResponse>>.Instance));
+                NullLogger<CachedQueryHandlerDecorator<PlainQuery, TestResponse>>.Instance,
+                ServiceProvider));
     }
 
     [Fact(DisplayName = "Plain response: deserialization failure falls back to handler and refreshes cache")]
@@ -447,11 +451,13 @@ public sealed class CachedQueryHandlerDecoratorTests
         IQueryHandler<PlainQuery, TestResponse> innerHandler,
         IFusionCache cache) =>
         new(innerHandler, cache,
-            NullLogger<CachedQueryHandlerDecorator<PlainQuery, TestResponse>>.Instance);
+            NullLogger<CachedQueryHandlerDecorator<PlainQuery, TestResponse>>.Instance,
+            ServiceProvider);
 
     private static CachedQueryHandlerDecorator<ErrorOrQuery, ErrorOr<TestResponse>> CreateErrorOrDecorator(
         IQueryHandler<ErrorOrQuery, ErrorOr<TestResponse>> innerHandler,
         IFusionCache cache) =>
         new(innerHandler, cache,
-            NullLogger<CachedQueryHandlerDecorator<ErrorOrQuery, ErrorOr<TestResponse>>>.Instance);
+            NullLogger<CachedQueryHandlerDecorator<ErrorOrQuery, ErrorOr<TestResponse>>>.Instance,
+            ServiceProvider);
 }
