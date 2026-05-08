@@ -104,6 +104,10 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
                 SideCutName = r.SideCut != null ? r.SideCut.Name : null,
                 SideCutIndicator = r.SideCut != null ? r.SideCut.Indicator : null,
             })
+            .OrderBy(result => result.Place == null)
+                .ThenBy(result => result.Place)
+                .ThenBy(result => result.BowlerName.LastName)
+                .ThenBy(result => result.BowlerName.FirstName)
             .ToListAsync(cancellationToken);
 
         var historicalEntryCount = await _historicalTournamentEntries

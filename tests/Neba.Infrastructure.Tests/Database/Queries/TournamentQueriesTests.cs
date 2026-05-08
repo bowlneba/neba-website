@@ -262,13 +262,13 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
             tournamentType: TournamentType.Singles,
             startDate: new DateOnly(2026, 3, 15),
             endDate: new DateOnly(2026, 3, 16),
-            seasonId: season.Id,
             bowlingCenterId: bowlingCenter.CertificationNumber,
+            patternRatioCategory: PatternRatioCategory.Challenge,
+            patternLengthCategory: PatternLengthCategory.MediumPattern,
+            seasonId: season.Id,
             entryFee: 75m,
             externalRegistrationUrl: new Uri("https://bowlneba.com/register/singles"),
-            logo: StoredFileFactory.Create(container: "tournament-logos", path: "singles-2026.png"),
-            patternLengthCategory: PatternLengthCategory.MediumPattern,
-            patternRatioCategory: PatternRatioCategory.Challenge);
+            logo: StoredFileFactory.Create(container: "tournament-logos", path: "singles-2026.png"));
 
         var sponsor1 = SponsorFactory.Create(
             id: new SponsorId("01000000000000000000000005"),
@@ -359,12 +359,12 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
             tournamentType: TournamentType.Singles,
             startDate: new DateOnly(2026, 3, 15),
             endDate: new DateOnly(2026, 3, 16),
-            seasonId: season.Id,
             bowlingCenterId: null,
-            externalRegistrationUrl: null,
-            logo: null,
+            patternRatioCategory: null,
             patternLengthCategory: null,
-            patternRatioCategory: null);
+            seasonId: season.Id,
+            externalRegistrationUrl: null,
+            logo: null);
 
         await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
         await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
@@ -413,13 +413,13 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
             tournamentType: TournamentType.Doubles,
             startDate: new DateOnly(2026, 4, 5),
             endDate: new DateOnly(2026, 4, 5),
-            seasonId: season.Id,
             bowlingCenterId: bowlingCenter.CertificationNumber,
+            patternRatioCategory: PatternRatioCategory.Sport,
+            patternLengthCategory: PatternLengthCategory.LongPattern,
+            seasonId: season.Id,
             entryFee: 120m,
             externalRegistrationUrl: new Uri("https://bowlneba.com/register/doubles"),
-            logo: StoredFileFactory.Create(container: "tournament-logos", path: "doubles-2026.png"),
-            patternLengthCategory: PatternLengthCategory.LongPattern,
-            patternRatioCategory: PatternRatioCategory.Sport);
+            logo: StoredFileFactory.Create(container: "tournament-logos", path: "doubles-2026.png"));
 
         var sponsor = SponsorFactory.Create(
             id: new SponsorId("01000000000000000000000045"),
@@ -433,6 +433,14 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
         var bowlerWithSideCut = BowlerFactory.Create(
             id: new BowlerId("01000000000000000000000043"),
             name: NameFactory.Create(firstName: "Dave", lastName: "Gutter"));
+
+        var bowlerNoPlaceAlpha = BowlerFactory.Create(
+            id: new BowlerId("01000000000000000000000047"),
+            name: NameFactory.Create(firstName: "Anna", lastName: "Baker"));
+
+        var bowlerNoPlaceBeta = BowlerFactory.Create(
+            id: new BowlerId("01000000000000000000000048"),
+            name: NameFactory.Create(firstName: "Zoe", lastName: "Baker"));
 
         var bowlerNoSideCut = BowlerFactory.Create(
             id: new BowlerId("01000000000000000000000044"),
@@ -455,7 +463,9 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
         await _dbContext.BowlingCenters.AddAsync(bowlingCenter, TestContext.Current.CancellationToken);
         await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
         await _dbContext.Sponsors.AddAsync(sponsor, TestContext.Current.CancellationToken);
-        await _dbContext.Bowlers.AddRangeAsync([winner, bowlerWithSideCut, bowlerNoSideCut], TestContext.Current.CancellationToken);
+        await _dbContext.Bowlers.AddRangeAsync(
+            [winner, bowlerWithSideCut, bowlerNoPlaceAlpha, bowlerNoPlaceBeta, bowlerNoSideCut],
+            TestContext.Current.CancellationToken);
         await _dbContext.OilPatterns.AddAsync(oilPattern, TestContext.Current.CancellationToken);
         await _dbContext.SideCuts.AddAsync(sideCut, TestContext.Current.CancellationToken);
         await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
@@ -463,7 +473,9 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
 
         _dbContext.Add(HistoricalTournamentChampionFactory.Create(bowler: winner, tournament: tournament));
         _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: winner, tournament: tournament, place: 1, prizeMoney: 2000m));
+        _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: bowlerNoPlaceAlpha, tournament: tournament, place: null, prizeMoney: 0m));
         _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: bowlerWithSideCut, tournament: tournament, place: 2, prizeMoney: 1000m, sideCut: sideCut));
+        _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: bowlerNoPlaceBeta, tournament: tournament, place: null, prizeMoney: 0m));
         _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: bowlerNoSideCut, tournament: tournament, place: null, prizeMoney: 0m));
         _dbContext.Add(HistoricalTournamentEntryFactory.Create(tournament: tournament, entries: 88));
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -507,12 +519,12 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
             tournamentType: TournamentType.Trios,
             startDate: new DateOnly(2026, 5, 10),
             endDate: new DateOnly(2026, 5, 10),
-            seasonId: season.Id,
             bowlingCenterId: null,
-            externalRegistrationUrl: null,
-            logo: null,
+            patternRatioCategory: null,
             patternLengthCategory: null,
-            patternRatioCategory: null);
+            seasonId: season.Id,
+            externalRegistrationUrl: null,
+            logo: null);
 
         await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
         await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
