@@ -228,3 +228,579 @@ Rookie BOY requires knowing whether the bowler is in their first year of NEBA me
 
 - `src/Neba.Application/Stats/_boyProgression.cs`
 - `src/Neba.Application/Stats/_boy{year}.json` (all seasons)
+
+---
+
+## Concrete Implementation Plan — Phase 1
+
+This section captures all decisions made in conversation, is self-contained, and is the authoritative implementation reference. Treat the sections above as domain rules; treat this section as the build guide.
+
+---
+
+### Decisions Made
+
+| Question | Decision | Rationale |
+| --- | --- | --- |
+| Where does the new query method live? | `IStatsQueries` + `StatsQueries` | The result is stats data used only for stats computation. No justification for a new single-method interface when `IStatsQueries` already covers this domain. |
+| What happens to `ISeasonStatsService.GetBowlerOfTheYearRaceAsync`? | Remove it entirely | It was explicitly marked temporary. The handler injects the new dedicated service directly. `IBowlerQueries` can also be removed from the handler. |
+| How is the result cached? | Single `HybridCache` entry per season inside `BowlerOfTheYearProgressionService` holds all races | One DB fetch populates all six races. 14-day expiration, same tag set as season stats. |
+| Where does the new service live? | `Neba.Application/Stats/BoyProgression/` | Per the plan doc and consistent with Application layer service organization. |
+| How many races does the service return? | All six (`Open`, `Senior`, `SuperSenior`, `Woman`, `Youth`, `Rookie`) | Structure is defined now; non-Open races return empty until Phase 2 prerequisites land. |
+| Key `(TournamentId, BowlerId)` on `HistoricalTournamentResult` | One result row per bowler per tournament | A bowler is either in the main cut (`SideCutId = null`) or a specific side cut (`SideCutId != null`). No multiple rows per bowler per tournament. |
+
+---
+
+### Race Population Status — Phase 1
+
+| Race | Phase 1 output | Blocked on |
+| --- | --- | --- |
+| Open | Fully computed from DB | Nothing |
+| Senior | Empty | `Bowler.DateOfBirth` (Phase 2 prerequisite) |
+| Super Senior | Empty | `Bowler.DateOfBirth` (Phase 2 prerequisite) |
+| Woman | Empty | `Bowler.Gender` (Phase 2 prerequisite) |
+| Youth | Empty | `Bowler.DateOfBirth` (Phase 2 prerequisite) |
+| Rookie | Empty | Membership data (deferred past Phase 2) |
+
+All six keys are always present in the returned dictionary. The UI renders a race tab as empty when its collection is empty.
+
+---
+
+### Data Shape
+
+Each `HistoricalTournamentResult` row carries a single `SideCutId?`. For Open BOY:
+
+- `StatsEligible = false` → skip (0 points)
+- `StatsEligible = true`, `SideCutId == null` → main cut → use listed `Points`
+- `StatsEligible = true`, `SideCutId != null` → side cut → 5 points (hardcoded for Phase 1)
+
+`CumulativePoints` in the output DTO is the running total across all a bowler's included tournaments ordered by `TournamentDate`.
+
+---
+
+### Files to Create
+
+#### `src/Neba.Application/Stats/BoyProgression/BoyProgressionResultDto.cs`
+
+One row per `HistoricalTournamentResult` row. Shape serves the BOY progression computation only — no reuse intended.
+
+```csharp
+using Neba.Domain.Bowlers;
+using Neba.Domain.Tournaments;
+
+namespace Neba.Application.Stats.BoyProgression;
+
+public sealed record BoyProgressionResultDto
+{
+    public required BowlerId BowlerId { get; init; }
+    public required Name BowlerName { get; init; }
+    public required TournamentId TournamentId { get; init; }
+    public required string TournamentName { get; init; }
+    public required DateOnly TournamentDate { get; init; }
+    public required bool StatsEligible { get; init; }
+    public required TournamentType TournamentType { get; init; }
+    public required int Points { get; init; }
+    public required int? SideCutId { get; init; }
+}
+```
+
+#### `src/Neba.Application/Stats/BoyProgression/IBowlerOfTheYearProgressionService.cs`
+
+```csharp
+using Neba.Application.Stats.GetSeasonStats;
+using Neba.Domain.Seasons;
+
+namespace Neba.Application.Stats.BoyProgression;
+
+internal interface IBowlerOfTheYearProgressionService
+{
+    Task<IReadOnlyDictionary<BowlerOfTheYearCategory, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>>>
+        GetAllProgressionsAsync(SeasonId seasonId, CancellationToken cancellationToken);
+}
+```
+
+#### `src/Neba.Application/Stats/BoyProgression/BowlerOfTheYearProgressionService.cs`
+
+```csharp
+using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.Logging;
+
+using Neba.Application.Caching;
+using Neba.Application.Stats.GetSeasonStats;
+using Neba.Domain.Seasons;
+
+namespace Neba.Application.Stats.BoyProgression;
+
+internal sealed class BowlerOfTheYearProgressionService(
+    IStatsQueries statsQueries,
+    HybridCache cache,
+    ILogger<BowlerOfTheYearProgressionService> logger)
+    : IBowlerOfTheYearProgressionService
+{
+    private readonly IStatsQueries _statsQueries = statsQueries;
+    private readonly HybridCache _cache = cache;
+    private readonly ILogger<BowlerOfTheYearProgressionService> _logger = logger;
+
+    public async Task<IReadOnlyDictionary<BowlerOfTheYearCategory, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>>>
+        GetAllProgressionsAsync(SeasonId seasonId, CancellationToken cancellationToken)
+    {
+        var cacheDescriptor = CacheDescriptors.Stats.BoyProgressions(seasonId);
+
+        return await _cache.GetOrCreateAsync(
+            key: cacheDescriptor.Key,
+            factory: async (cancel) =>
+            {
+                _logger.LogCacheMiss(cacheDescriptor.Key);
+                var results = await _statsQueries.GetBoyProgressionResultsForSeasonAsync(seasonId, cancel);
+                return ComputeAllProgressions(results);
+            },
+            options: new HybridCacheEntryOptions { Expiration = TimeSpan.FromDays(14) },
+            tags: cacheDescriptor.Tags,
+            cancellationToken: cancellationToken);
+    }
+
+    internal static IReadOnlyDictionary<BowlerOfTheYearCategory, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>>
+        ComputeAllProgressions(IReadOnlyCollection<BoyProgressionResultDto> results)
+    {
+        return new Dictionary<BowlerOfTheYearCategory, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>>
+        {
+            [BowlerOfTheYearCategory.Open] = ComputeOpenProgression(results),
+            [BowlerOfTheYearCategory.Senior] = [],       // Phase 2: requires Bowler.DateOfBirth
+            [BowlerOfTheYearCategory.SuperSenior] = [],  // Phase 2: requires Bowler.DateOfBirth
+            [BowlerOfTheYearCategory.Woman] = [],        // Phase 2: requires Bowler.Gender
+            [BowlerOfTheYearCategory.Youth] = [],        // Phase 2: requires Bowler.DateOfBirth
+            [BowlerOfTheYearCategory.Rookie] = [],       // Deferred: requires membership data
+        };
+    }
+
+    private static IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto> ComputeOpenProgression(
+        IReadOnlyCollection<BoyProgressionResultDto> results)
+    {
+        var eligibleResults = results
+            .Where(r => r.StatsEligible)
+            .GroupBy(r => r.BowlerId);
+
+        return [.. eligibleResults.Select(group =>
+        {
+            var cumulativePoints = 0;
+            var tournamentResults = group
+                .OrderBy(r => r.TournamentDate)
+                .Select(r =>
+                {
+                    cumulativePoints += r.SideCutId.HasValue ? 5 : r.Points;
+                    return new BowlerOfTheYearPointsRaceTournamentDto
+                    {
+                        TournamentName = r.TournamentName,
+                        TournamentDate = r.TournamentDate,
+                        CumulativePoints = cumulativePoints
+                    };
+                })
+                .ToArray();
+
+            return new BowlerOfTheYearPointsRaceSeriesDto
+            {
+                BowlerId = group.Key,
+                BowlerName = group.First().BowlerName,
+                Results = tournamentResults
+            };
+        })];
+    }
+}
+
+internal static partial class BowlerOfTheYearProgressionServiceLogMessages
+{
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "Cache miss for key '{CacheKey}', executing query handler")]
+    public static partial void LogCacheMiss(
+        this ILogger<BowlerOfTheYearProgressionService> logger,
+        string cacheKey);
+}
+```
+
+> **Note on `internal static`**: `ComputeAllProgressions` and `ComputeOpenProgression` are `internal` / `private static` so unit tests can call `ComputeAllProgressions` directly without hitting the cache or the DB.
+
+---
+
+### Files to Modify
+
+#### `src/Neba.Application/Stats/GetSeasonStats/SeasonStatsDto.cs`
+
+```csharp
+// Before
+public required IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto> BowlerOfTheYearRace { get; init; }
+
+// After — rename and change type; caller must be updated
+public required IReadOnlyDictionary<BowlerOfTheYearCategory, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>> BowlerOfTheYearRaces { get; init; }
+```
+
+Add `using Neba.Domain.Seasons;` if not already present.
+
+#### `src/Neba.Application/Stats/IStatsQueries.cs`
+
+Add to the interface:
+
+```csharp
+/// <summary>
+/// Retrieves all historical tournament result rows for the given season, joined to Tournament and Bowler.
+/// Used exclusively to compute BOY point progressions.
+/// </summary>
+Task<IReadOnlyCollection<BoyProgressionResultDto>> GetBoyProgressionResultsForSeasonAsync(
+    SeasonId seasonId,
+    CancellationToken cancellationToken);
+```
+
+Add `using Neba.Application.Stats.BoyProgression;` to the usings.
+
+#### `src/Neba.Infrastructure/Database/Queries/StatsQueries.cs`
+
+Add a second `IQueryable` field:
+
+```csharp
+private readonly IQueryable<HistoricalTournamentResult> _historicalTournamentResults
+    = appDbContext.HistoricalTournamentResults.AsNoTracking();
+```
+
+Add the implementation:
+
+```csharp
+public async Task<IReadOnlyCollection<BoyProgressionResultDto>> GetBoyProgressionResultsForSeasonAsync(
+    SeasonId seasonId,
+    CancellationToken cancellationToken)
+    => await _historicalTournamentResults
+        .Where(r => r.Tournament.SeasonId == seasonId)
+        .OrderBy(r => r.Tournament.StartDate)
+        .Select(r => new BoyProgressionResultDto
+        {
+            BowlerId = r.Bowler.Id,
+            BowlerName = r.Bowler.Name,
+            TournamentId = r.Tournament.Id,
+            TournamentName = r.Tournament.Name,
+            TournamentDate = r.Tournament.StartDate,
+            StatsEligible = r.Tournament.StatsEligible,
+            TournamentType = r.Tournament.TournamentType,
+            Points = r.Points,
+            SideCutId = r.SideCutId
+        })
+        .ToListAsync(cancellationToken);
+```
+
+Add required usings: `Neba.Application.Stats.BoyProgression`, `Neba.Infrastructure.Database.Entities`.
+
+#### `src/Neba.Application/Stats/SeasonStatsService.cs`
+
+- Remove `GetBowlerOfTheYearRaceAsync` method and its `ISeasonStatsService` declaration.
+- Remove the `IBowlerQueries` constructor parameter and field.
+- Remove the XML doc comment referencing the temporary state.
+
+#### `src/Neba.Application/Stats/GetSeasonStats/GetSeasonStatsQueryHandler.cs`
+
+- Remove `IBowlerQueries bowlerQueries` constructor parameter and `_bowlerQueries` field.
+- Add `IBowlerOfTheYearProgressionService boyProgressionService` constructor parameter and field.
+- Replace the call:
+
+```csharp
+// Before
+var bowlerOfTheYearRace = await _seasonStatsService.GetBowlerOfTheYearRaceAsync(season, _bowlerQueries, cancellationToken);
+
+// After
+var bowlerOfTheYearRaces = await _boyProgressionService.GetAllProgressionsAsync(season.Id, cancellationToken);
+```
+
+- Update `SeasonStatsDto` initializer: `BowlerOfTheYearRaces = bowlerOfTheYearRaces`.
+- Remove the "temporary" XML doc comment.
+
+#### `src/Neba.Api/Stats/GetSeasonStats/GetSeasonStatsEndpoint.cs` and response type
+
+Replace the single `BowlerOfTheYearPointsRace` property with six named properties (one per race). Named properties avoid magic strings at the API boundary:
+
+```csharp
+// In the response record/class
+public required IReadOnlyCollection<PointsRaceSeriesResponse> OpenPointsRace { get; init; }
+public required IReadOnlyCollection<PointsRaceSeriesResponse> SeniorPointsRace { get; init; }
+public required IReadOnlyCollection<PointsRaceSeriesResponse> SuperSeniorPointsRace { get; init; }
+public required IReadOnlyCollection<PointsRaceSeriesResponse> WomenPointsRace { get; init; }
+public required IReadOnlyCollection<PointsRaceSeriesResponse> YouthPointsRace { get; init; }
+public required IReadOnlyCollection<PointsRaceSeriesResponse> RookiePointsRace { get; init; }
+```
+
+In the endpoint mapping, project from the dictionary:
+
+```csharp
+static IReadOnlyCollection<PointsRaceSeriesResponse> MapRace(
+    IReadOnlyDictionary<BowlerOfTheYearCategory, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>> races,
+    BowlerOfTheYearCategory category)
+    => [.. races[category].Select(race => new PointsRaceSeriesResponse
+    {
+        BowlerId = race.BowlerId.Value.ToString(),
+        BowlerName = race.BowlerName.ToString(),
+        Results = [.. race.Results.Select(r => new PointsRaceTournamentResponse
+        {
+            TournamentName = r.TournamentName,
+            TournamentDate = r.TournamentDate,
+            CumulativePoints = r.CumulativePoints
+        })]
+    })];
+```
+
+#### `src/Neba.Application/ApplicationConfiguration.cs`
+
+In `AddServices()`:
+
+```csharp
+services.AddScoped<IBowlerOfTheYearProgressionService, BowlerOfTheYearProgressionService>();
+```
+
+#### `src/Neba.Application/Caching/CacheDescriptors.cs`
+
+Inside the `Stats` class, add:
+
+```csharp
+public static CacheDescriptor BoyProgressions(SeasonId seasonId)
+    => new()
+    {
+        Key = $"neba:stats:seasons:{seasonId}:boy-progressions",
+        Tags = ["neba", "neba:stats", "neba:stats:seasons", $"neba:stats:seasons:{seasonId}"]
+    };
+```
+
+---
+
+### UI Changes
+
+#### Context
+
+The current sidebar chart widget (`stats-points-race-card`) shows a compact Open BOY chart (top 3 bowlers) that opens a modal with top 10. This widget is removed entirely. The chart is replaced by a "Points Progression" link rendered inline next to the section header for each BOY standings category. Clicking the link opens a modal containing a race selector (tab row) and the full-width chart for the selected race.
+
+#### Race labels
+
+The UI label for the Open category is "Bowler of the Year", not "Open" (existing convention — see memory note).
+
+| Category | UI label |
+| --- | --- |
+| Open | Bowler of the Year |
+| Senior | Senior |
+| Super Senior | Super Senior |
+| Woman | Women |
+| Youth | Youth |
+| Rookie | Rookie |
+
+#### `StatsPageViewModel` changes
+
+Replace:
+
+```csharp
+public required IReadOnlyCollection<PointsRaceSeriesViewModel> BowlerOfTheYearPointsRace { get; init; }
+```
+
+With six named properties (parallel to the API response names):
+
+```csharp
+public required IReadOnlyCollection<PointsRaceSeriesViewModel> OpenPointsRace { get; init; }
+public required IReadOnlyCollection<PointsRaceSeriesViewModel> SeniorPointsRace { get; init; }
+public required IReadOnlyCollection<PointsRaceSeriesViewModel> SuperSeniorPointsRace { get; init; }
+public required IReadOnlyCollection<PointsRaceSeriesViewModel> WomenPointsRace { get; init; }
+public required IReadOnlyCollection<PointsRaceSeriesViewModel> YouthPointsRace { get; init; }
+public required IReadOnlyCollection<PointsRaceSeriesViewModel> RookiePointsRace { get; init; }
+```
+
+Update `StatsApiService` to map the six API response properties to these six viewmodel properties.
+
+#### `SeasonStats.razor` — main stats page changes
+
+**Remove** the entire `stats-points-race-card` sidebar widget block and its associated `OpenPointsRaceModal` / `OnPointsRaceWidgetKeyDown` methods.
+
+**Add** a "Points Progression" link (button styled as a text link) next to the section header for each BOY standings group (Bowler of the Year, Senior, Super Senior, Women, Youth, Rookie). Each link opens the shared progression modal pre-selected on that race.
+
+**Add** a new `RenderProgressionModal(string raceLabel)` render fragment containing:
+
+- A `_selectedProgressionRace` local field (default `"Open"` or `"Bowler of the Year"` label — whichever matches the link that was clicked).
+- A tab row with one tab button per race label. Clicking a tab updates `_selectedProgressionRace`.
+- Below the tabs: if the selected race collection is non-empty, render `<PointsRaceChart>` with `ShowCategoryLabels="true"` and **top 10 bowlers by final cumulative points** (sort the collection by last `CumulativePoints` descending, take 10). If empty, render a `<p>No data available for this race yet.</p>` message.
+
+The modal is opened via the existing `OpenModal(title, content, isWide: true)` helper. Title: `"Points Race"`.
+
+**Result**: No persistent chart on the stats page. The chart is one click away from the standings section that users are already reading.
+
+---
+
+#### Individual stats page changes
+
+The individual stats page is populated client-side within `StatsApiService.MapToIndividualStatsPageViewModel` — it filters the same `GetSeasonStatsResponse` that the main stats page receives. No new API endpoint or query is needed.
+
+Currently `IndividualStatsPageViewModel` carries a single nullable `BowlerOfTheYearPointsRace` (Open only). This is replaced by a collection of per-race progressions that includes only races where this bowler has data.
+
+##### `IndividualStatsPageViewModel` changes
+
+Remove:
+
+```csharp
+public PointsRaceSeriesViewModel? BowlerOfTheYearPointsRace { get; init; }
+```
+
+Add:
+
+```csharp
+public IReadOnlyCollection<IndividualBoyProgressionViewModel> BoyProgressions { get; init; } = [];
+```
+
+New supporting record (new file `IndividualBoyProgressionViewModel.cs`):
+
+```csharp
+namespace Neba.Website.Server.Stats;
+
+public sealed record IndividualBoyProgressionViewModel
+{
+    public required string RaceLabel { get; init; }
+    public required PointsRaceSeriesViewModel BowlerSeries { get; init; }
+    public required PointsRaceSeriesViewModel? LeaderSeries { get; init; }
+}
+```
+
+`LeaderSeries` is `null` when the bowler IS the race leader. The chart then renders just one series. When non-null, the chart renders both series (bowler + leader) so the bowler can see how they compare.
+
+##### `StatsApiService` mapping changes
+
+In `MapToIndividualStatsPageViewModel`, replace the `BowlerOfTheYearPointsRace` mapping with:
+
+```csharp
+BoyProgressions = BuildIndividualBoyProgressions(response, bowlerId),
+```
+
+Add a private static helper:
+
+```csharp
+private static IReadOnlyCollection<IndividualBoyProgressionViewModel> BuildIndividualBoyProgressions(
+    GetSeasonStatsResponse response, string bowlerId)
+{
+    var result = new List<IndividualBoyProgressionViewModel>();
+
+    TryAddRace(response.OpenPointsRace,     response.BowlerOfTheYear,     "Bowler of the Year", bowlerId, result);
+    TryAddRace(response.SeniorPointsRace,   response.SeniorOfTheYear,     "Senior",             bowlerId, result);
+    TryAddRace(response.SuperSeniorPointsRace, response.SuperSeniorOfTheYear, "Super Senior",   bowlerId, result);
+    TryAddRace(response.WomenPointsRace,    response.WomanOfTheYear,      "Women",              bowlerId, result);
+    TryAddRace(response.YouthPointsRace,    response.YouthOfTheYear,      "Youth",              bowlerId, result);
+    TryAddRace(response.RookiePointsRace,   response.RookieOfTheYear,     "Rookie",             bowlerId, result);
+
+    return result;
+}
+
+private static void TryAddRace(
+    IReadOnlyCollection<PointsRaceSeriesResponse> allSeries,
+    IReadOnlyCollection<BowlerOfTheYearStandingResponse> standings,
+    string raceLabel,
+    string bowlerId,
+    List<IndividualBoyProgressionViewModel> result)
+{
+    var bowlerRaw = allSeries.FirstOrDefault(r => r.BowlerId == bowlerId);
+    if (bowlerRaw is null)
+        return;
+
+    var leaderId = standings.FirstOrDefault()?.BowlerId;
+    var leaderRaw = leaderId is not null && leaderId != bowlerId
+        ? allSeries.FirstOrDefault(r => r.BowlerId == leaderId)
+        : null;
+
+    result.Add(new IndividualBoyProgressionViewModel
+    {
+        RaceLabel = raceLabel,
+        BowlerSeries = MapSeries(bowlerRaw),
+        LeaderSeries = leaderRaw is not null ? MapSeries(leaderRaw) : null,
+    });
+}
+
+private static PointsRaceSeriesViewModel MapSeries(PointsRaceSeriesResponse raw) =>
+    new()
+    {
+        BowlerId = raw.BowlerId,
+        BowlerName = raw.BowlerName,
+        Results = [.. raw.Results.Select(t => new PointsRaceTournamentViewModel
+        {
+            TournamentName = t.TournamentName,
+            TournamentDate = t.TournamentDate,
+            CumulativePoints = t.CumulativePoints
+        })]
+    };
+```
+
+> The standings collections are already ordered by points descending (the API renders them that way), so `standings.FirstOrDefault()` is always the current leader.
+
+##### `IndividualStats.razor` changes
+
+Replace the existing single BOY points race section with a loop over `_model.BoyProgressions`. For each entry:
+
+- Render a labelled section header (`{entry.RaceLabel} Points Progression`).
+- Render `<PointsRaceChart>` with `ShowCategoryLabels="true"`.
+- `Series` = `entry.LeaderSeries is not null ? [entry.BowlerSeries, entry.LeaderSeries] : [entry.BowlerSeries]`.
+- When `LeaderSeries` is non-null, a legend note clarifies which line is the bowler vs. the leader (the chart legend already labels by `BowlerName`, so this is automatic).
+
+Only races present in `BoyProgressions` are rendered — no "no data" message needed since absent races simply don't appear.
+
+---
+
+### Files to Delete
+
+- `src/Neba.Application/Stats/_boyProgression.cs`
+- `src/Neba.Application/Stats/_boy2019.json`
+- `src/Neba.Application/Stats/_boy2021.json`
+- `src/Neba.Application/Stats/_boy2022.json`
+- `src/Neba.Application/Stats/_boy2023.json`
+- `src/Neba.Application/Stats/_boy2024.json`
+- `src/Neba.Application/Stats/_boy2025.json`
+
+> **No year 2020** — pandemic year, season did not run.
+
+---
+
+### DI Registration Summary
+
+No new Infrastructure registrations needed — `IStatsQueries` is already registered as `StatsQueries` in `DatabaseConfiguration.AddQueries()`. Only Application needs updating:
+
+```csharp
+// ApplicationConfiguration.cs — AddServices()
+services.AddScoped<ISeasonStatsService, SeasonStatsService>();
+services.AddScoped<IBowlerOfTheYearProgressionService, BowlerOfTheYearProgressionService>(); // add this
+```
+
+---
+
+### Unit Tests — `BowlerOfTheYearProgressionService`
+
+File: `tests/Neba.Application.Tests/Stats/BoyProgression/BowlerOfTheYearProgressionServiceTests.cs`
+
+Test `ComputeAllProgressions` directly (it is `internal static` — accessible from the test project via `InternalsVisibleTo`).
+
+All tests: `[UnitTest]`, `[Component("Stats")]`, `DisplayName`, use Shouldly, use test factories.
+
+Required test cases:
+
+| Case | What to assert |
+| --- | --- |
+| Empty input | Open race empty; all other race keys present and empty |
+| Single bowler, single main-cut result, stat-eligible | Open: `CumulativePoints == result.Points`; one series entry |
+| Single bowler, single side-cut result, stat-eligible | Open: `CumulativePoints == 5` regardless of `Points` value |
+| Non-stat-eligible tournament | Open: bowler absent from series |
+| Single bowler, three tournaments in date order | Open: cumulative total is correct running sum at each step |
+| Single bowler, tournaments arriving out of date order in input | Open: results still ordered by date; cumulative correct |
+| Multiple bowlers | Open: each gets their own series; totals independent |
+| Mix of main-cut and side-cut results across tournaments | Open: each row uses correct point rule; cumulative accurate |
+| All races other than Open | Always return empty collection regardless of input (Phase 1) |
+
+**Test factory** — create `BoyProgressionResultDtoFactory` in `Neba.TestFactory` with a `Create()` method (nullable params, sensible const defaults) and a `Bogus(int count, int? seed)` method.
+
+---
+
+### Infrastructure Integration Test
+
+File: `tests/Neba.Infrastructure.Tests/Stats/BoyProgressionQueriesTests.cs`
+
+Test `StatsQueries.GetBoyProgressionResultsForSeasonAsync` against the real database (Testcontainers). Seed:
+
+- A season
+- Two tournaments in that season — one `StatsEligible = true`, one `StatsEligible = false`
+- Two bowlers with results in each tournament (one main-cut, one side-cut)
+
+Assert:
+
+- All four result rows are returned (query does not filter on `StatsEligible` — that is the service's responsibility)
+- `BowlerId`, `TournamentId`, `Points`, `SideCutId`, `StatsEligible`, `TournamentType`, `TournamentDate` are mapped correctly
+- Results are ordered by `TournamentDate` ascending
