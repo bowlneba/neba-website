@@ -1,4 +1,5 @@
 using Neba.Api.Contracts.Tournaments.GetTournament;
+
 using Refit;
 
 namespace Neba.Api.Contracts.Tournaments;
