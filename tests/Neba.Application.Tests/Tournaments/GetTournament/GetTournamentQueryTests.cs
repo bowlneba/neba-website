@@ -11,7 +11,7 @@ public sealed class GetTournamentDetailQueryTests
     [Fact(DisplayName = "Expiry should be 5 days")]
     public void Expiry_ShouldBe5Days()
     {
-        var query = new GetTournamentDetailQuery { Id = TournamentId.New() };
+        var query = new GetTournamentQuery { Id = TournamentId.New() };
 
         query.Expiry.ShouldBe(TimeSpan.FromDays(5));
     }
@@ -20,7 +20,7 @@ public sealed class GetTournamentDetailQueryTests
     public void Cache_Key_ShouldFollowExpectedFormat()
     {
         var id = TournamentId.New();
-        var query = new GetTournamentDetailQuery { Id = id };
+        var query = new GetTournamentQuery { Id = id };
 
         query.Cache.Key.ShouldBe($"neba:tournaments:{id}");
     }
@@ -28,8 +28,8 @@ public sealed class GetTournamentDetailQueryTests
     [Fact(DisplayName = "Cache key should be specific to the tournament")]
     public void Cache_Key_ShouldBeSpecificToTournament()
     {
-        var query1 = new GetTournamentDetailQuery { Id = TournamentId.New() };
-        var query2 = new GetTournamentDetailQuery { Id = TournamentId.New() };
+        var query1 = new GetTournamentQuery { Id = TournamentId.New() };
+        var query2 = new GetTournamentQuery { Id = TournamentId.New() };
 
         query1.Cache.Key.ShouldNotBe(query2.Cache.Key);
     }
@@ -37,7 +37,7 @@ public sealed class GetTournamentDetailQueryTests
     [Fact(DisplayName = "Cache tags should contain neba")]
     public void Cache_Tags_ShouldContainNebaTag()
     {
-        var query = new GetTournamentDetailQuery { Id = TournamentId.New() };
+        var query = new GetTournamentQuery { Id = TournamentId.New() };
 
         query.Cache.Tags.ShouldContain("neba");
     }
@@ -45,7 +45,7 @@ public sealed class GetTournamentDetailQueryTests
     [Fact(DisplayName = "Cache tags should contain neba:tournaments")]
     public void Cache_Tags_ShouldContainTournamentsTag()
     {
-        var query = new GetTournamentDetailQuery { Id = TournamentId.New() };
+        var query = new GetTournamentQuery { Id = TournamentId.New() };
 
         query.Cache.Tags.ShouldContain("neba:tournaments");
     }
@@ -54,7 +54,7 @@ public sealed class GetTournamentDetailQueryTests
     public void Cache_Tags_ShouldContainTournamentSpecificTag()
     {
         var id = TournamentId.New();
-        var query = new GetTournamentDetailQuery { Id = id };
+        var query = new GetTournamentQuery { Id = id };
 
         query.Cache.Tags.ShouldContain($"neba:tournaments:{id}");
     }
@@ -62,7 +62,7 @@ public sealed class GetTournamentDetailQueryTests
     [Fact(DisplayName = "Cache tags should contain exactly 3 tags")]
     public void Cache_Tags_ShouldContainExactly3Tags()
     {
-        var query = new GetTournamentDetailQuery { Id = TournamentId.New() };
+        var query = new GetTournamentQuery { Id = TournamentId.New() };
 
         query.Cache.Tags.Count.ShouldBe(3);
     }
