@@ -60,82 +60,11 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
 
     public async Task<IReadOnlyCollection<SeasonTournamentDto>> GetTournamentsInSeasonAsync(SeasonId seasonId, CancellationToken cancellationToken)
     {
-        var tournaments = await _tournaments
-            .Where(tournament => tournament.SeasonId == seasonId)
-            .Select(tournament => new
-            {
-                DbId = EF.Property<int>(tournament, ShadowIdConfiguration.DefaultPropertyName),
-                Dto = new SeasonTournamentDto
-                {
-                    Id = tournament.Id,
-                    Name = tournament.Name,
-                    Season = new SeasonDto
-                    {
-                        Id = tournament.Season.Id,
-                        Description = tournament.Season.Description,
-                        StartDate = tournament.Season.StartDate,
-                        EndDate = tournament.Season.EndDate
-                    },
-                    StartDate = tournament.StartDate,
-                    EndDate = tournament.EndDate,
-                    StatsEligible = tournament.StatsEligible,
-                    TournamentType = tournament.TournamentType.Name,
-                    BowlingCenter = tournament.BowlingCenter == null
-                        ? null
-                        : new BowlingCenterSummaryDto
-                        {
-                            CertificationNumber = tournament.BowlingCenter.CertificationNumber.Value,
-                            Name = tournament.BowlingCenter.Name,
-                            Status = tournament.BowlingCenter.Status.Name,
-                            Address = new AddressDto
-                            {
-                                Street = tournament.BowlingCenter.Address.Street,
-                                Unit = tournament.BowlingCenter.Address.Unit,
-                                City = tournament.BowlingCenter.Address.City,
-                                Region = tournament.BowlingCenter.Address.Region,
-                                Country = tournament.BowlingCenter.Address.Country.Value,
-                                PostalCode = tournament.BowlingCenter.Address.PostalCode,
-                            }
-                        },
-                    Sponsors = tournament.Sponsors
-                        .Select(tournamentSponsor => tournamentSponsor.Sponsor)
-                        .Select(sponsor => new SponsorSummaryDto
-                        {
-                            Name = sponsor.Name,
-                            Slug = sponsor.Slug,
-                        }).ToList(),
-                    AddedMoney = tournament.Sponsors.Sum(tournamentSponsor => tournamentSponsor.SponsorshipAmount),
-                    PatternLengthCategory = tournament.PatternLengthCategory == null
-                        ? null
-                        : tournament.PatternLengthCategory.Name,
-                    PatternRatioCategory = tournament.PatternRatioCategory == null
-                        ? null
-                        : tournament.PatternRatioCategory.Name,
-                    EntryFee = tournament.EntryFee,
-                    RegistrationUrl = tournament.ExternalRegistrationUrl,
-                    LogoContainer = tournament.Logo != null ? tournament.Logo.Container : null,
-                    LogoPath = tournament.Logo != null ? tournament.Logo.Path : null,
-                    Reservations = 999, // need to replace once actual column exists
-                },
-                OilPatternsRaw = tournament.OilPatterns.Select(tournamentOilPattern => new
-                {
-                    OilPattern = new OilPatternDto
-                    {
-                        Id = tournamentOilPattern.OilPattern.Id,
-                        Name = tournamentOilPattern.OilPattern.Name,
-                        Length = tournamentOilPattern.OilPattern.Length,
-                        Volume = tournamentOilPattern.OilPattern.Volume,
-                        LeftRatio = tournamentOilPattern.OilPattern.LeftRatio,
-                        RightRatio = tournamentOilPattern.OilPattern.RightRatio,
-                        KegelId = tournamentOilPattern.OilPattern.KegelId,
-                    },
-                    tournamentOilPattern.TournamentRounds
-                }).ToList()
-            })
+        var rows = await ProjectTournaments(_tournaments.Where(t => t.SeasonId == seasonId))
             .ToListAsync(cancellationToken);
 
         // We will need to do a separate query to get the champions from tournaments that we have full stats (2026+)
-        var dbIds = tournaments.ConvertAll(t => t.DbId);
+        var dbIds = rows.ConvertAll(r => r.DbId);
 
         var historicalWinners = await _historicalTournamentChampions
             .Where(tc => dbIds.Contains(tc.TournamentId))
@@ -147,98 +76,25 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
                 .GroupBy(w => w.TournamentId)
                 .ToDictionary(g => g.Key, g => (IReadOnlyCollection<Name>)[.. g.Select(w => w.Name)]);
 
-        return tournaments
-            .ConvertAll(t => t.Dto with
-            {
-                OilPatterns = t.OilPatternsRaw
-                    .ConvertAll(op => new TournamentOilPatternDto
-                    {
-                        OilPattern = op.OilPattern,
-                        TournamentRounds = [.. op.TournamentRounds.Select(tr => tr.Name)]
-                    }),
-                Winners = historicalWinnersByTournamentDbId.GetValueOrDefault(t.DbId, [])
-            });
+        return rows.ConvertAll(r =>
+            ToSeasonTournamentDto(r, historicalWinnersByTournamentDbId.GetValueOrDefault(r.DbId, [])));
     }
 
     public async Task<TournamentDetailDto?> GetTournamentDetailAsync(TournamentId id, CancellationToken cancellationToken)
     {
-        var tournament = await _tournaments
-            .Where(t => t.Id == id)
-            .Select(t => new
-            {
-                DbId = EF.Property<int>(t, ShadowIdConfiguration.DefaultPropertyName),
-                Dto = new TournamentDetailDto
-                {
-                    Id = t.Id,
-                    Name = t.Name,
-                    Season = new SeasonDto
-                    {
-                        Id = t.Season.Id,
-                        Description = t.Season.Description,
-                        StartDate = t.Season.StartDate,
-                        EndDate = t.Season.EndDate
-                    },
-                    StartDate = t.StartDate,
-                    EndDate = t.EndDate,
-                    StatsEligible = t.StatsEligible,
-                    TournamentType = t.TournamentType.Name,
-                    BowlingCenter = t.BowlingCenter == null
-                        ? null
-                        : new BowlingCenterSummaryDto
-                        {
-                            CertificationNumber = t.BowlingCenter.CertificationNumber.Value,
-                            Name = t.BowlingCenter.Name,
-                            Status = t.BowlingCenter.Status.Name,
-                            Address = new AddressDto
-                            {
-                                Street = t.BowlingCenter.Address.Street,
-                                Unit = t.BowlingCenter.Address.Unit,
-                                City = t.BowlingCenter.Address.City,
-                                Region = t.BowlingCenter.Address.Region,
-                                Country = t.BowlingCenter.Address.Country.Value,
-                                PostalCode = t.BowlingCenter.Address.PostalCode,
-                            }
-                        },
-                    Sponsors = t.Sponsors
-                        .Select(ts => ts.Sponsor)
-                        .Select(s => new SponsorSummaryDto { Name = s.Name, Slug = s.Slug })
-                        .ToList(),
-                    AddedMoney = t.Sponsors.Sum(ts => ts.SponsorshipAmount),
-                    PatternLengthCategory = t.PatternLengthCategory == null ? null : t.PatternLengthCategory.Name,
-                    PatternRatioCategory = t.PatternRatioCategory == null ? null : t.PatternRatioCategory.Name,
-                    EntryFee = t.EntryFee,
-                    RegistrationUrl = t.ExternalRegistrationUrl,
-                    LogoContainer = t.Logo != null ? t.Logo.Container : null,
-                    LogoPath = t.Logo != null ? t.Logo.Path : null,
-                    Reservations = 999, // need to replace once actual column exists
-                },
-                OilPatternsRaw = t.OilPatterns.Select(top => new
-                {
-                    OilPattern = new OilPatternDto
-                    {
-                        Id = top.OilPattern.Id,
-                        Name = top.OilPattern.Name,
-                        Length = top.OilPattern.Length,
-                        Volume = top.OilPattern.Volume,
-                        LeftRatio = top.OilPattern.LeftRatio,
-                        RightRatio = top.OilPattern.RightRatio,
-                        KegelId = top.OilPattern.KegelId,
-                    },
-                    top.TournamentRounds
-                }).ToList()
-            })
+        var row = await ProjectTournaments(_tournaments.Where(t => t.Id == id))
             .SingleOrDefaultAsync(cancellationToken);
 
-        if (tournament is null)
+        if (row is null)
             return null;
 
         var historicalWinners = await _historicalTournamentChampions
-            .Where(tc => tc.TournamentId == tournament.DbId)
+            .Where(tc => tc.TournamentId == row.DbId)
             .Select(tc => tc.Bowler.Name)
             .ToListAsync(cancellationToken);
 
         var historicalResults = await _historicalTournamentResults
-            .Where(r => r.TournamentId == tournament.DbId)
+            .Where(r => r.TournamentId == row.DbId)
             .Select(r => new TournamentResultDto
             {
                 BowlerName = r.Bowler.Name,
@@ -251,22 +107,163 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
             .ToListAsync(cancellationToken);
 
         var historicalEntryCount = await _historicalTournamentEntries
-            .Where(e => e.TournamentId == tournament.DbId)
+            .Where(e => e.TournamentId == row.DbId)
             .Select(e => (int?)e.Entries)
             .SingleOrDefaultAsync(cancellationToken);
 
-        return tournament.Dto with
+        return ToTournamentDetailDto(row, [.. historicalWinners], [.. historicalResults], historicalEntryCount);
+    }
+
+    private static IQueryable<TournamentQueryRow> ProjectTournaments(IQueryable<Tournament> source)
+        => source.Select(t => new TournamentQueryRow
         {
-            OilPatterns = [.. tournament.OilPatternsRaw
-                .Select(op => new TournamentOilPatternDto
+            DbId = EF.Property<int>(t, ShadowIdConfiguration.DefaultPropertyName),
+            Id = t.Id,
+            Name = t.Name,
+            Season = new SeasonDto
+            {
+                Id = t.Season.Id,
+                Description = t.Season.Description,
+                StartDate = t.Season.StartDate,
+                EndDate = t.Season.EndDate
+            },
+            StartDate = t.StartDate,
+            EndDate = t.EndDate,
+            StatsEligible = t.StatsEligible,
+            TournamentType = t.TournamentType.Name,
+            BowlingCenter = t.BowlingCenter == null
+                ? null
+                : new BowlingCenterSummaryDto
                 {
-                    OilPattern = op.OilPattern,
-                    TournamentRounds = [.. op.TournamentRounds.Select(tr => tr.Name)]
-                })],
-            Winners = [.. historicalWinners],
-            // If Results or EntryCount are empty/null, check future stats tables for 2026+ tournament data
-            Results = [.. historicalResults],
-            EntryCount = historicalEntryCount,
+                    CertificationNumber = t.BowlingCenter.CertificationNumber.Value,
+                    Name = t.BowlingCenter.Name,
+                    Status = t.BowlingCenter.Status.Name,
+                    Address = new AddressDto
+                    {
+                        Street = t.BowlingCenter.Address.Street,
+                        Unit = t.BowlingCenter.Address.Unit,
+                        City = t.BowlingCenter.Address.City,
+                        Region = t.BowlingCenter.Address.Region,
+                        Country = t.BowlingCenter.Address.Country.Value,
+                        PostalCode = t.BowlingCenter.Address.PostalCode,
+                    }
+                },
+            Sponsors = t.Sponsors
+                .Select(ts => ts.Sponsor)
+                .Select(s => new SponsorSummaryDto { Name = s.Name, Slug = s.Slug })
+                .ToList(),
+            AddedMoney = t.Sponsors.Sum(ts => ts.SponsorshipAmount),
+            PatternLengthCategory = t.PatternLengthCategory == null ? null : t.PatternLengthCategory.Name,
+            PatternRatioCategory = t.PatternRatioCategory == null ? null : t.PatternRatioCategory.Name,
+            EntryFee = t.EntryFee,
+            RegistrationUrl = t.ExternalRegistrationUrl,
+            LogoContainer = t.Logo != null ? t.Logo.Container : null,
+            LogoPath = t.Logo != null ? t.Logo.Path : null,
+            Reservations = 999, // need to replace once actual column exists
+            OilPatternsRaw = t.OilPatterns.Select(top => new OilPatternRawRow
+            {
+                OilPattern = new OilPatternDto
+                {
+                    Id = top.OilPattern.Id,
+                    Name = top.OilPattern.Name,
+                    Length = top.OilPattern.Length,
+                    Volume = top.OilPattern.Volume,
+                    LeftRatio = top.OilPattern.LeftRatio,
+                    RightRatio = top.OilPattern.RightRatio,
+                    KegelId = top.OilPattern.KegelId,
+                },
+                TournamentRounds = top.TournamentRounds
+            }).ToList()
+        });
+
+    private static IReadOnlyCollection<TournamentOilPatternDto> MapOilPatterns(IReadOnlyCollection<OilPatternRawRow> raw)
+        => [.. raw.Select(op => new TournamentOilPatternDto
+        {
+            OilPattern = op.OilPattern,
+            TournamentRounds = [.. op.TournamentRounds.Select(tr => tr.Name)]
+        })];
+
+    private static SeasonTournamentDto ToSeasonTournamentDto(TournamentQueryRow row, IReadOnlyCollection<Name> winners)
+        => new()
+        {
+            Id = row.Id,
+            Name = row.Name,
+            Season = row.Season,
+            StartDate = row.StartDate,
+            EndDate = row.EndDate,
+            StatsEligible = row.StatsEligible,
+            TournamentType = row.TournamentType,
+            EntryFee = row.EntryFee,
+            RegistrationUrl = row.RegistrationUrl,
+            BowlingCenter = row.BowlingCenter,
+            Sponsors = row.Sponsors,
+            AddedMoney = row.AddedMoney,
+            Reservations = row.Reservations,
+            PatternLengthCategory = row.PatternLengthCategory,
+            PatternRatioCategory = row.PatternRatioCategory,
+            OilPatterns = MapOilPatterns(row.OilPatternsRaw),
+            LogoContainer = row.LogoContainer,
+            LogoPath = row.LogoPath,
+            Winners = winners,
         };
+
+    private static TournamentDetailDto ToTournamentDetailDto(
+        TournamentQueryRow row,
+        IReadOnlyCollection<Name> winners,
+        IReadOnlyCollection<TournamentResultDto> results,
+        int? entryCount)
+        => new()
+        {
+            Id = row.Id,
+            Name = row.Name,
+            Season = row.Season,
+            StartDate = row.StartDate,
+            EndDate = row.EndDate,
+            StatsEligible = row.StatsEligible,
+            TournamentType = row.TournamentType,
+            EntryFee = row.EntryFee,
+            RegistrationUrl = row.RegistrationUrl,
+            BowlingCenter = row.BowlingCenter,
+            Sponsors = row.Sponsors,
+            AddedMoney = row.AddedMoney,
+            Reservations = row.Reservations,
+            PatternLengthCategory = row.PatternLengthCategory,
+            PatternRatioCategory = row.PatternRatioCategory,
+            OilPatterns = MapOilPatterns(row.OilPatternsRaw),
+            LogoContainer = row.LogoContainer,
+            LogoPath = row.LogoPath,
+            Winners = winners,
+            // If Results or EntryCount are empty/null, check future stats tables for 2026+ tournament data
+            Results = results,
+            EntryCount = entryCount,
+        };
+
+    private sealed record TournamentQueryRow
+    {
+        public int DbId { get; init; }
+        public TournamentId Id { get; init; }
+        public string Name { get; init; } = string.Empty;
+        public SeasonDto Season { get; init; } = null!;
+        public DateOnly StartDate { get; init; }
+        public DateOnly EndDate { get; init; }
+        public bool StatsEligible { get; init; }
+        public string TournamentType { get; init; } = string.Empty;
+        public BowlingCenterSummaryDto? BowlingCenter { get; init; }
+        public IReadOnlyCollection<SponsorSummaryDto> Sponsors { get; init; } = [];
+        public decimal? AddedMoney { get; init; }
+        public int? Reservations { get; init; }
+        public string? PatternLengthCategory { get; init; }
+        public string? PatternRatioCategory { get; init; }
+        public decimal? EntryFee { get; init; }
+        public Uri? RegistrationUrl { get; init; }
+        public string? LogoContainer { get; init; }
+        public string? LogoPath { get; init; }
+        public IReadOnlyCollection<OilPatternRawRow> OilPatternsRaw { get; init; } = [];
+    }
+
+    private sealed record OilPatternRawRow
+    {
+        public OilPatternDto OilPattern { get; init; } = null!;
+        public IReadOnlyCollection<TournamentRound> TournamentRounds { get; init; } = [];
     }
 }
