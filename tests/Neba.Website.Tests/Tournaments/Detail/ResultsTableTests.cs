@@ -17,7 +17,12 @@ public sealed class ResultsTableTests : IDisposable
     [Fact(DisplayName = "Should render a table row for each result")]
     public void Render_ShouldRenderRowPerResult()
     {
-        var results = TournamentResultViewModelFactory.Bogus(3, seed: 1);
+        var results = new[]
+        {
+            TournamentResultViewModelFactory.Create(place: 1),
+            TournamentResultViewModelFactory.Create(place: 2),
+            TournamentResultViewModelFactory.Create(place: 3),
+        };
 
         var cut = _ctx.Render<ResultsTable>(p => p.Add(x => x.Results, results));
 

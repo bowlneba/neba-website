@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Globalization;
 
+using ErrorOr;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
@@ -349,7 +351,6 @@ public sealed class ApiExecutorTests
     [InlineData(400, TestDisplayName = "400 Bad Request")]
     [InlineData(401, TestDisplayName = "401 Unauthorized")]
     [InlineData(403, TestDisplayName = "403 Forbidden")]
-    [InlineData(404, TestDisplayName = "404 Not Found")]
     [InlineData(500, TestDisplayName = "500 Internal Server Error")]
     [InlineData(502, TestDisplayName = "502 Bad Gateway")]
     [InlineData(503, TestDisplayName = "503 Service Unavailable")]
@@ -386,6 +387,32 @@ public sealed class ApiExecutorTests
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe($"{apiName}.{operationName}.HttpError");
         result.FirstError.Description.ShouldContain(statusCode.ToString(CultureInfo.InvariantCulture));
+    }
+
+    [Fact(DisplayName = "Should return NotFound error for 404 response")]
+    public async Task ExecuteAsync_ShouldReturnNotFoundError_For404()
+    {
+        const string apiName = "TestApi";
+        const string operationName = "GetData";
+        const long startTimestamp = 1000;
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var apiResponseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
+        apiResponseMock.Setup(r => r.IsSuccessStatusCode).Returns(false);
+        apiResponseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.NotFound);
+        apiResponseMock.Setup(r => r.Content).Returns((string?)null);
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(TimeSpan.FromMilliseconds(50));
+
+        var result = await _executor.ExecuteAsync(
+            apiName, operationName,
+            _ => Task.FromResult(apiResponseMock.Object),
+            cancellationToken);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe($"{apiName}.{operationName}.NotFound");
+        result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.NotFound);
     }
 
     [Fact(DisplayName = "Should record stopwatch timestamp at start")]

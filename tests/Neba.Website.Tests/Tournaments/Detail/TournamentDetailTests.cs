@@ -138,7 +138,7 @@ public sealed class TournamentDetailTests : IDisposable
 
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
-        cut.Find(".tournament-detail__eyebrow").TextContent.ShouldNotContain("Lanes");
+        cut.Find(".td-hero__eyebrow").TextContent.ShouldNotContain("Lanes");
     }
 
     [Fact(DisplayName = "Should render pattern length category chip when set")]
@@ -158,7 +158,7 @@ public sealed class TournamentDetailTests : IDisposable
 
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
-        cut.FindAll(".tournament-detail__chips .tournament-detail__chip").Count.ShouldBe(1);
+        cut.FindAll(".td-hero__chips .td-hero__chip").Count.ShouldBe(1);
     }
 
     // ── Champion bar ─────────────────────────────────────────────────────────
@@ -199,7 +199,7 @@ public sealed class TournamentDetailTests : IDisposable
 
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
-        cut.FindAll(".tournament-detail__info-card").Count.ShouldBe(1);
+        cut.FindAll(".td-rail-card").Count.ShouldBe(1);
         cut.Markup.ShouldContain("$95");
         cut.Markup.ShouldContain("$1,500");
         cut.Markup.ShouldContain("Register");
@@ -215,7 +215,7 @@ public sealed class TournamentDetailTests : IDisposable
 
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
-        cut.FindAll(".tournament-detail__info-card").ShouldBeEmpty();
+        cut.FindAll(".td-rail-card").ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Should not render register button when registration URL is absent")]
@@ -241,7 +241,7 @@ public sealed class TournamentDetailTests : IDisposable
 
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
-        cut.Find(".tournament-detail__entry-count").TextContent.ShouldContain("64");
+        cut.Find(".td-rail-entries__value").TextContent.ShouldContain("64");
     }
 
     [Fact(DisplayName = "Should not render entry count when null")]
@@ -251,7 +251,7 @@ public sealed class TournamentDetailTests : IDisposable
 
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
-        cut.FindAll(".tournament-detail__entry-count").ShouldBeEmpty();
+        cut.FindAll(".td-rail-entries").ShouldBeEmpty();
     }
 
     // ── Oil patterns ─────────────────────────────────────────────────────────
@@ -305,7 +305,7 @@ public sealed class TournamentDetailTests : IDisposable
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
         cut.Markup.ShouldContain("https://cdn.example.com/acme-logo.png");
-        cut.FindAll(".tournament-detail__sponsor-name").ShouldBeEmpty();
+        cut.FindAll(".td-rail-sponsor-card__name").ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Should render sponsor name text when no logo URL")]
@@ -317,7 +317,7 @@ public sealed class TournamentDetailTests : IDisposable
 
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
-        cut.Find(".tournament-detail__sponsor-name").TextContent.ShouldBe("Acme Corp");
+        cut.Find(".td-rail-sponsor-card__name").TextContent.ShouldBe("Acme Corp");
     }
 
     [Fact(DisplayName = "Should not render sponsors section when no sponsors")]
@@ -327,7 +327,7 @@ public sealed class TournamentDetailTests : IDisposable
 
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
-        cut.Markup.ShouldNotContain("Sponsors");
+        cut.FindAll(".td-rail-sponsors").ShouldBeEmpty();
     }
 
     // ── Results ──────────────────────────────────────────────────────────────
