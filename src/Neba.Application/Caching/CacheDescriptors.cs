@@ -1,5 +1,6 @@
 
 using Neba.Domain.Seasons;
+using Neba.Domain.Tournaments;
 
 namespace Neba.Application.Caching;
 
@@ -188,6 +189,18 @@ public static class CacheDescriptors
             {
                 Key = $"neba:tournaments:{seasonId}:list",
                 Tags = ["neba", "neba:tournaments", $"neba:tournaments:{seasonId}"]
+            };
+
+        /// <summary>
+        /// Returns a cache descriptor for the details of a specific tournament, identified by the given tournament ID.
+        /// </summary>
+        /// <param name="id">The tournament identifier.</param>
+        /// <returns>A cache descriptor for the tournament details.</returns>
+        public static CacheDescriptor TournamentDetail(TournamentId id)
+            => new()
+            {
+                Key = $"neba:tournaments:{id}",
+                Tags = ["neba", "neba:tournaments", $"neba:tournaments:{id}"]
             };
     }
 }
