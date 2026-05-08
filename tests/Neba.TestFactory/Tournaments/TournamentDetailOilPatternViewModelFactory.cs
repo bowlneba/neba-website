@@ -1,8 +1,8 @@
-using Neba.Api.Contracts.Tournaments.GetTournament;
+using Neba.Website.Server.Tournaments.Detail;
 
 namespace Neba.TestFactory.Tournaments;
 
-public static class TournamentDetailOilPatternResponseFactory
+public static class TournamentDetailOilPatternViewModelFactory
 {
     private static readonly string[] RoundOptions = ["Qualifying", "Round 1", "Semifinals", "Finals"];
     public const string ValidName = "Kegel Broadway";
@@ -11,7 +11,7 @@ public static class TournamentDetailOilPatternResponseFactory
     public const decimal ValidLeftRatio = 3.2m;
     public const decimal ValidRightRatio = 3.1m;
 
-    public static TournamentDetailOilPatternResponse Create(
+    public static TournamentDetailOilPatternViewModel Create(
         string? name = null,
         int? length = null,
         decimal? volume = null,
@@ -30,10 +30,10 @@ public static class TournamentDetailOilPatternResponseFactory
             Rounds = rounds ?? ["Qualifying"],
         };
 
-    public static IReadOnlyCollection<TournamentDetailOilPatternResponse> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<TournamentDetailOilPatternViewModel> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<TournamentDetailOilPatternResponse>()
-            .CustomInstantiator(f => new()
+        var faker = new Faker<TournamentDetailOilPatternViewModel>()
+            .CustomInstantiator(f => new TournamentDetailOilPatternViewModel
             {
                 Name = f.Lorem.Word() + " " + f.Lorem.Word(),
                 Length = f.Random.Int(30, 45),

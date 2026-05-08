@@ -32,7 +32,7 @@
             </div>
 
             <h3 class="tournament-upcoming-card__title">
-                <a href="/tournaments/@Tournament.Season/@Tournament.Id">@Tournament.Name</a>
+                <a href="/tournaments/@Tournament.Id">@Tournament.Name</a>
             </h3>
 
             @if (Tournament.HasHost)
@@ -110,6 +110,9 @@
                 {
                     <p class="tournament-upcoming-card__reg-later">Registration opens later</p>
                 }
+                <a href="/tournaments/@Tournament.Id" class="neba-link tournament-upcoming-card__details-link">
+                    View Details →
+                </a>
             </div>
         </div>
     </div>

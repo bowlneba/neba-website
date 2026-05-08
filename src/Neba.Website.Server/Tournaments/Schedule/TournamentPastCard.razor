@@ -18,7 +18,7 @@
             </div>
 
             <h3 class="tournament-past-card__title">
-                <a href="/tournaments/@Tournament.Season/@Tournament.Id">@Tournament.Name</a>
+                <a href="/tournaments/@Tournament.Id">@Tournament.Name</a>
             </h3>
 
             @if (Tournament.HasHost)
@@ -46,7 +46,7 @@
             {
                 <p class="tournament-past-card__results-pending">Results pending</p>
             }
-            <a href="/tournaments/@Tournament.Season/@Tournament.Id"
+            <a href="/tournaments/@Tournament.Id"
                class="neba-link tournament-past-card__results-link">
                 View results →
             </a>

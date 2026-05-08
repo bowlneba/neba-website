@@ -1,0 +1,215 @@
+@preservewhitespace false
+@page "/tournaments/{Id}"
+@using Neba.Api.Contracts.Tournaments
+@using Neba.Api.Contracts.Tournaments.GetTournament
+@using Neba.Website.Server.Services
+@using Neba.Website.Server.Tournaments.Detail
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject ApiExecutor ApiExecutor
+@inject ITournamentsApi TournamentsApi
+@inject NavigationManager Navigation
+
+@if (_isLoading)
+{
+    <div class="tournament-detail-loading">
+        <div class="neba-spinner"></div>
+    </div>
+}
+else
+{
+    <PageTitle>@_model!.Name | NEBA Tournaments</PageTitle>
+
+    <main class="neba-content-wrapper tournament-detail">
+
+        <header class="tournament-detail__header">
+            <div class="tournament-detail__logo-wrap">
+                <img src="@(_model!.LogoUrl?.ToString() ?? "/images/neba-logo.png")"
+                     alt="@_model!.Name logo" class="tournament-detail__logo-img" />
+            </div>
+
+            <div class="tournament-detail__header-body">
+                <div class="tournament-detail__eyebrow">
+                    <span>@_model.SeasonDescription</span>
+                    <span aria-hidden="true">·</span>
+                    <time>@_model.FormatDateRange()</time>
+                    @if (_model.HasHost)
+                    {
+                        <span aria-hidden="true">·</span>
+                        <span>@_model.DisplayLocation</span>
+                    }
+                </div>
+
+                <h1 class="tournament-detail__title">@_model.Name</h1>
+
+                <div class="tournament-detail__chips">
+                    <span class="tournament-detail__chip">@_model.TournamentType</span>
+                    @if (_model.PatternLengthCategory is not null)
+                    {
+                        <span class="tournament-detail__chip">@_model.PatternLengthCategory</span>
+                    }
+                </div>
+            </div>
+        </header>
+
+        @if (_model.HasWinners)
+        {
+            <div class="tournament-detail__champion-bar">
+                <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
+                <span>@string.Join(" / ", _model.Winners)</span>
+            </div>
+        }
+
+        <div class="tournament-detail__body">
+
+            @if (_model.IsUpcoming)
+            {
+                <section class="neba-card tournament-detail__info-card">
+                    @if (_model.EntryFee.HasValue || _model.HasAddedMoney)
+                    {
+                        <div class="tournament-detail__price-row">
+                            @if (_model.HasAddedMoney)
+                            {
+                                <div class="tournament-detail__price-block">
+                                    <span class="tournament-detail__price-value tournament-detail__price-value--gold">
+                                        @_model.AddedMoney!.Value.ToString("C0", System.Globalization.CultureInfo.CurrentCulture)
+                                    </span>
+                                    <span class="tournament-detail__price-label">Added money</span>
+                                </div>
+                            }
+                            @if (_model.EntryFee.HasValue)
+                            {
+                                <div class="tournament-detail__price-block">
+                                    <span class="tournament-detail__price-value">
+                                        @_model.EntryFee!.Value.ToString("C0", System.Globalization.CultureInfo.CurrentCulture)
+                                    </span>
+                                    <span class="tournament-detail__price-label">Entry fee</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                    @if (_model.HasRegistrationUrl)
+                    {
+                        <a href="@_model.RegistrationUrl" target="_blank" rel="noopener noreferrer"
+                           class="neba-btn neba-btn-primary">
+                            Register →
+                        </a>
+                    }
+                </section>
+            }
+
+            @if (_model.EntryCount.HasValue)
+            {
+                <p class="tournament-detail__entry-count">
+                    @_model.EntryCount.Value.ToString(System.Globalization.CultureInfo.CurrentCulture) entries
+                </p>
+            }
+
+            @if (_model.HasOilPatterns)
+            {
+                <section class="tournament-detail__section">
+                    <h2 class="tournament-detail__section-title">Oil Patterns</h2>
+                    <div class="tournament-detail__pattern-list">
+                        @foreach (var pattern in _model.OilPatterns)
+                        {
+                            <div class="neba-card tournament-detail__pattern-card">
+                                <p class="tournament-detail__pattern-name">@pattern.Display</p>
+                                @if (pattern.Rounds.Count > 0)
+                                {
+                                    <p class="tournament-detail__pattern-rounds">@string.Join(", ", pattern.Rounds)</p>
+                                }
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (_model.HasSponsors)
+            {
+                <section class="tournament-detail__section">
+                    <h2 class="tournament-detail__section-title">Sponsors</h2>
+                    <div class="tournament-detail__sponsor-list">
+                        @foreach (var sponsor in _model.Sponsors)
+                        {
+                            <a href="/sponsors/@sponsor.Slug" class="neba-card tournament-detail__sponsor-card">
+                                @if (sponsor.LogoUrl is not null)
+                                {
+                                    <img src="@sponsor.LogoUrl" alt="@sponsor.Name logo"
+                                         class="tournament-detail__sponsor-logo" />
+                                }
+                                else
+                                {
+                                    <span class="tournament-detail__sponsor-name">@sponsor.Name</span>
+                                }
+                            </a>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (_model.HasResults)
+            {
+                <section class="tournament-detail__section tournament-detail__results">
+                    <h2 class="tournament-detail__section-title">Results</h2>
+
+                    @if (_model.MainCutResults.Any())
+                    {
+                        <ResultsTable Results="@_model.MainCutResults" />
+                    }
+
+                    @foreach (var group in _model.SideCutGroups)
+                    {
+                        <div class="tournament-detail__cut-section">
+                            <h3 class="tournament-detail__cut-title" style="@GetCutStyle(group.Indicator)">
+                                @group.Name
+                            </h3>
+                            <ResultsTable Results="@group.Results" />
+                        </div>
+                    }
+                </section>
+            }
+            else if (!_model.IsUpcoming)
+            {
+                <section class="tournament-detail__section">
+                    <p class="tournament-detail__no-results">Results are not yet available for this tournament.</p>
+                </section>
+            }
+
+        </div>
+
+        <footer class="tournament-detail__footer">
+            <a href="/tournaments" class="neba-link tournament-detail__back-link">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Back to Tournament Schedule
+            </a>
+        </footer>
+
+    </main>
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = default!;
+
+    private TournamentDetailViewModel? _model;
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "GetTournamentDetail",
+            ct => TournamentsApi.GetTournamentAsync(Id, ct));
+
+        if (result.IsError)
+        {
+            Navigation.NavigateTo("/not-found", replace: true);
+            return;
+        }
+
+        _model = result.Value.ToViewModel();
+        _isLoading = false;
+    }
+
+    private static string GetCutStyle(string? color) =>
+        color is not null ? "border-left-color:" + color : string.Empty;
+}

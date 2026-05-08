@@ -1,0 +1,50 @@
+/* ── Results table ────────────────────────────────────────────────────────── */
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+}
+
+.results-table thead {
+    border-bottom: 2px solid var(--color-border);
+}
+
+.results-table th {
+    text-align: left;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+}
+
+.results-table td {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--color-border-subtle, var(--color-border));
+}
+
+.results-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.results-table tbody tr:hover {
+    background: var(--color-surface-hover, var(--color-surface-raised));
+}
+
+/* Place column — narrow, tabular numerals */
+.results-table td:first-child,
+.results-table th:first-child {
+    width: 3.5rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Prize money and Points — right-align numbers */
+.results-table td:nth-child(3),
+.results-table th:nth-child(3),
+.results-table td:nth-child(4),
+.results-table th:nth-child(4) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}

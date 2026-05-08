@@ -42,4 +42,16 @@ public sealed class TournamentPastCardTests : IDisposable
 
         cut.Markup.ShouldContain("Results pending");
     }
+
+    [Fact(DisplayName = "Should link results link directly to tournament detail page without season segment")]
+    public void Render_ShouldLinkResultsLink_ToTournamentDetailPage()
+    {
+        var tournament = SeasonTournamentViewModelFactory.Create(id: "01JSTX1234567890ABCDEFGHIJ");
+
+        var cut = _ctx.Render<TournamentPastCard>(parameters => parameters
+            .Add(p => p.Tournament, tournament));
+
+        cut.Find(".tournament-past-card__results-link").GetAttribute("href")
+            .ShouldBe("/tournaments/01JSTX1234567890ABCDEFGHIJ");
+    }
 }

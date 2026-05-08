@@ -1,0 +1,28 @@
+@namespace Neba.Website.Server.Tournaments.Detail
+
+<table class="results-table">
+    <thead>
+        <tr>
+            <th scope="col">Place</th>
+            <th scope="col">Bowler</th>
+            <th scope="col">Prize Money</th>
+            <th scope="col">Points</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var result in Results)
+        {
+            <tr>
+                <td>@result.FormattedPlace</td>
+                <td>@result.BowlerName</td>
+                <td>@result.FormattedPrizeMoney</td>
+                <td>@result.Points</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter, EditorRequired]
+    public IEnumerable<TournamentResultViewModel> Results { get; set; } = [];
+}

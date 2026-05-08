@@ -45,4 +45,16 @@ public sealed class TournamentUpcomingCardTests : IDisposable
         cut.Markup.ShouldContain("Sponsorship available");
         cut.Markup.ShouldContain("Host center to be announced");
     }
+
+    [Fact(DisplayName = "Should render View Details link pointing to tournament detail page")]
+    public void Render_ShouldRenderViewDetailsLink_ToTournamentDetailPage()
+    {
+        var tournament = SeasonTournamentViewModelFactory.Create(id: "01JSTX1234567890ABCDEFGHIJ");
+
+        var cut = _ctx.Render<TournamentUpcomingCard>(parameters => parameters
+            .Add(p => p.Tournament, tournament));
+
+        cut.Find(".tournament-upcoming-card__details-link").GetAttribute("href")
+            .ShouldBe("/tournaments/01JSTX1234567890ABCDEFGHIJ");
+    }
 }
