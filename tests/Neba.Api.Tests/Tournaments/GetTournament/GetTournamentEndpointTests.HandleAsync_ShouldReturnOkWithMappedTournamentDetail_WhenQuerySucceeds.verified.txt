@@ -1,0 +1,47 @@
+﻿{
+  Id: 01GBP3VHXR2YX9DBG4SMXSK1MY,
+  Name: impactful function incremental,
+  Season: {
+    Id: 01GBP3VHXR2YX9DBG4SMXSK1MY,
+    Description: 2014 Season,
+    StartDate: Date_1,
+    EndDate: Date_2
+  },
+  StartDate: Date_3,
+  EndDate: Date_4,
+  StatsEligible: true,
+  TournamentType: Doubles,
+  EntryFee: 63.5168915444598050,
+  RegistrationUrl: https://raymond.name,
+  AddedMoney: 3462.948614481345000,
+  Reservations: 52,
+  EntryCount: 61,
+  PatternLengthCategory: Long,
+  PatternRatioCategory: Challenge,
+  BowlingCenter: {
+    Name: Reilly LLC,
+    City: North Rhoda,
+    State: AL
+  },
+  Sponsors: [
+    {
+      Name: Ward - Balistreri,
+      Slug: eius-ut-eaque,
+      LogoUrl: https://picsum.photos/640/480/?image=234,
+      WebsiteUrl: https://sonny.biz,
+      TagPhrase: Function-based optimizing secured line
+    },
+    {
+      Name: O'Keefe Inc,
+      Slug: veritatis-praesentium-eum,
+      LogoUrl: https://picsum.photos/640/480/?image=472,
+      WebsiteUrl: http://obie.org,
+      TagPhrase: Self-enabling multi-state open architecture
+    }
+  ],
+  Winners: [
+    Cesar Leannon,
+    Lindsey Grady,
+    Richard Romaguera
+  ]
+}

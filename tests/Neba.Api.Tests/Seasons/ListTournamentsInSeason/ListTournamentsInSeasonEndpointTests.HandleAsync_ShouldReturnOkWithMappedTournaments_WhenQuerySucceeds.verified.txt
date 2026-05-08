@@ -5,49 +5,18 @@
       Name: impactful function incremental,
       StartDate: Date_1,
       EndDate: Date_2,
-      TournamentType: Non-Champions,
-      EntryFee: 72.828962035863200,
-      RegistrationUrl: http://meaghan.net,
-      AddedMoney: 3555.772948803275000,
-      Reservations: 14,
-      PatternLengthCategory: Short,
-      PatternRatioCategory: Sport,
-      LogoUrl: http://kristopher.net,
+      TournamentType: Doubles,
+      EntryFee: 63.5168915444598050,
+      RegistrationUrl: https://raymond.name,
+      AddedMoney: 3462.948614481345000,
+      Reservations: 52,
+      PatternLengthCategory: Long,
+      PatternRatioCategory: Challenge,
       Winners: [
-        Phillip Wunsch
+        Lee Dicki,
+        Lorraine Nader,
+        Abraham Armstrong
       ],
-      BowlingCenter: {
-        Name: Erdman - Ankunding,
-        City: West Jules,
-        State: SD
-      },
-      OilPatterns: [
-        {
-          Name: Dragon,
-          Length: 40,
-          Volume: 25.0,
-          LeftRatio: 3.0,
-          RightRatio: 3.0,
-          Rounds: [
-            Qualifying,
-            Step Ladder
-          ]
-        }
-      ]
-    },
-    {
-      Id: 01JRR0XZMR8VC2FEQD4WHFQEF4,
-      Name: actuating protocol Branch,
-      StartDate: Date_3,
-      EndDate: Date_4,
-      TournamentType: Over 40,
-      EntryFee: 51.34293637300978250,
-      RegistrationUrl: https://adolphus.com,
-      AddedMoney: 4567.570988818805000,
-      Reservations: 93,
-      PatternLengthCategory: Medium,
-      PatternRatioCategory: Recreation,
-      LogoUrl: http://hugh.net,
       BowlingCenter: {
         Name: Reilly LLC,
         City: North Rhoda,
@@ -55,9 +24,45 @@
       },
       Sponsors: [
         {
-          Name: Connelly, Cassin and Ledner,
-          Slug: dolorem-voluptatem-est,
-          LogoUrl: https://picsum.photos/640/480/?image=556
+          Name: Ward - Balistreri,
+          Slug: eius-ut-eaque,
+          LogoUrl: https://picsum.photos/640/480/?image=234
+        },
+        {
+          Name: O'Keefe Inc,
+          Slug: veritatis-praesentium-eum,
+          LogoUrl: https://picsum.photos/640/480/?image=472
+        }
+      ]
+    },
+    {
+      Id: 01K7A6HBR8V0KVNV974BXVKS7Y,
+      Name: Handmade Steel Shoes Grocery, Beauty & Health Books, Books & Movies,
+      StartDate: Date_3,
+      EndDate: Date_4,
+      TournamentType: Over 40,
+      EntryFee: 106.299941291240900,
+      RegistrationUrl: https://alvah.info,
+      AddedMoney: 2661.827992490410000,
+      Reservations: 40,
+      PatternLengthCategory: Long,
+      PatternRatioCategory: Sport,
+      LogoUrl: https://vernice.biz,
+      Winners: [
+        Alexandra Fadel,
+        Jeffrey O'Connell,
+        Gayle Stamm
+      ],
+      BowlingCenter: {
+        Name: Larson Inc,
+        City: Betteberg,
+        State: RI
+      },
+      Sponsors: [
+        {
+          Name: Zieme, Little and Quitzon,
+          Slug: consequatur-molestiae-quia,
+          LogoUrl: https://picsum.photos/640/480/?image=493
         }
       ],
       OilPatterns: [
@@ -68,53 +73,39 @@
           LeftRatio: 3.0,
           RightRatio: 3.0,
           Rounds: [
-            Qualifying,
-            Cashers,
-            Step Ladder
+            Qualifying
           ]
         }
       ]
     },
     {
-      Id: 01JT23Z35FSXTR0E5NQTG602ZR,
-      Name: deposit plug-and-play Computers,
+      Id: 01J3ABY1Y51FW4M5SYZMER8RP0,
+      Name: Persistent partnerships Liaison,
       StartDate: Date_5,
       EndDate: Date_6,
-      TournamentType: Non-Champions,
-      EntryFee: 64.0599162150453350,
-      RegistrationUrl: https://bobby.com,
-      AddedMoney: 3755.756958274060000,
-      Reservations: 83,
-      PatternLengthCategory: Long,
+      TournamentType: Tournament of Champions,
+      EntryFee: 51.35633903618731400,
+      RegistrationUrl: http://roma.org,
+      AddedMoney: 2726.720032620580000,
+      Reservations: 64,
+      PatternLengthCategory: Medium,
       PatternRatioCategory: Challenge,
+      LogoUrl: http://dariana.org,
       BowlingCenter: {
-        Name: Schuster - Abernathy,
-        City: New Coryfurt,
-        State: MT
+        Name: Baumbach - Rath,
+        City: Alberthaborough,
+        State: WA
       },
-      OilPatterns: [
+      Sponsors: [
         {
-          Name: Dragon,
-          Length: 40,
-          Volume: 25.0,
-          LeftRatio: 3.0,
-          RightRatio: 3.0,
-          Rounds: [
-            Match Play,
-            Cashers,
-            Qualifying
-          ]
+          Name: Zieme - Gorczany,
+          Slug: adipisci-enim-id,
+          LogoUrl: https://picsum.photos/640/480/?image=314
         },
         {
-          Name: Dragon,
-          Length: 40,
-          Volume: 25.0,
-          LeftRatio: 3.0,
-          RightRatio: 3.0,
-          Rounds: [
-            Cashers,
-            Match Play
-          ]
+          Name: O'Kon, Wyman and Gulgowski,
+          Slug: earum-facere-doloremque,
+          LogoUrl: https://picsum.photos/640/480/?image=369
         }
       ]
     }
