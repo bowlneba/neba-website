@@ -10,13 +10,18 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var result in Results)
+        @foreach (var group in GroupedResults)
         {
             <tr>
-                <td>@result.FormattedPlace</td>
-                <td>@result.BowlerName</td>
-                <td>@result.FormattedPrizeMoney</td>
-                <td>@result.Points</td>
+                <td>@group.FormattedPlace</td>
+                <td>
+                    @foreach (var name in group.BowlerNames)
+                    {
+                        <div>@name</div>
+                    }
+                </td>
+                <td>@group.FormattedCombinedPrizeMoney</td>
+                <td>@group.Points</td>
             </tr>
         }
     </tbody>
@@ -25,4 +30,20 @@
 @code {
     [Parameter, EditorRequired]
     public IEnumerable<TournamentResultViewModel> Results { get; set; } = [];
+
+    private IEnumerable<ResultRowViewModel> GroupedResults =>
+        Results
+            .GroupBy(r => r.Place)
+            .SelectMany(g => g.Key.HasValue
+                ? [new ResultRowViewModel([.. g])]
+                : g.Select(r => new ResultRowViewModel([r])));
+
+    private sealed record ResultRowViewModel(IReadOnlyList<TournamentResultViewModel> Rows)
+    {
+        public string FormattedPlace => Rows[0].FormattedPlace;
+        public IEnumerable<string> BowlerNames => Rows.Select(r => r.BowlerName);
+        public int Points => Rows[0].Points;
+        public string FormattedCombinedPrizeMoney =>
+            Rows.Sum(r => r.PrizeMoney).ToString("C0", System.Globalization.CultureInfo.CurrentCulture);
+    }
 }
