@@ -378,6 +378,193 @@ public sealed class TournamentQueriesTests : IClassFixture<PostgreSqlFixture>, I
         await Verify(result.Single());
     }
 
+    [Fact(DisplayName = "GetTournamentDetailAsync returns null when tournament does not exist")]
+    public async Task GetTournamentDetailAsync_ReturnsNull_WhenTournamentDoesNotExist()
+    {
+        var result = await _sut.GetTournamentDetailAsync(TournamentId.New(), TestContext.Current.CancellationToken);
+
+        result.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "GetTournamentDetailAsync maps all fields for a fully populated tournament")]
+    public async Task GetTournamentDetailAsync_MapsFullyPopulatedTournament()
+    {
+        // Arrange
+        var season = SeasonFactory.Create(
+            id: new SeasonId("01000000000000000000000040"),
+            description: "2026 Season",
+            startDate: new DateOnly(2026, 1, 1),
+            endDate: new DateOnly(2026, 12, 31));
+
+        var bowlingCenter = BowlingCenterFactory.Create(
+            certificationNumber: CertificationNumberFactory.Create("99999"),
+            name: "Lucky Lanes",
+            status: BowlingCenterStatus.Open,
+            address: AddressFactory.CreateUsAddress(
+                street: "50 Bowl Ave",
+                city: "Springfield",
+                state: UsState.Massachusetts,
+                postalCode: "01101",
+                coordinates: AddressFactory.ValidCoordinates));
+
+        var tournament = TournamentFactory.Create(
+            id: new TournamentId("01000000000000000000000041"),
+            name: "NEBA Doubles 2026",
+            tournamentType: TournamentType.Doubles,
+            startDate: new DateOnly(2026, 4, 5),
+            endDate: new DateOnly(2026, 4, 5),
+            seasonId: season.Id,
+            bowlingCenterId: bowlingCenter.CertificationNumber,
+            entryFee: 120m,
+            externalRegistrationUrl: new Uri("https://bowlneba.com/register/doubles"),
+            logo: StoredFileFactory.Create(container: "tournament-logos", path: "doubles-2026.png"),
+            patternLengthCategory: PatternLengthCategory.LongPattern,
+            patternRatioCategory: PatternRatioCategory.Sport);
+
+        var sponsor = SponsorFactory.Create(
+            id: new SponsorId("01000000000000000000000045"),
+            name: "Strike Zone Co",
+            slug: "strike-zone-co");
+
+        var winner = BowlerFactory.Create(
+            id: new BowlerId("01000000000000000000000042"),
+            name: NameFactory.Create(firstName: "Carol", lastName: "Kingpin"));
+
+        var bowlerWithSideCut = BowlerFactory.Create(
+            id: new BowlerId("01000000000000000000000043"),
+            name: NameFactory.Create(firstName: "Dave", lastName: "Gutter"));
+
+        var bowlerNoSideCut = BowlerFactory.Create(
+            id: new BowlerId("01000000000000000000000044"),
+            name: NameFactory.Create(firstName: "Eve", lastName: "Spare"));
+
+        var oilPattern = OilPatternFactory.Create(
+            id: new OilPatternId("01000000000000000000000046"),
+            name: "Kegel Beaten Path",
+            length: 45,
+            volume: 22.5m,
+            leftRatio: 2.5m,
+            rightRatio: 3.0m,
+            kegelId: null);
+
+        var sideCut = SideCutFactory.Senior();
+
+        tournament.AddOilPattern(oilPattern.Id, TournamentRound.Qualifying)
+            .IsError.ShouldBeFalse();
+
+        await _dbContext.BowlingCenters.AddAsync(bowlingCenter, TestContext.Current.CancellationToken);
+        await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
+        await _dbContext.Sponsors.AddAsync(sponsor, TestContext.Current.CancellationToken);
+        await _dbContext.Bowlers.AddRangeAsync([winner, bowlerWithSideCut, bowlerNoSideCut], TestContext.Current.CancellationToken);
+        await _dbContext.OilPatterns.AddAsync(oilPattern, TestContext.Current.CancellationToken);
+        await _dbContext.SideCuts.AddAsync(sideCut, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        _dbContext.Add(HistoricalTournamentChampionFactory.Create(bowler: winner, tournament: tournament));
+        _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: winner, tournament: tournament, place: 1, prizeMoney: 2000m));
+        _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: bowlerWithSideCut, tournament: tournament, place: 2, prizeMoney: 1000m, sideCut: sideCut));
+        _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: bowlerNoSideCut, tournament: tournament, place: null, prizeMoney: 0m));
+        _dbContext.Add(HistoricalTournamentEntryFactory.Create(tournament: tournament, entries: 88));
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var tournamentDbId = _dbContext.Entry(tournament)
+            .Property<int>(ShadowIdConfiguration.DefaultPropertyName).CurrentValue;
+
+        _dbContext.ChangeTracker.Clear();
+
+        var ts = _dbContext.Set<TournamentSponsor>().Add(new TournamentSponsor
+        {
+            SponsorId = sponsor.Id,
+            TitleSponsor = false,
+            SponsorshipAmount = 1500m,
+        });
+        ts.Property<int>(TournamentConfiguration.ForeignKeyName).CurrentValue = tournamentDbId;
+
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentDetailAsync(tournament.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldNotBeNull();
+        await Verify(result);
+    }
+
+    [Fact(DisplayName = "GetTournamentDetailAsync maps null optional fields and returns empty results when no historical data")]
+    public async Task GetTournamentDetailAsync_MapsNullOptionalFieldsAndEmptyHistoricalData()
+    {
+        // Arrange
+        var season = SeasonFactory.Create(
+            id: new SeasonId("01000000000000000000000050"),
+            description: "2026 Season",
+            startDate: new DateOnly(2026, 1, 1),
+            endDate: new DateOnly(2026, 12, 31));
+
+        var tournament = TournamentFactory.Create(
+            id: new TournamentId("01000000000000000000000051"),
+            name: "NEBA Trios 2026",
+            tournamentType: TournamentType.Trios,
+            startDate: new DateOnly(2026, 5, 10),
+            endDate: new DateOnly(2026, 5, 10),
+            seasonId: season.Id,
+            bowlingCenterId: null,
+            externalRegistrationUrl: null,
+            logo: null,
+            patternLengthCategory: null,
+            patternRatioCategory: null);
+
+        await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentDetailAsync(tournament.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldNotBeNull();
+        await Verify(result);
+    }
+
+    [Fact(DisplayName = "GetTournamentDetailAsync does not include results from other tournaments")]
+    public async Task GetTournamentDetailAsync_DoesNotIncludeResultsFromOtherTournament()
+    {
+        // Arrange
+        var season = SeasonFactory.Create(
+            id: new SeasonId("01000000000000000000000060"),
+            description: "2026 Season",
+            startDate: new DateOnly(2026, 1, 1),
+            endDate: new DateOnly(2026, 12, 31));
+
+        var requestedTournament = TournamentFactory.Create(
+            id: new TournamentId("01000000000000000000000061"),
+            name: "Requested Tournament",
+            seasonId: season.Id);
+
+        var otherTournament = TournamentFactory.Create(
+            id: new TournamentId("01000000000000000000000062"),
+            name: "Other Tournament",
+            seasonId: season.Id);
+
+        Bowler[] bowlers = [.. BowlerFactory.Bogus(count: 2, seed: 10)];
+
+        await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
+        await _dbContext.Tournaments.AddRangeAsync([requestedTournament, otherTournament], TestContext.Current.CancellationToken);
+        await _dbContext.Bowlers.AddRangeAsync(bowlers, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: bowlers[0], tournament: requestedTournament, place: 1, prizeMoney: 500m));
+        _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: bowlers[1], tournament: otherTournament, place: 1, prizeMoney: 500m));
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var result = await _sut.GetTournamentDetailAsync(requestedTournament.Id, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldNotBeNull();
+        await Verify(result);
+    }
+
     [Fact(DisplayName = "GetTournamentsInSeasonAsync does not mix winners across tournaments")]
     public async Task GetTournamentsInSeasonAsync_DoesNotMixWinners_AcrossTournaments()
     {

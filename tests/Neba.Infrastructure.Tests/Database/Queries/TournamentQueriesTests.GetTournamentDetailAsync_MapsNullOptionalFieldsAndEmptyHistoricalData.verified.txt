@@ -1,16 +1,16 @@
-﻿{
-  Id: 01000000000000000000000011,
-  Name: NEBA Singles 2026,
+{
+  Id: 01000000000000000000000051,
+  Name: NEBA Trios 2026,
   Season: {
-    Id: 01000000000000000000000012,
+    Id: 01000000000000000000000050,
     Description: 2026 Season,
     StartDate: Date_1,
     EndDate: Date_2
   },
   StartDate: Date_3,
-  EndDate: Date_4,
+  EndDate: Date_3,
   StatsEligible: true,
-  TournamentType: Singles,
+  TournamentType: Trios,
   EntryFee: 100.00,
   AddedMoney: 0.0,
   Reservations: 999

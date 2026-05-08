@@ -26,7 +26,6 @@ public static class HistoricalTournamentResultFactory
             Tournament = tournament ?? TournamentFactory.Create(),
             Place = place,
             PrizeMoney = prizeMoney ?? ValidPrizeMoney,
-            SideCutId = sideCutToUse?.Id,
             SideCut = sideCutToUse,
         };
     }

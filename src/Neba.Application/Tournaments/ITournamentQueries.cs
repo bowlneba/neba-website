@@ -1,4 +1,5 @@
 using Neba.Application.Seasons;
+using Neba.Application.Tournaments.GetTournament;
 using Neba.Application.Tournaments.ListTournamentsInSeason;
 using Neba.Domain.Seasons;
 using Neba.Domain.Tournaments;
@@ -33,4 +34,12 @@ public interface ITournamentQueries
     /// <param name="cancellationToken">A cancellation token for the asynchronous operation.</param>
     /// <returns>A dictionary mapping each tournament ID to its corresponding entry count.</returns>
     Task<IReadOnlyDictionary<TournamentId, int>> GetTournamentEntryCountsAsync(IEnumerable<TournamentId> tournamentIds, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Gets detailed information about a specific tournament, including its name, date, location, and other relevant details.
+    /// </summary>
+    /// <param name="id">The ID of the tournament for which to retrieve details.</param>
+    /// <param name="cancellationToken">A cancellation token for the asynchronous operation.</param>
+    /// <returns>A <see cref="TournamentDetailDto"/> containing detailed information about the specified tournament, or null if the tournament does not exist.</returns>
+    Task<TournamentDetailDto?> GetTournamentDetailAsync(TournamentId id, CancellationToken cancellationToken);
 }

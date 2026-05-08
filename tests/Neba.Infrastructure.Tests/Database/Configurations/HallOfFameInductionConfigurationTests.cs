@@ -150,6 +150,7 @@ public sealed class HallOfFameInductionConfigurationTests
             modelBuilder.Entity<Bowler>(bowler =>
             {
                 bowler.Ignore(x => x.Name);
+                bowler.Ignore(x => x.Gender);
 
                 bowler.Property(x => x.Id)
                     .IsUlid<BowlerId, UlidTypedIdConverter<BowlerId>>();
