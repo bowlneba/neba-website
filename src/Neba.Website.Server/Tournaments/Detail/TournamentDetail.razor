@@ -1,5 +1,6 @@
 @preservewhitespace false
 @page "/tournaments/{Id}"
+@using ErrorOr
 @using Neba.Api.Contracts.Tournaments
 @using Neba.Api.Contracts.Tournaments.GetTournament
 @using Neba.Website.Server.Services
@@ -15,6 +16,22 @@
     <div class="tournament-detail-loading">
         <div class="neba-spinner"></div>
     </div>
+}
+else if (_hasError)
+{
+    <main class="neba-content-wrapper tournament-detail">
+        <section class="tournament-detail__section">
+            <p class="tournament-detail__no-results">
+                Something went wrong while loading this tournament. Please try again later.
+            </p>
+        </section>
+        <footer class="tournament-detail__footer">
+            <a href="/tournaments" class="neba-link tournament-detail__back-link">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Back to Tournament Schedule
+            </a>
+        </footer>
+    </main>
 }
 else
 {
@@ -192,6 +209,7 @@ else
 
     private TournamentDetailViewModel? _model;
     private bool _isLoading = true;
+    private bool _hasError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -202,7 +220,15 @@ else
 
         if (result.IsError)
         {
-            Navigation.NavigateTo("/not-found", replace: true);
+            if (result.FirstError.Type == ErrorType.NotFound)
+            {
+                Navigation.NavigateTo("/not-found", replace: true);
+            }
+            else
+            {
+                _hasError = true;
+                _isLoading = false;
+            }
             return;
         }
 
