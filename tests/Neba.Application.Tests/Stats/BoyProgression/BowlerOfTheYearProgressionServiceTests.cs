@@ -76,9 +76,9 @@ public sealed class BowlerOfTheYearProgressionServiceTests
     public void ComputeAllProgressions_ThreeTournaments_CumulativeCorrect()
     {
         var bowlerId = BowlerId.New();
-        var t1 = BoyProgressionResultDtoFactory.Create(bowlerId: bowlerId, tournamentDate: new DateOnly(2025, 1, 1),  statsEligible: true, points: 50, sideCutId: null);
-        var t2 = BoyProgressionResultDtoFactory.Create(bowlerId: bowlerId, tournamentDate: new DateOnly(2025, 2, 1),  statsEligible: true, points: 75, sideCutId: null);
-        var t3 = BoyProgressionResultDtoFactory.Create(bowlerId: bowlerId, tournamentDate: new DateOnly(2025, 3, 1),  statsEligible: true, points: 100, sideCutId: null);
+        var t1 = BoyProgressionResultDtoFactory.Create(bowlerId: bowlerId, tournamentDate: new DateOnly(2025, 1, 1), statsEligible: true, points: 50, sideCutId: null);
+        var t2 = BoyProgressionResultDtoFactory.Create(bowlerId: bowlerId, tournamentDate: new DateOnly(2025, 2, 1), statsEligible: true, points: 75, sideCutId: null);
+        var t3 = BoyProgressionResultDtoFactory.Create(bowlerId: bowlerId, tournamentDate: new DateOnly(2025, 3, 1), statsEligible: true, points: 100, sideCutId: null);
 
         var progressions = BowlerOfTheYearProgressionService.ComputeAllProgressions([t1, t2, t3]);
 
@@ -94,8 +94,8 @@ public sealed class BowlerOfTheYearProgressionServiceTests
     {
         var bowlerId = BowlerId.New();
         var t3 = BoyProgressionResultDtoFactory.Create(bowlerId: bowlerId, tournamentDate: new DateOnly(2025, 3, 1), statsEligible: true, points: 100, sideCutId: null);
-        var t1 = BoyProgressionResultDtoFactory.Create(bowlerId: bowlerId, tournamentDate: new DateOnly(2025, 1, 1), statsEligible: true, points: 50,  sideCutId: null);
-        var t2 = BoyProgressionResultDtoFactory.Create(bowlerId: bowlerId, tournamentDate: new DateOnly(2025, 2, 1), statsEligible: true, points: 75,  sideCutId: null);
+        var t1 = BoyProgressionResultDtoFactory.Create(bowlerId: bowlerId, tournamentDate: new DateOnly(2025, 1, 1), statsEligible: true, points: 50, sideCutId: null);
+        var t2 = BoyProgressionResultDtoFactory.Create(bowlerId: bowlerId, tournamentDate: new DateOnly(2025, 2, 1), statsEligible: true, points: 75, sideCutId: null);
 
         var progressions = BowlerOfTheYearProgressionService.ComputeAllProgressions([t3, t1, t2]);
 

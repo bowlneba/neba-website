@@ -241,12 +241,12 @@ internal sealed class StatsApiService(ApiExecutor executor, IStatsApi statsApi) 
     {
         var result = new List<IndividualBoyProgressionViewModel>();
 
-        TryAddRace(response.OpenPointsRace,        response.BowlerOfTheYear,    "Bowler of the Year", bowlerId, result);
-        TryAddRace(response.SeniorPointsRace,       response.SeniorOfTheYear,    "Senior",             bowlerId, result);
-        TryAddRace(response.SuperSeniorPointsRace,  response.SuperSeniorOfTheYear, "Super Senior",     bowlerId, result);
-        TryAddRace(response.WomenPointsRace,        response.WomanOfTheYear,     "Women",              bowlerId, result);
-        TryAddRace(response.YouthPointsRace,        response.YouthOfTheYear,     "Youth",              bowlerId, result);
-        TryAddRace(response.RookiePointsRace,       response.RookieOfTheYear,    "Rookie",             bowlerId, result);
+        TryAddRace(response.OpenPointsRace, response.BowlerOfTheYear, "Bowler of the Year", bowlerId, result);
+        TryAddRace(response.SeniorPointsRace, response.SeniorOfTheYear, "Senior", bowlerId, result);
+        TryAddRace(response.SuperSeniorPointsRace, response.SuperSeniorOfTheYear, "Super Senior", bowlerId, result);
+        TryAddRace(response.WomenPointsRace, response.WomanOfTheYear, "Women", bowlerId, result);
+        TryAddRace(response.YouthPointsRace, response.YouthOfTheYear, "Youth", bowlerId, result);
+        TryAddRace(response.RookiePointsRace, response.RookieOfTheYear, "Rookie", bowlerId, result);
 
         return result;
     }
