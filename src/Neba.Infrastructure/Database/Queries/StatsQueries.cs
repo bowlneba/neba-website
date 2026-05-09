@@ -71,13 +71,17 @@ internal sealed class StatsQueries(AppDbContext appDbContext)
             {
                 BowlerId = r.Bowler.Id,
                 BowlerName = r.Bowler.Name,
+                BowlerDateOfBirth = r.Bowler.DateOfBirth,
+                BowlerGender = r.Bowler.Gender,
                 TournamentId = r.Tournament.Id,
                 TournamentName = r.Tournament.Name,
                 TournamentDate = r.Tournament.StartDate,
+                TournamentEndDate = r.Tournament.EndDate,
                 StatsEligible = r.Tournament.StatsEligible,
                 TournamentType = r.Tournament.TournamentType,
                 Points = r.Points,
-                SideCutId = r.SideCutId
+                SideCutId = r.SideCutId,
+                SideCutName = r.SideCut != null ? r.SideCut.Name : null
             })
             .ToListAsync(cancellationToken);
 

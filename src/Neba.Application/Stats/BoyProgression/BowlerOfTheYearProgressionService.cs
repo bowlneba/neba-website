@@ -3,7 +3,9 @@ using Microsoft.Extensions.Logging;
 
 using Neba.Application.Caching;
 using Neba.Application.Stats.GetSeasonStats;
+using Neba.Domain.Bowlers;
 using Neba.Domain.Seasons;
+using Neba.Domain.Tournaments;
 
 namespace Neba.Application.Stats.BoyProgression;
 
@@ -40,22 +42,26 @@ internal sealed class BowlerOfTheYearProgressionService(
     {
         return new Dictionary<int, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>>
         {
-            [BowlerOfTheYearCategory.Open.Value] = ComputeOpenProgression(results),
-            [BowlerOfTheYearCategory.Senior.Value] = [],       // Phase 2: requires Bowler.DateOfBirth
-            [BowlerOfTheYearCategory.SuperSenior.Value] = [],  // Phase 2: requires Bowler.DateOfBirth
-            [BowlerOfTheYearCategory.Woman.Value] = [],        // Phase 2: requires Bowler.Gender
-            [BowlerOfTheYearCategory.Youth.Value] = [],        // Phase 2: requires Bowler.DateOfBirth
-            [BowlerOfTheYearCategory.Rookie.Value] = [],       // Deferred: requires membership data
+            [BowlerOfTheYearCategory.Open.Value]        = ComputeRaceProgression(results, BowlerOfTheYearCategory.Open),
+            [BowlerOfTheYearCategory.Senior.Value]      = ComputeRaceProgression(results, BowlerOfTheYearCategory.Senior),
+            [BowlerOfTheYearCategory.SuperSenior.Value] = ComputeRaceProgression(results, BowlerOfTheYearCategory.SuperSenior),
+            [BowlerOfTheYearCategory.Woman.Value]       = ComputeRaceProgression(results, BowlerOfTheYearCategory.Woman),
+            [BowlerOfTheYearCategory.Youth.Value]       = ComputeRaceProgression(results, BowlerOfTheYearCategory.Youth),
+            [BowlerOfTheYearCategory.Rookie.Value]      = [],  // Deferred: requires membership data
         };
     }
 
-    private static IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto> ComputeOpenProgression(
-        IReadOnlyCollection<BoyProgressionResultDto> results)
+    private static IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto> ComputeRaceProgression(
+        IReadOnlyCollection<BoyProgressionResultDto> results,
+        BowlerOfTheYearCategory category)
     {
-        var eligible = results.Where(r => r.StatsEligible).ToList();
+        var eligible = results
+            .Where(r => IsTournamentEligibleForRace(r, category) && IsBowlerEligibleForRace(r, category))
+            .ToList();
+
         if (eligible.Count == 0) return [];
 
-        // All stat-eligible tournaments in chronological order — shared X-axis for every series.
+        // All tournaments for this race in chronological order — shared X-axis for every series.
         // Deduplicate names: when two tournaments share a display name, append the date so each
         // chart category label is unique (duplicate names cause ApexCharts to drop data points).
         var allTournaments = eligible
@@ -80,10 +86,10 @@ internal sealed class BowlerOfTheYearProgressionService(
 
         return [.. byBowler.Select(group =>
         {
-            // Collapse main-cut + side-cut rows for the same tournament into one points value.
+            // Collapse multiple rows for the same tournament into one points value.
             var pointsByTournament = group
                 .GroupBy(r => r.TournamentId)
-                .ToDictionary(g => g.Key, g => g.Sum(r => r.SideCutId.HasValue ? 5 : r.Points));
+                .ToDictionary(g => g.Key, g => g.Sum(r => PointsForRace(r, category)));
 
             var cumulativePoints = 0;
             var tournamentResults = allTournaments.Select(t =>
@@ -108,6 +114,71 @@ internal sealed class BowlerOfTheYearProgressionService(
             };
         })];
     }
+
+    private static bool IsTournamentEligibleForRace(BoyProgressionResultDto r, BowlerOfTheYearCategory category)
+    {
+        if (category == BowlerOfTheYearCategory.Open
+            || category == BowlerOfTheYearCategory.Youth
+            || category == BowlerOfTheYearCategory.Rookie)
+            return r.StatsEligible;
+
+        if (category == BowlerOfTheYearCategory.Senior
+            || category == BowlerOfTheYearCategory.SuperSenior)
+            return r.StatsEligible
+                || r.TournamentType == TournamentType.Senior
+                || r.TournamentType == TournamentType.SeniorAndWomen;
+
+        if (category == BowlerOfTheYearCategory.Woman)
+            return r.StatsEligible
+                || r.TournamentType == TournamentType.Women
+                || r.TournamentType == TournamentType.SeniorAndWomen;
+
+        return false;
+    }
+
+    private static bool IsBowlerEligibleForRace(BoyProgressionResultDto r, BowlerOfTheYearCategory category)
+    {
+        if (category == BowlerOfTheYearCategory.Open)
+            return true;
+
+        if (category == BowlerOfTheYearCategory.Woman)
+            return r.BowlerGender == Gender.Female;
+
+        if (category == BowlerOfTheYearCategory.Senior)
+            return r.BowlerDateOfBirth.HasValue && AgeAt(r.BowlerDateOfBirth.Value, r.TournamentEndDate) >= 50;
+
+        if (category == BowlerOfTheYearCategory.SuperSenior)
+            return r.BowlerDateOfBirth.HasValue && AgeAt(r.BowlerDateOfBirth.Value, r.TournamentEndDate) >= 60;
+
+        if (category == BowlerOfTheYearCategory.Youth)
+            return r.BowlerDateOfBirth.HasValue && AgeAt(r.BowlerDateOfBirth.Value, r.TournamentEndDate) < 18;
+
+        return false;
+    }
+
+    // Age completed on evaluationDate. Uses DateOnly.AddYears so Feb-29 birthdays are handled correctly.
+    private static int AgeAt(DateOnly dateOfBirth, DateOnly evaluationDate)
+    {
+        var age = evaluationDate.Year - dateOfBirth.Year;
+        if (dateOfBirth.AddYears(age) > evaluationDate) age--;
+        return age;
+    }
+
+    private static int PointsForRace(BoyProgressionResultDto r, BowlerOfTheYearCategory category)
+    {
+        if (r.SideCutId is null)
+            return r.Points;
+
+        return DeriveSideCutBoyCategory(r.SideCutName) == category ? r.Points : 5;
+    }
+
+    private static BowlerOfTheYearCategory? DeriveSideCutBoyCategory(string? sideCutName) => sideCutName switch
+    {
+        "Senior" => BowlerOfTheYearCategory.Senior,
+        "Super Senior" => BowlerOfTheYearCategory.SuperSenior,
+        "Woman" or "Women" => BowlerOfTheYearCategory.Woman,
+        _ => null
+    };
 }
 
 internal static partial class BowlerOfTheYearProgressionServiceLogMessages

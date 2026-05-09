@@ -11,11 +11,14 @@ public static class HistoricalTournamentResultFactory
 {
     public const decimal ValidPrizeMoney = 500m;
 
+    public const int ValidPoints = 100;
+
     internal static HistoricalTournamentResult Create(
         Bowler? bowler = null,
         Tournament? tournament = null,
         int? place = null,
         decimal? prizeMoney = null,
+        int? points = null,
         SideCut? sideCut = null)
     {
         var sideCutToUse = sideCut;
@@ -26,6 +29,7 @@ public static class HistoricalTournamentResultFactory
             Tournament = tournament ?? TournamentFactory.Create(),
             Place = place,
             PrizeMoney = prizeMoney ?? ValidPrizeMoney,
+            Points = points ?? ValidPoints,
             SideCut = sideCutToUse,
         };
     }
