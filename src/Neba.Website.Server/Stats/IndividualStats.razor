@@ -223,37 +223,20 @@
                     </div>
                 </div>
 
-                @if (_model.BowlerOfTheYearPointsRace is not null)
+                @foreach (var progression in _model.BoyProgressions)
                 {
-                    <div class="indiv-points-race-card" role="button" tabindex="0"
-                         aria-label="Open Bowler of the Year race chart" @onclick="OpenPointsRaceModal"
-                         @onkeydown="OnPointsRaceWidgetKeyDown">
+                    <div class="indiv-points-race-card">
                         <div class="indiv-points-race-card-header">
-                            <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Points Race</h2>
-                            <span class="indiv-points-race-card-hint">Open full chart</span>
+                            <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">@(progression.RaceLabel) Points Progression</h2>
                         </div>
-                        <PointsRaceChart Series="@(new[] { _model.BowlerOfTheYearPointsRace! })" Height="240"
-                                         AllowSeriesToggle="false" />
+                        <PointsRaceChart Series="@(progression.LeaderSeries is not null ? new[] { progression.BowlerSeries, progression.LeaderSeries } : new[] { progression.BowlerSeries })"
+                                         ShowCategoryLabels="true" Height="240" />
                     </div>
                 }
 
             </aside>
         </div>
 
-        @if (_modalOpen)
-        {
-            <div class="indiv-modal-backdrop" @onclick="CloseModal" role="dialog" aria-modal="true" aria-label="@_modalTitle">
-                <div class="indiv-modal" @onclick:stopPropagation>
-                    <div class="indiv-modal-header">
-                        <h2 class="indiv-modal-title">@_modalTitle</h2>
-                        <button class="indiv-modal-close" @onclick="CloseModal" aria-label="Close">&#x2715;</button>
-                    </div>
-                    <div class="indiv-modal-body">
-                        @_modalContent
-                    </div>
-                </div>
-            </div>
-        }
     }
 </div>
 
@@ -267,10 +250,6 @@
     private bool _isLoading = true;
     private int _selectedSeasonYear;
     private IReadOnlyDictionary<int, string> _initialAvailableSeasons = new Dictionary<int, string>();
-
-    private bool _modalOpen;
-    private string _modalTitle = "";
-    private RenderFragment _modalContent = builder => { };
 
     protected override async Task OnInitializedAsync()
     {
@@ -326,30 +305,6 @@
         var uri = Nav.GetUriWithQueryParameter("season", year);
         Nav.NavigateTo(uri, replace: true);
     }
-
-    private void OpenPointsRaceModal()
-    {
-        if (_model is null) return;
-        _modalTitle = "Bowler of the Year Race";
-        _modalContent = RenderPointsRaceModal();
-        _modalOpen = true;
-    }
-
-    private void CloseModal()
-    {
-        _modalOpen = false;
-    }
-
-    private void OnPointsRaceWidgetKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key is "Enter" or " ")
-            OpenPointsRaceModal();
-    }
-
-    private RenderFragment RenderPointsRaceModal() => @<div class="indiv-chart-modal">
-        <PointsRaceChart Series="@(new[] { _model!.BowlerOfTheYearPointsRace! })" Title="" ShowCategoryLabels="true"
-                         AllowSeriesToggle="false" Height="520" />
-    </div>;
 
     private static string FormatFieldAvg(decimal value)
         => value >= 0 ? $"+{value:F2}" : value.ToString("F2");

@@ -83,11 +83,15 @@
                 <!-- ── Award Standings ─────────────────────────────── -->
                 <div id="panel-award-standings" role="tabpanel" aria-labelledby="tab-award-standings"
                      class="@PanelClass("award-standings") neba-space-y-6">
-                    @foreach (var (title, rows, displayCount) in BoyStandingsSections())
+                    @foreach (var (title, rows, displayCount, raceSeries) in BoyStandingsSections())
                     {
                         <section class="stats-section">
                             <div class="stats-section-header stats-accent-blue-500">
                                 <h2 class="stats-section-title">@title</h2>
+                                <button class="stats-text-link" @onclick="() => OpenProgressionModal(raceSeries)"
+                                        aria-label="@($"Open {title} points progression chart")">
+                                    Points Progression
+                                </button>
                             </div>
                             <div class="stats-table-wrapper">
                                 <table class="stats-table">
@@ -709,20 +713,6 @@
                                                                                     </dl>
                                                                                 </div>
 
-                                                                                <!-- Points Race Chart -->
-                                                                                <div class="stats-points-race-card"
-                                                                                     role="button"
-                                                                                     tabindex="0"
-                                                                                     aria-label="Open Bowler of the Year race chart"
-                                                                                     @onclick="OpenPointsRaceModal"
-                                                                                     @onkeydown="OnPointsRaceWidgetKeyDown">
-                                                                                    <div class="stats-points-race-card-header">
-                                                                                        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Bowler of the Year Race</h2>
-                                                                                        <span class="stats-points-race-card-hint">Open full chart</span>
-                                                                                    </div>
-                                                                                    <PointsRaceChart Series="@(_model.BowlerOfTheYearPointsRace.Take(3).ToArray())"
-                                                                                                     Title="" />
-                                                                                </div>
                                                                             }
                                                                         </aside>
                                                                     </div>
@@ -869,16 +859,16 @@
             .Take(20);
     }
 
-    private IEnumerable<(string Title, IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> Rows, int DisplayCount)>
+    private IEnumerable<(string Title, IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> Rows, int DisplayCount, IReadOnlyCollection<PointsRaceSeriesViewModel> Series)>
 BoyStandingsSections()
     {
         if (_model is null) yield break;
-        yield return ("Bowler of the Year", _model.BowlerOfTheYear, 20);
-        yield return ("Senior of the Year", _model.SeniorOfTheYear, 10);
-        yield return ("Super Senior of the Year", _model.SuperSeniorOfTheYear, 10);
-        yield return ("Woman of the Year", _model.WomanOfTheYear, 10);
-        yield return ("Rookie of the Year", _model.RookieOfTheYear, 10);
-        yield return ("Youth of the Year", _model.YouthOfTheYear, 10);
+        yield return ("Bowler of the Year",       _model.BowlerOfTheYear,       20, _model.OpenPointsRace);
+        yield return ("Senior of the Year",       _model.SeniorOfTheYear,       10, _model.SeniorPointsRace);
+        yield return ("Super Senior of the Year", _model.SuperSeniorOfTheYear,  10, _model.SuperSeniorPointsRace);
+        yield return ("Woman of the Year",        _model.WomanOfTheYear,        10, _model.WomenPointsRace);
+        yield return ("Rookie of the Year",       _model.RookieOfTheYear,       10, _model.RookiePointsRace);
+        yield return ("Youth of the Year",        _model.YouthOfTheYear,        10, _model.YouthPointsRace);
     }
 
     private void OpenBoyModal(string title, IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> rows)
@@ -981,14 +971,14 @@ BoyStandingsSections()
         OpenModal($"{title} — Full Standings", content);
     }
 
-    private void OpenPointsRaceModal()
+    private void OpenProgressionModal(IReadOnlyCollection<PointsRaceSeriesViewModel> series)
     {
         if (_model is null)
         {
             return;
         }
 
-        OpenModal("Bowler of the Year Race", RenderPointsRaceModal(), isWide: true);
+        OpenModal("Points Race", RenderProgressionModal(series), isWide: true);
     }
 
     private void OpenModal(string title, RenderFragment content, bool isWide = false)
@@ -1006,14 +996,6 @@ BoyStandingsSections()
     }
 
     private string ModalClass => _modalWide ? "stats-modal stats-modal-wide" : "stats-modal";
-
-    private void OnPointsRaceWidgetKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key is "Enter" or " ")
-        {
-            OpenPointsRaceModal();
-        }
-    }
 
     private RenderFragment RenderBoyStandingsTable(IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> rows) => @<table class="stats-table">
         <thead>
@@ -1269,12 +1251,24 @@ BoyStandingsSections()
         </tbody>
     </table>;
 
-    private RenderFragment RenderPointsRaceModal() => @<div class="stats-chart-modal">
-        <PointsRaceChart Series="@_model!.BowlerOfTheYearPointsRace.Take(10).ToArray()"
-                         Title=""
-                         ShowCategoryLabels="true"
-                         Height="520" />
-    </div>;
+    private static RenderFragment RenderProgressionModal(IReadOnlyCollection<PointsRaceSeriesViewModel> series)
+    {
+        var top10 = series
+            .OrderByDescending(s => s.Results.LastOrDefault()?.CumulativePoints ?? 0)
+            .Take(10)
+            .ToArray();
+
+        if (top10.Length > 0)
+        {
+            return @<div class="stats-chart-modal">
+                <PointsRaceChart Series="@top10" Title="" ShowCategoryLabels="true" Height="520" />
+            </div>;
+        }
+
+        return @<div class="stats-chart-modal">
+            <p class="text-gray-500 text-sm">No data available for this race yet.</p>
+        </div>;
+    }
 
     private static string FormatFieldAvg(decimal value)
         => value >= 0 ? $"+{value:F2}" : value.ToString("F2");

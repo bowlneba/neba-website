@@ -172,6 +172,18 @@ public static class CacheDescriptors
                 Key = $"neba:stats:seasons:{seasonId}:bowlers",
                 Tags = ["neba", "neba:stats", "neba:stats:seasons", $"neba:stats:seasons:{seasonId}"]
             };
+
+        /// <summary>
+        /// Returns a cache descriptor for all BOY race progressions for the given season.
+        /// </summary>
+        /// <param name="seasonId">The season identifier.</param>
+        /// <returns>A cache descriptor for BOY progression data.</returns>
+        public static CacheDescriptor BoyProgressions(SeasonId seasonId)
+            => new()
+            {
+                Key = $"neba:stats:seasons:{seasonId}:boy-progressions",
+                Tags = ["neba", "neba:stats", "neba:stats:seasons", $"neba:stats:seasons:{seasonId}"]
+            };
     }
 
     /// <summary>

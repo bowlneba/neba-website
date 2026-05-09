@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Application.Messaging;
 using Neba.Application.Stats;
+using Neba.Application.Stats.BoyProgression;
 using Neba.Application.Tournaments;
 
 namespace Neba.Application;
@@ -28,6 +29,7 @@ public static class ApplicationConfiguration
         internal void AddServices()
         {
             services.AddScoped<ISeasonStatsService, SeasonStatsService>();
+            services.AddScoped<IBowlerOfTheYearProgressionService, BowlerOfTheYearProgressionService>();
         }
     }
 }

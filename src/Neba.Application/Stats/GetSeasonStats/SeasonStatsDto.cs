@@ -23,9 +23,9 @@ public sealed record SeasonStatsDto
     public required IReadOnlyCollection<BowlerSeasonStatsDto> BowlerStats { get; init; }
 
     /// <summary>
-    /// Gets a collection of series data for the Bowler of the Year points
+    /// Gets progressions for all six BOY race categories. Non-Open races are empty until Phase 2 prerequisites land.
     /// </summary>
-    public required IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto> BowlerOfTheYearRace { get; init; }
+    public required IReadOnlyDictionary<int, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>> BowlerOfTheYearRaces { get; init; }
 
     /// <summary>
     /// Gets a summary of the season's statistics, including total entries, total prize money, and other aggregated performance metrics. This summary provides a concise overview of the season's overall performance and key highlights, allowing for a quick assessment of the season's success and notable achievements.

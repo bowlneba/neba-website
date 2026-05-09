@@ -28,7 +28,12 @@ public static class GetSeasonStatsResponseFactory
         SeasonAtAGlanceResponse? seasonAtAGlance = null,
         SeasonBestsResponse? seasonsBests = null,
         FieldMatchPlaySummaryResponse? fieldMatchPlaySummary = null,
-        IReadOnlyCollection<PointsRaceSeriesResponse>? bowlerOfTheYearPointsRace = null,
+        IReadOnlyCollection<PointsRaceSeriesResponse>? openPointsRace = null,
+        IReadOnlyCollection<PointsRaceSeriesResponse>? seniorPointsRace = null,
+        IReadOnlyCollection<PointsRaceSeriesResponse>? superSeniorPointsRace = null,
+        IReadOnlyCollection<PointsRaceSeriesResponse>? womenPointsRace = null,
+        IReadOnlyCollection<PointsRaceSeriesResponse>? youthPointsRace = null,
+        IReadOnlyCollection<PointsRaceSeriesResponse>? rookiePointsRace = null,
         IReadOnlyCollection<FullStatModalRowResponse>? allBowlers = null)
         => new()
         {
@@ -56,7 +61,12 @@ public static class GetSeasonStatsResponseFactory
             SeasonAtAGlance = seasonAtAGlance ?? SeasonAtAGlanceResponseFactory.Create(),
             SeasonsBests = seasonsBests ?? SeasonBestsResponseFactory.Create(),
             FieldMatchPlaySummary = fieldMatchPlaySummary ?? FieldMatchPlaySummaryResponseFactory.Create(),
-            BowlerOfTheYearPointsRace = bowlerOfTheYearPointsRace ?? [PointsRaceSeriesResponseFactory.Create()],
+            OpenPointsRace = openPointsRace ?? [PointsRaceSeriesResponseFactory.Create()],
+            SeniorPointsRace = seniorPointsRace ?? [],
+            SuperSeniorPointsRace = superSeniorPointsRace ?? [],
+            WomenPointsRace = womenPointsRace ?? [],
+            YouthPointsRace = youthPointsRace ?? [],
+            RookiePointsRace = rookiePointsRace ?? [],
             AllBowlers = allBowlers ?? [FullStatModalRowResponseFactory.Create()]
         };
 
@@ -91,7 +101,12 @@ public static class GetSeasonStatsResponseFactory
                     SeasonAtAGlance = SeasonAtAGlanceResponseFactory.Bogus(1, seed).Single(),
                     SeasonsBests = SeasonBestsResponseFactory.Bogus(1, seed).Single(),
                     FieldMatchPlaySummary = FieldMatchPlaySummaryResponseFactory.Bogus(1, seed).Single(),
-                    BowlerOfTheYearPointsRace = PointsRaceSeriesResponseFactory.Bogus(f.Random.Int(3, 10), seed),
+                    OpenPointsRace = PointsRaceSeriesResponseFactory.Bogus(f.Random.Int(3, 10), seed),
+                    SeniorPointsRace = [],
+                    SuperSeniorPointsRace = [],
+                    WomenPointsRace = [],
+                    YouthPointsRace = [],
+                    RookiePointsRace = [],
                     AllBowlers = FullStatModalRowResponseFactory.Bogus(f.Random.Int(10, 30), seed),
                     MinimumNumberOfGames = f.Random.Decimal(10, 60),
                     MinimumNumberOfTournaments = f.Random.Decimal(2, 8),

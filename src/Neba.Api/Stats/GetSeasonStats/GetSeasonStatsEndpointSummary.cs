@@ -44,7 +44,12 @@ internal sealed class GetSeasonStatsEndpointSummary : Summary<GetSeasonStatsEndp
                 SeasonAtAGlance = new SeasonAtAGlanceResponse { TotalEntries = 245, TotalPrizeMoney = 18500m },
                 SeasonsBests = new SeasonBestsResponse { HighGame = 279, HighGameBowlers = new Dictionary<string, string> { { janeSmithBowlerId, janeSmithBowlerName } }, HighBlock = 1250, HighBlockBowlers = new Dictionary<string, string> { { janeSmithBowlerId, janeSmithBowlerName } }, HighAverage = 225.35m, HighAverageBowlers = new Dictionary<string, string> { { janeSmithBowlerId, janeSmithBowlerName } } },
                 FieldMatchPlaySummary = new FieldMatchPlaySummaryResponse { HighestWinPercentage = 66.67m, HighestWinPercentageBowlers = new Dictionary<string, string> { { janeSmithBowlerId, janeSmithBowlerName } }, MostFinals = 5, MostFinalsBowlers = new Dictionary<string, string> { { janeSmithBowlerId, janeSmithBowlerName } } },
-                BowlerOfTheYearPointsRace = [new PointsRaceSeriesResponse { BowlerId = janeSmithBowlerId, BowlerName = janeSmithBowlerName, Results = [new PointsRaceTournamentResponse { TournamentName = "Spring Open", TournamentDate = new DateOnly(2024, 3, 15), CumulativePoints = 80 }] }],
+                OpenPointsRace = [new PointsRaceSeriesResponse { BowlerId = janeSmithBowlerId, BowlerName = janeSmithBowlerName, Results = [new PointsRaceTournamentResponse { TournamentName = "Spring Open", TournamentDate = new DateOnly(2024, 3, 15), CumulativePoints = 80 }] }],
+                SeniorPointsRace = [],
+                SuperSeniorPointsRace = [],
+                WomenPointsRace = [],
+                YouthPointsRace = [],
+                RookiePointsRace = [],
                 AllBowlers = [new FullStatModalRowResponse { BowlerId = janeSmithBowlerId, BowlerName = janeSmithBowlerName, Points = 320, Average = 221.4m, Games = 60, Finals = 5, Wins = 9, Losses = 6, WinPercentage = 60.0m, MatchPlayAverage = 218.0m, Winnings = 1500m, FieldAverage = 12.5m, Tournaments = 10 }]
             });
 

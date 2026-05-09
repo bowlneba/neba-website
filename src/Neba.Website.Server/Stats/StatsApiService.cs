@@ -153,17 +153,12 @@ internal sealed class StatsApiService(ApiExecutor executor, IStatsApi statsApi) 
                 MostFinals = response.FieldMatchPlaySummary.MostFinals,
                 MostFinalsBowlers = response.FieldMatchPlaySummary.MostFinalsBowlers
             },
-            BowlerOfTheYearPointsRace = [.. response.BowlerOfTheYearPointsRace.Select(race => new PointsRaceSeriesViewModel
-            {
-                BowlerId = race.BowlerId,
-                BowlerName = race.BowlerName,
-                Results = [.. race.Results.Select(r => new PointsRaceTournamentViewModel
-                {
-                    TournamentName = r.TournamentName,
-                    TournamentDate = r.TournamentDate,
-                    CumulativePoints = r.CumulativePoints
-                })]
-            })],
+            OpenPointsRace = MapPointsRaceSeries(response.OpenPointsRace),
+            SeniorPointsRace = MapPointsRaceSeries(response.SeniorPointsRace),
+            SuperSeniorPointsRace = MapPointsRaceSeries(response.SuperSeniorPointsRace),
+            WomenPointsRace = MapPointsRaceSeries(response.WomenPointsRace),
+            YouthPointsRace = MapPointsRaceSeries(response.YouthPointsRace),
+            RookiePointsRace = MapPointsRaceSeries(response.RookiePointsRace),
             AllBowlers = [.. response.AllBowlers.Select((b, i) => new FullStatModalRowViewModel
             {
                 Rank = i + 1,
@@ -237,22 +232,75 @@ internal sealed class StatsApiService(ApiExecutor executor, IStatsApi statsApi) 
             FinalsPerEntryRank = FindRank(response.FinalsPerEntry, bowlerId, x => x.BowlerId),
             AverageFinishRank = FindRank(response.AverageFinishes, bowlerId, x => x.BowlerId),
 
-            BowlerOfTheYearPointsRace = response.BowlerOfTheYearPointsRace
-                .Where(r => r.BowlerId == bowlerId)
-                .Select(r => new PointsRaceSeriesViewModel
-                {
-                    BowlerId = bowlerId,
-                    BowlerName = r.BowlerName,
-                    Results = [.. r.Results.Select(t => new PointsRaceTournamentViewModel
-                    {
-                        TournamentName = t.TournamentName,
-                        TournamentDate = t.TournamentDate,
-                        CumulativePoints = t.CumulativePoints
-                    })]
-                })
-                .FirstOrDefault()
+            BoyProgressions = BuildIndividualBoyProgressions(response, bowlerId),
         };
     }
+
+    private static List<IndividualBoyProgressionViewModel> BuildIndividualBoyProgressions(
+        GetSeasonStatsResponse response, string bowlerId)
+    {
+        var result = new List<IndividualBoyProgressionViewModel>();
+
+        TryAddRace(response.OpenPointsRace,        response.BowlerOfTheYear,    "Bowler of the Year", bowlerId, result);
+        TryAddRace(response.SeniorPointsRace,       response.SeniorOfTheYear,    "Senior",             bowlerId, result);
+        TryAddRace(response.SuperSeniorPointsRace,  response.SuperSeniorOfTheYear, "Super Senior",     bowlerId, result);
+        TryAddRace(response.WomenPointsRace,        response.WomanOfTheYear,     "Women",              bowlerId, result);
+        TryAddRace(response.YouthPointsRace,        response.YouthOfTheYear,     "Youth",              bowlerId, result);
+        TryAddRace(response.RookiePointsRace,       response.RookieOfTheYear,    "Rookie",             bowlerId, result);
+
+        return result;
+    }
+
+    private static void TryAddRace(
+        IReadOnlyCollection<PointsRaceSeriesResponse> allSeries,
+        IReadOnlyCollection<BowlerOfTheYearStandingResponse> standings,
+        string raceLabel,
+        string bowlerId,
+        List<IndividualBoyProgressionViewModel> result)
+    {
+        var bowlerRaw = allSeries.FirstOrDefault(r => r.BowlerId == bowlerId);
+        if (bowlerRaw is null)
+            return;
+
+        var leaderId = standings.FirstOrDefault()?.BowlerId;
+        var leaderRaw = leaderId is not null && leaderId != bowlerId
+            ? allSeries.FirstOrDefault(r => r.BowlerId == leaderId)
+            : null;
+
+        result.Add(new IndividualBoyProgressionViewModel
+        {
+            RaceLabel = raceLabel,
+            BowlerSeries = MapSeries(bowlerRaw),
+            LeaderSeries = leaderRaw is not null ? MapSeries(leaderRaw) : null,
+        });
+    }
+
+    private static PointsRaceSeriesViewModel MapSeries(PointsRaceSeriesResponse raw) =>
+        new()
+        {
+            BowlerId = raw.BowlerId,
+            BowlerName = raw.BowlerName,
+            Results = [.. raw.Results.Select(t => new PointsRaceTournamentViewModel
+            {
+                TournamentName = t.TournamentName,
+                TournamentDate = t.TournamentDate,
+                CumulativePoints = t.CumulativePoints
+            })]
+        };
+
+    private static IReadOnlyCollection<PointsRaceSeriesViewModel> MapPointsRaceSeries(
+        IReadOnlyCollection<PointsRaceSeriesResponse> series)
+        => [.. series.Select(race => new PointsRaceSeriesViewModel
+        {
+            BowlerId = race.BowlerId,
+            BowlerName = race.BowlerName,
+            Results = [.. race.Results.Select(r => new PointsRaceTournamentViewModel
+            {
+                TournamentName = r.TournamentName,
+                TournamentDate = r.TournamentDate,
+                CumulativePoints = r.CumulativePoints
+            })]
+        })];
 
     private static IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> MapBotyStandings(
         IReadOnlyCollection<BowlerOfTheYearStandingResponse> standings) =>
@@ -316,7 +364,12 @@ internal sealed class StatsApiService(ApiExecutor executor, IStatsApi statsApi) 
                 MostFinals = 0,
                 MostFinalsBowlers = new Dictionary<string, string>()
             },
-            BowlerOfTheYearPointsRace = [],
+            OpenPointsRace = [],
+            SeniorPointsRace = [],
+            SuperSeniorPointsRace = [],
+            WomenPointsRace = [],
+            YouthPointsRace = [],
+            RookiePointsRace = [],
             AllBowlers = []
         };
 }

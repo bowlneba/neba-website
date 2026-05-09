@@ -2,9 +2,11 @@ using Microsoft.EntityFrameworkCore;
 
 using Neba.Application.Seasons;
 using Neba.Application.Stats;
+using Neba.Application.Stats.BoyProgression;
 using Neba.Application.Stats.GetSeasonStats;
 using Neba.Domain.Seasons;
 using Neba.Domain.Stats;
+using Neba.Infrastructure.Database.Entities;
 
 namespace Neba.Infrastructure.Database.Queries;
 
@@ -13,6 +15,9 @@ internal sealed class StatsQueries(AppDbContext appDbContext)
 {
     private readonly IQueryable<BowlerSeasonStats> _bowlerSeasonStats
         = appDbContext.BowlerSeasonStats.AsNoTracking();
+
+    private readonly IQueryable<HistoricalTournamentResult> _historicalTournamentResults
+        = appDbContext.HistoricalTournamentResults.AsNoTracking();
 
     public async Task<IReadOnlyCollection<BowlerSeasonStatsDto>> GetBowlerSeasonStatsAsync(SeasonId seasonId, CancellationToken cancellationToken)
         => await _bowlerSeasonStats
@@ -55,6 +60,26 @@ internal sealed class StatsQueries(AppDbContext appDbContext)
                 Credits = stat.Credits,
                 LastUpdatedUtc = stat.LastUpdatedUtc
             }).ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<BoyProgressionResultDto>> GetBoyProgressionResultsForSeasonAsync(
+        SeasonId seasonId,
+        CancellationToken cancellationToken)
+        => await _historicalTournamentResults
+            .Where(r => r.Tournament.SeasonId == seasonId)
+            .OrderBy(r => r.Tournament.StartDate)
+            .Select(r => new BoyProgressionResultDto
+            {
+                BowlerId = r.Bowler.Id,
+                BowlerName = r.Bowler.Name,
+                TournamentId = r.Tournament.Id,
+                TournamentName = r.Tournament.Name,
+                TournamentDate = r.Tournament.StartDate,
+                StatsEligible = r.Tournament.StatsEligible,
+                TournamentType = r.Tournament.TournamentType,
+                Points = r.Points,
+                SideCutId = r.SideCutId
+            })
+            .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyCollection<SeasonDto>> GetSeasonsWithStatsAsync(CancellationToken cancellationToken)
     {

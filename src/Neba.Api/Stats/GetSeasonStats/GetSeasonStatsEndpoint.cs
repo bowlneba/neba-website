@@ -9,6 +9,7 @@ using Neba.Api.Contracts.Stats.GetSeasonStats;
 using Neba.Application.Messaging;
 using Neba.Application.Stats.GetSeasonStats;
 using Neba.Domain.Bowlers;
+using Neba.Domain.Seasons;
 
 namespace Neba.Api.Stats.GetSeasonStats;
 
@@ -181,17 +182,12 @@ internal sealed class GetSeasonStatsEndpoint(IQueryHandler<GetSeasonStatsQuery, 
             MostFinals = dto.Summary.MostFinals,
             MostFinalsBowlers = MapBowlerNames(dto.Summary.MostFinalsBowlers)
         },
-        BowlerOfTheYearPointsRace = [.. dto.BowlerOfTheYearRace.Select(race => new PointsRaceSeriesResponse
-        {
-            BowlerId = race.BowlerId.Value.ToString(),
-            BowlerName = race.BowlerName.ToDisplayName(),
-            Results = [.. race.Results.Select(r => new PointsRaceTournamentResponse
-            {
-                TournamentName = r.TournamentName,
-                TournamentDate = r.TournamentDate,
-                CumulativePoints = r.CumulativePoints
-            })]
-        })],
+        OpenPointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.Open.Value),
+        SeniorPointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.Senior.Value),
+        SuperSeniorPointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.SuperSenior.Value),
+        WomenPointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.Woman.Value),
+        YouthPointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.Youth.Value),
+        RookiePointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.Rookie.Value),
         AllBowlers = [.. dto.Summary.AllBowlers
             .Select(b => new FullStatModalRowResponse
             {
@@ -210,6 +206,21 @@ internal sealed class GetSeasonStatsEndpoint(IQueryHandler<GetSeasonStatsQuery, 
                 Tournaments = b.Tournaments
             })]
     };
+
+    private static IReadOnlyCollection<PointsRaceSeriesResponse> MapRace(
+        IReadOnlyDictionary<int, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>> races,
+        int category)
+        => [.. races[category].Select(race => new PointsRaceSeriesResponse
+        {
+            BowlerId = race.BowlerId.Value.ToString(),
+            BowlerName = race.BowlerName.ToDisplayName(),
+            Results = [.. race.Results.Select(r => new PointsRaceTournamentResponse
+            {
+                TournamentName = r.TournamentName,
+                TournamentDate = r.TournamentDate,
+                CumulativePoints = r.CumulativePoints
+            })]
+        })];
 
     private static IReadOnlyCollection<BowlerOfTheYearStandingResponse> MapBotyStandings(
         IReadOnlyCollection<BowlerOfTheYearStandingDto> standings) =>

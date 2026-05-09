@@ -378,37 +378,37 @@ public sealed class StatsApiServiceTests
         result.WinPercentage.ShouldBe(60.0m);
     }
 
-    // ── Points race filter by bowlerId ─────────────────────────────────────────
+    // ── BOY progression filter by bowlerId ────────────────────────────────────
 
-    [Fact(DisplayName = "GetIndividualStatsAsync should include only the bowler's points race series")]
-    public async Task GetIndividualStatsAsync_ShouldFilterPointsRace_ToBowler()
+    [Fact(DisplayName = "GetIndividualStatsAsync should include BOY progression when bowler appears in Open race")]
+    public async Task GetIndividualStatsAsync_ShouldIncludeBoyProgression_WhenBowlerInOpenRace()
     {
         var myRace = PointsRaceSeriesResponseFactory.Create(bowlerId: BowlerId);
         var otherRace = PointsRaceSeriesResponseFactory.Create(bowlerId: "other-bowler");
         var response = GetSeasonStatsResponseFactory.Create(
-            bowlerOfTheYearPointsRace: [myRace, otherRace],
+            openPointsRace: [myRace, otherRace],
             allBowlers: [FullStatModalRowResponseFactory.Create(bowlerId: BowlerId)]);
         SetupSuccess(response);
 
         var result = await _service.GetIndividualStatsAsync(BowlerId, ct: TestContext.Current.CancellationToken);
 
         result.ShouldNotBeNull();
-        result.BowlerOfTheYearPointsRace.ShouldNotBeNull();
-        result.BowlerOfTheYearPointsRace!.BowlerId.ShouldBe(BowlerId);
+        result.BoyProgressions.Count.ShouldBe(1);
+        result.BoyProgressions.First().BowlerSeries.BowlerId.ShouldBe(BowlerId);
     }
 
-    [Fact(DisplayName = "GetIndividualStatsAsync should return null points race when bowler has no race data")]
-    public async Task GetIndividualStatsAsync_ShouldReturnNullPointsRace_WhenNoneExist()
+    [Fact(DisplayName = "GetIndividualStatsAsync should return empty progressions when bowler has no race data")]
+    public async Task GetIndividualStatsAsync_ShouldReturnEmptyProgressions_WhenBowlerNotInAnyRace()
     {
         var response = GetSeasonStatsResponseFactory.Create(
-            bowlerOfTheYearPointsRace: [PointsRaceSeriesResponseFactory.Create(bowlerId: "other-bowler")],
+            openPointsRace: [PointsRaceSeriesResponseFactory.Create(bowlerId: "other-bowler")],
             allBowlers: [FullStatModalRowResponseFactory.Create(bowlerId: BowlerId)]);
         SetupSuccess(response);
 
         var result = await _service.GetIndividualStatsAsync(BowlerId, ct: TestContext.Current.CancellationToken);
 
         result.ShouldNotBeNull();
-        result.BowlerOfTheYearPointsRace.ShouldBeNull();
+        result.BoyProgressions.ShouldBeEmpty();
     }
 
     // ── helpers ────────────────────────────────────────────────────────────────

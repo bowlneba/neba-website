@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
-using Neba.Application.Bowlers;
 using Neba.Application.Caching;
 using Neba.Application.Stats;
 using Neba.Application.Tournaments;
@@ -25,7 +24,6 @@ namespace Neba.Application.Tests.Stats;
 public sealed class SeasonStatsServiceTests
 {
     private readonly Mock<IStatsQueries> _statsQueriesMock;
-    private readonly Mock<IBowlerQueries> _bowlerQueriesMock;
     private readonly Mock<ITournamentQueries> _tournamentQueriesMock;
     private readonly FakeLogger<SeasonStatsService> _logger;
     private readonly SeasonStatsService _service;
@@ -33,7 +31,6 @@ public sealed class SeasonStatsServiceTests
     public SeasonStatsServiceTests()
     {
         _statsQueriesMock = new Mock<IStatsQueries>(MockBehavior.Strict);
-        _bowlerQueriesMock = new Mock<IBowlerQueries>(MockBehavior.Strict);
         _tournamentQueriesMock = new Mock<ITournamentQueries>(MockBehavior.Strict);
         _logger = new FakeLogger<SeasonStatsService>();
 
@@ -48,8 +45,7 @@ public sealed class SeasonStatsServiceTests
         var cache = services.BuildServiceProvider().GetRequiredService<HybridCache>();
 
         _service = new SeasonStatsService(
-            _statsQueriesMock.Object, _bowlerQueriesMock.Object,
-            _tournamentQueriesMock.Object, cache, _logger);
+            _statsQueriesMock.Object, _tournamentQueriesMock.Object, cache, _logger);
     }
 
     [Fact(DisplayName = "GetSeasonsWithStatsAsync should return seasons from query on cache miss")]

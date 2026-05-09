@@ -88,8 +88,23 @@ public sealed record GetSeasonStatsResponse
     /// <summary>Field match play summary for the Season (best win percentage and most Finals reached).</summary>
     public required FieldMatchPlaySummaryResponse FieldMatchPlaySummary { get; init; }
 
-    /// <summary>Bowler of the Year points race series data, showing cumulative points earned by each bowler across tournaments.</summary>
-    public required IReadOnlyCollection<PointsRaceSeriesResponse> BowlerOfTheYearPointsRace { get; init; }
+    /// <summary>Open (Bowler of the Year) points race series data, showing cumulative points earned by each bowler across tournaments.</summary>
+    public required IReadOnlyCollection<PointsRaceSeriesResponse> OpenPointsRace { get; init; }
+
+    /// <summary>Senior points race series data.</summary>
+    public required IReadOnlyCollection<PointsRaceSeriesResponse> SeniorPointsRace { get; init; }
+
+    /// <summary>Super Senior points race series data.</summary>
+    public required IReadOnlyCollection<PointsRaceSeriesResponse> SuperSeniorPointsRace { get; init; }
+
+    /// <summary>Women points race series data.</summary>
+    public required IReadOnlyCollection<PointsRaceSeriesResponse> WomenPointsRace { get; init; }
+
+    /// <summary>Youth points race series data.</summary>
+    public required IReadOnlyCollection<PointsRaceSeriesResponse> YouthPointsRace { get; init; }
+
+    /// <summary>Rookie points race series data.</summary>
+    public required IReadOnlyCollection<PointsRaceSeriesResponse> RookiePointsRace { get; init; }
 
     // Full stat modal
 
