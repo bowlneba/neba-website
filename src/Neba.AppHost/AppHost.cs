@@ -58,11 +58,14 @@ var api = builder.AddProject<Projects.Neba_Api>("api")
 #endif
     });
 
+#pragma warning disable ASPIREBROWSERLOGS001
 var web = builder.AddProject<Projects.Neba_Website_Server>("web")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(api)
-    .WaitFor(api);
+    .WaitFor(api)
+    .WithBrowserLogs();
+#pragma warning restore ASPIREBROWSERLOGS001
 
 if (builder.ExecutionContext.IsPublishMode)
 {
