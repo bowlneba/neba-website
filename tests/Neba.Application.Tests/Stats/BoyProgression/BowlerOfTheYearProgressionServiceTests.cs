@@ -554,6 +554,103 @@ public sealed class BowlerOfTheYearProgressionServiceTests
 
     // ── Concrete example from plan doc ────────────────────────────────────────
 
+    // ── Multiple rows per tournament (same bowler + same tournament) ──────────
+
+    [Fact(DisplayName = "Bowler with two rows for the same tournament (main cut + side cut) has points summed into one tournament step")]
+    public void ComputeAllProgressions_BowlerHasTwoRowsForSameTournament_PointsSummed()
+    {
+        var bowlerId = BowlerId.New();
+        var tournamentId = TournamentId.New();
+
+        // Same bowler, same tournament: main-cut row (120 pts) and a side-cut row that contributes 5 pts to Open
+        var mainCut = BoyProgressionResultDtoFactory.Create(
+            bowlerId: bowlerId,
+            tournamentId: tournamentId,
+            tournamentDate: new DateOnly(2025, 3, 1),
+            tournamentEndDate: new DateOnly(2025, 3, 2),
+            statsEligible: true,
+            points: 120,
+            sideCutId: null);
+
+        var sideCut = BoyProgressionResultDtoFactory.Create(
+            bowlerId: bowlerId,
+            tournamentId: tournamentId,
+            tournamentDate: new DateOnly(2025, 3, 1),
+            tournamentEndDate: new DateOnly(2025, 3, 2),
+            statsEligible: true,
+            points: 40,
+            sideCutId: 2,
+            sideCutName: "Senior");
+
+        var progressions = BowlerOfTheYearProgressionService.ComputeAllProgressions([mainCut, sideCut]);
+
+        // Open race: main-cut 120 + side-cut 5 (Senior cut → 5 pts for Open) = 125 in one step
+        var openSeries = progressions[BowlerOfTheYearCategory.Open.Value].Single();
+        openSeries.Results.Count.ShouldBe(1);
+        openSeries.Results.Single().CumulativePoints.ShouldBe(125);
+    }
+
+    // ── Duplicate tournament names ────────────────────────────────────────────
+
+    [Fact(DisplayName = "Two tournaments with the same display name have date appended to each label to keep them unique")]
+    public void ComputeAllProgressions_DuplicateTournamentNames_DateAppendedToEach()
+    {
+        var bowlerId = BowlerId.New();
+        var tournamentA = TournamentId.New();
+        var tournamentB = TournamentId.New();
+
+        var r1 = BoyProgressionResultDtoFactory.Create(
+            bowlerId: bowlerId,
+            tournamentId: tournamentA,
+            tournamentName: "NEBA Open",
+            tournamentDate: new DateOnly(2025, 1, 10),
+            tournamentEndDate: new DateOnly(2025, 1, 11),
+            statsEligible: true,
+            points: 80,
+            sideCutId: null);
+
+        var r2 = BoyProgressionResultDtoFactory.Create(
+            bowlerId: bowlerId,
+            tournamentId: tournamentB,
+            tournamentName: "NEBA Open",
+            tournamentDate: new DateOnly(2025, 3, 10),
+            tournamentEndDate: new DateOnly(2025, 3, 11),
+            statsEligible: true,
+            points: 60,
+            sideCutId: null);
+
+        var progressions = BowlerOfTheYearProgressionService.ComputeAllProgressions([r1, r2]);
+
+        var results = progressions[BowlerOfTheYearCategory.Open.Value].Single().Results.ToArray();
+        results.Length.ShouldBe(2);
+        // Both labels should have the date appended to disambiguate
+        results[0].TournamentName.ShouldContain("1/10");
+        results[1].TournamentName.ShouldContain("3/10");
+    }
+
+    // ── Unknown side cut name ─────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Unrecognized side cut name returns 5 points in every race (null category matches no race)")]
+    public void ComputeAllProgressions_UnknownSideCutName_Gives5PointsInEveryRace()
+    {
+        var bowlerId = BowlerId.New();
+        var result = BoyProgressionResultDtoFactory.Create(
+            bowlerId: bowlerId,
+            bowlerDateOfBirth: new DateOnly(1970, 1, 1),
+            bowlerGender: Gender.Female,
+            statsEligible: true,
+            tournamentEndDate: new DateOnly(2025, 6, 15),
+            points: 50,
+            sideCutId: 99,
+            sideCutName: "Unknown Division");
+
+        var progressions = BowlerOfTheYearProgressionService.ComputeAllProgressions([result]);
+
+        progressions[BowlerOfTheYearCategory.Open.Value].Single().Results.Single().CumulativePoints.ShouldBe(5);
+        progressions[BowlerOfTheYearCategory.Senior.Value].Single().Results.Single().CumulativePoints.ShouldBe(5);
+        progressions[BowlerOfTheYearCategory.Woman.Value].Single().Results.Single().CumulativePoints.ShouldBe(5);
+    }
+
     [Fact(DisplayName = "Plan doc example: Senior tournament, SuperSenior side cut — Senior gets 5, SuperSenior gets listed 40")]
     public void ComputeAllProgressions_PlanDocExample_SeniorTournamentSuperSeniorSideCut()
     {

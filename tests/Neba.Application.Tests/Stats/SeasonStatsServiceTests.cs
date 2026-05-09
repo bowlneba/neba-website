@@ -1008,4 +1008,15 @@ public sealed class SeasonStatsServiceTests
         result.HighestMatchPlayWinPercentage.ShouldBe(0m);
         result.HighestMatchPlayWinPercentageBowlers.Count.ShouldBe(2);
     }
+
+    [Fact(DisplayName = "CalculateSeasonStatsSummary should throw when bowlerStats is empty")]
+    public void CalculateSeasonStatsSummary_ShouldThrow_WhenBowlerStatsIsEmpty()
+    {
+        // CalculateSeasonStatsSummary calls Enumerable.Max on non-nullable int properties which throws
+        // on an empty sequence. The caller (GetSeasonStatsQueryHandler) only reaches this method when
+        // a season is in the "seasons with stats" list, so empty bowlerStats is treated as a programming
+        // error rather than a valid runtime state.
+        Should.Throw<InvalidOperationException>(() =>
+            _service.CalculateSeasonStatsSummary([], minimumGames: 0, minimumTournaments: 0, minimumEntries: 0));
+    }
 }
