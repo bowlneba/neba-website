@@ -225,9 +225,14 @@
 
                 @foreach (var progression in _model.BoyProgressions)
                 {
-                    <div class="indiv-points-race-card">
+                    <div class="indiv-points-race-card"
+                         role="button" tabindex="0"
+                         @onclick="@(() => OpenProgressionModal(progression))"
+                         @onkeydown="@(e => OnProgressionCardKeyDown(e, progression))"
+                         aria-label="@(progression.RaceLabel + " points progression — click to expand")">
                         <div class="indiv-points-race-card-header">
                             <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">@(progression.RaceLabel) Points Progression</h2>
+                            <span class="indiv-points-race-card-hint" aria-hidden="true">⤢</span>
                         </div>
                         <PointsRaceChart Series="@(progression.LeaderSeries is not null ? new[] { progression.BowlerSeries, progression.LeaderSeries } : new[] { progression.BowlerSeries })"
                                          ShowCategoryLabels="true" Height="240" />
@@ -237,6 +242,22 @@
             </aside>
         </div>
 
+    }
+
+    @if (_modalOpen)
+    {
+        <div class="indiv-modal-backdrop" @onclick="CloseModal" role="dialog" aria-modal="true"
+             aria-label="@_modalTitle">
+            <div class="indiv-modal" @onclick:stopPropagation>
+                <div class="indiv-modal-header">
+                    <h2 class="indiv-modal-title">@_modalTitle</h2>
+                    <button class="indiv-modal-close" @onclick="CloseModal" aria-label="Close">&#x2715;</button>
+                </div>
+                <div class="indiv-modal-body">
+                    @_modalContent
+                </div>
+            </div>
+        </div>
     }
 </div>
 
@@ -250,6 +271,10 @@
     private bool _isLoading = true;
     private int _selectedSeasonYear;
     private IReadOnlyDictionary<int, string> _initialAvailableSeasons = new Dictionary<int, string>();
+
+    private bool _modalOpen;
+    private string _modalTitle = "";
+    private RenderFragment _modalContent = _ => { };
 
     protected override async Task OnInitializedAsync()
     {
@@ -269,10 +294,34 @@
         _isLoading = false;
     }
 
+    private void OpenProgressionModal(IndividualBoyProgressionViewModel progression)
+    {
+        var series = progression.LeaderSeries is not null
+            ? (IReadOnlyCollection<PointsRaceSeriesViewModel>)[progression.BowlerSeries, progression.LeaderSeries]
+            : [progression.BowlerSeries];
+        _modalTitle = progression.RaceLabel + " Points Progression";
+        _modalContent = RenderProgressionModal(series);
+        _modalOpen = true;
+    }
+
+    private static RenderFragment RenderProgressionModal(IReadOnlyCollection<PointsRaceSeriesViewModel> series)
+        => @<div class="indiv-chart-modal">
+            <PointsRaceChart Series="@series" ShowCategoryLabels="true" Height="520" />
+        </div>;
+
+    private void CloseModal() => _modalOpen = false;
+
+    private void OnProgressionCardKeyDown(KeyboardEventArgs e, IndividualBoyProgressionViewModel progression)
+    {
+        if (e.Key is "Enter" or " ")
+            OpenProgressionModal(progression);
+    }
+
     private async Task OnSeasonChanged(int year)
     {
         _isLoading = true;
         _selectedSeasonYear = year;
+        _modalOpen = false;
         StateHasChanged();
 
         _model = await StatsApi.GetIndividualStatsAsync(BowlerId, year);

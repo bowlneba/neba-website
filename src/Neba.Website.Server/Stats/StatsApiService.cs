@@ -263,15 +263,30 @@ internal sealed class StatsApiService(ApiExecutor executor, IStatsApi statsApi) 
             return;
 
         var leaderId = standings.FirstOrDefault()?.BowlerId;
-        var leaderRaw = leaderId is not null && leaderId != bowlerId
-            ? allSeries.FirstOrDefault(r => r.BowlerId == leaderId)
-            : null;
+        PointsRaceSeriesResponse? comparisonRaw;
+        if (leaderId is null)
+        {
+            comparisonRaw = null;
+        }
+        else if (leaderId != bowlerId)
+        {
+            // Normal case: compare against the leader
+            comparisonRaw = allSeries.FirstOrDefault(r => r.BowlerId == leaderId);
+        }
+        else
+        {
+            // Bowler IS the leader — compare against 2nd place instead
+            var secondPlaceId = standings.Skip(1).FirstOrDefault()?.BowlerId;
+            comparisonRaw = secondPlaceId is not null
+                ? allSeries.FirstOrDefault(r => r.BowlerId == secondPlaceId)
+                : null;
+        }
 
         result.Add(new IndividualBoyProgressionViewModel
         {
             RaceLabel = raceLabel,
             BowlerSeries = MapSeries(bowlerRaw),
-            LeaderSeries = leaderRaw is not null ? MapSeries(leaderRaw) : null,
+            LeaderSeries = comparisonRaw is not null ? MapSeries(comparisonRaw) : null,
         });
     }
 
