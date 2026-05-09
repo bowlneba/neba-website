@@ -42,12 +42,12 @@ internal sealed class BowlerOfTheYearProgressionService(
     {
         return new Dictionary<int, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>>
         {
-            [BowlerOfTheYearCategory.Open.Value]        = ComputeRaceProgression(results, BowlerOfTheYearCategory.Open),
-            [BowlerOfTheYearCategory.Senior.Value]      = ComputeRaceProgression(results, BowlerOfTheYearCategory.Senior),
+            [BowlerOfTheYearCategory.Open.Value] = ComputeRaceProgression(results, BowlerOfTheYearCategory.Open),
+            [BowlerOfTheYearCategory.Senior.Value] = ComputeRaceProgression(results, BowlerOfTheYearCategory.Senior),
             [BowlerOfTheYearCategory.SuperSenior.Value] = ComputeRaceProgression(results, BowlerOfTheYearCategory.SuperSenior),
-            [BowlerOfTheYearCategory.Woman.Value]       = ComputeRaceProgression(results, BowlerOfTheYearCategory.Woman),
-            [BowlerOfTheYearCategory.Youth.Value]       = ComputeRaceProgression(results, BowlerOfTheYearCategory.Youth),
-            [BowlerOfTheYearCategory.Rookie.Value]      = [],  // Deferred: requires membership data
+            [BowlerOfTheYearCategory.Woman.Value] = ComputeRaceProgression(results, BowlerOfTheYearCategory.Woman),
+            [BowlerOfTheYearCategory.Youth.Value] = ComputeRaceProgression(results, BowlerOfTheYearCategory.Youth),
+            [BowlerOfTheYearCategory.Rookie.Value] = [],  // Deferred: requires membership data
         };
     }
 

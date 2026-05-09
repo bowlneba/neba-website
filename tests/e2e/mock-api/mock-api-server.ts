@@ -220,7 +220,12 @@ const MOCK_HIGH_BLOCK_AWARDS = {
 const MOCK_TOURNAMENT_DETAIL = {
   id: MOCK_TOURNAMENT_ID,
   name: 'NEBA Spring Classic',
-  season: { year: 2025, label: '2024-2025 Season' },
+  season: {
+    id: '01JX0000000000000000000011',
+    description: '2024-2025 Season',
+    startDate: '2024-09-01',
+    endDate: '2025-05-31',
+  },
   startDate: '2024-09-21',
   endDate: '2024-09-21',
   statsEligible: true,
@@ -233,9 +238,9 @@ const MOCK_TOURNAMENT_DETAIL = {
   patternLengthCategory: 'Medium',
   patternRatioCategory: null,
   logoUrl: null,
-  bowlingCenter: { name: 'Lucky Strike Lanes', slug: 'lucky-strike-lanes' },
+  bowlingCenter: { name: 'Lucky Strike Lanes', city: 'Boston', state: 'MA' },
   sponsors: [],
-  oilPatterns: [{ name: 'Scorpion', length: 42 }],
+  oilPatterns: [{ name: 'Scorpion', length: 42, volume: 24.5, leftRatio: 3.0, rightRatio: 3.0 }],
   winners: ['Current Leader'],
   results: [],
 };
@@ -394,7 +399,7 @@ function createStatsResponse(selectedYear: number): unknown {
         [PRIMARY_BOWLER_ID]: leaderName,
       },
     },
-    bowlerOfTheYearPointsRace: [
+    openPointsRace: [
       {
         bowlerId: PRIMARY_BOWLER_ID,
         bowlerName: leaderName,
@@ -412,6 +417,11 @@ function createStatsResponse(selectedYear: number): unknown {
         ],
       },
     ],
+    seniorPointsRace: [],
+    superSeniorPointsRace: [],
+    womenPointsRace: [],
+    youthPointsRace: [],
+    rookiePointsRace: [],
     allBowlers: [
       {
         bowlerId: PRIMARY_BOWLER_ID,

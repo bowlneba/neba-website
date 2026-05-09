@@ -161,7 +161,7 @@ public sealed class BoyProgressionQueriesTests
         var bowler = BowlerFactory.Create();
 
         var tournamentJan = TournamentFactory.Create(seasonId: season.Id, name: "January", startDate: new DateOnly(2025, 1, 10), endDate: new DateOnly(2025, 1, 11));
-        var tournamentMar = TournamentFactory.Create(seasonId: season.Id, name: "March",   startDate: new DateOnly(2025, 3, 10), endDate: new DateOnly(2025, 3, 11));
+        var tournamentMar = TournamentFactory.Create(seasonId: season.Id, name: "March", startDate: new DateOnly(2025, 3, 10), endDate: new DateOnly(2025, 3, 11));
         var tournamentFeb = TournamentFactory.Create(seasonId: season.Id, name: "February", startDate: new DateOnly(2025, 2, 10), endDate: new DateOnly(2025, 2, 11));
 
         await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
