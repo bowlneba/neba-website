@@ -180,6 +180,65 @@ const MOCK_SPONSOR_OLD_SPONSOR = {
 
 const PRIMARY_BOWLER_ID = '01JX1111111111111111111111';
 const SECONDARY_BOWLER_ID = '01JX2222222222222222222222';
+const MOCK_TOURNAMENT_ID = '01JX0000000000000000000010';
+
+const MOCK_HALL_OF_FAME = {
+  items: [
+    { year: 2024, bowlerName: 'Jane Smith', categories: ['Superior Performance'], photoUri: null },
+    { year: 2024, bowlerName: 'Bob Johnson', categories: ['Meritorious Service'], photoUri: null },
+    { year: 2023, bowlerName: 'Alice Williams', categories: ['Friend of NEBA'], photoUri: null },
+    { year: 2023, bowlerName: 'Tom Davis', categories: ['Superior Performance', 'Meritorious Service'], photoUri: null },
+  ],
+  totalItems: 4,
+};
+
+const MOCK_BOWLER_OF_THE_YEAR_AWARDS = {
+  items: [
+    { season: '2024-2025', bowlerName: 'Current Leader', category: 'Open' },
+    { season: '2024-2025', bowlerName: 'Jane Smith', category: 'Women' },
+    { season: '2023-2024', bowlerName: 'Legacy Leader', category: 'Open' },
+  ],
+  totalItems: 3,
+};
+
+const MOCK_HIGH_AVERAGE_AWARDS = {
+  items: [
+    { season: '2024-2025', bowlerName: 'Current Leader', average: 228.42, totalGames: 35, tournamentsParticipated: 7 },
+    { season: '2023-2024', bowlerName: 'Legacy Leader', average: 219.35, totalGames: 28, tournamentsParticipated: 6 },
+  ],
+  totalItems: 2,
+};
+
+const MOCK_HIGH_BLOCK_AWARDS = {
+  items: [
+    { season: '2024-2025', bowlerName: 'Current Leader', score: 1198 },
+    { season: '2023-2024', bowlerName: 'Legacy Leader', score: 1120 },
+  ],
+  totalItems: 2,
+};
+
+const MOCK_TOURNAMENT_DETAIL = {
+  id: MOCK_TOURNAMENT_ID,
+  name: 'NEBA Spring Classic',
+  season: { year: 2025, label: '2024-2025 Season' },
+  startDate: '2024-09-21',
+  endDate: '2024-09-21',
+  statsEligible: true,
+  tournamentType: 'Open',
+  entryFee: 75.0,
+  registrationUrl: null,
+  addedMoney: 500.0,
+  reservations: null,
+  entryCount: 48,
+  patternLengthCategory: 'Medium',
+  patternRatioCategory: null,
+  logoUrl: null,
+  bowlingCenter: { name: 'Lucky Strike Lanes', slug: 'lucky-strike-lanes' },
+  sponsors: [],
+  oilPatterns: [{ name: 'Scorpion', length: 42 }],
+  winners: ['Current Leader'],
+  results: [],
+};
 
 function createStatsResponse(selectedYear: number): unknown {
   const isLegacySeason = selectedYear === 2021;
@@ -396,7 +455,26 @@ const routes: Record<string, unknown> = {
   '/sponsors': MOCK_SPONSORS_ACTIVE,
   '/sponsors/pro-shop-plus': MOCK_SPONSOR_PRO_SHOP_PLUS,
   '/sponsors/old-sponsor': MOCK_SPONSOR_OLD_SPONSOR,
+  '/hall-of-fame/inductions': MOCK_HALL_OF_FAME,
+  '/awards/bowler-of-the-year': MOCK_BOWLER_OF_THE_YEAR_AWARDS,
+  '/awards/high-average': MOCK_HIGH_AVERAGE_AWARDS,
+  '/awards/high-block': MOCK_HIGH_BLOCK_AWARDS,
 };
+
+function resolveGetRoute(pathname: string, searchParams: URLSearchParams): unknown | null {
+  if (pathname === '/stats') {
+    const requestedYear = Number.parseInt(searchParams.get('year') ?? '2025', 10);
+    const selectedYear = Number.isFinite(requestedYear) ? requestedYear : 2025;
+    return createStatsResponse(selectedYear);
+  }
+
+  if (pathname.startsWith('/tournaments/')) {
+    const tournamentId = pathname.slice('/tournaments/'.length);
+    return tournamentId === MOCK_TOURNAMENT_ID ? MOCK_TOURNAMENT_DETAIL : null;
+  }
+
+  return routes[pathname] ?? null;
+}
 
 function handleRequest(req: IncomingMessage, res: ServerResponse): void {
   setCorsHeaders(res);
@@ -409,16 +487,8 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
 
   if (req.method === 'GET') {
     const requestUrl = new URL(req.url ?? '/', 'http://localhost');
-
-    if (requestUrl.pathname === '/stats') {
-      const requestedYear = Number.parseInt(requestUrl.searchParams.get('year') ?? '2025', 10);
-      const selectedYear = Number.isFinite(requestedYear) ? requestedYear : 2025;
-      sendJsonResponse(res, createStatsResponse(selectedYear));
-      return;
-    }
-
-    const data = routes[requestUrl.pathname];
-    if (data) {
+    const data = resolveGetRoute(requestUrl.pathname, requestUrl.searchParams);
+    if (data !== null) {
       sendJsonResponse(res, data);
       return;
     }
