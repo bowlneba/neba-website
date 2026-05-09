@@ -57,8 +57,6 @@ public sealed class BoyProgressionQueriesTests
         await _dbContext.Tournaments.AddRangeAsync([tournamentInRequestedSeason, tournamentInOtherSeason], TestContext.Current.CancellationToken);
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        _dbContext.ChangeTracker.Clear();
-
         _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: bowlerA, tournament: tournamentInRequestedSeason, points: 80));
         _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: bowlerB, tournament: tournamentInOtherSeason, points: 60));
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -99,8 +97,6 @@ public sealed class BoyProgressionQueriesTests
         await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
         await _dbContext.SideCuts.AddAsync(sideCut, TestContext.Current.CancellationToken);
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
-
-        _dbContext.ChangeTracker.Clear();
 
         _dbContext.Add(HistoricalTournamentResultFactory.Create(
             bowler: bowler,
@@ -144,8 +140,6 @@ public sealed class BoyProgressionQueriesTests
         await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        _dbContext.ChangeTracker.Clear();
-
         _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: bowler, tournament: tournament, points: 120, sideCut: null));
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -174,8 +168,6 @@ public sealed class BoyProgressionQueriesTests
         await _dbContext.Bowlers.AddAsync(bowler, TestContext.Current.CancellationToken);
         await _dbContext.Tournaments.AddRangeAsync([tournamentJan, tournamentMar, tournamentFeb], TestContext.Current.CancellationToken);
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
-
-        _dbContext.ChangeTracker.Clear();
 
         // Seed in non-chronological order to verify ordering
         _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: bowler, tournament: tournamentMar, points: 30));
@@ -211,8 +203,6 @@ public sealed class BoyProgressionQueriesTests
         await _dbContext.Tournaments.AddRangeAsync([statEligible, notStatEligible], TestContext.Current.CancellationToken);
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        _dbContext.ChangeTracker.Clear();
-
         _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: bowler, tournament: statEligible, points: 80));
         _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: bowler, tournament: notStatEligible, points: 40));
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -244,8 +234,6 @@ public sealed class BoyProgressionQueriesTests
         await _dbContext.Bowlers.AddAsync(bowler, TestContext.Current.CancellationToken);
         await _dbContext.Tournaments.AddAsync(tournament, TestContext.Current.CancellationToken);
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
-
-        _dbContext.ChangeTracker.Clear();
 
         _dbContext.Add(HistoricalTournamentResultFactory.Create(bowler: bowler, tournament: tournament, points: 50));
         await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
