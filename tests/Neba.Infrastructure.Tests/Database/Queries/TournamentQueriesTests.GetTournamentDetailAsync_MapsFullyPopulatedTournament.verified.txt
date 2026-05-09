@@ -68,7 +68,8 @@
         LastName: Kingpin
       },
       Place: 1,
-      PrizeMoney: 2000.00
+      PrizeMoney: 2000.00,
+      Points: 100
     },
     {
       BowlerName: {
@@ -77,6 +78,7 @@
       },
       Place: 2,
       PrizeMoney: 1000.00,
+      Points: 100,
       SideCutName: Senior,
       SideCutIndicator: 0, 0, 255
     },
@@ -84,19 +86,22 @@
       BowlerName: {
         FirstName: Anna,
         LastName: Baker
-      }
+      },
+      Points: 100
     },
     {
       BowlerName: {
         FirstName: Zoe,
         LastName: Baker
-      }
+      },
+      Points: 100
     },
     {
       BowlerName: {
         FirstName: Eve,
         LastName: Spare
-      }
+      },
+      Points: 100
     }
   ],
   EntryCount: 88

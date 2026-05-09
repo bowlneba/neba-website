@@ -22,7 +22,8 @@
         MiddleName: Christine
       },
       Place: 1,
-      PrizeMoney: 500.00
+      PrizeMoney: 500.00,
+      Points: 100
     }
   ]
 }
