@@ -52,26 +52,39 @@ internal sealed class BowlerOfTheYearProgressionService(
     private static IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto> ComputeOpenProgression(
         IReadOnlyCollection<BoyProgressionResultDto> results)
     {
-        var eligibleResults = results
-            .Where(r => r.StatsEligible)
-            .GroupBy(r => r.BowlerId);
+        var eligible = results.Where(r => r.StatsEligible).ToList();
+        if (eligible.Count == 0) return [];
 
-        return [.. eligibleResults.Select(group =>
+        // All stat-eligible tournaments in chronological order — shared X-axis for every series.
+        var allTournaments = eligible
+            .GroupBy(r => r.TournamentId)
+            .Select(g => (Id: g.Key, Name: g.First().TournamentName, Date: g.First().TournamentDate))
+            .OrderBy(t => t.Date)
+            .ToArray();
+
+        var byBowler = eligible.GroupBy(r => r.BowlerId);
+
+        return [.. byBowler.Select(group =>
         {
+            // Collapse main-cut + side-cut rows for the same tournament into one points value.
+            var pointsByTournament = group
+                .GroupBy(r => r.TournamentId)
+                .ToDictionary(g => g.Key, g => g.Sum(r => r.SideCutId.HasValue ? 5 : r.Points));
+
             var cumulativePoints = 0;
-            var tournamentResults = group
-                .OrderBy(r => r.TournamentDate)
-                .Select(r =>
+            var tournamentResults = allTournaments.Select(t =>
+            {
+                // Tournaments the bowler didn't enter contribute 0 points — line stays flat.
+                if (pointsByTournament.TryGetValue(t.Id, out var pts))
+                    cumulativePoints += pts;
+
+                return new BowlerOfTheYearPointsRaceTournamentDto
                 {
-                    cumulativePoints += r.SideCutId.HasValue ? 5 : r.Points;
-                    return new BowlerOfTheYearPointsRaceTournamentDto
-                    {
-                        TournamentName = r.TournamentName,
-                        TournamentDate = r.TournamentDate,
-                        CumulativePoints = cumulativePoints
-                    };
-                })
-                .ToArray();
+                    TournamentName = t.Name,
+                    TournamentDate = t.Date,
+                    CumulativePoints = cumulativePoints
+                };
+            }).ToArray();
 
             return new BowlerOfTheYearPointsRaceSeriesDto
             {

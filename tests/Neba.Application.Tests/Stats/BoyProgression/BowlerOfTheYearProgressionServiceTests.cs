@@ -1,6 +1,7 @@
 using Neba.Application.Stats.BoyProgression;
 using Neba.Domain.Bowlers;
 using Neba.Domain.Seasons;
+using Neba.Domain.Tournaments;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.Stats.BoyProgression;
@@ -107,8 +108,8 @@ public sealed class BowlerOfTheYearProgressionServiceTests
         results[2].CumulativePoints.ShouldBe(225);
     }
 
-    [Fact(DisplayName = "Multiple bowlers: each gets their own series with independent totals")]
-    public void ComputeAllProgressions_MultipleBowlers_IndependentSeries()
+    [Fact(DisplayName = "Multiple bowlers: series are normalized to the same tournament list, each reaches their own total")]
+    public void ComputeAllProgressions_MultipleBowlers_NormalizedToSameTournamentList()
     {
         var bowlerA = BowlerId.New();
         var bowlerB = BowlerId.New();
@@ -119,8 +120,36 @@ public sealed class BowlerOfTheYearProgressionServiceTests
 
         var openRace = progressions[BowlerOfTheYearCategory.Open.Value];
         openRace.Count.ShouldBe(2);
-        openRace.Single(s => s.BowlerId == bowlerA).Results.Single().CumulativePoints.ShouldBe(60);
-        openRace.Single(s => s.BowlerId == bowlerB).Results.Single().CumulativePoints.ShouldBe(90);
+        // Both series span all tournaments in the season (2 here).
+        openRace.Single(s => s.BowlerId == bowlerA).Results.Count.ShouldBe(2);
+        openRace.Single(s => s.BowlerId == bowlerB).Results.Count.ShouldBe(2);
+        // Final cumulative for each bowler equals their own total.
+        openRace.Single(s => s.BowlerId == bowlerA).Results.Last().CumulativePoints.ShouldBe(60);
+        openRace.Single(s => s.BowlerId == bowlerB).Results.Last().CumulativePoints.ShouldBe(90);
+    }
+
+    [Fact(DisplayName = "Bowler who skipped a tournament shows flat line at that position")]
+    public void ComputeAllProgressions_BowlerMissedTournament_FlatLineAtMissedPosition()
+    {
+        var bowlerA = BowlerId.New();
+        var bowlerB = BowlerId.New();
+        var tournamentA = TournamentId.New();
+        var tournamentB = TournamentId.New();
+        var tournamentC = TournamentId.New();
+        // BowlerA competed in A and C but not B; BowlerB competed in all three.
+        var rA1 = BoyProgressionResultDtoFactory.Create(bowlerId: bowlerA, tournamentId: tournamentA, tournamentDate: new DateOnly(2025, 1, 1), statsEligible: true, points: 50, sideCutId: null);
+        var rA2 = BoyProgressionResultDtoFactory.Create(bowlerId: bowlerA, tournamentId: tournamentC, tournamentDate: new DateOnly(2025, 3, 1), statsEligible: true, points: 75, sideCutId: null);
+        var rB1 = BoyProgressionResultDtoFactory.Create(bowlerId: bowlerB, tournamentId: tournamentA, tournamentDate: new DateOnly(2025, 1, 1), statsEligible: true, points: 40, sideCutId: null);
+        var rB2 = BoyProgressionResultDtoFactory.Create(bowlerId: bowlerB, tournamentId: tournamentB, tournamentDate: new DateOnly(2025, 2, 1), statsEligible: true, points: 60, sideCutId: null);
+        var rB3 = BoyProgressionResultDtoFactory.Create(bowlerId: bowlerB, tournamentId: tournamentC, tournamentDate: new DateOnly(2025, 3, 1), statsEligible: true, points: 80, sideCutId: null);
+
+        var progressions = BowlerOfTheYearProgressionService.ComputeAllProgressions([rA1, rA2, rB1, rB2, rB3]);
+
+        var seriesA = progressions[BowlerOfTheYearCategory.Open.Value].Single(s => s.BowlerId == bowlerA).Results.ToArray();
+        seriesA.Length.ShouldBe(3);
+        seriesA[0].CumulativePoints.ShouldBe(50);  // Tournament A
+        seriesA[1].CumulativePoints.ShouldBe(50);  // Tournament B — flat, bowler skipped
+        seriesA[2].CumulativePoints.ShouldBe(125); // Tournament C
     }
 
     [Fact(DisplayName = "Mix of main-cut and side-cut results: each row uses correct point rule, cumulative accurate")]
