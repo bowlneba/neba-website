@@ -432,6 +432,7 @@ FodyWeavers.xsd
 
 # Playwright report directory
 playwright-report/
+.playwright-mcp/
 test-results/
 .azure
 

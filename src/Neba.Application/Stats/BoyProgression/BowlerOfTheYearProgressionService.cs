@@ -56,11 +56,25 @@ internal sealed class BowlerOfTheYearProgressionService(
         if (eligible.Count == 0) return [];
 
         // All stat-eligible tournaments in chronological order — shared X-axis for every series.
+        // Deduplicate names: when two tournaments share a display name, append the date so each
+        // chart category label is unique (duplicate names cause ApexCharts to drop data points).
         var allTournaments = eligible
             .GroupBy(r => r.TournamentId)
             .Select(g => (Id: g.Key, Name: g.First().TournamentName, Date: g.First().TournamentDate))
             .OrderBy(t => t.Date)
             .ToArray();
+
+        var duplicateNames = allTournaments
+            .GroupBy(t => t.Name)
+            .Where(g => g.Count() > 1)
+            .SelectMany(g => g)
+            .Select(t => t.Id)
+            .ToHashSet();
+
+        allTournaments = [.. allTournaments.Select(t =>
+            duplicateNames.Contains(t.Id)
+                ? (t.Id, $"{t.Name} ({t.Date:M/d})", t.Date)
+                : t)];
 
         var byBowler = eligible.GroupBy(r => r.BowlerId);
 

@@ -51,9 +51,13 @@ app.UseOpenApiDocumentation();
 app.UseInfrastructure();
 
 #if DEBUG
-app.MapGet("/debug/cache", async (ZiggyCreatures.Caching.Fusion.IFusionCache cache, CancellationToken ct) =>
+app.MapGet("/debug/cache", async (
+    ZiggyCreatures.Caching.Fusion.IFusionCache fusionCache,
+    Microsoft.Extensions.Caching.Hybrid.HybridCache hybridCache,
+    CancellationToken ct) =>
 {
-    await cache.RemoveByTagAsync("neba", token: ct);
+    await fusionCache.RemoveByTagAsync("neba", token: ct);
+    await hybridCache.RemoveByTagAsync("neba", ct);
     return Results.Ok("Cache cleared.");
 }).AllowAnonymous();
 #endif
