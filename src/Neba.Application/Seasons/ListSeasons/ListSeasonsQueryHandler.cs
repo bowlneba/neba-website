@@ -7,10 +7,6 @@ internal sealed class ListSeasonsQueryHandler(ISeasonQueries seasonQuery)
 {
     private readonly ISeasonQueries _seasonQuery = seasonQuery;
 
-    public async Task<IReadOnlyCollection<SeasonDto>> HandleAsync(ListSeasonsQuery query, CancellationToken cancellationToken)
-    {
-        var seasons = await _seasonQuery.GetAllAsync(cancellationToken);
-
-        return seasons;
-    }
+    public Task<IReadOnlyCollection<SeasonDto>> HandleAsync(ListSeasonsQuery query, CancellationToken cancellationToken)
+        => _seasonQuery.GetAllAsync(cancellationToken);
 }

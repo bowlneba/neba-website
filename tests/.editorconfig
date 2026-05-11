@@ -1,6 +1,10 @@
 # Test-only analyzer suppressions
 [*.cs]
 
+# Ignore cognitive complexity in tests
+dotnet_diagnostic.S3776.severity = none
+
+
 # Completely disable accessibility modifier enforcement for tests
 # Setting to 'always' with 'none' severity means "don't enforce any particular style"
 dotnet_style_require_accessibility_modifiers = always:none

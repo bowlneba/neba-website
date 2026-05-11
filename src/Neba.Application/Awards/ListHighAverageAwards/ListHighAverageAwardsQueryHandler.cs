@@ -7,10 +7,6 @@ internal sealed class ListHighAverageAwardsQueryHandler(IAwardQueries awardQueri
 {
     private readonly IAwardQueries _awardQueries = awardQueries;
 
-    public async Task<IReadOnlyCollection<HighAverageAwardDto>> HandleAsync(ListHighAverageAwardsQuery query, CancellationToken cancellationToken)
-    {
-        var awards = await _awardQueries.GetAllHighAverageAwardsAsync(cancellationToken);
-
-        return awards;
-    }
+    public Task<IReadOnlyCollection<HighAverageAwardDto>> HandleAsync(ListHighAverageAwardsQuery query, CancellationToken cancellationToken)
+        => _awardQueries.GetAllHighAverageAwardsAsync(cancellationToken);
 }

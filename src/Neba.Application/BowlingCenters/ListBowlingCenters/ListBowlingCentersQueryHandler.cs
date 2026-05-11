@@ -7,10 +7,6 @@ internal sealed class ListBowlingCentersQueryHandler(IBowlingCenterQueries bowli
 {
     private readonly IBowlingCenterQueries _bowlingCenterQueries = bowlingCenterQueries;
 
-    public async Task<IReadOnlyCollection<BowlingCenterSummaryDto>> HandleAsync(ListBowlingCentersQuery query, CancellationToken cancellationToken)
-    {
-        var bowlingCenters = await _bowlingCenterQueries.GetAllAsync(cancellationToken);
-
-        return bowlingCenters;
-    }
+    public Task<IReadOnlyCollection<BowlingCenterSummaryDto>> HandleAsync(ListBowlingCentersQuery query, CancellationToken cancellationToken)
+        => _bowlingCenterQueries.GetAllAsync(cancellationToken);
 }
