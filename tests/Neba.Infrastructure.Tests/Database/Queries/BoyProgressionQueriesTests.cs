@@ -49,8 +49,8 @@ public sealed class BoyProgressionQueriesTests
         var bowlerA = BowlerFactory.Create(name: NameFactory.Create(firstName: "Alex", lastName: "Lane"));
         var bowlerB = BowlerFactory.Create(name: NameFactory.Create(firstName: "Pat", lastName: "Cross"));
 
-        var tournamentInRequestedSeason = TournamentFactory.Create(seasonId: requestedSeason.Id, statsEligible: true);
-        var tournamentInOtherSeason = TournamentFactory.Create(seasonId: otherSeason.Id, statsEligible: true);
+        var tournamentInRequestedSeason = TournamentFactory.Create(statsEligible: true, seasonId: requestedSeason.Id);
+        var tournamentInOtherSeason = TournamentFactory.Create(statsEligible: true, seasonId: otherSeason.Id);
 
         await _dbContext.Seasons.AddRangeAsync([requestedSeason, otherSeason], TestContext.Current.CancellationToken);
         await _dbContext.Bowlers.AddRangeAsync([bowlerA, bowlerB], TestContext.Current.CancellationToken);
@@ -84,11 +84,11 @@ public sealed class BoyProgressionQueriesTests
         var startDate = new DateOnly(2025, 3, 10);
         var endDate = new DateOnly(2025, 3, 11);
         var tournament = TournamentFactory.Create(
-            seasonId: season.Id,
             tournamentType: TournamentType.Senior,
             startDate: startDate,
             endDate: endDate,
-            statsEligible: false);
+            statsEligible: false,
+            seasonId: season.Id);
 
         var sideCut = SideCutFactory.Create(name: "Senior");
 
@@ -160,9 +160,9 @@ public sealed class BoyProgressionQueriesTests
         var season = SeasonFactory.Create(id: SeasonId.New());
         var bowler = BowlerFactory.Create();
 
-        var tournamentJan = TournamentFactory.Create(seasonId: season.Id, name: "January", startDate: new DateOnly(2025, 1, 10), endDate: new DateOnly(2025, 1, 11));
-        var tournamentMar = TournamentFactory.Create(seasonId: season.Id, name: "March", startDate: new DateOnly(2025, 3, 10), endDate: new DateOnly(2025, 3, 11));
-        var tournamentFeb = TournamentFactory.Create(seasonId: season.Id, name: "February", startDate: new DateOnly(2025, 2, 10), endDate: new DateOnly(2025, 2, 11));
+        var tournamentJan = TournamentFactory.Create(name: "January", startDate: new DateOnly(2025, 1, 10), endDate: new DateOnly(2025, 1, 11), seasonId: season.Id);
+        var tournamentMar = TournamentFactory.Create(name: "March", startDate: new DateOnly(2025, 3, 10), endDate: new DateOnly(2025, 3, 11), seasonId: season.Id);
+        var tournamentFeb = TournamentFactory.Create(name: "February", startDate: new DateOnly(2025, 2, 10), endDate: new DateOnly(2025, 2, 11), seasonId: season.Id);
 
         await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
         await _dbContext.Bowlers.AddAsync(bowler, TestContext.Current.CancellationToken);
@@ -192,11 +192,11 @@ public sealed class BoyProgressionQueriesTests
         var season = SeasonFactory.Create(id: SeasonId.New());
         var bowler = BowlerFactory.Create();
 
-        var statEligible = TournamentFactory.Create(seasonId: season.Id, statsEligible: true);
+        var statEligible = TournamentFactory.Create(statsEligible: true, seasonId: season.Id);
         var notStatEligible = TournamentFactory.Create(
-            seasonId: season.Id,
             tournamentType: TournamentType.Senior,
-            statsEligible: false);
+            statsEligible: false,
+            seasonId: season.Id);
 
         await _dbContext.Seasons.AddAsync(season, TestContext.Current.CancellationToken);
         await _dbContext.Bowlers.AddAsync(bowler, TestContext.Current.CancellationToken);

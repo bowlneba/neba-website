@@ -95,9 +95,9 @@ public sealed class SeasonTimelineTests : IDisposable
         var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
 
         var pastTournament = SeasonTournamentViewModelFactory.Create(
-            season: currentYear, startDate: pastDate, endDate: pastDate, name: "Past Open");
+name: "Past Open", season: currentYear, startDate: pastDate, endDate: pastDate);
         var futureTournament = SeasonTournamentViewModelFactory.Create(
-            season: currentYear, startDate: futureDate, endDate: futureDate, name: "Future Open");
+name: "Future Open", season: currentYear, startDate: futureDate, endDate: futureDate);
 
         var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
             .Add(p => p.Season, currentYear)
@@ -146,7 +146,7 @@ public sealed class SeasonTimelineTests : IDisposable
         var currentYear = DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
         var tournament = SeasonTournamentViewModelFactory.Create(
-            season: currentYear, startDate: futureDate, endDate: futureDate, name: "Spring Open");
+name: "Spring Open", season: currentYear, startDate: futureDate, endDate: futureDate);
 
         var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
             .Add(p => p.Season, currentYear)

@@ -303,8 +303,8 @@ public sealed class BowlerOfTheYearProgressionServiceTests
         var result = BoyProgressionResultDtoFactory.Create(
             bowlerId: bowlerId,
             bowlerDateOfBirth: new DateOnly(1975, 6, 15),
-            statsEligible: true,
             tournamentEndDate: endDate,
+            statsEligible: true,
             points: 90,
             sideCutId: null);
 
@@ -319,8 +319,8 @@ public sealed class BowlerOfTheYearProgressionServiceTests
         var endDate = new DateOnly(2025, 6, 14);
         var result = BoyProgressionResultDtoFactory.Create(
             bowlerDateOfBirth: new DateOnly(1975, 6, 15),
-            statsEligible: true,
             tournamentEndDate: endDate,
+            statsEligible: true,
             points: 90,
             sideCutId: null);
 
@@ -351,9 +351,9 @@ public sealed class BowlerOfTheYearProgressionServiceTests
         var result = BoyProgressionResultDtoFactory.Create(
             bowlerId: bowlerId,
             bowlerDateOfBirth: new DateOnly(1970, 1, 1),
+            tournamentEndDate: endDate,
             statsEligible: false,
             tournamentType: TournamentType.Senior,
-            tournamentEndDate: endDate,
             points: 50,
             sideCutId: null);
 
@@ -381,8 +381,8 @@ public sealed class BowlerOfTheYearProgressionServiceTests
     {
         var result = BoyProgressionResultDtoFactory.Create(
             bowlerDateOfBirth: new DateOnly(1970, 1, 1),
-            statsEligible: true,
             tournamentEndDate: new DateOnly(2025, 6, 15),
+            statsEligible: true,
             points: 30,
             sideCutId: 2,
             sideCutName: "Senior");
@@ -397,8 +397,8 @@ public sealed class BowlerOfTheYearProgressionServiceTests
     {
         var result = BoyProgressionResultDtoFactory.Create(
             bowlerDateOfBirth: new DateOnly(1970, 1, 1),
-            statsEligible: true,
             tournamentEndDate: new DateOnly(2025, 6, 15),
+            statsEligible: true,
             points: 30,
             sideCutId: 3,
             sideCutName: "Super Senior");
@@ -418,8 +418,8 @@ public sealed class BowlerOfTheYearProgressionServiceTests
         var result = BoyProgressionResultDtoFactory.Create(
             bowlerId: bowlerId,
             bowlerDateOfBirth: new DateOnly(1965, 3, 20),
-            statsEligible: true,
             tournamentEndDate: endDate,
+            statsEligible: true,
             points: 55,
             sideCutId: null);
 
@@ -436,8 +436,8 @@ public sealed class BowlerOfTheYearProgressionServiceTests
         var result = BoyProgressionResultDtoFactory.Create(
             bowlerId: bowlerId,
             bowlerDateOfBirth: new DateOnly(1970, 1, 1), // age 55 in 2025
-            statsEligible: true,
             tournamentEndDate: endDate,
+            statsEligible: true,
             points: 80,
             sideCutId: null);
 
@@ -452,8 +452,8 @@ public sealed class BowlerOfTheYearProgressionServiceTests
     {
         var result = BoyProgressionResultDtoFactory.Create(
             bowlerDateOfBirth: new DateOnly(1960, 1, 1),
-            statsEligible: true,
             tournamentEndDate: new DateOnly(2025, 6, 15),
+            statsEligible: true,
             points: 40,
             sideCutId: 4,
             sideCutName: "Super Senior");
@@ -473,8 +473,8 @@ public sealed class BowlerOfTheYearProgressionServiceTests
         var result = BoyProgressionResultDtoFactory.Create(
             bowlerId: bowlerId,
             bowlerDateOfBirth: new DateOnly(2007, 8, 11), // turns 18 the day after the tournament ends
-            statsEligible: true,
             tournamentEndDate: endDate,
+            statsEligible: true,
             points: 35,
             sideCutId: null);
 
@@ -489,8 +489,8 @@ public sealed class BowlerOfTheYearProgressionServiceTests
         var endDate = new DateOnly(2025, 8, 10);
         var result = BoyProgressionResultDtoFactory.Create(
             bowlerDateOfBirth: new DateOnly(2007, 8, 10), // turns 18 on end date
-            statsEligible: true,
             tournamentEndDate: endDate,
+            statsEligible: true,
             points: 35,
             sideCutId: null);
 
@@ -504,9 +504,9 @@ public sealed class BowlerOfTheYearProgressionServiceTests
     {
         var result = BoyProgressionResultDtoFactory.Create(
             bowlerDateOfBirth: new DateOnly(2010, 1, 1),
+            tournamentEndDate: new DateOnly(2025, 6, 15),
             statsEligible: false,
             tournamentType: TournamentType.Youth,
-            tournamentEndDate: new DateOnly(2025, 6, 15),
             points: 35,
             sideCutId: null);
 
@@ -525,9 +525,9 @@ public sealed class BowlerOfTheYearProgressionServiceTests
         var result = BoyProgressionResultDtoFactory.Create(
             bowlerId: bowlerId,
             bowlerDateOfBirth: new DateOnly(1975, 1, 15),
-            statsEligible: true,
-            tournamentDate: new DateOnly(2025, 1, 14),   // start
-            tournamentEndDate: new DateOnly(2025, 1, 15), // end — birthday
+            tournamentDate: new DateOnly(2025, 1, 14),
+            tournamentEndDate: new DateOnly(2025, 1, 15),   // start
+            statsEligible: true, // end — birthday
             points: 70,
             sideCutId: null);
 
@@ -541,9 +541,9 @@ public sealed class BowlerOfTheYearProgressionServiceTests
     {
         var result = BoyProgressionResultDtoFactory.Create(
             bowlerDateOfBirth: new DateOnly(1975, 1, 16),
-            statsEligible: true,
             tournamentDate: new DateOnly(2025, 1, 14),
             tournamentEndDate: new DateOnly(2025, 1, 15),
+            statsEligible: true,
             points: 70,
             sideCutId: null);
 
@@ -638,8 +638,8 @@ public sealed class BowlerOfTheYearProgressionServiceTests
             bowlerId: bowlerId,
             bowlerDateOfBirth: new DateOnly(1970, 1, 1),
             bowlerGender: Gender.Female,
-            statsEligible: true,
             tournamentEndDate: new DateOnly(2025, 6, 15),
+            statsEligible: true,
             points: 50,
             sideCutId: 99,
             sideCutName: "Unknown Division");
@@ -660,9 +660,9 @@ public sealed class BowlerOfTheYearProgressionServiceTests
         var result = BoyProgressionResultDtoFactory.Create(
             bowlerId: seniorBowlerId,
             bowlerDateOfBirth: new DateOnly(1960, 1, 1), // age 65
+            tournamentEndDate: endDate,
             statsEligible: false,
             tournamentType: TournamentType.Senior,
-            tournamentEndDate: endDate,
             points: 40,
             sideCutId: 4,
             sideCutName: "Super Senior");

@@ -194,8 +194,8 @@ public sealed class TournamentDetailTests : IDisposable
             startDate: futureDate,
             endDate: futureDate,
             entryFee: 95m,
-            addedMoney: 1500m,
-            registrationUrl: new Uri("https://bowlneba.com/register")));
+            registrationUrl: new Uri("https://bowlneba.com/register"),
+            addedMoney: 1500m));
 
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 

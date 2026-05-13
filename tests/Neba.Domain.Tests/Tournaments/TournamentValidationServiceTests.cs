@@ -52,9 +52,9 @@ public sealed class TournamentValidationServiceTests
             startDate: new DateOnly(2025, 1, 1),
             endDate: new DateOnly(2025, 12, 31));
         var tournament = TournamentFactory.Create(
-            seasonId: seasonId,
             startDate: new DateOnly(2024, 12, 31),
-            endDate: new DateOnly(2025, 1, 2));
+            endDate: new DateOnly(2025, 1, 2),
+            seasonId: seasonId);
 
         _seasonRepositoryMock
             .Setup(r => r.GetSeasonByIdAsync(seasonId, false, TestContext.Current.CancellationToken))
@@ -82,9 +82,9 @@ public sealed class TournamentValidationServiceTests
             startDate: new DateOnly(2025, 1, 1),
             endDate: new DateOnly(2025, 12, 31));
         var tournament = TournamentFactory.Create(
-            seasonId: seasonId,
             startDate: new DateOnly(2025, 12, 30),
-            endDate: new DateOnly(2026, 1, 1));
+            endDate: new DateOnly(2026, 1, 1),
+            seasonId: seasonId);
 
         _seasonRepositoryMock
             .Setup(r => r.GetSeasonByIdAsync(seasonId, false, TestContext.Current.CancellationToken))
@@ -112,9 +112,9 @@ public sealed class TournamentValidationServiceTests
             startDate: new DateOnly(2025, 1, 1),
             endDate: new DateOnly(2025, 12, 31));
         var tournament = TournamentFactory.Create(
-            seasonId: seasonId,
             startDate: new DateOnly(2025, 1, 1),
-            endDate: new DateOnly(2025, 12, 31));
+            endDate: new DateOnly(2025, 12, 31),
+            seasonId: seasonId);
 
         _seasonRepositoryMock
             .Setup(r => r.GetSeasonByIdAsync(seasonId, false, TestContext.Current.CancellationToken))

@@ -107,9 +107,9 @@ public sealed class ResultsTableTests : IDisposable
     {
         var results = new[]
         {
-            TournamentResultViewModelFactory.Create(place: 1, bowlerName: "Alice"),
-            TournamentResultViewModelFactory.Create(place: 1, bowlerName: "Bob"),
-            TournamentResultViewModelFactory.Create(place: 1, bowlerName: "Carol"),
+            TournamentResultViewModelFactory.Create(bowlerName: "Alice", place: 1),
+            TournamentResultViewModelFactory.Create(bowlerName: "Bob", place: 1),
+            TournamentResultViewModelFactory.Create(bowlerName: "Carol", place: 1),
         };
 
         var cut = _ctx.Render<ResultsTable>(p => p.Add(x => x.Results, (IEnumerable<TournamentResultViewModel>)results));
@@ -122,8 +122,8 @@ public sealed class ResultsTableTests : IDisposable
     {
         var results = new[]
         {
-            TournamentResultViewModelFactory.Create(place: 1, bowlerName: "Alice"),
-            TournamentResultViewModelFactory.Create(place: 1, bowlerName: "Bob"),
+            TournamentResultViewModelFactory.Create(bowlerName: "Alice", place: 1),
+            TournamentResultViewModelFactory.Create(bowlerName: "Bob", place: 1),
         };
 
         var cut = _ctx.Render<ResultsTable>(p => p.Add(x => x.Results, (IEnumerable<TournamentResultViewModel>)results));
@@ -153,8 +153,8 @@ public sealed class ResultsTableTests : IDisposable
     {
         var results = new[]
         {
-            TournamentResultViewModelFactory.Create(place: null, bowlerName: "Alice"),
-            TournamentResultViewModelFactory.Create(place: null, bowlerName: "Bob"),
+            TournamentResultViewModelFactory.Create(bowlerName: "Alice", place: null),
+            TournamentResultViewModelFactory.Create(bowlerName: "Bob", place: null),
         };
 
         var cut = _ctx.Render<ResultsTable>(p => p.Add(x => x.Results, (IEnumerable<TournamentResultViewModel>)results));

@@ -99,7 +99,7 @@ public sealed class GetTournamentQueryHandlerTests
         const string logoContainer = "tournament-logos";
         const string logoPath = "spring-open/logo.png";
         var expectedLogoUrl = new Uri($"https://storage.example.com/{logoContainer}/{logoPath}");
-        var dto = TournamentDetailDtoFactory.Create(logoContainer: logoContainer, logoPath: logoPath, logoUrl: null);
+        var dto = TournamentDetailDtoFactory.Create(logoUrl: null, logoContainer: logoContainer, logoPath: logoPath);
         var query = new GetTournamentQuery { Id = dto.Id };
 
         _tournamentQueriesMock
@@ -124,7 +124,7 @@ public sealed class GetTournamentQueryHandlerTests
         // Arrange
         // Canary: if the && guard is mutated to ||, GetBlobUri(null, path) is called.
         // Returning a URL here lets the assertion catch the mutation rather than relying on MockException.
-        var dto = TournamentDetailDtoFactory.Create(logoContainer: null, logoPath: "spring-open/logo.png", logoUrl: null);
+        var dto = TournamentDetailDtoFactory.Create(logoUrl: null, logoContainer: null, logoPath: "spring-open/logo.png");
         var query = new GetTournamentQuery { Id = dto.Id };
 
         _tournamentQueriesMock
@@ -149,7 +149,7 @@ public sealed class GetTournamentQueryHandlerTests
         // Arrange — LogoContainer set but LogoPath null.
         // The && guard means no URL should be resolved. The || mutation would call
         // GetBlobUri(container, null) — the assertion below catches the mutation.
-        var dto = TournamentDetailDtoFactory.Create(logoContainer: "tournament-logos", logoPath: null, logoUrl: null);
+        var dto = TournamentDetailDtoFactory.Create(logoUrl: null, logoContainer: "tournament-logos", logoPath: null);
         var query = new GetTournamentQuery { Id = dto.Id };
 
         _tournamentQueriesMock
@@ -176,8 +176,8 @@ public sealed class GetTournamentQueryHandlerTests
         const string container = "sponsor-logos";
         const string path = "acme/logo.png";
         var expectedLogoUrl = new Uri($"https://storage.example.com/{container}/{path}");
-        var sponsor = SponsorSummaryDtoFactory.Create(logoContainer: container, logoPath: path, logoUrl: null);
-        var dto = TournamentDetailDtoFactory.Create(logoContainer: null, logoPath: null, sponsors: [sponsor]);
+        var sponsor = SponsorSummaryDtoFactory.Create(logoUrl: null, logoContainer: container, logoPath: path);
+        var dto = TournamentDetailDtoFactory.Create(sponsors: [sponsor], logoContainer: null, logoPath: null);
         var query = new GetTournamentQuery { Id = dto.Id };
 
         _tournamentQueriesMock
@@ -203,7 +203,7 @@ public sealed class GetTournamentQueryHandlerTests
         // Canary: if && guard mutated to ||, GetBlobUri(null, path) is called.
         // Construct directly — the factory uses ?? defaults so null can't be passed through it.
         var sponsor = new SponsorSummaryDto { Name = "Acme Corp", Slug = "acme-corp", LogoContainer = null, LogoPath = "acme/logo.png" };
-        var dto = TournamentDetailDtoFactory.Create(logoContainer: null, logoPath: null, sponsors: [sponsor]);
+        var dto = TournamentDetailDtoFactory.Create(sponsors: [sponsor], logoContainer: null, logoPath: null);
         var query = new GetTournamentQuery { Id = dto.Id };
 
         _tournamentQueriesMock

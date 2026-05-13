@@ -122,7 +122,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests
         const string logoContainer = "tournament-logos";
         const string logoPath = "spring-open/logo.png";
         var expectedLogoUrl = new Uri($"https://storage.example.com/{logoContainer}/{logoPath}");
-        var tournament = SeasonTournamentDtoFactory.Create(logoContainer: logoContainer, logoPath: logoPath, logoUrl: null);
+        var tournament = SeasonTournamentDtoFactory.Create(logoUrl: null, logoContainer: logoContainer, logoPath: logoPath);
         var query = new ListTournamentsInSeasonQuery { SeasonId = seasonId };
 
         _tournamentQueriesMock
@@ -145,7 +145,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests
     {
         // Arrange
         var seasonId = SeasonId.New();
-        var tournament = SeasonTournamentDtoFactory.Create(logoContainer: null, logoPath: null, logoUrl: null);
+        var tournament = SeasonTournamentDtoFactory.Create(logoUrl: null, logoContainer: null, logoPath: null);
         var query = new ListTournamentsInSeasonQuery { SeasonId = seasonId };
 
         _tournamentQueriesMock
@@ -172,7 +172,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests
         // The && guard means no URL should be resolved. The || mutation would call
         // GetBlobUri(container, null) — the assertion below catches the mutation.
         var seasonId = SeasonId.New();
-        var tournament = SeasonTournamentDtoFactory.Create(logoContainer: "tournament-logos", logoPath: null, logoUrl: null);
+        var tournament = SeasonTournamentDtoFactory.Create(logoUrl: null, logoContainer: "tournament-logos", logoPath: null);
         var query = new ListTournamentsInSeasonQuery { SeasonId = seasonId };
 
         _tournamentQueriesMock
@@ -199,9 +199,9 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests
         const string container = "sponsor-logos";
         const string path = "acme/logo.png";
         var expectedLogoUrl = new Uri($"https://storage.example.com/{container}/{path}");
-        var sponsor = SponsorSummaryDtoFactory.Create(logoContainer: container, logoPath: path, logoUrl: null);
+        var sponsor = SponsorSummaryDtoFactory.Create(logoUrl: null, logoContainer: container, logoPath: path);
         var tournament = SeasonTournamentDtoFactory.Create(
-            logoContainer: null, logoPath: null, sponsors: [sponsor]);
+sponsors: [sponsor], logoContainer: null, logoPath: null);
         var query = new ListTournamentsInSeasonQuery { SeasonId = seasonId };
 
         _tournamentQueriesMock
@@ -228,7 +228,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests
         var seasonId = SeasonId.New();
         var sponsor = new SponsorSummaryDto { Name = "Acme Corp", Slug = "acme-corp", LogoContainer = null, LogoPath = "acme/logo.png" };
         var tournament = SeasonTournamentDtoFactory.Create(
-            logoContainer: null, logoPath: null, sponsors: [sponsor]);
+sponsors: [sponsor], logoContainer: null, logoPath: null);
         var query = new ListTournamentsInSeasonQuery { SeasonId = seasonId };
 
         _tournamentQueriesMock
