@@ -138,12 +138,9 @@ public sealed record SeasonTournamentViewModel
             return StartDate.ToString("MMM d, yyyy", System.Globalization.CultureInfo.CurrentCulture);
         }
 
-        if (StartDate.Month == EndDate.Month)
-        {
-            return $"{StartDate.ToString("MMM d", System.Globalization.CultureInfo.CurrentCulture)}–{EndDate.ToString("d, yyyy", System.Globalization.CultureInfo.CurrentCulture)}";
-        }
-
-        return $"{StartDate.ToString("MMM d", System.Globalization.CultureInfo.CurrentCulture)} – {EndDate.ToString("MMM d, yyyy", System.Globalization.CultureInfo.CurrentCulture)}";
+        return StartDate.Month == EndDate.Month
+            ? $"{StartDate.ToString("MMM d", System.Globalization.CultureInfo.CurrentCulture)}–{EndDate.ToString("d, yyyy", System.Globalization.CultureInfo.CurrentCulture)}"
+            : $"{StartDate.ToString("MMM d", System.Globalization.CultureInfo.CurrentCulture)} – {EndDate.ToString("MMM d, yyyy", System.Globalization.CultureInfo.CurrentCulture)}";
     }
 
     /// <summary>
