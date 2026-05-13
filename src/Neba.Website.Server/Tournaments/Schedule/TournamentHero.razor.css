@@ -110,15 +110,15 @@
 }
 
 .tournament-hero__chip {
-    background: rgba(255, 255, 255, 0.12);
+    background: #f3f4f6;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    color: rgba(255, 255, 255, 1);
+    color: #1f2937;
     border-radius: 999px;
     padding: 0.25rem 0.75rem;
     font-size: 0.8125rem;
     font-weight: 500;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid #d1d5db;
 }
 
 /* CTA row */
