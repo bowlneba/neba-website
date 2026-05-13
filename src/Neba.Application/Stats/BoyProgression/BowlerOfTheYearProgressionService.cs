@@ -120,18 +120,24 @@ internal sealed class BowlerOfTheYearProgressionService(
         if (category == BowlerOfTheYearCategory.Open
             || category == BowlerOfTheYearCategory.Youth
             || category == BowlerOfTheYearCategory.Rookie)
+        {
             return r.StatsEligible;
+        }
 
         if (category == BowlerOfTheYearCategory.Senior
             || category == BowlerOfTheYearCategory.SuperSenior)
+        {
             return r.StatsEligible
                 || r.TournamentType == TournamentType.Senior
                 || r.TournamentType == TournamentType.SeniorAndWomen;
+        }
 
         if (category == BowlerOfTheYearCategory.Woman)
+        {
             return r.StatsEligible
                 || r.TournamentType == TournamentType.Women
                 || r.TournamentType == TournamentType.SeniorAndWomen;
+        }
 
         return false;
     }
