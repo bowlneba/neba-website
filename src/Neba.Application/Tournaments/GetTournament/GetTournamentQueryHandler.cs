@@ -18,10 +18,14 @@ internal sealed class GetTournamentQueryHandler(
         var tournament = await _tournamentQueries.GetTournamentDetailAsync(query.Id, cancellationToken);
 
         if (tournament is null)
+        {
             return TournamentErrors.TournamentNotFound(query.Id);
+        }
 
         if (tournament.LogoContainer is not null && tournament.LogoPath is not null)
+        {
             tournament = tournament with { LogoUrl = _fileStorageService.GetBlobUri(tournament.LogoContainer, tournament.LogoPath) };
+        }
 
         var sponsors = tournament.Sponsors
             .Select(s => s.LogoContainer is not null && s.LogoPath is not null

@@ -143,9 +143,13 @@ public static class SideCutFactory
                         sortOrder).Value;
 
                     if (f.Random.Bool())
+                    {
                         sideCut.AddCriteria(groupId, f.Random.Int(1, 65), null);
+                    }
                     else
+                    {
                         sideCut.AddCriteria(groupId, f.PickRandom(Gender.List.ToArray()));
+                    }
                 }
 
                 return sideCut;

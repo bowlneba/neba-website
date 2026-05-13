@@ -29,7 +29,10 @@ internal sealed class QueryTagEnrichmentInterceptor(IHttpContextAccessor httpCon
     private void EnrichCommand(DbCommand command)
     {
         var ctx = httpContextAccessor.HttpContext;
-        if (ctx is null) return;
+        if (ctx is null)
+        {
+            return;
+        }
 
         var userId = Sanitize(ctx.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anon");
         var endpoint = Sanitize(ctx.GetEndpoint()?.DisplayName ?? "unknown");

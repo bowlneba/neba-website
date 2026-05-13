@@ -75,17 +75,29 @@ public static class SeasonFactory
             var category = categories[rng.Next(categories.Length)];
 
             if (category == BowlerOfTheYearCategory.Open)
+            {
                 season.AddOpenBowlerOfTheYearWinner(bowlerId);
+            }
             else if (category == BowlerOfTheYearCategory.Woman)
+            {
                 season.AddWomanOfTheYearWinner(bowlerId, Gender.Female);
+            }
             else if (category == BowlerOfTheYearCategory.Senior)
+            {
                 season.AddSeniorBowlerOfTheYearWinner(bowlerId, age: 55);
+            }
             else if (category == BowlerOfTheYearCategory.SuperSenior)
+            {
                 season.AddSuperSeniorBowlerOfTheYearWinner(bowlerId, age: 65);
+            }
             else if (category == BowlerOfTheYearCategory.Rookie)
+            {
                 season.AddRookieBowlerOfTheYearWinner(bowlerId, isRookie: true);
+            }
             else if (category == BowlerOfTheYearCategory.Youth)
+            {
                 season.AddYouthBowlerOfTheYearWinner(bowlerId, age: 16);
+            }
         }
 
         // HighAverage: 1–3 bowlers sharing the same average

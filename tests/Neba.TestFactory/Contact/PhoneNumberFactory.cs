@@ -45,7 +45,9 @@ public static class PhoneNumberFactory
             });
 
         if (seed.HasValue)
+        {
             faker.UseSeed(seed.Value);
+        }
 
         return faker.Generate(count);
     }

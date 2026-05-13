@@ -126,14 +126,24 @@ public sealed partial record PhoneNumber
         // - Third digit 0-9
         // - Cannot be N11 (211, 311, etc.)
 
-        if (areaCode.Length != 3) return false;
+        if (areaCode.Length != 3)
+        {
+            return false;
+        }
 
         char first = areaCode[0];
         char second = areaCode[1];
         char third = areaCode[2];
 
-        if (first < '2' || first > '9') return false;
-        if (second == '1' && third == '1') return false; // N11 codes
+        if (first < '2' || first > '9')
+        {
+            return false;
+        }
+
+        if (second == '1' && third == '1')
+        {
+            return false; // N11 codes
+        }
 
         return true;
     }

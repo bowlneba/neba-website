@@ -29,9 +29,13 @@ public static class SideCutCriteriaGroupFactory
             foreach (var criterion in criteria)
             {
                 if (criterion.GenderRequirement is not null)
+                {
                     group.AddCriteria(criterion.GenderRequirement);
+                }
                 else
+                {
                     group.AddCriteria(criterion.MinimumAge, criterion.MaximumAge);
+                }
             }
         }
 
@@ -68,9 +72,13 @@ public static class SideCutCriteriaGroupFactory
                 foreach (var criterion in SideCutCriteriaFactory.Bogus(f.Random.Int(1, 3)))
                 {
                     if (criterion.GenderRequirement is not null)
+                    {
                         group.AddCriteria(criterion.GenderRequirement);
+                    }
                     else
+                    {
                         group.AddCriteria(criterion.MinimumAge, criterion.MaximumAge);
+                    }
                 }
 
                 return group;

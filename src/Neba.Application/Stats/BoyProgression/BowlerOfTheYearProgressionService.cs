@@ -59,7 +59,10 @@ internal sealed class BowlerOfTheYearProgressionService(
             .Where(r => IsTournamentEligibleForRace(r, category) && IsBowlerEligibleForRace(r, category))
             .ToList();
 
-        if (eligible.Count == 0) return [];
+        if (eligible.Count == 0)
+        {
+            return [];
+        }
 
         // All tournaments for this race in chronological order — shared X-axis for every series.
         // Deduplicate names: when two tournaments share a display name, append the date so each
@@ -95,10 +98,7 @@ internal sealed class BowlerOfTheYearProgressionService(
             var tournamentResults = allTournaments.Select(t =>
             {
                 // Tournaments the bowler didn't enter contribute 0 points — line stays flat.
-                if (pointsByTournament.TryGetValue(t.Id, out var pts))
-                    cumulativePoints += pts;
-
-                return new BowlerOfTheYearPointsRaceTournamentDto
+                if (pointsByTournament.TryGetValue(t.Id, out var pts)) { cumulativePoints += pts; } return new BowlerOfTheYearPointsRaceTournamentDto
                 {
                     TournamentName = t.Name,
                     TournamentDate = t.Date,
@@ -142,13 +142,19 @@ internal sealed class BowlerOfTheYearProgressionService(
     private static bool IsBowlerEligibleForRace(BoyProgressionResultDto r, BowlerOfTheYearCategory category)
     {
         if (category == BowlerOfTheYearCategory.Open)
+        {
             return true;
+        }
 
         if (category == BowlerOfTheYearCategory.Woman)
+        {
             return r.BowlerGender == Gender.Female;
+        }
 
         if (category == BowlerOfTheYearCategory.Senior)
+        {
             return r.BowlerDateOfBirth.HasValue && AgeAt(r.BowlerDateOfBirth.Value, r.TournamentEndDate) >= 50;
+        }
 
         return category == BowlerOfTheYearCategory.SuperSenior
             ? r.BowlerDateOfBirth.HasValue && AgeAt(r.BowlerDateOfBirth.Value, r.TournamentEndDate) >= 60
@@ -160,14 +166,20 @@ internal sealed class BowlerOfTheYearProgressionService(
     private static int AgeAt(DateOnly dateOfBirth, DateOnly evaluationDate)
     {
         var age = evaluationDate.Year - dateOfBirth.Year;
-        if (dateOfBirth.AddYears(age) > evaluationDate) age--;
+        if (dateOfBirth.AddYears(age) > evaluationDate)
+        {
+            age--;
+        }
+
         return age;
     }
 
     private static int PointsForRace(BoyProgressionResultDto r, BowlerOfTheYearCategory category)
     {
         if (r.SideCutId is null)
+        {
             return r.Points;
+        }
 
         return DeriveSideCutBoyCategory(r.SideCutName) == category ? r.Points : 5;
     }

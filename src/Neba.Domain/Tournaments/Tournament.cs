@@ -122,7 +122,10 @@ public sealed class Tournament
         }
 
         var sponsor = TournamentSponsor.Create(sponsorId, titleSponsor, sponsorshipAmount);
-        if (sponsor.IsError) return sponsor.Errors;
+        if (sponsor.IsError)
+        {
+            return sponsor.Errors;
+        }
 
         _sponsors.Add(sponsor.Value);
 

@@ -110,7 +110,9 @@ public static class SponsorDetailViewModelFactory
             });
 
         if (seed.HasValue)
+        {
             faker.UseSeed(seed.Value);
+        }
 
         return faker.Generate(count);
     }

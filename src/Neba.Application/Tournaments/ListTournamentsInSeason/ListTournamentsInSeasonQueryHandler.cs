@@ -17,10 +17,7 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
 
         return [.. tournaments.Select(t =>
         {
-            if (t.LogoContainer is not null && t.LogoPath is not null)
-                t = t with { LogoUrl = _fileStorageService.GetBlobUri(t.LogoContainer, t.LogoPath) };
-
-            var sponsors = t.Sponsors
+            if (t.LogoContainer is not null && t.LogoPath is not null) { t = t with { LogoUrl = _fileStorageService.GetBlobUri(t.LogoContainer, t.LogoPath) }; } var sponsors = t.Sponsors
                 .Select(s => s.LogoContainer is not null && s.LogoPath is not null
                     ? s with { LogoUrl = _fileStorageService.GetBlobUri(s.LogoContainer, s.LogoPath) }
                     : s)

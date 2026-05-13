@@ -734,18 +734,26 @@ public sealed class ApiExecutorTests
             InstrumentPublished = (instrument, l) =>
             {
                 if (instrument.Meter.Name == "Neba.Website.Api")
+                {
                     l.EnableMeasurementEvents(instrument);
+                }
             }
         };
         listener.SetMeasurementEventCallback<long>((instrument, value, tags, _) =>
         {
             var entry = (instrument.Name, value, (IReadOnlyDictionary<string, object?>)tags.ToArray().ToDictionary(t => t.Key, t => t.Value));
-            lock (longs) longs.Add(entry);
+            lock (longs)
+            {
+                longs.Add(entry);
+            }
         });
         listener.SetMeasurementEventCallback<double>((instrument, value, tags, _) =>
         {
             var entry = (instrument.Name, value, (IReadOnlyDictionary<string, object?>)tags.ToArray().ToDictionary(t => t.Key, t => t.Value));
-            lock (doubles) doubles.Add(entry);
+            lock (doubles)
+            {
+                doubles.Add(entry);
+            }
         });
         listener.Start();
         return listener;

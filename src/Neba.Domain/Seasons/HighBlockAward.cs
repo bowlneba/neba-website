@@ -33,13 +33,19 @@ public sealed class HighBlockAward
     internal static ErrorOr<HighBlockAward> Create(BowlerId bowlerId, int blockScore, int games)
     {
         if (bowlerId.Equals(default))
+        {
             return HighBlockAwardErrors.BowlerIdRequired;
+        }
 
         if (blockScore <= 0)
+        {
             return HighBlockAwardErrors.InvalidBlockScore;
+        }
 
         if (blockScore > games * 300)
+        {
             return HighBlockAwardErrors.BlockScoreExceedsMaximum(games);
+        }
 
         var id = SeasonAwardId.New();
         return new HighBlockAward { Id = id, BowlerId = bowlerId, BlockScore = blockScore };

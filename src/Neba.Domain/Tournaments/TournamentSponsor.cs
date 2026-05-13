@@ -37,7 +37,9 @@ public sealed class TournamentSponsor
     internal static ErrorOr<TournamentSponsor> Create(SponsorId sponsorId, bool titleSponsor, decimal sponsorshipAmount)
     {
         if (sponsorshipAmount < 0)
+        {
             return TournamentSponsorErrors.NegativeSponsorshipAmount;
+        }
 
         return new TournamentSponsor
         {

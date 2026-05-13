@@ -23,7 +23,10 @@ public sealed class VisibilityTests : ArchitectureTestBase
             .ImplementInterface(typeof(ICommandHandler<,>))
             .And().ResideInAssembly(ApplicationAssembly);
 
-        if (!filter.GetObjects(ArchModel).Any()) return;
+        if (!filter.GetObjects(ArchModel).Any())
+        {
+            return;
+        }
 
         filter.Should().BeInternal().Check(ArchModel);
     }

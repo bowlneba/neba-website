@@ -83,7 +83,9 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
             .SingleOrDefaultAsync(cancellationToken);
 
         if (row is null)
+        {
             return null;
+        }
 
         var historicalWinners = await _historicalTournamentChampions
             .Where(tc => tc.TournamentId == row.DbId)

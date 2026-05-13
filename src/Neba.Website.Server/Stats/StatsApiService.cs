@@ -182,7 +182,9 @@ internal sealed class StatsApiService(ApiExecutor executor, IStatsApi statsApi) 
     {
         var full = response.AllBowlers.FirstOrDefault(b => b.BowlerId == bowlerId);
         if (full is null)
+        {
             return null;
+        }
 
         var allStandings = response.BowlerOfTheYear
             .Concat(response.SeniorOfTheYear)
@@ -260,7 +262,9 @@ internal sealed class StatsApiService(ApiExecutor executor, IStatsApi statsApi) 
     {
         var bowlerRaw = allSeries.FirstOrDefault(r => r.BowlerId == bowlerId);
         if (bowlerRaw is null)
+        {
             return;
+        }
 
         var leaderId = standings.FirstOrDefault()?.BowlerId;
         PointsRaceSeriesResponse? comparisonRaw;

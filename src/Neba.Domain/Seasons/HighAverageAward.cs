@@ -49,16 +49,24 @@ public sealed class HighAverageAward
     )
     {
         if (bowlerId.Equals(default))
+        {
             return HighAverageAwardErrors.BowlerIdRequired;
+        }
 
         if (average <= 0)
+        {
             return HighAverageAwardErrors.InvalidAverage;
+        }
 
         if (totalGames <= 0)
+        {
             return HighAverageAwardErrors.InvalidTotalGames;
+        }
 
         if (tournamentsParticipated <= 0)
+        {
             return HighAverageAwardErrors.InvalidTournamentsParticipated;
+        }
 
         var id = SeasonAwardId.New();
         return new HighAverageAward

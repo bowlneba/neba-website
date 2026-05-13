@@ -263,10 +263,14 @@ public sealed class TournamentsPageTests : IDisposable
         Task<ErrorOr<List<SeasonViewModel>>> ITournamentDataService.GetSeasonsAsync(CancellationToken ct)
         {
             if (ct.IsCancellationRequested)
+            {
                 return Task.FromCanceled<ErrorOr<List<SeasonViewModel>>>(ct);
+            }
 
             if (Seasons is null)
+            {
                 return Task.FromResult<ErrorOr<List<SeasonViewModel>>>(Error.Failure("Seasons.Unavailable", "Seasons unavailable."));
+            }
 
             return Task.FromResult<ErrorOr<List<SeasonViewModel>>>(Seasons);
         }
@@ -275,11 +279,15 @@ public sealed class TournamentsPageTests : IDisposable
             SeasonViewModel season, CancellationToken ct)
         {
             if (ct.IsCancellationRequested)
+            {
                 return Task.FromCanceled<ErrorOr<List<SeasonTournamentViewModel>>>(ct);
+            }
 
             RequestedSeasons.Add(season.Label);
             if (UnavailableSeasonLabels.Contains(season.Label))
+            {
                 return Task.FromResult<ErrorOr<List<SeasonTournamentViewModel>>>(new List<SeasonTournamentViewModel>());
+            }
 
             List<SeasonTournamentViewModel> result = SeasonData.TryGetValue(season.Label, out var data) ? data : [];
             return Task.FromResult<ErrorOr<List<SeasonTournamentViewModel>>>(result);

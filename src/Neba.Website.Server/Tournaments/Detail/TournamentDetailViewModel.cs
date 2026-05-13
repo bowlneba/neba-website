@@ -118,11 +118,20 @@ public sealed record TournamentDetailViewModel
         get
         {
             if (BowlingCenterName is null)
+            {
                 return null;
+            }
+
             if (BowlingCenterCity is null)
+            {
                 return BowlingCenterName;
+            }
+
             if (BowlingCenterState is null)
+            {
                 return BowlingCenterName + " · " + BowlingCenterCity;
+            }
+
             return BowlingCenterName + " · " + BowlingCenterCity + ", " + BowlingCenterState;
         }
     }
@@ -131,7 +140,10 @@ public sealed record TournamentDetailViewModel
     public string FormatDateRange()
     {
         if (!IsMultiDay)
+        {
             return StartDate.ToString("MMM d, yyyy", System.Globalization.CultureInfo.CurrentCulture);
+        }
+
         if (StartDate.Month == EndDate.Month)
         {
             return StartDate.ToString("MMM d", System.Globalization.CultureInfo.CurrentCulture)

@@ -13,7 +13,9 @@ public static class LaneConfigurationFactory
             .CustomInstantiator(_ => Create([.. LaneRangeFactory.Bogus(1, seed)]));
 
         if (seed.HasValue)
+        {
             faker.UseSeed(seed.Value);
+        }
 
         return faker.Generate(count);
     }

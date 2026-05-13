@@ -41,7 +41,9 @@ public static class SeasonDtoFactory
             });
 
         if (seed.HasValue)
+        {
             faker.UseSeed(seed.Value);
+        }
 
         return faker.Generate(count);
     }
