@@ -283,7 +283,12 @@ public sealed class TournamentsPageTests : IDisposable
                 return Task.FromResult<List<SeasonTournamentViewModel>?>(null);
             }
 
-            return Task.FromResult(SeasonData.TryGetValue(season.Label, out var data) ? data : []);
+            if (SeasonData.TryGetValue(season.Label, out var data))
+            {
+                return Task.FromResult<List<SeasonTournamentViewModel>?>(data);
+            }
+
+            return Task.FromResult<List<SeasonTournamentViewModel>?>([]);
         }
     }
 }
