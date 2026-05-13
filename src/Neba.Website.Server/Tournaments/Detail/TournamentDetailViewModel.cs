@@ -127,12 +127,9 @@ public sealed record TournamentDetailViewModel
                 return BowlingCenterName;
             }
 
-            if (BowlingCenterState is null)
-            {
-                return BowlingCenterName + " · " + BowlingCenterCity;
-            }
-
-            return BowlingCenterName + " · " + BowlingCenterCity + ", " + BowlingCenterState;
+            return BowlingCenterState is null
+                ? $"{BowlingCenterName} · {BowlingCenterCity}"
+                : $"{BowlingCenterName} · {BowlingCenterCity}, {BowlingCenterState}";
         }
     }
 
