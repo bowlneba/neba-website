@@ -173,91 +173,14 @@
 
         try
         {
-            // Resolve available seasons (cached after first load)
-            List<SeasonViewModel> availableSeasons;
-            if (_availableSeasons is not null)
-            {
-                availableSeasons = _availableSeasons;
-            }
-            else
-            {
-                var seasonsResult = await DataService.GetSeasonsAsync(ct);
-                if (seasonsResult.IsError)
-                {
-                    _activeSeason = null;
-                    _isCurrentSeason = false;
-                    _isMergedSeason = false;
-                    _activeTab = TournamentTab.Past;
-                    _allTournaments = [];
-                    _pageNotice = "Season information is currently unavailable.";
-                    return;
-                }
-                availableSeasons = seasonsResult.Value;
-                _availableSeasons = availableSeasons;
-            }
-
-            if (availableSeasons.Count == 0)
-            {
-                _activeSeason = null;
-                _isCurrentSeason = false;
-                _isMergedSeason = false;
-                _activeTab = TournamentTab.Past;
-                _allTournaments = [];
-                _pageNotice = "No seasons are currently available.";
+            var availableSeasons = await LoadAvailableSeasonsAsync(ct);
+            if (availableSeasons is null)
                 return;
-            }
 
-            var today = DateTime.Today;
-            var requestedYear = Year ?? today.Year;
-
-            var matched = availableSeasons.FirstOrDefault(s => s.ContainsYear(requestedYear));
-            var current = availableSeasons.FirstOrDefault(s => s.ContainsYear(today.Year));
-
-            if (matched is null)
-            {
-                Nav.NavigateTo("/tournaments");
+            if (!TrySetActiveSeason(availableSeasons, out var matched, out var current))
                 return;
-            }
 
-            _activeSeason = matched;
-            _isCurrentSeason = matched == current;
-            _isMergedSeason = matched.IsMergedSeason;
-            _activeTab = _isCurrentSeason ? TournamentTab.Upcoming : TournamentTab.Past;
-
-            _searchTerm = string.Empty;
-            _typeFilter = null;
-            _nextSeasonHeroTournament = null;
-
-            var tournamentsResult = await DataService.GetTournamentsForSeasonAsync(_activeSeason, ct);
-            if (tournamentsResult.IsError)
-            {
-                _allTournaments = [];
-                _pageNotice = "Tournament data is currently unavailable.";
-                return;
-            }
-            _allTournaments = tournamentsResult.Value;
-
-            // When the current season has no upcoming tournaments, look ahead to the
-            // next season so the hero can surface the first scheduled tournament.
-            if (_isCurrentSeason && _allTournaments.Count > 0 && _allTournaments.TrueForAll(t => t.IsPast))
-            {
-                var nextSeason = availableSeasons
-                    .Where(s => s.StartDate > _activeSeason.EndDate)
-                    .OrderBy(s => s.StartDate)
-                    .FirstOrDefault();
-
-                if (nextSeason is not null)
-                {
-                    var nextResult = await DataService.GetTournamentsForSeasonAsync(nextSeason, ct);
-                    if (!nextResult.IsError)
-                    {
-                        _nextSeasonHeroTournament = nextResult.Value
-                            .Where(t => !t.IsPast)
-                            .OrderBy(t => t.StartDate)
-                            .FirstOrDefault();
-                    }
-                }
-            }
+            await LoadTournamentsAndHeroAsync(availableSeasons, ct);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -270,6 +193,99 @@
         }
 
         _isLoading = false;
+    }
+
+    // Helper: Load available seasons, handle error and empty cases
+    private async Task<List<SeasonViewModel>?> LoadAvailableSeasonsAsync(CancellationToken ct)
+    {
+        if (_availableSeasons is not null)
+            return _availableSeasons;
+
+        var seasonsResult = await DataService.GetSeasonsAsync(ct);
+        if (seasonsResult.IsError)
+        {
+            _activeSeason = null;
+            _isCurrentSeason = false;
+            _isMergedSeason = false;
+            _activeTab = TournamentTab.Past;
+            _allTournaments = [];
+            _pageNotice = "Season information is currently unavailable.";
+            return null;
+        }
+        var availableSeasons = seasonsResult.Value;
+        _availableSeasons = availableSeasons;
+        if (availableSeasons.Count == 0)
+        {
+            _activeSeason = null;
+            _isCurrentSeason = false;
+            _isMergedSeason = false;
+            _activeTab = TournamentTab.Past;
+            _allTournaments = [];
+            _pageNotice = "No seasons are currently available.";
+            return null;
+        }
+        return availableSeasons;
+    }
+
+    // Helper: Set active season, handle not found
+    private bool TrySetActiveSeason(List<SeasonViewModel> availableSeasons, out SeasonViewModel? matched, out
+SeasonViewModel? current)
+    {
+        var today = DateTime.Today;
+        var requestedYear = Year ?? today.Year;
+
+        matched = availableSeasons.FirstOrDefault(s => s.ContainsYear(requestedYear));
+        current = availableSeasons.FirstOrDefault(s => s.ContainsYear(today.Year));
+
+        if (matched is null)
+        {
+            Nav.NavigateTo("/tournaments");
+            return false;
+        }
+
+        _activeSeason = matched;
+        _isCurrentSeason = matched == current;
+        _isMergedSeason = matched.IsMergedSeason;
+        _activeTab = _isCurrentSeason ? TournamentTab.Upcoming : TournamentTab.Past;
+
+        _searchTerm = string.Empty;
+        _typeFilter = null;
+        _nextSeasonHeroTournament = null;
+        return true;
+    }
+
+    // Helper: Load tournaments for active season and hero
+    private async Task LoadTournamentsAndHeroAsync(List<SeasonViewModel> availableSeasons, CancellationToken ct)
+    {
+        var tournamentsResult = await DataService.GetTournamentsForSeasonAsync(_activeSeason!, ct);
+        if (tournamentsResult.IsError)
+        {
+            _allTournaments = [];
+            _pageNotice = "Tournament data is currently unavailable.";
+            return;
+        }
+        _allTournaments = tournamentsResult.Value;
+
+        // When the current season has no upcoming tournaments, look ahead to the next season
+        if (_isCurrentSeason && _allTournaments.Count > 0 && _allTournaments.TrueForAll(t => t.IsPast))
+        {
+            var nextSeason = availableSeasons
+                .Where(s => s.StartDate > _activeSeason!.EndDate)
+                .OrderBy(s => s.StartDate)
+                .FirstOrDefault();
+
+            if (nextSeason is not null)
+            {
+                var nextResult = await DataService.GetTournamentsForSeasonAsync(nextSeason, ct);
+                if (!nextResult.IsError)
+                {
+                    _nextSeasonHeroTournament = nextResult.Value
+                        .Where(t => !t.IsPast)
+                        .OrderBy(t => t.StartDate)
+                        .FirstOrDefault();
+                }
+            }
+        }
     }
 
     // ── Handlers ───────────────────────────────────────────────────────────
