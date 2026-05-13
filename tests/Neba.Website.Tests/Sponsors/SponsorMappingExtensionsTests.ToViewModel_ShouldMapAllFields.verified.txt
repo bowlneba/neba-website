@@ -33,7 +33,7 @@
     LogoUrl: https://picsum.photos/640/480/?image=132,
     IsCurrentSponsor: true,
     Priority: 4,
-    Tier: Premier,
+    Tier: Premium,
     Category: Manufacturer,
     TagPhrase: Horizontal fault-tolerant framework,
     Description: Consequatur et.,
