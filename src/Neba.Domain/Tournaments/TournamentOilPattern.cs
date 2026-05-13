@@ -95,13 +95,13 @@ internal static class TournamentOilPatternErrors
     public static Error NoTournamentRoundsSpecified()
     {
         return Error.Validation(
-            code: "Tournaments.NoTournamentRoundsSpecified",
+            code: "TournamentOilPattern.NoRoundsSpecified",
             description: "At least one tournament round must be specified when adding an oil pattern.");
     }
 
     public static Error TournamentRoundAlreadyAssociatedWithOilPattern(string tournamentRoundName)
         => Error.Validation(
-            code: "Tournaments.TournamentOilPattern.TournamentRoundAlreadyAssociated",
+            code: "TournamentOilPattern.RoundAlreadyAssociated",
             description: "Tournament round is already associated with this oil pattern.",
             metadata: new Dictionary<string, object>
             {

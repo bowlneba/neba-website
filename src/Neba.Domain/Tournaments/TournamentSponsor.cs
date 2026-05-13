@@ -51,6 +51,6 @@ public sealed class TournamentSponsor
 internal static class TournamentSponsorErrors
 {
     public static readonly Error NegativeSponsorshipAmount = Error.Validation(
-        code: "Tournaments.TournamentSponsor.NegativeSponsorshipAmount",
+        code: "TournamentSponsor.NegativeSponsorshipAmount",
         description: "Sponsorship amount must be zero or greater.");
 }

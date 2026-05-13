@@ -32,7 +32,9 @@ internal sealed class ListTournamentsInSeasonEndpoint(
 
         Description(description => description
             .WithName("ListTournamentsInSeason")
-            .WithTags("Public"));
+            .WithTags("Public")
+            .Produces<CollectionResponse<SeasonTournamentResponse>>(StatusCodes.Status200OK)
+            .ProducesProblemDetails(StatusCodes.Status400BadRequest));
     }
 
     public override async Task HandleAsync(ListTournamentsInSeasonRequest req, CancellationToken ct)

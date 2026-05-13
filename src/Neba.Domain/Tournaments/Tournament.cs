@@ -192,7 +192,7 @@ internal static class TournamentErrors
     public static Error InvalidTournamentDatesForSeason(DateOnly seasonStartDate, DateOnly seasonEndDate)
     {
         return Error.Validation(
-            code: "Tournaments.InvalidDatesForSeason",
+            code: "Tournament.InvalidDatesForSeason",
             description: "Tournament dates must fall within the season dates.",
             metadata: new Dictionary<string, object>
             {
@@ -203,8 +203,8 @@ internal static class TournamentErrors
 
     public static Error SponsorAlreadyAdded(SponsorId sponsorId)
     {
-        return Error.Validation(
-            code: "Tournaments.SponsorAlreadyAdded",
+        return Error.Conflict(
+            code: "Tournament.SponsorAlreadyAdded",
             description: "The specified sponsor has already been added to this tournament.",
             metadata: new Dictionary<string, object>
             {
@@ -214,8 +214,8 @@ internal static class TournamentErrors
 
     public static Error TitleSponsorAlreadyAdded(SponsorId titleSponsorId)
     {
-        return Error.Validation(
-            code: "Tournaments.TitleSponsorAlreadyAdded",
+        return Error.Conflict(
+            code: "Tournament.TitleSponsorAlreadyAdded",
             description: "A title sponsor has already been added to this tournament.",
             metadata: new Dictionary<string, object>
             {

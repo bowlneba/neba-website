@@ -29,7 +29,8 @@ internal sealed class ListSeasonsEndpoint(IQueryHandler<ListSeasonsQuery, IReadO
 
         Description(description => description
             .WithName("ListSeasons")
-            .WithTags("Public"));
+            .WithTags("Public")
+            .Produces<CollectionResponse<SeasonResponse>>(StatusCodes.Status200OK));
     }
 
     public override async Task HandleAsync(CancellationToken ct)
