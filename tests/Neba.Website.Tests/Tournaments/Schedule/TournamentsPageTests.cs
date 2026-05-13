@@ -267,12 +267,9 @@ public sealed class TournamentsPageTests : IDisposable
                 return Task.FromCanceled<ErrorOr<List<SeasonViewModel>>>(ct);
             }
 
-            if (Seasons is null)
-            {
-                return Task.FromResult<ErrorOr<List<SeasonViewModel>>>(Error.Failure("Seasons.Unavailable", "Seasons unavailable."));
-            }
-
-            return Task.FromResult<ErrorOr<List<SeasonViewModel>>>(Seasons);
+            return Seasons is null
+                ? Task.FromResult<ErrorOr<List<SeasonViewModel>>>(Error.Failure("Seasons.Unavailable", "Seasons unavailable."))
+                : Task.FromResult<ErrorOr<List<SeasonViewModel>>>(Seasons);
         }
 
         Task<ErrorOr<List<SeasonTournamentViewModel>>> ITournamentDataService.GetTournamentsForSeasonAsync(
