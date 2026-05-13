@@ -206,7 +206,7 @@ public sealed class TournamentsPageTests : IDisposable
     public void Render_ShouldShowSeasonUnavailableNotice_WhenSeasonDataIsMissing()
     {
         // Arrange
-        _dataService.Seasons = null;
+        _dataService.Seasons = [];
 
         // Act
         var cut = _ctx.Render<TournamentsPage>();
@@ -250,7 +250,7 @@ public sealed class TournamentsPageTests : IDisposable
 
     private sealed class FakeTournamentDataService : ITournamentDataService
     {
-        public List<SeasonViewModel>? Seasons { get; set; } = [];
+        public List<SeasonViewModel> Seasons { get; set; } = [];
 
         public Dictionary<string, List<SeasonTournamentViewModel>> SeasonData { get; } =
             new(StringComparer.Ordinal);
