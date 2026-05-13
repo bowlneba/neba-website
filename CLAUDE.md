@@ -28,6 +28,7 @@ Before ending a session where significant discoveries were made, consider whethe
 - Queries return DTOs, never domain entities
 - Validators handle structural validation only (no DB lookups, no business rules)
 - Use `Error.Validation` (422) when the input itself is wrong; use `Error.Conflict` (409) when the input is valid but the system's current state prevents the operation. Retry test: if the caller could resend the exact same payload and succeed after a state change, it's `Conflict`.
+- Methods returning collections — whether directly (`List<T>`, `IEnumerable<T>`, etc.) or wrapped (`Task<List<T>>`) — must never return `null`. Return an empty collection instead. Nullable collection return types (`List<T>?`, `IEnumerable<T>?`, etc.) are not permitted unless there is an explicit, documented reason why `null` is semantically distinct from empty for that method.
 
 ### Always-Valid Entities and Aggregate Assignment
 
