@@ -183,16 +183,7 @@ const SECONDARY_BOWLER_ID = '01JX2222222222222222222222';
 const MOCK_SEASON_ID = '01JX0000000000000000020001';
 const MOCK_TOURNAMENT_ID = '01JX0000000000000000000010';
 
-const MOCK_SEASONS = {
-  items: [
-    {
-      id: MOCK_SEASON_ID,
-      description: '2025-2026 Season',
-      startDate: '2025-09-01',
-      endDate: '2026-05-31',
-    },
-  ],
-};
+// ...existing code...
 
 const MOCK_SEASON_TOURNAMENTS = {
   items: [
@@ -343,7 +334,7 @@ const CURRENT_SEASON: SeasonVariants = {
   winterDate: '2025-01-18',
 };
 
-function createStatsResponse(selectedYear: number): unknown {
+function createStatsResponse(selectedYear: number): object {
   const s = selectedYear === 2021 ? LEGACY_SEASON : CURRENT_SEASON;
 
   return {
