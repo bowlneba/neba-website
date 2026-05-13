@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Application.BowlingCenters.ListBowlingCenters;
@@ -118,74 +120,76 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
     }
 
     private static IQueryable<TournamentQueryRow> ProjectTournaments(IQueryable<Tournament> source)
-        => source.Select(t => new TournamentQueryRow
+        => source.Select(TournamentQueryProjection);
+
+    private static readonly Expression<Func<Tournament, TournamentQueryRow>> TournamentQueryProjection = t => new TournamentQueryRow
+    {
+        DbId = EF.Property<int>(t, ShadowIdConfiguration.DefaultPropertyName),
+        Id = t.Id,
+        Name = t.Name,
+        Season = new SeasonDto
         {
-            DbId = EF.Property<int>(t, ShadowIdConfiguration.DefaultPropertyName),
-            Id = t.Id,
-            Name = t.Name,
-            Season = new SeasonDto
+            Id = t.Season.Id,
+            Description = t.Season.Description,
+            StartDate = t.Season.StartDate,
+            EndDate = t.Season.EndDate
+        },
+        StartDate = t.StartDate,
+        EndDate = t.EndDate,
+        StatsEligible = t.StatsEligible,
+        TournamentType = t.TournamentType.Name,
+        BowlingCenter = t.BowlingCenter == null
+            ? null
+            : new BowlingCenterSummaryDto
             {
-                Id = t.Season.Id,
-                Description = t.Season.Description,
-                StartDate = t.Season.StartDate,
-                EndDate = t.Season.EndDate
+                CertificationNumber = t.BowlingCenter.CertificationNumber.Value,
+                Name = t.BowlingCenter.Name,
+                Status = t.BowlingCenter.Status.Name,
+                Address = new AddressDto
+                {
+                    Street = t.BowlingCenter.Address.Street,
+                    Unit = t.BowlingCenter.Address.Unit,
+                    City = t.BowlingCenter.Address.City,
+                    Region = t.BowlingCenter.Address.Region,
+                    Country = t.BowlingCenter.Address.Country.Value,
+                    PostalCode = t.BowlingCenter.Address.PostalCode,
+                }
             },
-            StartDate = t.StartDate,
-            EndDate = t.EndDate,
-            StatsEligible = t.StatsEligible,
-            TournamentType = t.TournamentType.Name,
-            BowlingCenter = t.BowlingCenter == null
-                ? null
-                : new BowlingCenterSummaryDto
-                {
-                    CertificationNumber = t.BowlingCenter.CertificationNumber.Value,
-                    Name = t.BowlingCenter.Name,
-                    Status = t.BowlingCenter.Status.Name,
-                    Address = new AddressDto
-                    {
-                        Street = t.BowlingCenter.Address.Street,
-                        Unit = t.BowlingCenter.Address.Unit,
-                        City = t.BowlingCenter.Address.City,
-                        Region = t.BowlingCenter.Address.Region,
-                        Country = t.BowlingCenter.Address.Country.Value,
-                        PostalCode = t.BowlingCenter.Address.PostalCode,
-                    }
-                },
-            Sponsors = t.Sponsors
-                .Select(ts => ts.Sponsor)
-                .Select(s => new SponsorSummaryDto
-                {
-                    Name = s.Name,
-                    Slug = s.Slug,
-                    LogoContainer = s.Logo != null ? s.Logo.Container : null,
-                    LogoPath = s.Logo != null ? s.Logo.Path : null,
-                    WebsiteUrl = s.WebsiteUrl,
-                    TagPhrase = s.TagPhrase,
-                })
-                .ToList(),
-            AddedMoney = t.Sponsors.Sum(ts => ts.SponsorshipAmount),
-            PatternLengthCategory = t.PatternLengthCategory == null ? null : t.PatternLengthCategory.Name,
-            PatternRatioCategory = t.PatternRatioCategory == null ? null : t.PatternRatioCategory.Name,
-            EntryFee = t.EntryFee,
-            RegistrationUrl = t.ExternalRegistrationUrl,
-            LogoContainer = t.Logo != null ? t.Logo.Container : null,
-            LogoPath = t.Logo != null ? t.Logo.Path : null,
-            Reservations = 999, // need to replace once actual column exists
-            OilPatternsRaw = t.OilPatterns.Select(top => new OilPatternRawRow
+        Sponsors = t.Sponsors
+            .Select(ts => ts.Sponsor)
+            .Select(s => new SponsorSummaryDto
             {
-                OilPattern = new OilPatternDto
-                {
-                    Id = top.OilPattern.Id,
-                    Name = top.OilPattern.Name,
-                    Length = top.OilPattern.Length,
-                    Volume = top.OilPattern.Volume,
-                    LeftRatio = top.OilPattern.LeftRatio,
-                    RightRatio = top.OilPattern.RightRatio,
-                    KegelId = top.OilPattern.KegelId,
-                },
-                TournamentRounds = top.TournamentRounds
-            }).ToList()
-        });
+                Name = s.Name,
+                Slug = s.Slug,
+                LogoContainer = s.Logo!.Container,
+                LogoPath = s.Logo!.Path,
+                WebsiteUrl = s.WebsiteUrl,
+                TagPhrase = s.TagPhrase,
+            })
+            .ToList(),
+        AddedMoney = t.Sponsors.Sum(ts => ts.SponsorshipAmount),
+        PatternLengthCategory = t.PatternLengthCategory == null ? null : t.PatternLengthCategory.Name,
+        PatternRatioCategory = t.PatternRatioCategory == null ? null : t.PatternRatioCategory.Name,
+        EntryFee = t.EntryFee,
+        RegistrationUrl = t.ExternalRegistrationUrl,
+        LogoContainer = t.Logo!.Container,
+        LogoPath = t.Logo!.Path,
+        Reservations = 999, // need to replace once actual column exists
+        OilPatternsRaw = t.OilPatterns.Select(top => new OilPatternRawRow
+        {
+            OilPattern = new OilPatternDto
+            {
+                Id = top.OilPattern.Id,
+                Name = top.OilPattern.Name,
+                Length = top.OilPattern.Length,
+                Volume = top.OilPattern.Volume,
+                LeftRatio = top.OilPattern.LeftRatio,
+                RightRatio = top.OilPattern.RightRatio,
+                KegelId = top.OilPattern.KegelId,
+            },
+            TournamentRounds = top.TournamentRounds
+        }).ToList()
+    };
 
     private static IReadOnlyCollection<TournamentOilPatternDto> MapOilPatterns(IReadOnlyCollection<OilPatternRawRow> raw)
         => [.. raw.Select(op => new TournamentOilPatternDto
