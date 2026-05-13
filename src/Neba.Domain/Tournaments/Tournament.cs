@@ -55,7 +55,7 @@ public sealed class Tournament
     internal BowlingCenter? BowlingCenter { get; init; }
 
     /// <summary>
-    /// Gets a value indicating whether this tournament is eligible to be included in bowler season stats calculations. This is determined based on the tournament type and other factors, and is used to ensure that only appropriate tournaments are included in season statistics and awards calculations.
+    /// Whether this tournament counts toward season statistics and awards calculations.
     /// </summary>
     public bool StatsEligible { get; init; }
 
@@ -96,9 +96,7 @@ public sealed class Tournament
     /// </summary>
     public Uri? ExternalRegistrationUrl { get; init; }
 
-    /// <summary>
-    /// Gets an optional logo image for the tournament, which can be used in promotional materials and on the website. This is represented as a <see cref="StoredFile"/> value object, which contains information about the file's storage location, content type, and other relevant metadata. This allows for flexible handling of associated media while keeping the core tournament data focused on the essential attributes of the event.
-    /// </summary>
+    /// <summary>Optional logo image for promotional display; null if not uploaded.</summary>
     public StoredFile? Logo { get; init; }
 
     private readonly List<TournamentSponsor> _sponsors = [];
@@ -110,13 +108,7 @@ public sealed class Tournament
     public IReadOnlyCollection<TournamentSponsor> Sponsors
         => _sponsors;
 
-    /// <summary>
-    /// Adds a sponsor to the tournament with the specified sponsorship amount and title sponsor status. If the sponsor has already been added to the tournament, or if a title sponsor has already been designated and the new sponsor is also marked as a title sponsor, an appropriate error is returned. Otherwise, the sponsor is added successfully.
-    /// </summary>
-    /// <param name="sponsorId">The unique identifier of the sponsor.</param>
-    /// <param name="titleSponsor">Indicates whether the sponsor is a title sponsor.</param>
-    /// <param name="sponsorshipAmount">The amount of the sponsorship.</param>
-    /// <returns>An <see cref="ErrorOr{Success}"/> indicating the result of the operation.</returns>
+    /// <summary>Adds a sponsor; returns an error if already added or a title sponsor conflict exists.</summary>
     public ErrorOr<Success> AddSponsor(SponsorId sponsorId, bool titleSponsor, decimal sponsorshipAmount)
     {
         if (_sponsors.Any(tournamentSponsor => tournamentSponsor.SponsorId == sponsorId))
@@ -139,21 +131,11 @@ public sealed class Tournament
 
     private readonly List<TournamentOilPattern> _oilPatterns = [];
 
-    /// <summary>
-    /// Gets the collection of oil patterns associated with this tournament, along with the specific rounds to which each pattern was applied. This allows us to track the oil conditions for each round of the tournament, providing valuable context for tournament results and historical records. Each <see cref="TournamentOilPattern"/> in the collection includes a reference to the associated <see cref="OilPattern"/>, as well as the specific <see cref="TournamentRound"/> values that indicate which rounds of the tournament used that oil pattern.
-    /// </summary>
+    /// <summary>Oil patterns used in this tournament and the rounds each was applied to.</summary>
     public IReadOnlyCollection<TournamentOilPattern> OilPatterns
         => _oilPatterns;
 
-    /// <summary>
-    /// Associates an oil pattern with this tournament for the specified tournament rounds. If the oil pattern is already associated with the tournament, the specified rounds will be added to the existing association. If any of the specified rounds are already associated with the oil pattern, an appropriate error is returned to prevent duplicate associations. Otherwise, the oil pattern and round associations are added successfully.
-    /// </summary>
-    /// <param name="oilPatternId">The unique identifier of the oil pattern to associate with the tournament.</param>
-    /// <param name="tournamentRounds">The collection of tournament rounds to associate with the oil pattern.</param>
-    /// <returns>An <see cref="ErrorOr{Success}"/> indicating the result of the operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when tournamentRounds is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when duplicate tournament rounds are provided for an existing oil pattern association.</exception>
-
+    /// <summary>Associates an oil pattern for the given rounds; appends rounds if pattern already exists.</summary>
     public ErrorOr<Success> AddOilPattern(OilPatternId oilPatternId, params TournamentRound[] tournamentRounds)
     {
         ArgumentNullException.ThrowIfNull(tournamentRounds);
