@@ -1067,11 +1067,11 @@ public sealed class SeasonStatsServiceTests
             .ReturnsAsync(7);
 
         // Act
-        var result = await _service.GetStatMinimumsForSeasonAsync(season, TestContext.Current.CancellationToken);
+        var (numberOfGames, numberOfTournaments, numberOfEntries) = await _service.GetStatMinimumsForSeasonAsync(season, TestContext.Current.CancellationToken);
 
         // Assert
-        result.NumberOfGames.ShouldBe(31.5m);
-        result.NumberOfTournaments.ShouldBe(3.5m);
-        result.NumberOfEntries.ShouldBe(5.25m);
+        numberOfGames.ShouldBe(31.5m);
+        numberOfTournaments.ShouldBe(3.5m);
+        numberOfEntries.ShouldBe(5.25m);
     }
 }
