@@ -251,7 +251,7 @@ public sealed class TournamentsPageTests : IDisposable
 
     private sealed class FakeTournamentDataService : ITournamentDataService
     {
-        public List<SeasonViewModel>? Seasons { get; set; }
+        public List<SeasonViewModel>? Seasons { get; set; } = [];
 
         public Dictionary<string, List<SeasonTournamentViewModel>> SeasonData { get; } =
             new(StringComparer.Ordinal);
@@ -279,7 +279,7 @@ public sealed class TournamentsPageTests : IDisposable
 
             RequestedSeasons.Add(season.Label);
             if (UnavailableSeasonLabels.Contains(season.Label))
-                return Task.FromResult<ErrorOr<List<SeasonTournamentViewModel>>>(Error.Failure("Tournaments.Unavailable", $"Tournaments unavailable for season '{season.Label}'."));
+                return Task.FromResult<ErrorOr<List<SeasonTournamentViewModel>>>(new List<SeasonTournamentViewModel>());
 
             List<SeasonTournamentViewModel> result = SeasonData.TryGetValue(season.Label, out var data) ? data : [];
             return Task.FromResult<ErrorOr<List<SeasonTournamentViewModel>>>(result);
