@@ -1,3 +1,4 @@
+using Neba.Application.Sponsors;
 using Neba.Application.Storage;
 using Neba.Application.Tournaments;
 using Neba.Application.Tournaments.ListTournamentsInSeason;
@@ -32,15 +33,6 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests
     {
         // Arrange
         IReadOnlyCollection<SeasonTournamentDto> tournaments = SeasonTournamentDtoFactory.Bogus(3, seed: 42);
-        IReadOnlyCollection<SeasonTournamentDto> expected =
-        [
-            .. tournaments.Select(t => t with
-            {
-                LogoUrl = t.LogoContainer is not null && t.LogoPath is not null
-                    ? new Uri($"https://storage.example.com/{t.LogoContainer}/{t.LogoPath}")
-                    : t.LogoUrl
-            })
-        ];
         var seasonId = SeasonId.New();
         var query = new ListTournamentsInSeasonQuery { SeasonId = seasonId };
 
@@ -55,8 +47,29 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests
         // Act
         var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
 
-        // Assert
-        result.ShouldBe(expected);
+        // Assert — compare count, IDs, and resolved URLs (not full record equality since sponsor
+        // collections produce new array instances that break reference equality inside records)
+        result.Count.ShouldBe(tournaments.Count);
+        result.Select(t => t.Id).ShouldBe(tournaments.Select(t => t.Id));
+
+        // Tournament logos
+        foreach (var (actual, original) in result.Zip(tournaments))
+        {
+            var expectedLogoUrl = original.LogoContainer is not null && original.LogoPath is not null
+                ? new Uri($"https://storage.example.com/{original.LogoContainer}/{original.LogoPath}")
+                : original.LogoUrl;
+            actual.LogoUrl.ShouldBe(expectedLogoUrl);
+
+            // Sponsor logos
+            actual.Sponsors.Count.ShouldBe(original.Sponsors.Count);
+            foreach (var (actualSponsor, originalSponsor) in actual.Sponsors.Zip(original.Sponsors))
+            {
+                var expectedSponsorLogoUrl = originalSponsor.LogoContainer is not null && originalSponsor.LogoPath is not null
+                    ? new Uri($"https://storage.example.com/{originalSponsor.LogoContainer}/{originalSponsor.LogoPath}")
+                    : originalSponsor.LogoUrl;
+                actualSponsor.LogoUrl.ShouldBe(expectedSponsorLogoUrl);
+            }
+        }
     }
 
     [Fact(DisplayName = "Should return 3 tournaments when queries returns 3")]
@@ -211,8 +224,9 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests
     {
         // Arrange
         // Canary: if && guard mutated to ||, GetBlobUri(null, path) is called.
+        // Construct directly — the factory uses ?? defaults so null can't be passed through it.
         var seasonId = SeasonId.New();
-        var sponsor = SponsorSummaryDtoFactory.Create(logoContainer: null, logoPath: "acme/logo.png", logoUrl: null);
+        var sponsor = new SponsorSummaryDto { Name = "Acme Corp", Slug = "acme-corp", LogoContainer = null, LogoPath = "acme/logo.png" };
         var tournament = SeasonTournamentDtoFactory.Create(
             logoContainer: null, logoPath: null, sponsors: [sponsor]);
         var query = new ListTournamentsInSeasonQuery { SeasonId = seasonId };

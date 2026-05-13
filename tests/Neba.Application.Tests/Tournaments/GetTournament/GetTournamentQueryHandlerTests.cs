@@ -201,7 +201,8 @@ public sealed class GetTournamentQueryHandlerTests
     {
         // Arrange
         // Canary: if && guard mutated to ||, GetBlobUri(null, path) is called.
-        var sponsor = SponsorSummaryDtoFactory.Create(logoContainer: null, logoPath: "acme/logo.png", logoUrl: null);
+        // Construct directly — the factory uses ?? defaults so null can't be passed through it.
+        var sponsor = new SponsorSummaryDto { Name = "Acme Corp", Slug = "acme-corp", LogoContainer = null, LogoPath = "acme/logo.png" };
         var dto = TournamentDetailDtoFactory.Create(logoContainer: null, logoPath: null, sponsors: [sponsor]);
         var query = new GetTournamentQuery { Id = dto.Id };
 
