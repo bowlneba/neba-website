@@ -11,6 +11,7 @@ print_usage() {
   echo "  ./run-all.sh"
   echo "  ./run-all.sh infrastructure"
   echo "  ./run-all.sh neba.infrastructure.tests"
+  return 0
 }
 
 resolve_target_dir() {
