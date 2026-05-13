@@ -10,7 +10,7 @@ internal sealed class TournamentDataService(
     ApiExecutor executor,
     ISeasonsApi seasonsApi) : ITournamentDataService
 {
-    public async Task<List<SeasonTournamentViewModel>> GetTournamentsForSeasonAsync(
+    public async Task<List<SeasonTournamentViewModel>?> GetTournamentsForSeasonAsync(
         SeasonViewModel season, CancellationToken ct = default)
     {
         var result = await executor.ExecuteAsync(
@@ -21,13 +21,13 @@ internal sealed class TournamentDataService(
 
         if (result.IsError)
         {
-            return [];
+            return null;
         }
 
         return [.. result.Value.Items.Select(r => MapToViewModel(r, season.Label))];
     }
 
-    public async Task<List<SeasonViewModel>> GetSeasonsAsync(CancellationToken ct = default)
+    public async Task<List<SeasonViewModel>?> GetSeasonsAsync(CancellationToken ct = default)
     {
         var result = await executor.ExecuteAsync(
             "SeasonsApi",
@@ -36,7 +36,7 @@ internal sealed class TournamentDataService(
             ct);
 
         return result.IsError
-            ? []
+            ? null
             : [.. result.Value.Items.Select(MapToViewModel)];
     }
 

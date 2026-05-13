@@ -178,14 +178,14 @@ const MOCK_SPONSOR_OLD_SPONSOR = {
   sponsorContactPhoneNumberType: null,
 };
 
-const PRIMARY_BOWLER_ID = '01JX1111111111111111111111';
-const SECONDARY_BOWLER_ID = '01JX2222222222222222222222';
-const MOCK_SEASON_ID = '01JX0000000000000000020001';
-const MOCK_TOURNAMENT_ID = '01JX0000000000000000000010';
+export const PRIMARY_BOWLER_ID = '01JX1111111111111111111111';
+export const SECONDARY_BOWLER_ID = '01JX2222222222222222222222';
+export const MOCK_SEASON_ID = '01JX0000000000000000020001';
+export const MOCK_TOURNAMENT_ID = '01JX0000000000000000000010';
 
 // ...existing code...
 
-const MOCK_SEASON_TOURNAMENTS = {
+export const MOCK_SEASON_TOURNAMENTS = {
   items: [
     {
       id: MOCK_TOURNAMENT_ID,
@@ -243,7 +243,7 @@ const MOCK_HIGH_BLOCK_AWARDS = {
   totalItems: 2,
 };
 
-const MOCK_TOURNAMENT_DETAIL = {
+export const MOCK_TOURNAMENT_DETAIL = {
   id: MOCK_TOURNAMENT_ID,
   name: 'NEBA Spring Classic',
   season: {
@@ -450,7 +450,7 @@ function createStatsResponse(selectedYear: number): object {
   };
 }
 
-const MOCK_SEASONS = {
+export const MOCK_SEASONS = {
   items: [
     {
       id: MOCK_SEASON_ID,

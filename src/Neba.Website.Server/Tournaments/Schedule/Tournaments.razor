@@ -28,49 +28,56 @@
             </header>
         }
 
-        @if (_allTournaments is not null)
+        @if (_pageNotice is not null)
         {
-            <SeasonTimeline Tournaments="@_allTournaments" Season="@(_activeSeason?.Label ?? string.Empty)" />
-        }
-
-        <TournamentTabBar ActiveTab="@_activeTab" IsCurrentSeason="@_isCurrentSeason"
-                          AvailableSeasons="@(_availableSeasons ?? [])" ActiveSeason="@_activeSeason" OnTabChanged="HandleTabChanged"
-                          OnSeasonChanged="HandleSeasonChanged" />
-
-        <TournamentFilterBar SearchTerm="@_searchTerm" SearchTermChanged="@(v => _searchTerm = v)"
-                             TypeFilter="@_typeFilter" TypeFilterChanged="@(v => _typeFilter = v)" />
-
-        @if (_isLoading)
-        {
-            <TournamentListSkeleton ShowHeroSkeleton="@ShowHero" />
+            <p class="tournaments-page__empty" role="status">@_pageNotice</p>
         }
         else
         {
-            <div class="tournaments-page__list" id="tournament-list" role="list" aria-live="polite"
-                 aria-label="@($"{FilteredTournaments.Count()} tournaments")">
-
-                @foreach (var t in FilteredTournaments)
-                {
-                    @if (_activeTab == TournamentTab.Upcoming)
-                    {
-                        <TournamentUpcomingCard Tournament="@t" />
-                    }
-                    else
-                    {
-                        <TournamentPastCard Tournament="@t" />
-                    }
-                }
-
-                @if (!FilteredTournaments.Any())
-                {
-                    <TournamentEmptyState Tab="@_activeTab" HasActiveFilters="@HasActiveFilters"
-                                          OnClearFilters="ClearFilters" />
-                }
-            </div>
-
-            @if (_isMergedSeason)
+            @if (_allTournaments is not null)
             {
-                <MergedSeasonNote />
+                <SeasonTimeline Tournaments="@_allTournaments" Season="@(_activeSeason?.Label ?? string.Empty)" />
+            }
+
+            <TournamentTabBar ActiveTab="@_activeTab" IsCurrentSeason="@_isCurrentSeason"
+                              AvailableSeasons="@(_availableSeasons ?? [])" ActiveSeason="@_activeSeason" OnTabChanged="HandleTabChanged"
+                              OnSeasonChanged="HandleSeasonChanged" />
+
+            <TournamentFilterBar SearchTerm="@_searchTerm" SearchTermChanged="@(v => _searchTerm = v)"
+                                 TypeFilter="@_typeFilter" TypeFilterChanged="@(v => _typeFilter = v)" />
+
+            @if (_isLoading)
+            {
+                <TournamentListSkeleton ShowHeroSkeleton="@ShowHero" />
+            }
+            else
+            {
+                <div class="tournaments-page__list" id="tournament-list" role="list" aria-live="polite"
+                     aria-label="@($"{FilteredTournaments.Count()} tournaments")">
+
+                    @foreach (var t in FilteredTournaments)
+                    {
+                        @if (_activeTab == TournamentTab.Upcoming)
+                        {
+                            <TournamentUpcomingCard Tournament="@t" />
+                        }
+                        else
+                        {
+                            <TournamentPastCard Tournament="@t" />
+                        }
+                    }
+
+                    @if (!FilteredTournaments.Any())
+                    {
+                        <TournamentEmptyState Tab="@_activeTab" HasActiveFilters="@HasActiveFilters"
+                                              OnClearFilters="ClearFilters" />
+                    }
+                </div>
+
+                @if (_isMergedSeason)
+                {
+                    <MergedSeasonNote />
+                }
             }
         }
 
@@ -97,6 +104,7 @@
     private List<SeasonTournamentViewModel>? _allTournaments;
     private List<SeasonViewModel>? _availableSeasons;
     private SeasonTournamentViewModel? _nextSeasonHeroTournament;
+    private string? _pageNotice;
     private bool _isLoading = true;
 
     private CancellationTokenSource _cts = new();
@@ -160,17 +168,48 @@
 
         _isLoading = true;
         _allTournaments = null;
+        _pageNotice = null;
 
         try
         {
             // Resolve available seasons (cached after first load)
-            _availableSeasons ??= await DataService.GetSeasonsAsync(ct);
+            var availableSeasons = _availableSeasons;
+            if (availableSeasons is null)
+            {
+                availableSeasons = await DataService.GetSeasonsAsync(ct);
+                if (availableSeasons is not null)
+                {
+                    _availableSeasons = availableSeasons;
+                }
+            }
+
+            if (availableSeasons is null)
+            {
+                _activeSeason = null;
+                _isCurrentSeason = false;
+                _isMergedSeason = false;
+                _activeTab = TournamentTab.Past;
+                _allTournaments = [];
+                _pageNotice = "Season information is currently unavailable.";
+                return;
+            }
+
+            if (availableSeasons.Count == 0)
+            {
+                _activeSeason = null;
+                _isCurrentSeason = false;
+                _isMergedSeason = false;
+                _activeTab = TournamentTab.Past;
+                _allTournaments = [];
+                _pageNotice = "No seasons are currently available.";
+                return;
+            }
 
             var today = DateTime.Today;
             var requestedYear = Year ?? today.Year;
 
-            var matched = _availableSeasons.FirstOrDefault(s => s.ContainsYear(requestedYear));
-            var current = _availableSeasons.FirstOrDefault(s => s.ContainsYear(today.Year));
+            var matched = availableSeasons.FirstOrDefault(s => s.ContainsYear(requestedYear));
+            var current = availableSeasons.FirstOrDefault(s => s.ContainsYear(today.Year));
 
             if (matched is null)
             {
@@ -189,11 +228,18 @@
 
             _allTournaments = await DataService.GetTournamentsForSeasonAsync(_activeSeason, ct);
 
+            if (_allTournaments is null)
+            {
+                _allTournaments = [];
+                _pageNotice = "Tournament data is currently unavailable.";
+                return;
+            }
+
             // When the current season has no upcoming tournaments, look ahead to the
             // next season so the hero can surface the first scheduled tournament.
-            if (_isCurrentSeason && _allTournaments.TrueForAll(t => t.IsPast))
+            if (_isCurrentSeason && _allTournaments.Count > 0 && _allTournaments.TrueForAll(t => t.IsPast))
             {
-                var nextSeason = _availableSeasons
+                var nextSeason = availableSeasons!
                     .Where(s => s.StartDate > _activeSeason.EndDate)
                     .OrderBy(s => s.StartDate)
                     .FirstOrDefault();
@@ -201,10 +247,13 @@
                 if (nextSeason is not null)
                 {
                     var nextTournaments = await DataService.GetTournamentsForSeasonAsync(nextSeason, ct);
-                    _nextSeasonHeroTournament = nextTournaments
-                        .Where(t => !t.IsPast)
-                        .OrderBy(t => t.StartDate)
-                        .FirstOrDefault();
+                    if (nextTournaments is not null)
+                    {
+                        _nextSeasonHeroTournament = nextTournaments
+                            .Where(t => !t.IsPast)
+                            .OrderBy(t => t.StartDate)
+                            .FirstOrDefault();
+                    }
                 }
             }
         }

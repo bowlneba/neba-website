@@ -202,6 +202,36 @@ public sealed class TournamentsPageTests : IDisposable
         _dataService.RequestedSeasons.ShouldContain(nextSeason.Label);
     }
 
+    [Fact(DisplayName = "Should show fallback message when seasons cannot load")]
+    public void Render_ShouldShowSeasonUnavailableNotice_WhenSeasonDataIsMissing()
+    {
+        // Arrange
+        _dataService.Seasons = null;
+
+        // Act
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Assert
+        cut.Markup.ShouldContain("Season information is currently unavailable.");
+    }
+
+    [Fact(DisplayName = "Should show fallback message when tournaments cannot load")]
+    public void Render_ShouldShowTournamentUnavailableNotice_WhenTournamentDataIsMissing()
+    {
+        // Arrange
+        var currentYear = DateTime.Today.Year;
+        var currentSeason = MakeSeason(currentYear);
+
+        _dataService.Seasons = [currentSeason];
+        _dataService.UnavailableSeasonLabels.Add(currentSeason.Label);
+
+        // Act
+        var cut = _ctx.Render<TournamentsPage>();
+
+        // Assert
+        cut.Markup.ShouldContain("Tournament data is currently unavailable.");
+    }
+
     // ── Helpers ────────────────────────────────────────────────────────────
 
     private static SeasonViewModel MakeSeason(int year) => SeasonViewModelFactory.Create(
@@ -220,32 +250,39 @@ public sealed class TournamentsPageTests : IDisposable
 
     private sealed class FakeTournamentDataService : ITournamentDataService
     {
-        public List<SeasonViewModel> Seasons { get; set; } = [];
+        public List<SeasonViewModel>? Seasons { get; set; } = [];
 
         public Dictionary<string, List<SeasonTournamentViewModel>> SeasonData { get; } =
             new(StringComparer.Ordinal);
 
+        public HashSet<string> UnavailableSeasonLabels { get; } = new(StringComparer.Ordinal);
+
         public List<string> RequestedSeasons { get; } = [];
 
-        Task<List<SeasonViewModel>> ITournamentDataService.GetSeasonsAsync(CancellationToken ct)
+        Task<List<SeasonViewModel>?> ITournamentDataService.GetSeasonsAsync(CancellationToken ct)
         {
             if (ct.IsCancellationRequested)
             {
-                return Task.FromCanceled<List<SeasonViewModel>>(ct);
+                return Task.FromCanceled<List<SeasonViewModel>?>(ct);
             }
 
             return Task.FromResult(Seasons);
         }
 
-        Task<List<SeasonTournamentViewModel>> ITournamentDataService.GetTournamentsForSeasonAsync(
+        Task<List<SeasonTournamentViewModel>?> ITournamentDataService.GetTournamentsForSeasonAsync(
             SeasonViewModel season, CancellationToken ct)
         {
             if (ct.IsCancellationRequested)
             {
-                return Task.FromCanceled<List<SeasonTournamentViewModel>>(ct);
+                return Task.FromCanceled<List<SeasonTournamentViewModel>?>(ct);
             }
 
             RequestedSeasons.Add(season.Label);
+            if (UnavailableSeasonLabels.Contains(season.Label))
+            {
+                return Task.FromResult<List<SeasonTournamentViewModel>?>(null);
+            }
+
             return Task.FromResult(SeasonData.TryGetValue(season.Label, out var data) ? data : []);
         }
     }
