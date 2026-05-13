@@ -1,10 +1,12 @@
 using ErrorOr;
 
+using Neba.Application.Sponsors;
 using Neba.Application.Storage;
 using Neba.Application.Tournaments;
 using Neba.Application.Tournaments.GetTournament;
 using Neba.Domain.Tournaments;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Sponsors;
 using Neba.TestFactory.Tournaments;
 
 namespace Neba.Application.Tests.Tournaments.GetTournament;
@@ -165,5 +167,57 @@ public sealed class GetTournamentQueryHandlerTests
         // Assert
         result.IsError.ShouldBeFalse();
         result.Value.LogoUrl.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "HandleAsync should resolve sponsor logo URLs when sponsors have both container and path")]
+    public async Task HandleAsync_ShouldResolveSponsorLogoUrls_WhenSponsorsHaveBothContainerAndPath()
+    {
+        // Arrange
+        const string container = "sponsor-logos";
+        const string path = "acme/logo.png";
+        var expectedLogoUrl = new Uri($"https://storage.example.com/{container}/{path}");
+        var sponsor = SponsorSummaryDtoFactory.Create(logoContainer: container, logoPath: path, logoUrl: null);
+        var dto = TournamentDetailDtoFactory.Create(logoContainer: null, logoPath: null, sponsors: [sponsor]);
+        var query = new GetTournamentQuery { Id = dto.Id };
+
+        _tournamentQueriesMock
+            .Setup(q => q.GetTournamentDetailAsync(query.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(dto);
+
+        _fileStorageServiceMock
+            .Setup(s => s.GetBlobUri(container, path))
+            .Returns(expectedLogoUrl);
+
+        // Act
+        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Sponsors.Single().LogoUrl.ShouldBe(expectedLogoUrl);
+    }
+
+    [Fact(DisplayName = "HandleAsync should keep sponsor logo URL null when sponsor has no logo container")]
+    public async Task HandleAsync_ShouldKeepSponsorLogoUrlNull_WhenSponsorHasNoLogoContainer()
+    {
+        // Arrange
+        // Canary: if && guard mutated to ||, GetBlobUri(null, path) is called.
+        var sponsor = SponsorSummaryDtoFactory.Create(logoContainer: null, logoPath: "acme/logo.png", logoUrl: null);
+        var dto = TournamentDetailDtoFactory.Create(logoContainer: null, logoPath: null, sponsors: [sponsor]);
+        var query = new GetTournamentQuery { Id = dto.Id };
+
+        _tournamentQueriesMock
+            .Setup(q => q.GetTournamentDetailAsync(query.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(dto);
+
+        _fileStorageServiceMock
+            .Setup(s => s.GetBlobUri(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new Uri("https://unexpected.example.com/logo.png"));
+
+        // Act
+        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Sponsors.Single().LogoUrl.ShouldBeNull();
     }
 }

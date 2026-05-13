@@ -23,6 +23,13 @@ internal sealed class GetTournamentQueryHandler(
         if (tournament.LogoContainer is not null && tournament.LogoPath is not null)
             tournament = tournament with { LogoUrl = _fileStorageService.GetBlobUri(tournament.LogoContainer, tournament.LogoPath) };
 
+        var sponsors = tournament.Sponsors
+            .Select(s => s.LogoContainer is not null && s.LogoPath is not null
+                ? s with { LogoUrl = _fileStorageService.GetBlobUri(s.LogoContainer, s.LogoPath) }
+                : s)
+            .ToArray();
+        tournament = tournament with { Sponsors = sponsors };
+
         return tournament;
     }
 }

@@ -48,14 +48,11 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
             .Where(tournament => tournamentIdsByDatabaseId.Keys.Contains(tournament.TournamentId))
             .ToDictionaryAsync(tournament => tournament.TournamentId, tournament => tournament.Entries, cancellationToken);
 
+        var inverseMap = tournamentIdsByDatabaseId.ToDictionary(kv => kv.Value, kv => kv.Key);
         // we will need to look into the stats tables for 2026+ tournaments once they come over
         return tournamentIdsByDatabaseId.Values.ToDictionary(
-            tournamentId => tournamentId,
-            tournamentId =>
-            {
-                var databaseId = tournamentIdsByDatabaseId.First(t => t.Value == tournamentId).Key;
-                return entryCounts.GetValueOrDefault(databaseId, 0);
-            });
+            id => id,
+            id => entryCounts.GetValueOrDefault(inverseMap[id], 0));
     }
 
     public async Task<IReadOnlyCollection<SeasonTournamentDto>> GetTournamentsInSeasonAsync(SeasonId seasonId, CancellationToken cancellationToken)
@@ -154,7 +151,15 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
                 },
             Sponsors = t.Sponsors
                 .Select(ts => ts.Sponsor)
-                .Select(s => new SponsorSummaryDto { Name = s.Name, Slug = s.Slug })
+                .Select(s => new SponsorSummaryDto
+                {
+                    Name = s.Name,
+                    Slug = s.Slug,
+                    LogoContainer = s.Logo != null ? s.Logo.Container : null,
+                    LogoPath = s.Logo != null ? s.Logo.Path : null,
+                    WebsiteUrl = s.WebsiteUrl,
+                    TagPhrase = s.TagPhrase,
+                })
                 .ToList(),
             AddedMoney = t.Sponsors.Sum(ts => ts.SponsorshipAmount),
             PatternLengthCategory = t.PatternLengthCategory == null ? null : t.PatternLengthCategory.Name,

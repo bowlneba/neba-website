@@ -4,6 +4,7 @@ using Neba.Application.Tournaments.ListTournamentsInSeason;
 using Neba.Domain.Seasons;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Seasons;
+using Neba.TestFactory.Sponsors;
 using Neba.TestFactory.Tournaments;
 
 namespace Neba.Application.Tests.Tournaments.ListTournamentsInSeason;
