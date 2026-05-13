@@ -30,13 +30,13 @@ public sealed class TournamentOilPatternTests
         result.Value.TournamentRounds.ShouldContain(TournamentRound.MatchPlay);
     }
 
-    [Fact(DisplayName = "Create returns Tournaments.NoTournamentRoundsSpecified when rounds collection is empty")]
+    [Fact(DisplayName = "Create returns TournamentOilPattern.NoRoundsSpecified when rounds collection is empty")]
     public void Create_ShouldReturnError_WhenRoundsIsEmpty()
     {
         var result = TournamentOilPattern.Create(OilPatternId.New(), []);
 
         result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("Tournaments.NoTournamentRoundsSpecified");
+        result.FirstError.Code.ShouldBe("TournamentOilPattern.NoRoundsSpecified");
     }
 
     [Fact(DisplayName = "Create throws ArgumentException when duplicate rounds are provided")]
@@ -99,7 +99,7 @@ public sealed class TournamentOilPatternTests
         oilPattern.TournamentRounds.ShouldContain(TournamentRound.MatchPlay);
     }
 
-    [Fact(DisplayName = "AddTournamentRound returns Tournaments.TournamentOilPattern.TournamentRoundAlreadyAssociated when round is already associated")]
+    [Fact(DisplayName = "AddTournamentRound returns TournamentOilPattern.RoundAlreadyAssociated when round is already associated")]
     public void AddTournamentRound_ShouldReturnError_WhenRoundAlreadyAssociated()
     {
         // Arrange
@@ -110,7 +110,7 @@ public sealed class TournamentOilPatternTests
 
         // Assert
         result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("Tournaments.TournamentOilPattern.TournamentRoundAlreadyAssociated");
+        result.FirstError.Code.ShouldBe("TournamentOilPattern.RoundAlreadyAssociated");
     }
 
     [Fact(DisplayName = "AddTournamentRound error metadata contains TournamentRoundName when round is already associated")]

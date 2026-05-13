@@ -42,7 +42,7 @@ public sealed class TournamentValidationServiceTests
         metadata["id"].ShouldBe(seasonId.Value);
     }
 
-    [Fact(DisplayName = "IsTournamentValidForSeasonAsync returns Tournaments.InvalidDatesForSeason when tournament starts before season")]
+    [Fact(DisplayName = "IsTournamentValidForSeasonAsync returns Tournament.InvalidDatesForSeason when tournament starts before season")]
     public async Task IsTournamentValidForSeasonAsync_ShouldReturnInvalidDatesForSeason_WhenTournamentStartsBeforeSeason()
     {
         // Arrange
@@ -65,14 +65,14 @@ public sealed class TournamentValidationServiceTests
 
         // Assert
         result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("Tournaments.InvalidDatesForSeason");
+        result.FirstError.Code.ShouldBe("Tournament.InvalidDatesForSeason");
         var metadata = result.FirstError.Metadata;
         metadata.ShouldNotBeNull();
         metadata["SeasonStartDate"].ShouldBe("2025-01-01");
         metadata["SeasonEndDate"].ShouldBe("2025-12-31");
     }
 
-    [Fact(DisplayName = "IsTournamentValidForSeasonAsync returns Tournaments.InvalidDatesForSeason when tournament ends after season")]
+    [Fact(DisplayName = "IsTournamentValidForSeasonAsync returns Tournament.InvalidDatesForSeason when tournament ends after season")]
     public async Task IsTournamentValidForSeasonAsync_ShouldReturnInvalidDatesForSeason_WhenTournamentEndsAfterSeason()
     {
         // Arrange
@@ -95,7 +95,7 @@ public sealed class TournamentValidationServiceTests
 
         // Assert
         result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("Tournaments.InvalidDatesForSeason");
+        result.FirstError.Code.ShouldBe("Tournament.InvalidDatesForSeason");
         var metadata = result.FirstError.Metadata;
         metadata.ShouldNotBeNull();
         metadata["SeasonStartDate"].ShouldBe("2025-01-01");

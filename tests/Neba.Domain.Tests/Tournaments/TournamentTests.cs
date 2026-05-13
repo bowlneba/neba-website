@@ -53,7 +53,7 @@ public sealed class TournamentTests
         added.SponsorshipAmount.ShouldBe(1000m);
     }
 
-    [Fact(DisplayName = "AddSponsor returns Tournaments.SponsorAlreadyAdded when sponsor is already in the tournament")]
+    [Fact(DisplayName = "AddSponsor returns Tournament.SponsorAlreadyAdded when sponsor is already in the tournament")]
     public void AddSponsor_ShouldReturnError_WhenSponsorIsAlreadyAdded()
     {
         // Arrange
@@ -66,13 +66,13 @@ public sealed class TournamentTests
 
         // Assert
         result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("Tournaments.SponsorAlreadyAdded");
+        result.FirstError.Code.ShouldBe("Tournament.SponsorAlreadyAdded");
         result.FirstError.Metadata.ShouldNotBeNull();
         result.FirstError.Metadata.ShouldContainKey("SponsorId");
         result.FirstError.Metadata["SponsorId"].ShouldBe(sponsorId.ToString());
     }
 
-    [Fact(DisplayName = "AddSponsor returns Tournaments.TitleSponsorAlreadyAdded with existing title sponsor ID when a second title sponsor is added")]
+    [Fact(DisplayName = "AddSponsor returns Tournament.TitleSponsorAlreadyAdded with existing title sponsor ID when a second title sponsor is added")]
     public void AddSponsor_ShouldReturnError_WhenTitleSponsorAlreadyExists()
     {
         // Arrange
@@ -87,7 +87,7 @@ public sealed class TournamentTests
 
         // Assert
         result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("Tournaments.TitleSponsorAlreadyAdded");
+        result.FirstError.Code.ShouldBe("Tournament.TitleSponsorAlreadyAdded");
         result.FirstError.Metadata.ShouldNotBeNull();
         result.FirstError.Metadata.ShouldContainKey("TitleSponsorId");
         result.FirstError.Metadata["TitleSponsorId"].ShouldBe(existingTitleSponsorId.ToString());
@@ -125,7 +125,7 @@ public sealed class TournamentTests
         tournament.Sponsors.Count.ShouldBe(3);
     }
 
-    [Fact(DisplayName = "AddSponsor returns Tournaments.TournamentSponsor.NegativeSponsorshipAmount when sponsorship amount is negative")]
+    [Fact(DisplayName = "AddSponsor returns TournamentSponsor.NegativeSponsorshipAmount when sponsorship amount is negative")]
     public void AddSponsor_ShouldReturnError_WhenSponsorshipAmountIsNegative()
     {
         var tournament = TournamentFactory.Create();
@@ -133,7 +133,7 @@ public sealed class TournamentTests
         var result = tournament.AddSponsor(SponsorId.New(), titleSponsor: false, sponsorshipAmount: -1m);
 
         result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("Tournaments.TournamentSponsor.NegativeSponsorshipAmount");
+        result.FirstError.Code.ShouldBe("TournamentSponsor.NegativeSponsorshipAmount");
     }
 
     [Fact(DisplayName = "AddOilPattern returns Success when oil pattern is new")]
@@ -184,7 +184,7 @@ public sealed class TournamentTests
         tournament.OilPatterns.Single().TournamentRounds.ShouldContain(TournamentRound.MatchPlay);
     }
 
-    [Fact(DisplayName = "AddOilPattern returns Tournaments.TournamentOilPattern.TournamentRoundAlreadyAssociated when round is already on the existing pattern")]
+    [Fact(DisplayName = "AddOilPattern returns TournamentOilPattern.RoundAlreadyAssociated when round is already on the existing pattern")]
     public void AddOilPattern_ShouldReturnError_WhenRoundAlreadyAssociatedWithExistingPattern()
     {
         var tournament = TournamentFactory.Create();
@@ -194,10 +194,10 @@ public sealed class TournamentTests
         var result = tournament.AddOilPattern(oilPatternId, TournamentRound.Qualifying);
 
         result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("Tournaments.TournamentOilPattern.TournamentRoundAlreadyAssociated");
+        result.FirstError.Code.ShouldBe("TournamentOilPattern.RoundAlreadyAssociated");
     }
 
-    [Fact(DisplayName = "AddOilPattern returns Tournaments.NoTournamentRoundsSpecified when no rounds are provided")]
+    [Fact(DisplayName = "AddOilPattern returns TournamentOilPattern.NoRoundsSpecified when no rounds are provided")]
     public void AddOilPattern_ShouldReturnError_WhenNoRoundsSpecified()
     {
         var tournament = TournamentFactory.Create();
@@ -205,6 +205,6 @@ public sealed class TournamentTests
         var result = tournament.AddOilPattern(OilPatternId.New());
 
         result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("Tournaments.NoTournamentRoundsSpecified");
+        result.FirstError.Code.ShouldBe("TournamentOilPattern.NoRoundsSpecified");
     }
 }
