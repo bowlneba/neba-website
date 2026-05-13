@@ -83,7 +83,7 @@ public sealed class ResultsTableTests : IDisposable
     public void Render_ShouldRenderEmptyTableBody_WhenNoResults()
     {
         var cut = _ctx.Render<ResultsTable>(p =>
-            p.Add(x => x.Results, Enumerable.Empty<TournamentResultViewModel>()));
+            p.Add(x => x.Results, []));
 
         cut.FindAll("tbody tr").ShouldBeEmpty();
     }
@@ -92,7 +92,7 @@ public sealed class ResultsTableTests : IDisposable
     public void Render_ShouldRenderAllColumnHeaders()
     {
         var cut = _ctx.Render<ResultsTable>(p =>
-            p.Add(x => x.Results, Enumerable.Empty<TournamentResultViewModel>()));
+            p.Add(x => x.Results, []));
 
         var headers = cut.FindAll("thead th");
         headers.Count.ShouldBe(4);
