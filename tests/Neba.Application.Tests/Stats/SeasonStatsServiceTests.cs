@@ -1019,4 +1019,22 @@ public sealed class SeasonStatsServiceTests
         Should.Throw<InvalidOperationException>(() =>
             _service.CalculateSeasonStatsSummary([], minimumGames: 0, minimumTournaments: 0, minimumEntries: 0));
     }
+
+    [Fact(DisplayName = "GetStatMinimumsForSeasonAsync should derive minimums from the tournament count")]
+    public async Task GetStatMinimumsForSeasonAsync_ShouldDeriveMinimums_FromTournamentCount()
+    {
+        // Arrange
+        var season = SeasonDtoFactory.Create();
+        _tournamentQueriesMock
+            .Setup(x => x.GetTournamentCountForSeasonAsync(season.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(7);
+
+        // Act
+        var result = await _service.GetStatMinimumsForSeasonAsync(season, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.NumberOfGames.ShouldBe(31.5m);
+        result.NumberOfTournaments.ShouldBe(3.5m);
+        result.NumberOfEntries.ShouldBe(5.25m);
+    }
 }

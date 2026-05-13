@@ -116,6 +116,9 @@ public sealed class SyncDocumentToStorageJobHandlerTests
         activity.Tags.ShouldContain(kvp => kvp.Key == "document.name" && kvp.Value == job.DocumentName);
         activity.Tags.ShouldContain(kvp => kvp.Key == "triggered.by" && kvp.Value == job.TriggeredBy);
         activity.Status.ShouldBe(ActivityStatusCode.Ok);
+        _logger.Collector.GetSnapshot().ShouldContain(l =>
+            l.Level == LogLevel.Trace &&
+            l.Message.Contains(job.DocumentName));
         _logger.Collector.GetSnapshot().ShouldNotContain(l => l.Level >= LogLevel.Warning);
         _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Debug);
     }
