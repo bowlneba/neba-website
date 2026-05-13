@@ -25,6 +25,12 @@ if [ -z "$DOTNET_BIN" ]; then
   exit 127
 fi
 
+"$DOTNET_BIN" build
+if [ $? -ne 0 ]; then
+  echo "dotnet build failed. Push aborted."
+  exit 1
+fi
+
 "$DOTNET_BIN" format
 if ! git diff --quiet; then
   git add -u
