@@ -32,8 +32,7 @@ internal sealed class GetTournamentQueryHandler(
                 ? s with { LogoUrl = _fileStorageService.GetBlobUri(s.LogoContainer, s.LogoPath) }
                 : s)
             .ToArray();
-        tournament = tournament with { Sponsors = sponsors };
 
-        return tournament;
+        return tournament with { Sponsors = sponsors };
     }
 }
