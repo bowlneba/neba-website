@@ -19,11 +19,6 @@ public sealed class LogicalOperator
     /// </summary>
     public static readonly LogicalOperator Or = new(nameof(Or), "OR");
 
-    /// <summary>
-    /// Negates a condition. Not used in Side Cut eligibility evaluation — reserved for future use.
-    /// </summary>
-    public static readonly LogicalOperator Not = new(nameof(Not), "NOT");
-
     private LogicalOperator(string name, string value)
         : base(name, value)
     { }

@@ -196,8 +196,8 @@ internal static class TournamentErrors
             description: "Tournament dates must fall within the season dates.",
             metadata: new Dictionary<string, object>
             {
-                { "SeasonStartDate", seasonStartDate.ToString("yyyy-MM-dd", CultureInfo.CurrentCulture) },
-                { "SeasonEndDate", seasonEndDate.ToString("yyyy-MM-dd", CultureInfo.CurrentCulture) },
+                { "SeasonStartDate", seasonStartDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
+                { "SeasonEndDate", seasonEndDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
             });
     }
 

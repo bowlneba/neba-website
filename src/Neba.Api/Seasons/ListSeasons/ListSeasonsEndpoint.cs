@@ -30,7 +30,8 @@ internal sealed class ListSeasonsEndpoint(IQueryHandler<ListSeasonsQuery, IReadO
         Description(description => description
             .WithName("ListSeasons")
             .WithTags("Public")
-            .Produces<CollectionResponse<SeasonResponse>>(StatusCodes.Status200OK));
+            .Produces<CollectionResponse<SeasonResponse>>(StatusCodes.Status200OK)
+            .ProducesProblemDetails(StatusCodes.Status500InternalServerError));
     }
 
     public override async Task HandleAsync(CancellationToken ct)

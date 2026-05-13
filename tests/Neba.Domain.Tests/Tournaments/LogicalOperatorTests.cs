@@ -7,20 +7,19 @@ namespace Neba.Domain.Tests.Tournaments;
 [Component("Tournaments.LogicalOperator")]
 public sealed class LogicalOperatorTests
 {
-    [Fact(DisplayName = "Should have 3 logical operators")]
-    public void LogicalOperator_ShouldHave3Operators()
+    [Fact(DisplayName = "Should have 2 logical operators")]
+    public void LogicalOperator_ShouldHave2Operators()
     {
         // Act
         var count = LogicalOperator.List.Count;
 
         // Assert
-        count.ShouldBe(3);
+        count.ShouldBe(2);
     }
 
     [Theory(DisplayName = "Logical operator values should be correct")]
     [InlineData("And", "AND", TestDisplayName = "And should have value 'AND'")]
     [InlineData("Or", "OR", TestDisplayName = "Or should have value 'OR'")]
-    [InlineData("Not", "NOT", TestDisplayName = "Not should have value 'NOT'")]
     public void LogicalOperator_ShouldHaveCorrectProperties(string expectedName, string expectedValue)
     {
         // Act
