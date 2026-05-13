@@ -3,6 +3,7 @@
 @implements IAsyncDisposable
 @inject ITournamentDataService DataService
 @inject NavigationManager Nav
+@using ErrorOr
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @preservewhitespace false
@@ -173,25 +174,26 @@
         try
         {
             // Resolve available seasons (cached after first load)
-            var availableSeasons = _availableSeasons;
-            if (availableSeasons is null)
+            List<SeasonViewModel> availableSeasons;
+            if (_availableSeasons is not null)
             {
-                availableSeasons = await DataService.GetSeasonsAsync(ct);
-                if (availableSeasons is not null)
-                {
-                    _availableSeasons = availableSeasons;
-                }
+                availableSeasons = _availableSeasons;
             }
-
-            if (availableSeasons is null)
+            else
             {
-                _activeSeason = null;
-                _isCurrentSeason = false;
-                _isMergedSeason = false;
-                _activeTab = TournamentTab.Past;
-                _allTournaments = [];
-                _pageNotice = "Season information is currently unavailable.";
-                return;
+                var seasonsResult = await DataService.GetSeasonsAsync(ct);
+                if (seasonsResult.IsError)
+                {
+                    _activeSeason = null;
+                    _isCurrentSeason = false;
+                    _isMergedSeason = false;
+                    _activeTab = TournamentTab.Past;
+                    _allTournaments = [];
+                    _pageNotice = "Season information is currently unavailable.";
+                    return;
+                }
+                availableSeasons = seasonsResult.Value;
+                _availableSeasons = availableSeasons;
             }
 
             if (availableSeasons.Count == 0)
@@ -226,30 +228,30 @@
             _typeFilter = null;
             _nextSeasonHeroTournament = null;
 
-            _allTournaments = await DataService.GetTournamentsForSeasonAsync(_activeSeason, ct);
-
-            if (_allTournaments is null)
+            var tournamentsResult = await DataService.GetTournamentsForSeasonAsync(_activeSeason, ct);
+            if (tournamentsResult.IsError)
             {
                 _allTournaments = [];
                 _pageNotice = "Tournament data is currently unavailable.";
                 return;
             }
+            _allTournaments = tournamentsResult.Value;
 
             // When the current season has no upcoming tournaments, look ahead to the
             // next season so the hero can surface the first scheduled tournament.
             if (_isCurrentSeason && _allTournaments.Count > 0 && _allTournaments.TrueForAll(t => t.IsPast))
             {
-                var nextSeason = availableSeasons!
+                var nextSeason = availableSeasons
                     .Where(s => s.StartDate > _activeSeason.EndDate)
                     .OrderBy(s => s.StartDate)
                     .FirstOrDefault();
 
                 if (nextSeason is not null)
                 {
-                    var nextTournaments = await DataService.GetTournamentsForSeasonAsync(nextSeason, ct);
-                    if (nextTournaments is not null)
+                    var nextResult = await DataService.GetTournamentsForSeasonAsync(nextSeason, ct);
+                    if (!nextResult.IsError)
                     {
-                        _nextSeasonHeroTournament = nextTournaments
+                        _nextSeasonHeroTournament = nextResult.Value
                             .Where(t => !t.IsPast)
                             .OrderBy(t => t.StartDate)
                             .FirstOrDefault();

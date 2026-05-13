@@ -68,28 +68,32 @@ public static class SeasonTournamentDtoFactory
         var oilPatterns = TournamentOilPatternDtoFactory.Bogus(20, seed).ToArray();
 
         var faker = new Faker<SeasonTournamentDto>()
-            .CustomInstantiator(f => new()
+            .CustomInstantiator(f =>
             {
-                Id = new TournamentId(Ulid.BogusString(f)),
-                Name = f.Random.Words(3),
-                Season = f.PickRandom(seasons),
-                StartDate = DateOnly.FromDateTime(f.Date.Future()),
-                EndDate = DateOnly.FromDateTime(f.Date.Future()),
-                StatsEligible = f.Random.Bool(),
-                TournamentType = f.PickRandom(TournamentType.List.ToArray()).Name,
-                EntryFee = f.Random.Decimal(50, 200),
-                RegistrationUrl = new Uri(f.Internet.Url()),
-                BowlingCenter = f.PickRandom(bowlingCenters),
-                Sponsors = [.. f.PickRandom(sponsors, f.Random.Int(0, 2))],
-                AddedMoney = f.Random.Decimal(0, 5000),
-                Reservations = f.Random.Int(0, 100),
-                PatternLengthCategory = f.PickRandom(PatternLengthCategory.List.ToArray())?.Name,
-                PatternRatioCategory = f.PickRandom(PatternRatioCategory.List.ToArray())?.Name,
-                OilPatterns = [.. f.PickRandom(oilPatterns, f.Random.Int(0, 2))],
-                LogoUrl = f.Random.Bool() ? new Uri(f.Internet.Url()) : null,
-                LogoContainer = f.Random.Bool() ? f.System.FilePath() : null,
-                LogoPath = f.Random.Bool() ? f.System.FilePath() : null,
-                Winners = [.. f.PickRandom(winners, f.Random.Int(0, 3))]
+                var startDate = DateOnly.FromDateTime(f.Date.Future());
+                return new()
+                {
+                    Id = new TournamentId(Ulid.BogusString(f)),
+                    Name = f.Random.Words(3),
+                    Season = f.PickRandom(seasons),
+                    StartDate = startDate,
+                    EndDate = startDate.AddDays(f.Random.Int(0, 3)),
+                    StatsEligible = f.Random.Bool(),
+                    TournamentType = f.PickRandom(TournamentType.List.ToArray()).Name,
+                    EntryFee = f.Random.Decimal(50, 200),
+                    RegistrationUrl = new Uri(f.Internet.Url()),
+                    BowlingCenter = f.PickRandom(bowlingCenters),
+                    Sponsors = [.. f.PickRandom(sponsors, f.Random.Int(0, 2))],
+                    AddedMoney = f.Random.Decimal(0, 5000),
+                    Reservations = f.Random.Int(0, 100),
+                    PatternLengthCategory = f.PickRandom(PatternLengthCategory.List.ToArray())?.Name,
+                    PatternRatioCategory = f.PickRandom(PatternRatioCategory.List.ToArray())?.Name,
+                    OilPatterns = [.. f.PickRandom(oilPatterns, f.Random.Int(0, 2))],
+                    LogoUrl = f.Random.Bool() ? new Uri(f.Internet.Url()) : null,
+                    LogoContainer = f.Random.Bool() ? f.System.FilePath() : null,
+                    LogoPath = f.Random.Bool() ? f.System.FilePath() : null,
+                    Winners = [.. f.PickRandom(winners, f.Random.Int(0, 3))]
+                };
             });
 
         if (seed.HasValue)

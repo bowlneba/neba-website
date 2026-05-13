@@ -1,3 +1,5 @@
+using ErrorOr;
+
 using Neba.Api.Contracts.Seasons;
 using Neba.Api.Contracts.Seasons.ListSeasons;
 using Neba.Api.Contracts.Seasons.ListTournamentsInSeason;
@@ -10,7 +12,7 @@ internal sealed class TournamentDataService(
     ApiExecutor executor,
     ISeasonsApi seasonsApi) : ITournamentDataService
 {
-    public async Task<List<SeasonTournamentViewModel>> GetTournamentsForSeasonAsync(
+    public async Task<ErrorOr<List<SeasonTournamentViewModel>>> GetTournamentsForSeasonAsync(
         SeasonViewModel season, CancellationToken ct = default)
     {
         var result = await executor.ExecuteAsync(
@@ -20,11 +22,11 @@ internal sealed class TournamentDataService(
             ct);
 
         return result.IsError
-            ? []
-            : [.. result.Value.Items.Select(r => MapToViewModel(r, season.Label))];
+            ? result.Errors
+            : result.Value.Items.Select(r => MapToViewModel(r, season.Label)).ToList();
     }
 
-    public async Task<List<SeasonViewModel>> GetSeasonsAsync(CancellationToken ct = default)
+    public async Task<ErrorOr<List<SeasonViewModel>>> GetSeasonsAsync(CancellationToken ct = default)
     {
         var result = await executor.ExecuteAsync(
             "SeasonsApi",
@@ -33,8 +35,8 @@ internal sealed class TournamentDataService(
             ct);
 
         return result.IsError
-            ? []
-            : [.. result.Value.Items.Select(MapToViewModel)];
+            ? result.Errors
+            : result.Value.Items.Select(MapToViewModel).ToList();
     }
 
     private static SeasonViewModel MapToViewModel(SeasonResponse r) => new()
