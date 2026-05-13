@@ -75,7 +75,7 @@ public sealed class TournamentOilPattern
     /// </summary>
     /// <param name="tournamentRound">The tournament round to associate with this oil pattern.</param>
     /// <returns>An <see cref="ErrorOr{Updated}"/> indicating the result of the operation.</returns>
-    public ErrorOr<Updated> AddTournamentRound(TournamentRound tournamentRound)
+    internal ErrorOr<Updated> AddTournamentRound(TournamentRound tournamentRound)
     {
         ArgumentNullException.ThrowIfNull(tournamentRound);
 
