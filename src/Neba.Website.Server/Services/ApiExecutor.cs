@@ -88,14 +88,11 @@ internal sealed class ApiExecutor(
                     duration
                 );
 
-                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    return Error.NotFound(
+                return response.StatusCode == System.Net.HttpStatusCode.NotFound
+                    ? Error.NotFound(
                         $"{apiName}.{operationName}.NotFound",
-                        "The requested resource was not found.");
-                }
-
-                return Error.Failure(
+                        "The requested resource was not found.")
+                    : Error.Failure(
                     $"{apiName}.{operationName}.HttpError",
                     $"API call failed with status code {(int)response.StatusCode}."
                 );
