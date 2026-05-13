@@ -177,7 +177,7 @@
             if (availableSeasons is null)
                 return;
 
-            if (!TrySetActiveSeason(availableSeasons, out var matched, out var current))
+            if (!TrySetActiveSeason(availableSeasons, out var _, out var _))
                 return;
 
             await LoadTournamentsAndHeroAsync(availableSeasons, ct);
