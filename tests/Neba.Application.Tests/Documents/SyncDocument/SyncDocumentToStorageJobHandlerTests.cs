@@ -112,7 +112,8 @@ public sealed class SyncDocumentToStorageJobHandlerTests
             m.Tags.Any(t => t.Key == "document.name" && (string?)t.Value == job.DocumentName));
 
         // Assert activity tags and status
-        var activity = activities.First(a => a.Tags.Any(t => t.Key == "document.name" && t.Value == job.DocumentName));
+        var activity = activities.FirstOrDefault(a => a.Tags.Any(t => t.Key == "document.name" && t.Value == job.DocumentName));
+        activity.ShouldNotBeNull("activity should have a document.name tag set");
         activity.Tags.ShouldContain(kvp => kvp.Key == "document.name" && kvp.Value == job.DocumentName);
         activity.Tags.ShouldContain(kvp => kvp.Key == "triggered.by" && kvp.Value == job.TriggeredBy);
         activity.Status.ShouldBe(ActivityStatusCode.Ok);
@@ -164,7 +165,8 @@ public sealed class SyncDocumentToStorageJobHandlerTests
             m.Tags.Any(t => t.Key == "result" && (string?)t.Value == "failure"));
 
         // Assert activity status
-        var activity = activities.First(a => a.Tags.Any(t => t.Key == "document.name" && t.Value == job.DocumentName));
+        var activity = activities.FirstOrDefault(a => a.Tags.Any(t => t.Key == "document.name" && t.Value == job.DocumentName));
+        activity.ShouldNotBeNull("activity should have a document.name tag set");
         activity.Status.ShouldBe(ActivityStatusCode.Error);
         activity.StatusDescription.ShouldBe("Document not found");
         _logger.Collector.GetSnapshot().ShouldContain(l =>
@@ -223,7 +225,8 @@ public sealed class SyncDocumentToStorageJobHandlerTests
             m.Tags.Any(t => t.Key == "error.type" && (string?)t.Value == "InvalidOperationException"));
 
         // Assert activity status
-        var activity = activities.First(a => a.Tags.Any(t => t.Key == "document.name" && t.Value == job.DocumentName));
+        var activity = activities.FirstOrDefault(a => a.Tags.Any(t => t.Key == "document.name" && t.Value == job.DocumentName));
+        activity.ShouldNotBeNull("activity should have a document.name tag set");
         activity.Status.ShouldBe(ActivityStatusCode.Error);
         activity.StatusDescription.ShouldBe("Storage unavailable");
         _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Error);

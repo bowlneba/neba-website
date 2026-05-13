@@ -1,3 +1,5 @@
+using ErrorOr;
+
 using Neba.Application.Stats;
 using Neba.Application.Stats.BoyProgression;
 using Neba.Application.Stats.GetSeasonStats;
@@ -37,7 +39,8 @@ public sealed class GetSeasonStatsQueryHandlerTests
         var query = new GetSeasonStatsQuery { SeasonYear = null };
 
         // Act
-        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+        ErrorOr<SeasonStatsDto> result = default;
+        await Should.NotThrowAsync(async () => { result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken); });
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -59,7 +62,8 @@ public sealed class GetSeasonStatsQueryHandlerTests
         var query = new GetSeasonStatsQuery { SeasonYear = 2023 };
 
         // Act
-        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+        ErrorOr<SeasonStatsDto> result = default;
+        await Should.NotThrowAsync(async () => { result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken); });
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -113,7 +117,8 @@ public sealed class GetSeasonStatsQueryHandlerTests
         var query = new GetSeasonStatsQuery { SeasonYear = null };
 
         // Act
-        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+        ErrorOr<SeasonStatsDto> result = default;
+        await Should.NotThrowAsync(async () => { result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken); });
 
         // Assert
         result.IsError.ShouldBeFalse();
