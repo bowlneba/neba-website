@@ -177,4 +177,58 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests
         // Assert
         result.Single().LogoUrl.ShouldBeNull();
     }
+
+    [Fact(DisplayName = "Should resolve sponsor logo URLs when sponsors have both container and path")]
+    public async Task HandleAsync_ShouldResolveSponsorLogoUrls_WhenSponsorsHaveBothContainerAndPath()
+    {
+        // Arrange
+        var seasonId = SeasonId.New();
+        const string container = "sponsor-logos";
+        const string path = "acme/logo.png";
+        var expectedLogoUrl = new Uri($"https://storage.example.com/{container}/{path}");
+        var sponsor = SponsorSummaryDtoFactory.Create(logoContainer: container, logoPath: path, logoUrl: null);
+        var tournament = SeasonTournamentDtoFactory.Create(
+            logoContainer: null, logoPath: null, sponsors: [sponsor]);
+        var query = new ListTournamentsInSeasonQuery { SeasonId = seasonId };
+
+        _tournamentQueriesMock
+            .Setup(q => q.GetTournamentsInSeasonAsync(seasonId, TestContext.Current.CancellationToken))
+            .ReturnsAsync([tournament]);
+
+        _fileStorageServiceMock
+            .Setup(s => s.GetBlobUri(container, path))
+            .Returns(expectedLogoUrl);
+
+        // Act
+        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Single().Sponsors.Single().LogoUrl.ShouldBe(expectedLogoUrl);
+    }
+
+    [Fact(DisplayName = "Should keep sponsor logo URL null when sponsor has no logo container")]
+    public async Task HandleAsync_ShouldKeepSponsorLogoUrlNull_WhenSponsorHasNoLogoContainer()
+    {
+        // Arrange
+        // Canary: if && guard mutated to ||, GetBlobUri(null, path) is called.
+        var seasonId = SeasonId.New();
+        var sponsor = SponsorSummaryDtoFactory.Create(logoContainer: null, logoPath: "acme/logo.png", logoUrl: null);
+        var tournament = SeasonTournamentDtoFactory.Create(
+            logoContainer: null, logoPath: null, sponsors: [sponsor]);
+        var query = new ListTournamentsInSeasonQuery { SeasonId = seasonId };
+
+        _tournamentQueriesMock
+            .Setup(q => q.GetTournamentsInSeasonAsync(seasonId, TestContext.Current.CancellationToken))
+            .ReturnsAsync([tournament]);
+
+        _fileStorageServiceMock
+            .Setup(s => s.GetBlobUri(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new Uri("https://unexpected.example.com/logo.png"));
+
+        // Act
+        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.Single().Sponsors.Single().LogoUrl.ShouldBeNull();
+    }
 }
