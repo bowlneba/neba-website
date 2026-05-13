@@ -132,14 +132,11 @@ internal sealed class BowlerOfTheYearProgressionService(
                 || r.TournamentType == TournamentType.SeniorAndWomen;
         }
 
-        if (category == BowlerOfTheYearCategory.Woman)
-        {
-            return r.StatsEligible
-                || r.TournamentType == TournamentType.Women
-                || r.TournamentType == TournamentType.SeniorAndWomen;
-        }
-
-        return false;
+        return category == BowlerOfTheYearCategory.Woman
+        && (r.StatsEligible
+            || r.TournamentType == TournamentType.Women
+            || r.TournamentType == TournamentType.SeniorAndWomen
+        );
     }
 
     private static bool IsBowlerEligibleForRace(BoyProgressionResultDto r, BowlerOfTheYearCategory category)
@@ -153,13 +150,10 @@ internal sealed class BowlerOfTheYearProgressionService(
         if (category == BowlerOfTheYearCategory.Senior)
             return r.BowlerDateOfBirth.HasValue && AgeAt(r.BowlerDateOfBirth.Value, r.TournamentEndDate) >= 50;
 
-        if (category == BowlerOfTheYearCategory.SuperSenior)
-            return r.BowlerDateOfBirth.HasValue && AgeAt(r.BowlerDateOfBirth.Value, r.TournamentEndDate) >= 60;
-
-        if (category == BowlerOfTheYearCategory.Youth)
-            return r.BowlerDateOfBirth.HasValue && AgeAt(r.BowlerDateOfBirth.Value, r.TournamentEndDate) < 18;
-
-        return false;
+        return category == BowlerOfTheYearCategory.SuperSenior
+            ? r.BowlerDateOfBirth.HasValue && AgeAt(r.BowlerDateOfBirth.Value, r.TournamentEndDate) >= 60
+            : category == BowlerOfTheYearCategory.Youth
+&& r.BowlerDateOfBirth.HasValue && AgeAt(r.BowlerDateOfBirth.Value, r.TournamentEndDate) < 18;
     }
 
     // Age completed on evaluationDate. Uses DateOnly.AddYears so Feb-29 birthdays are handled correctly.
