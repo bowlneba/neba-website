@@ -450,11 +450,23 @@ function createStatsResponse(selectedYear: number): object {
   };
 }
 
+const MOCK_SEASONS = {
+  items: [
+    {
+      id: MOCK_SEASON_ID,
+      description: '2025-2026 Season',
+      startDate: '2025-09-01',
+      endDate: '2026-05-31',
+    },
+  ],
+};
+
 const routes: Record<string, unknown> = {
   '/health': { status: 'healthy' },
   '/documents/tournament-rules': { html: MOCK_TOURNAMENT_RULES_HTML },
   '/documents/bylaws': { html: MOCK_BYLAWS_HTML },
   '/bowling-centers': MOCK_BOWLING_CENTERS,
+  '/seasons': MOCK_SEASONS,
   '/sponsors': MOCK_SPONSORS_ACTIVE,
   '/sponsors/pro-shop-plus': MOCK_SPONSOR_PRO_SHOP_PLUS,
   '/sponsors/old-sponsor': MOCK_SPONSOR_OLD_SPONSOR,
