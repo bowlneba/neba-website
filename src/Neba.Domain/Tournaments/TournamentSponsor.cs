@@ -39,11 +39,11 @@ public sealed class TournamentSponsor
         return sponsorshipAmount < 0
             ? TournamentSponsorErrors.NegativeSponsorshipAmount
             : new TournamentSponsor
-        {
-            SponsorId = sponsorId,
-            TitleSponsor = titleSponsor,
-            SponsorshipAmount = sponsorshipAmount
-        };
+            {
+                SponsorId = sponsorId,
+                TitleSponsor = titleSponsor,
+                SponsorshipAmount = sponsorshipAmount
+            };
     }
 }
 
