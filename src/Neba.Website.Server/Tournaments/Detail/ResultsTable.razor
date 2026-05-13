@@ -53,6 +53,8 @@
 </table>
 
 @code {
+    private static readonly System.Globalization.CultureInfo CurrencyCulture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+
     [Parameter, EditorRequired]
     public IEnumerable<TournamentResultViewModel> Results { get; set; } = [];
 
@@ -70,6 +72,6 @@
         public int Points => Rows[0].Points;
         public bool HasPrizeMoney => Rows.Sum(r => r.PrizeMoney) > 0;
         public string FormattedCombinedPrizeMoney =>
-            Rows.Sum(r => r.PrizeMoney).ToString("C0", System.Globalization.CultureInfo.CurrentCulture);
+            Rows.Sum(r => r.PrizeMoney).ToString("C0", CurrencyCulture);
     }
 }

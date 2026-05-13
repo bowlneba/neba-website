@@ -1,4 +1,5 @@
 @namespace Neba.Website.Server.Tournaments.Schedule
+@using System.Globalization
 
 <section class="tournament-hero" aria-label="Next upcoming tournament">
     <div class="tournament-hero__grid">
@@ -40,7 +41,7 @@
                     @if (Tournament.DisplayPrice.HasValue)
                     {
                         <span class="tournament-hero__stat-value tournament-hero__stat-value--gold">
-                            @Tournament.DisplayPrice.Value.ToString("C0", System.Globalization.CultureInfo.CurrentCulture)
+                            @Tournament.DisplayPrice.Value.ToString("C0", CurrencyCulture)
                         </span>
                     }
                     else
@@ -103,6 +104,8 @@
 </section>
 
 @code {
+    private static readonly CultureInfo CurrencyCulture = CultureInfo.GetCultureInfo("en-US");
+
     [Parameter, EditorRequired]
     public SeasonTournamentViewModel Tournament { get; set; } = default!;
 

@@ -5,6 +5,7 @@
 @using Neba.Api.Contracts.Tournaments.GetTournament
 @using Neba.Website.Server.Services
 @using Neba.Website.Server.Tournaments.Detail
+@using System.Globalization
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject ApiExecutor ApiExecutor
@@ -120,12 +121,12 @@ else
                                     {
                                         <span class="td-hero__stat-label">Added money</span>
                                         <span class="td-hero__stat-value td-hero__stat-value--gold">
-                                            @_model.AddedMoney!.Value.ToString("C0", System.Globalization.CultureInfo.CurrentCulture)
+                                            @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
                                         </span>
                                         @if (_model.EntryFee.HasValue)
                                         {
                                             <span class="td-hero__stat-sub">
-                                                @_model.EntryFee.Value.ToString("C0", System.Globalization.CultureInfo.CurrentCulture) entry
+                                                @_model.EntryFee.Value.ToString("C0", CurrencyCulture) entry
                                             </span>
                                         }
                                     }
@@ -133,7 +134,7 @@ else
                                     {
                                         <span class="td-hero__stat-label">Entry fee</span>
                                         <span class="td-hero__stat-value td-hero__stat-value--gold">
-                                            @_model.EntryFee!.Value.ToString("C0", System.Globalization.CultureInfo.CurrentCulture)
+                                            @_model.EntryFee!.Value.ToString("C0", CurrencyCulture)
                                         </span>
                                         <span class="td-hero__stat-sub">per bowler</span>
                                     }
@@ -276,20 +277,20 @@ else
                                         @if (_model.HasAddedMoney)
                                         {
                                             <span class="td-rail-price__value td-rail-price__value--gold">
-                                                @_model.AddedMoney!.Value.ToString("C0", System.Globalization.CultureInfo.CurrentCulture)
+                                                @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
                                             </span>
                                             <span class="td-rail-price__label">Added money</span>
                                             @if (_model.EntryFee.HasValue)
                                             {
                                                 <span class="td-rail-price__secondary">
-                                                    @_model.EntryFee.Value.ToString("C0", System.Globalization.CultureInfo.CurrentCulture) entry fee
+                                                    @_model.EntryFee.Value.ToString("C0", CurrencyCulture) entry fee
                                                 </span>
                                             }
                                         }
                                         else
                                         {
                                             <span class="td-rail-price__value td-rail-price__value--gold">
-                                                @_model.EntryFee!.Value.ToString("C0", System.Globalization.CultureInfo.CurrentCulture)
+                                                @_model.EntryFee!.Value.ToString("C0", CurrencyCulture)
                                             </span>
                                             <span class="td-rail-price__label">Entry fee</span>
                                         }
@@ -335,7 +336,7 @@ else
                         {
                             <div class="td-rail-entries td-rail-entries--payout">
                                 <span class="td-rail-entries__label">Total payout</span>
-                                <span class="td-rail-entries__value td-rail-entries__value--gold">@_model.TotalPayout.ToString("C0", System.Globalization.CultureInfo.CurrentCulture)</span>
+                                <span class="td-rail-entries__value td-rail-entries__value--gold">@_model.TotalPayout.ToString("C0", CurrencyCulture)</span>
                             </div>
                         }
 
@@ -358,6 +359,8 @@ else
 
 @code {
     [Parameter] public string Id { get; set; } = default!;
+
+    private static readonly CultureInfo CurrencyCulture = CultureInfo.GetCultureInfo("en-US");
 
     private TournamentDetailViewModel? _model;
     private bool _isLoading = true;

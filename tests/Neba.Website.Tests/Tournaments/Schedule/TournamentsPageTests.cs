@@ -250,7 +250,7 @@ public sealed class TournamentsPageTests : IDisposable
 
     private sealed class FakeTournamentDataService : ITournamentDataService
     {
-        public List<SeasonViewModel>? Seasons { get; set; } = [];
+        public List<SeasonViewModel> Seasons { get; set; } = [];
 
         public Dictionary<string, List<SeasonTournamentViewModel>> SeasonData { get; } =
             new(StringComparer.Ordinal);
@@ -259,36 +259,33 @@ public sealed class TournamentsPageTests : IDisposable
 
         public List<string> RequestedSeasons { get; } = [];
 
-        Task<List<SeasonViewModel>?> ITournamentDataService.GetSeasonsAsync(CancellationToken ct)
+        Task<List<SeasonViewModel>> ITournamentDataService.GetSeasonsAsync(CancellationToken ct)
         {
             if (ct.IsCancellationRequested)
             {
-                return Task.FromCanceled<List<SeasonViewModel>?>(ct);
+                return Task.FromCanceled<List<SeasonViewModel>>(ct);
             }
 
             return Task.FromResult(Seasons);
         }
 
-        Task<List<SeasonTournamentViewModel>?> ITournamentDataService.GetTournamentsForSeasonAsync(
+        Task<List<SeasonTournamentViewModel>> ITournamentDataService.GetTournamentsForSeasonAsync(
             SeasonViewModel season, CancellationToken ct)
         {
             if (ct.IsCancellationRequested)
             {
-                return Task.FromCanceled<List<SeasonTournamentViewModel>?>(ct);
+                return Task.FromCanceled<List<SeasonTournamentViewModel>>(ct);
             }
 
             RequestedSeasons.Add(season.Label);
             if (UnavailableSeasonLabels.Contains(season.Label))
             {
-                return Task.FromResult<List<SeasonTournamentViewModel>?>(null);
+                return Task.FromResult<List<SeasonTournamentViewModel>>([]);
             }
 
-            if (SeasonData.TryGetValue(season.Label, out var data))
-            {
-                return Task.FromResult<List<SeasonTournamentViewModel>?>(data);
-            }
-
-            return Task.FromResult<List<SeasonTournamentViewModel>?>([]);
+            return SeasonData.TryGetValue(season.Label, out var data)
+                ? Task.FromResult(data)
+                : Task.FromResult<List<SeasonTournamentViewModel>>([]);
         }
     }
 }

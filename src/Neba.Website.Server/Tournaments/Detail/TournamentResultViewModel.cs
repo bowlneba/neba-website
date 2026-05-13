@@ -1,8 +1,12 @@
+using System.Globalization;
+
 namespace Neba.Website.Server.Tournaments.Detail;
 
 /// <summary>Per-bowler result row for display in the results table.</summary>
 public sealed record TournamentResultViewModel
 {
+    private static readonly CultureInfo CurrencyCulture = CultureInfo.GetCultureInfo("en-US");
+
     /// <summary>Display name of the bowler.</summary>
     public required string BowlerName { get; init; }
 
@@ -29,5 +33,5 @@ public sealed record TournamentResultViewModel
 
     /// <summary>Prize money formatted as currency.</summary>
     public string FormattedPrizeMoney =>
-        PrizeMoney.ToString("C0", System.Globalization.CultureInfo.CurrentCulture);
+        PrizeMoney.ToString("C0", CurrencyCulture);
 }
