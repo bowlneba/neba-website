@@ -47,7 +47,7 @@
     font-weight: 700;
     line-height: 1.02;
     letter-spacing: -0.025em;
-    color: rgba(255, 255, 255, 1);
+    color: rgba(255, 255, 255, 0.95);
     margin: 0;
 }
 
@@ -113,7 +113,7 @@
     background: rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    color: white;
+    color: rgba(255, 255, 255, 1);
     border-radius: 999px;
     padding: 0.25rem 0.75rem;
     font-size: 0.8125rem;
