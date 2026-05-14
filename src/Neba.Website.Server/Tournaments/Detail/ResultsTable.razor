@@ -53,7 +53,8 @@
 </table>
 
 @code {
-    private static readonly System.Globalization.CultureInfo CurrencyCulture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+    private static readonly System.Globalization.CultureInfo CurrencyCulture =
+System.Globalization.CultureInfo.GetCultureInfo("en-US");
 
     [Parameter, EditorRequired]
     public IEnumerable<TournamentResultViewModel> Results { get; set; } = [];
