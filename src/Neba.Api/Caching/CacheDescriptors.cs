@@ -2,7 +2,7 @@
 using Neba.Domain.Seasons;
 using Neba.Domain.Tournaments;
 
-namespace Neba.Application.Caching;
+namespace Neba.Api.Caching;
 
 #pragma warning disable CA1724 // Nested type name intentionally mirrors domain for API clarity
 

@@ -1,4 +1,4 @@
-namespace Neba.Application.Caching;
+namespace Neba.Api.Caching;
 
 /// <summary>
 /// Represents a descriptor for caching information, including the cache key and associated tags.
