@@ -1,4 +1,4 @@
-namespace Neba.Application.Tournaments;
+namespace Neba.Api.Features.Tournaments;
 
 /// <summary>
 /// Details about the oil pattern used for a specific tournament round, including the name of the pattern and which rounds it applies to.

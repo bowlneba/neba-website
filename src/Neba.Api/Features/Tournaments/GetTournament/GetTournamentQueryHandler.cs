@@ -1,23 +1,13 @@
-using System.Linq.Expressions;
-
 using ErrorOr;
 
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
-using Neba.Api.Contacts;
 using Neba.Api.Database;
 using Neba.Api.Database.Configurations;
 using Neba.Api.Database.Entities;
-using Neba.Api.Database.Migrations;
-using Neba.Api.Features.BowlingCenters.ListBowlingCenters;
 using Neba.Api.Features.Seasons.ListSeasons;
-using Neba.Api.Features.Sponsors.ListActiveSponsors;
 using Neba.Api.Messaging;
 using Neba.Api.Storage;
-using Neba.Application.Tournaments;
-using Neba.Application.Tournaments.ListTournamentsInSeason;
-using Neba.Domain.Bowlers;
 using Neba.Domain.Tournaments;
 
 namespace Neba.Api.Features.Tournaments.GetTournament;
@@ -27,9 +17,9 @@ internal sealed partial class GetTournamentQueryHandler(
     IFileStorageService fileStorageService)
     : IQueryHandler<GetTournamentQuery, ErrorOr<TournamentDetailDto>>
 {
-    private readonly IQueryable<Tournament> _tournaments 
+    private readonly IQueryable<Tournament> _tournaments
         = appDbContext.Tournaments.AsNoTracking();
-    private readonly IQueryable<HistoricalTournamentChampion> _historicalTournamentChampion 
+    private readonly IQueryable<HistoricalTournamentChampion> _historicalTournamentChampion
         = appDbContext.HistoricalTournamentChampions.AsNoTracking();
     private readonly IQueryable<HistoricalTournamentEntry> _historicalTournamentEntries
         = appDbContext.HistoricalTournamentEntries.AsNoTracking();
@@ -59,34 +49,24 @@ internal sealed partial class GetTournamentQueryHandler(
                 StatsEligible = tournament.StatsEligible,
                 TournamentType = tournament.TournamentType.Name,
                 BowlingCenter = tournament.BowlingCenter == null
-            ? null
-            : new BowlingCenterSummaryDto
-            {
-                CertificationNumber = tournament.BowlingCenter.CertificationNumber.Value,
-                Name = tournament.BowlingCenter.Name,
-                Status = tournament.BowlingCenter.Status.Name,
-                Address = new AddressDto
-                {
-                    Street = tournament.BowlingCenter.Address.Street,
-                    Unit = tournament.BowlingCenter.Address.Unit,
-                    City = tournament.BowlingCenter.Address.City,
-                    Region = tournament.BowlingCenter.Address.Region,
-                    Country = tournament.BowlingCenter.Address.Country.Value,
-                    PostalCode = tournament.BowlingCenter.Address.PostalCode,
-                }
-            },
+                    ? null
+                    : new TournamentBowlingCenterDto
+                    {
+                        Name = tournament.BowlingCenter.Name,
+                        City = tournament.BowlingCenter.Address.City,
+                        State = tournament.BowlingCenter.Address.Region
+                    },
                 Sponsors = tournament.Sponsors
-            .Select(ts => ts.Sponsor)
-            .Select(s => new SponsorSummaryDto
-            {
-                Name = s.Name,
-                Slug = s.Slug,
-                LogoContainer = s.Logo!.Container,
-                LogoPath = s.Logo!.Path,
-                WebsiteUrl = s.WebsiteUrl,
-                TagPhrase = s.TagPhrase,
-            })
-            .ToList(),
+                    .Select(tournamentSponsor => tournamentSponsor.Sponsor)
+                    .Select(s => new TournamentSponsorDto
+                    {
+                        Name = s.Name,
+                        Slug = s.Slug,
+                        LogoContainer = s.Logo!.Container,
+                        LogoPath = s.Logo!.Path,
+                        WebsiteUrl = s.WebsiteUrl,
+                        TagPhrase = s.TagPhrase,
+                    }).ToList(),
                 AddedMoney = tournament.Sponsors.Sum(ts => ts.SponsorshipAmount),
                 PatternLengthCategory = tournament.PatternLengthCategory == null ? null : tournament.PatternLengthCategory.Name,
                 PatternRatioCategory = tournament.PatternRatioCategory == null ? null : tournament.PatternRatioCategory.Name,
@@ -152,7 +132,7 @@ internal sealed partial class GetTournamentQueryHandler(
         {
             Id = row.Id,
             Name = row.Name,
-            Season = row.Season,
+            Season = row.Season.Description,
             StartDate = row.StartDate,
             EndDate = row.EndDate,
             StatsEligible = row.StatsEligible,
@@ -165,11 +145,11 @@ internal sealed partial class GetTournamentQueryHandler(
             Reservations = row.Reservations,
             PatternLengthCategory = row.PatternLengthCategory,
             PatternRatioCategory = row.PatternRatioCategory,
-            OilPatterns =row.OilPatternsRaw.Select(op => new TournamentOilPatternDto
+            OilPatterns = [.. row.OilPatternsRaw.Select(op => new TournamentOilPatternDto
             {
                 OilPattern = op.OilPattern,
                 TournamentRounds = [.. op.TournamentRounds.Select(tr => tr.Name)]
-            }).ToList(),
+            })],
             LogoContainer = row.LogoContainer,
             LogoPath = row.LogoPath,
             Winners = historicalWinners,

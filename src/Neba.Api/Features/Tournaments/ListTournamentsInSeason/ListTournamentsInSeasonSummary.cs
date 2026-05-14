@@ -5,7 +5,7 @@ using FastEndpoints;
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Seasons.ListTournamentsInSeason;
 
-namespace Neba.Api.Features.Seasons.ListTournamentsInSeason;
+namespace Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 
 internal sealed class ListTournamentsInSeasonSummary
     : Summary<ListTournamentsInSeasonEndpoint>

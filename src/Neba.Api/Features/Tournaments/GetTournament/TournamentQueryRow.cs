@@ -25,9 +25,9 @@ internal sealed partial class GetTournamentQueryHandler
 
         public string TournamentType { get; init; } = string.Empty;
 
-        public BowlingCenterSummaryDto? BowlingCenter { get; init; }
+        public TournamentBowlingCenterDto? BowlingCenter { get; init; }
 
-        public IReadOnlyCollection<SponsorSummaryDto> Sponsors { get; init; } = [];
+        public IReadOnlyCollection<TournamentSponsorDto> Sponsors { get; init; } = [];
 
         public decimal? AddedMoney { get; init; }
 

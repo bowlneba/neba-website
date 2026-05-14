@@ -1,10 +1,8 @@
-using Neba.Application.BowlingCenters.ListBowlingCenters;
-using Neba.Application.Seasons;
-using Neba.Application.Sponsors;
+using Neba.Api.Features.Seasons.ListSeasons;
 using Neba.Domain.Bowlers;
 using Neba.Domain.Tournaments;
 
-namespace Neba.Application.Tournaments.ListTournamentsInSeason;
+namespace Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 
 /// <summary>
 /// Summary of a tournament returned by list queries.
@@ -59,12 +57,12 @@ public sealed record SeasonTournamentDto
     /// <summary>
     /// Host bowling center; null until confirmed.
     /// </summary>
-    public required BowlingCenterSummaryDto? BowlingCenter { get; init; }
+    public required TournamentBowlingCenterDto? BowlingCenter { get; init; }
 
     /// <summary>
     /// Sponsors associated with this tournament.
     /// </summary>
-    public IReadOnlyCollection<SponsorSummaryDto> Sponsors { get; init; } = [];
+    public IReadOnlyCollection<TournamentSponsorDto> Sponsors { get; init; } = [];
 
     /// <summary>
     /// Sponsor-added prize money in USD; null if none.

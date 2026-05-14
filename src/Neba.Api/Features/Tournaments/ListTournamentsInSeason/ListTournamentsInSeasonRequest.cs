@@ -1,4 +1,4 @@
-namespace Neba.Api.Features.Seasons.ListTournamentsInSeason;
+namespace Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 
 internal sealed class ListTournamentsInSeasonRequest
 {

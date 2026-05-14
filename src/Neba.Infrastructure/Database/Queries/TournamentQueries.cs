@@ -29,9 +29,6 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
     private readonly IQueryable<HistoricalTournamentEntry> _historicalTournamentEntries
         = appDbContext.HistoricalTournamentEntries.AsNoTracking();
 
-    private readonly IQueryable<HistoricalTournamentResult> _historicalTournamentResults
-        = appDbContext.HistoricalTournamentResults.AsNoTracking();
-
     public async Task<int> GetTournamentCountForSeasonAsync(SeasonId seasonId, CancellationToken cancellationToken)
         => await _tournaments.CountAsync(tournament => tournament.SeasonId == seasonId, cancellationToken);
 
@@ -77,7 +74,7 @@ internal sealed class TournamentQueries(AppDbContext appDbContext)
 
         return rows.ConvertAll(r =>
             ToSeasonTournamentDto(r, historicalWinnersByTournamentDbId.GetValueOrDefault(r.DbId, [])));
-    }    
+    }
 
     private static SeasonTournamentDto ToSeasonTournamentDto(TournamentQueryRow row, IReadOnlyCollection<Name> winners)
         => new()

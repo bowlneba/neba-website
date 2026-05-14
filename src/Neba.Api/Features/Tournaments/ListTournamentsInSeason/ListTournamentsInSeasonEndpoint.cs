@@ -5,11 +5,11 @@ using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Seasons.ListTournamentsInSeason;
-using Neba.Application.Messaging;
-using Neba.Application.Tournaments.ListTournamentsInSeason;
+using Neba.Api.Features.Seasons;
+using Neba.Api.Messaging;
 using Neba.Domain.Seasons;
 
-namespace Neba.Api.Features.Seasons.ListTournamentsInSeason;
+namespace Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 
 internal sealed class ListTournamentsInSeasonEndpoint(
     IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<SeasonTournamentDto>> queryHandler)
@@ -60,8 +60,8 @@ internal sealed class ListTournamentsInSeasonEndpoint(
                 BowlingCenter = t.BowlingCenter is null ? null : new TournamentBowlingCenterResponse
                 {
                     Name = t.BowlingCenter.Name,
-                    City = t.BowlingCenter.Address.City,
-                    State = t.BowlingCenter.Address.Region,
+                    City = t.BowlingCenter.City,
+                    State = t.BowlingCenter.State,
                 },
                 Sponsors = [.. t.Sponsors.Select(s => new TournamentSponsorResponse
                 {

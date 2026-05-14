@@ -1,7 +1,7 @@
-using Neba.Application.Messaging;
-using Neba.Application.Storage;
+using Neba.Api.Messaging;
+using Neba.Api.Storage;
 
-namespace Neba.Application.Tournaments.ListTournamentsInSeason;
+namespace Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 
 internal sealed class ListTournamentsInSeasonQueryHandler(
     ITournamentQueries tournamentQueries,

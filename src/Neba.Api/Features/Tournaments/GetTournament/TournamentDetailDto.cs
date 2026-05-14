@@ -24,7 +24,7 @@ public sealed record TournamentDetailDto
     /// <summary>
     /// Season this tournament belongs to.
     /// </summary>
-    public required SeasonDto Season { get; init; }
+    public required string Season { get; init; }
 
     /// <summary>
     /// Date the first qualifying squad is held.
@@ -59,12 +59,12 @@ public sealed record TournamentDetailDto
     /// <summary>
     /// Host bowling center; null until confirmed.
     /// </summary>
-    public required BowlingCenterSummaryDto? BowlingCenter { get; init; }
+    public required TournamentBowlingCenterDto? BowlingCenter { get; init; }
 
     /// <summary>
     /// Sponsors associated with this tournament.
     /// </summary>
-    public IReadOnlyCollection<SponsorSummaryDto> Sponsors { get; init; } = [];
+    public IReadOnlyCollection<TournamentSponsorDto> Sponsors { get; init; } = [];
 
     /// <summary>
     /// Sponsor-added prize money in USD; null if none.

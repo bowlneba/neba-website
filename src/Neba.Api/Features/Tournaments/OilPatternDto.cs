@@ -1,6 +1,6 @@
 using Neba.Domain.Tournaments;
 
-namespace Neba.Application.Tournaments;
+namespace Neba.Api.Features.Tournaments;
 
 /// <summary>
 /// Data transfer object representing a bowling oil pattern, used for transferring oil pattern information between application layers.
