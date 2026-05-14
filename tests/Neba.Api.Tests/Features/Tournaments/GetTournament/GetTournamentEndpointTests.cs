@@ -9,7 +9,7 @@ using Neba.Domain.Tournaments;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 
-namespace Neba.Api.Tests.Tournaments.GetTournament;
+namespace Neba.Api.Tests.Features.Tournaments.GetTournament;
 
 [UnitTest]
 [Component("Tournaments")]
