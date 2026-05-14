@@ -8,7 +8,7 @@ using Neba.Application.Sponsors.GetSponsorDetail;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Sponsors;
 
-namespace Neba.Api.Tests.Sponsors.GetSponsorDetail;
+namespace Neba.Api.Tests.Features.Sponsors.GetSponsorDetail;
 
 [UnitTest]
 [Component("Sponsors")]

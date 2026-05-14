@@ -3,7 +3,7 @@ using FluentAssertions;
 using Neba.Api.Features.Sponsors.GetSponsorDetail;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Api.Tests.Sponsors.GetSponsorDetail;
+namespace Neba.Api.Tests.Features.Sponsors.GetSponsorDetail;
 
 [UnitTest]
 [Component("Sponsors")]
