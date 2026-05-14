@@ -34,6 +34,9 @@
     <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
     <PackageReference Include="Scalar.AspNetCore" />
     <PackageReference Include="Scrutor.AspNetCore" />
+    <PackageReference Include="StronglyTypedId" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <PackageReference Include="StronglyTypedId.Templates" GeneratePathProperty="true" PrivateAssets="all" />
+    <PackageReference Include="UnitsNet" />
     <PackageReference Include="ZiggyCreatures.FusionCache" />
     <PackageReference Include="ZiggyCreatures.FusionCache.Serialization.SystemTextJson" />  
   </ItemGroup>
@@ -41,6 +44,10 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Neba.Api.Tests" />
     <InternalsVisibleTo Include="Neba.TestFactory" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="ulid-full.typedid" />
   </ItemGroup>
 
 </Project>
