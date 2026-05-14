@@ -9,7 +9,7 @@ using Neba.Api.Contracts.Documents.GetDocument;
 using Neba.Application.Documents.GetDocument;
 using Neba.Application.Messaging;
 
-namespace Neba.Api.Documents.GetDocument;
+namespace Neba.Api.Features.Documents.GetDocument;
 
 internal sealed class GetDocumentEndpoint(IQueryHandler<GetDocumentQuery, ErrorOr<GetDocumentDto>> queryHandler)
         : Endpoint<GetDocumentRequest, GetDocumentResponse>

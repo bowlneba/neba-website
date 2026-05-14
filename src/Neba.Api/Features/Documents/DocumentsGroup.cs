@@ -3,7 +3,7 @@ using Asp.Versioning;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
-namespace Neba.Api.Documents;
+namespace Neba.Api.Features.Documents;
 
 internal sealed class DocumentsGroup
     : SubGroup<BaseGroup>

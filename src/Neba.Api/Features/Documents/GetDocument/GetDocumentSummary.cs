@@ -4,7 +4,7 @@ using FastEndpoints;
 
 using Neba.Api.Contracts.Documents.GetDocument;
 
-namespace Neba.Api.Documents.GetDocument;
+namespace Neba.Api.Features.Documents.GetDocument;
 
 internal sealed class GetDocumentSummary
     : Summary<GetDocumentEndpoint>

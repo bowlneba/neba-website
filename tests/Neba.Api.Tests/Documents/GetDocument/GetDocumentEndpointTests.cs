@@ -3,7 +3,7 @@ using ErrorOr;
 using FastEndpoints;
 
 using Neba.Api.Contracts.Documents.GetDocument;
-using Neba.Api.Documents.GetDocument;
+using Neba.Api.Features.Documents.GetDocument;
 using Neba.Application.Documents.GetDocument;
 using Neba.Application.Messaging;
 using Neba.TestFactory.Attributes;
