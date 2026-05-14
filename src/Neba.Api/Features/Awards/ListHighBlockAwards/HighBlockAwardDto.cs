@@ -2,11 +2,23 @@ using Neba.Domain.Bowlers;
 
 namespace Neba.Api.Features.Awards.ListHighBlockAwards;
 
-internal sealed record HighBlockAwardDto
+/// <summary>
+/// Data Transfer Object representing the recipient of a High Block award for a season.
+/// </summary>
+public sealed record HighBlockAwardDto
 {
+    /// <summary>
+    /// Gets the unique identifier for this season award.
+    /// </summary>
     public required string Season { get; init; }
 
+    /// <summary>
+    /// Gets the name of the bowler who received the award.
+    /// </summary>
     public required Name BowlerName { get; init; }
 
+    /// <summary>
+    /// Gets the score that qualified for the High Block award.
+    /// </summary>
     public required int Score { get; init; }
 }
