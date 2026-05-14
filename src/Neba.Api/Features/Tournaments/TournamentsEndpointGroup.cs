@@ -5,7 +5,7 @@ using FastEndpoints.AspVersioning;
 
 namespace Neba.Api.Features.Tournaments;
 
-internal sealed class TournamentsEndpointGroup 
+internal sealed class TournamentsEndpointGroup
     : SubGroup<BaseEndpointGroup>
 {
     public TournamentsEndpointGroup()

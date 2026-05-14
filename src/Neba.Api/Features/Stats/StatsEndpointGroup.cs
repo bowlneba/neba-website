@@ -5,7 +5,7 @@ using FastEndpoints.AspVersioning;
 
 namespace Neba.Api.Features.Stats;
 
-internal sealed class StatsEndpointGroup 
+internal sealed class StatsEndpointGroup
     : SubGroup<BaseEndpointGroup>
 {
     public StatsEndpointGroup()
