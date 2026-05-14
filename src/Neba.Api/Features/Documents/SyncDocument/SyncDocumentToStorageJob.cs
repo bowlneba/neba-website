@@ -1,6 +1,6 @@
 using Neba.Api.BackgroundJobs;
 
-namespace Neba.Application.Documents.SyncDocument;
+namespace Neba.Api.Features.Documents.SyncDocument;
 
 /// <summary>
 /// Represents a background job for synchronizing a document to storage.

@@ -1,12 +1,11 @@
 using System.Diagnostics;
 
-using Microsoft.Extensions.Logging;
-
-using Neba.Application.BackgroundJobs;
-using Neba.Application.Clock;
+using Neba.Api.BackgroundJobs;
+using Neba.Api.Clock;
+using Neba.Api.Documents;
 using Neba.Application.Storage;
 
-namespace Neba.Application.Documents.SyncDocument;
+namespace Neba.Api.Features.Documents.SyncDocument;
 
 internal sealed class SyncDocumentToStorageJobHandler(
     IDocumentsService documentsService,

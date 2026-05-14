@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
-namespace Neba.Application.Documents.SyncDocument;
+namespace Neba.Api.Features.Documents.SyncDocument;
 
 internal static class SyncDocumentToStorageMetrics
 {
