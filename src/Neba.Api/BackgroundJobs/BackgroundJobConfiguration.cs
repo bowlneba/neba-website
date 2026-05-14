@@ -20,7 +20,7 @@ internal static class BackgroundJobsConfiguration
         public void AddBackgroundJobs(IConfiguration config)
         {
             services.AddOptions<HangfireSettings>()
-                .Bind(config.GetSection("Hangfire"))
+                .Bind(config.GetSection(HangfireSettings.SectionName))
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
 

@@ -7,6 +7,8 @@ namespace Neba.Api.BackgroundJobs;
 /// </summary>
 public sealed record HangfireSettings
 {
+    internal const string SectionName = "Hangfire";
+
     /// <summary>
     /// The number of worker threads to process background jobs.
     /// </summary>
