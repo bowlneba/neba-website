@@ -1,6 +1,6 @@
 using FastEndpoints;
 
-using Neba.Api.Seasons.ListSeasons;
+using Neba.Api.Features.Seasons.ListSeasons;
 using Neba.Application.Messaging;
 using Neba.Application.Seasons;
 using Neba.Application.Seasons.ListSeasons;

@@ -5,7 +5,7 @@ using FastEndpoints;
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Seasons.ListSeasons;
 
-namespace Neba.Api.Seasons.ListSeasons;
+namespace Neba.Api.Features.Seasons.ListSeasons;
 
 internal sealed class ListSeasonsSummary
     : Summary<ListSeasonsEndpoint>

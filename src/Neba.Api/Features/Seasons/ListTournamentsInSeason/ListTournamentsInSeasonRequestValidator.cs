@@ -2,7 +2,7 @@ using FastEndpoints;
 
 using FluentValidation;
 
-namespace Neba.Api.Seasons.ListTournamentsInSeason;
+namespace Neba.Api.Features.Seasons.ListTournamentsInSeason;
 
 internal sealed class ListTournamentsInSeasonRequestValidator
     : Validator<ListTournamentsInSeasonRequest>

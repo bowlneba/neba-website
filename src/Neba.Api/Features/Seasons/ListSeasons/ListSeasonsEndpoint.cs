@@ -9,7 +9,7 @@ using Neba.Application.Messaging;
 using Neba.Application.Seasons;
 using Neba.Application.Seasons.ListSeasons;
 
-namespace Neba.Api.Seasons.ListSeasons;
+namespace Neba.Api.Features.Seasons.ListSeasons;
 
 internal sealed class ListSeasonsEndpoint(IQueryHandler<ListSeasonsQuery, IReadOnlyCollection<SeasonDto>> queryHandler)
     : EndpointWithoutRequest<CollectionResponse<SeasonResponse>>

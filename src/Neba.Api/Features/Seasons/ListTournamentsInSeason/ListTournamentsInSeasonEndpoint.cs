@@ -6,12 +6,10 @@ using FastEndpoints.AspVersioning;
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Seasons.ListTournamentsInSeason;
 using Neba.Application.Messaging;
-using Neba.Application.Tournaments;
 using Neba.Application.Tournaments.ListTournamentsInSeason;
-using Neba.Domain.Bowlers;
 using Neba.Domain.Seasons;
 
-namespace Neba.Api.Seasons.ListTournamentsInSeason;
+namespace Neba.Api.Features.Seasons.ListTournamentsInSeason;
 
 internal sealed class ListTournamentsInSeasonEndpoint(
     IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<SeasonTournamentDto>> queryHandler)

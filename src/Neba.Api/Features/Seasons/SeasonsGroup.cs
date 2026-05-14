@@ -3,7 +3,7 @@ using Asp.Versioning;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
-namespace Neba.Api.Seasons;
+namespace Neba.Api.Features.Seasons;
 
 internal sealed class SeasonsGroup
     : SubGroup<BaseGroup>

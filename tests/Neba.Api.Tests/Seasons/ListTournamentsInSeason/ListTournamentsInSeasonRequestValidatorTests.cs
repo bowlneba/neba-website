@@ -1,4 +1,4 @@
-using Neba.Api.Seasons.ListTournamentsInSeason;
+using Neba.Api.Features.Seasons.ListTournamentsInSeason;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Seasons.ListTournamentsInSeason;
