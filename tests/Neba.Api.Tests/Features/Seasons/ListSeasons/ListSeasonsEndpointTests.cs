@@ -7,7 +7,7 @@ using Neba.Application.Seasons.ListSeasons;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Seasons;
 
-namespace Neba.Api.Tests.Seasons.ListSeasons;
+namespace Neba.Api.Tests.Features.Seasons.ListSeasons;
 
 [UnitTest]
 [Component("Seasons")]
