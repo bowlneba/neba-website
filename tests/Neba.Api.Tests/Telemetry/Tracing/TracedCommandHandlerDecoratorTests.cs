@@ -3,7 +3,7 @@ using ErrorOr;
 using Microsoft.Extensions.Logging;
 
 using Neba.Application.Clock;
-using Neba.Application.Messaging;
+using Neba.Api.Messaging;
 using Neba.Api.Telemetry.Tracing;
 using Neba.TestFactory.Attributes;
 

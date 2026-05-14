@@ -5,8 +5,7 @@ using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Awards;
-using Neba.Application.Awards.ListBowlerOfTheYearAwards;
-using Neba.Application.Messaging;
+using Neba.Api.Messaging;
 
 namespace Neba.Api.Features.Awards.ListBowlerOfTheYearAwards;
 

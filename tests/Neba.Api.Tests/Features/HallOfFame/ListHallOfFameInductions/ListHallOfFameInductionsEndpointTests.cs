@@ -2,7 +2,7 @@ using FastEndpoints;
 
 using Neba.Api.Features.HallOfFame.ListHallOfFameInductions;
 using Neba.Application.HallOfFame.ListHallOfFameInductions;
-using Neba.Application.Messaging;
+using Neba.Api.Messaging;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.HallOfFame;
 

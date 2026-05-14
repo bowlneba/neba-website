@@ -19,13 +19,7 @@ internal sealed class GetTournamentSummary : Summary<GetTournamentEndpoint>
             {
                 Id = "01JSTX1234567890ABCDEFGHIJ",
                 Name = "Spring Open",
-                Season = new TournamentDetailSeasonResponse
-                {
-                    Id = "01JSTY1234567890ABCDEFGHIJ",
-                    Description = "2024-2025 Season",
-                    StartDate = new DateOnly(2024, 9, 1),
-                    EndDate = new DateOnly(2025, 6, 30),
-                },
+                Season = "2024-2025 Season",
                 StartDate = new DateOnly(2025, 3, 15),
                 EndDate = new DateOnly(2025, 3, 15),
                 StatsEligible = true,
@@ -51,10 +45,6 @@ internal sealed class GetTournamentSummary : Summary<GetTournamentEndpoint>
                     {
                         Name = "Kegel Broadway",
                         Length = 40,
-                        Volume = 25.0m,
-                        LeftRatio = 3.2m,
-                        RightRatio = 3.1m,
-                        KegelId = null,
                         Rounds = ["Qualifying", "Finals"],
                     },
                 ],

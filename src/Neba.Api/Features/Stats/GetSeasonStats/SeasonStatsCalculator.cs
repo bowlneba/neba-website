@@ -1,7 +1,4 @@
-﻿using Neba.Api.Features.Stats.GetSeasonStats;
-using Neba.Application.Stats.GetSeasonStats;
-
-namespace Neba.Api.Features.Stats.GetSeasonStats;
+﻿namespace Neba.Api.Features.Stats.GetSeasonStats;
 
 internal sealed class SeasonStatsCalculator
     : ISeasonStatsCalculator

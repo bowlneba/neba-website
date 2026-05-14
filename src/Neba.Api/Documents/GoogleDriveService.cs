@@ -7,8 +7,7 @@ using Google.Apis.Auth.OAuth2;
 using Google.Apis.Drive.v3;
 using Google.Apis.Services;
 
-using Neba.Application.Clock;
-using Neba.Application.Documents;
+using Neba.Api.Clock;
 using Neba.Api.Telemetry;
 
 namespace Neba.Api.Documents;

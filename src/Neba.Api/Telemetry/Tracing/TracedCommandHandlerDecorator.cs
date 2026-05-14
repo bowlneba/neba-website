@@ -2,8 +2,8 @@ using System.Diagnostics;
 
 using ErrorOr;
 
-using Neba.Application.Clock;
-using Neba.Application.Messaging;
+using Neba.Api.Clock;
+using Neba.Api.Messaging;
 
 namespace Neba.Api.Telemetry.Tracing;
 

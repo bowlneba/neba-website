@@ -2,7 +2,7 @@ using FastEndpoints;
 
 using Neba.Api.Features.BowlingCenters.ListBowlingCenters;
 using Neba.Application.BowlingCenters.ListBowlingCenters;
-using Neba.Application.Messaging;
+using Neba.Api.Messaging;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.BowlingCenters;
 

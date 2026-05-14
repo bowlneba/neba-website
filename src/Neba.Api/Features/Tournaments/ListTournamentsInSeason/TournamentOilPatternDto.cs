@@ -11,9 +11,9 @@ public sealed record TournamentOilPatternDto
     public required string Name { get; init; }
 
     /// <summary>
-    /// Gets the length value, if specified.
+    /// Gets the length value
     /// </summary>
-    public int? Length { get; init; }
+    public int Length { get; init; }
 
     /// <summary>
     /// The tournament rounds that use this oil pattern (e.g., "Qualifying", "Round 1", "Finals"). This allows for tournaments that use different patterns in different rounds.

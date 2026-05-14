@@ -6,8 +6,7 @@ using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts.Documents.GetDocument;
-using Neba.Application.Documents.GetDocument;
-using Neba.Application.Messaging;
+using Neba.Api.Messaging;
 
 namespace Neba.Api.Features.Documents.GetDocument;
 

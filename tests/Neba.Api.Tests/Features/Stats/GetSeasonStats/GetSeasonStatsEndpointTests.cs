@@ -3,7 +3,7 @@ using ErrorOr;
 using FastEndpoints;
 
 using Neba.Api.Features.Stats.GetSeasonStats;
-using Neba.Application.Messaging;
+using Neba.Api.Messaging;
 using Neba.Application.Stats.GetSeasonStats;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Stats;

@@ -31,6 +31,7 @@
     <PackageReference Include="Hangfire.PostgreSql" />
     <PackageReference Include="HtmlAgilityPack" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
     <PackageReference Include="Scalar.AspNetCore" />
     <PackageReference Include="Scrutor.AspNetCore" />
     <PackageReference Include="ZiggyCreatures.FusionCache" />
@@ -40,10 +41,6 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Neba.Api.Tests" />
     <InternalsVisibleTo Include="Neba.TestFactory" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <EditorConfigFiles Include="Messaging\.editorconfig" />
   </ItemGroup>
 
 </Project>

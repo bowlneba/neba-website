@@ -1,7 +1,7 @@
 using FastEndpoints;
 
 using Neba.Api.Features.Sponsors.ListActiveSponsors;
-using Neba.Application.Messaging;
+using Neba.Api.Messaging;
 using Neba.Application.Sponsors;
 using Neba.Application.Sponsors.ListActiveSponsors;
 using Neba.TestFactory.Attributes;

@@ -3,15 +3,6 @@ using EntityFramework.Exceptions.PostgreSQL;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-using Neba.Application.Awards;
-using Neba.Application.Bowlers;
-using Neba.Application.BowlingCenters;
-using Neba.Application.HallOfFame;
-using Neba.Application.Seasons;
-using Neba.Application.Sponsors;
-using Neba.Application.Stats;
-using Neba.Application.Tournaments;
-using Neba.Domain.Seasons;
 using Neba.Api.Database.Interceptors;
 using Neba.Api.Database.Options;
 

@@ -1,6 +1,3 @@
-
-using Neba.Application.Storage;
-
 namespace Neba.Api.Storage;
 
 internal static class StorageConfiguration

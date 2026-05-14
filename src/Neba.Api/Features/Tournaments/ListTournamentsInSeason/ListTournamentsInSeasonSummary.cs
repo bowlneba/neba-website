@@ -49,10 +49,6 @@ internal sealed class ListTournamentsInSeasonSummary
                             {
                                 Name = "Kegel Broadway",
                                 Length = 40,
-                                Volume = 25.0m,
-                                LeftRatio = 3.2m,
-                                RightRatio = 3.1m,
-                                KegelId = null,
                                 Rounds = ["Qualifying", "Finals"],
                             },
                         ],

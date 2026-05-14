@@ -2,7 +2,7 @@ using System.Text.Json;
 
 using ErrorOr;
 
-using Neba.Application.Messaging;
+using Neba.Api.Messaging;
 
 using ZiggyCreatures.Caching.Fusion;
 

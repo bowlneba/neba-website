@@ -3,7 +3,7 @@ using System.Diagnostics;
 using Neba.Api.BackgroundJobs;
 using Neba.Api.Clock;
 using Neba.Api.Documents;
-using Neba.Application.Storage;
+using Neba.Api.Storage;
 
 namespace Neba.Api.Features.Documents.SyncDocument;
 

@@ -3,9 +3,8 @@ using System.Diagnostics;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 
+using Neba.Api.Clock;
 using Neba.Api.Telemetry;
-using Neba.Application.Clock;
-using Neba.Application.Storage;
 
 namespace Neba.Api.Storage;
 

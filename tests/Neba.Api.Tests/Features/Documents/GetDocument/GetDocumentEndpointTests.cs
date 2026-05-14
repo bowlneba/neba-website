@@ -5,7 +5,7 @@ using FastEndpoints;
 using Neba.Api.Contracts.Documents.GetDocument;
 using Neba.Api.Features.Documents.GetDocument;
 using Neba.Application.Documents.GetDocument;
-using Neba.Application.Messaging;
+using Neba.Api.Messaging;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Documents;
 

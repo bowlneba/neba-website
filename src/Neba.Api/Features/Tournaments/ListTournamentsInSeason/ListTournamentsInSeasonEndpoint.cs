@@ -71,12 +71,8 @@ internal sealed class ListTournamentsInSeasonEndpoint(
                 })],
                 OilPatterns = [.. t.OilPatterns.Select(op => new TournamentOilPatternResponse
                 {
-                    Name = op.OilPattern.Name,
-                    Length = op.OilPattern.Length,
-                    Volume = op.OilPattern.Volume,
-                    LeftRatio = op.OilPattern.LeftRatio,
-                    RightRatio = op.OilPattern.RightRatio,
-                    KegelId = op.OilPattern.KegelId,
+                    Name = op.Name,
+                    Length = op.Length,
                     Rounds = op.TournamentRounds,
                 })],
             })],

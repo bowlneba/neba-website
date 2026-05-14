@@ -1,5 +1,5 @@
 using Neba.Application.BackgroundJobs;
-using Neba.Application.Messaging;
+using Neba.Api.Messaging;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Architecture.Tests;

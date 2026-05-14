@@ -6,8 +6,7 @@ using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts.Tournaments.GetTournament;
-using Neba.Application.Messaging;
-using Neba.Application.Tournaments.GetTournament;
+using Neba.Api.Messaging;
 using Neba.Domain.Tournaments;
 
 namespace Neba.Api.Features.Tournaments.GetTournament;
@@ -67,13 +66,7 @@ internal sealed class GetTournamentEndpoint(
         {
             Id = dto.Id.Value.ToString(),
             Name = dto.Name,
-            Season = new TournamentDetailSeasonResponse
-            {
-                Id = dto.Season.Id.Value.ToString(),
-                Description = dto.Season.Description,
-                StartDate = dto.Season.StartDate,
-                EndDate = dto.Season.EndDate,
-            },
+            Season = dto.Season,
             StartDate = dto.StartDate,
             EndDate = dto.EndDate,
             StatsEligible = dto.StatsEligible,
@@ -89,8 +82,8 @@ internal sealed class GetTournamentEndpoint(
             BowlingCenter = dto.BowlingCenter is null ? null : new TournamentDetailBowlingCenterResponse
             {
                 Name = dto.BowlingCenter.Name,
-                City = dto.BowlingCenter.Address.City,
-                State = dto.BowlingCenter.Address.Region,
+                City = dto.BowlingCenter.City,
+                State = dto.BowlingCenter.State,
             },
             Sponsors = [.. dto.Sponsors.Select(s => new TournamentDetailSponsorResponse
             {
@@ -102,12 +95,8 @@ internal sealed class GetTournamentEndpoint(
             })],
             OilPatterns = [.. dto.OilPatterns.Select(op => new TournamentDetailOilPatternResponse
             {
-                Name = op.OilPattern.Name,
-                Length = op.OilPattern.Length,
-                Volume = op.OilPattern.Volume,
-                LeftRatio = op.OilPattern.LeftRatio,
-                RightRatio = op.OilPattern.RightRatio,
-                KegelId = op.OilPattern.KegelId,
+                Name = op.Name,
+                Length = op.Length,
                 Rounds = op.TournamentRounds,
             })],
             Winners = [.. dto.Winners.Select(w => w.ToDisplayName())],

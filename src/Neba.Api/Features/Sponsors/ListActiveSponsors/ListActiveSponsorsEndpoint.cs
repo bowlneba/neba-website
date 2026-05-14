@@ -5,9 +5,7 @@ using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Sponsors;
-using Neba.Application.Messaging;
-using Neba.Application.Sponsors;
-using Neba.Application.Sponsors.ListActiveSponsors;
+using Neba.Api.Messaging;
 
 namespace Neba.Api.Features.Sponsors.ListActiveSponsors;
 

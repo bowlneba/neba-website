@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
 using Neba.Api.Messaging;
-using Neba.Application.Storage;
+using Neba.Api.Storage;
 using Neba.Domain.HallOfFame;
 
 namespace Neba.Api.Features.HallOfFame.ListHallOfFameInductions;

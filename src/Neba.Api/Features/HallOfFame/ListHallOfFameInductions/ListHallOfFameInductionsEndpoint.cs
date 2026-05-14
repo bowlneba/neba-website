@@ -5,8 +5,7 @@ using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.HallOfFame.ListHallOfFameInductions;
-using Neba.Application.HallOfFame.ListHallOfFameInductions;
-using Neba.Application.Messaging;
+using Neba.Api.Messaging;
 
 namespace Neba.Api.Features.HallOfFame.ListHallOfFameInductions;
 

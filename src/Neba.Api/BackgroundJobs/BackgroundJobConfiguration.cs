@@ -42,14 +42,14 @@ internal static class BackgroundJobsConfiguration
             services.AddScoped<IBackgroundJobScheduler, HangfireBackgroundJobScheduler>();
 
             services.Scan(scan => scan
-                .FromAssemblies(typeof(IApiAssemblyMarker).Assembly)
+                .FromAssemblies(typeof(BackgroundJobsConfiguration).Assembly)
                 .AddClasses(classes => classes
                     .AssignableTo(typeof(IBackgroundJobHandler<>)))
                 .AsImplementedInterfaces()
                 .WithScopedLifetime());
 
             services.Scan(scan => scan
-                .FromAssemblies(typeof(IApiAssemblyMarker).Assembly)
+                .FromAssemblies(typeof(BackgroundJobsConfiguration).Assembly)
                 .AddClasses(classes => classes
                     .AssignableTo(typeof(IDomainEventJob<>)))
                 .AsImplementedInterfaces()

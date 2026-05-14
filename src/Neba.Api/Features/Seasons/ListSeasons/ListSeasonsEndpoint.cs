@@ -5,9 +5,7 @@ using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Seasons.ListSeasons;
-using Neba.Application.Messaging;
-using Neba.Application.Seasons;
-using Neba.Application.Seasons.ListSeasons;
+using Neba.Api.Messaging;
 
 namespace Neba.Api.Features.Seasons.ListSeasons;
 
