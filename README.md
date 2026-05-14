@@ -166,9 +166,9 @@ ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Usernam
 - [x] Tournament Rules
 - [x] Hall of Fame
 - [x] Bowling Centers
-- [ ] Tournaments
+- [x] Tournaments
 - [ ] Tournament Documents
-- [ ] Tournament Detail
+- [x] Tournament Detail
 - [x] Sponsors
 - [ ] News
 - [ ] About
