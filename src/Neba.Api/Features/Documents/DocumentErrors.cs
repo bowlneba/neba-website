@@ -1,6 +1,6 @@
 using ErrorOr;
 
-namespace Neba.Application.Documents;
+namespace Neba.Api.Features.Documents;
 
 internal static class DocumentErrors
 {

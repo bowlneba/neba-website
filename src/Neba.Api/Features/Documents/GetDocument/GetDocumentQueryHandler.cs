@@ -2,10 +2,11 @@ using System.Globalization;
 
 using ErrorOr;
 
-using Neba.Application.Messaging;
+using Neba.Api.Documents;
+using Neba.Api.Messaging;
 using Neba.Application.Storage;
 
-namespace Neba.Application.Documents.GetDocument;
+namespace Neba.Api.Features.Documents.GetDocument;
 
 internal sealed class GetDocumentQueryHandler(
     IDocumentsService documentsService,

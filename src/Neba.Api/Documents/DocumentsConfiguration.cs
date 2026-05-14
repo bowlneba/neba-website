@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Options;
 
 using Neba.Api.BackgroundJobs;
-using Neba.Application.Documents;
 using Neba.Application.Documents.SyncDocument;
 
 namespace Neba.Api.Documents;
