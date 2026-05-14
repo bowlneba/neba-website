@@ -66,11 +66,11 @@ internal sealed class BowlerOfTheYearRaceCalculator
             var tournamentResults = allTournaments.Select(tournament =>
             {
                 // Tournaments the bowler didn't enter contribute 0 points — line stays flat.
-                if (pointsByTournament.TryGetValue(tournament.Id, out var pts)) 
+                if (pointsByTournament.TryGetValue(tournament.Id, out var pts))
                 {
                     cumulativePoints += pts;
                 }
-                
+
                 return new BowlerOfTheYearPointsRaceTournamentDto
                 {
                     TournamentName = tournament.Name,
@@ -132,7 +132,7 @@ internal sealed class BowlerOfTheYearRaceCalculator
         return category == BowlerOfTheYearCategory.SuperSenior
             ? result.BowlerDateOfBirth.HasValue && AgeAt(result.BowlerDateOfBirth.Value, result.TournamentEndDate) >= 60
             : category == BowlerOfTheYearCategory.Youth
-                && result.BowlerDateOfBirth.HasValue 
+                && result.BowlerDateOfBirth.HasValue
                 && AgeAt(result.BowlerDateOfBirth.Value, result.TournamentEndDate) < 18;
     }
 

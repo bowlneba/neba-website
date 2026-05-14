@@ -13,11 +13,11 @@ internal sealed class ListHighBlockAwardsQueryHandler(AppDbContext appDbContext)
 
     public async Task<IReadOnlyCollection<HighBlockAwardDto>> HandleAsync(ListHighBlockAwardsQuery query, CancellationToken cancellationToken)
         => await (from season in _seasons
-                 from highBlockAward in season.HighBlockAwards
-                 select new HighBlockAwardDto
-                 {
-                     Season = season.Description,
-                     BowlerName = highBlockAward.Bowler.Name,
-                     Score = highBlockAward.BlockScore
-                 }).ToListAsync(cancellationToken);
+                  from highBlockAward in season.HighBlockAwards
+                  select new HighBlockAwardDto
+                  {
+                      Season = season.Description,
+                      BowlerName = highBlockAward.Bowler.Name,
+                      Score = highBlockAward.BlockScore
+                  }).ToListAsync(cancellationToken);
 }

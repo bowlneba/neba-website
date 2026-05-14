@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-using Neba.Domain.Storage;
 using Neba.Api.Database.Configurations;
+using Neba.Domain.Storage;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Database.Configurations;

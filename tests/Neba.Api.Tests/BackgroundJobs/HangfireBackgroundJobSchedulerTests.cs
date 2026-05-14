@@ -44,7 +44,7 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
 
     private sealed class TestBackgroundJobHandler : IBackgroundJobHandler<TestBackgroundJob>
     {
-        public Task ExecuteAsync(TestBackgroundJob job, CancellationToken cancellationToken)
+        public Task ExecuteAsync()
         {
             return Task.CompletedTask;
         }
@@ -52,7 +52,7 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
 
     private sealed class SimpleJobHandler : IBackgroundJobHandler<SimpleTestJob>
     {
-        public Task ExecuteAsync(SimpleTestJob job, CancellationToken cancellationToken)
+        public Task ExecuteAsync()
         {
             return Task.CompletedTask;
         }
@@ -65,7 +65,7 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
 
     private sealed class FailingJobHandler : IBackgroundJobHandler<FailingJob>
     {
-        public Task ExecuteAsync(FailingJob job, CancellationToken cancellationToken)
+        public Task ExecuteAsync()
         {
             throw new InvalidOperationException("Job execution failed");
         }

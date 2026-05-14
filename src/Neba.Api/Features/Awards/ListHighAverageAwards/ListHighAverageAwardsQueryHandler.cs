@@ -14,13 +14,13 @@ internal sealed class ListHighAverageAwardsQueryHandler(AppDbContext appDbContex
     public async Task<IReadOnlyCollection<HighAverageAwardDto>> HandleAsync(
         ListHighAverageAwardsQuery query, CancellationToken cancellationToken)
         => await (from season in _seasons
-                 from highAverageAward in season.HighAverageAwards
-                 select new HighAverageAwardDto
-                 {
-                     Season = season.Description,
-                     BowlerName = highAverageAward.Bowler.Name,
-                     Average = highAverageAward.Average,
-                     TotalGames = highAverageAward.TotalGames,
-                     TournamentsParticipated = highAverageAward.TournamentsParticipated
-                 }).ToListAsync(cancellationToken);
+                  from highAverageAward in season.HighAverageAwards
+                  select new HighAverageAwardDto
+                  {
+                      Season = season.Description,
+                      BowlerName = highAverageAward.Bowler.Name,
+                      Average = highAverageAward.Average,
+                      TotalGames = highAverageAward.TotalGames,
+                      TournamentsParticipated = highAverageAward.TournamentsParticipated
+                  }).ToListAsync(cancellationToken);
 }

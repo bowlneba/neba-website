@@ -1,7 +1,7 @@
+using Neba.Api.Database;
 using Neba.Domain.Bowlers;
 using Neba.Domain.Seasons;
 using Neba.Domain.Tournaments;
-using Neba.Api.Database;
 using Neba.Infrastructure.Database.Queries;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Bowlers;

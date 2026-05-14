@@ -96,7 +96,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
 
     private sealed class TestJobHandler : IBackgroundJobHandler<TestJob>
     {
-        public Task ExecuteAsync(TestJob job, CancellationToken cancellationToken)
+        public Task ExecuteAsync()
         {
             return Task.CompletedTask;
         }
@@ -104,7 +104,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
 
     private sealed class SuccessfulJobHandler : IBackgroundJobHandler<SuccessfulJob>
     {
-        public async Task ExecuteAsync(SuccessfulJob job, CancellationToken cancellationToken)
+        public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             // Simulate some work to ensure duration is measurable
             await Task.Delay(10, cancellationToken);
@@ -113,7 +113,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
 
     private sealed class FailingJobHandler : IBackgroundJobHandler<FailingJob>
     {
-        public Task ExecuteAsync(FailingJob job, CancellationToken cancellationToken)
+        public Task ExecuteAsync()
         {
             throw new InvalidOperationException("Job execution failed");
         }

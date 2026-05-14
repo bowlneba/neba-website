@@ -3,9 +3,9 @@ using Ardalis.SmartEnum.EFCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
+using Neba.Api.Database.Converters;
 using Neba.Domain;
 using Neba.Domain.Tournaments;
-using Neba.Api.Database.Converters;
 
 namespace Neba.Api.Database.Configurations;
 

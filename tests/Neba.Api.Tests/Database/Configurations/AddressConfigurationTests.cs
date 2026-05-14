@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
+using Neba.Api.Database.Configurations;
 using Neba.Domain.Contact;
 using Neba.Domain.Geography;
-using Neba.Api.Database.Configurations;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Database.Configurations;

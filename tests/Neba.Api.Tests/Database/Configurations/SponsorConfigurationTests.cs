@@ -4,12 +4,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Neba.Domain.Contact;
-using Neba.Domain.Sponsors;
 using Neba.Api.Database;
 using Neba.Api.Database.Configurations;
 using Neba.Api.Database.Interceptors;
 using Neba.Api.Database.Options;
+using Neba.Domain.Contact;
+using Neba.Domain.Sponsors;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Database.Configurations;

@@ -2,9 +2,9 @@ using ErrorOr;
 
 using Microsoft.Extensions.Logging;
 
-using Neba.Application.Clock;
 using Neba.Api.Messaging;
 using Neba.Api.Telemetry.Tracing;
+using Neba.Application.Clock;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Telemetry.Tracing;

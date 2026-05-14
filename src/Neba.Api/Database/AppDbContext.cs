@@ -4,6 +4,9 @@ using Ardalis.SmartEnum.EFCore;
 
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.Database.Configurations;
+using Neba.Api.Database.Converters;
+using Neba.Api.Database.Entities;
 using Neba.Domain;
 using Neba.Domain.Bowlers;
 using Neba.Domain.BowlingCenters;
@@ -12,9 +15,6 @@ using Neba.Domain.Seasons;
 using Neba.Domain.Sponsors;
 using Neba.Domain.Stats;
 using Neba.Domain.Tournaments;
-using Neba.Api.Database.Configurations;
-using Neba.Api.Database.Converters;
-using Neba.Api.Database.Entities;
 
 using SmartEnum.EFCore;
 

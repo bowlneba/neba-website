@@ -21,11 +21,11 @@ internal sealed class GetSeasonStatsQueryHandler(
     HybridCache cache)
         : IQueryHandler<GetSeasonStatsQuery, ErrorOr<SeasonStatsDto>>
 {
-    private readonly IQueryable<Tournament> _tournaments 
+    private readonly IQueryable<Tournament> _tournaments
         = appDbContext.Tournaments.AsNoTracking();
-    private readonly IQueryable<BowlerSeasonStats> _bowlerSeasonStats 
+    private readonly IQueryable<BowlerSeasonStats> _bowlerSeasonStats
         = appDbContext.BowlerSeasonStats.AsNoTracking();
-    private readonly IQueryable<HistoricalTournamentResult> _historicalTournamentResults 
+    private readonly IQueryable<HistoricalTournamentResult> _historicalTournamentResults
         = appDbContext.HistoricalTournamentResults.AsNoTracking();
 
     private readonly ISeasonStatsCalculator _seasonStatsCalculator = seasonStatsCalculator;
@@ -54,11 +54,11 @@ internal sealed class GetSeasonStatsQueryHandler(
 
         var descriptor = CacheDescriptors.Stats.BowlerSeasonStats(season.Id);
 
-       return await _cache.GetOrCreateAsync(
-            descriptor.Key,
-            async cancel => await ComputeSeasonStatsAsync(season.Id, seasonsWithStats, cancel),
-            tags: descriptor.Tags,
-            cancellationToken: cancellationToken);
+        return await _cache.GetOrCreateAsync(
+             descriptor.Key,
+             async cancel => await ComputeSeasonStatsAsync(season.Id, seasonsWithStats, cancel),
+             tags: descriptor.Tags,
+             cancellationToken: cancellationToken);
     }
 
     private async Task<SeasonStatsDto> ComputeSeasonStatsAsync(

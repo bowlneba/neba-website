@@ -10,7 +10,7 @@ namespace Neba.Api.Tests.Database.Converters;
 public sealed partial class UlidTypedIdConverterTests
 {
     [StronglyTypedId("ulid-full")]
-    private readonly partial struct TestId
+    private readonly partial struct TestId : IEquatable<TestId>
     {
         public Ulid Value { get; }
         private TestId(Ulid value) => Value = value;
@@ -20,6 +20,11 @@ public sealed partial class UlidTypedIdConverterTests
         public override int GetHashCode() => Value.GetHashCode();
         public static bool operator ==(TestId a, TestId b) => a.Equals(b);
         public static bool operator !=(TestId a, TestId b) => !(a == b);
+
+        public bool Equals(TestId other)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     private readonly struct NoStringCtorId(int value)
