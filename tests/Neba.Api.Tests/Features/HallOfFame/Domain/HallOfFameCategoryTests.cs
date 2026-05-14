@@ -1,9 +1,9 @@
 using Ardalis.SmartEnum;
 
-using Neba.Domain.HallOfFame;
+using Neba.Api.Features.HallOfFame.Domain;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Domain.Tests.HallOfFame;
+namespace Neba.Api.Tests.Features.HallOfFame.Domain;
 
 [UnitTest]
 [Component("HallOfFame.HallOfFameCategory")]

@@ -1,8 +1,8 @@
 
-using Neba.Domain.Bowlers;
-using Neba.Domain.Storage;
+using Neba.Api.Domain;
+using Neba.Api.Features.Bowlers.Domain;
 
-namespace Neba.Domain.HallOfFame;
+namespace Neba.Api.Features.HallOfFame.Domain;
 
 /// <summary>
 /// Represents an induction into the Hall of Fame.

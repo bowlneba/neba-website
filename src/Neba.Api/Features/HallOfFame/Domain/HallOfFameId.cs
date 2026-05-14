@@ -1,6 +1,6 @@
 using StronglyTypedIds;
 
-namespace Neba.Domain.HallOfFame;
+namespace Neba.Api.Features.HallOfFame.Domain;
 
 /// <summary>
 /// Unique identifier for a Hall of Fame induction entry.

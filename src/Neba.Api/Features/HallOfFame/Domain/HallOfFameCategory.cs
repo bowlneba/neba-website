@@ -2,7 +2,9 @@ using System.Text.Json.Serialization;
 
 using Ardalis.SmartEnum;
 
-namespace Neba.Domain.HallOfFame;
+using Neba.Api.Domain;
+
+namespace Neba.Api.Features.HallOfFame.Domain;
 
 /// <summary>
 /// Represents one or more Hall of Fame categories for a person or entity.
