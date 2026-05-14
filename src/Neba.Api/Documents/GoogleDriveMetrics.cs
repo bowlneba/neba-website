@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
-namespace Neba.Infrastructure.Documents;
+namespace Neba.Api.Documents;
 
 internal static class GoogleDriveMetrics
 {

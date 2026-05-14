@@ -3,10 +3,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Application.Clock;
-using Neba.Infrastructure.Documents;
+using Neba.Api.Documents;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Infrastructure.Tests.Documents;
+namespace Neba.Api.Tests.Documents;
 
 [UnitTest]
 [Component("GoogleDriveService")]

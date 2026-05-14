@@ -1,9 +1,9 @@
 using HtmlAgilityPack;
 
-using Neba.Infrastructure.Documents;
+using Neba.Api.Documents;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Infrastructure.Tests.Documents;
+namespace Neba.Api.Tests.Documents;
 
 [UnitTest]
 [Component("Documents")]

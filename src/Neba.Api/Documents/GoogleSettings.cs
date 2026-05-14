@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Neba.Infrastructure.Documents;
+namespace Neba.Api.Documents;
 
 /// <summary>
 /// Represents the configuration settings for Google integration, including application details, credentials, and document mappings.

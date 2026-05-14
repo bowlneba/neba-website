@@ -5,6 +5,64 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\guid-dapper.typedid" Link="guid-dapper.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\guid-efcore.typedid" Link="guid-efcore.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\guid-full.typedid" Link="guid-full.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\guid-newtonsoftjson.typedid" Link="guid-newtonsoftjson.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\int-dapper.typedid" Link="int-dapper.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\int-efcore.typedid" Link="int-efcore.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\int-full.typedid" Link="int-full.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\int-newtonsoftjson.typedid" Link="int-newtonsoftjson.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\long-dapper.typedid" Link="long-dapper.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\long-efcore.typedid" Link="long-efcore.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\long-full.typedid" Link="long-full.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\long-newtonsoftjson.typedid" Link="long-newtonsoftjson.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\newid-full.typedid" Link="newid-full.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\nullablestring-full.typedid" Link="nullablestring-full.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\string-dapper.typedid" Link="string-dapper.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\string-efcore.typedid" Link="string-efcore.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\string-full.typedid" Link="string-full.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\..\..\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\string-newtonsoftjson.typedid" Link="string-newtonsoftjson.typedid">
+      <Visible>true</Visible>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\src\Neba.Domain\ulid-full.typedid" Link="ulid-full.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" />
   </ItemGroup>

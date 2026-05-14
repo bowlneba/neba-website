@@ -7,13 +7,11 @@ using Google.Apis.Auth.OAuth2;
 using Google.Apis.Drive.v3;
 using Google.Apis.Services;
 
-using Microsoft.Extensions.Logging;
-
 using Neba.Application.Clock;
 using Neba.Application.Documents;
-using Neba.Infrastructure.Telemetry;
+using Neba.Api.Telemetry;
 
-namespace Neba.Infrastructure.Documents;
+namespace Neba.Api.Documents;
 
 internal sealed class GoogleDriveService
     : IDocumentsService, IDisposable

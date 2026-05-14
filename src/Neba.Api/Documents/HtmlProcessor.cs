@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 using HtmlAgilityPack;
 
-namespace Neba.Infrastructure.Documents;
+namespace Neba.Api.Documents;
 
 internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
 {

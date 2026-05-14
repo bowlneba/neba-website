@@ -15,8 +15,11 @@
     <PackageReference Include="FastEndpoints" />
     <PackageReference Include="FastEndpoints.AspVersioning" />
     <PackageReference Include="FastEndpoints.Swagger" />
+    <PackageReference Include="Google.Apis.Auth" />
+    <PackageReference Include="Google.Apis.Drive.v3" />
     <PackageReference Include="Hangfire.AspNetCore" />
     <PackageReference Include="Hangfire.PostgreSql" />
+    <PackageReference Include="HtmlAgilityPack" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Scalar.AspNetCore" />
     <PackageReference Include="ZiggyCreatures.FusionCache" />

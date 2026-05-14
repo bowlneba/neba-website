@@ -13,13 +13,153 @@
   </ItemGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="..\..\src\Neba.Domain\ulid-full.typedid" Link="ulid-full.typedid" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\src\Neba.Infrastructure\Neba.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Neba.ServiceDefaults\Neba.ServiceDefaults.csproj" />
     <ProjectReference Include="..\Neba.TestFactory\Neba.TestFactory.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\string-newtonsoftjson.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\string-full.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\string-efcore.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\string-dapper.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\nullablestring-full.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\newid-full.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\long-newtonsoftjson.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\long-full.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\long-efcore.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\long-dapper.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\int-newtonsoftjson.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\int-full.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\int-efcore.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\int-dapper.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\guid-newtonsoftjson.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\guid-full.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\guid-efcore.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\guid-dapper.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\guid-dapper.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\guid-efcore.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\guid-full.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\guid-newtonsoftjson.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\int-dapper.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\int-efcore.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\int-full.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\int-newtonsoftjson.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\long-dapper.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\long-efcore.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\long-full.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\long-newtonsoftjson.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\newid-full.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\nullablestring-full.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\string-dapper.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\string-efcore.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\string-full.typedid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Remove="C:\Users\kippe\.nuget\packages\stronglytypedid.templates\1.0.0-beta08\build\AdditionalFiles\string-newtonsoftjson.typedid" />
   </ItemGroup>
 
 </Project>
