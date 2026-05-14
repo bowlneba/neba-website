@@ -1,4 +1,4 @@
-using Neba.Application.Contact;
+using Neba.Api.Contacts;
 
 namespace Neba.Api.Features.BowlingCenters.ListBowlingCenters;
 
