@@ -1,7 +1,7 @@
-using Neba.Application.BowlingCenters.ListBowlingCenters;
+using Neba.Api.Features.BowlingCenters.ListBowlingCenters;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Application.Tests.BowlingCenters.ListBowlingCenters;
+namespace Neba.Api.Tests.Features.BowlingCenters.ListBowlingCenters;
 
 [UnitTest]
 [Component("BowlingCenters")]
