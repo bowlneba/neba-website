@@ -1,8 +1,8 @@
-using Neba.Api.Features.Bowlers;
+using Neba.Api.Features.Bowlers.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Bowlers;
 
-namespace Neba.Api.Tests.Features.Bowlers;
+namespace Neba.Api.Tests.Features.Bowlers.Domain;
 
 [UnitTest]
 [Component("Bowlers.Name")]

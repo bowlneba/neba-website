@@ -1,7 +1,8 @@
 using Neba.Api;
+using Neba.Api.Domain;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Api.Tests;
+namespace Neba.Api.Tests.Domain;
 
 [UnitTest]
 [Component("Domain")]

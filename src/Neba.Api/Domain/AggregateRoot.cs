@@ -1,4 +1,4 @@
-namespace Neba.Api;
+namespace Neba.Api.Domain;
 
 /// <summary>
 /// Base class for aggregate roots that can raise domain events

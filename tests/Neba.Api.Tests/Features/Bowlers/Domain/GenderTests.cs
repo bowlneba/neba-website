@@ -1,6 +1,6 @@
-using Neba.Api.Features.Bowlers;
+using Neba.Api.Features.Bowlers.Domain;
 
-namespace Neba.Api.Tests.Features.Bowlers;
+namespace Neba.Api.Tests.Features.Bowlers.Domain;
 
 public sealed class GenderTests
 {

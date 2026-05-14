@@ -1,4 +1,4 @@
-namespace Neba.Api;
+namespace Neba.Api.Domain;
 
 #pragma warning disable CA1040 // Avoid empty interfaces
 

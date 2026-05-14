@@ -3,7 +3,7 @@ using System.Text;
 
 using ErrorOr;
 
-namespace Neba.Api.Features.Bowlers;
+namespace Neba.Api.Features.Bowlers.Domain;
 
 /// <summary>
 /// A value object representing a bowler's complete name information, including legal name components

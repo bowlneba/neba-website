@@ -1,7 +1,7 @@
 
-using Neba.Domain.Stats;
+using Neba.Api.Domain;
 
-namespace Neba.Api.Features.Bowlers;
+namespace Neba.Api.Features.Bowlers.Domain;
 
 /// <summary>
 /// Represents a bowler in the NEBA system. This is an aggregate root entity that encapsulates all information and behavior related to a bowler.

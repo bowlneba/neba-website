@@ -1,6 +1,6 @@
 using Ardalis.SmartEnum;
 
-namespace Neba.Api.Features.Bowlers;
+namespace Neba.Api.Features.Bowlers.Domain;
 
 /// <summary>
 /// Represents a name suffix for a bowler, used in legal and official contexts such as 1099 tax reporting.

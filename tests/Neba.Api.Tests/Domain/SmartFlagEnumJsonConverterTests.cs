@@ -4,9 +4,10 @@ using System.Text.Json.Serialization;
 
 using Ardalis.SmartEnum;
 
+using Neba.Api.Domain;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Api.Tests;
+namespace Neba.Api.Tests.Domain;
 
 [UnitTest]
 [Component("Domain")]
