@@ -8,7 +8,7 @@ using Neba.Api.Contracts.HallOfFame.ListHallOfFameInductions;
 using Neba.Application.HallOfFame.ListHallOfFameInductions;
 using Neba.Application.Messaging;
 
-namespace Neba.Api.HallOfFame.ListHallOfFameInductions;
+namespace Neba.Api.Features.HallOfFame.ListHallOfFameInductions;
 
 internal sealed class ListHallOfFameInductionsEndpoint(IQueryHandler<ListHallOfFameInductionsQuery, IReadOnlyCollection<HallOfFameInductionDto>> queryHandler)
     : EndpointWithoutRequest<CollectionResponse<HallOfFameInductionResponse>>

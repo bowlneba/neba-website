@@ -3,7 +3,7 @@ using Asp.Versioning;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
-namespace Neba.Api.HallOfFame;
+namespace Neba.Api.Features.HallOfFame;
 
 internal sealed class HallOfFameGroup
     : SubGroup<BaseGroup>

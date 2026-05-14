@@ -5,7 +5,7 @@ using FastEndpoints;
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.HallOfFame.ListHallOfFameInductions;
 
-namespace Neba.Api.HallOfFame.ListHallOfFameInductions;
+namespace Neba.Api.Features.HallOfFame.ListHallOfFameInductions;
 
 internal sealed class ListHallOfFameInductionsSummary
     : Summary<ListHallOfFameInductionsEndpoint>
