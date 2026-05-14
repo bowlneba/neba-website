@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
-namespace Neba.Infrastructure.Storage;
+namespace Neba.Api.Storage;
 
 internal static class StorageMetrics
 {

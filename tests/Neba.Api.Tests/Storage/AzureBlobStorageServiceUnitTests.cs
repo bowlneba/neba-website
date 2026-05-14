@@ -3,10 +3,10 @@ using Azure.Storage.Blobs;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Application.Clock;
-using Neba.Infrastructure.Storage;
+using Neba.Api.Storage;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Infrastructure.Tests.Storage;
+namespace Neba.Api.Tests.Storage;
 
 [UnitTest]
 [Component("Storage")]

@@ -3,13 +3,11 @@ using System.Diagnostics;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 
-using Microsoft.Extensions.Logging;
-
+using Neba.Api.Telemetry;
 using Neba.Application.Clock;
 using Neba.Application.Storage;
-using Neba.Infrastructure.Telemetry;
 
-namespace Neba.Infrastructure.Storage;
+namespace Neba.Api.Storage;
 
 internal sealed class AzureBlobStorageService
     : IFileStorageService

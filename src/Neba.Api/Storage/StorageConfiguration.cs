@@ -1,10 +1,7 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 using Neba.Application.Storage;
 
-namespace Neba.Infrastructure.Storage;
+namespace Neba.Api.Storage;
 
 internal static class StorageConfiguration
 {

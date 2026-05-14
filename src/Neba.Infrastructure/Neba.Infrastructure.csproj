@@ -25,7 +25,6 @@
     <PackageReference Include="Aspire.Azure.Npgsql" />
     <PackageReference Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Aspire.Azure.Security.KeyVault" />
-    <PackageReference Include="Aspire.Azure.Storage.Blobs" />
     <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />

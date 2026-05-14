@@ -1,13 +1,13 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
-using Neba.Infrastructure.Clock;
-using Neba.Infrastructure.Storage;
+using Neba.Api.Clock;
+using Neba.Api.Storage;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Storage;
 
-namespace Neba.Infrastructure.Tests.Storage;
+namespace Neba.Api.Tests.Storage;
 
 [IntegrationTest]
 [Component("Storage")]
