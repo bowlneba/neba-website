@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.Extensions.Configuration;
 
-namespace Neba.Infrastructure.Database;
+namespace Neba.Api.Database;
 
 internal sealed class AppDbContextDesignTimeFactory
     : IDesignTimeDbContextFactory<AppDbContext>

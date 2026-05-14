@@ -1,9 +1,6 @@
 using EntityFramework.Exceptions.PostgreSQL;
 
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using Neba.Application.Awards;
@@ -15,14 +12,12 @@ using Neba.Application.Sponsors;
 using Neba.Application.Stats;
 using Neba.Application.Tournaments;
 using Neba.Domain.Seasons;
-using Neba.Infrastructure.Database.Interceptors;
-using Neba.Infrastructure.Database.Options;
-using Neba.Infrastructure.Database.Queries;
-using Neba.Infrastructure.Database.Repositories;
+using Neba.Api.Database.Interceptors;
+using Neba.Api.Database.Options;
 
 using Npgsql;
 
-namespace Neba.Infrastructure.Database;
+namespace Neba.Api.Database;
 
 internal static class DatabaseConfiguration
 {
@@ -71,9 +66,6 @@ internal static class DatabaseConfiguration
             builder.Services.AddSingleton<SlowQueryInterceptor>();
             builder.Services.AddSingleton<QueryTagEnrichmentInterceptor>();
             builder.Services.AddSingleton<DomainEventDispatcherInterceptor>();
-
-            builder.Services.AddQueries();
-            builder.Services.AddRepositories();
 
             return builder;
         }
@@ -131,26 +123,6 @@ internal static class DatabaseConfiguration
                     || value.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)
                     || value.Equals("::1", StringComparison.OrdinalIgnoreCase)
                     || value.EndsWith(".local", StringComparison.OrdinalIgnoreCase));
-        }
-    }
-
-    extension(IServiceCollection services)
-    {
-        public void AddQueries()
-        {
-            services.AddScoped<IBowlerQueries, BowlerQueries>();
-            services.AddScoped<IBowlingCenterQueries, BowlingCenterQueries>();
-            services.AddScoped<ITournamentQueries, TournamentQueries>();
-            services.AddScoped<IHallOfFameQueries, HallOfFameQueries>();
-            services.AddScoped<IAwardQueries, AwardQueries>();
-            services.AddScoped<ISponsorQueries, SponsorQueries>();
-            services.AddScoped<IStatsQueries, StatsQueries>();
-            services.AddScoped<ISeasonQueries, SeasonQueries>();
-        }
-
-        public void AddRepositories()
-        {
-            services.AddScoped<ISeasonRepository, SeasonRepository>();
         }
     }
 }

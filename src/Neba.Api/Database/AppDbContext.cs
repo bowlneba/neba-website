@@ -12,13 +12,13 @@ using Neba.Domain.Seasons;
 using Neba.Domain.Sponsors;
 using Neba.Domain.Stats;
 using Neba.Domain.Tournaments;
-using Neba.Infrastructure.Database.Configurations;
-using Neba.Infrastructure.Database.Converters;
-using Neba.Infrastructure.Database.Entities;
+using Neba.Api.Database.Configurations;
+using Neba.Api.Database.Converters;
+using Neba.Api.Database.Entities;
 
 using SmartEnum.EFCore;
 
-namespace Neba.Infrastructure.Database;
+namespace Neba.Api.Database;
 
 internal sealed class AppDbContext(
     DbContextOptions<AppDbContext> options)
