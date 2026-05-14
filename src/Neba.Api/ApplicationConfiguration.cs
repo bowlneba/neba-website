@@ -1,11 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using Neba.Application.Messaging;
-using Neba.Application.Stats;
-using Neba.Application.Stats.BoyProgression;
-using Neba.Application.Tournaments;
+using Neba.Api.Messaging;
+using Neba.Api.Stats;
+using Neba.Api.Stats.BoyProgression;
+using Neba.Api.Tournaments;
 
-namespace Neba.Application;
+namespace Neba.Api;
 
 /// <summary>
 /// Extension methods to add application dependencies to the service collection.
