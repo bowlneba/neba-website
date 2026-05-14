@@ -6,7 +6,7 @@ using Neba.Application.Messaging;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.HallOfFame;
 
-namespace Neba.Api.Tests.HallOfFame.ListHallOfFameInductions;
+namespace Neba.Api.Tests.Features.HallOfFame.ListHallOfFameInductions;
 
 [UnitTest]
 [Component("HallOfFame")]
