@@ -1,4 +1,4 @@
-namespace Neba.Api.Stats.GetSeasonStats;
+namespace Neba.Api.Features.Stats.GetSeasonStats;
 
 internal sealed class GetSeasonStatsRequest
 {

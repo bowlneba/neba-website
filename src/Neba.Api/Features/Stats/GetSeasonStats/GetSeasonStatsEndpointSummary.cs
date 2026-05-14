@@ -4,7 +4,7 @@ using FastEndpoints;
 
 using Neba.Api.Contracts.Stats.GetSeasonStats;
 
-namespace Neba.Api.Stats.GetSeasonStats;
+namespace Neba.Api.Features.Stats.GetSeasonStats;
 
 internal sealed class GetSeasonStatsEndpointSummary : Summary<GetSeasonStatsEndpoint>
 {

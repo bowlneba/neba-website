@@ -3,7 +3,7 @@ using Asp.Versioning;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
-namespace Neba.Api.Stats;
+namespace Neba.Api.Features.Stats;
 
 internal sealed class StatsGroup : SubGroup<BaseGroup>
 {

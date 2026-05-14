@@ -11,7 +11,7 @@ using Neba.Application.Stats.GetSeasonStats;
 using Neba.Domain.Bowlers;
 using Neba.Domain.Seasons;
 
-namespace Neba.Api.Stats.GetSeasonStats;
+namespace Neba.Api.Features.Stats.GetSeasonStats;
 
 internal sealed class GetSeasonStatsEndpoint(IQueryHandler<GetSeasonStatsQuery, ErrorOr<SeasonStatsDto>> queryHandler)
     : Endpoint<GetSeasonStatsRequest, GetSeasonStatsResponse>
