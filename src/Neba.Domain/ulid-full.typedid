@@ -1,21 +1,13 @@
     [global::System.ComponentModel.TypeConverter(typeof(PLACEHOLDERIDTypeConverter))]
     [global::System.Text.Json.Serialization.JsonConverter(typeof(PLACEHOLDERIDSystemTextJsonConverter))]
     partial struct PLACEHOLDERID :
-#if NET6_0_OR_GREATER
         global::System.ISpanFormattable,
-#endif
-#if NET7_0_OR_GREATER
         global::System.IParsable<PLACEHOLDERID>, global::System.ISpanParsable<PLACEHOLDERID>,
-#endif
         global::System.IComparable<PLACEHOLDERID>, global::System.IEquatable<PLACEHOLDERID>, global::System.IFormattable
     {
         public PLACEHOLDERID(string value)
         {
-#if NET7_0_OR_GREATER
             global::System.ArgumentNullException.ThrowIfNull(value);
-#else
-            if (value is null) throw new global::System.ArgumentNullException(nameof(value));
-#endif
             if (string.IsNullOrEmpty(value))
             {
                 Value = global::System.Ulid.Empty;
@@ -34,22 +26,8 @@
 
         public static readonly PLACEHOLDERID Empty = new PLACEHOLDERID(global::System.Ulid.Empty);
 
-        /// <inheritdoc cref="global::System.IEquatable{T}"/>
-        public bool Equals(PLACEHOLDERID other)
-            => Value.Equals(other.Value);
-
-        public override bool Equals(object? obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            return obj is PLACEHOLDERID other && Equals(other);
-        }
-
-        public override int GetHashCode() => Value.GetHashCode();
-
         public override string ToString() => Value.ToString();
 
-        public static bool operator ==(PLACEHOLDERID a, PLACEHOLDERID b) => a.Equals(b);
-        public static bool operator !=(PLACEHOLDERID a, PLACEHOLDERID b) => !(a == b);
         public static bool operator >  (PLACEHOLDERID a, PLACEHOLDERID b) => a.CompareTo(b) > 0;
         public static bool operator <  (PLACEHOLDERID a, PLACEHOLDERID b) => a.CompareTo(b) < 0;
         public static bool operator >=  (PLACEHOLDERID a, PLACEHOLDERID b) => a.CompareTo(b) >= 0;
@@ -114,13 +92,11 @@
             public override void Write(global::System.Text.Json.Utf8JsonWriter writer, PLACEHOLDERID value, global::System.Text.Json.JsonSerializerOptions options)
                 => writer.WriteStringValue(value.Value.ToString());
 
-#if NET6_0_OR_GREATER
             public override PLACEHOLDERID ReadAsPropertyName(ref global::System.Text.Json.Utf8JsonReader reader, global::System.Type typeToConvert, global::System.Text.Json.JsonSerializerOptions options)
                 => new(reader.GetString() ?? throw new global::System.FormatException("The string for the PLACEHOLDERID property was null"));
 
             public override void WriteAsPropertyName(global::System.Text.Json.Utf8JsonWriter writer, PLACEHOLDERID value, global::System.Text.Json.JsonSerializerOptions options)
                 => writer.WritePropertyName(value.Value.ToString());
-#endif
         }
 
         public static PLACEHOLDERID Parse(string input)
@@ -134,7 +110,6 @@
             return new PLACEHOLDERID(ulid);
         }
 
-#if NET7_0_OR_GREATER
         /// <inheritdoc cref="global::System.IParsable{TSelf}"/>
         public static PLACEHOLDERID Parse(string input, global::System.IFormatProvider? provider)
             => Parse(input);
@@ -166,13 +141,11 @@
             result = default;
             return false;
         }
-#endif
 
         /// <inheritdoc cref="global::System.IFormattable"/>
         public string ToString(string? format, global::System.IFormatProvider? formatProvider)
             => Value.ToString();
 
-#if NETCOREAPP2_1_OR_GREATER
         public static PLACEHOLDERID Parse(global::System.ReadOnlySpan<char> input)
         {
             if (input.IsEmpty)
@@ -182,12 +155,8 @@
             var ulid = global::System.Ulid.Parse(input);
             return new PLACEHOLDERID(ulid);
         }
-#endif
 
-#if NET6_0_OR_GREATER
-#if NET7_0_OR_GREATER
         /// <inheritdoc cref="global::System.ISpanParsable{TSelf}"/>
-#endif
         public static PLACEHOLDERID Parse(global::System.ReadOnlySpan<char> input, global::System.IFormatProvider? provider)
         {
             if (input.IsEmpty)
@@ -198,9 +167,7 @@
             return new PLACEHOLDERID(ulid);
         }
 
-#if NET7_0_OR_GREATER
         /// <inheritdoc cref="global::System.ISpanParsable{TSelf}"/>
-#endif
         public static bool TryParse(global::System.ReadOnlySpan<char> input, global::System.IFormatProvider? provider, out PLACEHOLDERID result)
         {
             if (input.IsEmpty)
@@ -235,5 +202,4 @@
         {
             return Value.TryFormat(destination, out charsWritten, format, provider: null);
         }
-#endif
     }

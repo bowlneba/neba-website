@@ -543,6 +543,19 @@ A Bowler record may represent a fully registered active participant or a histori
 
 ---
 
+### Gender
+
+**Definition**: The registered gender of a Bowler. Used in Side Cut eligibility evaluation (Gender Criterion) and Bowler of the Year category eligibility (Woman category). Two values are defined: `Male` and `Female`.
+
+> **Usage note**: Gender is a registration attribute stored on the Bowler record. When used in Side Cut criteria, a bowler's gender is compared against the criterion's `GenderRequirement` value on the date they bowl.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Bowlers`
+- Type: `Gender` (SmartEnum, string-valued)
+
+---
+
 ### NameSuffix
 
 **Definition**: An enumeration of valid generational name suffixes for a Bowler. Used in legal and official contexts (e.g., 1099 tax reporting).
@@ -560,11 +573,297 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 ## Tournaments
 
+### Tournament
+
+**Definition**: A USBC sanctioned scratch bowling competition consisting of one or more qualifying squads followed by a single-elimination match play championship round to determine a winner. Each tournament has a Tournament Type that governs format, team size, and eligibility. Lane conditions are characterized by a Pattern Length Category and Pattern Ratio Category, which may not be known at the time of tournament creation.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `Tournament` (aggregate root)
+- Identity type: `TournamentId` (ULID-backed strongly-typed ID)
+
+---
+
+### Tournament Sponsor
+
+**Definition**: The sponsorship association between a specific Tournament and a specific Sponsor. A Tournament Sponsor records sponsor participation for that event, including whether the sponsor is the tournament's Title Sponsor (the main sponsor) and the sponsorship amount.
+
+**Properties**:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `TournamentId` | ULID | The tournament being sponsored |
+| `SponsorId` | ULID | The sponsor providing support for the tournament |
+| `TitleSponsor` | bool | Whether this sponsor is the tournament's main sponsor |
+| `SponsorshipAmount` | decimal | The amount contributed for that tournament sponsorship |
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `TournamentSponsor` (association entity)
+
+---
+
+### Tournament Round
+
+**Definition**: The phase of a tournament in which a group of squads is contested. Rounds are classified by format and their role in the tournament structure. A single tournament may include one or more rounds.
+
+| Value | Name | Description |
+| --- | --- | --- |
+| `Qualifying` | Qualifying | Bowlers establish a pinfall score to determine advancement eligibility. All qualifying squads within a tournament use the same oil pattern. Bowlers may bowl one or more squads depending on tournament entry rules |
+| `Cashers` | Cashers | An intermediate round after qualifying for bowlers who made an initial cut, competing for a secondary cut. Bowlers eliminated here still earn a cash prize. Not currently used by NEBA; supported for compatibility with external tournament formats |
+| `MatchPlay` | Match Play | A bracket-based finals round with head-to-head competition. Advancement is determined by individual game outcomes rather than cumulative pinfall. Bracket structure may be traditional or eliminator format |
+| `StepLadder` | Step Ladder | A finals round in which a small number of advancing bowlers compete in sequenced single elimination. The lowest seed bowls the next lowest, with the winner advancing up the ladder until a champion is determined |
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `TournamentRound` (SmartFlagEnum — bitmask, powers of two)
+
+---
+
+### Title Sponsor (Tournament context)
+
+**Definition**: The main sponsor for a specific Tournament. The Title Sponsor receives primary naming and promotional placement for that event (for example, being formally associated with the tournament name in schedules and marketing).
+
+> **Scope note**: This is a per-tournament designation from `TournamentSponsor.TitleSponsor` and is distinct from the sponsor program's `SponsorTier.Title Sponsor` value.
+
+---
+
+### Tournament Type
+
+**Definition**: The format classification of a NEBA tournament. Determines the number of bowlers per entry (Team Size), eligibility restrictions, and match play structure. Tournament types are categorized as either active formats (currently offered by NEBA) or inactive formats (retained for historical data integrity only).
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `TournamentType` (SmartEnum)
+
+---
+
+### Team Size
+
+**Definition**: The number of bowlers who compete as a single entry unit within a given Tournament Type. Singles and most specialty formats have a Team Size of 1; Doubles formats have a Team Size of 2; Trios have 3; Baker has 5.
+
+**In Code**: `TournamentType.TeamSize`
+
+---
+
+### Active Format
+
+**Definition**: A Tournament Type designation indicating whether the format is currently offered by NEBA. Inactive formats are not available for new tournament creation but are preserved in the system to maintain historical accuracy for past tournaments.
+
+**In Code**: `TournamentType.ActiveFormat`
+
+---
+
+### Pattern Length Category
+
+**Definition**: A classification of the distance (in feet) over which oil is applied to tournament lanes. Three categories are defined: **Short** (37 feet or less), **Medium** (38–42 feet), and **Long** (43 feet or more). Pattern Length Category is one of two dimensions used to characterize tournament lane conditions alongside Pattern Ratio Category. May be unknown at the time of tournament creation.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `PatternLengthCategory` (SmartEnum)
+- Property on `Tournament`: `PatternLengthCategory` (nullable)
+
+---
+
+### Pattern Ratio Category
+
+**Definition**: A classification of the oil-to-dry ratio of the lane condition used in a tournament. Three categories are defined: **Sport** (ratio < 4.0), **Challenge** (4.0–8.0), and **Recreation** (≥ 8.0). Pattern Ratio Category is one of two dimensions used to characterize tournament lane conditions alongside Pattern Length Category. Sport and Challenge map directly to USBC lane condition designations of the same names; Recreation is NEBA's term for the USBC Standard/House designation. May be unknown at the time of tournament creation.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `PatternRatioCategory` (SmartEnum)
+- Property on `Tournament`: `PatternRatioCategory` (nullable)
+
+---
+
+### Non-Champions
+
+**Definition**: A tournament format restricted to bowlers who have not previously won a NEBA title. Provides competitive opportunity for bowlers who have never achieved a championship win.
+
+**In Code**: `TournamentType.NonChampions`
+
+---
+
 ### Tournament of Champions (TOC)
 
-**Definition**: NEBA's premier annual tournament event. The Title Sponsor's name is formally associated with this event for the duration of their sponsorship.
+**Definition**: NEBA's premier annual tournament event, restricted to past NEBA title winners. Entry eligibility is determined by whether the bowler appears on the historical NEBA champions list. The tournament's Title Sponsor (main sponsor) is formally associated with this event for the duration of their sponsorship.
 
 > **Usage**: "TOC" is the accepted abbreviation used throughout NEBA communications and in code identifiers. The full term "Tournament of Champions" is used in formal contexts.
+
+**In Code**: `TournamentType.TournamentOfChampions`
+
+---
+
+### Major
+
+**Definition**: A designation applied to NEBA's most prestigious tournament formats: the **Tournament of Champions**, the **Masters**, and the **Invitational**. The Major designation is a characteristic of the Tournament Type, not a separate entity.
+
+---
+
+### Left Ratio
+
+**Definition**: The X:1 ratio of average oil volume on the inner lane boards (L18–R18) to the left outside boards (L3–L7), stored as the decimal multiplier X. A symmetric pattern has equal left and right ratios.
+
+**In Code**: `OilPattern.LeftRatio`
+
+---
+
+### Right Ratio
+
+**Definition**: The X:1 ratio of average oil volume on the inner lane boards (L18–R18) to the right outside boards (R3–R7), stored as the decimal multiplier X. A symmetric pattern has equal left and right ratios.
+
+**In Code**: `OilPattern.RightRatio`
+
+---
+
+### Kegel Pattern ID
+
+**Definition**: A GUID uniquely identifying a pattern in the Kegel public pattern library. Null when the pattern is custom-defined and has no corresponding Kegel catalog entry.
+
+**In Code**: `OilPattern.KegelId`
+
+---
+
+### Custom Pattern
+
+**Definition**: An oil pattern created outside the Kegel catalog, typically configured directly by a tournament director or house mechanic. Identified by the absence of a Kegel Pattern ID.
+
+---
+
+### Oil Pattern
+
+**Definition**: A named, catalogued set of lane oil application parameters used in a tournament. Characterised by its length (feet), total oil volume (mL), Left Ratio, and Right Ratio. May correspond to a Kegel public pattern (identified by a Kegel Pattern ID) or be a Custom Pattern.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `OilPattern` (entity)
+- Identity type: `OilPatternId` (ULID-backed strongly-typed ID)
+
+---
+
+### Tournament Oil Pattern
+
+**Definition**: The association between a Tournament and an Oil Pattern for one or more specific Tournament Rounds. A tournament may use different oil patterns for different rounds (e.g., a fresh pattern for qualifying, a different one for match play). Each Tournament Oil Pattern records the oil pattern ID and the set of rounds to which it was applied.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `TournamentOilPattern` (association entity)
+
+---
+
+## Side Cuts
+
+### Side Cut
+
+**Definition**: A named, reusable eligibility predicate that identifies a subgroup of bowlers who qualify for an alternative advancement path in a tournament round. A Side Cut has its own Cut Line, evaluated independently of the Main Cut. Each Side Cut is assigned a Display Color used to visually identify qualifying entries on operational screens such as check-in. A Side Cut may be marked **inactive** to exclude it from tournament configuration without deleting it.
+
+**In Code**:
+
+- Namespace: `Neba.Domain.Tournaments`
+- Type: `SideCut` (sealed class)
+- Identity type: `SideCutId` (ULID-backed strongly-typed ID)
+
+---
+
+### Display Color
+
+**Definition**: A color value assigned to a Side Cut used to visually distinguish its qualifying entries in tournament management interfaces. Display Color is a property of the Side Cut itself, not of the bowler or the entry.
+
+**In Code**: `SideCut.Indicator` (`System.Drawing.Color`)
+
+---
+
+### Cut Line
+
+**Definition**: The minimum score required to advance through a cut. Each Side Cut has its own Cut Line, evaluated independently of the Main Cut. See also: **Main Cut**.
+
+**In Code**: Not yet modeled.
+
+---
+
+### Main Cut
+
+**Definition**: The primary advancement threshold for a tournament round, applied to all competing bowlers regardless of Side Cut eligibility.
+
+**In Code**: Not yet modeled.
+
+---
+
+### Side Cut Criterion Group
+
+**Definition**: An ordered collection of one or more Criteria within a Side Cut, evaluated together using the group's own Group Operator. A Side Cut contains one or more Criterion Groups. The results of all groups are combined at the top level using the Side Cut's Group Composition Operator.
+
+**In Code**: `SideCutCriteriaGroup` in `Neba.Domain.Tournaments`.
+
+---
+
+### Group Composition Operator
+
+**Definition**: The `LogicalOperator` applied at the Side Cut level to combine the results of its Criterion Groups. Uses `And` (every group must match) or `Or` (at least one group must match).
+
+**In Code**: `SideCut.LogicalOperator` in `Neba.Domain.Tournaments`. Uses `LogicalOperator` from `Neba.Domain`.
+
+---
+
+### Group Operator
+
+**Definition**: The `LogicalOperator` applied within a Criterion Group to combine its individual Criteria. Uses `And` (every criterion must match) or `Or` (at least one criterion must match).
+
+**In Code**: `SideCutCriteriaGroup.LogicalOperator` in `Neba.Domain.Tournaments`. Uses `LogicalOperator` from `Neba.Domain`.
+
+---
+
+### LogicalOperator
+
+**Definition**: A SmartEnum used by both the Group Operator and the Group Composition Operator to express how conditions are combined. Two values are actively used in Side Cut eligibility evaluation:
+
+| Value | Meaning |
+| --- | --- |
+| `And` | All conditions in the group must be satisfied |
+| `Or` | At least one condition in the group must be satisfied |
+
+> `Not` is defined in code but is **not used** in Side Cut eligibility evaluation — reserved for possible future use.
+
+**In Code**:
+
+- Namespace: `Neba.Domain`
+- Type: `LogicalOperator` (SmartEnum, string-valued)
+
+---
+
+### Criterion
+
+**Definition**: A single, testable condition evaluated against a bowler to determine eligibility within a Criterion Group. A Criterion consists of a Criterion Type, a Criterion Value, and an Age Operator (for age-based Criterion Types only).
+
+**Criterion Types**:
+
+| Type | Evaluation | Notes |
+| --- | --- | --- |
+| `MinimumAge` | `Participation Age >= CriterionValue` | Examples: Senior (50), Super Senior (60) |
+| `MaximumAge` | `Participation Age <= CriterionValue` | Value is the oldest eligible age. "Under 18" stores `17` |
+| `Gender` | Bowler's registered gender must match the specified value | |
+
+> **Convention**: Both `MinimumAge` and `MaximumAge` are stored and evaluated as **inclusive** bounds. When NEBA rules express eligibility as "under 18," the stored criterion value is `17` — the oldest eligible age — not `18`. The Criterion Type name (`MaximumAge`) is the authoritative semantic; the stored value is always inclusive.
+
+**In Code**: `SideCutCriteria` in `Neba.Domain.Tournaments`. The current implementation models criteria as nullable fields on a single type: `MinimumAge`, `MaximumAge`, and `GenderRequirement`.
+
+---
+
+### Participation Age
+
+**Definition**: A bowler's age as computed on the specific date they bowl. Used exclusively for Side Cut eligibility evaluation. A bowler who does not satisfy an age-based Criterion on their participation date is ineligible for that Side Cut on that date, regardless of whether they would qualify on a different date within the same tournament.
+
+> **Example**: In a two-day Senior tournament, a bowler who turns 50 on day two is ineligible for the Senior Side Cut on day one and eligible on day two.
+
+**In Code**: Not yet modeled. Computed at evaluation time from bowler date of birth and squad date.
 
 ---
 
@@ -664,7 +963,7 @@ Age eligibility for a category is evaluated as of each tournament date during th
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Awards`
+- Namespace: `Neba.Domain.Seasons`
 - Type: `BowlerOfTheYearAward` (entity)
 
 ---
@@ -712,7 +1011,7 @@ Baker team finals games do not count toward a bowler's average or game total.
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Awards`
+- Namespace: `Neba.Domain.Seasons`
 - Type: `HighAverageAward` (entity)
 
 ---
@@ -732,7 +1031,7 @@ Baker team finals games do not count toward a bowler's average or game total.
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Awards`
+- Namespace: `Neba.Domain.Seasons`
 - Type: `HighBlockAward` (entity)
 
 ---
@@ -879,7 +1178,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `Id` | ULID | Yes | System-generated unique identifier |
-| `SponsorName` | string | Yes | Display name — company name (e.g., "Storm Products Inc.") or individual name (e.g., "Tony & Suzanne Reynaud") |
+| `Name` | string | Yes | Display name — company name (e.g., "Storm Products Inc.") or individual name (e.g., "Tony & Suzanne Reynaud") |
 | `Slug` | string | Yes | URL-friendly unique identifier derived from the sponsor name; used to route to the sponsor's individual page (e.g., `/sponsors/storm`) |
 | `IsCurrentSponsor` | bool | Yes | Whether the sponsor is actively associated with NEBA for the current season. Manually managed until Sponsorship Agreement tracking is implemented |
 | `Priority` | int | Yes | Display order on the sponsor list. Lower values appear first. Title sponsors are assigned the highest priority (lowest number) |
@@ -900,7 +1199,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 **Display Rules**:
 
-- The Sponsor List page displays all sponsors where `IsCurrentSponsor == true`, ordered by `Priority` ascending, then `SponsorName` alphabetically as a tiebreaker
+- The Sponsor List page displays all sponsors where `IsCurrentSponsor == true`, ordered by `Priority` ascending, then `Name` alphabetically as a tiebreaker
 - Nullable fields are not displayed on the public site when absent — this accommodates individual sponsors for whom business-oriented fields are not applicable
 - `PromotionalNotes`, `SponsorContact`, `BusinessAddress`, `PhoneNumbers`, and `LiveReadText` are internal/admin only — never publicly displayed
 
@@ -915,6 +1214,8 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 ### SponsorTier
 
 **Definition**: A SmartEnum classifying the sponsor's level of commitment. Controls display prominence on the sponsor list page.
+
+> **Terminology note**: `SponsorTier.Title Sponsor` is the top level in the overall sponsorship program. It is not automatically the same as a specific tournament's Title Sponsor designation, which is modeled on `TournamentSponsor.TitleSponsor`.
 
 | Value | Name | Description |
 | --- | --- | --- |
@@ -947,7 +1248,6 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 | 128 | `Individual` | Individual or personal sponsors (e.g., Tony & Suzanne Reynaud) |
 
 > Values are powers of two to support potential future multi-category assignment via bit flags.
-
 > Future enhancement: promote to a configurable database-backed entity manageable through an admin interface.
 
 **In Code**:
@@ -974,7 +1274,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 **In Code**:
 
-- Shared type from `Neba.Domain.Contact`
+- Type: `PhoneNumberType` (SmartEnum) in `Neba.Domain.Contact`
 
 ---
 

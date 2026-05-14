@@ -7,11 +7,7 @@ internal sealed class ListBowlerOfTheYearAwardsQueryHandler(IAwardQueries awardQ
 {
     private readonly IAwardQueries _awardQueries = awardQueries;
 
-    public async Task<IReadOnlyCollection<BowlerOfTheYearAwardDto>> HandleAsync(
+    public Task<IReadOnlyCollection<BowlerOfTheYearAwardDto>> HandleAsync(
         ListBowlerOfTheYearAwardsQuery query, CancellationToken cancellationToken)
-    {
-        var awards = await _awardQueries.GetAllBowlerOfTheYearAwardsAsync(cancellationToken);
-
-        return awards;
-    }
+        => _awardQueries.GetAllBowlerOfTheYearAwardsAsync(cancellationToken);
 }

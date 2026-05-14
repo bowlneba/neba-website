@@ -2,6 +2,7 @@ using System.Text.Json;
 
 using ErrorOr;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Neba.Application.Messaging;
@@ -17,6 +18,7 @@ internal sealed class CachedQueryHandlerDecorator<TQuery, TResponse>
     private readonly IQueryHandler<TQuery, TResponse> _innerHandler;
     private readonly IFusionCache _cache;
     private readonly ILogger<CachedQueryHandlerDecorator<TQuery, TResponse>> _logger;
+    private readonly JsonSerializerOptions _jsonOptions;
 
     private readonly bool _isErrorOrResponse;
     private readonly Type? _innerType;
@@ -24,11 +26,14 @@ internal sealed class CachedQueryHandlerDecorator<TQuery, TResponse>
     public CachedQueryHandlerDecorator(
         IQueryHandler<TQuery, TResponse> innerHandler,
         IFusionCache cache,
-        ILogger<CachedQueryHandlerDecorator<TQuery, TResponse>> logger)
+        ILogger<CachedQueryHandlerDecorator<TQuery, TResponse>> logger,
+        IServiceProvider serviceProvider)
     {
         _innerHandler = innerHandler;
         _cache = cache;
         _logger = logger;
+        _jsonOptions = serviceProvider.GetKeyedService<JsonSerializerOptions>(HybridCacheSerializerOptionsKey.Key)
+            ?? JsonSerializerOptions.Default;
 
         _isErrorOrResponse = ErrorOrCacheHelper.IsErrorOrType(typeof(TResponse));
         _innerType = _isErrorOrResponse ? ErrorOrCacheHelper.GetInnerType(typeof(TResponse)) : null;
@@ -102,17 +107,25 @@ internal sealed class CachedQueryHandlerDecorator<TQuery, TResponse>
 
         if (cached.HasValue)
         {
-            _logger.LogCacheHit(cacheKey);
+            try
+            {
+                _logger.LogCacheHit(cacheKey);
 
-            // L1 hit: cached.Value is the original typed object
-            // L2 hit: cached.Value is the unwrapped inner value
-            var value = cached.Value is JsonElement jsonElement
-                ? JsonSerializer.Deserialize(jsonElement.GetRawText(), _innerType!)
-                : cached.Value;
+                // L1 hit: cached.Value is the original typed object
+                // L2 hit: cached.Value is the unwrapped inner value deserialized via cache options
+                var value = cached.Value is JsonElement jsonElement
+                    ? JsonSerializer.Deserialize(jsonElement.GetRawText(), _innerType!, _jsonOptions)
+                    : cached.Value;
 
-            _logger.LogRewrappingErrorOr(cacheKey);
+                _logger.LogRewrappingErrorOr(cacheKey);
 
-            return (TResponse)ErrorOrCacheHelper.WrapValue(_innerType!, value!);
+                return (TResponse)ErrorOrCacheHelper.WrapValue(_innerType!, value!);
+            }
+            catch (Exception ex) when (IsCacheDeserializationException(ex))
+            {
+                _logger.LogCacheDeserializationFallback(cacheKey, ex);
+                // fall through to execute inner handler and refresh cache
+            }
         }
 
         _logger.LogCacheMiss(cacheKey);

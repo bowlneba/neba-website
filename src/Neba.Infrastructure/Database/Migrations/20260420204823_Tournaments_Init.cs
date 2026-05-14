@@ -1,0 +1,67 @@
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+
+#nullable disable
+
+namespace Neba.Infrastructure.Database.Migrations
+{
+    /// <inheritdoc />
+    public partial class Tournaments_Init : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.CreateTable(
+                name: "tournaments",
+                schema: "app",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
+                    domain_id = table.Column<string>(type: "character(26)", fixedLength: true, maxLength: 26, nullable: false),
+                    name = table.Column<string>(type: "character varying(127)", maxLength: 127, nullable: false),
+                    tournament_type = table.Column<int>(type: "integer", nullable: false),
+                    start_date = table.Column<DateOnly>(type: "date", nullable: false),
+                    end_date = table.Column<DateOnly>(type: "date", nullable: false),
+                    bowling_center_id = table.Column<string>(type: "character varying(6)", maxLength: 6, nullable: true),
+                    pattern_ratio_category = table.Column<int>(type: "integer", nullable: true),
+                    pattern_length_category = table.Column<int>(type: "integer", nullable: true),
+                    legacy_id = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_tournaments", x => x.id);
+                    table.UniqueConstraint("ak_tournaments_domain_id", x => x.domain_id);
+                    table.ForeignKey(
+                        name: "fk_tournaments_bowling_centers_bowling_center_id",
+                        column: x => x.bowling_center_id,
+                        principalSchema: "app",
+                        principalTable: "bowling_centers",
+                        principalColumn: "certification_number");
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_tournaments_bowling_center_id",
+                schema: "app",
+                table: "tournaments",
+                column: "bowling_center_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_tournaments_legacy_id",
+                schema: "app",
+                table: "tournaments",
+                column: "legacy_id",
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", true);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropTable(
+                name: "tournaments",
+                schema: "app");
+        }
+    }
+}

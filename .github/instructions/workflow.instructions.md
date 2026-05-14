@@ -10,4 +10,4 @@ applyTo: '**'
 
 ## Code Suggestions
 
-- **Show, don't insert**: When suggesting code changes, display the implementation in the response for review rather than directly inserting it into files. Only insert code directly when explicitly requested by the user.
+- Implement changes directly into files. Only show code in the response (without inserting) when explicitly requested.

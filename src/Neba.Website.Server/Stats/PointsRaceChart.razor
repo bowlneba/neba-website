@@ -81,6 +81,7 @@
         Stroke = new Stroke
         {
             Curve = Curve.Smooth,
+            Width = 2,
         },
         Colors = SeriesColors.ToList(),
         Legend = new Legend { Show = false },
@@ -94,6 +95,7 @@
         },
         Xaxis = new XAxis
         {
+            Type = XAxisType.Category,
             Labels = new XAxisLabels
             {
                 Show = ShowCategoryLabels,

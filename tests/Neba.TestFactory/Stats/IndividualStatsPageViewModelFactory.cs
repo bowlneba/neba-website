@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Website.Server.Stats;
 
 namespace Neba.TestFactory.Stats;
@@ -50,7 +48,7 @@ public static class IndividualStatsPageViewModelFactory
         int? pointsPerTournamentRank = null,
         int? finalsPerEntryRank = null,
         int? averageFinishRank = null,
-        PointsRaceSeriesViewModel? bowlerOfTheYearPointsRace = null)
+        IReadOnlyCollection<IndividualBoyProgressionViewModel>? boyProgressions = null)
         => new()
         {
             BowlerId = bowlerId ?? Ulid.NewUlid().ToString(),
@@ -83,7 +81,7 @@ public static class IndividualStatsPageViewModelFactory
             PointsPerTournamentRank = pointsPerTournamentRank,
             FinalsPerEntryRank = finalsPerEntryRank,
             AverageFinishRank = averageFinishRank,
-            BowlerOfTheYearPointsRace = bowlerOfTheYearPointsRace,
+            BoyProgressions = boyProgressions ?? [],
         };
 
     public static IReadOnlyCollection<IndividualStatsPageViewModel> Bogus(int count, int? seed = null)
@@ -129,9 +127,7 @@ public static class IndividualStatsPageViewModelFactory
                     PointsPerTournamentRank = f.Random.Bool() ? f.Random.Int(1, 50) : null,
                     FinalsPerEntryRank = f.Random.Bool() ? f.Random.Int(1, 50) : null,
                     AverageFinishRank = f.Random.Bool() ? f.Random.Int(1, 50) : null,
-                    BowlerOfTheYearPointsRace = f.Random.Bool()
-                        ? PointsRaceSeriesViewModelFactory.Bogus(1, seed).Single()
-                        : null,
+                    BoyProgressions = [],
                 };
             });
 

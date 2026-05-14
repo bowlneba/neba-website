@@ -1,5 +1,3 @@
-using Bogus;
-
 using ErrorOr;
 
 using Neba.Domain.Bowlers;
@@ -28,17 +26,29 @@ public static class BowlerOfTheYearAwardFactory
         ErrorOr<BowlerOfTheYearAward> result;
 
         if (resolvedCategory == BowlerOfTheYearCategory.Woman)
+        {
             result = BowlerOfTheYearAward.CreateWoman(resolvedBowlerId, gender ?? Gender.Female);
+        }
         else if (resolvedCategory == BowlerOfTheYearCategory.Senior)
+        {
             result = BowlerOfTheYearAward.CreateSenior(resolvedBowlerId, age);
+        }
         else if (resolvedCategory == BowlerOfTheYearCategory.SuperSenior)
+        {
             result = BowlerOfTheYearAward.CreateSuperSenior(resolvedBowlerId, age);
+        }
         else if (resolvedCategory == BowlerOfTheYearCategory.Rookie)
+        {
             result = BowlerOfTheYearAward.CreateRookie(resolvedBowlerId, isRookie);
+        }
         else if (resolvedCategory == BowlerOfTheYearCategory.Youth)
+        {
             result = BowlerOfTheYearAward.CreateYouth(resolvedBowlerId, age);
+        }
         else
+        {
             result = BowlerOfTheYearAward.CreateOpen(resolvedBowlerId);
+        }
 
         return result.Value;
     }

@@ -1,0 +1,32 @@
+@namespace Neba.Website.Server.Tournaments.Schedule
+
+@if (ShowHeroSkeleton)
+{
+    <div class="neba-skeleton" style="width:100%; height:320px; border-radius:var(--neba-radius-xl); margin-bottom:1.5rem;"></div>
+}
+
+@for (var i = 0; i < 3; i++)
+{
+    <div class="neba-card" style="display:grid; grid-template-columns:200px 1fr 260px; gap:1.5rem; align-items:center; margin-bottom:1rem;">
+        <div class="neba-skeleton" style="width:200px; height:180px; border-radius:var(--neba-radius-lg);"></div>
+        <div style="display:flex; flex-direction:column; gap:0.75rem;">
+            <div class="neba-skeleton" style="width:40%; height:0.875rem;"></div>
+            <div class="neba-skeleton" style="width:72%; height:1.25rem;"></div>
+            <div class="neba-skeleton" style="width:55%; height:0.875rem;"></div>
+            <div style="display:flex; gap:0.5rem;">
+                <div class="neba-skeleton" style="width:80px; height:1.5rem; border-radius:999px;"></div>
+                <div class="neba-skeleton" style="width:100px; height:1.5rem; border-radius:999px;"></div>
+            </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:0.75rem; align-items:flex-end;">
+            <div class="neba-skeleton" style="width:80px; height:2rem;"></div>
+            <div class="neba-skeleton" style="width:120px; height:1.5rem; border-radius:999px;"></div>
+            <div class="neba-skeleton" style="width:100px; height:2.25rem; border-radius:var(--neba-radius);"></div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool ShowHeroSkeleton { get; set; }
+}

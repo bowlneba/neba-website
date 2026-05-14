@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Website.Server.Stats;
 
 namespace Neba.TestFactory.Stats;

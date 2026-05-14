@@ -112,12 +112,12 @@ public static class <TypeName>Factory
 
     public static IReadOnlyCollection<<TypeName>> Bogus(int count, int? seed = null)
     {
-        // Pre-compute correlation variables here if needed
+        // Pre-compute correlation variables here if needed (e.g. UniquePool, rank counter)
 
         var faker = new Faker<<TypeName>>()
             .CustomInstantiator(f =>
             {
-                // compute per-row correlation inside instantiator
+                // compute per-row correlation inside instantiator if needed
 
                 return new <TypeName>
                 {
@@ -162,6 +162,21 @@ Results = OtherFactory.Bogus(f.Random.Int(1, 5))
 ```
 
 This applies whether the call is inside `CustomInstantiator` or in the pre-computation block before the faker. The seed must flow to every nested `Bogus()` call in the method.
+
+### Bogus() implementation — always use Faker<T>
+
+**Always** implement `Bogus()` using `new Faker<T>().CustomInstantiator(f => ...)` followed by `faker.UseSeed(seed.Value)` / `faker.Generate(count)`. **Never** use `Enumerable.Range(...).Select(...)` with `Random.Shared` or a manual `new Random(seed)` — that pattern bypasses Bogus's seeded RNG, breaks Verify snapshot tests, and cannot use `f.*` faker APIs.
+
+```csharp
+// ✅ Correct
+var faker = new Faker<MyType>()
+    .CustomInstantiator(f => new MyType { Id = Ulid.BogusString(f), Name = f.Random.Words(2) });
+if (seed.HasValue) faker.UseSeed(seed.Value);
+return faker.Generate(count);
+
+// ❌ Wrong — bypasses Bogus RNG, incompatible with seed/Verify
+return [.. Enumerable.Range(0, count).Select(i => new MyType { ... })];
+```
 
 ### Bogus value conventions by type
 

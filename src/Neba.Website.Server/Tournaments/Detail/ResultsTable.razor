@@ -1,0 +1,77 @@
+@namespace Neba.Website.Server.Tournaments.Detail
+
+@{
+    var grouped = GroupedResults.ToList();
+}
+<table class="results-table">
+    <thead>
+        <tr>
+            <th scope="col">Place</th>
+            <th scope="col">Bowler</th>
+            <th scope="col">Prize Money</th>
+            <th scope="col">Points</th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (var i = 0; i < grouped.Count; i++)
+        {
+            var group = grouped[i];
+            var rowClass = i < 3
+                ? "results-table__row--podium results-table__row--" + (i +
+        1).ToString(System.Globalization.CultureInfo.InvariantCulture)
+                : string.Empty;
+            var placeAriaLabel = group.FormattedPlace;
+            if (i == 0)
+            {
+                placeAriaLabel = "1st place";
+            }
+            else if (i == 1)
+            {
+                placeAriaLabel = "2nd place";
+            }
+            else if (i == 2)
+            {
+                placeAriaLabel = "3rd place";
+            }
+            <tr class="@rowClass">
+                <td>
+                    <span class="results-table__place" aria-label="@placeAriaLabel">@group.FormattedPlace</span>
+                </td>
+                <td>
+                    @foreach (var name in group.BowlerNames)
+                    {
+                        <div>@name</div>
+                    }
+                </td>
+                <td class="@(group.HasPrizeMoney ? "results-table__prize--gold" : string.Empty)">
+                    @group.FormattedCombinedPrizeMoney
+                </td>
+                <td>@group.Points</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private static readonly System.Globalization.CultureInfo CurrencyCulture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+
+    [Parameter, EditorRequired]
+    public IEnumerable<TournamentResultViewModel> Results { get; set; } = [];
+
+    private IEnumerable<ResultRowViewModel> GroupedResults =>
+        Results
+            .GroupBy(r => r.Place)
+            .SelectMany(g => g.Key.HasValue
+                ? [new ResultRowViewModel([.. g])]
+                : g.Select(r => new ResultRowViewModel([r])));
+
+    private sealed record ResultRowViewModel(IReadOnlyList<TournamentResultViewModel> Rows)
+    {
+        public string FormattedPlace => Rows[0].FormattedPlace;
+        public IEnumerable<string> BowlerNames => Rows.Select(r => r.BowlerName);
+        public int Points => Rows[0].Points;
+        public bool HasPrizeMoney => Rows.Sum(r => r.PrizeMoney) > 0;
+        public string FormattedCombinedPrizeMoney =>
+            Rows.Sum(r => r.PrizeMoney).ToString("C0", CurrencyCulture);
+    }
+}

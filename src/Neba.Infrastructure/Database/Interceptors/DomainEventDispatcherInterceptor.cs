@@ -29,7 +29,10 @@ internal sealed class DomainEventDispatcherInterceptor(IBackgroundJobClient back
 
     private void DispatchDomainEvents(SaveChangesCompletedEventData eventData)
     {
-        if (eventData.Context is null) return;
+        if (eventData.Context is null)
+        {
+            return;
+        }
 
         var aggregates = eventData.Context.ChangeTracker
             .Entries<IAggregateRoot>()
@@ -37,7 +40,10 @@ internal sealed class DomainEventDispatcherInterceptor(IBackgroundJobClient back
             .Where(a => a.DomainEvents.Count > 0)
             .ToList();
 
-        if (aggregates.Count == 0) return;
+        if (aggregates.Count == 0)
+        {
+            return;
+        }
 
         var events = aggregates
             .SelectMany(a => a.DomainEvents)
@@ -53,6 +59,8 @@ internal sealed class DomainEventDispatcherInterceptor(IBackgroundJobClient back
         }
 
         foreach (var aggregate in aggregates)
+        {
             aggregate.ClearDomainEvents();
+        }
     }
 }

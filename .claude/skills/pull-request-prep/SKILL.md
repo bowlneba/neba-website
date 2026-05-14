@@ -78,6 +78,26 @@ Work through the diff layer by layer. For each issue found, record:
 - [ ] No `.Verify()` calls when using `MockBehavior.Strict`
 - [ ] No `null!` for null-argument tests — uses `#nullable disable`/`#nullable enable`
 
+**Playwright E2E tests** (if Blazor pages added or changed)
+
+Playwright is the right tool when the behavior involves the real browser + real HTTP stack together — things bUnit cannot exercise:
+
+| Add a Playwright test when… | Skip it when… |
+|---|---|
+| New page with API-backed rendering (verify end-to-end data flow) | Internal component logic or rendering — use bUnit |
+| Navigation flow between pages (link → URL change) | Pure UI state within one component — use bUnit |
+| URL query parameter drives page behavior | Data transformation or business logic — use unit tests |
+| Modal / overlay lifecycle (open, close via button or backdrop) | Static-only page with no API or interactions |
+| Redirect / not-found state triggered by API 404 | Page that is covered by an existing Playwright test already |
+| Cross-page state persistence (e.g. season preserved across nav) | |
+| Keyboard accessibility for interactive widgets | |
+
+When adding Playwright tests:
+- [ ] New mock API endpoint added to `tests/e2e/mock-api/mock-api-server.ts` for any new API route the page calls
+- [ ] Spec file added under `tests/e2e/` (group by page; combine closely related pages in one file)
+- [ ] Tests anchor on stable CSS class selectors (BEM `.block__element--modifier`), not text content for structural assertions
+- [ ] `page.waitForSelector()` used in `beforeEach` (not arbitrary sleeps) to wait for data-driven content to appear
+
 **Observability**
 - [ ] Logging present with appropriate levels
 - [ ] No sensitive data logged

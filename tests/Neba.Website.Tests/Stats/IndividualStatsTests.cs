@@ -270,12 +270,16 @@ public sealed class IndividualStatsTests : IDisposable
         (fieldVal.ClassName ?? string.Empty).ShouldContain("text-gray-400");
     }
 
-    [Fact(DisplayName = "Should show points race card when bowler has Bowler of the Year points race data")]
-    public void Render_ShouldShowPointsRaceCard_WhenRaceDataPresent()
+    [Fact(DisplayName = "Should show one progression card per BOY progression entry")]
+    public void Render_ShouldShowOneCardPerBoyProgression()
     {
         // Arrange
-        var model = IndividualStatsPageViewModelFactory.Create(
-            bowlerOfTheYearPointsRace: PointsRaceSeriesViewModelFactory.Bogus(1, seed: 1201).Single());
+        var progressions = new[]
+        {
+            new IndividualBoyProgressionViewModel { RaceLabel = "Bowler of the Year", BowlerSeries = PointsRaceSeriesViewModelFactory.Create(), LeaderSeries = null },
+            new IndividualBoyProgressionViewModel { RaceLabel = "Senior", BowlerSeries = PointsRaceSeriesViewModelFactory.Create(), LeaderSeries = null },
+        };
+        var model = IndividualStatsPageViewModelFactory.Create(boyProgressions: progressions);
         _statsApi.EnqueueIndividualResult(model);
 
         // Act
@@ -283,14 +287,14 @@ public sealed class IndividualStatsTests : IDisposable
             .Add(x => x.BowlerId, BowlerId));
 
         // Assert
-        cut.FindAll(".indiv-points-race-card").Count.ShouldBe(1);
+        cut.FindAll(".indiv-points-race-card").Count.ShouldBe(2);
     }
 
-    [Fact(DisplayName = "Should not show points race card when bowler has no Bowler of the Year points race data")]
-    public void Render_ShouldHidePointsRaceCard_WhenRaceDataAbsent()
+    [Fact(DisplayName = "Should not show any progression cards when BoyProgressions is empty")]
+    public void Render_ShouldHidePointsRaceCards_WhenBoyProgressionsEmpty()
     {
         // Arrange
-        var model = IndividualStatsPageViewModelFactory.Create(bowlerOfTheYearPointsRace: null);
+        var model = IndividualStatsPageViewModelFactory.Create(boyProgressions: []);
         _statsApi.EnqueueIndividualResult(model);
 
         // Act
@@ -301,97 +305,23 @@ public sealed class IndividualStatsTests : IDisposable
         cut.FindAll(".indiv-points-race-card").Count.ShouldBe(0);
     }
 
-    [Fact(DisplayName = "Should open modal with correct title when points race card is clicked")]
-    public async Task PointsRaceCard_ShouldOpenModal_WhenClicked()
+    [Fact(DisplayName = "Should display the race label in each progression card header")]
+    public void Render_ShouldShowRaceLabelInCardHeader()
     {
         // Arrange
-        var model = IndividualStatsPageViewModelFactory.Create(
-            bowlerOfTheYearPointsRace: PointsRaceSeriesViewModelFactory.Bogus(1, seed: 1202).Single());
+        var progressions = new[]
+        {
+            new IndividualBoyProgressionViewModel { RaceLabel = "Bowler of the Year", BowlerSeries = PointsRaceSeriesViewModelFactory.Create(), LeaderSeries = null },
+        };
+        var model = IndividualStatsPageViewModelFactory.Create(boyProgressions: progressions);
         _statsApi.EnqueueIndividualResult(model);
+
+        // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
             .Add(x => x.BowlerId, BowlerId));
 
-        // Act
-        await cut.Find(".indiv-points-race-card").ClickAsync(new());
-
         // Assert
-        cut.FindAll(".indiv-modal-backdrop").Count.ShouldBe(1);
-        cut.Find(".indiv-modal-title").TextContent.ShouldBe("Bowler of the Year Race");
-    }
-
-    [Fact(DisplayName = "Should close modal when close button is clicked")]
-    public async Task Modal_ShouldClose_WhenCloseButtonClicked()
-    {
-        // Arrange
-        var model = IndividualStatsPageViewModelFactory.Create(
-            bowlerOfTheYearPointsRace: PointsRaceSeriesViewModelFactory.Bogus(1, seed: 1203).Single());
-        _statsApi.EnqueueIndividualResult(model);
-        var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, BowlerId));
-
-        await cut.Find(".indiv-points-race-card").ClickAsync(new());
-        cut.FindAll(".indiv-modal-backdrop").Count.ShouldBe(1);
-
-        // Act
-        await cut.Find(".indiv-modal-close").ClickAsync(new());
-
-        // Assert
-        cut.FindAll(".indiv-modal-backdrop").Count.ShouldBe(0);
-    }
-
-    [Fact(DisplayName = "Should close modal when backdrop is clicked")]
-    public async Task Modal_ShouldClose_WhenBackdropClicked()
-    {
-        // Arrange
-        var model = IndividualStatsPageViewModelFactory.Create(
-            bowlerOfTheYearPointsRace: PointsRaceSeriesViewModelFactory.Bogus(1, seed: 1204).Single());
-        _statsApi.EnqueueIndividualResult(model);
-        var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, BowlerId));
-
-        await cut.Find(".indiv-points-race-card").ClickAsync(new());
-
-        // Act
-        await cut.Find(".indiv-modal-backdrop").ClickAsync(new());
-
-        // Assert
-        cut.FindAll(".indiv-modal-backdrop").Count.ShouldBe(0);
-    }
-
-    [Fact(DisplayName = "Should open modal when Enter key is pressed on the points race widget")]
-    public async Task PointsRaceWidget_ShouldOpenModal_WhenEnterKeyPressed()
-    {
-        // Arrange
-        var model = IndividualStatsPageViewModelFactory.Create(
-            bowlerOfTheYearPointsRace: PointsRaceSeriesViewModelFactory.Bogus(1, seed: 1205).Single());
-        _statsApi.EnqueueIndividualResult(model);
-        var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, BowlerId));
-
-        // Act
-        await cut.Find(".indiv-points-race-card")
-            .TriggerEventAsync("onkeydown", new KeyboardEventArgs { Key = "Enter" });
-
-        // Assert
-        cut.FindAll(".indiv-modal-backdrop").Count.ShouldBe(1);
-    }
-
-    [Fact(DisplayName = "Should not open modal when a non-activation key is pressed on the points race widget")]
-    public async Task PointsRaceWidget_ShouldNotOpenModal_WhenNonActivationKeyPressed()
-    {
-        // Arrange
-        var model = IndividualStatsPageViewModelFactory.Create(
-            bowlerOfTheYearPointsRace: PointsRaceSeriesViewModelFactory.Bogus(1, seed: 1206).Single());
-        _statsApi.EnqueueIndividualResult(model);
-        var cut = _ctx.Render<IndividualStatsPage>(p => p
-            .Add(x => x.BowlerId, BowlerId));
-
-        // Act
-        await cut.Find(".indiv-points-race-card")
-            .TriggerEventAsync("onkeydown", new KeyboardEventArgs { Key = "Tab" });
-
-        // Assert
-        cut.FindAll(".indiv-modal-backdrop").Count.ShouldBe(0);
+        cut.Find(".indiv-points-race-card-header h2").TextContent.ShouldContain("Bowler of the Year");
     }
 
     [Fact(DisplayName = "Should use Season query parameter to set the active season button when param is valid")]

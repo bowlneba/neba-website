@@ -1,0 +1,29 @@
+.tournament-tab-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--neba-border);
+    margin-bottom: 1rem;
+}
+
+.tournament-tab-bar__tab--disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.tournament-tab-bar__season-select {
+    max-width: 160px;
+}
+
+@media (max-width: 767px) {
+    .tournament-tab-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .tournament-tab-bar__season-select {
+        max-width: 100%;
+    }
+}

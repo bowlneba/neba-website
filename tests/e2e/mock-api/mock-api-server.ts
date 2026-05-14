@@ -178,42 +178,180 @@ const MOCK_SPONSOR_OLD_SPONSOR = {
   sponsorContactPhoneNumberType: null,
 };
 
-const PRIMARY_BOWLER_ID = '01JX1111111111111111111111';
-const SECONDARY_BOWLER_ID = '01JX2222222222222222222222';
+export const PRIMARY_BOWLER_ID = '01JX1111111111111111111111';
+export const SECONDARY_BOWLER_ID = '01JX2222222222222222222222';
+export const MOCK_SEASON_ID = '01JX0000000000000000020001';
+export const MOCK_TOURNAMENT_ID = '01JX0000000000000000000010';
 
-function createStatsResponse(selectedYear: number): unknown {
-  const isLegacySeason = selectedYear === 2021;
-  const selectedSeasonLabel = isLegacySeason ? '2020-2021 Season' : '2024-2025 Season';
-  const leaderName = isLegacySeason ? 'Legacy Leader' : 'Current Leader';
-  const rivalName = isLegacySeason ? 'Legacy Rival' : 'Current Rival';
-  const points = isLegacySeason ? 184 : 267;
-  const average = isLegacySeason ? 219.35 : 228.42;
-  const winnings = isLegacySeason ? 1320 : 2430;
+// ...existing code...
+
+export const MOCK_SEASON_TOURNAMENTS = {
+  items: [
+    {
+      id: MOCK_TOURNAMENT_ID,
+      name: 'NEBA Spring Classic',
+      startDate: '2026-03-15',
+      endDate: '2026-03-15',
+      tournamentType: 'Singles',
+      entryFee: 75,
+      registrationUrl: null,
+      addedMoney: 500,
+      reservations: null,
+      patternLengthCategory: 'Medium',
+      patternRatioCategory: null,
+      logoUrl: null,
+      winners: ['Current Leader'],
+      bowlingCenter: { name: 'Lucky Strike Lanes', city: 'Boston', state: 'MA' },
+      sponsors: [],
+      oilPatterns: [],
+    },
+  ],
+};
+
+const MOCK_HALL_OF_FAME = {
+  items: [
+    { year: 2024, bowlerName: 'Jane Smith', categories: ['Superior Performance'], photoUri: null },
+    { year: 2024, bowlerName: 'Bob Johnson', categories: ['Meritorious Service'], photoUri: null },
+    { year: 2023, bowlerName: 'Alice Williams', categories: ['Friend of NEBA'], photoUri: null },
+    { year: 2023, bowlerName: 'Tom Davis', categories: ['Superior Performance', 'Meritorious Service'], photoUri: null },
+  ],
+  totalItems: 4,
+};
+
+const MOCK_BOWLER_OF_THE_YEAR_AWARDS = {
+  items: [
+    { season: '2024-2025', bowlerName: 'Current Leader', category: 'Open' },
+    { season: '2024-2025', bowlerName: 'Jane Smith', category: 'Women' },
+    { season: '2023-2024', bowlerName: 'Legacy Leader', category: 'Open' },
+  ],
+  totalItems: 3,
+};
+
+const MOCK_HIGH_AVERAGE_AWARDS = {
+  items: [
+    { season: '2024-2025', bowlerName: 'Current Leader', average: 228.42, totalGames: 35, tournamentsParticipated: 7 },
+    { season: '2023-2024', bowlerName: 'Legacy Leader', average: 219.35, totalGames: 28, tournamentsParticipated: 6 },
+  ],
+  totalItems: 2,
+};
+
+const MOCK_HIGH_BLOCK_AWARDS = {
+  items: [
+    { season: '2024-2025', bowlerName: 'Current Leader', score: 1198 },
+    { season: '2023-2024', bowlerName: 'Legacy Leader', score: 1120 },
+  ],
+  totalItems: 2,
+};
+
+export const MOCK_TOURNAMENT_DETAIL = {
+  id: MOCK_TOURNAMENT_ID,
+  name: 'NEBA Spring Classic',
+  season: {
+    id: '01JX0000000000000000000011',
+    description: '2024-2025 Season',
+    startDate: '2024-09-01',
+    endDate: '2025-05-31',
+  },
+  startDate: '2024-09-21',
+  endDate: '2024-09-21',
+  statsEligible: true,
+  tournamentType: 'Open',
+  entryFee: 75,
+  registrationUrl: null,
+  addedMoney: 500,
+  reservations: null,
+  entryCount: 48,
+  patternLengthCategory: 'Medium',
+  patternRatioCategory: null,
+  logoUrl: null,
+  bowlingCenter: { name: 'Lucky Strike Lanes', city: 'Boston', state: 'MA' },
+  sponsors: [],
+  oilPatterns: [{ name: 'Scorpion', length: 42, volume: 24.5, leftRatio: 3, rightRatio: 3 }],
+  winners: ['Current Leader'],
+  results: [],
+};
+
+type SeasonVariants = {
+  label: string;
+  leaderName: string;
+  rivalName: string;
+  points: number;
+  average: number;
+  winnings: number;
+  highBlock: number;
+  highGame: number;
+  matchPlayAverage: number;
+  pointsPerEntry: number;
+  pointsPerTournament: number;
+  totalEntries: number;
+  totalPrizeMoney: number;
+  seasonHighGame: number;
+  seasonHighBlock: number;
+  openerDate: string;
+  openerPoints: number;
+  winterDate: string;
+};
+
+const LEGACY_SEASON: SeasonVariants = {
+  label: '2020-2021 Season',
+  leaderName: 'Legacy Leader',
+  rivalName: 'Legacy Rival',
+  points: 184,
+  average: 219.35,
+  winnings: 1320,
+  highBlock: 1120,
+  highGame: 279,
+  matchPlayAverage: 218.5,
+  pointsPerEntry: 23,
+  pointsPerTournament: 26.29,
+  totalEntries: 152,
+  totalPrizeMoney: 18800,
+  seasonHighGame: 289,
+  seasonHighBlock: 1189,
+  openerDate: '2020-09-19',
+  openerPoints: 32,
+  winterDate: '2021-01-16',
+};
+
+const CURRENT_SEASON: SeasonVariants = {
+  label: '2024-2025 Season',
+  leaderName: 'Current Leader',
+  rivalName: 'Current Rival',
+  points: 267,
+  average: 228.42,
+  winnings: 2430,
+  highBlock: 1198,
+  highGame: 289,
+  matchPlayAverage: 226.8,
+  pointsPerEntry: 33.38,
+  pointsPerTournament: 38.14,
+  totalEntries: 194,
+  totalPrizeMoney: 25400,
+  seasonHighGame: 300,
+  seasonHighBlock: 1264,
+  openerDate: '2024-09-21',
+  openerPoints: 45,
+  winterDate: '2025-01-18',
+};
+
+function createStatsResponse(selectedYear: number): object {
+  const s = selectedYear === 2021 ? LEGACY_SEASON : CURRENT_SEASON;
 
   return {
-    selectedSeason: selectedSeasonLabel,
+    selectedSeason: s.label,
     availableSeasons: {
       2025: '2024-2025 Season',
       2021: '2020-2021 Season',
     },
     bowlerSearchList: {
-      [PRIMARY_BOWLER_ID]: leaderName,
-      [SECONDARY_BOWLER_ID]: rivalName,
+      [PRIMARY_BOWLER_ID]: s.leaderName,
+      [SECONDARY_BOWLER_ID]: s.rivalName,
     },
     minimumNumberOfGames: 20,
     minimumNumberOfTournaments: 4,
     minimumNumberOfEntries: 6,
     bowlerOfTheYear: [
-      {
-        bowlerId: PRIMARY_BOWLER_ID,
-        bowlerName: leaderName,
-        points,
-        tournaments: 7,
-        entries: 8,
-        finals: 5,
-        averageFinish: 6.4,
-        winnings,
-      },
+      { bowlerId: PRIMARY_BOWLER_ID, bowlerName: s.leaderName, points: s.points, tournaments: 7, entries: 8, finals: 5, averageFinish: 6.4, winnings: s.winnings },
     ],
     seniorOfTheYear: [],
     superSeniorOfTheYear: [],
@@ -221,166 +359,90 @@ function createStatsResponse(selectedYear: number): unknown {
     rookieOfTheYear: [],
     youthOfTheYear: [],
     highAverage: [
-      {
-        bowlerId: PRIMARY_BOWLER_ID,
-        bowlerName: leaderName,
-        average,
-        games: 35,
-        tournaments: 7,
-        fieldAverage: 9.2,
-      },
+      { bowlerId: PRIMARY_BOWLER_ID, bowlerName: s.leaderName, average: s.average, games: 35, tournaments: 7, fieldAverage: 9.2 },
     ],
     highBlock: [
-      {
-        bowlerId: PRIMARY_BOWLER_ID,
-        bowlerName: leaderName,
-        highBlock: isLegacySeason ? 1120 : 1198,
-        highGame: isLegacySeason ? 279 : 289,
-      },
+      { bowlerId: PRIMARY_BOWLER_ID, bowlerName: s.leaderName, highBlock: s.highBlock, highGame: s.highGame },
     ],
     matchPlayAverage: [
-      {
-        bowlerId: PRIMARY_BOWLER_ID,
-        bowlerName: leaderName,
-        matchPlayAverage: isLegacySeason ? 218.5 : 226.8,
-        games: 18,
-        wins: 12,
-        losses: 6,
-        winPercentage: 66.7,
-        winnings,
-      },
+      { bowlerId: PRIMARY_BOWLER_ID, bowlerName: s.leaderName, matchPlayAverage: s.matchPlayAverage, games: 18, wins: 12, losses: 6, winPercentage: 66.7, winnings: s.winnings },
     ],
     matchPlayRecord: [
-      {
-        bowlerId: PRIMARY_BOWLER_ID,
-        bowlerName: leaderName,
-        wins: 12,
-        losses: 6,
-        winPercentage: 66.7,
-        finals: 5,
-        matchPlayAverage: isLegacySeason ? 218.5 : 226.8,
-        winnings,
-      },
+      { bowlerId: PRIMARY_BOWLER_ID, bowlerName: s.leaderName, wins: 12, losses: 6, winPercentage: 66.7, finals: 5, matchPlayAverage: s.matchPlayAverage, winnings: s.winnings },
     ],
     matchPlayAppearances: [
-      {
-        bowlerId: PRIMARY_BOWLER_ID,
-        bowlerName: leaderName,
-        finals: 5,
-        tournaments: 7,
-        entries: 8,
-      },
+      { bowlerId: PRIMARY_BOWLER_ID, bowlerName: s.leaderName, finals: 5, tournaments: 7, entries: 8 },
     ],
     pointsPerEntry: [
-      {
-        bowlerId: PRIMARY_BOWLER_ID,
-        bowlerName: leaderName,
-        pointsPerEntry: isLegacySeason ? 23 : 33.38,
-        points,
-        entries: 8,
-      },
+      { bowlerId: PRIMARY_BOWLER_ID, bowlerName: s.leaderName, pointsPerEntry: s.pointsPerEntry, points: s.points, entries: 8 },
     ],
     pointsPerTournament: [
-      {
-        bowlerId: PRIMARY_BOWLER_ID,
-        bowlerName: leaderName,
-        points,
-        tournaments: 7,
-        pointsPerTournament: isLegacySeason ? 26.29 : 38.14,
-      },
+      { bowlerId: PRIMARY_BOWLER_ID, bowlerName: s.leaderName, points: s.points, tournaments: 7, pointsPerTournament: s.pointsPerTournament },
     ],
     finalsPerEntry: [
-      {
-        bowlerId: PRIMARY_BOWLER_ID,
-        bowlerName: leaderName,
-        finals: 5,
-        entries: 8,
-        finalsPerEntry: 0.63,
-      },
+      { bowlerId: PRIMARY_BOWLER_ID, bowlerName: s.leaderName, finals: 5, entries: 8, finalsPerEntry: 0.63 },
     ],
     averageFinishes: [
-      {
-        bowlerId: PRIMARY_BOWLER_ID,
-        bowlerName: leaderName,
-        averageFinish: 6.4,
-        finals: 5,
-        winnings,
-      },
+      { bowlerId: PRIMARY_BOWLER_ID, bowlerName: s.leaderName, averageFinish: 6.4, finals: 5, winnings: s.winnings },
     ],
-    seasonAtAGlance: {
-      totalEntries: isLegacySeason ? 152 : 194,
-      totalPrizeMoney: isLegacySeason ? 18800 : 25400,
-    },
+    seasonAtAGlance: { totalEntries: s.totalEntries, totalPrizeMoney: s.totalPrizeMoney },
     seasonsBests: {
-      highGame: isLegacySeason ? 289 : 300,
-      highGameBowlers: {
-        [PRIMARY_BOWLER_ID]: leaderName,
-      },
-      highBlock: isLegacySeason ? 1189 : 1264,
-      highBlockBowlers: {
-        [PRIMARY_BOWLER_ID]: leaderName,
-      },
-      highAverage: average,
-      highAverageBowlers: {
-        [PRIMARY_BOWLER_ID]: leaderName,
-      },
+      highGame: s.seasonHighGame,
+      highGameBowlers: { [PRIMARY_BOWLER_ID]: s.leaderName },
+      highBlock: s.seasonHighBlock,
+      highBlockBowlers: { [PRIMARY_BOWLER_ID]: s.leaderName },
+      highAverage: s.average,
+      highAverageBowlers: { [PRIMARY_BOWLER_ID]: s.leaderName },
     },
     fieldMatchPlaySummary: {
       highestWinPercentage: 66.7,
-      highestWinPercentageBowlers: {
-        [PRIMARY_BOWLER_ID]: leaderName,
-      },
+      highestWinPercentageBowlers: { [PRIMARY_BOWLER_ID]: s.leaderName },
       mostFinals: 5,
-      mostFinalsBowlers: {
-        [PRIMARY_BOWLER_ID]: leaderName,
-      },
+      mostFinalsBowlers: { [PRIMARY_BOWLER_ID]: s.leaderName },
     },
-    bowlerOfTheYearPointsRace: [
+    openPointsRace: [
       {
         bowlerId: PRIMARY_BOWLER_ID,
-        bowlerName: leaderName,
+        bowlerName: s.leaderName,
         results: [
-          {
-            tournamentName: 'Season Opener',
-            tournamentDate: isLegacySeason ? '2020-09-19' : '2024-09-21',
-            cumulativePoints: isLegacySeason ? 32 : 45,
-          },
-          {
-            tournamentName: 'Winter Classic',
-            tournamentDate: isLegacySeason ? '2021-01-16' : '2025-01-18',
-            cumulativePoints: points,
-          },
+          { tournamentName: 'Season Opener', tournamentDate: s.openerDate, cumulativePoints: s.openerPoints },
+          { tournamentName: 'Winter Classic', tournamentDate: s.winterDate, cumulativePoints: s.points },
         ],
       },
     ],
+    seniorPointsRace: [],
+    superSeniorPointsRace: [],
+    womenPointsRace: [],
+    youthPointsRace: [],
+    rookiePointsRace: [],
     allBowlers: [
       {
         bowlerId: PRIMARY_BOWLER_ID,
-        bowlerName: leaderName,
-        points,
-        average,
+        bowlerName: s.leaderName,
+        points: s.points,
+        average: s.average,
         games: 35,
         finals: 5,
         wins: 12,
         losses: 6,
         winPercentage: 66.7,
-        matchPlayAverage: isLegacySeason ? 218.5 : 226.8,
-        winnings,
+        matchPlayAverage: s.matchPlayAverage,
+        winnings: s.winnings,
         fieldAverage: 9.2,
         tournaments: 7,
       },
       {
         bowlerId: SECONDARY_BOWLER_ID,
-        bowlerName: rivalName,
-        points: points - 40,
-        average: average - 4,
+        bowlerName: s.rivalName,
+        points: s.points - 40,
+        average: s.average - 4,
         games: 31,
         finals: 3,
         wins: 8,
         losses: 7,
         winPercentage: 53.3,
-        matchPlayAverage: (isLegacySeason ? 218.5 : 226.8) - 3,
-        winnings: winnings - 600,
+        matchPlayAverage: s.matchPlayAverage - 3,
+        winnings: s.winnings - 600,
         fieldAverage: 3.4,
         tournaments: 6,
       },
@@ -388,15 +450,51 @@ function createStatsResponse(selectedYear: number): unknown {
   };
 }
 
+export const MOCK_SEASONS = {
+  items: [
+    {
+      id: MOCK_SEASON_ID,
+      description: '2025-2026 Season',
+      startDate: '2025-09-01',
+      endDate: '2026-05-31',
+    },
+  ],
+};
+
 const routes: Record<string, unknown> = {
   '/health': { status: 'healthy' },
   '/documents/tournament-rules': { html: MOCK_TOURNAMENT_RULES_HTML },
   '/documents/bylaws': { html: MOCK_BYLAWS_HTML },
   '/bowling-centers': MOCK_BOWLING_CENTERS,
+  '/seasons': MOCK_SEASONS,
   '/sponsors': MOCK_SPONSORS_ACTIVE,
   '/sponsors/pro-shop-plus': MOCK_SPONSOR_PRO_SHOP_PLUS,
   '/sponsors/old-sponsor': MOCK_SPONSOR_OLD_SPONSOR,
+  '/hall-of-fame/inductions': MOCK_HALL_OF_FAME,
+  '/awards/bowler-of-the-year': MOCK_BOWLER_OF_THE_YEAR_AWARDS,
+  '/awards/high-average': MOCK_HIGH_AVERAGE_AWARDS,
+  '/awards/high-block': MOCK_HIGH_BLOCK_AWARDS,
 };
+
+function resolveGetRoute(pathname: string, searchParams: URLSearchParams): object | null {
+  if (pathname === '/stats') {
+    const requestedYear = Number.parseInt(searchParams.get('year') ?? '2025', 10);
+    const selectedYear = Number.isFinite(requestedYear) ? requestedYear : 2025;
+    return createStatsResponse(selectedYear);
+  }
+
+  if (pathname.startsWith('/seasons/') && pathname.endsWith('/tournaments')) {
+    const seasonId = pathname.slice('/seasons/'.length, -'/tournaments'.length);
+    return seasonId === MOCK_SEASON_ID ? MOCK_SEASON_TOURNAMENTS : null;
+  }
+
+  if (pathname.startsWith('/tournaments/')) {
+    const tournamentId = pathname.slice('/tournaments/'.length);
+    return tournamentId === MOCK_TOURNAMENT_ID ? MOCK_TOURNAMENT_DETAIL : null;
+  }
+
+  return routes[pathname] ?? null;
+}
 
 function handleRequest(req: IncomingMessage, res: ServerResponse): void {
   setCorsHeaders(res);
@@ -409,16 +507,8 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
 
   if (req.method === 'GET') {
     const requestUrl = new URL(req.url ?? '/', 'http://localhost');
-
-    if (requestUrl.pathname === '/stats') {
-      const requestedYear = Number.parseInt(requestUrl.searchParams.get('year') ?? '2025', 10);
-      const selectedYear = Number.isFinite(requestedYear) ? requestedYear : 2025;
-      sendJsonResponse(res, createStatsResponse(selectedYear));
-      return;
-    }
-
-    const data = routes[requestUrl.pathname];
-    if (data) {
+    const data = resolveGetRoute(requestUrl.pathname, requestUrl.searchParams);
+    if (data !== null) {
       sendJsonResponse(res, data);
       return;
     }

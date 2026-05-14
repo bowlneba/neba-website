@@ -1,0 +1,425 @@
+@preservewhitespace false
+@page "/tournaments/{Id}"
+@using ErrorOr
+@using Neba.Api.Contracts.Tournaments
+@using Neba.Api.Contracts.Tournaments.GetTournament
+@using Neba.Website.Server.Services
+@using Neba.Website.Server.Tournaments.Detail
+@using System.Globalization
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject ApiExecutor ApiExecutor
+@inject ITournamentsApi TournamentsApi
+@inject NavigationManager Navigation
+
+@if (_isLoading)
+{
+    <div class="tournament-detail-loading">
+        <div class="neba-spinner"></div>
+    </div>
+}
+else if (_hasError)
+{
+    <main class="neba-content-wrapper tournament-detail">
+        <section class="tournament-detail__section">
+            <p class="tournament-detail__no-results">
+                Something went wrong while loading this tournament. Please try again later.
+            </p>
+        </section>
+        <footer class="tournament-detail__footer">
+            <a href="/tournaments" class="neba-link tournament-detail__back-link">
+                <span class="tournament-detail__back-badge" aria-hidden="true">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </span>
+                Back to Tournament Schedule
+            </a>
+        </footer>
+    </main>
+}
+else if (_model is null)
+{
+    <main class="neba-content-wrapper tournament-detail">
+        <section class="tournament-detail__section">
+            <p class="tournament-detail__no-results">
+                Something went wrong while loading this tournament. Please try again later.
+            </p>
+        </section>
+        <footer class="tournament-detail__footer">
+            <a href="/tournaments" class="neba-link tournament-detail__back-link">
+                <span class="tournament-detail__back-badge" aria-hidden="true">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                </span>
+                Back to Tournament Schedule
+            </a>
+        </footer>
+    </main>
+}
+else
+{
+    <PageTitle>@_model!.Name | NEBA Tournaments</PageTitle>
+
+    <main class="neba-content-wrapper tournament-detail">
+
+        <header class="td-hero @(Model.IsUpcoming ? "td-hero--upcoming" : "td-hero--past")"
+                aria-label="@(Model.Name + " tournament overview")">
+            <div class="td-hero__grid">
+
+                <div class="td-hero__content">
+                    <div class="td-hero__eyebrow">
+                        <span class="td-hero__eyebrow-bar" aria-hidden="true"></span>
+                        <span>@_model.SeasonDescription</span>
+                        <span aria-hidden="true">·</span>
+                        <time>@_model.FormatDateRange()</time>
+                        @if (_model.HasHost)
+                        {
+                            <span aria-hidden="true">·</span>
+                            <span>@_model.DisplayLocation</span>
+                        }
+                        else
+                        {
+                            <span aria-hidden="true">·</span>
+                            <em class="td-hero__eyebrow-tba">Host TBA</em>
+                        }
+                    </div>
+
+                    <h1 class="td-hero__title">@_model.Name</h1>
+
+                    @if (_model.HasSponsors)
+                    {
+                        <p class="td-hero__sponsor">Presented by <strong>@_model.Sponsors.First().Name</strong></p>
+                    }
+                    else
+                    {
+                        <p class="td-hero__sponsor td-hero__sponsor--available">• Sponsorship available</p>
+                    }
+
+                    <div class="td-hero__stats">
+                        <div class="td-hero__stat">
+                            <span class="td-hero__stat-label">Dates</span>
+                            <span class="td-hero__stat-value">@_model.FormatDateRange()</span>
+                        </div>
+                        <div class="td-hero__stat">
+                            <span class="td-hero__stat-label">Host</span>
+                            @if (_model.HasHost)
+                            {
+                                <span class="td-hero__stat-value">@_model.BowlingCenterName</span>
+                                @if (_model.BowlingCenterCity is not null)
+                                {
+                                    <span class="td-hero__stat-sub">@(_model.BowlingCenterCity + (_model.BowlingCenterState is not
+                                                                    null ? ", " + _model.BowlingCenterState : string.Empty))</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="td-hero__stat-value td-hero__stat-value--tba">To be announced</span>
+                                }
+                            </div>
+                            @if (_model.EntryFee.HasValue || _model.HasAddedMoney)
+                            {
+                                <div class="td-hero__stat">
+                                    @if (_model.HasAddedMoney)
+                                    {
+                                        <span class="td-hero__stat-label">Added money</span>
+                                        <span class="td-hero__stat-value td-hero__stat-value--gold">
+                                            @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
+                                        </span>
+                                        @if (_model.EntryFee.HasValue)
+                                        {
+                                            <span class="td-hero__stat-sub">
+                                                @_model.EntryFee.Value.ToString("C0", CurrencyCulture) entry
+                                            </span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="td-hero__stat-label">Entry fee</span>
+                                        <span class="td-hero__stat-value td-hero__stat-value--gold">
+                                            @_model.EntryFee!.Value.ToString("C0", CurrencyCulture)
+                                        </span>
+                                        <span class="td-hero__stat-sub">per bowler</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        <div class="td-hero__chips">
+                            <span class="td-hero__chip">@_model.TournamentType</span>
+                            @if (_model.PatternLengthCategory is not null)
+                            {
+                                <span class="td-hero__chip">@_model.PatternLengthCategory</span>
+                            }
+                        </div>
+
+                        @if (_model.IsUpcoming)
+                        {
+                            <div class="td-hero__cta">
+                                @if (_model.HasRegistrationUrl)
+                                {
+                                    <a href="@_model.RegistrationUrl" target="_blank" rel="noopener noreferrer"
+                                       class="neba-btn neba-btn-lg td-hero__cta-register">
+                                        Register →
+                                    </a>
+                                }
+                                else
+                                {
+                                    <button class="neba-btn neba-btn-lg td-hero__cta-disabled" disabled aria-disabled="true">
+                                        Registration opens soon
+                                    </button>
+                                }
+                                <TournamentStatusPill Status="@InferredRegistrationStatus" />
+                            </div>
+                        }
+
+                        @if (!_model.IsUpcoming && _model.HasWinners)
+                        {
+                            <div class="td-hero__champion-pill" aria-label="@("Tournament champion: " + WinnersText)">
+                                <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
+                                <span>@WinnersText</span>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="td-hero__tile">
+                        @if (_model.LogoUrl is not null)
+                        {
+                            <img src="@_model.LogoUrl" alt="@(_model.Name + " logo")" class="td-hero__logo-img" />
+                        }
+                        else
+                        {
+                            <TournamentLogoTile TournamentType="@_model.TournamentType" Season="@SeasonLabel"
+                                                TournamentName="@_model.Name"
+                                                Variant="@(_model.IsUpcoming ? LogoTileVariant.Default : LogoTileVariant.Muted)"
+                                                CssClass="td-hero__tile-inner" />
+                        }
+                    </div>
+
+                </div>
+            </header>
+
+            @if (_model.IsUpcoming && _model.HasWinners)
+            {
+                <div class="tournament-detail__champion-bar">
+                    <span class="material-symbols-outlined" aria-hidden="true">emoji_events</span>
+                    <span>@WinnersText</span>
+                </div>
+            }
+
+            <div class="td-body @(HasRailContent ? "td-body--has-rail" : string.Empty)">
+
+                <div class="td-body__main">
+
+                    @if (_model.HasOilPatterns)
+                    {
+                        <section class="tournament-detail__section">
+                            <h2 class="td-section-title">Oil Patterns</h2>
+                            <div class="td-pattern-list">
+                                @foreach (var pattern in _model.OilPatterns)
+                                {
+                                    <div class="neba-card td-pattern-card">
+                                        <span class="td-pattern-card__dot @GetPatternClass(pattern.Length)" aria-hidden="true"></span>
+                                        <div class="td-pattern-card__body">
+                                            <p class="td-pattern-card__name">@pattern.Display</p>
+                                            @if (pattern.Rounds.Count > 0)
+                                            {
+                                                <p class="td-pattern-card__rounds">@string.Join(", ", pattern.Rounds)</p>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </section>
+                    }
+
+                    @if (_model.HasResults)
+                    {
+                        <section class="tournament-detail__section tournament-detail__results">
+                            <div class="td-section-header">
+                                <h2 class="td-section-title">Results</h2>
+                                <span class="td-section-subtitle">Final standings</span>
+                            </div>
+
+                            @if (_model.MainCutResults.Any())
+                            {
+                                <ResultsTable Results="@_model.MainCutResults" />
+                            }
+
+                            @foreach (var group in _model.SideCutGroups)
+                            {
+                                <div class="tournament-detail__cut-section"
+                                     style="@("--results-accent: " + (group.Indicator ?? "#3E4FD9") + ";")">
+                                    <h3 class="tournament-detail__cut-title" style="@GetCutStyle(group.Indicator)">
+                                        @group.Name
+                                    </h3>
+                                    <ResultsTable Results="@group.Results" />
+                                </div>
+                            }
+                        </section>
+                    }
+                    else if (!_model.IsUpcoming)
+                    {
+                        <section class="tournament-detail__section">
+                            <p class="tournament-detail__no-results">Results are not yet available for this tournament.</p>
+                        </section>
+                    }
+
+                </div>
+
+                @if (HasRailContent)
+                {
+                    <aside class="td-body__rail">
+
+                        @if (_model.IsUpcoming)
+                        {
+                            <div class="neba-card td-rail-card">
+                                @if (_model.EntryFee.HasValue || _model.HasAddedMoney)
+                                {
+                                    <div class="td-rail-price">
+                                        @if (_model.HasAddedMoney)
+                                        {
+                                            <span class="td-rail-price__value td-rail-price__value--gold">
+                                                @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
+                                            </span>
+                                            <span class="td-rail-price__label">Added money</span>
+                                            @if (_model.EntryFee.HasValue)
+                                            {
+                                                <span class="td-rail-price__secondary">
+                                                    @_model.EntryFee.Value.ToString("C0", CurrencyCulture) entry fee
+                                                </span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="td-rail-price__value td-rail-price__value--gold">
+                                                @_model.EntryFee!.Value.ToString("C0", CurrencyCulture)
+                                            </span>
+                                            <span class="td-rail-price__label">Entry fee</span>
+                                        }
+                                    </div>
+                                }
+                                <TournamentStatusPill Status="@InferredRegistrationStatus" />
+                            </div>
+                        }
+
+                        @if (_model.HasSponsors)
+                        {
+                            <div class="td-rail-sponsors">
+                                <h2 class="td-section-title">Sponsors</h2>
+                                <div class="td-rail-sponsors__list">
+                                    @foreach (var sponsor in _model.Sponsors)
+                                    {
+                                        <a href="/sponsors/@sponsor.Slug" class="neba-card td-rail-sponsor-card">
+                                            @if (sponsor.LogoUrl is not null)
+                                            {
+                                                <img src="@sponsor.LogoUrl" alt="@(sponsor.Name + " logo")"
+                                                     class="td-rail-sponsor-card__logo" />
+                                            }
+                                            else
+                                            {
+                                                <span class="td-rail-sponsor-card__name">@sponsor.Name</span>
+                                            }
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @if (_model.EntryCount.HasValue)
+                        {
+                            <div class="td-rail-entries">
+                                <span class="td-rail-entries__label">Entries</span>
+                                <span
+                                class="td-rail-entries__value">@_model.EntryCount.Value.ToString(System.Globalization.CultureInfo.CurrentCulture)</span>
+                            </div>
+                        }
+
+                        @if (_model.HasPayout)
+                        {
+                            <div class="td-rail-entries td-rail-entries--payout">
+                                <span class="td-rail-entries__label">Total payout</span>
+                                <span class="td-rail-entries__value td-rail-entries__value--gold">@_model.TotalPayout.ToString("C0", CurrencyCulture)</span>
+                            </div>
+                        }
+
+                    </aside>
+                }
+
+            </div>
+
+            <footer class="tournament-detail__footer">
+                <a href="/tournaments" class="neba-link tournament-detail__back-link">
+                    <span class="tournament-detail__back-badge" aria-hidden="true">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                    </span>
+                    Back to Tournament Schedule
+                </a>
+            </footer>
+
+        </main>
+    }
+
+@code {
+    [Parameter] public string Id { get; set; } = default!;
+
+    private static readonly CultureInfo CurrencyCulture = CultureInfo.GetCultureInfo("en-US");
+
+    private TournamentDetailViewModel? _model;
+    private bool _isLoading = true;
+    private bool _hasError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "GetTournamentDetail",
+            ct => TournamentsApi.GetTournamentAsync(Id, ct));
+
+        if (result.IsError)
+        {
+            if (result.FirstError.Type == ErrorType.NotFound)
+            {
+                Navigation.NavigateTo("/not-found", replace: true);
+            }
+            else
+            {
+                _hasError = true;
+                _isLoading = false;
+            }
+            return;
+        }
+
+        _model = result.Value.ToViewModel();
+        _isLoading = false;
+    }
+
+    private static string GetCutStyle(string? color) =>
+        color is not null ? "border-left-color:" + color : string.Empty;
+
+    private bool HasRailContent =>
+        _model is not null && (_model.IsUpcoming || _model.HasSponsors || _model.EntryCount.HasValue || _model.HasPayout);
+
+    private string SeasonLabel =>
+        _model!.SeasonDescription.Replace(" Season", string.Empty, StringComparison.OrdinalIgnoreCase);
+
+    private string WinnersText =>
+        _model is null ? string.Empty : string.Join(" / ", _model.Winners);
+
+    private TournamentDetailViewModel Model => _model!;
+
+    private RegistrationStatus? InferredRegistrationStatus =>
+        _model!.HasRegistrationUrl ? RegistrationStatus.Open : null;
+
+    private static string GetPatternClass(int length)
+    {
+        if (length >= 40)
+        {
+            return "td-pattern-card__dot--long";
+        }
+
+        if (length >= 35)
+        {
+            return "td-pattern-card__dot--medium";
+        }
+
+        return "td-pattern-card__dot--short";
+    }
+}

@@ -1,0 +1,597 @@
+/* ── Loading ──────────────────────────────────────────────────────────────── */
+
+.tournament-detail-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+}
+
+/* ── Page wrapper ─────────────────────────────────────────────────────────── */
+
+.tournament-detail {
+    padding-block: 2rem 4rem;
+    max-width: var(--tournaments-max-width);
+}
+
+/* ── Hero band ────────────────────────────────────────────────────────────── */
+
+.td-hero {
+    border-radius: var(--neba-radius-xl);
+    padding: 3rem 3.5rem;
+    margin-bottom: 2.5rem;
+    color: white;
+}
+
+.td-hero--upcoming {
+    background: var(--tournaments-hero-gradient);
+}
+
+.td-hero--past {
+    background: linear-gradient(135deg, #1a1f2e 0%, #2d3340 60%, #525a6b 100%);
+}
+
+.td-hero__grid {
+    display: grid;
+    grid-template-columns: 1.15fr minmax(280px, 1fr);
+    gap: 2.5rem;
+    align-items: stretch;
+}
+
+/* ── Hero: left column ────────────────────────────────────────────────────── */
+
+.td-hero__content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.td-hero__eyebrow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--neba-font-display);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--tournaments-gold-light);
+    opacity: 0.85;
+}
+
+.td-hero__eyebrow-bar {
+    display: block;
+    width: 3px;
+    height: 1em;
+    background: var(--tournaments-gold-light);
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.td-hero__eyebrow-tba {
+    font-style: italic;
+    opacity: 0.6;
+    font-weight: 500;
+}
+
+.td-hero__title {
+    font-family: var(--neba-font-display);
+    font-size: clamp(2.25rem, 4vw, 3.25rem);
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    color: white;
+    margin: 0;
+}
+
+.td-hero__sponsor {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+}
+
+.td-hero__sponsor--available {
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+/* ── Hero: stat strip ─────────────────────────────────────────────────────── */
+
+.td-hero__stats {
+    display: flex;
+    gap: 0;
+    flex-wrap: wrap;
+}
+
+.td-hero__stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding-right: 2rem;
+}
+
+.td-hero__stat + .td-hero__stat {
+    border-left: 1px solid rgba(255, 255, 255, 0.18);
+    padding-left: 2rem;
+}
+
+.td-hero__stat-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--tournaments-gold-light);
+    opacity: 0.7;
+}
+
+.td-hero__stat-value {
+    font-family: var(--neba-font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white;
+    line-height: 1.2;
+}
+
+.td-hero__stat-value--gold {
+    color: var(--tournaments-gold-light);
+}
+
+.td-hero__stat-value--tba {
+    font-style: italic;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.55);
+    font-weight: 500;
+}
+
+.td-hero__stat-sub {
+    font-size: 0.8125rem;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.3;
+}
+
+/* ── Hero: chips ──────────────────────────────────────────────────────────── */
+
+.td-hero__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.td-hero__chip {
+    background: rgba(0, 0, 0, 0.25);
+    color: white;
+    border-radius: 999px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ── Hero: CTA row ────────────────────────────────────────────────────────── */
+
+.td-hero__cta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.td-hero__cta-register {
+    background: white;
+    color: var(--neba-blue-brand);
+    font-weight: 600;
+}
+
+.td-hero__cta-register:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--neba-blue-brand);
+}
+
+.td-hero__cta-disabled {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+}
+
+/* ── Hero: champion pill (past variant) ───────────────────────────────────── */
+
+.td-hero__champion-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #fde68a 0%, #f59e0b 100%);
+    color: #78350f;
+    border-radius: 999px;
+    padding: 0.375rem 1rem 0.375rem 0.75rem;
+    font-family: var(--neba-font-display);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    align-self: flex-start;
+}
+
+.td-hero__champion-pill .material-symbols-outlined {
+    font-size: 1.125rem;
+}
+
+/* ── Hero: right column (logo tile) ──────────────────────────────────────── */
+
+.td-hero__tile {
+    min-height: 300px;
+    display: flex;
+}
+
+.td-hero__tile-inner,
+.td-hero__tile ::deep .tournament-logo-tile {
+    flex: 1;
+    min-height: 300px;
+}
+
+.td-hero__logo-img {
+    width: 100%;
+    height: 100%;
+    min-height: 300px;
+    object-fit: contain;
+    border-radius: var(--neba-radius-lg);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+/* ── Champion bar (upcoming edge case) ───────────────────────────────────── */
+
+.tournament-detail__champion-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: var(--neba-radius-lg);
+    margin-bottom: 2rem;
+    font-family: var(--neba-font-display);
+    font-weight: 600;
+    color: #78350f;
+}
+
+/* ── Body grid ────────────────────────────────────────────────────────────── */
+
+.td-body {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+.td-body--has-rail {
+    grid-template-columns: minmax(0, 1fr) 320px;
+}
+
+.td-body__main {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+    min-width: 0;
+}
+
+.td-body__rail {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: sticky;
+    top: 1.5rem;
+    align-self: start;
+}
+
+/* ── Section chrome ───────────────────────────────────────────────────────── */
+
+.td-section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.td-section-title {
+    font-family: var(--neba-font-display);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--neba-text);
+    margin: 0 0 1rem;
+    padding-top: 0.75rem;
+    border-top: 2px solid var(--neba-gray-200);
+}
+
+.td-section-header .td-section-title {
+    border-top: none;
+    padding-top: 0;
+    margin-bottom: 0;
+}
+
+.td-section-subtitle {
+    font-size: 0.8125rem;
+    color: var(--neba-gray-500);
+}
+
+/* ── Oil patterns ─────────────────────────────────────────────────────────── */
+
+.td-pattern-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.td-pattern-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    min-width: 200px;
+    padding: 1rem 1.125rem;
+}
+
+.td-pattern-card__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 0.3rem;
+}
+
+.td-pattern-card__dot--short  { background: var(--neba-success); }
+.td-pattern-card__dot--medium { background: var(--neba-warning); }
+.td-pattern-card__dot--long   { background: var(--neba-accent-red); }
+
+.td-pattern-card__name {
+    font-family: var(--neba-font-display);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--neba-text);
+    margin: 0;
+}
+
+.td-pattern-card__rounds {
+    font-size: 0.8125rem;
+    color: var(--neba-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0.25rem 0 0;
+}
+
+/* ── Results chrome ───────────────────────────────────────────────────────── */
+
+.tournament-detail__cut-section {
+    margin-top: 1.5rem;
+}
+
+.tournament-detail__cut-title {
+    font-family: var(--neba-font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    padding-left: 0.75rem;
+    border-left: 4px solid var(--neba-gray-300);
+    margin-bottom: 0.75rem;
+    color: var(--neba-text);
+}
+
+.tournament-detail__no-results {
+    color: var(--neba-gray-500);
+    font-style: italic;
+}
+
+/* ── Rail: info card ──────────────────────────────────────────────────────── */
+
+.td-rail-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.25rem;
+}
+
+.td-rail-price {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.td-rail-price__value {
+    font-family: var(--neba-font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--neba-text);
+}
+
+.td-rail-price__value--gold {
+    color: var(--tournaments-gold);
+}
+
+.td-rail-price__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--neba-gray-500);
+}
+
+.td-rail-price__secondary {
+    font-size: 0.875rem;
+    color: var(--neba-gray-500);
+    margin-top: 0.25rem;
+}
+
+/* ── Rail: sponsors ───────────────────────────────────────────────────────── */
+
+.td-rail-sponsors__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    margin-top: 0.75rem;
+}
+
+.td-rail-sponsor-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    min-height: 56px;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.td-rail-sponsor-card:hover {
+    transform: translateY(-2px);
+}
+
+.td-rail-sponsor-card__logo {
+    max-height: 40px;
+    max-width: 180px;
+    object-fit: contain;
+}
+
+.td-rail-sponsor-card__name {
+    font-family: var(--neba-font-display);
+    font-weight: 600;
+    font-size: 0.9375rem;
+}
+
+/* ── Rail: entry count ────────────────────────────────────────────────────── */
+
+.td-rail-entries {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--neba-gray-050);
+    border-radius: var(--neba-radius-lg);
+    border: 1px solid var(--neba-gray-200);
+}
+
+.td-rail-entries__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--neba-gray-500);
+}
+
+.td-rail-entries__value {
+    font-family: var(--neba-font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--neba-text);
+}
+
+.td-rail-entries__value--gold {
+    color: var(--tournaments-gold);
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+
+.tournament-detail__footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--neba-gray-200);
+}
+
+.tournament-detail__back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+}
+
+.tournament-detail__back-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--neba-gray-100);
+    border: 1px solid var(--neba-gray-200);
+    transition: background 0.15s ease, transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.tournament-detail__back-link:hover .tournament-detail__back-badge {
+    background: var(--neba-blue-100);
+    transform: translateX(-3px);
+}
+
+.tournament-detail__back-badge .material-symbols-outlined {
+    font-size: 1.125rem;
+    color: var(--neba-blue-700);
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 1100px) {
+    .td-body--has-rail {
+        grid-template-columns: 1fr;
+    }
+
+    .td-body__rail {
+        position: static;
+    }
+
+    .td-hero__stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+    }
+
+    .td-hero__stat + .td-hero__stat {
+        border-left: none;
+        padding-left: 0;
+    }
+
+    .td-hero__stat {
+        padding-right: 0;
+    }
+}
+
+@media (max-width: 767px) {
+    .td-hero {
+        padding: 2rem 1.5rem;
+    }
+
+    .td-hero__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .td-hero__tile {
+        order: -1;
+        min-height: 180px;
+    }
+
+    .td-hero__tile-inner,
+    .td-hero__tile ::deep .tournament-logo-tile {
+        min-height: 180px;
+    }
+
+    .td-hero__title {
+        font-size: 2rem;
+    }
+
+    .td-hero__stats {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .td-hero__cta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tournament-detail__back-badge,
+    .td-rail-sponsor-card {
+        transition: none;
+    }
+
+    .tournament-detail__back-link:hover .tournament-detail__back-badge {
+        transform: none;
+    }
+
+    .td-rail-sponsor-card:hover {
+        transform: none;
+    }
+}

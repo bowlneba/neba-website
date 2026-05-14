@@ -131,10 +131,23 @@ public record StatsPageViewModel
     /// </summary>
     public required FieldMatchPlaySummaryViewModel FieldMatchPlaySummary { get; init; }
 
-    /// <summary>
-    /// A collection of bowler of the year points race series, where each item in the collection represents a single bowler's points race performance for the selected season. This is used to display the bowler of the year points race in the sidebar of the stats page and to provide users with insights into how bowlers performed in the bowler of the year points race. Each item in the collection contains information about the bowler's name, points earned in each tournament, and other relevant information that is used to determine the bowler's performance in the bowler of the
-    /// </summary>
-    public required IReadOnlyCollection<PointsRaceSeriesViewModel> BowlerOfTheYearPointsRace { get; init; }
+    /// <summary>Open (Bowler of the Year) points race series for the season.</summary>
+    public required IReadOnlyCollection<PointsRaceSeriesViewModel> OpenPointsRace { get; init; }
+
+    /// <summary>Senior points race series for the season.</summary>
+    public required IReadOnlyCollection<PointsRaceSeriesViewModel> SeniorPointsRace { get; init; }
+
+    /// <summary>Super Senior points race series for the season.</summary>
+    public required IReadOnlyCollection<PointsRaceSeriesViewModel> SuperSeniorPointsRace { get; init; }
+
+    /// <summary>Women points race series for the season.</summary>
+    public required IReadOnlyCollection<PointsRaceSeriesViewModel> WomenPointsRace { get; init; }
+
+    /// <summary>Youth points race series for the season.</summary>
+    public required IReadOnlyCollection<PointsRaceSeriesViewModel> YouthPointsRace { get; init; }
+
+    /// <summary>Rookie points race series for the season.</summary>
+    public required IReadOnlyCollection<PointsRaceSeriesViewModel> RookiePointsRace { get; init; }
 
 
     // Full stat modal

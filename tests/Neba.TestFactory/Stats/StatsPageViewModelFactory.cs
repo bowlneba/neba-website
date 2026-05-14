@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Website.Server.Stats;
 
 namespace Neba.TestFactory.Stats;
@@ -30,7 +28,12 @@ public static class StatsPageViewModelFactory
         SeasonAtAGlanceViewModel? seasonAtAGlance = null,
         SeasonBestsViewModel? seasonsBests = null,
         FieldMatchPlaySummaryViewModel? fieldMatchPlaySummary = null,
-        IReadOnlyCollection<PointsRaceSeriesViewModel>? bowlerOfTheYearPointsRace = null,
+        IReadOnlyCollection<PointsRaceSeriesViewModel>? openPointsRace = null,
+        IReadOnlyCollection<PointsRaceSeriesViewModel>? seniorPointsRace = null,
+        IReadOnlyCollection<PointsRaceSeriesViewModel>? superSeniorPointsRace = null,
+        IReadOnlyCollection<PointsRaceSeriesViewModel>? womenPointsRace = null,
+        IReadOnlyCollection<PointsRaceSeriesViewModel>? youthPointsRace = null,
+        IReadOnlyCollection<PointsRaceSeriesViewModel>? rookiePointsRace = null,
         IReadOnlyCollection<FullStatModalRowViewModel>? allBowlers = null)
         => new()
         {
@@ -58,7 +61,12 @@ public static class StatsPageViewModelFactory
             SeasonAtAGlance = seasonAtAGlance ?? SeasonAtAGlanceViewModelFactory.Create(),
             SeasonsBests = seasonsBests ?? SeasonBestsViewModelFactory.Create(),
             FieldMatchPlaySummary = fieldMatchPlaySummary ?? FieldMatchPlaySummaryViewModelFactory.Create(),
-            BowlerOfTheYearPointsRace = bowlerOfTheYearPointsRace ?? [PointsRaceSeriesViewModelFactory.Create()],
+            OpenPointsRace = openPointsRace ?? [PointsRaceSeriesViewModelFactory.Create()],
+            SeniorPointsRace = seniorPointsRace ?? [],
+            SuperSeniorPointsRace = superSeniorPointsRace ?? [],
+            WomenPointsRace = womenPointsRace ?? [],
+            YouthPointsRace = youthPointsRace ?? [],
+            RookiePointsRace = rookiePointsRace ?? [],
             AllBowlers = allBowlers ?? [FullStatModalRowViewModelFactory.Create()],
         };
 
@@ -94,7 +102,12 @@ public static class StatsPageViewModelFactory
                     SeasonAtAGlance = SeasonAtAGlanceViewModelFactory.Bogus(1, seed).Single(),
                     SeasonsBests = SeasonBestsViewModelFactory.Bogus(1, seed).Single(),
                     FieldMatchPlaySummary = FieldMatchPlaySummaryViewModelFactory.Bogus(1, seed).Single(),
-                    BowlerOfTheYearPointsRace = PointsRaceSeriesViewModelFactory.Bogus(f.Random.Int(1, 5), seed),
+                    OpenPointsRace = PointsRaceSeriesViewModelFactory.Bogus(f.Random.Int(1, 5), seed),
+                    SeniorPointsRace = [],
+                    SuperSeniorPointsRace = [],
+                    WomenPointsRace = [],
+                    YouthPointsRace = [],
+                    RookiePointsRace = [],
                     AllBowlers = FullStatModalRowViewModelFactory.Bogus(25, seed),
                     MinimumNumberOfGames = f.Random.Decimal(10, 60),
                     MinimumNumberOfTournaments = f.Random.Decimal(2, 8),

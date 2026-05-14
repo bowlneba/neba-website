@@ -1,19 +1,17 @@
 using ErrorOr;
 
-using Neba.Application.Bowlers;
 using Neba.Application.Messaging;
+using Neba.Application.Stats.BoyProgression;
 
 namespace Neba.Application.Stats.GetSeasonStats;
 
-internal sealed class GetSeasonStatsQueryHandler(ISeasonStatsService seasonStatsService, IBowlerQueries bowlerQueries)
+internal sealed class GetSeasonStatsQueryHandler(
+    ISeasonStatsService seasonStatsService,
+    IBowlerOfTheYearProgressionService boyProgressionService)
         : IQueryHandler<GetSeasonStatsQuery, ErrorOr<SeasonStatsDto>>
 {
     private readonly ISeasonStatsService _seasonStatsService = seasonStatsService;
-
-    /// <summary>
-    /// This will be removed when tournaments and result stats come into the software, until then it is needed to show the progression of the bowler of the
-    /// </summary>
-    private readonly IBowlerQueries _bowlerQueries = bowlerQueries;
+    private readonly IBowlerOfTheYearProgressionService _boyProgressionService = boyProgressionService;
 
     public async Task<ErrorOr<SeasonStatsDto>> HandleAsync(GetSeasonStatsQuery query, CancellationToken cancellationToken)
     {
@@ -30,7 +28,7 @@ internal sealed class GetSeasonStatsQueryHandler(ISeasonStatsService seasonStats
 
         var (numberOfGames, numberOfTournaments, numberOfEntries) = await _seasonStatsService.GetStatMinimumsForSeasonAsync(season, cancellationToken);
         var bowlerStats = await _seasonStatsService.GetBowlerSeasonStatsAsync(season.Id, cancellationToken);
-        var bowlerOfTheYearRace = await _seasonStatsService.GetBowlerOfTheYearRaceAsync(season, _bowlerQueries, cancellationToken);
+        var bowlerOfTheYearRaces = await _boyProgressionService.GetAllProgressionsAsync(season.Id, cancellationToken);
         var seasonSummary = _seasonStatsService.CalculateSeasonStatsSummary(
             bowlerStats, numberOfGames, numberOfTournaments, numberOfEntries);
 
@@ -39,7 +37,7 @@ internal sealed class GetSeasonStatsQueryHandler(ISeasonStatsService seasonStats
             Season = season,
             SeasonsWithStats = [.. seasonsWithStats.OrderByDescending(s => s.EndDate)],
             BowlerStats = bowlerStats,
-            BowlerOfTheYearRace = bowlerOfTheYearRace,
+            BowlerOfTheYearRaces = bowlerOfTheYearRaces,
             Summary = seasonSummary,
             MinimumNumberOfGames = numberOfGames,
             MinimumNumberOfTournaments = numberOfTournaments,

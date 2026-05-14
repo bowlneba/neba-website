@@ -1,7 +1,5 @@
 using System.Globalization;
 
-using Bogus;
-
 using Neba.Api.Contracts.Contact;
 using Neba.Domain.Sponsors;
 using Neba.TestFactory.Contact;
@@ -112,7 +110,9 @@ public static class SponsorDetailViewModelFactory
             });
 
         if (seed.HasValue)
+        {
             faker.UseSeed(seed.Value);
+        }
 
         return faker.Generate(count);
     }

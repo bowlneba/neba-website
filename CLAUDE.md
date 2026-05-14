@@ -7,10 +7,6 @@ For detailed architectural context:
 - Backend: `docs/architecture/backend.md` (or wherever you put ARCHITECTURE.md)
 - Blazor: `docs/architecture/blazor.md`
 
-## Workflow Preferences
-
-- **Show, don't insert**: When suggesting code changes, display the implementation in the response for review rather than directly inserting it into files. Only insert code directly when explicitly requested. Documentation files (`.md`, skill files, architecture docs) are exempt — insert those directly.
-
 ## Self-Maintenance
 
 This file is a **living document** and should be kept current as the project evolves. Both Claude and GitHub Copilot can leverage these learnings to provide better assistance.
@@ -32,6 +28,7 @@ Before ending a session where significant discoveries were made, consider whethe
 - Queries return DTOs, never domain entities
 - Validators handle structural validation only (no DB lookups, no business rules)
 - Use `Error.Validation` (422) when the input itself is wrong; use `Error.Conflict` (409) when the input is valid but the system's current state prevents the operation. Retry test: if the caller could resend the exact same payload and succeed after a state change, it's `Conflict`.
+- Methods returning collections — whether directly (`List<T>`, `IEnumerable<T>`, etc.) or wrapped (`Task<List<T>>`) — must never return `null`. Return an empty collection instead. Nullable collection return types (`List<T>?`, `IEnumerable<T>?`, etc.) are not permitted unless there is an explicit, documented reason why `null` is semantically distinct from empty for that method.
 
 ### Always-Valid Entities and Aggregate Assignment
 
@@ -135,7 +132,20 @@ season.AssignHighAverageWinner(command.BowlerId, command.Average, command.Games,
 
 **Coverage analysis note**: MTP coverage is partially implemented in 4.13 — uncovered mutants are filtered out, but per-mutant test selection is not yet available. This means runs are slower than they will eventually be (all tests run per mutant), but results are accurate.
 
-**StronglyTypedId + Stryker limitation** — Stryker's in-memory Roslyn compilation invokes source generators but does not pass `AdditionalFiles` (e.g., `ulid-full.typedid`) to them. The `StronglyTypedIds` generator therefore produces no output, causing compile errors when domain source files reference any member that was previously template-generated. Fix: remove `Value { get; }`, the private `(Ulid value)` constructor, and `New()` from the template and define all three explicitly in each ID's partial struct body. Every `[StronglyTypedId("ulid-full")]` type must declare this trio — including test helper structs, not just domain IDs. See [ADR-0006](docs/adr/0006-explicit-new-on-stronglytypedid-partial-structs.md).
+**StronglyTypedId + Stryker limitation** — Stryker's in-memory Roslyn compilation invokes source generators but does not pass `AdditionalFiles` (e.g., `ulid-full.typedid`) to them. The `StronglyTypedIds` generator therefore produces no output, causing compile errors when domain source files reference any member that was previously template-generated. Fix: remove the member from the template and define it explicitly in each ID's partial struct body. Every `[StronglyTypedId("ulid-full")]` type must declare the following — including test helper structs, not just domain IDs. See [ADR-0006](docs/adr/0006-explicit-new-on-stronglytypedid-partial-structs.md).
+
+Required explicit members (removed from `ulid-full.typedid`, must be in every partial struct):
+
+- `public Ulid Value { get; }`
+- `private T(Ulid value) => Value = value;`
+- `public static T New() => new(Ulid.NewUlid());`
+- `public bool Equals(T other) => Value.Equals(other.Value);`
+- `public override bool Equals(object? obj) => obj is T other && Equals(other);`
+- `public override int GetHashCode() => Value.GetHashCode();`
+- `public static bool operator ==(T a, T b) => a.Equals(b);`
+- `public static bool operator !=(T a, T b) => !(a == b);`
+
+The equality members (`Equals`, `GetHashCode`, `==`, `!=`) are needed because Stryker mutates equality expressions (e.g., `==` → `!=`). Without them visible in Stryker's compilation, mutated code produces `CS0019` and aborts the run rather than producing a killable mutation.
 
 **Per-layer decisions** (make these explicitly for each new layer):
 
@@ -311,3 +321,51 @@ Stryker 4.14.1 (latest as of April 2026) **cannot run mutation tests on `Neba.We
 - Map SmartEnum values to primitives in query projections (for example, `Status.Name` as `string`) before caching.
 - `CachedQueryHandlerDecorator` catches cache deserialization failures on plain cached queries, logs a warning, executes the inner handler, and rewrites the cache entry.
 - Keep the cache key stable unless explicitly directed otherwise; deserialization fallback handles stale entry recovery.
+
+### EF Core Navigation Fixup — `= []` Collection Initializers Cause `Collection was of a fixed size`
+
+When a domain entity initializes a collection navigation property with `= []` (C# 12 collection expression), the CLR resolves `IReadOnlyCollection<T> Prop { get; init; } = []` to `T[]` (a fixed-size array). EF Core 10's `ClrCollectionAccessorFactory` picks up this array type as `TCollection`, and when navigation fixup tries to call `AddStandalone(array, value)`, it hits `SZArrayHelper.Add` which throws `System.NotSupportedException: Collection was of a fixed size`.
+
+This affects **both sides** of a relationship: adding a `TournamentSponsor` with a concrete `SponsorId` set causes EF to fix up `Sponsor.TournamentsSponsored` (also `= []`), even if you never set `Tournament = tournament` on the dependent.
+
+**Symptom**: `NotSupportedException: Collection was of a fixed size` in the EF Core navigation fixup stack during integration test seeding.
+
+**Fix in tests**: After saving the principal entities, call `_dbContext.ChangeTracker.Clear()` before adding dependent entities. With no tracked principals in the change tracker, EF has nothing to fixup against.
+
+```csharp
+await _dbContext.SaveChangesAsync(ct);
+
+var tournamentDbId = _dbContext.Entry(tournament)
+    .Property<int>(ShadowIdConfiguration.DefaultPropertyName).CurrentValue;
+
+_dbContext.ChangeTracker.Clear(); // prevents fixup against tracked sponsors/tournaments
+
+var ts = _dbContext.Set<TournamentSponsor>().Add(new TournamentSponsor { SponsorId = sponsorId, ... });
+ts.Property<int>(TournamentConfiguration.ForeignKeyName).CurrentValue = tournamentDbId;
+
+await _dbContext.SaveChangesAsync(ct);
+```
+
+**Note**: `PropertyAccessMode.Field` / `Navigation().HasField("_sponsors")` does NOT help — EF still determines `TCollection` from the property type, not the backing field type.
+
+**Ordering constraint when combining TournamentSponsors + other dependents in the same test**: Any entities added via navigation properties to already-saved aggregates (e.g. `HistoricalTournamentChampion { Tournament = tournament }`) must be added and saved **before** `ChangeTracker.Clear()`. After the clear, detached entities passed as navigation properties are re-tracked as `Added`, causing a unique constraint violation on re-insert. The required save order for a fully-populated tournament test is:
+
+1. Save all principals (season, bowling center, tournament, sponsors, bowlers)
+2. Add `HistoricalTournamentChampion` entries (tournament + bowlers still tracked) → `SaveChangesAsync`
+3. Read `tournamentDbId` from shadow property
+4. `ChangeTracker.Clear()`
+5. Add `TournamentSponsor` entries via shadow FK → `SaveChangesAsync`
+
+**Stable Verify snapshots for tournaments**: Use explicit IDs via the source-generated `TournamentId(string)` constructor (the `ulid-full.typedid` template generates `public PLACEHOLDERID(string value)`). All-numeric ULID strings are valid (e.g. `"01000000000000000000000001"`). Apply the same to `SeasonId`, `BowlerId`, `SponsorId` — any ID that will appear in the snapshot output.
+
+### Razor @code Block — Parser Limitations
+
+Two patterns that break Razor's lexer even inside `@code { }` blocks:
+
+1. **Relational patterns `< N =>` in switch expressions** — `<` followed by a space then a digit is misread as an HTML tag start, causing the brace tracker to prematurely close the `@code` block. Use `if`/`else` with `>=` instead (e.g., `if (pct >= 90) return "full";`). `<=` (less-than-or-equal) is NOT affected — only bare `<` followed by a space.
+
+2. **String interpolation with `{}` inside @code** — `$"prefix:{expr}suffix"` braces inside string interpolations in `@code` can confuse the Razor brace counter. Use string concatenation instead: `"prefix:" + expr + "suffix"`.
+
+3. **Component attribute values always need `@` for C# expressions** — `Foo="fieldName"` passes the literal string `"fieldName"`, not the field's value. Always write `Foo="@fieldName"` for fields/properties, `Foo="@(expr)"` for expressions with operators (e.g. null-forgiving `!`, null-coalescing `??`).
+
+4. **Blazor parameters use `[EditorRequired]` not C# `required`** — the `required` keyword on Blazor `[Parameter]` properties causes compile errors (CS0246/CS7014). Always use `[Parameter, EditorRequired]` with a default initializer (`= default!;`, `= string.Empty;`, `= [];`).

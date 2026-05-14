@@ -1,0 +1,97 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace Neba.Infrastructure.Database.Migrations
+{
+    /// <inheritdoc />
+    public partial class Tournaments_AddSummaryFields : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AddColumn<decimal>(
+                name: "entry_fee",
+                schema: "app",
+                table: "tournaments",
+                type: "numeric(5,2)",
+                precision: 5,
+                scale: 2,
+                nullable: false,
+                defaultValue: 0m);
+
+            migrationBuilder.AddColumn<string>(
+                name: "external_registration_url",
+                schema: "app",
+                table: "tournaments",
+                type: "character varying(511)",
+                maxLength: 511,
+                nullable: true);
+
+            migrationBuilder.AddColumn<string>(
+                name: "logo_container",
+                schema: "app",
+                table: "tournaments",
+                type: "character varying(63)",
+                maxLength: 63,
+                nullable: true);
+
+            migrationBuilder.AddColumn<string>(
+                name: "logo_content_type",
+                schema: "app",
+                table: "tournaments",
+                type: "character varying(255)",
+                maxLength: 255,
+                nullable: true);
+
+            migrationBuilder.AddColumn<string>(
+                name: "logo_file_path",
+                schema: "app",
+                table: "tournaments",
+                type: "character varying(1023)",
+                maxLength: 1023,
+                nullable: true);
+
+            migrationBuilder.AddColumn<long>(
+                name: "logo_size_in_bytes",
+                schema: "app",
+                table: "tournaments",
+                type: "bigint",
+                nullable: true);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropColumn(
+                name: "entry_fee",
+                schema: "app",
+                table: "tournaments");
+
+            migrationBuilder.DropColumn(
+                name: "external_registration_url",
+                schema: "app",
+                table: "tournaments");
+
+            migrationBuilder.DropColumn(
+                name: "logo_container",
+                schema: "app",
+                table: "tournaments");
+
+            migrationBuilder.DropColumn(
+                name: "logo_content_type",
+                schema: "app",
+                table: "tournaments");
+
+            migrationBuilder.DropColumn(
+                name: "logo_file_path",
+                schema: "app",
+                table: "tournaments");
+
+            migrationBuilder.DropColumn(
+                name: "logo_size_in_bytes",
+                schema: "app",
+                table: "tournaments");
+        }
+    }
+}

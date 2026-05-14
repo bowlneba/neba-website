@@ -1,7 +1,6 @@
-using Bogus;
-
 using Neba.Application.Seasons;
 using Neba.Application.Stats.GetSeasonStats;
+using Neba.Domain.Seasons;
 using Neba.TestFactory.Seasons;
 
 namespace Neba.TestFactory.Stats;
@@ -12,7 +11,7 @@ public static class SeasonStatsDtoFactory
         SeasonDto? season = null,
         IReadOnlyCollection<SeasonDto>? seasonsWithStats = null,
         IReadOnlyCollection<BowlerSeasonStatsDto>? bowlerStats = null,
-        IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>? bowlerOfTheYearRace = null,
+        IReadOnlyDictionary<int, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>>? bowlerOfTheYearRaces = null,
         SeasonStatsSummaryDto? summary = null,
         (decimal games, decimal tournaments, decimal entries)? minimums = null)
         => new()
@@ -20,7 +19,15 @@ public static class SeasonStatsDtoFactory
             Season = season ?? SeasonDtoFactory.Create(),
             SeasonsWithStats = seasonsWithStats ?? [SeasonDtoFactory.Create()],
             BowlerStats = bowlerStats ?? [BowlerSeasonStatsDtoFactory.Create()],
-            BowlerOfTheYearRace = bowlerOfTheYearRace ?? [BowlerOfTheYearPointsRaceSeriesDtoFactory.Create()],
+            BowlerOfTheYearRaces = bowlerOfTheYearRaces ?? new Dictionary<int, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>>
+            {
+                [BowlerOfTheYearCategory.Open.Value] = [BowlerOfTheYearPointsRaceSeriesDtoFactory.Create()],
+                [BowlerOfTheYearCategory.Senior.Value] = [],
+                [BowlerOfTheYearCategory.SuperSenior.Value] = [],
+                [BowlerOfTheYearCategory.Woman.Value] = [],
+                [BowlerOfTheYearCategory.Youth.Value] = [],
+                [BowlerOfTheYearCategory.Rookie.Value] = [],
+            },
             Summary = summary ?? SeasonStatsSummaryDtoFactory.Create(),
             MinimumNumberOfGames = minimums?.games ?? 0m,
             MinimumNumberOfTournaments = minimums?.tournaments ?? 0m,
@@ -43,7 +50,15 @@ public static class SeasonStatsDtoFactory
                     Season = SeasonDtoFactory.Bogus(1, seasonSeed).Single(),
                     SeasonsWithStats = SeasonDtoFactory.Bogus(f.Random.Int(1, 5), seasonsWithStatsSeed),
                     BowlerStats = BowlerSeasonStatsDtoFactory.Bogus(f.Random.Int(1, 10), bowlerStatsSeed),
-                    BowlerOfTheYearRace = BowlerOfTheYearPointsRaceSeriesDtoFactory.Bogus(f.Random.Int(1, 5), bowlerOfTheYearRaceSeed),
+                    BowlerOfTheYearRaces = new Dictionary<int, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>>
+                    {
+                        [BowlerOfTheYearCategory.Open.Value] = BowlerOfTheYearPointsRaceSeriesDtoFactory.Bogus(f.Random.Int(1, 5), bowlerOfTheYearRaceSeed),
+                        [BowlerOfTheYearCategory.Senior.Value] = [],
+                        [BowlerOfTheYearCategory.SuperSenior.Value] = [],
+                        [BowlerOfTheYearCategory.Woman.Value] = [],
+                        [BowlerOfTheYearCategory.Youth.Value] = [],
+                        [BowlerOfTheYearCategory.Rookie.Value] = [],
+                    },
                     Summary = SeasonStatsSummaryDtoFactory.Bogus(1, summarySeed).Single(),
                     MinimumNumberOfGames = f.Random.Decimal(10, 60),
                     MinimumNumberOfTournaments = f.Random.Decimal(2, 8),

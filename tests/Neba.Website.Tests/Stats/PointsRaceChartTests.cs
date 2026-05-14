@@ -107,4 +107,64 @@ public sealed class PointsRaceChartTests : IDisposable
         cut.FindAll(".points-race-chart-legend-reset").Count.ShouldBe(0);
         cut.FindAll(".points-race-chart-legend-item--hidden").Count.ShouldBe(0);
     }
+
+    [Fact(DisplayName = "Should render full chart container when ShowCategoryLabels is true")]
+    public void Render_ShouldRenderFullClass_WhenShowCategoryLabelsIsTrue()
+    {
+        // Arrange
+        var series = PointsRaceSeriesViewModelFactory.Bogus(1, seed: 1106);
+
+        // Act
+        var cut = _ctx.Render<PointsRaceChartComponent>(p => p
+            .Add(x => x.Series, series)
+            .Add(x => x.ShowCategoryLabels, true));
+
+        // Assert
+        (cut.Find(".points-race-chart").ClassName ?? string.Empty).ShouldContain("points-race-chart--full");
+    }
+
+    [Fact(DisplayName = "Should toggle series to hidden then back to visible on second click")]
+    public async Task Legend_ShouldToggleHiddenAndVisible_OnRepeatedClicks()
+    {
+        // Arrange
+        var series = PointsRaceSeriesViewModelFactory.Bogus(2, seed: 1107);
+        var cut = _ctx.Render<PointsRaceChartComponent>(p => p
+            .Add(x => x.Series, series)
+            .Add(x => x.ShowCategoryLabels, true));
+
+        var firstButton = cut.FindAll(".points-race-chart-legend-item")[0];
+
+        // Act — first click hides
+        await firstButton.ClickAsync(new());
+        cut.FindAll(".points-race-chart-legend-item--hidden").Count.ShouldBe(1);
+
+        // Act — second click unhides
+        await cut.FindAll(".points-race-chart-legend-item")[0].ClickAsync(new());
+
+        // Assert
+        cut.FindAll(".points-race-chart-legend-item--hidden").Count.ShouldBe(0);
+        cut.FindAll(".points-race-chart-legend-reset").Count.ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "Should set aria-pressed attribute on visible legend buttons and remove it when hidden")]
+    public async Task Legend_ShouldSetAriaPressed_BasedOnVisibilityState()
+    {
+        // Arrange
+        var series = PointsRaceSeriesViewModelFactory.Bogus(2, seed: 1108);
+        var cut = _ctx.Render<PointsRaceChartComponent>(p => p
+            .Add(x => x.Series, series));
+
+        // Blazor renders bool `true` as HTML boolean attribute (attribute present with empty string value).
+        // Blazor renders bool `false` by removing the attribute entirely.
+        var buttons = cut.FindAll(".points-race-chart-legend-item");
+        buttons[0].GetAttribute("aria-pressed").ShouldBe("");  // present = visible/pressed
+        buttons[1].GetAttribute("aria-pressed").ShouldBe("");
+
+        // Act — clicking hides series[0]; its aria-pressed is removed
+        await buttons[0].ClickAsync(new());
+
+        // Assert
+        cut.FindAll(".points-race-chart-legend-item")[0].GetAttribute("aria-pressed").ShouldBeNull();
+        cut.FindAll(".points-race-chart-legend-item")[1].GetAttribute("aria-pressed").ShouldBe("");
+    }
 }

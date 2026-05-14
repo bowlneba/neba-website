@@ -41,7 +41,9 @@ internal static class CachingConfiguration
                     .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ICachedQuery<>));
 
                 if (!isCachedQuery)
+                {
                     continue;
+                }
 
                 var decoratorType = typeof(CachedQueryHandlerDecorator<,>).MakeGenericType(queryType, responseType);
                 services.Decorate(serviceType, decoratorType);

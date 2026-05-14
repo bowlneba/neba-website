@@ -1,0 +1,146 @@
+@namespace Neba.Website.Server.Tournaments.Schedule
+@using System.Globalization
+
+<section class="tournament-hero" aria-label="Next upcoming tournament">
+    <div class="tournament-hero__grid">
+        <div class="tournament-hero__content">
+            <div class="tournament-hero__eyebrow">
+                <span class="tournament-hero__eyebrow-bar" aria-hidden="true"></span>
+                <span>Next up · @GetRelativeDate(Tournament.StartDate)</span>
+            </div>
+
+            <h1 class="tournament-hero__title">@Tournament.Name</h1>
+
+            @if (Tournament.HasSponsor)
+            {
+                <p class="tournament-hero__sponsor">@Tournament.Sponsor</p>
+            }
+            else
+            {
+                <p class="tournament-hero__sponsor tournament-hero__sponsor--available">• Sponsorship available</p>
+            }
+
+            <div class="tournament-hero__stats">
+                <div class="tournament-hero__stat">
+                    <span class="tournament-hero__stat-label">Dates</span>
+                    <span class="tournament-hero__stat-value">@Tournament.FormatDateRange()</span>
+                </div>
+                <div class="tournament-hero__stat">
+                    <span class="tournament-hero__stat-label">Host</span>
+                    @if (Tournament.HasHost)
+                    {
+                        <span class="tournament-hero__stat-value">@Tournament.DisplayLocation</span>
+                    }
+                    else
+                    {
+                        <span class="tournament-hero__stat-value tournament-hero__stat-value--tba">To be announced</span>
+                    }
+                </div>
+                <div class="tournament-hero__stat">
+                    <span class="tournament-hero__stat-label">@Tournament.DisplayPriceLabel</span>
+                    @if (Tournament.DisplayPrice.HasValue)
+                    {
+                        <span class="tournament-hero__stat-value tournament-hero__stat-value--gold">
+                            @Tournament.DisplayPrice.Value.ToString("C0", CurrencyCulture)
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="tournament-hero__stat-value tournament-hero__stat-value--tba">TBD</span>
+                    }
+                </div>
+            </div>
+
+            <div class="tournament-hero__chips">
+                <span class="tournament-hero__chip">@Tournament.TournamentType</span>
+                @if (Tournament.PatternDisplay is not null)
+                {
+                    <span class="tournament-hero__chip">@Tournament.PatternDisplay</span>
+                }
+            </div>
+
+            <div class="tournament-hero__cta">
+                @if (Tournament.CanRegister)
+                {
+                    <a href="@Tournament.RegistrationUrl" target="_blank" rel="noopener noreferrer"
+                       class="neba-btn neba-btn-primary neba-btn-lg">
+                        Register Now
+                    </a>
+                }
+                else
+                {
+                    <button class="neba-btn neba-btn-lg tournament-hero__cta-disabled" disabled aria-disabled="true">
+                        Registration opens soon
+                    </button>
+                }
+                <a href="/tournaments/@Tournament.Season/@Tournament.Id" class="tournament-hero__details-link">
+                    View details →
+                </a>
+                <TournamentStatusPill Status="Tournament.RegistrationStatus" />
+            </div>
+
+            @if (Tournament.HasCapacityData)
+            {
+                <div class="tournament-hero__capacity">
+                    <span class="tournament-hero__capacity-label">
+                        @Tournament.Entries of @Tournament.MaxEntries entries
+                    </span>
+                    <div class="tournament-hero__progress-track">
+                        <div class="tournament-hero__progress-fill @GetCapacityClass()" style="@GetCapacityStyle()"
+                             role="progressbar" aria-valuenow="@Tournament.Entries" aria-valuemin="0"
+                             aria-valuemax="@Tournament.MaxEntries"
+                             aria-label="@Tournament.Entries of @Tournament.MaxEntries entries filled">
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="tournament-hero__tile-wrapper">
+            <img src="@(Tournament.TournamentLogoUrl?.ToString() ?? "/images/neba-logo.png")"
+                 alt="@Tournament.Name logo" class="tournament-hero__logo-img" />
+        </div>
+    </div>
+</section>
+
+@code {
+    private static readonly CultureInfo CurrencyCulture = CultureInfo.GetCultureInfo("en-US");
+
+    [Parameter, EditorRequired]
+    public SeasonTournamentViewModel Tournament { get; set; } = default!;
+
+    private static string GetRelativeDate(DateOnly startDate)
+    {
+        int days = (startDate.ToDateTime(TimeOnly.MinValue) - DateTime.Today).Days;
+        return days switch
+        {
+            0 => "today",
+            1 => "tomorrow",
+            <= 6 => "this week",
+            7 => "next week",
+            _ => "in " + days.ToString(System.Globalization.CultureInfo.InvariantCulture) + " days",
+        };
+    }
+
+    private double GetCapacityPct() =>
+        (double)Tournament.Entries!.Value / Tournament.MaxEntries!.Value * 100;
+
+    private string GetCapacityStyle() =>
+        "width:" + GetCapacityPct().ToString("F0", System.Globalization.CultureInfo.CurrentCulture) + "%";
+
+    private string GetCapacityClass()
+    {
+        var pct = GetCapacityPct();
+        if (pct >= 90)
+        {
+            return "tournament-hero__progress-fill--full";
+        }
+
+        if (pct >= 75)
+        {
+            return "tournament-hero__progress-fill--warning";
+        }
+
+        return "tournament-hero__progress-fill--ok";
+    }
+}

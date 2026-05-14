@@ -1,0 +1,23 @@
+﻿{
+  Items: [
+    {
+      Id: 01GBP3VHXR2YX9DBG4SMXSK1MY,
+      Description: 2015 Season,
+      StartDate: Date_1,
+      EndDate: Date_2
+    },
+    {
+      Id: 01J81HN7W3Y2PVYEKFPX6JAN8Q,
+      Description: 2016 Season,
+      StartDate: Date_3,
+      EndDate: Date_4
+    },
+    {
+      Id: 01K0KQGRRPSHQ8P28MAYDB0DPF,
+      Description: 2017 Season,
+      StartDate: Date_5,
+      EndDate: Date_6
+    }
+  ],
+  TotalItems: 3
+}

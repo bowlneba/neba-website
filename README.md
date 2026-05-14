@@ -153,26 +153,26 @@ ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Usernam
 ### Public Website
 
 - [ ] Champions (History)
-- [ ] Bowler of the Year
-  - [ ] Open
-  - [ ] Senior
-  - [ ] Super Senior
-  - [ ] Woman
-  - [ ] Youth
-  - [ ] Rookie
-- [ ] High Average
-- [ ] High Block
-- [ ] Organization Bylaws
-- [ ] Tournament Rules
-- [ ] Hall of Fame
-- [ ] Bowling Centers
+- [x] Bowler of the Year
+  - [x] Open
+  - [x] Senior
+  - [x] Super Senior
+  - [x] Woman
+  - [x] Youth
+  - [x] Rookie
+- [x] High Average
+- [x] High Block
+- [x] Organization Bylaws
+- [x] Tournament Rules
+- [x] Hall of Fame
+- [x] Bowling Centers
 - [ ] Tournaments
 - [ ] Tournament Documents
 - [ ] Tournament Detail
-- [ ] Sponsors
+- [x] Sponsors
 - [ ] News
 - [ ] About
-- [ ] Stats
+- [x] Stats
 
 ### Website Administration
 
@@ -183,12 +183,12 @@ ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Usernam
 
 ### Platform & Operational
 
-- [ ] API Caching
-- [ ] Health Checks
-- [ ] SonarCloud Integration
-- [ ] Background Jobs
-- [ ] Global Exception Handling
-- [ ] OpenTelemetry
+- [x] API Caching
+- [x] Health Checks
+- [x] SonarCloud Integration
+- [x] Background Jobs
+- [x] Global Exception Handling
+- [x] OpenTelemetry
 - [ ] Rate Limiting & Throttling
 - [ ] API Documentation (Scalar)
 

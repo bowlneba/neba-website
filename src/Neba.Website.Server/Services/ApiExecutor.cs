@@ -78,7 +78,6 @@ internal sealed class ApiExecutor(
             }
             else
             {
-                // Existing HTTP error handling
                 var errorType = $"HttpError_{(int)response.StatusCode}";
                 ApiMetrics.RecordError(apiName, operationName, duration, errorType, (int)response.StatusCode);
 
@@ -89,7 +88,11 @@ internal sealed class ApiExecutor(
                     duration
                 );
 
-                return Error.Failure(
+                return response.StatusCode == System.Net.HttpStatusCode.NotFound
+                    ? Error.NotFound(
+                        $"{apiName}.{operationName}.NotFound",
+                        "The requested resource was not found.")
+                    : Error.Failure(
                     $"{apiName}.{operationName}.HttpError",
                     $"API call failed with status code {(int)response.StatusCode}."
                 );

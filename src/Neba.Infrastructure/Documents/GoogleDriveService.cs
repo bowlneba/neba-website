@@ -208,7 +208,9 @@ internal sealed class GoogleDriveService
     public void Dispose()
     {
         if (_driveService.IsValueCreated)
+        {
             _driveService.Value.Dispose();
+        }
     }
 }
 

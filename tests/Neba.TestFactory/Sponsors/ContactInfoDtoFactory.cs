@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Application.Contact;
 using Neba.Application.Sponsors.GetSponsorDetail;
 using Neba.TestFactory.Contact;

@@ -103,7 +103,8 @@ public sealed class GetSponsorDetailQueryHandlerTests
             .ReturnsAsync((SponsorDetailDto?)null);
 
         // Act
-        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+        ErrorOr<SponsorDetailDto> result = default;
+        await Should.NotThrowAsync(async () => result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken));
 
         // Assert
         result.IsError.ShouldBeTrue();

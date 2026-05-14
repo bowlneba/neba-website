@@ -1,4 +1,5 @@
 using Neba.Application.Seasons;
+using Neba.Application.Stats.BoyProgression;
 using Neba.Application.Stats.GetSeasonStats;
 using Neba.Domain.Seasons;
 
@@ -26,4 +27,12 @@ public interface IStatsQueries
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A dictionary mapping season IDs to season descriptions for seasons with statistics.</returns>
     Task<IReadOnlyCollection<SeasonDto>> GetSeasonsWithStatsAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Retrieves all historical tournament result rows for the given season, joined to Tournament and Bowler.
+    /// Used exclusively to compute BOY point progressions.
+    /// </summary>
+    Task<IReadOnlyCollection<BoyProgressionResultDto>> GetBoyProgressionResultsForSeasonAsync(
+        SeasonId seasonId,
+        CancellationToken cancellationToken);
 }

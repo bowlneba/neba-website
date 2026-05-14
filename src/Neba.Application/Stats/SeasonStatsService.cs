@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;
 
-using Neba.Application.Bowlers;
 using Neba.Application.Caching;
 using Neba.Application.Seasons;
 using Neba.Application.Stats.GetSeasonStats;
@@ -12,14 +11,12 @@ namespace Neba.Application.Stats;
 
 internal sealed class SeasonStatsService(
     IStatsQueries statsQueries,
-    IBowlerQueries bowlerQueries,
     ITournamentQueries tournamentQueries,
     HybridCache cache,
     ILogger<SeasonStatsService> logger)
         : ISeasonStatsService
 {
     private readonly IStatsQueries _statsQueries = statsQueries;
-    private readonly IBowlerQueries _bowlerQueries = bowlerQueries;
     private readonly ITournamentQueries _tournamentQueries = tournamentQueries;
 
     private readonly HybridCache _cache = cache;
@@ -100,9 +97,9 @@ internal sealed class SeasonStatsService(
         // Field Match Play Summary
 
         var highestMatchPlayWinPercentage = bowlerStats.Max(stat =>
-            ComputeRawWinRate(stat.MatchPlayWins, stat.MatchPlayLosses));
+            ComputeRawWinRate(stat.MatchPlayWins, stat.MatchPlayLosses)) * 100m;
         var highestMatchPlayWinPercentageBowlers = bowlerStats
-            .Where(stat => ComputeRawWinRate(stat.MatchPlayWins, stat.MatchPlayLosses) == highestMatchPlayWinPercentage)
+            .Where(stat => ComputeRawWinRate(stat.MatchPlayWins, stat.MatchPlayLosses) * 100m == highestMatchPlayWinPercentage)
             .ToDictionary(stat => stat.BowlerId, stat => stat.BowlerName);
 
         var mostFinals = bowlerStats.Max(stat => stat.Finals);
@@ -315,7 +312,7 @@ internal sealed class SeasonStatsService(
 
     public async Task<(decimal NumberOfGames, decimal NumberOfTournaments, decimal NumberOfEntries)> GetStatMinimumsForSeasonAsync(SeasonDto season, CancellationToken cancellationToken)
     {
-        var tournamentCount = await _tournamentQueries.GetTournamentCountForSeasonAsync(season, cancellationToken);
+        var tournamentCount = await _tournamentQueries.GetTournamentCountForSeasonAsync(season.Id, cancellationToken);
 
         return (
             NumberOfGames: tournamentCount * 4.5m,
@@ -323,12 +320,6 @@ internal sealed class SeasonStatsService(
             NumberOfEntries: tournamentCount * .75m
         );
     }
-
-    /// <summary>
-    /// This is a temporary method to get the progression of the bowler of the year points race until tournaments and points come into the application. Once that happens, this can be reworked to pull from the database instead of a json file and the temporary file can be deleted.
-    /// </summary>
-    public Task<IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>> GetBowlerOfTheYearRaceAsync(SeasonDto season, IBowlerQueries bowlerQueries, CancellationToken cancellationToken)
-        => _BowlerOfTheYearProgression.GetBowlerOfTheYearProgressionAsync(season, _bowlerQueries, cancellationToken);
 
     private static IReadOnlyCollection<BowlerOfTheYearStandingDto> ComputeBotyStandings(
         IReadOnlyCollection<BowlerSeasonStatsDto> bowlerStats,
@@ -381,11 +372,6 @@ internal interface ISeasonStatsService
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     Task<(decimal NumberOfGames, decimal NumberOfTournaments, decimal NumberOfEntries)> GetStatMinimumsForSeasonAsync(SeasonDto season, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// This is a temporary method to get the progression of the bowler of the year points race until tournaments and points come into the application. Once that happens, this can be reworked to pull from the database instead of a json file and the temporary file can be deleted.
-    /// </summary>
-    Task<IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>> GetBowlerOfTheYearRaceAsync(SeasonDto season, IBowlerQueries bowlerQueries, CancellationToken cancellationToken);
 }
 
 internal static partial class SeasonStatsServiceLogMessages

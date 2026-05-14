@@ -12,6 +12,7 @@ public static class AddressFactory
     public const string ValidZipCode = "06103";
     public static readonly CanadianProvince ValidCanadianProvince = CanadianProvince.Ontario;
     public const string ValidPostalCode = "K1A 0B1";
+    public static readonly Coordinates ValidCoordinates = Coordinates.Create(41.7637, -72.6851).Value; // Hartford, CT
 
     public static Address CreateUsAddress(
         string? street = null,

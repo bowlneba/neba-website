@@ -19,4 +19,38 @@
 ## or put your custom commands -------------------
 #echo 'Husky.Net is awesome!'
 
-dotnet husky run --group pre-push
+resolve_dotnet() {
+	if command -v dotnet >/dev/null 2>&1; then
+		command -v dotnet
+		return 0
+	fi
+
+	# GitHub Desktop and other GUI apps may not load shell profile PATH entries.
+	for candidate in \
+		"$HOME/.dotnet/dotnet" \
+		"/opt/homebrew/bin/dotnet" \
+		"/usr/local/bin/dotnet" \
+		"/usr/share/dotnet/dotnet"; do
+		if [ -x "$candidate" ]; then
+			printf '%s\n' "$candidate"
+			return 0
+		fi
+	done
+
+	return 1
+}
+
+DOTNET_BIN="$(resolve_dotnet)"
+if [ -z "$DOTNET_BIN" ]; then
+	echo "Husky pre-push: dotnet was not found in PATH or common install locations."
+	echo "Install .NET SDK, or update your GitHub Desktop shell environment so hooks can find dotnet."
+	exit 127
+fi
+
+DOTNET_DIR="$(dirname "$DOTNET_BIN")"
+export PATH="$DOTNET_DIR:$PATH"
+if [ -z "$DOTNET_ROOT" ]; then
+	export DOTNET_ROOT="$DOTNET_DIR"
+fi
+
+"$DOTNET_BIN" husky run --group pre-push

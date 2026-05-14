@@ -1,7 +1,9 @@
-using Neba.Application.Bowlers;
-using Neba.Application.Seasons;
+using ErrorOr;
+
 using Neba.Application.Stats;
+using Neba.Application.Stats.BoyProgression;
 using Neba.Application.Stats.GetSeasonStats;
+using Neba.Domain.Seasons;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Stats;
@@ -13,17 +15,17 @@ namespace Neba.Application.Tests.Stats.GetSeasonStats;
 public sealed class GetSeasonStatsQueryHandlerTests
 {
     private readonly Mock<ISeasonStatsService> _seasonStatsServiceMock;
-    private readonly Mock<IBowlerQueries> _bowlerQueriesMock;
+    private readonly Mock<IBowlerOfTheYearProgressionService> _boyProgressionServiceMock;
     private readonly GetSeasonStatsQueryHandler _handler;
 
     public GetSeasonStatsQueryHandlerTests()
     {
         _seasonStatsServiceMock = new Mock<ISeasonStatsService>(MockBehavior.Strict);
-        _bowlerQueriesMock = new Mock<IBowlerQueries>(MockBehavior.Strict);
+        _boyProgressionServiceMock = new Mock<IBowlerOfTheYearProgressionService>(MockBehavior.Strict);
 
         _handler = new GetSeasonStatsQueryHandler(
             _seasonStatsServiceMock.Object,
-            _bowlerQueriesMock.Object);
+            _boyProgressionServiceMock.Object);
     }
 
     [Fact(DisplayName = "Should return SeasonHasNoStats when no seasons with stats exist")]
@@ -37,7 +39,8 @@ public sealed class GetSeasonStatsQueryHandlerTests
         var query = new GetSeasonStatsQuery { SeasonYear = null };
 
         // Act
-        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+        ErrorOr<SeasonStatsDto> result = default;
+        await Should.NotThrowAsync(async () => result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken));
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -59,7 +62,8 @@ public sealed class GetSeasonStatsQueryHandlerTests
         var query = new GetSeasonStatsQuery { SeasonYear = 2023 };
 
         // Act
-        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+        ErrorOr<SeasonStatsDto> result = default;
+        await Should.NotThrowAsync(async () => result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken));
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -82,15 +86,15 @@ public sealed class GetSeasonStatsQueryHandlerTests
             .ReturnsAsync([olderSeason, newerSeason]);
 
         var bowlerStats = BowlerSeasonStatsDtoFactory.Bogus(3);
-        var botyRace = BowlerOfTheYearPointsRaceSeriesDtoFactory.Bogus(2);
+        var botyRaces = EmptyBotyRaces();
         var summary = SeasonStatsSummaryDtoFactory.Create();
 
         _seasonStatsServiceMock
             .Setup(s => s.GetBowlerSeasonStatsAsync(newerSeason.Id, TestContext.Current.CancellationToken))
             .ReturnsAsync(bowlerStats);
-        _seasonStatsServiceMock
-            .Setup(s => s.GetBowlerOfTheYearRaceAsync(newerSeason, _bowlerQueriesMock.Object, TestContext.Current.CancellationToken))
-            .ReturnsAsync(botyRace);
+        _boyProgressionServiceMock
+            .Setup(s => s.GetAllProgressionsAsync(newerSeason.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(botyRaces);
         _seasonStatsServiceMock
             .Setup(s => s.GetStatMinimumsForSeasonAsync(newerSeason, TestContext.Current.CancellationToken))
             .ReturnsAsync((45m, 5m, 7.5m));
@@ -103,9 +107,9 @@ public sealed class GetSeasonStatsQueryHandlerTests
         _seasonStatsServiceMock
             .Setup(s => s.GetBowlerSeasonStatsAsync(olderSeason.Id, TestContext.Current.CancellationToken))
             .ReturnsAsync(bowlerStats);
-        _seasonStatsServiceMock
-            .Setup(s => s.GetBowlerOfTheYearRaceAsync(olderSeason, _bowlerQueriesMock.Object, TestContext.Current.CancellationToken))
-            .ReturnsAsync(botyRace);
+        _boyProgressionServiceMock
+            .Setup(s => s.GetAllProgressionsAsync(olderSeason.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(botyRaces);
         _seasonStatsServiceMock
             .Setup(s => s.GetStatMinimumsForSeasonAsync(olderSeason, TestContext.Current.CancellationToken))
             .ReturnsAsync((45m, 5m, 7.5m));
@@ -113,7 +117,8 @@ public sealed class GetSeasonStatsQueryHandlerTests
         var query = new GetSeasonStatsQuery { SeasonYear = null };
 
         // Act
-        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+        ErrorOr<SeasonStatsDto> result = default;
+        await Should.NotThrowAsync(async () => result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken));
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -133,15 +138,15 @@ public sealed class GetSeasonStatsQueryHandlerTests
             .ReturnsAsync([season]);
 
         var bowlerStats = BowlerSeasonStatsDtoFactory.Bogus(3);
-        var botyRace = BowlerOfTheYearPointsRaceSeriesDtoFactory.Bogus(2);
+        var botyRaces = EmptyBotyRaces();
         var summary = SeasonStatsSummaryDtoFactory.Create();
 
         _seasonStatsServiceMock
             .Setup(s => s.GetBowlerSeasonStatsAsync(season.Id, TestContext.Current.CancellationToken))
             .ReturnsAsync(bowlerStats);
-        _seasonStatsServiceMock
-            .Setup(s => s.GetBowlerOfTheYearRaceAsync(season, _bowlerQueriesMock.Object, TestContext.Current.CancellationToken))
-            .ReturnsAsync(botyRace);
+        _boyProgressionServiceMock
+            .Setup(s => s.GetAllProgressionsAsync(season.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(botyRaces);
         _seasonStatsServiceMock
             .Setup(s => s.GetStatMinimumsForSeasonAsync(season, TestContext.Current.CancellationToken))
             .ReturnsAsync((45m, 5m, 7.5m));
@@ -172,15 +177,15 @@ public sealed class GetSeasonStatsQueryHandlerTests
             .ReturnsAsync([season]);
 
         var bowlerStats = BowlerSeasonStatsDtoFactory.Bogus(3);
-        var botyRace = BowlerOfTheYearPointsRaceSeriesDtoFactory.Bogus(2);
+        var botyRaces = EmptyBotyRaces();
         var summary = SeasonStatsSummaryDtoFactory.Create();
 
         _seasonStatsServiceMock
             .Setup(s => s.GetBowlerSeasonStatsAsync(season.Id, TestContext.Current.CancellationToken))
             .ReturnsAsync(bowlerStats);
-        _seasonStatsServiceMock
-            .Setup(s => s.GetBowlerOfTheYearRaceAsync(season, _bowlerQueriesMock.Object, TestContext.Current.CancellationToken))
-            .ReturnsAsync(botyRace);
+        _boyProgressionServiceMock
+            .Setup(s => s.GetAllProgressionsAsync(season.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(botyRaces);
         _seasonStatsServiceMock
             .Setup(s => s.GetStatMinimumsForSeasonAsync(season, TestContext.Current.CancellationToken))
             .ReturnsAsync((45m, 5m, 7.5m));
@@ -214,15 +219,15 @@ public sealed class GetSeasonStatsQueryHandlerTests
             .ReturnsAsync([olderSeason, newerSeason]);
 
         var bowlerStats = BowlerSeasonStatsDtoFactory.Bogus(2);
-        var botyRace = BowlerOfTheYearPointsRaceSeriesDtoFactory.Bogus(1);
+        var botyRaces = EmptyBotyRaces();
         var summary = SeasonStatsSummaryDtoFactory.Create();
 
         _seasonStatsServiceMock
             .Setup(s => s.GetBowlerSeasonStatsAsync(olderSeason.Id, TestContext.Current.CancellationToken))
             .ReturnsAsync(bowlerStats);
-        _seasonStatsServiceMock
-            .Setup(s => s.GetBowlerOfTheYearRaceAsync(olderSeason, _bowlerQueriesMock.Object, TestContext.Current.CancellationToken))
-            .ReturnsAsync(botyRace);
+        _boyProgressionServiceMock
+            .Setup(s => s.GetAllProgressionsAsync(olderSeason.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(botyRaces);
         _seasonStatsServiceMock
             .Setup(s => s.GetStatMinimumsForSeasonAsync(olderSeason, TestContext.Current.CancellationToken))
             .ReturnsAsync((40m, 4m, 6m));
@@ -236,9 +241,9 @@ public sealed class GetSeasonStatsQueryHandlerTests
         _seasonStatsServiceMock
             .Setup(s => s.GetBowlerSeasonStatsAsync(newerSeason.Id, TestContext.Current.CancellationToken))
             .ReturnsAsync(bowlerStats);
-        _seasonStatsServiceMock
-            .Setup(s => s.GetBowlerOfTheYearRaceAsync(newerSeason, _bowlerQueriesMock.Object, TestContext.Current.CancellationToken))
-            .ReturnsAsync(botyRace);
+        _boyProgressionServiceMock
+            .Setup(s => s.GetAllProgressionsAsync(newerSeason.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(botyRaces);
         _seasonStatsServiceMock
             .Setup(s => s.GetStatMinimumsForSeasonAsync(newerSeason, TestContext.Current.CancellationToken))
             .ReturnsAsync((40m, 4m, 6m));
@@ -251,6 +256,61 @@ public sealed class GetSeasonStatsQueryHandlerTests
         // Assert — must select the older season by year, not default to the most-recent newerSeason
         result.IsError.ShouldBeFalse();
         result.Value.Season.ShouldBe(olderSeason);
+    }
+
+    [Fact(DisplayName = "Should select the only matching season when SeasonYear matches a single season in the list")]
+    public async Task HandleAsync_ShouldSelectOnlyMatchingSeason_WhenSeasonYearMatchesSingleSeason()
+    {
+        // Arrange
+        var olderSeason = SeasonDtoFactory.Create(
+            startDate: new DateOnly(2022, 9, 1),
+            endDate: new DateOnly(2023, 8, 31));
+        var matchingSeason = SeasonDtoFactory.Create(
+            startDate: new DateOnly(2024, 9, 1),
+            endDate: new DateOnly(2025, 8, 31));
+
+        _seasonStatsServiceMock
+            .Setup(s => s.GetSeasonsWithStatsAsync(TestContext.Current.CancellationToken))
+            .ReturnsAsync([olderSeason, matchingSeason]);
+
+        var bowlerStats = BowlerSeasonStatsDtoFactory.Bogus(2);
+        var botyRaces = EmptyBotyRaces();
+        var summary = SeasonStatsSummaryDtoFactory.Create();
+
+        _seasonStatsServiceMock
+            .Setup(s => s.GetBowlerSeasonStatsAsync(matchingSeason.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(bowlerStats);
+        _boyProgressionServiceMock
+            .Setup(s => s.GetAllProgressionsAsync(matchingSeason.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(botyRaces);
+        _seasonStatsServiceMock
+            .Setup(s => s.GetStatMinimumsForSeasonAsync(matchingSeason, TestContext.Current.CancellationToken))
+            .ReturnsAsync((40m, 4m, 6m));
+        _seasonStatsServiceMock
+            .Setup(s => s.CalculateSeasonStatsSummary(bowlerStats, 40m, 4m, 6m))
+            .Returns(summary);
+
+        // Canary setups for the non-matching season: if the selection logic regresses and chooses the
+        // wrong season, the assertions below will fail on the season value rather than a mock exception.
+        _seasonStatsServiceMock
+            .Setup(s => s.GetBowlerSeasonStatsAsync(olderSeason.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(bowlerStats);
+        _boyProgressionServiceMock
+            .Setup(s => s.GetAllProgressionsAsync(olderSeason.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(botyRaces);
+        _seasonStatsServiceMock
+            .Setup(s => s.GetStatMinimumsForSeasonAsync(olderSeason, TestContext.Current.CancellationToken))
+            .ReturnsAsync((40m, 4m, 6m));
+
+        var query = new GetSeasonStatsQuery { SeasonYear = 2025 };
+
+        // Act
+        var result = await _handler.HandleAsync(query, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Season.ShouldBe(matchingSeason);
+        result.Value.SeasonsWithStats.First().ShouldBe(matchingSeason);
     }
 
     [Fact(DisplayName = "Should return SeasonsWithStats ordered by EndDate descending")]
@@ -272,15 +332,15 @@ public sealed class GetSeasonStatsQueryHandlerTests
             .ReturnsAsync([season2023, season2025, season2024]);
 
         var bowlerStats = BowlerSeasonStatsDtoFactory.Bogus(1);
-        var botyRace = BowlerOfTheYearPointsRaceSeriesDtoFactory.Bogus(1);
+        var botyRaces = EmptyBotyRaces();
         var summary = SeasonStatsSummaryDtoFactory.Create();
 
         _seasonStatsServiceMock
             .Setup(s => s.GetBowlerSeasonStatsAsync(season2025.Id, TestContext.Current.CancellationToken))
             .ReturnsAsync(bowlerStats);
-        _seasonStatsServiceMock
-            .Setup(s => s.GetBowlerOfTheYearRaceAsync(season2025, _bowlerQueriesMock.Object, TestContext.Current.CancellationToken))
-            .ReturnsAsync(botyRace);
+        _boyProgressionServiceMock
+            .Setup(s => s.GetAllProgressionsAsync(season2025.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(botyRaces);
         _seasonStatsServiceMock
             .Setup(s => s.GetStatMinimumsForSeasonAsync(season2025, TestContext.Current.CancellationToken))
             .ReturnsAsync((45m, 5m, 7.5m));
@@ -308,7 +368,7 @@ public sealed class GetSeasonStatsQueryHandlerTests
         var season = SeasonDtoFactory.Create();
         var allSeasons = new[] { season };
         var bowlerStats = BowlerSeasonStatsDtoFactory.Bogus(5);
-        var botyRace = BowlerOfTheYearPointsRaceSeriesDtoFactory.Bogus(3);
+        var botyRaces = EmptyBotyRaces();
         var summary = SeasonStatsSummaryDtoFactory.Create();
 
         _seasonStatsServiceMock
@@ -317,9 +377,9 @@ public sealed class GetSeasonStatsQueryHandlerTests
         _seasonStatsServiceMock
             .Setup(s => s.GetBowlerSeasonStatsAsync(season.Id, TestContext.Current.CancellationToken))
             .ReturnsAsync(bowlerStats);
-        _seasonStatsServiceMock
-            .Setup(s => s.GetBowlerOfTheYearRaceAsync(season, _bowlerQueriesMock.Object, TestContext.Current.CancellationToken))
-            .ReturnsAsync(botyRace);
+        _boyProgressionServiceMock
+            .Setup(s => s.GetAllProgressionsAsync(season.Id, TestContext.Current.CancellationToken))
+            .ReturnsAsync(botyRaces);
         _seasonStatsServiceMock
             .Setup(s => s.GetStatMinimumsForSeasonAsync(season, TestContext.Current.CancellationToken))
             .ReturnsAsync((45m, 5m, 7.5m));
@@ -337,10 +397,21 @@ public sealed class GetSeasonStatsQueryHandlerTests
         result.Value.Season.ShouldBe(season);
         result.Value.SeasonsWithStats.ShouldBe(allSeasons);
         result.Value.BowlerStats.ShouldBe(bowlerStats);
-        result.Value.BowlerOfTheYearRace.ShouldBe(botyRace);
+        result.Value.BowlerOfTheYearRaces.ShouldBe(botyRaces);
         result.Value.Summary.ShouldBe(summary);
         result.Value.MinimumNumberOfGames.ShouldBe(45m);
         result.Value.MinimumNumberOfTournaments.ShouldBe(5m);
         result.Value.MinimumNumberOfEntries.ShouldBe(7.5m);
     }
+
+    private static IReadOnlyDictionary<int, IReadOnlyCollection<Application.Stats.GetSeasonStats.BowlerOfTheYearPointsRaceSeriesDto>> EmptyBotyRaces()
+        => new Dictionary<int, IReadOnlyCollection<Application.Stats.GetSeasonStats.BowlerOfTheYearPointsRaceSeriesDto>>
+        {
+            [BowlerOfTheYearCategory.Open.Value] = [],
+            [BowlerOfTheYearCategory.Senior.Value] = [],
+            [BowlerOfTheYearCategory.SuperSenior.Value] = [],
+            [BowlerOfTheYearCategory.Woman.Value] = [],
+            [BowlerOfTheYearCategory.Youth.Value] = [],
+            [BowlerOfTheYearCategory.Rookie.Value] = [],
+        };
 }

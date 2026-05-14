@@ -30,7 +30,7 @@ public sealed record BowlingCenterSummaryDto
     /// <summary>
     /// A collection of the center's primary contact phone numbers, including area codes and extensions when applicable, used for display and user contact purposes. This allows users to easily reach the center for inquiries or reservations.
     /// </summary>
-    public required IReadOnlyCollection<PhoneNumberDto> PhoneNumbers { get; init; }
+    public IReadOnlyCollection<PhoneNumberDto> PhoneNumbers { get; init; } = [];
 
     /// <summary>
     /// The center's public website URL. Optional — not all centers have a website on file.

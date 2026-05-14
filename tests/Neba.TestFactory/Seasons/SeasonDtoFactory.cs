@@ -24,21 +24,27 @@ public static class SeasonDtoFactory
 
     public static IReadOnlyCollection<SeasonDto> Bogus(int count, int? seed = null)
     {
-#pragma warning disable CA5394 // test data only, not security-sensitive
-        var startYear = (seed.HasValue ? new Random(seed.Value) : Random.Shared).Next(2000, 2025 - count + 1);
-#pragma warning restore CA5394
+        var preFaker = seed.HasValue ? new Faker { Random = new Randomizer(seed.Value) } : new Faker();
+        var currentYear = preFaker.Random.Int(2000, 2025 - count);
 
-        return [.. Enumerable.Range(0, count)
-            .Select(i =>
+        var faker = new Faker<SeasonDto>()
+            .CustomInstantiator(f =>
             {
-                var year = startYear + i;
+                var year = currentYear++;
                 return new SeasonDto
                 {
-                    Id = SeasonId.New(),
+                    Id = new SeasonId(Ulid.BogusString(f)),
                     Description = $"{year} Season",
                     StartDate = new DateOnly(year, 9, 1),
                     EndDate = new DateOnly(year + 1, 8, 31),
                 };
-            })];
+            });
+
+        if (seed.HasValue)
+        {
+            faker.UseSeed(seed.Value);
+        }
+
+        return faker.Generate(count);
     }
 }

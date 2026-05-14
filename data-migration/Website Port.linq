@@ -14,8 +14,8 @@
       <EncryptSqlTraffic>True</EncryptSqlTraffic>
       <PreserveNumeric1>True</PreserveNumeric1>
       <EFProvider>Npgsql.EntityFrameworkCore.PostgreSQL</EFProvider>
-      <Port>19630</Port>
       <ExtraCxOptions>Include Error Detail=true;</ExtraCxOptions>
+      <Port>19630</Port>
     </DriverData>
   </Connection>
   <NuGetReference>Microsoft.Data.SqlClient</NuGetReference>
@@ -35,6 +35,7 @@
   <Namespace>NameParser</Namespace>
   <Namespace>System.Globalization</Namespace>
   <Namespace>System.Net.Http</Namespace>
+  <Namespace>System.Security.Cryptography</Namespace>
   <Namespace>System.Text.Json</Namespace>
   <Namespace>System.Text.Json.Serialization</Namespace>
   <Namespace>System.Threading.Tasks</Namespace>
@@ -43,6 +44,8 @@
 async Task Main()
 {
 	//BowlingCenters.RemoveRange(BowlingCenters);
+	TournamentChampions.RemoveRange(TournamentChampions);
+	TournamentEntries.RemoveRange(TournamentEntries);
 	Bowlers.RemoveRange(Bowlers);
 	HallsOfFameInductions.RemoveRange(HallsOfFameInductions);
 	BowlersOfTheYearAwards.RemoveRange(BowlersOfTheYearAwards);
@@ -51,6 +54,10 @@ async Task Main()
 	Seasons.RemoveRange(Seasons);
 	Sponsors.RemoveRange(Sponsors);
 	BowlerSeasonStats.RemoveRange(BowlerSeasonStats);
+	Tournaments.RemoveRange(Tournaments);
+	SideCutCriterias.RemoveRange(SideCutCriterias);
+	SideCutCriteriaGroups.RemoveRange(SideCutCriteriaGroups);
+	SideCuts.RemoveRange(SideCuts);
 	SaveChanges();
 	
 	//Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowling_centers RESTART IDENTITY CASCADE;");
@@ -61,6 +68,10 @@ async Task Main()
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.high_block_awards RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.seasons RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.sponsors RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.tournaments RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.side_cuts RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.side_cut_criteria_groups RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.side_cut_criteria RESTART IDENTITY CASCADE;");
 	SaveChanges();
 	
 	//await MigrateBowlingCentersAsync();
@@ -74,6 +85,7 @@ async Task Main()
 	await GenerateSeasonsAsync();
 	
 	var seasonIdByEndYear = Seasons.ToDictionary(s => s.EndDate.Year, s => s.Id);
+	var seasonDomainIdByEndYear = Seasons.ToDictionary(s => s.EndDate.Year, s => s.DomainId);
 	
 	var bowlerDomainIdByWebsiteName = bowlerIds.Where(b => b.websiteName is not null).ToDictionary(b => b.websiteName!, b => b.bowlerId);
 	var bowlerDomainIdBySoftwareName = bowlerIds.Where(b => b.softwareName is not null).ToDictionary(b => b.softwareName!, b => b.bowlerId);
@@ -96,6 +108,22 @@ async Task Main()
 	await MigrateSponsorsAsync();
 	
 	await MigrateBowlerSeasonStatsAsync(bowlerDomainIdBySoftwareId);
+	
+	var spreadsheetTournaments = await MigrateTournamentsAsync(seasonDomainIdByEndYear);
+	
+	await MigrateSideCuts();
+	
+	var tournamentDbIdByDomainId = Tournaments.ToDictionary(tournament => Ulid.Parse(tournament.DomainId), tournament => tournament.Id);
+	var bowlerDbIdByWebsiteId = Bowlers.Where(bowler => bowler.WebsiteId.HasValue).ToDictionary(bowler => bowler.WebsiteId!.Value, bowler => bowler.Id);
+	
+	await MigrateHistoricalTournamentChampions(bowlerDbIdByWebsiteId, spreadsheetTournaments, tournamentDbIdByDomainId);
+	await MigrateHistoricalTournamentEntries(spreadsheetTournaments, tournamentDbIdByDomainId);
+	
+	var bowlerDbIdBySoftwareId = bowlerIds.Where(b => b.softwareId.HasValue).ToDictionary(b => b.softwareId!.Value, b => b.id);
+	var tournamentDbIdBySoftwareId = Tournaments.Where(t => t.LegacyId.HasValue).ToDictionary(t => t.LegacyId!.Value, t => t.Id);
+	await MigrateHistoricalTournamentResults(tournamentDbIdBySoftwareId, bowlerDbIdBySoftwareId);
+	
+	"Migration Complete".Dump();
 }
 
 // You can define other methods, fields, classes and namespaces here
@@ -1273,7 +1301,7 @@ public sealed class PhoneNumberType
 public async Task<IReadOnlyCollection<(int id, Ulid bowlerId, int? websiteId, int? softwareId, HumanName? websiteName, HumanName? softwareName)>> MigrateBowlersAsync()
 {
 	DataTable websiteChampionsTable = await QueryStatsDatabaseAsync("select Id, FName, LName from dbo.champions");
-	DataTable softwareBowlersTable = await QuerySoftwareDatabaseAsync("select Id, FirstName, MiddleInitial, LastName, Suffix, Champion from dbo.Bowlers");
+	DataTable softwareBowlersTable = await QuerySoftwareDatabaseAsync("select * from dbo.Bowlers");
 
 	var websiteBowlers = websiteChampionsTable.AsEnumerable().Select(row => new
 	{
@@ -1293,12 +1321,16 @@ public async Task<IReadOnlyCollection<(int id, Ulid bowlerId, int? websiteId, in
 	{
 		Id = row.Field<int>("Id"),
 		Champion = row.Field<bool>("Champion"),
-		Name = new NameParser.HumanName($"{row.Field<string>("FirstName")} {row.Field<string>("MiddleInitial")} {row.Field<string>("LastName")} {row.Field<string>("Suffix")}")
+		Name = new NameParser.HumanName($"{row.Field<string>("FirstName")} {row.Field<string>("MiddleInitial")} {row.Field<string>("LastName")} {row.Field<string>("Suffix")}"),
+		Gender = row.Field<int>("Gender") == 0 ? "M" : "F",
+		DateOfBirth = row.Field<DateTime?>("DateOfBirth").HasValue ? DateOnly.FromDateTime(row.Field<DateTime>("DateOfBirth")) : (DateOnly?)null
 	}).Shuffle().ToList();
 
 	int championCount = softwareBowlers.Count(b => b.Champion);
 
-	var mergedBowlers = new List<(Ulid bowlerId, int? websiteId, int? softwareId, HumanName? softwareName, HumanName? websiteName)>();
+	var mergedBowlers = new List<
+	(Ulid bowlerId, int? websiteId, int? softwareId, HumanName? softwareName, HumanName? websiteName,
+	string? Gender, DateOnly? DateOfBirth)>();
 
 	foreach (var manualMatch in s_manualMatch)
 	{
@@ -1362,12 +1394,12 @@ public async Task<IReadOnlyCollection<(int id, Ulid bowlerId, int? websiteId, in
 		}
 
 		// no website match
-		mergedBowlers.Add(new(Guid.AsUlid(), null, softwareBowler.Id, softwareBowler.Name, null));
+		mergedBowlers.Add(new(Guid.AsUlid(), null, softwareBowler.Id, softwareBowler.Name, null, softwareBowler.Gender, softwareBowler.DateOfBirth));
 	}
 
 	foreach (var websiteBowler in websiteBowlers)
 	{
-		mergedBowlers.Add(new(Guid.AsUlid(), websiteBowler.Id, null, null, websiteBowler.Name));
+		mergedBowlers.Add(new(Guid.AsUlid(), websiteBowler.Id, null, null, websiteBowler.Name, null, null));
 	}
 
 
@@ -1382,6 +1414,8 @@ public async Task<IReadOnlyCollection<(int id, Ulid bowlerId, int? websiteId, in
 		LastName = mergedBowler.softwareName?.Last ?? mergedBowler.websiteName?.Last ?? throw new InvalidOperationException($"No Last Name for {mergedBowler.softwareId ?? mergedBowler.websiteId}"),
 		Suffix = !string.IsNullOrWhiteSpace(mergedBowler.softwareName?.Suffix) ? NameSuffix.FromName(mergedBowler.softwareName.Suffix.Replace(".", "").Trim()).Value : !string.IsNullOrWhiteSpace(mergedBowler.websiteName?.Suffix) ? NameSuffix.FromName(mergedBowler.websiteName.Suffix.Replace(".", "").Trim()).Value : null,
 		Nickname = !string.IsNullOrWhiteSpace(mergedBowler.softwareName?.Nickname) ? mergedBowler.softwareName.Nickname : !string.IsNullOrWhiteSpace(mergedBowler.websiteName?.Nickname) ? mergedBowler.websiteName?.Nickname : null,
+		Gender = mergedBowler.Gender,
+		DateOfBirth = mergedBowler.DateOfBirth
 	}).ToList();
 
 
@@ -2035,6 +2069,8 @@ static List<(int? websiteId, int? softwareId)> s_manualMatch = new()
 	new(null, 5063),  // Ned Robinson
 	new(null, 5065),  // James Fortier
 	new(null, 5069),  // Brianna Cote
+	new(null, 5085),  // Christian Forry
+	new(null, 5090),  // Caitlyn Smith
 };
 
 #endregion
@@ -2437,8 +2473,17 @@ public record AddressRanges
 
 private void ManualLocationUpdates(IReadOnlyCollection<BowlingCenters> bowlingCenters)
 {
+	var kensBowl = bowlingCenters.Single(bc => bc.Name == "Ken's Bowl");
+	kensBowl.CertificationNumber = "9906";
+	
 	var amity = bowlingCenters.Single(bc => bc.Name == "Amity Bowl");
 	amity.Street = "30 Selden Street";
+	
+	var eastProvidence = bowlingCenters.Single(bc => bc.Name == "East Providence Lanes");
+	eastProvidence.City = "Rumford";
+	eastProvidence.PostalCode = "029162068";
+	eastProvidence.Latitude = 41.85705;
+	eastProvidence.Longitude = -71.35454;
 
 	var tbowl = bowlingCenters.Single(bc => bc.Name == "Bowlero Wallingford");
 	tbowl.Latitude = 41.488968;
@@ -2727,6 +2772,8 @@ private async Task<IReadOnlyCollection<BowlingCenters>> ManualBowlingCenterAddit
 		Status = BowlingCenterStatus.Closed,
 		WebsiteId = 1
 	};
+	
+	manualBowlingCenters.Add(airway);
 
 
 	return manualBowlingCenters;
@@ -2874,6 +2921,520 @@ public class UsbcBowlingCenterDto
 
 	[JsonPropertyName("coach")]
 	public bool Coach { get; set; }
+}
+
+#endregion
+
+#region Tournaments
+
+public async Task<IReadOnlyCollection<SpreadsheetTournament>> MigrateTournamentsAsync(IDictionary<int, string> seasonDomainIdByEndYear)
+{
+	var spreadsheetTournaments = await GetTournamentsFromSpreadsheetAsync();
+	var softwareTournaments = await GetTournamentsFromSoftwareAsync();
+
+	foreach (var spreadsheetTournament in spreadsheetTournaments)
+	{
+		var softwareTournament = softwareTournaments.SingleOrDefault(t => t.Id == spreadsheetTournament.SoftwareId);
+
+		var tournament = new Tournaments
+		{
+			DomainId = Ulid.NewUlid(spreadsheetTournament.StartDate.ToDateTime(TimeOnly.MinValue).ToUniversalTime(), RandomNumberGenerator.GetBytes(10)).ToString(),
+			Name = spreadsheetTournament.TournamentName,
+			TournamentType =  TournamentType.FromName(spreadsheetTournament.TournamentType).Value,
+			StartDate = spreadsheetTournament.StartDate,
+			EndDate = spreadsheetTournament.EndDate,
+			BowlingCenterId = string.IsNullOrWhiteSpace(spreadsheetTournament.BowlingCenterCertificationNumber) ? null : spreadsheetTournament.BowlingCenterCertificationNumber,
+			LegacyId = softwareTournament?.Id,
+			PatternLengthCategory = GetPatternLengthCategory(softwareTournament?.OilPatternLength)?.Value,
+			PatternRatioCategory = GetPatternRatioCategory(softwareTournament?.OilPatternLeftRatio, softwareTournament?.OilPatternRightRatio)?.Value,
+			SeasonId = spreadsheetTournament.EndDate.Year == 2020 ? seasonDomainIdByEndYear[2021] : seasonDomainIdByEndYear[spreadsheetTournament.EndDate.Year],
+			EntryFee = softwareTournament?.EntryFee ?? 0,
+			StatsEligible = softwareTournament?.StatsEligible ?? false
+		};
+		
+		spreadsheetTournament.DomainId = Ulid.Parse(tournament.DomainId);
+		
+		Tournaments.Add(tournament);
+	}
+	
+	await SaveChangesAsync();
+	
+	"Tournaments Migrated".Dump();
+	
+	return spreadsheetTournaments;
+}
+
+public async Task MigrateHistoricalTournamentResults(
+	IDictionary<int, int> tournamentIdBySoftwareId,
+	IDictionary<int, int> bowlerIdBySoftwareId)
+{
+	var resultStatsDataTable = await QuerySoftwareDatabaseAsync("""
+		SELECT
+			s.BowlerId as BowlerId,
+			s.TournamentId as TournamentId,
+			r.Place as Place,
+			r.Payout as Payout,
+			r.Points as Points,
+			r.SideCut as SideCut
+		FROM
+			Stats s
+		INNER JOIN
+			Stats_ResultsStats r
+			ON
+				s.Id = r.Id
+		INNER JOIN
+			Tournaments t
+			ON
+			t.Id = s.TournamentId
+		WHERE
+			Year(t.Start) < 2026
+	""");
+
+	var resultStats = resultStatsDataTable.AsEnumerable().Select(row => new
+	{
+		BowlerId = row.Field<int>("BowlerId"),
+		TournamentId = row.Field<int>("TournamentId"),
+		Place = row.Field<int?>("Place"),
+		PrizeMoney = row.Field<decimal>("Payout"),
+		Points = row.Field<int>("Points"),
+		SideCutId = row.Field<int?>("SideCut")
+	}).ToList();
+
+	var results = resultStats.Select(s => new TournamentResults
+	{
+		BowlerId = bowlerIdBySoftwareId[s.BowlerId],
+		TournamentId = tournamentIdBySoftwareId[s.TournamentId],
+		Place = s.Place,
+		PrizeMoney = s.PrizeMoney,
+		Points = s.Points,
+		SideCutId = s.SideCutId
+	}).ToList();
+	
+	TournamentResults.AddRange(results);
+	
+	await SaveChangesAsync();
+	
+	"Historical Tournament Results Migrated".Dump();
+}
+
+public async Task MigrateHistoricalTournamentChampions(
+	Dictionary<int, int> bowlerDbIdByWebsiteId, 
+	IReadOnlyCollection<SpreadsheetTournament> tournaments,
+	Dictionary<Ulid, int> tournamentDbIdByDomainId)
+{
+	foreach (var tournament in tournaments
+		.Where(t => t.TournamentType != TournamentType.Youth.Name)
+		.Where(t => t.EndDate.Year < 2026)) // 2026 and forward will be determined the new way via stat records
+	{
+		foreach (var champion in (tournament.Winners ?? []).Where(id => id > 0))
+		{
+			var tournamentChampion = new TournamentChampions
+			{
+				TournamentId = tournamentDbIdByDomainId[tournament.DomainId],
+				BowlerId = bowlerDbIdByWebsiteId[champion]
+			};
+			
+			TournamentChampions.Add(tournamentChampion);
+		}
+	}
+	
+	await SaveChangesAsync();
+	
+	"Historical Tournament Champions Migrated".Dump();
+}
+
+public async Task MigrateHistoricalTournamentEntries(
+	IReadOnlyCollection<SpreadsheetTournament> tournaments,
+	Dictionary<Ulid, int> tournamentDbIdByDomainId)
+{
+	foreach (var tournament in tournaments.Where(t => t.EndDate.Year < 2026))
+	{
+		var tournamentEntry = new TournamentEntries
+		{
+			TournamentId = tournamentDbIdByDomainId[tournament.DomainId],
+			Entries = tournament.Entries
+		};
+		
+		TournamentEntries.Add(tournamentEntry);
+	}
+	
+	await SaveChangesAsync();
+	
+	"Historical Tournament Entries Migrated".Dump();
+}
+
+private PatternRatioCategory? GetPatternRatioCategory(decimal? leftRatio, decimal? rightRatio)
+{
+	if (leftRatio is null && rightRatio is null)
+	{
+		return null;
+	}
+	
+	decimal? ratioToTest = null;
+
+	if (leftRatio is null)
+	{
+		ratioToTest = rightRatio!.Value;
+	}
+
+	if (rightRatio is null)
+	{
+		ratioToTest = leftRatio!.Value;
+	}
+
+	if (ratioToTest is null)
+	{
+		ratioToTest = (leftRatio!.Value + rightRatio!.Value) / 2m;
+	}
+
+	if (ratioToTest < 4m)
+	{
+		return PatternRatioCategory.Sport;
+	}
+
+	if (ratioToTest >= 8)
+	{
+		return PatternRatioCategory.Recreation;
+	}
+	
+	return PatternRatioCategory.Challenge;
+}
+
+public sealed class PatternRatioCategory
+	: SmartEnum<PatternRatioCategory>
+{
+	public static readonly PatternRatioCategory Sport = new(nameof(Sport), 1, null, 4m);
+
+	public static readonly PatternRatioCategory Challenge = new(nameof(Challenge), 2, 4m, 8m);
+
+	public static readonly PatternRatioCategory Recreation = new(nameof(Recreation), 3, 8m, null);
+
+	private PatternRatioCategory(
+		string name,
+		int value,
+		decimal? minimumRatio,
+		decimal? maximumRatio)
+		: base(name, value)
+	{
+		MinimumRatio = minimumRatio;
+		MaximumRatio = maximumRatio;
+	}
+
+	public decimal? MinimumRatio { get; }
+
+	public decimal? MaximumRatio { get; }
+}
+
+private PatternLengthCategory? GetPatternLengthCategory(int? patternLength)
+{
+	if (patternLength is null)
+	{
+		return null;
+	}
+
+	if (patternLength <= 37)
+	{
+		return PatternLengthCategory.ShortPattern;
+	}
+
+	if (patternLength >= 43)
+	{
+		return PatternLengthCategory.LongPattern;
+	}
+	
+	return PatternLengthCategory.MediumPattern;
+}
+
+public sealed class PatternLengthCategory
+	: SmartEnum<PatternLengthCategory>
+{
+	public static readonly PatternLengthCategory ShortPattern = new("Short", 1, null, 37);
+
+	public static readonly PatternLengthCategory MediumPattern = new("Medium", 2, 38, 42);
+
+	public static readonly PatternLengthCategory LongPattern = new("Long", 3, 43, null);
+
+	private PatternLengthCategory(
+		string name,
+		int value,
+		int? minimumLength,
+		int? maximumLength)
+		: base(name, value)
+	{
+		MinimumLength = minimumLength;
+		MaximumLength = maximumLength;
+	}
+
+	public int? MinimumLength { get; }
+
+	public int? MaximumLength { get; }
+}
+public sealed class TournamentType
+	: SmartEnum<TournamentType>
+{
+	public static readonly TournamentType Singles = new(nameof(Singles), 100, 1, true);
+
+	public static readonly TournamentType Doubles = new(nameof(Doubles), 200, 2, true);
+
+	public static readonly TournamentType Trios = new(nameof(Trios), 300, 3, true);
+
+	public static readonly TournamentType Baker = new(nameof(Baker), 500, 5, true);
+
+	public static readonly TournamentType NonChampions = new("Non-Champions", 101, 1, true);
+
+	public static readonly TournamentType TournamentOfChampions = new("Tournament of Champions", 102, 1, true);
+
+	public static readonly TournamentType Invitational = new(nameof(Invitational), 103, 1, true);
+
+	public static readonly TournamentType Masters = new(nameof(Masters), 104, 1, true);
+
+	public static readonly TournamentType HighRoller = new("High Roller", 105, 1, false);
+
+	public static readonly TournamentType Senior = new(nameof(Senior), 106, 1, true);
+
+	public static readonly TournamentType Women = new(nameof(Women), 107, 1, true);
+
+	public static readonly TournamentType OverForty = new("Over 40", 108, 1, false);
+
+	public static readonly TournamentType FortyToFortyNine = new("40 - 49", 109, 1, false);
+
+	public static readonly TournamentType Youth = new(nameof(Youth), 110, 1, true);
+
+	public static readonly TournamentType Eliminator = new(nameof(Eliminator), 111, 1, false);
+
+	public static readonly TournamentType SeniorAndWomen = new("Senior / Women", 112, 1, true);
+
+	public static readonly TournamentType OverUnderFiftyDoubles = new("Over/Under 50 Doubles", 201, 2, true);
+
+	public static readonly TournamentType OverUnderFortyDoubles = new("Under/Over 40", 202, 2, false);
+
+	private TournamentType(string name, int value, int teamSize, bool activeFormat)
+		: base(name, value)
+	{
+		TeamSize = teamSize;
+		ActiveFormat = activeFormat;
+	}
+
+	public int TeamSize { get; }
+
+	public bool ActiveFormat { get; }
+}
+
+private async Task<IReadOnlyCollection<SpreadsheetTournament>> GetTournamentsFromSpreadsheetAsync()
+{
+	var json = await Util.GetPasswordAsync("credentials.sheets.google");
+	var serviceAccountCredential = CredentialFactory.FromJson<ServiceAccountCredential>(json);
+	var googleCredential = serviceAccountCredential.ToGoogleCredential().CreateScoped(SheetsService.Scope.SpreadsheetsReadonly);
+
+	using var sheetsService = new SheetsService(new BaseClientService.Initializer
+	{
+		HttpClientInitializer = googleCredential,
+		ApplicationName = "NEBA Tournament Port"
+	});
+
+	const string spreadsheetId = "1dMTZ4OiXqkFmQNXBUjREVKH_cduwLmZDIcpWmhJY6ds";
+	const string tableName = "Tournaments";
+
+	var request = sheetsService.Spreadsheets.Values.Get(spreadsheetId, tableName);
+	ValueRange response = await request.ExecuteAsync();
+
+	var values = response.Values.Skip(1);
+
+	var tournaments = new List<SpreadsheetTournament>();
+
+	foreach (var row in values)
+	{
+		var tournamentRecord = new SpreadsheetTournament
+		{
+			OverallTournamentCount = int.TryParse(row[0]?.ToString(), out var overallCount) ? overallCount : 0,
+			SinglesTournamentCount = int.TryParse(row[1]?.ToString(), out var singleCount) ? singleCount : null,
+			Month = int.TryParse(row[2]?.ToString(), out var month) ? month : 0,
+			Year = int.TryParse(row[3]?.ToString(), out var year) ? year : 0,
+			SoftwareId = int.TryParse(row[4]?.ToString(), out var softwareId) ? softwareId : null,
+			TournamentName = row[5]?.ToString() ?? string.Empty,
+			StartDate = DateOnly.TryParse(row[6]?.ToString(), out var startDate) ? startDate : DateOnly.MinValue,
+			EndDate = DateOnly.TryParse(row[7]?.ToString(), out var endDate) ? endDate : DateOnly.MaxValue,
+			TournamentType = row[8]?.ToString() ?? string.Empty,
+			BowlingCenter = row[9]?.ToString() ?? string.Empty,
+			BowlingCenterCertificationNumber = row[14]?.ToString() ?? string.Empty,
+			CityState = row[10]?.ToString() ?? string.Empty,
+			Entries = int.TryParse(row[12]?.ToString(), out var entries) ? entries : -1,
+			Winners = row[13]?.ToString()?.Split("/").Select(id => int.TryParse(id, out var idValue) ? idValue : 0).ToList().AsReadOnly() ?? []
+		};
+
+		tournaments.Add(tournamentRecord);
+	}
+
+	return tournaments;
+}
+
+private async Task<IReadOnlyCollection<SoftwareTournament>> GetTournamentsFromSoftwareAsync()
+{
+	var tournamentsDataTable = await QuerySoftwareDatabaseAsync("""
+	SELECT
+		*
+	FROM
+		dbo.Tournaments
+	""");
+
+	var tournaments = tournamentsDataTable.AsEnumerable()
+		.Select(row => new SoftwareTournament
+		{
+			Id = row.Field<int>("Id"),
+			Name = row.Field<string>("Name") ?? string.Empty,
+			OilPatternLength = row.Field<int?>("OilPattern_Length"),
+			OilPatternLeftRatio = row.Field<decimal?>("OilPattern_LeftRatio"),
+			OilPatternRightRatio = row.Field<decimal?>("OilPattern_RightRatio"),
+			EntryFee = row.Field<decimal>("EntryFee"),
+			StatsEligible = row.Field<bool>("YearlyStatEligible")
+		})
+		.ToList();
+		
+	return tournaments;
+}
+
+public sealed class SpreadsheetTournament
+{
+	public Ulid DomainId { get; set; }
+
+	public required int OverallTournamentCount { get; init; }
+
+	public int? SinglesTournamentCount { get; init; }
+
+	public required int Month { get; init; }
+
+	public required int Year { get; init; }
+
+	public int? SoftwareId { get; init; }
+
+	public required string TournamentName { get; init; }
+
+	public required DateOnly StartDate { get; init; }
+
+	public required DateOnly EndDate { get; init; }
+
+	public required string TournamentType { get; init; }
+
+	public required string BowlingCenter { get; init; }
+
+	public required string BowlingCenterCertificationNumber { get; init; }
+
+	public required string CityState { get; init; }
+
+	public int Entries { get; init; }
+
+	public IReadOnlyCollection<int>? Winners { get; init; }
+}
+
+public sealed class SoftwareTournament
+{ 
+	public int Id { get; init; }
+	
+	public string Name { get; init; } = string.Empty;
+	
+	public decimal? OilPatternLeftRatio { get; init; }
+	
+	public decimal? OilPatternRightRatio { get; init; }
+	
+	public int? OilPatternLength { get; init; }
+	
+	public decimal EntryFee { get; init; }
+	
+	public bool StatsEligible { get; init; }
+}
+
+#endregion
+
+#region Side Cuts
+
+public async Task MigrateSideCuts()
+{
+	var senior = new SideCuts
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "Senior",
+		Active = true,
+		ColorIndicator = System.Drawing.ColorTranslator.FromHtml("#fbf592").ToArgb(), //light yellow
+		LogicalOperator = "AND",
+		SideCutCriteriaGroups =
+		[
+			new SideCutCriteriaGroups
+			{
+				DomainId = Guid.AsDomainId(),
+				LogicalOperator = "AND",
+				SortOrder = 10,
+				SideCutCriteriaGroupSideCutCriterias =
+				[
+					new SideCutCriteria
+					{
+						GenderRequirement = null,
+						MinimumAge = 50,
+						MaximumAge = null
+					}
+				]
+			}
+		]
+	};
+
+	var superSenior = new SideCuts
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "Super Senior",
+		Active = true,
+		ColorIndicator = System.Drawing.ColorTranslator.FromHtml("#9298fb").ToArgb(), //light blue
+		LogicalOperator = "AND",
+		SideCutCriteriaGroups =
+		[
+			new SideCutCriteriaGroups
+			{
+				DomainId = Guid.AsDomainId(),
+				LogicalOperator = "AND",
+				SortOrder = 10,
+				SideCutCriteriaGroupSideCutCriterias =
+				[
+					new SideCutCriteria
+					{
+						GenderRequirement = null,
+						MinimumAge = 60,
+						MaximumAge = null
+					}
+				]
+			}
+		]
+	};
+
+	var women = new SideCuts
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "Women",
+		Active = true,
+		ColorIndicator = System.Drawing.ColorTranslator.FromHtml("#f9a6d8").ToArgb(), //light pink
+		LogicalOperator = "AND",
+		SideCutCriteriaGroups =
+		[
+			new SideCutCriteriaGroups
+			{
+				DomainId = Guid.AsDomainId(),
+				LogicalOperator = "AND",
+				SortOrder = 10,
+				SideCutCriteriaGroupSideCutCriterias =
+				[
+					new SideCutCriteria
+					{
+						GenderRequirement = "F",
+						MinimumAge = null,
+						MaximumAge = null
+					}
+				]
+			}
+		]
+	};
+	
+	SideCuts.AddRange([senior, superSenior, women]);
+	
+	await SaveChangesAsync();
+	
+	"Side Cuts Migrated".Dump();
 }
 
 #endregion

@@ -1,0 +1,130 @@
+@namespace Neba.Website.Server.Tournaments.Schedule
+@using System.Globalization
+
+<div class="neba-card tournament-upcoming-card">
+    <div class="tournament-upcoming-card__grid">
+        <div class="tournament-upcoming-card__logo">
+            <img src="@(Tournament.TournamentLogoUrl?.ToString() ?? "/images/neba-logo.png")"
+                 alt="@Tournament.Name logo" class="tournament-upcoming-card__logo-img" />
+        </div>
+
+        <div class="tournament-upcoming-card__content">
+            <div class="tournament-upcoming-card__eyebrow">
+                @if (Tournament.HasSponsor)
+                {
+                    <span class="tournament-upcoming-card__sponsor">@Tournament.Sponsor</span>
+                    <span aria-hidden="true">·</span>
+                }
+                else
+                {
+                    <span class="tournament-upcoming-card__sponsor-available">• Sponsorship available</span>
+                    <span aria-hidden="true">·</span>
+                }
+                <time>@Tournament.FormatDateRange()</time>
+
+                @if (Tournament.IsUrgent)
+                {
+                    <span class="tournament-upcoming-card__urgency-tag"
+                          aria-label="Starts in @Tournament.DaysUntilStart days">
+                        <span class="tournament-upcoming-card__urgency-dot" aria-hidden="true"></span>
+                        In @Tournament.DaysUntilStart days
+                    </span>
+                }
+            </div>
+
+            <h3 class="tournament-upcoming-card__title">
+                <a href="/tournaments/@Tournament.Id">@Tournament.Name</a>
+            </h3>
+
+            @if (Tournament.HasHost)
+            {
+                <p class="tournament-upcoming-card__host">
+                    <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+                    @Tournament.DisplayLocation
+                </p>
+            }
+            else
+            {
+                <p class="tournament-upcoming-card__host tournament-upcoming-card__host--tba">
+                    Host center to be announced
+                </p>
+            }
+
+            <div class="tournament-upcoming-card__chips">
+                <span class="tournament-upcoming-card__chip">@Tournament.TournamentType</span>
+                @if (Tournament.PatternDisplay is not null)
+                {
+                    <span class="tournament-upcoming-card__chip">@Tournament.PatternDisplay</span>
+                }
+            </div>
+        </div>
+
+        <div class="tournament-upcoming-card__actions">
+            <div class="tournament-upcoming-card__price">
+                @if (Tournament.DisplayPrice.HasValue)
+                {
+                    <span
+                        class="tournament-upcoming-card__price-value @(Tournament.HasAddedMoney ? "tournament-upcoming-card__price-value--gold" : "")">
+                        @Tournament.DisplayPrice.Value.ToString("C0", CurrencyCulture)
+                    </span>
+                    <span class="tournament-upcoming-card__price-label">@Tournament.DisplayPriceLabel</span>
+                    @if (Tournament.HasAddedMoney)
+                    {
+                        @if (Tournament.EntryFee.HasValue)
+                        {
+                            <span class="tournament-upcoming-card__price-sub">
+                                @Tournament.EntryFee.Value.ToString("C0", CurrencyCulture) entry fee
+                            </span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="tournament-upcoming-card__price-sub">per bowler</span>
+                    }
+                }
+            </div>
+
+            <TournamentStatusPill Status="Tournament.RegistrationStatus" />
+
+            @if (Tournament.HasCapacityData)
+            {
+                <div class="tournament-upcoming-card__capacity">
+                    <span class="tournament-upcoming-card__capacity-label">@Tournament.Entries of
+                        @Tournament.MaxEntries</span>
+                        <div class="tournament-upcoming-card__capacity-track">
+                            <div class="tournament-upcoming-card__capacity-fill" style="@GetCapacityStyle()" role="progressbar"
+                                 aria-valuenow="@Tournament.Entries" aria-valuemin="0" aria-valuemax="@Tournament.MaxEntries"
+                                 aria-label="@Tournament.Entries of @Tournament.MaxEntries entries filled">
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (Tournament.CanRegister)
+                {
+                    <a href="@Tournament.RegistrationUrl" target="_blank" rel="noopener noreferrer"
+                       class="neba-btn neba-btn-primary neba-btn-sm">
+                        Register →
+                    </a>
+                }
+                else
+                {
+                    <p class="tournament-upcoming-card__reg-later">Registration opens later</p>
+                }
+                <a href="/tournaments/@Tournament.Id" class="neba-link tournament-upcoming-card__details-link">
+                    View Details →
+                </a>
+            </div>
+        </div>
+    </div>
+
+@code {
+    private static readonly CultureInfo CurrencyCulture = CultureInfo.GetCultureInfo("en-US");
+
+    [Parameter, EditorRequired]
+    public SeasonTournamentViewModel Tournament { get; set; } = default!;
+
+    private string GetCapacityStyle() =>
+        "width:" + ((double)Tournament.Entries!.Value / Tournament.MaxEntries!.Value * 100).ToString("F0",
+System.Globalization.CultureInfo.CurrentCulture) + "%";
+}

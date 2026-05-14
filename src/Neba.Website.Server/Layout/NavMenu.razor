@@ -30,9 +30,7 @@
                        @onclick:preventDefault>Tournaments</a>
                     <div class="neba-dropdown" role="menu">
                         <NavLink class="neba-dropdown-link" href="tournaments" Match="NavLinkMatch.All" role="menuitem">
-                            Future Tournaments</NavLink>
-                            <NavLink class="neba-dropdown-link" href="@($"tournaments/{CurrentYear}")" role="menuitem">Past
-                                Tournaments</NavLink>
+                            Schedule</NavLink>
                                 <div class="neba-dropdown-divider"></div>
                                 <NavLink class="neba-dropdown-link" href="tournaments/rules" role="menuitem">Tournament Rules
                                 </NavLink>
@@ -94,8 +92,6 @@
 
     private string? NavMenuCssClass => collapseNavMenu ? null : "active";
     private string? NavbarCssClass => collapseNavMenu ? null : "menu-open";
-
-    private static int CurrentYear => DateTime.Now.Year;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

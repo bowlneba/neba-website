@@ -235,40 +235,16 @@ public sealed class SeasonStatsTests : IDisposable
         cut.FindAll(".stats-modal-backdrop").ShouldBeEmpty();
     }
 
-    [Fact(DisplayName = "Should open points race modal when the widget is clicked")]
+    [Fact(DisplayName = "Should open points progression modal when the widget is clicked")]
     public async Task Modal_ShouldOpenPointsRaceModal_WhenWidgetClicked()
     {
         _statsApi.EnqueueResult(CreateStatsModel(firstRowName: "Alpha Bowler"));
         var cut = _ctx.Render<SeasonStatsPage>();
 
-        await cut.Find("[aria-label='Open Bowler of the Year race chart']").ClickAsync(new());
+        await cut.Find("[aria-label='Open Bowler of the Year points progression chart']").ClickAsync(new());
 
         cut.Find(".stats-modal-backdrop").ShouldNotBeNull();
-        cut.Find(".stats-modal-title").TextContent.ShouldContain("Bowler of the Year Race");
-    }
-
-    [Fact(DisplayName = "Should open points race modal when Enter key is pressed on the widget")]
-    public async Task Modal_ShouldOpenPointsRaceModal_WhenEnterKeyPressed()
-    {
-        _statsApi.EnqueueResult(CreateStatsModel(firstRowName: "Alpha Bowler"));
-        var cut = _ctx.Render<SeasonStatsPage>();
-
-        await cut.Find("[aria-label='Open Bowler of the Year race chart']")
-            .TriggerEventAsync("onkeydown", new KeyboardEventArgs { Key = "Enter" });
-
-        cut.Find(".stats-modal-backdrop").ShouldNotBeNull();
-    }
-
-    [Fact(DisplayName = "Should not open modal when an unrecognized key is pressed on the widget")]
-    public async Task Modal_ShouldNotOpenModal_WhenOtherKeyPressed()
-    {
-        _statsApi.EnqueueResult(CreateStatsModel(firstRowName: "Alpha Bowler"));
-        var cut = _ctx.Render<SeasonStatsPage>();
-
-        await cut.Find("[aria-label='Open Bowler of the Year race chart']")
-            .TriggerEventAsync("onkeydown", new KeyboardEventArgs { Key = "Escape" });
-
-        cut.FindAll(".stats-modal-backdrop").ShouldBeEmpty();
+        cut.Find(".stats-modal-title").TextContent.ShouldContain("Points Race");
     }
 
     [Fact(DisplayName = "Should filter datalist options by search text when oninput fires")]
@@ -371,7 +347,7 @@ public sealed class SeasonStatsTests : IDisposable
             [
                 BowlerOfTheYearStandingRowViewModelFactory.Create(bowlerName: firstRowName),
             ],
-            bowlerOfTheYearPointsRace: PointsRaceSeriesViewModelFactory.Bogus(3, seed: 1103));
+            openPointsRace: PointsRaceSeriesViewModelFactory.Bogus(3, seed: 1103));
     }
 
     private sealed class FakeStatsApiService

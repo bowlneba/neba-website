@@ -20,7 +20,9 @@ internal static class PhoneNumberFormatter
         var formatted = FormatDigits(digits);
 
         if (formatted is null)
+        {
             return rawPhoneNumber;
+        }
 
         return extension is not null
             ? $"{formatted} x{extension}"

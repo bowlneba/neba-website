@@ -1,0 +1,57 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace Neba.Infrastructure.Database.Migrations
+{
+    /// <inheritdoc />
+    public partial class Tournaments_AddSeasonId : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AddColumn<string>(
+                name: "season_id",
+                schema: "app",
+                table: "tournaments",
+                type: "character(26)",
+                fixedLength: true,
+                maxLength: 26,
+                nullable: false);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_tournaments_season_id",
+                schema: "app",
+                table: "tournaments",
+                column: "season_id");
+
+            migrationBuilder.AddForeignKey(
+                name: "fk_tournaments_seasons_season_id",
+                schema: "app",
+                table: "tournaments",
+                column: "season_id",
+                principalSchema: "app",
+                principalTable: "seasons",
+                principalColumn: "domain_id");
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropForeignKey(
+                name: "fk_tournaments_seasons_season_id",
+                schema: "app",
+                table: "tournaments");
+
+            migrationBuilder.DropIndex(
+                name: "ix_tournaments_season_id",
+                schema: "app",
+                table: "tournaments");
+
+            migrationBuilder.DropColumn(
+                name: "season_id",
+                schema: "app",
+                table: "tournaments");
+        }
+    }
+}

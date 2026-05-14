@@ -1,0 +1,57 @@
+.tournament-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Variants */
+.tournament-status-pill--open {
+    background: rgba(22, 163, 74, 0.10);
+    color: var(--neba-success);
+}
+
+.tournament-status-pill--closing {
+    background: rgba(217, 119, 6, 0.10);
+    color: var(--neba-warning);
+}
+
+.tournament-status-pill--soon {
+    background: rgba(62, 79, 217, 0.10);
+    color: var(--neba-blue-700);
+}
+
+.tournament-status-pill--closed,
+.tournament-status-pill--full {
+    background: var(--neba-gray-100);
+    color: var(--neba-gray-600);
+}
+
+.tournament-status-pill--completed {
+    background: rgba(62, 79, 217, 0.08);
+    color: var(--neba-blue-700);
+}
+
+/* Pulse dot for open state */
+.tournament-status-pill__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .tournament-status-pill--open .tournament-status-pill__dot {
+        animation: status-pulse 2s ease-in-out infinite;
+    }
+}
+
+@keyframes status-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.4); }
+}

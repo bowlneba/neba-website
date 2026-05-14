@@ -40,7 +40,9 @@ void Main()
 
 // You can define other methods, fields, classes and namespaces here
 public sealed record BowlerTournamentPoints(
+	int Season,
 	int BowlerId,
+	int TournamentId,
 	string TournamentName,
 	DateOnly TournamentDate,
 	int CumulativePoints
@@ -71,7 +73,7 @@ public void GetBowlerTournamentPointsProgression(IReadOnlyCollection<int> bowler
 			
 			points += tournamentResult.Points;
 			
-			progressions.Add(new(bowlerId, tournament.Name, tournament.End.DateOnly(), points));
+			progressions.Add(new(tournamentYears.Last(), bowlerId, tournament.Id, tournament.Name, tournament.End.DateOnly(), points));
 		}
 	}
 

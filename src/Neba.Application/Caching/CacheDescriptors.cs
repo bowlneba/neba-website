@@ -1,5 +1,6 @@
 
 using Neba.Domain.Seasons;
+using Neba.Domain.Tournaments;
 
 namespace Neba.Application.Caching;
 
@@ -130,6 +131,22 @@ public static class CacheDescriptors
     }
 
     /// <summary>
+    /// Cache descriptors for season data.
+    /// </summary>
+    public static class Seasons
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of seasons, with a key and tags that allow for efficient caching and invalidation of season data.
+        /// </summary>
+        public static CacheDescriptor List
+            => new()
+            {
+                Key = "neba:seasons:list",
+                Tags = ["neba", "neba:seasons"]
+            };
+    }
+
+    /// <summary>
     /// Cache descriptors for stats data.
     /// </summary>
     public static class Stats
@@ -154,6 +171,48 @@ public static class CacheDescriptors
             {
                 Key = $"neba:stats:seasons:{seasonId}:bowlers",
                 Tags = ["neba", "neba:stats", "neba:stats:seasons", $"neba:stats:seasons:{seasonId}"]
+            };
+
+        /// <summary>
+        /// Returns a cache descriptor for all BOY race progressions for the given season.
+        /// </summary>
+        /// <param name="seasonId">The season identifier.</param>
+        /// <returns>A cache descriptor for BOY progression data.</returns>
+        public static CacheDescriptor BoyProgressions(SeasonId seasonId)
+            => new()
+            {
+                Key = $"neba:stats:seasons:{seasonId}:boy-progressions",
+                Tags = ["neba", "neba:stats", "neba:stats:seasons", $"neba:stats:seasons:{seasonId}"]
+            };
+    }
+
+    /// <summary>
+    /// Cache descriptors for tournament data.
+    /// </summary>
+    public static class Tournaments
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of tournaments in a given season.
+        /// </summary>
+        /// <param name="seasonId">The season identifier.</param>
+        /// <returns>A cache descriptor for the tournaments in the season.</returns>
+        public static CacheDescriptor ListForSeason(SeasonId seasonId)
+            => new()
+            {
+                Key = $"neba:tournaments:{seasonId}:list",
+                Tags = ["neba", "neba:tournaments", $"neba:tournaments:{seasonId}"]
+            };
+
+        /// <summary>
+        /// Returns a cache descriptor for the details of a specific tournament, identified by the given tournament ID.
+        /// </summary>
+        /// <param name="id">The tournament identifier.</param>
+        /// <returns>A cache descriptor for the tournament details.</returns>
+        public static CacheDescriptor TournamentDetail(TournamentId id)
+            => new()
+            {
+                Key = $"neba:tournaments:{id}",
+                Tags = ["neba", "neba:tournaments", $"neba:tournaments:{id}"]
             };
     }
 }

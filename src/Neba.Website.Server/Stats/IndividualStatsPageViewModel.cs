@@ -169,7 +169,7 @@ public record IndividualStatsPageViewModel
     public int? AverageFinishRank { get; init; }
 
     /// <summary>
-    /// The points race series information for the bowler in the Bowler of the Year race for the selected season. This is used to determine the bowler's performance in the Bowler of the Year
+    /// Per-race BOY progression entries for races in which this bowler has results. Only populated races are included.
     /// </summary>
-    public PointsRaceSeriesViewModel? BowlerOfTheYearPointsRace { get; init; }
+    public IReadOnlyCollection<IndividualBoyProgressionViewModel> BoyProgressions { get; init; } = [];
 }

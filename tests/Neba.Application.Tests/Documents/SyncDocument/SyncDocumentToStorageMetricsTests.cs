@@ -110,7 +110,9 @@ public sealed class SyncDocumentToStorageMetricsTests
             InstrumentPublished = (instrument, l) =>
             {
                 if (instrument.Meter.Name == MeterName)
+                {
                     l.EnableMeasurementEvents(instrument);
+                }
             }
         };
 

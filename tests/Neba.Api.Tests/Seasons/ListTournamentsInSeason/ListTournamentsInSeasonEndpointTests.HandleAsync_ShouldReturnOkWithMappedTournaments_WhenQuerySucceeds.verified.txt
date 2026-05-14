@@ -1,0 +1,93 @@
+﻿{
+  Items: [
+    {
+      Id: 01JS4X26NHQABAW16D7ECRD7JP,
+      Name: Germany incentivize Antigua and Barbuda,
+      StartDate: Date_1,
+      EndDate: Date_2,
+      TournamentType: Doubles,
+      EntryFee: 63.5168915444598050,
+      RegistrationUrl: https://raymond.name,
+      AddedMoney: 3462.948614481345000,
+      Reservations: 52,
+      PatternLengthCategory: Long,
+      PatternRatioCategory: Challenge,
+      Winners: [
+        Lee Dicki,
+        Lorraine Nader,
+        Abraham Armstrong
+      ],
+      BowlingCenter: {
+        Name: Reilly LLC,
+        City: North Rhoda,
+        State: AL
+      },
+      Sponsors: [
+        {
+          Name: Ward - Balistreri,
+          Slug: eius-ut-eaque,
+          LogoUrl: https://picsum.photos/640/480/?image=234
+        },
+        {
+          Name: O'Keefe Inc,
+          Slug: veritatis-praesentium-eum,
+          LogoUrl: https://picsum.photos/640/480/?image=472
+        }
+      ]
+    },
+    {
+      Id: 01GN0X0WT34YXET9S2ZEWY9ZPP,
+      Name: protocol Branch redundant,
+      StartDate: Date_3,
+      EndDate: Date_4,
+      TournamentType: Tournament of Champions,
+      EntryFee: 51.9345233458720700,
+      RegistrationUrl: http://anika.name,
+      AddedMoney: 1876.664709708030000,
+      Reservations: 62,
+      PatternLengthCategory: Long,
+      PatternRatioCategory: Recreation,
+      LogoUrl: https://juvenal.info,
+      BowlingCenter: {
+        Name: Reilly LLC,
+        City: North Rhoda,
+        State: AL
+      },
+      Sponsors: [
+        {
+          Name: Sauer Group,
+          Slug: et-est-rem,
+          LogoUrl: https://picsum.photos/640/480/?image=895
+        },
+        {
+          Name: Graham Group,
+          Slug: molestiae-aut-delectus,
+          LogoUrl: https://picsum.photos/640/480/?image=341
+        }
+      ]
+    },
+    {
+      Id: 01HBDFYSC9WMZ456YFEP03HDDY,
+      Name: port Wyoming deposit,
+      StartDate: Date_5,
+      EndDate: Date_6,
+      TournamentType: Eliminator,
+      EntryFee: 89.816559264350900,
+      RegistrationUrl: http://crystel.name,
+      AddedMoney: 4967.423279288890000,
+      Reservations: 12,
+      PatternLengthCategory: Long,
+      PatternRatioCategory: Challenge,
+      Winners: [
+        Justice Strosin,
+        Ashton McLaughlin
+      ],
+      BowlingCenter: {
+        Name: Murazik, Buckridge and Fritsch,
+        City: Port Rosamondburgh,
+        State: NV
+      }
+    }
+  ],
+  TotalItems: 3
+}

@@ -1,0 +1,63 @@
+@namespace Neba.Website.Server.Tournaments.Schedule
+
+<div class="tournament-tab-bar">
+    <div class="neba-segmented-control" role="tablist" aria-label="Tournament schedule">
+        <button role="tab"
+                aria-selected="@(ActiveTab == TournamentTab.Upcoming)"
+                aria-controls="tournament-list"
+                class="neba-segment-button @(ActiveTab == TournamentTab.Upcoming ? "neba-segment-selected" : "") @(!IsCurrentSeason ? "tournament-tab-bar__tab--disabled" : "")"
+                disabled="@(!IsCurrentSeason)"
+                aria-disabled="@(!IsCurrentSeason)"
+                @onclick="() => OnTabChanged.InvokeAsync(TournamentTab.Upcoming)">
+            Upcoming
+        </button>
+        <button role="tab"
+                aria-selected="@(ActiveTab == TournamentTab.Past)"
+                aria-controls="tournament-list"
+                class="neba-segment-button @(ActiveTab == TournamentTab.Past ? "neba-segment-selected" : "")"
+                @onclick="() => OnTabChanged.InvokeAsync(TournamentTab.Past)">
+            Past
+        </button>
+    </div>
+
+    @if (ActiveTab == TournamentTab.Past)
+    {
+        <select class="neba-select tournament-tab-bar__season-select"
+                value="@ActiveSeason?.StartDate.Year"
+                @onchange="OnSelectChanged"
+                aria-label="Select season">
+            @foreach (var season in AvailableSeasons)
+            {
+                <option value="@season.StartDate.Year" selected="@(season == ActiveSeason)">@season.Description</option>
+            }
+        </select>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public TournamentTab ActiveTab { get; set; }
+
+    [Parameter, EditorRequired]
+    public bool IsCurrentSeason { get; set; }
+
+    [Parameter, EditorRequired]
+    public List<SeasonViewModel> AvailableSeasons { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public SeasonViewModel? ActiveSeason { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<TournamentTab> OnTabChanged { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<int> OnSeasonChanged { get; set; }
+
+    private void OnSelectChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var year))
+        {
+            OnSeasonChanged.InvokeAsync(year);
+        }
+    }
+}

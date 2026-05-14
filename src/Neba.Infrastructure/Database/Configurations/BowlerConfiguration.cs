@@ -61,5 +61,11 @@ internal sealed class BowlerConfiguration
         builder.HasIndex(bowler => bowler.LegacyId)
             .IsUnique()
             .AreNullsDistinct();
+
+        builder.Property(bowler => bowler.Gender)
+            .IsRequired(false);
+
+        builder.Property(bowler => bowler.DateOfBirth)
+            .IsRequired(false);
     }
 }
