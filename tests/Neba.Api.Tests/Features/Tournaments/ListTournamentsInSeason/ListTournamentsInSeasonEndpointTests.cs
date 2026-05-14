@@ -1,13 +1,12 @@
 using FastEndpoints;
 
-using Neba.Api.Features.Seasons.ListTournamentsInSeason;
-using Neba.Application.Messaging;
-using Neba.Application.Tournaments.ListTournamentsInSeason;
+using Neba.Api.Features.Tournaments.ListTournamentsInSeason;
+using Neba.Api.Messaging;
 using Neba.Domain.Seasons;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 
-namespace Neba.Api.Tests.Features.Seasons.ListTournamentsInSeason;
+namespace Neba.Api.Tests.Features.Tournaments.ListTournamentsInSeason;
 
 [UnitTest]
 [Component("Tournaments")]

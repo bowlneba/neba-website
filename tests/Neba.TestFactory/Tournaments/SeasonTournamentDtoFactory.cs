@@ -1,8 +1,4 @@
-using Neba.Application.BowlingCenters.ListBowlingCenters;
-using Neba.Application.Seasons;
-using Neba.Application.Sponsors;
-using Neba.Application.Tournaments;
-using Neba.Application.Tournaments.ListTournamentsInSeason;
+using Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 using Neba.Domain.Bowlers;
 using Neba.Domain.Tournaments;
 using Neba.TestFactory.Bowlers;

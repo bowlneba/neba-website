@@ -37,13 +37,7 @@ internal sealed partial class GetTournamentQueryHandler(
                 DbId = EF.Property<int>(tournament, ShadowIdConfiguration.DefaultPropertyName),
                 tournament.Id,
                 tournament.Name,
-                Season = new SeasonDto
-                {
-                    Id = tournament.Season.Id,
-                    Description = tournament.Season.Description,
-                    StartDate = tournament.Season.StartDate,
-                    EndDate = tournament.Season.EndDate
-                },
+                SeasonDescription = tournament.Season.Description,
                 tournament.StartDate,
                 tournament.EndDate,
                 tournament.StatsEligible,
@@ -83,19 +77,11 @@ internal sealed partial class GetTournamentQueryHandler(
                     ? tournament.Logo.Path
                     : null,
                 Reservations = 999, // need to replace once actual column exists
-                OilPatternsRaw = tournament.OilPatterns.Select(top => new
+                OilPatterns = tournament.OilPatterns.Select(top => new
                 {
-                    OilPattern = new OilPatternDto
-                    {
-                        Id = top.OilPattern.Id,
-                        Name = top.OilPattern.Name,
-                        Length = top.OilPattern.Length,
-                        Volume = top.OilPattern.Volume,
-                        LeftRatio = top.OilPattern.LeftRatio,
-                        RightRatio = top.OilPattern.RightRatio,
-                        KegelId = top.OilPattern.KegelId,
-                    },
-                    top.TournamentRounds
+                    top.OilPattern.Name,
+                    top.OilPattern.Length,
+                    Rounds = top.TournamentRounds.Select(round => round.Name)
                 }).ToList()
             }).SingleOrDefaultAsync(cancellationToken);
 
@@ -140,7 +126,7 @@ internal sealed partial class GetTournamentQueryHandler(
         {
             Id = row.Id,
             Name = row.Name,
-            Season = row.Season.Description,
+            Season = row.SeasonDescription,
             StartDate = row.StartDate,
             EndDate = row.EndDate,
             StatsEligible = row.StatsEligible,
@@ -153,11 +139,12 @@ internal sealed partial class GetTournamentQueryHandler(
             Reservations = row.Reservations,
             PatternLengthCategory = row.PatternLengthCategory,
             PatternRatioCategory = row.PatternRatioCategory,
-            OilPatterns = [.. row.OilPatternsRaw.Select(op => new TournamentOilPatternDto
+            OilPatterns = row.OilPatterns.ConvertAll(pattern => new TournamentOilPatternDto
             {
-                OilPattern = op.OilPattern,
-                TournamentRounds = [.. op.TournamentRounds.Select(tr => tr.Name)]
-            })],
+                Name = pattern.Name,
+                Length = pattern.Length,
+                TournamentRounds = [.. pattern.Rounds]
+            }),
             LogoContainer = row.LogoContainer,
             LogoPath = row.LogoPath,
             Winners = historicalWinners,

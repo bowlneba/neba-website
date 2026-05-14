@@ -18,5 +18,15 @@ public sealed record TournamentSponsorDto
     /// <summary>
     /// Gets the logo URL associated with the entity.
     /// </summary>
-    public Uri? LogoUrl { get; init; }
+    public Uri? LogoUrl { get; internal set; }
+
+    /// <summary>
+    /// Gets the name or identifier of the container that stores the logo asset.
+    /// </summary>
+    public string? LogoContainer { get; init; }
+
+    /// <summary>
+    /// Gets the file system path to the logo image associated with this instance.
+    /// </summary>
+    public string? LogoPath { get; init; }
 }
