@@ -1,7 +1,7 @@
-using Neba.Application.Awards.ListBowlerOfTheYearAwards;
+using Neba.Api.Features.Awards.ListBowlerOfTheYearAwards;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Application.Tests.Awards.ListBowlerOfTheYearAwards;
+namespace Neba.Api.Tests.Features.Awards.ListBowlerOfTheYearAwards;
 
 [UnitTest]
 [Component("Awards")]
