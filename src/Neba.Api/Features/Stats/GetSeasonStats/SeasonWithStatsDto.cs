@@ -1,6 +1,6 @@
 ﻿using Neba.Domain.Seasons;
 
-namespace Neba.Api.Features.Stats.GetSeasonsWithStats;
+namespace Neba.Api.Features.Stats.GetSeasonStats;
 
 /// <summary>
 /// Represents a season along with its associated statistical information.

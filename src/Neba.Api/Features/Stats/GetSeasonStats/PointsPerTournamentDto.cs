@@ -1,6 +1,6 @@
 using Neba.Domain.Bowlers;
 
-namespace Neba.Application.Stats.GetSeasonStats;
+namespace Neba.Api.Features.Stats.GetSeasonStats;
 
 /// <summary>
 /// A leaderboard entry for the Points per Tournament leaderboard, representing a bowler's average

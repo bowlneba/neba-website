@@ -1,6 +1,6 @@
 using Neba.Domain.Bowlers;
 
-namespace Neba.Application.Stats.GetSeasonStats;
+namespace Neba.Api.Features.Stats.GetSeasonStats;
 
 /// <summary>
 /// View model for a points race series, containing the bowler's information and their results in the tournaments of the series.

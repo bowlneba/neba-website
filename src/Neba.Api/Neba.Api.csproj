@@ -5,7 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Neba.Application\Neba.Application.csproj" />
     <ProjectReference Include="..\Neba.Domain\Neba.Domain.csproj" />
     <ProjectReference Include="..\Neba.ServiceDefaults\Neba.ServiceDefaults.csproj" />
     <ProjectReference Include="..\Neba.Api.Contracts\Neba.Api.Contracts.csproj" />

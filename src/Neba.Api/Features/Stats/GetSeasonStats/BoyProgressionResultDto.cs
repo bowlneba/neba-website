@@ -1,8 +1,7 @@
 using Neba.Domain.Bowlers;
-using Neba.Domain.Seasons;
 using Neba.Domain.Tournaments;
 
-namespace Neba.Application.Stats.BoyProgression;
+namespace Neba.Api.Features.Stats.BoyProgression;
 
 /// <summary>One row per <c>HistoricalTournamentResult</c>. Used exclusively to compute BOY point progressions.</summary>
 public sealed record BoyProgressionResultDto
@@ -17,7 +16,7 @@ public sealed record BoyProgressionResultDto
     public required DateOnly? BowlerDateOfBirth { get; init; }
 
     /// <summary>The bowler's gender, used for Woman race eligibility.</summary>
-    public required Gender? BowlerGender { get; init; }
+    public required string? BowlerGender { get; init; }
 
     /// <summary>The tournament's unique identifier.</summary>
     public required TournamentId TournamentId { get; init; }
@@ -35,7 +34,7 @@ public sealed record BoyProgressionResultDto
     public required bool StatsEligible { get; init; }
 
     /// <summary>The tournament type, used for specialty-race eligibility.</summary>
-    public required TournamentType TournamentType { get; init; }
+    public required int TournamentType { get; init; }
 
     /// <summary>The raw points listed on this result row.</summary>
     public required int Points { get; init; }

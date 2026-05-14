@@ -1,6 +1,6 @@
 using Neba.Domain.Bowlers;
 
-namespace Neba.Application.Stats.GetSeasonStats;
+namespace Neba.Api.Features.Stats.GetSeasonStats;
 
 /// <summary>
 /// A lightweight bowler entry used to populate the season stats bowler search list.

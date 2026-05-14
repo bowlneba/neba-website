@@ -1,6 +1,6 @@
 using Neba.Domain.Bowlers;
 
-namespace Neba.Application.Stats.GetSeasonStats;
+namespace Neba.Api.Features.Stats.GetSeasonStats;
 
 /// <summary>
 /// A single bowler's computed standing in an award category (Bowler of the Year, Senior of the Year,

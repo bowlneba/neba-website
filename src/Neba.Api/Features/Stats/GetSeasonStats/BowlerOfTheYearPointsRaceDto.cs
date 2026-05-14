@@ -1,4 +1,4 @@
-namespace Neba.Application.Stats.GetSeasonStats;
+namespace Neba.Api.Features.Stats.GetSeasonStats;
 
 /// <summary>
 /// Data transfer object for the Bowler of the Year points race tournament statistics.

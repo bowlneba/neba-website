@@ -1,12 +1,13 @@
 using Neba.Domain.Bowlers;
 
-namespace Neba.Application.Stats.GetSeasonStats;
+namespace Neba.Api.Features.Stats.GetSeasonStats;
 
 /// <summary>
-/// A leaderboard entry for the Finals per Entry leaderboard, representing a bowler's Finals
-/// appearance rate relative to their number of tournament entries. Ordered descending by ratio.
+/// A leaderboard entry for the Match Play Appearances leaderboard, representing the number of Finals
+/// appearances for a bowler during the season. Ordered descending by Finals count. Bowlers with zero
+/// Finals are excluded.
 /// </summary>
-public sealed record FinalsPerEntryDto
+public sealed record MatchPlayAppearancesDto
 {
     /// <summary>The unique identifier of the bowler.</summary>
     public required BowlerId BowlerId { get; init; }
@@ -17,9 +18,9 @@ public sealed record FinalsPerEntryDto
     /// <summary>The number of Finals appearances during the season.</summary>
     public required int Finals { get; init; }
 
+    /// <summary>The number of distinct tournaments the bowler participated in during the season.</summary>
+    public required int Tournaments { get; init; }
+
     /// <summary>The total number of tournament entries during the season.</summary>
     public required int Entries { get; init; }
-
-    /// <summary>Pre-computed ratio of Finals appearances to total entries.</summary>
-    public required decimal FinalsPerEntry { get; init; }
 }

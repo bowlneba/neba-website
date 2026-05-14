@@ -7,7 +7,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Neba.Api\Neba.Api.csproj" />
     <ProjectReference Include="..\..\src\Neba.Api.Contracts\Neba.Api.Contracts.csproj" />
-    <ProjectReference Include="..\..\src\Neba.Application\Neba.Application.csproj" />
     <ProjectReference Include="..\..\src\Neba.Domain\Neba.Domain.csproj" />
     <ProjectReference Include="..\..\src\Neba.Infrastructure\Neba.Infrastructure.csproj" />
     <ProjectReference Include="..\Neba.TestFactory\Neba.TestFactory.csproj" />
@@ -19,7 +18,7 @@
 
   <ItemGroup>
     <Using Include="ArchUnitNET.Fluent" />
-    <Using Include="ArchUnitNET.Fluent.ArchRuleDefinition" Static="True"/>
+    <Using Include="ArchUnitNET.Fluent.ArchRuleDefinition" Static="True" />
   </ItemGroup>
 
 </Project>
