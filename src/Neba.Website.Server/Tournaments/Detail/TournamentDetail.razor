@@ -106,7 +106,7 @@ else
                                 @if (_model.BowlingCenterCity is not null)
                                 {
                                     <span class="td-hero__stat-sub">@(_model.BowlingCenterCity + (_model.BowlingCenterState is not
-                                                                    null ? ", " + _model.BowlingCenterState : string.Empty))</span>
+                                                                                                            null ? ", " + _model.BowlingCenterState : string.Empty))</span>
                                     }
                                 }
                                 else
@@ -336,26 +336,27 @@ else
                         {
                             <div class="td-rail-entries td-rail-entries--payout">
                                 <span class="td-rail-entries__label">Total payout</span>
-                                <span class="td-rail-entries__value td-rail-entries__value--gold">@_model.TotalPayout.ToString("C0", CurrencyCulture)</span>
-                            </div>
-                        }
+                                <span class="td-rail-entries__value td-rail-entries__value--gold">@_model.TotalPayout.ToString("C0",
+                                                        CurrencyCulture)</span>
+                                </div>
+                            }
 
-                    </aside>
-                }
+                        </aside>
+                    }
 
-            </div>
+                </div>
 
-            <footer class="tournament-detail__footer">
-                <a href="/tournaments" class="neba-link tournament-detail__back-link">
-                    <span class="tournament-detail__back-badge" aria-hidden="true">
-                        <span class="material-symbols-outlined">arrow_back</span>
-                    </span>
-                    Back to Tournament Schedule
-                </a>
-            </footer>
+                <footer class="tournament-detail__footer">
+                    <a href="/tournaments" class="neba-link tournament-detail__back-link">
+                        <span class="tournament-detail__back-badge" aria-hidden="true">
+                            <span class="material-symbols-outlined">arrow_back</span>
+                        </span>
+                        Back to Tournament Schedule
+                    </a>
+                </footer>
 
-        </main>
-    }
+            </main>
+        }
 
 @code {
     [Parameter] public string Id { get; set; } = default!;
