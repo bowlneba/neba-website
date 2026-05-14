@@ -68,12 +68,20 @@ internal sealed partial class GetTournamentQueryHandler(
                         TagPhrase = s.TagPhrase,
                     }).ToList(),
                 AddedMoney = tournament.Sponsors.Sum(ts => ts.SponsorshipAmount),
-                PatternLengthCategory = tournament.PatternLengthCategory == null ? null : tournament.PatternLengthCategory.Name,
-                PatternRatioCategory = tournament.PatternRatioCategory == null ? null : tournament.PatternRatioCategory.Name,
+                PatternLengthCategory = tournament.PatternLengthCategory == null
+                    ? null
+                    : tournament.PatternLengthCategory.Name,
+                PatternRatioCategory = tournament.PatternRatioCategory == null
+                    ? null
+                    : tournament.PatternRatioCategory.Name,
                 tournament.EntryFee,
                 RegistrationUrl = tournament.ExternalRegistrationUrl,
-                LogoContainer = tournament.Logo!.Container,
-                LogoPath = tournament.Logo!.Path,
+                LogoContainer = tournament.Logo != null
+                    ? tournament.Logo.Container
+                    : null,
+                LogoPath = tournament.Logo != null
+                    ? tournament.Logo.Path
+                    : null,
                 Reservations = 999, // need to replace once actual column exists
                 OilPatternsRaw = tournament.OilPatterns.Select(top => new
                 {
