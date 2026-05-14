@@ -1,6 +1,6 @@
 using ErrorOr;
 
-namespace Neba.Application.Stats;
+namespace Neba.Api.Features.Stats;
 
 internal static class StatsErrors
 {
