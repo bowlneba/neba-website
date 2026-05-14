@@ -6,7 +6,7 @@ using Neba.Infrastructure.BackgroundJobs;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure.BackgroundJobs;
 
-namespace Neba.Infrastructure.Tests.BackgroundJobs;
+namespace Neba.Api.Tests.BackgroundJobs;
 
 [UnitTest]
 [Component("Infrastructure.BackgroundJobs")]
