@@ -1,4 +1,4 @@
-using Neba.Infrastructure.Database;
+using Neba.Api.Database;
 using Neba.Infrastructure.Database.Queries;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-using Neba.Infrastructure.Database.Entities;
+using Neba.Api.Database.Entities;
 
 namespace Neba.Api.Database.Configurations;
 

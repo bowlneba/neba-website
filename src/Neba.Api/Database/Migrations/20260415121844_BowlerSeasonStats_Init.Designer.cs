@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-using Neba.Infrastructure.Database;
+using Neba.Api.Database;
 
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 

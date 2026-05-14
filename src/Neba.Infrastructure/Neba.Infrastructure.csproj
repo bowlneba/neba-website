@@ -20,13 +20,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Ardalis.SmartEnum.EFCore" />
-    <PackageReference Include="Ardalis.SmartEnum.SystemTextJson" />
-    <PackageReference Include="Aspire.Azure.Npgsql" />
-    <PackageReference Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" />
-    <PackageReference Include="Aspire.Azure.Security.KeyVault" />
-    <PackageReference Include="EFCore.NamingConventions" />
-    <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" />
+    
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     

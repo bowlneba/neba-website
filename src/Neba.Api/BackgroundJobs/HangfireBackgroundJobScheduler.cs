@@ -3,11 +3,7 @@ using System.Diagnostics;
 
 using Hangfire;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
-using Neba.Application.BackgroundJobs;
-using Neba.Infrastructure.Telemetry;
+using Neba.Api.Telemetry;
 
 namespace Neba.Api.BackgroundJobs;
 

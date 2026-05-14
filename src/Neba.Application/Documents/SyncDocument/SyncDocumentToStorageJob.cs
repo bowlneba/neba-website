@@ -1,4 +1,4 @@
-using Neba.Application.BackgroundJobs;
+using Neba.Api.BackgroundJobs;
 
 namespace Neba.Application.Documents.SyncDocument;
 

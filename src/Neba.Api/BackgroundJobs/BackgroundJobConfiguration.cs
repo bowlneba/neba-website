@@ -6,8 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-using Neba.Application;
-using Neba.Application.BackgroundJobs;
+using Neba.Api.BackgroundJobs;
 
 using Npgsql;
 
@@ -43,14 +42,14 @@ internal static class BackgroundJobsConfiguration
             services.AddScoped<IBackgroundJobScheduler, HangfireBackgroundJobScheduler>();
 
             services.Scan(scan => scan
-                .FromAssemblies(typeof(IApplicationAssemblyMarker).Assembly)
+                .FromAssemblies(typeof(IApiAssemblyMarker).Assembly)
                 .AddClasses(classes => classes
                     .AssignableTo(typeof(IBackgroundJobHandler<>)))
                 .AsImplementedInterfaces()
                 .WithScopedLifetime());
 
             services.Scan(scan => scan
-                .FromAssemblies(typeof(IApplicationAssemblyMarker).Assembly)
+                .FromAssemblies(typeof(IApiAssemblyMarker).Assembly)
                 .AddClasses(classes => classes
                     .AssignableTo(typeof(IDomainEventJob<>)))
                 .AsImplementedInterfaces()

@@ -5,7 +5,7 @@ using Neba.Domain.Geography;
 using Neba.Domain.Seasons;
 using Neba.Domain.Sponsors;
 using Neba.Domain.Tournaments;
-using Neba.Infrastructure.Database;
+using Neba.Api.Database;
 using Neba.Infrastructure.Database.Configurations;
 using Neba.Infrastructure.Database.Queries;
 using Neba.TestFactory.Attributes;

@@ -1,19 +1,32 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web"><PropertyGroup>  <UserSecretsId>632d3236-ee11-4a9d-9592-d35db940e4d8</UserSecretsId>
-  </PropertyGroup><ItemGroup>
-  <EditorConfigFiles Include="Database\Migrations\.editorconfig" />
-</ItemGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+  
+  <PropertyGroup>  
+    <UserSecretsId>632d3236-ee11-4a9d-9592-d35db940e4d8</UserSecretsId>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <AdditionalFiles Include="..\Neba.Domain\ulid-full.typedid" Link="ulid-full.typedid" />
+  </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Neba.Infrastructure\Neba.Infrastructure.csproj" />
+    <ProjectReference Include="..\Neba.Application\Neba.Application.csproj" />
+    <ProjectReference Include="..\Neba.Domain\Neba.Domain.csproj" />
     <ProjectReference Include="..\Neba.ServiceDefaults\Neba.ServiceDefaults.csproj" />
     <ProjectReference Include="..\Neba.Api.Contracts\Neba.Api.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Ardalis.SmartEnum.EFCore" />
     <PackageReference Include="Ardalis.SmartEnum.SystemTextJson" />
+    <PackageReference Include="Aspire.Azure.Npgsql" />
+    <PackageReference Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Aspire.Azure.Security.KeyVault" />
     <PackageReference Include="Aspire.Azure.Storage.Blobs" />
     <PackageReference Include="AspNetCore.HealthChecks.Hangfire" />
     <PackageReference Include="Community.Microsoft.Extensions.Caching.PostgreSql" />
+    <PackageReference Include="EFCore.NamingConventions" />
+    <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" />
+    <PackageReference Include="ErrorOr" />
     <PackageReference Include="FastEndpoints" />
     <PackageReference Include="FastEndpoints.AspVersioning" />
     <PackageReference Include="FastEndpoints.Swagger" />
@@ -24,13 +37,18 @@
     <PackageReference Include="HtmlAgilityPack" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Scalar.AspNetCore" />
+    <PackageReference Include="Scrutor.AspNetCore" />
     <PackageReference Include="ZiggyCreatures.FusionCache" />
-    <PackageReference Include="ZiggyCreatures.FusionCache.Serialization.SystemTextJson" />
+    <PackageReference Include="ZiggyCreatures.FusionCache.Serialization.SystemTextJson" />  
   </ItemGroup>
   
   <ItemGroup>
     <InternalsVisibleTo Include="Neba.Api.Tests" />
     <InternalsVisibleTo Include="Neba.TestFactory" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <AdditionalFiles Include="ulid-full.typedid" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-namespace Neba.Application.BackgroundJobs;
+namespace Neba.Api.BackgroundJobs;
 
 /// <summary>
 /// Represents a background job in the application.

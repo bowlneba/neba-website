@@ -1,6 +1,6 @@
 using Neba.Domain;
 
-namespace Neba.Application.BackgroundJobs;
+namespace Neba.Api.BackgroundJobs;
 
 #pragma warning disable S3246 // TEvent is intentionally invariant — contravariance is unsupported by DI containers and Hangfire's closed-type resolution
 

@@ -1,18 +1,13 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
-using Neba.Application.Clock;
-using Neba.Infrastructure.BackgroundJobs;
-using Neba.Infrastructure.Caching;
-using Neba.Infrastructure.Clock;
-using Neba.Infrastructure.Database;
-using Neba.Infrastructure.Documents;
-using Neba.Infrastructure.Storage;
-using Neba.Infrastructure.Telemetry.Tracing;
+using Neba.Api.BackgroundJobs;
+using Neba.Api.Caching;
+using Neba.Api.Clock;
+using Neba.Api.Database;
+using Neba.Api.Documents;
+using Neba.Api.Storage;
+using Neba.Api.Telemetry.Tracing;
 
-namespace Neba.Infrastructure;
+namespace Neba.Api;
 
 #pragma warning disable CA1708 // Identifiers should differ by more than case
 

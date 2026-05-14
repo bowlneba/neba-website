@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Neba.Infrastructure" />
+    <InternalsVisibleTo Include="Neba.Api" />
     <InternalsVisibleTo Include="Neba.TestFactory" />
     <InternalsVisibleTo Include="Neba.Domain.Tests" />
   </ItemGroup>
