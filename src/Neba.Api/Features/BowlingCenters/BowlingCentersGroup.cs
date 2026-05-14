@@ -3,7 +3,7 @@ using Asp.Versioning;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
-namespace Neba.Api.BowlingCenters;
+namespace Neba.Api.Features.BowlingCenters;
 
 internal sealed class BowlingCentersGroup
     : SubGroup<BaseGroup>

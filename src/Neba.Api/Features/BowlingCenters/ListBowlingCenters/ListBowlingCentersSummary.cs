@@ -6,7 +6,7 @@ using Neba.Api.Contracts;
 using Neba.Api.Contracts.BowlingCenters.ListBowlingCenters;
 using Neba.Api.Contracts.Contact;
 
-namespace Neba.Api.BowlingCenters.ListBowlingCenters;
+namespace Neba.Api.Features.BowlingCenters.ListBowlingCenters;
 
 internal sealed class ListBowlingCentersSummary
     : Summary<ListBowlingCentersEndpoint>

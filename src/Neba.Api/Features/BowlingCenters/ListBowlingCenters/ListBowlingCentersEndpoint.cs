@@ -9,7 +9,7 @@ using Neba.Api.Contracts.Contact;
 using Neba.Application.BowlingCenters.ListBowlingCenters;
 using Neba.Application.Messaging;
 
-namespace Neba.Api.BowlingCenters.ListBowlingCenters;
+namespace Neba.Api.Features.BowlingCenters.ListBowlingCenters;
 
 internal sealed class ListBowlingCentersEndpoint(IQueryHandler<ListBowlingCentersQuery, IReadOnlyCollection<BowlingCenterSummaryDto>> queryHandler)
     : EndpointWithoutRequest<CollectionResponse<BowlingCenterSummaryResponse>>
