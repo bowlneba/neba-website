@@ -6,7 +6,7 @@ using Neba.Application.Messaging;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.BowlingCenters;
 
-namespace Neba.Api.Tests.BowlingCenters.ListBowlingCenters;
+namespace Neba.Api.Tests.Features.BowlingCenters.ListBowlingCenters;
 
 [UnitTest]
 [Component("BowlingCenters")]
