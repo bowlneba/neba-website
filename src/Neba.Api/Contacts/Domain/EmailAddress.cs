@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 using ErrorOr;
 
-namespace Neba.Domain.Contact;
+namespace Neba.Api.Contacts.Domain;
 
 /// <summary>
 /// Represents an email address value object in the domain.

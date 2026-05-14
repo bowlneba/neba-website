@@ -1,8 +1,7 @@
-using Neba.Domain.Contact;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Geography;
 
-namespace Neba.Domain.Tests.Contact;
+namespace Neba.Api.Tests.Contacts.Domain;
 
 [UnitTest]
 [Component("Contact.Address")]

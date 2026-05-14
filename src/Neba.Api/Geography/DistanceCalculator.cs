@@ -1,10 +1,10 @@
 using ErrorOr;
 
-using Neba.Domain.Contact;
+using Neba.Api.Contacts.Domain;
 
 using UnitsNet;
 
-namespace Neba.Domain.Geography;
+namespace Neba.Api.Geography;
 
 /// <summary>
 /// Provides utilities to calculate distances between two <see cref="Address"/> instances.
@@ -86,12 +86,4 @@ public static class DistanceCalculator
 
         return kilometersDistance;
     }
-}
-
-internal static class DistanceCalculatorErrors
-{
-    public static readonly Error AddressMissingCoordinates =
-        Error.Validation(
-            code: "Address.DistanceCalculator.AddressMissingCoordinates",
-            description: "One or both addresses are missing coordinates.");
 }

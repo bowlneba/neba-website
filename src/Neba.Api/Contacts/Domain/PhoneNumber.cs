@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 using ErrorOr;
 
-namespace Neba.Domain.Contact;
+namespace Neba.Api.Contacts.Domain;
 
 /// <summary>
 /// Represents a phone number value object in the domain.

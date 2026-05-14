@@ -1,6 +1,6 @@
 using Ardalis.SmartEnum;
 
-namespace Neba.Domain.Contact;
+namespace Neba.Api.Contacts.Domain;
 
 /// <summary>
 /// Represents the set of United States states (including the District of Columbia)

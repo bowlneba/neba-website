@@ -1,7 +1,6 @@
-using Neba.Domain.Geography;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Domain.Tests.Geography;
+namespace Neba.Api.Tests.Geography;
 
 [UnitTest]
 [Component("Geography")]

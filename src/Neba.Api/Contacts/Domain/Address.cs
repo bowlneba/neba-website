@@ -2,9 +2,9 @@ using System.Text.RegularExpressions;
 
 using ErrorOr;
 
-using Neba.Domain.Geography;
+using Neba.Api.Geography;
 
-namespace Neba.Domain.Contact;
+namespace Neba.Api.Contacts.Domain;
 
 /// <summary>
 /// Represents a postal address, including street, city, region, country, postal code, and optional coordinates.
