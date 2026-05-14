@@ -1,5 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web"><PropertyGroup>  <UserSecretsId>632d3236-ee11-4a9d-9592-d35db940e4d8</UserSecretsId>
-  </PropertyGroup>
+  </PropertyGroup><ItemGroup>
+  <EditorConfigFiles Include="Database\Migrations\.editorconfig" />
+</ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Neba.Infrastructure\Neba.Infrastructure.csproj" />
