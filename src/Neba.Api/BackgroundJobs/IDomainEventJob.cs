@@ -1,4 +1,4 @@
-using Neba.Domain;
+using Neba.Api.Domain;
 
 namespace Neba.Api.BackgroundJobs;
 

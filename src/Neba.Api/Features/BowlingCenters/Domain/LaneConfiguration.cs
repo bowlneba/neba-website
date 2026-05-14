@@ -1,6 +1,6 @@
 using ErrorOr;
 
-namespace Neba.Domain.BowlingCenters;
+namespace Neba.Api.Features.BowlingCenters.Domain;
 
 /// <summary>
 /// Represents the overall configuration of lanes in a bowling center, consisting of one or more LaneRange instances. This class provides methods to calculate the total number of lane pairs and to validate that the lane ranges do not overlap or have adjacent ranges with the same pin fall type, which would indicate they should be merged. The equality implementation ensures that two LaneConfiguration instances are considered equal if their lane ranges are identical in sequence and content.
@@ -67,17 +67,4 @@ public sealed record LaneConfiguration
 
         return hash.ToHashCode();
     }
-}
-
-
-internal static class LaneConfigurationErrors
-{
-    public static Error RangesRequired
-        => Error.Validation("LaneConfiguration.Ranges.Required", "Lane configuration must contain at least one lane range.");
-
-    public static Error RangesOverlapping
-        => Error.Validation("LaneConfiguration.Ranges.Overlapping", "Lane ranges must not overlap.");
-
-    public static Error RangesAdjacent
-        => Error.Validation("LaneConfiguration.Ranges.Adjacent", "Adjacent lane ranges of the same pin fall type must be merged into a single range.");
 }

@@ -1,6 +1,6 @@
 using Ardalis.SmartEnum;
 
-namespace Neba.Domain.BowlingCenters;
+namespace Neba.Api.Features.BowlingCenters.Domain;
 
 /// <summary>
 /// Represents the type of pinsetter mechanism used on a tenpin lane.

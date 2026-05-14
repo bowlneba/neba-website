@@ -1,6 +1,6 @@
 using Ardalis.SmartEnum;
 
-namespace Neba.Domain.BowlingCenters;
+namespace Neba.Api.Features.BowlingCenters.Domain;
 
 /// <summary>
 /// Represents the operational status of a bowling center, indicating whether it is currently open for business or has been closed. This status can be used to filter active bowling centers in the system and to manage the lifecycle of bowling center entities. The Open status indicates that the bowling center is operational and can host events, while the Closed status indicates that the bowling center has ceased operations and should not be considered for new events or bookings.

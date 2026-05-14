@@ -1,6 +1,6 @@
-using Neba.Domain.Contact;
+using Neba.Api.Domain;
 
-namespace Neba.Domain.BowlingCenters;
+namespace Neba.Api.Features.BowlingCenters.Domain;
 
 /// <summary>
 /// Represents a bowling center.
