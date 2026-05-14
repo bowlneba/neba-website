@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
-using Neba.Infrastructure.Database.Interceptors;
-using Neba.Infrastructure.Database.Options;
+using Neba.Api.Database.Interceptors;
+using Neba.Api.Database.Options;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Infrastructure.Tests.Database.Interceptors;
+namespace Neba.Api.Tests.Database.Interceptors;
 
 [UnitTest]
 [Component("Infrastructure.Database")]

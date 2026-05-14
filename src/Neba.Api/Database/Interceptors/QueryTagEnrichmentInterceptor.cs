@@ -2,10 +2,9 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Security.Claims;
 
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
-namespace Neba.Infrastructure.Database.Interceptors;
+namespace Neba.Api.Database.Interceptors;
 
 internal sealed class QueryTagEnrichmentInterceptor(IHttpContextAccessor httpContextAccessor) : DbCommandInterceptor
 {

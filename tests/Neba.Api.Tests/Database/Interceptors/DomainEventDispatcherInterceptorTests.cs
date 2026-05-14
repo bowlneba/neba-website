@@ -8,10 +8,10 @@ using Microsoft.Extensions.Logging;
 
 using Neba.Application.BackgroundJobs;
 using Neba.Domain;
-using Neba.Infrastructure.Database.Interceptors;
+using Neba.Api.Database.Interceptors;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Infrastructure.Tests.Database.Interceptors;
+namespace Neba.Api.Tests.Database.Interceptors;
 
 [UnitTest]
 [Component("Infrastructure.Database")]

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Neba.Application.BackgroundJobs;
 using Neba.Domain;
 
-namespace Neba.Infrastructure.Database.Interceptors;
+namespace Neba.Api.Database.Interceptors;
 
 internal sealed class DomainEventDispatcherInterceptor(IBackgroundJobClient backgroundJobClient)
     : SaveChangesInterceptor

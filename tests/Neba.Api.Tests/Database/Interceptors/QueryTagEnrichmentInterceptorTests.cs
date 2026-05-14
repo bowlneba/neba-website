@@ -4,10 +4,10 @@ using System.Security.Claims;
 
 using Microsoft.AspNetCore.Http;
 
-using Neba.Infrastructure.Database.Interceptors;
+using Neba.Api.Database.Interceptors;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Infrastructure.Tests.Database.Interceptors;
+namespace Neba.Api.Tests.Database.Interceptors;
 
 [UnitTest]
 [Component("Infrastructure.Database")]

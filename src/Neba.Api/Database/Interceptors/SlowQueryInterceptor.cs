@@ -1,11 +1,10 @@
 using System.Data.Common;
 
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.Extensions.Logging;
 
-using Neba.Infrastructure.Database.Options;
+using Neba.Api.Database.Options;
 
-namespace Neba.Infrastructure.Database.Interceptors;
+namespace Neba.Api.Database.Interceptors;
 
 internal sealed class SlowQueryInterceptor(
     ILogger<SlowQueryInterceptor> logger,
