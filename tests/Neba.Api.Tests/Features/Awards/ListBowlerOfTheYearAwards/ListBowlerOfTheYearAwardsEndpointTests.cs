@@ -1,33 +1,33 @@
 using FastEndpoints;
 
-using Neba.Api.Features.Awards.ListHighBlockAwards;
-using Neba.Application.Awards.ListHighBlockAwards;
+using Neba.Api.Features.Awards.ListBowlerOfTheYearAwards;
+using Neba.Application.Awards.ListBowlerOfTheYearAwards;
 using Neba.Application.Messaging;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Awards;
 
-namespace Neba.Api.Tests.Awards.ListHighBlockAwards;
+namespace Neba.Api.Tests.Features.Awards.ListBowlerOfTheYearAwards;
 
 [UnitTest]
 [Component("Awards")]
-public sealed class ListHighBlockAwardsEndpointTests
+public sealed class ListBowlerOfTheYearAwardsEndpointTests
 {
     [Fact(DisplayName = "HandleAsync should return OK with mapped awards when query succeeds")]
     public async Task HandleAsync_ShouldReturnOkWithMappedAwards_WhenQuerySucceeds()
     {
         // Arrange
-        var dtos = HighBlockAwardDtoFactory.Bogus(3, 57);
+        var dtos = BowlerOfTheYearAwardDtoFactory.Bogus(3, 42);
 
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var queryHandlerMock = new Mock<IQueryHandler<ListHighBlockAwardsQuery, IReadOnlyCollection<HighBlockAwardDto>>>(MockBehavior.Strict);
+        var queryHandlerMock = new Mock<IQueryHandler<ListBowlerOfTheYearAwardsQuery, IReadOnlyCollection<BowlerOfTheYearAwardDto>>>(MockBehavior.Strict);
         queryHandlerMock
             .Setup(handler => handler.HandleAsync(
-                It.IsAny<ListHighBlockAwardsQuery>(),
+                It.IsAny<ListBowlerOfTheYearAwardsQuery>(),
                 cancellationToken))
             .ReturnsAsync(dtos);
 
-        var endpoint = Factory.Create<ListHighBlockAwardsEndpoint>(queryHandlerMock.Object);
+        var endpoint = Factory.Create<ListBowlerOfTheYearAwardsEndpoint>(queryHandlerMock.Object);
 
         // Act
         await endpoint.HandleAsync(cancellationToken);
@@ -41,16 +41,16 @@ public sealed class ListHighBlockAwardsEndpointTests
         await Verify(endpoint.Response);
     }
 
-    [Fact(DisplayName = "Configure should register anonymous GET route at /awards/high-block")]
+    [Fact(DisplayName = "Configure should register anonymous GET route at /awards/bowler-of-the-year")]
     public void Configure_ShouldRegisterAnonymousGetRoute_AtExpectedPath()
     {
         // Arrange
-        var queryHandlerMock = new Mock<IQueryHandler<ListHighBlockAwardsQuery, IReadOnlyCollection<HighBlockAwardDto>>>(MockBehavior.Strict);
-        var endpoint = Factory.Create<ListHighBlockAwardsEndpoint>(queryHandlerMock.Object);
+        var queryHandlerMock = new Mock<IQueryHandler<ListBowlerOfTheYearAwardsQuery, IReadOnlyCollection<BowlerOfTheYearAwardDto>>>(MockBehavior.Strict);
+        var endpoint = Factory.Create<ListBowlerOfTheYearAwardsEndpoint>(queryHandlerMock.Object);
 
         // Assert — route and auth
         endpoint.Definition.Verbs.ShouldContain("GET");
-        endpoint.Definition.Routes.ShouldContain("/awards/high-block");
+        endpoint.Definition.Routes.ShouldContain("/awards/bowler-of-the-year");
         endpoint.Definition.AnonymousVerbs.ShouldNotBeEmpty();
     }
 
@@ -60,14 +60,14 @@ public sealed class ListHighBlockAwardsEndpointTests
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var queryHandlerMock = new Mock<IQueryHandler<ListHighBlockAwardsQuery, IReadOnlyCollection<HighBlockAwardDto>>>(MockBehavior.Strict);
+        var queryHandlerMock = new Mock<IQueryHandler<ListBowlerOfTheYearAwardsQuery, IReadOnlyCollection<BowlerOfTheYearAwardDto>>>(MockBehavior.Strict);
         queryHandlerMock
             .Setup(handler => handler.HandleAsync(
-                It.IsAny<ListHighBlockAwardsQuery>(),
+                It.IsAny<ListBowlerOfTheYearAwardsQuery>(),
                 cancellationToken))
             .ReturnsAsync([]);
 
-        var endpoint = Factory.Create<ListHighBlockAwardsEndpoint>(queryHandlerMock.Object);
+        var endpoint = Factory.Create<ListBowlerOfTheYearAwardsEndpoint>(queryHandlerMock.Object);
 
         // Act
         await endpoint.HandleAsync(cancellationToken);

@@ -6,7 +6,7 @@ using Neba.Application.Messaging;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Awards;
 
-namespace Neba.Api.Tests.Awards.ListHighAverageAwards;
+namespace Neba.Api.Tests.Features.Awards.ListHighAverageAwards;
 
 [UnitTest]
 [Component("Awards")]
