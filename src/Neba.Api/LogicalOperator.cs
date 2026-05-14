@@ -1,6 +1,6 @@
 using Ardalis.SmartEnum;
 
-namespace Neba.Domain;
+namespace Neba.Api;
 
 /// <summary>
 /// Logical operators for combining Criteria within a Side Cut Criterion Group (Group Operator)

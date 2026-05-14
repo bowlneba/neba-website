@@ -1,6 +1,6 @@
 using StronglyTypedIds;
 
-namespace Neba.Domain.Bowlers;
+namespace Neba.Api.Features.Bowlers;
 
 /// <summary>
 /// Unique identifier for a bowler.

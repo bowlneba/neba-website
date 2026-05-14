@@ -5,8 +5,8 @@ using Bogus.DataSets;
 
 using ErrorOr;
 
+using Neba.Api.Features.Bowlers.Domain;
 using Neba.Domain;
-using Neba.Domain.Bowlers;
 using Neba.Domain.Tournaments;
 
 namespace Neba.TestFactory.Tournaments;

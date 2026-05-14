@@ -1,8 +1,6 @@
-using Microsoft.Extensions.DependencyInjection;
-
 using Neba.Domain.Tournaments;
 
-namespace Neba.Domain;
+namespace Neba.Api;
 
 /// <summary>
 /// Extension methods to add application dependencies to the service collection.

@@ -1,7 +1,7 @@
-using Neba.Domain.Bowlers;
+using Neba.Api.Features.Bowlers;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Domain.Tests.Bowlers;
+namespace Neba.Api.Tests.Features.Bowlers;
 
 [UnitTest]
 [Component("Bowlers.NameSuffix")]

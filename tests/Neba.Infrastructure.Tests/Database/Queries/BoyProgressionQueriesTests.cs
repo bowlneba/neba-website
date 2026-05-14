@@ -1,5 +1,5 @@
 using Neba.Api.Database;
-using Neba.Domain.Bowlers;
+using Neba.Api.Features.Bowlers.Domain;
 using Neba.Domain.Seasons;
 using Neba.Domain.Tournaments;
 using Neba.Infrastructure.Database.Queries;

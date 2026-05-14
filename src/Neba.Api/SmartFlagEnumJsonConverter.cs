@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 using Ardalis.SmartEnum;
 
-namespace Neba.Domain;
+namespace Neba.Api;
 
 /// <summary>
 /// Generic JSON converter for <see cref="SmartFlagEnum{TEnum}"/> types.

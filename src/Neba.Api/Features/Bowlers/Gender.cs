@@ -1,6 +1,6 @@
 using Ardalis.SmartEnum;
 
-namespace Neba.Domain.Bowlers;
+namespace Neba.Api.Features.Bowlers;
 
 /// <summary>
 /// Represents the gender of a bowler. This is currently a simple enumeration with two values (Male and Female), but it is implemented as a SmartEnum to allow for potential future expansion (e.g., adding non-binary or other gender options) without breaking existing code or database schema. The string value ("M" for Male, "F" for Female) is used for storage and comparison purposes.

@@ -4,13 +4,7 @@
     <PackageReference Include="Ardalis.SmartEnum" />
     <PackageReference Include="ErrorOr" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="StronglyTypedId" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    <PackageReference Include="StronglyTypedId.Templates" GeneratePathProperty="true" PrivateAssets="all" />
     <PackageReference Include="UnitsNet" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <AdditionalFiles Include="ulid-full.typedid" />
   </ItemGroup>
 
   <ItemGroup>

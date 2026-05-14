@@ -1,4 +1,4 @@
-using Neba.Domain.Bowlers;
+using Neba.Api.Features.Bowlers;
 
 namespace Neba.TestFactory.Bowlers;
 

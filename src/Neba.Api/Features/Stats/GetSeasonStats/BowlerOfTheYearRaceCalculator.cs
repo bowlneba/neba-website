@@ -1,5 +1,5 @@
-﻿using Neba.Api.Features.Stats.BoyProgression;
-using Neba.Domain.Bowlers;
+﻿using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.Stats.BoyProgression;
 using Neba.Domain.Seasons;
 using Neba.Domain.Tournaments;
 

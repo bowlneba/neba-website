@@ -3,7 +3,7 @@ using System.Text;
 
 using ErrorOr;
 
-namespace Neba.Domain.Bowlers;
+namespace Neba.Api.Features.Bowlers;
 
 /// <summary>
 /// A value object representing a bowler's complete name information, including legal name components
@@ -131,19 +131,4 @@ public sealed record Name
     ///<inheritdoc />
     public override string ToString()
         => ToLegalName();
-}
-
-internal static class NameErrors
-{
-    public static Error FirstNameRequired
-        => Error.Validation(
-            code: "Name.FirstNameRequired",
-            description: "First name is required."
-        );
-
-    public static Error LastNameRequired
-        => Error.Validation(
-            code: "Name.LastNameRequired",
-            description: "Last name is required."
-        );
 }
