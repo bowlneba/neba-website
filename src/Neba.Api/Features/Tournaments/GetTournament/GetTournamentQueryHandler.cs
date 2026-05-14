@@ -32,11 +32,11 @@ internal sealed partial class GetTournamentQueryHandler(
     {
         var row = await _tournaments
             .Where(tournament => tournament.Id == query.Id)
-            .Select(tournament => new TournamentQueryRow
+            .Select(tournament => new
             {
                 DbId = EF.Property<int>(tournament, ShadowIdConfiguration.DefaultPropertyName),
-                Id = tournament.Id,
-                Name = tournament.Name,
+                tournament.Id,
+                tournament.Name,
                 Season = new SeasonDto
                 {
                     Id = tournament.Season.Id,
@@ -44,9 +44,9 @@ internal sealed partial class GetTournamentQueryHandler(
                     StartDate = tournament.Season.StartDate,
                     EndDate = tournament.Season.EndDate
                 },
-                StartDate = tournament.StartDate,
-                EndDate = tournament.EndDate,
-                StatsEligible = tournament.StatsEligible,
+                tournament.StartDate,
+                tournament.EndDate,
+                tournament.StatsEligible,
                 TournamentType = tournament.TournamentType.Name,
                 BowlingCenter = tournament.BowlingCenter == null
                     ? null
@@ -70,12 +70,12 @@ internal sealed partial class GetTournamentQueryHandler(
                 AddedMoney = tournament.Sponsors.Sum(ts => ts.SponsorshipAmount),
                 PatternLengthCategory = tournament.PatternLengthCategory == null ? null : tournament.PatternLengthCategory.Name,
                 PatternRatioCategory = tournament.PatternRatioCategory == null ? null : tournament.PatternRatioCategory.Name,
-                EntryFee = tournament.EntryFee,
+                tournament.EntryFee,
                 RegistrationUrl = tournament.ExternalRegistrationUrl,
                 LogoContainer = tournament.Logo!.Container,
                 LogoPath = tournament.Logo!.Path,
                 Reservations = 999, // need to replace once actual column exists
-                OilPatternsRaw = tournament.OilPatterns.Select(top => new OilPatternRow
+                OilPatternsRaw = tournament.OilPatterns.Select(top => new
                 {
                     OilPattern = new OilPatternDto
                     {
@@ -87,7 +87,7 @@ internal sealed partial class GetTournamentQueryHandler(
                         RightRatio = top.OilPattern.RightRatio,
                         KegelId = top.OilPattern.KegelId,
                     },
-                    TournamentRounds = top.TournamentRounds
+                    top.TournamentRounds
                 }).ToList()
             }).SingleOrDefaultAsync(cancellationToken);
 
