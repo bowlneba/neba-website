@@ -3,7 +3,7 @@ using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Contact;
 using Neba.TestFactory.Sponsors;
 
-namespace Neba.Infrastructure.Tests.TestFactory.Contact;
+namespace Neba.Api.Tests.TestFactory.Contact;
 
 [UnitTest]
 [Component("Sponsors")]
