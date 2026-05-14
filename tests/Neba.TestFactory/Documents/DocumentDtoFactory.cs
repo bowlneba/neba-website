@@ -1,4 +1,4 @@
-using Neba.Application.Documents;
+using Neba.Api.Documents;
 
 namespace Neba.TestFactory.Documents;
 
