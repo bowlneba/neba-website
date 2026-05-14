@@ -2,12 +2,10 @@ using System.Diagnostics;
 
 using ErrorOr;
 
-using Microsoft.Extensions.Logging;
-
 using Neba.Application.Clock;
 using Neba.Application.Messaging;
 
-namespace Neba.Infrastructure.Telemetry.Tracing;
+namespace Neba.Api.Telemetry.Tracing;
 
 internal sealed class TracedCommandHandlerDecorator<TCommand, TResponse>(
     ICommandHandler<TCommand, TResponse> innerHandler,

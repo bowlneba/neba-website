@@ -3,7 +3,7 @@ using System.Diagnostics;
 using Neba.ServiceDefaults.Telemetry;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Infrastructure.Tests.Telemetry.Tracing;
+namespace Neba.Api.Tests.Telemetry.Tracing;
 
 #pragma warning disable CA2000 // CA2000 in this fixture is triggered by disposable test scaffolding (processor instances and telemetry setup); CreatePostgreSqlActivity now returns a scope that owns ActivitySource/Activity lifetime.
 

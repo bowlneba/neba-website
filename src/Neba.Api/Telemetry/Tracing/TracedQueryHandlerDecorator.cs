@@ -1,11 +1,9 @@
 using System.Diagnostics;
 
-using Microsoft.Extensions.Logging;
-
 using Neba.Application.Clock;
 using Neba.Application.Messaging;
 
-namespace Neba.Infrastructure.Telemetry.Tracing;
+namespace Neba.Api.Telemetry.Tracing;
 
 internal sealed class TracedQueryHandlerDecorator<TQuery, TResponse>(
     IQueryHandler<TQuery, TResponse> innerHandler,

@@ -1,9 +1,9 @@
 using System.Diagnostics;
 
-using Neba.Infrastructure.Telemetry;
+using Neba.Api.Telemetry;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Infrastructure.Tests.Telemetry;
+namespace Neba.Api.Tests.Telemetry;
 
 [UnitTest]
 [Component("Infrastructure.Telemetry")]

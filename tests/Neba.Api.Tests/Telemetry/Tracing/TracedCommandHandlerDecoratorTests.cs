@@ -4,10 +4,10 @@ using Microsoft.Extensions.Logging;
 
 using Neba.Application.Clock;
 using Neba.Application.Messaging;
-using Neba.Infrastructure.Telemetry.Tracing;
+using Neba.Api.Telemetry.Tracing;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Infrastructure.Tests.Telemetry.Tracing;
+namespace Neba.Api.Tests.Telemetry.Tracing;
 
 [UnitTest]
 [Component("Infrastructure.Telemetry.Tracing")]

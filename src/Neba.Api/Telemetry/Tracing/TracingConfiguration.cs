@@ -1,8 +1,7 @@
-using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Application.Messaging;
 
-namespace Neba.Infrastructure.Telemetry.Tracing;
+namespace Neba.Api.Telemetry.Tracing;
 
 internal static class TracingConfiguration
 {

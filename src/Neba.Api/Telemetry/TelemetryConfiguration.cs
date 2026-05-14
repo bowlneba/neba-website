@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace Neba.Infrastructure.Telemetry;
+namespace Neba.Api.Telemetry;
 
 internal static class TelemetryConfiguration
 {
