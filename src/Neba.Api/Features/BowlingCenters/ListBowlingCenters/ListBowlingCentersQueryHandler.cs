@@ -1,19 +1,18 @@
 using Microsoft.EntityFrameworkCore;
 
-using Neba.Application.BowlingCenters;
-using Neba.Application.BowlingCenters.ListBowlingCenters;
+using Neba.Api.Database;
+using Neba.Api.Messaging;
 using Neba.Application.Contact;
 using Neba.Domain.BowlingCenters;
 
-namespace Neba.Infrastructure.Database.Queries;
+namespace Neba.Api.Features.BowlingCenters.ListBowlingCenters;
 
-internal sealed class BowlingCenterQueries(AppDbContext dbContext)
-        : IBowlingCenterQueries
+internal sealed class ListBowlingCentersQueryHandler(AppDbContext appDbContext)
+        : IQueryHandler<ListBowlingCentersQuery, IReadOnlyCollection<BowlingCenterSummaryDto>>
 {
-    private readonly IQueryable<BowlingCenter> _bowlingCenters
-        = dbContext.BowlingCenters.AsNoTracking();
+    private readonly IQueryable<BowlingCenter> _bowlingCenters = appDbContext.BowlingCenters.AsNoTracking();
 
-    public async Task<IReadOnlyCollection<BowlingCenterSummaryDto>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<BowlingCenterSummaryDto>> HandleAsync(ListBowlingCentersQuery query, CancellationToken cancellationToken)
         => await _bowlingCenters
             .Select(bowlingCenter => new BowlingCenterSummaryDto
             {
