@@ -8,7 +8,7 @@ using Neba.Application.Stats.GetSeasonStats;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Stats;
 
-namespace Neba.Api.Tests.Stats.GetSeasonStats;
+namespace Neba.Api.Tests.Features.Stats.GetSeasonStats;
 
 [UnitTest]
 [Component("Stats")]
