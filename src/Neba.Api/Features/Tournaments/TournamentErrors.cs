@@ -2,7 +2,7 @@ using ErrorOr;
 
 using Neba.Domain.Tournaments;
 
-namespace Neba.Application.Tournaments;
+namespace Neba.Api.Features.Tournaments;
 
 internal static class TournamentErrors
 {

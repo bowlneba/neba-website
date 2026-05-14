@@ -1,8 +1,8 @@
-using Neba.Application.Tournaments.GetTournament;
+using Neba.Api.Features.Tournaments.GetTournament;
 using Neba.Domain.Tournaments;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Application.Tests.Tournaments.GetTournament;
+namespace Neba.Api.Tests.Features.Tournaments.GetTournament;
 
 [UnitTest]
 [Component("Tournaments")]

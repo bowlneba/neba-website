@@ -1,10 +1,10 @@
-using Neba.Application.BowlingCenters.ListBowlingCenters;
-using Neba.Application.Seasons;
-using Neba.Application.Sponsors;
+using Neba.Api.Features.BowlingCenters.ListBowlingCenters;
+using Neba.Api.Features.Seasons.ListSeasons;
+using Neba.Api.Features.Sponsors.ListActiveSponsors;
 using Neba.Domain.Bowlers;
 using Neba.Domain.Tournaments;
 
-namespace Neba.Application.Tournaments.GetTournament;
+namespace Neba.Api.Features.Tournaments.GetTournament;
 
 /// <summary>
 /// Detailed information about a tournament, including its name, season, dates, format, entry fee, registration URL, host bowling center, sponsors, prize money, reservation count, oil pattern details, logo information, and winners.

@@ -2,7 +2,7 @@ using System.Drawing;
 
 using Neba.Domain.Bowlers;
 
-namespace Neba.Application.Tournaments.GetTournament;
+namespace Neba.Api.Features.Tournaments.GetTournament;
 
 /// <summary>
 /// Data transfer object representing the result of a bowler in a tournament, including their name, placement, prize money, points earned, and any side cut information.
