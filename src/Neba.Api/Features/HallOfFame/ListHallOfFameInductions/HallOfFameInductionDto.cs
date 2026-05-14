@@ -1,7 +1,7 @@
 using Neba.Domain.Bowlers;
 using Neba.Domain.HallOfFame;
 
-namespace Neba.Application.HallOfFame.ListHallOfFameInductions;
+namespace Neba.Api.Features.HallOfFame.ListHallOfFameInductions;
 
 /// <summary>
 /// Data transfer object representing a Hall of Fame induction used by the application layer.
