@@ -2,12 +2,12 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-using Neba.Infrastructure.Caching;
+using Neba.Api.Caching;
 using Neba.TestFactory.Attributes;
 
 using ZiggyCreatures.Caching.Fusion;
 
-namespace Neba.Infrastructure.Tests.Caching;
+namespace Neba.Api.Tests.Caching;
 
 [UnitTest]
 [Component("Infrastructure.Caching")]

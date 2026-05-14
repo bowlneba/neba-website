@@ -1,9 +1,9 @@
 using ErrorOr;
 
-using Neba.Infrastructure.Caching;
+using Neba.Api.Caching;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Infrastructure.Tests.Caching;
+namespace Neba.Api.Tests.Caching;
 
 [UnitTest]
 [Component("Infrastructure.Caching")]

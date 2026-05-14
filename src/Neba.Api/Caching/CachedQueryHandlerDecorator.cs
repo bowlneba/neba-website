@@ -2,14 +2,11 @@ using System.Text.Json;
 
 using ErrorOr;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
 using Neba.Application.Messaging;
 
 using ZiggyCreatures.Caching.Fusion;
 
-namespace Neba.Infrastructure.Caching;
+namespace Neba.Api.Caching;
 
 internal sealed class CachedQueryHandlerDecorator<TQuery, TResponse>
     : IQueryHandler<TQuery, TResponse>

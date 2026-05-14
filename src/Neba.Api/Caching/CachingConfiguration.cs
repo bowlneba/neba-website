@@ -3,15 +3,13 @@ using Ardalis.SmartEnum.SystemTextJson;
 using Community.Microsoft.Extensions.Caching.PostgreSql;
 
 using Microsoft.Extensions.Caching.Hybrid;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Application.Messaging;
 using Neba.Domain.Bowlers;
 
 using ZiggyCreatures.Caching.Fusion;
 
-namespace Neba.Infrastructure.Caching;
+namespace Neba.Api.Caching;
 
 internal static class HybridCacheSerializerOptionsKey
 {

@@ -7,13 +7,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Application.Caching;
 using Neba.Application.Messaging;
-using Neba.Infrastructure.Caching;
+using Neba.Api.Caching;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Caching;
 
 using ZiggyCreatures.Caching.Fusion;
 
-namespace Neba.Infrastructure.Tests.Caching;
+namespace Neba.Api.Tests.Caching;
 
 [UnitTest]
 [Component("Infrastructure.Caching")]

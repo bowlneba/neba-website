@@ -3,7 +3,7 @@ using System.Reflection;
 
 using ErrorOr;
 
-namespace Neba.Infrastructure.Caching;
+namespace Neba.Api.Caching;
 
 /// <summary>
 /// Provides reflection-based utilities for working with ErrorOr types in caching scenarios.
