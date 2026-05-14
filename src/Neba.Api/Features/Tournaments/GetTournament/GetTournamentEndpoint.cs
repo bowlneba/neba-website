@@ -10,7 +10,7 @@ using Neba.Application.Messaging;
 using Neba.Application.Tournaments.GetTournament;
 using Neba.Domain.Tournaments;
 
-namespace Neba.Api.Tournaments.GetTournament;
+namespace Neba.Api.Features.Tournaments.GetTournament;
 
 internal sealed class GetTournamentEndpoint(
     IQueryHandler<GetTournamentQuery, ErrorOr<TournamentDetailDto>> queryHandler)

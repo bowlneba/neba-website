@@ -2,7 +2,7 @@ using FastEndpoints;
 
 using FluentValidation;
 
-namespace Neba.Api.Tournaments.GetTournament;
+namespace Neba.Api.Features.Tournaments.GetTournament;
 
 internal sealed class GetTournamentRequestValidator : Validator<GetTournamentRequest>
 {

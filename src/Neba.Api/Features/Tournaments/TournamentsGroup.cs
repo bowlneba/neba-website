@@ -3,7 +3,7 @@ using Asp.Versioning;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
-namespace Neba.Api.Tournaments;
+namespace Neba.Api.Features.Tournaments;
 
 internal sealed class TournamentsGroup : SubGroup<BaseGroup>
 {

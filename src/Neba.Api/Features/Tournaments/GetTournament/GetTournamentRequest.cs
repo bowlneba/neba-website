@@ -1,6 +1,6 @@
 using FastEndpoints;
 
-namespace Neba.Api.Tournaments.GetTournament;
+namespace Neba.Api.Features.Tournaments.GetTournament;
 
 internal sealed class GetTournamentRequest
 {

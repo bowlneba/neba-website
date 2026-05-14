@@ -2,7 +2,7 @@ using ErrorOr;
 
 using FastEndpoints;
 
-using Neba.Api.Tournaments.GetTournament;
+using Neba.Api.Features.Tournaments.GetTournament;
 using Neba.Application.Messaging;
 using Neba.Application.Tournaments.GetTournament;
 using Neba.Domain.Tournaments;

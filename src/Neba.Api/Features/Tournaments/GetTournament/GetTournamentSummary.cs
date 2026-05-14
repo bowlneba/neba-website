@@ -4,7 +4,7 @@ using FastEndpoints;
 
 using Neba.Api.Contracts.Tournaments.GetTournament;
 
-namespace Neba.Api.Tournaments.GetTournament;
+namespace Neba.Api.Features.Tournaments.GetTournament;
 
 internal sealed class GetTournamentSummary : Summary<GetTournamentEndpoint>
 {
