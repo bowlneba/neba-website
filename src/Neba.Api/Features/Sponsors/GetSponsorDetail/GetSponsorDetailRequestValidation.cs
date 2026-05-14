@@ -2,7 +2,7 @@ using FastEndpoints;
 
 using FluentValidation;
 
-namespace Neba.Api.Sponsors.GetSponsorDetail;
+namespace Neba.Api.Features.Sponsors.GetSponsorDetail;
 
 internal sealed class GetSponsorDetailRequestValidation
     : Validator<GetSponsorDetailRequest>

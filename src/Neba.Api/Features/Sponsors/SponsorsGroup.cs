@@ -3,7 +3,7 @@ using Asp.Versioning;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
-namespace Neba.Api.Sponsors;
+namespace Neba.Api.Features.Sponsors;
 
 internal sealed class SponsorsGroup
     : SubGroup<BaseGroup>

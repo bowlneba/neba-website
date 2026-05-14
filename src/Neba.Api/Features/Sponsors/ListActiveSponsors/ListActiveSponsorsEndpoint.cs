@@ -9,7 +9,7 @@ using Neba.Application.Messaging;
 using Neba.Application.Sponsors;
 using Neba.Application.Sponsors.ListActiveSponsors;
 
-namespace Neba.Api.Sponsors.ListActiveSponsors;
+namespace Neba.Api.Features.Sponsors.ListActiveSponsors;
 
 internal sealed class ListActiveSponsorsEndpoint(IQueryHandler<ListActiveSponsorsQuery, IReadOnlyCollection<SponsorSummaryDto>> queryHandler)
     : EndpointWithoutRequest<CollectionResponse<SponsorSummaryResponse>>

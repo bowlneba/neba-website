@@ -10,7 +10,7 @@ using Neba.Api.Contracts.Sponsors;
 using Neba.Application.Messaging;
 using Neba.Application.Sponsors.GetSponsorDetail;
 
-namespace Neba.Api.Sponsors.GetSponsorDetail;
+namespace Neba.Api.Features.Sponsors.GetSponsorDetail;
 
 internal sealed class GetSponsorDetailEndpoint(IQueryHandler<GetSponsorDetailQuery, ErrorOr<SponsorDetailDto>> queryHandler)
     : Endpoint<GetSponsorDetailRequest, SponsorDetailResponse>

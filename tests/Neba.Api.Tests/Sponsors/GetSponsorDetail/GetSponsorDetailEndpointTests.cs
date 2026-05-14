@@ -2,7 +2,7 @@ using ErrorOr;
 
 using FastEndpoints;
 
-using Neba.Api.Sponsors.GetSponsorDetail;
+using Neba.Api.Features.Sponsors.GetSponsorDetail;
 using Neba.Application.Messaging;
 using Neba.Application.Sponsors.GetSponsorDetail;
 using Neba.TestFactory.Attributes;

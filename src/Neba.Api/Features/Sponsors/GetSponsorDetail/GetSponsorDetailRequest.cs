@@ -1,4 +1,4 @@
-namespace Neba.Api.Sponsors.GetSponsorDetail;
+namespace Neba.Api.Features.Sponsors.GetSponsorDetail;
 
 internal sealed class GetSponsorDetailRequest
 {

@@ -6,7 +6,7 @@ using FastEndpoints;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Domain.Sponsors;
 
-namespace Neba.Api.Sponsors.GetSponsorDetail;
+namespace Neba.Api.Features.Sponsors.GetSponsorDetail;
 
 internal sealed class GetSponsorDetailEndpointSummary
     : Summary<GetSponsorDetailEndpoint>

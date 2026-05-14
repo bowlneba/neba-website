@@ -1,6 +1,6 @@
 using FluentAssertions;
 
-using Neba.Api.Sponsors.GetSponsorDetail;
+using Neba.Api.Features.Sponsors.GetSponsorDetail;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Sponsors.GetSponsorDetail;

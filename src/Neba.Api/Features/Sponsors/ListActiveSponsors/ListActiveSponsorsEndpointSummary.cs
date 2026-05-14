@@ -6,7 +6,7 @@ using Neba.Api.Contracts;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Domain.Sponsors;
 
-namespace Neba.Api.Sponsors.ListActiveSponsors;
+namespace Neba.Api.Features.Sponsors.ListActiveSponsors;
 
 internal sealed class ListActiveSponsorsEndpointSummary
     : Summary<ListActiveSponsorsEndpoint>
