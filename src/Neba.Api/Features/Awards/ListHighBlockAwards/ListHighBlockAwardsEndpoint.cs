@@ -8,7 +8,7 @@ using Neba.Api.Contracts.Awards;
 using Neba.Application.Awards.ListHighBlockAwards;
 using Neba.Application.Messaging;
 
-namespace Neba.Api.Awards.ListHighBlockAwards;
+namespace Neba.Api.Features.Awards.ListHighBlockAwards;
 
 internal sealed class ListHighBlockAwardsEndpoint(IQueryHandler<ListHighBlockAwardsQuery, IReadOnlyCollection<HighBlockAwardDto>> queryHandler)
     : EndpointWithoutRequest<CollectionResponse<HighBlockAwardResponse>>

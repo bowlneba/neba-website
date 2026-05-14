@@ -3,7 +3,7 @@ using Asp.Versioning;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
-namespace Neba.Api.Awards;
+namespace Neba.Api.Features.Awards;
 
 internal sealed class AwardsGroup
     : SubGroup<BaseGroup>

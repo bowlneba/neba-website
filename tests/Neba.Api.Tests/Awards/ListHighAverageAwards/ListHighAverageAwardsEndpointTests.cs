@@ -1,6 +1,6 @@
 using FastEndpoints;
 
-using Neba.Api.Awards.ListHighAverageAwards;
+using Neba.Api.Features.Awards.ListHighAverageAwards;
 using Neba.Application.Awards.ListHighAverageAwards;
 using Neba.Application.Messaging;
 using Neba.TestFactory.Attributes;

@@ -5,7 +5,7 @@ using FastEndpoints;
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Awards;
 
-namespace Neba.Api.Awards.ListBowlerOfTheYearAwards;
+namespace Neba.Api.Features.Awards.ListBowlerOfTheYearAwards;
 
 internal sealed class ListBowlerOfTheYearAwardsSummary
     : Summary<ListBowlerOfTheYearAwardsEndpoint>

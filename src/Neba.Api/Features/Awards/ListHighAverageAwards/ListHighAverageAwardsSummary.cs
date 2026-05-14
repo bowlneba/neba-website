@@ -5,7 +5,7 @@ using FastEndpoints;
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Awards;
 
-namespace Neba.Api.Awards.ListHighAverageAwards;
+namespace Neba.Api.Features.Awards.ListHighAverageAwards;
 
 internal sealed class ListHighAverageAwardsSummary
     : Summary<ListHighAverageAwardsEndpoint>

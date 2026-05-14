@@ -8,7 +8,7 @@ using Neba.Api.Contracts.Awards;
 using Neba.Application.Awards.ListHighAverageAwards;
 using Neba.Application.Messaging;
 
-namespace Neba.Api.Awards.ListHighAverageAwards;
+namespace Neba.Api.Features.Awards.ListHighAverageAwards;
 
 internal sealed class ListHighAverageAwardsEndpoint(IQueryHandler<ListHighAverageAwardsQuery, IReadOnlyCollection<HighAverageAwardDto>> queryHandler)
     : EndpointWithoutRequest<CollectionResponse<HighAverageAwardResponse>>

@@ -8,7 +8,7 @@ using Neba.Api.Contracts.Awards;
 using Neba.Application.Awards.ListBowlerOfTheYearAwards;
 using Neba.Application.Messaging;
 
-namespace Neba.Api.Awards.ListBowlerOfTheYearAwards;
+namespace Neba.Api.Features.Awards.ListBowlerOfTheYearAwards;
 
 internal sealed class ListBowlerOfTheYearAwardsEndpoint(IQueryHandler<ListBowlerOfTheYearAwardsQuery, IReadOnlyCollection<BowlerOfTheYearAwardDto>> queryHandler)
     : EndpointWithoutRequest<CollectionResponse<BowlerOfTheYearAwardResponse>>

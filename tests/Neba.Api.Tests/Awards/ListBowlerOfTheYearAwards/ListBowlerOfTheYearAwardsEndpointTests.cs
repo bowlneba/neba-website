@@ -1,6 +1,6 @@
 using FastEndpoints;
 
-using Neba.Api.Awards.ListBowlerOfTheYearAwards;
+using Neba.Api.Features.Awards.ListBowlerOfTheYearAwards;
 using Neba.Application.Awards.ListBowlerOfTheYearAwards;
 using Neba.Application.Messaging;
 using Neba.TestFactory.Attributes;
