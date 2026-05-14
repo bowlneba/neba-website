@@ -1,4 +1,4 @@
-namespace Neba.Infrastructure.Database.Options;
+namespace Neba.Api.Database.Options;
 
 internal sealed class SlowQueryOptions
 {
