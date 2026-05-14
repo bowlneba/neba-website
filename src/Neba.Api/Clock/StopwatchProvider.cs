@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 using Neba.Application.Clock;
 
-namespace Neba.Infrastructure.Clock;
+namespace Neba.Api.Clock;
 
 internal sealed class StopwatchProvider
     : IStopwatchProvider
