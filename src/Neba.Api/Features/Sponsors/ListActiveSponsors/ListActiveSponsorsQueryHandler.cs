@@ -1,19 +1,21 @@
 using Microsoft.EntityFrameworkCore;
 
-using Neba.Application.Contact;
-using Neba.Application.Sponsors;
-using Neba.Application.Sponsors.GetSponsorDetail;
+using Neba.Api.Database;
+using Neba.Api.Messaging;
+using Neba.Api.Storage;
 using Neba.Domain.Sponsors;
 
-namespace Neba.Infrastructure.Database.Queries;
+namespace Neba.Api.Features.Sponsors.ListActiveSponsors;
 
-internal sealed class SponsorQueries(AppDbContext appDbContext)
-    : ISponsorQueries
+internal sealed class ListActiveSponsorsQueryHandler(AppDbContext appDbContext, IFileStorageService fileStorageService)
+    : IQueryHandler<ListActiveSponsorsQuery, IReadOnlyCollection<SponsorSummaryDto>>
 {
     private readonly IQueryable<Sponsor> _sponsors = appDbContext.Sponsors.AsNoTracking();
+    private readonly IFileStorageService _fileStorageService = fileStorageService;
 
-    public async Task<IReadOnlyCollection<SponsorSummaryDto>> GetActiveSponsorsAsync(CancellationToken cancellationToken)
-        => await _sponsors
+    public async Task<IReadOnlyCollection<SponsorSummaryDto>> HandleAsync(ListActiveSponsorsQuery query, CancellationToken cancellationToken)
+    {
+        var sponsors = await _sponsors
             .Where(sponsor => sponsor.IsCurrentSponsor)
             .Select(sponsor => new SponsorSummaryDto
             {
@@ -32,4 +34,10 @@ internal sealed class SponsorQueries(AppDbContext appDbContext)
                 InstagramUrl = sponsor.InstagramUrl
             })
             .ToListAsync(cancellationToken);
+
+        return [.. sponsors
+            .Select(sponsor => sponsor.LogoContainer is not null && sponsor.LogoPath is not null
+                ? sponsor with { LogoUrl = _fileStorageService.GetBlobUri(sponsor.LogoContainer, sponsor.LogoPath) }
+                : sponsor)];
+    }
 }

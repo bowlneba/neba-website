@@ -1,7 +1,7 @@
-using Neba.Application.Sponsors.ListActiveSponsors;
+using Neba.Api.Features.Sponsors.ListActiveSponsors;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Application.Tests.Sponsors.ListActiveSponsors;
+namespace Neba.Api.Tests.Features.Sponsors.ListActiveSponsors;
 
 [UnitTest]
 [Component("Sponsors")]

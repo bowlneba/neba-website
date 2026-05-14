@@ -1,4 +1,4 @@
-namespace Neba.Application.Sponsors;
+namespace Neba.Api.Features.Sponsors.ListActiveSponsors;
 
 /// <summary>
 /// Data transfer object containing summary details for a sponsor.

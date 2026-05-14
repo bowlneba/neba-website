@@ -50,10 +50,10 @@ internal sealed class GetSponsorDetailQueryHandler(AppDbContext appDbContext, IF
                     }
                     : null,
                 BusinessEmailAddress = sponsor.BusinessEmail != null ? sponsor.BusinessEmail.Value : null,
-                PhoneNumbers = sponsor.PhoneNumbers.Select(pn => new PhoneNumberDto
+                PhoneNumbers = sponsor.PhoneNumbers.Select(phoneNumber => new PhoneNumberDto
                 {
-                    Number = pn.Number,
-                    PhoneNumberType = pn.Type.Name
+                    Number = phoneNumber.Number,
+                    PhoneNumberType = phoneNumber.Type.Name
                 }).ToList(),
                 SponsorContactInfo = sponsor.SponsorContact != null
                     ? new ContactInfoDto
