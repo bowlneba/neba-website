@@ -1,7 +1,7 @@
-using Neba.Domain.Seasons;
+using Neba.Api.Features.Seasons.Domain;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Domain.Tests.Seasons;
+namespace Neba.Api.Tests.Features.Seasons.Domain;
 
 [UnitTest]
 [Component("Awards.BowlerOfTheYearCategory")]

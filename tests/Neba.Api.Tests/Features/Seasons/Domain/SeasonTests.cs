@@ -1,11 +1,11 @@
 using ErrorOr;
 
 using Neba.Api.Features.Bowlers.Domain;
-using Neba.Domain.Seasons;
+using Neba.Api.Features.Seasons.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Seasons;
 
-namespace Neba.Domain.Tests.Seasons;
+namespace Neba.Api.Tests.Features.Seasons.Domain;
 
 [UnitTest]
 [Component("Awards.Season")]

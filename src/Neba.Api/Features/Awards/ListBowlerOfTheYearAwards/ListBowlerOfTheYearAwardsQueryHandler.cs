@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
+using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Messaging;
-using Neba.Domain.Seasons;
 
 namespace Neba.Api.Features.Awards.ListBowlerOfTheYearAwards;
 

@@ -1,6 +1,6 @@
 using StronglyTypedIds;
 
-namespace Neba.Domain.Seasons;
+namespace Neba.Api.Features.Seasons.Domain;
 
 /// <summary>
 /// Unique identifier for a season award.

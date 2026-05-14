@@ -1,8 +1,8 @@
 using ErrorOr;
 
-using Neba.Domain.Bowlers;
+using Neba.Api.Features.Bowlers.Domain;
 
-namespace Neba.Domain.Seasons;
+namespace Neba.Api.Features.Seasons.Domain;
 
 /// <summary>
 /// Recognizes the highest pinfall average per game across all Stat-Eligible Tournaments in the Season.
@@ -79,23 +79,4 @@ public sealed class HighAverageAward
         };
 
     }
-}
-
-internal static class HighAverageAwardErrors
-{
-    public static readonly Error BowlerIdRequired = Error.Validation(
-        code: "HighAverageAward.BowlerIdRequired",
-        description: "Bowler ID is required.");
-
-    public static readonly Error InvalidAverage = Error.Validation(
-        code: "HighAverageAward.InvalidAverage",
-        description: "Average must be greater than zero.");
-
-    public static readonly Error InvalidTotalGames = Error.Validation(
-        code: "HighAverageAward.InvalidTotalGames",
-        description: "Total games must be greater than zero.");
-
-    public static readonly Error InvalidTournamentsParticipated = Error.Validation(
-        code: "HighAverageAward.InvalidTournamentsParticipated",
-        description: "Tournaments participated must be greater than zero.");
 }
