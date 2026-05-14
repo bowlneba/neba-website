@@ -1,9 +1,9 @@
 using System.Drawing;
 
-using Neba.Infrastructure.Database.Converters;
+using Neba.Api.Database.Converters;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Infrastructure.Tests.Database.Converters;
+namespace Neba.Api.Tests.Database.Converters;
 
 [UnitTest]
 [Component("Database.Converters")]
@@ -14,7 +14,7 @@ public sealed class ColorConverterTests
     {
         // Arrange
         var color = Color.FromArgb(255, 100, 150, 200);
-        var converter = new Infrastructure.Database.Converters.ColorConverter();
+        var converter = new Api.Database.Converters.ColorConverter();
 
         // Act
         var result = (int)converter.ConvertToProvider(color)!;
@@ -28,7 +28,7 @@ public sealed class ColorConverterTests
     {
         // Arrange
         var color = Color.FromArgb(0, 0, 0, 0);
-        var converter = new Infrastructure.Database.Converters.ColorConverter();
+        var converter = new Api.Database.Converters.ColorConverter();
 
         // Act
         var result = (int)converter.ConvertToProvider(color)!;
@@ -43,7 +43,7 @@ public sealed class ColorConverterTests
         // Arrange
         var original = Color.FromArgb(200, 75, 125, 175);
         var argbValue = original.ToArgb();
-        var converter = new Infrastructure.Database.Converters.ColorConverter();
+        var converter = new Api.Database.Converters.ColorConverter();
 
         // Act
         var result = (Color)converter.ConvertFromProvider(argbValue)!;
@@ -57,7 +57,7 @@ public sealed class ColorConverterTests
     {
         // Arrange
         var original = Color.FromArgb(128, 50, 100, 200);
-        var converter = new Infrastructure.Database.Converters.ColorConverter();
+        var converter = new Api.Database.Converters.ColorConverter();
 
         // Act
         var providerValue = (int)converter.ConvertToProvider(original)!;

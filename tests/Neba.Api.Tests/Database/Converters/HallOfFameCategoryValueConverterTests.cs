@@ -1,8 +1,8 @@
 using Neba.Domain.HallOfFame;
-using Neba.Infrastructure.Database.Converters;
+using Neba.Api.Database.Converters;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Infrastructure.Tests.Database.Converters;
+namespace Neba.Api.Tests.Database.Converters;
 
 [UnitTest]
 [Component("Database.Converters")]

@@ -1,9 +1,8 @@
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-using Neba.Domain.HallOfFame;
 using Neba.Domain.Tournaments;
 
-namespace Neba.Infrastructure.Database.Converters;
+namespace Neba.Api.Database.Converters;
 
 internal sealed class TournamentRoundValueConverter
     : ValueConverter<IReadOnlyCollection<TournamentRound>, int>

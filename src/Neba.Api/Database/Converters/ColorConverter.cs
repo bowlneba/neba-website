@@ -2,7 +2,7 @@ using System.Drawing;
 
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace Neba.Infrastructure.Database.Converters;
+namespace Neba.Api.Database.Converters;
 
 internal sealed class ColorConverter
     : ValueConverter<Color, int>

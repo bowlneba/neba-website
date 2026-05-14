@@ -1,9 +1,9 @@
-using Neba.Infrastructure.Database.Converters;
+using Neba.Api.Database.Converters;
 using Neba.TestFactory.Attributes;
 
 using StronglyTypedIds;
 
-namespace Neba.Infrastructure.Tests.Database.Converters;
+namespace Neba.Api.Tests.Database.Converters;
 
 [UnitTest]
 [Component("Database.Converters")]

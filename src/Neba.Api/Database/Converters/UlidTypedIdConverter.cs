@@ -2,13 +2,13 @@ using System.Linq.Expressions;
 
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace Neba.Infrastructure.Database.Converters;
+namespace Neba.Api.Database.Converters;
 
 internal sealed class UlidTypedIdConverter<TId>(ConverterMappingHints? mappingHints)
     : ValueConverter<TId, string>(BuildToProvider(), BuildFromProvider(), mappingHints)
     where TId : struct
 {
-    public UlidTypedIdConverter() : this((ConverterMappingHints?)null) { }
+    public UlidTypedIdConverter() : this(null) { }
 
     private static Expression<Func<TId, string>> BuildToProvider()
     {
