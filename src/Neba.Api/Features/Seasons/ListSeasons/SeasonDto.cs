@@ -1,6 +1,6 @@
 using Neba.Domain.Seasons;
 
-namespace Neba.Application.Seasons;
+namespace Neba.Api.Features.Seasons.ListSeasons;
 
 /// <summary>
 /// Data Transfer Object (DTO) representing a Season in the NEBA application. This DTO is used to transfer season data between the application layers, particularly for read operations. It includes essential information about a season, such as its unique identifier, description, and date range. The SeasonDto is designed to be immutable and is intended for use in scenarios where season details need to be displayed or processed without exposing the underlying domain entities directly.
