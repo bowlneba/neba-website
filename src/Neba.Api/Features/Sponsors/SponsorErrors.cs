@@ -1,6 +1,6 @@
 using ErrorOr;
 
-namespace Neba.Application.Sponsors;
+namespace Neba.Api.Features.Sponsors;
 
 internal static class SponsorErrors
 {

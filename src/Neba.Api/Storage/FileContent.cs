@@ -1,4 +1,4 @@
-namespace Neba.Application.Storage;
+namespace Neba.Api.Storage;
 
 /// <summary>
 /// Represents a file retrieved from storage, including its content, content type, and metadata.

@@ -1,4 +1,4 @@
-namespace Neba.Application.Storage;
+namespace Neba.Api.Storage;
 
 
 /// <summary>
@@ -8,7 +8,7 @@ namespace Neba.Application.Storage;
 /// Files are the storage representation of any content within NEBA, regardless of origin.
 /// See docs/ubiquitous-language.md for the formal definition of "File" in the NEBA domain.
 /// </remarks>
-public interface IFileStorageService
+internal interface IFileStorageService
 {
     /// <summary>
     /// Checks whether a file exists in the specified container.

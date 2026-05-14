@@ -1,7 +1,7 @@
-using Neba.Application.Contact;
+using Neba.Api.Contacts;
 using Neba.Domain.Sponsors;
 
-namespace Neba.Application.Sponsors.GetSponsorDetail;
+namespace Neba.Api.Features.Sponsors.GetSponsorDetail;
 
 /// <summary>
 /// Data transfer object representing the detailed information of a sponsor, including its basic details, contact information, and promotional content. This DTO is used to transfer sponsor data from the application layer to the presentation layer when retrieving sponsor details.

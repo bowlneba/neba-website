@@ -1,9 +1,9 @@
 using ErrorOr;
 
-using Neba.Application.Caching;
-using Neba.Application.Messaging;
+using Neba.Api.Caching;
+using Neba.Api.Messaging;
 
-namespace Neba.Application.Sponsors.GetSponsorDetail;
+namespace Neba.Api.Features.Sponsors.GetSponsorDetail;
 
 /// <summary>
 /// A query to retrieve sponsor detail information by slug.

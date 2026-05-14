@@ -1,6 +1,6 @@
-using Neba.Application.Contact;
+using Neba.Api.Contacts;
 
-namespace Neba.Application.Sponsors.GetSponsorDetail;
+namespace Neba.Api.Features.Sponsors.GetSponsorDetail;
 
 /// <summary>
 /// Represents the contact information for a sponsor, including the contact person's name, phone number, and email address. This information is used to provide users with a way to reach out to the sponsor for inquiries or support.
