@@ -5,9 +5,10 @@ using FastEndpoints.AspVersioning;
 
 namespace Neba.Api.Features.Stats;
 
-internal sealed class StatsGroup : SubGroup<BaseGroup>
+internal sealed class StatsEndpointGroup 
+    : SubGroup<BaseEndpointGroup>
 {
-    public StatsGroup()
+    public StatsEndpointGroup()
     {
         VersionSets.CreateApi("Stats", v => v
             .HasApiVersion(new ApiVersion(1, 0)));

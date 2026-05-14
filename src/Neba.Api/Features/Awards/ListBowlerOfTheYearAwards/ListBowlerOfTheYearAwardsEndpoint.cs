@@ -18,7 +18,7 @@ internal sealed class ListBowlerOfTheYearAwardsEndpoint(IQueryHandler<ListBowler
     public override void Configure()
     {
         Get("bowler-of-the-year");
-        Group<AwardsGroup>();
+        Group<AwardsEndpointGroup>();
 
         Options(options => options
             .WithVersionSet("Awards")

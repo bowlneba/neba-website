@@ -5,9 +5,10 @@ using FastEndpoints.AspVersioning;
 
 namespace Neba.Api.Features.Tournaments;
 
-internal sealed class TournamentsGroup : SubGroup<BaseGroup>
+internal sealed class TournamentsEndpointGroup 
+    : SubGroup<BaseEndpointGroup>
 {
-    public TournamentsGroup()
+    public TournamentsEndpointGroup()
     {
         VersionSets.CreateApi("Tournaments", v => v
             .HasApiVersion(new ApiVersion(1, 0)));

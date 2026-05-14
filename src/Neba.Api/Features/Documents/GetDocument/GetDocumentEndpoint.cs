@@ -19,7 +19,7 @@ internal sealed class GetDocumentEndpoint(IQueryHandler<GetDocumentQuery, ErrorO
     public override void Configure()
     {
         Get("{DocumentName}");
-        Group<DocumentsGroup>();
+        Group<DocumentsEndpointGroup>();
 
         Options(options => options
             .WithVersionSet("Documents")

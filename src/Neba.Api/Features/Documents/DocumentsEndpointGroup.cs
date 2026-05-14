@@ -5,10 +5,10 @@ using FastEndpoints.AspVersioning;
 
 namespace Neba.Api.Features.Documents;
 
-internal sealed class DocumentsGroup
-    : SubGroup<BaseGroup>
+internal sealed class DocumentsEndpointGroup
+    : SubGroup<BaseEndpointGroup>
 {
-    public DocumentsGroup()
+    public DocumentsEndpointGroup()
     {
         VersionSets.CreateApi("Documents", v => v
             .HasApiVersion(new ApiVersion(1, 0)));

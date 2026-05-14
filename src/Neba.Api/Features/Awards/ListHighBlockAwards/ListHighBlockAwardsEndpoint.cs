@@ -18,7 +18,7 @@ internal sealed class ListHighBlockAwardsEndpoint(IQueryHandler<ListHighBlockAwa
     public override void Configure()
     {
         Get("high-block");
-        Group<AwardsGroup>();
+        Group<AwardsEndpointGroup>();
 
         Options(options => options
             .WithVersionSet("Awards")

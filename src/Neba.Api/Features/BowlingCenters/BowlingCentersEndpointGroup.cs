@@ -5,10 +5,10 @@ using FastEndpoints.AspVersioning;
 
 namespace Neba.Api.Features.BowlingCenters;
 
-internal sealed class BowlingCentersGroup
-    : SubGroup<BaseGroup>
+internal sealed class BowlingCentersEndpointGroup
+    : SubGroup<BaseEndpointGroup>
 {
-    public BowlingCentersGroup()
+    public BowlingCentersEndpointGroup()
     {
         VersionSets.CreateApi("BowlingCenters", v => v
             .HasApiVersion(new ApiVersion(1, 0)));

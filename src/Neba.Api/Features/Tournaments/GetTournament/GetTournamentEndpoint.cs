@@ -21,7 +21,7 @@ internal sealed class GetTournamentEndpoint(
     public override void Configure()
     {
         Get("{id}");
-        Group<TournamentsGroup>();
+        Group<TournamentsEndpointGroup>();
 
         Options(options => options
             .WithVersionSet("Tournaments")

@@ -21,7 +21,7 @@ internal sealed class GetSeasonStatsEndpoint(IQueryHandler<GetSeasonStatsQuery, 
     public override void Configure()
     {
         Get("");
-        Group<StatsGroup>();
+        Group<StatsEndpointGroup>();
 
         Options(options => options
             .WithVersionSet("Stats")

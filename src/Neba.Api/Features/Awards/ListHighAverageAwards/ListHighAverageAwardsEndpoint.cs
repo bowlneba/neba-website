@@ -18,7 +18,7 @@ internal sealed class ListHighAverageAwardsEndpoint(IQueryHandler<ListHighAverag
     public override void Configure()
     {
         Get("high-average");
-        Group<AwardsGroup>();
+        Group<AwardsEndpointGroup>();
 
         Options(options => options
             .WithVersionSet("Awards")

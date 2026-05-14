@@ -4,10 +4,10 @@ using FastEndpoints;
 
 namespace Neba.Api;
 
-internal sealed class BaseGroup
+internal sealed class BaseEndpointGroup
     : Group
 {
-    public BaseGroup()
+    public BaseEndpointGroup()
     {
         Configure(string.Empty,
             definition => definition.Description(

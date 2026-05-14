@@ -5,10 +5,10 @@ using FastEndpoints.AspVersioning;
 
 namespace Neba.Api.Features.HallOfFame;
 
-internal sealed class HallOfFameGroup
-    : SubGroup<BaseGroup>
+internal sealed class HallOfFameEndpointGroup
+    : SubGroup<BaseEndpointGroup>
 {
-    public HallOfFameGroup()
+    public HallOfFameEndpointGroup()
     {
         VersionSets.CreateApi("HallOfFame", v => v
             .HasApiVersion(new ApiVersion(1, 0)));

@@ -20,7 +20,7 @@ internal sealed class ListTournamentsInSeasonEndpoint(
     public override void Configure()
     {
         Get("{seasonId}/tournaments");
-        Group<SeasonsGroup>();
+        Group<SeasonsEndpointGroup>();
 
         Options(options => options
             .WithVersionSet("Seasons")

@@ -18,7 +18,7 @@ internal sealed class ListHallOfFameInductionsEndpoint(IQueryHandler<ListHallOfF
     public override void Configure()
     {
         Get("inductions");
-        Group<HallOfFameGroup>();
+        Group<HallOfFameEndpointGroup>();
 
         Options(options => options
             .WithVersionSet("HallOfFame")

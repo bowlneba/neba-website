@@ -19,7 +19,7 @@ internal sealed class ListBowlingCentersEndpoint(IQueryHandler<ListBowlingCenter
     public override void Configure()
     {
         Get(string.Empty);
-        Group<BowlingCentersGroup>();
+        Group<BowlingCentersEndpointGroup>();
 
         Options(options => options
             .WithVersionSet("BowlingCenters")

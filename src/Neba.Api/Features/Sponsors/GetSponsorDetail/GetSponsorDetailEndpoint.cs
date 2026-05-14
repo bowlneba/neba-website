@@ -20,7 +20,7 @@ internal sealed class GetSponsorDetailEndpoint(IQueryHandler<GetSponsorDetailQue
     public override void Configure()
     {
         Get("{slug}");
-        Group<SponsorsGroup>();
+        Group<SponsorsEndpointGroup>();
 
         Options(options => options
             .WithVersionSet("Sponsors")

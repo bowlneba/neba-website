@@ -19,7 +19,7 @@ internal sealed class ListSeasonsEndpoint(IQueryHandler<ListSeasonsQuery, IReadO
     public override void Configure()
     {
         Get(string.Empty);
-        Group<SeasonsGroup>();
+        Group<SeasonsEndpointGroup>();
 
         Options(options => options
             .WithVersionSet("Seasons")

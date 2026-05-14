@@ -5,10 +5,10 @@ using FastEndpoints.AspVersioning;
 
 namespace Neba.Api.Features.Sponsors;
 
-internal sealed class SponsorsGroup
-    : SubGroup<BaseGroup>
+internal sealed class SponsorsEndpointGroup
+    : SubGroup<BaseEndpointGroup>
 {
-    public SponsorsGroup()
+    public SponsorsEndpointGroup()
     {
         VersionSets.CreateApi("Sponsors", v => v
             .HasApiVersion(new ApiVersion(1, 0)));

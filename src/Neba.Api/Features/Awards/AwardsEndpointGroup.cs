@@ -5,10 +5,10 @@ using FastEndpoints.AspVersioning;
 
 namespace Neba.Api.Features.Awards;
 
-internal sealed class AwardsGroup
-    : SubGroup<BaseGroup>
+internal sealed class AwardsEndpointGroup
+    : SubGroup<BaseEndpointGroup>
 {
-    public AwardsGroup()
+    public AwardsEndpointGroup()
     {
         VersionSets.CreateApi("Awards", v => v
             .HasApiVersion(new ApiVersion(1, 0)));

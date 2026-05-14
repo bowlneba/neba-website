@@ -5,10 +5,10 @@ using FastEndpoints.AspVersioning;
 
 namespace Neba.Api.Features.Seasons;
 
-internal sealed class SeasonsGroup
-    : SubGroup<BaseGroup>
+internal sealed class SeasonsEndpointGroup
+    : SubGroup<BaseEndpointGroup>
 {
-    public SeasonsGroup()
+    public SeasonsEndpointGroup()
     {
         VersionSets.CreateApi("Seasons", v => v
             .HasApiVersion(new ApiVersion(1, 0)));
