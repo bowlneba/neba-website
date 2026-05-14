@@ -1,9 +1,5 @@
-using Microsoft.Extensions.DependencyInjection;
-
+using Neba.Api.Features.Stats.CalculateSeasonStats;
 using Neba.Api.Messaging;
-using Neba.Api.Stats;
-using Neba.Api.Stats.BoyProgression;
-using Neba.Api.Tournaments;
 
 namespace Neba.Api;
 
@@ -28,6 +24,8 @@ public static class ApplicationConfiguration
 
         internal void AddServices()
         {
+            services.AddSingleton<ISeasonStatsCalculator, SeasonStatsCalculator>();
+
             services.AddScoped<ISeasonStatsService, SeasonStatsService>();
             services.AddScoped<IBowlerOfTheYearProgressionService, BowlerOfTheYearProgressionService>();
         }

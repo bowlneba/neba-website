@@ -84,27 +84,4 @@ internal sealed class StatsQueries(AppDbContext appDbContext)
                 SideCutName = r.SideCut != null ? r.SideCut.Name : null
             })
             .ToListAsync(cancellationToken);
-
-    public async Task<IReadOnlyCollection<SeasonDto>> GetSeasonsWithStatsAsync(CancellationToken cancellationToken)
-    {
-        var seasons = await _bowlerSeasonStats
-            .Select(stat => new
-            {
-                stat.Season.Id,
-                stat.Season.Description,
-                stat.Season.StartDate,
-                stat.Season.EndDate
-            })
-            .Distinct()
-            .OrderByDescending(s => s.StartDate)
-            .ToListAsync(cancellationToken);
-
-        return [.. seasons.Select(season => new SeasonDto
-        {
-            Id = season.Id,
-            Description = season.Description,
-            StartDate = season.StartDate,
-            EndDate = season.EndDate
-        })];
-    }
 }
