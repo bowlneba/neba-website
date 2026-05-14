@@ -1,7 +1,7 @@
-using Neba.Application.Caching;
-using Neba.Application.Messaging;
+using Neba.Api.Caching;
+using Neba.Api.Messaging;
 
-namespace Neba.Application.Awards.ListBowlerOfTheYearAwards;
+namespace Neba.Api.Features.Awards.ListBowlerOfTheYearAwards;
 
 /// <summary>
 /// Query to retrieve a list of Bowler of the Year awards, which recognize overall performance
