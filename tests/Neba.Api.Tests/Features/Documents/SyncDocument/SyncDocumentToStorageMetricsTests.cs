@@ -1,9 +1,9 @@
 using System.Diagnostics.Metrics;
 
-using Neba.Application.Documents.SyncDocument;
+using Neba.Api.Features.Documents.SyncDocument;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Application.Tests.Documents.SyncDocument;
+namespace Neba.Api.Tests.Features.Documents.SyncDocument;
 
 [UnitTest]
 [Component("Documents")]

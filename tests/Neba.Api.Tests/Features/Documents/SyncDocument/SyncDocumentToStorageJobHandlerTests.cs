@@ -4,14 +4,14 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Time.Testing;
 
-using Neba.Application.Clock;
-using Neba.Application.Documents;
-using Neba.Application.Documents.SyncDocument;
+using Neba.Api.Clock;
+using Neba.Api.Documents;
+using Neba.Api.Features.Documents.SyncDocument;
 using Neba.Application.Storage;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Documents;
 
-namespace Neba.Application.Tests.Documents.SyncDocument;
+namespace Neba.Api.Tests.Features.Documents.SyncDocument;
 
 [UnitTest]
 [Component("Documents")]
@@ -238,7 +238,7 @@ public sealed class SyncDocumentToStorageJobHandlerTests
         var listener = new ActivityListener
         {
             ShouldListenTo = source => source.Name == "Neba.BackgroundJobs",
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+            Sample = (ref _) => ActivitySamplingResult.AllData,
             ActivityStopped = activities.Add
         };
         ActivitySource.AddActivityListener(listener);
