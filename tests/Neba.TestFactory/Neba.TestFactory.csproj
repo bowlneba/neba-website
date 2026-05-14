@@ -13,7 +13,6 @@
 
     <ItemGroup>
       <ProjectReference Include="../../src/Neba.AppHost/Neba.AppHost.csproj" />
-      <ProjectReference Include="../../src/Neba.Infrastructure/Neba.Infrastructure.csproj" />
       <ProjectReference Include="../../src/Neba.Api.Contracts/Neba.Api.Contracts.csproj" />
       <ProjectReference Include="../../src/Neba.Website.Server/Neba.Website.Server.csproj" />
       <ProjectReference Include="..\..\src\Neba.Api\Neba.Api.csproj" />

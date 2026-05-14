@@ -16,7 +16,6 @@
   </Folder>
   <Folder Name="/src/api/">
     <Project Path="src/Neba.Domain/Neba.Domain.csproj" />
-    <Project Path="src/Neba.Infrastructure/Neba.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <File Path="tests/.editorconfig" />
