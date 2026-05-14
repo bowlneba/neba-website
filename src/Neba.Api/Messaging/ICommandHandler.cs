@@ -1,6 +1,6 @@
 using ErrorOr;
 
-namespace Neba.Application.Messaging;
+namespace Neba.Api.Messaging;
 
 /// <summary>
 /// Represents a handler for processing commands of type <typeparamref name="TCommand"/>

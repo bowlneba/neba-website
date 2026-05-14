@@ -1,6 +1,6 @@
 using ErrorOr;
 
-namespace Neba.Application.Messaging;
+namespace Neba.Api.Messaging;
 
 /// <summary>
 /// Represents a command that returns a response of type <typeparamref name="TResponse"/>.

@@ -3,12 +3,12 @@ using System.Text.Json.Serialization;
 
 using FastEndpoints;
 
+using Neba.Api;
 using Neba.Api.ErrorHandling;
 using Neba.Api.OpenApi;
 using Neba.Api.Versioning;
 using Neba.Application;
 using Neba.Domain;
-using Neba.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 

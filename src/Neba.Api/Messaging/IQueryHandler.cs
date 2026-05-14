@@ -1,4 +1,4 @@
-namespace Neba.Application.Messaging;
+namespace Neba.Api.Messaging;
 
 /// <summary>
 /// Represents a handler for processing queries of type <typeparamref name="TQuery"/>

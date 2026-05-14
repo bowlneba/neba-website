@@ -3,10 +3,6 @@
   <PropertyGroup>  
     <UserSecretsId>632d3236-ee11-4a9d-9592-d35db940e4d8</UserSecretsId>
   </PropertyGroup>
-  
-  <ItemGroup>
-    <AdditionalFiles Include="..\Neba.Domain\ulid-full.typedid" Link="ulid-full.typedid" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Neba.Application\Neba.Application.csproj" />
@@ -48,7 +44,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <AdditionalFiles Include="ulid-full.typedid" />
+    <EditorConfigFiles Include="Messaging\.editorconfig" />
   </ItemGroup>
 
 </Project>

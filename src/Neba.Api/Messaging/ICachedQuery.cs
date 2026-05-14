@@ -1,6 +1,6 @@
-using Neba.Application.Caching;
+using Neba.Api.Caching;
 
-namespace Neba.Application.Messaging;
+namespace Neba.Api.Messaging;
 
 /// <summary>
 /// Represents a query that supports caching and returns a response of type <typeparamref name="TResponse"/>.

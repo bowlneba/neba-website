@@ -1,6 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
-
-namespace Neba.Application.Messaging;
+namespace Neba.Api.Messaging;
 
 internal static class MessagingConfiguration
 {
@@ -9,14 +7,14 @@ internal static class MessagingConfiguration
         public void AddMessaging()
         {
             services.Scan(scan => scan
-                .FromAssemblies(typeof(IApplicationAssemblyMarker).Assembly)
+                .FromAssemblies(typeof(MessagingConfiguration).Assembly)
                 .AddClasses(classes => classes
                     .AssignableTo(typeof(IQueryHandler<,>)))
                 .AsImplementedInterfaces()
                 .WithScopedLifetime());
 
             services.Scan(scan => scan
-                .FromAssemblies(typeof(IApplicationAssemblyMarker).Assembly)
+                .FromAssemblies(typeof(MessagingConfiguration).Assembly)
                 .AddClasses(classes => classes
                     .AssignableTo(typeof(ICommandHandler<,>)))
                 .AsImplementedInterfaces()
