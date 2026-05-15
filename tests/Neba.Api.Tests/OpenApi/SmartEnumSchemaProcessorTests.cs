@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using Neba.Api.Contracts.OpenApi;
+using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.OpenApi;
 using Neba.TestFactory.Attributes;
 

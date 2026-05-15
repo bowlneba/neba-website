@@ -1,3 +1,4 @@
+using Neba.Api.Geography;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Geography;
