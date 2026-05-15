@@ -1,6 +1,7 @@
 using ErrorOr;
 
-using Neba.Domain.Bowlers;
+using Neba.Api.Domain;
+using Neba.Api.Features.Bowlers.Domain;
 
 namespace Neba.Api.Features.Tournaments.Domain;
 
