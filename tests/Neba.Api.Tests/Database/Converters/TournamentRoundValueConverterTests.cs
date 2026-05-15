@@ -1,5 +1,4 @@
 using Neba.Api.Database.Converters;
-using Neba.Domain.Tournaments;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Database.Converters;

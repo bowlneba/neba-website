@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.Documents;
-using Neba.Application.Clock;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Documents;

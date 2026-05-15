@@ -2,13 +2,11 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
 using Hangfire;
-using Hangfire.InMemory;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Neba.Application.BackgroundJobs;
-using Neba.Infrastructure.BackgroundJobs;
+
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.BackgroundJobs;

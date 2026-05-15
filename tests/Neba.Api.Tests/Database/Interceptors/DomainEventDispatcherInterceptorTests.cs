@@ -7,8 +7,6 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 
 using Neba.Api.Database.Interceptors;
-using Neba.Application.BackgroundJobs;
-using Neba.Domain;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Database.Interceptors;

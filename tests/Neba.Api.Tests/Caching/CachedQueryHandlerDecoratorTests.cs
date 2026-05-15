@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Api.Caching;
 using Neba.Api.Messaging;
-using Neba.Application.Caching;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Caching;
 

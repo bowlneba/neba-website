@@ -4,8 +4,6 @@ using FastEndpoints;
 
 using Neba.Api.Features.Tournaments.GetTournament;
 using Neba.Api.Messaging;
-using Neba.Application.Tournaments.GetTournament;
-using Neba.Domain.Tournaments;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 

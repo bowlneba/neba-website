@@ -6,7 +6,6 @@ using Neba.Api.Database;
 using Neba.Api.Database.Configurations;
 using Neba.Api.Database.Interceptors;
 using Neba.Api.Database.Options;
-using Neba.Domain.Tournaments;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Database.Configurations;

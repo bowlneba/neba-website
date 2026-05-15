@@ -1,9 +1,8 @@
 using Microsoft.Extensions.Logging;
 
+using Neba.Api.Caching;
 using Neba.Api.Messaging;
 using Neba.Api.Telemetry.Tracing;
-using Neba.Application.Caching;
-using Neba.Application.Clock;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Caching;
 

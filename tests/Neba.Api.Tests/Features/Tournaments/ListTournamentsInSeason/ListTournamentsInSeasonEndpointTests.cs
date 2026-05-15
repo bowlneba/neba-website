@@ -2,7 +2,6 @@ using FastEndpoints;
 
 using Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 using Neba.Api.Messaging;
-using Neba.Domain.Seasons;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 
