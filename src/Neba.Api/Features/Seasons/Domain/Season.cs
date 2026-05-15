@@ -2,6 +2,8 @@ using ErrorOr;
 
 using Neba.Api.Domain;
 using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.Stats.Domain;
+using Neba.Api.Features.Tournaments.Domain;
 
 namespace Neba.Api.Features.Seasons.Domain;
 

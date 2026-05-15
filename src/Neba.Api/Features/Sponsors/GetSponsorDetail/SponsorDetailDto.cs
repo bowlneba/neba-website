@@ -1,4 +1,5 @@
 using Neba.Api.Contacts;
+using Neba.Api.Features.Sponsors.Domain;
 
 namespace Neba.Api.Features.Sponsors.GetSponsorDetail;
 
