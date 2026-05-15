@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 using Neba.Api.Database.Converters;
+using Neba.Api.Features.HallOfFame.Domain;
 
 namespace Neba.Api.Database.Configurations;
 
