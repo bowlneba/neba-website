@@ -1,5 +1,5 @@
-using Neba.Application.Awards.ListHighBlockAwards;
-using Neba.Domain.Bowlers;
+using Neba.Api.Features.Awards.ListHighBlockAwards;
+using Neba.Api.Features.Bowlers.Domain;
 using Neba.TestFactory.Bowlers;
 
 namespace Neba.TestFactory.Awards;

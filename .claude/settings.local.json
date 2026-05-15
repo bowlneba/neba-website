@@ -37,7 +37,8 @@
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(Sort-Object)",
       "Bash(find c:\\\\\\\\source\\\\\\\\bowlneba\\\\\\\\website\\\\\\\\src -type d -name \"Neba.Application\")",
-      "Bash(Remove-Item -Force -Recurse \"c:\\\\source\\\\bowlneba\\\\website\\\\tests\\\\Neba.Application.Tests\")"
+      "Bash(Remove-Item -Force -Recurse \"c:\\\\source\\\\bowlneba\\\\website\\\\tests\\\\Neba.Application.Tests\")",
+      "Bash(Remove-Item \"c:\\\\source\\\\bowlneba\\\\website\\\\tests\\\\Neba.TestFactory\\\\Tournaments\\\\TournamentOilPatternDtoFactory.cs\" -Force)"
     ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",

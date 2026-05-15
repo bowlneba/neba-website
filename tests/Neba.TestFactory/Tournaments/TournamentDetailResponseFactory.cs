@@ -1,5 +1,5 @@
 using Neba.Api.Contracts.Tournaments.GetTournament;
-using Neba.Domain.Tournaments;
+using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Bowlers;
 
 namespace Neba.TestFactory.Tournaments;
@@ -8,11 +8,12 @@ public static class TournamentDetailResponseFactory
 {
     public const string ValidId = "01JSTX1234567890ABCDEFGHIJ";
     public const string ValidName = "Spring Open";
+    public const string ValidSeason = "2024-2025 Season";
 
     public static TournamentDetailResponse Create(
         string? id = null,
         string? name = null,
-        TournamentDetailSeasonResponse? season = null,
+        string? season = null,
         DateOnly? startDate = null,
         DateOnly? endDate = null,
         bool? statsEligible = null,
@@ -34,7 +35,7 @@ public static class TournamentDetailResponseFactory
         {
             Id = id ?? ValidId,
             Name = name ?? ValidName,
-            Season = season ?? TournamentDetailSeasonResponseFactory.Create(),
+            Season = season ?? ValidSeason,
             StartDate = startDate ?? DateOnly.FromDateTime(DateTime.Today),
             EndDate = endDate ?? DateOnly.FromDateTime(DateTime.Today),
             StatsEligible = statsEligible ?? true,
@@ -56,7 +57,6 @@ public static class TournamentDetailResponseFactory
 
     public static IReadOnlyCollection<TournamentDetailResponse> Bogus(int count, int? seed = null)
     {
-        var seasons = TournamentDetailSeasonResponseFactory.Bogus(5, seed).ToArray();
         var bowlingCenters = TournamentDetailBowlingCenterResponseFactory.Bogus(10, seed).ToArray();
         var sponsors = TournamentDetailSponsorResponseFactory.Bogus(25, seed).ToArray();
         var oilPatterns = TournamentDetailOilPatternResponseFactory.Bogus(20, seed).ToArray();
@@ -67,7 +67,7 @@ public static class TournamentDetailResponseFactory
             {
                 Id = Ulid.BogusString(f),
                 Name = f.Random.Words(3),
-                Season = f.PickRandom(seasons),
+                Season = $"{f.Date.Past(10).Year}-{f.Date.Past(10).Year + 1} Season",
                 StartDate = DateOnly.FromDateTime(f.Date.Future()),
                 EndDate = DateOnly.FromDateTime(f.Date.Future()),
                 StatsEligible = f.Random.Bool(),

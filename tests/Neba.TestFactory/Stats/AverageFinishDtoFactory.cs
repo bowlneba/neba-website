@@ -1,5 +1,5 @@
-using Neba.Application.Stats.GetSeasonStats;
-using Neba.Domain.Bowlers;
+using Neba.Api.Features.Stats.GetSeasonStats;
+using Neba.Api.Features.Bowlers.Domain;
 using Neba.TestFactory.Bowlers;
 
 namespace Neba.TestFactory.Stats;

@@ -1,4 +1,4 @@
-using Neba.Application.Stats.GetSeasonStats;
+using Neba.Api.Features.Stats.GetSeasonStats;
 
 namespace Neba.TestFactory.Stats;
 

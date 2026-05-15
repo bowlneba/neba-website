@@ -1,6 +1,6 @@
-using Neba.Domain.Bowlers;
-using Neba.Domain.HallOfFame;
-using Neba.Domain.Storage;
+using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.HallOfFame.Domain;
+using Neba.Api.Features.Storage.Domain;
 using Neba.TestFactory.Storage;
 
 namespace Neba.TestFactory.HallOfFame;

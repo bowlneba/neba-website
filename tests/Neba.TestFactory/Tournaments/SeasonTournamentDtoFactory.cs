@@ -1,10 +1,9 @@
+using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.Seasons.ListSeasons;
+using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.ListTournamentsInSeason;
-using Neba.Domain.Bowlers;
-using Neba.Domain.Tournaments;
 using Neba.TestFactory.Bowlers;
-using Neba.TestFactory.BowlingCenters;
 using Neba.TestFactory.Seasons;
-using Neba.TestFactory.Sponsors;
 
 namespace Neba.TestFactory.Tournaments;
 
@@ -20,13 +19,13 @@ public static class SeasonTournamentDtoFactory
         TournamentType? tournamentType = null,
         decimal? entryFee = null,
         Uri? registrationUrl = null,
-        BowlingCenterSummaryDto? bowlingCenter = null,
-        IReadOnlyCollection<SponsorSummaryDto>? sponsors = null,
+        SeasonTournamentBowlingCenterDto? bowlingCenter = null,
+        IReadOnlyCollection<SeasonTournamentSponsorDto>? sponsors = null,
         decimal? addedMoney = null,
         int? reservations = null,
         PatternLengthCategory? patternLengthCategory = null,
         PatternRatioCategory? patternRatioCategory = null,
-        IReadOnlyCollection<TournamentOilPatternDto>? oilPatterns = null,
+        IReadOnlyCollection<SeasonTournamentOilPatternDto>? oilPatterns = null,
         Uri? logoUrl = null,
         string? logoContainer = null,
         string? logoPath = null,
@@ -59,9 +58,9 @@ public static class SeasonTournamentDtoFactory
     {
         var seasons = SeasonDtoFactory.Bogus(5, seed).ToArray();
         var winners = NameFactory.Bogus(count * 200, seed).ToArray();
-        var bowlingCenters = BowlingCenterSummaryDtoFactory.Bogus(10, seed).ToArray();
-        var sponsors = SponsorSummaryDtoFactory.Bogus(25, seed).ToArray();
-        var oilPatterns = TournamentOilPatternDtoFactory.Bogus(20, seed).ToArray();
+        var bowlingCenters = SeasonTournamentBowlingCenterDtoFactory.Bogus(10, seed).ToArray();
+        var sponsors = SeasonTournamentSponsorDtoFactory.Bogus(25, seed).ToArray();
+        var oilPatterns = SeasonTournamentOilPatternDtoFactory.Bogus(20, seed).ToArray();
 
         var faker = new Faker<SeasonTournamentDto>()
             .CustomInstantiator(f =>

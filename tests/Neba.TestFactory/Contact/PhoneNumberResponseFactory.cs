@@ -1,5 +1,5 @@
 using Neba.Api.Contracts.Contact;
-using Neba.Domain.Contact;
+using Neba.Api.Contacts.Domain;
 
 namespace Neba.TestFactory.Contact;
 

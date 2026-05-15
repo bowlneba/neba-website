@@ -1,5 +1,5 @@
 using Neba.Api.Contracts.Awards;
-using Neba.Domain.Seasons;
+using Neba.Api.Features.Seasons.Domain;
 
 namespace Neba.TestFactory.Awards;
 

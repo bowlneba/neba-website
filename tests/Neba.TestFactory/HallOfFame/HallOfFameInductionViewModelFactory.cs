@@ -1,4 +1,4 @@
-using Neba.Domain.HallOfFame;
+using Neba.Api.Features.HallOfFame.Domain;
 using Neba.Website.Server.HallOfFame;
 
 namespace Neba.TestFactory.HallOfFame;

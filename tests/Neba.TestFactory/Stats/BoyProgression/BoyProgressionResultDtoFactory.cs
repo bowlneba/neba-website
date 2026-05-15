@@ -1,9 +1,8 @@
 using System.Globalization;
 
 using Neba.Api.Features.Bowlers.Domain;
-using Neba.Application.Stats.BoyProgression;
-using Neba.Domain.Bowlers;
-using Neba.Domain.Tournaments;
+using Neba.Api.Features.Stats.BoyProgression;
+using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Bowlers;
 
 namespace Neba.TestFactory.Stats.BoyProgression;
@@ -17,19 +16,19 @@ public static class BoyProgressionResultDtoFactory
     public const int ValidPoints = 100;
     public static readonly int? ValidSideCutId;
     public static readonly DateOnly? ValidBowlerDateOfBirth;
-    public static readonly Gender? ValidBowlerGender;
+    public static readonly string? ValidBowlerGender;
 
     public static BoyProgressionResultDto Create(
         BowlerId? bowlerId = null,
         Name? bowlerName = null,
         DateOnly? bowlerDateOfBirth = null,
-        Gender? bowlerGender = null,
+        string? bowlerGender = null,
         TournamentId? tournamentId = null,
         string? tournamentName = null,
         DateOnly? tournamentDate = null,
         DateOnly? tournamentEndDate = null,
         bool? statsEligible = null,
-        TournamentType? tournamentType = null,
+        int? tournamentType = null,
         int? points = null,
         int? sideCutId = null,
         string? sideCutName = null)
@@ -44,7 +43,7 @@ public static class BoyProgressionResultDtoFactory
             TournamentDate = tournamentDate ?? ValidTournamentDate,
             TournamentEndDate = tournamentEndDate ?? ValidTournamentEndDate,
             StatsEligible = statsEligible ?? ValidStatsEligible,
-            TournamentType = tournamentType ?? TournamentType.Singles,
+            TournamentType = tournamentType ?? TournamentType.Singles.Value,
             Points = points ?? ValidPoints,
             SideCutId = sideCutId ?? ValidSideCutId,
             SideCutName = sideCutName,
@@ -58,13 +57,13 @@ public static class BoyProgressionResultDtoFactory
                 BowlerId = BowlerId.Parse(Ulid.BogusString(f, f.Date.Past()), CultureInfo.InvariantCulture),
                 BowlerName = new Name { FirstName = f.Person.FirstName, LastName = f.Person.LastName },
                 BowlerDateOfBirth = f.Random.Bool() ? DateOnly.FromDateTime(f.Date.Past(yearsToGoBack: 70)) : null,
-                BowlerGender = f.Random.Bool() ? f.PickRandom(Gender.List.ToArray()) : null,
+                BowlerGender = f.Random.Bool() ? f.PickRandom(Gender.List.ToArray()).Value : null,
                 TournamentId = TournamentId.Parse(Ulid.BogusString(f, f.Date.Past()), CultureInfo.InvariantCulture),
                 TournamentName = f.Commerce.ProductName(),
                 TournamentDate = DateOnly.FromDateTime(f.Date.Past()),
                 TournamentEndDate = DateOnly.FromDateTime(f.Date.Past()),
                 StatsEligible = f.Random.Bool(),
-                TournamentType = f.PickRandom(TournamentType.List.ToArray()),
+                TournamentType = f.PickRandom(TournamentType.List.ToArray()).Value,
                 Points = f.Random.Int(5, 300),
                 SideCutId = f.Random.Bool() ? f.Random.Int(1, 10) : null,
                 SideCutName = f.Random.Bool() ? f.PickRandom("Senior", "Super Senior", "Women") : null,

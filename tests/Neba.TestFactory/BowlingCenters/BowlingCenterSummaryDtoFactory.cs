@@ -1,7 +1,7 @@
-using Neba.Application.BowlingCenters.ListBowlingCenters;
-using Neba.Application.Contact;
-using Neba.Domain.BowlingCenters;
-using Neba.Domain.Contact;
+using Neba.Api.Features.BowlingCenters.ListBowlingCenters;
+using Neba.Api.Contacts;
+using Neba.Api.Features.BowlingCenters.Domain;
+using Neba.Api.Contacts.Domain;
 using Neba.TestFactory.Contact;
 
 namespace Neba.TestFactory.BowlingCenters;

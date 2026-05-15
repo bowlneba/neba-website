@@ -1,15 +1,15 @@
-using Neba.Api.Features.Seasons.ListSeasons;
 using Neba.Api.Features.Seasons.Domain;
+using Neba.Api.Features.Stats.GetSeasonStats;
 
-namespace Neba.TestFactory.Seasons;
+namespace Neba.TestFactory.Stats;
 
-public static class SeasonDtoFactory
+public static class SeasonWithStatsDtoFactory
 {
     public const string ValidDescription = "2025 Season";
     public static readonly DateOnly ValidStartDate = new(2025, 1, 1);
     public static readonly DateOnly ValidEndDate = new(2025, 12, 31);
 
-    public static SeasonDto Create(
+    public static SeasonWithStatsDto Create(
         SeasonId? id = null,
         string? description = null,
         DateOnly? startDate = null,
@@ -22,16 +22,16 @@ public static class SeasonDtoFactory
             EndDate = endDate ?? ValidEndDate,
         };
 
-    public static IReadOnlyCollection<SeasonDto> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<SeasonWithStatsDto> Bogus(int count, int? seed = null)
     {
         var preFaker = seed.HasValue ? new Faker { Random = new Randomizer(seed.Value) } : new Faker();
         var currentYear = preFaker.Random.Int(2000, 2025 - count);
 
-        var faker = new Faker<SeasonDto>()
+        var faker = new Faker<SeasonWithStatsDto>()
             .CustomInstantiator(f =>
             {
                 var year = currentYear++;
-                return new SeasonDto
+                return new SeasonWithStatsDto
                 {
                     Id = new SeasonId(Ulid.BogusString(f)),
                     Description = $"{year} Season",

@@ -1,8 +1,8 @@
 using Neba.Api.Contracts.BowlingCenters.ListBowlingCenters;
 using Neba.Api.Contracts.Contact;
-using Neba.Application.Contact;
-using Neba.Domain.BowlingCenters;
-using Neba.Domain.Contact;
+using Neba.Api.Contacts;
+using Neba.Api.Features.BowlingCenters.Domain;
+using Neba.Api.Contacts.Domain;
 using Neba.TestFactory.Contact;
 using Neba.TestFactory.Geography;
 

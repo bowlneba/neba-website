@@ -1,7 +1,7 @@
 using Bogus;
 
-using Neba.Domain;
-using Neba.Domain.Tournaments;
+using Neba.Api.Domain;
+using Neba.Api.Features.Tournaments.Domain;
 
 namespace Neba.TestFactory.Tournaments;
 

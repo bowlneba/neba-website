@@ -1,4 +1,4 @@
-using Neba.Domain.Sponsors;
+using Neba.Api.Features.Sponsors.Domain;
 using Neba.Website.Server.Sponsors;
 
 namespace Neba.TestFactory.Sponsors;

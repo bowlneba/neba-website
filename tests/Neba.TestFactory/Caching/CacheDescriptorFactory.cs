@@ -1,4 +1,4 @@
-using Neba.Application.Caching;
+using Neba.Api.Caching;
 
 namespace Neba.TestFactory.Caching;
 

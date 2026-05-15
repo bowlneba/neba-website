@@ -1,37 +1,31 @@
-using Neba.Application.BowlingCenters.ListBowlingCenters;
-using Neba.Application.Seasons;
-using Neba.Application.Sponsors;
-using Neba.Application.Tournaments;
-using Neba.Application.Tournaments.GetTournament;
-using Neba.Application.Tournaments.ListTournamentsInSeason;
-using Neba.Domain.Bowlers;
-using Neba.Domain.Tournaments;
+using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.Tournaments.Domain;
+using Neba.Api.Features.Tournaments.GetTournament;
 using Neba.TestFactory.Bowlers;
-using Neba.TestFactory.BowlingCenters;
-using Neba.TestFactory.Seasons;
-using Neba.TestFactory.Sponsors;
 
 namespace Neba.TestFactory.Tournaments;
 
 public static class TournamentDetailDtoFactory
 {
+    public const string ValidSeason = "2024-2025 Season";
+
     public static TournamentDetailDto Create(
         TournamentId? id = null,
         string? name = null,
-        SeasonDto? season = null,
+        string? season = null,
         DateOnly? startDate = null,
         DateOnly? endDate = null,
         bool? statsEligible = null,
         TournamentType? tournamentType = null,
         decimal? entryFee = null,
         Uri? registrationUrl = null,
-        BowlingCenterSummaryDto? bowlingCenter = null,
-        IReadOnlyCollection<SponsorSummaryDto>? sponsors = null,
+        TournamentDetailBowlingCenterDto? bowlingCenter = null,
+        IReadOnlyCollection<TournamentDetailSponsorDto>? sponsors = null,
         decimal? addedMoney = null,
         int? reservations = null,
         PatternLengthCategory? patternLengthCategory = null,
         PatternRatioCategory? patternRatioCategory = null,
-        IReadOnlyCollection<TournamentOilPatternDto>? oilPatterns = null,
+        IReadOnlyCollection<TournamentDetailOilPatternDto>? oilPatterns = null,
         Uri? logoUrl = null,
         string? logoContainer = null,
         string? logoPath = null,
@@ -42,7 +36,7 @@ public static class TournamentDetailDtoFactory
             {
                 Id = id ?? TournamentId.New(),
                 Name = name ?? "Test Tournament",
-                Season = season ?? SeasonDtoFactory.Create(),
+                Season = season ?? ValidSeason,
                 StartDate = startDate ?? DateOnly.FromDateTime(DateTime.Today),
                 EndDate = endDate ?? DateOnly.FromDateTime(DateTime.Today),
                 StatsEligible = statsEligible ?? true,
@@ -66,18 +60,17 @@ public static class TournamentDetailDtoFactory
 
     public static IReadOnlyCollection<TournamentDetailDto> Bogus(int count, int? seed = null)
     {
-        var seasons = SeasonDtoFactory.Bogus(5, seed).ToArray();
         var winners = NameFactory.Bogus(count * 200, seed).ToArray();
-        var bowlingCenters = BowlingCenterSummaryDtoFactory.Bogus(10, seed).ToArray();
-        var sponsors = SponsorSummaryDtoFactory.Bogus(25, seed).ToArray();
-        var oilPatterns = TournamentOilPatternDtoFactory.Bogus(20, seed).ToArray();
+        var bowlingCenters = TournamentDetailBowlingCenterDtoFactory.Bogus(10, seed).ToArray();
+        var sponsors = TournamentDetailSponsorDtoFactory.Bogus(25, seed).ToArray();
+        var oilPatterns = TournamentDetailOilPatternDtoFactory.Bogus(20, seed).ToArray();
 
         var faker = new Faker<TournamentDetailDto>()
             .CustomInstantiator(f => new()
             {
                 Id = new TournamentId(Ulid.BogusString(f)),
                 Name = f.Random.Words(3),
-                Season = f.PickRandom(seasons),
+                Season = $"{f.Date.Past(10).Year} Season",
                 StartDate = DateOnly.FromDateTime(f.Date.Future()),
                 EndDate = DateOnly.FromDateTime(f.Date.Future()),
                 StatsEligible = f.Random.Bool(),

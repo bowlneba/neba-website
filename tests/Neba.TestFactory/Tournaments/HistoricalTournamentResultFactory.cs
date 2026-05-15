@@ -1,8 +1,8 @@
 using Bogus;
 
-using Neba.Domain.Bowlers;
-using Neba.Domain.Tournaments;
-using Neba.Infrastructure.Database.Entities;
+using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.Tournaments.Domain;
+using Neba.Api.Database.Entities;
 using Neba.TestFactory.Bowlers;
 
 namespace Neba.TestFactory.Tournaments;
