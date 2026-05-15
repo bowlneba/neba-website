@@ -1,3 +1,4 @@
+using Neba.Api.Contacts.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Contact;
 using Neba.TestFactory.Sponsors;

@@ -1,3 +1,4 @@
+using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.GetTournament;
 using Neba.TestFactory.Attributes;
 
