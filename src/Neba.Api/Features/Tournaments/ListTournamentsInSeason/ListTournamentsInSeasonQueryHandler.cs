@@ -45,7 +45,7 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 TournamentType = tournament.TournamentType.Name,
                 BowlingCenter = tournament.BowlingCenter == null
                     ? null
-                    : new TournamentBowlingCenterDto
+                    : new SeasonTournamentBowlingCenterDto
                     {
                         Name = tournament.BowlingCenter.Name,
                         City = tournament.BowlingCenter.Address.City,
@@ -53,7 +53,7 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                     },
                 Sponsors = tournament.Sponsors
                     .Select(tournamentSponsor => tournamentSponsor.Sponsor)
-                    .Select(s => new TournamentSponsorDto
+                    .Select(s => new SeasonTournamentSponsorDto
                     {
                         Name = s.Name,
                         Slug = s.Slug,
@@ -118,7 +118,7 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
             Reservations = row.Reservations,
             PatternLengthCategory = row.PatternLengthCategory,
             PatternRatioCategory = row.PatternRatioCategory,
-            OilPatterns = row.OilPatterns.ConvertAll(pattern => new TournamentOilPatternDto
+            OilPatterns = row.OilPatterns.ConvertAll(pattern => new SeasonTournamentOilPatternDto
             {
                 Name = pattern.Name,
                 Length = pattern.Length,

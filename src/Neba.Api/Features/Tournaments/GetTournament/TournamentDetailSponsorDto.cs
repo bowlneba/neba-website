@@ -1,4 +1,4 @@
-﻿namespace Neba.Api.Features.Tournaments.GetTournament;
+namespace Neba.Api.Features.Tournaments.GetTournament;
 
 /// <summary>
 /// Represents sponsor information for a tournament, including name, branding, and related links.
@@ -6,7 +6,7 @@
 /// <remarks>Use this data transfer object to convey sponsor details when displaying or processing
 /// tournament-related information. All required properties must be set to ensure the sponsor is properly identified and
 /// attributed.</remarks>
-public sealed record TournamentSponsorDto
+public sealed record TournamentDetailSponsorDto
 {
     /// <summary>
     /// Gets the name of the sponsor. This is a required property and should be set to a non-empty string that accurately represents the sponsor's name for display and attribution purposes.

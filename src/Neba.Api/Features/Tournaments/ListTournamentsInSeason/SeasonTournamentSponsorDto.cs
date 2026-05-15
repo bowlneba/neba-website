@@ -1,9 +1,9 @@
-﻿namespace Neba.Api.Features.Tournaments.ListTournamentsInSeason;
+namespace Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 
 /// <summary>
 /// Represents a sponsor associated with a tournament, including identifying and contact information.
 /// </summary>
-public sealed record TournamentSponsorDto
+public sealed record SeasonTournamentSponsorDto
 {
     /// <summary>
     /// Gets the name associated with the current instance.

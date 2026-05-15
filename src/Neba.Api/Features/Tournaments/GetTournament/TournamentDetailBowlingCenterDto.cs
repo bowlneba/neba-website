@@ -1,10 +1,10 @@
-﻿namespace Neba.Api.Features.Tournaments.GetTournament;
+namespace Neba.Api.Features.Tournaments.GetTournament;
 
 /// <summary>
 /// Represents a data transfer object containing basic information about a tournament bowling center, including its name
 /// and location.
 /// </summary>
-public sealed record TournamentBowlingCenterDto
+public sealed record TournamentDetailBowlingCenterDto
 {
     /// <summary>
     /// Gets the name associated with this instance.

@@ -56,12 +56,12 @@ public sealed record TournamentDetailDto
     /// <summary>
     /// Host bowling center; null until confirmed.
     /// </summary>
-    public required TournamentBowlingCenterDto? BowlingCenter { get; init; }
+    public required TournamentDetailBowlingCenterDto? BowlingCenter { get; init; }
 
     /// <summary>
     /// Sponsors associated with this tournament.
     /// </summary>
-    public IReadOnlyCollection<TournamentSponsorDto> Sponsors { get; init; } = [];
+    public IReadOnlyCollection<TournamentDetailSponsorDto> Sponsors { get; init; } = [];
 
     /// <summary>
     /// Sponsor-added prize money in USD; null if none.
@@ -86,7 +86,7 @@ public sealed record TournamentDetailDto
     /// <summary>
     /// Oil pattern details; null until published.
     /// </summary>
-    public IReadOnlyCollection<TournamentOilPatternDto> OilPatterns { get; init; } = [];
+    public IReadOnlyCollection<TournamentDetailOilPatternDto> OilPatterns { get; init; } = [];
 
     /// <summary>
     /// URL to the tournament logo image; null when unavailable.

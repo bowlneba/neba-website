@@ -1,9 +1,9 @@
-﻿namespace Neba.Api.Features.Tournaments.ListTournamentsInSeason;
+namespace Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 
 /// <summary>
 /// Represents a data transfer object containing information about a tournament bowling center.
 /// </summary>
-public sealed record TournamentBowlingCenterDto
+public sealed record SeasonTournamentBowlingCenterDto
 {
     /// <summary>
     /// Gets the name associated with this instance.
