@@ -1,4 +1,4 @@
-﻿using Neba.Domain.Seasons;
+﻿using Neba.Api.Features.Seasons.Domain;
 
 namespace Neba.Api.Features.Stats.GetSeasonStats;
 

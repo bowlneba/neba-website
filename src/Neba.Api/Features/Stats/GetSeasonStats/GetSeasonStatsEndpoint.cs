@@ -7,8 +7,6 @@ using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts.Stats.GetSeasonStats;
 using Neba.Api.Messaging;
-using Neba.Domain.Bowlers;
-using Neba.Domain.Seasons;
 
 namespace Neba.Api.Features.Stats.GetSeasonStats;
 
