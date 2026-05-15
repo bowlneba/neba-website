@@ -3,11 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Neba.Api.Database;
 using Neba.Api.Database.Configurations;
 using Neba.Api.Database.Entities;
+using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Seasons.ListSeasons;
+using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Messaging;
 using Neba.Api.Storage;
-using Neba.Domain.Bowlers;
-using Neba.Domain.Tournaments;
 
 namespace Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 
@@ -99,7 +99,7 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
         Dictionary<int, IReadOnlyCollection<Name>> historicalWinnersByTournamentDbId =
             historicalWinners
                 .GroupBy(w => w.TournamentId)
-                .ToDictionary(g => g.Key, g => (IReadOnlyCollection<Name>)[.. g.Select(w => w.Name)]);
+                .ToDictionary(g => g.Key, g => [.. g.Select(w => w.Name)]);
 
         var tournaments = rows.ConvertAll(row => new SeasonTournamentDto
         {
