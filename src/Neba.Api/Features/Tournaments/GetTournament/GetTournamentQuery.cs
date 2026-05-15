@@ -1,6 +1,7 @@
 using ErrorOr;
 
 using Neba.Api.Caching;
+using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Messaging;
 
 namespace Neba.Api.Features.Tournaments.GetTournament;

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Contacts;
 using Neba.Api.Database;
+using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Messaging;
 using Neba.Api.Storage;
 
