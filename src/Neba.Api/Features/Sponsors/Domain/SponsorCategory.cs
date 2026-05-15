@@ -10,7 +10,8 @@ namespace Neba.Api.Features.Sponsors.Domain;
 /// Represents the different categories of sponsorship.
 /// </summary>
 /// <remarks>
-/// 
+/// Values are powers of two so they can be combined as bit flags if multi-category
+/// support is added in the future.
 /// </remarks>
 public sealed class SponsorCategory
     : SmartEnum<SponsorCategory>
