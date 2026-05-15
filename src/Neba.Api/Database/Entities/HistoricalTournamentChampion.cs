@@ -1,3 +1,6 @@
+using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.Tournaments.Domain;
+
 namespace Neba.Api.Database.Entities;
 
 internal sealed class HistoricalTournamentChampion

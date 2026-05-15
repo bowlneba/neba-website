@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
+using Neba.Api.Features.Stats.Domain;
+
 namespace Neba.Api.Database.Configurations;
 
 internal sealed class BowlerSeasonStatsConfiguration
