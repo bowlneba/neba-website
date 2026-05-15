@@ -1,5 +1,3 @@
-using FluentAssertions;
-
 using Neba.Api.Features.Sponsors.GetSponsorDetail;
 using Neba.TestFactory.Attributes;
 
@@ -22,8 +20,8 @@ public sealed class GetSponsorDetailRequestValidationTests
 #nullable enable
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(error =>
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(error =>
             error.PropertyName == nameof(GetSponsorDetailRequest.Slug)
             && error.ErrorCode == "SponsorDetailRequest.SlugRequired"
             && error.ErrorMessage == "Sponsor slug is required.");
@@ -42,8 +40,8 @@ public sealed class GetSponsorDetailRequestValidationTests
         var result = validator.Validate(request);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(error =>
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(error =>
             error.PropertyName == nameof(GetSponsorDetailRequest.Slug)
             && error.ErrorCode == "SponsorDetailRequest.SlugRequired"
             && error.ErrorMessage == "Sponsor slug is required.");
@@ -60,7 +58,7 @@ public sealed class GetSponsorDetailRequestValidationTests
         var result = validator.Validate(request);
 
         // Assert
-        result.IsValid.Should().BeTrue();
-        result.Errors.Should().BeEmpty();
+        result.IsValid.ShouldBeTrue();
+        result.Errors.ShouldBeEmpty();
     }
 }

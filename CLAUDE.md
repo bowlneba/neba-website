@@ -179,7 +179,7 @@ The equality members (`Equals`, `GetHashCode`, `==`, `!=`) are needed because St
 - Use a seed with `Bogus` only when the specific data values matter to the assertion (e.g., snapshot tests, integration tests for reproducibility). Omit the seed when only shape/count/type matters — the test is clearer without it
 - When seeds are used, each test should use a distinct seed value — don't reuse the same seed across multiple tests
 - Infrastructure services wrapping external SDKs (e.g., Azure Blob Storage) use Testcontainers for integration tests, not mocks
-- Use **Shouldly** for assertions, NOT FluentAssertions
+- Use **Shouldly** for assertions only; do not use FluentAssertions
 - When testing null inputs on non-nullable parameters (nullable reference types are enabled project-wide), wrap the test method with `#nullable disable` / `#nullable enable` instead of using `null!`:
 
   ```csharp

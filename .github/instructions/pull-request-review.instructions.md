@@ -437,6 +437,7 @@ Flag when:
 - Using `new Mock<T>()` without `MockBehavior.Strict` parameter
 - Using `null!` instead of `#nullable disable`/`#nullable enable` for null testing
 - Using `.Verify()` calls when `MockBehavior.Strict` already enforces the interaction contract via `Setup`
+- Any usage of FluentAssertions (`using FluentAssertions;`, `.Should().Be*()`, etc.) instead of Shouldly
 
 **Null testing pattern**: When testing methods that don't accept nullable references but need null passed:
 
@@ -572,6 +573,7 @@ The following libraries are explicitly prohibited from direct use in application
 | ---------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------- |
 | **AutoMapper**, **Mapster**, **ExpressMapper** | Runtime reflection, hidden mappings, hard to debug, breaks compile-time safety | Explicit mapping methods                |
 | **Newtonsoft.Json** (`JsonConvert`, `JObject`) | Reflection-based, not AOT-compatible, legacy                                   | System.Text.Json with source generators |
+| **FluentAssertions**                            | Project standardizes assertions on Shouldly for consistency and mutation workflows | Shouldly                                |
 | **BinaryFormatter**                            | Security vulnerabilities, deprecated                                           | System.Text.Json, MessagePack, Protobuf |
 
 **Note on transitive dependencies**: Some packages (e.g., Hangfire) have transitive dependencies on Newtonsoft.Json. The package may exist in the dependency graph, but **direct usage in our code is prohibited**. Flag any `using Newtonsoft.Json` statements or direct calls to `JsonConvert`.
