@@ -1,4 +1,4 @@
-using Neba.Domain.Contact;
+using Neba.Api.Contacts.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.BowlingCenters;
 using Neba.TestFactory.Contact;

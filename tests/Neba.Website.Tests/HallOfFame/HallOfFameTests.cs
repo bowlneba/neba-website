@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.HallOfFame;
 using Neba.Api.Contracts.HallOfFame.ListHallOfFameInductions;
-using Neba.Domain.HallOfFame;
+using Neba.Api.Features.HallOfFame.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.HallOfFame;
 using Neba.Website.Server.Clock;

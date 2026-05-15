@@ -1,6 +1,5 @@
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
-using Neba.Website.Server.Tournaments.Schedule;
 
 namespace Neba.Website.Tests.Tournaments.Schedule;
 

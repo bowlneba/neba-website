@@ -1,6 +1,5 @@
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Sponsors;
-using Neba.Website.Server.Sponsors;
 
 namespace Neba.Website.Tests.Sponsors;
 

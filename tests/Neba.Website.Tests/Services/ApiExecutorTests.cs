@@ -2,8 +2,6 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Globalization;
 
-using ErrorOr;
-
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
