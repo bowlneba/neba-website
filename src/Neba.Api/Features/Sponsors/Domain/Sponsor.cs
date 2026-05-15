@@ -1,8 +1,8 @@
-using Neba.Domain.Contact;
-using Neba.Domain.Storage;
-using Neba.Domain.Tournaments;
 
-namespace Neba.Domain.Sponsors;
+using Neba.Api.Contacts.Domain;
+using Neba.Api.Domain;
+
+namespace Neba.Api.Features.Sponsors.Domain;
 
 /// <summary>
 /// A company or individual with a formal promotional relationship with NEBA, receiving recognition

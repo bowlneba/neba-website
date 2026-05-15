@@ -1,6 +1,6 @@
 using Ardalis.SmartEnum;
 
-namespace Neba.Domain.Sponsors;
+namespace Neba.Api.Features.Sponsors.Domain;
 
 /// <summary>
 /// Represents the different tiers of sponsorship.

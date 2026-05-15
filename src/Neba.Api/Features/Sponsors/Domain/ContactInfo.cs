@@ -1,6 +1,6 @@
-using Neba.Domain.Contact;
+using Neba.Api.Contacts.Domain;
 
-namespace Neba.Domain.Sponsors;
+namespace Neba.Api.Features.Sponsors.Domain;
 
 /// <summary>
 /// Represents the contact information for a sponsor.
