@@ -7,7 +7,14 @@ using Microsoft.EntityFrameworkCore;
 using Neba.Api.Database.Configurations;
 using Neba.Api.Database.Converters;
 using Neba.Api.Database.Entities;
+using Neba.Api.Domain;
 using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.BowlingCenters.Domain;
+using Neba.Api.Features.HallOfFame.Domain;
+using Neba.Api.Features.Seasons.Domain;
+using Neba.Api.Features.Sponsors.Domain;
+using Neba.Api.Features.Stats.Domain;
+using Neba.Api.Features.Tournaments.Domain;
 
 using SmartEnum.EFCore;
 
