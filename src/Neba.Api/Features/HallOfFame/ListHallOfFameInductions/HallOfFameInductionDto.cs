@@ -1,3 +1,6 @@
+using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.HallOfFame.Domain;
+
 namespace Neba.Api.Features.HallOfFame.ListHallOfFameInductions;
 
 /// <summary>

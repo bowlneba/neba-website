@@ -1,3 +1,4 @@
+using Neba.Api.Contacts.Domain;
 using Neba.Api.Domain;
 
 namespace Neba.Api.Features.BowlingCenters.Domain;

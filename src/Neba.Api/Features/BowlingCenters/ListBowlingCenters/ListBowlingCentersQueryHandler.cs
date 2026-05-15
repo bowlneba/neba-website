@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Contacts;
 using Neba.Api.Database;
+using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Messaging;
 
 namespace Neba.Api.Features.BowlingCenters.ListBowlingCenters;
