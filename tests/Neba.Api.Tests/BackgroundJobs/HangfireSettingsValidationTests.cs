@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
+using Neba.Api.BackgroundJobs;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure.BackgroundJobs;
 

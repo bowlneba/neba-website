@@ -18,13 +18,9 @@ public sealed partial class UlidTypedIdConverterTests
         public bool Equals(TestId other) => Value.Equals(other.Value);
         public override bool Equals(object? obj) => obj is TestId other && Equals(other);
         public override int GetHashCode() => Value.GetHashCode();
+
         public static bool operator ==(TestId a, TestId b) => a.Equals(b);
         public static bool operator !=(TestId a, TestId b) => !(a == b);
-
-        public bool Equals(TestId other)
-        {
-            throw new NotImplementedException();
-        }
     }
 
     private readonly struct NoStringCtorId(int value)

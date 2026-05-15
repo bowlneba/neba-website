@@ -2,6 +2,7 @@ using Hangfire;
 using Hangfire.States;
 using Hangfire.Storage;
 
+using Neba.Api.BackgroundJobs;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure.BackgroundJobs;
 
