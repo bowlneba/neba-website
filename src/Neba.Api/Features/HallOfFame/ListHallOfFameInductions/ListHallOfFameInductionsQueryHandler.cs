@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
+using Neba.Api.Features.HallOfFame.Domain;
 using Neba.Api.Messaging;
 using Neba.Api.Storage;
 
