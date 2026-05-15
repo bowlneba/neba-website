@@ -4,6 +4,7 @@ using Community.Microsoft.Extensions.Caching.PostgreSql;
 
 using Microsoft.Extensions.Caching.Hybrid;
 
+using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Messaging;
 
 using ZiggyCreatures.Caching.Fusion;
