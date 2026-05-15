@@ -2,6 +2,8 @@ using ErrorOr;
 
 using FastEndpoints;
 
+using Neba.Api.Contracts.Stats.GetSeasonStats;
+
 using Neba.Api.Features.Stats.GetSeasonStats;
 using Neba.Api.Messaging;
 using Neba.TestFactory.Attributes;

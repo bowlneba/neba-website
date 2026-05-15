@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Neba.Api.Database;
 using Neba.Api.Database.Configurations;
 using Neba.Api.Database.Converters;
+using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.HallOfFame.Domain;
+using Neba.Api.Features.Storage.Domain;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Database.Configurations;

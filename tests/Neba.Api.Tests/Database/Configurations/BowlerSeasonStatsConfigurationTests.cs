@@ -6,6 +6,9 @@ using Neba.Api.Database;
 using Neba.Api.Database.Configurations;
 using Neba.Api.Database.Interceptors;
 using Neba.Api.Database.Options;
+using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.Seasons.Domain;
+using Neba.Api.Features.Stats.Domain;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Database.Configurations;

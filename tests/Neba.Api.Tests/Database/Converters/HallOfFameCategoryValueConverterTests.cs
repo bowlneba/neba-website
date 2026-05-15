@@ -1,4 +1,5 @@
 using Neba.Api.Database.Converters;
+using Neba.Api.Features.HallOfFame.Domain;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Database.Converters;

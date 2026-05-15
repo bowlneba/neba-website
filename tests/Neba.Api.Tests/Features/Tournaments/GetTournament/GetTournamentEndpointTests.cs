@@ -2,6 +2,8 @@ using ErrorOr;
 
 using FastEndpoints;
 
+using Neba.Api.Features.Tournaments.Domain;
+
 using Neba.Api.Features.Tournaments.GetTournament;
 using Neba.Api.Messaging;
 using Neba.TestFactory.Attributes;
