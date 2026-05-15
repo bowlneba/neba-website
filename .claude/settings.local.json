@@ -32,7 +32,11 @@
       "Bash(Get-ChildItem -Path \"c:\\\\source\\\\bowlneba\\\\website\\\\src\\\\Neba.Api\\\\Features\" -Recurse)",
       "Bash(Sort-Object FullName)",
       "Bash(Select-Object FullName, PSIsContainer)",
-      "Bash(Format-Table -AutoSize)"
+      "Bash(Format-Table -AutoSize)",
+      "Bash(Get-ChildItem -Path \"c:\\\\source\\\\bowlneba\\\\website\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "Bash(find c:\\\\\\\\source\\\\\\\\bowlneba\\\\\\\\website\\\\\\\\src -type d -name \"Neba.Application\")"
     ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",
