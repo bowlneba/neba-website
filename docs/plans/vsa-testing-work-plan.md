@@ -194,3 +194,14 @@ In the `.NET Mutation Testing` section, update the API row to match the new thre
 ```
 | API | 80 | 70 | 60 | |
 ```
+
+---
+
+## Phase 9: Package Audit
+
+Review every `<PackageVersion>` entry in `Directory.Packages.props` and remove any package that is no longer referenced by any `.csproj` in the solution.
+
+For each package:
+1. `grep` all `.csproj` files for `<PackageReference Include="<PackageName>"` (or `<PackageVersion Include=` usage via `GlobalPackageReference`).
+2. If no `.csproj` references it, remove the `<PackageVersion>` entry from `Directory.Packages.props`.
+3. Build the solution (`dotnet build`) after all removals to confirm nothing is broken.
