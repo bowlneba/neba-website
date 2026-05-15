@@ -1,12 +1,14 @@
 using System.ComponentModel;
 
 using Hangfire;
+using Hangfire.InMemory;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Testing;
 
+using Neba.Api.BackgroundJobs;
 
 using Neba.TestFactory.Attributes;
 
@@ -33,26 +35,16 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
     private sealed record TestBackgroundJob(string Name) : IBackgroundJob
     {
         public string JobName => $"Test Job: {Name}";
-
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as TestBackgroundJob);
-        }
     }
 
     private sealed record SimpleTestJob : IBackgroundJob
     {
         public string JobName => "SimpleTestJob";
-
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as SimpleTestJob);
-        }
     }
 
     private sealed class TestBackgroundJobHandler : IBackgroundJobHandler<TestBackgroundJob>
     {
-        public Task ExecuteAsync()
+        public Task ExecuteAsync(TestBackgroundJob job, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
         }
@@ -60,7 +52,7 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
 
     private sealed class SimpleJobHandler : IBackgroundJobHandler<SimpleTestJob>
     {
-        public Task ExecuteAsync()
+        public Task ExecuteAsync(SimpleTestJob job, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
         }
@@ -69,16 +61,11 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
     private sealed record FailingJob : IBackgroundJob
     {
         public string JobName => "FailingJob";
-
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as FailingJob);
-        }
     }
 
     private sealed class FailingJobHandler : IBackgroundJobHandler<FailingJob>
     {
-        public Task ExecuteAsync()
+        public Task ExecuteAsync(FailingJob job, CancellationToken cancellationToken)
         {
             throw new InvalidOperationException("Job execution failed");
         }

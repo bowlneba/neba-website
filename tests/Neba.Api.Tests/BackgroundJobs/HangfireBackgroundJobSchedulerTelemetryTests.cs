@@ -82,36 +82,21 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
     private sealed record TestJob(string Name) : IBackgroundJob
     {
         public string JobName => $"Test Job: {Name}";
-
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as TestJob);
-        }
     }
 
     private sealed record SuccessfulJob : IBackgroundJob
     {
         public string JobName => "SuccessfulJob";
-
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as SuccessfulJob);
-        }
     }
 
     private sealed record FailingJob : IBackgroundJob
     {
         public string JobName => "FailingJob";
-
-        public override bool Equals(object obj)
-        {
-            return Equals(obj as FailingJob);
-        }
     }
 
     private sealed class TestJobHandler : IBackgroundJobHandler<TestJob>
     {
-        public Task ExecuteAsync()
+        public Task ExecuteAsync(TestJob _, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
         }
@@ -119,7 +104,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
 
     private sealed class SuccessfulJobHandler : IBackgroundJobHandler<SuccessfulJob>
     {
-        public async Task ExecuteAsync(CancellationToken cancellationToken)
+        public async Task ExecuteAsync(SuccessfulJob _, CancellationToken cancellationToken)
         {
             // Simulate some work to ensure duration is measurable
             await Task.Delay(10, cancellationToken);
@@ -128,7 +113,7 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
 
     private sealed class FailingJobHandler : IBackgroundJobHandler<FailingJob>
     {
-        public Task ExecuteAsync()
+        public Task ExecuteAsync(FailingJob _, CancellationToken cancellationToken)
         {
             throw new InvalidOperationException("Job execution failed");
         }

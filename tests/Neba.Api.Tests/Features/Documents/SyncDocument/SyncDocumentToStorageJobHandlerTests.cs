@@ -7,6 +7,7 @@ using Microsoft.Extensions.Time.Testing;
 using Neba.Api.Clock;
 using Neba.Api.Documents;
 using Neba.Api.Features.Documents.SyncDocument;
+using Neba.Api.Storage;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Documents;
 
