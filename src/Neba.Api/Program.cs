@@ -7,7 +7,6 @@ using Neba.Api;
 using Neba.Api.ErrorHandling;
 using Neba.Api.OpenApi;
 using Neba.Api.Versioning;
-using Neba.Domain;
 
 var builder = WebApplication.CreateBuilder(args);
 
