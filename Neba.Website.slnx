@@ -14,7 +14,6 @@
     <Project Path="src/Neba.Website.Client/Neba.Website.Client.csproj" />
     <Project Path="src/Neba.Website.Server/Neba.Website.Server.csproj" />
   </Folder>
-  <Folder Name="/src/api/" />
   <Folder Name="/tests/">
     <File Path="tests/.editorconfig" />
     <Project Path="tests/Neba.Api.Tests/Neba.Api.Tests.csproj" />
