@@ -1,5 +1,6 @@
 
 using Neba.Api.Domain;
+using Neba.Api.Features.Stats.Domain;
 
 namespace Neba.Api.Features.Bowlers.Domain;
 

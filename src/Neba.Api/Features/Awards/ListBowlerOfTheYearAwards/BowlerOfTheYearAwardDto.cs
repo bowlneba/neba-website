@@ -1,3 +1,5 @@
+using Neba.Api.Features.Bowlers.Domain;
+
 namespace Neba.Api.Features.Awards.ListBowlerOfTheYearAwards;
 
 /// <summary>
