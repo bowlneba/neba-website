@@ -5,7 +5,6 @@ using Hangfire.States;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 using Neba.Api.BackgroundJobs;
-using Neba.Domain;
 
 namespace Neba.Api.Database.Interceptors;
 

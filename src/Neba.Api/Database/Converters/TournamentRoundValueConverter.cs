@@ -1,7 +1,5 @@
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-using Neba.Domain.Tournaments;
-
 namespace Neba.Api.Database.Converters;
 
 internal sealed class TournamentRoundValueConverter

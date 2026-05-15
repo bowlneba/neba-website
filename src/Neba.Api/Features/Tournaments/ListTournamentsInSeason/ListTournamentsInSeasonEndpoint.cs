@@ -7,7 +7,6 @@ using Neba.Api.Contracts;
 using Neba.Api.Contracts.Seasons.ListTournamentsInSeason;
 using Neba.Api.Features.Seasons;
 using Neba.Api.Messaging;
-using Neba.Domain.Seasons;
 
 namespace Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 

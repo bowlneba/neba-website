@@ -1,5 +1,3 @@
-using Neba.Domain.Bowlers;
-
 namespace Neba.Api.Features.Awards.ListHighAverageAwards;
 
 /// <summary>

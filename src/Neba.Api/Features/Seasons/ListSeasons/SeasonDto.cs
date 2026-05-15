@@ -1,5 +1,3 @@
-using Neba.Domain.Seasons;
-
 namespace Neba.Api.Features.Seasons.ListSeasons;
 
 /// <summary>

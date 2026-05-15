@@ -1,6 +1,5 @@
 using ErrorOr;
 
-using Neba.Api.Caching;
 using Neba.Api.Messaging;
 
 namespace Neba.Api.Features.Stats.GetSeasonStats;

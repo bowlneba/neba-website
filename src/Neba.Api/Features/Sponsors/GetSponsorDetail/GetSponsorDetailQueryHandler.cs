@@ -6,7 +6,6 @@ using Neba.Api.Contacts;
 using Neba.Api.Database;
 using Neba.Api.Messaging;
 using Neba.Api.Storage;
-using Neba.Domain.Sponsors;
 
 namespace Neba.Api.Features.Sponsors.GetSponsorDetail;
 

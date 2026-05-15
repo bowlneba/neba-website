@@ -1,5 +1,3 @@
-using Neba.Domain.Tournaments;
-
 namespace Neba.Api.Database.Entities;
 
 internal sealed class HistoricalTournamentEntry

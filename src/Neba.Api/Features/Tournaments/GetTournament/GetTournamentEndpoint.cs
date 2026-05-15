@@ -7,7 +7,6 @@ using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts.Tournaments.GetTournament;
 using Neba.Api.Messaging;
-using Neba.Domain.Tournaments;
 
 namespace Neba.Api.Features.Tournaments.GetTournament;
 

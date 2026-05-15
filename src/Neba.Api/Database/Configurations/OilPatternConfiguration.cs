@@ -1,8 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-using Neba.Domain.Tournaments;
-
 namespace Neba.Api.Database.Configurations;
 
 internal sealed class OilPatternConfiguration
