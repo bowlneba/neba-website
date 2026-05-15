@@ -6,9 +6,9 @@ using Neba.Api.Database;
 using Neba.Api.Database.Configurations;
 using Neba.Api.Database.Entities;
 using Neba.Api.Features.Seasons.ListSeasons;
+using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Messaging;
 using Neba.Api.Storage;
-using Neba.Domain.Tournaments;
 
 namespace Neba.Api.Features.Tournaments.GetTournament;
 

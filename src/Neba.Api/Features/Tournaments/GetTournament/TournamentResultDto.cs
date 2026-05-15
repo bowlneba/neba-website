@@ -1,6 +1,6 @@
 using System.Drawing;
 
-using Neba.Domain.Bowlers;
+using Neba.Api.Features.Bowlers.Domain;
 
 namespace Neba.Api.Features.Tournaments.GetTournament;
 
