@@ -1,6 +1,6 @@
 using Ardalis.SmartEnum;
 
-namespace Neba.Domain.Tournaments;
+namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
 /// Represents the oil-to-dry ratio category of the lane condition used in a tournament.

@@ -14,15 +14,12 @@
     <Project Path="src/Neba.Website.Client/Neba.Website.Client.csproj" />
     <Project Path="src/Neba.Website.Server/Neba.Website.Server.csproj" />
   </Folder>
-  <Folder Name="/src/api/">
-    <Project Path="src/Neba.Domain/Neba.Domain.csproj" />
-  </Folder>
+  <Folder Name="/src/api/" />
   <Folder Name="/tests/">
     <File Path="tests/.editorconfig" />
     <Project Path="tests/Neba.Api.Tests/Neba.Api.Tests.csproj" />
     <Project Path="tests/Neba.Application.Tests/Neba.Application.Tests.csproj" />
     <Project Path="tests/Neba.Architecture.Tests/Neba.Architecture.Tests.csproj" />
-    <Project Path="tests/Neba.Domain.Tests/Neba.Domain.Tests.csproj" />
     <Project Path="tests/Neba.Infrastructure.Tests/Neba.Infrastructure.Tests.csproj" />
     <Project Path="tests/Neba.TestFactory/Neba.TestFactory.csproj" />
     <Project Path="tests/Neba.Website.Tests/Neba.Website.Tests.csproj" />

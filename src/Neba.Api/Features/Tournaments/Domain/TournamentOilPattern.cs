@@ -1,6 +1,6 @@
 using ErrorOr;
 
-namespace Neba.Domain.Tournaments;
+namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
 /// Associates a tournament with an oil pattern and the specific rounds that pattern was applied to.

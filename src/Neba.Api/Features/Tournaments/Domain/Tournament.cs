@@ -7,7 +7,7 @@ using Neba.Domain.Seasons;
 using Neba.Domain.Sponsors;
 using Neba.Domain.Storage;
 
-namespace Neba.Domain.Tournaments;
+namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
 /// A NEBA-sanctioned scratch bowling competition consisting of one or more qualifying squads

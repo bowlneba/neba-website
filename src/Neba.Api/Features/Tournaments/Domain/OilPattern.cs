@@ -1,4 +1,4 @@
-namespace Neba.Domain.Tournaments;
+namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
 /// Represents a bowling oil pattern, including its name, length, volume, and ratio information.

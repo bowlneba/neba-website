@@ -1,6 +1,6 @@
 using StronglyTypedIds;
 
-namespace Neba.Domain.Tournaments;
+namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
 /// Unique identifier for a side cut criteria group.

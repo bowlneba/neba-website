@@ -4,7 +4,7 @@ using ErrorOr;
 
 using Neba.Domain.Bowlers;
 
-namespace Neba.Domain.Tournaments;
+namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
 /// A named, reusable eligibility predicate that identifies a subgroup of bowlers who qualify

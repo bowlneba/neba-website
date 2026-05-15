@@ -2,7 +2,7 @@ using ErrorOr;
 
 using Neba.Domain.Sponsors;
 
-namespace Neba.Domain.Tournaments;
+namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
 /// Represents the association between a tournament and its sponsor, including details about the sponsorship such as whether it is a title sponsorship and the amount of the sponsorship.

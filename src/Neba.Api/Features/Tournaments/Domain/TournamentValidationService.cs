@@ -1,23 +1,26 @@
 using ErrorOr;
 
-using Neba.Domain.Seasons;
+using Microsoft.EntityFrameworkCore;
 
-namespace Neba.Domain.Tournaments;
+using Neba.Api.Database;
+using Neba.Api.Features.Seasons.Domain;
+
+namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
 /// Provides validation logic for ensuring that a tournament's properties are consistent with the rules and constraints
 /// </summary>
-public sealed class TournamentValidationService(ISeasonRepository seasonRepository)
+internal sealed class TournamentValidationService(AppDbContext appDbContext)
     : ITournamentValidationService
 {
-    private readonly ISeasonRepository _seasonRepository = seasonRepository;
+    private readonly IQueryable<Season> _seasons = appDbContext.Seasons.AsNoTracking();
 
     ///<inheritdoc />
     public async Task<ErrorOr<Success>> IsTournamentValidForSeasonAsync(Tournament tournament, SeasonId seasonId, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(tournament);
 
-        var season = await _seasonRepository.GetSeasonByIdAsync(seasonId, trackChanges: false, cancellationToken);
+        var season = await _seasons.SingleOrDefaultAsync(s => s.Id == tournament.SeasonId, cancellationToken);
 
         if (season is null)
         {

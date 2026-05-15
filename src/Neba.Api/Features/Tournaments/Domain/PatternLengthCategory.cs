@@ -1,6 +1,6 @@
 using Ardalis.SmartEnum;
 
-namespace Neba.Domain.Tournaments;
+namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
 /// Represents the length category of the oil pattern applied to tournament lanes, expressed

@@ -2,7 +2,7 @@ using ErrorOr;
 
 using Neba.Domain.Bowlers;
 
-namespace Neba.Domain.Tournaments;
+namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
 /// Represents an ordered collection of one or more criteria within a Side Cut, evaluated together using the group's logical operator.

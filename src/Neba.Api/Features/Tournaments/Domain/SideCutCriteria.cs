@@ -2,7 +2,7 @@ using ErrorOr;
 
 using Neba.Domain.Bowlers;
 
-namespace Neba.Domain.Tournaments;
+namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
 /// Represents a single eligibility criterion within a Side Cut criteria group, such as an age range or gender requirement.

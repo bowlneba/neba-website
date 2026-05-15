@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 using Ardalis.SmartEnum;
 
-namespace Neba.Domain.Tournaments;
+namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
 /// Represents the various rounds that may be present in a tournament structure. A tournament may have one or more rounds, and the specific rounds used may vary based on the tournament format.

@@ -1,32 +1,32 @@
 using StronglyTypedIds;
 
-namespace Neba.Domain.Tournaments;
+namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
-/// Unique identifier for a side cut.
+/// Unique identifier for an oil pattern.
 /// </summary>
 [StronglyTypedId("ulid-full")]
-public readonly partial struct SideCutId
+public readonly partial struct OilPatternId
 {
     /// <summary>
     /// Gets the underlying <see cref="Ulid"/> value.
     /// </summary>
     public Ulid Value { get; }
 
-    private SideCutId(Ulid value)
+    private OilPatternId(Ulid value)
         => Value = value;
 
     /// <summary>
-    /// Creates a new <see cref="SideCutId"/> with a randomly generated ULID value.
+    /// Creates a new <see cref="OilPatternId"/> with a randomly generated ULID value.
     /// </summary>
-    public static SideCutId New()
+    public static OilPatternId New()
         => new(Ulid.NewUlid());
 
     /// <inheritdoc/>
-    public bool Equals(SideCutId other) => Value.Equals(other.Value);
+    public bool Equals(OilPatternId other) => Value.Equals(other.Value);
 
     /// <inheritdoc/>
-    public override bool Equals(object? obj) => obj is SideCutId other && Equals(other);
+    public override bool Equals(object? obj) => obj is OilPatternId other && Equals(other);
 
     /// <inheritdoc/>
     public override int GetHashCode() => Value.GetHashCode();
@@ -34,10 +34,10 @@ public readonly partial struct SideCutId
     /// <summary>
     /// Returns <see langword="true"/> if the two values are equal.
     /// </summary>
-    public static bool operator ==(SideCutId a, SideCutId b) => a.Equals(b);
+    public static bool operator ==(OilPatternId a, OilPatternId b) => a.Equals(b);
 
     /// <summary>
     /// Returns <see langword="true"/> if the two values are not equal.
     /// </summary>
-    public static bool operator !=(SideCutId a, SideCutId b) => !(a == b);
+    public static bool operator !=(OilPatternId a, OilPatternId b) => !(a == b);
 }
