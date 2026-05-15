@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
+using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Messaging;
 using Neba.Api.Storage;
-using Neba.Domain.Sponsors;
 
 namespace Neba.Api.Features.Sponsors.ListActiveSponsors;
 

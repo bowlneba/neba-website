@@ -3,8 +3,8 @@ using Ardalis.SmartEnum.EFCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-using Neba.Domain.Contact;
-using Neba.Domain.Sponsors;
+using Neba.Api.Contacts.Domain;
+using Neba.Api.Features.Sponsors.Domain;
 
 namespace Neba.Api.Database.Configurations;
 

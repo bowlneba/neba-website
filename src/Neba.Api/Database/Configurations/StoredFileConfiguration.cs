@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-using Neba.Domain.Storage;
+using Neba.Api.Features.Storage.Domain;
 
 namespace Neba.Api.Database.Configurations;
 
