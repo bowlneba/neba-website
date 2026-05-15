@@ -2,10 +2,14 @@ using System.Globalization;
 
 using ErrorOr;
 
-using Neba.Domain.BowlingCenters;
-using Neba.Domain.Seasons;
-using Neba.Domain.Sponsors;
-using Neba.Domain.Storage;
+using Neba.Api.Domain;
+
+using Neba.Api.Features.BowlingCenters.Domain;
+
+using Neba.Api.Features.Seasons.Domain;
+
+using Neba.Api.Features.Sponsors.Domain;
+using Neba.Api.Features.Storage.Domain;
 
 namespace Neba.Api.Features.Tournaments.Domain;
 

@@ -1,6 +1,6 @@
 using ErrorOr;
 
-using Neba.Domain.Sponsors;
+using Neba.Api.Features.Sponsors.Domain;
 
 namespace Neba.Api.Features.Tournaments.Domain;
 
@@ -45,11 +45,4 @@ public sealed class TournamentSponsor
                 SponsorshipAmount = sponsorshipAmount
             };
     }
-}
-
-internal static class TournamentSponsorErrors
-{
-    public static readonly Error NegativeSponsorshipAmount = Error.Validation(
-        code: "TournamentSponsor.NegativeSponsorshipAmount",
-        description: "Sponsorship amount must be zero or greater.");
 }
