@@ -1,5 +1,5 @@
-using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Database.Entities;
+using Neba.Api.Features.Tournaments.Domain;
 
 namespace Neba.TestFactory.Tournaments;
 

@@ -1,7 +1,7 @@
 using System.Globalization;
 
-using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Contacts.Domain;
+using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.TestFactory.Contact;
 
 namespace Neba.TestFactory.BowlingCenters;

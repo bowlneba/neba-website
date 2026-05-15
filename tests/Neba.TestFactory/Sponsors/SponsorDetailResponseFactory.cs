@@ -1,8 +1,8 @@
 using System.Globalization;
 
+using Neba.Api.Contacts.Domain;
 using Neba.Api.Contracts.Contact;
 using Neba.Api.Contracts.Sponsors;
-using Neba.Api.Contacts.Domain;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.TestFactory.Contact;
 

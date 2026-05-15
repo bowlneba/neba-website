@@ -1,6 +1,6 @@
 using Neba.Api.Contacts;
-using Neba.Api.Features.Sponsors.GetSponsorDetail;
 using Neba.Api.Features.Sponsors.Domain;
+using Neba.Api.Features.Sponsors.GetSponsorDetail;
 using Neba.TestFactory.Contact;
 
 namespace Neba.TestFactory.Sponsors;

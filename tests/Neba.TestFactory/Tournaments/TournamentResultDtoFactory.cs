@@ -1,8 +1,8 @@
 
 
-using Neba.Api.Features.Tournaments.GetTournament;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Tournaments.Domain;
+using Neba.Api.Features.Tournaments.GetTournament;
 using Neba.TestFactory.Bowlers;
 
 namespace Neba.TestFactory.Tournaments;

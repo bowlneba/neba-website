@@ -1,6 +1,6 @@
-using Neba.Api.Features.HallOfFame.ListHallOfFameInductions;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.HallOfFame.Domain;
+using Neba.Api.Features.HallOfFame.ListHallOfFameInductions;
 using Neba.TestFactory.Bowlers;
 
 namespace Neba.TestFactory.HallOfFame;
