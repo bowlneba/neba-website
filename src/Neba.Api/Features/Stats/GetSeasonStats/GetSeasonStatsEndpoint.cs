@@ -6,6 +6,8 @@ using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts.Stats.GetSeasonStats;
+using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Messaging;
 
 namespace Neba.Api.Features.Stats.GetSeasonStats;
@@ -179,12 +181,12 @@ internal sealed class GetSeasonStatsEndpoint(IQueryHandler<GetSeasonStatsQuery, 
             MostFinals = dto.Summary.MostFinals,
             MostFinalsBowlers = MapBowlerNames(dto.Summary.MostFinalsBowlers)
         },
-        OpenPointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.Open.Value),
-        SeniorPointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.Senior.Value),
-        SuperSeniorPointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.SuperSenior.Value),
-        WomenPointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.Woman.Value),
-        YouthPointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.Youth.Value),
-        RookiePointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.Rookie.Value),
+        OpenPointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.Open),
+        SeniorPointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.Senior),
+        SuperSeniorPointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.SuperSenior),
+        WomenPointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.Woman),
+        YouthPointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.Youth),
+        RookiePointsRace = MapRace(dto.BowlerOfTheYearRaces, BowlerOfTheYearCategory.Rookie),
         AllBowlers = [.. dto.Summary.AllBowlers
             .Select(b => new FullStatModalRowResponse
             {
@@ -206,7 +208,7 @@ internal sealed class GetSeasonStatsEndpoint(IQueryHandler<GetSeasonStatsQuery, 
 
     private static IReadOnlyCollection<PointsRaceSeriesResponse> MapRace(
         IReadOnlyDictionary<int, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>> races,
-        int category)
+        BowlerOfTheYearCategory category)
         => [.. races[category].Select(race => new PointsRaceSeriesResponse
         {
             BowlerId = race.BowlerId.Value.ToString(),
