@@ -31,11 +31,6 @@ public sealed partial class UlidStrongIdTests
         public override int GetHashCode() => Value.GetHashCode();
         public static bool operator ==(TestId a, TestId b) => a.Equals(b);
         public static bool operator !=(TestId a, TestId b) => !(a == b);
-
-        public bool Equals(TestId other)
-        {
-            throw new NotImplementedException();
-        }
     }
 
     #region Constructor Tests

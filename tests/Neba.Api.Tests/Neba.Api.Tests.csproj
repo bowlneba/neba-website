@@ -16,5 +16,9 @@
     <ProjectReference Include="..\Neba.TestFactory\Neba.TestFactory.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AdditionalFiles Include="..\..\src\Neba.Api\ulid-full.typedid" Link="ulid-full.typedid" />
+  </ItemGroup>
+
 
 </Project>
