@@ -39,7 +39,10 @@
       "Bash(find c:\\\\\\\\source\\\\\\\\bowlneba\\\\\\\\website\\\\\\\\src -type d -name \"Neba.Application\")",
       "Bash(Remove-Item -Force -Recurse \"c:\\\\source\\\\bowlneba\\\\website\\\\tests\\\\Neba.Application.Tests\")",
       "Bash(Remove-Item \"c:\\\\source\\\\bowlneba\\\\website\\\\tests\\\\Neba.TestFactory\\\\Tournaments\\\\TournamentOilPatternDtoFactory.cs\" -Force)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\source\\\\bowlneba\\\\website\\\\src\\\\Neba.Api\\\\Features\" -Directory)",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "Bash(Test-Path \"C:\\\\source\\\\bowlneba\\\\website\\\\tests\\\\Neba.Api.Tests\\\\Features\\\\Stats\\\\Domain\")"
     ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",

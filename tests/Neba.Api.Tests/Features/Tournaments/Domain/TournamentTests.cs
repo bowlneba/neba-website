@@ -1,5 +1,5 @@
-using Neba.Domain.Sponsors;
-using Neba.Domain.Tournaments;
+using Neba.Api.Features.Sponsors.Domain;
+using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 

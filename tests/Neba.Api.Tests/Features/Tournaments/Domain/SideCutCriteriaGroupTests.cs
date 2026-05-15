@@ -1,5 +1,4 @@
 using Neba.Api.Features.Bowlers.Domain;
-using Neba.Domain.Tournaments;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 

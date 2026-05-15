@@ -1,6 +1,6 @@
 using Ardalis.SmartEnum;
 
-using Neba.Domain.Tournaments;
+using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Features.Tournaments.Domain;
