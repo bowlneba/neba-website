@@ -4,29 +4,29 @@ applyTo: "**"
 
 # Pull Request Review Guidelines
 
-> **For GitHub Copilot**: Use these guidelines when reviewing pull requests. Flag violations as suggestions for refactoring, not blocking requests. The codebase follows Clean Architecture, DDD, and CQRS patterns.
+> **For GitHub Copilot**: Use these guidelines when reviewing pull requests. Flag violations as suggestions for refactoring, not blocking requests. The codebase follows Vertical Slice Architecture, DDD, and CQRS patterns.
 
 ---
 
-## Architecture & Layer Boundaries
+## Architecture & Feature Boundaries
 
-### Domain Layer (`Neba.Domain`)
+### Domain (Feature Domain Types in `Features/*/Domain/`)
 
-**Treat each root-level namespace as a separate bounded context.** Folders like `Tournaments`, `Bowlers`, `BowlingCenters`, and `Membership` should never directly reference each other's domain objects — review as if they were separate assemblies without project references.
+**Treat each feature domain namespace as a separate bounded context.** Types under `Features/Tournaments/Domain`, `Features/Bowlers/Domain`, `Features/BowlingCenters/Domain`, etc. should never directly reference each other's domain objects — review as if they were separate assemblies without project references.
 
-**Exception — strongly-typed IDs only**: A bounded context may import a strongly-typed ID from another context (e.g., `HallOfFame` importing `BowlerId`) when it needs to record a cross-context foreign key relationship. This is analogous to a database FK: the context stores the _identifier_, not the object. Importing the full aggregate, entity, value objects, or domain services of another context is still prohibited.
+**Exception — strongly-typed IDs only**: A feature domain may import a strongly-typed ID from another feature's domain (e.g., `HallOfFame` importing `BowlerId` from `Features.Bowlers.Domain`) when it needs to record a cross-context foreign key relationship. This is analogous to a database FK: the context stores the _identifier_, not the object. Importing the full aggregate, entity, value objects, or domain services of another feature is still prohibited.
 
-**Do NOT flag** `internal` navigation properties on domain aggregates. These are intentional: `Neba.Infrastructure` has `[InternalsVisibleTo("Neba.Infrastructure")]` on `Neba.Domain`, which gives the infrastructure layer access for EF Core mapping and query projections. The `internal` modifier is what prevents the Application layer from using them — that's the design. Flagging them as an accessibility or encapsulation problem misreads the intent.
+**Do NOT flag** `internal` navigation properties on domain aggregates. These are intentional: EF Core entity configurations in `Neba.Api/Database/` live in the same assembly (`Neba.Api`) and rely on `internal` access for mapping and query projections. The `internal` modifier is what prevents external assemblies (Contracts, Website) from using these properties. Flagging them as an accessibility problem misreads the intent.
 
 Flag when:
 
-- A domain folder imports domain objects from another domain folder (aggregates, entities, value objects, domain services, or enums — e.g., `Tournaments` importing `Bowler`, not `BowlerId`)
-- Types that should live in `SharedKernel` are defined within a specific domain folder (cross-cutting IDs, shared value objects, domain event interfaces)
+- A feature domain folder imports domain objects from another feature domain folder (aggregates, entities, value objects, domain services, or enums — e.g., `Tournaments/Domain` importing `Bowler`, not `BowlerId`)
+- Cross-cutting domain base types (`AggregateRoot`, `IDomainEvent`) are duplicated inside a feature folder instead of using the shared `Neba.Api/Domain/` types
 - Domain entities expose public setters or mutable collections
 - Aggregates lack domain event support when state changes occur
 - Business logic appears outside the domain layer
 - A child entity owned by an aggregate does **not** have an `internal static ErrorOr<T> Create(...)` factory — every child entity must own its structural invariants through this factory, even if validation is minimal (e.g., non-negative amount). The `internal` modifier ensures construction is only possible from the same assembly (the aggregate root or `InternalsVisibleTo` test helpers)
-- A child entity owned by an aggregate has a `public static Create(...)` factory — it should be `internal` so construction is only possible through the aggregate root (same assembly)
+- A child entity owned by an aggregate has a `public static Create(...)` factory — it should be `internal` so construction is only possible through the aggregate root (by convention — both live in `Neba.Api`)
 - An aggregate's assign/add method validates child entity invariants directly (e.g., checking `blockScore > 0` on `Season`) instead of delegating to the child entity's `internal static Create(...)` factory
 - A child entity is instantiated directly via `new` outside the aggregate root — application or test code must go through the aggregate's assign methods
 - An application handler computes a domain formula and passes the derived result to an aggregate — raw input data should be passed instead; the formula belongs in the domain (e.g., computing `minimumGames = floor(4.5 × count)` in a handler rather than passing `statEligibleTournamentCount` to the aggregate)
@@ -34,46 +34,54 @@ Flag when:
 - A new aggregate, entity, or value object has an XML `<summary>` comment that contradicts or omits the purpose described in the UL — comments don't need to be word-for-word matches, but must convey the same concept to an engineer reading the code cold
 - An existing domain type is touched and its XML `<summary>` is absent or misleading relative to its UL entry — take a quick pass over the UL when reviewing domain changes and flag any pre-existing gaps encountered along the way
 
-### Application Layer (`Neba.Application`)
+### Handlers (Feature Slice Use Case Folders)
+
+Handlers live at `Features/{Feature}/{UseCase}/`, co-located with their command/query type and DTO. Each handler implements `IQueryHandler<,>` or `ICommandHandler<,>` and injects `AppDbContext` directly.
 
 **Commands must return `ErrorOr<T>`** — flag any command handler that throws exceptions for business rule violations or returns raw types.
 
-**Cross-domain orchestration is allowed here**, but should occur through application services that call the "public API" of each domain (repository interfaces, domain services), not by directly manipulating another domain's internals.
+**Cross-feature data access is allowed in handlers** — a handler may query data from multiple feature domains inline (e.g., counting stat-eligible tournaments when assigning a season award). The handler provides facts to the aggregate; the aggregate enforces rules.
 
 Flag when:
 
 - Command handlers don't return `ErrorOr<T>`
 - Query handlers return domain entities instead of DTOs/response types
-- Direct instantiation of another domain's aggregates (should go through that domain's factory or repository)
+- Direct instantiation of another feature's aggregates (should go through the aggregate's own factory methods)
 - Missing `CancellationToken` propagation in async methods
+- Query handlers use `.AsTracking()` or omit `.AsNoTracking()` for read-only operations
 
-**Do NOT flag** query or command handlers that appear to be simple pass-throughs to an infrastructure service. All handlers are wrapped by `TracedQueryHandlerDecorator` / `TracedCommandHandlerDecorator`, which provides automatic telemetry (activity spans, duration tracking, structured error logging). Bypassing the handler pipeline would lose this observability. See [ADR-0003](../../docs/adr/0003-handler-decoration-over-direct-service-calls.md).
+**Do NOT flag** query or command handlers that appear to be simple pass-throughs. All handlers are wrapped by `TracedQueryHandlerDecorator` / `TracedCommandHandlerDecorator`, which provides automatic telemetry (activity spans, duration tracking, structured error logging). Bypassing the handler pipeline would lose this observability. See [ADR-0003](../../docs/adr/0003-handler-decoration-over-direct-service-calls.md).
 
-### Infrastructure Layer (`Neba.Infrastructure`)
+### Infrastructure (`Neba.Api/Database/`, `Neba.Api/Caching/`, etc.)
+
+Infrastructure concerns live in dedicated folders within `Neba.Api`. There is no repository abstraction — handlers inject `AppDbContext` directly.
 
 Flag when:
 
-- Repository implementations return domain entities for query operations (queries should return DTOs)
-- Repository methods don't use `AsNoTracking()` for read-only queries
-- Raw SQL or direct DbContext usage outside of repositories
+- EF Core entity configurations expose domain-computed properties to the persistence layer (EF configurations should only map columns, not derive business values)
+- Raw SQL bypasses EF Core without a clear documented reason
+- Feature domain types directly reference EF Core attributes or types (domain types should stay framework-free)
 
 ### API Layer (`Neba.Api`)
 
-**Structure**: Each endpoint lives in a use case folder with endpoint, summary, and validator:
+**Structure**: Each endpoint lives in a use case folder with endpoint, summary, validator, command/query, and handler:
 
 ```
-Neba.Api/Tournaments/CreateTournament/
+Neba.Api/Features/Tournaments/CreateTournament/
 ├── CreateTournamentEndpoint.cs
 ├── CreateTournamentSummary.cs
-└── CreateTournamentValidator.cs
+├── CreateTournamentValidator.cs
+├── CreateTournamentCommand.cs
+└── CreateTournamentCommandHandler.cs
 ```
 
 Flag when:
 
-- Business logic appears in endpoints (should be in domain or application layer)
-- Files in wrong folders (e.g., validator in Contracts project)
+- Business logic appears in endpoints (should be in domain types or handler)
+- Files in wrong folders (e.g., validator in Contracts project, handler outside its use case folder)
 - Missing Summary class
 - Mixing concerns (multiple use cases in one folder)
+- Handler or DTO defined outside the use case folder it belongs to
 
 #### Endpoint Configuration
 
@@ -100,9 +108,9 @@ Flag when:
 Validators should only contain structural validation:
 
 - ✅ Required fields, length constraints, range validation, format validation
-- ❌ Cross-property validation (belongs in Application layer)
-- ❌ Database lookups (belongs in Application layer)
-- ❌ Business rules (belongs in Domain/Application layer)
+- ❌ Cross-property validation (belongs in handler)
+- ❌ Database lookups (belongs in handler)
+- ❌ Business rules (belongs in domain or handler)
 
 Flag when:
 
@@ -331,7 +339,7 @@ Architecture rules are enforced automatically by `Neba.Architecture.Tests` (Arch
 
 Flag when:
 
-- A new bounded context namespace is added under `Neba.Domain` (e.g., `Neba.Domain.Tournaments`) but `BoundedContextNamespaces` in `DomainBoundaryTests.cs` is not updated. This is the **only file that needs updating** when a new bounded context is introduced.
+- A new feature with a domain namespace (e.g., `Neba.Api.Features.NewFeature.Domain`) is added but `BoundedContextNamespaces` in `DomainBoundaryTests.cs` is not updated. This is the **only file that needs updating** when a new feature domain is introduced.
 - A new handler interface type is introduced (beyond `ICommandHandler`, `IQueryHandler`, `IBackgroundJobHandler`) without corresponding naming, visibility, and colocation tests added to `Neba.Architecture.Tests`.
 
 ### Required Coverage
@@ -446,13 +454,14 @@ public void Method_ShouldThrow_WhenNull()
 
 ### What to Test
 
-| Layer              | Required Tests                                               |
-| ------------------ | ------------------------------------------------------------ |
-| Services           | Mock Refit interface, verify ErrorOr mapping, error handling |
-| Command handlers   | Business rule enforcement, domain event raising, error cases |
-| Query handlers     | Correct DTO mapping (use Verify snapshots)                   |
-| Complex components | bUnit tests for interaction logic, conditional rendering     |
-| JS modules         | Jest tests for function behavior                             |
+| What                | Required Tests                                               |
+| ------------------- | ------------------------------------------------------------ |
+| Blazor services     | Mock Refit interface, verify ErrorOr mapping, error handling |
+| Command handlers    | Business rule enforcement, domain event raising, error cases |
+| Query handlers      | Correct DTO mapping (use Verify snapshots)                   |
+| Domain aggregates   | Invariant enforcement, state transitions, error cases        |
+| Complex components  | bUnit tests for interaction logic, conditional rendering     |
+| JS modules          | Jest tests for function behavior                             |
 
 **Logging in tests**: Never mock `ILogger<T>`. Use `NullLogger<T>.Instance` when you don't need to assert on log output. Use `FakeLogger<T>` from `Microsoft.Extensions.Logging.Testing` (namespace inside the `Microsoft.Extensions.Diagnostics.Testing` NuGet package) when you need to assert on log level, message content, or structured attributes — it's a real `ILogger<T>` implementation, not a mock. Assert via `logger.Collector.GetSnapshot()`, which returns `IReadOnlyList<FakeLogRecord>` with `.Level` and `.Message` on each entry.
 
@@ -575,7 +584,7 @@ When reviewing, verify:
 
 ### Architecture & Code Quality
 
-- [ ] Layer boundaries respected (no cross-domain references)
+- [ ] Feature boundaries respected (no cross-feature domain references)
 - [ ] Commands return `ErrorOr<T>`
 - [ ] Queries return DTOs, not entities
 - [ ] Extension methods use `extension()` block syntax, not legacy `this` parameter
@@ -622,7 +631,7 @@ When reviewing, verify:
 - [ ] Tests have `DisplayName` on Facts and Theories
 - [ ] New code has corresponding tests
 - [ ] API endpoint integration tests cover success, validation failure, and auth failure
-- [ ] New Domain bounded context namespace added to `BoundedContextNamespaces` in `DomainBoundaryTests.cs`
+- [ ] New feature domain namespace added to `BoundedContextNamespaces` in `DomainBoundaryTests.cs`
 
 ### Observability
 

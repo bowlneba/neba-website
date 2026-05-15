@@ -52,11 +52,11 @@ NEBA Website is a centralized platform for the New England Bowlers Association. 
 
 ### Architecture Principles
 
-- **Clean Architecture**: Domain at the center, dependencies point inward
-- **Domain-Driven Design**: Tactical patterns (aggregates, entities, value objects, domain events)
-- **CQRS**: Command/Query separation with distinct read and write models
-- **No Modular Monolith**: Single domain/application/infrastructure - complexity not justified for current scale (~1k members, 1-2 tournaments/month, ~10k visits/month)
-- **Feature Folders**: Organize by domain area within each layer, treating folders as if they were modules
+- **Vertical Slice Architecture**: Each feature is a self-contained slice that co-locates domain types, application logic, and data access in one folder — no separate layer projects
+- **Domain-Driven Design**: Tactical patterns (aggregates, entities, value objects, domain events) live within each feature's `Domain/` subfolder; shared cross-cutting base types in `Neba.Api/Domain/`
+- **CQRS**: Command/Query separation with handlers co-located in their feature slice folder; handlers inject `AppDbContext` directly — no repository abstraction
+- **Single API Project**: `Neba.Api` contains all backend logic — no separate Domain, Application, or Infrastructure projects; reduces indirection for current scale (~1k members, 1-2 tournaments/month, ~10k visits/month)
+- **Feature Isolation**: Feature domains do not cross-reference each other's domain objects; cross-feature references use shared IDs (e.g., `BowlerId`) or application-level orchestration within handlers
 
 ---
 
@@ -64,69 +64,81 @@ NEBA Website is a centralized platform for the New England Bowlers Association. 
 
 ```text
 src/
-├── Neba.Domain/
-│   ├── Bowlers/
-│   ├── BowlingCenters/
-│   ├── Tournaments/
-│   ├── Content/
-│   └── SharedKernel/
-├── Neba.Application/
-│   ├── Bowlers/
-│   │   ├── Commands/
-│   │   └── Queries/
-│   ├── BowlingCenters/
-│   ├── Tournaments/
-│   └── Common/
-│       └── Behaviors/
-├── Neba.Infrastructure/
 ├── Neba.Api/
+│   ├── Domain/                           # Shared cross-cutting domain base types
+│   │   ├── AggregateRoot.cs
+│   │   ├── IDomainEvent.cs
+│   │   └── ...
+│   ├── Features/
+│   │   ├── Seasons/
+│   │   │   ├── Domain/                   # Season aggregate and domain types
+│   │   │   │   ├── Season.cs
+│   │   │   │   ├── SeasonId.cs
+│   │   │   │   ├── HighAverageAward.cs
+│   │   │   │   └── ...
+│   │   │   ├── ListSeasons/              # One folder per use case
+│   │   │   │   ├── ListSeasonsEndpoint.cs
+│   │   │   │   ├── ListSeasonsQuery.cs
+│   │   │   │   ├── ListSeasonsQueryHandler.cs
+│   │   │   │   ├── ListSeasonsSummary.cs
+│   │   │   │   └── SeasonDto.cs
+│   │   │   └── SeasonsEndpointGroup.cs
+│   │   ├── Tournaments/
+│   │   │   ├── Domain/
+│   │   │   ├── GetTournament/
+│   │   │   ├── ListTournamentsInSeason/
+│   │   │   └── TournamentsEndpointGroup.cs
+│   │   ├── Bowlers/
+│   │   ├── BowlingCenters/
+│   │   ├── Sponsors/
+│   │   ├── HallOfFame/
+│   │   ├── Awards/
+│   │   ├── Stats/
+│   │   └── Documents/
+│   ├── Database/                         # EF Core DbContext and entity configurations
+│   ├── Messaging/                        # IQueryHandler<,> / ICommandHandler<,>
+│   ├── Caching/                          # FusionCache setup and decorators
+│   ├── BackgroundJobs/                   # Hangfire job definitions
+│   ├── Storage/                          # Azure Blob Storage
+│   ├── Clock/                            # IDateTimeProvider / TimeProvider
+│   ├── Telemetry/                        # Tracing, metrics
+│   ├── ErrorHandling/                    # ProblemDetails configuration
+│   ├── OpenApi/                          # Scalar / Swagger config
+│   ├── DomainConfiguration.cs            # DI: domain services (e.g., validation services)
+│   ├── ApplicationConfiguration.cs       # DI: handlers, application services (e.g., stats calculators)
+│   ├── InfrastructureConfiguration.cs    # DI: database, caching, storage, background jobs
+│   └── Program.cs
+├── Neba.Api.Contracts/                   # Request/Input/Response records + Refit interfaces (shared with Blazor)
+│   ├── Seasons/
 │   ├── Tournaments/
-│   │   ├── CreateTournament/
-│   │   │   ├── CreateTournamentEndpoint.cs
-│   │   │   └── CreateTournamentValidator.cs
-│   │   ├── GetTournament/
-│   │   └── ListTournaments/
-│   ├── Squads/
-│   ├── Bowlers/
-│   └── BowlingCenters/
-├── Neba.Api.Contracts/
-│   ├── Tournaments/
-│   │   ├── CreateTournament/
-│   │   │   ├── CreateTournamentRequest.cs
-│   │   │   └── TournamentInput.cs
-│   │   ├── GetTournament/
-│   │   │   └── TournamentResponse.cs
-│   │   ├── ListTournaments/
-│   │   │   ├── ListTournamentsRequest.cs
-│   │   │   └── TournamentSummaryResponse.cs
-│   │   └── ITournamentsApi.cs
-│   ├── Squads/
-│   ├── Bowlers/
-│   ├── BowlingCenters/
 │   └── Common/
 │       ├── CollectionResponse.cs
 │       └── PaginationResponse.cs
-└── Neba.Website/
+├── Neba.Website.Server/                  # Blazor Web App (Interactive Auto mode)
+├── Neba.Website.Client/                  # Blazor WebAssembly client project
+├── Neba.AppHost/                         # .NET Aspire AppHost
+└── Neba.ServiceDefaults/                 # .NET Aspire service defaults
 ```
 
-### Layer Responsibilities
+### What Lives in a Vertical Slice
 
-| Layer | Responsibility |
-| ----- | -------------- |
-| `Neba.Domain` | Entities, aggregates, value objects, domain events, repository interfaces |
-| `Neba.Application` | Commands, queries, handlers, application services, DTOs |
-| `Neba.Infrastructure` | EF Core DbContext, repository implementations, external service clients |
-| `Neba.Api` | Fast Endpoints, validators, real-time hubs (SSE/WebSocket) |
-| `Neba.Api.Contracts` | Request/Input/Response records and Refit interfaces shared with Blazor |
-| `Neba.Website` | Blazor Web App (Interactive Auto mode) |
+| Location | Responsibility |
+| -------- | -------------- |
+| `Features/{Feature}/Domain/` | Aggregate, entity, value object, domain event, and error class types for this feature |
+| `Features/{Feature}/{UseCase}/` | Endpoint, Query/Command, Handler, DTO, Validator, and Summary for one use case |
+| `Domain/` (top-level in `Neba.Api`) | Shared base types: `AggregateRoot`, `IDomainEvent` |
+| `Database/` | `AppDbContext`, EF Core entity configurations, migrations |
+| `Messaging/` | `IQueryHandler<,>`, `ICommandHandler<,>` interfaces and handler scanning registration |
+| `Caching/`, `Clock/`, `Storage/`, etc. | Infrastructure concerns (FusionCache, time provider, Blob Storage, etc.) |
+| `Neba.Api.Contracts` | `Request/Input/Response` records and Refit interfaces shared between API and Blazor |
 
 ### Namespace Boundaries
 
-Domain folders should not reference each other directly. Cross-cutting needs go through:
+Feature domain types live in `Neba.Api.Features.{Feature}.Domain`. Features must not reference each other's domain types directly. Cross-cutting needs go through:
 
-- Shared IDs in `SharedKernel`
-- Domain events
-- Application layer orchestration
+- Shared IDs from the owning feature's domain namespace (e.g., `BowlerId` from `Neba.Api.Features.Bowlers.Domain`) — imported by reference only, like a typed foreign key
+- Domain events (dispatched by the aggregate, handled in-process)
+- Application-level orchestration within handler code
 
 ### Build Configuration
 
@@ -178,63 +190,42 @@ Domain folders should not reference each other directly. Cross-cutting needs go 
 
 ### Dependency Injection Organization
 
-Each layer exposes a single `Add{Layer}Services()` extension method. Feature-specific registrations are grouped into `Add{Feature}Services()` methods called from the layer method.
+Three configuration files in the project root own DI registration, split by concern:
 
 ```csharp
-// Neba.Application/DependencyInjection.cs
-public static class DependencyInjection
+// Neba.Api/ApplicationConfiguration.cs
+public static class ApplicationConfiguration
 {
     extension(IServiceCollection services)
     {
-        public IServiceCollection AddApplicationServices()
+        public IServiceCollection AddApplication()
         {
-            services.AddTournamentServices();
-            services.AddBowlerServices();
-            services.AddMembershipServices();
-
-            // Cross-cutting behaviors
-            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
-
+            services.AddMessaging();  // Scans and registers all IQueryHandler/ICommandHandler implementations
+            services.AddServices();   // Feature-specific singletons (e.g., stats calculators)
             return services;
         }
     }
 }
 
-// Neba.Application/Tournaments/TournamentServices.cs
-internal static class TournamentServices
-{
-    extension(IServiceCollection services)
-    {
-        internal IServiceCollection AddTournamentServices()
-        {
-            services.AddScoped<ICommandHandler<CreateTournamentCommand, TournamentDto>,
-                CreateTournamentHandler>();
-            services.AddScoped<IQueryHandler<GetTournamentQuery, TournamentDto>,
-                GetTournamentHandler>();
-            // ... other tournament handlers
-
-            return services;
-        }
-    }
-}
+// Neba.Api/DomainConfiguration.cs — domain services (e.g., TournamentValidationService)
+// Neba.Api/InfrastructureConfiguration.cs — database, caching, storage, background jobs
 ```
 
 **In Program.cs**:
 
 ```csharp
 builder.Services
-    .AddDomainServices()
-    .AddApplicationServices()
-    .AddInfrastructureServices(builder.Configuration);
+    .AddDomain()
+    .AddApplication();
+
+builder.AddInfrastructure();
 ```
 
 **Guidelines**:
 
-- One `Add{Layer}Services()` per project, called from Program.cs
-- Feature-specific `Add{Feature}Services()` methods are `internal`
-- Keep registration methods next to the services they register (feature folder)
-- Cross-cutting concerns (behaviors, middleware) in the layer-level method
+- Handler registration is convention-based via `AddMessaging()` — no manual per-handler registration
+- Feature-specific service registrations are `internal` and called from the appropriate configuration file
+- Infrastructure registration takes `WebApplicationBuilder` (not just `IServiceCollection`) because it configures Aspire resources
 
 ---
 
@@ -291,7 +282,7 @@ From a DDD perspective, there is no difference between natural keys and surrogat
 
 - Used when no stable natural key exists
 - Example: `BowlerId` wraps a ULID
-- Lives in `SharedKernel` as a cross-boundary reference type
+- Lives in the owning feature's domain namespace (e.g., `Neba.Api.Features.Bowlers.Domain`) and is imported by other features that need the cross-context reference
 - Is a strongly-typed value object with a factory method
 
 **Natural Key** (see [ADR-0005](../adr/0005-shadow-db-pk-for-natural-key-aggregates.md)):
@@ -814,66 +805,66 @@ public async Task UpdateCacheAsync(string key, string value)
 - Projections happen in the repository (`.Select()`)
 - No need to load full aggregates
 
-### Repository Pattern
+### Handler Pattern
 
-Separate repositories for commands and queries:
+Each handler implements `IQueryHandler<TQuery, TResponse>` or `ICommandHandler<TCommand, TResponse>` and lives in the same use case folder as its query/command type. Handlers inject `AppDbContext` directly — there is no repository abstraction.
 
-**Command/Entity Repositories**:
-
-- Return fully hydrated aggregates
-- Used by command handlers
-
-**Query Repositories**:
-
-- Return DTOs/projections
-- Named methods communicate intent
-- Mapping happens in the repository
+**Query handler** — inject `AppDbContext`, project to DTO inline with `AsNoTracking()`:
 
 ```csharp
-// Command repository
-public interface ITournamentRepository
+internal sealed class ListSeasonsQueryHandler(AppDbContext appDbContext)
+    : IQueryHandler<ListSeasonsQuery, IReadOnlyCollection<SeasonDto>>
 {
-    Task<Tournament?> GetById(TournamentId id);
-    Task Add(Tournament tournament);
-    Task Update(Tournament tournament);
-}
+    private readonly IQueryable<Season> _seasons = appDbContext.Seasons.AsNoTracking();
 
-// Query repository - named methods for each use case
-public interface ITournamentQueries
-{
-    Task<IEnumerable<TournamentListDto>> GetUpcoming();
-    Task<TournamentDetailDto?> GetPublicDetail(TournamentId id);
-    Task<IEnumerable<TournamentResultDto>> GetCompletedByYear(int year);
+    public async Task<IReadOnlyCollection<SeasonDto>> HandleAsync(
+        ListSeasonsQuery query, CancellationToken ct)
+        => await _seasons
+            .OrderByDescending(s => s.StartDate)
+            .Select(s => new SeasonDto
+            {
+                Id = s.Id,
+                Description = s.Description,
+                StartDate = s.StartDate,
+                EndDate = s.EndDate
+            })
+            .ToListAsync(ct);
 }
 ```
 
-Query repository implementation with mapping inline:
+**Command handler** — load aggregate from DbContext, call domain methods, save:
 
 ```csharp
-public async Task<TournamentDetailDto?> GetPublicDetail(TournamentId id)
+internal sealed class AssignHighBlockAwardCommandHandler(AppDbContext appDbContext)
+    : ICommandHandler<AssignHighBlockAwardCommand, ErrorOr<Success>>
 {
-    return await _context.Tournaments
-        .Where(t => t.Id == id)
-        .Select(t => new TournamentDetailDto
-        {
-            Id = t.Id.Value,
-            Name = t.Name,
-            Date = t.Date,
-            VenueName = t.Venue.Name
-        })
-        .FirstOrDefaultAsync();
+    public async Task<ErrorOr<Success>> HandleAsync(
+        AssignHighBlockAwardCommand command, CancellationToken ct)
+    {
+        var season = await appDbContext.Seasons.FindAsync([command.SeasonId], ct);
+        if (season is null)
+            return SeasonErrors.SeasonNotFound;
+
+        var result = season.AddHighBlockWinner(command.BowlerId, command.Score, command.Games);
+        if (result.IsError) return result;
+
+        await appDbContext.SaveChangesAsync(ct);
+        return Result.Success;
+    }
 }
 ```
+
+**Cross-feature data**: When a handler needs data owned by another feature, inject the relevant `DbSet<T>` or `IQueryable<T>` directly. The handler coordinates; feature domains do not reach into each other.
 
 ### DTOs and Contracts
 
-- **DTOs**: Returned by query handlers, shaped for the use case
+- **DTOs**: Defined in the use case folder, returned by query handlers, shaped for the use case; never reused across feature slices
 - **Inputs/Responses** (`Neba.Api.Contracts`): API contract shared with Blazor
 
 Mapping:
 
-- Query repository → DTO (inline in repository)
-- DTO → Response (inline in endpoint, unless complex)
+- Handler projects entity → DTO inline (no separate mapper)
+- Endpoint maps DTO → Response inline
 
 Start with fewer mapping layers. Add abstraction when there's a reason.
 
@@ -1089,21 +1080,22 @@ public async Task<IReadOnlyList<TournamentDto>> GetAllAsync(CancellationToken ct
 
 ### Fast Endpoints Structure
 
-Each endpoint in its own use case folder with endpoint, summary, and validator:
+Each endpoint in its own use case folder with endpoint, summary, validator, command/query, and handler — all co-located:
 
 ```text
-Neba.Api/
+Neba.Api/Features/
 ├── Tournaments/
-│   ├── TournamentEndpointGroup.cs
+│   ├── TournamentsEndpointGroup.cs
+│   ├── Domain/                              # Tournament aggregate and domain types
 │   ├── CreateTournament/
 │   │   ├── CreateTournamentEndpoint.cs
 │   │   ├── CreateTournamentSummary.cs
-│   │   └── CreateTournamentValidator.cs
-│   ├── UpdateTournament/
+│   │   ├── CreateTournamentValidator.cs
+│   │   ├── CreateTournamentCommand.cs
+│   │   └── CreateTournamentCommandHandler.cs
 │   ├── GetTournament/
-│   ├── ListTournaments/
-│   └── DeleteTournament/
-├── Squads/
+│   └── ListTournamentsInSeason/
+├── Seasons/
 ├── Bowlers/
 └── BowlingCenters/
 ```
@@ -1434,9 +1426,9 @@ public class CreateTournamentValidator : Validator<CreateTournamentRequest>
 **Validation scope**:
 
 - ✅ Required fields, length constraints, range validation, format validation
-- ❌ Cross-property validation (Application layer)
-- ❌ Database lookups (Application layer)
-- ❌ Business rules (Domain/Application layer)
+- ❌ Cross-property validation (handler)
+- ❌ Database lookups (handler)
+- ❌ Business rules (domain or handler)
 
 **Domain entities** handle business rule validation and return `ErrorOr<T>` for failures.
 
@@ -1467,7 +1459,7 @@ Rules:
 
 ### Error Handling
 
-Errors flow as `ErrorOr<T>` from domain/application layers. The API translates to ProblemDetails (RFC 9457) via FastEndpoints' built-in `UseProblemDetails()` configuration.
+Errors flow as `ErrorOr<T>` from domain and handler code. The API translates to ProblemDetails (RFC 9457) via FastEndpoints' built-in `UseProblemDetails()` configuration.
 
 **ProblemDetails configuration** is in `ErrorHandlingConfiguration.cs`:
 
@@ -1504,7 +1496,7 @@ This produces a ProblemDetails response with the error code (via `IndicateErrorC
 **Error response rules**:
 
 - Always return ProblemDetails for any error (400, 401, 403, 404, 409, 500, etc.)
-- Use `AddError()` + `Send.ErrorsAsync(statusCode)` for Application layer errors from `ErrorOr<T>` results
+- Use `AddError()` + `Send.ErrorsAsync(statusCode)` for handler/domain errors from `ErrorOr<T>` results
 - Map `ErrorType` to the appropriate HTTP status code at the endpoint level
 - Validation errors return 400 automatically via FastEndpoints validators
 - Unhandled exceptions return 500 via `GlobalExceptionHandler`
@@ -1514,13 +1506,13 @@ This produces a ProblemDetails response with the error code (via `IndicateErrorC
 
 Error codes follow the `Entity.ErrorCode` pattern (PascalCase, dot-separated). See [ADR-0004](../adr/0004-error-code-naming-convention.md) for the full decision record.
 
-| Layer | Pattern | Example |
-| ----- | ------- | ------- |
-| Application/Domain errors | `Entity.ErrorCode` | `Document.NotFound`, `Tournament.AlreadyStarted` |
+| Source | Pattern | Example |
+| ------ | ------- | ------- |
+| Domain / handler errors | `Entity.ErrorCode` | `Document.NotFound`, `Tournament.AlreadyStarted` |
 | Value object validation | `Entity.Property.Rule` | `Money.Amount.Negative`, `Money.Currency.InvalidFormat` |
 | Infrastructure errors | `Service.Operation.ErrorKind` | `GoogleDrive.GetDocument.HttpError` |
 
-Error classes are named `{Entity}Errors`, are `internal static`, and live alongside the handlers that use them:
+Error classes are named `{Entity}Errors`, are `internal static`, and live in the feature's `Domain/` folder or alongside the handler that uses them:
 
 ```csharp
 internal static class DocumentErrors
@@ -1644,7 +1636,7 @@ public override void Configure()
 
 ### Response Caching
 
-Response caching is handled via **FusionCache in the Application layer**, not at the API endpoint level. Do not use Fast Endpoints' `ResponseCache()` method.
+Response caching is handled via **FusionCache (decorated query handlers)**, not at the API endpoint level. Do not use Fast Endpoints' `ResponseCache()` method.
 
 Current implementation details:
 
@@ -1830,10 +1822,10 @@ Career stats combine both sources transparently.
 tests/
 ├── Neba.TestFactory/           # Shared test infrastructure (factories, fixtures, traits)
 ├── Neba.Architecture.Tests/    # Architecture rule enforcement (ArchUnitNET)
-├── Neba.Api.Tests/             # API endpoint tests (unit + integration)
-├── Neba.Application.Tests/     # Handler tests (unit + integration)
-├── Neba.Domain.Tests/          # Domain logic tests (unit)
-├── Neba.Infrastructure.Tests/  # Repository tests (unit + integration)
+├── Neba.Api.Tests/             # API endpoint integration tests
+├── Neba.Application.Tests/     # Handler unit tests (command/query logic in Features/)
+├── Neba.Domain.Tests/          # Domain unit tests (aggregates, value objects in Features/*/Domain/)
+├── Neba.Infrastructure.Tests/  # Infrastructure integration tests (EF Core, Testcontainers)
 ├── Neba.Website.Tests/         # UI tests (bUnit, services, JS interop)
 ├── e2e/                        # Playwright E2E tests (TypeScript)
 └── js/                         # Jest tests for JS modules
@@ -1966,27 +1958,26 @@ All architecture test classes are marked `[ArchitectureTest]` and `[Component("A
 
 | Test class | What it guards |
 | --- | --- |
-| `LayerDependencyTests` | Clean architecture dependency direction: Domain ← Application ← Infrastructure ← Api. Domain and Application must not reference Infrastructure, Api, or Contracts. |
 | `NamingConventionTests` | `IQueryHandler` implementors → name ends with `QueryHandler`. `ICommandHandler` implementors → `CommandHandler`. `IBackgroundJobHandler` implementors → `JobHandler`. |
-| `VisibilityTests` | All handler implementations in the Application layer must be `internal`. |
-| `DependencyGuardTests` | Domain and Application must not reference EF Core, Hangfire, or Newtonsoft.Json. |
+| `VisibilityTests` | All handler implementations must be `internal`. |
+| `DependencyGuardTests` | Feature domain types must not reference EF Core, Hangfire, or Newtonsoft.Json. |
 | `ColocationTests` | Each handler class must live in the same namespace as its command/query/job type. |
-| `DomainBoundaryTests` | Domain bounded contexts must not cross-reference each other (see below). |
+| `DomainBoundaryTests` | Feature domain namespaces must not cross-reference each other (see below). |
 
 #### Bounded context namespaces
 
-`DomainBoundaryTests` enforces that the following namespaces within `Neba.Domain` do not depend on each other:
+`DomainBoundaryTests` enforces that the following feature domain namespaces do not depend on each other:
 
 ```text
-Neba.Domain.BowlingCenters
-Neba.Domain.Tournaments
-Neba.Domain.Bowlers
-Neba.Domain.Membership
+Neba.Api.Features.BowlingCenters.Domain
+Neba.Api.Features.Tournaments.Domain
+Neba.Api.Features.Bowlers.Domain
+Neba.Api.Features.Seasons.Domain
 ```
 
-Shared kernel namespaces (`Neba.Domain.Contact`, `Neba.Domain.Geography`) are intentionally excluded — they are designed to be used by all bounded contexts.
+The shared `Neba.Api.Domain` namespace (containing `AggregateRoot`, `IDomainEvent`, etc.) is intentionally excluded — it is designed to be used by all feature domains.
 
-**When adding a new bounded context**: add its namespace to `BoundedContextNamespaces` in [DomainBoundaryTests.cs](../../tests/Neba.Architecture.Tests/DomainBoundaryTests.cs). This is the only file that must be updated.
+**When adding a new feature**: add its domain namespace to `BoundedContextNamespaces` in [DomainBoundaryTests.cs](../../tests/Neba.Architecture.Tests/DomainBoundaryTests.cs). This is the only file that must be updated.
 
 ### Unit Tests
 
@@ -2240,7 +2231,7 @@ public class AppFixture : WebApplicationFactory<Program>
 - Database cleanup after each test using Respawn
 - Use `CreateAuthenticatedClient(roles)` for authenticated endpoints
 - Use Fast Endpoints testing helpers for type-safe requests
-- Each layer has its own test project
+- Test projects are split by concern: Domain tests, Application (handler) tests, Infrastructure tests, API integration tests
 
 ### Aspire Integration Testing
 

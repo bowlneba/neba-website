@@ -28,7 +28,12 @@
       "mcp__aspire__list_trace_structured_logs",
       "Bash(gh issue list:*)",
       "Bash(curl:*)",
-      "Bash(lsof:*)"],
+      "Bash(lsof:*)",
+      "Bash(Get-ChildItem -Path \"c:\\\\source\\\\bowlneba\\\\website\\\\src\\\\Neba.Api\\\\Features\" -Recurse)",
+      "Bash(Sort-Object FullName)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)"
+    ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",
       "/Users/kippermand/Projects/bowlneba/neba-website/tests",

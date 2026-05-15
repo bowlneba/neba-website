@@ -21,9 +21,9 @@ Before ending a session where significant discoveries were made, consider whethe
 
 ## Architecture Rules
 
-### Layer Boundaries
+### Feature Boundaries
 
-- Domain folders (Bowlers, Tournaments, etc.) must NOT cross-reference each other's domain objects (aggregates, entities, value objects, domain services). Exception: importing a strongly-typed ID from another context (e.g., `BowlerId` in `HallOfFame`) is allowed — it's a typed foreign key, not a domain dependency.
+- Feature domain folders (`Features/Bowlers/Domain`, `Features/Tournaments/Domain`, etc.) must NOT cross-reference each other's domain objects (aggregates, entities, value objects, domain services). Exception: importing a strongly-typed ID from another feature's domain (e.g., `BowlerId` from `Neba.Api.Features.Bowlers.Domain` in `HallOfFame`) is allowed — it's a typed foreign key, not a domain dependency.
 - Commands return `ErrorOr<T>`, never throw for business rules
 - Queries return DTOs, never domain entities
 - Validators handle structural validation only (no DB lookups, no business rules)
@@ -32,7 +32,7 @@ Before ending a session where significant discoveries were made, consider whethe
 
 ### Always-Valid Entities and Aggregate Assignment
 
-Child entities owned by an aggregate use `internal static ErrorOr<T> Create(...)` factory methods that validate the entity's own structural invariants. The `internal` modifier ensures the entity can only be constructed through the owning aggregate (same assembly) — never directly from application or test code.
+Child entities owned by an aggregate use `internal static ErrorOr<T> Create(...)` factory methods that validate the entity's own structural invariants. The `internal` modifier restricts construction to the same assembly (`Neba.Api`); by convention, only the owning aggregate root calls these factories — never handler or test code directly.
 
 The aggregate root's assign methods take raw properties, call the internal factory, enforce aggregate-level invariants (e.g., `Complete == true`), and return a single `ErrorOr<Success>` to the caller:
 
@@ -61,7 +61,7 @@ public ErrorOr<Success> AssignHighBlockAward(BowlerId bowlerId, int blockScore)
 
 ### Aggregate Invariants Requiring Cross-Aggregate Data
 
-When an assign method's invariant depends on data owned by another aggregate, the application layer queries that data and passes it as a parameter. The aggregate enforces the rule; the application layer provides the facts.
+When an assign method's invariant depends on data owned by another aggregate, the handler queries that data and passes it as a parameter. The aggregate enforces the rule; the handler provides the facts.
 
 **The deciding factor — persist on aggregate vs. pass as parameter**:
 
@@ -87,20 +87,21 @@ public ErrorOr<Success> AssignHighAverageWinner(
     return Result.Success;
 }
 
-// Formula is domain logic — lives on the aggregate, not the application layer
+// Formula is domain logic — lives on the aggregate, not the handler
 private int ComputeMinimumGames(int statEligibleTournaments) =>
     (int)Math.Floor(_minimumGamesMultiplier * statEligibleTournaments);
 ```
 
-Application layer orchestrates — queries the cross-aggregate fact once, then drives the aggregate:
+The handler orchestrates — queries the cross-aggregate fact once, then drives the aggregate:
 
 ```csharp
-var statEligibleCount = await _tournamentRepository.CountStatEligibleAsync(command.SeasonId, ct);
+var statEligibleCount = await appDbContext.Tournaments
+    .CountAsync(t => t.SeasonId == command.SeasonId && t.StatEligible, ct);
 season.AssignHighAverageWinner(command.BowlerId, command.Average, command.Games,
     command.TournamentsParticipated, statEligibleCount);
 ```
 
-**Anti-pattern**: Computing a domain formula in the application handler and passing the derived result (e.g., pre-computing `minimumGames` and passing it in). When the formula changes, the fix belongs in the domain — not scattered across handlers.
+**Anti-pattern**: Computing a domain formula in the handler and passing the derived result (e.g., pre-computing `minimumGames` and passing it in). When the formula changes, the fix belongs in the domain — not scattered across handlers.
 
 ### Testing Requirements
 
@@ -123,7 +124,7 @@ season.AssignHighAverageWinner(command.BowlerId, command.Average, command.Games,
 - Diff run (PR): `dotnet stryker --since origin/main`
 - Reports land in `tests/<Layer>.Tests/StrykerOutput/`
 
-**New layer checklist** — when adding a stryker-config.json for a new layer, every config must have:
+**New test project checklist** — when adding a stryker-config.json for a new test project, every config must have:
 
 1. `"test-runner": "mtp"` — **required** for xUnit v3; without it all mutants show as Survived (xUnit v3 runs tests out-of-process; Stryker's VSTest extension never receives events). Shipped in Stryker.NET 4.13.
 2. `"project-info"` (not `"dashboard"`) — the .NET config key for dashboard reporting; `"dashboard"` is JS-only and will throw an unknown key error.
@@ -147,9 +148,9 @@ Required explicit members (removed from `ulid-full.typedid`, must be in every pa
 
 The equality members (`Equals`, `GetHashCode`, `==`, `!=`) are needed because Stryker mutates equality expressions (e.g., `==` → `!=`). Without them visible in Stryker's compilation, mutated code produces `CS0019` and aborts the run rather than producing a killable mutation.
 
-**Per-layer decisions** (make these explicitly for each new layer):
+**Per-project decisions** (make these explicitly for each new test project):
 
-- `ignore-mutations: Linq` — keep for Domain/Application (logic layers); exclude for Infrastructure/API/Blazor (see rationale in learnings below)
+- `ignore-mutations: Linq` — keep for Domain/Application test projects (logic); exclude for Infrastructure/API/Blazor (see rationale in learnings below)
 - `mutate` exclusions — inspect actual files; exclude pure declarations (source-generated stubs, SmartEnum tables), not logic
 
 **Thresholds by layer**:
@@ -203,10 +204,10 @@ The equality members (`Equals`, `GetHashCode`, `==`, `!=`) are needed because St
 ### Bug Fixing (TDD Approach)
 
 1. Write a failing test that demonstrates the bug FIRST
-2. Choose test type based on layer:
-   - Domain entity/aggregate → Unit test in `Neba.Domain.Tests`
-   - Application handler → Unit test in `Neba.Application.Tests`
-   - Infrastructure/EF Core → Integration test in `Neba.Infrastructure.Tests`
+2. Choose test project based on what's broken:
+   - Domain entity/aggregate (in `Features/*/Domain/`) → Unit test in `Neba.Domain.Tests`
+   - Handler (in `Features/*/`) → Unit test in `Neba.Application.Tests`
+   - EF Core / Database (in `Database/`) → Integration test in `Neba.Infrastructure.Tests`
    - API endpoint → Integration test in `Neba.Api.Tests`
    - Blazor component → bUnit test in `Neba.Website.Tests`
    - UI interaction/flow → E2E test in `tests/e2e/`
