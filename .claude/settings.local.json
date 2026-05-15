@@ -36,7 +36,8 @@
       "Bash(Get-ChildItem -Path \"c:\\\\source\\\\bowlneba\\\\website\" -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(Sort-Object)",
-      "Bash(find c:\\\\\\\\source\\\\\\\\bowlneba\\\\\\\\website\\\\\\\\src -type d -name \"Neba.Application\")"
+      "Bash(find c:\\\\\\\\source\\\\\\\\bowlneba\\\\\\\\website\\\\\\\\src -type d -name \"Neba.Application\")",
+      "Bash(Remove-Item -Force -Recurse \"c:\\\\source\\\\bowlneba\\\\website\\\\tests\\\\Neba.Application.Tests\")"
     ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",
