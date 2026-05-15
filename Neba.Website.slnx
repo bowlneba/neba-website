@@ -17,7 +17,6 @@
   <Folder Name="/tests/">
     <File Path="tests/.editorconfig" />
     <Project Path="tests/Neba.Api.Tests/Neba.Api.Tests.csproj" />
-    <Project Path="tests/Neba.Infrastructure.Tests/Neba.Infrastructure.Tests.csproj" />
     <Project Path="tests/Neba.TestFactory/Neba.TestFactory.csproj" />
     <Project Path="tests/Neba.Website.Tests/Neba.Website.Tests.csproj" />
   </Folder>
