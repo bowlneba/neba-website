@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-using Neba.Domain.Tournaments;
+using Neba.Api.Features.Tournaments.Domain;
 
 namespace Neba.Api.Database.Configurations;
 

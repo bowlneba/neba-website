@@ -2,6 +2,8 @@ using System.Text.Json.Serialization;
 
 using Ardalis.SmartEnum;
 
+using Neba.Api.Domain;
+
 namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
