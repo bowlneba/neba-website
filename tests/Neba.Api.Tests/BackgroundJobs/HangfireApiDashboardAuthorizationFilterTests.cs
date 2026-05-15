@@ -1,3 +1,4 @@
+using Neba.Api.BackgroundJobs;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.BackgroundJobs;
@@ -11,7 +12,7 @@ public sealed class HangfireApiDashboardAuthorizationFilterTests
     {
 #nullable disable
         // Arrange
-        var filter = new Infrastructure.BackgroundJobs.HangfireApiDashboardAuthorizationFilter();
+        var filter = new HangfireApiDashboardAuthorizationFilter();
         // DashboardContext cannot be mocked (no parameterless constructor)
         // and is not used by the implementation, so null is acceptable
         Hangfire.Dashboard.DashboardContext context = null;
