@@ -44,10 +44,18 @@ internal sealed class GoogleDriveService
     /// <summary>
     /// Retrieves a document as HTML by its configured name.
     /// </summary>
-    /// <param name="documentName">The logical name of the document (e.g., "bylaws").</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The document as a <see cref="DocumentDto"/> containing the processed HTML content and metadata, or <c>null</c> if the document is not found.</returns>
-    /// <exception cref="GoogleApiException">Thrown when Google Drive API request fails.</exception>
+    /// <param name="documentName">
+    /// The logical name of the document (e.g., "bylaws").
+    /// </param>
+    /// <param name="cancellationToken">
+    /// Cancellation token.
+    /// </param>
+    /// <returns>
+    /// The document as a <see cref="DocumentDto"/> containing the processed HTML content and metadata, or <c>null</c> if the document is not found.
+    /// </returns>
+    /// <exception cref="GoogleApiException">
+    /// Thrown when Google Drive API request fails.
+    /// </exception>
     public async Task<DocumentDto?> GetDocumentAsHtmlAsync(string documentName, CancellationToken cancellationToken)
     {
         // Find document configuration by name (case-insensitive)
@@ -157,8 +165,12 @@ internal sealed class GoogleDriveService
     /// <summary>
     /// Creates and initializes a DriveService with authenticated credentials.
     /// </summary>
-    /// <param name="settings">Google Drive configuration settings.</param>
-    /// <returns>Initialized DriveService instance.</returns>
+    /// <param name="settings">
+    /// Google Drive configuration settings.
+    /// </param>
+    /// <returns>
+    /// Initialized DriveService instance.
+    /// </returns>
     /// <remarks>
     /// <para>
     /// This method constructs a service account credential from the minimal configuration fields

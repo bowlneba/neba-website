@@ -23,8 +23,12 @@ public sealed record Coordinates
     /// <summary>
     /// Initializes a new instance of the <see cref="Coordinates"/> record.
     /// </summary>
-    /// <param name="latitude">The latitude value (-90 to 90).</param>
-    /// <param name="longitude">The longitude value (-180 to 180).</param>
+    /// <param name="latitude">
+    /// The latitude value (-90 to 90).
+    /// </param>
+    /// <param name="longitude">
+    /// The longitude value (-180 to 180).
+    /// </param>
     private Coordinates(double latitude, double longitude)
     {
         Latitude = latitude;
@@ -37,8 +41,12 @@ public sealed record Coordinates
     /// <summary>
     /// Creates a new <see cref="Coordinates"/> instance if the latitude and longitude are valid.
     /// </summary>
-    /// <param name="latitude">The latitude value (-90 to 90).</param>
-    /// <param name="longitude">The longitude value (-180 to 180).</param>
+    /// <param name="latitude">
+    /// The latitude value (-90 to 90).
+    /// </param>
+    /// <param name="longitude">
+    /// The longitude value (-180 to 180).
+    /// </param>
     /// <returns>
     /// An <see cref="ErrorOr{T}"/> containing the <see cref="Coordinates"/> if valid, or an error if invalid.
     /// </returns>
@@ -57,7 +65,9 @@ public sealed record Coordinates
     /// <summary>
     /// Returns a string representation of the coordinates in "Latitude, Longitude" format.
     /// </summary>
-    /// <returns>A string in the format "Latitude, Longitude".</returns>
+    /// <returns>
+    /// A string in the format "Latitude, Longitude".
+    /// </returns>
     public override string ToString()
         => $"{Latitude}, {Longitude}";
 }

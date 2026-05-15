@@ -179,8 +179,12 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
     /// <summary>
     /// Builds a lookup map from Google Docs heading IDs to human-readable IDs.
     /// </summary>
-    /// <param name="node">The HTML node to search for headings.</param>
-    /// <returns>Dictionary mapping original Google Docs IDs to human-readable IDs.</returns>
+    /// <param name="node">
+    /// The HTML node to search for headings.
+    /// </param>
+    /// <returns>
+    /// Dictionary mapping original Google Docs IDs to human-readable IDs.
+    /// </returns>
     private static Dictionary<string, string> BuildAnchorLookup(HtmlNode node)
     {
         var lookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -208,8 +212,12 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
     /// <summary>
     /// Extracts Google Docs list-specific CSS rules from the document head.
     /// </summary>
-    /// <param name="documentNode">The root HTML document node.</param>
-    /// <returns>Filtered CSS rules for list styling, or empty string if none found.</returns>
+    /// <param name="documentNode">
+    /// The root HTML document node.
+    /// </param>
+    /// <returns>
+    /// Filtered CSS rules for list styling, or empty string if none found.
+    /// </returns>
     /// <remarks>
     /// Google Docs exports list formatting (e.g., lower-alpha for a, b, c) in &lt;style&gt; tags
     /// using CSS classes like .lst-kix_* with list-style-type rules. This method extracts and
@@ -239,8 +247,12 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
     /// <summary>
     /// Generates a URL-safe anchor ID from heading text.
     /// </summary>
-    /// <param name="text">Heading text to convert.</param>
-    /// <returns>URL-safe anchor ID.</returns>
+    /// <param name="text">
+    /// Heading text to convert.
+    /// </param>
+    /// <returns>
+    /// URL-safe anchor ID.
+    /// </returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
     "Globalization",
     "CA1308:Normalize strings to uppercase",

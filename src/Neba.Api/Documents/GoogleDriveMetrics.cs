@@ -32,11 +32,21 @@ internal static class GoogleDriveMetrics
     /// <summary>
     /// Records a successful document export operation.
     /// </summary>
-    /// <param name="documentName">The logical name of the document (e.g., "bylaws").</param>
-    /// <param name="documentId">The Google Drive file ID.</param>
-    /// <param name="durationMilliseconds">The export duration in milliseconds.</param>
-    /// <param name="sizeBytes">The size of the exported HTML in bytes.</param>
-    /// <param name="exportFormat">The export format (e.g., "text/html").</param>
+    /// <param name="documentName">
+    /// The logical name of the document (e.g., "bylaws").
+    /// </param>
+    /// <param name="documentId">
+    /// The Google Drive file ID.
+    /// </param>
+    /// <param name="durationMilliseconds">
+    /// The export duration in milliseconds.
+    /// </param>
+    /// <param name="sizeBytes">
+    /// The size of the exported HTML in bytes.
+    /// </param>
+    /// <param name="exportFormat">
+    /// The export format (e.g., "text/html").
+    /// </param>
     public static void RecordExportSuccess(
         string documentName,
         string documentId,
@@ -72,10 +82,18 @@ internal static class GoogleDriveMetrics
     /// <summary>
     /// Records a failed document export operation.
     /// </summary>
-    /// <param name="documentName">The logical name of the document (e.g., "bylaws").</param>
-    /// <param name="documentId">The Google Drive file ID.</param>
-    /// <param name="exportFormat">The export format (e.g., "text/html").</param>
-    /// <param name="errorType">The type of error that occurred (exception type name).</param>
+    /// <param name="documentName">
+    /// The logical name of the document (e.g., "bylaws").
+    /// </param>
+    /// <param name="documentId">
+    /// The Google Drive file ID.
+    /// </param>
+    /// <param name="exportFormat">
+    /// The export format (e.g., "text/html").
+    /// </param>
+    /// <param name="errorType">
+    /// The type of error that occurred (exception type name).
+    /// </param>
     public static void RecordExportFailure(
         string documentName,
         string documentId,

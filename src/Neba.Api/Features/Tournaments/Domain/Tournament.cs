@@ -96,7 +96,9 @@ public sealed class Tournament
     /// </summary>
     public Uri? ExternalRegistrationUrl { get; init; }
 
-    /// <summary>Optional logo image for promotional display; null if not uploaded.</summary>
+    /// <summary>
+    /// Optional logo image for promotional display; null if not uploaded.
+    /// </summary>
     public StoredFile? Logo { get; init; }
 
     private readonly List<TournamentSponsor> _sponsors = [];
@@ -108,7 +110,9 @@ public sealed class Tournament
     public IReadOnlyCollection<TournamentSponsor> Sponsors
         => _sponsors;
 
-    /// <summary>Adds a sponsor; returns an error if already added or a title sponsor conflict exists.</summary>
+    /// <summary>
+    /// Adds a sponsor; returns an error if already added or a title sponsor conflict exists.
+    /// </summary>
     public ErrorOr<Success> AddSponsor(SponsorId sponsorId, bool titleSponsor, decimal sponsorshipAmount)
     {
         if (_sponsors.Any(tournamentSponsor => tournamentSponsor.SponsorId == sponsorId))
@@ -134,11 +138,15 @@ public sealed class Tournament
 
     private readonly List<TournamentOilPattern> _oilPatterns = [];
 
-    /// <summary>Oil patterns used in this tournament and the rounds each was applied to.</summary>
+    /// <summary>
+    /// Oil patterns used in this tournament and the rounds each was applied to.
+    /// </summary>
     public IReadOnlyCollection<TournamentOilPattern> OilPatterns
         => _oilPatterns;
 
-    /// <summary>Associates an oil pattern for the given rounds; appends rounds if pattern already exists.</summary>
+    /// <summary>
+    /// Associates an oil pattern for the given rounds; appends rounds if pattern already exists.
+    /// </summary>
     public ErrorOr<Success> AddOilPattern(OilPatternId oilPatternId, params TournamentRound[] tournamentRounds)
     {
         ArgumentNullException.ThrowIfNull(tournamentRounds);

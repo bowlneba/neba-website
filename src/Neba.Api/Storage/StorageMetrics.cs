@@ -32,10 +32,18 @@ internal static class StorageMetrics
     /// <summary>
     /// Records a successful storage operation.
     /// </summary>
-    /// <param name="container">The storage container name.</param>
-    /// <param name="operation">The operation type (e.g., "upload", "download", "exists").</param>
-    /// <param name="durationMilliseconds">The operation duration in milliseconds.</param>
-    /// <param name="sizeBytes">The file size in bytes (optional, only for upload/download).</param>
+    /// <param name="container">
+    /// The storage container name.
+    /// </param>
+    /// <param name="operation">
+    /// The operation type (e.g., "upload", "download", "exists").
+    /// </param>
+    /// <param name="durationMilliseconds">
+    /// The operation duration in milliseconds.
+    /// </param>
+    /// <param name="sizeBytes">
+    /// The file size in bytes (optional, only for upload/download).
+    /// </param>
     public static void RecordOperationSuccess(
         string container,
         string operation,
@@ -72,10 +80,18 @@ internal static class StorageMetrics
     /// <summary>
     /// Records a failed storage operation.
     /// </summary>
-    /// <param name="container">The storage container name.</param>
-    /// <param name="operation">The operation type (e.g., "upload", "download", "exists").</param>
-    /// <param name="durationMilliseconds">The operation duration in milliseconds.</param>
-    /// <param name="errorType">The type of error that occurred (exception type name).</param>
+    /// <param name="container">
+    /// The storage container name.
+    /// </param>
+    /// <param name="operation">
+    /// The operation type (e.g., "upload", "download", "exists").
+    /// </param>
+    /// <param name="durationMilliseconds">
+    /// The operation duration in milliseconds.
+    /// </param>
+    /// <param name="errorType">
+    /// The type of error that occurred (exception type name).
+    /// </param>
     public static void RecordOperationFailure(
         string container,
         string operation,

@@ -9,27 +9,43 @@ namespace Neba.Api.Features.Stats.GetSeasonStats;
 /// </summary>
 public sealed record BowlerOfTheYearStandingDto
 {
-    /// <summary>The unique identifier of the bowler.</summary>
+    /// <summary>
+    /// The unique identifier of the bowler.
+    /// </summary>
     public required BowlerId BowlerId { get; init; }
 
-    /// <summary>The bowler's display name.</summary>
+    /// <summary>
+    /// The bowler's display name.
+    /// </summary>
     public required Name BowlerName { get; init; }
 
-    /// <summary>Points accumulated for this award category during the season.</summary>
+    /// <summary>
+    /// Points accumulated for this award category during the season.
+    /// </summary>
     public required int Points { get; init; }
 
-    /// <summary>The number of distinct tournaments the bowler participated in during the season.</summary>
+    /// <summary>
+    /// The number of distinct tournaments the bowler participated in during the season.
+    /// </summary>
     public required int Tournaments { get; init; }
 
-    /// <summary>The total number of tournament entries during the season.</summary>
+    /// <summary>
+    /// The total number of tournament entries during the season.
+    /// </summary>
     public required int Entries { get; init; }
 
-    /// <summary>The number of Finals appearances during the season.</summary>
+    /// <summary>
+    /// The number of Finals appearances during the season.
+    /// </summary>
     public required int Finals { get; init; }
 
-    /// <summary>The mean finishing position, or null if the bowler had no recorded finishing positions.</summary>
+    /// <summary>
+    /// The mean finishing position, or null if the bowler had no recorded finishing positions.
+    /// </summary>
     public required decimal? AverageFinish { get; init; }
 
-    /// <summary>Total prize money earned during the season.</summary>
+    /// <summary>
+    /// Total prize money earned during the season.
+    /// </summary>
     public required decimal Winnings { get; init; }
 }

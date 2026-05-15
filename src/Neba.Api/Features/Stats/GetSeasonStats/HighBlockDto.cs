@@ -8,15 +8,23 @@ namespace Neba.Api.Features.Stats.GetSeasonStats;
 /// </summary>
 public sealed record HighBlockDto
 {
-    /// <summary>The unique identifier of the bowler.</summary>
+    /// <summary>
+    /// The unique identifier of the bowler.
+    /// </summary>
     public required BowlerId BowlerId { get; init; }
 
-    /// <summary>The bowler's display name.</summary>
+    /// <summary>
+    /// The bowler's display name.
+    /// </summary>
     public required Name BowlerName { get; init; }
 
-    /// <summary>The highest 5-game qualifying block score achieved during the season.</summary>
+    /// <summary>
+    /// The highest 5-game qualifying block score achieved during the season.
+    /// </summary>
     public required int HighBlock { get; init; }
 
-    /// <summary>The highest single qualifying game achieved during the season.</summary>
+    /// <summary>
+    /// The highest single qualifying game achieved during the season.
+    /// </summary>
     public required int HighGame { get; init; }
 }

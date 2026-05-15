@@ -82,16 +82,31 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
     private sealed record TestJob(string Name) : IBackgroundJob
     {
         public string JobName => $"Test Job: {Name}";
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as TestJob);
+        }
     }
 
     private sealed record SuccessfulJob : IBackgroundJob
     {
         public string JobName => "SuccessfulJob";
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as SuccessfulJob);
+        }
     }
 
     private sealed record FailingJob : IBackgroundJob
     {
         public string JobName => "FailingJob";
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as FailingJob);
+        }
     }
 
     private sealed class TestJobHandler : IBackgroundJobHandler<TestJob>

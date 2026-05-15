@@ -16,8 +16,12 @@ internal static class ErrorOrCacheHelper
     /// <summary>
     /// Determines whether the specified type is ErrorOr&lt;T&gt;.
     /// </summary>
-    /// <param name="type">The type to check.</param>
-    /// <returns>true if the type is ErrorOr&lt;T&gt;; otherwise, false.</returns>
+    /// <param name="type">
+    /// The type to check.
+    /// </param>
+    /// <returns>
+    /// true if the type is ErrorOr&lt;T&gt;; otherwise, false.
+    /// </returns>
     public static bool IsErrorOrType(Type type)
     {
         ArgumentNullException.ThrowIfNull(type);
@@ -29,9 +33,15 @@ internal static class ErrorOrCacheHelper
     /// <summary>
     /// Extracts the inner type T from ErrorOr&lt;T&gt;.
     /// </summary>
-    /// <param name="errorOrType">The ErrorOr&lt;T&gt; type.</param>
-    /// <returns>The inner type T.</returns>
-    /// <exception cref="ArgumentException">Thrown when the type is not ErrorOr&lt;T&gt;.</exception>
+    /// <param name="errorOrType">
+    /// The ErrorOr&lt;T&gt; type.
+    /// </param>
+    /// <returns>
+    /// The inner type T.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when the type is not ErrorOr&lt;T&gt;.
+    /// </exception>
     public static Type GetInnerType(Type errorOrType)
     {
         ArgumentNullException.ThrowIfNull(errorOrType);
@@ -44,8 +54,12 @@ internal static class ErrorOrCacheHelper
     /// <summary>
     /// Checks whether an ErrorOr instance contains an error.
     /// </summary>
-    /// <param name="errorOrInstance">The ErrorOr instance to check.</param>
-    /// <returns>true if the instance contains an error; otherwise, false.</returns>
+    /// <param name="errorOrInstance">
+    /// The ErrorOr instance to check.
+    /// </param>
+    /// <returns>
+    /// true if the instance contains an error; otherwise, false.
+    /// </returns>
     public static bool IsError(IErrorOr errorOrInstance)
     {
         ArgumentNullException.ThrowIfNull(errorOrInstance);
@@ -56,9 +70,15 @@ internal static class ErrorOrCacheHelper
     /// <summary>
     /// Extracts the value from a successful ErrorOr instance.
     /// </summary>
-    /// <param name="errorOrInstance">The ErrorOr instance.</param>
-    /// <returns>The unwrapped value.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when trying to get value from an error state.</exception>
+    /// <param name="errorOrInstance">
+    /// The ErrorOr instance.
+    /// </param>
+    /// <returns>
+    /// The unwrapped value.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when trying to get value from an error state.
+    /// </exception>
     public static object? GetValue(object errorOrInstance)
     {
         ArgumentNullException.ThrowIfNull(errorOrInstance);
@@ -70,9 +90,15 @@ internal static class ErrorOrCacheHelper
     /// <summary>
     /// Wraps a value of type T into ErrorOr&lt;T&gt;.
     /// </summary>
-    /// <param name="innerType">The inner type T.</param>
-    /// <param name="value">The value to wrap.</param>
-    /// <returns>An ErrorOr&lt;T&gt; instance containing the value.</returns>
+    /// <param name="innerType">
+    /// The inner type T.
+    /// </param>
+    /// <param name="value">
+    /// The value to wrap.
+    /// </param>
+    /// <returns>
+    /// An ErrorOr&lt;T&gt; instance containing the value.
+    /// </returns>
     public static object WrapValue(Type innerType, object value)
     {
         ArgumentNullException.ThrowIfNull(innerType);

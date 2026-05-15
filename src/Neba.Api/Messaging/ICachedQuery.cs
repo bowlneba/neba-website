@@ -6,7 +6,9 @@ namespace Neba.Api.Messaging;
 /// Represents a query that supports caching and returns a response of type <typeparamref name="TResponse"/>.
 /// Used in the CQRS pattern to encapsulate a request for data with caching capabilities.
 /// </summary>
-/// <typeparam name="TResponse">The type of the response returned by the query.</typeparam>
+/// <typeparam name="TResponse">
+/// The type of the response returned by the query.
+/// </typeparam>
 public interface ICachedQuery<out TResponse>
     : IQuery<TResponse>
 {

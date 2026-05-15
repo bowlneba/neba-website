@@ -108,10 +108,18 @@ public sealed class TournamentType
     /// <summary>
     /// Initializes a new instance of the <see cref="TournamentType"/> class.
     /// </summary>
-    /// <param name="name">The display name of the tournament type.</param>
-    /// <param name="value">The unique integer value for the tournament type.</param>
-    /// <param name="teamSize">The number of players per team for this tournament type.</param>
-    /// <param name="activeFormat">Indicates whether this tournament type is an active format.</param>
+    /// <param name="name">
+    /// The display name of the tournament type.
+    /// </param>
+    /// <param name="value">
+    /// The unique integer value for the tournament type.
+    /// </param>
+    /// <param name="teamSize">
+    /// The number of players per team for this tournament type.
+    /// </param>
+    /// <param name="activeFormat">
+    /// Indicates whether this tournament type is an active format.
+    /// </param>
     private TournamentType(string name, int value, int teamSize, bool activeFormat)
         : base(name, value)
     {

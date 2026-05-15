@@ -10,17 +10,27 @@ namespace Neba.Api.Domain;
 /// Serializes the enum as its integer value and deserializes using FromValue.
 /// Handles both legacy object format and new number format for backward compatibility.
 /// </summary>
-/// <typeparam name="TEnum">The SmartFlagEnum type to convert.</typeparam>
+/// <typeparam name="TEnum">
+/// The SmartFlagEnum type to convert.
+/// </typeparam>
 public class SmartFlagEnumJsonConverter<TEnum> : JsonConverter<TEnum>
     where TEnum : SmartFlagEnum<TEnum>
 {
     /// <summary>
     /// Reads and converts the JSON to type <typeparamref name="TEnum"/>.
     /// </summary>
-    /// <param name="reader">The reader.</param>
-    /// <param name="typeToConvert">The type to convert.</param>
-    /// <param name="options">An object that specifies serialization options to use.</param>
-    /// <returns>The converted value.</returns>
+    /// <param name="reader">
+    /// The reader.
+    /// </param>
+    /// <param name="typeToConvert">
+    /// The type to convert.
+    /// </param>
+    /// <param name="options">
+    /// An object that specifies serialization options to use.
+    /// </param>
+    /// <returns>
+    /// The converted value.
+    /// </returns>
     public override TEnum? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType == JsonTokenType.StartObject)
@@ -79,9 +89,15 @@ public class SmartFlagEnumJsonConverter<TEnum> : JsonConverter<TEnum>
     /// <summary>
     /// Writes a specified value as JSON.
     /// </summary>
-    /// <param name="writer">The writer to write to.</param>
-    /// <param name="value">The value to convert to JSON.</param>
-    /// <param name="options">An object that specifies serialization options to use.</param>
+    /// <param name="writer">
+    /// The writer to write to.
+    /// </param>
+    /// <param name="value">
+    /// The value to convert to JSON.
+    /// </param>
+    /// <param name="options">
+    /// An object that specifies serialization options to use.
+    /// </param>
     public override void Write(Utf8JsonWriter writer, TEnum value, JsonSerializerOptions options)
     {
         ArgumentNullException.ThrowIfNull(writer);

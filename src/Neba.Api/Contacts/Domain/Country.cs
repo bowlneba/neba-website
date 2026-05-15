@@ -8,10 +8,14 @@ namespace Neba.Api.Contacts.Domain;
 public sealed class Country
     : SmartEnum<Country, string>
 {
-    /// <summary>United States (US).</summary>
+    /// <summary>
+    /// United States (US).
+    /// </summary>
     public static readonly Country UnitedStates = new("United States", "US");
 
-    /// <summary>Canada (CA).</summary>
+    /// <summary>
+    /// Canada (CA).
+    /// </summary>
     public static readonly Country Canada = new("Canada", "CA");
 
     private Country(string name, string value)

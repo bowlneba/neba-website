@@ -12,7 +12,9 @@ public static class DomainConfiguration
         /// <summary>
         /// Adds application dependencies to the service collection.
         /// </summary>
-        /// <returns>The updated service collection.</returns>
+        /// <returns>
+        /// The updated service collection.
+        /// </returns>
         public IServiceCollection AddDomain()
         {
             services.AddScoped<ITournamentValidationService, TournamentValidationService>();

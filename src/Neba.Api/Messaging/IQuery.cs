@@ -4,5 +4,7 @@ namespace Neba.Api.Messaging;
 /// Represents a query that returns a response of type <typeparamref name="TResponse"/>.
 /// Used in the CQRS pattern to encapsulate a request for data.
 /// </summary>
-/// <typeparam name="TResponse">The type of the response returned by the query.</typeparam>
+/// <typeparam name="TResponse">
+/// The type of the response returned by the query.
+/// </typeparam>
 public interface IQuery<out TResponse>;

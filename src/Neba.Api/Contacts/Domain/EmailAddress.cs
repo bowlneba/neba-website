@@ -25,7 +25,9 @@ public sealed partial record EmailAddress
     /// <summary>
     /// Creates an <see cref="EmailAddress"/> from the provided string.
     /// </summary>
-    /// <param name="email">The email address string to validate and store.</param>
+    /// <param name="email">
+    /// The email address string to validate and store.
+    /// </param>
     /// <returns>
     /// An <see cref="ErrorOr{T}"/> containing a valid <see cref="EmailAddress"/> on success;
     /// otherwise an error describing why the input was invalid.

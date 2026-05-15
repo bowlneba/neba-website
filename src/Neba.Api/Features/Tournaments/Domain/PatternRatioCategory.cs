@@ -44,13 +44,17 @@ public sealed class PatternRatioCategory
     /// Gets the minimum oil-to-dry ratio for this category,
     /// or <see langword="null"/> for the Sport category where no lower bound applies.
     /// </summary>
-    /// <value>The minimum ratio, or <see langword="null"/> if not applicable.</value>
+    /// <value>
+    /// The minimum ratio, or <see langword="null"/> if not applicable.
+    /// </value>
     public decimal? MinimumRatio { get; }
 
     /// <summary>
     /// Gets the maximum oil-to-dry ratio for this category,
     /// or <see langword="null"/> for the Recreation category where no upper bound applies.
     /// </summary>
-    /// <value>The maximum ratio, or <see langword="null"/> if not applicable.</value>
+    /// <value>
+    /// The maximum ratio, or <see langword="null"/> if not applicable.
+    /// </value>
     public decimal? MaximumRatio { get; }
 }

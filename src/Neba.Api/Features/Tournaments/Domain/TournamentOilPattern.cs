@@ -10,14 +10,18 @@ public sealed class TournamentOilPattern
 
     internal Tournament Tournament { get; init; } = null!;
 
-    /// <summary>FK to the associated oil pattern.</summary>
+    /// <summary>
+    /// FK to the associated oil pattern.
+    /// </summary>
     public OilPatternId OilPatternId { get; init; }
 
     internal OilPattern OilPattern { get; init; } = null!;
 
     private readonly List<TournamentRound> _tournamentRounds = [];
 
-    /// <summary>Rounds of the tournament that used this oil pattern.</summary>
+    /// <summary>
+    /// Rounds of the tournament that used this oil pattern.
+    /// </summary>
     public IReadOnlyCollection<TournamentRound> TournamentRounds
         => _tournamentRounds;
 
@@ -53,7 +57,9 @@ public sealed class TournamentOilPattern
         return tournamentOilPattern;
     }
 
-    /// <summary>Associates a round with this oil pattern; returns an error if already associated.</summary>
+    /// <summary>
+    /// Associates a round with this oil pattern; returns an error if already associated.
+    /// </summary>
     internal ErrorOr<Updated> AddTournamentRound(TournamentRound tournamentRound)
     {
         ArgumentNullException.ThrowIfNull(tournamentRound);

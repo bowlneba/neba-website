@@ -19,11 +19,21 @@ internal static class StoredFileConfiguration
         /// Configures an owned <see cref="StoredFile"/> on the entity type and maps
         /// its properties to individual columns with sensible defaults.
         /// </summary>
-        /// <param name="fileExpression">An expression pointing to the owned <see cref="StoredFile"/> property.</param>
-        /// <param name="containerColumnName">Database column name for the container (default: "file_container").</param>
-        /// <param name="filePathColumnName">Database column name for the file path (default: "file_path").</param>
-        /// <param name="contentTypeColumnName">Database column name for the content type (default: "file_content_type").</param>
-        /// <param name="sizeInBytesColumnName">Database column name for the file size in bytes (default: "file_size_in_bytes").</param>
+        /// <param name="fileExpression">
+        /// An expression pointing to the owned <see cref="StoredFile"/> property.
+        /// </param>
+        /// <param name="containerColumnName">
+        /// Database column name for the container (default: "file_container").
+        /// </param>
+        /// <param name="filePathColumnName">
+        /// Database column name for the file path (default: "file_path").
+        /// </param>
+        /// <param name="contentTypeColumnName">
+        /// Database column name for the content type (default: "file_content_type").
+        /// </param>
+        /// <param name="sizeInBytesColumnName">
+        /// Database column name for the file size in bytes (default: "file_size_in_bytes").
+        /// </param>
         public void HasStoredFile(
             Expression<Func<T, StoredFile?>> fileExpression,
             string containerColumnName = "file_container",

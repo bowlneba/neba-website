@@ -21,8 +21,12 @@ public sealed record LaneConfiguration
     /// <summary>
     /// Creates a LaneConfiguration instance with validation. Ensures that the provided collection of LaneRange instances is not null or empty, that the ranges do not overlap, and that adjacent ranges with the same pin fall type are not allowed (they should be merged instead). Returns an ErrorOr&lt;LaneConfiguration&gt; containing either a valid LaneConfiguration or validation errors if any of the conditions are not met.
     /// </summary>
-    /// <param name="ranges"></param>
-    /// <returns></returns>
+    /// <param name="ranges">
+    /// 
+    /// </param>
+    /// <returns>
+    /// 
+    /// </returns>
     public static ErrorOr<LaneConfiguration> Create(IReadOnlyCollection<LaneRange> ranges)
     {
         if (ranges is null || ranges.Count == 0)

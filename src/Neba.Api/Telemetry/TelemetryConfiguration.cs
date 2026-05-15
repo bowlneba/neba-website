@@ -9,9 +9,15 @@ internal static class TelemetryConfiguration
         /// <summary>
         /// Sets code-related attributes on the activity.
         /// </summary>
-        /// <param name="function">The function name.</param>
-        /// <param name="namespace">The namespace.</param>
-        /// <returns>The activity with the attributes set, or null if the activity is null.</returns>
+        /// <param name="function">
+        /// The function name.
+        /// </param>
+        /// <param name="namespace">
+        /// The namespace.
+        /// </param>
+        /// <returns>
+        /// The activity with the attributes set, or null if the activity is null.
+        /// </returns>
         public Activity? SetCodeAttributes(
             string function,
             string @namespace)

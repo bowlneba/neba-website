@@ -47,12 +47,24 @@ public sealed record Name
     /// <summary>
     /// Creates a new <see cref="Name"/> value object after validating required fields.
     /// </summary>
-    /// <param name="firstName">The bowler's first name (required - cannot be null or whitespace).</param>
-    /// <param name="lastName">The bowler's last name (required - cannot be null or whitespace).</param>
-    /// <param name="middleName">The bowler's middle name (optional).</param>
-    /// <param name="suffix">The bowler's name suffix (optional).</param>
-    /// <param name="nickname">The bowler's nickname (optional - no restrictions on content).</param>
-    /// <returns>An <see cref="ErrorOr{T}"/> containing the created <see cref="Name"/> or validation errors.</returns>
+    /// <param name="firstName">
+    /// The bowler's first name (required - cannot be null or whitespace).
+    /// </param>
+    /// <param name="lastName">
+    /// The bowler's last name (required - cannot be null or whitespace).
+    /// </param>
+    /// <param name="middleName">
+    /// The bowler's middle name (optional).
+    /// </param>
+    /// <param name="suffix">
+    /// The bowler's name suffix (optional).
+    /// </param>
+    /// <param name="nickname">
+    /// The bowler's nickname (optional - no restrictions on content).
+    /// </param>
+    /// <returns>
+    /// An <see cref="ErrorOr{T}"/> containing the created <see cref="Name"/> or validation errors.
+    /// </returns>
     public static ErrorOr<Name> Create(
         string firstName,
         string lastName,
@@ -89,7 +101,9 @@ public sealed record Name
     /// Returns the bowler's legal name in the format: FirstName [MiddleName] LastName[, Suffix].
     /// Use case: Official documents, 1099 tax reporting, legal records.
     /// </summary>
-    /// <returns>The legal name string (e.g., "David Michael Smith, Jr.").</returns>
+    /// <returns>
+    /// The legal name string (e.g., "David Michael Smith, Jr.").
+    /// </returns>
     public string ToLegalName()
     {
         StringBuilder parts = new(FirstName);
@@ -114,7 +128,9 @@ public sealed record Name
     /// Uses nickname if available, otherwise uses first name.
     /// Use case: Public website display, tournament results, awards lists.
     /// </summary>
-    /// <returns>The display name string (e.g., "Dave Smith" if a nickname exists, otherwise "David Smith").</returns>
+    /// <returns>
+    /// The display name string (e.g., "Dave Smith" if a nickname exists, otherwise "David Smith").
+    /// </returns>
     public string ToDisplayName()
         => !string.IsNullOrWhiteSpace(Nickname)
             ? $"{Nickname} {LastName}"
@@ -124,7 +140,9 @@ public sealed record Name
     /// Returns the bowler's formal name in the format: FirstName LastName (ignoring nickname).
     /// Use case: Formal communications where nicknames are inappropriate.
     /// </summary>
-    /// <returns>The formal name string (e.g., "David Smith").</returns>
+    /// <returns>
+    /// The formal name string (e.g., "David Smith").
+    /// </returns>
     public string ToFormalName()
         => $"{FirstName} {LastName}";
 

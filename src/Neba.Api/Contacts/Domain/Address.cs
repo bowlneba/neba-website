@@ -54,12 +54,24 @@ public sealed partial record Address
     /// <summary>
     /// Creates a new <see cref="Address"/> for a United States address.
     /// </summary>
-    /// <param name="street">Street address (required).</param>
-    /// <param name="unit">Unit, apartment, or suite number (optional).</param>
-    /// <param name="city">City or locality (required).</param>
-    /// <param name="state">A <see cref="UsState"/> representing the state (required).</param>
-    /// <param name="zipCode">ZIP code. Must match US ZIP code formats (5 digits or 5+4). Formatting characters (dashes, spaces) will be removed when stored.</param>
-    /// <param name="coordinates">Optional geographic coordinates for the address.</param>
+    /// <param name="street">
+    /// Street address (required).
+    /// </param>
+    /// <param name="unit">
+    /// Unit, apartment, or suite number (optional).
+    /// </param>
+    /// <param name="city">
+    /// City or locality (required).
+    /// </param>
+    /// <param name="state">
+    /// A <see cref="UsState"/> representing the state (required).
+    /// </param>
+    /// <param name="zipCode">
+    /// ZIP code. Must match US ZIP code formats (5 digits or 5+4). Formatting characters (dashes, spaces) will be removed when stored.
+    /// </param>
+    /// <param name="coordinates">
+    /// Optional geographic coordinates for the address.
+    /// </param>
     /// <returns>
     /// An <see cref="ErrorOr{Address}"/> containing the created <see cref="Address"/> when input
     /// is valid, or an error from <see cref="AddressErrors"/> describing the first validation failure.
@@ -106,12 +118,24 @@ public sealed partial record Address
     /// <summary>
     /// Creates a new <see cref="Address"/> for a Canadian address.
     /// </summary>
-    /// <param name="street">Street address (required).</param>
-    /// <param name="unit">Unit, apartment, or suite number (optional).</param>
-    /// <param name="city">City or locality (required).</param>
-    /// <param name="province">A <see cref="CanadianProvince"/> representing the province or territory (required).</param>
-    /// <param name="postalCode">Postal code. Must match Canadian postal code format (A1A 1A1 or A1A1A1). Formatting characters (spaces, dashes) will be removed when stored.</param>
-    /// <param name="coordinates">Optional geographic coordinates for the address.</param>
+    /// <param name="street">
+    /// Street address (required).
+    /// </param>
+    /// <param name="unit">
+    /// Unit, apartment, or suite number (optional).
+    /// </param>
+    /// <param name="city">
+    /// City or locality (required).
+    /// </param>
+    /// <param name="province">
+    /// A <see cref="CanadianProvince"/> representing the province or territory (required).
+    /// </param>
+    /// <param name="postalCode">
+    /// Postal code. Must match Canadian postal code format (A1A 1A1 or A1A1A1). Formatting characters (spaces, dashes) will be removed when stored.
+    /// </param>
+    /// <param name="coordinates">
+    /// Optional geographic coordinates for the address.
+    /// </param>
     /// <returns>
     /// An <see cref="ErrorOr{Address}"/> containing the created <see cref="Address"/> when input
     /// is valid, or an error from <see cref="AddressErrors"/> describing the first validation failure.

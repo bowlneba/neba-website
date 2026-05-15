@@ -21,7 +21,9 @@ public static class InfrastructureConfiguration
         /// <summary>
         /// Adds infrastructure dependencies to the service collection.
         /// </summary>
-        /// <returns>The updated service collection.</returns>
+        /// <returns>
+        /// The updated service collection.
+        /// </returns>
         public WebApplicationBuilder AddInfrastructure()
         {
             ArgumentNullException.ThrowIfNull(builder);
@@ -65,7 +67,9 @@ public static class InfrastructureConfiguration
         /// <summary>
         /// Uses infrastructure middleware in the application.
         /// </summary>
-        /// <returns>The updated web application.</returns>
+        /// <returns>
+        /// The updated web application.
+        /// </returns>
         public WebApplication UseInfrastructure()
         {
             app.UseBackgroundJobsDashboard();

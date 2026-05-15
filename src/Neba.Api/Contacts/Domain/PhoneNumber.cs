@@ -42,9 +42,15 @@ public sealed partial record PhoneNumber
     /// <summary>
     /// Creates a <see cref="PhoneNumber"/> for North American Numbering Plan (NANP) numbers.
     /// </summary>
-    /// <param name="type">The type of phone number (e.g. Home, Mobile, Work, Fax).</param>
-    /// <param name="phoneNumber">The input phone number string which may include formatting characters.</param>
-    /// <param name="extension">An optional extension value which may include non-digit characters.</param>
+    /// <param name="type">
+    /// The type of phone number (e.g. Home, Mobile, Work, Fax).
+    /// </param>
+    /// <param name="phoneNumber">
+    /// The input phone number string which may include formatting characters.
+    /// </param>
+    /// <param name="extension">
+    /// An optional extension value which may include non-digit characters.
+    /// </param>
     /// <returns>
     /// An <see cref="ErrorOr{T}"/> containing a valid <see cref="PhoneNumber"/> on success;
     /// otherwise an error describing why the input was invalid.
@@ -91,7 +97,9 @@ public sealed partial record PhoneNumber
     /// <summary>
     /// Formats the phone number into a canonical string representation.
     /// </summary>
-    /// <returns>A string representing the phone number in a canonical format.</returns>
+    /// <returns>
+    /// A string representing the phone number in a canonical format.
+    /// </returns>
     public string ToCanonical()
     {
         string formattedNumber = CountryCode + Number;
@@ -116,8 +124,12 @@ public sealed partial record PhoneNumber
     /// - First digit must be 2-9
     /// - Cannot be an N11 service code (e.g. 211, 311)
     /// </summary>
-    /// <param name="areaCode">The 3-digit area code to validate.</param>
-    /// <returns><c>true</c> if the area code is valid; otherwise <c>false</c>.</returns>
+    /// <param name="areaCode">
+    /// The 3-digit area code to validate.
+    /// </param>
+    /// <returns>
+    /// <c>true</c> if the area code is valid; otherwise <c>false</c>.
+    /// </returns>
     private static bool IsValidNorthAmericanAreaCode(string areaCode)
     {
         // Basic rules:

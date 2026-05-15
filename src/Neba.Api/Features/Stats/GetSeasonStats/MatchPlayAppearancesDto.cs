@@ -9,18 +9,28 @@ namespace Neba.Api.Features.Stats.GetSeasonStats;
 /// </summary>
 public sealed record MatchPlayAppearancesDto
 {
-    /// <summary>The unique identifier of the bowler.</summary>
+    /// <summary>
+    /// The unique identifier of the bowler.
+    /// </summary>
     public required BowlerId BowlerId { get; init; }
 
-    /// <summary>The bowler's display name.</summary>
+    /// <summary>
+    /// The bowler's display name.
+    /// </summary>
     public required Name BowlerName { get; init; }
 
-    /// <summary>The number of Finals appearances during the season.</summary>
+    /// <summary>
+    /// The number of Finals appearances during the season.
+    /// </summary>
     public required int Finals { get; init; }
 
-    /// <summary>The number of distinct tournaments the bowler participated in during the season.</summary>
+    /// <summary>
+    /// The number of distinct tournaments the bowler participated in during the season.
+    /// </summary>
     public required int Tournaments { get; init; }
 
-    /// <summary>The total number of tournament entries during the season.</summary>
+    /// <summary>
+    /// The total number of tournament entries during the season.
+    /// </summary>
     public required int Entries { get; init; }
 }

@@ -5,10 +5,14 @@ namespace Neba.Website.Server.Stats;
 /// </summary>
 public sealed record IndividualBoyProgressionViewModel
 {
-    /// <summary>The display label for this race (e.g. "Bowler of the Year", "Senior").</summary>
+    /// <summary>
+    /// The display label for this race (e.g. "Bowler of the Year", "Senior").
+    /// </summary>
     public required string RaceLabel { get; init; }
 
-    /// <summary>The points race series for this bowler.</summary>
+    /// <summary>
+    /// The points race series for this bowler.
+    /// </summary>
     public required PointsRaceSeriesViewModel BowlerSeries { get; init; }
 
     /// <summary>

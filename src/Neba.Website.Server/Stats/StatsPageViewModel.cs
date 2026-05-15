@@ -20,13 +20,19 @@ public record StatsPageViewModel
     /// </summary>
     public required IReadOnlyDictionary<string, string> BowlerSearchList { get; init; }
 
-    /// <summary>Minimum games required for a bowler to appear in the High Average leaderboard.</summary>
+    /// <summary>
+    /// Minimum games required for a bowler to appear in the High Average leaderboard.
+    /// </summary>
     public required decimal MinimumNumberOfGames { get; init; }
 
-    /// <summary>Minimum eligible tournaments required for a bowler to appear in tournament-based leaderboards.</summary>
+    /// <summary>
+    /// Minimum eligible tournaments required for a bowler to appear in tournament-based leaderboards.
+    /// </summary>
     public required decimal MinimumNumberOfTournaments { get; init; }
 
-    /// <summary>Minimum eligible entries required for a bowler to appear in entry-based leaderboards.</summary>
+    /// <summary>
+    /// Minimum eligible entries required for a bowler to appear in entry-based leaderboards.
+    /// </summary>
     public required decimal MinimumNumberOfEntries { get; init; }
 
     // Award Standings
@@ -131,22 +137,34 @@ public record StatsPageViewModel
     /// </summary>
     public required FieldMatchPlaySummaryViewModel FieldMatchPlaySummary { get; init; }
 
-    /// <summary>Open (Bowler of the Year) points race series for the season.</summary>
+    /// <summary>
+    /// Open (Bowler of the Year) points race series for the season.
+    /// </summary>
     public required IReadOnlyCollection<PointsRaceSeriesViewModel> OpenPointsRace { get; init; }
 
-    /// <summary>Senior points race series for the season.</summary>
+    /// <summary>
+    /// Senior points race series for the season.
+    /// </summary>
     public required IReadOnlyCollection<PointsRaceSeriesViewModel> SeniorPointsRace { get; init; }
 
-    /// <summary>Super Senior points race series for the season.</summary>
+    /// <summary>
+    /// Super Senior points race series for the season.
+    /// </summary>
     public required IReadOnlyCollection<PointsRaceSeriesViewModel> SuperSeniorPointsRace { get; init; }
 
-    /// <summary>Women points race series for the season.</summary>
+    /// <summary>
+    /// Women points race series for the season.
+    /// </summary>
     public required IReadOnlyCollection<PointsRaceSeriesViewModel> WomenPointsRace { get; init; }
 
-    /// <summary>Youth points race series for the season.</summary>
+    /// <summary>
+    /// Youth points race series for the season.
+    /// </summary>
     public required IReadOnlyCollection<PointsRaceSeriesViewModel> YouthPointsRace { get; init; }
 
-    /// <summary>Rookie points race series for the season.</summary>
+    /// <summary>
+    /// Rookie points race series for the season.
+    /// </summary>
     public required IReadOnlyCollection<PointsRaceSeriesViewModel> RookiePointsRace { get; init; }
 
 

@@ -8,9 +8,13 @@ namespace Neba.Api.Features.Stats.GetSeasonStats;
 /// </summary>
 public sealed record BowlerSearchEntryDto
 {
-    /// <summary>The unique identifier of the bowler.</summary>
+    /// <summary>
+    /// The unique identifier of the bowler.
+    /// </summary>
     public required BowlerId BowlerId { get; init; }
 
-    /// <summary>The bowler's display name.</summary>
+    /// <summary>
+    /// The bowler's display name.
+    /// </summary>
     public required Name BowlerName { get; init; }
 }

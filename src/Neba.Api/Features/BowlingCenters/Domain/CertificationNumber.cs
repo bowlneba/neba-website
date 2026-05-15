@@ -21,8 +21,12 @@ public sealed record CertificationNumber
     /// <summary>
     /// Creates a new placeholder <see cref="CertificationNumber"/> with the specified sequence, which must be non-empty and will be prefixed with 'x' to indicate it is a placeholder rather than a valid certification number.
     /// </summary>
-    /// <param name="sequence">The sequence to use for the placeholder certification number.</param>
-    /// <returns>An <see cref="ErrorOr{CertificationNumber}"/> containing either a valid placeholder <see cref="CertificationNumber"/> or an error if the input is invalid.</returns>
+    /// <param name="sequence">
+    /// The sequence to use for the placeholder certification number.
+    /// </param>
+    /// <returns>
+    /// An <see cref="ErrorOr{CertificationNumber}"/> containing either a valid placeholder <see cref="CertificationNumber"/> or an error if the input is invalid.
+    /// </returns>
     public static ErrorOr<CertificationNumber> Placeholder(string sequence)
     {
         return string.IsNullOrWhiteSpace(sequence)
@@ -33,8 +37,12 @@ public sealed record CertificationNumber
     /// <summary>
     /// Creates a new <see cref="CertificationNumber"/> from the provided string value, validating that it is not null, empty, or non-numeric.
     /// </summary>
-    /// <param name="number">The certification number string to create.</param>
-    /// <returns>An <see cref="ErrorOr{CertificationNumber}"/> containing either a valid <see cref="CertificationNumber"/> or an error if the input is invalid.</returns>
+    /// <param name="number">
+    /// The certification number string to create.
+    /// </param>
+    /// <returns>
+    /// An <see cref="ErrorOr{CertificationNumber}"/> containing either a valid <see cref="CertificationNumber"/> or an error if the input is invalid.
+    /// </returns>
     public static ErrorOr<CertificationNumber> Create(string number)
     {
         if (string.IsNullOrWhiteSpace(number))

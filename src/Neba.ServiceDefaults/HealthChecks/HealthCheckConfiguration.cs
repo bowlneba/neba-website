@@ -17,7 +17,9 @@ internal static class HealthCheckConfiguration
         /// <summary>
         /// Adds default health checks to the application.
         /// </summary>
-        /// <returns>The builder for chaining.</returns>
+        /// <returns>
+        /// The builder for chaining.
+        /// </returns>
         internal TBuilder AddDefaultHealthChecks()
         {
             builder.Services.AddHealthChecks()

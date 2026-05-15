@@ -80,8 +80,12 @@ public sealed class Season
     /// <summary>
     /// Assigns a Woman Bowler of the Year award to the specified bowler.
     /// </summary>
-    /// <param name="bowlerId">The unique identifier of the bowler.</param>
-    /// <param name="gender">The bowler's gender; must be <see cref="Gender.Female"/>.</param>
+    /// <param name="bowlerId">
+    /// The unique identifier of the bowler.
+    /// </param>
+    /// <param name="gender">
+    /// The bowler's gender; must be <see cref="Gender.Female"/>.
+    /// </param>
     public ErrorOr<Success> AddWomanOfTheYearWinner(BowlerId bowlerId, Gender gender)
     {
         if (!Complete)
@@ -104,8 +108,12 @@ public sealed class Season
     /// <summary>
     /// Assigns a Senior Bowler of the Year award to the specified bowler.
     /// </summary>
-    /// <param name="bowlerId">The unique identifier of the bowler.</param>
-    /// <param name="age">The bowler's age; must be at least 50.</param>
+    /// <param name="bowlerId">
+    /// The unique identifier of the bowler.
+    /// </param>
+    /// <param name="age">
+    /// The bowler's age; must be at least 50.
+    /// </param>
     public ErrorOr<Success> AddSeniorBowlerOfTheYearWinner(BowlerId bowlerId, int age)
     {
         if (!Complete)
@@ -128,8 +136,12 @@ public sealed class Season
     /// <summary>
     /// Assigns a Super Senior Bowler of the Year award to the specified bowler.
     /// </summary>
-    /// <param name="bowlerId">The unique identifier of the bowler.</param>
-    /// <param name="age">The bowler's age; must be at least 60.</param>
+    /// <param name="bowlerId">
+    /// The unique identifier of the bowler.
+    /// </param>
+    /// <param name="age">
+    /// The bowler's age; must be at least 60.
+    /// </param>
     public ErrorOr<Success> AddSuperSeniorBowlerOfTheYearWinner(BowlerId bowlerId, int age)
     {
         if (!Complete)
@@ -152,8 +164,12 @@ public sealed class Season
     /// <summary>
     /// Assigns a Rookie Bowler of the Year award to the specified bowler.
     /// </summary>
-    /// <param name="bowlerId">The unique identifier of the bowler.</param>
-    /// <param name="isRookie">Whether the bowler holds a New Member membership in the current season.</param>
+    /// <param name="bowlerId">
+    /// The unique identifier of the bowler.
+    /// </param>
+    /// <param name="isRookie">
+    /// Whether the bowler holds a New Member membership in the current season.
+    /// </param>
     public ErrorOr<Success> AddRookieBowlerOfTheYearWinner(BowlerId bowlerId, bool isRookie)
     {
         if (!Complete)
@@ -176,8 +192,12 @@ public sealed class Season
     /// <summary>
     /// Assigns a Youth Bowler of the Year award to the specified bowler.
     /// </summary>
-    /// <param name="bowlerId">The unique identifier of the bowler.</param>
-    /// <param name="age">The bowler's age; must be under 18.</param>
+    /// <param name="bowlerId">
+    /// The unique identifier of the bowler.
+    /// </param>
+    /// <param name="age">
+    /// The bowler's age; must be under 18.
+    /// </param>
     public ErrorOr<Success> AddYouthBowlerOfTheYearWinner(BowlerId bowlerId, int age)
     {
         if (!Complete)
@@ -211,12 +231,24 @@ public sealed class Season
     /// <summary>
     /// Assigns a High Average award to the specified bowler with the specified average, total games, and tournaments participated.
     /// </summary>
-    /// <param name="bowlerId">The unique identifier of the bowler.</param>
-    /// <param name="average">The average score of the bowler.</param>
-    /// <param name="totalGames">The total number of games played by the bowler.</param>
-    /// <param name="tournamentsParticipated">The number of tournaments the bowler participated in.</param>
-    /// <param name="statEligibleTournamentCount">The number of stat-eligible tournaments in the season.</param>
-    /// <returns>A result indicating success or failure.</returns>
+    /// <param name="bowlerId">
+    /// The unique identifier of the bowler.
+    /// </param>
+    /// <param name="average">
+    /// The average score of the bowler.
+    /// </param>
+    /// <param name="totalGames">
+    /// The total number of games played by the bowler.
+    /// </param>
+    /// <param name="tournamentsParticipated">
+    /// The number of tournaments the bowler participated in.
+    /// </param>
+    /// <param name="statEligibleTournamentCount">
+    /// The number of stat-eligible tournaments in the season.
+    /// </param>
+    /// <returns>
+    /// A result indicating success or failure.
+    /// </returns>
     public ErrorOr<Success> AddHighAverageWinner(
         BowlerId bowlerId,
         decimal average,
@@ -268,10 +300,18 @@ public sealed class Season
     /// <summary>
     /// Assigns a High Block award to the specified bowler with the specified block score.
     /// </summary>
-    /// <param name="bowlerId">The unique identifier of the bowler.</param>
-    /// <param name="score">The block score achieved by the bowler.</param>
-    /// <param name="games">The number of games in the block.</param>
-    /// <returns>A result indicating success or failure.</returns>
+    /// <param name="bowlerId">
+    /// The unique identifier of the bowler.
+    /// </param>
+    /// <param name="score">
+    /// The block score achieved by the bowler.
+    /// </param>
+    /// <param name="games">
+    /// The number of games in the block.
+    /// </param>
+    /// <returns>
+    /// A result indicating success or failure.
+    /// </returns>
     public ErrorOr<Success> AddHighBlockWinner(BowlerId bowlerId, int score, int games)
     {
         if (!Complete)

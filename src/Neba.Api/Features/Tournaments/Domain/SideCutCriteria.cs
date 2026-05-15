@@ -43,9 +43,15 @@ public sealed class SideCutCriteria
     /// <summary>
     /// Creates a new age-based criterion. At least one age bound must be supplied, bounds must be non-negative, and the minimum cannot exceed the maximum.
     /// </summary>
-    /// <param name="minimumAge">The minimum age requirement for the side cut, if applicable.</param>
-    /// <param name="maximumAge">The maximum age requirement for the side cut, if applicable.</param>
-    /// <returns>An ErrorOr&lt;SideCutCriteria&gt; representing the result of the creation attempt.</returns>
+    /// <param name="minimumAge">
+    /// The minimum age requirement for the side cut, if applicable.
+    /// </param>
+    /// <param name="maximumAge">
+    /// The maximum age requirement for the side cut, if applicable.
+    /// </param>
+    /// <returns>
+    /// An ErrorOr&lt;SideCutCriteria&gt; representing the result of the creation attempt.
+    /// </returns>
     internal static ErrorOr<SideCutCriteria> CreateAgeRequirement(int? minimumAge, int? maximumAge)
     {
         if (minimumAge == null && maximumAge == null)
@@ -71,9 +77,15 @@ public sealed class SideCutCriteria
     /// <summary>
     /// Creates a new gender-based criterion.
     /// </summary>
-    /// <param name="gender">The gender requirement for the side cut.</param>
-    /// <returns>An ErrorOr&lt;SideCutCriteria&gt; representing the result of the creation attempt.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if the gender parameter is null.</exception>
+    /// <param name="gender">
+    /// The gender requirement for the side cut.
+    /// </param>
+    /// <returns>
+    /// An ErrorOr&lt;SideCutCriteria&gt; representing the result of the creation attempt.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown if the gender parameter is null.
+    /// </exception>
     internal static ErrorOr<SideCutCriteria> CreateGenderRequirement(Gender gender)
     {
         ArgumentNullException.ThrowIfNull(gender);

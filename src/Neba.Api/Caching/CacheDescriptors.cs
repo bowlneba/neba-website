@@ -21,8 +21,12 @@ public static class CacheDescriptors
         /// <summary>
         /// Returns a cache descriptor for a document's content, identified by the given document key.
         /// </summary>
-        /// <param name="documentKey">The key of the document.</param>
-        /// <returns>A cache descriptor for the document's content.</returns>
+        /// <param name="documentKey">
+        /// The key of the document.
+        /// </param>
+        /// <returns>
+        /// A cache descriptor for the document's content.
+        /// </returns>
         public static CacheDescriptor Content(string documentKey)
             => new()
             {
@@ -81,8 +85,12 @@ public static class CacheDescriptors
         /// <summary>
         /// Returns a cache descriptor for sponsor detail data identified by the given slug.
         /// </summary>
-        /// <param name="slug">The sponsor slug.</param>
-        /// <returns>A cache descriptor for sponsor detail data.</returns>
+        /// <param name="slug">
+        /// The sponsor slug.
+        /// </param>
+        /// <returns>
+        /// A cache descriptor for sponsor detail data.
+        /// </returns>
         public static CacheDescriptor Detail(string slug)
             => new()
             {
@@ -161,8 +169,12 @@ public static class CacheDescriptors
         /// <summary>
         /// Returns a cache descriptor for bowler season stats for the given season.
         /// </summary>
-        /// <param name="seasonId">The season identifier.</param>
-        /// <returns>A cache descriptor for bowler season stats.</returns>
+        /// <param name="seasonId">
+        /// The season identifier.
+        /// </param>
+        /// <returns>
+        /// A cache descriptor for bowler season stats.
+        /// </returns>
         public static CacheDescriptor BowlerSeasonStats(SeasonId seasonId)
             => new()
             {
@@ -173,8 +185,12 @@ public static class CacheDescriptors
         /// <summary>
         /// Returns a cache descriptor for all BOY race progressions for the given season.
         /// </summary>
-        /// <param name="seasonId">The season identifier.</param>
-        /// <returns>A cache descriptor for BOY progression data.</returns>
+        /// <param name="seasonId">
+        /// The season identifier.
+        /// </param>
+        /// <returns>
+        /// A cache descriptor for BOY progression data.
+        /// </returns>
         public static CacheDescriptor BoyProgressions(SeasonId seasonId)
             => new()
             {
@@ -191,8 +207,12 @@ public static class CacheDescriptors
         /// <summary>
         /// Returns a cache descriptor for the list of tournaments in a given season.
         /// </summary>
-        /// <param name="seasonId">The season identifier.</param>
-        /// <returns>A cache descriptor for the tournaments in the season.</returns>
+        /// <param name="seasonId">
+        /// The season identifier.
+        /// </param>
+        /// <returns>
+        /// A cache descriptor for the tournaments in the season.
+        /// </returns>
         public static CacheDescriptor ListForSeason(SeasonId seasonId)
             => new()
             {
@@ -203,8 +223,12 @@ public static class CacheDescriptors
         /// <summary>
         /// Returns a cache descriptor for the details of a specific tournament, identified by the given tournament ID.
         /// </summary>
-        /// <param name="id">The tournament identifier.</param>
-        /// <returns>A cache descriptor for the tournament details.</returns>
+        /// <param name="id">
+        /// The tournament identifier.
+        /// </param>
+        /// <returns>
+        /// A cache descriptor for the tournament details.
+        /// </returns>
         public static CacheDescriptor TournamentDetail(TournamentId id)
             => new()
             {

@@ -41,13 +41,17 @@ public sealed class PatternLengthCategory
     /// Gets the minimum oil application length in feet for this category,
     /// or <see langword="null"/> for the shortest category where no lower bound applies.
     /// </summary>
-    /// <value>The minimum length in feet, or <see langword="null"/> if not applicable.</value>
+    /// <value>
+    /// The minimum length in feet, or <see langword="null"/> if not applicable.
+    /// </value>
     public int? MinimumLength { get; }
 
     /// <summary>
     /// Gets the maximum oil application length in feet for this category,
     /// or <see langword="null"/> for the longest category where no upper bound applies.
     /// </summary>
-    /// <value>The maximum length in feet, or <see langword="null"/> if not applicable.</value>
+    /// <value>
+    /// The maximum length in feet, or <see langword="null"/> if not applicable.
+    /// </value>
     public int? MaximumLength { get; }
 }

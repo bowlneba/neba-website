@@ -10,7 +10,9 @@ public sealed class OpenApiSmartEnumAttribute : Attribute
     /// <summary>
     /// Initializes a new instance of the <see cref="OpenApiSmartEnumAttribute"/> class.
     /// </summary>
-    /// <param name="smartEnumTypeName">The name of the backing SmartEnum type (for example, <c>SponsorTier</c>).</param>
+    /// <param name="smartEnumTypeName">
+    /// The name of the backing SmartEnum type (for example, <c>SponsorTier</c>).
+    /// </param>
     public OpenApiSmartEnumAttribute(string smartEnumTypeName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(smartEnumTypeName);

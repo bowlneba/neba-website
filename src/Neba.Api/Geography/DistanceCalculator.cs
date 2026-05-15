@@ -23,8 +23,12 @@ public static class DistanceCalculator
     /// Returns <see cref="DistanceCalculatorErrors.AddressMissingCoordinates"/> if either address
     /// is missing coordinates.
     /// </summary>
-    /// <param name="address1">The first address (required).</param>
-    /// <param name="address2">The second address (required).</param>
+    /// <param name="address1">
+    /// The first address (required).
+    /// </param>
+    /// <param name="address2">
+    /// The second address (required).
+    /// </param>
     /// <returns>
     /// An <see cref="ErrorOr{Decimal}"/> containing the distance in miles, or an error if coordinates are missing.
     /// </returns>
@@ -66,8 +70,12 @@ public static class DistanceCalculator
     /// Calculates the great-circle distance between two addresses in kilometers.
     /// Returns the same errors as <see cref="DistanceInMiles"/> if coordinates are missing.
     /// </summary>
-    /// <param name="address1">The first address (required).</param>
-    /// <param name="address2">The second address (required).</param>
+    /// <param name="address1">
+    /// The first address (required).
+    /// </param>
+    /// <param name="address2">
+    /// The second address (required).
+    /// </param>
     /// <returns>
     /// An <see cref="ErrorOr{Decimal}"/> containing the distance in kilometers, or an error if coordinates are missing.
     /// </returns>

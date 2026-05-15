@@ -7,18 +7,28 @@ namespace Neba.Api.Contracts.Stats.GetSeasonStats;
 /// </summary>
 public sealed record PointsPerTournamentResponse
 {
-    /// <summary>The unique identifier of the Bowler (ULID string).</summary>
+    /// <summary>
+    /// The unique identifier of the Bowler (ULID string).
+    /// </summary>
     public required string BowlerId { get; init; }
 
-    /// <summary>The bowler's display name.</summary>
+    /// <summary>
+    /// The bowler's display name.
+    /// </summary>
     public required string BowlerName { get; init; }
 
-    /// <summary>Total Bowler of the Year points accumulated during the Season.</summary>
+    /// <summary>
+    /// Total Bowler of the Year points accumulated during the Season.
+    /// </summary>
     public required int Points { get; init; }
 
-    /// <summary>Number of eligible tournaments the bowler participated in during the Season.</summary>
+    /// <summary>
+    /// Number of eligible tournaments the bowler participated in during the Season.
+    /// </summary>
     public required int Tournaments { get; init; }
 
-    /// <summary>Bowler of the Year points divided by eligible tournaments, rounded to two decimal places.</summary>
+    /// <summary>
+    /// Bowler of the Year points divided by eligible tournaments, rounded to two decimal places.
+    /// </summary>
     public required decimal PointsPerTournament { get; init; }
 }

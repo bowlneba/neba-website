@@ -22,7 +22,11 @@ internal interface IStopwatchProvider
     /// <summary>
     /// Gets the elapsed time since the <paramref name="startTimestamp"/> value retrieved using <see cref="GetTimestamp"/>.
     /// </summary>
-    /// <param name="startTimestamp">The starting timestamp.</param>
-    /// <returns>A <see cref="TimeSpan"/> representing the elapsed time.</returns>
+    /// <param name="startTimestamp">
+    /// The starting timestamp.
+    /// </param>
+    /// <returns>
+    /// A <see cref="TimeSpan"/> representing the elapsed time.
+    /// </returns>
     TimeSpan GetElapsedTime(long startTimestamp);
 }

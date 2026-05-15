@@ -43,9 +43,17 @@ public interface ITournamentValidationService
     /// <summary>
     /// Validates that the tournament's dates fall within the specified season's start and end dates.
     /// </summary>
-    /// <param name="tournament">The tournament to validate.</param>
-    /// <param name="seasonId">The unique identifier of the season.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A result indicating whether the tournament is valid for the season.</returns>
+    /// <param name="tournament">
+    /// The tournament to validate.
+    /// </param>
+    /// <param name="seasonId">
+    /// The unique identifier of the season.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// The cancellation token.
+    /// </param>
+    /// <returns>
+    /// A result indicating whether the tournament is valid for the season.
+    /// </returns>
     Task<ErrorOr<Success>> IsTournamentValidForSeasonAsync(Tournament tournament, SeasonId seasonId, CancellationToken cancellationToken);
 }

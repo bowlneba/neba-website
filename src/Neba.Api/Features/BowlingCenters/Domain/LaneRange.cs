@@ -31,7 +31,9 @@ public sealed record LaneRange
     /// <summary>
     /// Generates the pairs of lanes in this range as tuples of (odd lane, even lane). For example, if the range is from lane 1 to lane 4, this method would yield (1, 2) and (3, 4). This is useful for iterating over the pairs of lanes for scoring or other operations.
     /// </summary>
-    /// <returns>An enumerable of tuples representing the pairs of lanes in this range.</returns>
+    /// <returns>
+    /// An enumerable of tuples representing the pairs of lanes in this range.
+    /// </returns>
     public IEnumerable<(int OddLane, int EvenLane)> LanePairs()
     {
         for (var i = 0; i < PairCount; i++)
@@ -43,10 +45,18 @@ public sealed record LaneRange
     /// <summary>
     /// Creates a LaneRange instance with validation. Ensures the starting lane is a positive odd number, the ending lane is a positive even number greater than the start, and the pin fall type is provided. Returns an ErrorOr&lt;LaneRange&gt; containing either a valid LaneRange or validation errors.
     /// </summary>
-    /// <param name="startLane">The starting lane number (must be positive and odd).</param>
-    /// <param name="endLane">The ending lane number (must be positive, even, and greater than startLane).</param>
-    /// <param name="pinFallType">The pinsetter mechanism type (FreeFall or StringPin).</param>
-    /// <returns>ErrorOr&lt;LaneRange&gt; containing a valid LaneRange or validation errors.</returns>
+    /// <param name="startLane">
+    /// The starting lane number (must be positive and odd).
+    /// </param>
+    /// <param name="endLane">
+    /// The ending lane number (must be positive, even, and greater than startLane).
+    /// </param>
+    /// <param name="pinFallType">
+    /// The pinsetter mechanism type (FreeFall or StringPin).
+    /// </param>
+    /// <returns>
+    /// ErrorOr&lt;LaneRange&gt; containing a valid LaneRange or validation errors.
+    /// </returns>
     public static ErrorOr<LaneRange> Create(int startLane, int endLane, PinFallType pinFallType)
     {
         if (pinFallType is null)
