@@ -5,6 +5,7 @@ using Hangfire.States;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 using Neba.Api.BackgroundJobs;
+using Neba.Api.Domain;
 
 namespace Neba.Api.Database.Interceptors;
 
@@ -52,7 +53,7 @@ internal sealed class DomainEventDispatcherInterceptor(IBackgroundJobClient back
         {
             var eventType = domainEvent.GetType();
             var jobType = typeof(IDomainEventJob<>).MakeGenericType(eventType);
-            var method = jobType.GetMethod(nameof(IDomainEventJob<IDomainEvent>.HandleAsync))!;
+            var method = jobType.GetMethod(nameof(IDomainEventJob<>.HandleAsync))!;
             var job = new Job(jobType, method, domainEvent, CancellationToken.None);
             backgroundJobClient.Create(job, new EnqueuedState());
         }

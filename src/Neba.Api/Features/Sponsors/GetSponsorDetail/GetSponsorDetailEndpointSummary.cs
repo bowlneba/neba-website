@@ -4,6 +4,7 @@ using System.Net.Mime;
 using FastEndpoints;
 
 using Neba.Api.Contracts.Sponsors;
+using Neba.Api.Features.Sponsors.Domain;
 
 namespace Neba.Api.Features.Sponsors.GetSponsorDetail;
 

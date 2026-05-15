@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
+using Neba.Api.Contacts.Domain;
 using Neba.Api.Features.BowlingCenters.Domain;
 
 namespace Neba.Api.Database.Configurations;

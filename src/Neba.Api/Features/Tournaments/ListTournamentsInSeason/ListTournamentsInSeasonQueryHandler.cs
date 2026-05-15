@@ -99,7 +99,7 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
         Dictionary<int, IReadOnlyCollection<Name>> historicalWinnersByTournamentDbId =
             historicalWinners
                 .GroupBy(w => w.TournamentId)
-                .ToDictionary(g => g.Key, g => [.. g.Select(w => w.Name)]);
+                .ToDictionary(g => g.Key, g => (IReadOnlyCollection<Name>)[.. g.Select(w => w.Name)]);
 
         var tournaments = rows.ConvertAll(row => new SeasonTournamentDto
         {
