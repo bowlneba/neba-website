@@ -113,7 +113,12 @@ internal sealed class SmartEnumSchemaProcessor : ISchemaProcessor
         // Stryker disable all : see BuildEnumNamesByTypeName
         EnsureNebaAssembliesLoaded();
         return AppDomain.CurrentDomain.GetAssemblies()
-            .Where(a => a.GetName().Name?.StartsWith("Neba.Domain", StringComparison.Ordinal) == true);
+            .Where(a =>
+            {
+                var name = a.GetName().Name;
+                return name?.StartsWith("Neba.Domain", StringComparison.Ordinal) == true
+                    || name?.StartsWith("Neba.Api", StringComparison.Ordinal) == true;
+            });
     }
 
     // Stryker disable once Block : see BuildEnumNamesByTypeName

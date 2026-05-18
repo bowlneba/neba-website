@@ -123,7 +123,7 @@ public sealed class SmartEnumSchemaProcessorTests
     private static IEnumerable<string> ResolveSmartEnumNames(string smartEnumTypeName)
     {
         var enumType = AppDomain.CurrentDomain.GetAssemblies()
-            .Where(assembly => assembly.GetName().Name?.StartsWith("Neba.Domain", StringComparison.Ordinal) == true)
+            .Where(assembly => assembly.GetName().Name?.StartsWith("Neba.Api", StringComparison.Ordinal) == true)
             .SelectMany(assembly => assembly.GetTypes())
             .FirstOrDefault(type => type.Name == smartEnumTypeName);
 

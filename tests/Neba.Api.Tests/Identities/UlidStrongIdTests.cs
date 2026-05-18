@@ -5,7 +5,7 @@ using Neba.TestFactory.Attributes;
 
 using StronglyTypedIds;
 
-namespace Neba.Domain.Tests.Identities;
+namespace Neba.Api.Tests.Identities;
 
 [UnitTest]
 [Component("Identities")]
