@@ -98,13 +98,9 @@ jobs:
             test-name: Website Tests
             needs-integration: false
             collect_coverage: true
-          - test-project: tests/Neba.Domain.Tests/Neba.Domain.Tests.csproj
-            test-name: Domain Tests
+          - test-project: tests/Neba.Architecture.Tests/Neba.Architecture.Tests.csproj
+            test-name: Architecture Tests
             needs-integration: false
-            collect_coverage: true
-          - test-project: tests/Neba.Infrastructure.Tests/Neba.Infrastructure.Tests.csproj
-            test-name: Infrastructure Tests
-            needs-integration: true
             collect_coverage: true
           - test-project: tests/Neba.Api.Tests/Neba.Api.Tests.csproj
             test-name: API Tests

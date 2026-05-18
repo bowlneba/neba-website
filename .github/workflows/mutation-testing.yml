@@ -83,57 +83,6 @@ jobs:
           path: reports/mutation/
           retention-days: 14
 
-  mutation-domain:
-    name: Domain (break ≥ 85%)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-    env:
-      HUSKY: 0
-
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Fetch main for diff baseline
-        if: ${{ inputs.is_pull_request }}
-        run: git fetch origin main:refs/remotes/origin/main
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-
-      - name: Install dotnet-stryker
-        run: dotnet tool install --global dotnet-stryker
-
-      - name: Build
-        run: dotnet build tests/Neba.Domain.Tests --configuration Release
-
-      - name: Run Stryker (full run)
-        if: ${{ !inputs.is_pull_request }}
-        working-directory: tests/Neba.Domain.Tests
-        run: dotnet stryker --reporter dashboard
-        env:
-          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_KEY }}
-          STRYKER_DASHBOARD_VERSION: ${{ inputs.dashboard_version }}
-
-      - name: Run Stryker (diff — PR files only)
-        if: ${{ inputs.is_pull_request }}
-        working-directory: tests/Neba.Domain.Tests
-        run: dotnet stryker --reporter dashboard --since:origin/main
-        env:
-          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_KEY }}
-          STRYKER_DASHBOARD_VERSION: ${{ inputs.dashboard_version }}
-
-      - name: Upload mutation report
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: mutation-report-domain
-          path: tests/Neba.Domain.Tests/StrykerOutput/
-          retention-days: 14
-
   mutation-api:
     name: API (break ≥ 60%)
     runs-on: ubuntu-latest
@@ -241,7 +190,6 @@ jobs:
     needs:
       [
         mutation-js,
-        mutation-domain,
         mutation-api,
         mutation-blazor,
       ]
@@ -260,12 +208,6 @@ jobs:
             const project = 'github.com/bowlneba/neba-website';
 
             const layers = [
-              {
-                name: 'Domain',
-                module: 'domain',
-                breakThreshold: '≥ 85%',
-                result: '${{ needs.mutation-domain.result }}',
-              },
               {
                 name: 'API',
                 module: 'api',

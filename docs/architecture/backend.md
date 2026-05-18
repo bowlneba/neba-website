@@ -1822,10 +1822,7 @@ Career stats combine both sources transparently.
 tests/
 ├── Neba.TestFactory/           # Shared test infrastructure (factories, fixtures, traits)
 ├── Neba.Architecture.Tests/    # Architecture rule enforcement (ArchUnitNET)
-├── Neba.Api.Tests/             # API endpoint integration tests
-├── Neba.Application.Tests/     # Handler unit tests (command/query logic in Features/)
-├── Neba.Domain.Tests/          # Domain unit tests (aggregates, value objects in Features/*/Domain/)
-├── Neba.Infrastructure.Tests/  # Infrastructure integration tests (EF Core, Testcontainers)
+├── Neba.Api.Tests/             # All backend tests: domain, application, infrastructure, and API endpoints
 ├── Neba.Website.Tests/         # UI tests (bUnit, services, JS interop)
 ├── e2e/                        # Playwright E2E tests (TypeScript)
 └── js/                         # Jest tests for JS modules
@@ -1882,10 +1879,10 @@ dotnet test --filter "Component=Tournaments"
 dotnet test --filter "Category=Unit&Component=Tournaments.Registration"
 
 # Using dotnet run (note the -- to pass args to test runner)
-dotnet run --project tests/Neba.Domain.Tests -- --filter "Category=Unit"
+dotnet run --project tests/Neba.Api.Tests -- --filter "Category=Unit"
 
 # Running the executable directly
-./Neba.Domain.Tests --filter "Category=Unit"
+./Neba.Api.Tests --filter "Category=Unit"
 
 # xUnit v3 query filter language
 dotnet run -- --filter-query "[Category=Unit]"

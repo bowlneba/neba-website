@@ -23,7 +23,7 @@ namespace Neba.Api.Database.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Neba.Domain.Bowlers.Bowler", b =>
+            modelBuilder.Entity("Neba.Api.Features.Bowlers.Domain.Bowler", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -77,7 +77,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("bowlers", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.BowlingCenters.BowlingCenter", b =>
+            modelBuilder.Entity("Neba.Api.Features.BowlingCenters.Domain.BowlingCenter", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -115,7 +115,7 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("website_id");
 
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "Address", "Neba.Domain.BowlingCenters.BowlingCenter.Address#Address", b1 =>
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Address", "Neba.Api.Features.BowlingCenters.Domain.BowlingCenter.Address#Address", b1 =>
                         {
                             b1.IsRequired();
 
@@ -156,7 +156,7 @@ namespace Neba.Api.Database.Migrations
                                 .HasColumnType("character varying(50)")
                                 .HasColumnName("unit");
 
-                            b1.ComplexProperty(typeof(Dictionary<string, object>), "Coordinates", "Neba.Domain.BowlingCenters.BowlingCenter.Address#Address.Coordinates#Coordinates", b2 =>
+                            b1.ComplexProperty(typeof(Dictionary<string, object>), "Coordinates", "Neba.Api.Features.BowlingCenters.Domain.BowlingCenter.Address#Address.Coordinates#Coordinates", b2 =>
                                 {
                                     b2.IsRequired();
 
@@ -170,7 +170,7 @@ namespace Neba.Api.Database.Migrations
                                 });
                         });
 
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "EmailAddress", "Neba.Domain.BowlingCenters.BowlingCenter.EmailAddress#EmailAddress", b1 =>
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "EmailAddress", "Neba.Api.Features.BowlingCenters.Domain.BowlingCenter.EmailAddress#EmailAddress", b1 =>
                         {
                             b1.Property<string>("Value")
                                 .IsRequired()
@@ -200,7 +200,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("bowling_centers", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.HallOfFame.HallOfFameInduction", b =>
+            modelBuilder.Entity("Neba.Api.Features.HallOfFame.Domain.HallOfFameInduction", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -231,7 +231,7 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("induction_year");
 
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "Photo", "Neba.Domain.HallOfFame.HallOfFameInduction.Photo#StoredFile", b1 =>
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Photo", "Neba.Api.Features.HallOfFame.Domain.HallOfFameInduction.Photo#StoredFile", b1 =>
                         {
                             b1.Property<string>("Container")
                                 .IsRequired()
@@ -274,7 +274,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("hall_of_fame_inductions", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Seasons.BowlerOfTheYearAward", b =>
+            modelBuilder.Entity("Neba.Api.Features.Seasons.Domain.BowlerOfTheYearAward", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -320,7 +320,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("bowler_of_the_year_awards", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Seasons.HighAverageAward", b =>
+            modelBuilder.Entity("Neba.Api.Features.Seasons.Domain.HighAverageAward", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -375,7 +375,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("high_average_awards", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Seasons.HighBlockAward", b =>
+            modelBuilder.Entity("Neba.Api.Features.Seasons.Domain.HighBlockAward", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -421,7 +421,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("high_block_awards", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Seasons.Season", b =>
+            modelBuilder.Entity("Neba.Api.Features.Seasons.Domain.Season", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -464,7 +464,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("seasons", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Sponsors.Sponsor", b =>
+            modelBuilder.Entity("Neba.Api.Features.Sponsors.Domain.Sponsor", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -543,7 +543,7 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("website_url");
 
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "BusinessAddress", "Neba.Domain.Sponsors.Sponsor.BusinessAddress#Address", b1 =>
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "BusinessAddress", "Neba.Api.Features.Sponsors.Domain.Sponsor.BusinessAddress#Address", b1 =>
                         {
                             b1.Property<string>("City")
                                 .IsRequired()
@@ -582,7 +582,7 @@ namespace Neba.Api.Database.Migrations
                                 .HasColumnType("character varying(50)")
                                 .HasColumnName("business_unit");
 
-                            b1.ComplexProperty(typeof(Dictionary<string, object>), "Coordinates", "Neba.Domain.Sponsors.Sponsor.BusinessAddress#Address.Coordinates#Coordinates", b2 =>
+                            b1.ComplexProperty(typeof(Dictionary<string, object>), "Coordinates", "Neba.Api.Features.Sponsors.Domain.Sponsor.BusinessAddress#Address.Coordinates#Coordinates", b2 =>
                                 {
                                     b2.Property<double>("Latitude")
                                         .HasColumnType("double precision")
@@ -594,7 +594,7 @@ namespace Neba.Api.Database.Migrations
                                 });
                         });
 
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "BusinessEmail", "Neba.Domain.Sponsors.Sponsor.BusinessEmail#EmailAddress", b1 =>
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "BusinessEmail", "Neba.Api.Features.Sponsors.Domain.Sponsor.BusinessEmail#EmailAddress", b1 =>
                         {
                             b1.Property<string>("Value")
                                 .IsRequired()
@@ -603,7 +603,7 @@ namespace Neba.Api.Database.Migrations
                                 .HasColumnName("business_email_address");
                         });
 
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "Logo", "Neba.Domain.Sponsors.Sponsor.Logo#StoredFile", b1 =>
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Logo", "Neba.Api.Features.Sponsors.Domain.Sponsor.Logo#StoredFile", b1 =>
                         {
                             b1.Property<string>("Container")
                                 .IsRequired()
@@ -640,7 +640,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("sponsors", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Stats.BowlerSeasonStats", b =>
+            modelBuilder.Entity("Neba.Api.Features.Stats.Domain.BowlerSeasonStats", b =>
                 {
                     b.Property<string>("SeasonId")
                         .HasMaxLength(26)
@@ -800,7 +800,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("bowler_season_stats", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Tournaments.OilPattern", b =>
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.OilPattern", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -860,7 +860,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("oil_patterns", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Tournaments.SideCut", b =>
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.SideCut", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -905,7 +905,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("side_cuts", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Tournaments.SideCutCriteria", b =>
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.SideCutCriteria", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -940,7 +940,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("side_cut_criteria", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Tournaments.SideCutCriteriaGroup", b =>
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.SideCutCriteriaGroup", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -983,7 +983,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("side_cut_criteria_groups", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Tournaments.Tournament", b =>
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.Tournament", b =>
                 {
                     b.Property<int>("db_id")
                         .ValueGeneratedOnAdd()
@@ -1055,7 +1055,7 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("tournament_type");
 
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "Logo", "Neba.Domain.Tournaments.Tournament.Logo#StoredFile", b1 =>
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Logo", "Neba.Api.Features.Tournaments.Domain.Tournament.Logo#StoredFile", b1 =>
                         {
                             b1.Property<string>("Container")
                                 .IsRequired()
@@ -1101,7 +1101,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("tournaments", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Tournaments.TournamentOilPattern", b =>
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.TournamentOilPattern", b =>
                 {
                     b.Property<int>("tournament_id")
                         .HasColumnType("integer")
@@ -1124,7 +1124,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("tournament_oil_patterns", "app");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Tournaments.TournamentSponsor", b =>
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.TournamentSponsor", b =>
                 {
                     b.Property<int>("tournament_id")
                         .HasColumnType("integer")
@@ -1154,7 +1154,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("tournament_sponsors", "app");
                 });
 
-            modelBuilder.Entity("Neba.Infrastructure.Database.Entities.HistoricalTournamentChampion", b =>
+            modelBuilder.Entity("Neba.Api.Database.Entities.HistoricalTournamentChampion", b =>
                 {
                     b.Property<int>("TournamentId")
                         .HasColumnType("integer")
@@ -1173,7 +1173,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("tournament_champions", "historical");
                 });
 
-            modelBuilder.Entity("Neba.Infrastructure.Database.Entities.HistoricalTournamentEntry", b =>
+            modelBuilder.Entity("Neba.Api.Database.Entities.HistoricalTournamentEntry", b =>
                 {
                     b.Property<int>("TournamentId")
                         .HasColumnType("integer")
@@ -1189,7 +1189,7 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("tournament_entries", "historical");
                 });
 
-            modelBuilder.Entity("Neba.Infrastructure.Database.Entities.HistoricalTournamentResult", b =>
+            modelBuilder.Entity("Neba.Api.Database.Entities.HistoricalTournamentResult", b =>
                 {
                     b.Property<int>("TournamentId")
                         .HasColumnType("integer")
@@ -1228,9 +1228,9 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("tournament_results", "historical");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Bowlers.Bowler", b =>
+            modelBuilder.Entity("Neba.Api.Features.Bowlers.Domain.Bowler", b =>
                 {
-                    b.OwnsOne("Neba.Domain.Bowlers.Name", "Name", b1 =>
+                    b.OwnsOne("Neba.Api.Features.Bowlers.Domain.Name", "Name", b1 =>
                         {
                             b1.Property<int>("Bowlerdb_id")
                                 .HasColumnType("integer")
@@ -1279,9 +1279,9 @@ namespace Neba.Api.Database.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Neba.Domain.BowlingCenters.BowlingCenter", b =>
+            modelBuilder.Entity("Neba.Api.Features.BowlingCenters.Domain.BowlingCenter", b =>
                 {
-                    b.OwnsOne("Neba.Domain.BowlingCenters.LaneConfiguration", "Lanes", b1 =>
+                    b.OwnsOne("Neba.Api.Features.BowlingCenters.Domain.LaneConfiguration", "Lanes", b1 =>
                         {
                             b1.Property<int>("BowlingCenterdb_id")
                                 .HasColumnType("integer")
@@ -1295,7 +1295,7 @@ namespace Neba.Api.Database.Migrations
                                 .HasForeignKey("BowlingCenterdb_id")
                                 .HasConstraintName("fk_bowling_centers_bowling_centers_id");
 
-                            b1.OwnsMany("Neba.Domain.BowlingCenters.LaneRange", "Ranges", b2 =>
+                            b1.OwnsMany("Neba.Api.Features.BowlingCenters.Domain.LaneRange", "Ranges", b2 =>
                                 {
                                     b2.Property<int>("bowling_center_id")
                                         .HasColumnType("integer")
@@ -1329,7 +1329,7 @@ namespace Neba.Api.Database.Migrations
                             b1.Navigation("Ranges");
                         });
 
-                    b.OwnsMany("Neba.Domain.Contact.PhoneNumber", "PhoneNumbers", b1 =>
+                    b.OwnsMany("Neba.Api.Contacts.Domain.PhoneNumber", "PhoneNumbers", b1 =>
                         {
                             b1.Property<int>("bowling_center_id")
                                 .HasColumnType("integer")
@@ -1374,9 +1374,9 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("PhoneNumbers");
                 });
 
-            modelBuilder.Entity("Neba.Domain.HallOfFame.HallOfFameInduction", b =>
+            modelBuilder.Entity("Neba.Api.Features.HallOfFame.Domain.HallOfFameInduction", b =>
                 {
-                    b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
+                    b.HasOne("Neba.Api.Features.Bowlers.Domain.Bowler", "Bowler")
                         .WithMany()
                         .HasForeignKey("BowlerId")
                         .HasPrincipalKey("Id")
@@ -1387,9 +1387,9 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("Bowler");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Seasons.BowlerOfTheYearAward", b =>
+            modelBuilder.Entity("Neba.Api.Features.Seasons.Domain.BowlerOfTheYearAward", b =>
                 {
-                    b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
+                    b.HasOne("Neba.Api.Features.Bowlers.Domain.Bowler", "Bowler")
                         .WithMany()
                         .HasForeignKey("BowlerId")
                         .HasPrincipalKey("Id")
@@ -1397,7 +1397,7 @@ namespace Neba.Api.Database.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_bowler_of_the_year_awards_bowlers_bowler_id");
 
-                    b.HasOne("Neba.Domain.Seasons.Season", null)
+                    b.HasOne("Neba.Api.Features.Seasons.Domain.Season", null)
                         .WithMany("BowlerOfTheYearAwards")
                         .HasForeignKey("season_id")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1407,9 +1407,9 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("Bowler");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Seasons.HighAverageAward", b =>
+            modelBuilder.Entity("Neba.Api.Features.Seasons.Domain.HighAverageAward", b =>
                 {
-                    b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
+                    b.HasOne("Neba.Api.Features.Bowlers.Domain.Bowler", "Bowler")
                         .WithMany()
                         .HasForeignKey("BowlerId")
                         .HasPrincipalKey("Id")
@@ -1417,7 +1417,7 @@ namespace Neba.Api.Database.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_high_average_awards_bowlers_bowler_id");
 
-                    b.HasOne("Neba.Domain.Seasons.Season", null)
+                    b.HasOne("Neba.Api.Features.Seasons.Domain.Season", null)
                         .WithMany("HighAverageAwards")
                         .HasForeignKey("season_id")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1427,9 +1427,9 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("Bowler");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Seasons.HighBlockAward", b =>
+            modelBuilder.Entity("Neba.Api.Features.Seasons.Domain.HighBlockAward", b =>
                 {
-                    b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
+                    b.HasOne("Neba.Api.Features.Bowlers.Domain.Bowler", "Bowler")
                         .WithMany()
                         .HasForeignKey("BowlerId")
                         .HasPrincipalKey("Id")
@@ -1437,7 +1437,7 @@ namespace Neba.Api.Database.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_high_block_awards_bowlers_bowler_id");
 
-                    b.HasOne("Neba.Domain.Seasons.Season", null)
+                    b.HasOne("Neba.Api.Features.Seasons.Domain.Season", null)
                         .WithMany("HighBlockAwards")
                         .HasForeignKey("season_id")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1447,9 +1447,9 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("Bowler");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Sponsors.Sponsor", b =>
+            modelBuilder.Entity("Neba.Api.Features.Sponsors.Domain.Sponsor", b =>
                 {
-                    b.OwnsOne("Neba.Domain.Sponsors.ContactInfo", "SponsorContact", b1 =>
+                    b.OwnsOne("Neba.Api.Features.Sponsors.Domain.ContactInfo", "SponsorContact", b1 =>
                         {
                             b1.Property<int>("Sponsordb_id")
                                 .HasColumnType("integer")
@@ -1469,7 +1469,7 @@ namespace Neba.Api.Database.Migrations
                                 .HasForeignKey("Sponsordb_id")
                                 .HasConstraintName("fk_sponsors_sponsors_id");
 
-                            b1.OwnsOne("Neba.Domain.Contact.EmailAddress", "Email", b2 =>
+                            b1.OwnsOne("Neba.Api.Contacts.Domain.EmailAddress", "Email", b2 =>
                                 {
                                     b2.Property<int>("ContactInfoSponsordb_id")
                                         .HasColumnType("integer")
@@ -1490,7 +1490,7 @@ namespace Neba.Api.Database.Migrations
                                         .HasConstraintName("fk_sponsors_sponsors_id");
                                 });
 
-                            b1.OwnsOne("Neba.Domain.Contact.PhoneNumber", "Phone", b2 =>
+                            b1.OwnsOne("Neba.Api.Contacts.Domain.PhoneNumber", "Phone", b2 =>
                                 {
                                     b2.Property<int>("ContactInfoSponsordb_id")
                                         .HasColumnType("integer")
@@ -1536,7 +1536,7 @@ namespace Neba.Api.Database.Migrations
                                 .IsRequired();
                         });
 
-                    b.OwnsMany("Neba.Domain.Contact.PhoneNumber", "PhoneNumbers", b1 =>
+                    b.OwnsMany("Neba.Api.Contacts.Domain.PhoneNumber", "PhoneNumbers", b1 =>
                         {
                             b1.Property<int>("sponsor_id")
                                 .HasColumnType("integer")
@@ -1580,9 +1580,9 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("SponsorContact");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Stats.BowlerSeasonStats", b =>
+            modelBuilder.Entity("Neba.Api.Features.Stats.Domain.BowlerSeasonStats", b =>
                 {
-                    b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
+                    b.HasOne("Neba.Api.Features.Bowlers.Domain.Bowler", "Bowler")
                         .WithMany("SeasonStats")
                         .HasForeignKey("BowlerId")
                         .HasPrincipalKey("Id")
@@ -1590,7 +1590,7 @@ namespace Neba.Api.Database.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_bowler_season_stats_bowlers_bowler_id");
 
-                    b.HasOne("Neba.Domain.Seasons.Season", "Season")
+                    b.HasOne("Neba.Api.Features.Seasons.Domain.Season", "Season")
                         .WithMany("BowlerStats")
                         .HasForeignKey("SeasonId")
                         .HasPrincipalKey("Id")
@@ -1603,9 +1603,9 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("Season");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Tournaments.SideCutCriteria", b =>
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.SideCutCriteria", b =>
                 {
-                    b.HasOne("Neba.Domain.Tournaments.SideCutCriteriaGroup", "CriteriaGroup")
+                    b.HasOne("Neba.Api.Features.Tournaments.Domain.SideCutCriteriaGroup", "CriteriaGroup")
                         .WithMany("Criteria")
                         .HasForeignKey("side_cut_criteria_group_id")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1615,9 +1615,9 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("CriteriaGroup");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Tournaments.SideCutCriteriaGroup", b =>
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.SideCutCriteriaGroup", b =>
                 {
-                    b.HasOne("Neba.Domain.Tournaments.SideCut", "SideCut")
+                    b.HasOne("Neba.Api.Features.Tournaments.Domain.SideCut", "SideCut")
                         .WithMany("CriteriaGroups")
                         .HasForeignKey("side_cut_id")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1627,16 +1627,16 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("SideCut");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Tournaments.Tournament", b =>
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.Tournament", b =>
                 {
-                    b.HasOne("Neba.Domain.BowlingCenters.BowlingCenter", "BowlingCenter")
+                    b.HasOne("Neba.Api.Features.BowlingCenters.Domain.BowlingCenter", "BowlingCenter")
                         .WithMany()
                         .HasForeignKey("BowlingCenterId")
                         .HasPrincipalKey("CertificationNumber")
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("fk_tournaments_bowling_centers_bowling_center_id");
 
-                    b.HasOne("Neba.Domain.Seasons.Season", "Season")
+                    b.HasOne("Neba.Api.Features.Seasons.Domain.Season", "Season")
                         .WithMany("Tournaments")
                         .HasForeignKey("SeasonId")
                         .HasPrincipalKey("Id")
@@ -1649,9 +1649,9 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("Season");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Tournaments.TournamentOilPattern", b =>
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.TournamentOilPattern", b =>
                 {
-                    b.HasOne("Neba.Domain.Tournaments.OilPattern", "OilPattern")
+                    b.HasOne("Neba.Api.Features.Tournaments.Domain.OilPattern", "OilPattern")
                         .WithMany("Tournaments")
                         .HasForeignKey("OilPatternId")
                         .HasPrincipalKey("Id")
@@ -1659,7 +1659,7 @@ namespace Neba.Api.Database.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_tournament_oil_patterns_oil_patterns_oil_pattern_id");
 
-                    b.HasOne("Neba.Domain.Tournaments.Tournament", "Tournament")
+                    b.HasOne("Neba.Api.Features.Tournaments.Domain.Tournament", "Tournament")
                         .WithMany("OilPatterns")
                         .HasForeignKey("tournament_id")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1671,9 +1671,9 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("Tournament");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Tournaments.TournamentSponsor", b =>
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.TournamentSponsor", b =>
                 {
-                    b.HasOne("Neba.Domain.Sponsors.Sponsor", "Sponsor")
+                    b.HasOne("Neba.Api.Features.Sponsors.Domain.Sponsor", "Sponsor")
                         .WithMany("TournamentsSponsored")
                         .HasForeignKey("SponsorId")
                         .HasPrincipalKey("Id")
@@ -1681,7 +1681,7 @@ namespace Neba.Api.Database.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_tournament_sponsors_sponsors_sponsor_id");
 
-                    b.HasOne("Neba.Domain.Tournaments.Tournament", "Tournament")
+                    b.HasOne("Neba.Api.Features.Tournaments.Domain.Tournament", "Tournament")
                         .WithMany("Sponsors")
                         .HasForeignKey("tournament_id")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1693,16 +1693,16 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("Tournament");
                 });
 
-            modelBuilder.Entity("Neba.Infrastructure.Database.Entities.HistoricalTournamentChampion", b =>
+            modelBuilder.Entity("Neba.Api.Database.Entities.HistoricalTournamentChampion", b =>
                 {
-                    b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
+                    b.HasOne("Neba.Api.Features.Bowlers.Domain.Bowler", "Bowler")
                         .WithMany()
                         .HasForeignKey("BowlerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_tournament_champions_bowlers_bowler_id");
 
-                    b.HasOne("Neba.Domain.Tournaments.Tournament", "Tournament")
+                    b.HasOne("Neba.Api.Features.Tournaments.Domain.Tournament", "Tournament")
                         .WithMany()
                         .HasForeignKey("TournamentId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1714,9 +1714,9 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("Tournament");
                 });
 
-            modelBuilder.Entity("Neba.Infrastructure.Database.Entities.HistoricalTournamentEntry", b =>
+            modelBuilder.Entity("Neba.Api.Database.Entities.HistoricalTournamentEntry", b =>
                 {
-                    b.HasOne("Neba.Domain.Tournaments.Tournament", "Tournament")
+                    b.HasOne("Neba.Api.Features.Tournaments.Domain.Tournament", "Tournament")
                         .WithMany()
                         .HasForeignKey("TournamentId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1726,22 +1726,22 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("Tournament");
                 });
 
-            modelBuilder.Entity("Neba.Infrastructure.Database.Entities.HistoricalTournamentResult", b =>
+            modelBuilder.Entity("Neba.Api.Database.Entities.HistoricalTournamentResult", b =>
                 {
-                    b.HasOne("Neba.Domain.Bowlers.Bowler", "Bowler")
+                    b.HasOne("Neba.Api.Features.Bowlers.Domain.Bowler", "Bowler")
                         .WithMany()
                         .HasForeignKey("BowlerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_tournament_results_bowlers_bowler_id");
 
-                    b.HasOne("Neba.Domain.Tournaments.SideCut", "SideCut")
+                    b.HasOne("Neba.Api.Features.Tournaments.Domain.SideCut", "SideCut")
                         .WithMany()
                         .HasForeignKey("SideCutId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_tournament_results_side_cuts_side_cut_id");
 
-                    b.HasOne("Neba.Domain.Tournaments.Tournament", "Tournament")
+                    b.HasOne("Neba.Api.Features.Tournaments.Domain.Tournament", "Tournament")
                         .WithMany()
                         .HasForeignKey("TournamentId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1755,12 +1755,12 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("Tournament");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Bowlers.Bowler", b =>
+            modelBuilder.Entity("Neba.Api.Features.Bowlers.Domain.Bowler", b =>
                 {
                     b.Navigation("SeasonStats");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Seasons.Season", b =>
+            modelBuilder.Entity("Neba.Api.Features.Seasons.Domain.Season", b =>
                 {
                     b.Navigation("BowlerOfTheYearAwards");
 
@@ -1773,27 +1773,27 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("Tournaments");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Sponsors.Sponsor", b =>
+            modelBuilder.Entity("Neba.Api.Features.Sponsors.Domain.Sponsor", b =>
                 {
                     b.Navigation("TournamentsSponsored");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Tournaments.OilPattern", b =>
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.OilPattern", b =>
                 {
                     b.Navigation("Tournaments");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Tournaments.SideCut", b =>
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.SideCut", b =>
                 {
                     b.Navigation("CriteriaGroups");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Tournaments.SideCutCriteriaGroup", b =>
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.SideCutCriteriaGroup", b =>
                 {
                     b.Navigation("Criteria");
                 });
 
-            modelBuilder.Entity("Neba.Domain.Tournaments.Tournament", b =>
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.Tournament", b =>
                 {
                     b.Navigation("OilPatterns");
 

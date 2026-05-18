@@ -119,8 +119,8 @@ season.AssignHighAverageWinner(command.BowlerId, command.Average, command.Games,
 #### .NET Mutation Testing
 
 - Uses **dotnet-stryker** (global install: `dotnet tool install --global dotnet-stryker`)
-- Config per layer: `tests/<Layer>.Tests/stryker-config.json`
-- Run from the test project directory: `cd tests/Neba.Domain.Tests && dotnet stryker`
+- Config: `tests/Neba.Api.Tests/stryker-config.json` and `tests/Neba.Website.Tests/stryker-config.json`
+- Run from the test project directory: `cd tests/Neba.Api.Tests && dotnet stryker`
 - Diff run (PR): `dotnet stryker --since origin/main`
 - Reports land in `tests/<Layer>.Tests/StrykerOutput/`
 
@@ -150,18 +150,15 @@ The equality members (`Equals`, `GetHashCode`, `==`, `!=`) are needed because St
 
 **Per-project decisions** (make these explicitly for each new test project):
 
-- `ignore-mutations: Linq` — keep for Domain/Application test projects (logic); exclude for Infrastructure/API/Blazor (see rationale in learnings below)
+- `ignore-mutations: Linq` — `Neba.Api.Tests` currently includes `Linq` (retained from prior domain/application layers); `Neba.Website.Tests` excludes it
 - `mutate` exclusions — inspect actual files; exclude pure declarations (source-generated stubs, SmartEnum tables), not logic
 
 **Thresholds by layer**:
 
-| Layer          | high | low | break | Notes                                                                                  |
-|----------------|------|-----|-------|----------------------------------------------------------------------------------------|
-| Domain         | 95   | 90  | 85    |                                                                                        |
-| Application    | 95   | 90  | 85    |                                                                                        |
-| Infrastructure | 75   | 65  | 0     | Local only — Testcontainers integration tests crash the MTP runner; not wired into CI  |
-| API            | 80   | 70  | 60    |                                                                                        |
-| Blazor         | 85   | 70  | 65    |                                                                                        |
+| Layer  | high | low | break | Notes                                    |
+|--------|------|-----|-------|------------------------------------------|
+| API    | 80   | 70  | 60    | Covers domain, application, and API code |
+| Blazor | 85   | 70  | 65    |                                          |
 
 - A mutation is **killed** when at least one test *fails* on the mutated code
 - **"Not covered"** → needs a new test exercising the code path
@@ -206,9 +203,9 @@ The equality members (`Equals`, `GetHashCode`, `==`, `!=`) are needed because St
 
 1. Write a failing test that demonstrates the bug FIRST
 2. Choose test project based on what's broken:
-   - Domain entity/aggregate (in `Features/*/Domain/`) → Unit test in `Neba.Domain.Tests`
-   - Handler (in `Features/*/`) → Unit test in `Neba.Application.Tests`
-   - EF Core / Database (in `Database/`) → Integration test in `Neba.Infrastructure.Tests`
+   - Domain entity/aggregate (in `Features/*/Domain/`) → Unit test in `Neba.Api.Tests`
+   - Handler (in `Features/*/`) → Unit test in `Neba.Api.Tests`
+   - EF Core / Database (in `Database/`) → Integration test in `Neba.Api.Tests`
    - API endpoint → Integration test in `Neba.Api.Tests`
    - Blazor component → bUnit test in `Neba.Website.Tests`
    - UI interaction/flow → E2E test in `tests/e2e/`
@@ -226,12 +223,9 @@ The equality members (`Equals`, `GetHashCode`, `==`, `!=`) are needed because St
 - **E2E tests**: `npm run test:e2e`
 - **JS mutation tests (full run + summary)**: `npm run mutation:ai`
 - **JS mutation report for one file**: `npm run mutation:ai:file -- <FileName>` (e.g. `-- NavMenu`)
-- **.NET mutation tests — Domain**: `cd tests/Neba.Domain.Tests && dotnet stryker`
-- **.NET mutation tests — Application**: `cd tests/Neba.Application.Tests && dotnet stryker`
-- **.NET mutation tests — Infrastructure**: `cd tests/Neba.Infrastructure.Tests && dotnet stryker`
 - **.NET mutation tests — API**: `cd tests/Neba.Api.Tests && dotnet stryker`
-- **.NET mutation summary**: `npm run mutation:ai:dotnet -- Domain`
-- **.NET mutation detail for one file**: `npm run mutation:ai:dotnet -- Domain <FileName>` (e.g. `-- Domain LaneRange`)
+- **.NET mutation summary**: `npm run mutation:ai:dotnet -- Api`
+- **.NET mutation detail for one file**: `npm run mutation:ai:dotnet -- Api <FileName>` (e.g. `-- Api LaneRange`)
 - **CI status**: `gh run list --limit 5`
 - **CI failure details**: `gh run view <run-id> --log-failed`
 
