@@ -160,7 +160,7 @@ Audited all 12 endpoint test classes against the checklist. Changes made:
 
 ---
 
-## Phase 8: CI and Mutation Configuration Updates
+## Phase 8: CI and Mutation Configuration Updates — COMPLETE
 
 Make these changes regardless of the other phases; they can be done in parallel with Phase 1.
 
@@ -208,11 +208,16 @@ In the `.NET Mutation Testing` section, update the API row to match the new thre
 
 ---
 
-## Phase 9: Package Audit
+## Phase 9: Package Audit — COMPLETE
 
-Review every `<PackageVersion>` entry in `Directory.Packages.props` and remove any package that is no longer referenced by any `.csproj` in the solution.
+Removed 7 unreferenced `<PackageVersion>` entries from `Directory.Packages.props`:
 
-For each package:
-1. `grep` all `.csproj` files for `<PackageReference Include="<PackageName>"` (or `<PackageVersion Include=` usage via `GlobalPackageReference`).
-2. If no `.csproj` references it, remove the `<PackageVersion>` entry from `Directory.Packages.props`.
-3. Build the solution (`dotnet build`) after all removals to confirm nothing is broken.
+- `Ardalis.SmartEnum` — only the EFCore and SystemTextJson variants are directly referenced
+- `Microsoft.EntityFrameworkCore` — pulled in transitively; no project references it directly
+- `Microsoft.EntityFrameworkCore.Relational` — same as above
+- `Microsoft.EntityFrameworkCore.Design` — no project references it (migrations tooling was removed with the layered projects)
+- `Microsoft.Extensions.DependencyInjection.Abstractions` — no project references it directly
+- `Microsoft.Extensions.Logging.Abstractions` — no project references it directly
+- `Scrutor` — only `Scrutor.AspNetCore` is referenced by `Neba.Api`
+
+`dotnet build` passes clean (0 errors, 0 warnings) after removals.
