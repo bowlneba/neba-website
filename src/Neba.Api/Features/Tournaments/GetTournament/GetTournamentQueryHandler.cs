@@ -80,7 +80,7 @@ internal sealed partial class GetTournamentQueryHandler(
                 {
                     top.OilPattern.Name,
                     top.OilPattern.Length,
-                    Rounds = top.TournamentRounds.Select(round => round.Name)
+                    top.TournamentRounds
                 }).ToList()
             }).SingleOrDefaultAsync(cancellationToken);
 
@@ -142,7 +142,7 @@ internal sealed partial class GetTournamentQueryHandler(
             {
                 Name = pattern.Name,
                 Length = pattern.Length,
-                TournamentRounds = [.. pattern.Rounds]
+                TournamentRounds = [.. pattern.TournamentRounds.Select(r => r.Name)]
             }),
             LogoContainer = row.LogoContainer,
             LogoPath = row.LogoPath,

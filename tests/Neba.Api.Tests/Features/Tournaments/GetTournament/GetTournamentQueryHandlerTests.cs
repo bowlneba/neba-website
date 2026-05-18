@@ -100,4 +100,33 @@ public sealed class GetTournamentQueryHandlerTests(PostgreSqlFixture fixture)
         result.IsError.ShouldBeFalse();
         result.Value.LogoUrl.ShouldBe(expectedUri);
     }
+
+    [Fact(DisplayName = "HandleAsync returns oil patterns with round names when tournament has oil patterns")]
+    public async Task HandleAsync_ShouldReturnOilPatternsWithRoundNames_WhenTournamentHasOilPatterns()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var oilPattern = OilPatternFactory.Create(name: "Dragon", length: 40);
+        await _dbContext.OilPatterns.AddAsync(oilPattern, ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        tournament.AddOilPattern(oilPattern.Id, TournamentRound.Qualifying, TournamentRound.StepLadder);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
+
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id }, ct);
+
+        result.IsError.ShouldBeFalse();
+        result.Value.OilPatterns.ShouldHaveSingleItem();
+        var pattern = result.Value.OilPatterns.Single();
+        pattern.Name.ShouldBe("Dragon");
+        pattern.Length.ShouldBe(40);
+        pattern.TournamentRounds.ShouldBe(["Qualifying", "Step Ladder"], ignoreOrder: true);
+    }
 }

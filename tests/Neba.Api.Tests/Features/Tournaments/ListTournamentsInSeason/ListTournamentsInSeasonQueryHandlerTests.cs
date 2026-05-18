@@ -1,4 +1,5 @@
 using Neba.Api.Database;
+using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 using Neba.Api.Storage;
 using Neba.TestFactory.Attributes;
@@ -122,5 +123,33 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(PostgreSqlFixture f
 
         result.ShouldHaveSingleItem();
         result.Single().LogoUrl.ShouldBe(expectedUri);
+    }
+
+    [Fact(DisplayName = "HandleAsync returns oil patterns with round names when tournament has oil patterns")]
+    public async Task HandleAsync_ShouldReturnOilPatternsWithRoundNames_WhenTournamentHasOilPatterns()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var oilPattern = OilPatternFactory.Create(name: "Chameleon", length: 37);
+        await _dbContext.OilPatterns.AddAsync(oilPattern, ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        tournament.AddOilPattern(oilPattern.Id, TournamentRound.Qualifying, TournamentRound.MatchPlay);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object);
+
+        var result = await handler.HandleAsync(
+            new ListTournamentsInSeasonQuery { SeasonId = season.Id }, ct);
+
+        result.ShouldHaveSingleItem();
+        var pattern = result.Single().OilPatterns.Single();
+        pattern.Name.ShouldBe("Chameleon");
+        pattern.Length.ShouldBe(37);
+        pattern.TournamentRounds.ShouldBe(["Qualifying", "Match Play"], ignoreOrder: true);
     }
 }

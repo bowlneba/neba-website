@@ -84,7 +84,7 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 {
                     top.OilPattern.Name,
                     top.OilPattern.Length,
-                    Rounds = top.TournamentRounds.Select(round => round.Name)
+                    top.TournamentRounds
                 }).ToList()
             }).ToListAsync(cancellationToken);
 
@@ -122,7 +122,7 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
             {
                 Name = pattern.Name,
                 Length = pattern.Length,
-                TournamentRounds = [.. pattern.Rounds]
+                TournamentRounds = [.. pattern.TournamentRounds.Select(r => r.Name)]
             }),
             LogoContainer = row.LogoContainer,
             LogoPath = row.LogoPath,
