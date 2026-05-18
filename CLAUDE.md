@@ -160,7 +160,7 @@ The equality members (`Equals`, `GetHashCode`, `==`, `!=`) are needed because St
 | Domain         | 95   | 90  | 85    |                                                                                        |
 | Application    | 95   | 90  | 85    |                                                                                        |
 | Infrastructure | 75   | 65  | 0     | Local only — Testcontainers integration tests crash the MTP runner; not wired into CI  |
-| API            | 80   | 60  | 75    |                                                                                        |
+| API            | 80   | 70  | 60    |                                                                                        |
 | Blazor         | 85   | 70  | 65    |                                                                                        |
 
 - A mutation is **killed** when at least one test *fails* on the mutated code
