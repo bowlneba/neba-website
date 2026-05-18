@@ -14,6 +14,7 @@ internal sealed class ListBowlingCentersQueryHandler(AppDbContext appDbContext)
 
     public async Task<IReadOnlyCollection<BowlingCenterSummaryDto>> HandleAsync(ListBowlingCentersQuery query, CancellationToken cancellationToken)
         => await _bowlingCenters
+            .Where(bowlingCenter => bowlingCenter.Status == BowlingCenterStatus.Open)
             .Select(bowlingCenter => new BowlingCenterSummaryDto
             {
                 CertificationNumber = bowlingCenter.CertificationNumber.Value,

@@ -28,7 +28,7 @@ public static class BowlingCenterFactory
             CertificationNumber = certificationNumber ?? CertificationNumberFactory.Create(ValidCertificationNumber),
             Name = name ?? ValidName,
             Status = status ?? ValidStatus,
-            Address = address ?? AddressFactory.CreateUsAddress(),
+            Address = address ?? AddressFactory.CreateUsAddress(coordinates: AddressFactory.ValidCoordinates),
             PhoneNumbers = phoneNumbers ?? [PhoneNumberFactory.Create(type: PhoneNumberType.Work)],
             EmailAddress = emailAddress,
             Website = website,

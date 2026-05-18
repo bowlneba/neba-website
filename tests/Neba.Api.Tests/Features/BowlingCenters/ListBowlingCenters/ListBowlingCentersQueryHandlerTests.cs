@@ -1,4 +1,5 @@
 using Neba.Api.Database;
+using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.BowlingCenters.ListBowlingCenters;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.BowlingCenters;
@@ -64,12 +65,12 @@ public sealed class ListBowlingCentersQueryHandlerTests(PostgreSqlFixture fixtur
         dto.Address.Longitude.ShouldBe(AddressFactory.ValidCoordinates.Longitude);
     }
 
-    [Fact(DisplayName = "HandleAsync returns all bowling centers when multiple exist")]
-    public async Task HandleAsync_ShouldReturnAllCenters_WhenMultipleExist()
+    [Fact(DisplayName = "HandleAsync returns only open bowling centers when multiple exist")]
+    public async Task HandleAsync_ShouldReturnOnlyOpenCenters_WhenMultipleExist()
     {
         var ct = TestContext.Current.CancellationToken;
         const int seed = 21;
-        var centers = BowlingCenterFactory.Bogus(3, seed);
+        var centers = BowlingCenterFactory.Bogus(10, seed);
         await _dbContext.BowlingCenters.AddRangeAsync(centers, ct);
         await _dbContext.SaveChangesAsync(ct);
 
@@ -77,12 +78,39 @@ public sealed class ListBowlingCentersQueryHandlerTests(PostgreSqlFixture fixtur
 
         var result = await handler.HandleAsync(new ListBowlingCentersQuery(), ct);
 
-        result.Count.ShouldBe(3);
+        var expectedCount = centers.Count(c => c.Status == BowlingCenterStatus.Open);
+        result.Count.ShouldBe(expectedCount);
         foreach (var dto in result)
         {
             dto.Name.ShouldNotBeNullOrWhiteSpace();
             dto.CertificationNumber.ShouldNotBeNullOrWhiteSpace();
             dto.Address.ShouldNotBeNull();
+            dto.Status.ShouldBe(BowlingCenterStatus.Open.Name);
         }
+    }
+
+    [Fact(DisplayName = "HandleAsync excludes closed and uncertified bowling centers")]
+    public async Task HandleAsync_ShouldExcludeClosedAndUncertifiedCenters()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var openCenter = BowlingCenterFactory.Create(
+            certificationNumber: CertificationNumberFactory.Create("11111"),
+            status: BowlingCenterStatus.Open);
+        var closedCenter = BowlingCenterFactory.Create(
+            certificationNumber: CertificationNumberFactory.Create("22222"),
+            status: BowlingCenterStatus.Closed);
+        var uncertifiedCenter = BowlingCenterFactory.Create(
+            certificationNumber: CertificationNumberFactory.Create("33333"),
+            status: BowlingCenterStatus.Uncertified);
+
+        await _dbContext.BowlingCenters.AddRangeAsync([openCenter, closedCenter, uncertifiedCenter], ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = new ListBowlingCentersQueryHandler(_dbContext);
+
+        var result = await handler.HandleAsync(new ListBowlingCentersQuery(), ct);
+
+        result.ShouldHaveSingleItem();
+        result.Single().CertificationNumber.ShouldBe("11111");
     }
 }

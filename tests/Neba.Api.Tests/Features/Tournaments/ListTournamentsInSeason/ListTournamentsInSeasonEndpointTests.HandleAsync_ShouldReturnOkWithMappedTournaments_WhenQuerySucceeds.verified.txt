@@ -18,20 +18,18 @@
         Abraham Armstrong
       ],
       BowlingCenter: {
-        Name: Reilly LLC,
-        City: North Rhoda,
-        State: AL
+        Name: Connelly, Cassin and Ledner Lanes,
+        City: East Modestaport,
+        State: FL
       },
       Sponsors: [
         {
-          Name: Ward - Balistreri,
-          Slug: eius-ut-eaque,
-          LogoUrl: https://picsum.photos/640/480/?image=234
+          Name: Baumbach - Rath,
+          Slug: caleb
         },
         {
-          Name: O'Keefe Inc,
-          Slug: veritatis-praesentium-eum,
-          LogoUrl: https://picsum.photos/640/480/?image=472
+          Name: McGlynn Inc,
+          Slug: lorenza
         }
       ]
     },
@@ -49,20 +47,18 @@
       PatternRatioCategory: Recreation,
       LogoUrl: https://juvenal.info,
       BowlingCenter: {
-        Name: Reilly LLC,
-        City: North Rhoda,
-        State: AL
+        Name: Connelly, Cassin and Ledner Lanes,
+        City: East Modestaport,
+        State: FL
       },
       Sponsors: [
         {
-          Name: Sauer Group,
-          Slug: et-est-rem,
-          LogoUrl: https://picsum.photos/640/480/?image=895
+          Name: Schoen and Sons,
+          Slug: jovani
         },
         {
-          Name: Graham Group,
-          Slug: molestiae-aut-delectus,
-          LogoUrl: https://picsum.photos/640/480/?image=341
+          Name: Green, Lueilwitz and Zboncak,
+          Slug: mac
         }
       ]
     },
@@ -83,9 +79,9 @@
         Ashton McLaughlin
       ],
       BowlingCenter: {
-        Name: Murazik, Buckridge and Fritsch,
-        City: Port Rosamondburgh,
-        State: NV
+        Name: Hackett LLC Lanes,
+        City: Abernathymouth,
+        State: SD
       }
     }
   ],

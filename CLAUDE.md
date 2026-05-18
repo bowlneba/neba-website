@@ -176,6 +176,7 @@ The equality members (`Equals`, `GetHashCode`, `==`, `!=`) are needed because St
 - Use `NullLogger<T>.Instance`, never mock ILogger
 - Use test factories from `Neba.TestFactory`, never manual entity instantiation
 - Test factories follow a consistent pattern: `Create()` with nullable params (const defaults), `Bogus(int count, int? seed)` for collection
+- **`Create()` must always produce a persistable entity with no arguments** — every default must satisfy all domain invariants and EF constraints (e.g., required complex properties). If a test fails because `Create()` produces an invalid entity when called with no arguments, fix the factory default rather than patching the test. Example: `AddressFactory.CreateUsAddress()` passes `null` coordinates, but `BowlingCenterFactory.Create()` must call it with `coordinates: AddressFactory.ValidCoordinates` so the default address satisfies EF's non-nullable `Coordinates` constraint.
 - Use a seed with `Bogus` only when the specific data values matter to the assertion (e.g., snapshot tests, integration tests for reproducibility). Omit the seed when only shape/count/type matters — the test is clearer without it
 - When seeds are used, each test should use a distinct seed value — don't reuse the same seed across multiple tests
 - Infrastructure services wrapping external SDKs (e.g., Azure Blob Storage) use Testcontainers for integration tests, not mocks
