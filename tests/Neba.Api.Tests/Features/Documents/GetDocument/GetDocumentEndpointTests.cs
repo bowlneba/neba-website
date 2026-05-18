@@ -42,11 +42,7 @@ public sealed class GetDocumentEndpointTests
         await endpoint.HandleAsync(request, cancellationToken);
 
         // Assert
-        endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
-        endpoint.HttpContext.Response.ContentType.ShouldNotBeNull();
-        endpoint.Response.ShouldNotBeNull();
-        endpoint.Response.Html.ShouldBe(dto.Html);
-        endpoint.Response.LastUpdated.ShouldBe(dto.LastUpdated);
+        await Verify(endpoint.Response);
     }
 
     [Fact(DisplayName = "HandleAsync should return 404 when document not found")]
@@ -81,7 +77,6 @@ public sealed class GetDocumentEndpointTests
 
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(404);
-        endpoint.HttpContext.Response.ContentType.ShouldNotBe("application/json; charset=utf-8");
     }
 
     [Fact(DisplayName = "Configure should register anonymous GET route at /documents/{DocumentName}")]

@@ -32,11 +32,6 @@ public sealed class ListTournamentsInSeasonEndpointTests
         await endpoint.HandleAsync(new ListTournamentsInSeasonRequest { SeasonId = seasonId.Value.ToString() }, cancellationToken);
 
         // Assert
-        endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
-        endpoint.HttpContext.Response.ContentType.ShouldNotBeNull();
-        endpoint.Response.ShouldNotBeNull();
-        endpoint.Response.TotalItems.ShouldBe(dtos.Count);
-
         await Verify(endpoint.Response);
     }
 

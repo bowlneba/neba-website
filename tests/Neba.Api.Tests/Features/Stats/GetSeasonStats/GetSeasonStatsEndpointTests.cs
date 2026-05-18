@@ -33,9 +33,6 @@ public sealed class GetSeasonStatsEndpointTests
         await endpoint.HandleAsync(new GetSeasonStatsRequest { Year = null }, cancellationToken);
 
         // Assert
-        endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
-        endpoint.Response.ShouldNotBeNull();
-        endpoint.Response.SelectedSeason.ShouldBe(dto.Season.Description);
         await Verify(endpoint.Response);
     }
 
@@ -57,8 +54,7 @@ public sealed class GetSeasonStatsEndpointTests
         await endpoint.HandleAsync(new GetSeasonStatsRequest { Year = 2024 }, cancellationToken);
 
         // Assert
-        endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
-        endpoint.Response.ShouldNotBeNull();
+        await Verify(endpoint.Response);
     }
 
     [Fact(DisplayName = "HandleAsync should return 404 Not Found when no stats exist for the season")]
@@ -99,7 +95,6 @@ public sealed class GetSeasonStatsEndpointTests
 
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(500);
-        endpoint.ValidationFailures.ShouldContain(f => f.ErrorMessage == "Season stats payload was null.");
     }
 
     [Fact(DisplayName = "Configure should register anonymous GET route under /stats path")]

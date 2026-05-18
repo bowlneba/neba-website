@@ -35,10 +35,6 @@ public sealed class GetTournamentEndpointTests
             cancellationToken);
 
         // Assert
-        endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
-        endpoint.Response.ShouldNotBeNull();
-        endpoint.Response.Id.ShouldBe(dto.Id.Value.ToString());
-        endpoint.Response.Name.ShouldBe(dto.Name);
         await Verify(endpoint.Response);
     }
 
@@ -92,8 +88,6 @@ public sealed class GetTournamentEndpointTests
 
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(500);
-        endpoint.ValidationFailures.ShouldContain(f => f.ErrorMessage == firstErrorMessage);
-        endpoint.ValidationFailures.ShouldContain(f => f.ErrorMessage == secondErrorMessage);
     }
 
     [Fact(DisplayName = "Configure should register anonymous GET route under /tournaments")]

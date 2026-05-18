@@ -31,10 +31,6 @@ public sealed class GetSponsorDetailEndpointTests
         await endpoint.HandleAsync(new GetSponsorDetailRequest { Slug = dto.Slug }, cancellationToken);
 
         // Assert
-        endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
-        endpoint.Response.ShouldNotBeNull();
-        endpoint.Response.Id.ShouldBe(dto.Id.Value);
-        endpoint.Response.Slug.ShouldBe(dto.Slug);
         await Verify(endpoint.Response);
     }
 

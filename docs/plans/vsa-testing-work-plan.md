@@ -118,19 +118,30 @@ All 11 integration test files created under `tests/Neba.Api.Tests/Features/`. Ea
 
 ---
 
-## Phase 7: Endpoint Test Review and Gaps
+## Phase 7: Endpoint Test Review and Gaps — COMPLETE
 
 ### 7.1 Review All Existing Endpoint Tests
 
-For each existing endpoint test class, verify and fix as needed:
+Audited all 12 endpoint test classes against the checklist. Changes made:
 
-1. Every response code in `Configure()` (`Produces(...)`, `ProducesProblemDetails(...)`) has a corresponding test.
-2. Happy-path tests call `await Verify(endpoint.Response)` and do **not** also assert individual response properties (remove redundant assertions).
-3. Each test uses a **distinct** Bogus seed — no two tests in the same class share a seed.
-4. Error-path tests assert only `endpoint.HttpContext.Response.StatusCode` — no `Verify` call.
-5. The Configure test (route + auth) may remain as-is.
+**Redundant assertions removed from happy-path tests** (those that also call `Verify`): stripped `StatusCode`, `ContentType`, `Response.ShouldNotBeNull()`, and individual property assertions from: `ListHallOfFameInductionsEndpointTests`, `ListBowlerOfTheYearAwardsEndpointTests`, `ListHighAverageAwardsEndpointTests`, `ListHighBlockAwardsEndpointTests`, `ListBowlingCentersEndpointTests`, `ListSeasonsEndpointTests`, `ListActiveSponsorsEndpointTests`, `GetSponsorDetailEndpointTests`, `GetTournamentEndpointTests`, `ListTournamentsInSeasonEndpointTests`, and `GetSeasonStatsEndpointTests` (`_WhenQuerySucceedsWithoutYear`).
 
-Features with existing endpoint tests: all Award slices, BowlingCenters, Documents/GetDocument, HallOfFame, Seasons, both Sponsor slices, Stats/GetSeasonStats, both Tournament slices.
+**Missing `Verify` added** to two happy-path tests that were asserting individual properties with no snapshot:
+
+- `GetSeasonStatsEndpointTests._WhenQuerySucceedsWithYear` — replaced `StatusCode` + null assertions with `await Verify(endpoint.Response)`.
+- `GetDocumentEndpointTests._ShouldReturnOkWithHtml_WhenQuerySucceeds` — replaced `StatusCode`, `ContentType`, `Html`, and `LastUpdated` assertions with `await Verify(endpoint.Response)`.
+
+**Extra assertions removed from error-path tests** (must assert `StatusCode` only):
+
+- `GetSeasonStatsEndpointTests` 500 — removed `ValidationFailures.ShouldContain(...)`.
+- `GetTournamentEndpointTests` 500 — removed both `ValidationFailures.ShouldContain(...)` assertions.
+- `GetDocumentEndpointTests` 404 — removed `ContentType.ShouldNotBe(...)` assertion.
+
+**400 coverage for `ListTournamentsInSeason`**: Already covered by the pre-existing `ListTournamentsInSeasonRequestValidatorTests.cs` (null, empty/whitespace, too-short, too-long, and valid cases). No new file needed.
+
+**Seeds**: All Bogus seeds within each test class are distinct. No conflicts found.
+
+**`ListSeasons` 500**: Declared in `Configure()` for OpenAPI documentation only (global exception handler); no handler code path can trigger it in unit tests. Skipped.
 
 ### 7.2 Create Missing Endpoint Tests
 
@@ -138,12 +149,12 @@ Features with existing endpoint tests: all Award slices, BowlingCenters, Documen
 
 ### 7.3 Missing Query Tests
 
-**Stats/GetSeasonStats** — `GetSeasonStatsQueryTests.cs` does not exist.
+**Stats/GetSeasonStats**: `GetSeasonStatsQuery` does not implement `ICachedQuery` — the handler calls `HybridCache.GetOrCreateAsync` directly using `CacheDescriptors.Stats.BowlerSeasonStats(season.Id)`. Created `tests/Neba.Api.Tests/Features/Stats/GetSeasonStats/GetSeasonStatsQueryTests.cs` testing the descriptor directly:
 
-Create `tests/Neba.Api.Tests/Features/Stats/GetSeasonStats/GetSeasonStatsQueryTests.cs` and test:
-- `query.Cache.Key` equals the expected string
-- `query.Cache.Tags` contains every expected tag and no extras (`Count.ShouldBe(N)`)
-- `query.Expiry` equals the expected `TimeSpan`
+- Key follows `"neba:stats:seasons:{seasonId}:bowlers"` format
+- Key is specific to the season (different `SeasonId` values → different keys)
+- Tags contain `"neba"`, `"neba:stats"`, `"neba:stats:seasons"`, and `"neba:stats:seasons:{seasonId}"`
+- Tags count is exactly 4
 
 **Stats/GetSeasonsWithStats** — skip (Phase 0.1: no separate slice).
 
