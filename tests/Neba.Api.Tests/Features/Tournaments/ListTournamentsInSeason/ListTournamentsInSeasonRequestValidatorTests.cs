@@ -1,7 +1,7 @@
 using Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Api.Tests.Features.Seasons.ListTournamentsInSeason;
+namespace Neba.Api.Tests.Features.Tournaments.ListTournamentsInSeason;
 
 [UnitTest]
 [Component("Tournaments")]
