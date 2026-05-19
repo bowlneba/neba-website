@@ -1,6 +1,6 @@
 ﻿using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Seasons.Domain;
-using Neba.Api.Features.Stats.BoyProgression;
+using Neba.Api.Features.Stats.GetSeasonStats.BoyProgression;
 using Neba.Api.Features.Tournaments.Domain;
 
 namespace Neba.Api.Features.Stats.GetSeasonStats;
@@ -97,20 +97,21 @@ internal sealed class BowlerOfTheYearRaceCalculator
             return result.StatsEligible;
         }
 
-        if (category == BowlerOfTheYearCategory.Senior
-            || category == BowlerOfTheYearCategory.SuperSenior)
-        {
-            return result.StatsEligible
-                || result.TournamentType == TournamentType.Senior
-                || result.TournamentType == TournamentType.SeniorAndWomen;
-        }
-
-        return category == BowlerOfTheYearCategory.Woman
+        return category == BowlerOfTheYearCategory.Senior
+            || category == BowlerOfTheYearCategory.SuperSenior
+            ? result.StatsEligible
+                || IsSeniorTournament(result.TournamentType)
+            : category == BowlerOfTheYearCategory.Woman
         && (result.StatsEligible
-            || result.TournamentType == TournamentType.Women
-            || result.TournamentType == TournamentType.SeniorAndWomen
+            || IsWomanTournament(result.TournamentType)
         );
     }
+
+    private static bool IsSeniorTournament(int tournamentType)
+        => tournamentType == TournamentType.Senior || tournamentType == TournamentType.SeniorAndWomen;
+
+    private static bool IsWomanTournament(int tournamentType)
+        => tournamentType == TournamentType.Women || tournamentType == TournamentType.SeniorAndWomen;
 
     private static bool IsBowlerEligibleForRace(BoyProgressionResultDto result, BowlerOfTheYearCategory category)
     {

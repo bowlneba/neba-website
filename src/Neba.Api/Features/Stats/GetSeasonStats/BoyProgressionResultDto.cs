@@ -1,7 +1,7 @@
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 
-namespace Neba.Api.Features.Stats.BoyProgression;
+namespace Neba.Api.Features.Stats.GetSeasonStats.BoyProgression;
 
 /// <summary>
 /// One row per <c>HistoricalTournamentResult</c>. Used exclusively to compute BOY point progressions.
