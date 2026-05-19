@@ -6,4 +6,4 @@ namespace Neba.Api.Features.Seasons.Domain;
 /// Unique identifier for a season award.
 /// </summary>
 [StronglyTypedId("ulid-full")]
-public readonly partial struct SeasonAwardId { }
+public readonly partial struct SeasonAwardId;

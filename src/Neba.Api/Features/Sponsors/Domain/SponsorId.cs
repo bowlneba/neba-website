@@ -6,4 +6,4 @@ namespace Neba.Api.Features.Sponsors.Domain;
 /// Unique identifier for a sponsor.
 /// </summary>
 [StronglyTypedId("ulid-full")]
-public readonly partial struct SponsorId { }
+public readonly partial struct SponsorId;

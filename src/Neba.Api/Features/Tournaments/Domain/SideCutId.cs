@@ -6,4 +6,4 @@ namespace Neba.Api.Features.Tournaments.Domain;
 /// Unique identifier for a side cut.
 /// </summary>
 [StronglyTypedId("ulid-full")]
-public readonly partial struct SideCutId { }
+public readonly partial struct SideCutId;

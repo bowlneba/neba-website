@@ -6,4 +6,4 @@ namespace Neba.Api.Features.Tournaments.Domain;
 /// Unique identifier for a tournament.
 /// </summary>
 [StronglyTypedId("ulid-full")]
-public readonly partial struct TournamentId { }
+public readonly partial struct TournamentId;

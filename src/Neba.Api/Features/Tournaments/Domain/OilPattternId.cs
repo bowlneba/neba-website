@@ -6,4 +6,4 @@ namespace Neba.Api.Features.Tournaments.Domain;
 /// Unique identifier for an oil pattern.
 /// </summary>
 [StronglyTypedId("ulid-full")]
-public readonly partial struct OilPatternId { }
+public readonly partial struct OilPatternId;

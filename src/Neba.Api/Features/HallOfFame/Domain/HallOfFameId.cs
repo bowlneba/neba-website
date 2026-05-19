@@ -6,4 +6,4 @@ namespace Neba.Api.Features.HallOfFame.Domain;
 /// Unique identifier for a Hall of Fame induction entry.
 /// </summary>
 [StronglyTypedId("ulid-full")]
-public readonly partial struct HallOfFameId { }
+public readonly partial struct HallOfFameId;
