@@ -28,7 +28,8 @@ internal sealed class ListBowlingCentersEndpoint(IQueryHandler<ListBowlingCenter
 
         Description(description => description
             .WithName("ListBowlingCenters")
-            .WithTags("Public"));
+            .WithTags("Public")
+            .Produces<CollectionResponse<BowlingCenterSummaryResponse>>(StatusCodes.Status200OK));
     }
 
     public override async Task HandleAsync(CancellationToken ct)

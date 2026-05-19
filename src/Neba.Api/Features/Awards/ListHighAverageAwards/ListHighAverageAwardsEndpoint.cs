@@ -27,7 +27,8 @@ internal sealed class ListHighAverageAwardsEndpoint(IQueryHandler<ListHighAverag
 
         Description(description => description
             .WithName("ListHighAverageAwards")
-            .WithTags("Public"));
+            .WithTags("Public")
+            .Produces<CollectionResponse<HighAverageAwardResponse>>(StatusCodes.Status200OK));
     }
 
     public override async Task HandleAsync(CancellationToken ct)

@@ -27,7 +27,8 @@ internal sealed class ListHallOfFameInductionsEndpoint(IQueryHandler<ListHallOfF
 
         Description(description => description
             .WithName("ListHallOfFameInductions")
-            .WithTags("Public"));
+            .WithTags("Public")
+            .Produces<CollectionResponse<HallOfFameInductionResponse>>(StatusCodes.Status200OK));
     }
 
     public override async Task HandleAsync(CancellationToken ct)

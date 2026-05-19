@@ -55,7 +55,7 @@ Work through the diff layer by layer. For each issue found, record:
 - [ ] Authorization explicitly configured
 - [ ] `WithName()` in Description
 - [ ] Tags match authorization (Public/Authenticated/Admin)
-- [ ] All status codes documented
+- [ ] All status codes documented — **check the endpoint group first**: `ProducesProblemDetails(500)` is declared on the group (e.g., `AwardsEndpointGroup`, `BowlingCentersEndpointGroup`) and does not need to be repeated on each endpoint. Individual endpoints only need `Produces<TResponse>(200)` and any status codes unique to that endpoint (e.g., `ProducesProblemDetails(404)` for endpoints that can 404)
 - [ ] Validator present and contains only structural validation
 - [ ] All errors return ProblemDetails (bare `Send.NotFoundAsync()` is acceptable for simple 404s)
 - [ ] Summary class with realistic examples
@@ -74,7 +74,6 @@ Work through the diff layer by layer. For each issue found, record:
 - [ ] Tests have `[UnitTest]` or `[IntegrationTest]` trait
 - [ ] Tests have `[Component]` trait
 - [ ] Facts and Theories have `DisplayName`
-- [ ] New Domain bounded context added to `BoundedContextNamespaces` in `DomainBoundaryTests.cs`
 - [ ] No `.Verify()` calls when using `MockBehavior.Strict`
 - [ ] No `null!` for null-argument tests — uses `#nullable disable`/`#nullable enable`
 

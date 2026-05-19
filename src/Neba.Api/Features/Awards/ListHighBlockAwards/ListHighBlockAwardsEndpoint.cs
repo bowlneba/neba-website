@@ -27,7 +27,8 @@ internal sealed class ListHighBlockAwardsEndpoint(IQueryHandler<ListHighBlockAwa
 
         Description(description => description
             .WithName("ListHighBlockAwards")
-            .WithTags("Public"));
+            .WithTags("Public")
+            .Produces<CollectionResponse<HighBlockAwardResponse>>(StatusCodes.Status200OK));
     }
 
     public override async Task HandleAsync(CancellationToken ct)

@@ -13,7 +13,6 @@
       "break": 60
     },
     "ignore-mutations": ["string", "Update", "Linq"],
-    "additional-timeout": 30000,
     "ignore-methods": [
       "ArgumentNullException.ThrowIfNull",
       "ArgumentException.ThrowIfNullOrEmpty",

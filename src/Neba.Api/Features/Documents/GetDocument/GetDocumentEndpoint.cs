@@ -28,7 +28,9 @@ internal sealed class GetDocumentEndpoint(IQueryHandler<GetDocumentQuery, ErrorO
 
         Description(description => description
             .WithName("GetDocument")
-            .WithTags("Public"));
+            .WithTags("Public")
+            .Produces<GetDocumentResponse>(StatusCodes.Status200OK)
+            .ProducesProblemDetails(StatusCodes.Status404NotFound));
     }
 
     public override async Task HandleAsync(GetDocumentRequest req, CancellationToken ct)

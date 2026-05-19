@@ -45,14 +45,6 @@ internal sealed class GetSeasonStatsEndpoint(IQueryHandler<GetSeasonStatsQuery, 
             return;
         }
 
-        if (result.Value is null)
-        {
-            AddError("Season stats payload was null.");
-            await Send.ErrorsAsync(StatusCodes.Status500InternalServerError, ct);
-            // Stryker disable once Statement
-            return;
-        }
-
         // Stryker disable once Statement
         await Send.OkAsync(MapToResponse(result.Value), ct);
     }

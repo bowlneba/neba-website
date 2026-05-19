@@ -1821,7 +1821,6 @@ Career stats combine both sources transparently.
 ```text
 tests/
 ├── Neba.TestFactory/           # Shared test infrastructure (factories, fixtures, traits)
-├── Neba.Architecture.Tests/    # Architecture rule enforcement (ArchUnitNET)
 ├── Neba.Api.Tests/             # All backend tests: domain, application, infrastructure, and API endpoints
 ├── Neba.Website.Tests/         # UI tests (bUnit, services, JS interop)
 ├── e2e/                        # Playwright E2E tests (TypeScript)
@@ -1838,7 +1837,6 @@ Tests are categorized using custom xUnit v3 trait attributes defined in `Neba.Te
 // Category traits
 [UnitTest]         // Category=Unit
 [IntegrationTest]  // Category=Integration
-[ArchitectureTest] // Category=Architecture
 
 // Component trait - feature/functionality being tested
 [Component("Tournaments")]
@@ -1891,17 +1889,12 @@ dotnet run -- --filter-query "[Category=Unit]"
 **CI usage**: Run in separate jobs for faster feedback and clear failure attribution:
 
 ```yaml
-- name: Run Architecture Tests
-  run: dotnet test --filter "Category=Architecture"
-
 - name: Run Unit Tests
   run: dotnet test --filter "Category=Unit"
 
 - name: Run Integration Tests
   run: dotnet test --filter "Category=Integration"
 ```
-
-Architecture tests run first — they're fast (milliseconds, no I/O) and catch structural violations before the full test suite runs.
 
 ### Test Naming & Display Names
 
@@ -1944,37 +1937,6 @@ public static TheoryData<int, int, decimal, int> HandicapTestCases => new()
 - Test output is readable without parsing method names
 - CI logs clearly show what failed
 - Non-technical stakeholders can understand test coverage
-
-### Architecture Tests
-
-Architecture tests live in `Neba.Architecture.Tests` and use [ArchUnitNET](https://github.com/TNG/ArchUnitNET) to enforce structural rules that code review alone cannot reliably catch. They run in milliseconds with no infrastructure required.
-
-All architecture test classes are marked `[ArchitectureTest]` and `[Component("Architecture")]`.
-
-#### What is enforced
-
-| Test class | What it guards |
-| --- | --- |
-| `NamingConventionTests` | `IQueryHandler` implementors → name ends with `QueryHandler`. `ICommandHandler` implementors → `CommandHandler`. `IBackgroundJobHandler` implementors → `JobHandler`. |
-| `VisibilityTests` | All handler implementations must be `internal`. |
-| `DependencyGuardTests` | Feature domain types must not reference EF Core, Hangfire, or Newtonsoft.Json. |
-| `ColocationTests` | Each handler class must live in the same namespace as its command/query/job type. |
-| `DomainBoundaryTests` | Feature domain namespaces must not cross-reference each other (see below). |
-
-#### Bounded context namespaces
-
-`DomainBoundaryTests` enforces that the following feature domain namespaces do not depend on each other:
-
-```text
-Neba.Api.Features.BowlingCenters.Domain
-Neba.Api.Features.Tournaments.Domain
-Neba.Api.Features.Bowlers.Domain
-Neba.Api.Features.Seasons.Domain
-```
-
-The shared `Neba.Api.Domain` namespace (containing `AggregateRoot`, `IDomainEvent`, etc.) is intentionally excluded — it is designed to be used by all feature domains.
-
-**When adding a new feature**: add its domain namespace to `BoundedContextNamespaces` in [DomainBoundaryTests.cs](../../tests/Neba.Architecture.Tests/DomainBoundaryTests.cs). This is the only file that must be updated.
 
 ### Unit Tests
 

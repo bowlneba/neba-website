@@ -27,7 +27,8 @@ internal sealed class ListBowlerOfTheYearAwardsEndpoint(IQueryHandler<ListBowler
 
         Description(description => description
             .WithName("ListBowlerOfTheYearAwards")
-            .WithTags("Public"));
+            .WithTags("Public")
+            .Produces<CollectionResponse<BowlerOfTheYearAwardResponse>>(StatusCodes.Status200OK));
     }
 
     public override async Task HandleAsync(CancellationToken ct)
