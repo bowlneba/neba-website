@@ -44,7 +44,7 @@ public sealed class ListBowlerOfTheYearAwardsQueryHandlerTests(PostgreSqlFixture
         var bowler = BowlerFactory.Create(name: NameFactory.Create("Jane", "Doe"));
         await _dbContext.Bowlers.AddAsync(bowler, ct);
 
-        var season = SeasonFactory.Create(complete: true, description: "2025 Season");
+        var season = SeasonFactory.Create(description: "2025 Season", complete: true);
         season.AddOpenBowlerOfTheYearWinner(bowler.Id);
         await _dbContext.Seasons.AddAsync(season, ct);
         await _dbContext.SaveChangesAsync(ct);

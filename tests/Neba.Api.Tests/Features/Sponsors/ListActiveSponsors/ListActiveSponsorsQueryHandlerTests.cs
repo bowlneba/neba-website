@@ -42,7 +42,7 @@ public sealed class ListActiveSponsorsQueryHandlerTests(PostgreSqlFixture fixtur
     public async Task HandleAsync_ShouldExcludeInactiveSponsors_WhenOnlyInactiveExist()
     {
         var ct = TestContext.Current.CancellationToken;
-        var inactive = SponsorFactory.Create(isCurrentSponsor: false, slug: "inactive-co");
+        var inactive = SponsorFactory.Create(slug: "inactive-co", isCurrentSponsor: false);
         await _dbContext.Sponsors.AddAsync(inactive, ct);
         await _dbContext.SaveChangesAsync(ct);
 
@@ -84,7 +84,7 @@ public sealed class ListActiveSponsorsQueryHandlerTests(PostgreSqlFixture fixtur
     {
         var ct = TestContext.Current.CancellationToken;
         var logo = StoredFileFactory.Create(container: "logos", path: "sponsors/acme-logo.png");
-        var sponsor = SponsorFactory.Create(isCurrentSponsor: true, slug: "logo-sponsor", logo: logo);
+        var sponsor = SponsorFactory.Create(slug: "logo-sponsor", isCurrentSponsor: true, logo: logo);
         await _dbContext.Sponsors.AddAsync(sponsor, ct);
         await _dbContext.SaveChangesAsync(ct);
 

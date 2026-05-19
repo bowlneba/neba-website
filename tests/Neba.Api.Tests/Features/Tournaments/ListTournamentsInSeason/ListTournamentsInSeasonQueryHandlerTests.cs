@@ -77,10 +77,10 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(PostgreSqlFixture f
 
         var tournament = TournamentFactory.Create(
             name: "NEBA Singles 2025",
-            seasonId: season.Id,
-            statsEligible: true,
             startDate: new DateOnly(2025, 10, 4),
-            endDate: new DateOnly(2025, 10, 5));
+            endDate: new DateOnly(2025, 10, 5),
+            statsEligible: true,
+            seasonId: season.Id);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
