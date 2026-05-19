@@ -110,7 +110,7 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
     {
         var results = BoyProgressionResultDtoFactory.Bogus(count: 10, seed: 77);
 
-        var progressions = _calculator.CalculateAllProgressions((IReadOnlyCollection<Api.Features.Stats.GetSeasonStats.BoyProgression.BoyProgressionResultDto>)results);
+        var progressions = _calculator.CalculateAllProgressions(results);
 
         progressions[BowlerOfTheYearCategory.Rookie.Value].ShouldBeEmpty();
     }

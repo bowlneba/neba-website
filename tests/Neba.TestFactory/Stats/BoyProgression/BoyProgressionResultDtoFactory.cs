@@ -1,7 +1,7 @@
 using System.Globalization;
 
 using Neba.Api.Features.Bowlers.Domain;
-using Neba.Api.Features.Stats.BoyProgression;
+using Neba.Api.Features.Stats.GetSeasonStats;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Bowlers;
 

@@ -7,7 +7,6 @@ using Neba.Api.Caching;
 using Neba.Api.Database;
 using Neba.Api.Database.Entities;
 using Neba.Api.Features.Seasons.Domain;
-using Neba.Api.Features.Stats.BoyProgression;
 using Neba.Api.Features.Stats.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Messaging;
