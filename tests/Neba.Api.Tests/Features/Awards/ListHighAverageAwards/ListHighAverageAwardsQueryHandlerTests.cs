@@ -48,7 +48,7 @@ public sealed class ListHighAverageAwardsQueryHandlerTests(PostgreSqlFixture fix
         const int tournamentsParticipated = 6;
         const int statEligibleTournamentCount = 6; // minimum = floor(4.5 × 6) = 27 games
 
-        var season = SeasonFactory.Create(description: "2025 Season", complete: true);
+        var season = SeasonFactory.Create(complete: true, description: "2025 Season");
         season.AddHighAverageWinner(bowler.Id, average, totalGames, tournamentsParticipated, statEligibleTournamentCount);
         await _dbContext.Seasons.AddAsync(season, ct);
         await _dbContext.SaveChangesAsync(ct);

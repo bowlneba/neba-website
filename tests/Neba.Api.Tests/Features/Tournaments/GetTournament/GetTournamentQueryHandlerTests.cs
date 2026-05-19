@@ -49,11 +49,11 @@ public sealed class GetTournamentQueryHandlerTests(PostgreSqlFixture fixture)
 
         var tournament = TournamentFactory.Create(
             name: "NEBA Singles 2025",
+            seasonId: season.Id,
+            statsEligible: true,
             tournamentType: TournamentType.Singles,
             startDate: new DateOnly(2025, 10, 4),
-            endDate: new DateOnly(2025, 10, 5),
-            statsEligible: true,
-            seasonId: season.Id);
+            endDate: new DateOnly(2025, 10, 5));
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 

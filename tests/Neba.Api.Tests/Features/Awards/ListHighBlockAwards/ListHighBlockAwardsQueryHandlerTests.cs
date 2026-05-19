@@ -46,7 +46,7 @@ public sealed class ListHighBlockAwardsQueryHandlerTests(PostgreSqlFixture fixtu
         const int blockScore = 1150;
         const int games = 5;
 
-        var season = SeasonFactory.Create(description: "2025 Season", complete: true);
+        var season = SeasonFactory.Create(complete: true, description: "2025 Season");
         season.AddHighBlockWinner(bowler.Id, blockScore, games);
         await _dbContext.Seasons.AddAsync(season, ct);
         await _dbContext.SaveChangesAsync(ct);
