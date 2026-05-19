@@ -5,6 +5,30 @@
         global::System.IParsable<PLACEHOLDERID>, global::System.ISpanParsable<PLACEHOLDERID>,
         global::System.IComparable<PLACEHOLDERID>, global::System.IEquatable<PLACEHOLDERID>, global::System.IFormattable
     {
+        /// <summary>Gets the underlying <see cref="global::System.Ulid"/> value.</summary>
+        public global::System.Ulid Value { get; }
+
+        private PLACEHOLDERID(global::System.Ulid value) => Value = value;
+
+        /// <summary>Creates a new <see cref="PLACEHOLDERID"/> with a randomly generated ULID value.</summary>
+        public static PLACEHOLDERID New() => new(global::System.Ulid.NewUlid());
+
+        /// <inheritdoc cref="global::System.IEquatable{TSelf}"/>
+        public bool Equals(PLACEHOLDERID other) => Value.Equals(other.Value);
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj) => obj is PLACEHOLDERID other && Equals(other);
+
+        /// <inheritdoc/>
+        public override int GetHashCode() => Value.GetHashCode();
+
+        /// <summary>Returns <see langword="true"/> if the two values are equal.</summary>
+        public static bool operator ==(PLACEHOLDERID a, PLACEHOLDERID b) => a.Equals(b);
+
+        /// <summary>Returns <see langword="true"/> if the two values are not equal.</summary>
+        public static bool operator !=(PLACEHOLDERID a, PLACEHOLDERID b) => !(a == b);
+
+        /// <summary>Creates a new <see cref="PLACEHOLDERID"/> from a string ULID representation.</summary>
         public PLACEHOLDERID(string value)
         {
             global::System.ArgumentNullException.ThrowIfNull(value);

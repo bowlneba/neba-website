@@ -105,64 +105,10 @@ season.AssignHighAverageWinner(command.BowlerId, command.Average, command.Games,
 
 ### Testing Requirements
 
-#### JavaScript Mutation Testing
+#### Mutation Testing
 
-- Uses **Stryker v9** with `@stryker-mutator/jest-runner`; config: `stryker.config.json`
-- Mutates all `src/Neba.Website.Server/**/*.js` (excludes `.tests.js` files)
-- A mutation is **killed** when at least one test *fails* on the mutated code
-- **"Not covered"** → needs a new test that exercises the code path
-- **"Covered, survived"** → test reaches the code but assertions aren't specific enough; sharpen them
-- Be pragmatic: `StringLiteral` mutations inside `console.log/warn/error` are low-value
-- Arithmetic mutations where one operand is `0` are ambiguous (`a - 0 === a + 0`) — ensure test data uses non-zero baseline values for timing, distances, and similar calculations
-- `BlockStatement` mutations (emptying a function body to `{}`) are high-value — they reveal entirely untested code paths and should be prioritized
+Mutation testing (Stryker) is **not currently in the CI pipeline** — removed May 2026. Stryker configs (`stryker-config.json`) and local tooling remain in place for manual runs. See the `## Learnings` section below for notes on known Stryker limitations.
 
-#### .NET Mutation Testing
-
-- Uses **dotnet-stryker** (global install: `dotnet tool install --global dotnet-stryker`)
-- Config: `tests/Neba.Api.Tests/stryker-config.json` and `tests/Neba.Website.Tests/stryker-config.json`
-- Run from the test project directory: `cd tests/Neba.Api.Tests && dotnet stryker`
-- Diff run (PR): `dotnet stryker --since origin/main`
-- Reports land in `tests/<Layer>.Tests/StrykerOutput/`
-
-**New test project checklist** — when adding a stryker-config.json for a new test project, every config must have:
-
-1. `"test-runner": "mtp"` — **required** for xUnit v3; without it all mutants show as Survived (xUnit v3 runs tests out-of-process; Stryker's VSTest extension never receives events). Shipped in Stryker.NET 4.13.
-2. `"project-info"` (not `"dashboard"`) — the .NET config key for dashboard reporting; `"dashboard"` is JS-only and will throw an unknown key error.
-3. `"reporters": ["html", "json", "progress"]` locally — omit `"dashboard"` from the config; pass `--reporter dashboard` as a CLI flag in CI only (having it in the config requires the API key even locally).
-4. `"ignore-mutations": ["string", "Update"]` — always exclude string literals (noise) and update expressions (`i++`/`i--`). The MTP runner in Stryker 4.13 does **not** respect `additional-timeout`, so `i++` → `i--` mutations in `for` loops create infinite loops that hang the entire run. `UpdateExpression` mutations are low-value anyway — loop control infrastructure, not business logic.
-
-**Coverage analysis note**: MTP coverage is partially implemented in 4.13 — uncovered mutants are filtered out, but per-mutant test selection is not yet available. This means runs are slower than they will eventually be (all tests run per mutant), but results are accurate.
-
-**StronglyTypedId + Stryker limitation** — Stryker's in-memory Roslyn compilation invokes source generators but does not pass `AdditionalFiles` (e.g., `ulid-full.typedid`) to them. The `StronglyTypedIds` generator therefore produces no output, causing compile errors when domain source files reference any member that was previously template-generated. Fix: remove the member from the template and define it explicitly in each ID's partial struct body. Every `[StronglyTypedId("ulid-full")]` type must declare the following — including test helper structs, not just domain IDs. See [ADR-0006](docs/adr/0006-explicit-new-on-stronglytypedid-partial-structs.md).
-
-Required explicit members (removed from `ulid-full.typedid`, must be in every partial struct):
-
-- `public Ulid Value { get; }`
-- `private T(Ulid value) => Value = value;`
-- `public static T New() => new(Ulid.NewUlid());`
-- `public bool Equals(T other) => Value.Equals(other.Value);`
-- `public override bool Equals(object? obj) => obj is T other && Equals(other);`
-- `public override int GetHashCode() => Value.GetHashCode();`
-- `public static bool operator ==(T a, T b) => a.Equals(b);`
-- `public static bool operator !=(T a, T b) => !(a == b);`
-
-The equality members (`Equals`, `GetHashCode`, `==`, `!=`) are needed because Stryker mutates equality expressions (e.g., `==` → `!=`). Without them visible in Stryker's compilation, mutated code produces `CS0019` and aborts the run rather than producing a killable mutation.
-
-**Per-project decisions** (make these explicitly for each new test project):
-
-- `ignore-mutations: Linq` — `Neba.Api.Tests` currently includes `Linq` (retained from prior domain/application layers); `Neba.Website.Tests` excludes it
-- `mutate` exclusions — inspect actual files; exclude pure declarations (source-generated stubs, SmartEnum tables), not logic
-
-**Thresholds by layer**:
-
-| Layer  | high | low | break | Notes                                    |
-|--------|------|-----|-------|------------------------------------------|
-| API    | 80   | 70  | 60    | Covers domain, application, and API code |
-| Blazor | 85   | 70  | 65    |                                          |
-
-- A mutation is **killed** when at least one test *fails* on the mutated code
-- **"Not covered"** → needs a new test exercising the code path
-- **"Covered, survived"** → assertions aren't specific enough; sharpen them
 
 #### .NET Testing Requirements
 
@@ -221,11 +167,6 @@ The equality members (`Equals`, `GetHashCode`, `==`, `!=`) are needed because St
 - **Integration tests**: `dotnet test --filter "Category=Integration"`
 - **Specific component**: `dotnet test --filter "Component=Tournaments"`
 - **E2E tests**: `npm run test:e2e`
-- **JS mutation tests (full run + summary)**: `npm run mutation:ai`
-- **JS mutation report for one file**: `npm run mutation:ai:file -- <FileName>` (e.g. `-- NavMenu`)
-- **.NET mutation tests — API**: `cd tests/Neba.Api.Tests && dotnet stryker`
-- **.NET mutation summary**: `npm run mutation:ai:dotnet -- Api`
-- **.NET mutation detail for one file**: `npm run mutation:ai:dotnet -- Api <FileName>` (e.g. `-- Api LaneRange`)
 - **CI status**: `gh run list --limit 5`
 - **CI failure details**: `gh run view <run-id> --log-failed`
 
@@ -289,27 +230,6 @@ This applies to any `ISchemaProcessor`, startup-cached registries, or other stat
 - Each test project that uses `FakeLogger<T>` needs `<PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" />` in its `.csproj`.
 
 All classes that use `[LoggerMessage]` source-generated log methods have dedicated log-assertion tests using `FakeLogger<T>`. When adding a new class that logs, add `Microsoft.Extensions.Diagnostics.Testing` to its test project (if not already present) and add log-assertion tests covering every log level/path.
-
-### Blazor Layer Mutation Testing — C# 14 Extension Block Limitation
-
-Stryker 4.14.1 (latest as of April 2026) **cannot run mutation tests on `Neba.Website.Server`** because its internal Roslyn version does not support C# 14 `extension` block syntax (`extension(T t) { ... }` inside a `static class`). The compile error is a rollback failure after Stryker tries to include these files in compilation.
-
-**Root cause**: Stryker packages its own Roslyn. The C# 14 `extension` block feature requires a Roslyn version newer than Stryker ships.
-
-**Affected files** (use `extension(` blocks):
-
-- `BowlingCenters/BowlingCenterMappingExtensions.cs`
-- `HallOfFame/HallOfFameMappingExtensions.cs`
-- `History/Awards/BowlerOfTheYearMappingExtensions.cs`
-- `History/Awards/HighAverageMappingExtensions.cs`
-- `History/Awards/HighBlockMappingExtensions.cs`
-- `Sponsors/SponsorMappingExtensions.cs`
-- `Services/ApiServicesConfiguration.cs`
-- `Maps/MapsConfiguration.cs`
-
-**Workaround**: None until Stryker updates its Roslyn package. Do not attempt to rewrite these files to traditional extension methods — the `extension` block syntax is the project convention per Architecture Patterns.
-
-**What to do**: Skip the Blazor mutation run. When Stryker ships a version that supports C# 14 extension blocks, run `cd tests/Neba.Website.Tests && dotnet stryker` to get the baseline score.
 
 ### FusionCache Deserialization Recovery
 
