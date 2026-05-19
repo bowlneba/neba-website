@@ -1,18 +1,24 @@
 ---
 name: mutation-score-dotnet
-description: Review surviving mutations for a .NET layer and add/update tests to kill them. Usage: /mutation-score-dotnet <Layer> <FileName>
+description: Review surviving mutations for a .NET layer and add/update tests to kill them. Usage: /mutation-score-dotnet <api|ui> <FileName>
 ---
 
 The user wants to review and fix surviving mutations for a specific .NET source file.
 
 ## What to do
 
-1. **Get the layer and file name** from the user's arguments (e.g. `Domain HallOfFameCategory`, `Domain LaneRange`). If no arguments were given, ask the user which layer and file they want to review.
+1. **Get the target and file name** from the user's arguments. The first argument must be either `api` or `ui`:
+   - `api` → layer `Api` → test project `tests/Neba.Api.Tests/`
+   - `ui` → layer `Website` → test project `tests/Neba.Website.Tests/`
+
+   If no arguments were given, ask the user whether they want `api` or `ui`, and which file they want to review.
 
 2. **Run the mutation report formatter** to get the surviving mutations for that file:
    ```
    npm run mutation:ai:dotnet -- <Layer> <FileName>
    ```
+   where `<Layer>` is `Api` (for `api`) or `Website` (for `ui`).
+
    Capture the output — it lists each surviving mutation with: mutator type, line number, original code, mutant replacement, and whether it's covered or not covered by tests.
 
 3. **Read the source file and locate the test file** so you have full context. The test project is `tests/Neba.<Layer>.Tests/`. Look for a test file whose name corresponds to the source file (e.g. `LaneRange.cs` → `LaneRangeTests.cs`).
