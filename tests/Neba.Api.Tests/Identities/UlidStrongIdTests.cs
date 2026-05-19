@@ -12,26 +12,7 @@ namespace Neba.Api.Tests.Identities;
 public sealed partial class UlidStrongIdTests
 {
     [StronglyTypedId("ulid-full")]
-    private readonly partial struct TestId : IEquatable<TestId>
-    {
-        /// <summary>
-        /// Gets the underlying <see cref="Ulid"/> value.
-        /// </summary>
-        public Ulid Value { get; }
-        private TestId(Ulid value)
-            => Value = value;
-
-        /// <summary>
-        /// Creates a new <see cref="TestId"/> with a randomly generated ULID value.
-        /// </summary>
-        public static TestId New() => new(Ulid.NewUlid());
-
-        public bool Equals(TestId other) => Value.Equals(other.Value);
-        public override bool Equals(object? obj) => obj is TestId other && Equals(other);
-        public override int GetHashCode() => Value.GetHashCode();
-        public static bool operator ==(TestId a, TestId b) => a.Equals(b);
-        public static bool operator !=(TestId a, TestId b) => !(a == b);
-    }
+    private readonly partial struct TestId;
 
     #region Constructor Tests
 
