@@ -51,9 +51,9 @@ public sealed class TournamentValidationServiceTests(PostgreSqlFixture fixture)
         await _dbContext.SaveChangesAsync(ct);
 
         var tournament = TournamentFactory.Create(
-            seasonId: season.Id,
             startDate: new DateOnly(2025, 3, 1),
-            endDate: new DateOnly(2025, 3, 2));
+            endDate: new DateOnly(2025, 3, 2),
+            seasonId: season.Id);
 
         var service = new TournamentValidationService(_dbContext);
 
@@ -73,9 +73,9 @@ public sealed class TournamentValidationServiceTests(PostgreSqlFixture fixture)
         await _dbContext.SaveChangesAsync(ct);
 
         var tournament = TournamentFactory.Create(
-            seasonId: season.Id,
             startDate: new DateOnly(2024, 12, 31),
-            endDate: new DateOnly(2025, 1, 2));
+            endDate: new DateOnly(2025, 1, 2),
+            seasonId: season.Id);
 
         var service = new TournamentValidationService(_dbContext);
 
@@ -96,9 +96,9 @@ public sealed class TournamentValidationServiceTests(PostgreSqlFixture fixture)
         await _dbContext.SaveChangesAsync(ct);
 
         var tournament = TournamentFactory.Create(
-            seasonId: season.Id,
             startDate: new DateOnly(2025, 12, 30),
-            endDate: new DateOnly(2026, 1, 1));
+            endDate: new DateOnly(2026, 1, 1),
+            seasonId: season.Id);
 
         var service = new TournamentValidationService(_dbContext);
 
