@@ -585,6 +585,46 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 ---
 
+### Champion
+
+**Definition**: A bowler designated as the winner of a Tournament upon completion of match play. The number of Champions per tournament equals its Team Size — a Singles tournament has one Champion, Doubles has two, Trios has three, and Baker has five. Each bowler on the winning team is individually designated as a Champion.
+
+A Tournament has no Champions if match play is not completed (e.g., cancellation due to inclement weather). In that case, any prize money distributed does not constitute a Championship — no Title is awarded.
+
+There are never ties for a Championship. A Tournament never designates more Champions than its Team Size.
+
+Champions are assigned exclusively through the Tournament aggregate.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
+- Property: `Tournament.Champions` (`IReadOnlyCollection<Bowler>` — EF Core navigation; domain identity is `BowlerId`)
+- Operation: `Tournament.AddChampion(BowlerId)`
+
+---
+
+### Title
+
+**Definition**: The recognition earned by a bowler upon being designated Champion of a Tournament. A Title is the bowler's perspective of a tournament win — it does not exist independently of the Tournament that produced it. A bowler accumulates Titles across their career.
+
+Titles are the authoritative source for:
+
+- **Tournament of Champions eligibility** — any bowler with one or more Titles on record is eligible
+- **Hall of Fame point calculations** — each Title contributes points based on the associated Tournament Type and the Tournament date
+
+**Rules**:
+
+- A Title is earned exclusively by finishing first in completed match play
+- A bowler may hold multiple Titles across different tournaments and seasons
+- Title is a read-side concept on the Bowler aggregate — no add or remove operations exist there. All championship assignments go through the Tournament aggregate
+
+**In Code**:
+
+- Property: `Bowler.Titles` (`IReadOnlyCollection<Tournament>` — EF Core navigation for projection; domain identity is `TournamentId`)
+- Read-only on `Bowler` — no domain operations
+
+---
+
 ### Tournament Sponsor
 
 **Definition**: The sponsorship association between a specific Tournament and a specific Sponsor. A Tournament Sponsor records sponsor participation for that event, including whether the sponsor is the tournament's Title Sponsor (the main sponsor) and the sponsorship amount.
@@ -686,15 +726,19 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **Definition**: A tournament format restricted to bowlers who have not previously won a NEBA title. Provides competitive opportunity for bowlers who have never achieved a championship win.
 
+> See also: [Title](#title)
+
 **In Code**: `TournamentType.NonChampions`
 
 ---
 
 ### Tournament of Champions (TOC)
 
-**Definition**: NEBA's premier annual tournament event, restricted to past NEBA title winners. Entry eligibility is determined by whether the bowler appears on the historical NEBA champions list. The tournament's Title Sponsor (main sponsor) is formally associated with this event for the duration of their sponsorship.
+**Definition**: NEBA's premier annual tournament event, restricted to past NEBA title winners. Entry eligibility is determined by whether the bowler has any Title on record. The tournament's Title Sponsor (main sponsor) is formally associated with this event for the duration of their sponsorship.
 
 > **Usage**: "TOC" is the accepted abbreviation used throughout NEBA communications and in code identifiers. The full term "Tournament of Champions" is used in formal contexts.
+>
+> See also: [Champion](#champion), [Title](#title)
 
 **In Code**: `TournamentType.TournamentOfChampions`
 
