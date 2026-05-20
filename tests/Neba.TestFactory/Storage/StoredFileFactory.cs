@@ -1,4 +1,4 @@
-using Neba.Domain.Storage;
+using Neba.Api.Features.Storage.Domain;
 
 namespace Neba.TestFactory.Storage;
 

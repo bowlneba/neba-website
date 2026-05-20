@@ -1347,7 +1347,7 @@ public async Task<IReadOnlyCollection<(int id, Ulid bowlerId, int? websiteId, in
 			throw new InvalidOperationException($"Software Non Champion has a website id: {websiteBowler.Id} {websiteBowler.Name.First} {websiteBowler.Name.Last}");
 		}
 
-		mergedBowlers.Add(new(Guid.AsUlid(), manualMatch.websiteId, manualMatch.softwareId, softwareBowler.Name, websiteBowler?.Name));
+		mergedBowlers.Add(new(Guid.AsUlid(), manualMatch.websiteId, manualMatch.softwareId, softwareBowler.Name, websiteBowler?.Name, softwareBowler.Gender, softwareBowler.DateOfBirth));
 		softwareBowlers.Remove(softwareBowler);
 
 		if (websiteBowler is not null)
@@ -1372,8 +1372,8 @@ public async Task<IReadOnlyCollection<(int id, Ulid bowlerId, int? websiteId, in
 				throw new InvalidOperationException($"Bowler not listed as champion but on website.  Verify Match / Champion status for {softwareBowler.Name.FullName} / softwareId: {softwareBowler.Id}");
 			}
 
-			(Ulid bowlerId, int? websiteId, int softwareId, HumanName softwareName, HumanName websiteName) mergedBowler
-				= new(Guid.AsUlid(), websiteBowler.Id, softwareBowler.Id, softwareBowler.Name, websiteBowler.Name);
+			(Ulid bowlerId, int? websiteId, int softwareId, HumanName softwareName, HumanName websiteName, string? Gender, DateOnly? DateOfBirth) mergedBowler
+				= new(Guid.AsUlid(), websiteBowler.Id, softwareBowler.Id, softwareBowler.Name, websiteBowler.Name, softwareBowler.Gender, softwareBowler.DateOfBirth);
 			websiteBowlers.Remove(websiteBowler);
 
 			mergedBowlers.Add(mergedBowler);
@@ -2698,7 +2698,7 @@ private async Task<IReadOnlyCollection<BowlingCenters>> ManualBowlingCenterAddit
 
 	var townLine = new BowlingCenters
 	{
-		CertificationNumber = "x0003",
+		CertificationNumber = "3312",
 		Name = "Town Line Luxury Lanes",
 		Street = "665 Broadway Route 99",
 		City = "Malden",

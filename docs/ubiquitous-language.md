@@ -41,7 +41,7 @@
 
 **In Code**:
 
-- Namespace: `Neba.Application.Documents`
+- Namespace: `Neba.Api.Features.Documents`
 - Interface: `IDocumentsService`
 - Models: `DocumentDto`, `DocumentViewModel`
 
@@ -66,7 +66,7 @@
 
 **In Code**:
 
-- Namespace: `Neba.Application.Storage` / `Neba.Domain.Storage`
+- Namespace: `Neba.Api.Features.Storage.Domain`
 - Interface: `IFileStorageService`
 - Value object: `StoredFile` (domain — the storage address)
 - DTO: `FileContent` (application — the retrieved content)
@@ -87,7 +87,7 @@
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Storage`
+- Namespace: `Neba.Api.Features.Storage.Domain`
 - Type: `StoredFile` (sealed record, domain value object)
 - EF mapping: `StoredFileConfiguration.HasStoredFile()` — maps as EF ComplexProperty on owning entities
 
@@ -106,7 +106,7 @@
 
 **In Code**:
 
-- Namespace: `Neba.Application.Storage`
+- Namespace: `Neba.Api.Features.Storage`
 - Type: `FileContent` (sealed record, application DTO)
 
 ---
@@ -174,7 +174,7 @@
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Contact`
+- Namespace: `Neba.Api.Contacts.Domain`
 - Type: `Address` (sealed record)
 - Related enums: `UsState`, `CanadianProvince` (SmartEnums)
 
@@ -227,7 +227,7 @@
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Contact`
+- Namespace: `Neba.Api.Contacts.Domain`
 - Type: `PhoneNumber` (sealed record)
 - Factory: `PhoneNumber.CreateNorthAmerican(number, extension?)`
 
@@ -257,7 +257,7 @@
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Contact`
+- Namespace: `Neba.Api.Contacts.Domain`
 - Type: `EmailAddress` (sealed record)
 
 ---
@@ -284,7 +284,7 @@
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Geography`
+- Namespace: `Neba.Api.Geography`
 - Type: `Coordinates` (sealed record)
 
 ---
@@ -313,7 +313,7 @@ The USBC API only returns open (active) bowling centers. NEBA has a 60-year hist
 
 **In Code**:
 
-- Namespace: `Neba.Domain.BowlingCenters`
+- Namespace: `Neba.Api.Features.BowlingCenters.Domain`
 - Type: `CertificationNumber` (sealed record)
 - Factory: `CertificationNumberFactory`
 
@@ -349,7 +349,7 @@ The USBC API only returns open (active) bowling centers. NEBA has a 60-year hist
 
 **In Code**:
 
-- Namespace: `Neba.Domain.BowlingCenters`
+- Namespace: `Neba.Api.Features.BowlingCenters.Domain`
 - Type: `BowlingCenter` (aggregate root)
 - Domain identity: `CertificationNumber` — no `BowlingCenterId` wrapper type exists (see [ADR-0005](../adr/0005-shadow-db-pk-for-natural-key-aggregates.md))
 
@@ -368,7 +368,7 @@ The USBC API only returns open (active) bowling centers. NEBA has a 60-year hist
 
 **In Code**:
 
-- Namespace: `Neba.Domain.BowlingCenters`
+- Namespace: `Neba.Api.Features.BowlingCenters.Domain`
 - Type: `BowlingCenterStatus`
 
 ---
@@ -425,7 +425,7 @@ The USBC API only returns open (active) bowling centers. NEBA has a 60-year hist
 
 **In Code**:
 
-- Namespace: `Neba.Domain.BowlingCenters`
+- Namespace: `Neba.Api.Features.BowlingCenters.Domain`
 - Type: `LaneConfiguration` (sealed record)
 
 ---
@@ -452,7 +452,7 @@ The USBC API only returns open (active) bowling centers. NEBA has a 60-year hist
 
 **In Code**:
 
-- Namespace: `Neba.Domain.BowlingCenters`
+- Namespace: `Neba.Api.Features.BowlingCenters.Domain`
 - Type: `LaneRange` (sealed record)
 
 ---
@@ -500,7 +500,7 @@ A Bowler record may represent a fully registered active participant or a histori
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Bowlers`
+- Namespace: `Neba.Api.Features.Bowlers.Domain`
 - Type: `Bowler` (aggregate root)
 - Identity type: `BowlerId` (ULID-backed strongly-typed ID)
 
@@ -537,7 +537,7 @@ A Bowler record may represent a fully registered active participant or a histori
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Bowlers`
+- Namespace: `Neba.Api.Features.Bowlers.Domain`
 - Type: `Name` (sealed record)
 - Factory: `Name.Create(firstName, lastName, middleName?, suffix?, nickname?)`
 
@@ -551,7 +551,7 @@ A Bowler record may represent a fully registered active participant or a histori
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Bowlers`
+- Namespace: `Neba.Api.Features.Bowlers.Domain`
 - Type: `Gender` (SmartEnum, string-valued)
 
 ---
@@ -566,7 +566,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Bowlers`
+- Namespace: `Neba.Api.Features.Bowlers.Domain`
 - Type: `NameSuffix` (SmartEnum with string value)
 
 ---
@@ -579,7 +579,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Tournaments`
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
 - Type: `Tournament` (aggregate root)
 - Identity type: `TournamentId` (ULID-backed strongly-typed ID)
 
@@ -600,7 +600,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Tournaments`
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
 - Type: `TournamentSponsor` (association entity)
 
 ---
@@ -618,7 +618,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Tournaments`
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
 - Type: `TournamentRound` (SmartFlagEnum — bitmask, powers of two)
 
 ---
@@ -637,7 +637,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Tournaments`
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
 - Type: `TournamentType` (SmartEnum)
 
 ---
@@ -664,7 +664,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Tournaments`
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
 - Type: `PatternLengthCategory` (SmartEnum)
 - Property on `Tournament`: `PatternLengthCategory` (nullable)
 
@@ -676,7 +676,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Tournaments`
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
 - Type: `PatternRatioCategory` (SmartEnum)
 - Property on `Tournament`: `PatternRatioCategory` (nullable)
 
@@ -742,7 +742,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Tournaments`
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
 - Type: `OilPattern` (entity)
 - Identity type: `OilPatternId` (ULID-backed strongly-typed ID)
 
@@ -754,7 +754,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Tournaments`
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
 - Type: `TournamentOilPattern` (association entity)
 
 ---
@@ -767,7 +767,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Tournaments`
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
 - Type: `SideCut` (sealed class)
 - Identity type: `SideCutId` (ULID-backed strongly-typed ID)
 
@@ -801,7 +801,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **Definition**: An ordered collection of one or more Criteria within a Side Cut, evaluated together using the group's own Group Operator. A Side Cut contains one or more Criterion Groups. The results of all groups are combined at the top level using the Side Cut's Group Composition Operator.
 
-**In Code**: `SideCutCriteriaGroup` in `Neba.Domain.Tournaments`.
+**In Code**: `SideCutCriteriaGroup` in `Neba.Api.Features.Tournaments.Domain`.
 
 ---
 
@@ -809,7 +809,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **Definition**: The `LogicalOperator` applied at the Side Cut level to combine the results of its Criterion Groups. Uses `And` (every group must match) or `Or` (at least one group must match).
 
-**In Code**: `SideCut.LogicalOperator` in `Neba.Domain.Tournaments`. Uses `LogicalOperator` from `Neba.Domain`.
+**In Code**: `SideCut.LogicalOperator` in `Neba.Api.Features.Tournaments.Domain`. Uses `LogicalOperator` from `Neba.Api`.
 
 ---
 
@@ -817,7 +817,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **Definition**: The `LogicalOperator` applied within a Criterion Group to combine its individual Criteria. Uses `And` (every criterion must match) or `Or` (at least one criterion must match).
 
-**In Code**: `SideCutCriteriaGroup.LogicalOperator` in `Neba.Domain.Tournaments`. Uses `LogicalOperator` from `Neba.Domain`.
+**In Code**: `SideCutCriteriaGroup.LogicalOperator` in `Neba.Api.Features.Tournaments.Domain`. Uses `LogicalOperator` from `Neba.Api`.
 
 ---
 
@@ -834,7 +834,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **In Code**:
 
-- Namespace: `Neba.Domain`
+- Namespace: `Neba.Api`
 - Type: `LogicalOperator` (SmartEnum, string-valued)
 
 ---
@@ -853,7 +853,7 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 > **Convention**: Both `MinimumAge` and `MaximumAge` are stored and evaluated as **inclusive** bounds. When NEBA rules express eligibility as "under 18," the stored criterion value is `17` — the oldest eligible age — not `18`. The Criterion Type name (`MaximumAge`) is the authoritative semantic; the stored value is always inclusive.
 
-**In Code**: `SideCutCriteria` in `Neba.Domain.Tournaments`. The current implementation models criteria as nullable fields on a single type: `MinimumAge`, `MaximumAge`, and `GenderRequirement`.
+**In Code**: `SideCutCriteria` in `Neba.Api.Features.Tournaments.Domain`. The current implementation models criteria as nullable fields on a single type: `MinimumAge`, `MaximumAge`, and `GenderRequirement`.
 
 ---
 
@@ -909,7 +909,7 @@ A Season must be marked **Complete** before any awards may be assigned to bowler
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Seasons`
+- Namespace: `Neba.Api.Features.Seasons.Domain`
 - Type: `Season` (aggregate root)
 - Identity type: `SeasonId` (ULID-backed strongly-typed ID)
 
@@ -940,7 +940,7 @@ Awards may only be assigned after the owning Season is marked **Complete**.
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Seasons`
+- Namespace: `Neba.Api.Features.Seasons.Domain`
 - Types: `BowlerOfTheYearAward`, `HighAverageAward`, `HighBlockAward` — three independent entity classes, each mapping to its own table. No shared base class.
 - Shared identity type: `SeasonAwardId` (ULID-backed strongly-typed ID)
 
@@ -963,7 +963,7 @@ Age eligibility for a category is evaluated as of each tournament date during th
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Seasons`
+- Namespace: `Neba.Api.Features.Seasons.Domain`
 - Type: `BowlerOfTheYearAward` (entity)
 
 ---
@@ -983,7 +983,7 @@ Age eligibility for a category is evaluated as of each tournament date during th
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Seasons`
+- Namespace: `Neba.Api.Features.Seasons.Domain`
 - Type: `BowlerOfTheYearCategory` (SmartEnum, int-valued)
 
 ---
@@ -1011,7 +1011,7 @@ Baker team finals games do not count toward a bowler's average or game total.
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Seasons`
+- Namespace: `Neba.Api.Features.Seasons.Domain`
 - Type: `HighAverageAward` (entity)
 
 ---
@@ -1031,7 +1031,7 @@ Baker team finals games do not count toward a bowler's average or game total.
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Seasons`
+- Namespace: `Neba.Api.Features.Seasons.Domain`
 - Type: `HighBlockAward` (entity)
 
 ---
@@ -1040,7 +1040,7 @@ Baker team finals games do not count toward a bowler's average or game total.
 
 The NEBA program that formally recognizes individuals for exceptional competitive achievement, organizational service, or meaningful contribution to the organization. Inductees are honored at a Hall of Fame Banquet held every two years.
 
-**In Code**: Namespace `Neba.Domain.HallOfFame`
+**In Code**: Namespace `Neba.Api.Features.HallOfFame.Domain`
 
 ---
 
@@ -1080,7 +1080,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 **In Code**:
 
-- Namespace: `Neba.Domain.HallOfFame`
+- Namespace: `Neba.Api.Features.HallOfFame.Domain`
 - Type: `HallOfFameInduction` (aggregate root)
 - Identity type: `HallOfFameId` (ULID-backed strongly-typed ID)
 
@@ -1205,7 +1205,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Sponsors`
+- Namespace: `Neba.Api.Features.Sponsors.Domain`
 - Type: `Sponsor` (aggregate root)
 - Identity type: `SponsorId` (ULID-backed strongly-typed ID)
 
@@ -1227,7 +1227,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Sponsors`
+- Namespace: `Neba.Api.Features.Sponsors.Domain`
 - Type: `SponsorTier` (SmartEnum, int-valued)
 
 ---
@@ -1252,7 +1252,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Sponsors`
+- Namespace: `Neba.Api.Features.Sponsors.Domain`
 - Type: `SponsorCategory` (SmartEnum, int-valued, power-of-two)
 
 ---
@@ -1263,7 +1263,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 **In Code**:
 
-- Uses the shared `PhoneNumber` value object from `Neba.Domain.Contact`
+- Uses the shared `PhoneNumber` value object from `Neba.Api.Contacts.Domain`
 - Composite PK `(sponsor_id, phone_type)` in `sponsor_phone_numbers` enforces the one-per-type constraint at the database level
 
 ---
@@ -1274,13 +1274,13 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 **In Code**:
 
-- Type: `PhoneNumberType` (SmartEnum) in `Neba.Domain.Contact`
+- Type: `PhoneNumberType` (SmartEnum) in `Neba.Api.Contacts.Domain`
 
 ---
 
 ### ContactInfo
 
-**Definition**: A value object representing the designated point of contact at a sponsor's organization for NEBA communications. Follows the same construction pattern as `Address`, `PhoneNumber`, and `EmailAddress`. Scoped to the Sponsors domain — if needed elsewhere in the future, it will be moved to `Neba.Domain.Contact` and all references updated accordingly.
+**Definition**: A value object representing the designated point of contact at a sponsor's organization for NEBA communications. Follows the same construction pattern as `Address`, `PhoneNumber`, and `EmailAddress`. Scoped to the Sponsors domain — if needed elsewhere in the future, it will be moved to `Neba.Api.Contacts.Domain` and all references updated accordingly.
 
 **Fields**:
 
@@ -1292,7 +1292,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Sponsors`
+- Namespace: `Neba.Api.Features.Sponsors.Domain`
 - Type: `ContactInfo` (sealed record, domain value object)
 
 ---
@@ -1305,7 +1305,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 **In Code**:
 
-- Namespace: `Neba.Domain.Stats`
+- Namespace: `Neba.Api.Features.Stats.Domain`
 - Type: `BowlerSeasonStats` (aggregate root)
 
 ---

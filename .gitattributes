@@ -3,3 +3,21 @@
 *.verified.json text eol=lf working-tree-encoding=UTF-8
 *.verified.bin binary
 *.received.bin binary
+
+# Enforce LF for source and config files.
+*.cs text eol=lf
+*.csproj text eol=lf
+*.props text eol=lf
+*.targets text eol=lf
+*.sln text eol=lf
+*.slnx text eol=lf
+*.razor text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.xml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.editorconfig text eol=lf
+.gitattributes text eol=lf

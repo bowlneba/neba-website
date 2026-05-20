@@ -25,6 +25,8 @@ public sealed record HallOfFameInductionViewModel
     /// <summary>
     /// URI of the bowler's photo, if available.
     /// </summary>
-    /// <value>The URI of the photo, or <c>null</c> if no photo is available.</value>
+    /// <value>
+    /// The URI of the photo, or <c>null</c> if no photo is available.
+    /// </value>
     public Uri? PhotoUri { get; init; }
 }

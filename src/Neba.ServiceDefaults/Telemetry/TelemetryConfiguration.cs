@@ -23,7 +23,9 @@ public static class TelemetryConfiguration
         /// <summary>
         /// Configures OpenTelemetry for the application, including logging, metrics, and tracing.
         /// </summary>
-        /// <returns>The builder for chaining.</returns>
+        /// <returns>
+        /// The builder for chaining.
+        /// </returns>
         internal TBuilder ConfigureOpenTelemetry()
         {
             builder.Logging.AddOpenTelemetry(logging =>

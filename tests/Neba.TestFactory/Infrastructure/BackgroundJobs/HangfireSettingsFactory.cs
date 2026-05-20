@@ -1,4 +1,4 @@
-using Neba.Infrastructure.BackgroundJobs;
+using Neba.Api.BackgroundJobs;
 
 namespace Neba.TestFactory.Infrastructure.BackgroundJobs;
 

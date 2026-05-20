@@ -1,7 +1,7 @@
 using ErrorOr;
 
-using Neba.Domain.Bowlers;
-using Neba.Domain.Seasons;
+using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.Seasons.Domain;
 
 namespace Neba.TestFactory.Seasons;
 

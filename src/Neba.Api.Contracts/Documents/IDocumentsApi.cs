@@ -12,9 +12,15 @@ public interface IDocumentsApi
     /// <summary>
     /// Gets a document by its name.
     /// </summary>
-    /// <param name="documentName">The name of the document to retrieve.</param>
-    /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>The requested document.</returns>
+    /// <param name="documentName">
+    /// The name of the document to retrieve.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token to cancel the operation.
+    /// </param>
+    /// <returns>
+    /// The requested document.
+    /// </returns>
     [Get("/documents/{documentName}")]
     Task<IApiResponse<GetDocumentResponse>> GetDocumentAsync(string documentName, CancellationToken cancellationToken = default);
 }

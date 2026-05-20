@@ -1,5 +1,5 @@
 using Neba.Api.Contracts.Sponsors;
-using Neba.Domain.Sponsors;
+using Neba.Api.Features.Sponsors.Domain;
 
 namespace Neba.TestFactory.Sponsors;
 

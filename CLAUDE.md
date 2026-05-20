@@ -21,9 +21,9 @@ Before ending a session where significant discoveries were made, consider whethe
 
 ## Architecture Rules
 
-### Layer Boundaries
+### Feature Boundaries
 
-- Domain folders (Bowlers, Tournaments, etc.) must NOT cross-reference each other's domain objects (aggregates, entities, value objects, domain services). Exception: importing a strongly-typed ID from another context (e.g., `BowlerId` in `HallOfFame`) is allowed — it's a typed foreign key, not a domain dependency.
+- Feature domain folders (`Features/Bowlers/Domain`, `Features/Tournaments/Domain`, etc.) must NOT cross-reference each other's domain objects (aggregates, entities, value objects, domain services). Exception: importing a strongly-typed ID from another feature's domain (e.g., `BowlerId` from `Neba.Api.Features.Bowlers.Domain` in `HallOfFame`) is allowed — it's a typed foreign key, not a domain dependency.
 - Commands return `ErrorOr<T>`, never throw for business rules
 - Queries return DTOs, never domain entities
 - Validators handle structural validation only (no DB lookups, no business rules)
@@ -32,7 +32,7 @@ Before ending a session where significant discoveries were made, consider whethe
 
 ### Always-Valid Entities and Aggregate Assignment
 
-Child entities owned by an aggregate use `internal static ErrorOr<T> Create(...)` factory methods that validate the entity's own structural invariants. The `internal` modifier ensures the entity can only be constructed through the owning aggregate (same assembly) — never directly from application or test code.
+Child entities owned by an aggregate use `internal static ErrorOr<T> Create(...)` factory methods that validate the entity's own structural invariants. The `internal` modifier restricts construction to the same assembly (`Neba.Api`); by convention, only the owning aggregate root calls these factories — never handler or test code directly.
 
 The aggregate root's assign methods take raw properties, call the internal factory, enforce aggregate-level invariants (e.g., `Complete == true`), and return a single `ErrorOr<Success>` to the caller:
 
@@ -61,7 +61,7 @@ public ErrorOr<Success> AssignHighBlockAward(BowlerId bowlerId, int blockScore)
 
 ### Aggregate Invariants Requiring Cross-Aggregate Data
 
-When an assign method's invariant depends on data owned by another aggregate, the application layer queries that data and passes it as a parameter. The aggregate enforces the rule; the application layer provides the facts.
+When an assign method's invariant depends on data owned by another aggregate, the handler queries that data and passes it as a parameter. The aggregate enforces the rule; the handler provides the facts.
 
 **The deciding factor — persist on aggregate vs. pass as parameter**:
 
@@ -87,84 +87,28 @@ public ErrorOr<Success> AssignHighAverageWinner(
     return Result.Success;
 }
 
-// Formula is domain logic — lives on the aggregate, not the application layer
+// Formula is domain logic — lives on the aggregate, not the handler
 private int ComputeMinimumGames(int statEligibleTournaments) =>
     (int)Math.Floor(_minimumGamesMultiplier * statEligibleTournaments);
 ```
 
-Application layer orchestrates — queries the cross-aggregate fact once, then drives the aggregate:
+The handler orchestrates — queries the cross-aggregate fact once, then drives the aggregate:
 
 ```csharp
-var statEligibleCount = await _tournamentRepository.CountStatEligibleAsync(command.SeasonId, ct);
+var statEligibleCount = await appDbContext.Tournaments
+    .CountAsync(t => t.SeasonId == command.SeasonId && t.StatEligible, ct);
 season.AssignHighAverageWinner(command.BowlerId, command.Average, command.Games,
     command.TournamentsParticipated, statEligibleCount);
 ```
 
-**Anti-pattern**: Computing a domain formula in the application handler and passing the derived result (e.g., pre-computing `minimumGames` and passing it in). When the formula changes, the fix belongs in the domain — not scattered across handlers.
+**Anti-pattern**: Computing a domain formula in the handler and passing the derived result (e.g., pre-computing `minimumGames` and passing it in). When the formula changes, the fix belongs in the domain — not scattered across handlers.
 
 ### Testing Requirements
 
-#### JavaScript Mutation Testing
+#### Mutation Testing
 
-- Uses **Stryker v9** with `@stryker-mutator/jest-runner`; config: `stryker.config.json`
-- Mutates all `src/Neba.Website.Server/**/*.js` (excludes `.tests.js` files)
-- A mutation is **killed** when at least one test *fails* on the mutated code
-- **"Not covered"** → needs a new test that exercises the code path
-- **"Covered, survived"** → test reaches the code but assertions aren't specific enough; sharpen them
-- Be pragmatic: `StringLiteral` mutations inside `console.log/warn/error` are low-value
-- Arithmetic mutations where one operand is `0` are ambiguous (`a - 0 === a + 0`) — ensure test data uses non-zero baseline values for timing, distances, and similar calculations
-- `BlockStatement` mutations (emptying a function body to `{}`) are high-value — they reveal entirely untested code paths and should be prioritized
+Mutation testing (Stryker) is **not currently in the CI pipeline** — removed May 2026. Stryker configs (`stryker-config.json`) and local tooling remain in place for manual runs. See the `## Learnings` section below for notes on known Stryker limitations.
 
-#### .NET Mutation Testing
-
-- Uses **dotnet-stryker** (global install: `dotnet tool install --global dotnet-stryker`)
-- Config per layer: `tests/<Layer>.Tests/stryker-config.json`
-- Run from the test project directory: `cd tests/Neba.Domain.Tests && dotnet stryker`
-- Diff run (PR): `dotnet stryker --since origin/main`
-- Reports land in `tests/<Layer>.Tests/StrykerOutput/`
-
-**New layer checklist** — when adding a stryker-config.json for a new layer, every config must have:
-
-1. `"test-runner": "mtp"` — **required** for xUnit v3; without it all mutants show as Survived (xUnit v3 runs tests out-of-process; Stryker's VSTest extension never receives events). Shipped in Stryker.NET 4.13.
-2. `"project-info"` (not `"dashboard"`) — the .NET config key for dashboard reporting; `"dashboard"` is JS-only and will throw an unknown key error.
-3. `"reporters": ["html", "json", "progress"]` locally — omit `"dashboard"` from the config; pass `--reporter dashboard` as a CLI flag in CI only (having it in the config requires the API key even locally).
-4. `"ignore-mutations": ["string", "Update"]` — always exclude string literals (noise) and update expressions (`i++`/`i--`). The MTP runner in Stryker 4.13 does **not** respect `additional-timeout`, so `i++` → `i--` mutations in `for` loops create infinite loops that hang the entire run. `UpdateExpression` mutations are low-value anyway — loop control infrastructure, not business logic.
-
-**Coverage analysis note**: MTP coverage is partially implemented in 4.13 — uncovered mutants are filtered out, but per-mutant test selection is not yet available. This means runs are slower than they will eventually be (all tests run per mutant), but results are accurate.
-
-**StronglyTypedId + Stryker limitation** — Stryker's in-memory Roslyn compilation invokes source generators but does not pass `AdditionalFiles` (e.g., `ulid-full.typedid`) to them. The `StronglyTypedIds` generator therefore produces no output, causing compile errors when domain source files reference any member that was previously template-generated. Fix: remove the member from the template and define it explicitly in each ID's partial struct body. Every `[StronglyTypedId("ulid-full")]` type must declare the following — including test helper structs, not just domain IDs. See [ADR-0006](docs/adr/0006-explicit-new-on-stronglytypedid-partial-structs.md).
-
-Required explicit members (removed from `ulid-full.typedid`, must be in every partial struct):
-
-- `public Ulid Value { get; }`
-- `private T(Ulid value) => Value = value;`
-- `public static T New() => new(Ulid.NewUlid());`
-- `public bool Equals(T other) => Value.Equals(other.Value);`
-- `public override bool Equals(object? obj) => obj is T other && Equals(other);`
-- `public override int GetHashCode() => Value.GetHashCode();`
-- `public static bool operator ==(T a, T b) => a.Equals(b);`
-- `public static bool operator !=(T a, T b) => !(a == b);`
-
-The equality members (`Equals`, `GetHashCode`, `==`, `!=`) are needed because Stryker mutates equality expressions (e.g., `==` → `!=`). Without them visible in Stryker's compilation, mutated code produces `CS0019` and aborts the run rather than producing a killable mutation.
-
-**Per-layer decisions** (make these explicitly for each new layer):
-
-- `ignore-mutations: Linq` — keep for Domain/Application (logic layers); exclude for Infrastructure/API/Blazor (see rationale in learnings below)
-- `mutate` exclusions — inspect actual files; exclude pure declarations (source-generated stubs, SmartEnum tables), not logic
-
-**Thresholds by layer**:
-
-| Layer          | high | low | break | Notes                                                                                  |
-|----------------|------|-----|-------|----------------------------------------------------------------------------------------|
-| Domain         | 95   | 90  | 85    |                                                                                        |
-| Application    | 95   | 90  | 85    |                                                                                        |
-| Infrastructure | 75   | 65  | 0     | Local only — Testcontainers integration tests crash the MTP runner; not wired into CI  |
-| API            | 80   | 60  | 75    |                                                                                        |
-| Blazor         | 85   | 70  | 65    |                                                                                        |
-
-- A mutation is **killed** when at least one test *fails* on the mutated code
-- **"Not covered"** → needs a new test exercising the code path
-- **"Covered, survived"** → assertions aren't specific enough; sharpen them
 
 #### .NET Testing Requirements
 
@@ -175,10 +119,11 @@ The equality members (`Equals`, `GetHashCode`, `==`, `!=`) are needed because St
 - Use `NullLogger<T>.Instance`, never mock ILogger
 - Use test factories from `Neba.TestFactory`, never manual entity instantiation
 - Test factories follow a consistent pattern: `Create()` with nullable params (const defaults), `Bogus(int count, int? seed)` for collection
+- **`Create()` must always produce a persistable entity with no arguments** — every default must satisfy all domain invariants and EF constraints (e.g., required complex properties). If a test fails because `Create()` produces an invalid entity when called with no arguments, fix the factory default rather than patching the test. Example: `AddressFactory.CreateUsAddress()` passes `null` coordinates, but `BowlingCenterFactory.Create()` must call it with `coordinates: AddressFactory.ValidCoordinates` so the default address satisfies EF's non-nullable `Coordinates` constraint.
 - Use a seed with `Bogus` only when the specific data values matter to the assertion (e.g., snapshot tests, integration tests for reproducibility). Omit the seed when only shape/count/type matters — the test is clearer without it
 - When seeds are used, each test should use a distinct seed value — don't reuse the same seed across multiple tests
 - Infrastructure services wrapping external SDKs (e.g., Azure Blob Storage) use Testcontainers for integration tests, not mocks
-- Use **Shouldly** for assertions, NOT FluentAssertions
+- Use **Shouldly** for assertions only; do not use FluentAssertions
 - When testing null inputs on non-nullable parameters (nullable reference types are enabled project-wide), wrap the test method with `#nullable disable` / `#nullable enable` instead of using `null!`:
 
   ```csharp
@@ -203,10 +148,10 @@ The equality members (`Equals`, `GetHashCode`, `==`, `!=`) are needed because St
 ### Bug Fixing (TDD Approach)
 
 1. Write a failing test that demonstrates the bug FIRST
-2. Choose test type based on layer:
-   - Domain entity/aggregate → Unit test in `Neba.Domain.Tests`
-   - Application handler → Unit test in `Neba.Application.Tests`
-   - Infrastructure/EF Core → Integration test in `Neba.Infrastructure.Tests`
+2. Choose test project based on what's broken:
+   - Domain entity/aggregate (in `Features/*/Domain/`) → Unit test in `Neba.Api.Tests`
+   - Handler (in `Features/*/`) → Unit test in `Neba.Api.Tests`
+   - EF Core / Database (in `Database/`) → Integration test in `Neba.Api.Tests`
    - API endpoint → Integration test in `Neba.Api.Tests`
    - Blazor component → bUnit test in `Neba.Website.Tests`
    - UI interaction/flow → E2E test in `tests/e2e/`
@@ -222,14 +167,6 @@ The equality members (`Equals`, `GetHashCode`, `==`, `!=`) are needed because St
 - **Integration tests**: `dotnet test --filter "Category=Integration"`
 - **Specific component**: `dotnet test --filter "Component=Tournaments"`
 - **E2E tests**: `npm run test:e2e`
-- **JS mutation tests (full run + summary)**: `npm run mutation:ai`
-- **JS mutation report for one file**: `npm run mutation:ai:file -- <FileName>` (e.g. `-- NavMenu`)
-- **.NET mutation tests — Domain**: `cd tests/Neba.Domain.Tests && dotnet stryker`
-- **.NET mutation tests — Application**: `cd tests/Neba.Application.Tests && dotnet stryker`
-- **.NET mutation tests — Infrastructure**: `cd tests/Neba.Infrastructure.Tests && dotnet stryker`
-- **.NET mutation tests — API**: `cd tests/Neba.Api.Tests && dotnet stryker`
-- **.NET mutation summary**: `npm run mutation:ai:dotnet -- Domain`
-- **.NET mutation detail for one file**: `npm run mutation:ai:dotnet -- Domain <FileName>` (e.g. `-- Domain LaneRange`)
 - **CI status**: `gh run list --limit 5`
 - **CI failure details**: `gh run view <run-id> --log-failed`
 
@@ -293,27 +230,6 @@ This applies to any `ISchemaProcessor`, startup-cached registries, or other stat
 - Each test project that uses `FakeLogger<T>` needs `<PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" />` in its `.csproj`.
 
 All classes that use `[LoggerMessage]` source-generated log methods have dedicated log-assertion tests using `FakeLogger<T>`. When adding a new class that logs, add `Microsoft.Extensions.Diagnostics.Testing` to its test project (if not already present) and add log-assertion tests covering every log level/path.
-
-### Blazor Layer Mutation Testing — C# 14 Extension Block Limitation
-
-Stryker 4.14.1 (latest as of April 2026) **cannot run mutation tests on `Neba.Website.Server`** because its internal Roslyn version does not support C# 14 `extension` block syntax (`extension(T t) { ... }` inside a `static class`). The compile error is a rollback failure after Stryker tries to include these files in compilation.
-
-**Root cause**: Stryker packages its own Roslyn. The C# 14 `extension` block feature requires a Roslyn version newer than Stryker ships.
-
-**Affected files** (use `extension(` blocks):
-
-- `BowlingCenters/BowlingCenterMappingExtensions.cs`
-- `HallOfFame/HallOfFameMappingExtensions.cs`
-- `History/Awards/BowlerOfTheYearMappingExtensions.cs`
-- `History/Awards/HighAverageMappingExtensions.cs`
-- `History/Awards/HighBlockMappingExtensions.cs`
-- `Sponsors/SponsorMappingExtensions.cs`
-- `Services/ApiServicesConfiguration.cs`
-- `Maps/MapsConfiguration.cs`
-
-**Workaround**: None until Stryker updates its Roslyn package. Do not attempt to rewrite these files to traditional extension methods — the `extension` block syntax is the project convention per Architecture Patterns.
-
-**What to do**: Skip the Blazor mutation run. When Stryker ships a version that supports C# 14 extension blocks, run `cd tests/Neba.Website.Tests && dotnet stryker` to get the baseline score.
 
 ### FusionCache Deserialization Recovery
 

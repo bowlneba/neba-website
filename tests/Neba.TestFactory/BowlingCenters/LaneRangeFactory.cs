@@ -1,4 +1,4 @@
-using Neba.Domain.BowlingCenters;
+using Neba.Api.Features.BowlingCenters.Domain;
 
 namespace Neba.TestFactory.BowlingCenters;
 

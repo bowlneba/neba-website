@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Neba.Infrastructure.Tests" />
+    <InternalsVisibleTo Include="Neba.Api.Tests" />
   </ItemGroup>
 
   <ItemGroup>

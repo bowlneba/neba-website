@@ -5,7 +5,9 @@ namespace Neba.TestFactory.Attributes;
 /// <summary>
 /// Identifies the component or feature being tested.
 /// </summary>
-/// <param name="name">The name of the component or feature being tested.</param>
+/// <param name="name">
+/// The name of the component or feature being tested.
+/// </param>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
 public sealed class ComponentAttribute(string name) : Attribute, ITraitAttribute
 {

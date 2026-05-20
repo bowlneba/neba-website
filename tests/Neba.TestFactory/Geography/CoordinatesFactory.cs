@@ -1,4 +1,4 @@
-using Neba.Domain.Geography;
+using Neba.Api.Geography;
 
 namespace Neba.TestFactory.Geography;
 

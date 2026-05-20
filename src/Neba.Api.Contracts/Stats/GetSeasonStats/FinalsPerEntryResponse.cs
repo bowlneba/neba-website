@@ -7,18 +7,28 @@ namespace Neba.Api.Contracts.Stats.GetSeasonStats;
 /// </summary>
 public sealed record FinalsPerEntryResponse
 {
-    /// <summary>The unique identifier of the Bowler (ULID string).</summary>
+    /// <summary>
+    /// The unique identifier of the Bowler (ULID string).
+    /// </summary>
     public required string BowlerId { get; init; }
 
-    /// <summary>The bowler's display name.</summary>
+    /// <summary>
+    /// The bowler's display name.
+    /// </summary>
     public required string BowlerName { get; init; }
 
-    /// <summary>Number of tournaments in which the bowler advanced to the Finals (match play round).</summary>
+    /// <summary>
+    /// Number of tournaments in which the bowler advanced to the Finals (match play round).
+    /// </summary>
     public required int Finals { get; init; }
 
-    /// <summary>Number of eligible entries the bowler made during the Season.</summary>
+    /// <summary>
+    /// Number of eligible entries the bowler made during the Season.
+    /// </summary>
     public required int Entries { get; init; }
 
-    /// <summary>Finals appearances divided by eligible entries, rounded to two decimal places.</summary>
+    /// <summary>
+    /// Finals appearances divided by eligible entries, rounded to two decimal places.
+    /// </summary>
     public required decimal FinalsPerEntry { get; init; }
 }

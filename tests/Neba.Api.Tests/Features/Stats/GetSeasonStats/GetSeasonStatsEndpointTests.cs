@@ -1,0 +1,92 @@
+using ErrorOr;
+
+using FastEndpoints;
+
+using Neba.Api.Contracts.Stats.GetSeasonStats;
+
+using Neba.Api.Features.Stats.GetSeasonStats;
+using Neba.Api.Messaging;
+using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Stats;
+
+namespace Neba.Api.Tests.Features.Stats.GetSeasonStats;
+
+[UnitTest]
+[Component("Stats")]
+public sealed class GetSeasonStatsEndpointTests
+{
+    [Fact(DisplayName = "HandleAsync should return OK with mapped season stats when query succeeds without year")]
+    public async Task HandleAsync_ShouldReturnOkWithMappedSeasonStats_WhenQuerySucceedsWithoutYear()
+    {
+        // Arrange
+        var dto = SeasonStatsDtoFactory.Bogus(count: 1, seed: 100).Single();
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var queryHandlerMock = new Mock<IQueryHandler<GetSeasonStatsQuery, ErrorOr<SeasonStatsDto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<GetSeasonStatsQuery>(), cancellationToken))
+            .ReturnsAsync(dto);
+
+        var endpoint = Factory.Create<GetSeasonStatsEndpoint>(queryHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(new GetSeasonStatsRequest { Year = null }, cancellationToken);
+
+        // Assert
+        await Verify(endpoint.Response);
+    }
+
+    [Fact(DisplayName = "HandleAsync should return OK with mapped season stats when query succeeds with year")]
+    public async Task HandleAsync_ShouldReturnOkWithMappedSeasonStats_WhenQuerySucceedsWithYear()
+    {
+        // Arrange
+        var dto = SeasonStatsDtoFactory.Bogus(count: 1, seed: 200).Single();
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var queryHandlerMock = new Mock<IQueryHandler<GetSeasonStatsQuery, ErrorOr<SeasonStatsDto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .Setup(h => h.HandleAsync(It.Is<GetSeasonStatsQuery>(q => q.SeasonYear == 2024), cancellationToken))
+            .ReturnsAsync(dto);
+
+        var endpoint = Factory.Create<GetSeasonStatsEndpoint>(queryHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(new GetSeasonStatsRequest { Year = 2024 }, cancellationToken);
+
+        // Assert
+        await Verify(endpoint.Response);
+    }
+
+    [Fact(DisplayName = "HandleAsync should return 404 Not Found when no stats exist for the season")]
+    public async Task HandleAsync_ShouldReturn404_WhenNoStatsExistForSeason()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var queryHandlerMock = new Mock<IQueryHandler<GetSeasonStatsQuery, ErrorOr<SeasonStatsDto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<GetSeasonStatsQuery>(), cancellationToken))
+            .ReturnsAsync(Error.NotFound());
+
+        var endpoint = Factory.Create<GetSeasonStatsEndpoint>(queryHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(new GetSeasonStatsRequest { Year = 1999 }, cancellationToken);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(404);
+    }
+
+    [Fact(DisplayName = "Configure should register anonymous GET route under /stats path")]
+    public void Configure_ShouldRegisterAnonymousGetRoute_UnderStatsPath()
+    {
+        // Arrange
+        var queryHandlerMock = new Mock<IQueryHandler<GetSeasonStatsQuery, ErrorOr<SeasonStatsDto>>>(MockBehavior.Strict);
+        var endpoint = Factory.Create<GetSeasonStatsEndpoint>(queryHandlerMock.Object);
+
+        // Assert
+        endpoint.Definition.Verbs.ShouldContain("GET");
+        endpoint.Definition.Routes.ShouldContain(r => r.Contains("stats"), "should be under the /stats path");
+        endpoint.Definition.AnonymousVerbs.ShouldNotBeEmpty();
+    }
+}

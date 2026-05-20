@@ -1,7 +1,7 @@
 using System.Globalization;
 
-using Neba.Domain.BowlingCenters;
-using Neba.Domain.Contact;
+using Neba.Api.Contacts.Domain;
+using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.TestFactory.Contact;
 
 namespace Neba.TestFactory.BowlingCenters;
@@ -28,7 +28,7 @@ public static class BowlingCenterFactory
             CertificationNumber = certificationNumber ?? CertificationNumberFactory.Create(ValidCertificationNumber),
             Name = name ?? ValidName,
             Status = status ?? ValidStatus,
-            Address = address ?? AddressFactory.CreateUsAddress(),
+            Address = address ?? AddressFactory.CreateUsAddress(coordinates: AddressFactory.ValidCoordinates),
             PhoneNumbers = phoneNumbers ?? [PhoneNumberFactory.Create(type: PhoneNumberType.Work)],
             EmailAddress = emailAddress,
             Website = website,

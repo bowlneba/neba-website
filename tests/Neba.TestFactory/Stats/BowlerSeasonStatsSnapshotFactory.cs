@@ -1,4 +1,4 @@
-using Neba.Domain.Stats;
+using Neba.Api.Features.Stats.Domain;
 
 namespace Neba.TestFactory.Stats;
 

@@ -1,0 +1,60 @@
+using Asp.Versioning;
+
+using FastEndpoints;
+using FastEndpoints.AspVersioning;
+
+using Neba.Api.Contracts;
+using Neba.Api.Contracts.Sponsors;
+using Neba.Api.Messaging;
+
+namespace Neba.Api.Features.Sponsors.ListActiveSponsors;
+
+internal sealed class ListActiveSponsorsEndpoint(IQueryHandler<ListActiveSponsorsQuery, IReadOnlyCollection<SponsorSummaryDto>> queryHandler)
+    : EndpointWithoutRequest<CollectionResponse<SponsorSummaryResponse>>
+{
+    private readonly IQueryHandler<ListActiveSponsorsQuery, IReadOnlyCollection<SponsorSummaryDto>> _queryHandler = queryHandler;
+
+    public override void Configure()
+    {
+        Get(string.Empty);
+        Group<SponsorsEndpointGroup>();
+
+        Options(options => options
+            .WithVersionSet("Sponsors")
+            .MapToApiVersion(new ApiVersion(1, 0)));
+
+        AllowAnonymous();
+
+        Description(description => description
+            .WithName("ListActiveSponsors")
+            .WithTags("Sponsors", "Public")
+            .Produces<CollectionResponse<SponsorSummaryResponse>>(StatusCodes.Status200OK));
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        var result = await _queryHandler.HandleAsync(new ListActiveSponsorsQuery(), ct);
+
+        var response = new CollectionResponse<SponsorSummaryResponse>
+        {
+            Items = [.. result
+                .Select(s => new SponsorSummaryResponse
+                {
+                    Name = s.Name,
+                    Slug = s.Slug,
+                    LogoUrl = s.LogoUrl,
+                    IsCurrentSponsor = s.IsCurrentSponsor,
+                    Priority = s.Priority,
+                    Tier = s.Tier,
+                    Category = s.Category,
+                    TagPhrase = s.TagPhrase,
+                    Description = s.Description,
+                    WebsiteUrl = s.WebsiteUrl,
+                    FacebookUrl = s.FacebookUrl,
+                    InstagramUrl = s.InstagramUrl,
+                })],
+        };
+
+        await Send.OkAsync(response, ct);
+    }
+}

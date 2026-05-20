@@ -3,10 +3,18 @@ namespace Neba.Website.Server.Maps;
 /// <summary>
 /// Represents the geographic bounds of the visible map viewport.
 /// </summary>
-/// <param name="North">The northern (maximum) latitude</param>
-/// <param name="South">The southern (minimum) latitude</param>
-/// <param name="East">The eastern (maximum) longitude</param>
-/// <param name="West">The western (minimum) longitude</param>
+/// <param name="North">
+/// The northern (maximum) latitude
+/// </param>
+/// <param name="South">
+/// The southern (minimum) latitude
+/// </param>
+/// <param name="East">
+/// The eastern (maximum) longitude
+/// </param>
+/// <param name="West">
+/// The western (minimum) longitude
+/// </param>
 public sealed record MapBounds(
     double North,
     double South,

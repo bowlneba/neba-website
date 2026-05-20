@@ -246,12 +246,7 @@ const MOCK_HIGH_BLOCK_AWARDS = {
 export const MOCK_TOURNAMENT_DETAIL = {
   id: MOCK_TOURNAMENT_ID,
   name: 'NEBA Spring Classic',
-  season: {
-    id: '01JX0000000000000000000011',
-    description: '2024-2025 Season',
-    startDate: '2024-09-01',
-    endDate: '2025-05-31',
-  },
+  season: '2024-2025 Season',
   startDate: '2024-09-21',
   endDate: '2024-09-21',
   statsEligible: true,

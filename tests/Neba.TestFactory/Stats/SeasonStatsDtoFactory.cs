@@ -1,23 +1,21 @@
-using Neba.Application.Seasons;
-using Neba.Application.Stats.GetSeasonStats;
-using Neba.Domain.Seasons;
-using Neba.TestFactory.Seasons;
+using Neba.Api.Features.Seasons.Domain;
+using Neba.Api.Features.Stats.GetSeasonStats;
 
 namespace Neba.TestFactory.Stats;
 
 public static class SeasonStatsDtoFactory
 {
     public static SeasonStatsDto Create(
-        SeasonDto? season = null,
-        IReadOnlyCollection<SeasonDto>? seasonsWithStats = null,
+        SeasonWithStatsDto? season = null,
+        IReadOnlyCollection<SeasonWithStatsDto>? seasonsWithStats = null,
         IReadOnlyCollection<BowlerSeasonStatsDto>? bowlerStats = null,
         IReadOnlyDictionary<int, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>>? bowlerOfTheYearRaces = null,
         SeasonStatsSummaryDto? summary = null,
         (decimal games, decimal tournaments, decimal entries)? minimums = null)
         => new()
         {
-            Season = season ?? SeasonDtoFactory.Create(),
-            SeasonsWithStats = seasonsWithStats ?? [SeasonDtoFactory.Create()],
+            Season = season ?? SeasonWithStatsDtoFactory.Create(),
+            SeasonsWithStats = seasonsWithStats ?? [SeasonWithStatsDtoFactory.Create()],
             BowlerStats = bowlerStats ?? [BowlerSeasonStatsDtoFactory.Create()],
             BowlerOfTheYearRaces = bowlerOfTheYearRaces ?? new Dictionary<int, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>>
             {
@@ -47,8 +45,8 @@ public static class SeasonStatsDtoFactory
 
                 return new SeasonStatsDto
                 {
-                    Season = SeasonDtoFactory.Bogus(1, seasonSeed).Single(),
-                    SeasonsWithStats = SeasonDtoFactory.Bogus(f.Random.Int(1, 5), seasonsWithStatsSeed),
+                    Season = SeasonWithStatsDtoFactory.Bogus(1, seasonSeed).Single(),
+                    SeasonsWithStats = SeasonWithStatsDtoFactory.Bogus(f.Random.Int(1, 5), seasonsWithStatsSeed),
                     BowlerStats = BowlerSeasonStatsDtoFactory.Bogus(f.Random.Int(1, 10), bowlerStatsSeed),
                     BowlerOfTheYearRaces = new Dictionary<int, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>>
                     {

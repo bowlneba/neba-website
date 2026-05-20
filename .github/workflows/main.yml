@@ -20,7 +20,6 @@ jobs:
       is_pull_request: false
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      STRYKER_DASHBOARD_KEY: ${{ secrets.STRYKER_DASHBOARD_KEY }}
 
   cd:
     needs: ci

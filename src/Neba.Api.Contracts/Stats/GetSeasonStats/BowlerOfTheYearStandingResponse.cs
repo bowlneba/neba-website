@@ -7,27 +7,43 @@ namespace Neba.Api.Contracts.Stats.GetSeasonStats;
 /// </summary>
 public sealed record BowlerOfTheYearStandingResponse
 {
-    /// <summary>The unique identifier of the Bowler (ULID string).</summary>
+    /// <summary>
+    /// The unique identifier of the Bowler (ULID string).
+    /// </summary>
     public required string BowlerId { get; init; }
 
-    /// <summary>The bowler's display name.</summary>
+    /// <summary>
+    /// The bowler's display name.
+    /// </summary>
     public required string BowlerName { get; init; }
 
-    /// <summary>Total points accumulated toward this award category for the Season.</summary>
+    /// <summary>
+    /// Total points accumulated toward this award category for the Season.
+    /// </summary>
     public required int Points { get; init; }
 
-    /// <summary>Number of eligible tournaments the bowler participated in during the Season.</summary>
+    /// <summary>
+    /// Number of eligible tournaments the bowler participated in during the Season.
+    /// </summary>
     public required int Tournaments { get; init; }
 
-    /// <summary>Number of eligible entries the bowler made during the Season.</summary>
+    /// <summary>
+    /// Number of eligible entries the bowler made during the Season.
+    /// </summary>
     public required int Entries { get; init; }
 
-    /// <summary>Number of tournaments in which the bowler advanced to the Finals (match play round).</summary>
+    /// <summary>
+    /// Number of tournaments in which the bowler advanced to the Finals (match play round).
+    /// </summary>
     public required int Finals { get; init; }
 
-    /// <summary>The bowler's mean finishing position across all Finals appearances. Null if the bowler did not receive a finishing position.</summary>
+    /// <summary>
+    /// The bowler's mean finishing position across all Finals appearances. Null if the bowler did not receive a finishing position.
+    /// </summary>
     public decimal? AverageFinish { get; init; }
 
-    /// <summary>Total tournament cash prize money earned by the bowler during the Season, excluding Cup earnings.</summary>
+    /// <summary>
+    /// Total tournament cash prize money earned by the bowler during the Season, excluding Cup earnings.
+    /// </summary>
     public required decimal Winnings { get; init; }
 }

@@ -10,8 +10,6 @@ on:
     secrets:
       SONAR_TOKEN:
         required: true
-      STRYKER_DASHBOARD_KEY:
-        required: false
 
 jobs:
   build:
@@ -98,22 +96,6 @@ jobs:
             test-name: Website Tests
             needs-integration: false
             collect_coverage: true
-          - test-project: tests/Neba.Domain.Tests/Neba.Domain.Tests.csproj
-            test-name: Domain Tests
-            needs-integration: false
-            collect_coverage: true
-          - test-project: tests/Neba.Application.Tests/Neba.Application.Tests.csproj
-            test-name: Application Tests
-            needs-integration: false
-            collect_coverage: true
-          - test-project: tests/Neba.Infrastructure.Tests/Neba.Infrastructure.Tests.csproj
-            test-name: Infrastructure Tests
-            needs-integration: true
-            collect_coverage: true
-          - test-project: tests/Neba.Architecture.Tests/Neba.Architecture.Tests.csproj
-            test-name: Architecture Tests
-            needs-integration: false
-            collect_coverage: false
           - test-project: tests/Neba.Api.Tests/Neba.Api.Tests.csproj
             test-name: API Tests
             needs-integration: true
@@ -252,21 +234,6 @@ jobs:
           name: playwright-traces-${{ matrix.project }}
           path: test-results/
           retention-days: 7
-
-  mutation-js:
-    name: Mutation Testing
-    needs: jest
-    if: ${{ !cancelled() && !failure() }}
-    permissions:
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/mutation-testing.yml
-    secrets:
-      STRYKER_DASHBOARD_KEY: ${{ secrets.STRYKER_DASHBOARD_KEY }}
-    with:
-      is_pull_request: ${{ inputs.is_pull_request }}
-      dashboard_version: ${{ inputs.is_pull_request && github.head_ref || 'main' }}
-      pr_number: ${{ github.event.pull_request.number && toJson(github.event.pull_request.number) || '' }}
 
   sonarcloud:
     if: github.actor != 'dependabot[bot]'

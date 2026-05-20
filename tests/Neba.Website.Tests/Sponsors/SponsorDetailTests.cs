@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Api.Contracts.Sponsors;
-using Neba.Domain.Sponsors;
+using Neba.Api.Features.Sponsors.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Contact;
 using Neba.TestFactory.Sponsors;

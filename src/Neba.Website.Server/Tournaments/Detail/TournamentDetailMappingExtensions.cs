@@ -12,7 +12,7 @@ internal static class TournamentDetailMappingExtensions
         {
             Id = response.Id,
             Name = response.Name,
-            SeasonDescription = response.Season.Description,
+            SeasonDescription = response.Season,
             StartDate = response.StartDate,
             EndDate = response.EndDate,
             TournamentType = response.TournamentType,
@@ -51,10 +51,6 @@ internal static class TournamentDetailMappingExtensions
         {
             Name = response.Name,
             Length = response.Length,
-            Volume = response.Volume,
-            LeftRatio = response.LeftRatio,
-            RightRatio = response.RightRatio,
-            KegelId = response.KegelId,
             Rounds = response.Rounds,
         };
     }

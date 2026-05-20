@@ -13,17 +13,27 @@ public interface ISeasonsApi
     /// <summary>
     /// Lists all seasons.
     /// </summary>
-    /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A collection of seasons.</returns>
+    /// <param name="cancellationToken">
+    /// A token to cancel the operation.
+    /// </param>
+    /// <returns>
+    /// A collection of seasons.
+    /// </returns>
     [Get("/seasons")]
     Task<IApiResponse<CollectionResponse<SeasonResponse>>> ListSeasonsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Lists all tournaments in a season.
     /// </summary>
-    /// <param name="seasonId">The ULID of the season.</param>
-    /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A collection of tournament summaries.</returns>
+    /// <param name="seasonId">
+    /// The ULID of the season.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token to cancel the operation.
+    /// </param>
+    /// <returns>
+    /// A collection of tournament summaries.
+    /// </returns>
     [Get("/seasons/{seasonId}/tournaments")]
     Task<IApiResponse<CollectionResponse<SeasonTournamentResponse>>> ListTournamentsInSeasonAsync(
         string seasonId,

@@ -36,6 +36,7 @@
       "connectionId": "bowlneba",
       "projectKey": "bowlneba-website"
     },
+    "dotnet.projectsystem.cacheInProjectFolder": false,
     "dotnet.defaultSolution": "Neba.Website.slnx",
     "testExplorer.useNativeTesting": true,
     "dotnet.testWindow.useTestingPlatformProtocol": true,

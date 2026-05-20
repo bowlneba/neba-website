@@ -5,13 +5,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Hangfire.InMemory" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Neba.Api\Neba.Api.csproj" />
     <ProjectReference Include="..\Neba.TestFactory\Neba.TestFactory.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="..\..\src\Neba.Api\ulid-full.typedid" Link="ulid-full.typedid" />
+  </ItemGroup>
+
 
 </Project>

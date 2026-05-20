@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Sponsors;
-using Neba.Domain.Sponsors;
+using Neba.Api.Features.Sponsors.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Sponsors;
 using Neba.Website.Server.Clock;

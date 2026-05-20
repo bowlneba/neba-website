@@ -3,7 +3,9 @@ namespace Neba.Api.Contracts;
 /// <summary>
 /// Represents a paginated or filtered response containing a collection of items.
 /// </summary>
-/// <typeparam name="T">The type of items in the collection.</typeparam>
+/// <typeparam name="T">
+/// The type of items in the collection.
+/// </typeparam>
 /// <remarks>
 /// This interface is implemented by all collection-based API responses to provide a consistent structure for returning multiple items.
 /// </remarks>

@@ -1,6 +1,6 @@
-using Neba.Domain.Contact;
-using Neba.Domain.Sponsors;
-using Neba.Domain.Storage;
+using Neba.Api.Contacts.Domain;
+using Neba.Api.Features.Sponsors.Domain;
+using Neba.Api.Features.Storage.Domain;
 using Neba.TestFactory.Contact;
 using Neba.TestFactory.Storage;
 

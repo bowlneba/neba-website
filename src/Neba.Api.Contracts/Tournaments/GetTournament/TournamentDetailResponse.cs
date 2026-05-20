@@ -16,9 +16,9 @@ public sealed record TournamentDetailResponse
     public required string Name { get; init; }
 
     /// <summary>
-    /// The season this tournament belongs to.
+    /// The season description this tournament belongs to.
     /// </summary>
-    public required TournamentDetailSeasonResponse Season { get; init; }
+    public required string Season { get; init; }
 
     /// <summary>
     /// Date the first qualifying squad is held.

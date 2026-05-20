@@ -1,5 +1,5 @@
-using Neba.Application.Sponsors;
-using Neba.Domain.Sponsors;
+using Neba.Api.Features.Sponsors.Domain;
+using Neba.Api.Features.Sponsors.ListActiveSponsors;
 
 namespace Neba.TestFactory.Sponsors;
 

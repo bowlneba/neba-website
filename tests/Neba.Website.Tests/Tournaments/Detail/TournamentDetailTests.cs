@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Api.Contracts.Tournaments;
 using Neba.Api.Contracts.Tournaments.GetTournament;
+using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 using Neba.Website.Server.Clock;
@@ -111,7 +112,7 @@ public sealed class TournamentDetailTests : IDisposable
     public void Render_ShouldRenderTournamentTypeChip()
     {
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
-            tournamentType: Neba.Domain.Tournaments.TournamentType.Doubles));
+            tournamentType: TournamentType.Doubles));
 
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 

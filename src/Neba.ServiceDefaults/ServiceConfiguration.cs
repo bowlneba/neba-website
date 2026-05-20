@@ -24,7 +24,9 @@ public static class ServiceConfiguration
         /// <summary>
         /// Adds common Aspire services: service discovery, resilience, health checks, and OpenTelemetry.
         /// </summary>
-        /// <returns>The builder for chaining.</returns>
+        /// <returns>
+        /// The builder for chaining.
+        /// </returns>
         public TBuilder AddServiceDefaults()
         {
             builder.ConfigureOpenTelemetry();
@@ -54,7 +56,9 @@ public static class ServiceConfiguration
         /// <summary>
         /// Maps default endpoints for health checks.
         /// </summary>
-        /// <returns>The application for chaining.</returns>
+        /// <returns>
+        /// The application for chaining.
+        /// </returns>
         public WebApplication MapDefaultEndpoints()
         {
             app.MapDefaultHealthChecks();

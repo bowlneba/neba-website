@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Neba.Website.Client": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:50211;http://localhost:50212"
+    }
+  }
+}

@@ -1,6 +1,6 @@
-using Neba.Domain.Bowlers;
-using Neba.Domain.Seasons;
-using Neba.Domain.Stats;
+using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.Seasons.Domain;
+using Neba.Api.Features.Stats.Domain;
 
 namespace Neba.TestFactory.Stats;
 

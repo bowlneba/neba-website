@@ -3,9 +3,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using Neba.Api.Contracts.OpenApi;
-using Neba.Api.Contracts.Sponsors;
+using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.OpenApi;
-using Neba.Domain.Sponsors;
 using Neba.TestFactory.Attributes;
 
 using NJsonSchema;
@@ -124,7 +123,7 @@ public sealed class SmartEnumSchemaProcessorTests
     private static IEnumerable<string> ResolveSmartEnumNames(string smartEnumTypeName)
     {
         var enumType = AppDomain.CurrentDomain.GetAssemblies()
-            .Where(assembly => assembly.GetName().Name?.StartsWith("Neba.Domain", StringComparison.Ordinal) == true)
+            .Where(assembly => assembly.GetName().Name?.StartsWith("Neba.Api", StringComparison.Ordinal) == true)
             .SelectMany(assembly => assembly.GetTypes())
             .FirstOrDefault(type => type.Name == smartEnumTypeName);
 
