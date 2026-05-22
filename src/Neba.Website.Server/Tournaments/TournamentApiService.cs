@@ -8,9 +8,9 @@ using Neba.Website.Server.Tournaments.Schedule;
 
 namespace Neba.Website.Server.Tournaments;
 
-internal sealed class TournamentDataService(
+internal sealed class TournamentApiService(
     ApiExecutor executor,
-    ISeasonsApi seasonsApi) : ITournamentDataService
+    ISeasonsApi seasonsApi) : ITournamentApiService
 {
     public async Task<ErrorOr<List<SeasonTournamentViewModel>>> GetTournamentsForSeasonAsync(
         SeasonViewModel season, CancellationToken ct = default)

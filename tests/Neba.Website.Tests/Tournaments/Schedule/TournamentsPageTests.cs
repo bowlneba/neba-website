@@ -28,7 +28,7 @@ public sealed class TournamentsPageTests : IDisposable
         _ctx.Services.AddRouting();
 
         _dataService = new FakeTournamentDataService();
-        _ctx.Services.AddSingleton<ITournamentDataService>(_dataService);
+        _ctx.Services.AddSingleton<ITournamentApiService>(_dataService);
     }
 
     public void Dispose() => _ctx.Dispose();
@@ -249,7 +249,7 @@ public sealed class TournamentsPageTests : IDisposable
 
     // ── Fake service ───────────────────────────────────────────────────────
 
-    private sealed class FakeTournamentDataService : ITournamentDataService
+    private sealed class FakeTournamentDataService : ITournamentApiService
     {
         public List<SeasonViewModel>? Seasons { get; set; } = [];
 
@@ -260,7 +260,7 @@ public sealed class TournamentsPageTests : IDisposable
 
         public List<string> RequestedSeasons { get; } = [];
 
-        Task<ErrorOr<List<SeasonViewModel>>> ITournamentDataService.GetSeasonsAsync(CancellationToken ct)
+        Task<ErrorOr<List<SeasonViewModel>>> ITournamentApiService.GetSeasonsAsync(CancellationToken ct)
         {
             if (ct.IsCancellationRequested)
             {
@@ -272,7 +272,7 @@ public sealed class TournamentsPageTests : IDisposable
                 : Task.FromResult<ErrorOr<List<SeasonViewModel>>>(Seasons);
         }
 
-        Task<ErrorOr<List<SeasonTournamentViewModel>>> ITournamentDataService.GetTournamentsForSeasonAsync(
+        Task<ErrorOr<List<SeasonTournamentViewModel>>> ITournamentApiService.GetTournamentsForSeasonAsync(
             SeasonViewModel season, CancellationToken ct)
         {
             if (ct.IsCancellationRequested)

@@ -127,3 +127,4 @@ All tests: `[IntegrationTest]`/`[UnitTest]` + `[Component("Champions")]` traits 
 **`HallOfFame` on each `ChampionResponse`** — bowler-level attribute carried on every entry. Data service reads from any entry for that bowler when building the "By Titles" view.
 
 **`TournamentDate` kept as `DateOnly` in all responses** — both `TournamentChampionResponse` and `BowlerTitleResponse` use `DateOnly` rather than pre-formatted strings or separate int fields. Mapping extensions handle display formatting and field extraction.
+
