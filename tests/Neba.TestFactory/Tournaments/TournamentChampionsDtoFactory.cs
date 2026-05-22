@@ -11,7 +11,7 @@ public static class TournamentChampionDtoFactory
     public static readonly DateOnly ValidTournamentDate = new(2024, 11, 1);
     public static readonly TournamentType ValidTournamentType = TournamentType.Singles;
 
-    public static TournamentChampionDto Create(
+    public static TournamentChampionsDto Create(
         TournamentId? tournamentId = null,
         string? tournamentName = null,
         DateOnly? tournamentDate = null,
@@ -26,10 +26,10 @@ public static class TournamentChampionDtoFactory
             Champions = champions ?? [ChampionDtoFactory.Create()],
         };
 
-    public static IReadOnlyCollection<TournamentChampionDto> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<TournamentChampionsDto> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<TournamentChampionDto>()
-            .CustomInstantiator(f => new TournamentChampionDto
+        var faker = new Faker<TournamentChampionsDto>()
+            .CustomInstantiator(f => new TournamentChampionsDto
             {
                 TournamentId = new TournamentId(Ulid.BogusString(f)),
                 TournamentName = f.Random.Words(2),

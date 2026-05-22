@@ -6,7 +6,7 @@ namespace Neba.Api.Features.Tournaments.ListChampions;
 /// <summary>
 /// Represents a tournament champion in the list of champions response. This DTO is used to transfer data from the domain model to the API response model, ensuring that only the necessary information is exposed to the client.
 /// </summary>
-public sealed record TournamentChampionDto
+public sealed record TournamentChampionsDto
 {
     /// <summary>
     /// The unique identifier of the tournament. This is used to link to the tournament's details and other related data.
