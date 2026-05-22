@@ -1,0 +1,54 @@
+﻿{
+  Items: [
+    {
+      TournamentId: 01GBP3VHXR2YX9DBG4SMXSK1MY,
+      TournamentName: impactful function,
+      TournamentDate: Date_1,
+      TournamentType: Over/Under 40 Doubles,
+      Champions: [
+        {
+          BowlerId: 01GBP3VHXR2YX9DBG4SMXSK1MY,
+          BowlerName: Clayton Hammes,
+          HallOfFame: true
+        }
+      ]
+    },
+    {
+      TournamentId: 01FP7GC25P4NAHEQECDT5GJ52Q,
+      TournamentName: International Cocos (Keeling) Islands,
+      TournamentDate: Date_2,
+      TournamentType: Invitational,
+      Champions: [
+        {
+          BowlerId: 01GBP3VHXR2YX9DBG4SMXSK1MY,
+          BowlerName: Clayton Hammes,
+          HallOfFame: true
+        },
+        {
+          BowlerId: 01KDCZ51B8G4VPK0CTNQNV7FS9,
+          BowlerName: Brad Schiller,
+          HallOfFame: true
+        },
+        {
+          BowlerId: 01K9GAJRAD4ZQEX06JCH8JADBQ,
+          BowlerName: Katherine Metz,
+          HallOfFame: false
+        }
+      ]
+    },
+    {
+      TournamentId: 01FN6Y18BPRW3XQBQJE3E9A189,
+      TournamentName: Concrete copy,
+      TournamentDate: Date_3,
+      TournamentType: Doubles,
+      Champions: [
+        {
+          BowlerId: 01GBP3VHXR2YX9DBG4SMXSK1MY,
+          BowlerName: Clayton Hammes,
+          HallOfFame: true
+        }
+      ]
+    }
+  ],
+  TotalItems: 3
+}
