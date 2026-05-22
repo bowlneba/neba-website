@@ -2,6 +2,7 @@ using Bogus;
 
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Tournaments.ListChampions;
+using Neba.TestFactory.Bowlers;
 
 namespace Neba.TestFactory.Tournaments;
 
