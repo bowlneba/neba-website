@@ -2,59 +2,19 @@
 
 ## Overview
 
-Implement the Champions page (`/history/champions`) showing NEBA bowlers ranked by tournament title count. The page has two views ("By Titles" and "By Year") and a per-bowler modal. The key change from the prior reference design: tournament entries in the modal are **hyperlinks** to the tournament detail page (`/tournaments/{id}`), and the modal now shows tournament name alongside date and type.
+Implement the Champions page (`/history/champions`) showing NEBA bowlers ranked by tournament title count. The page has two views ("By Titles" and "By Year") and a per-bowler modal. Tournament entries in the modal are **hyperlinks** to the tournament detail page (`/tournaments/{id}`), and the modal shows tournament name alongside date and type.
 
 ---
 
-## Phase 1: API — Contracts, Handlers, and Endpoints
+## Phase 1: API — Complete ✅
 
-### 1.1 New Contracts (`Neba.Api.Contracts`)
+All contracts, handlers, endpoints, and tests are implemented and passing. `IBowlersApi` is registered in `ApiServicesConfiguration.cs`.
 
-**`Tournaments/` folder (additions to existing)**
+**API shape notes for Phase 2 mapping work:**
 
-- `ITournamentsApi.cs` — add `ListChampionsAsync(CancellationToken)` to existing Refit interface
-- `ListChampions/TournamentChampionResponse.cs` — grouped by tournament
-  - `TournamentId` (string), `TournamentName`, `TournamentDate` (string, formatted e.g. "Mar 2018"), `TournamentType` (string), `Champions: IReadOnlyCollection<ChampionResponse>`
-- `ListChampions/ChampionResponse.cs`
-  - `BowlerId` (string), `BowlerName`, `HallOfFame` (bool)
-  - `HallOfFame` is a bowler-level attribute; data service reads it from champion entries when grouping for the "By Titles" view
-
-**`Bowlers/` folder (new)**
-
-- `IBowlersApi.cs` — Refit interface: `GetBowlerTitlesAsync(string bowlerId, CancellationToken)`
-- `GetBowlerTitles/BowlerTitlesResponse.cs`
-  - `BowlerName`, `HallOfFame` (bool), `Titles: IReadOnlyCollection<BowlerTitleEntry>`
-- `GetBowlerTitles/BowlerTitleEntry.cs`
-  - `TournamentId` (string), `TournamentName`, `TournamentMonth` (int), `TournamentYear` (int), `TournamentType` (string)
-
-### 1.2 New API Feature Folders (`Neba.Api`)
-
-**`Features/Tournaments/`** (additions to existing endpoint group)
-
-- `ListChampions/`
-  - `ListChampionsQuery.cs`
-  - `ChampionDto.cs` — `BowlerId` (domain `BowlerId`), `BowlerName` (domain `Name`), `HallOfFame` (bool)
-  - `TournamentChampionDto.cs` — `TournamentId` (domain `TournamentId`), `TournamentName`, `TournamentDate` (DateOnly), `TournamentType` (domain `TournamentType`), `Champions: IReadOnlyCollection<ChampionDto>`
-  - `ListChampionsQueryHandler.cs`
-    - Query: `HistoricalTournamentChampion` JOIN `Tournament` JOIN `Bowler`; LEFT JOIN `HallOfFameInductions` for HoF flag; group by tournament; project `TournamentChampionDto` with nested `ChampionDto` list
-  - `ListChampionsEndpoint.cs` — `GET /tournaments/champions`, maps DTO → `TournamentChampionResponse` (formats `TournamentDate` DateOnly → string), returns `CollectionResponse`
-
-**`Features/Bowlers/`** (endpoint group only — domain folder already exists)
-
-- `BowlersEndpointGroup.cs` — `SubGroup<BaseEndpointGroup>`, route prefix `bowlers`
-- `GetBowlerTitles/`
-  - `GetBowlerTitlesQuery.cs`
-  - `GetBowlerTitlesRequest.cs` — `[BindFrom("id")] string BowlerId`
-  - `GetBowlerTitlesRequestValidator.cs`
-  - `BowlerTitleDto.cs` — `TournamentId`, `TournamentName`, `StartDate`, `TournamentType`
-  - `BowlerTitlesDto.cs` — `BowlerName`, `HallOfFame`, `Titles: IReadOnlyCollection<BowlerTitleDto>`
-  - `GetBowlerTitlesQueryHandler.cs`
-    - Query: `HistoricalTournamentChampion` WHERE `BowlerId = {id}` JOIN `Tournament` JOIN `Bowler`; check HoF; return 404 if bowler not found
-  - `GetBowlerTitlesEndpoint.cs` — `GET /bowlers/{id}/titles`, maps to `BowlerTitlesResponse`
-
-### 1.3 Registration
-
-- `ApiServicesConfiguration.cs` (`Neba.Website.Server`) — register `IBowlersApi` via `RegisterApiEndpoint<T>()` (`ITournamentsApi` already registered)
+- `TournamentChampionResponse.TournamentDate` is `DateOnly` (not a pre-formatted string). The mapping extension formats it to display string (e.g. "Mar 2018").
+- `BowlerTitleResponse.TournamentDate` is `DateOnly` (not separate `TournamentMonth`/`TournamentYear` ints). The mapping extension extracts `.Month` and `.Year` from it.
+- Refit method on `ITournamentsApi` is `ListTournamentChampionsAsync` (not `ListChampionsAsync`).
 
 ---
 
@@ -77,14 +37,14 @@ All files go in `History/Champions/` (new folder).
 
 - `BowlerTitleMappingExtensions.cs` — C# 14 `extension` syntax
   - `TournamentChampionResponse` → `BowlerTitleSummaryViewModel` (used when grouping by bowler for "By Titles" view)
-  - `TournamentChampionResponse` → `BowlerTitleViewModel` (used when grouping by year for "By Year" view)
-  - `BowlerTitlesResponse` → `BowlerTitlesViewModel` (for modal; includes `TournamentId` + `TournamentName` → `TitleViewModel`)
+  - `TournamentChampionResponse` → `BowlerTitleViewModel` (used when grouping by year for "By Year" view; extract `.Month` and `.Year` from `TournamentDate`)
+  - `BowlerTitlesResponse` → `BowlerTitlesViewModel` (for modal; format `TournamentDate` DateOnly → "Mar 2018" string)
 
 ### 2.3 Data Service
 
 - `IChampionsDataService.cs` + `ChampionsDataService.cs`
-  - `GetTitleSummariesAsync(CancellationToken)` → calls `ITournamentsApi.ListChampionsAsync`; flattens tournament→champions into (champion, tournament) pairs, groups by bowler, takes `HallOfFame` from any entry in the group, counts entries for `TitleCount` → `IReadOnlyCollection<BowlerTitleSummaryViewModel>`
-  - `GetTitlesByYearAsync(CancellationToken)` → calls `ITournamentsApi.ListChampionsAsync`; parses year from `TournamentDate` string, groups tournaments by year → `IReadOnlyCollection<TitlesByYearViewModel>` (both views share one API call; the response is not cached between them — each method fetches independently)
+  - `GetTitleSummariesAsync(CancellationToken)` → calls `ITournamentsApi.ListTournamentChampionsAsync`; flattens tournament→champions into (champion, tournament) pairs, groups by bowler, takes `HallOfFame` from any entry in the group, counts entries for `TitleCount` → `IReadOnlyCollection<BowlerTitleSummaryViewModel>`
+  - `GetTitlesByYearAsync(CancellationToken)` → calls `ITournamentsApi.ListTournamentChampionsAsync`; groups tournaments by year (parsed from `TournamentDate.Year`) → `IReadOnlyCollection<TitlesByYearViewModel>` (each method fetches independently — no shared cache)
   - `GetBowlerTitlesAsync(BowlerId, CancellationToken)` → wraps `IBowlersApi.GetBowlerTitlesAsync`
   - All calls go through `ApiExecutor` for telemetry/error handling
 - Register in `WebApplicationBuilder` DI extensions
@@ -149,9 +109,7 @@ Following CLAUDE.md TDD conventions — write failing test first, then implement
 
 | Layer | Test Type | Coverage |
 | --- | --- | --- |
-| `ListChampionsQueryHandler` | Integration | Returns flat title rows with `TournamentId`/`TournamentName`/`HallOfFame`; month/year derived from `StartDate`; empty when no data |
-| `GetBowlerTitlesQueryHandler` | Integration | Returns titles for bowler; 404 for unknown bowler; HoF flag |
-| Mapping extensions | Unit | All response → VM mappings; `TournamentDate` formatting; `HallOfFame` taken from first row when grouping by bowler |
+| Mapping extensions | Unit | All response → VM mappings; `TournamentDate` DateOnly → "Mar 2018" string formatting; `TournamentMonth`/`TournamentYear` extracted from `DateOnly`; `HallOfFame` taken from first row when grouping by bowler |
 | `BowlerTitlesModal` | bUnit | Hyperlinks render with correct `href`; modal open/close resets state; loading state; error state; HOF badge conditional |
 
 All tests: `[IntegrationTest]`/`[UnitTest]` + `[Component("Champions")]` traits + `DisplayName`.
@@ -160,10 +118,12 @@ All tests: `[IntegrationTest]`/`[UnitTest]` + `[Component("Champions")]` traits 
 
 ## Resolved Decisions
 
-**`BowlerTitleViewModel` includes `TournamentId`** — `TournamentId` (string) is included on `BowlerTitleViewModel` alongside the existing month/year/type fields. This keeps the year view data path consistent with the rest of the feature and avoids a second DTO shape.
+**`BowlerTitleViewModel` includes `TournamentId`** — included on `BowlerTitleViewModel` alongside the month/year/type fields. Keeps the year view data path consistent and avoids a second DTO shape.
 
-**Champions list lives under `/tournaments/champions`, not a standalone `titles` resource** — Tournament champions are a tournament concept; a separate top-level `titles` group would be semantically ambiguous. Both the "By Titles" and "By Year" views are served by a single `GET /tournaments/champions` endpoint that returns tournament-grouped data. The data service re-groups those records differently per view.
+**Champions list lives under `/tournaments/champions`** — Tournament champions are a tournament concept. Both views are served by a single `GET /tournaments/champions` endpoint returning tournament-grouped data. The data service re-groups per view.
 
-**Response is grouped by tournament, not flat rows** — `TournamentChampionResponse` contains a `Champions: IReadOnlyCollection<ChampionResponse>` collection. The data service flattens and re-groups as needed: "By Titles" groups the flattened (champion × tournament) pairs by bowler; "By Year" parses the year from `TournamentDate` and groups tournaments.
+**Response grouped by tournament, not flat rows** — `TournamentChampionResponse` contains `Champions: IReadOnlyCollection<ChampionResponse>`. Data service flattens and re-groups: "By Titles" groups by bowler; "By Year" groups by year.
 
-**`HallOfFame` is on each `ChampionResponse`** — It's a bowler-level attribute carried on every champion entry. The data service reads the flag from any entry for that bowler when building the "By Titles" view.
+**`HallOfFame` on each `ChampionResponse`** — bowler-level attribute carried on every entry. Data service reads from any entry for that bowler when building the "By Titles" view.
+
+**`TournamentDate` kept as `DateOnly` in all responses** — both `TournamentChampionResponse` and `BowlerTitleResponse` use `DateOnly` rather than pre-formatted strings or separate int fields. Mapping extensions handle display formatting and field extraction.
