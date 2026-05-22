@@ -7,5 +7,9 @@ internal static class DocumentErrors
     public static Error DocumentNotFound(string documentName)
         => Error.NotFound(
             code: "Document.NotFound",
-            description: $"Document with name '{documentName}' was not found.");
+            description: "Document was not found.",
+            metadata: new Dictionary<string, object>
+            {
+                { "DocumentName", documentName }
+            });
 }
