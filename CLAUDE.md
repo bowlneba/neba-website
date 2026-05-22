@@ -115,6 +115,7 @@ Mutation testing (Stryker) is **not currently in the CI pipeline** — removed M
 - All tests need `[UnitTest]` or `[IntegrationTest]` trait
 - All tests need `[Component("FeatureName")]` trait
 - All Facts/Theories need `DisplayName`
+- All test methods must include explicit AAA section comments: `// Arrange`, `// Act`, `// Assert`
 - Use `MockBehavior.Strict` for all mocks
 - Use `NullLogger<T>.Instance`, never mock ILogger
 - Use test factories from `Neba.TestFactory`, never manual entity instantiation
