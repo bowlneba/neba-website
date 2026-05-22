@@ -3,8 +3,8 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 
 using Neba.Api.Contracts.Awards;
-using Neba.Api.Contracts.BowlingCenters;
 using Neba.Api.Contracts.Bowlers;
+using Neba.Api.Contracts.BowlingCenters;
 using Neba.Api.Contracts.Documents;
 using Neba.Api.Contracts.HallOfFame;
 using Neba.Api.Contracts.Seasons;
