@@ -261,6 +261,16 @@ public static class CacheDescriptors
                 Key = $"neba:tournaments:{id}",
                 Tags = ["neba", "neba:tournaments", $"neba:tournaments:{id}"]
             };
+
+        /// <summary>
+        /// Returns a cache descriptor for the list of all tournament champions.
+        /// </summary>
+        public static CacheDescriptor ListChampions
+            => new()
+            {
+                Key = "neba:tournaments:champions:list",
+                Tags = ["neba", "neba:tournaments", "neba:tournaments:champions"]
+            };
     }
 }
 #pragma warning restore CA1724
