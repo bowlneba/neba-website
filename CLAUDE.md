@@ -109,7 +109,6 @@ season.AssignHighAverageWinner(command.BowlerId, command.Average, command.Games,
 
 Mutation testing (Stryker) is **not currently in the CI pipeline** — removed May 2026. Stryker configs (`stryker-config.json`) and local tooling remain in place for manual runs. See the `## Learnings` section below for notes on known Stryker limitations.
 
-
 #### .NET Testing Requirements
 
 - All tests need `[UnitTest]` or `[IntegrationTest]` trait
