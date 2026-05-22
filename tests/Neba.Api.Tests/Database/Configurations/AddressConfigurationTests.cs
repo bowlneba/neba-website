@@ -31,8 +31,10 @@ public sealed class AddressConfigurationTests
     [Fact(DisplayName = "street is varchar(100), not nullable")]
     public void HasAddress_ShouldConfigureStreetColumn()
     {
+        // Act
         var property = _addressType.FindProperty(nameof(Address.Street))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("street");
         property.GetMaxLength().ShouldBe(100);
         property.IsNullable.ShouldBeFalse();
@@ -41,8 +43,10 @@ public sealed class AddressConfigurationTests
     [Fact(DisplayName = "unit is varchar(50), nullable")]
     public void HasAddress_ShouldConfigureUnitColumn()
     {
+        // Act
         var property = _addressType.FindProperty(nameof(Address.Unit))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("unit");
         property.GetMaxLength().ShouldBe(50);
         property.IsNullable.ShouldBeTrue();
@@ -51,8 +55,10 @@ public sealed class AddressConfigurationTests
     [Fact(DisplayName = "city is varchar(50), not nullable")]
     public void HasAddress_ShouldConfigureCityColumn()
     {
+        // Act
         var property = _addressType.FindProperty(nameof(Address.City))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("city");
         property.GetMaxLength().ShouldBe(50);
         property.IsNullable.ShouldBeFalse();
@@ -61,8 +67,10 @@ public sealed class AddressConfigurationTests
     [Fact(DisplayName = "region is char(2), not nullable")]
     public void HasAddress_ShouldConfigureRegionColumn()
     {
+        // Act
         var property = _addressType.FindProperty(nameof(Address.Region))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("region");
         property.GetMaxLength().ShouldBe(2);
         property.IsFixedLength().ShouldBe(true);
@@ -72,8 +80,10 @@ public sealed class AddressConfigurationTests
     [Fact(DisplayName = "country is char(2), not nullable")]
     public void HasAddress_ShouldConfigureCountryColumn()
     {
+        // Act
         var property = _addressType.FindProperty(nameof(Address.Country))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("country");
         property.GetMaxLength().ShouldBe(2);
         property.IsFixedLength().ShouldBe(true);
@@ -83,8 +93,10 @@ public sealed class AddressConfigurationTests
     [Fact(DisplayName = "postal_code is varchar(10), not nullable")]
     public void HasAddress_ShouldConfigurePostalCodeColumn()
     {
+        // Act
         var property = _addressType.FindProperty(nameof(Address.PostalCode))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("postal_code");
         property.GetMaxLength().ShouldBe(10);
         property.IsNullable.ShouldBeFalse();
@@ -93,8 +105,10 @@ public sealed class AddressConfigurationTests
     [Fact(DisplayName = "latitude maps to latitude column, not nullable")]
     public void HasAddress_ShouldConfigureLatitudeColumn()
     {
+        // Act
         var property = _coordinatesType.FindProperty(nameof(Coordinates.Latitude))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("latitude");
         property.IsNullable.ShouldBeFalse();
     }
@@ -102,8 +116,10 @@ public sealed class AddressConfigurationTests
     [Fact(DisplayName = "longitude maps to longitude column, not nullable")]
     public void HasAddress_ShouldConfigureLongitudeColumn()
     {
+        // Act
         var property = _coordinatesType.FindProperty(nameof(Coordinates.Longitude))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("longitude");
         property.IsNullable.ShouldBeFalse();
     }

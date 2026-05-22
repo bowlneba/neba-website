@@ -32,12 +32,15 @@ public sealed class GetBowlerTitlesQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns NotFound error when bowler does not exist")]
     public async Task HandleAsync_ShouldReturnNotFound_WhenBowlerDoesNotExist()
     {
+        // Arrange
         var handler = new GetBowlerTitlesQueryHandler(_dbContext);
 
+        // Act
         var result = await handler.HandleAsync(
             new GetBowlerTitlesQuery { BowlerId = BowlerId.New() },
             TestContext.Current.CancellationToken);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Bowler.NotFound");
     }
@@ -45,6 +48,7 @@ public sealed class GetBowlerTitlesQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns bowler name and empty titles when bowler has no champion records")]
     public async Task HandleAsync_ShouldReturnEmptyTitles_WhenBowlerHasNoChampionRecords()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var bowler = BowlerFactory.Create(name: NameFactory.Create("Jane", "Doe"));
         await _dbContext.Bowlers.AddAsync(bowler, ct);
@@ -52,9 +56,11 @@ public sealed class GetBowlerTitlesQueryHandlerTests(PostgreSqlFixture fixture)
 
         var handler = new GetBowlerTitlesQueryHandler(_dbContext);
 
+        // Act
         var result = await handler.HandleAsync(
             new GetBowlerTitlesQuery { BowlerId = bowler.Id }, ct);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.BowlerName.ShouldBe(bowler.Name);
         result.Value.HallOfFame.ShouldBeFalse();
@@ -64,6 +70,7 @@ public sealed class GetBowlerTitlesQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns HallOfFame true when bowler has an induction")]
     public async Task HandleAsync_ShouldReturnHallOfFameTrue_WhenBowlerHasInduction()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var bowler = BowlerFactory.Create();
         await _dbContext.Bowlers.AddAsync(bowler, ct);
@@ -74,9 +81,11 @@ public sealed class GetBowlerTitlesQueryHandlerTests(PostgreSqlFixture fixture)
 
         var handler = new GetBowlerTitlesQueryHandler(_dbContext);
 
+        // Act
         var result = await handler.HandleAsync(
             new GetBowlerTitlesQuery { BowlerId = bowler.Id }, ct);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.HallOfFame.ShouldBeTrue();
     }
@@ -84,6 +93,7 @@ public sealed class GetBowlerTitlesQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns mapped title when bowler has a historical champion record")]
     public async Task HandleAsync_ShouldReturnMappedTitle_WhenBowlerHasHistoricalChampionRecord()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
 
         var bowler = BowlerFactory.Create();
@@ -109,9 +119,11 @@ public sealed class GetBowlerTitlesQueryHandlerTests(PostgreSqlFixture fixture)
 
         var handler = new GetBowlerTitlesQueryHandler(_dbContext);
 
+        // Act
         var result = await handler.HandleAsync(
             new GetBowlerTitlesQuery { BowlerId = bowler.Id }, ct);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Titles.ShouldHaveSingleItem();
         var title = result.Value.Titles.Single();
@@ -124,6 +136,7 @@ public sealed class GetBowlerTitlesQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns only titles belonging to the requested bowler")]
     public async Task HandleAsync_ShouldReturnOnlyTitlesForRequestedBowler_WhenMultipleChampionRecordsExist()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
 
         var bowler = BowlerFactory.Create();
@@ -145,9 +158,11 @@ public sealed class GetBowlerTitlesQueryHandlerTests(PostgreSqlFixture fixture)
 
         var handler = new GetBowlerTitlesQueryHandler(_dbContext);
 
+        // Act
         var result = await handler.HandleAsync(
             new GetBowlerTitlesQuery { BowlerId = bowler.Id }, ct);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Titles.ShouldHaveSingleItem();
         result.Value.Titles.Single().TournamentId.ShouldBe(bowlerTournament.Id);

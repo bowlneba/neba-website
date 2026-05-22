@@ -47,12 +47,15 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should show loading spinner while API is pending")]
     public void Render_ShouldShowLoadingSpinner_WhileLoading()
     {
+        // Arrange
         _mockApi
             .Setup(x => x.GetSponsorBySlugAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(new TaskCompletionSource<IApiResponse<SponsorDetailResponse>>().Task);
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldContain("neba-spinner");
     }
 
@@ -61,10 +64,13 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should call GetSponsorBySlugAsync with the Slug parameter")]
     public void OnInit_ShouldCallApiWithSlug()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(slug: "acme-corp"));
 
+        // Act
         _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "acme-corp"));
 
+        // Assert
         _mockApi.Verify(
             x => x.GetSponsorBySlugAsync("acme-corp", It.IsAny<CancellationToken>()),
             Times.Once);
@@ -75,10 +81,13 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should navigate to /not-found when API call fails")]
     public void OnInit_ShouldNavigateToNotFound_WhenApiFails()
     {
+        // Arrange
         SetupFailureResponse(System.Net.HttpStatusCode.NotFound);
 
+        // Act
         _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "unknown-slug"));
 
+        // Assert
         var nav = _ctx.Services.GetRequiredService<NavigationManager>();
         nav.Uri.ShouldEndWith("/not-found");
     }
@@ -86,10 +95,13 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should navigate to /not-found when sponsor is inactive")]
     public void OnInit_ShouldNavigateToNotFound_WhenSponsorIsInactive()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(isCurrentSponsor: false));
 
+        // Act
         _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "inactive-sponsor"));
 
+        // Assert
         var nav = _ctx.Services.GetRequiredService<NavigationManager>();
         nav.Uri.ShouldEndWith("/not-found");
     }
@@ -99,11 +111,14 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should render page title with sponsor name")]
     public void Render_ShouldRenderPageTitle_WithSponsorName()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(name: "Acme Bowling Supply"));
 
+        // Act
         _ = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "acme-bowling-supply"));
         var headOutlet = _ctx.Render<HeadOutlet>();
 
+        // Assert
         headOutlet.Find("title").TextContent.ShouldBe("Acme Bowling Supply | NEBA Sponsors");
     }
 
@@ -112,51 +127,66 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should render tier badge")]
     public void Render_ShouldRenderTierBadge()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(tier: SponsorTier.Premier));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "premier-co"));
 
+        // Assert
         cut.Markup.ShouldContain(SponsorTier.Premier.Name);
     }
 
     [Fact(DisplayName = "Should render sponsor name in h1")]
     public void Render_ShouldRenderSponsorName_InHeading()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(name: "Premier Lanes"));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "premier-lanes"));
 
+        // Assert
         cut.Find("h1").TextContent.ShouldContain("Premier Lanes");
     }
 
     [Fact(DisplayName = "Should render tagline when provided")]
     public void Render_ShouldRenderTagline_WhenProvided()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(tagPhrase: "Strike Up Excellence"));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldContain("Strike Up Excellence");
     }
 
     [Fact(DisplayName = "Should not render tagline element when not provided")]
     public void Render_ShouldNotRenderTagline_WhenNull()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(tagPhrase: null));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.FindAll(".sponsor-detail__tagline").ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Should render logo image when LogoUrl is provided")]
     public void Render_ShouldRenderLogoImage_WhenLogoUrlProvided()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(
             logoUrl: new Uri("https://cdn.example.com/acme-logo.png")));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldContain("https://cdn.example.com/acme-logo.png");
         cut.FindAll(".sponsor-detail__logo-placeholder").ShouldBeEmpty();
     }
@@ -164,10 +194,13 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should render logo placeholder when LogoUrl is null")]
     public void Render_ShouldRenderLogoPlaceholder_WhenNoLogoUrl()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(logoUrl: null));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.FindAll(".sponsor-detail__logo-placeholder").Count.ShouldBe(1);
         cut.FindAll(".sponsor-detail__logo-img").ShouldBeEmpty();
     }
@@ -175,11 +208,14 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should render Visit Website link when WebsiteUrl is provided")]
     public void Render_ShouldRenderWebsiteLink_WhenProvided()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(
             websiteUrl: new Uri("https://acme.example.com")));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldContain("Visit Website");
         cut.Markup.ShouldContain("https://acme.example.com");
     }
@@ -187,10 +223,13 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should not render Visit Website link when WebsiteUrl is null")]
     public void Render_ShouldNotRenderWebsiteLink_WhenNull()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(websiteUrl: null));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldNotContain("Visit Website");
     }
 
@@ -199,21 +238,27 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should render about text when description is provided")]
     public void Render_ShouldRenderAboutText_WhenProvided()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(
             description: "Leaders in bowling equipment since 1982."));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldContain("Leaders in bowling equipment since 1982.");
     }
 
     [Fact(DisplayName = "Should not render about section when description is null")]
     public void Render_ShouldNotRenderAboutSection_WhenDescriptionNull()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(description: null));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldNotContain("About our Partner");
     }
 
@@ -222,34 +267,43 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should render promotional notes when provided")]
     public void Render_ShouldRenderPromotionalNotes_WhenProvided()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(
             promotionalNotes: "Exclusive 10% discount for NEBA members."));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldContain("Exclusive 10% discount for NEBA members.");
     }
 
     [Fact(DisplayName = "Should render live read script when provided")]
     public void Render_ShouldRenderLiveReadScript_WhenProvided()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(
             liveReadText: "And now a word from our sponsor, Acme Bowling..."));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldContain("And now a word from our sponsor, Acme Bowling...");
     }
 
     [Fact(DisplayName = "Should not render promotional section when no promotional data")]
     public void Render_ShouldNotRenderPromoSection_WhenNoPromoData()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(
             promotionalNotes: null,
             liveReadText: null));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldNotContain("Member Exclusive");
     }
 
@@ -258,12 +312,15 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should render business address when address fields are provided")]
     public void Render_ShouldRenderAddress_WhenProvided()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(
             businessStreet: "100 Bowl Drive",
             businessCity: "Springfield"));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldContain("100 Bowl Drive");
         cut.Markup.ShouldContain("Springfield");
     }
@@ -271,6 +328,7 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should not render address section when all address fields are null")]
     public void Render_ShouldNotRenderAddress_WhenNoAddressFields()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create() with
         {
             BusinessStreet = null,
@@ -280,44 +338,55 @@ public sealed class SponsorDetailTests : IDisposable
             BusinessCountry = null
         });
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldNotContain("Business Location");
     }
 
     [Fact(DisplayName = "Should render contact email link when provided")]
     public void Render_ShouldRenderContactEmail_WhenProvided()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(
             businessEmailAddress: "hello@acme.example.com"));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldContain("mailto:hello@acme.example.com");
     }
 
     [Fact(DisplayName = "Should render phone numbers formatted as (XXX) XXX-XXXX")]
     public void Render_ShouldRenderPhoneNumbers_Formatted()
     {
+        // Arrange
         var phones = new[] { PhoneNumberResponseFactory.Create(number: "8005551234") };
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(phoneNumbers: phones));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldContain("(800) 555-1234");
     }
 
     [Fact(DisplayName = "Should not render contact section when no email or phone numbers")]
     public void Render_ShouldNotRenderContactSection_WhenNoChannels()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create() with
         {
             BusinessEmailAddress = null,
             PhoneNumbers = []
         });
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldNotContain("Contact Channels");
     }
 
@@ -326,11 +395,14 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should render Facebook link when provided")]
     public void Render_ShouldRenderFacebookLink_WhenProvided()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(
             facebookUrl: new Uri("https://facebook.com/acme")));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldContain("https://facebook.com/acme");
         cut.Markup.ShouldContain("aria-label=\"Facebook\"");
     }
@@ -338,11 +410,14 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should render Instagram link when provided")]
     public void Render_ShouldRenderInstagramLink_WhenProvided()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(
             instagramUrl: new Uri("https://instagram.com/acme")));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldContain("https://instagram.com/acme");
         cut.Markup.ShouldContain("aria-label=\"Instagram\"");
     }
@@ -350,12 +425,15 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should not render social media section when no social URLs")]
     public void Render_ShouldNotRenderSocialSection_WhenNoSocialUrls()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(
             facebookUrl: null,
             instagramUrl: null));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldNotContain("Social Media");
     }
 
@@ -364,12 +442,15 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should render internal contact section when contact name is provided")]
     public void Render_ShouldRenderInternalContact_WhenProvided()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create(
             contactName: "Jane Smith",
             contactEmail: "jane@acme.internal"));
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldContain("Internal Sponsor Contact");
         cut.Markup.ShouldContain("Jane Smith");
     }
@@ -377,10 +458,13 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should not render internal contact section when no contact name")]
     public void Render_ShouldNotRenderInternalContact_WhenNoContactName()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create() with { SponsorContactName = null });
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldNotContain("Internal Sponsor Contact");
     }
 
@@ -389,10 +473,13 @@ public sealed class SponsorDetailTests : IDisposable
     [Fact(DisplayName = "Should render back link to sponsor directory")]
     public void Render_ShouldRenderBackLink_ToSponsorDirectory()
     {
+        // Arrange
         SetupSuccessResponse(SponsorDetailResponseFactory.Create());
 
+        // Act
         var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
 
+        // Assert
         cut.Markup.ShouldContain("Back to Sponsor Directory");
         cut.Find(".sponsor-detail__back-link").GetAttribute("href").ShouldBe("/sponsors");
     }

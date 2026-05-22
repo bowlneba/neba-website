@@ -46,20 +46,26 @@ public sealed class SponsorsTests : IDisposable
     [Fact(DisplayName = "Should render page title")]
     public void Render_ShouldShowPageTitle_WhenRendered()
     {
+        // Arrange
         SetupSuccessResponse([]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Our Partners");
     }
 
     [Fact(DisplayName = "Should call ListActiveSponsorsAsync on initialization")]
     public void OnInit_ShouldCallListActiveSponsorsApi()
     {
+        // Arrange
         SetupSuccessResponse([]);
 
+        // Act
         _ctx.Render<SponsorsPage>();
 
+        // Assert
         _mockApi.Verify(
             x => x.ListActiveSponsorsAsync(It.IsAny<CancellationToken>()),
             Times.Once);
@@ -70,12 +76,15 @@ public sealed class SponsorsTests : IDisposable
     [Fact(DisplayName = "Should show loading skeleton while API is pending")]
     public void Render_ShouldShowLoadingSkeleton_WhileLoading()
     {
+        // Arrange
         _mockApi
             .Setup(x => x.ListActiveSponsorsAsync(It.IsAny<CancellationToken>()))
             .Returns(new TaskCompletionSource<IApiResponse<CollectionResponse<SponsorSummaryResponse>>>().Task);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("aria-busy=\"true\"");
     }
 
@@ -84,10 +93,13 @@ public sealed class SponsorsTests : IDisposable
     [Fact(DisplayName = "Should show error alert when API call fails")]
     public void Render_ShouldShowErrorAlert_WhenApiFails()
     {
+        // Arrange
         SetupFailureResponse(System.Net.HttpStatusCode.InternalServerError);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Error Loading Sponsors");
     }
 
@@ -96,32 +108,41 @@ public sealed class SponsorsTests : IDisposable
     [Fact(DisplayName = "Should show CTA section while loading")]
     public void Render_ShouldShowCtaSection_WhileLoading()
     {
+        // Arrange
         _mockApi
             .Setup(x => x.ListActiveSponsorsAsync(It.IsAny<CancellationToken>()))
             .Returns(new TaskCompletionSource<IApiResponse<CollectionResponse<SponsorSummaryResponse>>>().Task);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Want to join the legacy?");
     }
 
     [Fact(DisplayName = "Should show CTA section after API succeeds")]
     public void Render_ShouldShowCtaSection_WhenApiSucceeds()
     {
+        // Arrange
         SetupSuccessResponse([]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Want to join the legacy?");
     }
 
     [Fact(DisplayName = "Should show CTA section when API fails")]
     public void Render_ShouldShowCtaSection_WhenApiFails()
     {
+        // Arrange
         SetupFailureResponse(System.Net.HttpStatusCode.InternalServerError);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Want to join the legacy?");
     }
 
@@ -130,11 +151,14 @@ public sealed class SponsorsTests : IDisposable
     [Fact(DisplayName = "Should show title sponsor section when title sponsor exists")]
     public void Render_ShouldShowTitleSponsorSection_WhenTitleSponsorExists()
     {
+        // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(name: "Acme Corp", tier: SponsorTier.TitleSponsor);
         SetupSuccessResponse([sponsor]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Title Sponsor");
         cut.Markup.ShouldContain("Acme Corp");
     }
@@ -142,49 +166,61 @@ public sealed class SponsorsTests : IDisposable
     [Fact(DisplayName = "Should not show title sponsor section when no title sponsor exists")]
     public void Render_ShouldNotShowTitleSponsorSection_WhenNoTitleSponsor()
     {
+        // Arrange
         SetupSuccessResponse([]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldNotContain("Title Sponsor");
     }
 
     [Fact(DisplayName = "Should show title sponsor tag phrase when provided")]
     public void Render_ShouldShowTitleSponsorTagPhrase_WhenProvided()
     {
+        // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(
             tier: SponsorTier.TitleSponsor,
             tagPhrase: "Excellence in Motion");
         SetupSuccessResponse([sponsor]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Excellence in Motion");
     }
 
     [Fact(DisplayName = "Should show title sponsor description when provided")]
     public void Render_ShouldShowTitleSponsorDescription_WhenProvided()
     {
+        // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(
             tier: SponsorTier.TitleSponsor,
             description: "Leaders in bowling equipment.");
         SetupSuccessResponse([sponsor]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Leaders in bowling equipment.");
     }
 
     [Fact(DisplayName = "Should show Visit Website link for title sponsor when website URL provided")]
     public void Render_ShouldShowVisitWebsiteLink_WhenTitleSponsorHasWebsiteUrl()
     {
+        // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(
             tier: SponsorTier.TitleSponsor,
             websiteUrl: new Uri("https://acme.example.com"));
         SetupSuccessResponse([sponsor]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Visit Website");
         cut.Markup.ShouldContain("https://acme.example.com");
     }
@@ -192,65 +228,80 @@ public sealed class SponsorsTests : IDisposable
     [Fact(DisplayName = "Should not show Visit Website link for title sponsor when no website URL")]
     public void Render_ShouldNotShowVisitWebsiteLink_WhenTitleSponsorHasNoWebsiteUrl()
     {
+        // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(
             tier: SponsorTier.TitleSponsor,
             websiteUrl: null);
         SetupSuccessResponse([sponsor]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldNotContain("Visit Website");
     }
 
     [Fact(DisplayName = "Should show Facebook link for title sponsor when Facebook URL provided")]
     public void Render_ShouldShowFacebookLink_WhenTitleSponsorHasFacebookUrl()
     {
+        // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(
             tier: SponsorTier.TitleSponsor,
             facebookUrl: new Uri("https://facebook.com/acme"));
         SetupSuccessResponse([sponsor]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("https://facebook.com/acme");
     }
 
     [Fact(DisplayName = "Should show Instagram link for title sponsor when Instagram URL provided")]
     public void Render_ShouldShowInstagramLink_WhenTitleSponsorHasInstagramUrl()
     {
+        // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(
             tier: SponsorTier.TitleSponsor,
             instagramUrl: new Uri("https://instagram.com/acme"));
         SetupSuccessResponse([sponsor]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("https://instagram.com/acme");
     }
 
     [Fact(DisplayName = "Should use fallback logo when title sponsor has no logo URL")]
     public void Render_ShouldUseFallbackLogo_WhenTitleSponsorHasNoLogoUrl()
     {
+        // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(
             logoUrl: null,
             tier: SponsorTier.TitleSponsor);
         SetupSuccessResponse([sponsor]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("/images/neba-logo.png");
     }
 
     [Fact(DisplayName = "Should use sponsor logo when title sponsor has logo URL")]
     public void Render_ShouldUseSponsorLogo_WhenTitleSponsorHasLogoUrl()
     {
+        // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(
             logoUrl: new Uri("https://cdn.example.com/acme-logo.png"),
             tier: SponsorTier.TitleSponsor);
         SetupSuccessResponse([sponsor]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("https://cdn.example.com/acme-logo.png");
         cut.Markup.ShouldNotContain("/images/neba-logo.png");
     }
@@ -260,11 +311,14 @@ public sealed class SponsorsTests : IDisposable
     [Fact(DisplayName = "Should show Premier Partners section when premium sponsors exist")]
     public void Render_ShouldShowPremierPartnersSection_WhenPremiumSponsorsExist()
     {
+        // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(name: "Premier Co", tier: SponsorTier.Premier);
         SetupSuccessResponse([sponsor]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Premier Partners");
         cut.Markup.ShouldContain("Premier Co");
     }
@@ -272,37 +326,46 @@ public sealed class SponsorsTests : IDisposable
     [Fact(DisplayName = "Should not show Premier Partners section when no premium sponsors exist")]
     public void Render_ShouldNotShowPremierPartnersSection_WhenNoPremiumSponsors()
     {
+        // Arrange
         SetupSuccessResponse([]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldNotContain("Premier Partners");
     }
 
     [Fact(DisplayName = "Should show premier sponsor category")]
     public void Render_ShouldShowPremierSponsorCategory_WhenApiSucceeds()
     {
+        // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(
             tier: SponsorTier.Premier,
             category: SponsorCategory.Technology);
         SetupSuccessResponse([sponsor]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain(SponsorCategory.Technology.Name);
     }
 
     [Fact(DisplayName = "Should link to sponsor details page for premier sponsor")]
     public void Render_ShouldLinkToSponsorDetails_WhenPremierSponsorRendered()
     {
+        // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(
             slug: "premier-sponsor",
             tier: SponsorTier.Premier,
             websiteUrl: new Uri("https://premier.example.com"));
         SetupSuccessResponse([sponsor]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("/sponsors/premier-sponsor");
         cut.Markup.ShouldContain("Learn more about");
     }
@@ -310,29 +373,35 @@ public sealed class SponsorsTests : IDisposable
     [Fact(DisplayName = "Should still link to sponsor details page when premier sponsor has no website URL")]
     public void Render_ShouldLinkToSponsorDetails_WhenPremierSponsorHasNoWebsiteUrl()
     {
+        // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(
             slug: "premier-no-website",
             tier: SponsorTier.Premier,
             websiteUrl: null);
         SetupSuccessResponse([sponsor]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("/sponsors/premier-no-website");
     }
 
     [Fact(DisplayName = "Should render premier sponsors ordered by priority then name")]
     public void Render_ShouldOrderPremierSponsorsByPriorityThenName()
     {
+        // Arrange
         SetupSuccessResponse([
             SponsorSummaryResponseFactory.Create(name: "Zebra Co", priority: 1, tier: SponsorTier.Premier),
             SponsorSummaryResponseFactory.Create(name: "Alpha Co", priority: 2, tier: SponsorTier.Premier),
             SponsorSummaryResponseFactory.Create(name: "Middle Co", priority: 1, tier: SponsorTier.Premier),
         ]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
         var markup = cut.Markup;
 
+        // Assert
         // Priority 1 before priority 2
         markup.IndexOf("Zebra Co", StringComparison.Ordinal)
             .ShouldBeLessThan(markup.IndexOf("Alpha Co", StringComparison.Ordinal));
@@ -346,11 +415,14 @@ public sealed class SponsorsTests : IDisposable
     [Fact(DisplayName = "Should show Association Sponsors section when standard sponsors exist")]
     public void Render_ShouldShowAssociationSponsorsSection_WhenStandardSponsorsExist()
     {
+        // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(name: "Standard Corp", tier: SponsorTier.Standard);
         SetupSuccessResponse([sponsor]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Association Sponsors");
         cut.Markup.ShouldContain("Standard Corp");
     }
@@ -358,24 +430,30 @@ public sealed class SponsorsTests : IDisposable
     [Fact(DisplayName = "Should not show Association Sponsors section when no standard sponsors exist")]
     public void Render_ShouldNotShowAssociationSponsorsSection_WhenNoStandardSponsors()
     {
+        // Arrange
         SetupSuccessResponse([]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldNotContain("Association Sponsors");
     }
 
     [Fact(DisplayName = "Should link to sponsor details page when association sponsor has website URL")]
     public void Render_ShouldLinkToSponsorDetails_WhenAssociationSponsorHasWebsiteUrl()
     {
+        // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(
             slug: "association-sponsor",
             tier: SponsorTier.Standard,
             websiteUrl: new Uri("https://assoc.example.com"));
         SetupSuccessResponse([sponsor]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Markup.ShouldContain("/sponsors/association-sponsor");
         cut.Markup.ShouldNotContain("https://assoc.example.com");
     }
@@ -383,29 +461,35 @@ public sealed class SponsorsTests : IDisposable
     [Fact(DisplayName = "Should link to sponsor details page when association sponsor has no website URL")]
     public void Render_ShouldLinkToSponsorDetails_WhenAssociationSponsorHasNoWebsiteUrl()
     {
+        // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(
             slug: "some-sponsor",
             tier: SponsorTier.Standard,
             websiteUrl: null);
         SetupSuccessResponse([sponsor]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
 
+        // Assert
         cut.Find(".sponsor-tile").GetAttribute("href").ShouldBe("/sponsors/some-sponsor");
     }
 
     [Fact(DisplayName = "Should render association sponsors ordered by priority then name")]
     public void Render_ShouldOrderAssociationSponsorsByPriorityThenName()
     {
+        // Arrange
         SetupSuccessResponse([
             SponsorSummaryResponseFactory.Create(name: "Zebra Assoc", priority: 1, tier: SponsorTier.Standard),
             SponsorSummaryResponseFactory.Create(name: "Alpha Assoc", priority: 2, tier: SponsorTier.Standard),
             SponsorSummaryResponseFactory.Create(name: "Middle Assoc", priority: 1, tier: SponsorTier.Standard),
         ]);
 
+        // Act
         var cut = _ctx.Render<SponsorsPage>();
         var markup = cut.Markup;
 
+        // Assert
         // Priority 1 before priority 2
         markup.IndexOf("Zebra Assoc", StringComparison.Ordinal)
             .ShouldBeLessThan(markup.IndexOf("Alpha Assoc", StringComparison.Ordinal));

@@ -28,19 +28,23 @@ public sealed class ListActiveSponsorsQueryHandlerTests(PostgreSqlFixture fixtur
     [Fact(DisplayName = "HandleAsync returns empty collection when no active sponsors exist")]
     public async Task HandleAsync_ShouldReturnEmpty_WhenNoActiveSponsorsExist()
     {
+        // Arrange
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
         var handler = new ListActiveSponsorsQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(
             new ListActiveSponsorsQuery(),
             TestContext.Current.CancellationToken);
 
+        // Assert
         result.ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "HandleAsync excludes inactive sponsors")]
     public async Task HandleAsync_ShouldExcludeInactiveSponsors_WhenOnlyInactiveExist()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var inactive = SponsorFactory.Create(slug: "inactive-co", isCurrentSponsor: false);
         await _dbContext.Sponsors.AddAsync(inactive, ct);
@@ -49,14 +53,17 @@ public sealed class ListActiveSponsorsQueryHandlerTests(PostgreSqlFixture fixtur
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
         var handler = new ListActiveSponsorsQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(new ListActiveSponsorsQuery(), ct);
 
+        // Assert
         result.ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "HandleAsync returns active sponsor with correct fields")]
     public async Task HandleAsync_ShouldReturnActiveSponsor_WithCorrectFields()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var sponsor = SponsorFactory.Create(
             name: "ACME Corp",
@@ -69,8 +76,10 @@ public sealed class ListActiveSponsorsQueryHandlerTests(PostgreSqlFixture fixtur
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
         var handler = new ListActiveSponsorsQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(new ListActiveSponsorsQuery(), ct);
 
+        // Assert
         result.ShouldHaveSingleItem();
         var dto = result.Single();
         dto.Name.ShouldBe("ACME Corp");
@@ -82,6 +91,7 @@ public sealed class ListActiveSponsorsQueryHandlerTests(PostgreSqlFixture fixtur
     [Fact(DisplayName = "HandleAsync sets LogoUrl when sponsor has a logo")]
     public async Task HandleAsync_ShouldSetLogoUrl_WhenSponsorHasLogo()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var logo = StoredFileFactory.Create(container: "logos", path: "sponsors/acme-logo.png");
         var sponsor = SponsorFactory.Create(slug: "logo-sponsor", isCurrentSponsor: true, logo: logo);
@@ -95,8 +105,10 @@ public sealed class ListActiveSponsorsQueryHandlerTests(PostgreSqlFixture fixtur
             .Returns(expectedUri);
         var handler = new ListActiveSponsorsQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(new ListActiveSponsorsQuery(), ct);
 
+        // Assert
         result.ShouldHaveSingleItem();
         result.Single().LogoUrl.ShouldBe(expectedUri);
     }

@@ -34,6 +34,7 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "maps to bowler_season_stats table in app schema")]
     public void Configure_ShouldMapToBowlerSeasonStatsTable()
     {
+        // Act & Assert
         _statsType.GetTableName().ShouldBe("bowler_season_stats");
         _statsType.GetSchema().ShouldBe(AppDbContext.DefaultSchema);
     }
@@ -41,10 +42,12 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "composite primary key is (SeasonId, BowlerId)")]
     public void Configure_ShouldConfigureCompositePrimaryKey()
     {
+        // Act
         var pkPropertyNames = _statsType.FindPrimaryKey()!.Properties
             .Select(p => p.Name)
             .ToList();
 
+        // Assert
         pkPropertyNames.ShouldContain(nameof(BowlerSeasonStats.SeasonId));
         pkPropertyNames.ShouldContain(nameof(BowlerSeasonStats.BowlerId));
         pkPropertyNames.Count.ShouldBe(2);
@@ -53,8 +56,10 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "season_id is char(26), not nullable")]
     public void Configure_ShouldConfigureSeasonIdColumn()
     {
+        // Act
         var property = _statsType.FindProperty(nameof(BowlerSeasonStats.SeasonId))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe(SeasonConfiguration.ForeignKeyName);
         property.GetMaxLength().ShouldBe(26);
         property.IsFixedLength().ShouldBe(true);
@@ -64,9 +69,11 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "season foreign key targets Season.Id with restrict delete")]
     public void Configure_ShouldConfigureSeasonForeignKey()
     {
+        // Act
         var foreignKey = _statsType.GetForeignKeys()
             .FirstOrDefault(fk => fk.Properties.Any(p => p.Name == nameof(BowlerSeasonStats.SeasonId)));
 
+        // Assert
         foreignKey.ShouldNotBeNull();
         foreignKey!.PrincipalEntityType.ClrType.ShouldBe(typeof(Season));
         foreignKey.PrincipalKey.Properties.Select(p => p.Name).ShouldContain(nameof(Season.Id));
@@ -76,8 +83,10 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "bowler_id is char(26), not nullable")]
     public void Configure_ShouldConfigureBowlerIdColumn()
     {
+        // Act
         var property = _statsType.FindProperty(nameof(BowlerSeasonStats.BowlerId))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe(BowlerConfiguration.ForeignKeyName);
         property.GetMaxLength().ShouldBe(26);
         property.IsFixedLength().ShouldBe(true);
@@ -87,9 +96,11 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "bowler foreign key targets Bowler.Id with restrict delete")]
     public void Configure_ShouldConfigureBowlerForeignKey()
     {
+        // Act
         var foreignKey = _statsType.GetForeignKeys()
             .FirstOrDefault(fk => fk.Properties.Any(p => p.Name == nameof(BowlerSeasonStats.BowlerId)));
 
+        // Assert
         foreignKey.ShouldNotBeNull();
         foreignKey!.PrincipalEntityType.ClrType.ShouldBe(typeof(Bowler));
         foreignKey.PrincipalKey.Properties.Select(p => p.Name).ShouldContain(nameof(Bowler.Id));
@@ -99,15 +110,18 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "bowler_id has an index")]
     public void Configure_ShouldConfigureBowlerIdIndex()
     {
+        // Act
         var index = _statsType.GetIndexes()
             .FirstOrDefault(i => i.Properties.Any(p => p.Name == nameof(BowlerSeasonStats.BowlerId)));
 
+        // Assert
         index.ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "classification flags are not nullable")]
     public void Configure_ShouldConfigureClassificationFlags()
     {
+        // Act & Assert
         _statsType.FindProperty(nameof(BowlerSeasonStats.IsMember))!.IsNullable.ShouldBeFalse();
         _statsType.FindProperty(nameof(BowlerSeasonStats.IsRookie))!.IsNullable.ShouldBeFalse();
         _statsType.FindProperty(nameof(BowlerSeasonStats.IsSenior))!.IsNullable.ShouldBeFalse();
@@ -119,8 +133,10 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "eligible_tournaments maps to tournaments column, not nullable")]
     public void Configure_ShouldConfigureEligibleTournamentsColumn()
     {
+        // Act
         var property = _statsType.FindProperty(nameof(BowlerSeasonStats.EligibleTournaments))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("tournaments");
         property.IsNullable.ShouldBeFalse();
     }
@@ -128,8 +144,10 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "eligible_entries maps to entries column, not nullable")]
     public void Configure_ShouldConfigureEligibleEntriesColumn()
     {
+        // Act
         var property = _statsType.FindProperty(nameof(BowlerSeasonStats.EligibleEntries))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("entries");
         property.IsNullable.ShouldBeFalse();
     }
@@ -137,6 +155,7 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "participation counts are not nullable")]
     public void Configure_ShouldConfigureParticipationCounts()
     {
+        // Act & Assert
         _statsType.FindProperty(nameof(BowlerSeasonStats.TotalTournaments))!.IsNullable.ShouldBeFalse();
         _statsType.FindProperty(nameof(BowlerSeasonStats.TotalEntries))!.IsNullable.ShouldBeFalse();
         _statsType.FindProperty(nameof(BowlerSeasonStats.Cashes))!.IsNullable.ShouldBeFalse();
@@ -146,6 +165,7 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "performance stats are not nullable")]
     public void Configure_ShouldConfigurePerformanceStats()
     {
+        // Act & Assert
         _statsType.FindProperty(nameof(BowlerSeasonStats.TotalGames))!.IsNullable.ShouldBeFalse();
         _statsType.FindProperty(nameof(BowlerSeasonStats.TotalPinfall))!.IsNullable.ShouldBeFalse();
         _statsType.FindProperty(nameof(BowlerSeasonStats.QualifyingHighGame))!.IsNullable.ShouldBeFalse();
@@ -155,8 +175,10 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "field_average is decimal(5,2), not nullable")]
     public void Configure_ShouldConfigureFieldAverageColumn()
     {
+        // Act
         var property = _statsType.FindProperty(nameof(BowlerSeasonStats.FieldAverage))!;
 
+        // Assert
         property.GetPrecision().ShouldBe(5);
         property.GetScale().ShouldBe(2);
         property.IsNullable.ShouldBeFalse();
@@ -165,16 +187,20 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "high_finish is nullable")]
     public void Configure_ShouldConfigureHighFinishColumn()
     {
+        // Act
         var property = _statsType.FindProperty(nameof(BowlerSeasonStats.HighFinish))!;
 
+        // Assert
         property.IsNullable.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "average_finish is decimal(3,1), nullable")]
     public void Configure_ShouldConfigureAverageFinishColumn()
     {
+        // Act
         var property = _statsType.FindProperty(nameof(BowlerSeasonStats.AverageFinish))!;
 
+        // Assert
         property.GetPrecision().ShouldBe(3);
         property.GetScale().ShouldBe(1);
         property.IsNullable.ShouldBeTrue();
@@ -183,6 +209,7 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "match play stats are not nullable")]
     public void Configure_ShouldConfigureMatchPlayStats()
     {
+        // Act & Assert
         _statsType.FindProperty(nameof(BowlerSeasonStats.MatchPlayWins))!.IsNullable.ShouldBeFalse();
         _statsType.FindProperty(nameof(BowlerSeasonStats.MatchPlayLosses))!.IsNullable.ShouldBeFalse();
         _statsType.FindProperty(nameof(BowlerSeasonStats.MatchPlayGames))!.IsNullable.ShouldBeFalse();
@@ -193,6 +220,7 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "points fields are not nullable")]
     public void Configure_ShouldConfigurePointsFields()
     {
+        // Act & Assert
         _statsType.FindProperty(nameof(BowlerSeasonStats.BowlerOfTheYearPoints))!.IsNullable.ShouldBeFalse();
         _statsType.FindProperty(nameof(BowlerSeasonStats.SeniorOfTheYearPoints))!.IsNullable.ShouldBeFalse();
         _statsType.FindProperty(nameof(BowlerSeasonStats.SuperSeniorOfTheYearPoints))!.IsNullable.ShouldBeFalse();
@@ -203,17 +231,20 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "financial fields are decimal(7,2), not nullable")]
     public void Configure_ShouldConfigureFinancialFields()
     {
+        // Act
         var winnings = _statsType.FindProperty(nameof(BowlerSeasonStats.TournamentWinnings))!;
+        var cupEarnings = _statsType.FindProperty(nameof(BowlerSeasonStats.CupEarnings))!;
+        var credits = _statsType.FindProperty(nameof(BowlerSeasonStats.Credits))!;
+
+        // Assert
         winnings.GetPrecision().ShouldBe(7);
         winnings.GetScale().ShouldBe(2);
         winnings.IsNullable.ShouldBeFalse();
 
-        var cupEarnings = _statsType.FindProperty(nameof(BowlerSeasonStats.CupEarnings))!;
         cupEarnings.GetPrecision().ShouldBe(7);
         cupEarnings.GetScale().ShouldBe(2);
         cupEarnings.IsNullable.ShouldBeFalse();
 
-        var credits = _statsType.FindProperty(nameof(BowlerSeasonStats.Credits))!;
         credits.GetPrecision().ShouldBe(7);
         credits.GetScale().ShouldBe(2);
         credits.IsNullable.ShouldBeFalse();
@@ -222,8 +253,10 @@ public sealed class BowlerSeasonStatsConfigurationTests
     [Fact(DisplayName = "last_updated_utc maps to last_updated_utc column, not nullable")]
     public void Configure_ShouldConfigureLastUpdatedUtcColumn()
     {
+        // Act
         var property = _statsType.FindProperty(nameof(BowlerSeasonStats.LastUpdatedUtc))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("last_updated_utc");
         property.IsNullable.ShouldBeFalse();
     }

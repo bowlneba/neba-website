@@ -45,20 +45,26 @@ public sealed class HallOfFameTests : IDisposable
     [Fact(DisplayName = "Should render page title")]
     public void Render_ShouldShowPageTitle_WhenRendered()
     {
+        // Arrange
         SetupSuccessResponse([HallOfFameInductionResponseFactory.Create()]);
 
+        // Act
         var cut = _ctx.Render<HallOfFamePage>();
 
+        // Assert
         cut.Markup.ShouldContain("Hall of Fame");
     }
 
     [Fact(DisplayName = "Should call ListHallOfFameInductionsAsync on initialization")]
     public void OnInit_ShouldCallListHallOfFameInductionsApi()
     {
+        // Arrange
         SetupSuccessResponse([]);
 
+        // Act
         _ctx.Render<HallOfFamePage>();
 
+        // Assert
         _mockApi.Verify(
             x => x.ListHallOfFameInductionsAsync(It.IsAny<CancellationToken>()),
             Times.Once);
@@ -67,34 +73,43 @@ public sealed class HallOfFameTests : IDisposable
     [Fact(DisplayName = "Should show bowler name when API call succeeds")]
     public void Render_ShouldShowBowlerName_WhenApiSucceeds()
     {
+        // Arrange
         var induction = HallOfFameInductionResponseFactory.Create(bowlerName: "Jane Smith");
         SetupSuccessResponse([induction]);
 
+        // Act
         var cut = _ctx.Render<HallOfFamePage>();
 
+        // Assert
         cut.Markup.ShouldContain("Jane Smith");
     }
 
     [Fact(DisplayName = "Should show Class of year header when API call succeeds")]
     public void Render_ShouldShowClassOfYearHeader_WhenApiSucceeds()
     {
+        // Arrange
         var induction = HallOfFameInductionResponseFactory.Create(year: 2019);
         SetupSuccessResponse([induction]);
 
+        // Act
         var cut = _ctx.Render<HallOfFamePage>();
 
+        // Assert
         cut.Markup.ShouldContain("Class of 2019");
     }
 
     [Fact(DisplayName = "Should show category name for single-category inductee")]
     public void Render_ShouldShowCategoryName_WhenSingleCategoryInductee()
     {
+        // Arrange
         var induction = HallOfFameInductionResponseFactory.Create(
             categories: [HallOfFameCategory.SuperiorPerformance.Name]);
         SetupSuccessResponse([induction]);
 
+        // Act
         var cut = _ctx.Render<HallOfFamePage>();
 
+        // Assert
         cut.Markup.ShouldContain(HallOfFameCategory.SuperiorPerformance.Name);
     }
 
@@ -102,17 +117,21 @@ public sealed class HallOfFameTests : IDisposable
     public void Render_ShouldShowCombinedSection_WhenMultiCategoryInductee()
     {
         // Default factory creates inductees with two categories
+        // Arrange
         var induction = HallOfFameInductionResponseFactory.Create();
         SetupSuccessResponse([induction]);
 
+        // Act
         var cut = _ctx.Render<HallOfFamePage>();
 
+        // Assert
         cut.Markup.ShouldContain("Combined");
     }
 
     [Fact(DisplayName = "Should display newest year before older year")]
     public void Render_ShouldOrderYearsDescending_WhenMultipleYears()
     {
+        // Arrange
         SetupSuccessResponse([
             HallOfFameInductionResponseFactory.Create(year: 2010, bowlerName: "Old Timer",
                 categories: [HallOfFameCategory.SuperiorPerformance.Name]),
@@ -120,9 +139,11 @@ public sealed class HallOfFameTests : IDisposable
                 categories: [HallOfFameCategory.SuperiorPerformance.Name]),
         ]);
 
+        // Act
         var cut = _ctx.Render<HallOfFamePage>();
         var markup = cut.Markup;
 
+        // Assert
         markup.IndexOf("Class of 2023", StringComparison.Ordinal)
             .ShouldBeLessThan(markup.IndexOf("Class of 2010", StringComparison.Ordinal));
     }
@@ -130,23 +151,28 @@ public sealed class HallOfFameTests : IDisposable
     [Fact(DisplayName = "Should show error alert when API call fails")]
     public void Render_ShouldShowErrorAlert_WhenApiFails()
     {
+        // Arrange
         SetupFailureResponse(System.Net.HttpStatusCode.InternalServerError);
 
+        // Act
         var cut = _ctx.Render<HallOfFamePage>();
 
+        // Assert
         cut.Markup.ShouldContain("Error Loading Hall of Fame");
     }
 
     [Fact(DisplayName = "Should show eligibility criteria section while loading")]
     public void Render_ShouldShowCriteriaSection_WhileLoading()
     {
-        // Never resolve — page stays in loading state
+        // Arrange — never resolve — page stays in loading state
         _mockApi
             .Setup(x => x.ListHallOfFameInductionsAsync(It.IsAny<CancellationToken>()))
             .Returns(new TaskCompletionSource<IApiResponse<CollectionResponse<HallOfFameInductionResponse>>>().Task);
 
+        // Act
         var cut = _ctx.Render<HallOfFamePage>();
 
+        // Assert
         cut.Markup.ShouldContain("Eligibility");
         cut.Markup.ShouldContain("Superior Performance Category");
     }
@@ -154,10 +180,13 @@ public sealed class HallOfFameTests : IDisposable
     [Fact(DisplayName = "Should show eligibility criteria section after data loads")]
     public void Render_ShouldShowCriteriaSection_WhenApiSucceeds()
     {
+        // Arrange
         SetupSuccessResponse([HallOfFameInductionResponseFactory.Create()]);
 
+        // Act
         var cut = _ctx.Render<HallOfFamePage>();
 
+        // Assert
         cut.Markup.ShouldContain("Eligibility");
         cut.Markup.ShouldContain("Superior Performance Category");
     }
@@ -165,10 +194,13 @@ public sealed class HallOfFameTests : IDisposable
     [Fact(DisplayName = "Should show eligibility criteria section when API fails")]
     public void Render_ShouldShowCriteriaSection_WhenApiFails()
     {
+        // Arrange
         SetupFailureResponse(System.Net.HttpStatusCode.InternalServerError);
 
+        // Act
         var cut = _ctx.Render<HallOfFamePage>();
 
+        // Assert
         cut.Markup.ShouldContain("Eligibility");
         cut.Markup.ShouldContain("Superior Performance Category");
     }
@@ -176,28 +208,34 @@ public sealed class HallOfFameTests : IDisposable
     [Fact(DisplayName = "Should show initials when inductee has no photo URI")]
     public void Render_ShouldShowInitials_WhenNoPhotoUri()
     {
+        // Arrange
         var induction = HallOfFameInductionResponseFactory.Create(
             bowlerName: "Jane Smith",
             categories: [HallOfFameCategory.SuperiorPerformance.Name],
             photoUri: null);
         SetupSuccessResponse([induction]);
 
+        // Act
         var cut = _ctx.Render<HallOfFamePage>();
 
+        // Assert
         cut.Markup.ShouldContain("JS");
     }
 
     [Fact(DisplayName = "Should apply background-image style when inductee has a photo URI")]
     public void Render_ShouldApplyPhotoStyle_WhenPhotoUriProvided()
     {
+        // Arrange
         var photoUri = new Uri("https://example.com/photo.jpg");
         var induction = HallOfFameInductionResponseFactory.Create(
             categories: [HallOfFameCategory.SuperiorPerformance.Name],
             photoUri: photoUri);
         SetupSuccessResponse([induction]);
 
+        // Act
         var cut = _ctx.Render<HallOfFamePage>();
 
+        // Assert
         cut.Markup.ShouldContain("background-image");
         cut.Markup.ShouldContain("https://example.com/photo.jpg");
     }
@@ -205,24 +243,28 @@ public sealed class HallOfFameTests : IDisposable
     [Fact(DisplayName = "GetInitials should return first and last initials for two-part name")]
     public void GetInitials_ShouldReturnFirstAndLastInitials_ForTwoPartName()
     {
+        // Act & Assert
         HallOfFamePage.GetInitials("Jane Smith").ShouldBe("JS");
     }
 
     [Fact(DisplayName = "GetInitials should return first and last initials for multi-part name")]
     public void GetInitials_ShouldReturnFirstAndLastInitials_ForMultiPartName()
     {
+        // Act & Assert
         HallOfFamePage.GetInitials("Mary Jo Johnson").ShouldBe("MJ");
     }
 
     [Fact(DisplayName = "GetInitials should return single initial for one-part name")]
     public void GetInitials_ShouldReturnSingleInitial_ForOnePartName()
     {
+        // Act & Assert
         HallOfFamePage.GetInitials("Cher").ShouldBe("C");
     }
 
     [Fact(DisplayName = "GetInitials should return question mark for empty name")]
     public void GetInitials_ShouldReturnQuestionMark_ForEmptyName()
     {
+        // Act & Assert
         HallOfFamePage.GetInitials(string.Empty).ShouldBe("?");
     }
 

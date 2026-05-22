@@ -14,8 +14,10 @@ public sealed class StoredFileConfigurationTests
     [Fact(DisplayName = "file_container is varchar(63), not nullable")]
     public void HasStoredFile_ShouldConfigureContainerColumn_WhenUsingDefaults()
     {
+        // Act
         var property = BuildStoredFileProperty(nameof(StoredFile.Container));
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("file_container");
         property.GetMaxLength().ShouldBe(63);
         property.IsNullable.ShouldBeFalse();
@@ -24,8 +26,10 @@ public sealed class StoredFileConfigurationTests
     [Fact(DisplayName = "file_path is varchar(1023), not nullable")]
     public void HasStoredFile_ShouldConfigurePathColumn_WhenUsingDefaults()
     {
+        // Act
         var property = BuildStoredFileProperty(nameof(StoredFile.Path));
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("file_path");
         property.GetMaxLength().ShouldBe(1023);
         property.IsNullable.ShouldBeFalse();
@@ -34,8 +38,10 @@ public sealed class StoredFileConfigurationTests
     [Fact(DisplayName = "file_content_type is varchar(255), not nullable")]
     public void HasStoredFile_ShouldConfigureContentTypeColumn_WhenUsingDefaults()
     {
+        // Act
         var property = BuildStoredFileProperty(nameof(StoredFile.ContentType));
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("file_content_type");
         property.GetMaxLength().ShouldBe(255);
         property.IsNullable.ShouldBeFalse();
@@ -44,8 +50,10 @@ public sealed class StoredFileConfigurationTests
     [Fact(DisplayName = "file_size_in_bytes is not nullable")]
     public void HasStoredFile_ShouldConfigureSizeInBytesColumn_WhenUsingDefaults()
     {
+        // Act
         var property = BuildStoredFileProperty(nameof(StoredFile.SizeInBytes));
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("file_size_in_bytes");
         property.IsNullable.ShouldBeFalse();
     }
@@ -53,6 +61,7 @@ public sealed class StoredFileConfigurationTests
     [Fact(DisplayName = "custom column names are applied")]
     public void HasStoredFile_ShouldApplyCustomColumnNames_WhenProvided()
     {
+        // Act
         var container = BuildStoredFileProperty(
             nameof(StoredFile.Container),
             containerColumnName: "blob_container",
@@ -81,6 +90,7 @@ public sealed class StoredFileConfigurationTests
             contentTypeColumnName: "blob_content_type",
             sizeInBytesColumnName: "blob_size");
 
+        // Assert
         container.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("blob_container");
         path.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("blob_path");
         contentType.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("blob_content_type");

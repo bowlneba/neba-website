@@ -277,54 +277,64 @@ public sealed class NebaMapTests : IDisposable
     [Fact(DisplayName = "Should return null when ShowRouteAsync throws JSException")]
     public async Task ShowRouteAsync_ShouldReturnNull_WhenJSExceptionThrown()
     {
+        // Arrange
         _moduleInterop.Setup<RouteData>("showRoute", _ => true).SetException(new JSException("Route failed"));
 
         var cut = _ctx.Render<NebaMap>();
         var origin = new[] { -71.0589, 42.3601 };
         var destination = new[] { -71.5, 42.5 };
 
+        // Act
         var result = await cut.InvokeAsync(() => cut.Instance.ShowRouteAsync(origin, destination));
 
+        // Assert
         result.ShouldBeNull();
     }
 
     [Fact(DisplayName = "Should return null when ShowRouteAsync throws TaskCanceledException")]
     public async Task ShowRouteAsync_ShouldReturnNull_WhenTaskCanceledExceptionThrown()
     {
+        // Arrange
         _moduleInterop.Setup<RouteData>("showRoute", _ => true).SetException(new TaskCanceledException("Canceled"));
 
         var cut = _ctx.Render<NebaMap>();
         var origin = new[] { -71.0589, 42.3601 };
         var destination = new[] { -71.5, 42.5 };
 
+        // Act
         var result = await cut.InvokeAsync(() => cut.Instance.ShowRouteAsync(origin, destination));
 
+        // Assert
         result.ShouldBeNull();
     }
 
     [Fact(DisplayName = "Should not throw when ExitDirectionsModeAsync encounters a JSException")]
     public async Task ExitDirectionsModeAsync_ShouldNotThrow_WhenJSExceptionOccurs()
     {
+        // Arrange
         _moduleInterop.SetupVoid("exitDirectionsMode", _ => true).SetException(new JSException("Failed"));
 
         var cut = _ctx.Render<NebaMap>();
 
+        // Act
         await cut.InvokeAsync(() => cut.Instance.ExitDirectionsModeAsync());
 
-        // If exception was not swallowed, InvokeAsync would have thrown before this assertion
+        // Assert — if exception was not swallowed, InvokeAsync would have thrown before this assertion
         cut.Instance.ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "Should not throw when DisposeAsync encounters a JSDisconnectedException on dispose")]
     public async Task DisposeAsync_ShouldNotThrow_WhenJSDisconnectedExceptionOccurs()
     {
+        // Arrange
         _moduleInterop.SetupVoid("dispose", _ => true).SetException(new JSDisconnectedException("Disconnected"));
 
         var cut = _ctx.Render<NebaMap>();
 
+        // Act
         await cut.InvokeAsync(() => cut.Instance.DisposeAsync().AsTask());
 
-        // If exception was not swallowed, InvokeAsync would have thrown before this assertion
+        // Assert — if exception was not swallowed, InvokeAsync would have thrown before this assertion
         cut.Instance.ShouldNotBeNull();
     }
 }

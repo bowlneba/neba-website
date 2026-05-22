@@ -28,8 +28,10 @@ public sealed class PhoneNumberConfigurationTests
     [Fact(DisplayName = "phone_type is char(1), not nullable")]
     public void WithPhoneNumbers_ShouldConfigureTypeColumn()
     {
+        // Act
         var property = _phoneNumberType.FindProperty(nameof(PhoneNumber.Type))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("phone_type");
         property.GetMaxLength().ShouldBe(1);
         property.IsFixedLength().ShouldBe(true);
@@ -39,8 +41,10 @@ public sealed class PhoneNumberConfigurationTests
     [Fact(DisplayName = "phone_country_code is varchar(3), not nullable")]
     public void WithPhoneNumbers_ShouldConfigureCountryCodeColumn()
     {
+        // Act
         var property = _phoneNumberType.FindProperty(nameof(PhoneNumber.CountryCode))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("phone_country_code");
         property.GetMaxLength().ShouldBe(3);
         property.IsNullable.ShouldBeFalse();
@@ -49,8 +53,10 @@ public sealed class PhoneNumberConfigurationTests
     [Fact(DisplayName = "phone_number is varchar(15), not nullable")]
     public void WithPhoneNumbers_ShouldConfigureNumberColumn()
     {
+        // Act
         var property = _phoneNumberType.FindProperty(nameof(PhoneNumber.Number))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("phone_number");
         property.GetMaxLength().ShouldBe(15);
         property.IsNullable.ShouldBeFalse();
@@ -59,8 +65,10 @@ public sealed class PhoneNumberConfigurationTests
     [Fact(DisplayName = "phone_extension is varchar(10), nullable")]
     public void WithPhoneNumbers_ShouldConfigureExtensionColumn()
     {
+        // Act
         var property = _phoneNumberType.FindProperty(nameof(PhoneNumber.Extension))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("phone_extension");
         property.GetMaxLength().ShouldBe(10);
         property.IsNullable.ShouldBeTrue();

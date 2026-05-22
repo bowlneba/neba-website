@@ -32,6 +32,7 @@ public sealed class HallOfFameInductionConfigurationTests
     [Fact(DisplayName = "maps to hall_of_fame_inductions table in app schema")]
     public void Configure_ShouldMapToHallOfFameInductionsTable()
     {
+        // Act & Assert
         _inductionType.GetTableName().ShouldBe("hall_of_fame_inductions");
         _inductionType.GetSchema().ShouldBe(AppDbContext.DefaultSchema);
     }
@@ -39,8 +40,10 @@ public sealed class HallOfFameInductionConfigurationTests
     [Fact(DisplayName = "domain_id is char(26), not nullable, value generated never")]
     public void Configure_ShouldConfigureDomainIdColumn()
     {
+        // Act
         var property = _inductionType.FindProperty(nameof(HallOfFameInduction.Id))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("domain_id");
         property.GetMaxLength().ShouldBe(26);
         property.IsFixedLength().ShouldBe(true);
@@ -51,18 +54,22 @@ public sealed class HallOfFameInductionConfigurationTests
     [Fact(DisplayName = "domain_id is an alternate key")]
     public void Configure_ShouldConfigureDomainIdAsAlternateKey()
     {
+        // Act
         var alternateKey = _inductionType.GetKeys()
             .Where(k => !k.IsPrimaryKey())
             .FirstOrDefault(k => k.Properties.Any(p => p.Name == nameof(HallOfFameInduction.Id)));
 
+        // Assert
         alternateKey.ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "bowler_id is char(26), not nullable")]
     public void Configure_ShouldConfigureBowlerIdColumn()
     {
+        // Act
         var property = _inductionType.FindProperty(nameof(HallOfFameInduction.BowlerId))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe(BowlerConfiguration.ForeignKeyName);
         property.GetMaxLength().ShouldBe(26);
         property.IsFixedLength().ShouldBe(true);
@@ -73,9 +80,11 @@ public sealed class HallOfFameInductionConfigurationTests
     [Fact(DisplayName = "bowler_id foreign key targets Bowler.Id")]
     public void Configure_ShouldConfigureBowlerForeignKey()
     {
+        // Act
         var foreignKey = _inductionType.GetForeignKeys()
             .FirstOrDefault(fk => fk.Properties.Any(p => p.Name == nameof(HallOfFameInduction.BowlerId)));
 
+        // Assert
         foreignKey.ShouldNotBeNull();
         foreignKey!.PrincipalEntityType.ClrType.ShouldBe(typeof(Bowler));
         foreignKey.PrincipalKey.Properties.Select(p => p.Name).ShouldContain(nameof(Bowler.Id));
@@ -84,8 +93,10 @@ public sealed class HallOfFameInductionConfigurationTests
     [Fact(DisplayName = "induction_year is not nullable")]
     public void Configure_ShouldConfigureYearColumn()
     {
+        // Act
         var property = _inductionType.FindProperty(nameof(HallOfFameInduction.Year))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("induction_year");
         property.IsNullable.ShouldBeFalse();
     }
@@ -93,17 +104,21 @@ public sealed class HallOfFameInductionConfigurationTests
     [Fact(DisplayName = "year has an index")]
     public void Configure_ShouldConfigureYearIndex()
     {
+        // Act
         var index = _inductionType.GetIndexes()
             .FirstOrDefault(i => i.Properties.Any(p => p.Name == nameof(HallOfFameInduction.Year)));
 
+        // Assert
         index.ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "category uses HallOfFameCategoryValueConverter and is not nullable")]
     public void Configure_ShouldConfigureCategoriesColumn()
     {
+        // Act
         var property = _inductionType.FindProperty(nameof(HallOfFameInduction.Categories))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("category");
         property.GetValueConverter().ShouldBeOfType<HallOfFameCategoryValueConverter>();
         property.IsNullable.ShouldBeFalse();
@@ -112,11 +127,13 @@ public sealed class HallOfFameInductionConfigurationTests
     [Fact(DisplayName = "photo columns use custom names and expected lengths")]
     public void Configure_ShouldConfigurePhotoColumns()
     {
+        // Act
         var container = _photoType.FindProperty(nameof(StoredFile.Container))!;
         var path = _photoType.FindProperty(nameof(StoredFile.Path))!;
         var contentType = _photoType.FindProperty(nameof(StoredFile.ContentType))!;
         var sizeInBytes = _photoType.FindProperty(nameof(StoredFile.SizeInBytes))!;
 
+        // Assert
         container.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("photo_container");
         container.GetMaxLength().ShouldBe(63);
 
@@ -132,6 +149,7 @@ public sealed class HallOfFameInductionConfigurationTests
     [Fact(DisplayName = "year and bowler_id form an alternate key")]
     public void Configure_ShouldConfigureYearAndBowlerIdAlternateKey()
     {
+        // Act
         var alternateKey = _inductionType.GetKeys()
             .Where(k => !k.IsPrimaryKey())
             .FirstOrDefault(k =>
@@ -139,6 +157,7 @@ public sealed class HallOfFameInductionConfigurationTests
                 k.Properties.Any(p => p.Name == nameof(HallOfFameInduction.Year)) &&
                 k.Properties.Any(p => p.Name == nameof(HallOfFameInduction.BowlerId)));
 
+        // Assert
         alternateKey.ShouldNotBeNull();
     }
 

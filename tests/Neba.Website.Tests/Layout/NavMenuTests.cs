@@ -35,18 +35,23 @@ public sealed class NavMenuTests : IDisposable
     [Fact(DisplayName = "Should render nav element when component is rendered")]
     public void Render_ShouldRenderNavElement_WhenRendered()
     {
+        // Act
         var cut = _ctx.Render<NavMenu>();
 
+        // Assert
         cut.Find("nav.neba-navbar").ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "ToggleNavMenu should expand the menu when it is collapsed")]
     public async Task ToggleNavMenu_ShouldExpandMenu_WhenMenuIsCollapsed()
     {
+        // Arrange
         var cut = _ctx.Render<NavMenu>();
 
+        // Act
         await cut.InvokeAsync(() => cut.Find("button.neba-menu-toggle").Click());
 
+        // Assert
         cut.Find("ul.neba-nav-menu.active").ShouldNotBeNull();
         cut.Find("nav.neba-navbar.menu-open").ShouldNotBeNull();
     }
@@ -54,15 +59,17 @@ public sealed class NavMenuTests : IDisposable
     [Fact(DisplayName = "CloseMenu should collapse the navigation menu when called")]
     public async Task CloseMenu_ShouldCollapseMenu_WhenCalled()
     {
+        // Arrange
         var cut = _ctx.Render<NavMenu>();
 
         // Open the menu first
         await cut.InvokeAsync(() => cut.Find("button.neba-menu-toggle").Click());
         cut.Find("ul.neba-nav-menu.active").ShouldNotBeNull();
 
-        // Close via JSInvokable method
+        // Act — close via JSInvokable method
         await cut.InvokeAsync(() => cut.Instance.CloseMenu());
 
+        // Assert
         cut.FindAll("ul.neba-nav-menu.active").ShouldBeEmpty();
     }
 }

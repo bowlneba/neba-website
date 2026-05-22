@@ -19,18 +19,22 @@ public sealed class SeasonTimelineTests : IDisposable
     [Fact(DisplayName = "Should render one timeline dot per tournament")]
     public void Render_ShouldShowOneDotPerTournament_WhenTournamentsProvided()
     {
+        // Arrange
         var tournaments = SeasonTournamentViewModelFactory.Bogus(3, seed: 2101).ToList();
 
+        // Act
         var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
             .Add(p => p.Season, DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture))
             .Add(p => p.Tournaments, tournaments));
 
+        // Assert
         cut.FindAll(".season-timeline__dot").Count.ShouldBe(3);
     }
 
     [Fact(DisplayName = "Should show tooltip on dot hover and hide on mouse out")]
     public void Tooltip_ShouldShowAndHide_WhenDotHoveredThenMouseOut()
     {
+        // Arrange
         var tournament = SeasonTournamentViewModelFactory.Create();
 
         var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
@@ -38,8 +42,11 @@ public sealed class SeasonTimelineTests : IDisposable
             .Add(p => p.Tournaments, [tournament]));
 
         var dot = cut.Find(".season-timeline__dot");
+
+        // Act
         dot.TriggerEvent("onmouseover", new MouseEventArgs());
 
+        // Assert
         cut.Find(".season-timeline__tooltip").TextContent.ShouldContain(tournament.Name);
 
         dot.TriggerEvent("onmouseout", new MouseEventArgs());
@@ -50,12 +57,15 @@ public sealed class SeasonTimelineTests : IDisposable
     [Fact(DisplayName = "Should render merged season month order when season is 2020-21")]
     public void Render_ShouldUseMergedMonthLabels_WhenSeasonIsMerged()
     {
+        // Arrange
         var tournament = SeasonTournamentViewModelFactory.Create(season: "2020-21");
 
+        // Act
         var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
             .Add(p => p.Season, "2020-21")
             .Add(p => p.Tournaments, [tournament]));
 
+        // Assert
         cut.Markup.ShouldContain("Sep");
         cut.Markup.ShouldContain("Aug");
     }
@@ -63,13 +73,16 @@ public sealed class SeasonTimelineTests : IDisposable
     [Fact(DisplayName = "Should render today marker when today falls within the season")]
     public void Render_ShouldShowTodayMarker_WhenTodayIsInSeason()
     {
+        // Arrange
         var currentYear = DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var tournament = SeasonTournamentViewModelFactory.Create(season: currentYear);
 
+        // Act
         var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
             .Add(p => p.Season, currentYear)
             .Add(p => p.Tournaments, [tournament]));
 
+        // Assert
         cut.FindAll(".season-timeline__today-marker").Count.ShouldBe(1);
         cut.Markup.ShouldContain("Today");
     }
@@ -77,19 +90,23 @@ public sealed class SeasonTimelineTests : IDisposable
     [Fact(DisplayName = "Should not render today marker when season is in the past")]
     public void Render_ShouldNotShowTodayMarker_WhenSeasonIsInThePast()
     {
+        // Arrange
         var pastYear = (DateTime.Today.Year - 2).ToString(System.Globalization.CultureInfo.InvariantCulture);
         var tournament = SeasonTournamentViewModelFactory.Create(season: pastYear);
 
+        // Act
         var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
             .Add(p => p.Season, pastYear)
             .Add(p => p.Tournaments, [tournament]));
 
+        // Assert
         cut.FindAll(".season-timeline__today-marker").Count.ShouldBe(0);
     }
 
     [Fact(DisplayName = "Should render completed dot class for past tournament and upcoming class for future")]
     public void Render_ShouldApplyCorrectDotClass_BasedOnTournamentStatus()
     {
+        // Arrange
         var currentYear = DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var pastDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
         var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
@@ -99,10 +116,12 @@ name: "Past Open", season: currentYear, startDate: pastDate, endDate: pastDate);
         var futureTournament = SeasonTournamentViewModelFactory.Create(
 name: "Future Open", season: currentYear, startDate: futureDate, endDate: futureDate);
 
+        // Act
         var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
             .Add(p => p.Season, currentYear)
             .Add(p => p.Tournaments, [pastTournament, futureTournament]));
 
+        // Assert
         cut.FindAll(".season-timeline__dot--completed").Count.ShouldBe(1);
         cut.FindAll(".season-timeline__dot--upcoming").Count.ShouldBe(1);
     }
@@ -110,12 +129,15 @@ name: "Future Open", season: currentYear, startDate: futureDate, endDate: future
     [Fact(DisplayName = "Should render empty timeline without crashing when no tournaments provided")]
     public void Render_ShouldRenderEmptyTimeline_WhenTournamentsIsEmpty()
     {
+        // Arrange
         var currentYear = DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
+        // Act
         var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
             .Add(p => p.Season, currentYear)
             .Add(p => p.Tournaments, []));
 
+        // Assert
         cut.FindAll(".season-timeline__dot").Count.ShouldBe(0);
         cut.Find(".season-timeline").ShouldNotBeNull();
     }
@@ -123,6 +145,7 @@ name: "Future Open", season: currentYear, startDate: futureDate, endDate: future
     [Fact(DisplayName = "Should show tooltip on keyboard focus and hide on blur")]
     public void Tooltip_ShouldShowAndHide_WhenDotFocusedThenBlurred()
     {
+        // Arrange
         var currentYear = DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var tournament = SeasonTournamentViewModelFactory.Create(season: currentYear);
 
@@ -131,8 +154,11 @@ name: "Future Open", season: currentYear, startDate: futureDate, endDate: future
             .Add(p => p.Tournaments, [tournament]));
 
         var dot = cut.Find(".season-timeline__dot");
+
+        // Act
         dot.TriggerEvent("onfocus", new Microsoft.AspNetCore.Components.Web.FocusEventArgs());
 
+        // Assert
         cut.Find(".season-timeline__tooltip").TextContent.ShouldContain(tournament.Name);
 
         dot.TriggerEvent("onblur", new Microsoft.AspNetCore.Components.Web.FocusEventArgs());
@@ -143,15 +169,18 @@ name: "Future Open", season: currentYear, startDate: futureDate, endDate: future
     [Fact(DisplayName = "Should include tournament name and status in dot aria-label")]
     public void Render_ShouldIncludeNameAndStatusInDotAriaLabel()
     {
+        // Arrange
         var currentYear = DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
         var tournament = SeasonTournamentViewModelFactory.Create(
 name: "Spring Open", season: currentYear, startDate: futureDate, endDate: futureDate);
 
+        // Act
         var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
             .Add(p => p.Season, currentYear)
             .Add(p => p.Tournaments, [tournament]));
 
+        // Assert
         var dot = cut.Find(".season-timeline__dot");
         var ariaLabel = dot.GetAttribute("aria-label") ?? string.Empty;
 

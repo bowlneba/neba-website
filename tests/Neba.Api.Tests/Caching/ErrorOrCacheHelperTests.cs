@@ -63,14 +63,20 @@ public sealed class ErrorOrCacheHelperTests
     [Fact(DisplayName = "IsError returns true when ErrorOr contains an error")]
     public void IsError_ReturnsTrue_WhenErrorOrContainsError()
     {
+        // Arrange
         ErrorOr<string> result = Error.Failure("Test.Failure", "something went wrong");
+
+        // Act & Assert
         ErrorOrCacheHelper.IsError(result).ShouldBeTrue();
     }
 
     [Fact(DisplayName = "IsError returns false when ErrorOr contains a value")]
     public void IsError_ReturnsFalse_WhenErrorOrContainsValue()
     {
+        // Arrange
         ErrorOr<string> result = "hello";
+
+        // Act & Assert
         ErrorOrCacheHelper.IsError(result).ShouldBeFalse();
     }
 
@@ -83,15 +89,21 @@ public sealed class ErrorOrCacheHelperTests
     [Fact(DisplayName = "GetValue returns inner string value from successful ErrorOr")]
     public void GetValue_ReturnsInnerValue_ForSuccessfulErrorOrString()
     {
+        // Arrange
         ErrorOr<string> result = "hello world";
+
+        // Act & Assert
         ErrorOrCacheHelper.GetValue(result).ShouldBe("hello world");
     }
 
     [Fact(DisplayName = "GetValue returns inner record value from successful ErrorOr")]
     public void GetValue_ReturnsInnerValue_ForSuccessfulErrorOrRecord()
     {
+        // Arrange
         var value = new TestValue("Alice", 42);
         ErrorOr<TestValue> result = value;
+
+        // Act & Assert
         ErrorOrCacheHelper.GetValue(result).ShouldBe(value);
     }
 
@@ -112,9 +124,13 @@ public sealed class ErrorOrCacheHelperTests
     [Fact(DisplayName = "WrapValue produces ErrorOr<string> containing the original value")]
     public void WrapValue_ProducesErrorOrString_WithCorrectValue()
     {
+        // Arrange
         const string value = "wrapped value";
+
+        // Act
         var result = ErrorOrCacheHelper.WrapValue(typeof(string), value);
 
+        // Assert
         var errorOr = result.ShouldBeOfType<ErrorOr<string>>();
         errorOr.IsError.ShouldBeFalse();
         errorOr.Value.ShouldBe(value);
@@ -123,9 +139,13 @@ public sealed class ErrorOrCacheHelperTests
     [Fact(DisplayName = "WrapValue produces ErrorOr<TestValue> containing the original record")]
     public void WrapValue_ProducesErrorOrRecord_WithCorrectValue()
     {
+        // Arrange
         var value = new TestValue("Bob", 99);
+
+        // Act
         var result = ErrorOrCacheHelper.WrapValue(typeof(TestValue), value);
 
+        // Assert
         var errorOr = result.ShouldBeOfType<ErrorOr<TestValue>>();
         errorOr.IsError.ShouldBeFalse();
         errorOr.Value.ShouldBe(value);
@@ -144,12 +164,15 @@ public sealed class ErrorOrCacheHelperTests
     [Fact(DisplayName = "GetValue and WrapValue round-trip preserves the original value")]
     public void RoundTrip_UnwrapAndRewrap_PreservesValue()
     {
+        // Arrange
         const string original = "round-trip value";
         ErrorOr<string> source = original;
 
+        // Act
         var unwrapped = ErrorOrCacheHelper.GetValue(source);
         var rewrapped = ErrorOrCacheHelper.WrapValue(typeof(string), unwrapped!);
 
+        // Assert
         var errorOr = rewrapped.ShouldBeOfType<ErrorOr<string>>();
         errorOr.IsError.ShouldBeFalse();
         errorOr.Value.ShouldBe(original);

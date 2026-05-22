@@ -43,20 +43,26 @@ public sealed class HighBlockTests : IDisposable
     [Fact(DisplayName = "Should render page title")]
     public void Render_ShouldShowPageTitle_WhenRendered()
     {
+        // Arrange
         SetupSuccessResponse([HighBlockAwardResponseFactory.Create()]);
 
+        // Act
         var cut = _ctx.Render<HighBlockPage>();
 
+        // Assert
         cut.Markup.ShouldContain("High Block");
     }
 
     [Fact(DisplayName = "Should call ListHighBlockAwardsAsync on initialization")]
     public void OnInit_ShouldCallListHighBlockAwardsApi()
     {
+        // Arrange
         SetupSuccessResponse([]);
 
+        // Act
         _ctx.Render<HighBlockPage>();
 
+        // Assert
         _mockApi.Verify(
             x => x.ListHighBlockAwardsAsync(It.IsAny<CancellationToken>()),
             Times.Once);
@@ -65,45 +71,57 @@ public sealed class HighBlockTests : IDisposable
     [Fact(DisplayName = "Should show bowler name when API call succeeds")]
     public void Render_ShouldShowBowlerName_WhenApiSucceeds()
     {
+        // Arrange
         var award = HighBlockAwardResponseFactory.Create(bowlerName: "Jane Smith");
         SetupSuccessResponse([award]);
 
+        // Act
         var cut = _ctx.Render<HighBlockPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Jane Smith");
     }
 
     [Fact(DisplayName = "Should show score when API call succeeds")]
     public void Render_ShouldShowScore_WhenApiSucceeds()
     {
+        // Arrange
         var award = HighBlockAwardResponseFactory.Create(score: 1325);
         SetupSuccessResponse([award]);
 
+        // Act
         var cut = _ctx.Render<HighBlockPage>();
 
+        // Assert
         cut.Markup.ShouldContain("1325");
     }
 
     [Fact(DisplayName = "Should show season when API call succeeds")]
     public void Render_ShouldShowSeason_WhenApiSucceeds()
     {
+        // Arrange
         var award = HighBlockAwardResponseFactory.Create(season: "2022 Season");
         SetupSuccessResponse([award]);
 
+        // Act
         var cut = _ctx.Render<HighBlockPage>();
 
+        // Assert
         cut.Markup.ShouldContain("2022 Season");
     }
 
     [Fact(DisplayName = "Should show TIE badge when two bowlers share the same season and score")]
     public void Render_ShouldShowTieBadge_WhenTwoAwardsShareSeasonAndScore()
     {
+        // Arrange
         var award1 = HighBlockAwardResponseFactory.Create(season: "2023 Season", bowlerName: "Alice", score: 1350);
         var award2 = HighBlockAwardResponseFactory.Create(season: "2023 Season", bowlerName: "Bob", score: 1350);
         SetupSuccessResponse([award1, award2]);
 
+        // Act
         var cut = _ctx.Render<HighBlockPage>();
 
+        // Assert
         cut.Markup.ShouldContain("TIE");
         cut.Markup.ShouldContain("Alice");
         cut.Markup.ShouldContain("Bob");
@@ -112,24 +130,30 @@ public sealed class HighBlockTests : IDisposable
     [Fact(DisplayName = "Should show RECORD badge for the highest score")]
     public void Render_ShouldShowRecordBadge_WhenAwardHasHighestScore()
     {
+        // Arrange
         var record = HighBlockAwardResponseFactory.Create(season: "2024 Season", score: 1400);
         var other = HighBlockAwardResponseFactory.Create(season: "2023 Season", score: 1300);
         SetupSuccessResponse([record, other]);
 
+        // Act
         var cut = _ctx.Render<HighBlockPage>();
 
+        // Assert
         cut.Markup.ShouldContain("RECORD");
     }
 
     [Fact(DisplayName = "Should not show RECORD badge when all awards have the same score")]
     public void Render_ShouldShowRecordBadgeOnEveryRow_WhenAllScoresAreEqual()
     {
+        // Arrange
         var award1 = HighBlockAwardResponseFactory.Create(season: "2024 Season", bowlerName: "Alice", score: 1350);
         var award2 = HighBlockAwardResponseFactory.Create(season: "2023 Season", bowlerName: "Bob", score: 1350);
         SetupSuccessResponse([award1, award2]);
 
+        // Act
         var cut = _ctx.Render<HighBlockPage>();
 
+        // Assert
         // Both rows match the max score — both get the RECORD badge
         cut.Markup.ShouldContain("RECORD");
     }
@@ -137,33 +161,42 @@ public sealed class HighBlockTests : IDisposable
     [Fact(DisplayName = "Should show error alert when API call fails")]
     public void Render_ShouldShowErrorAlert_WhenApiFails()
     {
+        // Arrange
         SetupFailureResponse(System.Net.HttpStatusCode.InternalServerError);
 
+        // Act
         var cut = _ctx.Render<HighBlockPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Error Loading Awards");
     }
 
     [Fact(DisplayName = "Should show no data message when API returns empty collection")]
     public void Render_ShouldShowNoDataMessage_WhenApiReturnsEmpty()
     {
+        // Arrange
         SetupSuccessResponse([]);
 
+        // Act
         var cut = _ctx.Render<HighBlockPage>();
 
+        // Assert
         cut.Markup.ShouldContain("No high block awards data available.");
     }
 
     [Fact(DisplayName = "Should display most recent season before older season")]
     public void Render_ShouldOrderSeasonsDescending_WhenMultipleSeasons()
     {
+        // Arrange
         var older = HighBlockAwardResponseFactory.Create(season: "2020 Season", bowlerName: "Old Timer");
         var newer = HighBlockAwardResponseFactory.Create(season: "2024 Season", bowlerName: "Recent Star");
         SetupSuccessResponse([older, newer]);
 
+        // Act
         var cut = _ctx.Render<HighBlockPage>();
         var markup = cut.Markup;
 
+        // Assert
         markup.IndexOf("Recent Star", StringComparison.Ordinal)
             .ShouldBeLessThan(markup.IndexOf("Old Timer", StringComparison.Ordinal));
     }

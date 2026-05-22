@@ -16,9 +16,11 @@ public sealed class TournamentStatusPillTests : IDisposable
     [Fact(DisplayName = "Should render open styling and pulse dot when status is open")]
     public void Render_ShouldShowOpenStyling_WhenStatusIsOpen()
     {
+        // Act
         var cut = _ctx.Render<TournamentStatusPill>(parameters => parameters
             .Add(p => p.Status, RegistrationStatus.Open));
 
+        // Assert
         cut.Markup.ShouldContain("tournament-status-pill--open");
         cut.Markup.ShouldContain("Registration open");
         cut.FindAll(".tournament-status-pill__dot").Count.ShouldBe(1);
@@ -27,8 +29,10 @@ public sealed class TournamentStatusPillTests : IDisposable
     [Fact(DisplayName = "Should render default soon status when status is null")]
     public void Render_ShouldShowSoonCopy_WhenStatusIsNull()
     {
+        // Act
         var cut = _ctx.Render<TournamentStatusPill>();
 
+        // Assert
         cut.Markup.ShouldContain("tournament-status-pill--soon");
         cut.Markup.ShouldContain("Registration opens soon");
     }

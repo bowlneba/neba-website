@@ -30,19 +30,23 @@ public sealed class ListHallOfFameInductionsQueryHandlerTests(PostgreSqlFixture 
     [Fact(DisplayName = "HandleAsync returns empty collection when no inductions exist")]
     public async Task HandleAsync_ShouldReturnEmpty_WhenNoInductionsExist()
     {
+        // Arrange
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
         var handler = new ListHallOfFameInductionsQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(
             new ListHallOfFameInductionsQuery(),
             TestContext.Current.CancellationToken);
 
+        // Assert
         result.ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "HandleAsync returns induction with correct fields when data exists")]
     public async Task HandleAsync_ShouldReturnInduction_WithCorrectFields_WhenDataExists()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var bowler = BowlerFactory.Create(name: NameFactory.Create("Jane", "Doe"));
         await _dbContext.Bowlers.AddAsync(bowler, ct);
@@ -57,8 +61,10 @@ public sealed class ListHallOfFameInductionsQueryHandlerTests(PostgreSqlFixture 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
         var handler = new ListHallOfFameInductionsQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(new ListHallOfFameInductionsQuery(), ct);
 
+        // Assert
         result.ShouldHaveSingleItem();
         var dto = result.Single();
         dto.Year.ShouldBe(2020);
@@ -70,6 +76,7 @@ public sealed class ListHallOfFameInductionsQueryHandlerTests(PostgreSqlFixture 
     [Fact(DisplayName = "HandleAsync sets PhotoUri when induction has a photo")]
     public async Task HandleAsync_ShouldSetPhotoUri_WhenInductionHasPhoto()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var bowler = BowlerFactory.Create();
         await _dbContext.Bowlers.AddAsync(bowler, ct);
@@ -86,8 +93,10 @@ public sealed class ListHallOfFameInductionsQueryHandlerTests(PostgreSqlFixture 
             .Returns(expectedUri);
         var handler = new ListHallOfFameInductionsQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(new ListHallOfFameInductionsQuery(), ct);
 
+        // Assert
         result.ShouldHaveSingleItem();
         result.Single().PhotoUri.ShouldBe(expectedUri);
     }

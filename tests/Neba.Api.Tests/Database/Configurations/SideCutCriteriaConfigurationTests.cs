@@ -34,6 +34,7 @@ public sealed class SideCutCriteriaConfigurationTests
     [Fact(DisplayName = "maps to side_cut_criteria table in app schema")]
     public void Configure_ShouldMapToSideCutCriteriaTable()
     {
+        // Act & Assert
         _criteriaType.GetTableName().ShouldBe("side_cut_criteria");
         _criteriaType.GetSchema().ShouldBe(AppDbContext.DefaultSchema);
     }
@@ -41,24 +42,30 @@ public sealed class SideCutCriteriaConfigurationTests
     [Fact(DisplayName = "minimum_age is nullable")]
     public void Configure_ShouldConfigureMinimumAgeNullable()
     {
+        // Act
         var property = _criteriaType.FindProperty(nameof(SideCutCriteria.MinimumAge))!;
 
+        // Assert
         property.IsNullable.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "maximum_age is nullable")]
     public void Configure_ShouldConfigureMaximumAgeNullable()
     {
+        // Act
         var property = _criteriaType.FindProperty(nameof(SideCutCriteria.MaximumAge))!;
 
+        // Assert
         property.IsNullable.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "gender_requirement is varchar(1), nullable")]
     public void Configure_ShouldConfigureGenderRequirementColumn()
     {
+        // Act
         var property = _criteriaType.FindProperty(nameof(SideCutCriteria.GenderRequirement))!;
 
+        // Assert
         property.GetMaxLength().ShouldBe(1);
         property.IsNullable.ShouldBeTrue();
     }
@@ -66,9 +73,11 @@ public sealed class SideCutCriteriaConfigurationTests
     [Fact(DisplayName = "side_cut_criteria_group_id has an index")]
     public void Configure_ShouldConfigureGroupIdIndex()
     {
+        // Act
         var index = _criteriaType.GetIndexes()
             .FirstOrDefault(i => i.Properties.Any(p => p.Name == SideCutCriteriaGroupConfiguration.ForeignKey));
 
+        // Assert
         index.ShouldNotBeNull();
     }
 }

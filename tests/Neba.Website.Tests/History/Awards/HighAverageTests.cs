@@ -43,20 +43,26 @@ public sealed class HighAverageTests : IDisposable
     [Fact(DisplayName = "Should render page title")]
     public void Render_ShouldShowPageTitle_WhenRendered()
     {
+        // Arrange
         SetupSuccessResponse([HighAverageAwardResponseFactory.Create()]);
 
+        // Act
         var cut = _ctx.Render<HighAveragePage>();
 
+        // Assert
         cut.Markup.ShouldContain("High Average");
     }
 
     [Fact(DisplayName = "Should call ListHighAverageAwardsAsync on initialization")]
     public void OnInit_ShouldCallListHighAverageAwardsApi()
     {
+        // Arrange
         SetupSuccessResponse([]);
 
+        // Act
         _ctx.Render<HighAveragePage>();
 
+        // Assert
         _mockApi.Verify(
             x => x.ListHighAverageAwardsAsync(It.IsAny<CancellationToken>()),
             Times.Once);
@@ -65,111 +71,141 @@ public sealed class HighAverageTests : IDisposable
     [Fact(DisplayName = "Should show bowler name when API call succeeds")]
     public void Render_ShouldShowBowlerName_WhenApiSucceeds()
     {
+        // Arrange
         var award = HighAverageAwardResponseFactory.Create(bowlerName: "Jane Smith");
         SetupSuccessResponse([award]);
 
+        // Act
         var cut = _ctx.Render<HighAveragePage>();
 
+        // Assert
         cut.Markup.ShouldContain("Jane Smith");
     }
 
     [Fact(DisplayName = "Should show formatted average when API call succeeds")]
     public void Render_ShouldShowFormattedAverage_WhenApiSucceeds()
     {
+        // Arrange
         var award = HighAverageAwardResponseFactory.Create(average: 228.75m);
         SetupSuccessResponse([award]);
 
+        // Act
         var cut = _ctx.Render<HighAveragePage>();
 
+        // Assert
         cut.Markup.ShouldContain("228.75");
     }
 
     [Fact(DisplayName = "Should show season when API call succeeds")]
     public void Render_ShouldShowSeason_WhenApiSucceeds()
     {
+        // Arrange
         var award = HighAverageAwardResponseFactory.Create(season: "2022 Season");
         SetupSuccessResponse([award]);
 
+        // Act
         var cut = _ctx.Render<HighAveragePage>();
 
+        // Assert
         cut.Markup.ShouldContain("2022 Season");
     }
 
     [Fact(DisplayName = "Should show game count when present")]
     public void Render_ShouldShowGameCount_WhenPresent()
     {
+        // Arrange
         var award = HighAverageAwardResponseFactory.Create(totalGames: 63);
         SetupSuccessResponse([award]);
 
+        // Act
         var cut = _ctx.Render<HighAveragePage>();
 
+        // Assert
         cut.Markup.ShouldContain("63");
     }
 
     [Fact(DisplayName = "Should show em dash when game count is null")]
     public void Render_ShouldShowEmDash_WhenGameCountIsNull()
     {
+        // Arrange
         var award = HighAverageAwardResponseFactory.Create(totalGames: null);
         SetupSuccessResponse([award]);
 
+        // Act
         var cut = _ctx.Render<HighAveragePage>();
 
+        // Assert
         cut.Markup.ShouldContain("—");
     }
 
     [Fact(DisplayName = "Should show tournament count when present")]
     public void Render_ShouldShowTournamentCount_WhenPresent()
     {
+        // Arrange
         var award = HighAverageAwardResponseFactory.Create(tournamentsParticipated: 14);
         SetupSuccessResponse([award]);
 
+        // Act
         var cut = _ctx.Render<HighAveragePage>();
 
+        // Assert
         cut.Markup.ShouldContain("14");
     }
 
     [Fact(DisplayName = "Should show RECORD badge for the highest average")]
     public void Render_ShouldShowRecordBadge_WhenAwardHasHighestAverage()
     {
+        // Arrange
         var record = HighAverageAwardResponseFactory.Create(season: "2024 Season", average: 235.50m);
         var other = HighAverageAwardResponseFactory.Create(season: "2023 Season", average: 228.00m);
         SetupSuccessResponse([record, other]);
 
+        // Act
         var cut = _ctx.Render<HighAveragePage>();
 
+        // Assert
         cut.Markup.ShouldContain("RECORD");
     }
 
     [Fact(DisplayName = "Should show error alert when API call fails")]
     public void Render_ShouldShowErrorAlert_WhenApiFails()
     {
+        // Arrange
         SetupFailureResponse(System.Net.HttpStatusCode.InternalServerError);
 
+        // Act
         var cut = _ctx.Render<HighAveragePage>();
 
+        // Assert
         cut.Markup.ShouldContain("Error Loading Awards");
     }
 
     [Fact(DisplayName = "Should show no data message when API returns empty collection")]
     public void Render_ShouldShowNoDataMessage_WhenApiReturnsEmpty()
     {
+        // Arrange
         SetupSuccessResponse([]);
 
+        // Act
         var cut = _ctx.Render<HighAveragePage>();
 
+        // Assert
         cut.Markup.ShouldContain("No high average awards data available.");
     }
 
     [Fact(DisplayName = "Should display most recent season before older season")]
     public void Render_ShouldOrderSeasonsDescending_WhenMultipleSeasons()
     {
+        // Arrange
         var older = HighAverageAwardResponseFactory.Create(season: "2020 Season", bowlerName: "Old Timer");
         var newer = HighAverageAwardResponseFactory.Create(season: "2024 Season", bowlerName: "Recent Star");
         SetupSuccessResponse([older, newer]);
 
+        // Act
         var cut = _ctx.Render<HighAveragePage>();
         var markup = cut.Markup;
 
+        // Assert
         markup.IndexOf("Recent Star", StringComparison.Ordinal)
             .ShouldBeLessThan(markup.IndexOf("Old Timer", StringComparison.Ordinal));
     }

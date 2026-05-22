@@ -33,6 +33,7 @@ public sealed class BowlerConfigurationTests
     [Fact(DisplayName = "maps to bowlers table in app schema")]
     public void Configure_ShouldMapToBowlersTable()
     {
+        // Act & Assert
         _bowlerType.GetTableName().ShouldBe("bowlers");
         _bowlerType.GetSchema().ShouldBe(AppDbContext.DefaultSchema);
     }
@@ -40,8 +41,10 @@ public sealed class BowlerConfigurationTests
     [Fact(DisplayName = "domain_id is character(26), not nullable, value generated never")]
     public void Configure_ShouldConfigureDomainIdColumn()
     {
+        // Act
         var property = _bowlerType.FindProperty(nameof(Bowler.Id))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("domain_id");
         property.GetMaxLength().ShouldBe(26);
         property.IsFixedLength().ShouldBe(true);
@@ -52,18 +55,22 @@ public sealed class BowlerConfigurationTests
     [Fact(DisplayName = "domain_id is an alternate key")]
     public void Configure_ShouldConfigureDomainIdAsAlternateKey()
     {
+        // Act
         var alternateKey = _bowlerType.GetKeys()
             .Where(k => !k.IsPrimaryKey())
             .FirstOrDefault(k => k.Properties.Any(p => p.Name == nameof(Bowler.Id)));
 
+        // Assert
         alternateKey.ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "first_name is varchar(31), not nullable")]
     public void Configure_ShouldConfigureFirstNameColumn()
     {
+        // Act
         var property = _nameType.FindProperty(nameof(Name.FirstName))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("first_name");
         property.GetMaxLength().ShouldBe(31);
         property.IsNullable.ShouldBeFalse();
@@ -72,8 +79,10 @@ public sealed class BowlerConfigurationTests
     [Fact(DisplayName = "middle_name is varchar(31), nullable")]
     public void Configure_ShouldConfigureMiddleNameColumn()
     {
+        // Act
         var property = _nameType.FindProperty(nameof(Name.MiddleName))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("middle_name");
         property.GetMaxLength().ShouldBe(31);
         property.IsNullable.ShouldBeTrue();
@@ -82,8 +91,10 @@ public sealed class BowlerConfigurationTests
     [Fact(DisplayName = "last_name is varchar(63), not nullable")]
     public void Configure_ShouldConfigureLastNameColumn()
     {
+        // Act
         var property = _nameType.FindProperty(nameof(Name.LastName))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("last_name");
         property.GetMaxLength().ShouldBe(63);
         property.IsNullable.ShouldBeFalse();
@@ -92,8 +103,10 @@ public sealed class BowlerConfigurationTests
     [Fact(DisplayName = "suffix is varchar(7), nullable")]
     public void Configure_ShouldConfigureSuffixColumn()
     {
+        // Act
         var property = _nameType.FindProperty(nameof(Name.Suffix))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("suffix");
         property.GetMaxLength().ShouldBe(7);
         property.IsNullable.ShouldBeTrue();
@@ -102,8 +115,10 @@ public sealed class BowlerConfigurationTests
     [Fact(DisplayName = "nickname is varchar(31), nullable")]
     public void Configure_ShouldConfigureNicknameColumn()
     {
+        // Act
         var property = _nameType.FindProperty(nameof(Name.Nickname))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("nickname");
         property.GetMaxLength().ShouldBe(31);
         property.IsNullable.ShouldBeTrue();
@@ -112,28 +127,34 @@ public sealed class BowlerConfigurationTests
     [Fact(DisplayName = "Name has composite index on last_name, first_name")]
     public void Configure_ShouldConfigureNameCompositeIndex()
     {
+        // Act
         var index = _nameType.GetIndexes()
             .FirstOrDefault(i =>
                 i.Properties.Any(p => p.Name == nameof(Name.LastName)) &&
                 i.Properties.Any(p => p.Name == nameof(Name.FirstName)));
 
+        // Assert
         index.ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "website_id is never generated")]
     public void Configure_ShouldConfigureWebsiteIdValueGeneratedNever()
     {
+        // Act
         var property = _bowlerType.FindProperty(nameof(Bowler.WebsiteId))!;
 
+        // Assert
         property.ValueGenerated.ShouldBe(ValueGenerated.Never);
     }
 
     [Fact(DisplayName = "website_id has a unique index with nulls distinct")]
     public void Configure_ShouldConfigureWebsiteIdUniqueIndex()
     {
+        // Act
         var index = _bowlerType.GetIndexes()
             .FirstOrDefault(i => i.Properties.Any(p => p.Name == nameof(Bowler.WebsiteId)));
 
+        // Assert
         index.ShouldNotBeNull();
         index!.IsUnique.ShouldBeTrue();
         index.FindAnnotation("Npgsql:NullsDistinct")?.Value.ShouldBe(true);
@@ -142,17 +163,21 @@ public sealed class BowlerConfigurationTests
     [Fact(DisplayName = "legacy_id is never generated")]
     public void Configure_ShouldConfigureLegacyIdValueGeneratedNever()
     {
+        // Act
         var property = _bowlerType.FindProperty(nameof(Bowler.LegacyId))!;
 
+        // Assert
         property.ValueGenerated.ShouldBe(ValueGenerated.Never);
     }
 
     [Fact(DisplayName = "legacy_id has a unique index with nulls distinct")]
     public void Configure_ShouldConfigureLegacyIdUniqueIndex()
     {
+        // Act
         var index = _bowlerType.GetIndexes()
             .FirstOrDefault(i => i.Properties.Any(p => p.Name == nameof(Bowler.LegacyId)));
 
+        // Assert
         index.ShouldNotBeNull();
         index!.IsUnique.ShouldBeTrue();
         index.FindAnnotation("Npgsql:NullsDistinct")?.Value.ShouldBe(true);

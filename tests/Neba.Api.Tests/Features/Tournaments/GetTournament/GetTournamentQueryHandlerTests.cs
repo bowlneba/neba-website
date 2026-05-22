@@ -29,13 +29,16 @@ public sealed class GetTournamentQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns TournamentNotFound when tournament does not exist")]
     public async Task HandleAsync_ShouldReturnNotFound_WhenTournamentDoesNotExist()
     {
+        // Arrange
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
         var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(
             new GetTournamentQuery { Id = TournamentId.New() },
             TestContext.Current.CancellationToken);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Tournament.NotFound");
     }
@@ -43,6 +46,7 @@ public sealed class GetTournamentQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns tournament detail with correct fields when tournament exists")]
     public async Task HandleAsync_ShouldReturnTournamentDetail_WithCorrectFields_WhenTournamentExists()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var season = SeasonFactory.Create(description: "2025 Season");
         await _dbContext.Seasons.AddAsync(season, ct);
@@ -60,9 +64,11 @@ public sealed class GetTournamentQueryHandlerTests(PostgreSqlFixture fixture)
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
         var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(
             new GetTournamentQuery { Id = tournament.Id }, ct);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Id.ShouldBe(tournament.Id);
         result.Value.Name.ShouldBe("NEBA Singles 2025");
@@ -76,6 +82,7 @@ public sealed class GetTournamentQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync sets LogoUrl when tournament has a logo")]
     public async Task HandleAsync_ShouldSetLogoUrl_WhenTournamentHasLogo()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var season = SeasonFactory.Create();
         await _dbContext.Seasons.AddAsync(season, ct);
@@ -94,9 +101,11 @@ public sealed class GetTournamentQueryHandlerTests(PostgreSqlFixture fixture)
             .Returns(expectedUri);
         var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(
             new GetTournamentQuery { Id = tournament.Id }, ct);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.LogoUrl.ShouldBe(expectedUri);
     }
@@ -104,6 +113,7 @@ public sealed class GetTournamentQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns oil patterns with round names when tournament has oil patterns")]
     public async Task HandleAsync_ShouldReturnOilPatternsWithRoundNames_WhenTournamentHasOilPatterns()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var season = SeasonFactory.Create();
         await _dbContext.Seasons.AddAsync(season, ct);
@@ -119,9 +129,11 @@ public sealed class GetTournamentQueryHandlerTests(PostgreSqlFixture fixture)
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
         var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(
             new GetTournamentQuery { Id = tournament.Id }, ct);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.OilPatterns.ShouldHaveSingleItem();
         var pattern = result.Value.OilPatterns.Single();

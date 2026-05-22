@@ -48,12 +48,15 @@ public sealed class GetSeasonStatsQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns SeasonHasNoStats when no BowlerSeasonStats exist")]
     public async Task HandleAsync_ShouldReturnSeasonHasNoStats_WhenNoBowlerSeasonStatsExist()
     {
+        // Arrange
         var handler = CreateHandler();
 
+        // Act
         var result = await handler.HandleAsync(
             new GetSeasonStatsQuery { SeasonYear = null },
             TestContext.Current.CancellationToken);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Stats.SeasonHasNoStats");
     }
@@ -61,6 +64,7 @@ public sealed class GetSeasonStatsQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns stats for most recent season when no year specified")]
     public async Task HandleAsync_ShouldReturnStatsForMostRecentSeason_WhenNoYearSpecified()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var bowler = BowlerFactory.Create();
         await _dbContext.Bowlers.AddAsync(bowler, ct);
@@ -76,9 +80,11 @@ public sealed class GetSeasonStatsQueryHandlerTests(PostgreSqlFixture fixture)
 
         var handler = CreateHandler();
 
+        // Act
         var result = await handler.HandleAsync(
             new GetSeasonStatsQuery { SeasonYear = null }, ct);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Season.Id.ShouldBe(season.Id);
         result.Value.BowlerStats.ShouldHaveSingleItem();
@@ -87,6 +93,7 @@ public sealed class GetSeasonStatsQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns stats for specified year when SeasonYear matches")]
     public async Task HandleAsync_ShouldReturnStatsForSpecifiedYear_WhenSeasonYearMatches()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var bowler = BowlerFactory.Create();
         await _dbContext.Bowlers.AddAsync(bowler, ct);
@@ -106,9 +113,11 @@ public sealed class GetSeasonStatsQueryHandlerTests(PostgreSqlFixture fixture)
 
         var handler = CreateHandler();
 
+        // Act
         var result = await handler.HandleAsync(
             new GetSeasonStatsQuery { SeasonYear = 2024 }, ct);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Season.Id.ShouldBe(season2024.Id);
     }
@@ -116,6 +125,7 @@ public sealed class GetSeasonStatsQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns SeasonHasNoStats when specified year has no stats")]
     public async Task HandleAsync_ShouldReturnSeasonHasNoStats_WhenSpecifiedYearHasNoStats()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var bowler = BowlerFactory.Create();
         await _dbContext.Bowlers.AddAsync(bowler, ct);
@@ -131,9 +141,11 @@ public sealed class GetSeasonStatsQueryHandlerTests(PostgreSqlFixture fixture)
 
         var handler = CreateHandler();
 
+        // Act
         var result = await handler.HandleAsync(
             new GetSeasonStatsQuery { SeasonYear = 2020 }, ct);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Stats.SeasonHasNoStats");
     }

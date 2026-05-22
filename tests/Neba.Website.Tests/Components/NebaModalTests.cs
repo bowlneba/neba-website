@@ -27,30 +27,36 @@ public sealed class NebaModalTests : IDisposable
     [Fact(DisplayName = "Should render nothing when IsOpen is false")]
     public void Render_ShouldRenderNothing_WhenIsOpenIsFalse()
     {
+        // Act
         var cut = _ctx.Render<NebaModal>(p => p
             .Add(x => x.IsOpen, false)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { })));
 
+        // Assert
         cut.FindAll(".neba-modal-backdrop").Count.ShouldBe(0);
     }
 
     [Fact(DisplayName = "Should render backdrop when IsOpen is true")]
     public void Render_ShouldRenderBackdrop_WhenIsOpenIsTrue()
     {
+        // Act
         var cut = _ctx.Render<NebaModal>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { })));
 
+        // Assert
         cut.Find(".neba-modal-backdrop").ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "Should enable focus trap when modal opens")]
     public void OnAfterRender_ShouldEnableFocusTrap_WhenModalOpens()
     {
+        // Act
         _ctx.Render<NebaModal>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { })));
 
+        // Assert
         _modalModuleInterop.VerifyInvoke("focusElement", 1);
         _modalModuleInterop.VerifyInvoke("enableFocusTrap", 1);
     }
@@ -58,11 +64,13 @@ public sealed class NebaModalTests : IDisposable
     [Fact(DisplayName = "Should apply dialog ARIA semantics when modal is open")]
     public void Render_ShouldApplyDialogAriaSemantics_WhenModalIsOpen()
     {
+        // Act
         var cut = _ctx.Render<NebaModal>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
             .Add(x => x.Title, "Accessible title"));
 
+        // Assert
         var dialog = cut.Find(".neba-modal-content");
 
         dialog.GetAttribute("role").ShouldBe("dialog");
@@ -83,10 +91,12 @@ public sealed class NebaModalTests : IDisposable
     [Fact(DisplayName = "Should omit aria-labelledby when title is not provided")]
     public void Render_ShouldOmitAriaLabelledBy_WhenTitleIsNotProvided()
     {
+        // Act
         var cut = _ctx.Render<NebaModal>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { })));
 
+        // Assert
         var dialog = cut.Find(".neba-modal-content");
 
         dialog.GetAttribute("aria-labelledby").ShouldBeNull();
@@ -96,11 +106,13 @@ public sealed class NebaModalTests : IDisposable
     [Fact(DisplayName = "Should render title when Title is provided")]
     public void Render_ShouldRenderTitle_WhenTitleIsProvided()
     {
+        // Act
         var cut = _ctx.Render<NebaModal>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
             .Add(x => x.Title, "Test Title"));
 
+        // Assert
         cut.Find(".neba-modal-header").ShouldNotBeNull();
         cut.Markup.ShouldContain("Test Title");
     }
@@ -108,45 +120,53 @@ public sealed class NebaModalTests : IDisposable
     [Fact(DisplayName = "Should not render header when Title is null")]
     public void Render_ShouldNotRenderHeader_WhenTitleIsNull()
     {
+        // Act
         var cut = _ctx.Render<NebaModal>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { })));
 
+        // Assert
         cut.FindAll(".neba-modal-header").Count.ShouldBe(0);
     }
 
     [Fact(DisplayName = "Should render close button when ShowCloseButton is true")]
     public void Render_ShouldRenderCloseButton_WhenShowCloseButtonIsTrue()
     {
+        // Act
         var cut = _ctx.Render<NebaModal>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
             .Add(x => x.Title, "Modal Title")
             .Add(x => x.ShowCloseButton, true));
 
+        // Assert
         cut.Find(".neba-modal-close").ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "Should not render close button when ShowCloseButton is false")]
     public void Render_ShouldNotRenderCloseButton_WhenShowCloseButtonIsFalse()
     {
+        // Act
         var cut = _ctx.Render<NebaModal>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
             .Add(x => x.Title, "Modal Title")
             .Add(x => x.ShowCloseButton, false));
 
+        // Assert
         cut.FindAll(".neba-modal-close").Count.ShouldBe(0);
     }
 
     [Fact(DisplayName = "Should render child content when provided")]
     public void Render_ShouldRenderChildContent_WhenProvided()
     {
+        // Act
         var cut = _ctx.Render<NebaModal>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
             .Add(x => x.ChildContent, builder => builder.AddMarkupContent(0, "<p>Modal body content</p>")));
 
+        // Assert
         cut.Find(".neba-modal-body").ShouldNotBeNull();
         cut.Markup.ShouldContain("Modal body content");
     }
@@ -154,11 +174,13 @@ public sealed class NebaModalTests : IDisposable
     [Fact(DisplayName = "Should render footer when FooterContent is provided")]
     public void Render_ShouldRenderFooter_WhenFooterContentProvided()
     {
+        // Act
         var cut = _ctx.Render<NebaModal>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
             .Add(x => x.FooterContent, builder => builder.AddMarkupContent(0, "<button>OK</button>")));
 
+        // Assert
         cut.Find(".neba-modal-footer").ShouldNotBeNull();
         cut.Markup.ShouldContain("OK");
     }
@@ -166,16 +188,19 @@ public sealed class NebaModalTests : IDisposable
     [Fact(DisplayName = "Should not render footer when FooterContent is null")]
     public void Render_ShouldNotRenderFooter_WhenFooterContentIsNull()
     {
+        // Act
         var cut = _ctx.Render<NebaModal>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { })));
 
+        // Assert
         cut.FindAll(".neba-modal-footer").Count.ShouldBe(0);
     }
 
     [Fact(DisplayName = "Should invoke OnClose when close button is clicked")]
     public async Task HandleClose_ShouldInvokeOnClose_WhenCloseButtonClicked()
     {
+        // Arrange
         var closeCalled = false;
 
         var cut = _ctx.Render<NebaModal>(p => p
@@ -184,14 +209,17 @@ public sealed class NebaModalTests : IDisposable
             .Add(x => x.Title, "Modal Title")
             .Add(x => x.ShowCloseButton, true));
 
+        // Act
         await cut.Find(".neba-modal-close").ClickAsync(new());
 
+        // Assert
         closeCalled.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Should invoke OnClose when backdrop is clicked and CloseOnBackdropClick is true")]
     public async Task HandleBackdropClick_ShouldInvokeOnClose_WhenCloseOnBackdropClickIsTrue()
     {
+        // Arrange
         var closeCalled = false;
 
         var cut = _ctx.Render<NebaModal>(p => p
@@ -199,14 +227,17 @@ public sealed class NebaModalTests : IDisposable
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => closeCalled = true))
             .Add(x => x.CloseOnBackdropClick, true));
 
+        // Act
         await cut.Find(".neba-modal-backdrop").ClickAsync(new());
 
+        // Assert
         closeCalled.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Should not invoke OnClose when backdrop is clicked and CloseOnBackdropClick is false")]
     public async Task HandleBackdropClick_ShouldNotInvokeOnClose_WhenCloseOnBackdropClickIsFalse()
     {
+        // Arrange
         var closeCalled = false;
 
         var cut = _ctx.Render<NebaModal>(p => p
@@ -214,14 +245,17 @@ public sealed class NebaModalTests : IDisposable
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => closeCalled = true))
             .Add(x => x.CloseOnBackdropClick, false));
 
+        // Act
         await cut.Find(".neba-modal-backdrop").ClickAsync(new());
 
+        // Assert
         closeCalled.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "Should invoke OnClose when Escape is pressed and escape close is enabled")]
     public async Task HandleKeyDown_ShouldInvokeOnClose_WhenEscapePressedAndEscapeCloseIsEnabled()
     {
+        // Arrange
         var closeCalled = false;
 
         var cut = _ctx.Render<NebaModal>(p => p
@@ -230,15 +264,18 @@ public sealed class NebaModalTests : IDisposable
             .Add(x => x.ShowCloseButton, false)
             .Add(x => x.CloseOnBackdropClick, true));
 
+        // Act
         await cut.Find(".neba-modal-content")
             .TriggerEventAsync("onkeydown", new KeyboardEventArgs { Key = "Escape" });
 
+        // Assert
         closeCalled.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Should not invoke OnClose when Escape is pressed and escape close is disabled")]
     public async Task HandleKeyDown_ShouldNotInvokeOnClose_WhenEscapePressedAndEscapeCloseIsDisabled()
     {
+        // Arrange
         var closeCalled = false;
 
         var cut = _ctx.Render<NebaModal>(p => p
@@ -247,31 +284,37 @@ public sealed class NebaModalTests : IDisposable
             .Add(x => x.ShowCloseButton, false)
             .Add(x => x.CloseOnBackdropClick, false));
 
+        // Act
         await cut.Find(".neba-modal-content")
             .TriggerEventAsync("onkeydown", new KeyboardEventArgs { Key = "Escape" });
 
+        // Assert
         closeCalled.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "Should apply CssClass to modal content when provided")]
     public void Render_ShouldApplyCssClass_WhenProvided()
     {
+        // Act
         var cut = _ctx.Render<NebaModal>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
             .Add(x => x.CssClass, "my-custom-class"));
 
+        // Assert
         cut.Find(".neba-modal-content.my-custom-class").ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "Should apply MaxWidth to modal container when provided")]
     public void Render_ShouldApplyMaxWidthStyle_WhenProvided()
     {
+        // Act
         var cut = _ctx.Render<NebaModal>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
             .Add(x => x.MaxWidth, "700px"));
 
+        // Assert
         var containerStyle = cut.Find(".neba-modal-container").GetAttribute("style") ?? string.Empty;
 
         containerStyle.ShouldContain("max-width: 700px;");

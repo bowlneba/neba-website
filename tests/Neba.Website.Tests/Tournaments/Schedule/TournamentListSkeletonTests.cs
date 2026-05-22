@@ -16,17 +16,21 @@ public sealed class TournamentListSkeletonTests : IDisposable
     [Fact(DisplayName = "Should render hero skeleton when ShowHeroSkeleton is true")]
     public void Render_ShouldShowHeroSkeleton_WhenEnabled()
     {
+        // Act
         var cut = _ctx.Render<TournamentListSkeleton>(parameters => parameters
             .Add(p => p.ShowHeroSkeleton, true));
 
+        // Assert
         cut.Markup.ShouldContain("height:320px");
     }
 
     [Fact(DisplayName = "Should render three row skeleton cards")]
     public void Render_ShouldShowThreeSkeletonCards_WhenRendered()
     {
+        // Act
         var cut = _ctx.Render<TournamentListSkeleton>();
 
+        // Assert
         cut.FindAll(".neba-card").Count.ShouldBe(3);
     }
 }

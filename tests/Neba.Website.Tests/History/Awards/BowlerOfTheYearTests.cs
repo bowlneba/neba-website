@@ -43,20 +43,26 @@ public sealed class BowlerOfTheYearTests : IDisposable
     [Fact(DisplayName = "Should render page title")]
     public void Render_ShouldShowPageTitle_WhenRendered()
     {
+        // Arrange
         SetupSuccessResponse([BowlerOfTheYearAwardResponseFactory.Create()]);
 
+        // Act
         var cut = _ctx.Render<BowlerOfTheYearPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Bowler of the Year");
     }
 
     [Fact(DisplayName = "Should call ListBowlerOfTheYearAwardsAsync on initialization")]
     public void OnInit_ShouldCallListBowlerOfTheYearAwardsApi()
     {
+        // Arrange
         SetupSuccessResponse([]);
 
+        // Act
         _ctx.Render<BowlerOfTheYearPage>();
 
+        // Assert
         _mockApi.Verify(
             x => x.ListBowlerOfTheYearAwardsAsync(It.IsAny<CancellationToken>()),
             Times.Once);
@@ -65,56 +71,71 @@ public sealed class BowlerOfTheYearTests : IDisposable
     [Fact(DisplayName = "Should show bowler name when API call succeeds")]
     public void Render_ShouldShowBowlerName_WhenApiSucceeds()
     {
+        // Arrange
         var award = BowlerOfTheYearAwardResponseFactory.Create(bowlerName: "Jane Smith");
         SetupSuccessResponse([award]);
 
+        // Act
         var cut = _ctx.Render<BowlerOfTheYearPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Jane Smith");
     }
 
     [Fact(DisplayName = "Should show season header when API call succeeds")]
     public void Render_ShouldShowSeasonHeader_WhenApiSucceeds()
     {
+        // Arrange
         var award = BowlerOfTheYearAwardResponseFactory.Create(season: "2022 Season");
         SetupSuccessResponse([award]);
 
+        // Act
         var cut = _ctx.Render<BowlerOfTheYearPage>();
 
+        // Assert
         cut.Markup.ShouldContain("2022 Season");
     }
 
     [Fact(DisplayName = "Should display Open category as Bowler of the Year")]
     public void Render_ShouldDisplayOpenCategoryAsBotyLabel_WhenOpenCategory()
     {
+        // Arrange
         var award = BowlerOfTheYearAwardResponseFactory.Create(category: "Open");
         SetupSuccessResponse([award]);
 
+        // Act
         var cut = _ctx.Render<BowlerOfTheYearPage>();
 
+        // Assert
         cut.Markup.ShouldContain("BOWLER OF THE YEAR");
     }
 
     [Fact(DisplayName = "Should display Senior category label when Senior award")]
     public void Render_ShouldDisplaySeniorLabel_WhenSeniorCategory()
     {
+        // Arrange
         var award = BowlerOfTheYearAwardResponseFactory.Create(category: "Senior");
         SetupSuccessResponse([award]);
 
+        // Act
         var cut = _ctx.Render<BowlerOfTheYearPage>();
 
+        // Assert
         cut.Markup.ShouldContain("SENIOR");
     }
 
     [Fact(DisplayName = "Should show both bowlers when two categories exist in the same season")]
     public void Render_ShouldShowBothBowlers_WhenTwoCategoriesInSameSeason()
     {
+        // Arrange
         var open = BowlerOfTheYearAwardResponseFactory.Create(season: "2024 Season", bowlerName: "Alice Adams", category: "Open");
         var senior = BowlerOfTheYearAwardResponseFactory.Create(season: "2024 Season", bowlerName: "Bob Baker", category: "Senior");
         SetupSuccessResponse([open, senior]);
 
+        // Act
         var cut = _ctx.Render<BowlerOfTheYearPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Alice Adams");
         cut.Markup.ShouldContain("Bob Baker");
     }
@@ -122,13 +143,16 @@ public sealed class BowlerOfTheYearTests : IDisposable
     [Fact(DisplayName = "Should display most recent season card before older season card")]
     public void Render_ShouldOrderSeasonsDescending_WhenMultipleSeasons()
     {
+        // Arrange
         var older = BowlerOfTheYearAwardResponseFactory.Create(season: "2020 Season", bowlerName: "Old Timer");
         var newer = BowlerOfTheYearAwardResponseFactory.Create(season: "2024 Season", bowlerName: "Recent Star");
         SetupSuccessResponse([older, newer]);
 
+        // Act
         var cut = _ctx.Render<BowlerOfTheYearPage>();
         var markup = cut.Markup;
 
+        // Assert
         markup.IndexOf("Recent Star", StringComparison.Ordinal)
             .ShouldBeLessThan(markup.IndexOf("Old Timer", StringComparison.Ordinal));
     }
@@ -136,20 +160,26 @@ public sealed class BowlerOfTheYearTests : IDisposable
     [Fact(DisplayName = "Should show error alert when API call fails")]
     public void Render_ShouldShowErrorAlert_WhenApiFails()
     {
+        // Arrange
         SetupFailureResponse(System.Net.HttpStatusCode.InternalServerError);
 
+        // Act
         var cut = _ctx.Render<BowlerOfTheYearPage>();
 
+        // Assert
         cut.Markup.ShouldContain("Error Loading Awards");
     }
 
     [Fact(DisplayName = "Should show no data message when API returns empty collection")]
     public void Render_ShouldShowNoDataMessage_WhenApiReturnsEmpty()
     {
+        // Arrange
         SetupSuccessResponse([]);
 
+        // Act
         var cut = _ctx.Render<BowlerOfTheYearPage>();
 
+        // Assert
         cut.Markup.ShouldContain("No awards data available.");
     }
 
