@@ -1,11 +1,56 @@
-/* Tournament page tokens */
+/* ── Global design tokens ──────────────────────────────────── */
 :root {
+    /* Blue scale additions */
+    --neba-blue-900: var(--neba-blue-brand);
+    --neba-blue-50:  #EEF0FD;
+
+    /* Ink / accent */
+    --t-ink:  #0a0f2c;
+    --t-gold: #B8860B;
+
+    /* Tier accent tokens */
+    --tier-elite-bg:   linear-gradient(135deg, #fde68a 0%, #f59e0b 100%);
+    --tier-elite-ink:  #78350f;
+    --tier-elite-ring: #f59e0b;
+
+    --tier-mid-bg:   linear-gradient(135deg, #052767 0%, #3E4FD9 100%);
+    --tier-mid-ink:  #ffffff;
+    --tier-mid-ring: #3E4FD9;
+
+    --tier-std-bg:   #ffffff;
+    --tier-std-ink:  #0a0f2c;
+    --tier-std-ring: #E5E5E5;
+
+    /* Radius scale */
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+
+    /* Shadow scale */
+    --shadow-card: 0 1px 2px rgba(5,39,103,0.04), 0 1px 0 rgba(5,39,103,0.02);
+    --shadow-lift: 0 14px 36px -16px rgba(5,39,103,0.28);
+
+    /* Tournament page tokens */
     --tournaments-max-width: 1240px;
     --tournaments-gold: #B8860B;
     --tournaments-gold-light: #FFD580;
     --tournaments-hero-gradient: linear-gradient(135deg, #052767 0%, #2A3AA0 60%, #3E4FD9 100%);
     --tournaments-champion-gradient: linear-gradient(135deg, #92400e, #d97706);
     --tournaments-logo-muted-gradient: linear-gradient(135deg, #1a1a2e, #374151);
+}
+
+/* Material Symbols (Outlined variant — already loaded in App.razor) */
+.msym {
+    font-family: 'Material Symbols Outlined', sans-serif;
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: nowrap;
+    display: inline-block;
+    font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
 }
 
 /* Blazor validation styles using theme variables */

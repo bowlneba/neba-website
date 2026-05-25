@@ -1,3 +1,4 @@
+using Neba.Api.Contracts;
 using Neba.Api.Contracts.Tournaments.GetTournament;
 using Neba.Api.Contracts.Tournaments.ListChampions;
 
@@ -24,5 +25,5 @@ public interface ITournamentsApi
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A collection of tournament champions.</returns>
     [Get("/tournaments/champions")]
-    Task<ICollectionResponse<TournamentChampionResponse>> ListTournamentChampionsAsync(CancellationToken cancellationToken = default);
+    Task<IApiResponse<CollectionResponse<TournamentChampionResponse>>> ListTournamentChampionsAsync(CancellationToken cancellationToken = default);
 }

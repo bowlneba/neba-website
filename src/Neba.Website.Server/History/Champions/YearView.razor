@@ -1,0 +1,114 @@
+@using Neba.Website.Server.History.Champions
+
+@foreach (var year in Years.OrderByDescending(y => y.Year))
+{
+    var eventRows = GetEventRows(year).ToList();
+    var champCount = year.Titles.Select(t => t.BowlerId).Distinct().Count();
+
+    <div class="@YearSectionClass(year.Year)" @key="@year.Year">
+        <div class="year-head" role="button" tabindex="0"
+             @onclick="@(() => ToggleYear(year.Year))"
+             @onkeydown="@(e => { if (e.Key is "Enter" or " ") ToggleYear(year.Year); })">
+            <span class="year-head__chevron"><span class="msym">expand_more</span></span>
+            <h2 class="year-head__title font-display">@year.Year</h2>
+            <span class="year-head__meta">
+                <span><b>@eventRows.Count</b> events</span>
+                <span><b>@champCount</b> champions</span>
+            </span>
+        </div>
+        <div class="year-body">
+            <table class="year-table">
+                <thead>
+                    <tr>
+                        <th class="col-month">Month</th>
+                        <th class="col-type">Tournament Type</th>
+                        <th class="col-champs">Champions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in eventRows)
+                    {
+                        <tr @key="@row.TournamentId">
+                            <td class="col-month">@ChampionsHelpers.MonthAbbreviation(row.Month)</td>
+                            <td class="col-type">
+                                <span class="@("type-pill " + ChampionsHelpers.TypePillClass(row.TournamentType))">
+                                    @row.TournamentType
+                                </span>
+                            </td>
+                            <td class="col-champs">
+                                @for (int i = 0; i < row.Champions.Count; i++)
+                                {
+                                    var champion = row.Champions[i];
+                                    var summary  = LookupSummary(champion.BowlerId);
+                                    <a class="champ-link"
+                                       @key="@champion.BowlerId"
+                                       href="javascript:void(0)"
+                                       @onclick="@(() => InvokeChampion(summary, champion))"
+                                       @onclick:preventDefault>@champion.BowlerName</a>
+                                    @if (i < row.Champions.Count - 1)
+                                    {
+                                        <span class="champ-sep">·</span>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyCollection<TitlesByYearViewModel> Years { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyCollection<BowlerTitleSummaryViewModel> Summaries { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public EventCallback<BowlerTitleSummaryViewModel> OnBowlerSelected { get; set; }
+
+    private HashSet<int> _collapsedYears = new();
+
+    protected override void OnParametersSet()
+    {
+        var mostRecent = Years.OrderByDescending(y => y.Year).Take(3).Select(y => y.Year).ToHashSet();
+        _collapsedYears = Years.Select(y => y.Year).Where(y => !mostRecent.Contains(y)).ToHashSet();
+    }
+
+    public void ExpandAll()   => _collapsedYears.Clear();
+    public void CollapseAll() => _collapsedYears.UnionWith(Years.Select(y => y.Year));
+
+    private void ToggleYear(int year) =>
+        _ = _collapsedYears.Contains(year)
+            ? _collapsedYears.Remove(year)
+            : _collapsedYears.Add(year);
+
+    private string YearSectionClass(int year) =>
+        _collapsedYears.Contains(year) ? "year-section is-collapsed" : "year-section";
+
+    private static IEnumerable<(int Month, string TournamentId, string TournamentType, IList<BowlerTitleViewModel> Champions)>
+        GetEventRows(TitlesByYearViewModel yearVm) =>
+            yearVm.Titles
+                  .GroupBy(t => t.TournamentId)
+                  .OrderBy(g => g.First().TournamentMonth)
+                  .Select(g => (
+                      Month:          g.First().TournamentMonth,
+                      TournamentId:   g.Key,
+                      TournamentType: g.First().TournamentType,
+                      Champions:      (IList<BowlerTitleViewModel>)g.ToList()
+                  ));
+
+    private BowlerTitleSummaryViewModel LookupSummary(string bowlerId) =>
+        Summaries.FirstOrDefault(s => s.BowlerId == bowlerId)
+        ?? new BowlerTitleSummaryViewModel { BowlerId = bowlerId, BowlerName = string.Empty, TitleCount = 0, HallOfFame = false };
+
+    private Task InvokeChampion(BowlerTitleSummaryViewModel summary, BowlerTitleViewModel champion)
+    {
+        var effective = summary.BowlerId != string.Empty
+            ? summary
+            : new BowlerTitleSummaryViewModel { BowlerId = champion.BowlerId, BowlerName = champion.BowlerName, TitleCount = 0, HallOfFame = champion.HallOfFame };
+        return OnBowlerSelected.InvokeAsync(effective);
+    }
+}

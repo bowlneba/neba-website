@@ -1,0 +1,249 @@
+/* Modal header custom content */
+::deep .neba-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--neba-gray-100);
+    flex-wrap: wrap;
+}
+
+.modal-title-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.modal-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--neba-gray-500);
+}
+
+.modal-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--t-ink);
+    margin: 0;
+    word-break: break-word;
+}
+
+.modal-summary-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.modal-summary-inline__count {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--neba-blue-700);
+    line-height: 1;
+}
+
+.modal-summary-inline__label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--neba-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Mobile summary card (hidden on desktop) */
+.modal-summary-card {
+    display: none;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: var(--neba-gray-050);
+    border-bottom: 1px solid var(--neba-gray-100);
+}
+
+.modal-summary-card__count {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--neba-blue-700);
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.modal-summary-card__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.modal-summary-card__label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--neba-gray-500);
+}
+
+.modal-summary-card__name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--t-ink);
+    word-break: break-word;
+}
+
+/* Modal body */
+.modal-body {
+    padding: 0;
+}
+
+/* Titles table */
+.titles-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.titles-table thead th {
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--neba-gray-500);
+    padding: 0.6rem 1.25rem;
+    border-bottom: 1px solid var(--neba-gray-200);
+    background: var(--neba-gray-050);
+}
+
+.titles-table tbody td {
+    padding: 0.7rem 1.25rem;
+    border-bottom: 1px solid var(--neba-gray-100);
+    vertical-align: middle;
+}
+
+.titles-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.tt-num {
+    width: 2.5rem;
+    color: var(--neba-gray-400);
+    font-weight: 600;
+    text-align: right;
+}
+
+.tt-tourn a {
+    color: var(--neba-blue-700);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.tt-tourn a:hover {
+    text-decoration: underline;
+}
+
+.tt-date {
+    width: 6rem;
+    white-space: nowrap;
+    color: var(--neba-gray-600);
+}
+
+.tt-type {
+    width: 8rem;
+}
+
+/* Loading / error states */
+.modal-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 3rem 1.5rem;
+    text-align: center;
+}
+
+.modal-state.is-active {
+    display: flex;
+}
+
+.modal-state__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--t-ink);
+    margin: 0;
+}
+
+.modal-state__text {
+    font-size: 0.875rem;
+    color: var(--neba-gray-500);
+}
+
+.modal-state__retry {
+    margin-top: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    border: 1px solid var(--neba-blue-700);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--neba-blue-700);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.modal-state__retry:hover {
+    background: var(--neba-blue-50);
+}
+
+/* Type pills */
+.type-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.type-pill::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.7;
+}
+
+.type-singles { background: var(--neba-blue-50);  color: var(--neba-blue-700); }
+.type-doubles { background: #f4ecfb;              color: #7a3fb8; }
+.type-trios   { background: #fff4e6;              color: #CC6600; }
+.type-team    { background: #ecfdf5;              color: #047857; }
+.type-senior  { background: #fffbeb;              color: #92400e; }
+.type-women   { background: #fdf2f8;              color: #be185d; }
+.type-special { background: var(--neba-gray-100); color: var(--neba-gray-700); }
+
+.hof-badge {
+    height: 1.5rem;
+    width: auto;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+@media (max-width: 640px) and (orientation: portrait) {
+    .modal-summary-inline { display: none; }
+    .modal-summary-card   { display: flex; }
+    .modal-title          { font-size: 1.3rem; white-space: normal; }
+}
+
+@media (max-width: 540px) {
+    .modal-summary-inline { display: none; }
+    .modal-summary-card   { display: flex; }
+}

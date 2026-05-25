@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
+using Neba.Website.Server.History.Champions;
 using Neba.Website.Server.Tournaments;
 using Neba.Website.Server.Tournaments.Schedule;
 
@@ -289,5 +290,11 @@ public sealed class TournamentsPageTests : IDisposable
             List<SeasonTournamentViewModel> result = SeasonData.TryGetValue(season.Label, out var data) ? data : [];
             return Task.FromResult<ErrorOr<List<SeasonTournamentViewModel>>>(result);
         }
+
+        Task<ErrorOr<List<BowlerTitleSummaryViewModel>>> ITournamentApiService.GetTitleSummariesAsync(CancellationToken ct) =>
+            Task.FromResult<ErrorOr<List<BowlerTitleSummaryViewModel>>>(new List<BowlerTitleSummaryViewModel>());
+
+        Task<ErrorOr<List<TitlesByYearViewModel>>> ITournamentApiService.GetTitlesByYearAsync(CancellationToken ct) =>
+            Task.FromResult<ErrorOr<List<TitlesByYearViewModel>>>(new List<TitlesByYearViewModel>());
     }
 }

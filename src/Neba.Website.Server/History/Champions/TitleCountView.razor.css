@@ -1,0 +1,147 @@
+.tier-section {
+    margin-bottom: 2rem;
+}
+
+.tier-section:first-child {
+    margin-top: 0;
+}
+
+/* Tier header */
+.tier-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.tier-head__chevron {
+    display: flex;
+    align-items: center;
+    color: var(--neba-gray-500);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.tier-section.is-collapsed .tier-head__chevron {
+    transform: rotate(-90deg);
+}
+
+.tier-head__rule {
+    flex: 1;
+    height: 1px;
+    background: var(--neba-gray-200);
+}
+
+.tier-head__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--t-ink);
+    margin: 0;
+    white-space: nowrap;
+}
+
+.tier-head__range {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--neba-gray-500);
+    margin-left: 0.5rem;
+}
+
+.tier-head__count {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--neba-gray-500);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Tier grid */
+.tier-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+}
+
+.tier-section.is-collapsed .tier-grid {
+    display: none;
+}
+
+/* Bowler cards */
+.bowler-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--tier-std-ring);
+    border-radius: var(--radius-lg);
+    background: var(--tier-std-bg);
+    color: var(--tier-std-ink);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: box-shadow 0.15s, transform 0.15s;
+    box-shadow: var(--shadow-card);
+}
+
+.bowler-card:hover {
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-1px);
+}
+
+.bowler-card__count {
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1;
+    flex-shrink: 0;
+    min-width: 2rem;
+    text-align: right;
+}
+
+.bowler-card__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.bowler-card__name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: block;
+    word-break: break-word;
+}
+
+.bowler-card__chev {
+    flex-shrink: 0;
+    color: currentColor;
+    opacity: 0.4;
+}
+
+/* Elite tier overrides */
+.tier-section[data-tier="elite"] .bowler-card {
+    background: var(--tier-elite-bg);
+    color: var(--tier-elite-ink);
+    border-color: var(--tier-elite-ring);
+}
+
+/* Mid tier overrides */
+.tier-section[data-tier="mid"] .bowler-card {
+    background: var(--tier-mid-bg);
+    color: var(--tier-mid-ink);
+    border-color: var(--tier-mid-ring);
+}
+
+.hof-badge {
+    height: 1.25rem;
+    width: auto;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+@media (max-width: 760px) {
+    .tier-head__title { font-size: 1.1rem; }
+    .tier-head__range { display: block; margin-left: 0; font-size: 0.82rem; }
+}

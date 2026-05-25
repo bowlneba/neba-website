@@ -1,0 +1,128 @@
+@using Neba.Website.Server.History.Champions
+
+<div>
+    <div class="@TierSectionClass("elite")" data-tier="elite">
+        <div class="tier-head" role="button" tabindex="0"
+             @onclick="@(() => ToggleTier("elite"))"
+             @onkeydown="@(e => { if (e.Key is "Enter" or " ") ToggleTier("elite"); })">
+            <span class="tier-head__chevron"><span class="msym">expand_more</span></span>
+            <span class="tier-head__rule"></span>
+            <h2 class="tier-head__title font-display">
+                Elite <span class="tier-head__range">20+ titles</span>
+            </h2>
+            <span class="tier-head__count">@GetEliteBowlers().Count bowlers</span>
+        </div>
+        <div class="tier-grid">
+            @foreach (var bowler in GetEliteBowlers())
+            {
+                <button class="bowler-card"
+                        @key="@bowler.BowlerId"
+                        @onclick="@(() => OnBowlerSelected.InvokeAsync(bowler))">
+                    <span class="bowler-card__count">@bowler.TitleCount</span>
+                    <span class="bowler-card__body">
+                        <span class="bowler-card__name">@bowler.BowlerName</span>
+                    </span>
+                    @if (bowler.HallOfFame)
+                    {
+                        <img src="/images/neba-hof.jpg" class="hof-badge" alt="Hall of Fame" />
+                    }
+                    <span class="bowler-card__chev"><span class="msym">chevron_right</span></span>
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="@TierSectionClass("mid")" data-tier="mid">
+        <div class="tier-head" role="button" tabindex="0"
+             @onclick="@(() => ToggleTier("mid"))"
+             @onkeydown="@(e => { if (e.Key is "Enter" or " ") ToggleTier("mid"); })">
+            <span class="tier-head__chevron"><span class="msym">expand_more</span></span>
+            <span class="tier-head__rule"></span>
+            <h2 class="tier-head__title font-display">
+                Champions <span class="tier-head__range">10 – 19 titles</span>
+            </h2>
+            <span class="tier-head__count">@GetMidBowlers().Count bowlers</span>
+        </div>
+        <div class="tier-grid">
+            @foreach (var bowler in GetMidBowlers())
+            {
+                <button class="bowler-card"
+                        @key="@bowler.BowlerId"
+                        @onclick="@(() => OnBowlerSelected.InvokeAsync(bowler))">
+                    <span class="bowler-card__count">@bowler.TitleCount</span>
+                    <span class="bowler-card__body">
+                        <span class="bowler-card__name">@bowler.BowlerName</span>
+                    </span>
+                    @if (bowler.HallOfFame)
+                    {
+                        <img src="/images/neba-hof.jpg" class="hof-badge" alt="Hall of Fame" />
+                    }
+                    <span class="bowler-card__chev"><span class="msym">chevron_right</span></span>
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="@TierSectionClass("std")" data-tier="std">
+        <div class="tier-head" role="button" tabindex="0"
+             @onclick="@(() => ToggleTier("std"))"
+             @onkeydown="@(e => { if (e.Key is "Enter" or " ") ToggleTier("std"); })">
+            <span class="tier-head__chevron"><span class="msym">expand_more</span></span>
+            <span class="tier-head__rule"></span>
+            <h2 class="tier-head__title font-display">
+                Title Winners <span class="tier-head__range">1 – 9 titles</span>
+            </h2>
+            <span class="tier-head__count">@GetStdBowlers().Count bowlers</span>
+        </div>
+        <div class="tier-grid">
+            @foreach (var bowler in GetStdBowlers())
+            {
+                <button class="bowler-card"
+                        @key="@bowler.BowlerId"
+                        @onclick="@(() => OnBowlerSelected.InvokeAsync(bowler))">
+                    <span class="bowler-card__count">@bowler.TitleCount</span>
+                    <span class="bowler-card__body">
+                        <span class="bowler-card__name">@bowler.BowlerName</span>
+                    </span>
+                    @if (bowler.HallOfFame)
+                    {
+                        <img src="/images/neba-hof.jpg" class="hof-badge" alt="Hall of Fame" />
+                    }
+                    <span class="bowler-card__chev"><span class="msym">chevron_right</span></span>
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyCollection<BowlerTitleSummaryViewModel> Summaries { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public EventCallback<BowlerTitleSummaryViewModel> OnBowlerSelected { get; set; }
+
+    private readonly HashSet<string> _collapsedTiers = new();
+
+    private IReadOnlyCollection<BowlerTitleSummaryViewModel> GetEliteBowlers() =>
+        Summaries.Where(s => s.TitleCount >= 20).OrderByDescending(s => s.TitleCount).ToList();
+
+    private IReadOnlyCollection<BowlerTitleSummaryViewModel> GetMidBowlers() =>
+        Summaries.Where(s => s.TitleCount is >= 10 and <= 19).OrderByDescending(s => s.TitleCount).ToList();
+
+    private IReadOnlyCollection<BowlerTitleSummaryViewModel> GetStdBowlers() =>
+        Summaries.Where(s => s.TitleCount < 10).OrderByDescending(s => s.TitleCount).ToList();
+
+    public void ExpandAll()   => _collapsedTiers.Clear();
+    public void CollapseAll() => _collapsedTiers.UnionWith(new[] { "elite", "mid", "std" });
+
+    private void ToggleTier(string tier) =>
+        _ = _collapsedTiers.Contains(tier)
+            ? _collapsedTiers.Remove(tier)
+            : _collapsedTiers.Add(tier);
+
+    private bool IsCollapsed(string tier) => _collapsedTiers.Contains(tier);
+
+    private string TierSectionClass(string tier) =>
+        IsCollapsed(tier) ? "tier-section is-collapsed" : "tier-section";
+}

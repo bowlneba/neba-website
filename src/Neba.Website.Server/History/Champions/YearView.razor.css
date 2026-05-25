@@ -1,0 +1,157 @@
+.year-section {
+    border-bottom: 1px solid var(--neba-gray-200);
+}
+
+.year-section:first-child {
+    border-top: 1px solid var(--neba-gray-200);
+}
+
+/* Year header */
+.year-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.year-section.is-collapsed .year-head {
+    padding-bottom: 1rem;
+}
+
+.year-head__chevron {
+    display: flex;
+    align-items: center;
+    color: var(--neba-gray-500);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.year-section.is-collapsed .year-head__chevron {
+    transform: rotate(-90deg);
+}
+
+.year-head__title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--t-ink);
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.year-head__meta {
+    display: flex;
+    gap: 1.25rem;
+    font-size: 0.82rem;
+    color: var(--neba-gray-500);
+    margin-left: auto;
+}
+
+/* Year body */
+.year-body {
+    overflow: hidden;
+    padding-bottom: 1.25rem;
+}
+
+.year-section.is-collapsed .year-body {
+    display: none;
+}
+
+/* Year table */
+.year-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.year-table thead th {
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--neba-gray-500);
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--neba-gray-200);
+}
+
+.year-table tbody td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--neba-gray-100);
+    vertical-align: middle;
+}
+
+.year-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.col-month {
+    width: 4rem;
+    white-space: nowrap;
+    color: var(--neba-gray-500);
+}
+
+.col-type {
+    width: 10rem;
+}
+
+.col-champs {
+    color: var(--t-ink);
+    word-break: break-word;
+}
+
+/* Champion links */
+.champ-link {
+    color: var(--neba-blue-700);
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.champ-link:hover {
+    text-decoration: underline;
+}
+
+.champ-sep {
+    margin: 0 0.35rem;
+    color: var(--neba-gray-400);
+}
+
+/* Type pills */
+.type-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.type-pill::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.7;
+}
+
+.type-singles { background: var(--neba-blue-50);  color: var(--neba-blue-700); }
+.type-doubles { background: #f4ecfb;              color: #7a3fb8; }
+.type-trios   { background: #fff4e6;              color: #CC6600; }
+.type-team    { background: #ecfdf5;              color: #047857; }
+.type-senior  { background: #fffbeb;              color: #92400e; }
+.type-women   { background: #fdf2f8;              color: #be185d; }
+.type-special { background: var(--neba-gray-100); color: var(--neba-gray-700); }
+
+@media (max-width: 760px) {
+    .year-table .col-month,
+    .year-table .col-type      { width: auto; }
+    .year-table thead th,
+    .year-table tbody td       { padding: 0.7rem 0.85rem; }
+}

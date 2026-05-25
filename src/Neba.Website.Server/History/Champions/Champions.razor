@@ -1,0 +1,170 @@
+@page "/history/champions"
+@using Neba.Api.Contracts.Bowlers
+@using Neba.Website.Server.Services
+@using Neba.Website.Server.Tournaments
+
+@inject ApiExecutor ApiExecutor
+@inject ITournamentApiService TournamentApiService
+@inject IBowlersApi BowlersApi
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>Champions - NEBA</PageTitle>
+<HeadContent>
+    <meta name="description" content="NEBA tournament champions ranked by title count, and a full year-by-year history of every tournament winner." />
+</HeadContent>
+
+<div class="page">
+    <div class="hero">
+        <h1 class="font-display">Champions</h1>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <span class="hero-stat__num">@TotalTitles</span>
+                <span class="hero-stat__label">Titles Awarded</span>
+            </div>
+            <div class="hero-stat">
+                <span class="hero-stat__num">@TotalChampions</span>
+                <span class="hero-stat__label">Champions</span>
+            </div>
+            <div class="hero-stat">
+                <span class="hero-stat__num">@HallOfFamers</span>
+                <span class="hero-stat__label">Hall of Famers</span>
+            </div>
+            @if (FirstYear > 0)
+            {
+                <div class="hero-stat">
+                    <span class="hero-stat__num">@FirstYear</span>
+                    <span class="hero-stat__label">First Year</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <div class="segmented">
+            <button class="@(_activeView == ChampionsView.Titles ? "segmented__btn is-active" : "segmented__btn")"
+                    @onclick="@(() => _activeView = ChampionsView.Titles)">
+                By Titles
+            </button>
+            <button class="@(_activeView == ChampionsView.Year ? "segmented__btn is-active" : "segmented__btn")"
+                    @onclick="@(() => _activeView = ChampionsView.Year)">
+                By Year
+            </button>
+        </div>
+        <div class="toolbar-spacer"></div>
+        <div class="toolbar-actions">
+            <button class="toolbar-btn" @onclick="ExpandAll">Expand All</button>
+            <button class="toolbar-btn" @onclick="CollapseAll">Collapse All</button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <NebaAlert Severity="NotifySeverity.Error"
+                   Title="Error Loading Champions"
+                   Message="@_error"
+                   Dismissible="true"
+                   OnDismiss="@(() => _error = null)" />
+    }
+    else if (_loading)
+    {
+        <NebaLoadingIndicator />
+    }
+    else
+    {
+        <div class="@(_activeView == ChampionsView.Titles ? "view is-active" : "view")">
+            <TitleCountView @ref="_titleCountView"
+                            Summaries="@_summaries"
+                            OnBowlerSelected="@OpenModal" />
+        </div>
+        <div class="@(_activeView == ChampionsView.Year ? "view is-active" : "view")">
+            <YearView @ref="_yearView"
+                      Years="@_years"
+                      Summaries="@_summaries"
+                      OnBowlerSelected="@OpenModal" />
+        </div>
+    }
+</div>
+
+<BowlerTitlesModal IsOpen="@_modalOpen"
+                   BowlerId="@_modalBowlerId"
+                   BowlerName="@_modalBowlerName"
+                   TitleCount="@_modalTitleCount"
+                   HallOfFame="@_modalHallOfFame"
+                   OnClose="@(() => _modalOpen = false)" />
+
+@code {
+    private bool    _loading = true;
+    private string? _error;
+
+    private IReadOnlyCollection<BowlerTitleSummaryViewModel> _summaries
+        = Array.Empty<BowlerTitleSummaryViewModel>();
+    private IReadOnlyCollection<TitlesByYearViewModel> _years
+        = Array.Empty<TitlesByYearViewModel>();
+
+    private ChampionsView _activeView = ChampionsView.Titles;
+
+    private string? _modalBowlerId;
+    private string? _modalBowlerName;
+    private int     _modalTitleCount;
+    private bool    _modalHallOfFame;
+    private bool    _modalOpen;
+
+    private TitleCountView? _titleCountView;
+    private YearView?       _yearView;
+
+    private enum ChampionsView { Titles, Year }
+
+    private int TotalTitles    => _summaries.Sum(s => s.TitleCount);
+    private int TotalChampions => _summaries.Count;
+    private int HallOfFamers   => _summaries.Count(s => s.HallOfFame);
+    private int FirstYear      => _years.Count > 0 ? _years.Min(y => y.Year) : 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var summariesTask = TournamentApiService.GetTitleSummariesAsync();
+        var yearsTask     = TournamentApiService.GetTitlesByYearAsync();
+
+        await Task.WhenAll(summariesTask, yearsTask);
+
+        var summariesResult = summariesTask.Result;
+        var yearsResult     = yearsTask.Result;
+
+        _loading = false;
+
+        if (summariesResult.IsError)
+        {
+            _error = summariesResult.FirstError.Description;
+            return;
+        }
+        if (yearsResult.IsError)
+        {
+            _error = yearsResult.FirstError.Description;
+            return;
+        }
+
+        _summaries = summariesResult.Value;
+        _years     = yearsResult.Value;
+    }
+
+    private void ExpandAll()
+    {
+        if (_activeView == ChampionsView.Titles) _titleCountView?.ExpandAll();
+        else _yearView?.ExpandAll();
+    }
+
+    private void CollapseAll()
+    {
+        if (_activeView == ChampionsView.Titles) _titleCountView?.CollapseAll();
+        else _yearView?.CollapseAll();
+    }
+
+    private void OpenModal(BowlerTitleSummaryViewModel bowler)
+    {
+        _modalBowlerId   = bowler.BowlerId;
+        _modalBowlerName = bowler.BowlerName;
+        _modalTitleCount = bowler.TitleCount;
+        _modalHallOfFame = bowler.HallOfFame;
+        _modalOpen       = true;
+    }
+}
