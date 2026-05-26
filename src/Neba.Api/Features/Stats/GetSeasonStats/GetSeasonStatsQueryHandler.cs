@@ -33,14 +33,16 @@ internal sealed class GetSeasonStatsQueryHandler(
 
     public async Task<ErrorOr<SeasonStatsDto>> HandleAsync(GetSeasonStatsQuery query, CancellationToken cancellationToken)
     {
-        var seasonsWithStats = await _bowlerSeasonStats
+        var seasonsWithStats = (await _bowlerSeasonStats
             .Select(stat => new SeasonWithStatsDto
             {
                 Id = stat.Season.Id,
                 Description = stat.Season.Description,
                 StartDate = stat.Season.StartDate,
                 EndDate = stat.Season.EndDate
-            }).ToListAsync(cancellationToken);
+            }).ToListAsync(cancellationToken))
+            .DistinctBy(s => s.Id)
+            .ToList();
 
         var season = query.SeasonYear.HasValue
             ? seasonsWithStats.FirstOrDefault(s => s.EndDate.Year == query.SeasonYear.Value || s.StartDate.Year == query.SeasonYear.Value)

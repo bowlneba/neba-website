@@ -122,6 +122,36 @@ public sealed class GetSeasonStatsQueryHandlerTests(PostgreSqlFixture fixture)
         result.Value.Season.Id.ShouldBe(season2024.Id);
     }
 
+    [Fact(DisplayName = "HandleAsync returns a single SeasonsWithStats entry when multiple bowlers exist for the same season")]
+    public async Task HandleAsync_ShouldReturnSingleSeasonsWithStatsEntry_WhenMultipleBowlersExistForSameSeason()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var bowler1 = BowlerFactory.Create();
+        var bowler2 = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddRangeAsync([bowler1, bowler2], ct);
+
+        var season = SeasonFactory.Create(
+            startDate: new DateOnly(2025, 1, 1),
+            endDate: new DateOnly(2025, 12, 31));
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var stats1 = BowlerSeasonStatsFactory.Create(seasonId: season.Id, bowlerId: bowler1.Id);
+        var stats2 = BowlerSeasonStatsFactory.Create(seasonId: season.Id, bowlerId: bowler2.Id);
+        await _dbContext.BowlerSeasonStats.AddRangeAsync([stats1, stats2], ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetSeasonStatsQuery { SeasonYear = null }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.SeasonsWithStats.ShouldHaveSingleItem();
+    }
+
     [Fact(DisplayName = "HandleAsync returns SeasonHasNoStats when specified year has no stats")]
     public async Task HandleAsync_ShouldReturnSeasonHasNoStats_WhenSpecifiedYearHasNoStats()
     {
