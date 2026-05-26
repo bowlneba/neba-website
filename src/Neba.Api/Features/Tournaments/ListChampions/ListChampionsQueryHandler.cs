@@ -41,7 +41,7 @@ internal sealed class ListChampionsQueryHandler(AppDbContext appDbContext)
             })]
         });
 
-        // will union with stat-eligible tournament winners in a future iteration
+        // will union with full-stat tournament winners in a future iteration
 
         return [.. historicalTournaments];
     }
