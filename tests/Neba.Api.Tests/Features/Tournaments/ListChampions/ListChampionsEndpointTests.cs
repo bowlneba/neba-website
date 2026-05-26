@@ -15,7 +15,7 @@ public sealed class ListChampionsEndpointTests
     public async Task HandleAsync_ShouldReturnOkWithMappedChampions_WhenQuerySucceeds()
     {
         // Arrange
-        var dtos = TournamentChampionDtoFactory.Bogus(3, 42);
+        var dtos = TournamentChampionsDtoFactory.Bogus(3, 42);
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var queryHandlerMock = new Mock<IQueryHandler<ListChampionsQuery, IReadOnlyCollection<TournamentChampionsDto>>>(MockBehavior.Strict);
@@ -74,7 +74,7 @@ public sealed class ListChampionsEndpointTests
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
         var champion = ChampionDtoFactory.Create(hallOfFame: true);
-        var dto = TournamentChampionDtoFactory.Create(champions: [champion]);
+        var dto = TournamentChampionsDtoFactory.Create(champions: [champion]);
 
         var queryHandlerMock = new Mock<IQueryHandler<ListChampionsQuery, IReadOnlyCollection<TournamentChampionsDto>>>(MockBehavior.Strict);
         queryHandlerMock

@@ -5,7 +5,7 @@ using Neba.Api.Features.Tournaments.ListChampions;
 
 namespace Neba.TestFactory.Tournaments;
 
-public static class TournamentChampionDtoFactory
+public static class TournamentChampionsDtoFactory
 {
     public const string ValidTournamentName = "Singles Classic";
     public static readonly DateOnly ValidTournamentDate = new(2024, 11, 1);
