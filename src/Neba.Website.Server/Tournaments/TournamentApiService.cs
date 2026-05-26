@@ -42,30 +42,18 @@ internal sealed class TournamentApiService(
             : result.Value.Items.Select(MapToViewModel).ToList();
     }
 
-    public async Task<ErrorOr<IReadOnlyCollection<BowlerTitleSummaryViewModel>>> GetTitleSummariesAsync(CancellationToken ct = default)
+    public async Task<ErrorOr<(IReadOnlyCollection<BowlerTitleSummaryViewModel> Summaries, IReadOnlyCollection<TitlesByYearViewModel> Years)>> GetChampionsDataAsync(CancellationToken ct = default)
     {
         var result = await executor.ExecuteAsync(
             "TournamentsApi",
-            nameof(GetTitleSummariesAsync),
+            nameof(GetChampionsDataAsync),
             token => tournamentsApi.ListTournamentChampionsAsync(token),
             ct);
 
-        return result.IsError
-            ? result.Errors
-            : result.Value.Items.ToTitleSummaries();
-    }
+        if (result.IsError) return result.Errors;
 
-    public async Task<ErrorOr<IReadOnlyCollection<TitlesByYearViewModel>>> GetTitlesByYearAsync(CancellationToken ct = default)
-    {
-        var result = await executor.ExecuteAsync(
-            "TournamentsApi",
-            nameof(GetTitlesByYearAsync),
-            token => tournamentsApi.ListTournamentChampionsAsync(token),
-            ct);
-
-        return result.IsError
-            ? result.Errors
-            : result.Value.Items.ToTitlesByYear();
+        var items = result.Value.Items;
+        return (items.ToTitleSummaries(), items.ToTitlesByYear());
     }
 
     private static SeasonViewModel MapToViewModel(SeasonResponse r) => new()

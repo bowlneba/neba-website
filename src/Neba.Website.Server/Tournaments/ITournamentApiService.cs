@@ -9,6 +9,5 @@ internal interface ITournamentApiService
 {
     Task<ErrorOr<List<SeasonTournamentViewModel>>> GetTournamentsForSeasonAsync(SeasonViewModel season, CancellationToken ct = default);
     Task<ErrorOr<List<SeasonViewModel>>> GetSeasonsAsync(CancellationToken ct = default);
-    Task<ErrorOr<IReadOnlyCollection<BowlerTitleSummaryViewModel>>> GetTitleSummariesAsync(CancellationToken ct = default);
-    Task<ErrorOr<IReadOnlyCollection<TitlesByYearViewModel>>> GetTitlesByYearAsync(CancellationToken ct = default);
+    Task<ErrorOr<(IReadOnlyCollection<BowlerTitleSummaryViewModel> Summaries, IReadOnlyCollection<TitlesByYearViewModel> Years)>> GetChampionsDataAsync(CancellationToken ct = default);
 }

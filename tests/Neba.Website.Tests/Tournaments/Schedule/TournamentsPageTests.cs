@@ -291,10 +291,7 @@ public sealed class TournamentsPageTests : IDisposable
             return Task.FromResult<ErrorOr<List<SeasonTournamentViewModel>>>(result);
         }
 
-        Task<ErrorOr<List<BowlerTitleSummaryViewModel>>> ITournamentApiService.GetTitleSummariesAsync(CancellationToken ct) =>
-            Task.FromResult<ErrorOr<List<BowlerTitleSummaryViewModel>>>(new List<BowlerTitleSummaryViewModel>());
-
-        Task<ErrorOr<List<TitlesByYearViewModel>>> ITournamentApiService.GetTitlesByYearAsync(CancellationToken ct) =>
-            Task.FromResult<ErrorOr<List<TitlesByYearViewModel>>>(new List<TitlesByYearViewModel>());
+        Task<ErrorOr<(IReadOnlyCollection<BowlerTitleSummaryViewModel> Summaries, IReadOnlyCollection<TitlesByYearViewModel> Years)>> ITournamentApiService.GetChampionsDataAsync(CancellationToken ct) =>
+            Task.FromResult<ErrorOr<(IReadOnlyCollection<BowlerTitleSummaryViewModel>, IReadOnlyCollection<TitlesByYearViewModel>)>>(([], []));
     }
 }

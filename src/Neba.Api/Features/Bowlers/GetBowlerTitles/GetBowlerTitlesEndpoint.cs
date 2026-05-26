@@ -32,8 +32,7 @@ internal sealed class GetBowlerTitlesEndpoint(
             .WithTags("Public")
             .Produces<BowlerTitlesResponse>(StatusCodes.Status200OK)
             .ProducesProblemDetails(StatusCodes.Status400BadRequest)
-            .ProducesProblemDetails(StatusCodes.Status404NotFound)
-            .ProducesProblemDetails(StatusCodes.Status500InternalServerError));
+            .ProducesProblemDetails(StatusCodes.Status404NotFound));
     }
 
     public override async Task HandleAsync(GetBowlerTitlesRequest req, CancellationToken ct)

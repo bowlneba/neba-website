@@ -3,7 +3,6 @@
 @using Neba.Website.Server.Services
 
 @inject ApiExecutor ApiExecutor
-@inject IBowlersApi BowlersApi
 
 <NebaModal IsOpen="@IsOpen" OnClose="@OnClose" MaxWidth="680px">
     <HeaderContent>
@@ -97,6 +96,9 @@
 
     [Parameter, EditorRequired]
     public EventCallback OnClose { get; set; }
+
+    [Parameter, EditorRequired]
+    public IBowlersApi BowlersApi { get; set; } = default!;
 
     [Parameter] public string? BowlerId   { get; set; }
     [Parameter] public string? BowlerName { get; set; }

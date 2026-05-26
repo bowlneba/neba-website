@@ -41,10 +41,8 @@ internal sealed class ListChampionsQueryHandler(AppDbContext appDbContext)
             })]
         });
 
-        // need to do a search for tournaments with stats and union
+        // will union with stat-eligible tournament winners in a future iteration
 
-        var tournaments = new List<TournamentChampionsDto>();
-
-        return [.. historicalTournaments, .. tournaments];
+        return [.. historicalTournaments];
     }
 }

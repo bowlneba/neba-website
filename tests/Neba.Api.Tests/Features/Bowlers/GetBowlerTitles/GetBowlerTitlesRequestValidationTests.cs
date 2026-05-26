@@ -28,8 +28,8 @@ public sealed class GetBowlerTitlesRequestValidationTests
     }
 
     [Theory(DisplayName = "Validate should return bowler ID required error when bowler ID is empty")]
-    [InlineData("")]
-    [InlineData("   ")]
+    [InlineData("", TestDisplayName = "empty string")]
+    [InlineData("   ", TestDisplayName = "whitespace only")]
     public void Validate_ShouldReturnBowlerIdRequiredError_WhenBowlerIdIsEmpty(string bowlerId)
     {
         // Arrange
@@ -48,8 +48,8 @@ public sealed class GetBowlerTitlesRequestValidationTests
     }
 
     [Theory(DisplayName = "Validate should return invalid length error when bowler ID is not 26 characters")]
-    [InlineData("tooshort")]
-    [InlineData("thisstringiswaytoolongtobeavalidulid")]
+    [InlineData("tooshort", TestDisplayName = "too short")]
+    [InlineData("thisstringiswaytoolongtobeavalidulid", TestDisplayName = "too long")]
     public void Validate_ShouldReturnInvalidLengthError_WhenBowlerIdIsNotTwentySixCharacters(string bowlerId)
     {
         // Arrange

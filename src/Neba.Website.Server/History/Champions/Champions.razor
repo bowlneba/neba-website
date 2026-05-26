@@ -1,9 +1,7 @@
 @page "/history/champions"
 @using Neba.Api.Contracts.Bowlers
-@using Neba.Website.Server.Services
 @using Neba.Website.Server.Tournaments
 
-@inject ApiExecutor ApiExecutor
 @inject ITournamentApiService TournamentApiService
 @inject IBowlersApi BowlersApi
 
@@ -91,6 +89,7 @@
                    BowlerName="@_modalBowlerName"
                    TitleCount="@_modalTitleCount"
                    HallOfFame="@_modalHallOfFame"
+                   BowlersApi="@BowlersApi"
                    OnClose="@(() => _modalOpen = false)" />
 
 @code {
@@ -122,29 +121,18 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var summariesTask = TournamentApiService.GetTitleSummariesAsync();
-        var yearsTask     = TournamentApiService.GetTitlesByYearAsync();
-
-        await Task.WhenAll(summariesTask, yearsTask);
-
-        var summariesResult = summariesTask.Result;
-        var yearsResult     = yearsTask.Result;
+        var result = await TournamentApiService.GetChampionsDataAsync();
 
         _loading = false;
 
-        if (summariesResult.IsError)
+        if (result.IsError)
         {
-            _error = summariesResult.FirstError.Description;
-            return;
-        }
-        if (yearsResult.IsError)
-        {
-            _error = yearsResult.FirstError.Description;
+            _error = result.FirstError.Description;
             return;
         }
 
-        _summaries = summariesResult.Value;
-        _years     = yearsResult.Value;
+        _summaries = result.Value.Summaries;
+        _years     = result.Value.Years;
     }
 
     private void ExpandAll()
