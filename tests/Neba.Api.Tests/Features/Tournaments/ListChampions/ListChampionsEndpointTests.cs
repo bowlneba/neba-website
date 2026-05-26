@@ -91,7 +91,7 @@ public sealed class ListChampionsEndpointTests
         item.TournamentId.ShouldBe(dto.TournamentId.Value.ToString());
         item.TournamentName.ShouldBe(dto.TournamentName);
         item.TournamentDate.ShouldBe(dto.TournamentDate);
-        item.TournamentType.ShouldBe(dto.TournamentType.Name);
+        item.TournamentType.ShouldBe(dto.TournamentType);
         var responseChampion = item.Champions.ShouldHaveSingleItem();
         responseChampion.BowlerId.ShouldBe(champion.BowlerId.Value.ToString());
         responseChampion.BowlerName.ShouldBe(champion.BowlerName.ToDisplayName());

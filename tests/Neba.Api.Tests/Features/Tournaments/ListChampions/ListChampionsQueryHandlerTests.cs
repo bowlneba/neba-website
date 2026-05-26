@@ -78,7 +78,7 @@ public sealed class ListChampionsQueryHandlerTests(PostgreSqlFixture fixture)
         dto.TournamentId.ShouldBe(tournament.Id);
         dto.TournamentName.ShouldBe("NEBA Singles 2024");
         dto.TournamentDate.ShouldBe(new DateOnly(2024, 10, 5));
-        dto.TournamentType.ShouldBe(TournamentType.Singles);
+        dto.TournamentType.ShouldBe(TournamentType.Singles.Name);
         dto.Champions.ShouldHaveSingleItem();
         var champion = dto.Champions.Single();
         champion.BowlerId.ShouldBe(bowler.Id);

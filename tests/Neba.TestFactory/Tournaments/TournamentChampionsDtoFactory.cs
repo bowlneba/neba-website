@@ -22,7 +22,7 @@ public static class TournamentChampionDtoFactory
             TournamentId = tournamentId ?? TournamentId.New(),
             TournamentName = tournamentName ?? ValidTournamentName,
             TournamentDate = tournamentDate ?? ValidTournamentDate,
-            TournamentType = tournamentType ?? ValidTournamentType,
+            TournamentType = (tournamentType ?? ValidTournamentType).Name,
             Champions = champions ?? [ChampionDtoFactory.Create()],
         };
 
@@ -34,7 +34,7 @@ public static class TournamentChampionDtoFactory
                 TournamentId = new TournamentId(Ulid.BogusString(f)),
                 TournamentName = f.Random.Words(2),
                 TournamentDate = f.Date.PastDateOnly(10),
-                TournamentType = f.PickRandom(TournamentType.List.ToArray()),
+                TournamentType = f.PickRandom(TournamentType.List.ToArray()).Name,
                 Champions = ChampionDtoFactory.Bogus(f.Random.Int(1, 4), seed),
             });
 
