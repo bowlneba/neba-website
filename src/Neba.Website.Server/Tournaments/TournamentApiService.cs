@@ -42,7 +42,7 @@ internal sealed class TournamentApiService(
             : result.Value.Items.Select(MapToViewModel).ToList();
     }
 
-    public async Task<ErrorOr<List<BowlerTitleSummaryViewModel>>> GetTitleSummariesAsync(CancellationToken ct = default)
+    public async Task<ErrorOr<IReadOnlyCollection<BowlerTitleSummaryViewModel>>> GetTitleSummariesAsync(CancellationToken ct = default)
     {
         var result = await executor.ExecuteAsync(
             "TournamentsApi",
@@ -55,7 +55,7 @@ internal sealed class TournamentApiService(
             : result.Value.Items.ToTitleSummaries();
     }
 
-    public async Task<ErrorOr<List<TitlesByYearViewModel>>> GetTitlesByYearAsync(CancellationToken ct = default)
+    public async Task<ErrorOr<IReadOnlyCollection<TitlesByYearViewModel>>> GetTitlesByYearAsync(CancellationToken ct = default)
     {
         var result = await executor.ExecuteAsync(
             "TournamentsApi",
