@@ -1,0 +1,20 @@
+@namespace Neba.Website.Server.History.Champions
+
+<div class="champions-skeleton">
+    @for (var t = 0; t < 3; t++)
+    {
+        <div class="champions-skeleton__tier">
+            <div class="champions-skeleton__tier-head">
+                <div class="neba-skeleton champions-skeleton__tier-rule"></div>
+                <div class="neba-skeleton champions-skeleton__tier-title"></div>
+                <div class="neba-skeleton champions-skeleton__tier-rule"></div>
+            </div>
+            <div class="champions-skeleton__grid">
+                @for (var i = 0; i < 4; i++)
+                {
+                    <div class="neba-skeleton champions-skeleton__card"></div>
+                }
+            </div>
+        </div>
+    }
+</div>

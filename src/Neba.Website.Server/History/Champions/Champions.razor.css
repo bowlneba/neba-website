@@ -119,6 +119,27 @@
     display: block;
 }
 
+/* Hero skeleton stat placeholders */
+.hero-stat-skeleton__num {
+    width: 3rem;
+    height: 2rem;
+    margin-bottom: 0.25rem;
+    opacity: 0.35;
+}
+
+.hero-stat-skeleton__label {
+    width: 5.5rem;
+    height: 0.65rem;
+    opacity: 0.25;
+}
+
+/* Disable cursor on toolbar buttons when busy */
+.toolbar-btn:disabled,
+.segmented__btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
 @media (max-width: 760px) {
     .hero              { padding: 2.25rem 1.5rem 2.5rem; }
     .hero h1           { font-size: 2.4rem; }

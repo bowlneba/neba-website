@@ -497,6 +497,41 @@ test.describe('Champions page — Bowler Titles Modal (Closes)', () => {
   });
 });
 
+test.describe('Champions page — Loading Skeleton', () => {
+  test.use({ viewport: { width: 1280, height: 900 } });
+
+  test.afterEach(async ({ page }) => {
+    await page.unroute('**/tournaments/champions');
+  });
+
+  test('shows skeleton boxes in hero stats while API is loading', async ({ page }) => {
+    await page.route('**/tournaments/champions', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      await route.continue();
+    });
+    await page.goto('/history/champions');
+    await page.waitForSelector('h1');
+    await expect(page.locator('.hero .neba-skeleton').first()).toBeVisible();
+  });
+
+  test('shows champions skeleton in content area while API is loading', async ({ page }) => {
+    await page.route('**/tournaments/champions', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      await route.continue();
+    });
+    await page.goto('/history/champions');
+    await page.waitForSelector('h1');
+    await expect(page.locator('.champions-skeleton')).toBeVisible();
+  });
+
+  test('skeleton resolves to real content after data loads', async ({ page }) => {
+    await page.goto('/history/champions');
+    await page.waitForSelector('.hero-stats');
+    await expect(page.locator('.champions-skeleton')).not.toBeVisible();
+    await expect(page.locator('.tier-section').first()).toBeVisible();
+  });
+});
+
 test.describe('Champions page — Error State on Page Load', () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
@@ -509,6 +544,14 @@ test.describe('Champions page — Error State on Page Load', () => {
     await page.goto('/history/champions');
     await page.waitForSelector('h1');
     await expect(page.locator('.neba-alert')).toBeVisible();
+  });
+
+  test('hero stats show -- placeholder when API fails', async ({ page }) => {
+    await page.route('**/tournaments/champions', (route) => route.fulfill({ status: 500 }));
+    await page.goto('/history/champions');
+    await page.waitForSelector('h1');
+    const statNums = page.locator('.hero-stat__num');
+    await expect(statNums.first()).toContainText('--');
   });
 
   test('error alert can be dismissed', async ({ page }) => {

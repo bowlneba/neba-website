@@ -16,24 +16,37 @@
     <div class="hero">
         <h1 class="font-display">Champions</h1>
         <div class="hero-stats">
-            <div class="hero-stat">
-                <span class="hero-stat__num">@TotalTitles</span>
-                <span class="hero-stat__label">Titles Awarded</span>
-            </div>
-            <div class="hero-stat">
-                <span class="hero-stat__num">@TotalChampions</span>
-                <span class="hero-stat__label">Champions</span>
-            </div>
-            <div class="hero-stat">
-                <span class="hero-stat__num">@HallOfFamers</span>
-                <span class="hero-stat__label">Hall of Famers</span>
-            </div>
-            @if (FirstYear > 0)
+            @if (_loading)
+            {
+                @for (var i = 0; i < 4; i++)
+                {
+                    <div class="hero-stat">
+                        <div class="neba-skeleton hero-stat-skeleton__num"></div>
+                        <div class="neba-skeleton hero-stat-skeleton__label"></div>
+                    </div>
+                }
+            }
+            else
             {
                 <div class="hero-stat">
-                    <span class="hero-stat__num">@FirstYear</span>
-                    <span class="hero-stat__label">First Year</span>
+                    <span class="hero-stat__num">@(_error != null ? "--" : TotalTitles.ToString())</span>
+                    <span class="hero-stat__label">Titles Awarded</span>
                 </div>
+                <div class="hero-stat">
+                    <span class="hero-stat__num">@(_error != null ? "--" : TotalChampions.ToString())</span>
+                    <span class="hero-stat__label">Champions</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="hero-stat__num">@(_error != null ? "--" : HallOfFamers.ToString())</span>
+                    <span class="hero-stat__label">Hall of Famers</span>
+                </div>
+                @if (_error != null || FirstYear > 0)
+                {
+                    <div class="hero-stat">
+                        <span class="hero-stat__num">@(_error != null ? "--" : FirstYear.ToString())</span>
+                        <span class="hero-stat__label">First Year</span>
+                    </div>
+                }
             }
         </div>
     </div>
@@ -41,18 +54,20 @@
     <div class="toolbar">
         <div class="segmented">
             <button class="@(_activeView == ChampionsView.Titles ? "segmented__btn is-active" : "segmented__btn")"
+                    disabled="@_busy"
                     @onclick="@(() => _activeView = ChampionsView.Titles)">
                 By Titles
             </button>
             <button class="@(_activeView == ChampionsView.Year ? "segmented__btn is-active" : "segmented__btn")"
+                    disabled="@_busy"
                     @onclick="@(() => _activeView = ChampionsView.Year)">
                 By Year
             </button>
         </div>
         <div class="toolbar-spacer"></div>
         <div class="toolbar-actions">
-            <button class="toolbar-btn" @onclick="ExpandAll">Expand All</button>
-            <button class="toolbar-btn" @onclick="CollapseAll">Collapse All</button>
+            <button class="toolbar-btn" disabled="@_busy" @onclick="ExpandAll">Expand All</button>
+            <button class="toolbar-btn" disabled="@_busy" @onclick="CollapseAll">Collapse All</button>
         </div>
     </div>
 
@@ -66,7 +81,7 @@
     }
     else if (_loading)
     {
-        <NebaLoadingIndicator />
+        <ChampionsSkeleton />
     }
     else
     {
@@ -113,6 +128,8 @@
     private YearView?       _yearView;
 
     private enum ChampionsView { Titles, Year }
+
+    private bool _busy => _loading || !string.IsNullOrWhiteSpace(_error);
 
     private int TotalTitles    => _summaries.Sum(s => s.TitleCount);
     private int TotalChampions => _summaries.Count;
