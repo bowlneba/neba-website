@@ -199,6 +199,46 @@ internal sealed class AzureBlobStorageService
         }
     }
 
+    public async Task DeleteAsync(string container, string path, CancellationToken cancellationToken)
+    {
+        using var activity = ActivitySource.StartActivity("storage.delete", ActivityKind.Client);
+        activity?.SetCodeAttributes(nameof(DeleteAsync), StorageMetricsNamespace);
+        activity?.SetTag("storage.container", container);
+        activity?.SetTag("storage.path", path);
+
+        long startTimestamp = _stopwatchProvider.GetTimestamp();
+
+        try
+        {
+            _logger.LogDeletingFile(container, path);
+
+            var blobClient = GetBlobClient(container, path);
+            await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+
+            var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
+
+            _logger.LogFileDeleted(container, path, durationMs.Milliseconds);
+
+            StorageMetrics.RecordOperationSuccess(container, "delete", durationMs.Milliseconds);
+
+            activity?.SetTag(StorageDurationMsTag, durationMs.TotalMilliseconds);
+            activity?.SetStatus(ActivityStatusCode.Ok);
+        }
+        catch (Exception ex)
+        {
+            var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
+
+            _logger.LogFileDeleteFailed(ex, container, path);
+
+            StorageMetrics.RecordOperationFailure(container, "delete", durationMs.Milliseconds, ex.GetType().Name);
+
+            activity?.SetExceptionTags(ex);
+            activity?.SetTag(StorageDurationMsTag, durationMs.TotalMilliseconds);
+
+            throw;
+        }
+    }
+
     public Uri GetBlobUri(string container, string path)
     {
         var containerClient = _blobServiceClient.GetBlobContainerClient(container);
@@ -315,4 +355,30 @@ internal static partial class AzureBlobStorageServiceLogMessages
         string container,
         string path,
         int sizeBytes);
+
+    [LoggerMessage(
+        Level = LogLevel.Debug,
+        Message = "Deleting file: {Container}/{Path}")]
+    public static partial void LogDeletingFile(
+        this ILogger<AzureBlobStorageService> logger,
+        string container,
+        string path);
+
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "File deleted successfully: {Container}/{Path} ({DurationMs} ms)")]
+    public static partial void LogFileDeleted(
+        this ILogger<AzureBlobStorageService> logger,
+        string container,
+        string path,
+        double durationMs);
+
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "Failed to delete file: {Container}/{Path}")]
+    public static partial void LogFileDeleteFailed(
+        this ILogger<AzureBlobStorageService> logger,
+        Exception exception,
+        string container,
+        string path);
 }
