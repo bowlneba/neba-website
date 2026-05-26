@@ -52,9 +52,9 @@ internal sealed class AzureBlobStorageService
 
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileExistsChecked(container, path, exists, durationMs.Milliseconds);
+            _logger.LogFileExistsChecked(container, path, exists, durationMs.TotalMilliseconds);
 
-            StorageMetrics.RecordOperationSuccess(container, "exists", durationMs.Milliseconds);
+            StorageMetrics.RecordOperationSuccess(container, "exists", durationMs.TotalMilliseconds);
 
             activity?.SetTag("storage.exists", exists);
             activity?.SetTag(StorageDurationMsTag, durationMs.TotalMilliseconds);
@@ -68,7 +68,7 @@ internal sealed class AzureBlobStorageService
 
             _logger.LogFileExistsCheckFailed(ex, container, path);
 
-            StorageMetrics.RecordOperationFailure(container, "exists", durationMs.Milliseconds, ex.GetType().Name);
+            StorageMetrics.RecordOperationFailure(container, "exists", durationMs.TotalMilliseconds, ex.GetType().Name);
 
             activity?.SetExceptionTags(ex);
             activity?.SetTag(StorageDurationMsTag, durationMs.TotalMilliseconds);
@@ -116,9 +116,9 @@ internal sealed class AzureBlobStorageService
 
             var finalDurationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileDownloaded(container, path, storedFile.Content.Length, finalDurationMs.Milliseconds);
+            _logger.LogFileDownloaded(container, path, storedFile.Content.Length, finalDurationMs.TotalMilliseconds);
 
-            StorageMetrics.RecordOperationSuccess(container, "download", finalDurationMs.Milliseconds, storedFile.Content.Length);
+            StorageMetrics.RecordOperationSuccess(container, "download", finalDurationMs.TotalMilliseconds, storedFile.Content.Length);
 
             activity?.SetTag("storage.found", true);
             activity?.SetTag("storage.size_bytes", storedFile.Content.Length);
@@ -134,7 +134,7 @@ internal sealed class AzureBlobStorageService
 
             _logger.LogFileDownloadFailed(ex, container, path);
 
-            StorageMetrics.RecordOperationFailure(container, "download", durationMs.Milliseconds, ex.GetType().Name);
+            StorageMetrics.RecordOperationFailure(container, "download", durationMs.TotalMilliseconds, ex.GetType().Name);
 
             activity?.SetExceptionTags(ex);
             activity?.SetTag(StorageDurationMsTag, durationMs.TotalMilliseconds);
@@ -177,9 +177,9 @@ internal sealed class AzureBlobStorageService
 
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileUploaded(container, path, content.Length, durationMs.Milliseconds);
+            _logger.LogFileUploaded(container, path, content.Length, durationMs.TotalMilliseconds);
 
-            StorageMetrics.RecordOperationSuccess(container, "upload", durationMs.Milliseconds, content.Length);
+            StorageMetrics.RecordOperationSuccess(container, "upload", durationMs.TotalMilliseconds, content.Length);
 
             activity?.SetTag(StorageDurationMsTag, durationMs.TotalMilliseconds);
             activity?.SetStatus(ActivityStatusCode.Ok);
@@ -190,7 +190,7 @@ internal sealed class AzureBlobStorageService
 
             _logger.LogFileUploadFailed(ex, container, path, content.Length);
 
-            StorageMetrics.RecordOperationFailure(container, "upload", durationMs.Milliseconds, ex.GetType().Name);
+            StorageMetrics.RecordOperationFailure(container, "upload", durationMs.TotalMilliseconds, ex.GetType().Name);
 
             activity?.SetExceptionTags(ex);
             activity?.SetTag(StorageDurationMsTag, durationMs.TotalMilliseconds);
@@ -217,9 +217,9 @@ internal sealed class AzureBlobStorageService
 
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileDeleted(container, path, durationMs.Milliseconds);
+            _logger.LogFileDeleted(container, path, durationMs.TotalMilliseconds);
 
-            StorageMetrics.RecordOperationSuccess(container, "delete", durationMs.Milliseconds);
+            StorageMetrics.RecordOperationSuccess(container, "delete", durationMs.TotalMilliseconds);
 
             activity?.SetTag(StorageDurationMsTag, durationMs.TotalMilliseconds);
             activity?.SetStatus(ActivityStatusCode.Ok);
@@ -230,7 +230,7 @@ internal sealed class AzureBlobStorageService
 
             _logger.LogFileDeleteFailed(ex, container, path);
 
-            StorageMetrics.RecordOperationFailure(container, "delete", durationMs.Milliseconds, ex.GetType().Name);
+            StorageMetrics.RecordOperationFailure(container, "delete", durationMs.TotalMilliseconds, ex.GetType().Name);
 
             activity?.SetExceptionTags(ex);
             activity?.SetTag(StorageDurationMsTag, durationMs.TotalMilliseconds);
