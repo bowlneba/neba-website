@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { PRIMARY_BOWLER_ID, SECONDARY_BOWLER_ID } from './mock-api/mock-api-server';
+import { PRIMARY_BOWLER_ID } from './mock-api/mock-api-server';
 
 // Hero stat values from mock data:
 //   Total titles: 4 (2 for Current Leader + 2 for Current Rival)
