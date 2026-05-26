@@ -1,6 +1,5 @@
 
 using Neba.Api.Domain;
-using Neba.Api.Features.HallOfFame.Domain;
 using Neba.Api.Features.Stats.Domain;
 
 namespace Neba.Api.Features.Bowlers.Domain;
@@ -50,7 +49,4 @@ public sealed class Bowler
     internal IReadOnlyCollection<BowlerSeasonStats> SeasonStats
         => _seasonStats.AsReadOnly();
 
-    private readonly List<HallOfFameInduction> _hallOfFameInductions = [];
-    internal IReadOnlyCollection<HallOfFameInduction> HallOfFameInductions
-        => _hallOfFameInductions.AsReadOnly();
 }

@@ -6,6 +6,7 @@ using Neba.Api.Database;
 using Neba.Api.Database.Configurations;
 using Neba.Api.Database.Entities;
 using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.HallOfFame.Domain;
 using Neba.Api.Messaging;
 
 namespace Neba.Api.Features.Bowlers.GetBowlerTitles;
@@ -14,6 +15,7 @@ internal sealed class GetBowlerTitlesQueryHandler(AppDbContext appDbContext)
         : IQueryHandler<GetBowlerTitlesQuery, ErrorOr<BowlerTitlesDto>>
 {
     private readonly IQueryable<Bowler> _bowlers = appDbContext.Bowlers.AsNoTracking();
+    private readonly IQueryable<HallOfFameInduction> _hallOfFameInductions = appDbContext.HallOfFameInductions.AsNoTracking();
     private readonly IQueryable<HistoricalTournamentChampion> _historicalTournamentChampions = appDbContext.HistoricalTournamentChampions.AsNoTracking();
 
     public async Task<ErrorOr<BowlerTitlesDto>> HandleAsync(GetBowlerTitlesQuery query, CancellationToken cancellationToken)
@@ -23,7 +25,7 @@ internal sealed class GetBowlerTitlesQueryHandler(AppDbContext appDbContext)
             .Select(bowler => new
             {
                 bowler.Name,
-                HallOfFame = bowler.HallOfFameInductions.Any(),
+                HallOfFame = _hallOfFameInductions.Any(induction => induction.BowlerId == bowler.Id),
                 DbId = EF.Property<int>(bowler, ShadowIdConfiguration.DefaultPropertyName)
             })
             .SingleOrDefaultAsync(cancellationToken);

@@ -29,7 +29,7 @@ internal sealed class HallOfFameInductionConfiguration
             .IsRequired();
 
         builder.HasOne(induction => induction.Bowler)
-            .WithMany(bowler => bowler.HallOfFameInductions)
+            .WithMany()
             .HasForeignKey(induction => induction.BowlerId)
             .HasPrincipalKey(bowler => bowler.Id)
             .OnDelete(DeleteBehavior.Cascade);
