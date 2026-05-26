@@ -12,22 +12,33 @@
             </h2>
             <span class="tier-head__count">@GetEliteBowlers().Count bowlers</span>
         </div>
-        <div class="tier-grid">
-            @foreach (var bowler in GetEliteBowlers())
+        <div class="tier-body">
+            @foreach (var group in GroupByCount(GetEliteBowlers()))
             {
-                <button class="bowler-card"
-                        @key="@bowler.BowlerId"
-                        @onclick="@(() => OnBowlerSelected.InvokeAsync(bowler))">
-                    <span class="bowler-card__count">@bowler.TitleCount</span>
-                    <span class="bowler-card__body">
-                        <span class="bowler-card__name">@bowler.BowlerName</span>
-                    </span>
-                    @if (bowler.HallOfFame)
-                    {
-                        <img src="/images/neba-hof.jpg" class="hof-badge" alt="Hall of Fame" />
-                    }
-                    <span class="bowler-card__chev"><span class="msym">chevron_right</span></span>
-                </button>
+                <div class="count-group" @key="@group.Count">
+                    <div class="count-group__head">
+                        <span class="count-group__num">@group.Count</span>
+                        <span class="count-group__label">@(group.Count == 1 ? "title" : "titles")</span>
+                        <span class="count-group__tally">@group.Bowlers.Count @(group.Bowlers.Count == 1 ? "bowler" : "bowlers")</span>
+                    </div>
+                    <div class="count-group__grid">
+                        @foreach (var bowler in group.Bowlers)
+                        {
+                            <button class="bowler-card"
+                                    @key="@bowler.BowlerId"
+                                    @onclick="@(() => OnBowlerSelected.InvokeAsync(bowler))">
+                                <span class="bowler-card__body">
+                                    <span class="bowler-card__name">@bowler.BowlerName</span>
+                                </span>
+                                @if (bowler.HallOfFame)
+                                {
+                                    <img src="/images/neba-hof.jpg" class="hof-badge" alt="Hall of Fame" />
+                                }
+                                <span class="bowler-card__chev"><span class="msym">chevron_right</span></span>
+                            </button>
+                        }
+                    </div>
+                </div>
             }
         </div>
     </div>
@@ -39,26 +50,37 @@
             <span class="tier-head__chevron"><span class="msym">expand_more</span></span>
             <span class="tier-head__rule"></span>
             <h2 class="tier-head__title font-display">
-                Champions <span class="tier-head__range">10 – 19 titles</span>
+                Decorated <span class="tier-head__range">10 – 19 titles</span>
             </h2>
             <span class="tier-head__count">@GetMidBowlers().Count bowlers</span>
         </div>
-        <div class="tier-grid">
-            @foreach (var bowler in GetMidBowlers())
+        <div class="tier-body">
+            @foreach (var group in GroupByCount(GetMidBowlers()))
             {
-                <button class="bowler-card"
-                        @key="@bowler.BowlerId"
-                        @onclick="@(() => OnBowlerSelected.InvokeAsync(bowler))">
-                    <span class="bowler-card__count">@bowler.TitleCount</span>
-                    <span class="bowler-card__body">
-                        <span class="bowler-card__name">@bowler.BowlerName</span>
-                    </span>
-                    @if (bowler.HallOfFame)
-                    {
-                        <img src="/images/neba-hof.jpg" class="hof-badge" alt="Hall of Fame" />
-                    }
-                    <span class="bowler-card__chev"><span class="msym">chevron_right</span></span>
-                </button>
+                <div class="count-group" @key="@group.Count">
+                    <div class="count-group__head">
+                        <span class="count-group__num">@group.Count</span>
+                        <span class="count-group__label">@(group.Count == 1 ? "title" : "titles")</span>
+                        <span class="count-group__tally">@group.Bowlers.Count @(group.Bowlers.Count == 1 ? "bowler" : "bowlers")</span>
+                    </div>
+                    <div class="count-group__grid">
+                        @foreach (var bowler in group.Bowlers)
+                        {
+                            <button class="bowler-card"
+                                    @key="@bowler.BowlerId"
+                                    @onclick="@(() => OnBowlerSelected.InvokeAsync(bowler))">
+                                <span class="bowler-card__body">
+                                    <span class="bowler-card__name">@bowler.BowlerName</span>
+                                </span>
+                                @if (bowler.HallOfFame)
+                                {
+                                    <img src="/images/neba-hof.jpg" class="hof-badge" alt="Hall of Fame" />
+                                }
+                                <span class="bowler-card__chev"><span class="msym">chevron_right</span></span>
+                            </button>
+                        }
+                    </div>
+                </div>
             }
         </div>
     </div>
@@ -70,26 +92,37 @@
             <span class="tier-head__chevron"><span class="msym">expand_more</span></span>
             <span class="tier-head__rule"></span>
             <h2 class="tier-head__title font-display">
-                Title Winners <span class="tier-head__range">1 – 9 titles</span>
+                Champions <span class="tier-head__range">1 – 9 titles</span>
             </h2>
             <span class="tier-head__count">@GetStdBowlers().Count bowlers</span>
         </div>
-        <div class="tier-grid">
-            @foreach (var bowler in GetStdBowlers())
+        <div class="tier-body">
+            @foreach (var group in GroupByCount(GetStdBowlers()))
             {
-                <button class="bowler-card"
-                        @key="@bowler.BowlerId"
-                        @onclick="@(() => OnBowlerSelected.InvokeAsync(bowler))">
-                    <span class="bowler-card__count">@bowler.TitleCount</span>
-                    <span class="bowler-card__body">
-                        <span class="bowler-card__name">@bowler.BowlerName</span>
-                    </span>
-                    @if (bowler.HallOfFame)
-                    {
-                        <img src="/images/neba-hof.jpg" class="hof-badge" alt="Hall of Fame" />
-                    }
-                    <span class="bowler-card__chev"><span class="msym">chevron_right</span></span>
-                </button>
+                <div class="count-group" @key="@group.Count">
+                    <div class="count-group__head">
+                        <span class="count-group__num">@group.Count</span>
+                        <span class="count-group__label">@(group.Count == 1 ? "title" : "titles")</span>
+                        <span class="count-group__tally">@group.Bowlers.Count @(group.Bowlers.Count == 1 ? "bowler" : "bowlers")</span>
+                    </div>
+                    <div class="count-group__grid">
+                        @foreach (var bowler in group.Bowlers)
+                        {
+                            <button class="bowler-card"
+                                    @key="@bowler.BowlerId"
+                                    @onclick="@(() => OnBowlerSelected.InvokeAsync(bowler))">
+                                <span class="bowler-card__body">
+                                    <span class="bowler-card__name">@bowler.BowlerName</span>
+                                </span>
+                                @if (bowler.HallOfFame)
+                                {
+                                    <img src="/images/neba-hof.jpg" class="hof-badge" alt="Hall of Fame" />
+                                }
+                                <span class="bowler-card__chev"><span class="msym">chevron_right</span></span>
+                            </button>
+                        }
+                    </div>
+                </div>
             }
         </div>
     </div>
@@ -112,6 +145,13 @@
 
     private IReadOnlyCollection<BowlerTitleSummaryViewModel> GetStdBowlers() =>
         Summaries.Where(s => s.TitleCount < 10).OrderByDescending(s => s.TitleCount).ToList();
+
+    private static IEnumerable<(int Count, IReadOnlyList<BowlerTitleSummaryViewModel> Bowlers)>
+        GroupByCount(IReadOnlyCollection<BowlerTitleSummaryViewModel> bowlers) =>
+            bowlers
+                .GroupBy(b => b.TitleCount)
+                .OrderByDescending(g => g.Key)
+                .Select(g => (g.Key, (IReadOnlyList<BowlerTitleSummaryViewModel>)g.OrderBy(b => b.BowlerName).ToList()));
 
     public void ExpandAll()   => _collapsedTiers.Clear();
     public void CollapseAll() => _collapsedTiers.UnionWith(new[] { "elite", "mid", "std" });

@@ -43,7 +43,7 @@ internal sealed class ListChampionsEndpoint(
                 TournamentId = t.TournamentId.Value.ToString(),
                 TournamentName = t.TournamentName,
                 TournamentDate = t.TournamentDate,
-                TournamentType = t.TournamentType.Name,
+                TournamentType = t.TournamentType,
                 Champions = [.. t.Champions.Select(c => new ChampionResponse
                 {
                     BowlerId = c.BowlerId.Value.ToString(),

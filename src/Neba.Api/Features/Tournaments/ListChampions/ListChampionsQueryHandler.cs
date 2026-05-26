@@ -32,7 +32,7 @@ internal sealed class ListChampionsQueryHandler(AppDbContext appDbContext)
             TournamentId = tournamentChampion.Key,
             TournamentName = tournamentChampion.First().TournamentName,
             TournamentDate = tournamentChampion.First().TournamentDate,
-            TournamentType = tournamentChampion.First().TournamentType,
+            TournamentType = tournamentChampion.First().TournamentType.Name,
             Champions = [.. tournamentChampion.Select(champion => new ChampionDto
             {
                 BowlerId = champion.BowlerId,

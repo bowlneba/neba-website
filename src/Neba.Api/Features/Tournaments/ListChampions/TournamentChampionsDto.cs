@@ -26,7 +26,7 @@ public sealed record TournamentChampionsDto
     /// <summary>
     /// The type of the tournament. This is used for display purposes and to provide context about the champion's achievement.
     /// </summary>
-    public required TournamentType TournamentType { get; init; }
+    public required string TournamentType { get; init; }
 
     /// <summary>
     /// The champion of the tournament. This includes the bowler's name, whether they are in the Hall of Fame, and other relevant details. This is used for display purposes and to provide context about the champion's achievement.
