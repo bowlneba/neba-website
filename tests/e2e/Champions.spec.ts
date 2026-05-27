@@ -417,14 +417,14 @@ test.describe('Champions page — Bowler Titles Modal (Error & Retry)', () => {
   });
 
   test('modal shows error state when API returns 500 for bowler titles', async ({ page }) => {
-    await page.request.post(`${MOCK_ADMIN}/fail?path=/bowlers/${PRIMARY_BOWLER_ID}/titles&status=500`);
+    await page.request.post(`${MOCK_ADMIN}/fail?path=/bowlers/${PRIMARY_BOWLER_ID}/titles&status=422`);
     await page.locator('.bowler-card', { has: page.locator('.bowler-card__name', { hasText: 'Current Leader' }) }).click();
     await expect(page.locator('.modal-state.is-active')).toBeVisible();
     await expect(page.locator('.modal-state__title')).toContainText("Couldn't load titles");
   });
 
   test('Retry button re-fires the API request', async ({ page }) => {
-    await page.request.post(`${MOCK_ADMIN}/fail?path=/bowlers/${PRIMARY_BOWLER_ID}/titles&status=500`);
+    await page.request.post(`${MOCK_ADMIN}/fail?path=/bowlers/${PRIMARY_BOWLER_ID}/titles&status=422`);
     await page.locator('.bowler-card', { has: page.locator('.bowler-card__name', { hasText: 'Current Leader' }) }).click();
     await expect(page.locator('.modal-state__retry')).toBeVisible();
     // Clear the failure so the retry call succeeds — proves a second request was made and handled
@@ -434,7 +434,7 @@ test.describe('Champions page — Bowler Titles Modal (Error & Retry)', () => {
   });
 
   test('modal shows data after successful retry', async ({ page }) => {
-    await page.request.post(`${MOCK_ADMIN}/fail?path=/bowlers/${PRIMARY_BOWLER_ID}/titles&status=500`);
+    await page.request.post(`${MOCK_ADMIN}/fail?path=/bowlers/${PRIMARY_BOWLER_ID}/titles&status=422`);
     await page.locator('.bowler-card', { has: page.locator('.bowler-card__name', { hasText: 'Current Leader' }) }).click();
     await expect(page.locator('.modal-state__retry')).toBeVisible();
     await page.request.post(`${MOCK_ADMIN}/reset`);
@@ -524,14 +524,14 @@ test.describe('Champions page — Error State on Page Load', () => {
   });
 
   test('shows error alert when champions API fails to load', async ({ page }) => {
-    await page.request.post(`${MOCK_ADMIN}/fail?path=/tournaments/champions&status=500`);
+    await page.request.post(`${MOCK_ADMIN}/fail?path=/tournaments/champions&status=422`);
     await page.goto('/history/champions');
     await page.waitForSelector('h1');
     await expect(page.locator('.neba-alert')).toBeVisible();
   });
 
   test('hero stats show -- placeholder when API fails', async ({ page }) => {
-    await page.request.post(`${MOCK_ADMIN}/fail?path=/tournaments/champions&status=500`);
+    await page.request.post(`${MOCK_ADMIN}/fail?path=/tournaments/champions&status=422`);
     await page.goto('/history/champions');
     await page.waitForSelector('h1');
     const statNums = page.locator('.hero-stat__num');
@@ -539,7 +539,7 @@ test.describe('Champions page — Error State on Page Load', () => {
   });
 
   test('error alert can be dismissed', async ({ page }) => {
-    await page.request.post(`${MOCK_ADMIN}/fail?path=/tournaments/champions&status=500`);
+    await page.request.post(`${MOCK_ADMIN}/fail?path=/tournaments/champions&status=422`);
     await page.goto('/history/champions');
     await page.waitForSelector('.neba-alert');
     await page.locator('.neba-alert [data-dismiss], .neba-alert button').first().click();
