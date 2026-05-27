@@ -546,7 +546,14 @@ function resolveGetRoute(pathname: string, searchParams: URLSearchParams): objec
   return routes[pathname] ?? null;
 }
 
-function handleRequest(req: IncomingMessage, res: ServerResponse): void {
+interface MockOverride {
+  status?: number;
+  delayMs?: number;
+}
+
+const mockOverrides = new Map<string, MockOverride>();
+
+async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
   setCorsHeaders(res);
 
   if (req.method === 'OPTIONS') {
@@ -555,9 +562,50 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
     return;
   }
 
+  const requestUrl = new URL(req.url ?? '/', 'http://localhost');
+  const pathname = requestUrl.pathname;
+
+  if (req.method === 'POST') {
+    if (pathname === '/__mock/fail') {
+      const path = requestUrl.searchParams.get('path') ?? '';
+      const status = Number.parseInt(requestUrl.searchParams.get('status') ?? '500', 10);
+      mockOverrides.set(path, { ...mockOverrides.get(path), status });
+      res.writeHead(200);
+      res.end();
+      return;
+    }
+
+    if (pathname === '/__mock/delay') {
+      const path = requestUrl.searchParams.get('path') ?? '';
+      const ms = Number.parseInt(requestUrl.searchParams.get('ms') ?? '0', 10);
+      mockOverrides.set(path, { ...mockOverrides.get(path), delayMs: ms });
+      res.writeHead(200);
+      res.end();
+      return;
+    }
+
+    if (pathname === '/__mock/reset') {
+      mockOverrides.clear();
+      res.writeHead(200);
+      res.end();
+      return;
+    }
+  }
+
   if (req.method === 'GET') {
-    const requestUrl = new URL(req.url ?? '/', 'http://localhost');
-    const data = resolveGetRoute(requestUrl.pathname, requestUrl.searchParams);
+    const override = mockOverrides.get(pathname);
+
+    const delayMs = override?.delayMs;
+    if (delayMs) {
+      await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    if (override?.status != null && override.status >= 400) {
+      sendJsonResponse(res, { error: 'Mock error' }, override.status);
+      return;
+    }
+
+    const data = resolveGetRoute(pathname, requestUrl.searchParams);
     if (data !== null) {
       sendJsonResponse(res, data);
       return;
