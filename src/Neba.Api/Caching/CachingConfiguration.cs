@@ -64,10 +64,8 @@ internal static class CachingConfiguration
             services.AddKeyedSingleton<System.Text.Json.JsonSerializerOptions>(
                 HybridCacheSerializerOptionsKey.Key, cacheJsonOptions);
 
-            services.AddHybridCache(options =>
-            {
-                options.MaximumPayloadBytes = 10 * 1024 * 1024; // 10 MB — season stats payload exceeds the 1 MB default
-            });
+            services.AddHybridCache(options => options
+                .MaximumPayloadBytes = 10 * 1024 * 1024);
 
             services.AddDistributedPostgreSqlCache(options =>
             {
