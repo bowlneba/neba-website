@@ -54,7 +54,7 @@ internal static class ApiServicesConfiguration
             return services;
         }
 
-        private IServiceCollection RegisterApiEndpoint<TApi>()
+        private void RegisterApiEndpoint<TApi>()
             where TApi : class
         {
             services
@@ -64,8 +64,6 @@ internal static class ApiServicesConfiguration
                     var apiConfig = sp.GetRequiredService<NebaApiConfiguration>();
                     client.BaseAddress = apiConfig.BaseUrl;
                 });
-
-            return services;
         }
     }
 }
