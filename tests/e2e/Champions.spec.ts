@@ -348,15 +348,14 @@ test.describe('Champions page — Bowler Titles Modal (Loading & Data)', () => {
     await page.waitForSelector('.hero-stats');
   });
 
+  test.afterEach(async ({ page }) => {
+    await page.request.post(`${MOCK_ADMIN}/reset`);
+  });
+
   test('modal shows loading indicator while fetching titles', async ({ page }) => {
-    // Delay the titles response to observe loading state
-    await page.route(`**/bowlers/${PRIMARY_BOWLER_ID}/titles`, async (route) => {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      await route.continue();
-    });
+    await page.request.post(`${MOCK_ADMIN}/delay?path=/bowlers/${PRIMARY_BOWLER_ID}/titles&ms=500`);
     await page.locator('.bowler-card', { has: page.locator('.bowler-card__name', { hasText: 'Current Leader' }) }).click();
     await expect(page.locator('.neba-modal-backdrop .modal-state.is-active')).toBeVisible();
-    await page.unroute(`**/bowlers/${PRIMARY_BOWLER_ID}/titles`);
   });
 
   test('modal displays titles table after successful fetch', async ({ page }) => {
