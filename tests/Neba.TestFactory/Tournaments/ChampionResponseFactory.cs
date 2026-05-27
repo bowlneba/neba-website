@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Api.Contracts.Tournaments.ListChampions;
 using Neba.Api.Features.Bowlers.Domain;
 

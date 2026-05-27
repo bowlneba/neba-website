@@ -1,4 +1,3 @@
-using Neba.Api.Contracts;
 using Neba.Api.Contracts.Tournaments.GetTournament;
 using Neba.Api.Contracts.Tournaments.ListChampions;
 

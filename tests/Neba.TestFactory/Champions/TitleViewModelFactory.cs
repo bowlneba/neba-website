@@ -1,7 +1,5 @@
 using System.Globalization;
 
-using Bogus;
-
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Website.Server.History.Champions;
 

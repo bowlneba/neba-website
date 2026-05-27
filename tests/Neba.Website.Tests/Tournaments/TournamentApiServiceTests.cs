@@ -9,7 +9,6 @@ using Neba.Api.Contracts.Tournaments.ListChampions;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 using Neba.Website.Server.Clock;
-using Neba.Website.Server.History.Champions;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Tournaments;
 using Neba.Website.Server.Tournaments.Schedule;

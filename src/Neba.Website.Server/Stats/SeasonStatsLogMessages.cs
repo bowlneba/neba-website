@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Logging;
-
 namespace Neba.Website.Server.Stats;
 
 internal static partial class SeasonStatsLogMessages

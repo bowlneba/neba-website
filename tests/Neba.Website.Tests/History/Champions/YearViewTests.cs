@@ -1,11 +1,8 @@
-using System.Globalization;
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
 
 using Neba.Api.Features.Bowlers.Domain;
-using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Champions;
 using Neba.Website.Server.History.Champions;

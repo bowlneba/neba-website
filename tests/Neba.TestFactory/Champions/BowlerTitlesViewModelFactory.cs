@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Website.Server.History.Champions;
 
 namespace Neba.TestFactory.Champions;

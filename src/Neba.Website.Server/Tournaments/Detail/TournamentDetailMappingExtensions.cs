@@ -1,5 +1,3 @@
-using System.Globalization;
-
 using Neba.Api.Contracts.Tournaments.GetTournament;
 
 namespace Neba.Website.Server.Tournaments.Detail;
