@@ -18,6 +18,7 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
     [Fact(DisplayName = "CalculateAllProgressions should accumulate cumulative points across tournaments for Open race")]
     public void CalculateAllProgressions_ShouldAccumulateCumulativePoints_ForOpenRace()
     {
+        // Arrange
         var bowlerId = BowlerId.New();
         var t1 = TournamentId.New();
         var t2 = TournamentId.New();
@@ -34,8 +35,10 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
                 statsEligible: true, points: 150),
         };
 
+        // Act
         var progressions = _calculator.CalculateAllProgressions(results);
 
+        // Assert
         var openSeries = progressions[BowlerOfTheYearCategory.Open.Value];
         openSeries.Count.ShouldBe(1);
         var series = openSeries.Single();
@@ -47,6 +50,7 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
     [Fact(DisplayName = "CalculateAllProgressions should produce independent series per bowler with correct totals")]
     public void CalculateAllProgressions_ShouldProduceIndependentSeriesPerBowler_WithCorrectTotals()
     {
+        // Arrange
         var bowlerAId = BowlerId.New();
         var bowlerBId = BowlerId.New();
         var t1 = TournamentId.New();
@@ -69,8 +73,10 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
                 statsEligible: true, points: 200),
         };
 
+        // Act
         var progressions = _calculator.CalculateAllProgressions(results);
 
+        // Assert
         var openSeries = progressions[BowlerOfTheYearCategory.Open.Value];
         openSeries.Count.ShouldBe(2);
         openSeries.ShouldContain(s => s.BowlerId == bowlerAId && s.Results.Last().CumulativePoints == 300);
@@ -80,6 +86,7 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
     [Fact(DisplayName = "CalculateAllProgressions should exclude bowler with no stats-eligible results from Open race")]
     public void CalculateAllProgressions_ShouldExcludeBowler_WhenNoStatsEligibleResults()
     {
+        // Arrange
         var eligibleBowlerId = BowlerId.New();
         var ineligibleBowlerId = BowlerId.New();
 
@@ -95,8 +102,10 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
                 statsEligible: false, points: 200),
         };
 
+        // Act
         var progressions = _calculator.CalculateAllProgressions(results);
 
+        // Assert
         var openSeries = progressions[BowlerOfTheYearCategory.Open.Value];
         openSeries.Count.ShouldBe(1);
         openSeries.ShouldContain(s => s.BowlerId == eligibleBowlerId);
@@ -108,10 +117,13 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
     [Fact(DisplayName = "CalculateAllProgressions should always return empty series for Rookie category")]
     public void CalculateAllProgressions_ShouldAlwaysReturnEmptySeries_ForRookieCategory()
     {
+        // Arrange
         var results = BoyProgressionResultDtoFactory.Bogus(count: 10, seed: 77);
 
+        // Act
         var progressions = _calculator.CalculateAllProgressions(results);
 
+        // Assert
         progressions[BowlerOfTheYearCategory.Rookie.Value].ShouldBeEmpty();
     }
 
@@ -120,6 +132,7 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
     [Fact(DisplayName = "CalculateAllProgressions should award 5 points for side-cut that does not target Open category")]
     public void CalculateAllProgressions_ShouldAward5Points_ForSideCutNotTargetingOpenCategory()
     {
+        // Arrange
         var bowlerId = BowlerId.New();
         var tournament = TournamentId.New();
 
@@ -132,8 +145,10 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
                 sideCutId: 1, sideCutName: "Senior"),
         };
 
+        // Act
         var progressions = _calculator.CalculateAllProgressions(results);
 
+        // Assert
         var openSeries = progressions[BowlerOfTheYearCategory.Open.Value];
         openSeries.Count.ShouldBe(1);
         // Senior side-cut contributes only 5 pts to Open — result.Points (200) is not awarded
@@ -143,6 +158,7 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
     [Fact(DisplayName = "CalculateAllProgressions should award full points for side-cut that targets the race category")]
     public void CalculateAllProgressions_ShouldAwardFullPoints_ForSideCutMatchingRaceCategory()
     {
+        // Arrange
         var bowlerId = BowlerId.New();
         var tournament = TournamentId.New();
         var endDate = new DateOnly(2025, 1, 1);
@@ -159,8 +175,10 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
                 sideCutId: 1, sideCutName: "Senior"),
         };
 
+        // Act
         var progressions = _calculator.CalculateAllProgressions(results);
 
+        // Assert
         var seniorSeries = progressions[BowlerOfTheYearCategory.Senior.Value];
         seniorSeries.Count.ShouldBe(1);
         // Side-cut matches Senior race — full 200 pts awarded
@@ -172,6 +190,7 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
     [Fact(DisplayName = "Senior race should include bowler who is exactly 50 on tournament end date and exclude one who is 49")]
     public void SeniorRace_ShouldIncludeBowlerExactly50_AndExcludeBowler49_OnTournamentEndDate()
     {
+        // Arrange
         var seniorBowlerId = BowlerId.New();
         var nonSeniorBowlerId = BowlerId.New();
         var tournament = TournamentId.New();
@@ -195,8 +214,10 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
                 statsEligible: true, points: 200),
         };
 
+        // Act
         var progressions = _calculator.CalculateAllProgressions(results);
 
+        // Assert
         var seniorSeries = progressions[BowlerOfTheYearCategory.Senior.Value];
         seniorSeries.Count.ShouldBe(1);
         seniorSeries.Single().BowlerId.ShouldBe(seniorBowlerId);
@@ -205,6 +226,7 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
     [Fact(DisplayName = "Senior race should count non-stats-eligible results from Senior-format tournaments")]
     public void SeniorRace_ShouldCountNonStatsEligibleResults_FromSeniorFormatTournaments()
     {
+        // Arrange
         var seniorBowlerId = BowlerId.New();
         var tournament = TournamentId.New();
         var endDate = new DateOnly(2025, 1, 1);
@@ -221,8 +243,10 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
                 points: 150),
         };
 
+        // Act
         var progressions = _calculator.CalculateAllProgressions(results);
 
+        // Assert
         var seniorSeries = progressions[BowlerOfTheYearCategory.Senior.Value];
         seniorSeries.Count.ShouldBe(1);
         seniorSeries.Single().Results.Single().CumulativePoints.ShouldBe(150);
@@ -233,6 +257,7 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
     [Fact(DisplayName = "SuperSenior race should include bowler who is exactly 60 on tournament end date and exclude one who is 59")]
     public void SuperSeniorRace_ShouldIncludeBowlerExactly60_AndExcludeBowler59_OnTournamentEndDate()
     {
+        // Arrange
         var superSeniorBowlerId = BowlerId.New();
         var seniorOnlyBowlerId = BowlerId.New();
         var tournament = TournamentId.New();
@@ -256,8 +281,10 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
                 statsEligible: true, points: 200),
         };
 
+        // Act
         var progressions = _calculator.CalculateAllProgressions(results);
 
+        // Assert
         var superSeniorSeries = progressions[BowlerOfTheYearCategory.SuperSenior.Value];
         superSeniorSeries.Count.ShouldBe(1);
         superSeniorSeries.Single().BowlerId.ShouldBe(superSeniorBowlerId);
@@ -268,6 +295,7 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
     [Fact(DisplayName = "Woman race should include only female bowlers and exclude male bowlers")]
     public void WomanRace_ShouldIncludeOnlyFemaleBowlers_AndExcludeMaleBowlers()
     {
+        // Arrange
         var femaleBowlerId = BowlerId.New();
         var maleBowlerId = BowlerId.New();
         var tournament = TournamentId.New();
@@ -288,8 +316,10 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
                 statsEligible: true, points: 200),
         };
 
+        // Act
         var progressions = _calculator.CalculateAllProgressions(results);
 
+        // Assert
         var womanSeries = progressions[BowlerOfTheYearCategory.Woman.Value];
         womanSeries.Count.ShouldBe(1);
         womanSeries.Single().BowlerId.ShouldBe(femaleBowlerId);
@@ -300,6 +330,7 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
     [Fact(DisplayName = "Youth race should include bowler who is 17 on tournament end date and exclude one who turns 18 that day")]
     public void YouthRace_ShouldIncludeBowlerAge17_AndExcludeBowlerWhoTurns18_OnTournamentEndDate()
     {
+        // Arrange
         var youthBowlerId = BowlerId.New();
         var adultBowlerId = BowlerId.New();
         var tournament = TournamentId.New();
@@ -323,8 +354,10 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
                 statsEligible: true, points: 200),
         };
 
+        // Act
         var progressions = _calculator.CalculateAllProgressions(results);
 
+        // Assert
         var youthSeries = progressions[BowlerOfTheYearCategory.Youth.Value];
         youthSeries.Count.ShouldBe(1);
         youthSeries.Single().BowlerId.ShouldBe(youthBowlerId);

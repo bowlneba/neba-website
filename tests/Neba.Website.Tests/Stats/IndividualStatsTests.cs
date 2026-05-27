@@ -326,6 +326,7 @@ public sealed class IndividualStatsTests : IDisposable
     [Fact(DisplayName = "Should use Season query parameter to set the active season button when param is valid")]
     public void Render_ShouldSetActiveSeasonFromQueryParam_WhenSeasonParamIsValid()
     {
+        // Arrange
         var model = IndividualStatsPageViewModelFactory.Create(
             selectedSeason: "2024-2025",
             availableSeasons: new Dictionary<int, string>
@@ -337,14 +338,17 @@ public sealed class IndividualStatsTests : IDisposable
         _ctx.Services.GetRequiredService<NavigationManager>()
             .NavigateTo($"http://localhost/stats/{BowlerId}?season={Season2Year}");
 
+        // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p.Add(x => x.BowlerId, BowlerId));
 
+        // Assert
         cut.FindAll(".stats-season-btn.active").Single().TextContent.Trim().ShouldContain("2023-2024");
     }
 
     [Fact(DisplayName = "Should fall back to first available season when selected season name has no match")]
     public void Render_ShouldFallbackToFirstSeason_WhenSelectedSeasonNameHasNoMatch()
     {
+        // Arrange
         var model = IndividualStatsPageViewModelFactory.Create(
             selectedSeason: "No Match",
             availableSeasons: new Dictionary<int, string>
@@ -354,9 +358,11 @@ public sealed class IndividualStatsTests : IDisposable
             });
         _statsApi.EnqueueIndividualResult(model);
 
+        // Act
         var cut = _ctx.Render<IndividualStatsPage>(p => p
             .Add(x => x.BowlerId, BowlerId));
 
+        // Assert
         cut.FindAll(".stats-season-btn.active").Single().TextContent.Trim().ShouldContain("2024-2025");
     }
 

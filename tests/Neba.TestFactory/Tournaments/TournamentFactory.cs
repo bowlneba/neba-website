@@ -1,6 +1,5 @@
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.Seasons.Domain;
-using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.BowlingCenters;

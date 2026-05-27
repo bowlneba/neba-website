@@ -17,14 +17,17 @@ public sealed class TournamentPastCardTests : IDisposable
     [Fact(DisplayName = "Should render winners pill when winners are present")]
     public void Render_ShouldShowWinners_WhenWinnersExist()
     {
+        // Arrange
         var tournament = SeasonTournamentViewModelFactory.Create() with
         {
             Winners = ["Alex Example", "Jamie Sample"],
         };
 
+        // Act
         var cut = _ctx.Render<TournamentPastCard>(parameters => parameters
             .Add(p => p.Tournament, tournament));
 
+        // Assert
         cut.Markup.ShouldContain("Alex Example / Jamie Sample");
         cut.Markup.ShouldContain("View results");
     }
@@ -32,25 +35,31 @@ public sealed class TournamentPastCardTests : IDisposable
     [Fact(DisplayName = "Should show results pending message when no winners are present")]
     public void Render_ShouldShowResultsPending_WhenWinnersMissing()
     {
+        // Arrange
         var tournament = SeasonTournamentViewModelFactory.Create() with
         {
             Winners = [],
         };
 
+        // Act
         var cut = _ctx.Render<TournamentPastCard>(parameters => parameters
             .Add(p => p.Tournament, tournament));
 
+        // Assert
         cut.Markup.ShouldContain("Results pending");
     }
 
     [Fact(DisplayName = "Should link results link directly to tournament detail page without season segment")]
     public void Render_ShouldLinkResultsLink_ToTournamentDetailPage()
     {
+        // Arrange
         var tournament = SeasonTournamentViewModelFactory.Create(id: "01JSTX1234567890ABCDEFGHIJ");
 
+        // Act
         var cut = _ctx.Render<TournamentPastCard>(parameters => parameters
             .Add(p => p.Tournament, tournament));
 
+        // Assert
         cut.Find(".tournament-past-card__results-link").GetAttribute("href")
             .ShouldBe("/tournaments/01JSTX1234567890ABCDEFGHIJ");
     }

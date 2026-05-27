@@ -28,13 +28,16 @@ public sealed class GetSponsorDetailQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns SponsorNotFound when no sponsor matches the slug")]
     public async Task HandleAsync_ShouldReturnNotFound_WhenSlugDoesNotExist()
     {
+        // Arrange
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(
             new GetSponsorDetailQuery { Slug = "nonexistent-sponsor" },
             TestContext.Current.CancellationToken);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Sponsor.NotFound");
     }
@@ -42,6 +45,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns sponsor detail with correct fields when slug matches")]
     public async Task HandleAsync_ShouldReturnSponsor_WithCorrectFields_WhenSlugMatches()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var sponsor = SponsorFactory.Create(
             name: "ACME Corp",
@@ -54,9 +58,11 @@ public sealed class GetSponsorDetailQueryHandlerTests(PostgreSqlFixture fixture)
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(
             new GetSponsorDetailQuery { Slug = "acme-corp" }, ct);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Name.ShouldBe("ACME Corp");
         result.Value.Slug.ShouldBe("acme-corp");
@@ -67,6 +73,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync sets LogoUrl when sponsor has a logo")]
     public async Task HandleAsync_ShouldSetLogoUrl_WhenSponsorHasLogo()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var logo = StoredFileFactory.Create(container: "logos", path: "sponsors/acme-logo.png");
         var sponsor = SponsorFactory.Create(slug: "logo-sponsor", logo: logo);
@@ -80,9 +87,11 @@ public sealed class GetSponsorDetailQueryHandlerTests(PostgreSqlFixture fixture)
             .Returns(expectedUri);
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(
             new GetSponsorDetailQuery { Slug = "logo-sponsor" }, ct);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.LogoUrl.ShouldBe(expectedUri);
     }
@@ -90,6 +99,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns NotFound when a different slug is queried")]
     public async Task HandleAsync_ShouldReturnNotFound_WhenDifferentSlugQueried()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var sponsor = SponsorFactory.Create(slug: "real-sponsor");
         await _dbContext.Sponsors.AddAsync(sponsor, ct);
@@ -98,9 +108,11 @@ public sealed class GetSponsorDetailQueryHandlerTests(PostgreSqlFixture fixture)
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(
             new GetSponsorDetailQuery { Slug = "other-sponsor" }, ct);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Sponsor.NotFound");
     }

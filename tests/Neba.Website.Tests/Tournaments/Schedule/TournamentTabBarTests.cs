@@ -20,9 +20,11 @@ public sealed class TournamentTabBarTests : IDisposable
     [Fact(DisplayName = "Should disable upcoming tab when season is not current")]
     public void Render_ShouldDisableUpcomingTab_WhenNotCurrentSeason()
     {
+        // Arrange
         var season2024 = MakeSeason(2024);
         var season2023 = MakeSeason(2023);
 
+        // Act
         var cut = _ctx.Render<TournamentTabBar>(parameters => parameters
             .Add(p => p.ActiveTab, TournamentTab.Past)
             .Add(p => p.IsCurrentSeason, false)
@@ -31,14 +33,17 @@ public sealed class TournamentTabBarTests : IDisposable
             .Add(p => p.OnTabChanged, EventCallback.Factory.Create<TournamentTab>(this, _ => { }))
             .Add(p => p.OnSeasonChanged, EventCallback.Factory.Create<int>(this, _ => { })));
 
+        // Assert
         cut.FindAll("button")[0].HasAttribute("disabled").ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Should not show season selector when upcoming tab is active")]
     public void Render_ShouldHideSeasonSelector_WhenUpcomingTabActive()
     {
+        // Arrange
         var season = MakeSeason(DateTime.Today.Year);
 
+        // Act
         var cut = _ctx.Render<TournamentTabBar>(parameters => parameters
             .Add(p => p.ActiveTab, TournamentTab.Upcoming)
             .Add(p => p.IsCurrentSeason, true)
@@ -47,15 +52,18 @@ public sealed class TournamentTabBarTests : IDisposable
             .Add(p => p.OnTabChanged, EventCallback.Factory.Create<TournamentTab>(this, _ => { }))
             .Add(p => p.OnSeasonChanged, EventCallback.Factory.Create<int>(this, _ => { })));
 
+        // Assert
         cut.FindAll("select").ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Should display season descriptions in selector when past tab is active")]
     public void Render_ShouldShowSeasonDescriptions_WhenPastTabActive()
     {
+        // Arrange
         var season2024 = MakeSeason(2024);
         var season2023 = MakeSeason(2023);
 
+        // Act
         var cut = _ctx.Render<TournamentTabBar>(parameters => parameters
             .Add(p => p.ActiveTab, TournamentTab.Past)
             .Add(p => p.IsCurrentSeason, false)
@@ -64,6 +72,7 @@ public sealed class TournamentTabBarTests : IDisposable
             .Add(p => p.OnTabChanged, EventCallback.Factory.Create<TournamentTab>(this, _ => { }))
             .Add(p => p.OnSeasonChanged, EventCallback.Factory.Create<int>(this, _ => { })));
 
+        // Assert
         cut.Markup.ShouldContain("2024 Season");
         cut.Markup.ShouldContain("2023 Season");
     }
@@ -71,12 +80,14 @@ public sealed class TournamentTabBarTests : IDisposable
     [Fact(DisplayName = "Should display merged season description in selector")]
     public void Render_ShouldShowMergedSeasonDescription_WhenMergedSeasonInList()
     {
+        // Arrange
         var mergedSeason = SeasonViewModelFactory.Create(
             description: "2020-21 Season",
             startDate: new DateOnly(2020, 1, 1),
             endDate: new DateOnly(2021, 12, 31));
         var season2019 = MakeSeason(2019);
 
+        // Act
         var cut = _ctx.Render<TournamentTabBar>(parameters => parameters
             .Add(p => p.ActiveTab, TournamentTab.Past)
             .Add(p => p.IsCurrentSeason, false)
@@ -85,12 +96,14 @@ public sealed class TournamentTabBarTests : IDisposable
             .Add(p => p.OnTabChanged, EventCallback.Factory.Create<TournamentTab>(this, _ => { }))
             .Add(p => p.OnSeasonChanged, EventCallback.Factory.Create<int>(this, _ => { })));
 
+        // Assert
         cut.Markup.ShouldContain("2020-21 Season");
     }
 
     [Fact(DisplayName = "Should emit tab and season change callbacks when controls are used")]
     public async Task Render_ShouldEmitCallbacks_WhenTabAndSeasonChanged()
     {
+        // Arrange
         TournamentTab? observedTab = null;
         int? observedYear = null;
 
@@ -105,9 +118,11 @@ public sealed class TournamentTabBarTests : IDisposable
             .Add(p => p.OnTabChanged, EventCallback.Factory.Create<TournamentTab>(this, value => observedTab = value))
             .Add(p => p.OnSeasonChanged, EventCallback.Factory.Create<int>(this, value => observedYear = value)));
 
+        // Act
         await cut.FindAll("button").First(b => b.TextContent.Contains("Upcoming", StringComparison.Ordinal)).ClickAsync(new MouseEventArgs());
         await cut.Find("select").ChangeAsync(new ChangeEventArgs { Value = "2023" });
 
+        // Assert
         observedTab.ShouldBe(TournamentTab.Upcoming);
         observedYear.ShouldBe(2023);
     }
@@ -115,6 +130,7 @@ public sealed class TournamentTabBarTests : IDisposable
     [Fact(DisplayName = "Should use start year as option value for merged season")]
     public async Task Render_ShouldEmitStartYear_WhenMergedSeasonSelected()
     {
+        // Arrange
         int? observedYear = null;
         var mergedSeason = SeasonViewModelFactory.Create(
             description: "2020-21 Season",
@@ -130,9 +146,11 @@ public sealed class TournamentTabBarTests : IDisposable
             .Add(p => p.OnTabChanged, EventCallback.Factory.Create<TournamentTab>(this, _ => { }))
             .Add(p => p.OnSeasonChanged, EventCallback.Factory.Create<int>(this, value => observedYear = value)));
 
+        // Act
         // Merged season option value is StartDate.Year = 2020
         await cut.Find("select").ChangeAsync(new ChangeEventArgs { Value = "2020" });
 
+        // Assert
         observedYear.ShouldBe(2020);
     }
 

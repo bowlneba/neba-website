@@ -1,4 +1,5 @@
 
+using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 
@@ -16,6 +17,28 @@ namespace Neba.Api.Caching;
 /// </remarks>
 public static class CacheDescriptors
 {
+    /// <summary>
+    /// Cache descriptors for bowler data.
+    /// </summary>
+    public static class Bowlers
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the titles won by a specific bowler.
+        /// </summary>
+        /// <param name="bowlerId">
+        /// The bowler identifier.
+        /// </param>
+        /// <returns>
+        /// A cache descriptor for the bowler's titles.
+        /// </returns>
+        public static CacheDescriptor Titles(BowlerId bowlerId)
+            => new()
+            {
+                Key = $"neba:bowlers:{bowlerId}:titles",
+                Tags = ["neba", "neba:bowlers", $"neba:bowlers:{bowlerId}"]
+            };
+    }
+
     /// <summary>
     /// Cache descriptors for document content.
     /// </summary>
@@ -237,6 +260,16 @@ public static class CacheDescriptors
             {
                 Key = $"neba:tournaments:{id}",
                 Tags = ["neba", "neba:tournaments", $"neba:tournaments:{id}"]
+            };
+
+        /// <summary>
+        /// Returns a cache descriptor for the list of all tournament champions.
+        /// </summary>
+        public static CacheDescriptor ListChampions
+            => new()
+            {
+                Key = "neba:tournaments:champions:list",
+                Tags = ["neba", "neba:tournaments", "neba:tournaments:champions"]
             };
     }
 }

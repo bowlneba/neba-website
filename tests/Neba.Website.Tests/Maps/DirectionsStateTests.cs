@@ -12,24 +12,30 @@ public sealed class DirectionsStateTests
     [Fact(DisplayName = "Default state has Overview mode")]
     public void DefaultState_ShouldHaveOverviewMode()
     {
+        // Arrange
         var state = new DirectionsState();
 
+        // Assert
         state.Mode.ShouldBe(MapMode.Overview);
     }
 
     [Fact(DisplayName = "Default state IsLoading is false")]
     public void DefaultState_ShouldNotBeLoading()
     {
+        // Arrange
         var state = new DirectionsState();
 
+        // Assert
         state.IsLoading.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "Default state all nullable properties are null")]
     public void DefaultState_ShouldHaveNullNullableProperties()
     {
+        // Arrange
         var state = new DirectionsState();
 
+        // Assert
         state.SelectedCenterId.ShouldBeNull();
         state.SelectedCenterName.ShouldBeNull();
         state.UserLocation.ShouldBeNull();
@@ -42,6 +48,7 @@ public sealed class DirectionsStateTests
     [Fact(DisplayName = "Reset restores all properties to defaults after being set")]
     public void Reset_ShouldRestoreAllPropertiesToDefaults_AfterBeingSet()
     {
+        // Arrange
         var state = new DirectionsState
         {
             Mode = MapMode.DirectionsActive,
@@ -55,8 +62,10 @@ public sealed class DirectionsStateTests
             ErrorMessage = "Something went wrong"
         };
 
+        // Act
         state.Reset();
 
+        // Assert
         state.Mode.ShouldBe(MapMode.Overview);
         state.SelectedCenterId.ShouldBeNull();
         state.SelectedCenterName.ShouldBeNull();
@@ -71,10 +80,13 @@ public sealed class DirectionsStateTests
     [Fact(DisplayName = "Reset is idempotent when called on a default state")]
     public void Reset_ShouldBeIdempotent_WhenCalledOnDefaultState()
     {
+        // Arrange
         var state = new DirectionsState();
 
+        // Act
         state.Reset();
 
+        // Assert
         state.Mode.ShouldBe(MapMode.Overview);
         state.IsLoading.ShouldBeFalse();
         state.ErrorMessage.ShouldBeNull();

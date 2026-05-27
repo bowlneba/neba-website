@@ -13,17 +13,20 @@ public sealed class SponsorMappingExtensionsTests
     [Fact(DisplayName = "Maps all fields from response to view model")]
     public async Task ToViewModel_ShouldMapAllFields()
     {
+        // Arrange
         var responses = SponsorSummaryResponseFactory.Bogus(3, seed: 1);
 
+        // Act
         var viewModels = responses.Select(r => r.ToViewModel()).ToList();
 
+        // Assert
         await Verify(viewModels);
     }
 
     [Fact(DisplayName = "Maps nullable fields as null when not provided")]
     public void ToViewModel_ShouldMapNullableFieldsAsNull_WhenNotProvided()
     {
-        // Constructed directly because the factory null-coalesces TagPhrase and Description to defaults,
+        // Arrange — constructed directly because the factory null-coalesces TagPhrase and Description to defaults,
         // making it impossible to produce a response with those fields null via the factory.
         var response = new SponsorSummaryResponse
         {
@@ -41,8 +44,10 @@ public sealed class SponsorMappingExtensionsTests
             InstagramUrl = null
         };
 
+        // Act
         var viewModel = response.ToViewModel();
 
+        // Assert
         viewModel.LogoUrl.ShouldBeNull();
         viewModel.TagPhrase.ShouldBeNull();
         viewModel.Description.ShouldBeNull();

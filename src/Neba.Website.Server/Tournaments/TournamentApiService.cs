@@ -3,14 +3,17 @@ using ErrorOr;
 using Neba.Api.Contracts.Seasons;
 using Neba.Api.Contracts.Seasons.ListSeasons;
 using Neba.Api.Contracts.Seasons.ListTournamentsInSeason;
+using Neba.Api.Contracts.Tournaments;
+using Neba.Website.Server.History.Champions;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Tournaments.Schedule;
 
 namespace Neba.Website.Server.Tournaments;
 
-internal sealed class TournamentDataService(
+internal sealed class TournamentApiService(
     ApiExecutor executor,
-    ISeasonsApi seasonsApi) : ITournamentDataService
+    ISeasonsApi seasonsApi,
+    ITournamentsApi tournamentsApi) : ITournamentApiService
 {
     public async Task<ErrorOr<List<SeasonTournamentViewModel>>> GetTournamentsForSeasonAsync(
         SeasonViewModel season, CancellationToken ct = default)
@@ -37,6 +40,20 @@ internal sealed class TournamentDataService(
         return result.IsError
             ? result.Errors
             : result.Value.Items.Select(MapToViewModel).ToList();
+    }
+
+    public async Task<ErrorOr<(IReadOnlyCollection<BowlerTitleSummaryViewModel> Summaries, IReadOnlyCollection<TitlesByYearViewModel> Years)>> GetChampionsDataAsync(CancellationToken ct = default)
+    {
+        var result = await executor.ExecuteAsync(
+            "TournamentsApi",
+            nameof(GetChampionsDataAsync),
+            token => tournamentsApi.ListTournamentChampionsAsync(token),
+            ct);
+
+        if (result.IsError) return result.Errors;
+
+        var items = result.Value.Items;
+        return (items.ToTitleSummaries(), items.ToTitlesByYear());
     }
 
     private static SeasonViewModel MapToViewModel(SeasonResponse r) => new()

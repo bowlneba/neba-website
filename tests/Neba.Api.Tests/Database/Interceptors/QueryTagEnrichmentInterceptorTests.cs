@@ -46,22 +46,28 @@ public sealed class QueryTagEnrichmentInterceptorTests
     [Fact(DisplayName = "Does not modify command when HttpContext is null (sync)")]
     public void ReaderExecuting_WhenHttpContextIsNull_DoesNotModifyCommand()
     {
+        // Arrange
         const string sql = "SELECT 1";
         var cmd = CreateCommand(sql);
 
+        // Act
         CreateInterceptor(null).ReaderExecuting(cmd.Object, null!, default);
 
+        // Assert
         cmd.Object.CommandText.ShouldBe(sql);
     }
 
     [Fact(DisplayName = "Does not modify command when HttpContext is null (async)")]
     public async Task ReaderExecutingAsync_WhenHttpContextIsNull_DoesNotModifyCommand()
     {
+        // Arrange
         const string sql = "SELECT 1";
         var cmd = CreateCommand(sql);
 
+        // Act
         await CreateInterceptor(null).ReaderExecutingAsync(cmd.Object, null!, default, CancellationToken.None);
 
+        // Assert
         cmd.Object.CommandText.ShouldBe(sql);
     }
 
@@ -70,6 +76,7 @@ public sealed class QueryTagEnrichmentInterceptorTests
     [Fact(DisplayName = "ReaderExecuting prepends comment with user, endpoint, and Activity trace ID")]
     public void ReaderExecuting_WithFullContext_PrependsComment()
     {
+        // Arrange
         var cmd = CreateCommand();
         var ctx = AuthenticatedContext("alice");
         ctx.SetEndpoint(new Endpoint(null, new EndpointMetadataCollection(), "GET /bowlers"));
@@ -79,14 +86,17 @@ public sealed class QueryTagEnrichmentInterceptorTests
         using var activity = activitySource;
         var expectedTraceId = Activity.Current!.TraceId.ToString();
 
+        // Act
         CreateInterceptor(ctx).ReaderExecuting(cmd.Object, null!, default);
 
+        // Assert
         cmd.Object.CommandText.ShouldBe($"/* user:alice endpoint:GET /bowlers trace:{expectedTraceId} */\nSELECT 1");
     }
 
     [Fact(DisplayName = "ReaderExecutingAsync prepends comment with user, endpoint, and Activity trace ID")]
     public async Task ReaderExecutingAsync_WithFullContext_PrependsComment()
     {
+        // Arrange
         var cmd = CreateCommand();
         var ctx = AuthenticatedContext("alice");
         ctx.SetEndpoint(new Endpoint(null, new EndpointMetadataCollection(), "GET /bowlers"));
@@ -96,8 +106,10 @@ public sealed class QueryTagEnrichmentInterceptorTests
         using var activity = activitySource;
         var expectedTraceId = Activity.Current!.TraceId.ToString();
 
+        // Act
         await CreateInterceptor(ctx).ReaderExecutingAsync(cmd.Object, null!, default, CancellationToken.None);
 
+        // Assert
         cmd.Object.CommandText.ShouldBe($"/* user:alice endpoint:GET /bowlers trace:{expectedTraceId} */\nSELECT 1");
     }
 
@@ -106,41 +118,50 @@ public sealed class QueryTagEnrichmentInterceptorTests
     [Fact(DisplayName = "Falls back to 'anon' when user has no NameIdentifier claim")]
     public void ReaderExecuting_WhenNoNameIdentifierClaim_UsesAnonFallback()
     {
+        // Arrange
         var cmd = CreateCommand();
         var ctx = new DefaultHttpContext();
         ctx.SetEndpoint(new Endpoint(null, new EndpointMetadataCollection(), "GET /test"));
         ctx.TraceIdentifier = "req-abc";
         Activity.Current = null;
 
+        // Act
         CreateInterceptor(ctx).ReaderExecuting(cmd.Object, null!, default);
 
+        // Assert
         cmd.Object.CommandText.ShouldStartWith("/* user:anon ");
     }
 
     [Fact(DisplayName = "Falls back to 'unknown' when no endpoint is set")]
     public void ReaderExecuting_WhenNoEndpoint_UsesUnknownFallback()
     {
+        // Arrange
         var cmd = CreateCommand();
         var ctx = AuthenticatedContext("alice");
         ctx.TraceIdentifier = "req-abc";
         Activity.Current = null;
 
+        // Act
         CreateInterceptor(ctx).ReaderExecuting(cmd.Object, null!, default);
 
+        // Assert
         cmd.Object.CommandText.ShouldContain("endpoint:unknown");
     }
 
     [Fact(DisplayName = "Falls back to ctx.TraceIdentifier when Activity.Current is null")]
     public void ReaderExecuting_WhenNoActivityCurrent_UsesTraceIdentifierFallback()
     {
+        // Arrange
         var cmd = CreateCommand();
         var ctx = AuthenticatedContext("alice");
         ctx.SetEndpoint(new Endpoint(null, new EndpointMetadataCollection(), "GET /test"));
         ctx.TraceIdentifier = "req-abc-123";
         Activity.Current = null;
 
+        // Act
         CreateInterceptor(ctx).ReaderExecuting(cmd.Object, null!, default);
 
+        // Assert
         cmd.Object.CommandText.ShouldContain("trace:req-abc-123");
     }
 
@@ -149,6 +170,7 @@ public sealed class QueryTagEnrichmentInterceptorTests
     [Fact(DisplayName = "Strips '*/' from userId to prevent comment breakout")]
     public void ReaderExecuting_WhenUserIdContainsCommentEnd_StripsIt()
     {
+        // Arrange
         var cmd = CreateCommand();
         var ctx = new DefaultHttpContext
         {
@@ -158,9 +180,10 @@ public sealed class QueryTagEnrichmentInterceptorTests
         };
         Activity.Current = null;
 
+        // Act
         CreateInterceptor(ctx).ReaderExecuting(cmd.Object, null!, default);
 
-        // If stripping works, the comment closes once at the end; nothing dangerous leaks after it.
+        // Assert — if stripping works, the comment closes once at the end; nothing dangerous leaks after it.
         var afterComment = cmd.Object.CommandText[(cmd.Object.CommandText.IndexOf("*/", StringComparison.Ordinal) + 2)..];
         afterComment.ShouldNotContain("DROP TABLE", customMessage: "comment breakout must be stripped from userId");
     }
@@ -168,14 +191,17 @@ public sealed class QueryTagEnrichmentInterceptorTests
     [Fact(DisplayName = "Strips '*/' from endpoint to prevent comment breakout")]
     public void ReaderExecuting_WhenEndpointContainsCommentEnd_StripsIt()
     {
+        // Arrange
         var cmd = CreateCommand();
         var ctx = AuthenticatedContext("alice");
         ctx.SetEndpoint(new Endpoint(null, new EndpointMetadataCollection(), "GET /test */ DROP TABLE users; --"));
         ctx.TraceIdentifier = "req-abc";
         Activity.Current = null;
 
+        // Act
         CreateInterceptor(ctx).ReaderExecuting(cmd.Object, null!, default);
 
+        // Assert
         var afterComment = cmd.Object.CommandText[(cmd.Object.CommandText.IndexOf("*/", StringComparison.Ordinal) + 2)..];
         afterComment.ShouldNotContain("DROP TABLE", customMessage: "comment breakout must be stripped from endpoint");
     }
@@ -183,14 +209,17 @@ public sealed class QueryTagEnrichmentInterceptorTests
     [Fact(DisplayName = "Strips '*/' from traceId to prevent comment breakout")]
     public void ReaderExecuting_WhenTraceIdContainsCommentEnd_StripsIt()
     {
+        // Arrange
         var cmd = CreateCommand();
         var ctx = AuthenticatedContext("alice");
         ctx.SetEndpoint(new Endpoint(null, new EndpointMetadataCollection(), "GET /test"));
         ctx.TraceIdentifier = "req-abc */ DROP TABLE users; --";
         Activity.Current = null;
 
+        // Act
         CreateInterceptor(ctx).ReaderExecuting(cmd.Object, null!, default);
 
+        // Assert
         var afterComment = cmd.Object.CommandText[(cmd.Object.CommandText.IndexOf("*/", StringComparison.Ordinal) + 2)..];
         afterComment.ShouldNotContain("DROP TABLE", customMessage: "comment breakout must be stripped from traceId");
     }

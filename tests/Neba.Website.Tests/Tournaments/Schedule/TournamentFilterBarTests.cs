@@ -19,6 +19,7 @@ public sealed class TournamentFilterBarTests : IDisposable
     [Fact(DisplayName = "Should emit SearchTermChanged when search input changes")]
     public void Search_ShouldEmitSearchTermChanged_WhenInputChanges()
     {
+        // Arrange
         string? observed = null;
 
         var cut = _ctx.Render<TournamentFilterBar>(parameters => parameters
@@ -26,14 +27,17 @@ public sealed class TournamentFilterBarTests : IDisposable
             .Add(p => p.SearchTermChanged, EventCallback.Factory.Create<string>(this, value => observed = value))
             .Add(p => p.TypeFilterChanged, EventCallback.Factory.Create<string?>(this, _ => { })));
 
+        // Act
         cut.Find("input[type='search']").Input("classic");
 
+        // Assert
         observed.ShouldBe("classic");
     }
 
     [Fact(DisplayName = "Should emit TypeFilterChanged when type button is clicked")]
     public async Task TypeFilter_ShouldEmitTypeFilterChanged_WhenButtonClicked()
     {
+        // Arrange
         string? observed = null;
 
         var cut = _ctx.Render<TournamentFilterBar>(parameters => parameters
@@ -41,8 +45,10 @@ public sealed class TournamentFilterBarTests : IDisposable
             .Add(p => p.SearchTermChanged, EventCallback.Factory.Create<string>(this, _ => { }))
             .Add(p => p.TypeFilterChanged, EventCallback.Factory.Create<string?>(this, value => observed = value)));
 
+        // Act
         await cut.FindAll("button").First(b => b.TextContent.Contains("Doubles", StringComparison.Ordinal)).ClickAsync(new MouseEventArgs());
 
+        // Assert
         observed.ShouldBe("Doubles");
     }
 }

@@ -31,6 +31,7 @@ public sealed class SeasonConfigurationTests
     [Fact(DisplayName = "maps to seasons table in app schema")]
     public void Configure_ShouldMapToSeasonsTable()
     {
+        // Act & Assert
         _seasonType.GetTableName().ShouldBe("seasons");
         _seasonType.GetSchema().ShouldBe(AppDbContext.DefaultSchema);
     }
@@ -38,8 +39,10 @@ public sealed class SeasonConfigurationTests
     [Fact(DisplayName = "domain_id is char(26), not nullable, value generated never")]
     public void Configure_ShouldConfigureDomainIdColumn()
     {
+        // Act
         var property = _seasonType.FindProperty(nameof(Season.Id))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("domain_id");
         property.GetMaxLength().ShouldBe(26);
         property.IsFixedLength().ShouldBe(true);
@@ -50,18 +53,22 @@ public sealed class SeasonConfigurationTests
     [Fact(DisplayName = "domain_id is an alternate key")]
     public void Configure_ShouldConfigureDomainIdAsAlternateKey()
     {
+        // Act
         var alternateKey = _seasonType.GetKeys()
             .Where(k => !k.IsPrimaryKey())
             .FirstOrDefault(k => k.Properties.Any(p => p.Name == nameof(Season.Id)));
 
+        // Assert
         alternateKey.ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "description is varchar(31), not nullable")]
     public void Configure_ShouldConfigureDescriptionColumn()
     {
+        // Act
         var property = _seasonType.FindProperty(nameof(Season.Description))!;
 
+        // Assert
         property.GetMaxLength().ShouldBe(31);
         property.IsNullable.ShouldBeFalse();
     }
@@ -69,24 +76,30 @@ public sealed class SeasonConfigurationTests
     [Fact(DisplayName = "start_date is not nullable")]
     public void Configure_ShouldConfigureStartDateColumn()
     {
+        // Act
         var property = _seasonType.FindProperty(nameof(Season.StartDate))!;
 
+        // Assert
         property.IsNullable.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "end_date is not nullable")]
     public void Configure_ShouldConfigureEndDateColumn()
     {
+        // Act
         var property = _seasonType.FindProperty(nameof(Season.EndDate))!;
 
+        // Assert
         property.IsNullable.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "complete is not nullable")]
     public void Configure_ShouldConfigureCompleteColumn()
     {
+        // Act
         var property = _seasonType.FindProperty(nameof(Season.Complete))!;
 
+        // Assert
         property.IsNullable.ShouldBeFalse();
     }
 }

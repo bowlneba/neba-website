@@ -12,21 +12,30 @@ public sealed class SponsorDetailViewModelTests
     [Fact(DisplayName = "HasAddress should be true when BusinessStreet is provided")]
     public void HasAddress_ShouldBeTrue_WhenBusinessStreetIsProvided()
     {
+        // Arrange
         var vm = SponsorDetailViewModelFactory.Create(businessStreet: "123 Main St", businessCity: null);
+
+        // Assert
         vm.HasAddress.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "HasAddress should be true when BusinessCity is provided")]
     public void HasAddress_ShouldBeTrue_WhenBusinessCityIsProvided()
     {
+        // Arrange
         var vm = SponsorDetailViewModelFactory.Create(businessStreet: null, businessCity: "Anytown");
+
+        // Assert
         vm.HasAddress.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "HasAddress should be false when both BusinessStreet and BusinessCity are null")]
     public void HasAddress_ShouldBeFalse_WhenBothAddressFieldsAreNull()
     {
+        // Arrange
         var vm = SponsorDetailViewModelFactory.Create() with { BusinessStreet = null, BusinessCity = null };
+
+        // Assert
         vm.HasAddress.ShouldBeFalse();
     }
 
@@ -35,21 +44,30 @@ public sealed class SponsorDetailViewModelTests
     [Fact(DisplayName = "HasContactChannels should be true when ContactEmail is provided")]
     public void HasContactChannels_ShouldBeTrue_WhenContactEmailIsProvided()
     {
+        // Arrange
         var vm = SponsorDetailViewModelFactory.Create(contactEmail: "test@example.com", phoneNumbers: []);
+
+        // Assert
         vm.HasContactChannels.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "HasContactChannels should be true when phone numbers are present")]
     public void HasContactChannels_ShouldBeTrue_WhenPhoneNumbersArePresent()
     {
+        // Arrange
         var vm = SponsorDetailViewModelFactory.Create(contactEmail: null);
+
+        // Assert
         vm.HasContactChannels.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "HasContactChannels should be false when no email and no phone numbers")]
     public void HasContactChannels_ShouldBeFalse_WhenNoContactChannels()
     {
+        // Arrange
         var vm = SponsorDetailViewModelFactory.Create(phoneNumbers: []) with { ContactEmail = null };
+
+        // Assert
         vm.HasContactChannels.ShouldBeFalse();
     }
 
@@ -58,25 +76,34 @@ public sealed class SponsorDetailViewModelTests
     [Fact(DisplayName = "HasSocialMedia should be true when FacebookUrl is provided")]
     public void HasSocialMedia_ShouldBeTrue_WhenFacebookUrlIsProvided()
     {
+        // Arrange
         var vm = SponsorDetailViewModelFactory.Create(
             facebookUrl: new Uri("https://facebook.com/test"),
             instagramUrl: null);
+
+        // Assert
         vm.HasSocialMedia.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "HasSocialMedia should be true when InstagramUrl is provided")]
     public void HasSocialMedia_ShouldBeTrue_WhenInstagramUrlIsProvided()
     {
+        // Arrange
         var vm = SponsorDetailViewModelFactory.Create(
             facebookUrl: null,
             instagramUrl: new Uri("https://instagram.com/test"));
+
+        // Assert
         vm.HasSocialMedia.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "HasSocialMedia should be false when no social media urls are provided")]
     public void HasSocialMedia_ShouldBeFalse_WhenNoSocialUrls()
     {
+        // Arrange
         var vm = SponsorDetailViewModelFactory.Create(facebookUrl: null, instagramUrl: null);
+
+        // Assert
         vm.HasSocialMedia.ShouldBeFalse();
     }
 
@@ -85,21 +112,30 @@ public sealed class SponsorDetailViewModelTests
     [Fact(DisplayName = "HasPromotionalInfo should be true when PromotionalNotes is provided")]
     public void HasPromotionalInfo_ShouldBeTrue_WhenPromotionalNotesIsProvided()
     {
+        // Arrange
         var vm = SponsorDetailViewModelFactory.Create(promotionalNotes: "Some notes", liveReadScript: null);
+
+        // Assert
         vm.HasPromotionalInfo.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "HasPromotionalInfo should be true when LiveReadScript is provided")]
     public void HasPromotionalInfo_ShouldBeTrue_WhenLiveReadScriptIsProvided()
     {
+        // Arrange
         var vm = SponsorDetailViewModelFactory.Create(promotionalNotes: null, liveReadScript: "Read this.");
+
+        // Assert
         vm.HasPromotionalInfo.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "HasPromotionalInfo should be false when neither field is provided")]
     public void HasPromotionalInfo_ShouldBeFalse_WhenNoPromotionalInfo()
     {
+        // Arrange
         var vm = SponsorDetailViewModelFactory.Create(promotionalNotes: null, liveReadScript: null);
+
+        // Assert
         vm.HasPromotionalInfo.ShouldBeFalse();
     }
 
@@ -108,14 +144,20 @@ public sealed class SponsorDetailViewModelTests
     [Fact(DisplayName = "HasInternalContact should be true when SponsorContactName is provided")]
     public void HasInternalContact_ShouldBeTrue_WhenSponsorContactNameIsProvided()
     {
+        // Arrange
         var vm = SponsorDetailViewModelFactory.Create(sponsorContactName: "Jane Doe");
+
+        // Assert
         vm.HasInternalContact.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "HasInternalContact should be false when SponsorContactName is null")]
     public void HasInternalContact_ShouldBeFalse_WhenSponsorContactNameIsNull()
     {
+        // Arrange
         var vm = SponsorDetailViewModelFactory.Create(sponsorContactName: null);
+
+        // Assert
         vm.HasInternalContact.ShouldBeFalse();
     }
 }

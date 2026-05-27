@@ -185,4 +185,38 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
         result.AbsoluteUri.ShouldContain(container);
         result.AbsoluteUri.ShouldContain("folder/my-file.txt");
     }
+
+    [Fact(DisplayName = "DeleteAsync should not throw when file does not exist")]
+    public async Task DeleteAsync_ShouldNotThrow_WhenFileDoesNotExist()
+    {
+        // Arrange
+        var container = UniqueContainer();
+
+        // Act & Assert — should not throw
+        await Should.NotThrowAsync(() => _sut.DeleteAsync(container, "nonexistent.txt", CancellationToken.None));
+    }
+
+    [Fact(DisplayName = "DeleteAsync should remove file so it no longer exists")]
+    public async Task DeleteAsync_ShouldRemoveFile_WhenFileExists()
+    {
+        // Arrange
+        var container = UniqueContainer();
+        const string path = "delete-me.html";
+
+        await _sut.UploadFileAsync(
+            container,
+            path,
+            FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType,
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
+            CancellationToken.None);
+
+        // Act
+        await _sut.DeleteAsync(container, path, CancellationToken.None);
+
+        // Assert
+        var exists = await _sut.ExistsAsync(container, path, CancellationToken.None);
+        exists.ShouldBeFalse();
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Information && l.Message.Contains("deleted"));
+    }
 }

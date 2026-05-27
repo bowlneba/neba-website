@@ -35,6 +35,7 @@ public sealed class SideCutConfigurationTests
     [Fact(DisplayName = "maps to side_cuts table in app schema")]
     public void Configure_ShouldMapToSideCutsTable()
     {
+        // Act & Assert
         _sideCutType.GetTableName().ShouldBe("side_cuts");
         _sideCutType.GetSchema().ShouldBe(AppDbContext.DefaultSchema);
     }
@@ -42,8 +43,10 @@ public sealed class SideCutConfigurationTests
     [Fact(DisplayName = "domain_id is char(26), not nullable, value generated never")]
     public void Configure_ShouldConfigureDomainIdColumn()
     {
+        // Act
         var property = _sideCutType.FindProperty(nameof(SideCut.Id))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("domain_id");
         property.GetMaxLength().ShouldBe(26);
         property.IsFixedLength().ShouldBe(true);
@@ -54,18 +57,22 @@ public sealed class SideCutConfigurationTests
     [Fact(DisplayName = "domain_id is an alternate key")]
     public void Configure_ShouldConfigureDomainIdAsAlternateKey()
     {
+        // Act
         var alternateKey = _sideCutType.GetKeys()
             .Where(k => !k.IsPrimaryKey())
             .FirstOrDefault(k => k.Properties.Any(p => p.Name == nameof(SideCut.Id)));
 
+        // Assert
         alternateKey.ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "name is varchar(31), not nullable")]
     public void Configure_ShouldConfigureNameColumn()
     {
+        // Act
         var property = _sideCutType.FindProperty(nameof(SideCut.Name))!;
 
+        // Assert
         property.GetMaxLength().ShouldBe(31);
         property.IsNullable.ShouldBeFalse();
     }
@@ -73,8 +80,10 @@ public sealed class SideCutConfigurationTests
     [Fact(DisplayName = "color_indicator is not nullable and has a value converter")]
     public void Configure_ShouldConfigureColorIndicatorColumn()
     {
+        // Act
         var property = _sideCutType.FindProperty(nameof(SideCut.Indicator))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("color_indicator");
         property.IsNullable.ShouldBeFalse();
         property.GetValueConverter().ShouldNotBeNull();
@@ -83,34 +92,42 @@ public sealed class SideCutConfigurationTests
     [Fact(DisplayName = "logical_operator is not nullable")]
     public void Configure_ShouldConfigureLogicalOperatorColumn()
     {
+        // Act
         var property = _sideCutType.FindProperty(nameof(SideCut.LogicalOperator))!;
 
+        // Assert
         property.IsNullable.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "active is not nullable")]
     public void Configure_ShouldConfigureActiveColumn()
     {
+        // Act
         var property = _sideCutType.FindProperty(nameof(SideCut.Active))!;
 
+        // Assert
         property.IsNullable.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "criteria groups navigation uses side_cut_id foreign key")]
     public void Configure_ShouldConfigureCriteriaGroupsForeignKey()
     {
+        // Act
         var fk = _criteriaGroupType.GetForeignKeys()
             .FirstOrDefault(f => f.Properties.Any(p => p.Name == SideCutConfiguration.ForeignKey));
 
+        // Assert
         fk.ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "criteria groups cascade on delete")]
     public void Configure_ShouldCascadeDeleteCriteriaGroups()
     {
+        // Act
         var fk = _criteriaGroupType.GetForeignKeys()
             .FirstOrDefault(f => f.Properties.Any(p => p.Name == SideCutConfiguration.ForeignKey));
 
+        // Assert
         fk!.DeleteBehavior.ShouldBe(DeleteBehavior.Cascade);
     }
 }

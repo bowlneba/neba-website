@@ -27,18 +27,22 @@ public sealed class ListHighAverageAwardsQueryHandlerTests(PostgreSqlFixture fix
     [Fact(DisplayName = "HandleAsync returns empty collection when no seasons exist")]
     public async Task HandleAsync_ShouldReturnEmpty_WhenNoSeasonsExist()
     {
+        // Arrange
         var handler = new ListHighAverageAwardsQueryHandler(_dbContext);
 
+        // Act
         var result = await handler.HandleAsync(
             new ListHighAverageAwardsQuery(),
             TestContext.Current.CancellationToken);
 
+        // Assert
         result.ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "HandleAsync returns high average award with correct fields when data exists")]
     public async Task HandleAsync_ShouldReturnAward_WithCorrectFields_WhenDataExists()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var bowler = BowlerFactory.Create(name: NameFactory.Create("Jane", "Doe"));
         await _dbContext.Bowlers.AddAsync(bowler, ct);
@@ -55,8 +59,10 @@ public sealed class ListHighAverageAwardsQueryHandlerTests(PostgreSqlFixture fix
 
         var handler = new ListHighAverageAwardsQueryHandler(_dbContext);
 
+        // Act
         var result = await handler.HandleAsync(new ListHighAverageAwardsQuery(), ct);
 
+        // Assert
         result.ShouldHaveSingleItem();
         var award = result.Single();
         award.Season.ShouldBe("2025 Season");
@@ -69,6 +75,7 @@ public sealed class ListHighAverageAwardsQueryHandlerTests(PostgreSqlFixture fix
     [Fact(DisplayName = "HandleAsync returns awards from all seasons when multiple complete seasons exist")]
     public async Task HandleAsync_ShouldReturnAwardsFromAllSeasons_WhenMultipleSeasonsExist()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         const int seed = 12;
         var bowlers = BowlerFactory.Bogus(10, seed);
@@ -80,8 +87,10 @@ public sealed class ListHighAverageAwardsQueryHandlerTests(PostgreSqlFixture fix
 
         var handler = new ListHighAverageAwardsQueryHandler(_dbContext);
 
+        // Act
         var result = await handler.HandleAsync(new ListHighAverageAwardsQuery(), ct);
 
+        // Assert
         foreach (var award in result)
         {
             award.Season.ShouldNotBeNullOrWhiteSpace();

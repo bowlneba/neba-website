@@ -13,33 +13,41 @@ public sealed class ShadowIdConfigurationTests
     [Fact(DisplayName = "default shadow property maps to id column")]
     public void ConfigureShadowId_ShouldConfigureDefaultColumnName()
     {
+        // Act
         var property = BuildProperty();
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe(ShadowIdConfiguration.DefaultColumnName);
     }
 
     [Fact(DisplayName = "default shadow property is the primary key")]
     public void ConfigureShadowId_ShouldSetAsPrimaryKey()
     {
+        // Act
         var entityType = BuildEntityType();
 
+        // Assert
         entityType.FindPrimaryKey()!.Properties.Single().Name.ShouldBe(ShadowIdConfiguration.DefaultPropertyName);
     }
 
     [Fact(DisplayName = "shadow property is generated on add")]
     public void ConfigureShadowId_ShouldConfigureValueGeneratedOnAdd()
     {
+        // Act
         var property = BuildProperty();
 
+        // Assert
         property.ValueGenerated.ShouldBe(ValueGenerated.OnAdd);
     }
 
     [Fact(DisplayName = "custom property name and column name are applied")]
     public void ConfigureShadowId_ShouldApplyCustomNames()
     {
+        // Act
         var entityType = BuildEntityType("custom_prop", "custom_col");
         var property = entityType.FindProperty("custom_prop")!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("custom_col");
         entityType.FindPrimaryKey()!.Properties.Single().Name.ShouldBe("custom_prop");
     }

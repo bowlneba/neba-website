@@ -16,15 +16,18 @@ public sealed class CachingConfigurationTests
     [Fact(DisplayName = "AddCaching throws InvalidOperationException when connection string is missing")]
     public void AddCaching_Throws_WhenConnectionStringMissing()
     {
+        // Arrange
         var services = new ServiceCollection();
         var config = new ConfigurationBuilder().Build();
 
+        // Act & Assert
         Should.Throw<InvalidOperationException>(() => services.AddCaching(config));
     }
 
     [Fact(DisplayName = "AddCaching registers IFusionCache and IDistributedCache when connection string is provided")]
     public void AddCaching_RegistersExpectedServices_WhenConnectionStringProvided()
     {
+        // Arrange
         var services = new ServiceCollection();
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -33,8 +36,10 @@ public sealed class CachingConfigurationTests
             })
             .Build();
 
+        // Act
         services.AddCaching(config);
 
+        // Assert
         services.ShouldContain(d => d.ServiceType == typeof(IFusionCache));
         services.ShouldContain(d => d.ServiceType == typeof(IDistributedCache));
     }

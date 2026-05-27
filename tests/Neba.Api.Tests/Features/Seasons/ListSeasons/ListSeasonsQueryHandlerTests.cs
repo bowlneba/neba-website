@@ -26,18 +26,22 @@ public sealed class ListSeasonsQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns empty collection when no seasons exist")]
     public async Task HandleAsync_ShouldReturnEmpty_WhenNoSeasonsExist()
     {
+        // Arrange
         var handler = new ListSeasonsQueryHandler(_dbContext);
 
+        // Act
         var result = await handler.HandleAsync(
             new ListSeasonsQuery(),
             TestContext.Current.CancellationToken);
 
+        // Assert
         result.ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "HandleAsync returns all seasons with correct fields")]
     public async Task HandleAsync_ShouldReturnAllSeasons_WithCorrectFields()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var season = SeasonFactory.Create(
             description: "2025 Season",
@@ -48,8 +52,10 @@ public sealed class ListSeasonsQueryHandlerTests(PostgreSqlFixture fixture)
 
         var handler = new ListSeasonsQueryHandler(_dbContext);
 
+        // Act
         var result = await handler.HandleAsync(new ListSeasonsQuery(), ct);
 
+        // Assert
         result.ShouldHaveSingleItem();
         var dto = result.Single();
         dto.Id.ShouldBe(season.Id);
@@ -61,6 +67,7 @@ public sealed class ListSeasonsQueryHandlerTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "HandleAsync returns seasons ordered by start date descending")]
     public async Task HandleAsync_ShouldReturnSeasonsOrderedByStartDateDescending()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var seasonA = SeasonFactory.Create(startDate: new DateOnly(2023, 1, 1), endDate: new DateOnly(2023, 12, 31));
         var seasonB = SeasonFactory.Create(startDate: new DateOnly(2025, 1, 1), endDate: new DateOnly(2025, 12, 31));
@@ -70,8 +77,10 @@ public sealed class ListSeasonsQueryHandlerTests(PostgreSqlFixture fixture)
 
         var handler = new ListSeasonsQueryHandler(_dbContext);
 
+        // Act
         var result = await handler.HandleAsync(new ListSeasonsQuery(), ct);
 
+        // Assert
         var list = result.ToList();
         list.Count.ShouldBe(3);
         list[0].StartDate.ShouldBe(new DateOnly(2025, 1, 1));

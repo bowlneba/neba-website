@@ -74,6 +74,20 @@ internal interface IFileStorageService
         CancellationToken cancellationToken);
 
     /// <summary>
+    /// Deletes a file from the specified container if it exists.
+    /// </summary>
+    /// <param name="container">
+    /// The storage container name.
+    /// </param>
+    /// <param name="path">
+    /// The blob path within the container.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// Cancellation token for async operation.
+    /// </param>
+    Task DeleteAsync(string container, string path, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Gets the URI of a blob in the specified container and path.
     /// </summary>
     /// <param name="container">

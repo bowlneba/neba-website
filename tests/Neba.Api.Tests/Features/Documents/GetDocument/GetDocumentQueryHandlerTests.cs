@@ -286,6 +286,7 @@ public sealed class GetDocumentQueryHandlerTests
         handlerException.ShouldBeNull($"Handler threw unexpectedly: {handlerException?.GetType().Name}");
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Document.NotFound");
-        result.FirstError.Description.ShouldBe($"Document with name '{documentName}' was not found.");
+        result.FirstError.Description.ShouldBe("Document was not found.");
+        result.FirstError.Metadata!["DocumentName"].ShouldBe(documentName);
     }
 }

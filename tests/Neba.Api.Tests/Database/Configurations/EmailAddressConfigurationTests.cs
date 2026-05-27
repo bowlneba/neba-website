@@ -28,6 +28,7 @@ public sealed class EmailAddressConfigurationTests
     [Fact(DisplayName = "email_address is varchar(255), not nullable")]
     public void HasEmailAddress_ShouldConfigureValueColumn()
     {
+        // Act & Assert
         _valueProperty.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("email_address");
         _valueProperty.GetMaxLength().ShouldBe(255);
         _valueProperty.IsNullable.ShouldBeFalse();

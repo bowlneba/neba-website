@@ -1,0 +1,148 @@
+.page {
+    max-width: 1150px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+}
+
+/* Hero */
+.hero {
+    background: var(--tournaments-hero-gradient);
+    border-radius: var(--radius-xl);
+    padding: 3rem 2.5rem 3.5rem;
+    color: #fff;
+    margin-bottom: 2rem;
+}
+
+.hero h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #fff;
+    margin: 0 0 1.75rem;
+}
+
+.hero-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2.5rem;
+}
+
+.hero-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.hero-stat__num {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+}
+
+.hero-stat__label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.72);
+}
+
+/* Toolbar */
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.toolbar-spacer {
+    flex: 1;
+}
+
+.toolbar-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.toolbar-btn {
+    padding: 0.4rem 0.9rem;
+    border: 1px solid var(--neba-gray-200);
+    border-radius: var(--radius-md);
+    background: #fff;
+    color: var(--neba-gray-700);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.toolbar-btn:hover {
+    background: var(--neba-gray-050);
+    border-color: var(--neba-gray-300);
+}
+
+/* Segmented control */
+.segmented {
+    display: inline-flex;
+    background: var(--neba-gray-100);
+    border-radius: var(--radius-md);
+    padding: 3px;
+    gap: 2px;
+}
+
+.segmented__btn {
+    padding: 0.35rem 1rem;
+    border: none;
+    border-radius: calc(var(--radius-md) - 2px);
+    background: transparent;
+    color: var(--neba-gray-600);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.segmented__btn.is-active {
+    background: #fff;
+    color: var(--neba-blue-700);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* View visibility */
+.view {
+    display: none;
+}
+
+.view.is-active {
+    display: block;
+}
+
+/* Hero skeleton stat placeholders */
+.hero-stat-skeleton__num {
+    width: 3rem;
+    height: 2rem;
+    margin-bottom: 0.25rem;
+    opacity: 0.35;
+}
+
+.hero-stat-skeleton__label {
+    width: 5.5rem;
+    height: 0.65rem;
+    opacity: 0.25;
+}
+
+/* Disable cursor on toolbar buttons when busy */
+.toolbar-btn:disabled,
+.segmented__btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+@media (max-width: 760px) {
+    .hero              { padding: 2.25rem 1.5rem 2.5rem; }
+    .hero h1           { font-size: 2.4rem; }
+    .hero-stats        { gap: 1.5rem; }
+    .hero-stat__num    { font-size: 1.5rem; }
+}

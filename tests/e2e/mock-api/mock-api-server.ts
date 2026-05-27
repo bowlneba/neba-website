@@ -445,6 +445,57 @@ function createStatsResponse(selectedYear: number): object {
   };
 }
 
+const MOCK_TOURNAMENT_CHAMPIONS = {
+  items: [
+    {
+      tournamentId: '01JX0000000000000000000010',
+      tournamentName: 'NEBA Spring Classic',
+      tournamentDate: '2024-04-20',
+      tournamentType: 'Singles',
+      champions: [
+        { bowlerId: PRIMARY_BOWLER_ID, bowlerName: 'Current Leader', hallOfFame: true },
+      ],
+    },
+    {
+      tournamentId: '01JX0000000000000000000011',
+      tournamentName: 'NEBA Fall Doubles',
+      tournamentDate: '2024-10-15',
+      tournamentType: 'Doubles',
+      champions: [
+        { bowlerId: PRIMARY_BOWLER_ID, bowlerName: 'Current Leader', hallOfFame: true },
+        { bowlerId: SECONDARY_BOWLER_ID, bowlerName: 'Current Rival', hallOfFame: false },
+      ],
+    },
+    {
+      tournamentId: '01JX0000000000000000000012',
+      tournamentName: 'NEBA Winter Classic',
+      tournamentDate: '2023-01-21',
+      tournamentType: 'Singles',
+      champions: [
+        { bowlerId: SECONDARY_BOWLER_ID, bowlerName: 'Current Rival', hallOfFame: false },
+      ],
+    },
+  ],
+};
+
+const MOCK_BOWLER_TITLES_CURRENT_LEADER = {
+  bowlerName: 'Current Leader',
+  hallOfFame: true,
+  titles: [
+    { tournamentId: '01JX0000000000000000000010', tournamentName: 'NEBA Spring Classic', tournamentDate: '2024-04-20', tournamentType: 'Singles' },
+    { tournamentId: '01JX0000000000000000000011', tournamentName: 'NEBA Fall Doubles', tournamentDate: '2024-10-15', tournamentType: 'Doubles' },
+  ],
+};
+
+const MOCK_BOWLER_TITLES_CURRENT_RIVAL = {
+  bowlerName: 'Current Rival',
+  hallOfFame: false,
+  titles: [
+    { tournamentId: '01JX0000000000000000000011', tournamentName: 'NEBA Fall Doubles', tournamentDate: '2024-10-15', tournamentType: 'Doubles' },
+    { tournamentId: '01JX0000000000000000000012', tournamentName: 'NEBA Winter Classic', tournamentDate: '2023-01-21', tournamentType: 'Singles' },
+  ],
+};
+
 export const MOCK_SEASONS = {
   items: [
     {
@@ -483,6 +534,10 @@ function resolveGetRoute(pathname: string, searchParams: URLSearchParams): objec
     return seasonId === MOCK_SEASON_ID ? MOCK_SEASON_TOURNAMENTS : null;
   }
 
+  if (pathname === '/tournaments/champions') return MOCK_TOURNAMENT_CHAMPIONS;
+  if (pathname === `/bowlers/${PRIMARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_LEADER;
+  if (pathname === `/bowlers/${SECONDARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_RIVAL;
+
   if (pathname.startsWith('/tournaments/')) {
     const tournamentId = pathname.slice('/tournaments/'.length);
     return tournamentId === MOCK_TOURNAMENT_ID ? MOCK_TOURNAMENT_DETAIL : null;
@@ -491,7 +546,14 @@ function resolveGetRoute(pathname: string, searchParams: URLSearchParams): objec
   return routes[pathname] ?? null;
 }
 
-function handleRequest(req: IncomingMessage, res: ServerResponse): void {
+interface MockOverride {
+  status?: number;
+  delayMs?: number;
+}
+
+const mockOverrides = new Map<string, MockOverride>();
+
+async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
   setCorsHeaders(res);
 
   if (req.method === 'OPTIONS') {
@@ -500,9 +562,50 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
     return;
   }
 
+  const requestUrl = new URL(req.url ?? '/', 'http://localhost');
+  const pathname = requestUrl.pathname;
+
+  if (req.method === 'POST') {
+    if (pathname === '/__mock/fail') {
+      const path = requestUrl.searchParams.get('path') ?? '';
+      const status = Number.parseInt(requestUrl.searchParams.get('status') ?? '500', 10);
+      mockOverrides.set(path, { ...mockOverrides.get(path), status });
+      res.writeHead(200);
+      res.end();
+      return;
+    }
+
+    if (pathname === '/__mock/delay') {
+      const path = requestUrl.searchParams.get('path') ?? '';
+      const ms = Number.parseInt(requestUrl.searchParams.get('ms') ?? '0', 10);
+      mockOverrides.set(path, { ...mockOverrides.get(path), delayMs: ms });
+      res.writeHead(200);
+      res.end();
+      return;
+    }
+
+    if (pathname === '/__mock/reset') {
+      mockOverrides.clear();
+      res.writeHead(200);
+      res.end();
+      return;
+    }
+  }
+
   if (req.method === 'GET') {
-    const requestUrl = new URL(req.url ?? '/', 'http://localhost');
-    const data = resolveGetRoute(requestUrl.pathname, requestUrl.searchParams);
+    const override = mockOverrides.get(pathname);
+
+    const delayMs = override?.delayMs;
+    if (delayMs) {
+      await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    if (override?.status != null && override.status >= 400) {
+      sendJsonResponse(res, { error: 'Mock error' }, override.status);
+      return;
+    }
+
+    const data = resolveGetRoute(pathname, requestUrl.searchParams);
     if (data !== null) {
       sendJsonResponse(res, data);
       return;

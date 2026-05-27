@@ -390,6 +390,7 @@ public sealed class ApiExecutorTests
     [Fact(DisplayName = "Should return NotFound error for 404 response")]
     public async Task ExecuteAsync_ShouldReturnNotFoundError_For404()
     {
+        // Arrange
         const string apiName = "TestApi";
         const string operationName = "GetData";
         const long startTimestamp = 1000;
@@ -403,11 +404,13 @@ public sealed class ApiExecutorTests
         _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
         _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(TimeSpan.FromMilliseconds(50));
 
+        // Act
         var result = await _executor.ExecuteAsync(
             apiName, operationName,
             _ => Task.FromResult(apiResponseMock.Object),
             cancellationToken);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe($"{apiName}.{operationName}.NotFound");
         result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.NotFound);

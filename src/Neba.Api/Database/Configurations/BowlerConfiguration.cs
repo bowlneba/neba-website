@@ -67,5 +67,6 @@ internal sealed class BowlerConfiguration
 
         builder.Property(bowler => bowler.DateOfBirth)
             .IsRequired(false);
+
     }
 }

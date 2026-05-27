@@ -28,14 +28,17 @@ public sealed class TournamentValidationServiceTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "IsTournamentValidForSeasonAsync returns SeasonNotFound when season does not exist")]
     public async Task IsTournamentValidForSeasonAsync_ShouldReturnSeasonNotFound_WhenSeasonMissing()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var missingSeasonId = SeasonId.New();
         var tournament = TournamentFactory.Create(seasonId: missingSeasonId);
 
         var service = new TournamentValidationService(_dbContext);
 
+        // Act
         var result = await service.IsTournamentValidForSeasonAsync(tournament, missingSeasonId, ct);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Season.NotFound");
     }
@@ -43,6 +46,7 @@ public sealed class TournamentValidationServiceTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "IsTournamentValidForSeasonAsync returns Success when tournament dates are within season dates")]
     public async Task IsTournamentValidForSeasonAsync_ShouldReturnSuccess_WhenDatesAreValid()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var season = SeasonFactory.Create(
             startDate: new DateOnly(2025, 1, 1),
@@ -57,14 +61,17 @@ public sealed class TournamentValidationServiceTests(PostgreSqlFixture fixture)
 
         var service = new TournamentValidationService(_dbContext);
 
+        // Act
         var result = await service.IsTournamentValidForSeasonAsync(tournament, season.Id, ct);
 
+        // Assert
         result.IsError.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "IsTournamentValidForSeasonAsync returns error when tournament starts before season")]
     public async Task IsTournamentValidForSeasonAsync_ShouldReturnError_WhenStartDateBeforeSeason()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var season = SeasonFactory.Create(
             startDate: new DateOnly(2025, 1, 1),
@@ -79,8 +86,10 @@ public sealed class TournamentValidationServiceTests(PostgreSqlFixture fixture)
 
         var service = new TournamentValidationService(_dbContext);
 
+        // Act
         var result = await service.IsTournamentValidForSeasonAsync(tournament, season.Id, ct);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Tournament.InvalidDatesForSeason");
     }
@@ -88,6 +97,7 @@ public sealed class TournamentValidationServiceTests(PostgreSqlFixture fixture)
     [Fact(DisplayName = "IsTournamentValidForSeasonAsync returns error when tournament ends after season")]
     public async Task IsTournamentValidForSeasonAsync_ShouldReturnError_WhenEndDateAfterSeason()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var season = SeasonFactory.Create(
             startDate: new DateOnly(2025, 1, 1),
@@ -102,8 +112,10 @@ public sealed class TournamentValidationServiceTests(PostgreSqlFixture fixture)
 
         var service = new TournamentValidationService(_dbContext);
 
+        // Act
         var result = await service.IsTournamentValidForSeasonAsync(tournament, season.Id, ct);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Tournament.InvalidDatesForSeason");
     }

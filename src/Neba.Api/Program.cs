@@ -53,10 +53,17 @@ app.UseInfrastructure();
 app.MapGet("/debug/cache", async (
     ZiggyCreatures.Caching.Fusion.IFusionCache fusionCache,
     Microsoft.Extensions.Caching.Hybrid.HybridCache hybridCache,
+    Neba.Api.Storage.IFileStorageService storageService,
+    Neba.Api.Documents.GoogleSettings googleSettings,
     CancellationToken ct) =>
 {
     await fusionCache.RemoveByTagAsync("neba", token: ct);
     await hybridCache.RemoveByTagAsync("neba", ct);
+
+    var deleteTasks = googleSettings.Documents
+        .Select(doc => storageService.DeleteAsync("bowlneba-private", $"documents/{doc.Name}", ct));
+    await Task.WhenAll(deleteTasks);
+
     return Results.Ok("Cache cleared.");
 }).AllowAnonymous();
 #endif

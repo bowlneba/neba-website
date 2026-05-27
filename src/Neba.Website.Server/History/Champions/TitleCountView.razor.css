@@ -1,0 +1,187 @@
+.tier-section {
+    margin-bottom: 2rem;
+}
+
+.tier-section:first-child {
+    margin-top: 0;
+}
+
+/* Tier header */
+.tier-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.tier-head__chevron {
+    display: flex;
+    align-items: center;
+    color: var(--neba-gray-500);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.tier-section.is-collapsed .tier-head__chevron {
+    transform: rotate(-90deg);
+}
+
+.tier-head__rule {
+    flex: 1;
+    height: 1px;
+    background: var(--neba-gray-200);
+}
+
+.tier-head__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--t-ink);
+    margin: 0;
+    white-space: nowrap;
+}
+
+.tier-head__range {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--neba-gray-500);
+    margin-left: 0.5rem;
+}
+
+.tier-head__count {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--neba-gray-500);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Tier body */
+.tier-body {
+    padding: 0.5rem 0 0.25rem;
+}
+
+.tier-section.is-collapsed .tier-body {
+    display: none;
+}
+
+/* Count sub-groups */
+.count-group {
+    margin-bottom: 1.25rem;
+}
+
+.count-group__head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.25rem 0 0.5rem;
+    border-bottom: 1px solid var(--neba-gray-100);
+    margin-bottom: 0.6rem;
+}
+
+.count-group__num {
+    font-size: 1.1rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--t-ink);
+}
+
+.count-group__label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--neba-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.count-group__tally {
+    margin-left: auto;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--neba-gray-400);
+}
+
+.count-group__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.5rem;
+}
+
+/* Bowler cards */
+.bowler-card {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--tier-std-ring);
+    border-radius: var(--radius-lg);
+    background: var(--tier-std-bg);
+    color: var(--tier-std-ink);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: box-shadow 0.15s, transform 0.15s;
+    box-shadow: var(--shadow-card);
+}
+
+.bowler-card:hover {
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-1px);
+}
+
+.bowler-card__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.bowler-card__name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: block;
+    word-break: break-word;
+}
+
+.bowler-card__count {
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    opacity: 0.6;
+}
+
+.bowler-card__chev {
+    flex-shrink: 0;
+    color: currentColor;
+    opacity: 0.4;
+}
+
+/* Elite tier overrides */
+.tier-section[data-tier="elite"] .bowler-card {
+    background: var(--tier-elite-bg);
+    color: var(--tier-elite-ink);
+    border-color: var(--tier-elite-ring);
+}
+
+.tier-section[data-tier="elite"] .count-group__num,
+.tier-section[data-tier="elite"] .count-group__label {
+    color: var(--tier-elite-ink);
+}
+
+/* Mid (Decorated) tier overrides */
+.tier-section[data-tier="mid"] .bowler-card {
+    background: var(--tier-mid-bg);
+    color: var(--tier-mid-ink);
+    border-color: var(--tier-mid-ring);
+}
+
+.hof-badge {
+    height: 1.25rem;
+    width: auto;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+@media (max-width: 760px) {
+    .tier-head__title { font-size: 1.1rem; }
+    .tier-head__range { display: block; margin-left: 0; font-size: 0.82rem; }
+}

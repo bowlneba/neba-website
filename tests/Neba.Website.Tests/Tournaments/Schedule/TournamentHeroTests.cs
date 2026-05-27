@@ -17,11 +17,14 @@ public sealed class TournamentHeroTests : IDisposable
     [Fact(DisplayName = "Should render register CTA and status pill when registration is available")]
     public void Render_ShouldShowRegisterLink_WhenRegistrationUrlExists()
     {
+        // Arrange
         var tournament = SeasonTournamentViewModelFactory.Create();
 
+        // Act
         var cut = _ctx.Render<TournamentHero>(parameters => parameters
             .Add(p => p.Tournament, tournament));
 
+        // Assert
         cut.Markup.ShouldContain("Register Now");
         cut.Markup.ShouldContain("Registration open");
         cut.Markup.ShouldContain(tournament.Name);
@@ -30,21 +33,25 @@ public sealed class TournamentHeroTests : IDisposable
     [Fact(DisplayName = "Should render disabled registration CTA when registration is unavailable")]
     public void Render_ShouldShowDisabledRegistration_WhenRegistrationUrlMissing()
     {
+        // Arrange
         var tournament = SeasonTournamentViewModelFactory.Create() with
         {
             RegistrationUrl = null,
             RegistrationStatus = null,
         };
 
+        // Act
         var cut = _ctx.Render<TournamentHero>(parameters => parameters
             .Add(p => p.Tournament, tournament));
 
+        // Assert
         cut.Markup.ShouldContain("Registration opens soon");
     }
 
     [Fact(DisplayName = "Should show sponsorship available and host TBA fallbacks when data missing")]
     public void Render_ShouldShowFallbackCopy_WhenSponsorAndHostMissing()
     {
+        // Arrange
         var tournament = SeasonTournamentViewModelFactory.Create() with
         {
             Sponsor = null,
@@ -52,9 +59,11 @@ public sealed class TournamentHeroTests : IDisposable
             BowlingCenterCity = null,
         };
 
+        // Act
         var cut = _ctx.Render<TournamentHero>(parameters => parameters
             .Add(p => p.Tournament, tournament));
 
+        // Assert
         cut.Markup.ShouldContain("Sponsorship available");
         cut.Markup.ShouldContain("To be announced");
     }

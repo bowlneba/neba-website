@@ -12,12 +12,14 @@ public sealed class TournamentRoundTests
     [Fact(DisplayName = "Should have 4 tournament rounds")]
     public void TournamentRound_ShouldHave4Rounds()
     {
+        // Act & Assert
         TournamentRound.List.Count.ShouldBe(4);
     }
 
     [Fact(DisplayName = "Round bit values should be non-overlapping powers of two")]
     public void TournamentRound_RoundValues_ShouldBeCorrectPowersOfTwo()
     {
+        // Act & Assert
         TournamentRound.Qualifying.Value.ShouldBe(1);
         TournamentRound.Cashers.Value.ShouldBe(2);
         TournamentRound.MatchPlay.Value.ShouldBe(4);
@@ -31,8 +33,10 @@ public sealed class TournamentRoundTests
     [InlineData("Step Ladder", 8, TestDisplayName = "Step Ladder should have value 8")]
     public void TournamentRound_ShouldHaveCorrectProperties(string expectedName, int expectedValue)
     {
+        // Act
         var round = SmartFlagEnum<TournamentRound>.FromValue(expectedValue).First();
 
+        // Assert
         round.Name.ShouldBe(expectedName);
         round.Value.ShouldBe(expectedValue);
     }
@@ -45,10 +49,13 @@ public sealed class TournamentRoundTests
     [InlineData(15, new[] { "Qualifying", "Cashers", "Match Play", "Step Ladder" }, TestDisplayName = "All four flags combined resolves to all four")]
     public void TournamentRound_ShouldResolveCorrectFlags_WhenValueIsCombined(int combinedValue, string[] expectedNames)
     {
+        // Arrange
         ArgumentNullException.ThrowIfNull(expectedNames);
 
+        // Act
         var flags = SmartFlagEnum<TournamentRound>.FromValue(combinedValue).ToList();
 
+        // Assert
         flags.Count.ShouldBe(expectedNames.Length);
         foreach (var name in expectedNames)
         {

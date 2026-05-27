@@ -1,0 +1,152 @@
+@using Neba.Api.Contracts.Bowlers
+@using Neba.Website.Server.History.Champions
+@using Neba.Website.Server.Services
+
+@inject ApiExecutor ApiExecutor
+
+<NebaModal IsOpen="@IsOpen" OnClose="@OnClose" MaxWidth="680px">
+    <HeaderContent>
+        <div class="modal-title-wrap">
+            <span class="modal-eyebrow">Champion record</span>
+            <h2 class="modal-title font-display">@BowlerName</h2>
+        </div>
+        <div class="modal-summary-inline">
+            <span class="modal-summary-inline__count">@TitleCount</span>
+            <span class="modal-summary-inline__label">titles</span>
+            @if (HallOfFame)
+            {
+                <img src="/images/neba-hof.jpg" class="hof-badge" alt="Hall of Fame" />
+            }
+        </div>
+    </HeaderContent>
+    <ChildContent>
+        <div class="modal-summary-card">
+            <span class="modal-summary-card__count">@TitleCount</span>
+            <div class="modal-summary-card__meta">
+                <span class="modal-summary-card__label">Career titles</span>
+                <span class="modal-summary-card__name">@BowlerName</span>
+            </div>
+            @if (HallOfFame)
+            {
+                <img src="/images/neba-hof.jpg" class="hof-badge" alt="Hall of Fame" />
+            }
+        </div>
+
+        <div class="modal-body">
+            @if (_state == ModalState.Loading)
+            {
+                <div class="modal-state is-active">
+                    <NebaLoadingIndicator />
+                    <div class="modal-state__text">Loading title history…</div>
+                </div>
+            }
+            else if (_state == ModalState.Error)
+            {
+                <div class="modal-state is-active">
+                    <span class="msym">error</span>
+                    <h3 class="modal-state__title">Couldn't load titles</h3>
+                    <div class="modal-state__text">
+                        Something went wrong fetching this bowler's record.
+                    </div>
+                    <button class="modal-state__retry" @onclick="RetryAsync">Retry</button>
+                </div>
+            }
+            else
+            {
+                <table class="titles-table">
+                    <thead>
+                        <tr>
+                            <th class="tt-num">#</th>
+                            <th class="tt-tourn">Tournament</th>
+                            <th class="tt-date">Date</th>
+                            <th class="tt-type">Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ var sorted = GetSortedTitles(); }
+                        @for (int i = 0; i < sorted.Count; i++)
+                        {
+                            var title  = sorted[i];
+                            var rowNum = sorted.Count - i;
+                            <tr @key="@title.TournamentId">
+                                <td class="tt-num">@rowNum</td>
+                                <td class="tt-tourn">
+                                    <a href="/tournaments/@title.TournamentId">
+                                        @title.TournamentName
+                                    </a>
+                                </td>
+                                <td class="tt-date">@title.TournamentDate</td>
+                                <td class="tt-type">
+                                    <span class="@("type-pill " + ChampionsHelpers.TypePillClass(title.TournamentType))">
+                                        @title.TournamentType
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </ChildContent>
+</NebaModal>
+
+@code {
+    [Parameter, EditorRequired]
+    public bool IsOpen { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter, EditorRequired]
+    public IBowlersApi BowlersApi { get; set; } = default!;
+
+    [Parameter] public string? BowlerId   { get; set; }
+    [Parameter] public string? BowlerName { get; set; }
+    [Parameter] public int     TitleCount { get; set; }
+    [Parameter] public bool    HallOfFame { get; set; }
+
+    private enum ModalState { Loading, Error, Data }
+
+    private ModalState             _state = ModalState.Loading;
+    private BowlerTitlesViewModel? _data;
+    private string?                _lastLoadedBowlerId;
+
+    private IReadOnlyList<TitleViewModel> GetSortedTitles() =>
+        _data is null ? [] : [.. _data.Titles];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!IsOpen || BowlerId is null || BowlerId == _lastLoadedBowlerId)
+            return;
+
+        await LoadTitlesAsync();
+    }
+
+    private async Task LoadTitlesAsync()
+    {
+        _lastLoadedBowlerId = BowlerId;
+        _state = ModalState.Loading;
+        _data  = null;
+        StateHasChanged();
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "BowlersApi",
+            nameof(LoadTitlesAsync),
+            ct => BowlersApi.GetBowlerTitlesAsync(BowlerId!, ct));
+
+        if (result.IsError)
+        {
+            _state = ModalState.Error;
+            return;
+        }
+
+        _data  = result.Value.ToViewModel();
+        _state = ModalState.Data;
+    }
+
+    private Task RetryAsync()
+    {
+        _lastLoadedBowlerId = null;
+        return LoadTitlesAsync();
+    }
+}

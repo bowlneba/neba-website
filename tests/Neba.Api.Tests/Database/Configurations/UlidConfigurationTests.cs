@@ -16,48 +16,60 @@ public sealed class UlidConfigurationTests
     [Fact(DisplayName = "default column name maps to domain_id")]
     public void IsUlid_ShouldConfigureDefaultColumnName()
     {
+        // Act
         var property = BuildProperty();
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("domain_id");
     }
 
     [Fact(DisplayName = "max length is 26")]
     public void IsUlid_ShouldSetMaxLength()
     {
+        // Act
         var property = BuildProperty();
 
+        // Assert
         property.GetMaxLength().ShouldBe(26);
     }
 
     [Fact(DisplayName = "is fixed length char(26)")]
     public void IsUlid_ShouldBeFixedLength()
     {
+        // Act
         var property = BuildProperty();
 
+        // Assert
         property.IsFixedLength().ShouldBe(true);
     }
 
     [Fact(DisplayName = "value is never generated")]
     public void IsUlid_ShouldConfigureValueGeneratedNever()
     {
+        // Act
         var property = BuildProperty();
 
+        // Assert
         property.ValueGenerated.ShouldBe(ValueGenerated.Never);
     }
 
     [Fact(DisplayName = "custom column name is applied")]
     public void IsUlid_ShouldApplyCustomColumnName()
     {
+        // Act
         var property = BuildProperty("custom_id");
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("custom_id");
     }
 
     [Fact(DisplayName = "value converter is configured")]
     public void IsUlid_ShouldConfigureValueConverter()
     {
+        // Act
         var property = BuildProperty();
 
+        // Assert
         property.GetValueConverter().ShouldBeOfType<UlidTypedIdConverter<TestId>>();
     }
 

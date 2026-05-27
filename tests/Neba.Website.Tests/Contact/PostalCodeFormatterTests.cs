@@ -14,8 +14,10 @@ public sealed class PostalCodeFormatterTests
     [InlineData("K1A0A9", "K1A 0A9")]
     public void FormatForDisplay_ShouldFormat_WhenPostalCodeNeedsFormatting(string postalCode, string expected)
     {
+        // Act
         var result = PostalCodeFormatter.FormatForDisplay(postalCode);
 
+        // Assert
         result.ShouldBe(expected);
     }
 
@@ -27,8 +29,10 @@ public sealed class PostalCodeFormatterTests
     [InlineData("A1B2C3D")]
     public void FormatForDisplay_ShouldReturnAsIs_WhenPostalCodeNeedsNoFormatting(string postalCode)
     {
+        // Act
         var result = PostalCodeFormatter.FormatForDisplay(postalCode);
 
+        // Assert
         result.ShouldBe(postalCode);
     }
 
@@ -39,8 +43,10 @@ public sealed class PostalCodeFormatterTests
     [InlineData("   ")]
     public void FormatForDisplay_ShouldThrow_WhenPostalCodeIsNullOrWhiteSpace(string postalCode)
     {
+        // Act
         var act = () => PostalCodeFormatter.FormatForDisplay(postalCode);
 
+        // Assert
         act.ShouldThrow<ArgumentException>();
     }
 #nullable enable

@@ -17,8 +17,10 @@ public sealed class PhoneNumberFormatterTests
     [InlineData("1-203-555-0430x99", "(203) 555-0430 x99")]
     public void FormatForDisplay_ShouldFormat_WhenPhoneNumberIsValid(string rawNumber, string expected)
     {
+        // Act
         var result = PhoneNumberFormatter.FormatForDisplay(rawNumber);
 
+        // Assert
         result.ShouldBe(expected);
     }
 
@@ -31,8 +33,10 @@ public sealed class PhoneNumberFormatterTests
     [InlineData("32035550430")]
     public void FormatForDisplay_ShouldReturnRawNumber_WhenPhoneCannotBeFormatted(string rawNumber)
     {
+        // Act
         var result = PhoneNumberFormatter.FormatForDisplay(rawNumber);
 
+        // Assert
         result.ShouldBe(rawNumber);
     }
 
@@ -43,8 +47,10 @@ public sealed class PhoneNumberFormatterTests
     [InlineData("   ")]
     public void FormatForDisplay_ShouldThrow_WhenPhoneNumberIsNullOrWhiteSpace(string rawNumber)
     {
+        // Act
         var act = () => PhoneNumberFormatter.FormatForDisplay(rawNumber);
 
+        // Assert
         act.ShouldThrow<ArgumentException>();
     }
 #nullable enable

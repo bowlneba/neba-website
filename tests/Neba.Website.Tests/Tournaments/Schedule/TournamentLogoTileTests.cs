@@ -16,6 +16,7 @@ public sealed class TournamentLogoTileTests : IDisposable
     [Fact(DisplayName = "Should render expected aria label and variant class")]
     public void Render_ShouldShowAriaLabelAndVariant_WhenParametersProvided()
     {
+        // Act
         var cut = _ctx.Render<TournamentLogoTile>(parameters => parameters
             .Add(p => p.TournamentName, "Granite Open")
             .Add(p => p.Season, "2026")
@@ -23,6 +24,7 @@ public sealed class TournamentLogoTileTests : IDisposable
             .Add(p => p.Variant, LogoTileVariant.Muted)
             .Add(p => p.CssClass, "extra-class"));
 
+        // Assert
         (cut.Find(".tournament-logo-tile").GetAttribute("aria-label") ?? string.Empty).ShouldContain("Granite Open");
         cut.Markup.ShouldContain("tournament-logo-tile--muted");
         cut.Markup.ShouldContain("extra-class");

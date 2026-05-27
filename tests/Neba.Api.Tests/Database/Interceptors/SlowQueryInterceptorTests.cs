@@ -64,33 +64,42 @@ public sealed class SlowQueryInterceptorTests
     [Fact(DisplayName = "Logs warning when duration exceeds threshold")]
     public void ReaderExecuted_WhenDurationExceedsThreshold_LogsWarning()
     {
+        // Arrange
         var logger = new FakeLogger<SlowQueryInterceptor>();
 
+        // Act
         CreateInterceptor(logger).ReaderExecuted(
             CreateCommand(), MakeEventData(AboveThreshold), null!);
 
+        // Assert
         logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
     }
 
     [Fact(DisplayName = "Does not log when duration is below threshold")]
     public void ReaderExecuted_WhenDurationBelowThreshold_DoesNotLog()
     {
+        // Arrange
         var logger = new FakeLogger<SlowQueryInterceptor>();
 
+        // Act
         CreateInterceptor(logger).ReaderExecuted(
             CreateCommand(), MakeEventData(BelowThreshold), null!);
 
+        // Assert
         logger.Collector.GetSnapshot().ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Logs warning when duration equals threshold exactly")]
     public void ReaderExecuted_WhenDurationEqualsThreshold_LogsWarning()
     {
+        // Arrange
         var logger = new FakeLogger<SlowQueryInterceptor>();
 
+        // Act
         CreateInterceptor(logger).ReaderExecuted(
             CreateCommand(), MakeEventData(AtThreshold), null!);
 
+        // Assert
         logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
     }
 
@@ -99,55 +108,70 @@ public sealed class SlowQueryInterceptorTests
     [Fact(DisplayName = "ReaderExecutedAsync logs warning when duration exceeds threshold")]
     public async Task ReaderExecutedAsync_WhenDurationExceedsThreshold_LogsWarning()
     {
+        // Arrange
         var logger = new FakeLogger<SlowQueryInterceptor>();
 
+        // Act
         await CreateInterceptor(logger).ReaderExecutedAsync(
             CreateCommand(), MakeEventData(AboveThreshold), null!, CancellationToken.None);
 
+        // Assert
         logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
     }
 
     [Fact(DisplayName = "NonQueryExecuted logs warning when duration exceeds threshold")]
     public void NonQueryExecuted_WhenDurationExceedsThreshold_LogsWarning()
     {
+        // Arrange
         var logger = new FakeLogger<SlowQueryInterceptor>();
 
+        // Act
         CreateInterceptor(logger).NonQueryExecuted(
             CreateCommand("DELETE FROM x WHERE 1=0"), MakeEventData(AboveThreshold), 0);
 
+        // Assert
         logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
     }
 
     [Fact(DisplayName = "NonQueryExecutedAsync logs warning when duration exceeds threshold")]
     public async Task NonQueryExecutedAsync_WhenDurationExceedsThreshold_LogsWarning()
     {
+        // Arrange
         var logger = new FakeLogger<SlowQueryInterceptor>();
 
+        // Act
         await CreateInterceptor(logger).NonQueryExecutedAsync(
             CreateCommand("DELETE FROM x WHERE 1=0"), MakeEventData(AboveThreshold), 0, CancellationToken.None);
 
+        // Assert
         logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
     }
 
     [Fact(DisplayName = "ScalarExecuted logs warning when duration exceeds threshold")]
     public void ScalarExecuted_WhenDurationExceedsThreshold_LogsWarning()
     {
+        // Arrange
         var logger = new FakeLogger<SlowQueryInterceptor>();
 
+        // Act
         CreateInterceptor(logger).ScalarExecuted(
             CreateCommand("SELECT COUNT(*)"), MakeEventData(AboveThreshold), null);
 
+        // Assert
         logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
     }
 
     [Fact(DisplayName = "ScalarExecutedAsync logs warning when duration exceeds threshold")]
     public async Task ScalarExecutedAsync_WhenDurationExceedsThreshold_LogsWarning()
     {
+        // Arrange
         var logger = new FakeLogger<SlowQueryInterceptor>();
 
+        // Act
         await CreateInterceptor(logger).ScalarExecutedAsync(
             CreateCommand("SELECT COUNT(*)"), MakeEventData(AboveThreshold), null, CancellationToken.None);
 
+        // Assert
         logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
     }
 
@@ -156,12 +180,15 @@ public sealed class SlowQueryInterceptorTests
     [Fact(DisplayName = "Truncates query text exceeding 2000 characters in the log message")]
     public void ReaderExecuted_WhenCommandTextExceedsLimit_TruncatesInLog()
     {
+        // Arrange
         var logger = new FakeLogger<SlowQueryInterceptor>();
         var longSql = "SELECT 1 FROM x WHERE id IN (" + new string('x', 2100) + ")";
 
+        // Act
         CreateInterceptor(logger).ReaderExecuted(
             CreateCommand(longSql), MakeEventData(AboveThreshold), null!);
 
+        // Assert
         var record = logger.Collector.GetSnapshot().ShouldHaveSingleItem();
         var commandText = record.GetStructuredStateValue("CommandText")?.ToString();
 

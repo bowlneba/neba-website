@@ -12,8 +12,10 @@ public sealed class ListTournamentsInSeasonRequestValidatorTests
     [Fact(DisplayName = "Validate should succeed when SeasonId is a valid 26-character ULID")]
     public void Validate_ShouldSucceed_WhenSeasonIdIsValid()
     {
+        // Act
         var result = _validator.Validate(new ListTournamentsInSeasonRequest { SeasonId = "01000000000000000000000001" });
 
+        // Assert
         result.IsValid.ShouldBeTrue();
         result.Errors.ShouldBeEmpty();
     }
@@ -37,8 +39,10 @@ public sealed class ListTournamentsInSeasonRequestValidatorTests
     [InlineData("   ")]
     public void Validate_ShouldFail_WhenSeasonIdIsEmptyOrWhitespace(string seasonId)
     {
+        // Act
         var result = _validator.Validate(new ListTournamentsInSeasonRequest { SeasonId = seasonId });
 
+        // Assert
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e =>
             e.PropertyName == nameof(ListTournamentsInSeasonRequest.SeasonId)
@@ -51,8 +55,10 @@ public sealed class ListTournamentsInSeasonRequestValidatorTests
     [InlineData("01000000000000000000000001EXTRA")]
     public void Validate_ShouldFail_WhenSeasonIdIsNotCorrectLength(string seasonId)
     {
+        // Act
         var result = _validator.Validate(new ListTournamentsInSeasonRequest { SeasonId = seasonId });
 
+        // Assert
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e =>
             e.PropertyName == nameof(ListTournamentsInSeasonRequest.SeasonId)

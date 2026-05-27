@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 
 using Neba.Api.Contracts.Awards;
+using Neba.Api.Contracts.Bowlers;
 using Neba.Api.Contracts.BowlingCenters;
 using Neba.Api.Contracts.Documents;
 using Neba.Api.Contracts.HallOfFame;
@@ -48,11 +49,12 @@ internal static class ApiServicesConfiguration
             services.RegisterApiEndpoint<ISponsorsApi>();
             services.RegisterApiEndpoint<IStatsApi>();
             services.RegisterApiEndpoint<ITournamentsApi>();
+            services.RegisterApiEndpoint<IBowlersApi>();
 
             return services;
         }
 
-        private IServiceCollection RegisterApiEndpoint<TApi>()
+        private void RegisterApiEndpoint<TApi>()
             where TApi : class
         {
             services
@@ -62,8 +64,6 @@ internal static class ApiServicesConfiguration
                     var apiConfig = sp.GetRequiredService<NebaApiConfiguration>();
                     client.BaseAddress = apiConfig.BaseUrl;
                 });
-
-            return services;
         }
     }
 }

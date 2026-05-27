@@ -28,18 +28,22 @@ public sealed class ListBowlingCentersQueryHandlerTests(PostgreSqlFixture fixtur
     [Fact(DisplayName = "HandleAsync returns empty collection when no bowling centers exist")]
     public async Task HandleAsync_ShouldReturnEmpty_WhenNoBowlingCentersExist()
     {
+        // Arrange
         var handler = new ListBowlingCentersQueryHandler(_dbContext);
 
+        // Act
         var result = await handler.HandleAsync(
             new ListBowlingCentersQuery(),
             TestContext.Current.CancellationToken);
 
+        // Assert
         result.ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "HandleAsync returns bowling center with correct fields when data exists")]
     public async Task HandleAsync_ShouldReturnCenter_WithCorrectFields_WhenDataExists()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var address = AddressFactory.CreateUsAddress(
             street: "100 Bowling Dr",
@@ -54,8 +58,10 @@ public sealed class ListBowlingCentersQueryHandlerTests(PostgreSqlFixture fixtur
 
         var handler = new ListBowlingCentersQueryHandler(_dbContext);
 
+        // Act
         var result = await handler.HandleAsync(new ListBowlingCentersQuery(), ct);
 
+        // Assert
         result.ShouldHaveSingleItem();
         var dto = result.Single();
         dto.Name.ShouldBe("Test Lanes");
@@ -68,6 +74,7 @@ public sealed class ListBowlingCentersQueryHandlerTests(PostgreSqlFixture fixtur
     [Fact(DisplayName = "HandleAsync returns only open bowling centers when multiple exist")]
     public async Task HandleAsync_ShouldReturnOnlyOpenCenters_WhenMultipleExist()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         const int seed = 21;
         var centers = BowlingCenterFactory.Bogus(10, seed);
@@ -76,8 +83,10 @@ public sealed class ListBowlingCentersQueryHandlerTests(PostgreSqlFixture fixtur
 
         var handler = new ListBowlingCentersQueryHandler(_dbContext);
 
+        // Act
         var result = await handler.HandleAsync(new ListBowlingCentersQuery(), ct);
 
+        // Assert
         var expectedCount = centers.Count(c => c.Status == BowlingCenterStatus.Open);
         result.Count.ShouldBe(expectedCount);
         foreach (var dto in result)
@@ -92,6 +101,7 @@ public sealed class ListBowlingCentersQueryHandlerTests(PostgreSqlFixture fixtur
     [Fact(DisplayName = "HandleAsync excludes closed and uncertified bowling centers")]
     public async Task HandleAsync_ShouldExcludeClosedAndUncertifiedCenters()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var openCenter = BowlingCenterFactory.Create(
             certificationNumber: CertificationNumberFactory.Create("11111"),
@@ -108,8 +118,10 @@ public sealed class ListBowlingCentersQueryHandlerTests(PostgreSqlFixture fixtur
 
         var handler = new ListBowlingCentersQueryHandler(_dbContext);
 
+        // Act
         var result = await handler.HandleAsync(new ListBowlingCentersQuery(), ct);
 
+        // Assert
         result.ShouldHaveSingleItem();
         result.Single().CertificationNumber.ShouldBe("11111");
     }

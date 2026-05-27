@@ -19,6 +19,7 @@ public sealed class TournamentEmptyStateTests : IDisposable
     [Fact(DisplayName = "Should show clear filters button and invoke callback when filters are active")]
     public async Task Render_ShouldShowClearButton_WhenFiltersAreActive()
     {
+        // Arrange
         var cleared = false;
 
         var cut = _ctx.Render<TournamentEmptyState>(parameters => parameters
@@ -28,30 +29,36 @@ public sealed class TournamentEmptyStateTests : IDisposable
 
         cut.Markup.ShouldContain("No tournaments match your current filters.");
 
+        // Act
         await cut.Find("button").ClickAsync(new MouseEventArgs());
 
+        // Assert
         cleared.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Should show upcoming empty message when no filters are active")]
     public void Render_ShouldShowUpcomingMessage_WhenUpcomingTabWithoutFilters()
     {
+        // Act
         var cut = _ctx.Render<TournamentEmptyState>(parameters => parameters
             .Add(p => p.Tab, TournamentTab.Upcoming)
             .Add(p => p.HasActiveFilters, false)
             .Add(p => p.OnClearFilters, EventCallback.Factory.Create(this, () => Task.CompletedTask)));
 
+        // Assert
         cut.Markup.ShouldContain("No upcoming tournaments are scheduled for this season.");
     }
 
     [Fact(DisplayName = "Should show past empty message when tab is past and no filters are active")]
     public void Render_ShouldShowPastMessage_WhenPastTabWithoutFilters()
     {
+        // Act
         var cut = _ctx.Render<TournamentEmptyState>(parameters => parameters
             .Add(p => p.Tab, TournamentTab.Past)
             .Add(p => p.HasActiveFilters, false)
             .Add(p => p.OnClearFilters, EventCallback.Factory.Create(this, () => Task.CompletedTask)));
 
+        // Assert
         cut.Markup.ShouldContain("No tournaments have been completed this season yet.");
     }
 }

@@ -30,6 +30,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(PostgreSqlFixture f
     [Fact(DisplayName = "HandleAsync returns empty collection when no tournaments exist for season")]
     public async Task HandleAsync_ShouldReturnEmpty_WhenNoTournamentsExistForSeason()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var season = SeasonFactory.Create();
         await _dbContext.Seasons.AddAsync(season, ct);
@@ -38,16 +39,19 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(PostgreSqlFixture f
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
         var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(
             new ListTournamentsInSeasonQuery { SeasonId = season.Id },
             ct);
 
+        // Assert
         result.ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "HandleAsync returns only tournaments for the specified season")]
     public async Task HandleAsync_ShouldReturnOnlyTournamentsForSpecifiedSeason()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var seasonA = SeasonFactory.Create();
         var seasonB = SeasonFactory.Create();
@@ -61,9 +65,11 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(PostgreSqlFixture f
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
         var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(
             new ListTournamentsInSeasonQuery { SeasonId = seasonA.Id }, ct);
 
+        // Assert
         result.ShouldHaveSingleItem();
         result.Single().Name.ShouldBe("Season A Tournament");
     }
@@ -71,6 +77,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(PostgreSqlFixture f
     [Fact(DisplayName = "HandleAsync returns tournament with correct fields when tournament exists")]
     public async Task HandleAsync_ShouldReturnTournament_WithCorrectFields()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var season = SeasonFactory.Create(description: "2025 Season");
         await _dbContext.Seasons.AddAsync(season, ct);
@@ -87,9 +94,11 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(PostgreSqlFixture f
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
         var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(
             new ListTournamentsInSeasonQuery { SeasonId = season.Id }, ct);
 
+        // Assert
         result.ShouldHaveSingleItem();
         var dto = result.Single();
         dto.Id.ShouldBe(tournament.Id);
@@ -102,6 +111,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(PostgreSqlFixture f
     [Fact(DisplayName = "HandleAsync sets LogoUrl when tournament has a logo")]
     public async Task HandleAsync_ShouldSetLogoUrl_WhenTournamentHasLogo()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var season = SeasonFactory.Create();
         await _dbContext.Seasons.AddAsync(season, ct);
@@ -118,9 +128,11 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(PostgreSqlFixture f
             .Returns(expectedUri);
         var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(
             new ListTournamentsInSeasonQuery { SeasonId = season.Id }, ct);
 
+        // Assert
         result.ShouldHaveSingleItem();
         result.Single().LogoUrl.ShouldBe(expectedUri);
     }
@@ -128,6 +140,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(PostgreSqlFixture f
     [Fact(DisplayName = "HandleAsync returns oil patterns with round names when tournament has oil patterns")]
     public async Task HandleAsync_ShouldReturnOilPatternsWithRoundNames_WhenTournamentHasOilPatterns()
     {
+        // Arrange
         var ct = TestContext.Current.CancellationToken;
         var season = SeasonFactory.Create();
         await _dbContext.Seasons.AddAsync(season, ct);
@@ -143,9 +156,11 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(PostgreSqlFixture f
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
         var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object);
 
+        // Act
         var result = await handler.HandleAsync(
             new ListTournamentsInSeasonQuery { SeasonId = season.Id }, ct);
 
+        // Assert
         result.ShouldHaveSingleItem();
         var pattern = result.Single().OilPatterns.Single();
         pattern.Name.ShouldBe("Chameleon");

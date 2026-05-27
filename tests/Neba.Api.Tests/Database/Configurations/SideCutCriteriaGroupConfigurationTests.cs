@@ -35,6 +35,7 @@ public sealed class SideCutCriteriaGroupConfigurationTests
     [Fact(DisplayName = "maps to side_cut_criteria_groups table in app schema")]
     public void Configure_ShouldMapToSideCutCriteriaGroupsTable()
     {
+        // Act & Assert
         _groupType.GetTableName().ShouldBe("side_cut_criteria_groups");
         _groupType.GetSchema().ShouldBe(AppDbContext.DefaultSchema);
     }
@@ -42,8 +43,10 @@ public sealed class SideCutCriteriaGroupConfigurationTests
     [Fact(DisplayName = "domain_id is char(26), not nullable, value generated never")]
     public void Configure_ShouldConfigureDomainIdColumn()
     {
+        // Act
         var property = _groupType.FindProperty(nameof(SideCutCriteriaGroup.Id))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("domain_id");
         property.GetMaxLength().ShouldBe(26);
         property.IsFixedLength().ShouldBe(true);
@@ -54,37 +57,45 @@ public sealed class SideCutCriteriaGroupConfigurationTests
     [Fact(DisplayName = "domain_id is an alternate key")]
     public void Configure_ShouldConfigureDomainIdAsAlternateKey()
     {
+        // Act
         var alternateKey = _groupType.GetKeys()
             .Where(k => !k.IsPrimaryKey())
             .FirstOrDefault(k => k.Properties.Any(p => p.Name == nameof(SideCutCriteriaGroup.Id)));
 
+        // Assert
         alternateKey.ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "logical_operator is not nullable")]
     public void Configure_ShouldConfigureLogicalOperatorColumn()
     {
+        // Act
         var property = _groupType.FindProperty(nameof(SideCutCriteriaGroup.LogicalOperator))!;
 
+        // Assert
         property.IsNullable.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "sort_order is not nullable")]
     public void Configure_ShouldConfigureSortOrderColumn()
     {
+        // Act
         var property = _groupType.FindProperty(nameof(SideCutCriteriaGroup.SortOrder))!;
 
+        // Assert
         property.IsNullable.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "side_cut_id + sort_order has a unique index")]
     public void Configure_ShouldConfigureUniqueSortOrderIndex()
     {
+        // Act
         var index = _groupType.GetIndexes()
             .FirstOrDefault(i =>
                 i.Properties.Any(p => p.Name == SideCutConfiguration.ForeignKey) &&
                 i.Properties.Any(p => p.Name == nameof(SideCutCriteriaGroup.SortOrder)));
 
+        // Assert
         index.ShouldNotBeNull();
         index.IsUnique.ShouldBeTrue();
     }
@@ -92,18 +103,22 @@ public sealed class SideCutCriteriaGroupConfigurationTests
     [Fact(DisplayName = "criteria navigation uses side_cut_criteria_group_id foreign key")]
     public void Configure_ShouldConfigureCriteriaForeignKey()
     {
+        // Act
         var fk = _criteriaType.GetForeignKeys()
             .FirstOrDefault(f => f.Properties.Any(p => p.Name == SideCutCriteriaGroupConfiguration.ForeignKey));
 
+        // Assert
         fk.ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "criteria cascade on delete")]
     public void Configure_ShouldCascadeDeleteCriteria()
     {
+        // Act
         var fk = _criteriaType.GetForeignKeys()
             .FirstOrDefault(f => f.Properties.Any(p => p.Name == SideCutCriteriaGroupConfiguration.ForeignKey));
 
+        // Assert
         fk!.DeleteBehavior.ShouldBe(DeleteBehavior.Cascade);
     }
 }

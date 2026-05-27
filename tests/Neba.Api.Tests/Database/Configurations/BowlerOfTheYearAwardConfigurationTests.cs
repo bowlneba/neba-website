@@ -35,6 +35,7 @@ public sealed class BowlerOfTheYearAwardConfigurationTests
     [Fact(DisplayName = "maps to bowler_of_the_year_awards table in app schema")]
     public void Configure_ShouldMapToBowlerOfTheYearAwardsTable()
     {
+        // Act & Assert
         _awardType.GetTableName().ShouldBe("bowler_of_the_year_awards");
         _awardType.GetSchema().ShouldBe(AppDbContext.DefaultSchema);
     }
@@ -42,8 +43,10 @@ public sealed class BowlerOfTheYearAwardConfigurationTests
     [Fact(DisplayName = "domain_id is char(26), not nullable, value generated never")]
     public void Configure_ShouldConfigureDomainIdColumn()
     {
+        // Act
         var property = _awardType.FindProperty(nameof(BowlerOfTheYearAward.Id))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("domain_id");
         property.GetMaxLength().ShouldBe(26);
         property.IsFixedLength().ShouldBe(true);
@@ -54,27 +57,33 @@ public sealed class BowlerOfTheYearAwardConfigurationTests
     [Fact(DisplayName = "domain_id is an alternate key")]
     public void Configure_ShouldConfigureDomainIdAsAlternateKey()
     {
+        // Act
         var alternateKey = _awardType.GetKeys()
             .Where(k => !k.IsPrimaryKey())
             .FirstOrDefault(k => k.Properties.Any(p => p.Name == nameof(BowlerOfTheYearAward.Id)));
 
+        // Assert
         alternateKey.ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "season_id shadow foreign key is not nullable")]
     public void Configure_ShouldConfigureSeasonIdShadowProperty()
     {
+        // Act
         var property = _awardType.FindProperty(SeasonConfiguration.ForeignKeyName)!;
 
+        // Assert
         property.IsNullable.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "season foreign key uses cascade delete")]
     public void Configure_ShouldConfigureSeasonForeignKeyWithCascadeDelete()
     {
+        // Act
         var foreignKey = _awardType.GetForeignKeys()
             .FirstOrDefault(fk => fk.Properties.Any(p => p.Name == SeasonConfiguration.ForeignKeyName));
 
+        // Assert
         foreignKey.ShouldNotBeNull();
         foreignKey!.DeleteBehavior.ShouldBe(DeleteBehavior.Cascade);
     }
@@ -82,8 +91,10 @@ public sealed class BowlerOfTheYearAwardConfigurationTests
     [Fact(DisplayName = "bowler_id is char(26), not nullable")]
     public void Configure_ShouldConfigureBowlerIdColumn()
     {
+        // Act
         var property = _awardType.FindProperty(nameof(BowlerOfTheYearAward.BowlerId))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe(BowlerConfiguration.ForeignKeyName);
         property.GetMaxLength().ShouldBe(26);
         property.IsFixedLength().ShouldBe(true);
@@ -93,9 +104,11 @@ public sealed class BowlerOfTheYearAwardConfigurationTests
     [Fact(DisplayName = "bowler_id foreign key targets Bowler.Id")]
     public void Configure_ShouldConfigureBowlerForeignKey()
     {
+        // Act
         var foreignKey = _awardType.GetForeignKeys()
             .FirstOrDefault(fk => fk.Properties.Any(p => p.Name == nameof(BowlerOfTheYearAward.BowlerId)));
 
+        // Assert
         foreignKey.ShouldNotBeNull();
         foreignKey!.PrincipalEntityType.ClrType.ShouldBe(typeof(Bowler));
         foreignKey.PrincipalKey.Properties.Select(p => p.Name).ShouldContain(nameof(Bowler.Id));
@@ -104,8 +117,10 @@ public sealed class BowlerOfTheYearAwardConfigurationTests
     [Fact(DisplayName = "category uses SmartEnumConverter and maps to category column, not nullable")]
     public void Configure_ShouldConfigureCategoryColumn()
     {
+        // Act
         var property = _awardType.FindProperty(nameof(BowlerOfTheYearAward.Category))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("category");
         property.GetValueConverter().ShouldBeOfType<SmartEnumConverter<BowlerOfTheYearCategory, int>>();
         property.IsNullable.ShouldBeFalse();
@@ -114,9 +129,11 @@ public sealed class BowlerOfTheYearAwardConfigurationTests
     [Fact(DisplayName = "season_id has an index")]
     public void Configure_ShouldConfigureSeasonIdIndex()
     {
+        // Act
         var index = _awardType.GetIndexes()
             .FirstOrDefault(i => i.Properties.Any(p => p.Name == SeasonConfiguration.ForeignKeyName));
 
+        // Assert
         index.ShouldNotBeNull();
     }
 }

@@ -48,4 +48,5 @@ public sealed class Bowler
     private readonly List<BowlerSeasonStats> _seasonStats = [];
     internal IReadOnlyCollection<BowlerSeasonStats> SeasonStats
         => _seasonStats.AsReadOnly();
+
 }

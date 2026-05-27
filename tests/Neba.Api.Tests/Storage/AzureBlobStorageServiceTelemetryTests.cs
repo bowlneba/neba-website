@@ -339,6 +339,69 @@ public sealed class AzureBlobStorageServiceTelemetryTests : IClassFixture<Azurit
             ignoreOrder: true);
     }
 
+    [Fact(DisplayName = "DeleteAsync should create activity with correct name and tags")]
+    public async Task DeleteAsync_ShouldCreateActivityWithCorrectNameAndTags()
+    {
+        // Arrange
+        _recordedActivities.Clear();
+        _recordedMetrics.Clear();
+        var container = UniqueContainer();
+        const string path = "delete-telemetry-test.txt";
+
+        await _sut.UploadFileAsync(
+            container,
+            path,
+            FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType,
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
+            CancellationToken.None);
+
+        _recordedActivities.Clear();
+        _recordedMetrics.Clear();
+
+        // Act
+        await _sut.DeleteAsync(container, path, CancellationToken.None);
+
+        // Assert
+        _recordedActivities.ShouldHaveSingleItem();
+        Activity activity = _recordedActivities[0];
+
+        activity.DisplayName.ShouldBe("storage.delete");
+        activity.GetTagItem("code.function").ShouldBe("DeleteAsync");
+        activity.GetTagItem("code.namespace").ShouldBe("Neba.Storage");
+        activity.GetTagItem("storage.container").ShouldBe(container);
+        activity.GetTagItem("storage.path").ShouldBe(path);
+        activity.GetTagItem("storage.duration_ms").ShouldNotBeNull();
+        activity.Status.ShouldBe(ActivityStatusCode.Ok);
+    }
+
+    [Fact(DisplayName = "DeleteAsync should record success metrics")]
+    public async Task DeleteAsync_ShouldRecordSuccessMetrics()
+    {
+        // Arrange
+        _recordedActivities.Clear();
+        _recordedMetrics.Clear();
+        var container = UniqueContainer();
+
+        // Act
+        await _sut.DeleteAsync(container, "nonexistent.txt", CancellationToken.None);
+
+        // Assert
+        List<MetricMeasurement> countMetrics = [.. _recordedMetrics.Where(m => m.InstrumentName == "neba.storage.operation.count")];
+        countMetrics.ShouldHaveSingleItem();
+        countMetrics[0].Value.ShouldBe(1);
+        countMetrics[0].Tags["storage.container"].ShouldBe(container);
+        countMetrics[0].Tags["storage.operation"].ShouldBe("delete");
+        countMetrics[0].Tags["result"].ShouldBe("success");
+
+        List<MetricMeasurement> durationMetrics = [.. _recordedMetrics.Where(m => m.InstrumentName == "neba.storage.operation.duration")];
+        durationMetrics.ShouldHaveSingleItem();
+        durationMetrics[0].Value.ShouldBeGreaterThanOrEqualTo(0);
+        durationMetrics[0].Tags["storage.container"].ShouldBe(container);
+        durationMetrics[0].Tags["storage.operation"].ShouldBe("delete");
+        durationMetrics[0].Tags["result"].ShouldBe("success");
+    }
+
     [Fact(DisplayName = "Activity duration should match metric duration approximately")]
     public async Task UploadFileAsync_ShouldHaveMatchingDuration_WhenActivityAndMetricRecorded()
     {

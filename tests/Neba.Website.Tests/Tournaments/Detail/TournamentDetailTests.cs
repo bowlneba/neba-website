@@ -47,12 +47,15 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should show loading spinner while API is pending")]
     public void Render_ShouldShowLoadingSpinner_WhileLoading()
     {
+        // Arrange
         _mockApi
             .Setup(x => x.GetTournamentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(new TaskCompletionSource<IApiResponse<TournamentDetailResponse>>().Task);
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Markup.ShouldContain("neba-spinner");
     }
 
@@ -61,10 +64,13 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should call GetTournamentAsync with the Id parameter")]
     public void OnInit_ShouldCallApiWithId()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId));
 
+        // Act
         _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         _mockApi.Verify(
             x => x.GetTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()),
             Times.Once);
@@ -75,10 +81,13 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should navigate to /not-found when API call fails")]
     public void OnInit_ShouldNavigateToNotFound_WhenApiFails()
     {
+        // Arrange
         SetupFailureResponse(System.Net.HttpStatusCode.NotFound);
 
+        // Act
         _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         var nav = _ctx.Services.GetRequiredService<NavigationManager>();
         nav.Uri.ShouldEndWith("/not-found");
     }
@@ -88,11 +97,14 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should render page title with tournament name")]
     public void Render_ShouldRenderPageTitle_WithTournamentName()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(name: "Spring Open"));
 
+        // Act
         _ = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
         var headOutlet = _ctx.Render<HeadOutlet>();
 
+        // Assert
         headOutlet.Find("title").TextContent.ShouldBe("Spring Open | NEBA Tournaments");
     }
 
@@ -101,33 +113,42 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should render tournament name in h1")]
     public void Render_ShouldRenderTournamentName_InHeading()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(name: "Winter Classic"));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Find("h1").TextContent.ShouldContain("Winter Classic");
     }
 
     [Fact(DisplayName = "Should render tournament type chip")]
     public void Render_ShouldRenderTournamentTypeChip()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             tournamentType: TournamentType.Doubles));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Markup.ShouldContain("Doubles");
     }
 
     [Fact(DisplayName = "Should render bowling center location when host is set")]
     public void Render_ShouldRenderLocation_WhenHostSet()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             bowlingCenter: TournamentDetailBowlingCenterResponseFactory.Create(
                 name: "Striker Lanes", city: "Manchester", state: "NH")));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Markup.ShouldContain("Striker Lanes");
         cut.Markup.ShouldContain("Manchester");
     }
@@ -135,30 +156,39 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should not render location when no bowling center is assigned")]
     public void Render_ShouldNotRenderLocation_WhenNoBowlingCenter()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(bowlingCenter: null));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Find(".td-hero__eyebrow").TextContent.ShouldNotContain("Lanes");
     }
 
     [Fact(DisplayName = "Should render pattern length category chip when set")]
     public void Render_ShouldRenderPatternLengthChip_WhenSet()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(patternLengthCategory: "Medium"));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Markup.ShouldContain("Medium");
     }
 
     [Fact(DisplayName = "Should not render pattern length chip when null")]
     public void Render_ShouldNotRenderPatternLengthChip_WhenNull()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(patternLengthCategory: null));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.FindAll(".td-hero__chips .td-hero__chip").Count.ShouldBe(1);
     }
 
@@ -167,21 +197,27 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should render champion bar when winners are present")]
     public void Render_ShouldRenderChampionBar_WhenWinnersPresent()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             winners: ["Alex Example", "Jamie Sample"]));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Find(".tournament-detail__champion-bar").TextContent.ShouldContain("Alex Example / Jamie Sample");
     }
 
     [Fact(DisplayName = "Should not render champion bar when no winners")]
     public void Render_ShouldNotRenderChampionBar_WhenNoWinners()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(winners: []));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.FindAll(".tournament-detail__champion-bar").ShouldBeEmpty();
     }
 
@@ -190,6 +226,7 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should render info card with price and register link for upcoming tournament")]
     public void Render_ShouldRenderInfoCard_ForUpcomingTournament()
     {
+        // Arrange
         var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             startDate: futureDate,
@@ -198,8 +235,10 @@ public sealed class TournamentDetailTests : IDisposable
             registrationUrl: new Uri("https://bowlneba.com/register"),
             addedMoney: 1500m));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.FindAll(".td-rail-card").Count.ShouldBe(1);
         cut.Markup.ShouldContain("$95");
         cut.Markup.ShouldContain("$1,500");
@@ -209,27 +248,33 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should not render info card for past tournament")]
     public void Render_ShouldNotRenderInfoCard_ForPastTournament()
     {
+        // Arrange
         var pastDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             startDate: pastDate,
             endDate: pastDate));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.FindAll(".td-rail-card").ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Should not render register button when registration URL is absent")]
     public void Render_ShouldNotRenderRegisterButton_WhenNoRegistrationUrl()
     {
+        // Arrange
         var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             startDate: futureDate,
             endDate: futureDate,
             registrationUrl: null));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Markup.ShouldNotContain("Register");
     }
 
@@ -238,20 +283,26 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should render entry count when present")]
     public void Render_ShouldRenderEntryCount_WhenPresent()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(entryCount: 64));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Find(".td-rail-entries__value").TextContent.ShouldContain("64");
     }
 
     [Fact(DisplayName = "Should not render entry count when null")]
     public void Render_ShouldNotRenderEntryCount_WhenNull()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(entryCount: null));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.FindAll(".td-rail-entries").ShouldBeEmpty();
     }
 
@@ -260,12 +311,15 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should render oil patterns section when patterns are present")]
     public void Render_ShouldRenderOilPatterns_WhenPresent()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             oilPatterns: [TournamentDetailOilPatternResponseFactory.Create(
                 name: "Kegel Broadway", length: 40, rounds: ["Qualifying", "Finals"])]));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Markup.ShouldContain("Oil Patterns");
         cut.Markup.ShouldContain("Kegel Broadway · 40 ft");
         cut.Markup.ShouldContain("Qualifying, Finals");
@@ -274,10 +328,13 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should not render oil patterns section when no patterns")]
     public void Render_ShouldNotRenderOilPatterns_WhenEmpty()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(oilPatterns: []));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Markup.ShouldNotContain("Oil Patterns");
     }
 
@@ -286,12 +343,15 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should render sponsors section linking to sponsor detail pages")]
     public void Render_ShouldRenderSponsors_WithDetailLinks()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             sponsors: [TournamentDetailSponsorResponseFactory.Create(
                 name: "Acme Corp", slug: "acme-corp")]));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Markup.ShouldContain("Sponsors");
         cut.Markup.ShouldContain("/sponsors/acme-corp");
     }
@@ -299,12 +359,15 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should render sponsor logo image when logo URL is present")]
     public void Render_ShouldRenderSponsorLogo_WhenLogoUrlPresent()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             sponsors: [TournamentDetailSponsorResponseFactory.Create(
                 logoUrl: new Uri("https://cdn.example.com/acme-logo.png"))]));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Markup.ShouldContain("https://cdn.example.com/acme-logo.png");
         cut.FindAll(".td-rail-sponsor-card__name").ShouldBeEmpty();
     }
@@ -312,22 +375,28 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should render sponsor name text when no logo URL")]
     public void Render_ShouldRenderSponsorName_WhenNoLogoUrl()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             sponsors: [TournamentDetailSponsorResponseFactory.Create(
                 name: "Acme Corp", logoUrl: null)]));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Find(".td-rail-sponsor-card__name").TextContent.ShouldBe("Acme Corp");
     }
 
     [Fact(DisplayName = "Should not render sponsors section when no sponsors")]
     public void Render_ShouldNotRenderSponsors_WhenEmpty()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(sponsors: []));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.FindAll(".td-rail-sponsors").ShouldBeEmpty();
     }
 
@@ -336,12 +405,15 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should render results section with main cut bowler name")]
     public void Render_ShouldRenderResults_WithMainCutBowlerName()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             results: [TournamentResultResponseFactory.Create(
                 bowlerName: "Jane Smith", place: 1, sideCutName: null)]));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Markup.ShouldContain("Results");
         cut.Markup.ShouldContain("Jane Smith");
     }
@@ -349,6 +421,7 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should render side cut sections grouped by name")]
     public void Render_ShouldRenderSideCutSections_GroupedByName()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             results:
             [
@@ -356,8 +429,10 @@ public sealed class TournamentDetailTests : IDisposable
                 TournamentResultResponseFactory.Create(bowlerName: "Bob Jones", sideCutName: "Senior"),
             ]));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.FindAll(".tournament-detail__cut-section").Count.ShouldBe(1);
         cut.Find(".tournament-detail__cut-title").TextContent.Trim().ShouldBe("Senior");
         cut.Markup.ShouldContain("Jane Smith");
@@ -367,28 +442,34 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should show no-results message for past tournament without results")]
     public void Render_ShouldShowNoResultsMessage_WhenPastTournamentHasNoResults()
     {
+        // Arrange
         var pastDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-30));
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             startDate: pastDate,
             endDate: pastDate,
             results: []));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Find(".tournament-detail__no-results").TextContent.ShouldContain("Results are not yet available");
     }
 
     [Fact(DisplayName = "Should not show no-results message for upcoming tournament without results")]
     public void Render_ShouldNotShowNoResultsMessage_WhenUpcomingTournamentHasNoResults()
     {
+        // Arrange
         var futureDate = DateOnly.FromDateTime(DateTime.Today.AddDays(30));
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
             startDate: futureDate,
             endDate: futureDate,
             results: []));
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.FindAll(".tournament-detail__no-results").ShouldBeEmpty();
     }
 
@@ -397,10 +478,13 @@ public sealed class TournamentDetailTests : IDisposable
     [Fact(DisplayName = "Should render back link to tournament schedule")]
     public void Render_ShouldRenderBackLink_ToTournamentSchedule()
     {
+        // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create());
 
+        // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
+        // Assert
         cut.Find(".tournament-detail__back-link").GetAttribute("href").ShouldBe("/tournaments");
     }
 

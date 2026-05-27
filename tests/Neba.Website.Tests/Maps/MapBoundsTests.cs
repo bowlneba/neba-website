@@ -10,64 +10,80 @@ public sealed class MapBoundsTests
     [Fact(DisplayName = "Contains returns true when coordinate is inside bounds")]
     public void Contains_ShouldReturnTrue_WhenCoordinateIsInsideBounds()
     {
+        // Arrange
         var bounds = new MapBounds(North: 43.0, South: 42.0, East: -70.0, West: -72.0);
 
+        // Assert
         bounds.Contains(42.5, -71.0).ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Contains returns false when latitude is north of bounds")]
     public void Contains_ShouldReturnFalse_WhenLatitudeIsNorthOfBounds()
     {
+        // Arrange
         var bounds = new MapBounds(North: 43.0, South: 42.0, East: -70.0, West: -72.0);
 
+        // Assert
         bounds.Contains(43.5, -71.0).ShouldBeFalse();
     }
 
     [Fact(DisplayName = "Contains returns false when latitude is south of bounds")]
     public void Contains_ShouldReturnFalse_WhenLatitudeIsSouthOfBounds()
     {
+        // Arrange
         var bounds = new MapBounds(North: 43.0, South: 42.0, East: -70.0, West: -72.0);
 
+        // Assert
         bounds.Contains(41.5, -71.0).ShouldBeFalse();
     }
 
     [Fact(DisplayName = "Contains returns false when longitude is east of bounds")]
     public void Contains_ShouldReturnFalse_WhenLongitudeIsEastOfBounds()
     {
+        // Arrange
         var bounds = new MapBounds(North: 43.0, South: 42.0, East: -70.0, West: -72.0);
 
+        // Assert
         bounds.Contains(42.5, -69.0).ShouldBeFalse();
     }
 
     [Fact(DisplayName = "Contains returns false when longitude is west of bounds")]
     public void Contains_ShouldReturnFalse_WhenLongitudeIsWestOfBounds()
     {
+        // Arrange
         var bounds = new MapBounds(North: 43.0, South: 42.0, East: -70.0, West: -72.0);
 
+        // Assert
         bounds.Contains(42.5, -73.0).ShouldBeFalse();
     }
 
     [Fact(DisplayName = "Contains returns true when coordinate is exactly on a boundary")]
     public void Contains_ShouldReturnTrue_WhenCoordinateIsOnBoundary()
     {
+        // Arrange
         var bounds = new MapBounds(North: 43.0, South: 42.0, East: -70.0, West: -72.0);
 
+        // Assert
         bounds.Contains(43.0, -72.0).ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Contains returns true when latitude is exactly on the south boundary")]
     public void Contains_ShouldReturnTrue_WhenLatitudeIsExactlyOnSouthBoundary()
     {
+        // Arrange
         var bounds = new MapBounds(North: 43.0, South: 42.0, East: -70.0, West: -72.0);
 
+        // Assert
         bounds.Contains(42.0, -71.0).ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Contains returns true when longitude is exactly on the east boundary")]
     public void Contains_ShouldReturnTrue_WhenLongitudeIsExactlyOnEastBoundary()
     {
+        // Arrange
         var bounds = new MapBounds(North: 43.0, South: 42.0, East: -70.0, West: -72.0);
 
+        // Assert
         bounds.Contains(42.5, -70.0).ShouldBeTrue();
     }
 }

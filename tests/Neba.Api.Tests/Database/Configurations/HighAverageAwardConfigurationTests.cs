@@ -33,6 +33,7 @@ public sealed class HighAverageAwardConfigurationTests
     [Fact(DisplayName = "maps to high_average_awards table in app schema")]
     public void Configure_ShouldMapToHighAverageAwardsTable()
     {
+        // Act & Assert
         _awardType.GetTableName().ShouldBe("high_average_awards");
         _awardType.GetSchema().ShouldBe(AppDbContext.DefaultSchema);
     }
@@ -40,8 +41,10 @@ public sealed class HighAverageAwardConfigurationTests
     [Fact(DisplayName = "domain_id is char(26), not nullable, value generated never")]
     public void Configure_ShouldConfigureDomainIdColumn()
     {
+        // Act
         var property = _awardType.FindProperty(nameof(HighAverageAward.Id))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe("domain_id");
         property.GetMaxLength().ShouldBe(26);
         property.IsFixedLength().ShouldBe(true);
@@ -52,27 +55,33 @@ public sealed class HighAverageAwardConfigurationTests
     [Fact(DisplayName = "domain_id is an alternate key")]
     public void Configure_ShouldConfigureDomainIdAsAlternateKey()
     {
+        // Act
         var alternateKey = _awardType.GetKeys()
             .Where(k => !k.IsPrimaryKey())
             .FirstOrDefault(k => k.Properties.Any(p => p.Name == nameof(HighAverageAward.Id)));
 
+        // Assert
         alternateKey.ShouldNotBeNull();
     }
 
     [Fact(DisplayName = "season_id shadow foreign key is not nullable")]
     public void Configure_ShouldConfigureSeasonIdShadowProperty()
     {
+        // Act
         var property = _awardType.FindProperty(SeasonConfiguration.ForeignKeyName)!;
 
+        // Assert
         property.IsNullable.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "season foreign key uses cascade delete")]
     public void Configure_ShouldConfigureSeasonForeignKeyWithCascadeDelete()
     {
+        // Act
         var foreignKey = _awardType.GetForeignKeys()
             .FirstOrDefault(fk => fk.Properties.Any(p => p.Name == SeasonConfiguration.ForeignKeyName));
 
+        // Assert
         foreignKey.ShouldNotBeNull();
         foreignKey!.DeleteBehavior.ShouldBe(DeleteBehavior.Cascade);
     }
@@ -80,8 +89,10 @@ public sealed class HighAverageAwardConfigurationTests
     [Fact(DisplayName = "bowler_id is char(26), not nullable")]
     public void Configure_ShouldConfigureBowlerIdColumn()
     {
+        // Act
         var property = _awardType.FindProperty(nameof(HighAverageAward.BowlerId))!;
 
+        // Assert
         property.FindAnnotation(RelationalAnnotationNames.ColumnName)!.Value.ShouldBe(BowlerConfiguration.ForeignKeyName);
         property.GetMaxLength().ShouldBe(26);
         property.IsFixedLength().ShouldBe(true);
@@ -91,9 +102,11 @@ public sealed class HighAverageAwardConfigurationTests
     [Fact(DisplayName = "bowler_id foreign key targets Bowler.Id")]
     public void Configure_ShouldConfigureBowlerForeignKey()
     {
+        // Act
         var foreignKey = _awardType.GetForeignKeys()
             .FirstOrDefault(fk => fk.Properties.Any(p => p.Name == nameof(HighAverageAward.BowlerId)));
 
+        // Assert
         foreignKey.ShouldNotBeNull();
         foreignKey!.PrincipalEntityType.ClrType.ShouldBe(typeof(Bowler));
         foreignKey.PrincipalKey.Properties.Select(p => p.Name).ShouldContain(nameof(Bowler.Id));
@@ -102,8 +115,10 @@ public sealed class HighAverageAwardConfigurationTests
     [Fact(DisplayName = "average is decimal(5,2), not nullable")]
     public void Configure_ShouldConfigureAverageColumn()
     {
+        // Act
         var property = _awardType.FindProperty(nameof(HighAverageAward.Average))!;
 
+        // Assert
         property.GetPrecision().ShouldBe(5);
         property.GetScale().ShouldBe(2);
         property.IsNullable.ShouldBeFalse();
@@ -112,25 +127,31 @@ public sealed class HighAverageAwardConfigurationTests
     [Fact(DisplayName = "total_games is nullable")]
     public void Configure_ShouldConfigureTotalGamesColumn()
     {
+        // Act
         var property = _awardType.FindProperty(nameof(HighAverageAward.TotalGames))!;
 
+        // Assert
         property.IsNullable.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "tournaments_participated is nullable")]
     public void Configure_ShouldConfigureTournamentsParticipatedColumn()
     {
+        // Act
         var property = _awardType.FindProperty(nameof(HighAverageAward.TournamentsParticipated))!;
 
+        // Assert
         property.IsNullable.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "season_id has an index")]
     public void Configure_ShouldConfigureSeasonIdIndex()
     {
+        // Act
         var index = _awardType.GetIndexes()
             .FirstOrDefault(i => i.Properties.Any(p => p.Name == SeasonConfiguration.ForeignKeyName));
 
+        // Assert
         index.ShouldNotBeNull();
     }
 }

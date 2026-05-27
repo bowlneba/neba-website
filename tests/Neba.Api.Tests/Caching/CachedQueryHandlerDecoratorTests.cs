@@ -35,6 +35,7 @@ public sealed class CachedQueryHandlerDecoratorTests
     [Fact(DisplayName = "Plain response: cache hit returns cached value without calling inner handler")]
     public async Task HandleAsync_PlainResponse_CacheHit_ReturnsCachedValue()
     {
+        // Arrange
         var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
@@ -55,9 +56,11 @@ public sealed class CachedQueryHandlerDecoratorTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(cachedValue);
 
+        // Act
         var result = await CreatePlainDecorator(innerHandler.Object, cache.Object)
             .HandleAsync(query, CancellationToken.None);
 
+        // Assert
         result.ShouldBe(cachedValue);
         cache.Verify(
             c => c.GetOrSetAsync<TestResponse>(
@@ -73,6 +76,7 @@ public sealed class CachedQueryHandlerDecoratorTests
     [Fact(DisplayName = "Plain response: cache miss calls inner handler and returns result")]
     public async Task HandleAsync_PlainResponse_CacheMiss_CallsHandlerAndReturnsResult()
     {
+        // Arrange
         var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
@@ -98,19 +102,22 @@ public sealed class CachedQueryHandlerDecoratorTests
             .Setup(h => h.HandleAsync(query, It.IsAny<CancellationToken>()))
             .ReturnsAsync(handlerResult);
 
+        // Act
         var result = await CreatePlainDecorator(innerHandler.Object, cache.Object)
             .HandleAsync(query, CancellationToken.None);
 
+        // Assert
         result.ShouldBe(handlerResult);
     }
 
     [Fact(DisplayName = "Plain response: constructor succeeds without calling GetInnerType for non-ErrorOr type")]
     public void Constructor_PlainResponseType_DoesNotThrow()
     {
+        // Arrange
         var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
-        // Mutation forces GetInnerType(typeof(TestResponse)) which throws ArgumentException
+        // Act & Assert — mutation forces GetInnerType(typeof(TestResponse)) which throws ArgumentException
         // because TestResponse is not ErrorOr<T>
         Should.NotThrow(() =>
             new CachedQueryHandlerDecorator<PlainQuery, TestResponse>(
@@ -123,6 +130,7 @@ public sealed class CachedQueryHandlerDecoratorTests
     [Fact(DisplayName = "Plain response: deserialization failure falls back to handler and refreshes cache")]
     public async Task HandleAsync_PlainResponse_DeserializationFailure_FallsBackToHandlerAndRefreshesCache()
     {
+        // Arrange
         var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
@@ -159,9 +167,11 @@ public sealed class CachedQueryHandlerDecoratorTests
                 It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
 
+        // Act
         var result = await CreatePlainDecorator(innerHandler.Object, cache.Object)
             .HandleAsync(query, CancellationToken.None);
 
+        // Assert
         result.ShouldBe(handlerResult);
         cache.Verify(
             c => c.SetAsync(
@@ -178,6 +188,7 @@ public sealed class CachedQueryHandlerDecoratorTests
     [Fact(DisplayName = "ErrorOr response: L1 cache hit rewraps typed object and returns it")]
     public async Task HandleAsync_ErrorOrResponse_CacheHitL1_ReturnsWrappedValue()
     {
+        // Arrange
         var innerHandler = new Mock<IQueryHandler<ErrorOrQuery, ErrorOr<TestResponse>>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
@@ -191,9 +202,11 @@ public sealed class CachedQueryHandlerDecoratorTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync((MaybeValue<object>)innerValue);
 
+        // Act
         var result = await CreateErrorOrDecorator(innerHandler.Object, cache.Object)
             .HandleAsync(query, CancellationToken.None);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(innerValue);
         innerHandler.Verify(
@@ -204,6 +217,7 @@ public sealed class CachedQueryHandlerDecoratorTests
     [Fact(DisplayName = "ErrorOr response: L2 cache hit deserializes JsonElement and returns wrapped value")]
     public async Task HandleAsync_ErrorOrResponse_CacheHitL2_DeserializesAndReturnsWrappedValue()
     {
+        // Arrange
         var innerHandler = new Mock<IQueryHandler<ErrorOrQuery, ErrorOr<TestResponse>>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
@@ -218,9 +232,11 @@ public sealed class CachedQueryHandlerDecoratorTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync((MaybeValue<object>)jsonElement);
 
+        // Act
         var result = await CreateErrorOrDecorator(innerHandler.Object, cache.Object)
             .HandleAsync(query, CancellationToken.None);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(innerValue);
         innerHandler.Verify(
@@ -231,6 +247,7 @@ public sealed class CachedQueryHandlerDecoratorTests
     [Fact(DisplayName = "ErrorOr response: cache miss with error result returns error without caching")]
     public async Task HandleAsync_ErrorOrResponse_CacheMiss_ErrorResult_ReturnsErrorWithoutCaching()
     {
+        // Arrange
         var innerHandler = new Mock<IQueryHandler<ErrorOrQuery, ErrorOr<TestResponse>>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
@@ -248,9 +265,11 @@ public sealed class CachedQueryHandlerDecoratorTests
             .Setup(h => h.HandleAsync(query, It.IsAny<CancellationToken>()))
             .ReturnsAsync(errorResult);
 
+        // Act
         var result = await CreateErrorOrDecorator(innerHandler.Object, cache.Object)
             .HandleAsync(query, CancellationToken.None);
 
+        // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Type.ShouldBe(ErrorType.NotFound);
     }
@@ -258,6 +277,7 @@ public sealed class CachedQueryHandlerDecoratorTests
     [Fact(DisplayName = "ErrorOr response: cache miss with success result caches inner value with tags and returns response")]
     public async Task HandleAsync_ErrorOrResponse_CacheMiss_SuccessResult_CachesWithTagsAndReturnsResponse()
     {
+        // Arrange
         var innerHandler = new Mock<IQueryHandler<ErrorOrQuery, ErrorOr<TestResponse>>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
@@ -292,9 +312,11 @@ public sealed class CachedQueryHandlerDecoratorTests
             .Setup(h => h.HandleAsync(query, It.IsAny<CancellationToken>()))
             .ReturnsAsync(successResult);
 
+        // Act
         var result = await CreateErrorOrDecorator(innerHandler.Object, cache.Object)
             .HandleAsync(query, CancellationToken.None);
 
+        // Assert
         result.IsError.ShouldBeFalse();
         result.Value.ShouldBe(innerValue);
         cache.Verify(
@@ -318,6 +340,7 @@ public sealed class CachedQueryHandlerDecoratorTests
     [Fact(DisplayName = "Plain response: JsonException falls back to handler and refreshes cache")]
     public async Task HandleAsync_PlainResponse_JsonException_FallsBackToHandlerAndRefreshesCache()
     {
+        // Arrange
         var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
@@ -352,9 +375,11 @@ public sealed class CachedQueryHandlerDecoratorTests
                 It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
 
+        // Act
         var result = await CreatePlainDecorator(innerHandler.Object, cache.Object)
             .HandleAsync(query, CancellationToken.None);
 
+        // Assert
         result.ShouldBe(handlerResult);
         cache.Verify(
             c => c.SetAsync(
@@ -369,6 +394,7 @@ public sealed class CachedQueryHandlerDecoratorTests
     [Fact(DisplayName = "Plain response: nested JsonException in InnerException chain falls back to handler")]
     public async Task HandleAsync_PlainResponse_NestedJsonException_FallsBackToHandlerAndRefreshesCache()
     {
+        // Arrange
         var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
@@ -403,9 +429,11 @@ public sealed class CachedQueryHandlerDecoratorTests
                 It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
 
+        // Act
         var result = await CreatePlainDecorator(innerHandler.Object, cache.Object)
             .HandleAsync(query, CancellationToken.None);
 
+        // Assert
         result.ShouldBe(handlerResult);
         cache.Verify(
             c => c.SetAsync(
@@ -420,6 +448,7 @@ public sealed class CachedQueryHandlerDecoratorTests
     [Fact(DisplayName = "Plain response: NotSupportedException without 'deserialization' in message propagates without fallback")]
     public async Task HandleAsync_PlainResponse_NotSupportedExceptionWithUnrelatedMessage_Propagates()
     {
+        // Arrange
         var innerHandler = new Mock<IQueryHandler<PlainQuery, TestResponse>>(MockBehavior.Strict);
         var cache = new Mock<IFusionCache>(MockBehavior.Strict);
 
@@ -439,6 +468,7 @@ public sealed class CachedQueryHandlerDecoratorTests
                 It.IsAny<CancellationToken>()))
             .Throws(new NotSupportedException("Cache serializer is not configured"));
 
+        // Act & Assert
         await Should.ThrowAsync<NotSupportedException>(() =>
             CreatePlainDecorator(innerHandler.Object, cache.Object)
                 .HandleAsync(query, CancellationToken.None));

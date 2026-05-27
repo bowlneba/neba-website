@@ -10,50 +10,60 @@ public sealed class SeasonViewModelTests
     [Fact(DisplayName = "Should derive label as year string for single-year season")]
     public void Label_ShouldBeYearString_WhenStartAndEndYearMatch()
     {
+        // Arrange
         var vm = SeasonViewModelFactory.Create(
             startDate: new DateOnly(2026, 1, 1),
             endDate: new DateOnly(2026, 12, 31));
 
+        // Assert
         vm.Label.ShouldBe("2026");
     }
 
     [Fact(DisplayName = "Should derive label as YYYY-YY for multi-year season")]
     public void Label_ShouldUseHyphenFormat_WhenStartAndEndYearDiffer()
     {
+        // Arrange
         var vm = SeasonViewModelFactory.Create(
             startDate: new DateOnly(2020, 1, 1),
             endDate: new DateOnly(2021, 12, 31));
 
+        // Assert
         vm.Label.ShouldBe("2020-21");
     }
 
     [Fact(DisplayName = "Should zero-pad two-digit suffix in multi-year label")]
     public void Label_ShouldZeroPadSuffix_WhenEndYearModuloIsLessThanTen()
     {
+        // Arrange
         var vm = SeasonViewModelFactory.Create(
             startDate: new DateOnly(2008, 1, 1),
             endDate: new DateOnly(2009, 12, 31));
 
+        // Assert
         vm.Label.ShouldBe("2008-09");
     }
 
     [Fact(DisplayName = "Should not flag single-year season as merged")]
     public void IsMergedSeason_ShouldBeFalse_WhenStartAndEndYearMatch()
     {
+        // Arrange
         var vm = SeasonViewModelFactory.Create(
             startDate: new DateOnly(2026, 1, 1),
             endDate: new DateOnly(2026, 12, 31));
 
+        // Assert
         vm.IsMergedSeason.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "Should flag multi-year season as merged")]
     public void IsMergedSeason_ShouldBeTrue_WhenStartAndEndYearDiffer()
     {
+        // Arrange
         var vm = SeasonViewModelFactory.Create(
             startDate: new DateOnly(2020, 1, 1),
             endDate: new DateOnly(2021, 12, 31));
 
+        // Assert
         vm.IsMergedSeason.ShouldBeTrue();
     }
 
@@ -68,20 +78,24 @@ public sealed class SeasonViewModelTests
     public void ContainsYear_ShouldReturnExpectedResult_WhenYearChecked(
         int year, int startYear, int endYear, bool expected)
     {
+        // Arrange
         var vm = SeasonViewModelFactory.Create(
             startDate: new DateOnly(startYear, 1, 1),
             endDate: new DateOnly(endYear, 12, 31));
 
+        // Assert
         vm.ContainsYear(year).ShouldBe(expected);
     }
 
     [Fact(DisplayName = "Should treat start year boundary as inclusive")]
     public void ContainsYear_ShouldBeTrue_WhenYearEqualsStartYear()
     {
+        // Arrange
         var vm = SeasonViewModelFactory.Create(
             startDate: new DateOnly(2024, 1, 1),
             endDate: new DateOnly(2024, 12, 31));
 
+        // Assert
         vm.ContainsYear(2024).ShouldBeTrue();
         vm.ContainsYear(2023).ShouldBeFalse();
     }
@@ -89,10 +103,12 @@ public sealed class SeasonViewModelTests
     [Fact(DisplayName = "Should treat end year boundary as inclusive")]
     public void ContainsYear_ShouldBeTrue_WhenYearEqualsEndYear()
     {
+        // Arrange
         var vm = SeasonViewModelFactory.Create(
             startDate: new DateOnly(2020, 1, 1),
             endDate: new DateOnly(2021, 12, 31));
 
+        // Assert
         vm.ContainsYear(2021).ShouldBeTrue();
         vm.ContainsYear(2022).ShouldBeFalse();
     }
