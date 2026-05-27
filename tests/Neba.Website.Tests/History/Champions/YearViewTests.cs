@@ -276,7 +276,7 @@ public sealed class YearViewTests : IDisposable
 
         var cut = _ctx.Render<YearView>(p => p
             .Add(c => c.Years, [year])
-            .Add(c => c.Summaries, Array.Empty<BowlerTitleSummaryViewModel>())
+            .Add(c => c.Summaries, [])
             .Add(c => c.OnBowlerSelected, callback));
 
         // Act
