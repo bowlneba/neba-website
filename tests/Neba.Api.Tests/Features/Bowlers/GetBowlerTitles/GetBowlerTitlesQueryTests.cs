@@ -1,5 +1,6 @@
 using Neba.Api.Caching;
 using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.Bowlers.GetBowlerTitles;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Features.Bowlers.GetBowlerTitles;
@@ -73,5 +74,34 @@ public sealed class GetBowlerTitlesQueryTests
 
         // Assert
         descriptor.Tags.Count.ShouldBe(3);
+    }
+
+    // ── GetBowlerTitlesQuery properties ───────────────────────────────────
+
+    [Fact(DisplayName = "Query Cache property should return descriptor keyed to the bowler")]
+    public void Query_Cache_ShouldReturnDescriptorKeyedToBowler()
+    {
+        // Arrange
+        var bowlerId = new BowlerId("01000000000000000000000001");
+        var query = new GetBowlerTitlesQuery { BowlerId = bowlerId };
+
+        // Act
+        var descriptor = query.Cache;
+
+        // Assert
+        descriptor.Key.ShouldBe($"neba:bowlers:{bowlerId}:titles");
+    }
+
+    [Fact(DisplayName = "Query Expiry should be 7 days")]
+    public void Query_Expiry_ShouldBe7Days()
+    {
+        // Arrange
+        var query = new GetBowlerTitlesQuery { BowlerId = BowlerId.New() };
+
+        // Act
+        var expiry = query.Expiry;
+
+        // Assert
+        expiry.ShouldBe(TimeSpan.FromDays(7));
     }
 }

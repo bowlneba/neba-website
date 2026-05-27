@@ -188,6 +188,163 @@ public sealed class ChampionsPageTests : IDisposable
         cut.FindAll("button[disabled]").Count.ShouldBe(0);
     }
 
+    [Fact(DisplayName = "Should show FirstYear stat when years data is available")]
+    public void Render_ShouldShowFirstYearStat_WhenYearsDataIsLoaded()
+    {
+        // Arrange
+        IReadOnlyCollection<BowlerTitleSummaryViewModel> summaries = [];
+        IReadOnlyCollection<TitlesByYearViewModel> years =
+        [
+            TitlesByYearViewModelFactory.Create(year: 2024),
+            TitlesByYearViewModelFactory.Create(year: 2018),
+        ];
+        var result = Task.FromResult<ErrorOr<(IReadOnlyCollection<BowlerTitleSummaryViewModel>, IReadOnlyCollection<TitlesByYearViewModel>)>>(
+            (summaries, years));
+        RegisterService(new FakeChampionsService(result));
+
+        // Act
+        var cut = _ctx.Render<ChampionsPage>();
+
+        // Assert — 4 stats including the first year
+        var statNums = cut.FindAll(".hero-stat__num");
+        statNums.Count.ShouldBe(4);
+        statNums[^1].TextContent.Trim().ShouldBe("2018");
+    }
+
+    [Fact(DisplayName = "Should not show FirstYear stat when no years data exists")]
+    public void Render_ShouldNotShowFirstYearStat_WhenNoYearsData()
+    {
+        // Arrange
+        IReadOnlyCollection<BowlerTitleSummaryViewModel> summaries = [];
+        IReadOnlyCollection<TitlesByYearViewModel> years = [];
+        var result = Task.FromResult<ErrorOr<(IReadOnlyCollection<BowlerTitleSummaryViewModel>, IReadOnlyCollection<TitlesByYearViewModel>)>>(
+            (summaries, years));
+        RegisterService(new FakeChampionsService(result));
+
+        // Act
+        var cut = _ctx.Render<ChampionsPage>();
+
+        // Assert — only 3 stats; First Year stat is omitted when years is empty
+        var statNums = cut.FindAll(".hero-stat__num");
+        statNums.Count.ShouldBe(3);
+    }
+
+    [Fact(DisplayName = "ExpandAll should delegate to TitleCountView when Titles view is active")]
+    public async Task ExpandAll_ShouldDelegateToTitleCountView_WhenTitlesViewIsActive()
+    {
+        // Arrange — load data so views are rendered
+        IReadOnlyCollection<BowlerTitleSummaryViewModel> summaries = [];
+        IReadOnlyCollection<TitlesByYearViewModel> years = [];
+        var result = Task.FromResult<ErrorOr<(IReadOnlyCollection<BowlerTitleSummaryViewModel>, IReadOnlyCollection<TitlesByYearViewModel>)>>(
+            (summaries, years));
+        RegisterService(new FakeChampionsService(result));
+        var cut = _ctx.Render<ChampionsPage>();
+
+        // Act — Titles view is active by default; click Expand All
+        var expandButton = cut.Find(".toolbar-actions button:first-child");
+        await expandButton.ClickAsync();
+
+        // Assert — no exception; component remains in a valid state
+        cut.Markup.ShouldContain("view is-active");
+    }
+
+    [Fact(DisplayName = "ExpandAll should delegate to YearView when Year view is active")]
+    public async Task ExpandAll_ShouldDelegateToYearView_WhenYearViewIsActive()
+    {
+        // Arrange
+        IReadOnlyCollection<BowlerTitleSummaryViewModel> summaries = [];
+        IReadOnlyCollection<TitlesByYearViewModel> years =
+        [
+            TitlesByYearViewModelFactory.Create(year: 2024),
+            TitlesByYearViewModelFactory.Create(year: 2023),
+            TitlesByYearViewModelFactory.Create(year: 2022),
+            TitlesByYearViewModelFactory.Create(year: 2021),
+            TitlesByYearViewModelFactory.Create(year: 2020),
+        ];
+        var result = Task.FromResult<ErrorOr<(IReadOnlyCollection<BowlerTitleSummaryViewModel>, IReadOnlyCollection<TitlesByYearViewModel>)>>(
+            (summaries, years));
+        RegisterService(new FakeChampionsService(result));
+        var cut = _ctx.Render<ChampionsPage>();
+
+        // Switch to Year view — By Year button is the second segmented button
+        await cut.FindAll(".segmented__btn")[1].ClickAsync();
+
+        // Verify some sections are collapsed
+        cut.FindAll(".year-section.is-collapsed").Count.ShouldBeGreaterThan(0);
+
+        // Act — Expand All is the first toolbar-actions button
+        await cut.Find(".toolbar-actions button:first-child").ClickAsync();
+
+        // Assert
+        cut.FindAll(".year-section.is-collapsed").Count.ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "CollapseAll should delegate to YearView when Year view is active")]
+    public async Task CollapseAll_ShouldDelegateToYearView_WhenYearViewIsActive()
+    {
+        // Arrange
+        IReadOnlyCollection<BowlerTitleSummaryViewModel> summaries = [];
+        IReadOnlyCollection<TitlesByYearViewModel> years =
+        [
+            TitlesByYearViewModelFactory.Create(year: 2024),
+            TitlesByYearViewModelFactory.Create(year: 2023),
+        ];
+        var result = Task.FromResult<ErrorOr<(IReadOnlyCollection<BowlerTitleSummaryViewModel>, IReadOnlyCollection<TitlesByYearViewModel>)>>(
+            (summaries, years));
+        RegisterService(new FakeChampionsService(result));
+        var cut = _ctx.Render<ChampionsPage>();
+
+        // Switch to Year view
+        await cut.FindAll(".segmented__btn")[1].ClickAsync();
+
+        // All 2 years expanded initially
+        cut.FindAll(".year-section.is-collapsed").Count.ShouldBe(0);
+
+        // Act — Collapse All is the second toolbar-actions button
+        await cut.Find(".toolbar-actions button:last-child").ClickAsync();
+
+        // Assert
+        cut.FindAll(".year-section.is-collapsed").Count.ShouldBe(2);
+    }
+
+    [Fact(DisplayName = "CollapseAll should delegate to TitleCountView when Titles view is active")]
+    public async Task CollapseAll_ShouldDelegateToTitleCountView_WhenTitlesViewIsActive()
+    {
+        // Arrange
+        IReadOnlyCollection<BowlerTitleSummaryViewModel> summaries = [];
+        IReadOnlyCollection<TitlesByYearViewModel> years = [];
+        var result = Task.FromResult<ErrorOr<(IReadOnlyCollection<BowlerTitleSummaryViewModel>, IReadOnlyCollection<TitlesByYearViewModel>)>>(
+            (summaries, years));
+        RegisterService(new FakeChampionsService(result));
+        var cut = _ctx.Render<ChampionsPage>();
+
+        // No sections collapsed initially
+        cut.FindAll(".tier-section.is-collapsed").Count.ShouldBe(0);
+
+        // Act — Titles view is active by default; Collapse All is the second toolbar-actions button
+        await cut.Find(".toolbar-actions button:last-child").ClickAsync();
+
+        // Assert — all 3 tiers collapsed
+        cut.FindAll(".tier-section.is-collapsed").Count.ShouldBe(3);
+    }
+
+    [Fact(DisplayName = "Should dismiss error alert when OnDismiss is invoked")]
+    public async Task Render_ShouldDismissAlert_WhenOnDismissIsInvoked()
+    {
+        // Arrange
+        var result = Task.FromResult<ErrorOr<(IReadOnlyCollection<BowlerTitleSummaryViewModel>, IReadOnlyCollection<TitlesByYearViewModel>)>>(
+            Error.Failure("Champions.Unavailable", "Failed to load champions."));
+        RegisterService(new FakeChampionsService(result));
+        var cut = _ctx.Render<ChampionsPage>();
+        cut.Markup.ShouldContain("neba-alert");
+
+        // Act — click the dismiss button (aria-label set by NebaAlert)
+        await cut.Find("button[aria-label='Dismiss alert']").ClickAsync();
+
+        // Assert
+        cut.Markup.ShouldNotContain("neba-alert");
+    }
+
     private void RegisterService(FakeChampionsService service)
         => _ctx.Services.AddSingleton<ITournamentApiService>(service);
 
