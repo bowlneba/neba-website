@@ -12,6 +12,8 @@ internal sealed class AzureBlobStorageService
     : IFileStorageService
 {
     private const string StorageMetricsNamespace = "Neba.Storage";
+    private const string StorageContainerTag = "storage.container";
+    private const string StoragePathTag = "storage.path";
     private const string StorageDurationMsTag = "storage.duration_ms";
 
     private static readonly ActivitySource ActivitySource = new(StorageMetricsNamespace);
@@ -38,8 +40,8 @@ internal sealed class AzureBlobStorageService
     {
         using var activity = ActivitySource.StartActivity("storage.exists", ActivityKind.Client);
         activity?.SetCodeAttributes(nameof(ExistsAsync), StorageMetricsNamespace);
-        activity?.SetTag("storage.container", container);
-        activity?.SetTag("storage.path", path);
+        activity?.SetTag(StorageContainerTag, container);
+        activity?.SetTag(StoragePathTag, path);
 
         long startTimestamp = _stopwatchProvider.GetTimestamp();
 
@@ -81,8 +83,8 @@ internal sealed class AzureBlobStorageService
     {
         using var activity = ActivitySource.StartActivity("storage.download", ActivityKind.Client);
         activity?.SetCodeAttributes(nameof(GetFileAsync), StorageMetricsNamespace);
-        activity?.SetTag("storage.container", container);
-        activity?.SetTag("storage.path", path);
+        activity?.SetTag(StorageContainerTag, container);
+        activity?.SetTag(StoragePathTag, path);
 
         long startTimestamp = _stopwatchProvider.GetTimestamp();
 
@@ -147,8 +149,8 @@ internal sealed class AzureBlobStorageService
     {
         using var activity = ActivitySource.StartActivity("storage.upload", ActivityKind.Client);
         activity?.SetCodeAttributes(nameof(UploadFileAsync), StorageMetricsNamespace);
-        activity?.SetTag("storage.container", container);
-        activity?.SetTag("storage.path", path);
+        activity?.SetTag(StorageContainerTag, container);
+        activity?.SetTag(StoragePathTag, path);
         activity?.SetTag("storage.size_bytes", content.Length);
         activity?.SetTag("storage.content_type", contentType);
 
@@ -203,8 +205,8 @@ internal sealed class AzureBlobStorageService
     {
         using var activity = ActivitySource.StartActivity("storage.delete", ActivityKind.Client);
         activity?.SetCodeAttributes(nameof(DeleteAsync), StorageMetricsNamespace);
-        activity?.SetTag("storage.container", container);
-        activity?.SetTag("storage.path", path);
+        activity?.SetTag(StorageContainerTag, container);
+        activity?.SetTag(StoragePathTag, path);
 
         long startTimestamp = _stopwatchProvider.GetTimestamp();
 
