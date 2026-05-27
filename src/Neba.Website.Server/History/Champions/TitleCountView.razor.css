@@ -142,6 +142,13 @@
     word-break: break-word;
 }
 
+.bowler-card__count {
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    opacity: 0.6;
+}
+
 .bowler-card__chev {
     flex-shrink: 0;
     color: currentColor;

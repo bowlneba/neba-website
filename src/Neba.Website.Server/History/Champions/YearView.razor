@@ -70,9 +70,12 @@
     public EventCallback<BowlerTitleSummaryViewModel> OnBowlerSelected { get; set; }
 
     private HashSet<int> _collapsedYears = new();
+    private bool _initialized = false;
 
     protected override void OnParametersSet()
     {
+        if (_initialized || !Years.Any()) return;
+        _initialized = true;
         var mostRecent = Years.OrderByDescending(y => y.Year).Take(3).Select(y => y.Year).ToHashSet();
         _collapsedYears = Years.Select(y => y.Year).Where(y => !mostRecent.Contains(y)).ToHashSet();
     }
