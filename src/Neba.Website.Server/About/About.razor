@@ -317,28 +317,28 @@
         }
         else
         {
-            @if (TitleSponsor is not null)
+            @if (_titleSponsor is not null)
             {
-                <a href="/sponsors/@TitleSponsor.Slug"
+                <a href="/sponsors/@_titleSponsor.Slug"
                    class="block rounded-lg p-6 bg-[var(--neba-color-primary-container)] text-white no-underline mb-5"
-                   aria-label="View details for @TitleSponsor.Name">
+                   aria-label="View details for @_titleSponsor.Name">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                         <div>
                             <p class="text-xs font-semibold uppercase tracking-widest text-[var(--neba-blue-200)] mb-1">Title Sponsor</p>
-                            <h3 class="text-2xl font-bold mb-2">@TitleSponsor.Name</h3>
-                            @if (TitleSponsor.TagPhrase is not null)
+                            <h3 id="about-title-sponsor-name" class="text-2xl font-bold mb-2">@_titleSponsor.Name</h3>
+                            @if (_titleSponsor.TagPhrase is not null)
                             {
-                                <p class="text-[var(--neba-blue-200)] mb-2">@TitleSponsor.TagPhrase</p>
+                                <p class="text-[var(--neba-blue-200)] mb-2">@_titleSponsor.TagPhrase</p>
                             }
-                            @if (TitleSponsor.Description is not null)
+                            @if (_titleSponsor.Description is not null)
                             {
-                                <p class="text-sm leading-relaxed opacity-90">@TitleSponsor.Description</p>
+                                <p class="text-sm leading-relaxed opacity-90">@_titleSponsor.Description</p>
                             }
                         </div>
                         <div class="flex justify-center md:justify-end">
                             <div class="bg-white rounded-lg p-4 shadow-lg" style="transform: rotate(-2deg);">
-                                <img src="@(TitleSponsor.LogoUrl?.ToString() ?? "/images/neba-logo.png")"
-                                     alt="@TitleSponsor.Name logo"
+                                <img src="@(_titleSponsor.LogoUrl?.ToString() ?? "/images/neba-logo.png")"
+                                     alt="@_titleSponsor.Name logo"
                                      class="max-h-32 object-contain" />
                             </div>
                         </div>
@@ -346,7 +346,7 @@
                 </a>
             }
 
-            @if (PremierSponsors.Any())
+            @if (_premierSponsors.Any())
             {
                 <div>
                     <div class="flex items-center gap-3 mb-4">
@@ -354,7 +354,7 @@
                         <hr class="flex-1 border-[var(--neba-border)]" />
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        @foreach (var sponsor in PremierSponsors)
+                        @foreach (var sponsor in _premierSponsors)
                         {
                             <a href="/sponsors/@sponsor.Slug"
                                class="neba-card sponsor-card-premier block"
@@ -372,7 +372,7 @@
                 </div>
             }
 
-            @if (TitleSponsor is null && !PremierSponsors.Any())
+            @if (_titleSponsor is null && !_premierSponsors.Any())
             {
                 <p class="section-text text-[var(--neba-gray-500)]">Sponsor information is not currently available.</p>
             }
@@ -386,7 +386,7 @@
             <div>
                 <p class="section-text">Call to reserve your spot or fill out the form on the respective tournament page.</p>
                 <div class="text-2xl font-bold text-[var(--neba-blue-700)] font-display mt-2">
-                    <a href="tel:4135139508" class="hover:underline">(413) 513-9508</a>
+                    <a href="tel:4135319508" class="hover:underline">(413) 531-9508</a>
                 </div>
                 <p class="section-text text-sm text-[var(--neba-gray-600)] mt-1">
                     Deadline: <strong>Friday at 10:00 PM</strong> before the tournament
@@ -402,18 +402,10 @@
 </div>
 
 @code {
-    private List<SponsorSummaryViewModel> _sponsors = [];
+    private SponsorSummaryViewModel? _titleSponsor;
+    private IReadOnlyList<SponsorSummaryViewModel> _premierSponsors = [];
     private bool _sponsorsLoading = true;
     private string? _sponsorError;
-
-    private SponsorSummaryViewModel? TitleSponsor =>
-        _sponsors.FirstOrDefault(s => s.Tier == "Title Sponsor");
-
-    private IEnumerable<SponsorSummaryViewModel> PremierSponsors =>
-        _sponsors
-            .Where(s => s.Tier == "Premier")
-            .OrderBy(s => s.Priority)
-            .ThenBy(s => s.Name);
 
     protected override async Task OnInitializedAsync()
     {
@@ -430,9 +422,12 @@
             return;
         }
 
-        _sponsors = result.Value.Items
-            .Select(s => s.ToViewModel())
-            .Where(s => s.Tier is "Title Sponsor" or "Premier")
+        var all = result.Value.Items.Select(s => s.ToViewModel()).ToList();
+        _titleSponsor = all.FirstOrDefault(s => s.Tier == "Title Sponsor");
+        _premierSponsors = all
+            .Where(s => s.Tier == "Premier")
+            .OrderBy(s => s.Priority)
+            .ThenBy(s => s.Name)
             .ToList();
     }
 }
