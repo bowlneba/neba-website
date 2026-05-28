@@ -418,6 +418,7 @@
 
         if (result.IsError)
         {
+            Logger.LogWarning("Failed to load sponsors: {Error}", result.FirstError.Description);
             _sponsorError = result.FirstError.Description;
             return;
         }
