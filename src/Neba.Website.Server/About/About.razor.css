@@ -1,0 +1,100 @@
+/* ── Font utility ─────────────────────────────────────────── */
+.font-display {
+    font-family: var(--neba-font-display);
+}
+
+/* ── Panel/card section headings ─────────────────────────── */
+.panel-heading {
+    font-family: var(--neba-font-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--neba-blue-700);
+    margin-bottom: 0.75rem;
+}
+
+.info-card-heading {
+    font-family: var(--neba-font-display);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--neba-blue-700);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.65rem;
+}
+
+/* ── Body text ───────────────────────────────────────────── */
+.section-text {
+    font-size: 0.9rem;
+    color: var(--neba-gray-700);
+    line-height: 1.75;
+}
+
+.section-text + .section-text {
+    margin-top: 0.5rem;
+}
+
+/* ── Squad time badges ───────────────────────────────────── */
+.squad-time-badge {
+    background: var(--neba-gray-100);
+    border: 1px solid var(--neba-gray-200);
+    border-radius: var(--radius-md);
+    padding: 0.3rem 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--neba-gray-700);
+}
+
+/* ── Fee grid ────────────────────────────────────────────── */
+.fee-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.fee-row {
+    display: flex;
+    flex-direction: column;
+    padding: 0.55rem 0.65rem;
+    background: var(--neba-gray-050);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--neba-gray-200);
+}
+
+.fee-label {
+    font-size: 0.78rem;
+    color: var(--neba-gray-600);
+}
+
+.fee-amount {
+    font-family: var(--neba-font-display);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--neba-blue-700);
+}
+
+/* ── Criteria list ───────────────────────────────────────── */
+.criteria-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.criteria-list li {
+    display: flex;
+    gap: 0.65rem;
+    font-size: 0.875rem;
+    color: var(--neba-gray-700);
+    line-height: 1.65;
+}
+
+.criteria-list li::before {
+    content: '\2013';
+    color: var(--neba-blue-300);
+    flex-shrink: 0;
+    padding-top: 0.05rem;
+}
+

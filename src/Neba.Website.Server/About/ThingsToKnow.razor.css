@@ -1,0 +1,464 @@
+/* ── Shared panel ────────────────────────────────────────── */
+.ttk-panel {
+    background: #fff;
+    border: 1px solid var(--neba-gray-300);
+    border-radius: var(--radius-md);
+    padding: 1.5rem 1.75rem;
+}
+
+/* ── Section header ──────────────────────────────────────── */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 1.25rem;
+}
+
+.section-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    background: var(--neba-blue-100);
+    color: var(--neba-blue-700);
+    border-radius: 50%;
+    font-family: var(--neba-font-display);
+    font-size: 0.78rem;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.section-header h2 {
+    font-family: var(--neba-font-display);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--neba-blue-brand);
+}
+
+/* ── Rule rows ───────────────────────────────────────────── */
+.rule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.rule-item {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--neba-gray-200);
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 1rem;
+    align-items: start;
+}
+
+.rule-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.rule-item:first-child {
+    padding-top: 0;
+}
+
+.rule-item-bordered {
+    border-bottom: 1px solid var(--neba-gray-200);
+    padding-bottom: 1rem;
+    margin-bottom: 0;
+    padding-top: 0;
+}
+
+.rule-label {
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: var(--neba-blue-700);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding-top: 0.1rem;
+    flex-shrink: 0;
+}
+
+.section-text {
+    font-size: 0.9rem;
+    color: var(--neba-gray-700);
+    line-height: 1.75;
+}
+
+.section-text + .section-text {
+    margin-top: 0.5rem;
+}
+
+/* ── Criteria list ───────────────────────────────────────── */
+.criteria-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.criteria-list li {
+    display: flex;
+    gap: 0.65rem;
+    font-size: 0.875rem;
+    color: var(--neba-gray-700);
+    line-height: 1.65;
+}
+
+.criteria-list li::before {
+    content: '\2013';
+    color: var(--neba-blue-300);
+    flex-shrink: 0;
+    padding-top: 0.05rem;
+}
+
+/* ── Fee grid ────────────────────────────────────────────── */
+.fee-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.fee-row {
+    display: flex;
+    flex-direction: column;
+    padding: 0.55rem 0.65rem;
+    background: var(--neba-gray-050);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--neba-gray-200);
+}
+
+.fee-label {
+    font-size: 0.78rem;
+    color: var(--neba-gray-600);
+}
+
+.fee-amount {
+    font-family: var(--neba-font-display);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--neba-blue-700);
+}
+
+.fee-note {
+    margin-top: 0.6rem;
+    font-size: 0.82rem;
+    color: var(--neba-gray-500);
+}
+
+/* ── Side pot badges ─────────────────────────────────────── */
+.side-pot-grid {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.side-pot-badge {
+    background: var(--neba-gray-100);
+    border: 1px solid var(--neba-gray-200);
+    border-radius: var(--radius-md);
+    padding: 0.3rem 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--neba-gray-700);
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+}
+
+.pot-amount {
+    font-family: var(--neba-font-display);
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--neba-blue-700);
+}
+
+.pot-label {
+    font-size: 0.72rem;
+    color: var(--neba-gray-500);
+    font-weight: 500;
+}
+
+/* ── Dress code ──────────────────────────────────────────── */
+.dress-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-top: 0.5rem;
+}
+
+.dress-block h4 {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.dress-allowed h4 {
+    color: #16a34a;
+}
+
+.dress-not-allowed h4 {
+    color: #dc2626;
+}
+
+.dress-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.dress-list li {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--neba-gray-700);
+    line-height: 1.5;
+}
+
+.dress-allowed .dress-list li::before {
+    content: '\2713';
+    color: #16a34a;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.dress-not-allowed .dress-list li::before {
+    content: '\2717';
+    color: #dc2626;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ── Callout note ────────────────────────────────────────── */
+.callout-note {
+    background: var(--neba-blue-100);
+    border: 1px solid var(--neba-blue-200);
+    border-radius: var(--radius-md);
+    padding: 0.65rem 0.9rem;
+    font-size: 0.82rem;
+    color: var(--neba-blue-brand);
+    line-height: 1.6;
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    margin-top: 0.75rem;
+}
+
+.callout-note svg {
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+}
+
+/* ── Fine badge ──────────────────────────────────────────── */
+.fine-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: var(--radius-md);
+    padding: 0.15rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #92400e;
+}
+
+/* ── Contact link ────────────────────────────────────────── */
+.contact-link {
+    color: var(--neba-blue-700);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.contact-link:hover {
+    color: var(--neba-blue-500);
+}
+
+/* ── Format visual ───────────────────────────────────────── */
+.format-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.format-step {
+    text-align: center;
+}
+
+.step-num {
+    font-family: var(--neba-font-display);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--neba-blue-700);
+}
+
+.step-lbl {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--neba-gray-500);
+    margin-top: 0.1rem;
+}
+
+.format-arrow {
+    color: var(--neba-gray-400);
+    font-size: 1.25rem;
+}
+
+.format-note {
+    margin-top: 0.75rem;
+}
+
+/* ── Cut list ────────────────────────────────────────────── */
+.cut-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 0.75rem;
+}
+
+.cut-item {
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--neba-gray-200);
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 1rem;
+    align-items: start;
+}
+
+.cut-item-last {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.cut-label {
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: var(--neba-blue-brand);
+}
+
+.cut-desc {
+    font-size: 0.875rem;
+    color: var(--neba-gray-700);
+    line-height: 1.65;
+}
+
+/* ── Contact grid ────────────────────────────────────────── */
+.contact-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.contact-card {
+    background: var(--neba-gray-050);
+    border: 1px solid var(--neba-gray-200);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+}
+
+.contact-card-full {
+    grid-column: span 2;
+}
+
+.contact-role {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--neba-gray-500);
+    margin-bottom: 0.25rem;
+}
+
+.contact-name {
+    font-family: var(--neba-font-display);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--neba-gray-800);
+    margin-bottom: 0.35rem;
+}
+
+.contact-phone {
+    font-family: var(--neba-font-display);
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--neba-blue-700);
+}
+
+.contact-email {
+    font-size: 0.82rem;
+    color: var(--neba-blue-600);
+    margin-top: 0.15rem;
+    word-break: break-all;
+}
+
+.contact-web {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.contact-web-link {
+    color: var(--neba-blue-700);
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+}
+
+.contact-email-link {
+    color: var(--neba-blue-600);
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .fee-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .contact-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .contact-card-full {
+        grid-column: span 1;
+    }
+
+    .rule-item,
+    .cut-item {
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
+    }
+
+    .rule-label {
+        padding-bottom: 0.1rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .dress-cols {
+        grid-template-columns: 1fr;
+    }
+
+    .fee-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .ttk-panel {
+        padding: 1.25rem 1rem;
+    }
+}

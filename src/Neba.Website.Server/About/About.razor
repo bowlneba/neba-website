@@ -1,0 +1,433 @@
+@page "/about"
+@using Neba.Api.Contracts.Sponsors
+@using Neba.Website.Server.Services
+@using Neba.Website.Server.Sponsors
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject ApiExecutor ApiExecutor
+@inject ISponsorsApi SponsorsApi
+@inject ILogger<About> Logger
+
+<PageTitle>About NEBA</PageTitle>
+<HeadContent>
+    <meta name="description"
+          content="New England's premier amateur scratch bowling tournament series — run by bowlers for bowlers since 1963. Learn about our mission, format, rules, and sponsors." />
+</HeadContent>
+
+<div class="neba-space-y-6">
+
+    <!-- Page title -->
+    <div class="page-title-bar">
+        <div class="page-title-inner">
+            <h1>About NEBA</h1>
+            <p>New England's premier amateur scratch bowling tournament series, run by bowlers for bowlers since 1963.</p>
+        </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="grid grid-cols-3 gap-4">
+        <div class="neba-card text-center">
+            <div class="text-3xl font-bold text-[var(--neba-blue-700)] font-display">60+</div>
+            <div class="text-xs font-semibold uppercase tracking-widest text-[var(--neba-gray-500)] mt-1">Years</div>
+        </div>
+        <div class="neba-card text-center">
+            <div class="text-3xl font-bold text-[var(--neba-blue-700)] font-display">1,000+</div>
+            <div class="text-xs font-semibold uppercase tracking-widest text-[var(--neba-gray-500)] mt-1">Events Held</div>
+        </div>
+        <div class="neba-card text-center">
+            <div class="text-3xl font-bold text-[var(--neba-blue-700)] font-display">500+</div>
+            <div class="text-xs font-semibold uppercase tracking-widest text-[var(--neba-gray-500)] mt-1">Active Bowlers</div>
+        </div>
+    </div>
+
+    <!-- About + Mission -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="neba-card">
+            <h2 class="panel-heading">About NEBA</h2>
+            <p class="section-text">NEBA is America's longest-running USBC-sanctioned monthly scratch tournament. NEBA was formed in 1963 and celebrated its 50th anniversary in 2013. In 2023, NEBA celebrated its 1,000th event.</p>
+            <p class="section-text">NEBA tournaments are professionally managed and provide the best scratch competition in New England.</p>
+        </div>
+        <div class="neba-card">
+            <h2 class="panel-heading">Our Mission</h2>
+            <p class="section-text" style="font-style: italic; font-size: 0.95rem; line-height: 1.8;">New England's premier amateur scratch bowling tournament series, run by bowlers for bowlers, striving to foster competitive excellence and player development.</p>
+        </div>
+    </div>
+
+    <!-- Tournament Format -->
+    <div class="neba-panel">
+        <h2 class="panel-heading">Tournament Format</h2>
+        <div class="flex items-center gap-3 flex-wrap mt-1">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-[var(--neba-blue-700)] font-display">5</div>
+                <div class="text-xs font-semibold uppercase tracking-wide text-[var(--neba-gray-500)] mt-0.5">Qualifying Games</div>
+            </div>
+            <span class="text-[var(--neba-gray-400)] text-lg">→</span>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-[var(--neba-blue-700)] font-display">10</div>
+                <div class="text-xs font-semibold uppercase tracking-wide text-[var(--neba-gray-500)] mt-0.5">Lanes</div>
+            </div>
+            <span class="text-[var(--neba-gray-400)] text-lg">→</span>
+            <div class="text-center">
+                <div class="text-lg font-bold text-[var(--neba-blue-700)] font-display">1-Game</div>
+                <div class="text-xs font-semibold uppercase tracking-wide text-[var(--neba-gray-500)] mt-0.5">Match Play Finals</div>
+            </div>
+            <span class="text-[var(--neba-gray-400)] text-lg">→</span>
+            <div class="text-center">
+                <div class="text-lg font-bold text-[var(--neba-blue-700)] font-display">Single Elim</div>
+                <div class="text-xs font-semibold uppercase tracking-wide text-[var(--neba-gray-500)] mt-0.5">Head-to-Head</div>
+            </div>
+        </div>
+        <p class="section-text mt-4">
+            1 in 4.5 to 1 in 5 entries qualify for match play (1 in 6 entries from each squad guaranteed).
+            1 in 7 Seniors (age 50+) are guaranteed to qualify; additionally 1 in 7 Women and Super Seniors (age 60+)
+            are also guaranteed, based on at least 7 entries.
+        </p>
+        <div class="mt-4">
+            <p class="section-text font-semibold mb-2">Squad times</p>
+            <div class="flex gap-2 flex-wrap">
+                <span class="squad-time-badge">Saturday @@ 6:00 PM</span>
+                <span class="squad-time-badge">Sunday @@ 9:00 AM</span>
+                <span class="squad-time-badge">Sunday @@ 12:30 PM</span>
+            </div>
+            <p class="section-text mt-2 text-xs text-[var(--neba-gray-500)]">Special tournaments (non-champs, Tournament of Champions) may have different times.</p>
+        </div>
+        <p class="section-text mt-3"><strong>Lane patterns:</strong> Announced at least 7 days in advance.</p>
+    </div>
+
+    <!-- Qualifying Structure table -->
+    <div class="neba-panel">
+        <h2 class="panel-heading">Qualifying Structure</h2>
+        <div class="overflow-x-auto mt-3">
+            <table class="neba-table w-full text-sm">
+                <thead>
+                    <tr>
+                        <th class="text-left">Entries</th>
+                        <th>Qualifiers</th>
+                        <th class="text-left">Byes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>20 or fewer</td><td>4</td><td>None</td></tr>
+                    <tr><td>21–30</td><td>6</td><td>1st round qualifiers 1–2</td></tr>
+                    <tr><td>31–40</td><td>8</td><td>None</td></tr>
+                    <tr><td>41–60</td><td>12</td><td>1st round qualifiers 1–4</td></tr>
+                    <tr><td>61–80</td><td>16</td><td>None</td></tr>
+                    <tr><td>81–120</td><td>24</td><td>1st round qualifiers 1–8</td></tr>
+                    <tr><td>121–160</td><td>32</td><td>None</td></tr>
+                    <tr><td>161–200</td><td>40</td><td>1st round qualifiers 1–24</td></tr>
+                    <tr><td>201–240</td><td>48</td><td>1st round qualifiers 1–16</td></tr>
+                    <tr><td>241–280</td><td>56</td><td>1st round qualifiers 1–8</td></tr>
+                    <tr><td>281 or more</td><td>64</td><td>None</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Eligibility, Entry Fees, Attire -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        <div class="neba-panel">
+            <h3 class="info-card-heading">Eligibility</h3>
+            <p class="section-text">Any PBA or PWBA member that has not won a PBA, PWBA, or PBA50 national tournament in the past five years (US Open and USBC Masters are exempt) or is not in the top 40 on the national PBA points list for the prior season.</p>
+            <p class="section-text mt-3">Any NEBA member in good standing who wins a national title and maintains their NEBA membership can continue to compete in NEBA.</p>
+        </div>
+
+        <div class="neba-panel">
+            <h3 class="info-card-heading">Entry Fees</h3>
+            <p class="section-text font-semibold mb-2">Monthly tournaments</p>
+            <div class="fee-grid">
+                <div class="fee-row"><span class="fee-label">Regular events</span><span class="fee-amount">$100</span></div>
+                <div class="fee-row"><span class="fee-label">Special events</span><span class="fee-amount">$150</span></div>
+                <div class="fee-row"><span class="fee-label">Tournament of Champions</span><span class="fee-amount">$125</span></div>
+            </div>
+            <p class="section-text mt-3 text-xs text-[var(--neba-gray-500)]">Special events include Masters and Points Leaders tournaments.</p>
+            <p class="section-text mt-3 font-semibold mb-2">Membership</p>
+            <div class="fee-grid">
+                <div class="fee-row"><span class="fee-label">New member</span><span class="fee-amount">$25</span></div>
+                <div class="fee-row"><span class="fee-label">Renewal</span><span class="fee-amount">$25</span></div>
+                <div class="fee-row"><span class="fee-label">Non-member surcharge</span><span class="fee-amount">$15</span></div>
+                <div class="fee-row"><span class="fee-label">Guest (one time)</span><span class="fee-amount">$0</span></div>
+            </div>
+        </div>
+
+        <div class="neba-panel">
+            <h3 class="info-card-heading">Attire &amp; Payment</h3>
+            <p class="section-text font-semibold mb-1">Required</p>
+            <ul class="criteria-list">
+                <li>Polo-type or mock neck collar shirt</li>
+                <li>Pants or business casual shorts (zippers required)</li>
+                <li>Full name on back, 2–4 inch letters in contrasting color</li>
+                <li>Mock neck: all advertising must be permanently embroidered</li>
+            </ul>
+            <p class="section-text font-semibold mt-3 mb-1">Not allowed</p>
+            <ul class="criteria-list">
+                <li>Sweatpants, athletic shorts, yoga pants</li>
+                <li>Tattered, frayed, or clothing with holes</li>
+                <li>Hats, headbands, headphones, or earbuds</li>
+                <li>White shirts (previous NEBA champions only)</li>
+            </ul>
+            <div class="mt-3 pt-3 border-t border-[var(--neba-border)]">
+                <p class="section-text"><strong>Cash required</strong> at all NEBA tournaments.</p>
+                <p class="section-text text-xs text-[var(--neba-gray-500)] mt-1">New members may compete three times without a name on the back without penalty.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bowler of the Year Points System -->
+    <div class="neba-panel">
+        <h2 class="panel-heading">Bowler of the Year Points System</h2>
+        <div class="divide-y divide-[var(--neba-border)] mt-2">
+            <div class="flex items-center gap-3 py-2">
+                <span class="text-lg font-bold text-[var(--neba-blue-700)] font-display min-w-[3rem]">5</span>
+                <span class="section-text">Points for bowling</span>
+            </div>
+            <div class="flex items-center gap-3 py-2">
+                <span class="text-lg font-bold text-[var(--neba-blue-700)] font-display min-w-[3rem]">10</span>
+                <span class="section-text">Cash but do not qualify for match play (294 entries+)</span>
+            </div>
+            <div class="flex items-center gap-3 py-2">
+                <span class="text-lg font-bold text-[var(--neba-blue-700)] font-display min-w-[3rem]">15</span>
+                <span class="section-text">Match play — out in the first round</span>
+            </div>
+            <div class="flex items-center gap-3 py-2">
+                <span class="text-lg font-bold text-[var(--neba-blue-700)] font-display min-w-[3rem]">22</span>
+                <span class="section-text">Match play — out in the second round</span>
+            </div>
+            <div class="flex items-center gap-3 py-2">
+                <span class="text-lg font-bold text-[var(--neba-blue-700)] font-display min-w-[3rem]">30</span>
+                <span class="section-text">Match play — out in the third round</span>
+            </div>
+            <div class="flex items-center gap-3 py-2">
+                <span class="text-lg font-bold text-[var(--neba-blue-700)] font-display min-w-[3rem]">39</span>
+                <span class="section-text">Match play — out in the fourth round</span>
+            </div>
+            <div class="flex items-center gap-3 py-2">
+                <span class="text-lg font-bold text-[var(--neba-blue-700)] font-display min-w-[3rem]">49</span>
+                <span class="section-text">Match play — out in the fifth round</span>
+            </div>
+            <div class="flex items-center gap-3 py-2">
+                <span class="text-lg font-bold text-[var(--neba-blue-700)] font-display min-w-[3rem]">60</span>
+                <span class="section-text">Match play — out in the sixth round, or champion if fewer than 40 finalists</span>
+            </div>
+            <div class="flex items-center gap-3 py-2">
+                <span class="text-lg font-bold text-[var(--neba-blue-700)] font-display min-w-[3rem]">72</span>
+                <span class="section-text">Match play champion (40 or more finalists)</span>
+            </div>
+            <div class="flex items-center gap-3 py-2">
+                <span class="text-lg font-bold text-[var(--neba-blue-700)] font-display min-w-[3rem]">+5</span>
+                <span class="section-text">Bonus points awarded to high qualifiers</span>
+            </div>
+        </div>
+        <div class="mt-4 p-3 bg-[var(--neba-gray-050)] border border-[var(--neba-border)] rounded text-sm text-[var(--neba-gray-700)] leading-relaxed">
+            You do not get extra points for re-entering. If you bowl three times and do not make the cut, you get 5 points. If you bowl three times and make the cut, you get the position points.
+            <br /><br />
+            The match play point progression is: 15 base, then +7 first round, +8 second round, +9 third round, +10 fourth round, up to +12.
+            <br /><br />
+            <strong>Note:</strong> The point system is different for the Tournament of Champions and Doubles tournaments — see the rule book for details.
+        </div>
+    </div>
+
+    <!-- Board of Directors + Documents -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <div class="neba-panel">
+            <h2 class="panel-heading">Board of Directors</h2>
+            <p class="section-text">NEBA is governed by a volunteer board of directors elected by the membership. The board sets organizational policy, oversees finances, and ensures every event meets the standard our members expect. For the full list of current officers and directors, see Article IV of the bylaws.</p>
+            <div class="mt-4">
+                <a href="/bylaws" class="neba-btn neba-btn-secondary inline-flex items-center gap-2 text-sm">
+                    View officers &amp; directors
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                </a>
+            </div>
+        </div>
+
+        <div class="neba-panel">
+            <h2 class="panel-heading">Documents &amp; Resources</h2>
+            <div class="flex flex-col gap-2 mt-1">
+                <div class="flex items-center justify-between gap-2 px-3 py-2 bg-[var(--neba-gray-050)] border border-[var(--neba-border)] rounded text-sm">
+                    <span class="font-medium text-[var(--neba-gray-800)]">Bylaws</span>
+                    <a href="/bylaws" class="inline-flex items-center gap-1 text-xs font-semibold text-[var(--neba-blue-700)] hover:text-[var(--neba-blue-500)]">
+                        View
+                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+                <div class="flex items-center justify-between gap-2 px-3 py-2 bg-[var(--neba-gray-050)] border border-[var(--neba-border)] rounded text-sm">
+                    <span class="font-medium text-[var(--neba-gray-800)]">Tournament Rules</span>
+                    <a href="/tournaments/rules" class="inline-flex items-center gap-1 text-xs font-semibold text-[var(--neba-blue-700)] hover:text-[var(--neba-blue-500)]">
+                        View
+                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+                <div class="flex items-center justify-between gap-2 px-3 py-2 bg-[var(--neba-gray-050)] border border-[var(--neba-border)] rounded text-sm">
+                    <span class="font-medium text-[var(--neba-gray-800)]">FAQ</span>
+                    <a href="/about/faq" class="inline-flex items-center gap-1 text-xs font-semibold text-[var(--neba-blue-700)] hover:text-[var(--neba-blue-500)]">
+                        View
+                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+                <div class="flex items-center justify-between gap-2 px-3 py-2 bg-[var(--neba-gray-050)] border border-[var(--neba-border)] rounded text-sm">
+                    <span class="font-medium text-[var(--neba-gray-800)]">Things to Know</span>
+                    <a href="/about/things-to-know" class="inline-flex items-center gap-1 text-xs font-semibold text-[var(--neba-blue-700)] hover:text-[var(--neba-blue-500)]">
+                        View
+                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Sponsors -->
+    <div class="neba-panel">
+        <div class="flex items-center justify-between gap-4 mb-4">
+            <h2 class="panel-heading mb-0">Our Sponsors</h2>
+            <a href="/sponsors" class="inline-flex items-center gap-1 text-sm font-semibold text-[var(--neba-blue-700)] hover:text-[var(--neba-blue-500)]">
+                View all sponsors
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_sponsorError))
+        {
+            <NebaAlert Severity="NotifySeverity.Error" Title="Error Loading Sponsors" Message="@_sponsorError" Dismissible="true"
+                       OnDismiss="@(() => _sponsorError = null)" />
+        }
+        else if (_sponsorsLoading)
+        {
+            <div aria-busy="true" aria-label="Loading sponsors" class="neba-space-y-4">
+                <div class="rounded-lg p-6 bg-[var(--neba-surface-high)] grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    <div class="space-y-3">
+                        <NebaSkeletonLoader Type="SkeletonType.Custom" Width="50%" Height="1.75rem" />
+                        <NebaSkeletonLoader Type="SkeletonType.Text" Rows="2" />
+                    </div>
+                    <NebaSkeletonLoader Type="SkeletonType.Custom" Width="100%" Height="140px" />
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    @for (var i = 0; i < 3; i++)
+                    {
+                        <div class="neba-card space-y-2">
+                            <div class="neba-skeleton h-16 w-full rounded"></div>
+                            <div class="neba-skeleton h-4 w-3/4"></div>
+                            <div class="neba-skeleton h-3 w-full"></div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (_titleSponsor is not null)
+            {
+                <a href="/sponsors/@_titleSponsor.Slug"
+                   class="block rounded-lg p-6 bg-[var(--neba-color-primary-container)] text-white no-underline mb-5"
+                   aria-label="View details for @_titleSponsor.Name">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-widest text-[var(--neba-blue-200)] mb-1">Title Sponsor</p>
+                            <h3 id="about-title-sponsor-name" class="text-2xl font-bold mb-2">@_titleSponsor.Name</h3>
+                            @if (_titleSponsor.TagPhrase is not null)
+                            {
+                                <p class="text-[var(--neba-blue-200)] mb-2">@_titleSponsor.TagPhrase</p>
+                            }
+                            @if (_titleSponsor.Description is not null)
+                            {
+                                <p class="text-sm leading-relaxed opacity-90">@_titleSponsor.Description</p>
+                            }
+                        </div>
+                        <div class="flex justify-center md:justify-end">
+                            <div class="bg-white rounded-lg p-4 shadow-lg" style="transform: rotate(-2deg);">
+                                <img src="@(_titleSponsor.LogoUrl?.ToString() ?? "/images/neba-logo.png")"
+                                     alt="@_titleSponsor.Name logo"
+                                     class="max-h-32 object-contain" />
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            }
+
+            @if (_premierSponsors.Any())
+            {
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <h3 class="text-base font-bold text-[var(--neba-gray-800)] whitespace-nowrap">Premier Partners</h3>
+                        <hr class="flex-1 border-[var(--neba-border)]" />
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        @foreach (var sponsor in _premierSponsors)
+                        {
+                            <a href="/sponsors/@sponsor.Slug"
+                               class="neba-card sponsor-card-premier block"
+                               aria-label="Learn more about @sponsor.Name">
+                                <div class="h-20 flex items-center justify-center mb-3">
+                                    <img src="@(sponsor.LogoUrl?.ToString() ?? "/images/neba-logo.png")"
+                                         alt="@sponsor.Name logo"
+                                         class="max-h-16 object-contain" />
+                                </div>
+                                <h4 class="font-semibold text-[var(--neba-text)] mb-1">@sponsor.Name</h4>
+                                <div class="text-xs font-medium uppercase tracking-wide text-[var(--neba-blue-500)]">@sponsor.Category</div>
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (_titleSponsor is null && !_premierSponsors.Any())
+            {
+                <p class="section-text text-[var(--neba-gray-500)]">Sponsor information is not currently available.</p>
+            }
+        }
+    </div>
+
+    <!-- Reservations -->
+    <div class="neba-panel">
+        <h2 class="panel-heading">Reservations</h2>
+        <div class="flex flex-wrap items-start justify-between gap-6 mt-1">
+            <div>
+                <p class="section-text">Call to reserve your spot or fill out the form on the respective tournament page.</p>
+                <div class="text-2xl font-bold text-[var(--neba-blue-700)] font-display mt-2">
+                    <a href="tel:4135319508" class="hover:underline">(413) 531-9508</a>
+                </div>
+                <p class="section-text text-sm text-[var(--neba-gray-600)] mt-1">
+                    Deadline: <strong>Friday at 10:00 PM</strong> before the tournament
+                </p>
+            </div>
+            <a href="/tournaments" class="neba-btn neba-btn-primary inline-flex items-center gap-2">
+                View tournament schedule
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+    </div>
+
+</div>
+
+@code {
+    private SponsorSummaryViewModel? _titleSponsor;
+    private IReadOnlyList<SponsorSummaryViewModel> _premierSponsors = [];
+    private bool _sponsorsLoading = true;
+    private string? _sponsorError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync(
+            "Sponsors",
+            "ListActiveSponsors",
+            ct => SponsorsApi.ListActiveSponsorsAsync(ct));
+
+        _sponsorsLoading = false;
+
+        if (result.IsError)
+        {
+            _sponsorError = result.FirstError.Description;
+            return;
+        }
+
+        var all = result.Value.Items.Select(s => s.ToViewModel()).ToList();
+        _titleSponsor = all.FirstOrDefault(s => s.Tier == "Title Sponsor");
+        _premierSponsors = all
+            .Where(s => s.Tier == "Premier")
+            .OrderBy(s => s.Priority)
+            .ThenBy(s => s.Name)
+            .ToList();
+    }
+}
