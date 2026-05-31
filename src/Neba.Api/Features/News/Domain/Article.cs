@@ -1,3 +1,5 @@
+using ErrorOr;
+
 using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 
@@ -47,4 +49,29 @@ public sealed class Article
     /// An optional reference to a tournament associated with the news article. This is used to link news articles to specific tournaments, allowing for better organization and navigation on the website. If an article is related to a particular tournament (e.g., a tournament announcement, results summary, or player profile), the TournamentId can be set to the ID of that tournament. This allows users to easily find all news articles related to a specific tournament and provides additional context for the news event being reported. If an article is not related to any tournament, this field can be left null.
     /// </summary>
     public TournamentId TournamentId { get; init; }
+
+    private readonly List<ArticleAttachment> _attachments = [];
+
+    /// <summary>
+    /// A list of attachments associated with the news article. Attachments can include images, documents, or any other file types that are relevant to the article's content. Each attachment is represented by an ArticleAttachment object, which contains information about the attachment such as its unique identifier, display name, reference to the stored file, and whether it should be displayed inline with the article content. This list allows for multiple attachments to be associated with a single article, providing additional context and resources for readers. The attachments are stored in a private list to allow for controlled modification (e.g., adding or removing attachments) while exposing a read-only collection to external code.
+    /// </summary>
+    public IReadOnlyList<ArticleAttachment> Attachments
+        => _attachments.AsReadOnly();
+
+    /// <summary>
+    /// Adds an attachment to the article. Returns a validation error if the display name is empty.
+    /// </summary>
+    public ErrorOr<Success> AddAttachment(string displayName, StoredFile file, bool isInline)
+    {
+        var attachment = ArticleAttachment.Create(displayName, file, isInline);
+
+        if (attachment.IsError)
+        {
+            return attachment.Errors;
+        }
+
+        _attachments.Add(attachment.Value);
+
+        return Result.Success;
+    }
 }

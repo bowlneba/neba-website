@@ -13,6 +13,7 @@ public static class ArticleFactory
     public static readonly PublicationStatus ValidPublicationStatus = PublicationStatus.Draft;
     public static readonly DateTimeOffset ValidPublishDateUtc = new(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
+#pragma warning disable S107
     public static Article Create(
         ArticleId? id = null,
         string? title = null,
@@ -21,8 +22,10 @@ public static class ArticleFactory
         PublicationStatus? publicationStatus = null,
         DateTimeOffset? publishDateUtc = null,
         StoredFile? headerImage = null,
-        TournamentId? tournamentId = null)
-        => new()
+        TournamentId? tournamentId = null,
+        IReadOnlyCollection<ArticleAttachment>? attachments = null)
+    {
+        var article = new Article
         {
             Id = id ?? ArticleId.New(),
             Title = title ?? ValidTitle,
@@ -34,6 +37,20 @@ public static class ArticleFactory
             TournamentId = tournamentId ?? TournamentId.New()
         };
 
+        foreach (var attachment in attachments ?? [])
+        {
+            var result = article.AddAttachment(attachment.DisplayName, attachment.File, attachment.IsInline);
+
+            if (result.IsError)
+            {
+                throw new InvalidOperationException($"Failed to add attachment '{attachment.DisplayName}': {result.Errors[0].Description}");
+            }
+        }
+
+        return article;
+    }
+#pragma warning restore S107
+
 #pragma warning disable CA1308
     public static IReadOnlyCollection<Article> Bogus(int count, int? seed = null)
     {
@@ -44,7 +61,7 @@ public static class ArticleFactory
             {
                 var title = f.Random.Words(3);
 
-                return new Article
+                var article = new Article
                 {
                     Id = new ArticleId(Ulid.BogusString(f)),
                     Title = title,
@@ -55,6 +72,23 @@ public static class ArticleFactory
                     HeaderImage = uniqueImages.GetNextNullable(),
                     TournamentId = new TournamentId(Ulid.BogusString(f))
                 };
+
+                var attachmentCount = f.Random.Int(0, 3);
+                for (var i = 0; i < attachmentCount; i++)
+                {
+                    article.AddAttachment(
+                        f.Random.Words(2),
+                        new StoredFile
+                        {
+                            Container = $"container-{f.Random.AlphaNumeric(8)}",
+                            Path = f.System.FileName(),
+                            ContentType = f.System.MimeType(),
+                            SizeInBytes = f.Random.Long(1, 10_000_000)
+                        },
+                        f.Random.Bool());
+                }
+
+                return article;
             });
 
         if (seed.HasValue)
@@ -65,5 +99,4 @@ public static class ArticleFactory
         return faker.Generate(count);
     }
 #pragma warning restore CA1308
-
 }
