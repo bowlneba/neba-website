@@ -1,5 +1,6 @@
 using ErrorOr;
 
+using Neba.Api.Domain;
 using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 
@@ -9,6 +10,7 @@ namespace Neba.Api.Features.News.Domain;
 /// Represents a news article on the website. This class contains all relevant information about a news article, including its title, content, publication status, and associated tournament (if any). The ArticleId is a strongly-typed identifier to ensure type safety when working with article IDs throughout the codebase. The PublicationStatus is implemented as a SmartEnum to allow for easy expansion of possible statuses in the future without breaking existing code or database schema.
 /// </summary>
 public sealed class Article
+    : AggregateRoot
 {
     /// <summary>
     /// Unique identifier for the news article. This is a strongly-typed ID to ensure type safety when working with article IDs throughout the codebase. The underlying value is a ULID, which provides both uniqueness and chronological sorting capabilities. This ID is required for all articles and is used as the primary key in the database.
@@ -48,7 +50,9 @@ public sealed class Article
     /// <summary>
     /// An optional reference to a tournament associated with the news article. This is used to link news articles to specific tournaments, allowing for better organization and navigation on the website. If an article is related to a particular tournament (e.g., a tournament announcement, results summary, or player profile), the TournamentId can be set to the ID of that tournament. This allows users to easily find all news articles related to a specific tournament and provides additional context for the news event being reported. If an article is not related to any tournament, this field can be left null.
     /// </summary>
-    public TournamentId TournamentId { get; init; }
+    public TournamentId? TournamentId { get; init; }
+
+    internal Tournament? Tournament { get; init; }
 
     private readonly List<ArticleAttachment> _attachments = [];
 

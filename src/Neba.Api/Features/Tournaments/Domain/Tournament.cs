@@ -3,7 +3,7 @@ using ErrorOr;
 using Neba.Api.Domain;
 
 using Neba.Api.Features.BowlingCenters.Domain;
-
+using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Seasons.Domain;
 
 using Neba.Api.Features.Sponsors.Domain;
@@ -137,6 +137,11 @@ public sealed class Tournament
 
         return Result.Success;
     }
+
+    private readonly List<Article> _articles = [];
+
+    internal IReadOnlyCollection<Article> Articles
+        => _articles.AsReadOnly();
 
     private readonly List<TournamentOilPattern> _oilPatterns = [];
 

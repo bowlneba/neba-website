@@ -24,4 +24,20 @@ internal static class ShadowIdConfiguration
             builder.HasKey(propertyName);
         }
     }
+
+    extension<TOwnerEntity, TDependentEntity>(OwnedNavigationBuilder<TOwnerEntity, TDependentEntity> builder)
+        where TOwnerEntity : class
+        where TDependentEntity : class
+    {
+        public void ConfigureShadowId(
+            string propertyName = DefaultPropertyName,
+            string columnName = DefaultColumnName)
+        {
+            builder.Property<int>(propertyName)
+                .HasColumnName(columnName)
+                .UseIdentityAlwaysColumn();
+
+            builder.HasKey(propertyName);
+        }
+    } 
 }
