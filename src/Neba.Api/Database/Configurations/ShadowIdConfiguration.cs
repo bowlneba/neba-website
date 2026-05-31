@@ -39,5 +39,5 @@ internal static class ShadowIdConfiguration
 
             builder.HasKey(propertyName);
         }
-    } 
+    }
 }

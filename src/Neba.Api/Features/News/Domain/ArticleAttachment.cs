@@ -34,11 +34,11 @@ public sealed class ArticleAttachment
         return string.IsNullOrWhiteSpace(displayName)
             ? ArticleErrors.ArticleAttachmentDisplayNameRequired
             : new ArticleAttachment
-        {
-            Id = ArticleAttachmentId.New(),
-            DisplayName = displayName,
-            File = file,
-            IsInline = isInline
-        };
+            {
+                Id = ArticleAttachmentId.New(),
+                DisplayName = displayName,
+                File = file,
+                IsInline = isInline
+            };
     }
 }
