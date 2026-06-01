@@ -34,7 +34,7 @@ public static class ArticleFactory
             PublicationStatus = publicationStatus ?? ValidPublicationStatus,
             PublishDateUtc = publishDateUtc ?? ValidPublishDateUtc,
             HeaderImage = headerImage,
-            TournamentId = tournamentId ?? TournamentId.New()
+            TournamentId = tournamentId
         };
 
         foreach (var attachment in attachments ?? [])
