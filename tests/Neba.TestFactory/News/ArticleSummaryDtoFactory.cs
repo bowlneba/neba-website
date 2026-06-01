@@ -40,7 +40,9 @@ public static class ArticleSummaryDtoFactory
 
                 return new ArticleSummaryDto
                 {
+#pragma warning disable CA1308
                     Slug = title.ToLowerInvariant().Replace(' ', '-'),
+#pragma warning restore CA1308
                     Title = title,
                     Excerpt = f.Lorem.Sentence(),
                     HeaderImageContainer = hasImage ? $"container-{f.Random.AlphaNumeric(8)}" : null,
