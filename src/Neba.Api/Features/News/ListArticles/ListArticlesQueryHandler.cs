@@ -11,17 +11,21 @@ internal sealed class ListArticlesQueryHandler(
     AppDbContext appDbContext,
     TimeProvider timeProvider,
     IFileStorageService fileStorageService)
-        : IQueryHandler<ListArticlesQuery, IReadOnlyCollection<ArticleSummaryDto>>
+        : IQueryHandler<ListArticlesQuery, PagedResult<ArticleSummaryDto>>
 {
     private readonly IQueryable<Article> _articles = appDbContext.Articles.AsNoTracking();
     private readonly TimeProvider _timeProvider = timeProvider;
     private readonly IFileStorageService _fileStorageService = fileStorageService;
 
-    public async Task<IReadOnlyCollection<ArticleSummaryDto>> HandleAsync(ListArticlesQuery query, CancellationToken cancellationToken)
+    public async Task<PagedResult<ArticleSummaryDto>> HandleAsync(ListArticlesQuery query, CancellationToken cancellationToken)
     {
-        var articles = await _articles
+        var baseQuery = _articles
             .Where(article => article.PublicationStatus == PublicationStatus.Published
-                && article.PublishDateUtc <= _timeProvider.GetUtcNow())
+                && article.PublishDateUtc <= _timeProvider.GetUtcNow());
+
+        var totalItems = await baseQuery.CountAsync(cancellationToken);
+
+        var articles = await baseQuery
             .Select(article => new ArticleSummaryDto
             {
                 Slug = article.Slug,
@@ -36,11 +40,15 @@ internal sealed class ListArticlesQueryHandler(
                 PublishDateUtc = article.PublishDateUtc,
             })
             .OrderByDescending(article => article.PublishDateUtc)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
             .ToListAsync(cancellationToken);
 
-        return [.. articles
+        var items = articles
             .ConvertAll(article => article.HeaderImageContainer != null && article.HeaderImagePath != null
                 ? article with { HeaderImageUrl = _fileStorageService.GetBlobUri(article.HeaderImageContainer, article.HeaderImagePath) }
-                : article)];
+                : article);
+
+        return new PagedResult<ArticleSummaryDto>([.. items], totalItems);
     }
 }

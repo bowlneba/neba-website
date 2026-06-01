@@ -48,7 +48,8 @@ public sealed class ListArticlesQueryHandlerTests(PostgreSqlFixture fixture)
         var result = await handler.HandleAsync(DefaultQuery, TestContext.Current.CancellationToken);
 
         // Assert
-        result.ShouldBeEmpty();
+        result.Items.ShouldBeEmpty();
+        result.TotalItems.ShouldBe(0);
     }
 
     [Fact(DisplayName = "HandleAsync excludes draft articles")]
@@ -70,7 +71,8 @@ public sealed class ListArticlesQueryHandlerTests(PostgreSqlFixture fixture)
         var result = await handler.HandleAsync(DefaultQuery, ct);
 
         // Assert
-        result.ShouldBeEmpty();
+        result.Items.ShouldBeEmpty();
+        result.TotalItems.ShouldBe(0);
     }
 
     [Fact(DisplayName = "HandleAsync excludes published articles with a future publish date")]
@@ -92,7 +94,8 @@ public sealed class ListArticlesQueryHandlerTests(PostgreSqlFixture fixture)
         var result = await handler.HandleAsync(DefaultQuery, ct);
 
         // Assert
-        result.ShouldBeEmpty();
+        result.Items.ShouldBeEmpty();
+        result.TotalItems.ShouldBe(0);
     }
 
     [Fact(DisplayName = "HandleAsync returns published article with correct fields")]
@@ -117,8 +120,9 @@ public sealed class ListArticlesQueryHandlerTests(PostgreSqlFixture fixture)
         var result = await handler.HandleAsync(DefaultQuery, ct);
 
         // Assert
-        result.ShouldHaveSingleItem();
-        var dto = result.Single();
+        result.Items.ShouldHaveSingleItem();
+        result.TotalItems.ShouldBe(1);
+        var dto = result.Items.Single();
         dto.Slug.ShouldBe("my-article");
         dto.Title.ShouldBe("My Article");
         dto.Excerpt.ShouldBe($"{new string('a', 200)}...");
@@ -153,8 +157,8 @@ public sealed class ListArticlesQueryHandlerTests(PostgreSqlFixture fixture)
         var result = await handler.HandleAsync(DefaultQuery, ct);
 
         // Assert
-        result.ShouldHaveSingleItem();
-        result.Single().HeaderImageUrl.ShouldBe(expectedUri);
+        result.Items.ShouldHaveSingleItem();
+        result.Items.Single().HeaderImageUrl.ShouldBe(expectedUri);
     }
 
     [Fact(DisplayName = "HandleAsync leaves HeaderImageUrl null when article has no header image")]
@@ -178,8 +182,8 @@ public sealed class ListArticlesQueryHandlerTests(PostgreSqlFixture fixture)
         var result = await handler.HandleAsync(DefaultQuery, ct);
 
         // Assert
-        result.ShouldHaveSingleItem();
-        result.Single().HeaderImageUrl.ShouldBeNull();
+        result.Items.ShouldHaveSingleItem();
+        result.Items.Single().HeaderImageUrl.ShouldBeNull();
     }
 
     [Fact(DisplayName = "HandleAsync orders articles by publish date descending")]
@@ -206,10 +210,84 @@ public sealed class ListArticlesQueryHandlerTests(PostgreSqlFixture fixture)
         var result = await handler.HandleAsync(DefaultQuery, ct);
 
         // Assert
-        result.Count.ShouldBe(2);
-        var ordered = result.ToList();
+        result.Items.Count.ShouldBe(2);
+        var ordered = result.Items.ToList();
         ordered[0].Slug.ShouldBe("newer-article");
         ordered[1].Slug.ShouldBe("older-article");
+    }
+
+    [Fact(DisplayName = "HandleAsync TotalItems is consistent regardless of page size")]
+    public async Task HandleAsync_TotalItems_ShouldBeConsistent_RegardlessOfPageSize()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await _dbContext.Articles.AddRangeAsync(ArticleFactory.Bogus(50, seed: 1), ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+
+        // Act
+        var paged = await handler.HandleAsync(new ListArticlesQuery { Page = 1, PageSize = 5 }, ct);
+        var all = await handler.HandleAsync(new ListArticlesQuery { Page = 1, PageSize = 500 }, ct);
+
+        // Assert — TotalItems must be identical regardless of page size; fetching all items at once must equal TotalItems
+        paged.TotalItems.ShouldBe(all.TotalItems);
+        paged.Items.Count.ShouldBeLessThanOrEqualTo(5);
+        all.Items.Count.ShouldBe(all.TotalItems);
+    }
+
+    [Fact(DisplayName = "HandleAsync returns non-overlapping pages with consistent TotalItems")]
+    public async Task HandleAsync_ShouldReturnNonOverlappingPages_WithConsistentTotalItems()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await _dbContext.Articles.AddRangeAsync(ArticleFactory.Bogus(50, seed: 3), ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+
+        // Act
+        var page1 = await handler.HandleAsync(new ListArticlesQuery { Page = 1, PageSize = 5 }, ct);
+        var page2 = await handler.HandleAsync(new ListArticlesQuery { Page = 2, PageSize = 5 }, ct);
+
+        // Assert — TotalItems is consistent across pages; items on different pages do not overlap
+        page1.TotalItems.ShouldBe(page2.TotalItems);
+        page1.Items.Count.ShouldBeLessThanOrEqualTo(5);
+        page2.Items.Count.ShouldBeLessThanOrEqualTo(5);
+        page1.Items.Select(x => x.Slug).ShouldAllBe(slug => !page2.Items.Select(x => x.Slug).Contains(slug));
+    }
+
+    [Fact(DisplayName = "HandleAsync TotalItems excludes drafts and future-dated articles")]
+    public async Task HandleAsync_TotalItems_ShouldExcludeDraftsAndFutureDatedArticles()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var published = ArticleFactory.Create(
+            slug: "published",
+            content: new string('x', 250),
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: Now.AddDays(-1));
+        var draft = ArticleFactory.Create(
+            slug: "draft",
+            content: new string('x', 250),
+            publicationStatus: PublicationStatus.Draft,
+            publishDateUtc: Now.AddDays(-1));
+        var scheduled = ArticleFactory.Create(
+            slug: "scheduled",
+            content: new string('x', 250),
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: Now.AddDays(1));
+        await _dbContext.Articles.AddRangeAsync([published, draft, scheduled], ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(DefaultQuery, ct);
+
+        // Assert
+        result.Items.Count.ShouldBe(1);
+        result.TotalItems.ShouldBe(1);
     }
 
     [Fact(DisplayName = "HandleAsync returns snapshot of published articles with header images")]

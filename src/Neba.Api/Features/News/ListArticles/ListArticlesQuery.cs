@@ -7,7 +7,7 @@ namespace Neba.Api.Features.News.ListArticles;
 /// Represents a query to list articles, including pagination parameters and caching information. This query is used to retrieve a paginated list of article summaries, which may include details such as the article's slug, title, excerpt, header image information, and publish date. The query implements the ICachedQuery interface to specify caching behavior and the IPaginationQuery interface to include pagination parameters.
 /// </summary>
 public sealed record ListArticlesQuery
-    : ICachedQuery<IReadOnlyCollection<ArticleSummaryDto>>, IPaginationQuery
+    : ICachedQuery<PagedResult<ArticleSummaryDto>>, IPaginationQuery
 {
     /// <inheritdoc />
     public CacheDescriptor Cache
