@@ -7,6 +7,7 @@ using Neba.Api.Contracts.Bowlers;
 using Neba.Api.Contracts.BowlingCenters;
 using Neba.Api.Contracts.Documents;
 using Neba.Api.Contracts.HallOfFame;
+using Neba.Api.Contracts.News;
 using Neba.Api.Contracts.Seasons;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Contracts.Stats;
@@ -42,6 +43,7 @@ internal static class ApiServicesConfiguration
             services.AddScoped<ApiExecutor>();
 
             services.RegisterApiEndpoint<IDocumentsApi>();
+            services.RegisterApiEndpoint<INewsApi>();
             services.RegisterApiEndpoint<IBowlingCentersApi>();
             services.RegisterApiEndpoint<IHallOfFameApi>();
             services.RegisterApiEndpoint<IAwardsApi>();

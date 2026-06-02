@@ -1,0 +1,20 @@
+@using Neba.Api.Contracts.News.ListArticles
+
+<a href="/news/@Article.Slug" class="article-card neba-card neba-card--interactive" aria-label="Read article: @Article.Title">
+    <div class="card-img" aria-hidden="true">
+        @if (Article.HeaderImageUrl is not null)
+        {
+            <img src="@Article.HeaderImageUrl" alt="" class="w-full h-full object-cover" loading="lazy" />
+        }
+    </div>
+    <div class="card-body">
+        <div class="card-date">@Article.PublishDateUtc.ToString("MMM d, yyyy")</div>
+        <h3 class="card-title">@Article.Title</h3>
+        <p class="card-excerpt">@Article.Excerpt</p>
+    </div>
+</a>
+
+@code {
+    [Parameter, EditorRequired]
+    public ArticleSummaryResponse Article { get; set; } = default!;
+}

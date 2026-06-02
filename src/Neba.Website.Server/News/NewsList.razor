@@ -1,0 +1,182 @@
+@page "/news"
+@using Neba.Api.Contracts
+@using Neba.Api.Contracts.News
+@using Neba.Api.Contracts.News.ListArticles
+@using Neba.Website.Server.Services
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject ApiExecutor ApiExecutor
+@inject INewsApi NewsApi
+@inject ILogger<NewsList> Logger
+
+<PageTitle>News - NEBA</PageTitle>
+<HeadContent>
+    <meta name="description"
+          content="The latest news, tournament updates, and announcements from NEBA — New England's premier scratch bowling tournament series." />
+</HeadContent>
+
+<div class="neba-space-y-6">
+
+    <div class="page-title-bar">
+        <div class="page-title-inner">
+            <h1>News</h1>
+            <p>The latest from NEBA</p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <NebaAlert Severity="NotifySeverity.Error" Title="Error Loading Articles" Message="@_errorMessage" Dismissible="true"
+                   OnDismiss="@(() => _errorMessage = null)" />
+    }
+
+    @if (_isLoading)
+    {
+        <div aria-busy="true" aria-label="Loading news articles" class="neba-space-y-6">
+
+            @if (Page == 1)
+            {
+                <div class="news-hero-skeleton">
+                    <div class="hero-skeleton-img neba-skeleton"></div>
+                    <div class="hero-skeleton-body">
+                        <NebaSkeletonLoader Type="SkeletonType.Custom" Width="80px" Height="1.2rem" />
+                        <NebaSkeletonLoader Type="SkeletonType.Custom" Width="55%" Height="0.75rem" />
+                        <NebaSkeletonLoader Type="SkeletonType.Custom" Width="85%" Height="1.6rem" />
+                        <NebaSkeletonLoader Type="SkeletonType.Custom" Width="75%" Height="1.4rem" />
+                        <NebaSkeletonLoader Type="SkeletonType.Text" Rows="2" />
+                        <NebaSkeletonLoader Type="SkeletonType.Custom" Width="140px" Height="2.25rem" />
+                    </div>
+                </div>
+            }
+
+            <div class="news-grid">
+                @for (var i = 0; i < 3; i++)
+                {
+                    <div class="neba-card skeleton-card">
+                        <div class="neba-skeleton skeleton-card-img"></div>
+                        <div class="skeleton-card-body">
+                            <NebaSkeletonLoader Type="SkeletonType.Custom" Width="35%" Height="0.6rem" />
+                            <NebaSkeletonLoader Type="SkeletonType.Custom" Width="80%" Height="1rem" />
+                            <NebaSkeletonLoader Type="SkeletonType.Text" Rows="2" />
+                        </div>
+                    </div>
+                }
+            </div>
+
+        </div>
+    }
+    else if (_articles is not null)
+    {
+        @if (_articles.Items.Count == 0)
+        {
+            <div class="news-empty">
+                <span class="material-symbols-outlined" style="font-size: 3rem; color: var(--neba-gray-300, #CCCCCC);" aria-hidden="true">newspaper</span>
+                <p class="news-empty-text">No articles published yet. Check back soon.</p>
+            </div>
+        }
+        else
+        {
+            @if (Page == 1)
+            {
+                var hero = _articles.Items.First();
+                <a href="/news/@hero.Slug" class="news-hero" aria-label="Read: @hero.Title">
+                    <div class="hero-img" aria-hidden="true">
+                        @if (hero.HeaderImageUrl is not null)
+                        {
+                            <img src="@hero.HeaderImageUrl" alt="" class="w-full h-full object-cover" />
+                        }
+                    </div>
+                    <div class="hero-body">
+                        <div class="hero-featured-tag">&#11088; Latest</div>
+                        <div class="hero-date">@hero.PublishDateUtc.ToString("MMMM d, yyyy")</div>
+                        <h2 class="hero-title">@hero.Title</h2>
+                        <p class="hero-excerpt">@hero.Excerpt</p>
+                        <span class="neba-btn neba-btn-primary" style="width: fit-content;">
+                            Read full story
+                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </span>
+                    </div>
+                </a>
+
+                @if (_articles.Items.Count > 1)
+                {
+                    <div class="news-grid">
+                        @foreach (var article in _articles.Items.Skip(1))
+                        {
+                            <ArticleCard Article="@article" />
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="news-grid">
+                    @foreach (var article in _articles.Items)
+                    {
+                        <ArticleCard Article="@article" />
+                    }
+                </div>
+            }
+
+            @if (_articles.TotalPages > 1)
+            {
+                <nav class="news-pagination" aria-label="Article pages">
+                    @if (_articles.HasPreviousPage)
+                    {
+                        <a href="/news?page=@(Page - 1)" class="page-btn" aria-label="Previous page">&#8249;</a>
+                    }
+
+                    @for (var p = 1; p <= _articles.TotalPages; p++)
+                    {
+                        var pageNum = p;
+                        <a href="/news?page=@pageNum"
+                           class="page-btn @(pageNum == Page ? "active" : string.Empty)"
+                           aria-label="Page @pageNum"
+                           aria-current="@(pageNum == Page ? "page" : null)">
+                            @pageNum
+                        </a>
+                    }
+
+                    @if (_articles.HasNextPage)
+                    {
+                        <a href="/news?page=@(Page + 1)" class="page-btn" aria-label="Next page">&#8250;</a>
+                    }
+                </nav>
+            }
+        }
+    }
+
+</div>
+
+@code {
+    [Parameter, SupplyParameterFromQuery(Name = "page")]
+    public int Page { get; set; } = 1;
+
+    private PaginationResponse<ArticleSummaryResponse>? _articles;
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _articles = null;
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "News",
+            "ListArticles",
+            ct => NewsApi.ListArticlesAsync(Page, 10, ct));
+
+        _isLoading = false;
+
+        if (result.IsError)
+        {
+            _errorMessage = result.FirstError.Description;
+            return;
+        }
+
+        _articles = result.Value;
+    }
+}
