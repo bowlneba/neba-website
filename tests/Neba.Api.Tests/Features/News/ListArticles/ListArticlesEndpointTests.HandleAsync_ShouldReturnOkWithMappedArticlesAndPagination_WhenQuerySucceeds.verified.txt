@@ -1,0 +1,30 @@
+﻿{
+  Items: [
+    {
+      Slug: deposit-granite-gorgeous-metal-hat,
+      Title: deposit Granite Gorgeous Metal Hat,
+      Excerpt: Ut quaerat quas voluptatem vel quaerat sint aperiam vel.,
+      HeaderImageUrl: https://ipfs.io/ipfs/Qmd3W5DuhgHirLHGVixi6V76LhCkZUz6pnFt5AJBiyvHye/avatar/4.jpg,
+      PublishDateUtc: DateTimeOffset_1
+    },
+    {
+      Slug: 1080p-enable-jewelery,
+      Title: 1080p enable Jewelery,
+      Excerpt: Magnam est nostrum.,
+      PublishDateUtc: DateTimeOffset_2
+    },
+    {
+      Slug: small-rubber-hat-practical-metal-tuna-advanced,
+      Title: Small Rubber Hat Practical Metal Tuna Advanced,
+      Excerpt: Quasi porro quasi laudantium aut.,
+      HeaderImageUrl: https://ipfs.io/ipfs/Qmd3W5DuhgHirLHGVixi6V76LhCkZUz6pnFt5AJBiyvHye/avatar/1161.jpg,
+      PublishDateUtc: DateTimeOffset_3
+    }
+  ],
+  TotalItems: 15,
+  PageNumber: 2,
+  PageSize: 10,
+  TotalPages: 2,
+  HasPreviousPage: true,
+  HasNextPage: false
+}

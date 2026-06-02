@@ -1,5 +1,4 @@
-{
-  TotalItems: 2,
+﻿{
   Items: [
     {
       Slug: tournament-recap,
@@ -16,5 +15,6 @@
       Excerpt: The new bowling season is officially underway. Registration is now open for all members. Check the schedule and sign up before spots fill up for the upcoming league events and practice sessions planne...,
       PublishDateUtc: DateTimeOffset_2
     }
-  ]
+  ],
+  TotalItems: 2
 }
