@@ -82,7 +82,7 @@ public sealed class UniquePool<T>
             throw new InvalidOperationException(
                 $"UniquePool<{typeof(T).Name}> exhausted. Attempted to get value at index {_currentIndex} but pool only contains {_values.Count} values.");
         }
-        
+
         // loop over GetNextNullable until we get a non default
         T? value;
         do

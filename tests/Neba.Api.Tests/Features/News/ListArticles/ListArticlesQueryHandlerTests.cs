@@ -221,7 +221,13 @@ public sealed class ListArticlesQueryHandlerTests(PostgreSqlFixture fixture)
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        await _dbContext.Articles.AddRangeAsync(ArticleFactory.Bogus(50, seed: 1), ct);
+        var articles = Enumerable.Range(1, 20)
+            .Select(i => ArticleFactory.Create(
+                slug: $"article-{i:D3}",
+                content: new string('x', 250),
+                publicationStatus: PublicationStatus.Published,
+                publishDateUtc: Now.AddDays(-i)));
+        await _dbContext.Articles.AddRangeAsync(articles, ct);
         await _dbContext.SaveChangesAsync(ct);
 
         var handler = CreateHandler();
@@ -241,7 +247,13 @@ public sealed class ListArticlesQueryHandlerTests(PostgreSqlFixture fixture)
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        await _dbContext.Articles.AddRangeAsync(ArticleFactory.Bogus(50, seed: 3), ct);
+        var articles = Enumerable.Range(1, 20)
+            .Select(i => ArticleFactory.Create(
+                slug: $"article-{i:D3}",
+                content: new string('x', 250),
+                publicationStatus: PublicationStatus.Published,
+                publishDateUtc: Now.AddDays(-i)));
+        await _dbContext.Articles.AddRangeAsync(articles, ct);
         await _dbContext.SaveChangesAsync(ct);
 
         var handler = CreateHandler();
@@ -334,4 +346,5 @@ public sealed class ListArticlesQueryHandlerTests(PostgreSqlFixture fixture)
         // Assert
         await Verify(result);
     }
+
 }
