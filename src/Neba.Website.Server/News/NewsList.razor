@@ -34,7 +34,7 @@
     {
         <div aria-busy="true" aria-label="Loading news articles" class="neba-space-y-6">
 
-            @if (Page == 1)
+            @if (PageNumber == 1)
             {
                 <div class="news-hero-skeleton">
                     <div class="hero-skeleton-img neba-skeleton"></div>
@@ -76,7 +76,7 @@
         }
         else
         {
-            @if (Page == 1)
+            @if (PageNumber == 1)
             {
                 var hero = _articles.Items.First();
                 <a href="/news/@hero.Slug" class="news-hero" aria-label="Read: @hero.Title">
@@ -125,23 +125,23 @@
                 <nav class="news-pagination" aria-label="Article pages">
                     @if (_articles.HasPreviousPage)
                     {
-                        <a href="/news?page=@(Page - 1)" class="page-btn" aria-label="Previous page">&#8249;</a>
+                        <a href="/news?page=@(PageNumber - 1)" class="page-btn" aria-label="Previous page">&#8249;</a>
                     }
 
                     @for (var p = 1; p <= _articles.TotalPages; p++)
                     {
                         var pageNum = p;
                         <a href="/news?page=@pageNum"
-                           class="page-btn @(pageNum == Page ? "active" : string.Empty)"
+                           class="page-btn @(pageNum == PageNumber ? "active" : string.Empty)"
                            aria-label="Page @pageNum"
-                           aria-current="@(pageNum == Page ? "page" : null)">
+                           aria-current="@(pageNum == PageNumber ? "page" : null)">
                             @pageNum
                         </a>
                     }
 
                     @if (_articles.HasNextPage)
                     {
-                        <a href="/news?page=@(Page + 1)" class="page-btn" aria-label="Next page">&#8250;</a>
+                        <a href="/news?page=@(PageNumber + 1)" class="page-btn" aria-label="Next page">&#8250;</a>
                     }
                 </nav>
             }
@@ -152,7 +152,9 @@
 
 @code {
     [Parameter, SupplyParameterFromQuery(Name = "page")]
-    public int Page { get; set; } = 1;
+    public int? Page { get; set; }
+
+    private int PageNumber => Page is > 0 ? Page.Value : 1;
 
     private PaginationResponse<ArticleSummaryResponse>? _articles;
     private bool _isLoading = true;
@@ -167,7 +169,7 @@
         var result = await ApiExecutor.ExecuteAsync(
             "News",
             "ListArticles",
-            ct => NewsApi.ListArticlesAsync(Page, 10, ct));
+            ct => NewsApi.ListArticlesAsync(PageNumber, 10, ct));
 
         _isLoading = false;
 

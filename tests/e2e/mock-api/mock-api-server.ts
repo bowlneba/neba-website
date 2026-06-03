@@ -507,6 +507,35 @@ export const MOCK_SEASONS = {
   ],
 };
 
+const MOCK_NEWS_PAGE_1 = {
+  items: [
+    {
+      slug: 'season-champions-2026',
+      title: '2025–26 Season Champions Crowned at Tournament of Champions',
+      excerpt: 'After a dominant season, the finals came down to two of NEBA\'s most decorated veterans. Find out who took home the title and how the points race shook out heading into next year.',
+      headerImageUrl: null,
+      publishDateUtc: '2026-05-15T00:00:00+00:00',
+    },
+    {
+      slug: 'june-lane-pattern',
+      title: 'Lane Pattern Announced for June Southside Classic',
+      excerpt: 'The June monthly at Southside Bowl will feature the WTBA London sport pattern. Download the PDF and check qualifying details.',
+      headerImageUrl: null,
+      publishDateUtc: '2026-05-01T00:00:00+00:00',
+    },
+    {
+      slug: 'points-race-update',
+      title: 'Points Race Update: Three Bowlers Separated by Eight Points',
+      excerpt: 'With two tournaments left, the Bowler of the Year race is razor-thin. Here\'s the current standings and what each contender needs.',
+      headerImageUrl: null,
+      publishDateUtc: '2026-04-18T00:00:00+00:00',
+    },
+  ],
+  totalItems: 3,
+  pageNumber: 1,
+  pageSize: 10,
+};
+
 const routes: Record<string, unknown> = {
   '/health': { status: 'healthy' },
   '/documents/tournament-rules': { html: MOCK_TOURNAMENT_RULES_HTML },
@@ -516,6 +545,7 @@ const routes: Record<string, unknown> = {
   '/sponsors': MOCK_SPONSORS_ACTIVE,
   '/sponsors/pro-shop-plus': MOCK_SPONSOR_PRO_SHOP_PLUS,
   '/sponsors/old-sponsor': MOCK_SPONSOR_OLD_SPONSOR,
+  '/news': MOCK_NEWS_PAGE_1,
   '/hall-of-fame/inductions': MOCK_HALL_OF_FAME,
   '/awards/bowler-of-the-year': MOCK_BOWLER_OF_THE_YEAR_AWARDS,
   '/awards/high-average': MOCK_HIGH_AVERAGE_AWARDS,
