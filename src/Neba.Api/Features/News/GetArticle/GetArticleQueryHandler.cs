@@ -19,50 +19,48 @@ internal sealed class GetArticleQueryHandler(
 
     public async Task<ErrorOr<ArticleDetailDto>> HandleAsync(GetArticleQuery query, CancellationToken cancellationToken)
     {
-        var article = await _articles
+        var row = await _articles
             .Where(article => article.Slug == query.Slug)
-            .Select(article => new ArticleDetailDto
+            .Select(article => new
             {
-                Slug = article.Slug,
-                Title = article.Title,
-                Content = article.Content,
-                HeaderImageContainer = article.HeaderImage != null
-                    ? article.HeaderImage.Container
-                    : null,
-                HeaderImagePath = article.HeaderImage != null
-                    ? article.HeaderImage.Path
-                    : null,
-                PublishDateUtc = article.PublishDateUtc,
-                Attachments = article.Attachments.Select(attachment => new ArticleAttachmentDto
+                article.Slug,
+                article.Title,
+                article.Content,
+                HeaderImageContainer = article.HeaderImage != null ? article.HeaderImage.Container : null,
+                HeaderImagePath = article.HeaderImage != null ? article.HeaderImage.Path : null,
+                article.PublishDateUtc,
+                Attachments = article.Attachments.Select(attachment => new
                 {
-                    DisplayName = attachment.DisplayName,
-                    Container = attachment.File.Container,
-                    Path = attachment.File.Path
+                    attachment.DisplayName,
+                    attachment.File.Container,
+                    attachment.File.Path
                 }).ToList(),
-                TournamentId = article.TournamentId
+                article.TournamentId
             })
             .SingleOrDefaultAsync(cancellationToken);
 
-        if (article is null)
+        if (row is null)
         {
             return ArticleErrors.ArticleNotFound(query.Slug);
         }
 
-        if (article.HeaderImageContainer != null && article.HeaderImagePath != null)
-        {
-            article = article with
-            {
-                HeaderImageUrl = _fileStorageService.GetBlobUri(article.HeaderImageContainer, article.HeaderImagePath)
-            };
-        }
+        var headerImageUrl = row.HeaderImageContainer != null && row.HeaderImagePath != null
+            ? _fileStorageService.GetBlobUri(row.HeaderImageContainer, row.HeaderImagePath)
+            : null;
 
-        return article with
+        return new ArticleDetailDto
         {
-            Attachments = [.. article.Attachments
-                .Select(a => a with
-                    {
-                        Url = _fileStorageService.GetBlobUri(a.Container, a.Path)
-                    })]
+            Slug = row.Slug,
+            Title = row.Title,
+            Content = row.Content,
+            HeaderImageUrl = headerImageUrl,
+            PublishDateUtc = row.PublishDateUtc,
+            Attachments = [.. row.Attachments.Select(a => new ArticleAttachmentDto
+            {
+                DisplayName = a.DisplayName,
+                Url = _fileStorageService.GetBlobUri(a.Container, a.Path)
+            })],
+            TournamentId = row.TournamentId
         };
     }
 }

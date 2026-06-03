@@ -7,8 +7,7 @@ public static class SponsorSummaryDtoFactory
 {
     public const string ValidName = "Some Sponsor, LLC";
     public const string ValidSlug = "some-sponsor";
-    public const string ValidLogoContainer = "sponsor-logos";
-    public const string ValidLogoPath = "some-sponsor/logo.png";
+    public static readonly Uri ValidLogoUrl = new("https://storage.example.com/sponsor-logos/some-sponsor/logo.png");
     public const string ValidTagPhrase = "We sponsor things!";
     public const string ValidDescription = "Some Sponsor, LLC is a leading provider of sponsorship opportunities for events and organizations around the world.";
 
@@ -16,8 +15,6 @@ public static class SponsorSummaryDtoFactory
         string? name = null,
         string? slug = null,
         Uri? logoUrl = null,
-        string? logoContainer = null,
-        string? logoPath = null,
         bool? isCurrentSponsor = null,
         int? priority = null,
         SponsorTier? tier = null,
@@ -32,9 +29,7 @@ public static class SponsorSummaryDtoFactory
         {
             Name = name ?? ValidName,
             Slug = slug ?? ValidSlug,
-            LogoUrl = logoUrl,
-            LogoContainer = logoContainer ?? ValidLogoContainer,
-            LogoPath = logoPath ?? ValidLogoPath,
+            LogoUrl = logoUrl ?? ValidLogoUrl,
             IsCurrentSponsor = isCurrentSponsor ?? SponsorFactory.ValidIsCurrentSponsor,
             Priority = priority ?? SponsorFactory.ValidPriority,
             Tier = tier?.Name ?? SponsorFactory.ValidTier.Name,
@@ -54,8 +49,6 @@ public static class SponsorSummaryDtoFactory
                 Name = f.Company.CompanyName(),
                 Slug = f.Lorem.Slug(),
                 LogoUrl = new Uri(f.Image.PicsumUrl()),
-                LogoContainer = ValidLogoContainer,
-                LogoPath = $"{f.Lorem.Slug()}/logo.png",
                 IsCurrentSponsor = f.Random.Bool(),
                 Priority = f.Random.Int(1, 10),
                 Tier = f.PickRandom(SponsorTier.List.ToArray()).Name,

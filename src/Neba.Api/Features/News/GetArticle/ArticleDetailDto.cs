@@ -3,7 +3,7 @@ using Neba.Api.Features.Tournaments.Domain;
 namespace Neba.Api.Features.News.GetArticle;
 
 /// <summary>
-/// Represents the details of a news article, including its title, content, publication date, header image information, and any associated attachments. This DTO (Data Transfer Object) is used to transfer article data from the server to the client in a structured format. The Slug is included for SEO-friendly URLs, while the HeaderImageContainer, HeaderImagePath, and HeaderImageUrl provide information about the article's header image if one is associated with the article. The Attachments property contains a collection of ArticleAttachmentDto objects representing any files or images attached to the article. This DTO is designed to provide all necessary information for displaying a news article on the client side while maintaining a clear separation of concerns between the domain model and the data transfer layer.
+/// Represents the details of a news article, including its title, content, publication date, header image URL, and any associated attachments.
 /// </summary>
 public sealed record ArticleDetailDto
 {
@@ -23,17 +23,7 @@ public sealed record ArticleDetailDto
     public required string Content { get; init; }
 
     /// <summary>
-    /// The name of the storage container where the header image is stored. This is used to locate the header image in the storage system. This field is optional and may be null if no header image is associated with the article.
-    /// </summary>
-    public string? HeaderImageContainer { get; init; }
-
-    /// <summary>
-    /// The path to the header image within the storage container. This is used in conjunction with the container name to access the header image. This field is optional and may be null if no header image is associated with the article.
-    /// </summary>
-    public string? HeaderImagePath { get; init; }
-
-    /// <summary>
-    /// The URL to access the header image. This may be null if no header image is associated with the article or if the URL is not provided. If a header image is associated with the article, this URL can be used to display the header image on the client side.
+    /// The URL to access the header image; null if no header image is associated with the article.
     /// </summary>
     public Uri? HeaderImageUrl { get; init; }
 

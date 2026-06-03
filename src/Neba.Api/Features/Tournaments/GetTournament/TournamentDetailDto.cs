@@ -94,16 +94,6 @@ public sealed record TournamentDetailDto
     public Uri? LogoUrl { get; init; }
 
     /// <summary>
-    /// Storage container for the logo; null when unavailable.
-    /// </summary>
-    public string? LogoContainer { get; init; }
-
-    /// <summary>
-    /// Storage path for the logo; null when unavailable.
-    /// </summary>
-    public string? LogoPath { get; init; }
-
-    /// <summary>
     /// Names of the winning bowler(s); empty for pending/upcoming events.
     /// </summary>
     public IReadOnlyCollection<Name> Winners { get; init; } = [];

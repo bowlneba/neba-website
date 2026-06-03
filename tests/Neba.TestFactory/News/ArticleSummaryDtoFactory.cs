@@ -15,8 +15,6 @@ public static class ArticleSummaryDtoFactory
         string? slug = null,
         string? title = null,
         string? excerpt = null,
-        string? headerImageContainer = null,
-        string? headerImagePath = null,
         Uri? headerImageUrl = null,
         DateTimeOffset? publishDateUtc = null)
         => new()
@@ -24,8 +22,6 @@ public static class ArticleSummaryDtoFactory
             Slug = slug ?? ValidSlug,
             Title = title ?? ValidTitle,
             Excerpt = excerpt ?? ValidExcerpt,
-            HeaderImageContainer = headerImageContainer,
-            HeaderImagePath = headerImagePath,
             HeaderImageUrl = headerImageUrl,
             PublishDateUtc = publishDateUtc ?? ValidPublishDateUtc
         };
@@ -45,8 +41,6 @@ public static class ArticleSummaryDtoFactory
 #pragma warning restore CA1308
                     Title = title,
                     Excerpt = f.Lorem.Sentence(),
-                    HeaderImageContainer = hasImage ? $"container-{f.Random.AlphaNumeric(8)}" : null,
-                    HeaderImagePath = hasImage ? f.System.FileName() : null,
                     HeaderImageUrl = hasImage ? new Uri(f.Internet.Avatar()) : null,
                     PublishDateUtc = f.Date.PastOffset(2)
                 };

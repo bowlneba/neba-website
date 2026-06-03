@@ -16,8 +16,6 @@ public static class ArticleDetailDtoFactory
         string? slug = null,
         string? title = null,
         string? content = null,
-        string? headerImageContainer = null,
-        string? headerImagePath = null,
         Uri? headerImageUrl = null,
         DateTimeOffset? publishDateUtc = null,
         IReadOnlyCollection<ArticleAttachmentDto>? attachments = null,
@@ -27,8 +25,6 @@ public static class ArticleDetailDtoFactory
             Slug = slug ?? ValidSlug,
             Title = title ?? ValidTitle,
             Content = content ?? ValidContent,
-            HeaderImageContainer = headerImageContainer,
-            HeaderImagePath = headerImagePath,
             HeaderImageUrl = headerImageUrl,
             PublishDateUtc = publishDateUtc ?? ValidPublishDateUtc,
             Attachments = attachments ?? [],
@@ -41,14 +37,11 @@ public static class ArticleDetailDtoFactory
             .CustomInstantiator(f =>
             {
                 var hasHeaderImage = f.Random.Bool();
-
                 return new ArticleDetailDto
                 {
                     Slug = string.Join("-", f.Lorem.Words(4)),
                     Title = f.Random.Words(4),
                     Content = f.Lorem.Paragraphs(2),
-                    HeaderImageContainer = hasHeaderImage ? f.Random.Word() : null,
-                    HeaderImagePath = hasHeaderImage ? $"images/{f.System.FileName()}" : null,
                     HeaderImageUrl = hasHeaderImage ? new Uri(f.Internet.Url()) : null,
                     PublishDateUtc = f.Date.PastOffset(2),
                     Attachments = ArticleAttachmentDtoFactory.Bogus(f.Random.Int(0, 3), seed),

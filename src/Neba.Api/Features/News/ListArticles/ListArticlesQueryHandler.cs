@@ -25,29 +25,32 @@ internal sealed class ListArticlesQueryHandler(
 
         var totalItems = await baseQuery.CountAsync(cancellationToken);
 
-        var articles = await baseQuery
-            .Select(article => new ArticleSummaryDto
+        var rows = await baseQuery
+            .Select(article => new
             {
-                Slug = article.Slug,
-                Title = article.Title,
+                article.Slug,
+                article.Title,
                 Excerpt = $"{article.Content.Substring(0, 200)}...",
-                HeaderImageContainer = article.HeaderImage != null
-                    ? article.HeaderImage.Container
-                    : null,
-                HeaderImagePath = article.HeaderImage != null
-                    ? article.HeaderImage.Path
-                    : null,
-                PublishDateUtc = article.PublishDateUtc,
+                HeaderImageContainer = article.HeaderImage != null ? article.HeaderImage.Container : null,
+                HeaderImagePath = article.HeaderImage != null ? article.HeaderImage.Path : null,
+                article.PublishDateUtc,
             })
             .OrderByDescending(article => article.PublishDateUtc)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
             .ToListAsync(cancellationToken);
 
-        var items = articles
-            .ConvertAll(article => article.HeaderImageContainer != null && article.HeaderImagePath != null
-                ? article with { HeaderImageUrl = _fileStorageService.GetBlobUri(article.HeaderImageContainer, article.HeaderImagePath) }
-                : article);
+        var items = rows
+            .ConvertAll(row => new ArticleSummaryDto
+            {
+                Slug = row.Slug,
+                Title = row.Title,
+                Excerpt = row.Excerpt,
+                HeaderImageUrl = row.HeaderImageContainer != null && row.HeaderImagePath != null
+                    ? _fileStorageService.GetBlobUri(row.HeaderImageContainer, row.HeaderImagePath)
+                    : null,
+                PublishDateUtc = row.PublishDateUtc,
+            });
 
         return new PagedResult<ArticleSummaryDto>([.. items], totalItems);
     }

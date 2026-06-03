@@ -10,16 +10,12 @@ public static class SeasonTournamentSponsorDtoFactory
     public static SeasonTournamentSponsorDto Create(
         string? name = null,
         string? slug = null,
-        Uri? logoUrl = null,
-        string? logoContainer = null,
-        string? logoPath = null)
+        Uri? logoUrl = null)
         => new()
         {
             Name = name ?? ValidName,
             Slug = slug ?? ValidSlug,
             LogoUrl = logoUrl,
-            LogoContainer = logoContainer,
-            LogoPath = logoPath,
         };
 
     public static IReadOnlyCollection<SeasonTournamentSponsorDto> Bogus(int count, int? seed = null)
@@ -29,9 +25,7 @@ public static class SeasonTournamentSponsorDtoFactory
             {
                 Name = f.Company.CompanyName(),
                 Slug = f.Internet.DomainWord(),
-                LogoUrl = null,
-                LogoContainer = f.Random.Bool() ? f.Lorem.Word() : null,
-                LogoPath = f.Random.Bool() ? f.System.FilePath() : null,
+                LogoUrl = f.Random.Bool() ? new Uri(f.Internet.Url()) : null,
             });
 
         if (seed.HasValue)

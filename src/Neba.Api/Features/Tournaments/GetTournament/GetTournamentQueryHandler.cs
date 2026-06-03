@@ -51,14 +51,14 @@ internal sealed partial class GetTournamentQueryHandler(
                     },
                 Sponsors = tournament.Sponsors
                     .Select(tournamentSponsor => tournamentSponsor.Sponsor)
-                    .Select(s => new TournamentDetailSponsorDto
+                    .Select(s => new
                     {
-                        Name = s.Name,
-                        Slug = s.Slug,
-                        LogoContainer = s.Logo!.Container,
-                        LogoPath = s.Logo!.Path,
-                        WebsiteUrl = s.WebsiteUrl,
-                        TagPhrase = s.TagPhrase,
+                        s.Name,
+                        s.Slug,
+                        LogoContainer = s.Logo != null ? s.Logo.Container : null,
+                        LogoPath = s.Logo != null ? s.Logo.Path : null,
+                        s.WebsiteUrl,
+                        s.TagPhrase,
                     }).ToList(),
                 AddedMoney = tournament.Sponsors.Sum(ts => ts.SponsorshipAmount),
                 PatternLengthCategory = tournament.PatternLengthCategory == null
@@ -69,10 +69,10 @@ internal sealed partial class GetTournamentQueryHandler(
                     : tournament.PatternRatioCategory.Name,
                 tournament.EntryFee,
                 RegistrationUrl = tournament.ExternalRegistrationUrl,
-                LogoContainer = tournament.Logo != null
+                TournamentLogoContainer = tournament.Logo != null
                     ? tournament.Logo.Container
                     : null,
-                LogoPath = tournament.Logo != null
+                TournamentLogoPath = tournament.Logo != null
                     ? tournament.Logo.Path
                     : null,
                 Reservations = 999, // need to replace once actual column exists
@@ -121,7 +121,20 @@ internal sealed partial class GetTournamentQueryHandler(
             .Select(tournamentEntry => (int?)tournamentEntry.Entries)
             .SingleOrDefaultAsync(cancellationToken);
 
-        var tournament = new TournamentDetailDto
+        var sponsors = row.Sponsors
+            .Select(s => new TournamentDetailSponsorDto
+            {
+                Name = s.Name,
+                Slug = s.Slug,
+                LogoUrl = s.LogoContainer is not null && s.LogoPath is not null
+                    ? _fileStorageService.GetBlobUri(s.LogoContainer, s.LogoPath)
+                    : null,
+                WebsiteUrl = s.WebsiteUrl,
+                TagPhrase = s.TagPhrase,
+            })
+            .ToArray();
+
+        return new TournamentDetailDto
         {
             Id = row.Id,
             Name = row.Name,
@@ -133,7 +146,7 @@ internal sealed partial class GetTournamentQueryHandler(
             EntryFee = row.EntryFee,
             RegistrationUrl = row.RegistrationUrl,
             BowlingCenter = row.BowlingCenter,
-            Sponsors = row.Sponsors,
+            Sponsors = sponsors,
             AddedMoney = row.AddedMoney,
             Reservations = row.Reservations,
             PatternLengthCategory = row.PatternLengthCategory,
@@ -144,25 +157,13 @@ internal sealed partial class GetTournamentQueryHandler(
                 Length = pattern.Length,
                 TournamentRounds = [.. pattern.TournamentRounds.Select(r => r.Name)]
             }),
-            LogoContainer = row.LogoContainer,
-            LogoPath = row.LogoPath,
+            LogoUrl = row.TournamentLogoContainer is not null && row.TournamentLogoPath is not null
+                ? _fileStorageService.GetBlobUri(row.TournamentLogoContainer, row.TournamentLogoPath)
+                : null,
             Winners = historicalWinners,
             // If Results or EntryCount are empty/null, check future stats tables for 2026+ tournament data
             Results = historicalResults,
             EntryCount = historicalEntryCount,
         };
-
-        if (tournament.LogoContainer is not null && tournament.LogoPath is not null)
-        {
-            tournament = tournament with { LogoUrl = _fileStorageService.GetBlobUri(tournament.LogoContainer, tournament.LogoPath) };
-        }
-
-        var sponsors = tournament.Sponsors
-            .Select(s => s.LogoContainer is not null && s.LogoPath is not null
-                ? s with { LogoUrl = _fileStorageService.GetBlobUri(s.LogoContainer, s.LogoPath) }
-                : s)
-            .ToArray();
-
-        return tournament with { Sponsors = sponsors };
     }
 }

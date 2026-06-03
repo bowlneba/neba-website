@@ -12,9 +12,7 @@ public static class TournamentDetailSponsorDtoFactory
         string? slug = null,
         Uri? websiteUrl = null,
         string? tagPhrase = null,
-        Uri? logoUrl = null,
-        string? logoPath = null,
-        string? logoContainer = null)
+        Uri? logoUrl = null)
         => new()
         {
             Name = name ?? ValidName,
@@ -22,8 +20,6 @@ public static class TournamentDetailSponsorDtoFactory
             WebsiteUrl = websiteUrl,
             TagPhrase = tagPhrase,
             LogoUrl = logoUrl,
-            LogoPath = logoPath,
-            LogoContainer = logoContainer,
         };
 
     public static IReadOnlyCollection<TournamentDetailSponsorDto> Bogus(int count, int? seed = null)
@@ -35,9 +31,7 @@ public static class TournamentDetailSponsorDtoFactory
                 Slug = f.Internet.DomainWord(),
                 WebsiteUrl = f.Random.Bool() ? new Uri(f.Internet.Url()) : null,
                 TagPhrase = f.Random.Bool() ? f.Lorem.Sentence() : null,
-                LogoUrl = null,
-                LogoPath = f.Random.Bool() ? f.System.FilePath() : null,
-                LogoContainer = f.Random.Bool() ? f.Lorem.Word() : null,
+                LogoUrl = f.Random.Bool() ? new Uri(f.Internet.Url()) : null,
             });
 
         if (seed.HasValue)

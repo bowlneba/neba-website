@@ -53,16 +53,12 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                     },
                 Sponsors = tournament.Sponsors
                     .Select(tournamentSponsor => tournamentSponsor.Sponsor)
-                    .Select(s => new SeasonTournamentSponsorDto
+                    .Select(s => new
                     {
-                        Name = s.Name,
-                        Slug = s.Slug,
-                        LogoContainer = s.Logo != null
-                            ? s.Logo.Container
-                            : null,
-                        LogoPath = s.Logo != null
-                            ? s.Logo.Path
-                            : null
+                        s.Name,
+                        s.Slug,
+                        LogoContainer = s.Logo != null ? s.Logo.Container : null,
+                        LogoPath = s.Logo != null ? s.Logo.Path : null
                     }).ToList(),
                 AddedMoney = tournament.Sponsors.Sum(ts => ts.SponsorshipAmount),
                 PatternLengthCategory = tournament.PatternLengthCategory == null
@@ -73,10 +69,10 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                     : tournament.PatternRatioCategory.Name,
                 tournament.EntryFee,
                 RegistrationUrl = tournament.ExternalRegistrationUrl,
-                LogoContainer = tournament.Logo != null
+                TournamentLogoContainer = tournament.Logo != null
                     ? tournament.Logo.Container
                     : null,
-                LogoPath = tournament.Logo != null
+                TournamentLogoPath = tournament.Logo != null
                     ? tournament.Logo.Path
                     : null,
                 Reservations = 999, // need to replace once actual column exists
@@ -101,48 +97,47 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 .GroupBy(w => w.TournamentId)
                 .ToDictionary(g => g.Key, g => (IReadOnlyCollection<Name>)[.. g.Select(w => w.Name)]);
 
-        var tournaments = rows.ConvertAll(row => new SeasonTournamentDto
+        return [.. rows.Select(row =>
         {
-            Id = row.Id,
-            Name = row.Name,
-            Season = row.Season,
-            StartDate = row.StartDate,
-            EndDate = row.EndDate,
-            StatsEligible = row.StatsEligible,
-            TournamentType = row.TournamentType,
-            EntryFee = row.EntryFee,
-            RegistrationUrl = row.RegistrationUrl,
-            BowlingCenter = row.BowlingCenter,
-            Sponsors = row.Sponsors,
-            AddedMoney = row.AddedMoney,
-            Reservations = row.Reservations,
-            PatternLengthCategory = row.PatternLengthCategory,
-            PatternRatioCategory = row.PatternRatioCategory,
-            OilPatterns = row.OilPatterns.ConvertAll(pattern => new SeasonTournamentOilPatternDto
-            {
-                Name = pattern.Name,
-                Length = pattern.Length,
-                TournamentRounds = [.. pattern.TournamentRounds.Select(r => r.Name)]
-            }),
-            LogoContainer = row.LogoContainer,
-            LogoPath = row.LogoPath,
-            Winners = historicalWinnersByTournamentDbId.GetValueOrDefault(row.DbId, []),
-        });
-
-        return [.. tournaments.Select(t =>
-        {
-            if (t.LogoContainer is not null && t.LogoPath is not null)
-            {
-                t = t with { LogoUrl = _fileStorageService.GetBlobUri(t.LogoContainer, t.LogoPath) };
-            }
-
-            var sponsors = t.Sponsors
-                .Select(s => s.LogoContainer is not null && s.LogoPath is not null
-                    ? s with { LogoUrl = _fileStorageService.GetBlobUri(s.LogoContainer, s.LogoPath) }
-                    : s)
+            var sponsors = row.Sponsors
+                .Select(s => new SeasonTournamentSponsorDto
+                {
+                    Name = s.Name,
+                    Slug = s.Slug,
+                    LogoUrl = s.LogoContainer is not null && s.LogoPath is not null
+                        ? _fileStorageService.GetBlobUri(s.LogoContainer, s.LogoPath)
+                        : null
+                })
                 .ToArray();
 
-            return t with { Sponsors = sponsors };
+            return new SeasonTournamentDto
+            {
+                Id = row.Id,
+                Name = row.Name,
+                Season = row.Season,
+                StartDate = row.StartDate,
+                EndDate = row.EndDate,
+                StatsEligible = row.StatsEligible,
+                TournamentType = row.TournamentType,
+                EntryFee = row.EntryFee,
+                RegistrationUrl = row.RegistrationUrl,
+                BowlingCenter = row.BowlingCenter,
+                Sponsors = sponsors,
+                AddedMoney = row.AddedMoney,
+                Reservations = row.Reservations,
+                PatternLengthCategory = row.PatternLengthCategory,
+                PatternRatioCategory = row.PatternRatioCategory,
+                OilPatterns = row.OilPatterns.ConvertAll(pattern => new SeasonTournamentOilPatternDto
+                {
+                    Name = pattern.Name,
+                    Length = pattern.Length,
+                    TournamentRounds = [.. pattern.TournamentRounds.Select(r => r.Name)]
+                }),
+                LogoUrl = row.TournamentLogoContainer is not null && row.TournamentLogoPath is not null
+                    ? _fileStorageService.GetBlobUri(row.TournamentLogoContainer, row.TournamentLogoPath)
+                    : null,
+                Winners = historicalWinnersByTournamentDbId.GetValueOrDefault(row.DbId, []),
+            };
         })];
     }
 }

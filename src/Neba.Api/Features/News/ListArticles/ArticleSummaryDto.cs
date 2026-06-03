@@ -21,17 +21,7 @@ public sealed record ArticleSummaryDto
     public required string Excerpt { get; init; }
 
     /// <summary>
-    /// Gets the name of the container where the header image of the article is stored. This is typically used in conjunction with a storage service to retrieve the image.
-    /// </summary>
-    public string? HeaderImageContainer { get; init; }
-
-    /// <summary>
-    /// Gets the path to the header image of the article. This is typically used in conjunction with a storage service to retrieve the image.
-    /// </summary>
-    public string? HeaderImagePath { get; init; }
-
-    /// <summary>
-    /// Gets the URL of the header image of the article. This is typically used to display the image in a web application or other client.
+    /// Gets the URL of the header image of the article; null if no header image is associated.
     /// </summary>
     public Uri? HeaderImageUrl { get; init; }
 

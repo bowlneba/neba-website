@@ -29,17 +29,7 @@ public sealed record TournamentDetailSponsorDto
     public string? TagPhrase { get; init; }
 
     /// <summary>
-    /// Gets the URI of the logo image associated with this instance.
+    /// Gets the URI of the logo image; null if no logo is available.
     /// </summary>
-    public Uri? LogoUrl { get; internal set; }
-
-    /// <summary>
-    /// Gets the file system path to the logo image, if available.
-    /// </summary>
-    public string? LogoPath { get; init; }
-
-    /// <summary>
-    /// Gets the name or identifier of the container where the logo is stored.
-    /// </summary>
-    public string? LogoContainer { get; init; }
+    public Uri? LogoUrl { get; init; }
 }
