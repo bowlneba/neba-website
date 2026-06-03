@@ -52,9 +52,10 @@ public static class ArticleFactory
 #pragma warning restore S107
 
 #pragma warning disable CA1308
-    public static IReadOnlyCollection<Article> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<Article> Bogus(int count, int? seed = null, IEnumerable<TournamentId>? tournamentIds = null)
     {
         var uniqueImages = UniquePool.CreateNullable(StoredFileFactory.Bogus(count, seed), seed);
+        var uniqueTournamentIds = UniquePool.CreateNullable(tournamentIds ?? [], seed);
 
         var faker = new Faker<Article>()
             .CustomInstantiator(f =>
@@ -68,9 +69,9 @@ public static class ArticleFactory
                     Slug = title.ToLowerInvariant().Replace(' ', '-'),
                     Content = f.Lorem.Paragraphs(2),
                     PublicationStatus = f.PickRandom(PublicationStatus.List.ToArray()),
-                    PublishDateUtc = f.Date.PastOffset(2),
+                    PublishDateUtc = f.Date.PastOffset(2).ToUniversalTime(),
                     HeaderImage = uniqueImages.GetNextNullable(),
-                    TournamentId = new TournamentId(Ulid.BogusString(f))
+                    TournamentId = uniqueTournamentIds.GetNextNullable()
                 };
 
                 var attachmentCount = f.Random.Int(0, 3);
