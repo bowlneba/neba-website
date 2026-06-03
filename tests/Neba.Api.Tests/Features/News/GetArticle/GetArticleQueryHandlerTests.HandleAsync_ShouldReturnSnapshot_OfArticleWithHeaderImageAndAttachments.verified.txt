@@ -1,0 +1,23 @@
+﻿{
+  Slug: tournament-recap,
+  Title: Tournament Recap,
+  Content: The annual tournament concluded last weekend with exciting results across all divisions.,
+  HeaderImageContainer: news,
+  HeaderImagePath: articles/recap.jpg,
+  HeaderImageUrl: https://cdn.example.com/news/articles/recap.jpg,
+  PublishDateUtc: DateTimeOffset_1,
+  Attachments: [
+    {
+      DisplayName: Bracket,
+      Container: news-files,
+      Path: docs/bracket.pdf,
+      Url: https://cdn.example.com/news-files/docs/bracket.pdf
+    },
+    {
+      DisplayName: Scores,
+      Container: news-files,
+      Path: docs/scores.pdf,
+      Url: https://cdn.example.com/news-files/docs/scores.pdf
+    }
+  ]
+}
