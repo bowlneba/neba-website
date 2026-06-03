@@ -2071,6 +2071,7 @@ static List<(int? websiteId, int? softwareId)> s_manualMatch = new()
 	new(null, 5069),  // Brianna Cote
 	new(null, 5085),  // Christian Forry
 	new(null, 5090),  // Caitlyn Smith
+	new(null, 5093),  // Scott King
 };
 
 #endregion
