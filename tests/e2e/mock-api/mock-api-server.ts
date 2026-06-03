@@ -536,6 +536,41 @@ const MOCK_NEWS_PAGE_1 = {
   pageSize: 10,
 };
 
+const MOCK_ARTICLE_SEASON_CHAMPIONS: object = {
+  slug: 'season-champions-2026',
+  title: '2025–26 Season Champions Crowned at Tournament of Champions',
+  content: '<p>After a dominant regular season, the 2025–26 NEBA Tournament of Champions brought together the top performers from across New England for a single-elimination finale at Baxter Bowl in Springfield.</p><p>The field was deep. Twelve qualifiers entered match play, but it was two bowlers who had been trading the points lead all season who ultimately met in the final: defending champion Marcus Roark and two-time high-average winner Diane Pellerin.</p><p>Pellerin answered with a strike in the 10th to post a 267 and claim her first Tournament of Champions title.</p>',
+  headerImageUrl: null,
+  publishDateUtc: '2026-05-15T00:00:00+00:00',
+  tournamentId: MOCK_TOURNAMENT_ID,
+  attachments: [
+    { displayName: 'Tournament Results & Bracket', url: 'https://files.bowlneba.com/news/season-champions-2026/bracket.pdf' },
+    { displayName: 'Lane Pattern (WTBA London)', url: 'https://files.bowlneba.com/news/season-champions-2026/lane-pattern.pdf' },
+  ],
+};
+
+const MOCK_ARTICLE_JUNE_LANE_PATTERN: object = {
+  slug: 'june-lane-pattern',
+  title: 'Lane Pattern Announced for June Southside Classic',
+  content: '<p>The June monthly at Southside Bowl will feature the WTBA London sport pattern. Download the PDF below and check qualifying details.</p><p>Registration opens May 20th. Entry fee is $75 per bowler.</p>',
+  headerImageUrl: null,
+  publishDateUtc: '2026-05-01T00:00:00+00:00',
+  tournamentId: null,
+  attachments: [
+    { displayName: 'Lane Pattern PDF', url: 'https://files.bowlneba.com/news/june-lane-pattern/pattern.pdf' },
+  ],
+};
+
+const MOCK_ARTICLE_POINTS_RACE: object = {
+  slug: 'points-race-update',
+  title: 'Points Race Update: Three Bowlers Separated by Eight Points',
+  content: '<p>With two tournaments left, the Bowler of the Year race is razor-thin. Here\'s the current standings and what each contender needs to clinch the title heading into the final stretch.</p>',
+  headerImageUrl: null,
+  publishDateUtc: '2026-04-18T00:00:00+00:00',
+  tournamentId: null,
+  attachments: [],
+};
+
 const routes: Record<string, unknown> = {
   '/health': { status: 'healthy' },
   '/documents/tournament-rules': { html: MOCK_TOURNAMENT_RULES_HTML },
@@ -546,6 +581,9 @@ const routes: Record<string, unknown> = {
   '/sponsors/pro-shop-plus': MOCK_SPONSOR_PRO_SHOP_PLUS,
   '/sponsors/old-sponsor': MOCK_SPONSOR_OLD_SPONSOR,
   '/news': MOCK_NEWS_PAGE_1,
+  '/news/season-champions-2026': MOCK_ARTICLE_SEASON_CHAMPIONS,
+  '/news/june-lane-pattern': MOCK_ARTICLE_JUNE_LANE_PATTERN,
+  '/news/points-race-update': MOCK_ARTICLE_POINTS_RACE,
   '/hall-of-fame/inductions': MOCK_HALL_OF_FAME,
   '/awards/bowler-of-the-year': MOCK_BOWLER_OF_THE_YEAR_AWARDS,
   '/awards/high-average': MOCK_HIGH_AVERAGE_AWARDS,

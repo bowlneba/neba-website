@@ -1,0 +1,196 @@
+@preservewhitespace false
+@page "/news/{Slug}"
+@using ErrorOr
+@using Neba.Api.Contracts.News
+@using Neba.Api.Contracts.News.GetArticle
+@using Neba.Website.Server.Services
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject ApiExecutor ApiExecutor
+@inject INewsApi NewsApi
+@inject ILogger<NewsDetail> Logger
+
+<PageTitle>@(_article?.Title is not null ? _article.Title + " - NEBA" : "News - NEBA")</PageTitle>
+<HeadContent>
+    @if (_article is not null)
+    {
+        <meta name="description" content="@_article.Title — NEBA news article." />
+    }
+</HeadContent>
+
+@if (_isLoading)
+{
+    <div class="news-detail-skeleton neba-space-y-6" aria-busy="true" aria-label="Loading article">
+        <div class="detail-skeleton-image neba-skeleton"></div>
+        <div class="detail-skeleton-meta">
+            <NebaSkeletonLoader Type="SkeletonType.Custom" Width="120px" Height="0.75rem" />
+            <NebaSkeletonLoader Type="SkeletonType.Custom" Width="65%" Height="2rem" />
+        </div>
+        <div class="detail-skeleton-body">
+            <div class="detail-skeleton-main">
+                <NebaSkeletonLoader Type="SkeletonType.Text" Rows="6" />
+            </div>
+            <div class="detail-skeleton-sidebar">
+                <NebaSkeletonLoader Type="SkeletonType.Custom" Width="100%" Height="6rem" />
+            </div>
+        </div>
+    </div>
+}
+else if (_notFound)
+{
+    <div class="news-detail-not-found">
+        <span class="material-symbols-outlined" style="font-size: 3rem; color: var(--neba-gray-300, #CCCCCC);" aria-hidden="true">article</span>
+        <p class="news-detail-not-found-text">This article could not be found or is no longer published.</p>
+        <a href="/news" class="neba-btn neba-btn-secondary">Back to News</a>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <NebaAlert Severity="NotifySeverity.Error" Title="Error Loading Article" Message="@_errorMessage" Dismissible="true"
+               OnDismiss="@(() => _errorMessage = null)" />
+}
+else if (_article is not null)
+{
+    <div class="neba-space-y-6">
+
+        <a href="/news" class="news-back-link" aria-label="Back to News">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to News
+        </a>
+
+        <div class="news-detail-layout">
+
+            <div class="news-detail-main">
+                @if (_article.HeaderImageUrl is not null)
+                {
+                    <div class="news-detail-image-card" aria-hidden="true">
+                        <img src="@_article.HeaderImageUrl" alt="" class="news-detail-image" loading="eager" />
+                    </div>
+                }
+
+                <div class="news-detail-date">@_article.PublishDateUtc.ToString("MMMM d, yyyy")</div>
+                <h1 class="news-detail-title">@_article.Title</h1>
+
+                <div class="news-detail-body article-body">
+                    @((MarkupString)_article.Content)
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <a href="/news" class="news-back-link" aria-label="Back to News">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Back to News
+                    </a>
+                </div>
+            </div>
+
+            <aside class="news-detail-sidebar" aria-label="Article info">
+
+                <div class="sidebar-panel">
+                    <div class="sidebar-panel-header">Article Info</div>
+                    <div class="sidebar-panel-body">
+                        <div class="sidebar-meta-label">Published</div>
+                        <div class="sidebar-meta-value">@_article.PublishDateUtc.ToString("MMMM d, yyyy")</div>
+                    </div>
+                    @if (_article.TournamentId is not null)
+                    {
+                        <div class="sidebar-tournament-link">
+                            <a href="/tournaments/@_article.TournamentId" class="neba-btn neba-btn-secondary sidebar-tournament-btn">
+                                Go to Tournament
+                                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </a>
+                        </div>
+                    }
+                </div>
+
+                @if (_article.Attachments.Count > 0)
+                {
+                    <div class="sidebar-panel">
+                        <div class="sidebar-panel-header">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                            Attached Files
+                        </div>
+                        <div class="sidebar-panel-body sidebar-files-body">
+                            @foreach (var attachment in _article.Attachments)
+                            {
+                                @if (attachment.Url is not null)
+                                {
+                                    <a class="sidebar-file-row"
+                                       href="@attachment.Url.ToString()"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       aria-label="Download @attachment.DisplayName">
+                                        <div class="file-icon" aria-hidden="true">PDF</div>
+                                        <span class="sidebar-file-name">@attachment.DisplayName</span>
+                                        <span class="sidebar-file-dl" aria-hidden="true">
+                                            Download
+                                            <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
+                                            </svg>
+                                        </span>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <div class="sidebar-file-row sidebar-file-row--unavailable">
+                                        <div class="file-icon" aria-hidden="true">PDF</div>
+                                        <span class="sidebar-file-name">@attachment.DisplayName</span>
+                                        <span class="sidebar-file-dl sidebar-file-dl--unavailable" aria-hidden="true">Unavailable</span>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+
+            </aside>
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string Slug { get; set; } = string.Empty;
+
+    private ArticleDetailResponse? _article;
+    private bool _isLoading = true;
+    private bool _notFound;
+    private string? _errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+        _notFound = false;
+        _errorMessage = null;
+        _article = null;
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "News",
+            "GetArticle",
+            ct => NewsApi.GetArticleAsync(Slug, ct));
+
+        _isLoading = false;
+
+        if (result.IsError)
+        {
+            if (result.FirstError.Type == ErrorType.NotFound)
+            {
+                _notFound = true;
+                return;
+            }
+
+            _errorMessage = result.FirstError.Description;
+            return;
+        }
+
+        _article = result.Value;
+    }
+}
