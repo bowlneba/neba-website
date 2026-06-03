@@ -248,6 +248,22 @@ public static class CacheDescriptors
                 Key = $"neba:news:articles:list:page:{page}:size:{pageSize}",
                 Tags = ["neba", "neba:news", "neba:news:articles"]
             };
+
+        /// <summary>
+        /// Returns a cache descriptor for a specific news article identified by its slug.
+        /// </summary>
+        /// <param name="slug">
+        /// The article slug.
+        /// </param>
+        /// <returns>
+        /// A cache descriptor for the article detail.
+        /// </returns>
+        public static CacheDescriptor Article(string slug)
+            => new()
+            {
+                Key = $"neba:news:{slug}:article",
+                Tags = ["neba", "neba:news", $"neba:news:{slug}"]
+            };
     }
 
     /// <summary>
