@@ -1,3 +1,4 @@
+using Neba.Api.Contracts.News.GetArticle;
 using Neba.Api.Contracts.News.ListArticles;
 
 using Refit;
@@ -20,5 +21,16 @@ public interface INewsApi
     Task<IApiResponse<PaginationResponse<ArticleSummaryResponse>>> ListArticlesAsync(
         int page = 1,
         int pageSize = 10,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a published article by its URL slug.
+    /// </summary>
+    /// <param name="slug">The URL-friendly identifier for the article.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The full article detail, or 404 if not found.</returns>
+    [Get("/news/{slug}")]
+    Task<IApiResponse<ArticleDetailResponse>> GetArticleAsync(
+        string slug,
         CancellationToken cancellationToken = default);
 }
