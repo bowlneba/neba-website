@@ -29,12 +29,14 @@ internal sealed class GetArticleQueryHandler(
                 HeaderImageContainer = article.HeaderImage != null ? article.HeaderImage.Container : null,
                 HeaderImagePath = article.HeaderImage != null ? article.HeaderImage.Path : null,
                 article.PublishDateUtc,
-                Attachments = article.Attachments.Select(attachment => new
-                {
-                    attachment.DisplayName,
-                    attachment.File.Container,
-                    attachment.File.Path
-                }).ToList(),
+                Attachments = article.Attachments
+                    .Where(attachment => !attachment.IsInline)
+                    .Select(attachment => new
+                    {
+                        attachment.DisplayName,
+                        attachment.File.Container,
+                        attachment.File.Path
+                    }).ToList(),
                 article.TournamentId
             })
             .SingleOrDefaultAsync(cancellationToken);

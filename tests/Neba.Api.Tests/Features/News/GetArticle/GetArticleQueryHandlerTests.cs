@@ -176,6 +176,42 @@ public sealed class GetArticleQueryHandlerTests(PostgreSqlFixture fixture)
         result.Value.Attachments.ShouldContain(a => a.DisplayName == "Results" && a.Url == uri2);
     }
 
+    [Fact(DisplayName = "HandleAsync excludes inline attachments from the attachment list")]
+    public async Task HandleAsync_ShouldExcludeInlineAttachments_FromAttachmentList()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var inlineFile = StoredFileFactory.Create(container: "news-files", path: "docs/inline-image.jpg");
+        var downloadFile = StoredFileFactory.Create(container: "news-files", path: "docs/schedule.pdf");
+        var attachments = new[]
+        {
+            ArticleAttachmentFactory.Create(displayName: "Inline Image", file: inlineFile, isInline: true),
+            ArticleAttachmentFactory.Create(displayName: "Schedule", file: downloadFile, isInline: false)
+        };
+        var article = ArticleFactory.Create(
+            slug: "mixed-attachments",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: new DateTimeOffset(2025, 5, 1, 0, 0, 0, TimeSpan.Zero),
+            attachments: attachments);
+        await _dbContext.Articles.AddAsync(article, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var scheduleUri = new Uri("https://storage.example.com/news-files/docs/schedule.pdf");
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        fileStorageMock.Setup(s => s.GetBlobUri("news-files", "docs/schedule.pdf")).Returns(scheduleUri);
+
+        var handler = CreateHandler(fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(QueryFor("mixed-attachments"), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Attachments.Count.ShouldBe(1);
+        result.Value.Attachments.Single().DisplayName.ShouldBe("Schedule");
+        result.Value.Attachments.Single().Url.ShouldBe(scheduleUri);
+    }
+
     [Fact(DisplayName = "HandleAsync returns article regardless of publication status")]
     public async Task HandleAsync_ShouldReturnArticle_RegardlessOfPublicationStatus()
     {

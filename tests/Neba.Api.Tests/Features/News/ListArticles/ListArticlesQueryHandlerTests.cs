@@ -302,6 +302,81 @@ public sealed class ListArticlesQueryHandlerTests(PostgreSqlFixture fixture)
         result.TotalItems.ShouldBe(1);
     }
 
+    [Fact(DisplayName = "HandleAsync strips HTML tags from excerpt")]
+    public async Task HandleAsync_ShouldStripHtmlTags_FromExcerpt()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var article = ArticleFactory.Create(
+            slug: "html-article",
+            content: "<p>Hello from <strong>NEBA</strong>. Welcome.</p>",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: Now.AddDays(-1));
+        await _dbContext.Articles.AddAsync(article, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(DefaultQuery, ct);
+
+        // Assert
+        result.Items.ShouldHaveSingleItem();
+        var excerpt = result.Items.Single().Excerpt;
+        excerpt.ShouldNotContain("<");
+        excerpt.ShouldNotContain(">");
+        excerpt.ShouldContain("Hello from");
+        excerpt.ShouldContain("NEBA");
+    }
+
+    [Fact(DisplayName = "HandleAsync decodes HTML entities in excerpt")]
+    public async Task HandleAsync_ShouldDecodeHtmlEntities_InExcerpt()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var article = ArticleFactory.Create(
+            slug: "entity-article",
+            content: "<p>Scores &amp; standings for the 2025 season.</p>",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: Now.AddDays(-1));
+        await _dbContext.Articles.AddAsync(article, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(DefaultQuery, ct);
+
+        // Assert
+        result.Items.ShouldHaveSingleItem();
+        var excerpt = result.Items.Single().Excerpt;
+        excerpt.ShouldContain("Scores & standings");
+        excerpt.ShouldNotContain("&amp;");
+    }
+
+    [Fact(DisplayName = "HandleAsync does not append ellipsis when plain-text excerpt is under limit")]
+    public async Task HandleAsync_ShouldNotAppendEllipsis_WhenExcerptUnderLimit()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var article = ArticleFactory.Create(
+            slug: "short-article",
+            content: "<p>Short content.</p>",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: Now.AddDays(-1));
+        await _dbContext.Articles.AddAsync(article, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(DefaultQuery, ct);
+
+        // Assert
+        result.Items.ShouldHaveSingleItem();
+        result.Items.Single().Excerpt.ShouldNotEndWith("...");
+    }
+
     [Fact(DisplayName = "HandleAsync returns snapshot of published articles with header images")]
     public async Task HandleAsync_ShouldReturnSnapshot_OfPublishedArticlesWithHeaderImages()
     {
