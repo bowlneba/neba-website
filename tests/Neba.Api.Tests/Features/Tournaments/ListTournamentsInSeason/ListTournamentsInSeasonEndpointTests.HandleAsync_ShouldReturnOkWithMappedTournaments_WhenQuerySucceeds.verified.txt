@@ -13,9 +13,9 @@
       PatternLengthCategory: Long,
       PatternRatioCategory: Challenge,
       Winners: [
-        Lee Dicki,
-        Lorraine Nader,
-        Abraham Armstrong
+        Carl Zemlak,
+        Rudolph Vandervort,
+        Unique Kreiger
       ],
       BowlingCenter: {
         Name: Connelly, Cassin and Ledner Lanes,
@@ -24,65 +24,75 @@
       },
       Sponsors: [
         {
-          Name: Baumbach - Rath,
+          Name: Lindgren, Baumbach and Rath,
           Slug: caleb
         },
         {
-          Name: McGlynn Inc,
-          Slug: lorenza
+          Name: Yundt, Sauer and Collier,
+          Slug: shaun,
+          LogoUrl: http://keenan.name
         }
       ]
     },
     {
-      Id: 01GN0X0WT34YXET9S2ZEWY9ZPP,
-      Name: protocol Branch redundant,
+      Id: 01HNB7J615E3E9A189DSKPQSZH,
+      Name: Small Rubber Hat Practical Metal Tuna Advanced,
       StartDate: Date_3,
       EndDate: Date_4,
-      TournamentType: Tournament of Champions,
-      EntryFee: 51.9345233458720700,
-      RegistrationUrl: http://anika.name,
-      AddedMoney: 1876.664709708030000,
-      Reservations: 62,
-      PatternLengthCategory: Long,
-      PatternRatioCategory: Recreation,
-      LogoUrl: https://juvenal.info,
-      BowlingCenter: {
-        Name: Connelly, Cassin and Ledner Lanes,
-        City: East Modestaport,
-        State: FL
-      },
-      Sponsors: [
-        {
-          Name: Schoen and Sons,
-          Slug: jovani
-        },
-        {
-          Name: Green, Lueilwitz and Zboncak,
-          Slug: mac
-        }
-      ]
-    },
-    {
-      Id: 01HBDFYSC9WMZ456YFEP03HDDY,
-      Name: port Wyoming deposit,
-      StartDate: Date_5,
-      EndDate: Date_6,
-      TournamentType: Eliminator,
-      EntryFee: 89.816559264350900,
-      RegistrationUrl: http://crystel.name,
-      AddedMoney: 4967.423279288890000,
-      Reservations: 12,
+      TournamentType: Senior / Women,
+      EntryFee: 60.6414412430680550,
+      RegistrationUrl: http://adolfo.net,
+      AddedMoney: 44.76454576699275000,
+      Reservations: 83,
       PatternLengthCategory: Long,
       PatternRatioCategory: Challenge,
-      Winners: [
-        Justice Strosin,
-        Ashton McLaughlin
-      ],
       BowlingCenter: {
         Name: Hackett LLC Lanes,
         City: Abernathymouth,
         State: SD
-      }
+      },
+      Sponsors: [
+        {
+          Name: Lemke, Jacobs and Gulgowski,
+          Slug: sydnee
+        }
+      ]
+    },
+    {
+      Id: 01F5BJSN62NQNV7FS9H7YG0ME6,
+      Name: support Rue Industrial, Garden & Clothing,
+      StartDate: Date_5,
+      EndDate: Date_5,
+      TournamentType: Invitational,
+      EntryFee: 166.416565988406800,
+      RegistrationUrl: http://briana.biz,
+      AddedMoney: 3831.11519218940000,
+      Reservations: 67,
+      PatternLengthCategory: Short,
+      PatternRatioCategory: Challenge,
+      BowlingCenter: {
+        Name: Hoppe, Cormier and Balistreri Lanes,
+        City: Lake Lisandroland,
+        State: IL
+      },
+      Sponsors: [
+        {
+          Name: White - Schroeder,
+          Slug: branson,
+          LogoUrl: http://cheyenne.org
+        }
+      ],
+      OilPatterns: [
+        {
+          Name: a Pattern,
+          Length: 37,
+          Rounds: [
+            Qualifying,
+            Cashers,
+            Match Play
+          ]
+        }
+      ]
     }
   ],
   TotalItems: 3
