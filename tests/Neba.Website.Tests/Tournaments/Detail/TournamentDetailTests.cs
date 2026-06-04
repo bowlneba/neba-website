@@ -326,6 +326,63 @@ public sealed class TournamentDetailTests : IDisposable
         cut.Markup.ShouldContain("Qualifying, Finals");
     }
 
+    [Theory(DisplayName = "Should render long dot class when pattern length is 43 or greater")]
+    [InlineData(43)]
+    [InlineData(44)]
+    [InlineData(50)]
+    public void Render_ShouldRenderLongDotClass_WhenLengthIsFortyThreeOrGreater(int length)
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            oilPatterns: [TournamentDetailOilPatternResponseFactory.Create(length: length)]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Find(".td-pattern-card__dot--long").ShouldNotBeNull();
+        cut.FindAll(".td-pattern-card__dot--medium").ShouldBeEmpty();
+        cut.FindAll(".td-pattern-card__dot--short").ShouldBeEmpty();
+    }
+
+    [Theory(DisplayName = "Should render medium dot class when pattern length is between 38 and 42 inclusive")]
+    [InlineData(38)]
+    [InlineData(40)]
+    [InlineData(42)]
+    public void Render_ShouldRenderMediumDotClass_WhenLengthIsBetweenThirtyEightAndFortyTwo(int length)
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            oilPatterns: [TournamentDetailOilPatternResponseFactory.Create(length: length)]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Find(".td-pattern-card__dot--medium").ShouldNotBeNull();
+        cut.FindAll(".td-pattern-card__dot--long").ShouldBeEmpty();
+        cut.FindAll(".td-pattern-card__dot--short").ShouldBeEmpty();
+    }
+
+    [Theory(DisplayName = "Should render short dot class when pattern length is 37 or less")]
+    [InlineData(37)]
+    [InlineData(35)]
+    [InlineData(30)]
+    public void Render_ShouldRenderShortDotClass_WhenLengthIsThirtySevenOrLess(int length)
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            oilPatterns: [TournamentDetailOilPatternResponseFactory.Create(length: length)]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Find(".td-pattern-card__dot--short").ShouldNotBeNull();
+        cut.FindAll(".td-pattern-card__dot--long").ShouldBeEmpty();
+        cut.FindAll(".td-pattern-card__dot--medium").ShouldBeEmpty();
+    }
+
     [Fact(DisplayName = "Should not render oil patterns section when no patterns")]
     public void Render_ShouldNotRenderOilPatterns_WhenEmpty()
     {
