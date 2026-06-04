@@ -230,6 +230,23 @@ else
                         </section>
                     }
 
+                    @if (_model.HasArticles)
+                    {
+                        <section class="tournament-detail__section">
+                            <h2 class="td-section-title">Articles</h2>
+                            <ul class="td-article-list">
+                                @foreach (var article in _model.Articles)
+                                {
+                                    <li class="td-article-list__item">
+                                        <a href="/news/@article.Slug" class="neba-link td-article-list__link">
+                                            @article.Title
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </section>
+                    }
+
                     @if (_model.HasResults)
                     {
                         <section class="tournament-detail__section tournament-detail__results">
