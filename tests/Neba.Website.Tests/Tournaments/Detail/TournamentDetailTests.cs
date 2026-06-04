@@ -313,14 +313,15 @@ public sealed class TournamentDetailTests : IDisposable
     {
         // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
-            oilPatterns: [TournamentDetailOilPatternResponseFactory.Create(
-                name: "Kegel Broadway", length: 40, rounds: ["Qualifying", "Finals"])]));
+            oilPatterns: [
+                TournamentDetailOilPatternResponseFactory.Create(name: "Kegel Broadway", length: 40, rounds: ["Qualifying", "Finals"]),
+                TournamentDetailOilPatternResponseFactory.Create(name: "Kegel Crown", length: 39, rounds: ["Match Play"])]));
 
         // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
 
         // Assert
-        cut.Markup.ShouldContain("Oil Patterns");
+        cut.Markup.ShouldContain("Oil Pattern");
         cut.Markup.ShouldContain("Kegel Broadway · 40 ft");
         cut.Markup.ShouldContain("Qualifying, Finals");
     }
