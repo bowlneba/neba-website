@@ -3772,9 +3772,32 @@ public async Task MigrateOilPatterns()
 		KegelId = new Guid("20b49bb7-94b6-ec11-983f-0022480404ba")
 	};
 
+	var junSingles2026 = new OilPatterns
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "2025 PBA Ballard",
+		Length = 36,
+		Volume = 29.81m,
+		LeftRatio = 3.64m,
+		RightRatio = 2.67m,
+		KegelId = new Guid("9a7558ce-4fd3-ef11-8eea-6045bd057455")
+	};
+
+	var junOverUnder2026 = new OilPatterns
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "2023 USBC Jr. Gold - Qualifying (U15B, U18B & U20GB)",
+		Length = 35,
+		Volume = 26.05m,
+		LeftRatio = 2.43m,
+		RightRatio = 3.1m,
+		KegelId = new Guid("320c3be5-e957-ee11-be6f-00224805fa07")
+	};
+
 	OilPatterns.AddRange(
 		janSingles2026, febDoubles2026, febTrios2026, marSingles2026,
-		aprNonChamp2026, aprSenior2026, aprSingles2026, maySingles2026);
+		aprNonChamp2026, aprSenior2026, aprSingles2026, maySingles2026,
+		junSingles2026, junOverUnder2026);
 
 	TournamentOilPatterns.AddRange(
 		new TournamentOilPatterns 
@@ -3823,6 +3846,18 @@ public async Task MigrateOilPatterns()
 		{
 			TournamentId = Tournaments.Single(t => t.LegacyId == 157).Id,
 			OilPattern = maySingles2026,
+			TournamentRounds = 5
+		},
+		new TournamentOilPatterns
+		{
+			TournamentId = Tournaments.Single(t => t.EndDate == new DateOnly(2026, 06, 13)).Id,
+			OilPattern = junSingles2026,
+			TournamentRounds = 5
+		},
+		new TournamentOilPatterns
+		{
+			TournamentId = Tournaments.Single(t => t.EndDate == new DateOnly(2026, 06, 14)).Id,
+			OilPattern = junOverUnder2026,
 			TournamentRounds = 5
 		}
 	);
