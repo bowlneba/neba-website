@@ -98,6 +98,7 @@ internal sealed class GetTournamentEndpoint(
                 Name = op.Name,
                 Length = op.Length,
                 Rounds = op.TournamentRounds,
+                KegelId = op.KegelId,
             })],
             Winners = [.. dto.Winners.Select(w => w.ToDisplayName())],
             Results = [.. dto.Results.Select(r => new TournamentResultResponse

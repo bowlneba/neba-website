@@ -211,15 +211,25 @@ else
                     @if (_model.HasOilPatterns)
                     {
                         <section class="tournament-detail__section">
-                            <h2 class="td-section-title">Oil Patterns</h2>
+                            <h2 class="td-section-title">@(_model.OilPatterns.Count == 1 ? "Oil Pattern" : "Oil Patterns")</h2>
                             <div class="td-pattern-list">
                                 @foreach (var pattern in _model.OilPatterns)
                                 {
                                     <div class="neba-card td-pattern-card">
                                         <span class="td-pattern-card__dot @GetPatternClass(pattern.Length)" aria-hidden="true"></span>
                                         <div class="td-pattern-card__body">
-                                            <p class="td-pattern-card__name">@pattern.Display</p>
-                                            @if (pattern.Rounds.Count > 0)
+                                            <p class="td-pattern-card__name">
+                                                @if (pattern.KegelLibraryUrl is not null)
+                                                {
+                                                    <a href="@pattern.KegelLibraryUrl" target="_blank" rel="noopener noreferrer"
+                                                       class="neba-link">@pattern.Display</a>
+                                                }
+                                                else
+                                                {
+                                                    @pattern.Display
+                                                }
+                                            </p>
+                                            @if (_model.OilPatterns.Count > 1 && pattern.Rounds.Count > 0)
                                             {
                                                 <p class="td-pattern-card__rounds">@string.Join(", ", pattern.Rounds)</p>
                                             }

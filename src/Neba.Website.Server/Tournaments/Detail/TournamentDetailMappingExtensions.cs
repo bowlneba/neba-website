@@ -51,6 +51,7 @@ internal static class TournamentDetailMappingExtensions
             Name = response.Name,
             Length = response.Length,
             Rounds = response.Rounds,
+            KegelId = response.KegelId,
         };
     }
 
