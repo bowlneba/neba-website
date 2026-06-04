@@ -12,7 +12,7 @@ using Neba.Api.Storage;
 
 namespace Neba.Api.Features.Tournaments.GetTournament;
 
-internal sealed partial class GetTournamentQueryHandler(
+internal sealed class GetTournamentQueryHandler(
     AppDbContext appDbContext,
     IFileStorageService fileStorageService)
     : IQueryHandler<GetTournamentQuery, ErrorOr<TournamentDetailDto>>
@@ -81,7 +81,8 @@ internal sealed partial class GetTournamentQueryHandler(
                 {
                     top.OilPattern.Name,
                     top.OilPattern.Length,
-                    top.TournamentRounds
+                    top.TournamentRounds,
+                    top.OilPattern.KegelId
                 }).ToList(),
                 Articles = tournament.Articles
                     .Where(a => a.PublicationStatus == PublicationStatus.Published)
@@ -163,7 +164,8 @@ internal sealed partial class GetTournamentQueryHandler(
             {
                 Name = pattern.Name,
                 Length = pattern.Length,
-                TournamentRounds = [.. pattern.TournamentRounds.Select(r => r.Name)]
+                TournamentRounds = [.. pattern.TournamentRounds.Select(r => r.Name)],
+                KegelId = pattern.KegelId,
             }),
             LogoUrl = row.TournamentLogoContainer is not null && row.TournamentLogoPath is not null
                 ? _fileStorageService.GetBlobUri(row.TournamentLogoContainer, row.TournamentLogoPath)
