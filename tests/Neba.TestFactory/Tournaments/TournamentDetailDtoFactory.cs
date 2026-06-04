@@ -29,7 +29,8 @@ public static class TournamentDetailDtoFactory
         Uri? logoUrl = null,
         IReadOnlyCollection<Name>? winners = null,
         IReadOnlyCollection<TournamentResultDto>? results = null,
-        int? entryCount = null)
+        int? entryCount = null,
+        IReadOnlyCollection<TournamentDetailArticleDto>? articles = null)
             => new()
             {
                 Id = id ?? TournamentId.New(),
@@ -51,7 +52,8 @@ public static class TournamentDetailDtoFactory
                 LogoUrl = logoUrl,
                 Winners = winners ?? [],
                 Results = results ?? [],
-                EntryCount = entryCount
+                EntryCount = entryCount,
+                Articles = articles ?? [],
             };
 
     public static IReadOnlyCollection<TournamentDetailDto> Bogus(int count, int? seed = null)
@@ -60,6 +62,7 @@ public static class TournamentDetailDtoFactory
         var bowlingCenters = TournamentDetailBowlingCenterDtoFactory.Bogus(10, seed).ToArray();
         var sponsors = TournamentDetailSponsorDtoFactory.Bogus(25, seed).ToArray();
         var oilPatterns = TournamentDetailOilPatternDtoFactory.Bogus(20, seed).ToArray();
+        var articles = TournamentDetailArticleDtoFactory.Bogus(10, seed).ToArray();
 
         var faker = new Faker<TournamentDetailDto>()
             .CustomInstantiator(f => new()
@@ -83,7 +86,8 @@ public static class TournamentDetailDtoFactory
                 LogoUrl = f.Random.Bool() ? new Uri(f.Internet.Url()) : null,
                 Winners = [.. f.PickRandom(winners, f.Random.Int(0, 3))],
                 Results = TournamentResultDtoFactory.Bogus(f.Random.Int(0, 10), seed),
-                EntryCount = f.Random.Int(0, 100)
+                EntryCount = f.Random.Int(0, 100),
+                Articles = [.. f.PickRandom(articles, f.Random.Int(0, 2))],
             });
 
         if (seed.HasValue)

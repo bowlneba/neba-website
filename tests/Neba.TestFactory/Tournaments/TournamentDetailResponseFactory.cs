@@ -30,7 +30,8 @@ public static class TournamentDetailResponseFactory
         IReadOnlyCollection<TournamentDetailSponsorResponse>? sponsors = null,
         IReadOnlyCollection<TournamentDetailOilPatternResponse>? oilPatterns = null,
         IReadOnlyCollection<string>? winners = null,
-        IReadOnlyCollection<TournamentResultResponse>? results = null)
+        IReadOnlyCollection<TournamentResultResponse>? results = null,
+        IReadOnlyCollection<TournamentDetailArticleResponse>? articles = null)
         => new()
         {
             Id = id ?? ValidId,
@@ -53,6 +54,7 @@ public static class TournamentDetailResponseFactory
             OilPatterns = oilPatterns ?? [],
             Winners = winners ?? [],
             Results = results ?? [],
+            Articles = articles ?? [],
         };
 
     public static IReadOnlyCollection<TournamentDetailResponse> Bogus(int count, int? seed = null)
@@ -61,6 +63,7 @@ public static class TournamentDetailResponseFactory
         var sponsors = TournamentDetailSponsorResponseFactory.Bogus(25, seed).ToArray();
         var oilPatterns = TournamentDetailOilPatternResponseFactory.Bogus(20, seed).ToArray();
         var winners = NameFactory.Bogus(count * 200, seed).ToArray();
+        var articles = TournamentDetailArticleResponseFactory.Bogus(10, seed).ToArray();
 
         var faker = new Faker<TournamentDetailResponse>()
             .CustomInstantiator(f => new()
@@ -85,6 +88,7 @@ public static class TournamentDetailResponseFactory
                 OilPatterns = [.. f.PickRandom(oilPatterns, f.Random.Int(0, 2))],
                 Winners = [.. f.PickRandom(winners, f.Random.Int(0, 3)).Select(w => w.ToDisplayName())],
                 Results = TournamentResultResponseFactory.Bogus(f.Random.Int(0, 10), seed),
+                Articles = [.. f.PickRandom(articles, f.Random.Int(0, 2))],
             });
 
         if (seed.HasValue)

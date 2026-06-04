@@ -151,6 +151,16 @@ public sealed record TournamentDetailViewModel
     public bool HasOilPatterns => OilPatterns.Count > 0;
 
     /// <summary>
+    /// Published articles associated with this tournament; empty when none exist.
+    /// </summary>
+    public IReadOnlyCollection<TournamentDetailArticleViewModel> Articles { get; init; } = [];
+
+    /// <summary>
+    /// True when at least one article is associated with this tournament.
+    /// </summary>
+    public bool HasArticles => Articles.Count > 0;
+
+    /// <summary>
     /// True when the tournament spans more than one day.
     /// </summary>
     public bool IsMultiDay => EndDate > StartDate;

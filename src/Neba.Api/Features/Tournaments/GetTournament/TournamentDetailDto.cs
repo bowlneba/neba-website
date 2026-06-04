@@ -107,4 +107,9 @@ public sealed record TournamentDetailDto
     /// Total number of entries in the tournament; null for pending/upcoming events or if not tracked.
     /// </summary>
     public int? EntryCount { get; init; }
+
+    /// <summary>
+    /// Published articles associated with this tournament; empty when none exist.
+    /// </summary>
+    public IReadOnlyCollection<TournamentDetailArticleDto> Articles { get; init; } = [];
 }

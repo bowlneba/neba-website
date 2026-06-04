@@ -111,6 +111,11 @@ internal sealed class GetTournamentEndpoint(
                     ? $"#{c.R:X2}{c.G:X2}{c.B:X2}"
                     : null,
             })],
+            Articles = [.. dto.Articles.Select(a => new TournamentDetailArticleResponse
+            {
+                Title = a.Title,
+                Slug = a.Slug,
+            })],
         };
 
         // Stryker disable once Statement

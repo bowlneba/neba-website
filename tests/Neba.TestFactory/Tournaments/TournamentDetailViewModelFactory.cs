@@ -34,7 +34,8 @@ public static class TournamentDetailViewModelFactory
         IReadOnlyCollection<TournamentDetailSponsorViewModel>? sponsors = null,
         IReadOnlyCollection<TournamentDetailOilPatternViewModel>? oilPatterns = null,
         IReadOnlyCollection<string>? winners = null,
-        IReadOnlyCollection<TournamentResultViewModel>? results = null)
+        IReadOnlyCollection<TournamentResultViewModel>? results = null,
+        IReadOnlyCollection<TournamentDetailArticleViewModel>? articles = null)
         => new()
         {
             Id = id ?? ValidId,
@@ -57,6 +58,7 @@ public static class TournamentDetailViewModelFactory
             OilPatterns = oilPatterns ?? [],
             Winners = winners ?? [],
             Results = results ?? [],
+            Articles = articles ?? [],
         };
 
     public static IReadOnlyCollection<TournamentDetailViewModel> Bogus(int count, int? seed = null)
@@ -87,6 +89,7 @@ public static class TournamentDetailViewModelFactory
                     OilPatterns = TournamentDetailOilPatternViewModelFactory.Bogus(f.Random.Int(0, 2), seed),
                     Winners = [f.Name.FullName()],
                     Results = TournamentResultViewModelFactory.Bogus(f.Random.Int(0, 10), seed),
+                    Articles = TournamentDetailArticleViewModelFactory.Bogus(f.Random.Int(0, 2), seed),
                 };
             });
 

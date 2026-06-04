@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Neba.Api.Database;
 using Neba.Api.Database.Configurations;
 using Neba.Api.Database.Entities;
+using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Messaging;
 using Neba.Api.Storage;
@@ -81,7 +82,14 @@ internal sealed partial class GetTournamentQueryHandler(
                     top.OilPattern.Name,
                     top.OilPattern.Length,
                     top.TournamentRounds
-                }).ToList()
+                }).ToList(),
+                Articles = tournament.Articles
+                    .Where(a => a.PublicationStatus == PublicationStatus.Published)
+                    .Select(a => new TournamentDetailArticleDto
+                    {
+                        Title = a.Title,
+                        Slug = a.Slug,
+                    }).ToList()
             }).SingleOrDefaultAsync(cancellationToken);
 
 
@@ -164,6 +172,7 @@ internal sealed partial class GetTournamentQueryHandler(
             // If Results or EntryCount are empty/null, check future stats tables for 2026+ tournament data
             Results = historicalResults,
             EntryCount = historicalEntryCount,
+            Articles = row.Articles,
         };
     }
 }
