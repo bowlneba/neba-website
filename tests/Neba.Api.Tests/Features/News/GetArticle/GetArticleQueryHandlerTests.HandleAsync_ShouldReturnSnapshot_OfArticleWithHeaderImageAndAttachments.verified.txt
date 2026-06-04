@@ -1,4 +1,4 @@
-{
+﻿{
   Slug: tournament-recap,
   Title: Tournament Recap,
   Content: The annual tournament concluded last weekend with exciting results across all divisions.,
@@ -7,10 +7,12 @@
   Attachments: [
     {
       DisplayName: Bracket,
+      ContentType: text/plain,
       Url: https://cdn.example.com/news-files/docs/bracket.pdf
     },
     {
       DisplayName: Scores,
+      ContentType: text/plain,
       Url: https://cdn.example.com/news-files/docs/scores.pdf
     }
   ]

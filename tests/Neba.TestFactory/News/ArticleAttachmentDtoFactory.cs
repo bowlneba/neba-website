@@ -1,3 +1,5 @@
+using System.Net.Mime;
+
 using Bogus;
 
 using Neba.Api.Features.News.GetArticle;
@@ -11,11 +13,13 @@ public static class ArticleAttachmentDtoFactory
 
     public static ArticleAttachmentDto Create(
         string? displayName = null,
-        Uri? url = null)
+        Uri? url = null,
+        string? contentType = null)
         => new()
         {
             DisplayName = displayName ?? ValidDisplayName,
             Url = url ?? ValidUrl,
+            ContentType = contentType ?? MediaTypeNames.Application.Pdf,
         };
 
     public static IReadOnlyCollection<ArticleAttachmentDto> Bogus(int count, int? seed = null)
@@ -25,6 +29,7 @@ public static class ArticleAttachmentDtoFactory
             {
                 DisplayName = f.Random.Words(2),
                 Url = new Uri(f.Internet.Url()),
+                ContentType = f.System.MimeType()
             });
 
         if (seed.HasValue)

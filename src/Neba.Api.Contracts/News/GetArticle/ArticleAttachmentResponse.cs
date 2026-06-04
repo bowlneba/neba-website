@@ -11,7 +11,12 @@ public sealed record ArticleAttachmentResponse
     public required string DisplayName { get; init; }
 
     /// <summary>
-    /// A public URL to download or view the attachment, or null if unavailable.
+    /// The MIME content type of the attachment (e.g., "image/jpeg", "application/pdf").
+    /// </summary>
+    public required string ContentType { get; init; }
+
+    /// <summary>
+    /// A public URL to view the attachment, or null if unavailable.
     /// </summary>
     public Uri? Url { get; init; }
 }

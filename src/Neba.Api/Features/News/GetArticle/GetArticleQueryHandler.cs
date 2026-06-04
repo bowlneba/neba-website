@@ -35,7 +35,8 @@ internal sealed class GetArticleQueryHandler(
                     {
                         attachment.DisplayName,
                         attachment.File.Container,
-                        attachment.File.Path
+                        attachment.File.Path,
+                        attachment.File.ContentType
                     }).ToList(),
                 article.TournamentId
             })
@@ -60,6 +61,7 @@ internal sealed class GetArticleQueryHandler(
             Attachments = [.. row.Attachments.Select(a => new ArticleAttachmentDto
             {
                 DisplayName = a.DisplayName,
+                ContentType = a.ContentType,
                 Url = _fileStorageService.GetBlobUri(a.Container, a.Path)
             })],
             TournamentId = row.TournamentId

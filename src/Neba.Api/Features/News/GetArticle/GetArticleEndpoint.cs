@@ -71,6 +71,7 @@ internal sealed class GetArticleEndpoint(
             Attachments = [.. dto.Attachments.Select(a => new ArticleAttachmentResponse
             {
                 DisplayName = a.DisplayName,
+                ContentType = a.ContentType,
                 Url = a.Url,
             })],
         };

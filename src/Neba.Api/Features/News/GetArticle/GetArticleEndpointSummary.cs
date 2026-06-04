@@ -30,6 +30,7 @@ internal sealed class GetArticleEndpointSummary
                     new ArticleAttachmentResponse
                     {
                         DisplayName = "Results Sheet",
+                        ContentType = "application/pdf",
                         Url = new Uri("https://files.bowlneba.com/news/spring-2026/results.pdf", UriKind.Absolute),
                     },
                 ],

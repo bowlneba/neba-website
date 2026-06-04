@@ -1,3 +1,5 @@
+using System.Net.Mime;
+
 using Bogus;
 
 using Neba.Api.Contracts.News.GetArticle;
@@ -10,11 +12,13 @@ public static class ArticleAttachmentResponseFactory
 
     public static ArticleAttachmentResponse Create(
         string? displayName = null,
-        Uri? url = null)
+        Uri? url = null,
+        string? contentType = null)
         => new()
         {
             DisplayName = displayName ?? ValidDisplayName,
             Url = url,
+            ContentType = contentType ?? MediaTypeNames.Image.Jpeg,
         };
 
     public static IReadOnlyCollection<ArticleAttachmentResponse> Bogus(int count, int? seed = null)
@@ -24,6 +28,7 @@ public static class ArticleAttachmentResponseFactory
             {
                 DisplayName = f.Random.Words(2),
                 Url = f.Random.Bool() ? new Uri(f.Internet.Url()) : null,
+                ContentType = f.System.MimeType()
             });
 
         if (seed.HasValue)

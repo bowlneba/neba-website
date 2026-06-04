@@ -100,4 +100,5 @@ internal interface IFileStorageService
     /// The URI of the blob.
     /// </returns>
     Uri GetBlobUri(string container, string path);
+
 }

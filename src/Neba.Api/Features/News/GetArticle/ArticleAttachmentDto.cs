@@ -5,13 +5,12 @@ namespace Neba.Api.Features.News.GetArticle;
 /// </summary>
 public sealed record ArticleAttachmentDto
 {
-    /// <summary>
-    /// The display name of the attachment, which may differ from the actual file name.
-    /// </summary>
+    /// <summary>The display name of the attachment, which may differ from the actual file name.</summary>
     public required string DisplayName { get; init; }
 
-    /// <summary>
-    /// The URL to access the attachment.
-    /// </summary>
+    /// <summary>The MIME content type of the attachment (e.g., "image/jpeg", "application/pdf").</summary>
+    public required string ContentType { get; init; }
+
+    /// <summary>The URL to access the attachment.</summary>
     public required Uri Url { get; init; }
 }
