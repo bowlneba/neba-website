@@ -58,6 +58,10 @@ async Task Main()
 	SideCutCriterias.RemoveRange(SideCutCriterias);
 	SideCutCriteriaGroups.RemoveRange(SideCutCriteriaGroups);
 	SideCuts.RemoveRange(SideCuts);
+	TournamentOilPatterns.RemoveRange(TournamentOilPatterns);
+	OilPatterns.RemoveRange(OilPatterns);
+	Articles.RemoveRange(Articles);
+	ArticleAttachments.RemoveRange(ArticleAttachments);
 	SaveChanges();
 	
 	//Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowling_centers RESTART IDENTITY CASCADE;");
@@ -72,6 +76,9 @@ async Task Main()
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.side_cuts RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.side_cut_criteria_groups RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.side_cut_criteria RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.oil_patterns RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.articles RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.article_attachments RESTART IDENTITY CASCADE;");
 	SaveChanges();
 	
 	//await MigrateBowlingCentersAsync();
@@ -122,6 +129,8 @@ async Task Main()
 	var bowlerDbIdBySoftwareId = bowlerIds.Where(b => b.softwareId.HasValue).ToDictionary(b => b.softwareId!.Value, b => b.id);
 	var tournamentDbIdBySoftwareId = Tournaments.Where(t => t.LegacyId.HasValue).ToDictionary(t => t.LegacyId!.Value, t => t.Id);
 	await MigrateHistoricalTournamentResults(tournamentDbIdBySoftwareId, bowlerDbIdBySoftwareId);
+	
+	await MigrateOilPatterns();
 	
 	"Migration Complete".Dump();
 }
@@ -3667,6 +3676,160 @@ public sealed class SponsorTier
 	private SponsorTier(string name, int value)
 		: base(name, value)
 	{ }
+}
+
+#endregion
+
+#region Oil Patterns
+
+public async Task MigrateOilPatterns()
+{
+	var janSingles2026 = new OilPatterns
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "2025 PBA Webb",
+		Length = 37,
+		Volume = 27.7m,
+		LeftRatio = 4.23m,
+		RightRatio = 4.58m,
+		KegelId = new Guid("100ac921-dd2c-f011-8c4e-002248093064")
+	};
+
+	var febDoubles2026 = new OilPatterns
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "Abbey Road",
+		Length = 40,
+		Volume = 24.2m,
+		LeftRatio = 3.7m,
+		RightRatio = 3.7m,
+		KegelId = new Guid("e968cca6-cf52-ec11-8c62-000d3a5afd36")
+	};
+
+	var febTrios2026 = new OilPatterns
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "2021 SYC Kansas Medium",
+		Length = 42,
+		Volume = 25.76m,
+		LeftRatio = 4.41m,
+		RightRatio = 4.41m,
+		KegelId = new Guid("46b49bb7-94b6-ec11-983f-0022480404ba")
+	};
+
+	var marSingles2026 = new OilPatterns
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "2024 PBA Scorpion",
+		Length = 42,
+		Volume = 35.05m,
+		LeftRatio = 2.78m,
+		RightRatio = 2.78m,
+		KegelId = new Guid("2a50cc08-bd76-ef11-a670-000d3a348d5d")
+	};
+
+	var aprNonChamp2026 = new OilPatterns
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "2025 Youth Open Championships",
+		Length = 41,
+		Volume = 27.65m,
+		LeftRatio = 5.24m,
+		RightRatio = 6.47m,
+		KegelId = new Guid("05ad54ee-dc6e-f011-bec3-002248093064")
+	};
+
+	var aprSenior2026 = new OilPatterns
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "Broadway V2",
+		Length = 37,
+		Volume = 26.45m,
+		LeftRatio = 4.77m,
+		RightRatio = 4.77m,
+		KegelId = new Guid("80fa39e9-d052-ec11-8c62-000d3a5afff3")
+	};
+
+	var aprSingles2026 = new OilPatterns
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "2023 USBC Masters",
+		Length = 46,
+		Volume = 28.04m,
+		LeftRatio = 1.53m,
+		RightRatio = 1.77m,
+		KegelId = new Guid("5a7e321c-fdd2-ed11-a7c7-00224805fa07")
+	};
+
+	var maySingles2026 = new OilPatterns
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "2021 SYC Boardwalk Bowl Medium",
+		Length = 43,
+		Volume = 27.45m,
+		LeftRatio = 4.6m,
+		RightRatio = 4.6m,
+		KegelId = new Guid("20b49bb7-94b6-ec11-983f-0022480404ba")
+	};
+
+	OilPatterns.AddRange(
+		janSingles2026, febDoubles2026, febTrios2026, marSingles2026,
+		aprNonChamp2026, aprSenior2026, aprSingles2026, maySingles2026);
+
+	TournamentOilPatterns.AddRange(
+		new TournamentOilPatterns 
+		{
+			TournamentId = Tournaments.Single(t => t.LegacyId == 151).Id,
+			OilPattern = febTrios2026,
+			TournamentRounds = 5
+		},
+		new TournamentOilPatterns
+		{
+			TournamentId = Tournaments.Single(t => t.LegacyId == 152).Id,
+			OilPattern = febDoubles2026,
+			TournamentRounds = 5
+		},
+		new TournamentOilPatterns
+		{
+			TournamentId = Tournaments.Single(t => t.LegacyId == 150).Id,
+			OilPattern = janSingles2026,
+			TournamentRounds = 5
+		},
+		new TournamentOilPatterns
+		{
+			TournamentId = Tournaments.Single(t => t.LegacyId == 153).Id,
+			OilPattern = marSingles2026,
+			TournamentRounds = 5
+		},
+		new TournamentOilPatterns
+		{
+			TournamentId = Tournaments.Single(t => t.LegacyId == 154).Id,
+			OilPattern = aprSenior2026,
+			TournamentRounds = 5
+		},
+		new TournamentOilPatterns
+		{
+			TournamentId = Tournaments.Single(t => t.LegacyId == 155).Id,
+			OilPattern = aprNonChamp2026,
+			TournamentRounds = 5
+		},
+		new TournamentOilPatterns
+		{
+			TournamentId = Tournaments.Single(t => t.LegacyId == 156).Id,
+			OilPattern = aprSingles2026,
+			TournamentRounds = 5
+		},
+		new TournamentOilPatterns
+		{
+			TournamentId = Tournaments.Single(t => t.LegacyId == 157).Id,
+			OilPattern = maySingles2026,
+			TournamentRounds = 5
+		}
+	);
+	
+	await SaveChangesAsync();
+	
+	"(Tournament) Oil Patterns Migrated".Dump();
 }
 
 #endregion
