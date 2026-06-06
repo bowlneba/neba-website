@@ -544,8 +544,8 @@ const MOCK_ARTICLE_SEASON_CHAMPIONS: object = {
   publishDateUtc: '2026-05-15T00:00:00+00:00',
   tournamentId: MOCK_TOURNAMENT_ID,
   attachments: [
-    { displayName: 'Tournament Results & Bracket', url: 'https://files.bowlneba.com/news/season-champions-2026/bracket.pdf' },
-    { displayName: 'Lane Pattern (WTBA London)', url: 'https://files.bowlneba.com/news/season-champions-2026/lane-pattern.pdf' },
+    { displayName: 'Tournament Results & Bracket', contentType: 'application/pdf', url: 'https://files.bowlneba.com/news/season-champions-2026/bracket.pdf' },
+    { displayName: 'Lane Pattern (WTBA London)', contentType: 'application/pdf', url: 'https://files.bowlneba.com/news/season-champions-2026/lane-pattern.pdf' },
   ],
 };
 
@@ -557,7 +557,7 @@ const MOCK_ARTICLE_JUNE_LANE_PATTERN: object = {
   publishDateUtc: '2026-05-01T00:00:00+00:00',
   tournamentId: null,
   attachments: [
-    { displayName: 'Lane Pattern PDF', url: 'https://files.bowlneba.com/news/june-lane-pattern/pattern.pdf' },
+    { displayName: 'Lane Pattern PDF', contentType: 'application/pdf', url: 'https://files.bowlneba.com/news/june-lane-pattern/pattern.pdf' },
   ],
 };
 
