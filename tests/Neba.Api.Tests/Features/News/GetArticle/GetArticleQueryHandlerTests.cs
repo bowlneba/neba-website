@@ -30,7 +30,7 @@ public sealed class GetArticleQueryHandlerTests(PostgreSqlFixture fixture)
 
     private GetArticleQueryHandler CreateHandler(IFileStorageService? fileStorageService = null)
     {
-        var storage = fileStorageService ?? new Mock<IFileStorageService>(MockBehavior.Loose).Object;
+        var storage = fileStorageService ?? new Mock<IFileStorageService>(MockBehavior.Strict).Object;
         return new GetArticleQueryHandler(_dbContext, storage);
     }
 

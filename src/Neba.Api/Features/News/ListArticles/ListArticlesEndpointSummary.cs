@@ -35,6 +35,8 @@ internal sealed class ListArticlesEndpointSummary
                 PageNumber = 1,
                 PageSize = 10,
             });
+
+        Response<Microsoft.AspNetCore.Http.HttpValidationProblemDetails>(400, "The page or pageSize parameter is invalid.");
 #pragma warning restore S1075 // URIs should not be hardcoded
 
     }

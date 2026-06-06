@@ -32,7 +32,7 @@ public sealed class ListArticlesQueryHandlerTests(PostgreSqlFixture fixture)
     private ListArticlesQueryHandler CreateHandler(IFileStorageService? fileStorageService = null)
     {
         var timeProvider = new FakeTimeProvider(Now);
-        var storage = fileStorageService ?? new Mock<IFileStorageService>(MockBehavior.Loose).Object;
+        var storage = fileStorageService ?? new Mock<IFileStorageService>(MockBehavior.Strict).Object;
         return new ListArticlesQueryHandler(_dbContext, timeProvider, storage);
     }
 
