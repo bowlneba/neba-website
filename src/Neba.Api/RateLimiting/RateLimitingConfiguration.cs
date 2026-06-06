@@ -17,6 +17,18 @@ internal static class RateLimitingConfiguration
             var permitLimit = config.GetValue("RateLimiting:PermitLimit", 100);
             var windowSeconds = config.GetValue("RateLimiting:WindowSeconds", 60);
 
+            if (permitLimit <= 0)
+            {
+                throw new InvalidOperationException(
+                    $"RateLimiting:PermitLimit must be greater than zero (configured value: {permitLimit}).");
+            }
+
+            if (windowSeconds <= 0)
+            {
+                throw new InvalidOperationException(
+                    $"RateLimiting:WindowSeconds must be greater than zero (configured value: {windowSeconds}).");
+            }
+
             services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
