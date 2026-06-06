@@ -37,7 +37,7 @@ public sealed record TournamentDetailOilPatternViewModel
 #pragma warning disable S1075 // External partner URL — intentional hardcoded base
     public Uri? KegelLibraryUrl =>
         KegelId is { } id
-            ? new Uri("https://patternlibrary.kegel.net/pattern/" + id.ToString(), UriKind.Absolute)
+            ? new Uri("https://patternlibrary.kegel.net/pattern/" + id, UriKind.Absolute)
             : null;
 #pragma warning restore S1075
 }
