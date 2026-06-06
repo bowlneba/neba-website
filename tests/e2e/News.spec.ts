@@ -46,13 +46,11 @@ test.describe('News list page — loading state', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
 
   test('shows skeleton loader while articles are loading', async ({ page }) => {
-    await page.route('http://localhost:5151/news', async route => {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      await route.continue();
-    });
+    await page.request.post('http://localhost:5151/__mock/delay?path=/news&ms=3000');
 
     await page.goto('/news');
     await expect(page.locator('[aria-busy="true"]')).toBeVisible();
+    await page.request.post('http://localhost:5151/__mock/reset');
   });
 });
 
@@ -145,13 +143,11 @@ test.describe('News detail page — loading state', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
 
   test('shows skeleton loader while article is loading', async ({ page }) => {
-    await page.route('http://localhost:5151/news/**', async route => {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      await route.continue();
-    });
+    await page.request.post('http://localhost:5151/__mock/delay?path=/news/season-champions-2026&ms=3000');
 
     await page.goto('/news/season-champions-2026');
     await expect(page.locator('[aria-busy="true"]')).toBeVisible();
+    await page.request.post('http://localhost:5151/__mock/reset');
   });
 });
 
