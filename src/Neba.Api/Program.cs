@@ -35,6 +35,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
 
+app.UseForwardedHeaders();
 app.UseRateLimiter();
 
 app.UseFastEndpoints(config =>

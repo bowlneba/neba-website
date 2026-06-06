@@ -1,7 +1,9 @@
 using System.Globalization;
+using System.Net;
 using System.Net.Mime;
 using System.Threading.RateLimiting;
 
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Neba.Api.RateLimiting;
@@ -29,6 +31,17 @@ internal static class RateLimitingConfiguration
                     $"RateLimiting:WindowSeconds must be greater than zero (configured value: {windowSeconds}).");
             }
 
+            // Trust X-Forwarded-For only from RFC 1918 private networks (Azure load balancers
+            // and Container Apps infrastructure). RemoteIpAddress is rewritten by
+            // UseForwardedHeaders() before it reaches the rate limiter.
+            services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+                options.KnownIPNetworks.Add(new System.Net.IPNetwork(IPAddress.Parse("10.0.0.0"), 8));
+                options.KnownIPNetworks.Add(new System.Net.IPNetwork(IPAddress.Parse("172.16.0.0"), 12));
+                options.KnownIPNetworks.Add(new System.Net.IPNetwork(IPAddress.Parse("192.168.0.0"), 16));
+            });
+
             services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -55,12 +68,7 @@ internal static class RateLimitingConfiguration
 
                 options.AddPolicy(PublicPolicy, context =>
                 {
-                    var ip = context.Request.Headers["X-Forwarded-For"]
-                        .FirstOrDefault()
-                        ?.Split(',')[0]
-                        .Trim()
-                        ?? context.Connection.RemoteIpAddress?.ToString()
-                        ?? "unknown";
+                    var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
                     return RateLimitPartition.GetFixedWindowLimiter(ip,
                         _ => new FixedWindowRateLimiterOptions
