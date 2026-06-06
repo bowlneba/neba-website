@@ -262,51 +262,6 @@ public sealed class SponsorDetailTests : IDisposable
         cut.Markup.ShouldNotContain("About our Partner");
     }
 
-    // ── Promotional info ─────────────────────────────────────────────────────
-
-    [Fact(DisplayName = "Should render promotional notes when provided")]
-    public void Render_ShouldRenderPromotionalNotes_WhenProvided()
-    {
-        // Arrange
-        SetupSuccessResponse(SponsorDetailResponseFactory.Create(
-            promotionalNotes: "Exclusive 10% discount for NEBA members."));
-
-        // Act
-        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
-
-        // Assert
-        cut.Markup.ShouldContain("Exclusive 10% discount for NEBA members.");
-    }
-
-    [Fact(DisplayName = "Should render live read script when provided")]
-    public void Render_ShouldRenderLiveReadScript_WhenProvided()
-    {
-        // Arrange
-        SetupSuccessResponse(SponsorDetailResponseFactory.Create(
-            liveReadText: "And now a word from our sponsor, Acme Bowling..."));
-
-        // Act
-        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
-
-        // Assert
-        cut.Markup.ShouldContain("And now a word from our sponsor, Acme Bowling...");
-    }
-
-    [Fact(DisplayName = "Should not render promotional section when no promotional data")]
-    public void Render_ShouldNotRenderPromoSection_WhenNoPromoData()
-    {
-        // Arrange
-        SetupSuccessResponse(SponsorDetailResponseFactory.Create(
-            promotionalNotes: null,
-            liveReadText: null));
-
-        // Act
-        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
-
-        // Assert
-        cut.Markup.ShouldNotContain("Member Exclusive");
-    }
-
     // ── Contact card ─────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should render business address when address fields are provided")]
@@ -435,37 +390,6 @@ public sealed class SponsorDetailTests : IDisposable
 
         // Assert
         cut.Markup.ShouldNotContain("Social Media");
-    }
-
-    // ── Internal contact ─────────────────────────────────────────────────────
-
-    [Fact(DisplayName = "Should render internal contact section when contact name is provided")]
-    public void Render_ShouldRenderInternalContact_WhenProvided()
-    {
-        // Arrange
-        SetupSuccessResponse(SponsorDetailResponseFactory.Create(
-            contactName: "Jane Smith",
-            contactEmail: "jane@acme.internal"));
-
-        // Act
-        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
-
-        // Assert
-        cut.Markup.ShouldContain("Internal Sponsor Contact");
-        cut.Markup.ShouldContain("Jane Smith");
-    }
-
-    [Fact(DisplayName = "Should not render internal contact section when no contact name")]
-    public void Render_ShouldNotRenderInternalContact_WhenNoContactName()
-    {
-        // Arrange
-        SetupSuccessResponse(SponsorDetailResponseFactory.Create() with { SponsorContactName = null });
-
-        // Act
-        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
-
-        // Assert
-        cut.Markup.ShouldNotContain("Internal Sponsor Contact");
     }
 
     // ── Footer ───────────────────────────────────────────────────────────────

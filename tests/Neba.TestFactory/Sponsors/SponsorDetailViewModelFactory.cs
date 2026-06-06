@@ -30,8 +30,6 @@ public static class SponsorDetailViewModelFactory
         Uri? websiteUrl = null,
         string? tagline = null,
         string? aboutText = null,
-        string? promotionalNotes = null,
-        string? liveReadScript = null,
         Uri? facebookUrl = null,
         Uri? instagramUrl = null,
         string? businessStreet = null,
@@ -41,11 +39,7 @@ public static class SponsorDetailViewModelFactory
         string? businessPostalCode = null,
         string? businessCountry = null,
         string? contactEmail = null,
-        IReadOnlyCollection<PhoneNumberResponse>? phoneNumbers = null,
-        string? sponsorContactName = null,
-        string? sponsorContactEmail = null,
-        string? sponsorContactPhone = null,
-        string? sponsorContactPhoneType = null)
+        IReadOnlyCollection<PhoneNumberResponse>? phoneNumbers = null)
         => new()
         {
             Id = id ?? Ulid.Parse(ValidId, CultureInfo.InvariantCulture),
@@ -58,8 +52,6 @@ public static class SponsorDetailViewModelFactory
             WebsiteUrl = websiteUrl,
             Tagline = tagline,
             AboutText = aboutText ?? ValidAboutText,
-            PromotionalNotes = promotionalNotes,
-            LiveReadScript = liveReadScript,
             FacebookUrl = facebookUrl,
             InstagramUrl = instagramUrl,
             BusinessStreet = businessStreet ?? ValidBusinessStreet,
@@ -70,10 +62,6 @@ public static class SponsorDetailViewModelFactory
             BusinessCountry = businessCountry,
             ContactEmail = contactEmail ?? ValidContactEmail,
             PhoneNumbers = phoneNumbers ?? [PhoneNumberResponseFactory.Create()],
-            SponsorContactName = sponsorContactName,
-            SponsorContactEmail = sponsorContactEmail,
-            SponsorContactPhone = sponsorContactPhone,
-            SponsorContactPhoneType = sponsorContactPhoneType
         };
 
     public static IReadOnlyCollection<SponsorDetailViewModel> Bogus(int count, int? seed = null)
@@ -91,8 +79,6 @@ public static class SponsorDetailViewModelFactory
                 WebsiteUrl = new Uri(f.Internet.Url()),
                 Tagline = f.Company.CatchPhrase(),
                 AboutText = f.Company.Bs(),
-                PromotionalNotes = null,
-                LiveReadScript = null,
                 FacebookUrl = new Uri(f.Internet.Url()),
                 InstagramUrl = new Uri(f.Internet.Url()),
                 BusinessStreet = f.Address.StreetAddress(),
@@ -103,10 +89,6 @@ public static class SponsorDetailViewModelFactory
                 BusinessCountry = f.Address.CountryCode(),
                 ContactEmail = f.Internet.Email(),
                 PhoneNumbers = PhoneNumberResponseFactory.Bogus(1, seed),
-                SponsorContactName = null,
-                SponsorContactEmail = null,
-                SponsorContactPhone = null,
-                SponsorContactPhoneType = null
             });
 
         if (seed.HasValue)

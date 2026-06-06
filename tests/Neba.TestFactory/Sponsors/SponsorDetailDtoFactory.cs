@@ -22,14 +22,11 @@ public static class SponsorDetailDtoFactory
         Uri? websiteUrl = null,
         string? tagPhrase = null,
         string? description = null,
-        string? liveReadText = null,
-        string? promotionalNotes = null,
         Uri? facebookUrl = null,
         Uri? instagramUrl = null,
         AddressDto? businessAddress = null,
         string? businessEmail = null,
-        IReadOnlyCollection<PhoneNumberDto>? phoneNumbers = null,
-        ContactInfoDto? sponsorContact = null)
+        IReadOnlyCollection<PhoneNumberDto>? phoneNumbers = null)
             => new()
             {
                 Id = id ?? SponsorId.New(),
@@ -43,14 +40,11 @@ public static class SponsorDetailDtoFactory
                 WebsiteUrl = websiteUrl,
                 TagPhrase = tagPhrase,
                 Description = description,
-                LiveReadText = liveReadText,
-                PromotionalNotes = promotionalNotes,
                 FacebookUrl = facebookUrl,
                 InstagramUrl = instagramUrl,
                 BusinessAddress = businessAddress,
                 BusinessEmailAddress = businessEmail,
                 PhoneNumbers = phoneNumbers ?? [],
-                SponsorContactInfo = sponsorContact
             };
 
     public static IReadOnlyCollection<SponsorDetailDto> Bogus(int count, int? seed = null)
@@ -58,7 +52,6 @@ public static class SponsorDetailDtoFactory
         var businessAddressPool = UniquePool.CreateNullable(AddressDtoFactory.Bogus(count * 10, seed), seed);
         var businessEmailPool = UniquePool.CreateNullable(EmailAddressFactory.Bogus(count * 10, seed), seed);
         var phoneNumberPool = UniquePool.Create(PhoneNumberDtoFactory.Bogus(count * 10, seed), seed);
-        var contactInfoPool = UniquePool.CreateNullable(ContactInfoDtoFactory.Bogus(count * 10, seed), seed);
 
         var faker = new Faker<SponsorDetailDto>()
             .CustomInstantiator(f =>
@@ -77,14 +70,11 @@ public static class SponsorDetailDtoFactory
                     WebsiteUrl = new Uri(f.Internet.Url()),
                     TagPhrase = f.Company.CatchPhrase(),
                     Description = f.Company.Bs(),
-                    LiveReadText = f.Lorem.Sentences(2),
-                    PromotionalNotes = f.Lorem.Sentences(3),
                     FacebookUrl = new Uri(f.Internet.UrlWithPath("facebook")),
                     InstagramUrl = new Uri(f.Internet.UrlWithPath("instagram")),
                     BusinessAddress = businessAddressPool.GetNextNullable(),
                     BusinessEmailAddress = businessEmailPool.GetNextNullable()?.Value,
                     PhoneNumbers = [.. new[] { phoneNumberPool.GetNext(), phoneNumberPool.GetNext() }.DistinctBy(p => p.PhoneNumberType)],
-                    SponsorContactInfo = contactInfoPool.GetNextNullable()
                 };
             });
 

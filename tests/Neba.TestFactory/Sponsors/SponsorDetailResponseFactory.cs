@@ -1,6 +1,5 @@
 using System.Globalization;
 
-using Neba.Api.Contacts.Domain;
 using Neba.Api.Contracts.Contact;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Features.Sponsors.Domain;
@@ -20,10 +19,6 @@ public static class SponsorDetailResponseFactory
     public const string ValidBusinessPostalCode = "12345";
     public const string ValidBusinessCountry = "US";
     public const string ValidBusinessEmailAddress = "joe@sponsor.com";
-    public const string ValidContactName = "Joe D. Sponsor";
-    public const string ValidContactEmail = "joe@personal.com";
-    public const string ValidContactPhoneNumber = "8005551234";
-    public const string ValidPhoneNumberType = "M";
 
     public static SponsorDetailResponse Create(
         SponsorId? id = null,
@@ -37,8 +32,6 @@ public static class SponsorDetailResponseFactory
         Uri? websiteUrl = null,
         string? tagPhrase = null,
         string? description = null,
-        string? promotionalNotes = null,
-        string? liveReadText = null,
         Uri? facebookUrl = null,
         Uri? instagramUrl = null,
         string? businessStreet = null,
@@ -47,11 +40,7 @@ public static class SponsorDetailResponseFactory
         string? businessPostalCode = null,
         string? businessCountry = null,
         string? businessEmailAddress = null,
-        IReadOnlyCollection<PhoneNumberResponse>? phoneNumbers = null,
-        string? contactName = null,
-        string? contactEmail = null,
-        string? contactPhoneNumber = null,
-        string? contactPhoneNumberType = null)
+        IReadOnlyCollection<PhoneNumberResponse>? phoneNumbers = null)
             => new()
             {
                 Id = id?.Value ?? Ulid.Parse(ValidId, CultureInfo.InvariantCulture),
@@ -65,8 +54,6 @@ public static class SponsorDetailResponseFactory
                 WebsiteUrl = websiteUrl,
                 TagPhrase = tagPhrase,
                 Description = description,
-                PromotionalNotes = promotionalNotes,
-                LiveReadText = liveReadText,
                 FacebookUrl = facebookUrl,
                 InstagramUrl = instagramUrl,
                 BusinessStreet = businessStreet ?? ValidBusinessStreet,
@@ -76,10 +63,6 @@ public static class SponsorDetailResponseFactory
                 BusinessCountry = businessCountry ?? ValidBusinessCountry,
                 BusinessEmailAddress = businessEmailAddress ?? ValidBusinessEmailAddress,
                 PhoneNumbers = phoneNumbers ?? [PhoneNumberResponseFactory.Create()],
-                SponsorContactName = contactName ?? ValidContactName,
-                SponsorContactEmailAddress = contactEmail ?? ValidContactEmail,
-                SponsorContactPhoneNumber = contactPhoneNumber ?? ValidContactPhoneNumber,
-                SponsorContactPhoneNumberType = contactPhoneNumberType ?? ValidPhoneNumberType,
             };
 
     public static IReadOnlyCollection<SponsorDetailResponse> Bogus(int count, int? seed = null)
@@ -98,8 +81,6 @@ public static class SponsorDetailResponseFactory
                 WebsiteUrl = new Uri(f.Internet.Url()),
                 TagPhrase = f.Company.CatchPhrase(),
                 Description = f.Company.Bs(),
-                PromotionalNotes = f.Company.CompanyName() + " is a great sponsor!",
-                LiveReadText = "Live read for " + f.Company.CompanyName(),
                 FacebookUrl = new Uri(f.Internet.Url()),
                 InstagramUrl = new Uri(f.Internet.Url()),
                 BusinessStreet = f.Address.StreetAddress(),
@@ -109,10 +90,6 @@ public static class SponsorDetailResponseFactory
                 BusinessCountry = f.Address.CountryCode(),
                 BusinessEmailAddress = f.Internet.Email(),
                 PhoneNumbers = PhoneNumberResponseFactory.Bogus(2, seed),
-                SponsorContactName = f.Name.FullName(),
-                SponsorContactEmailAddress = f.Internet.Email(),
-                SponsorContactPhoneNumber = f.Phone.PhoneNumber("##########"),
-                SponsorContactPhoneNumberType = f.PickRandom(PhoneNumberType.List.ToArray()).Name,
             });
 
         if (seed.HasValue)

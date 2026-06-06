@@ -12,7 +12,7 @@ internal sealed class GetArticleEndpointSummary
     public GetArticleEndpointSummary()
     {
         Summary = "Gets a published article by slug.";
-        Description = "Retrieves the full content of a published news article identified by its URL-friendly slug.";
+        Description = "Retrieves the full content of a news article by its URL-friendly slug. Returns 404 if the article does not exist, is in draft status, or has a publish date in the future.";
 
 #pragma warning disable S1075 // URIs should not be hardcoded
         Response(200, "The article detail.",

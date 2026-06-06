@@ -66,16 +66,6 @@ public sealed record SponsorDetailResponse
     public string? Description { get; init; }
 
     /// <summary>
-    /// Optional promotional notes provided for the sponsor.
-    /// </summary>
-    public string? PromotionalNotes { get; init; }
-
-    /// <summary>
-    /// Optional live-read script text for events.
-    /// </summary>
-    public string? LiveReadText { get; init; }
-
-    /// <summary>
     /// URL to the sponsor's Facebook profile.
     /// </summary>
     public Uri? FacebookUrl { get; init; }
@@ -126,25 +116,4 @@ public sealed record SponsorDetailResponse
     /// Contact phone numbers associated with the sponsor.
     /// </summary>
     public required IReadOnlyCollection<PhoneNumberResponse> PhoneNumbers { get; init; }
-
-    /// <summary>
-    /// Name of the sponsor's primary contact person.
-    /// </summary>
-    public string? SponsorContactName { get; init; }
-
-    /// <summary>
-    /// Email address of the sponsor's primary contact person.
-    /// </summary>
-    public string? SponsorContactEmailAddress { get; init; }
-
-    /// <summary>
-    /// Phone number of the sponsor's primary contact person.
-    /// </summary>
-    public string? SponsorContactPhoneNumber { get; init; }
-
-    /// <summary>
-    /// Phone number type of the sponsor's primary contact person.
-    /// </summary>
-    [OpenApiSmartEnum("PhoneNumberType")]
-    public string? SponsorContactPhoneNumberType { get; init; }
 }
