@@ -19,4 +19,9 @@ public sealed record TournamentDetailOilPatternResponse
     /// Tournament rounds that use this pattern (e.g., "Qualifying", "Finals").
     /// </summary>
     public IReadOnlyCollection<string> Rounds { get; init; } = [];
+
+    /// <summary>
+    /// Kegel pattern library ID; null when the pattern is not in the Kegel library.
+    /// </summary>
+    public Guid? KegelId { get; init; }
 }

@@ -17,22 +17,25 @@ internal sealed class ListHallOfFameInductionsQueryHandler(
 
     public async Task<IReadOnlyCollection<HallOfFameInductionDto>> HandleAsync(ListHallOfFameInductionsQuery query, CancellationToken cancellationToken)
     {
-        var inductions = await _hallOfFameInductions
-            .Select(induction => new HallOfFameInductionDto
+        var rows = await _hallOfFameInductions
+            .Select(induction => new
             {
-                Year = induction.Year,
+                induction.Year,
                 BowlerName = induction.Bowler.Name,
-                Categories = induction.Categories,
+                induction.Categories,
                 PhotoContainer = induction.Photo != null ? induction.Photo.Container : null,
                 PhotoPath = induction.Photo != null ? induction.Photo.Path : null
             })
             .ToListAsync(cancellationToken);
 
-        foreach (var induction in inductions.Where(i => i.PhotoContainer is not null && i.PhotoPath is not null))
+        return [.. rows.Select(row => new HallOfFameInductionDto
         {
-            induction.PhotoUri = _fileStorageService.GetBlobUri(induction.PhotoContainer!, induction.PhotoPath!);
-        }
-
-        return inductions;
+            Year = row.Year,
+            BowlerName = row.BowlerName,
+            Categories = row.Categories,
+            PhotoUri = row.PhotoContainer != null && row.PhotoPath != null
+                ? _fileStorageService.GetBlobUri(row.PhotoContainer, row.PhotoPath)
+                : null
+        })];
     }
 }

@@ -24,17 +24,7 @@ public sealed record HallOfFameInductionDto
     public required IReadOnlyCollection<HallOfFameCategory> Categories { get; init; }
 
     /// <summary>
-    /// The name of the storage container where the induction photo is stored, if available.
+    /// A public URI pointing to the bowler's photo; null if no photo is available.
     /// </summary>
-    public string? PhotoContainer { get; init; }
-
-    /// <summary>
-    /// The path within the storage container to the induction photo, if available.
-    /// </summary>
-    public string? PhotoPath { get; init; }
-
-    /// <summary>
-    /// A public URI pointing to the bowler's photo, if available. This is populated by the application layer after retrieving the induction data.
-    /// </summary>
-    public Uri? PhotoUri { get; internal set; }
+    public Uri? PhotoUri { get; init; }
 }

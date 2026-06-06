@@ -11,11 +11,13 @@ public static class TournamentDetailOilPatternDtoFactory
     public static TournamentDetailOilPatternDto Create(
         string? name = null,
         int? length = null,
+        Guid? kegelId = null,
         IReadOnlyCollection<string>? tournamentRounds = null)
         => new()
         {
             Name = name ?? ValidName,
             Length = length ?? ValidLength,
+            KegelId = kegelId,
             TournamentRounds = tournamentRounds ?? [TournamentRound.Qualifying.Name],
         };
 
@@ -26,6 +28,7 @@ public static class TournamentDetailOilPatternDtoFactory
             {
                 Name = f.Lorem.Word() + " Pattern",
                 Length = f.Random.Int(32, 47),
+                KegelId = f.Random.Bool() ? f.Random.Guid() : null,
                 TournamentRounds = [.. f.PickRandom(TournamentRound.List.ToArray(), f.Random.Int(1, TournamentRound.List.Count)).Select(r => r.Name)],
             });
 

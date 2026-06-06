@@ -65,7 +65,7 @@ public static class TelemetryConfiguration
             return builder;
         }
 
-        private TBuilder AddOpenTelemetryExporters()
+        private void AddOpenTelemetryExporters()
         {
             var useOtlpExporter = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
 
@@ -80,8 +80,6 @@ public static class TelemetryConfiguration
                 builder.Services.AddOpenTelemetry()
                    .UseAzureMonitor();
             }
-
-            return builder;
         }
     }
 }

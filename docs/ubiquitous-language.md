@@ -144,6 +144,137 @@
 
 ---
 
+## News
+
+### Article
+
+**Definition**: A piece of content authored by NEBA staff and published on the public News page. Articles cover organizational topics such as tournament results, upcoming tournament announcements, lane pattern reveals, and board meeting notices. All articles share the same data shape and are displayed uniformly — there is no sub-classification by topic type.
+
+An Article is only publicly visible when its Publication Status is `Published` **and** its Publish Date is on or before the current date and time. A Published Article with a future Publish Date is scheduled — it becomes visible automatically when that date and time arrives without any further action by staff.
+
+**Properties**:
+
+| Property | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `Id` | ULID | Yes | System-generated unique identifier |
+| `Title` | string | Yes | The heading displayed on the list and detail pages |
+| `Slug` | string | Yes | URL-friendly route identifier. Used in `/news/{slug}` |
+| `Body` | string | Yes | Rich-text content of the article (HTML). May contain embedded inline images referencing blob URLs |
+| `PublicationStatus` | `PublicationStatus` | Yes | Whether the article is a Draft or Published. Defaults to `Draft` |
+| `PublishDate` | DateTimeOffset | No | The date and time the article becomes publicly visible. Required when status is `Published` |
+| `HeaderImage` | `StoredFile?` | No | Storage address of the article's header image. When absent, the NEBA logo is displayed as a fallback (presentation layer — not a domain concept) |
+| `TournamentId` | `TournamentId?` | No | Optional reference to a related Tournament. Enables navigation between the article and the Tournament detail page, and surfaces related articles on the Tournament detail page |
+
+**Business Rules**:
+
+- An Article is publicly visible only when `PublicationStatus == Published` and `PublishDate <= UtcNow`
+- A `Draft` article is never publicly visible, regardless of `PublishDate`
+- `PublishDate` is required when publishing. It may be set to a past, present, or future date and time
+- Slug must be unique across all Articles
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.News.Domain`
+- Type: `Article` (aggregate root)
+- Identity type: `ArticleId` (ULID-backed strongly-typed ID)
+
+---
+
+### Publication Status
+
+**Definition**: An enumeration representing whether an Article is publicly visible.
+
+| Value | Meaning |
+| --- | --- |
+| `Draft` | The article has been saved but is not publicly visible |
+| `Published` | The article has been explicitly published and is publicly visible on or after its Publish Date |
+
+> An Article transitions from `Draft` to `Published` through an explicit publish action by staff. There is no automatic promotion based on date alone — a `Draft` article with a past Publish Date remains invisible until explicitly published.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.News.Domain`
+- Type: `PublicationStatus` (SmartEnum, int-valued)
+---
+
+### Draft
+
+**Definition**: The Publication Status of an Article that has been saved but not yet published. A Draft is never publicly visible, regardless of its Publish Date.
+
+---
+
+### Published
+
+**Definition**: The Publication Status of an Article that has been explicitly published by staff. A Published Article is publicly visible when its Publish Date is on or before the current date and time.
+
+---
+
+### Publish Date
+
+**Definition**: The date and time at which a Published Article becomes publicly visible. Set explicitly by staff. May be in the future (scheduled publish) or in the past or present (immediate publish).
+
+**In Code**: `Article.PublishDateUtc` (`DateTimeOffset`)
+---
+
+### Slug
+
+**Definition**: A URL-friendly string that uniquely identifies an Article within the `/news` route (e.g., `2025-masters-results`). Used as the path segment in `/news/{slug}`. Slugs are set by staff at authoring time and must be unique across all Articles.
+
+**In Code**: `Article.Slug` (`string`)
+
+---
+
+### Header Image
+
+**Definition**: An optional image displayed prominently at the top of an Article on both the News list page and the Article detail page. Stored as a `StoredFile` reference in Azure Blob Storage. When no Header Image is present, the NEBA logo is displayed as a fallback — this is a presentation-layer convention, not a domain concept.
+
+Blob path convention: `news/{articleId}/header/{filename}`
+
+**In Code**: `Article.HeaderImage` (`StoredFile?`)
+
+---
+
+### Article Attachment
+
+**Definition**: A file associated with an Article and stored in Azure Blob Storage. Each Article Attachment has a staff-provided Display Name shown in the attachment list (e.g., `"Finals Bracket"`, `"Final Standings"`). When opened, attachments are served via their blob URL and open in a new browser tab. A download option is also available.
+
+An Article Attachment with `IsInline = true` is also embedded within the Article body. The blob URL referenced in the rich-text body and the `StoredFile` on the attachment record refer to the same file — staff uploads once and inserts inline via the editor.
+
+**Properties**:
+
+| Property | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `Id` | ULID | Yes | System-generated unique identifier |
+| `ArticleId` | `ArticleId` | Yes | The Article this attachment belongs to |
+| `File` | `StoredFile` | Yes | Storage address of the file in Azure Blob Storage |
+| `DisplayName` | string | Yes | Staff-provided label shown in the attachment list |
+| `IsInline` | bool | Yes | Whether this attachment is also embedded within the Article body. Defaults to `false` |
+
+Blob path convention: `news/{articleId}/attachments/{filename}`
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.News.Domain`
+- Type: `ArticleAttachment` (entity, owned by `Article`)
+
+---
+
+### Display Name (Article Attachment)
+
+**Definition**: A staff-provided label for an Article Attachment displayed in the attachment list on the Article detail page (e.g., `"Finals Bracket"`, `"Lane Pattern Image"`). Distinct from the underlying filename stored in blob storage.
+
+**In Code**: `ArticleAttachment.DisplayName` (`string`)
+
+---
+
+### Is Inline
+
+**Definition**: A flag on an Article Attachment indicating that the file is also embedded within the Article body (e.g., an image inserted directly into the rich-text content). When `true`, the attachment record and the blob URL baked into the body HTML reference the same file.
+
+**In Code**: `ArticleAttachment.IsInline` (`bool`)
+
+---
+
 ## Contact
 
 ### Address

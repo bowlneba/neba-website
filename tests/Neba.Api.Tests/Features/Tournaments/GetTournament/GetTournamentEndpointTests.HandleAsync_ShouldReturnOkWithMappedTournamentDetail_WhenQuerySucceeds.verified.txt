@@ -1,4 +1,4 @@
-﻿{
+{
   Id: 01GBP3VHXR2YX9DBG4SMXSK1MY,
   Name: impactful function incremental,
   Season: 2026 Season,
@@ -10,7 +10,7 @@
   RegistrationUrl: https://raymond.name,
   AddedMoney: 3462.948614481345000,
   Reservations: 52,
-  EntryCount: 61,
+  EntryCount: 38,
   PatternLengthCategory: Long,
   PatternRatioCategory: Challenge,
   BowlingCenter: {
@@ -20,17 +20,72 @@
   },
   Sponsors: [
     {
-      Name: O'Connell Inc,
-      Slug: alvah
+      Name: Bauch and Sons,
+      Slug: kristopher,
+      TagPhrase: Aut placeat eum voluptatem accusantium ab dolor.
     },
     {
-      Name: Bahringer - Feil,
-      Slug: terence
+      Name: Deckow LLC,
+      Slug: bernard,
+      LogoUrl: https://kayden.name,
+      TagPhrase: Velit rerum et eos ex et quam molestiae.
     }
   ],
   Winners: [
-    Cesar Leannon,
-    Lindsey Grady,
-    Richard Romaguera
+    Dolores Cassin,
+    Duane Schinner,
+    Jocelyn Gislason
+  ],
+  Results: [
+    {
+      BowlerName: Carl Zemlak,
+      Place: 3,
+      PrizeMoney: 668.106465911542000,
+      Points: 14,
+      SideCutName: ut,
+      SideCutIndicator: #085C09
+    },
+    {
+      BowlerName: Laron Bernier,
+      Place: 0,
+      PrizeMoney: 125.518289453126000,
+      Points: 52
+    },
+    {
+      BowlerName: Melba Gulgowski,
+      Place: 2,
+      PrizeMoney: 168.434224169904000,
+      Points: 26
+    },
+    {
+      BowlerName: Rafael Johnston,
+      Place: 5,
+      PrizeMoney: 724.408364726421000,
+      Points: 51
+    },
+    {
+      BowlerName: Alvah Connelly,
+      Place: 0,
+      PrizeMoney: 173.651170532057000,
+      Points: 76
+    },
+    {
+      BowlerName: Marian O'Reilly,
+      Place: 6,
+      PrizeMoney: 234.588458312018000,
+      Points: 25
+    },
+    {
+      BowlerName: Dolores Cassin,
+      Place: 8,
+      PrizeMoney: 505.603544649483000,
+      Points: 32
+    },
+    {
+      BowlerName: Rachael Ondricka,
+      Place: 4,
+      PrizeMoney: 380.969613502254000,
+      Points: 26
+    }
   ]
 }

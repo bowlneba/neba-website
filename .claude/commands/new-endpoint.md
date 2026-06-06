@@ -2,143 +2,354 @@
 
 Scaffold a new Fast Endpoints use case following project conventions.
 
-**Usage**: `/new-endpoint <Domain> <Action>` (e.g., `/new-endpoint Tournaments Create`)
+**Usage**: `/new-endpoint <description>` — describe the endpoint you want, including the domain, HTTP verb, route, and any relevant context files.
 
 ## Files to Create
 
 For `{Domain}/{Action}{Entity}`:
 
-### 1. API Layer (`src/Neba.Api/{Domain}/{Action}{Entity}/`)
+### 1. API Layer (`src/Neba.Api/Features/{Domain}/`)
 
-**{Action}{Entity}Endpoint.cs**:
+**`{Domain}EndpointGroup.cs`** (if it doesn't already exist):
 
 ```csharp
-public sealed class {Action}{Entity}Endpoint : Endpoint<{Action}{Entity}Request, {Entity}Response>
+internal sealed class {Domain}EndpointGroup : SubGroup<BaseEndpointGroup>
+{
+    public {Domain}EndpointGroup()
+    {
+        VersionSets.CreateApi("{Domain}", v => v
+            .HasApiVersion(new ApiVersion(1, 0)));
+
+        Configure("{route-prefix}", endpoint => endpoint
+            .Description(description => description
+                .WithTags("{Domain}")
+                .ProducesProblemDetails(500)));
+    }
+}
+```
+
+**`{Action}{Entity}Endpoint.cs`**:
+
+```csharp
+internal sealed class {Action}{Entity}Endpoint(IQueryHandler<{Action}{Entity}Query, {Result}> queryHandler)
+    : EndpointWithoutRequest<{Response}>  // or Endpoint<{Request}, {Response}> for endpoints with input
 {
     public override void Configure()
     {
-        Post("/api/{domain}/{action}"); // or appropriate verb/route
-        AllowAnonymous(); // or Roles("Admin"), Policies("RequireAdmin")
-        Description(d => d
+        Get("{route}");  // or Post/Put/Delete as appropriate
+        Group<{Domain}EndpointGroup>();
+
+        Options(options => options
+            .WithVersionSet("{Domain}")
+            .MapToApiVersion(new ApiVersion(1, 0)));
+
+        AllowAnonymous();  // or Roles("Admin") / Policies("RequireAdmin")
+
+        Description(description => description
             .WithName("{Action}{Entity}")
-            .Produces<{Entity}Response>(StatusCodes.Status201Created)
+            .WithTags("Public")
+            .Produces<{Response}>(StatusCodes.Status200OK)
             .ProducesProblemDetails(StatusCodes.Status400BadRequest)
             .ProducesProblemDetails(StatusCodes.Status404NotFound));
     }
+
+    public override async Task HandleAsync(CancellationToken ct)  // or HandleAsync(TRequest req, CancellationToken ct)
+    {
+        var result = await _queryHandler.HandleAsync(new {Action}{Entity}Query(), ct);
+
+        var response = new {Response}
+        {
+            // map from result/dto to response
+        };
+
+        // Stryker disable once Statement
+        await Send.OkAsync(response, ct);
+    }
 }
 ```
 
-**{Action}{Entity}Summary.cs**:
+**`{Action}{Entity}EndpointSummary.cs`**:
 
 ```csharp
-public sealed class {Action}{Entity}Summary : Summary<{Action}{Entity}Endpoint>
+internal sealed class {Action}{Entity}Summary : Summary<{Action}{Entity}Endpoint>
 {
     public {Action}{Entity}Summary()
     {
-        Summary = "{Action} a {Entity}";
-        Description = "Detailed description here";
-        ExampleRequest = new {Action}{Entity}Request { /* example */ };
+        Summary = "{One-line description}.";
+        Description = "Detailed description of what this endpoint does.";
+
+#pragma warning disable S1075 // URIs should not be hardcoded
+        Response(200, "Description of the 200 response.",
+            contentType: MediaTypeNames.Application.Json,
+            example: new {Response}
+            {
+                // example values using factory constants where possible
+            });
+#pragma warning restore S1075 // URIs should not be hardcoded
     }
 }
 ```
 
-**{Action}{Entity}Validator.cs**:
+**`{Action}{Entity}RequestValidator.cs`** (for endpoints with a request type, structural validation only):
 
 ```csharp
-public sealed class {Action}{Entity}Validator : Validator<{Action}{Entity}Request>
+internal sealed class {Action}{Entity}RequestValidator : Validator<{Action}{Entity}Request>
 {
-    public {Action}{Entity}Validator()
+    public {Action}{Entity}RequestValidator()
     {
-        // Structural validation ONLY - no DB lookups, no business rules
-        RuleFor(x => x.Input.Name).NotEmpty().MaximumLength(100);
+        // Structural validation ONLY — no DB lookups, no business rules
+        RuleFor(r => r.Id)
+            .NotEmpty()
+            .WithErrorCode("{Action}{Entity}Request.IdRequired")
+            .WithMessage("Id is required.");
     }
 }
 ```
 
-### 2. Contracts (`src/Neba.Api.Contracts/{Domain}/{Action}{Entity}/`)
-
-**{Action}{Entity}Request.cs**:
+**`{Action}{Entity}Request.cs`** (for GET endpoints with query params — internal to the API, not in Contracts):
 
 ```csharp
-public sealed record {Action}{Entity}Request
+internal sealed class {Action}{Entity}Request
 {
-    public required {Entity}Input Input { get; init; }
+    [BindFrom("page")]    // always use [BindFrom] to make the query-string key explicit
+    public int Page { get; set; } = 1;
+
+    [BindFrom("pageSize")]
+    public int PageSize { get; set; } = 10;
 }
 ```
 
-**{Entity}Input.cs** (for commands):
+### 2. Contracts (`src/Neba.Api.Contracts/{Domain}/`)
+
+**`{Entity}Response.cs`**:
 
 ```csharp
-public sealed record {Entity}Input
-{
-    public required string Name { get; init; }
-    // ... other properties
-}
-```
-
-**{Entity}Response.cs**:
-
-```csharp
+/// <summary>
+/// Represents a ... for display in ...
+/// </summary>
 public sealed record {Entity}Response
 {
+    /// <summary>...</summary>
     public required string Id { get; init; }
-    // ... other properties
+    // ... other properties with XML docs
 }
 ```
 
-### 3. Application Layer (`src/Neba.Application/{Domain}/Commands/`)
-
-**{Action}{Entity}Command.cs**:
+**`I{Domain}Api.cs`** (Refit contract, if it doesn't already exist):
 
 ```csharp
-public sealed record {Action}{Entity}Command(/* parameters */) : IRequest<ErrorOr<{Entity}>>;
+public interface I{Domain}Api
+{
+    [Get("/{route}")]
+    Task<IApiResponse<{Response}>> {Action}{Entity}Async(CancellationToken cancellationToken = default);
+}
 ```
 
-**{Action}{Entity}Handler.cs**:
+### 3. Test Factories (`tests/Neba.TestFactory/{Domain}/`)
+
+Create a factory for **every new type** introduced: internal DTOs, public response contracts, and request types.
+
+**`{Entity}DtoFactory.cs`** (for internal `{Entity}Dto` used by query handlers):
 
 ```csharp
-public sealed class {Action}{Entity}Handler : IRequestHandler<{Action}{Entity}Command, ErrorOr<{Entity}>>
+public static class {Entity}DtoFactory
 {
-    public async Task<ErrorOr<{Entity}>> Handle({Action}{Entity}Command request, CancellationToken ct)
+    public const string ValidSlug = "test-item";  // named constants for defaults
+    public const string ValidTitle = "Test Item";
+    public static readonly DateTimeOffset ValidDate = new(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+    public static {Entity}Dto Create(
+        string? slug = null,
+        string? title = null,
+        DateTimeOffset? date = null)
+        => new()
+        {
+            Slug = slug ?? ValidSlug,
+            Title = title ?? ValidTitle,
+            Date = date ?? ValidDate
+        };
+
+    public static IReadOnlyCollection<{Entity}Dto> Bogus(int count, int? seed = null)
     {
-        // Business logic here - return errors, don't throw
+        var faker = new Faker<{Entity}Dto>()
+            .CustomInstantiator(f => new()
+            {
+                Slug = f.Lorem.Slug(),
+                Title = f.Random.Words(3),
+                Date = f.Date.PastOffset(2)
+            });
+
+        if (seed.HasValue) faker.UseSeed(seed.Value);
+        return faker.Generate(count);
     }
 }
 ```
 
-### 4. Tests
-
-**Unit test** (`tests/Neba.Application.Tests/{Domain}/`):
+**`{Entity}ResponseFactory.cs`** (for the public `{Entity}Response` in Contracts):
 
 ```csharp
-[Fact, UnitTest, Component("{Domain}")]
-[DisplayName("{Action}{Entity} should succeed with valid input")]
-public async Task {Action}{Entity}_WithValidInput_Succeeds()
+public static class {Entity}ResponseFactory
 {
-    // Arrange using test factories
-    // Act
-    // Assert with Shouldly
+    public const string ValidSlug = "test-item";
+    public const string ValidTitle = "Test Item";
+
+    public static {Entity}Response Create(
+        string? slug = null,
+        string? title = null)
+        => new()
+        {
+            Slug = slug ?? ValidSlug,
+            Title = title ?? ValidTitle
+        };
+
+    public static IReadOnlyCollection<{Entity}Response> Bogus(int count, int? seed = null)
+    {
+        var faker = new Faker<{Entity}Response>()
+            .CustomInstantiator(f => new()
+            {
+                Slug = f.Lorem.Slug(),
+                Title = f.Random.Words(3)
+            });
+
+        if (seed.HasValue) faker.UseSeed(seed.Value);
+        return faker.Generate(count);
+    }
 }
 ```
 
-**Integration test** (`tests/Neba.Api.Tests/{Domain}/`):
+### 4. Endpoint Tests (`tests/Neba.Api.Tests/Features/{Domain}/{Action}{Entity}/`)
+
+Endpoint tests are **unit tests** using `Factory.Create<TEndpoint>()` from FastEndpoints and **Verify** (VerifyXunit) for snapshot assertions on the mapped response shape.
+
+**`{Action}{Entity}EndpointTests.cs`**:
 
 ```csharp
-[Fact, IntegrationTest, Component("{Domain}")]
-[DisplayName("{Action}{Entity} endpoint should return 201 Created")]
-public async Task {Action}{Entity}_Endpoint_Returns201()
+[UnitTest]
+[Component("{Domain}")]
+public sealed class {Action}{Entity}EndpointTests
+{
+    [Fact(DisplayName = "HandleAsync should return OK with mapped {entities} when query succeeds")]
+    public async Task HandleAsync_ShouldReturnOkWithMapped{Entities}_WhenQuerySucceeds()
+    {
+        // Arrange
+        var dtos = {Entity}DtoFactory.Bogus(3, 42);  // always use a seed for snapshot tests
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var queryHandlerMock = new Mock<IQueryHandler<{Action}{Entity}Query, IReadOnlyCollection<{Entity}Dto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<{Action}{Entity}Query>(), cancellationToken))
+            .ReturnsAsync(dtos);
+
+        var endpoint = Factory.Create<{Action}{Entity}Endpoint>(queryHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(cancellationToken);
+        // For endpoints with a request: await endpoint.HandleAsync(new {Action}{Entity}Request { ... }, cancellationToken);
+
+        // Assert — Verify snapshots the full response payload structure
+        await Verify(endpoint.Response);
+    }
+
+    [Fact(DisplayName = "HandleAsync should return OK with empty collection when no {entities} exist")]
+    public async Task HandleAsync_ShouldReturnOkWithEmpty{Entities}_WhenNo{Entities}Exist()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var queryHandlerMock = new Mock<IQueryHandler<{Action}{Entity}Query, IReadOnlyCollection<{Entity}Dto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<{Action}{Entity}Query>(), cancellationToken))
+            .ReturnsAsync([]);
+
+        var endpoint = Factory.Create<{Action}{Entity}Endpoint>(queryHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(cancellationToken);
+
+        // Assert — explicit for empty/edge cases; no Verify needed
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
+        endpoint.Response.ShouldNotBeNull();
+        endpoint.Response.Items.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Configure should register anonymous GET route under /{domain}")]
+    public void Configure_ShouldRegisterAnonymousGetRoute_Under{Domain}Path()
+    {
+        // Arrange
+        var queryHandlerMock = new Mock<IQueryHandler<{Action}{Entity}Query, IReadOnlyCollection<{Entity}Dto>>>(MockBehavior.Strict);
+        var endpoint = Factory.Create<{Action}{Entity}Endpoint>(queryHandlerMock.Object);
+
+        // Assert
+        endpoint.Definition.Verbs.ShouldContain("GET");
+        endpoint.Definition.Routes.ShouldContain(r => r.Contains("{domain}"), "should be under the /{domain} path");
+        endpoint.Definition.AnonymousVerbs.ShouldNotBeEmpty();
+    }
+}
+```
+
+**Important Verify rules**:
+- Always use a fixed seed (`Bogus(count, seed)`) in snapshot tests so the output is deterministic.
+- The snapshot file (`*.verified.txt`) is created on the first run. Run the test, confirm the received output is correct, then accept it by copying `.received.txt` → `.verified.txt`.
+- Use `await Verify(endpoint.Response)` to snapshot the **full response payload**, validating the entire field mapping in one assertion.
+- Use Verify for happy-path structure checks. Use explicit Shouldly assertions for edge cases (empty, null, error status codes) where the exact shape doesn't need snapshotting.
+- **Do NOT use** `Verify` from Moq — this is VerifyXunit (`global using static VerifyXunit.Verifier`).
+
+**For endpoints that return `ErrorOr<T>`** (commands/queries that can fail), add tests for each error path:
+
+```csharp
+[Fact(DisplayName = "HandleAsync should return 404 when {entity} does not exist")]
+public async Task HandleAsync_ShouldReturn404_When{Entity}DoesNotExist()
 {
     // Arrange
-    // Act - call endpoint
-    // Assert response
+    var cancellationToken = TestContext.Current.CancellationToken;
+    var queryHandlerMock = new Mock<IQueryHandler<...>>(MockBehavior.Strict);
+    queryHandlerMock
+        .Setup(h => h.HandleAsync(It.IsAny<...>(), cancellationToken))
+        .ReturnsAsync(Error.NotFound());
+
+    var endpoint = Factory.Create<{Action}{Entity}Endpoint>(queryHandlerMock.Object);
+
+    // Act
+    await endpoint.HandleAsync(new {Action}{Entity}Request { ... }, cancellationToken);
+
+    // Assert
+    endpoint.HttpContext.Response.StatusCode.ShouldBe(404);
+}
+```
+
+**For paginated endpoints** (using `PagedResult<T>` / `PaginationResponse<T>`), verify pagination field mapping explicitly and in the snapshot:
+
+```csharp
+[Fact(DisplayName = "HandleAsync should map pagination fields correctly from request and result")]
+public async Task HandleAsync_ShouldMapPaginationFields_CorrectlyFromRequestAndResult()
+{
+    // Arrange
+    var dtos = {Entity}DtoFactory.Bogus(3, 42);
+    var pagedResult = dtos.WithTotalItems(15);  // PagedResultExtensions helper
+    // ...mock setup...
+
+    // Act
+    await endpoint.HandleAsync(new {Action}{Entity}Request { Page = 3, PageSize = 5 }, cancellationToken);
+
+    // Assert
+    endpoint.Response.PageNumber.ShouldBe(3);
+    endpoint.Response.PageSize.ShouldBe(5);
+    endpoint.Response.TotalItems.ShouldBe(15);
+    // TotalPages, HasNextPage, HasPreviousPage are computed on PaginationResponse — covered by snapshot
 }
 ```
 
 ## Checklist
 
-- [ ] Authorization explicitly configured
+- [ ] `{Domain}EndpointGroup` exists (create if missing)
+- [ ] Authorization explicitly configured (`AllowAnonymous()`, `Roles()`, or `Policies()`)
 - [ ] All status codes documented with `Produces()`/`ProducesProblemDetails()`
-- [ ] `WithName()` set in Description
-- [ ] Validator only has structural validation
-- [ ] Handler returns `ErrorOr<T>`
-- [ ] Tests have all required traits
+- [ ] `WithName()` and `WithTags()` set in `Description`
+- [ ] `[BindFrom("key")]` on every query-param property in request classes
+- [ ] Validator has structural validation only (no DB lookups, no business rules)
+- [ ] Response contract lives in `Neba.Api.Contracts/{Domain}/`
+- [ ] `I{Domain}Api` Refit interface updated with the new method
+- [ ] `{Entity}DtoFactory` exists in `Neba.TestFactory/{Domain}/`
+- [ ] `{Entity}ResponseFactory` exists in `Neba.TestFactory/{Domain}/`
+- [ ] Endpoint tests: snapshot test (Verify), empty/edge case (Shouldly), Configure (route + anon)
+- [ ] Snapshot `.verified.txt` accepted after first run

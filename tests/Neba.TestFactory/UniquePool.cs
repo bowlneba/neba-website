@@ -63,7 +63,7 @@ public sealed class UniquePool<T>
 #pragma warning disable CA1024, CA5394 // GetNext() appropriately named (mutates state); Random acceptable for test data
     public T? GetNextNullable()
     {
-        if (_random.NextDouble() >= _probabilityOfValue)
+        if (_values.Count == 0 || _random.NextDouble() >= _probabilityOfValue)
         {
             return default;
         }
@@ -77,6 +77,12 @@ public sealed class UniquePool<T>
 
     public T GetNext()
     {
+        if (_values.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"UniquePool<{typeof(T).Name}> exhausted. Attempted to get value at index {_currentIndex} but pool only contains {_values.Count} values.");
+        }
+
         // loop over GetNextNullable until we get a non default
         T? value;
         do

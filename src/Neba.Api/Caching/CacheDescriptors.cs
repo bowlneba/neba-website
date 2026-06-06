@@ -226,6 +226,47 @@ public static class CacheDescriptors
     }
 
     /// <summary>
+    /// Cache descriptors for news data.
+    /// </summary>
+    public static class News
+    {
+        /// <summary>
+        /// Returns a cache descriptor for a paginated list of article summaries.
+        /// </summary>
+        /// <param name="page">
+        /// The page number.
+        /// </param>
+        /// <param name="pageSize">
+        /// The number of items per page.
+        /// </param>
+        /// <returns>
+        /// A cache descriptor for the paginated article list.
+        /// </returns>
+        public static CacheDescriptor ListArticles(int page, int pageSize)
+            => new()
+            {
+                Key = $"neba:news:articles:list:page:{page}:size:{pageSize}",
+                Tags = ["neba", "neba:news", "neba:news:articles"]
+            };
+
+        /// <summary>
+        /// Returns a cache descriptor for a specific news article identified by its slug.
+        /// </summary>
+        /// <param name="slug">
+        /// The article slug.
+        /// </param>
+        /// <returns>
+        /// A cache descriptor for the article detail.
+        /// </returns>
+        public static CacheDescriptor Article(string slug)
+            => new()
+            {
+                Key = $"neba:news:{slug}:article",
+                Tags = ["neba", "neba:news", $"neba:news:{slug}"]
+            };
+    }
+
+    /// <summary>
     /// Cache descriptors for tournament data.
     /// </summary>
     public static class Tournaments

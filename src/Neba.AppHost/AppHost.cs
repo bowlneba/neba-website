@@ -22,7 +22,9 @@ var storage = builder.AddAzureStorage("storage")
         .WithContainerName("bowlneba-storage")
         .WithLifetime(ContainerLifetime.Persistent)
         .WithDataVolume("bowlneba-storage-data")
-        .WithBlobPort(19632));
+        .WithBlobPort(19632)
+        .WithQueuePort(19633)
+        .WithTablePort(19634));
 
 var blobs = storage.AddBlobs("blob");
 

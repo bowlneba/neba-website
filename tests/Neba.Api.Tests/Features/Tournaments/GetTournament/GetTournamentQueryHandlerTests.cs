@@ -1,9 +1,11 @@
 using Neba.Api.Database;
+using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.GetTournament;
 using Neba.Api.Storage;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
+using Neba.TestFactory.News;
 using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Tournaments;
 
@@ -108,6 +110,75 @@ public sealed class GetTournamentQueryHandlerTests(PostgreSqlFixture fixture)
         // Assert
         result.IsError.ShouldBeFalse();
         result.Value.LogoUrl.ShouldBe(expectedUri);
+    }
+
+    [Fact(DisplayName = "HandleAsync returns published articles with title and slug when tournament has articles")]
+    public async Task HandleAsync_ShouldReturnPublishedArticles_WhenTournamentHasArticles()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var published = ArticleFactory.Create(
+            title: "NEBA Singles Recap",
+            slug: "neba-singles-recap",
+            publicationStatus: PublicationStatus.Published,
+            tournamentId: tournament.Id);
+        var draft = ArticleFactory.Create(
+            slug: "draft-article",
+            publicationStatus: PublicationStatus.Draft,
+            tournamentId: tournament.Id);
+        await _dbContext.Articles.AddRangeAsync([published, draft], ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Articles.ShouldHaveSingleItem();
+        var article = result.Value.Articles.Single();
+        article.Title.ShouldBe("NEBA Singles Recap");
+        article.Slug.ShouldBe("neba-singles-recap");
+    }
+
+    [Fact(DisplayName = "HandleAsync excludes draft articles when tournament has only draft articles")]
+    public async Task HandleAsync_ShouldExcludeDraftArticles_WhenTournamentHasOnlyDraftArticles()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var draft = ArticleFactory.Create(
+            publicationStatus: PublicationStatus.Draft,
+            tournamentId: tournament.Id);
+        await _dbContext.Articles.AddAsync(draft, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Articles.ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "HandleAsync returns oil patterns with round names when tournament has oil patterns")]

@@ -28,6 +28,7 @@ internal static class TournamentDetailMappingExtensions
             OilPatterns = [.. response.OilPatterns.Select(p => p.ToViewModel())],
             Winners = response.Winners,
             Results = [.. response.Results.Select(r => r.ToViewModel())],
+            Articles = [.. response.Articles.Select(a => a.ToViewModel())],
         };
     }
 
@@ -50,6 +51,7 @@ internal static class TournamentDetailMappingExtensions
             Name = response.Name,
             Length = response.Length,
             Rounds = response.Rounds,
+            KegelId = response.KegelId,
         };
     }
 
@@ -63,6 +65,15 @@ internal static class TournamentDetailMappingExtensions
             Points = response.Points,
             SideCutName = response.SideCutName,
             SideCutIndicator = response.SideCutIndicator,
+        };
+    }
+
+    extension(TournamentDetailArticleResponse response)
+    {
+        public TournamentDetailArticleViewModel ToViewModel() => new()
+        {
+            Title = response.Title,
+            Slug = response.Slug,
         };
     }
 }

@@ -11,6 +11,7 @@ using Neba.Api.Domain;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.HallOfFame.Domain;
+using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Stats.Domain;
@@ -65,6 +66,9 @@ internal sealed class AppDbContext(
     public DbSet<OilPattern> OilPatterns
         => Set<OilPattern>();
 
+    public DbSet<Article> Articles
+        => Set<Article>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BowlingCenterConfiguration());
@@ -83,6 +87,7 @@ internal sealed class AppDbContext(
         modelBuilder.ApplyConfiguration(new SideCutConfiguration());
         modelBuilder.ApplyConfiguration(new SideCutCriteriaGroupConfiguration());
         modelBuilder.ApplyConfiguration(new SideCutCriteriaConfiguration());
+        modelBuilder.ApplyConfiguration(new ArticleConfiguration());
 
         modelBuilder.ApplyConfiguration(new HistoricalTournamentChampionConfiguration());
         modelBuilder.ApplyConfiguration(new HistoricalTournamentEntryConfiguration());
@@ -119,6 +124,12 @@ internal sealed class AppDbContext(
 
         configurationBuilder.Properties<SideCutCriteriaGroupId>()
             .HaveConversion<UlidTypedIdConverter<SideCutCriteriaGroupId>>();
+
+        configurationBuilder.Properties<ArticleId>()
+            .HaveConversion<UlidTypedIdConverter<ArticleId>>();
+
+        configurationBuilder.Properties<ArticleAttachmentId>()
+            .HaveConversion<UlidTypedIdConverter<ArticleAttachmentId>>();
 
         configurationBuilder.Properties<Uri>()
             .HaveConversion<UriToStringConverter>();

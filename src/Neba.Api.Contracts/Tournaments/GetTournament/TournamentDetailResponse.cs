@@ -104,4 +104,9 @@ public sealed record TournamentDetailResponse
     /// Per-bowler results ordered by place (nulls last) then bowler name; empty for upcoming or data-unavailable tournaments.
     /// </summary>
     public IReadOnlyCollection<TournamentResultResponse> Results { get; init; } = [];
+
+    /// <summary>
+    /// Published articles associated with this tournament; empty when none exist.
+    /// </summary>
+    public IReadOnlyCollection<TournamentDetailArticleResponse> Articles { get; init; } = [];
 }

@@ -8,6 +8,7 @@ public sealed class AzuriteFixture
     : IAsyncLifetime
 {
     private readonly AzuriteContainer _container = new AzuriteBuilder("mcr.microsoft.com/azure-storage/azurite:latest")
+        .WithCommand("--skipApiVersionCheck")
         .Build();
 
     public BlobServiceClient BlobServiceClient { get; private set; } = null!;

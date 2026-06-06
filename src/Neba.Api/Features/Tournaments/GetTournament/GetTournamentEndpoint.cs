@@ -98,6 +98,7 @@ internal sealed class GetTournamentEndpoint(
                 Name = op.Name,
                 Length = op.Length,
                 Rounds = op.TournamentRounds,
+                KegelId = op.KegelId,
             })],
             Winners = [.. dto.Winners.Select(w => w.ToDisplayName())],
             Results = [.. dto.Results.Select(r => new TournamentResultResponse
@@ -110,6 +111,11 @@ internal sealed class GetTournamentEndpoint(
                 SideCutIndicator = r.SideCutIndicator is { } c
                     ? $"#{c.R:X2}{c.G:X2}{c.B:X2}"
                     : null,
+            })],
+            Articles = [.. dto.Articles.Select(a => new TournamentDetailArticleResponse
+            {
+                Title = a.Title,
+                Slug = a.Slug,
             })],
         };
 

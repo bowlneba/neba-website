@@ -27,8 +27,6 @@ public static class SeasonTournamentDtoFactory
         PatternRatioCategory? patternRatioCategory = null,
         IReadOnlyCollection<SeasonTournamentOilPatternDto>? oilPatterns = null,
         Uri? logoUrl = null,
-        string? logoContainer = null,
-        string? logoPath = null,
         IReadOnlyCollection<Name>? winners = null)
             => new()
             {
@@ -49,8 +47,6 @@ public static class SeasonTournamentDtoFactory
                 PatternRatioCategory = patternRatioCategory?.Name,
                 OilPatterns = oilPatterns ?? [],
                 LogoUrl = logoUrl,
-                LogoContainer = logoContainer,
-                LogoPath = logoPath,
                 Winners = winners ?? []
             };
 
@@ -85,8 +81,6 @@ public static class SeasonTournamentDtoFactory
                     PatternRatioCategory = f.PickRandom(PatternRatioCategory.List.ToArray())?.Name,
                     OilPatterns = [.. f.PickRandom(oilPatterns, f.Random.Int(0, 2))],
                     LogoUrl = f.Random.Bool() ? new Uri(f.Internet.Url()) : null,
-                    LogoContainer = f.Random.Bool() ? f.System.FilePath() : null,
-                    LogoPath = f.Random.Bool() ? f.System.FilePath() : null,
                     Winners = [.. f.PickRandom(winners, f.Random.Int(0, 3))]
                 };
             });

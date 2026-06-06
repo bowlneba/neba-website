@@ -16,19 +16,9 @@ public sealed record SponsorSummaryDto
     public required string Slug { get; init; }
 
     /// <summary>
-    /// URI of the sponsor's logo.
+    /// URI of the sponsor's logo; null if no logo is available.
     /// </summary>
     public Uri? LogoUrl { get; init; }
-
-    /// <summary>
-    /// Blob storage container name where the logo is stored.
-    /// </summary>
-    public string? LogoContainer { get; init; }
-
-    /// <summary>
-    /// Blob storage path to the sponsor logo.
-    /// </summary>
-    public string? LogoPath { get; init; }
 
     /// <summary>
     /// Indicates whether the sponsor is currently active.

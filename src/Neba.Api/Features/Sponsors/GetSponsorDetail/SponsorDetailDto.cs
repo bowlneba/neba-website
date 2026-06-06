@@ -44,17 +44,7 @@ public sealed record SponsorDetailDto
     public required string Category { get; init; }
 
     /// <summary>
-    /// Blob storage container name where the logo is stored.
-    /// </summary>
-    public string? LogoContainer { get; init; }
-
-    /// <summary>
-    /// Blob storage path to the sponsor logo.
-    /// </summary>
-    public string? LogoPath { get; init; }
-
-    /// <summary>
-    /// URL of the sponsor's logo. This is the publicly accessible URL where the sponsor's logo image can be accessed. It can be used in the presentation layer to display the sponsor's logo without needing to retrieve the file content directly from storage. This allows for efficient loading of images and reduces the need for additional API calls to fetch the logo content.
+    /// URL of the sponsor's logo; null if no logo is available.
     /// </summary>
     public Uri? LogoUrl { get; init; }
 

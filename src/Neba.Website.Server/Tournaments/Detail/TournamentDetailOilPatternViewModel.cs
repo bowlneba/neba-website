@@ -21,8 +21,23 @@ public sealed record TournamentDetailOilPatternViewModel
     public IReadOnlyCollection<string> Rounds { get; init; } = [];
 
     /// <summary>
+    /// Kegel pattern library ID; null when the pattern is not in the Kegel library.
+    /// </summary>
+    public Guid? KegelId { get; init; }
+
+    /// <summary>
     /// Name and length formatted for display chips.
     /// </summary>
     public string Display =>
         Name + " · " + Length.ToString(System.Globalization.CultureInfo.CurrentCulture) + " ft";
+
+    /// <summary>
+    /// URL to the Kegel pattern library entry; null when KegelId is not set.
+    /// </summary>
+#pragma warning disable S1075 // External partner URL — intentional hardcoded base
+    public Uri? KegelLibraryUrl =>
+        KegelId is { } id
+            ? new Uri("https://patternlibrary.kegel.net/pattern/" + id, UriKind.Absolute)
+            : null;
+#pragma warning restore S1075
 }

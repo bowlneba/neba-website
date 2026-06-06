@@ -15,29 +15,42 @@ internal sealed class ListActiveSponsorsQueryHandler(AppDbContext appDbContext, 
 
     public async Task<IReadOnlyCollection<SponsorSummaryDto>> HandleAsync(ListActiveSponsorsQuery query, CancellationToken cancellationToken)
     {
-        var sponsors = await _sponsors
+        var rows = await _sponsors
             .Where(sponsor => sponsor.IsCurrentSponsor)
-            .Select(sponsor => new SponsorSummaryDto
+            .Select(sponsor => new
             {
-                Name = sponsor.Name,
-                Slug = sponsor.Slug,
+                sponsor.Name,
+                sponsor.Slug,
                 LogoContainer = sponsor.Logo != null ? sponsor.Logo.Container : null,
                 LogoPath = sponsor.Logo != null ? sponsor.Logo.Path : null,
-                IsCurrentSponsor = sponsor.IsCurrentSponsor,
-                Priority = sponsor.Priority,
+                sponsor.IsCurrentSponsor,
+                sponsor.Priority,
                 Tier = sponsor.Tier.Name,
                 Category = sponsor.Category.Name,
-                TagPhrase = sponsor.TagPhrase,
-                Description = sponsor.Description,
-                WebsiteUrl = sponsor.WebsiteUrl,
-                FacebookUrl = sponsor.FacebookUrl,
-                InstagramUrl = sponsor.InstagramUrl
+                sponsor.TagPhrase,
+                sponsor.Description,
+                sponsor.WebsiteUrl,
+                sponsor.FacebookUrl,
+                sponsor.InstagramUrl
             })
             .ToListAsync(cancellationToken);
 
-        return [.. sponsors
-            .Select(sponsor => sponsor.LogoContainer is not null && sponsor.LogoPath is not null
-                ? sponsor with { LogoUrl = _fileStorageService.GetBlobUri(sponsor.LogoContainer, sponsor.LogoPath) }
-                : sponsor)];
+        return [.. rows.Select(row => new SponsorSummaryDto
+        {
+            Name = row.Name,
+            Slug = row.Slug,
+            LogoUrl = row.LogoContainer is not null && row.LogoPath is not null
+                ? _fileStorageService.GetBlobUri(row.LogoContainer, row.LogoPath)
+                : null,
+            IsCurrentSponsor = row.IsCurrentSponsor,
+            Priority = row.Priority,
+            Tier = row.Tier,
+            Category = row.Category,
+            TagPhrase = row.TagPhrase,
+            Description = row.Description,
+            WebsiteUrl = row.WebsiteUrl,
+            FacebookUrl = row.FacebookUrl,
+            InstagramUrl = row.InstagramUrl
+        })];
     }
 }
