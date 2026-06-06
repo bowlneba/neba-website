@@ -194,8 +194,7 @@ An Article is only publicly visible when its Publication Status is `Published` *
 **In Code**:
 
 - Namespace: `Neba.Api.Features.News.Domain`
-- Type: `PublicationStatus` (SmartEnum, string-valued)
-
+- Type: `PublicationStatus` (SmartEnum, int-valued)
 ---
 
 ### Draft
