@@ -46,7 +46,7 @@ test.describe('News list page — loading state', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
 
   test('shows skeleton loader while articles are loading', async ({ page }) => {
-    await page.route('**/news**', async route => {
+    await page.route('http://localhost:5151/news', async route => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       await route.continue();
     });
@@ -60,11 +60,11 @@ test.describe('News list page — error state', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
 
   test('shows error alert when API returns an error', async ({ page }) => {
-    await page.goto('/__mock/override?path=/news&status=500');
+    await page.request.post('http://localhost:5151/__mock/fail?path=/news&status=500');
     await page.goto('/news');
     await page.waitForSelector('.neba-alert');
     await expect(page.locator('.neba-alert')).toContainText('Error Loading Articles');
-    await page.goto('/__mock/reset');
+    await page.request.post('http://localhost:5151/__mock/reset');
   });
 });
 
@@ -145,7 +145,7 @@ test.describe('News detail page — loading state', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
 
   test('shows skeleton loader while article is loading', async ({ page }) => {
-    await page.route('**/news/**', async route => {
+    await page.route('http://localhost:5151/news/**', async route => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       await route.continue();
     });
@@ -175,10 +175,10 @@ test.describe('News detail page — error state', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
 
   test('shows error alert when API returns a server error', async ({ page }) => {
-    await page.goto('/__mock/override?path=/news/season-champions-2026&status=500');
+    await page.request.post('http://localhost:5151/__mock/fail?path=/news/season-champions-2026&status=500');
     await page.goto('/news/season-champions-2026');
     await page.waitForSelector('.neba-alert');
     await expect(page.locator('.neba-alert')).toContainText('Error Loading Article');
-    await page.goto('/__mock/reset');
+    await page.request.post('http://localhost:5151/__mock/reset');
   });
 });

@@ -208,6 +208,7 @@ test.describe('Champions page — Year Section Collapse / Expand', () => {
     await page.goto('/history/champions');
     await page.waitForSelector('.hero-stats');
     await page.click('button:has-text("By Year")');
+    await page.waitForSelector('.year-section');
   });
 
   test('clicking a year header collapses that year', async ({ page }) => {
