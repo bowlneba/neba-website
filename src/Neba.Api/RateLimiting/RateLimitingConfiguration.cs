@@ -29,7 +29,6 @@ internal static class RateLimitingConfiguration
                             ((int)retryAfter.TotalSeconds).ToString(CultureInfo.InvariantCulture);
                     }
 
-                    context.HttpContext.Response.ContentType = MediaTypeNames.Application.ProblemJson;
                     await context.HttpContext.Response.WriteAsJsonAsync(
                         new ProblemDetails
                         {
@@ -37,6 +36,8 @@ internal static class RateLimitingConfiguration
                             Title = "Too Many Requests",
                             Detail = "Rate limit exceeded. Please retry after the specified time.",
                         },
+                        options: null,
+                        contentType: MediaTypeNames.Application.ProblemJson,
                         cancellationToken);
                 };
 
