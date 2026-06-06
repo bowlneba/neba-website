@@ -1,7 +1,10 @@
 using Neba.Api.Features.News.Domain;
+using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Features.News.Domain;
 
+[UnitTest]
+[Component("News")]
 public sealed class PublicationStatusTests
 {
     [Fact(DisplayName = "PublicationStatus should have 2 defined values")]
