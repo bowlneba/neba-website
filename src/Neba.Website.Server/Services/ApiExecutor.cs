@@ -41,7 +41,7 @@ internal sealed class ApiExecutor(
             var response = await apiCall(cancellationToken);
             var duration = stopwatchProvider.GetElapsedTime(startTimestamp).TotalMilliseconds;
 
-            activity?.SetTag("http.status_code", (int)response.StatusCode);
+            activity?.SetTag("http.status_code", (int?)response.StatusCode);
 
             if (response.IsSuccessStatusCode)
             {
@@ -57,7 +57,7 @@ internal sealed class ApiExecutor(
                 {
                     // Handle null content on success status as a deserialization error
                     const string errorType = "DeserializationFailed";
-                    ApiMetrics.RecordError(apiName, operationName, duration, errorType, (int)response.StatusCode);
+                    ApiMetrics.RecordError(apiName, operationName, duration, errorType, (int?)response.StatusCode);
 
                     activity?.SetTag("error.type", "DeserializationFailed");
                     activity?.SetTag("error.message", "Response content was null despite success status.");
@@ -66,7 +66,7 @@ internal sealed class ApiExecutor(
                     logger.LogDeserializationFailed(
                         apiName,
                         operationName,
-                        (int)response.StatusCode,
+                        (int)response.StatusCode.GetValueOrDefault(),
                         duration
                     );
 
@@ -78,13 +78,14 @@ internal sealed class ApiExecutor(
             }
             else
             {
-                var errorType = $"HttpError_{(int)response.StatusCode}";
-                ApiMetrics.RecordError(apiName, operationName, duration, errorType, (int)response.StatusCode);
+                var statusCode = (int)response.StatusCode.GetValueOrDefault();
+                var errorType = $"HttpError_{statusCode}";
+                ApiMetrics.RecordError(apiName, operationName, duration, errorType, (int?)response.StatusCode);
 
                 logger.LogApiError(
                     apiName,
                     operationName,
-                    (int)response.StatusCode,
+                    statusCode,
                     duration
                 );
 
@@ -94,7 +95,7 @@ internal sealed class ApiExecutor(
                         "The requested resource was not found.")
                     : Error.Failure(
                     $"{apiName}.{operationName}.HttpError",
-                    $"API call failed with status code {(int)response.StatusCode}."
+                    $"API call failed with status code {statusCode}."
                 );
             }
         }
