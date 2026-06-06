@@ -15,6 +15,12 @@
     @if (_article is not null)
     {
         <meta name="description" content="@_article.Title — NEBA news article." />
+        <meta property="og:title" content="@_article.Title - NEBA" />
+        <meta property="og:description" content="@_article.Title — NEBA news article." />
+        <meta property="og:image" content="@(_article.HeaderImageUrl?.ToString() ?? "https://www.bowlneba.com/images/neba-logo.png")" />
+        <meta property="og:url" content="https://www.bowlneba.com/news/@Slug" />
+        <meta property="og:type" content="article" />
+        <meta name="twitter:card" content="summary_large_image" />
     }
 </HeadContent>
 
