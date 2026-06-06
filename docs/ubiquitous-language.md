@@ -213,10 +213,7 @@ An Article is only publicly visible when its Publication Status is `Published` *
 
 **Definition**: The date and time at which a Published Article becomes publicly visible. Set explicitly by staff. May be in the future (scheduled publish) or in the past or present (immediate publish).
 
-> A Published Article with a future Publish Date is considered **scheduled** — it will appear on the News page automatically when that date and time arrives.
-
-**In Code**: `Article.PublishDate` (`DateTimeOffset?`)
-
+**In Code**: `Article.PublishDateUtc` (`DateTimeOffset`)
 ---
 
 ### Slug
