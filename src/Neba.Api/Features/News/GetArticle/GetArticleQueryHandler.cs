@@ -11,16 +11,22 @@ namespace Neba.Api.Features.News.GetArticle;
 
 internal sealed class GetArticleQueryHandler(
     AppDbContext appDbContext,
+    TimeProvider timeProvider,
     IFileStorageService fileStorageService)
         : IQueryHandler<GetArticleQuery, ErrorOr<ArticleDetailDto>>
 {
     private readonly IQueryable<Article> _articles = appDbContext.Articles.AsNoTracking();
+    private readonly TimeProvider _timeProvider = timeProvider;
     private readonly IFileStorageService _fileStorageService = fileStorageService;
 
     public async Task<ErrorOr<ArticleDetailDto>> HandleAsync(GetArticleQuery query, CancellationToken cancellationToken)
     {
+        var now = _timeProvider.GetUtcNow();
+
         var row = await _articles
-            .Where(article => article.Slug == query.Slug)
+            .Where(article => article.Slug == query.Slug
+                && article.PublicationStatus == PublicationStatus.Published
+                && article.PublishDateUtc <= now)
             .Select(article => new
             {
                 article.Slug,

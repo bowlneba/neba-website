@@ -58,16 +58,6 @@ public sealed record SponsorDetailViewModel
     public string? AboutText { get; init; }
 
     /// <summary>
-    /// Optional script for live reads or announcements related to the sponsor.
-    /// </summary>
-    public string? PromotionalNotes { get; init; }
-
-    /// <summary>
-    /// Optional script for live reads or announcements related to the sponsor.
-    /// </summary>
-    public string? LiveReadScript { get; init; }
-
-    /// <summary>
     /// Optional Facebook profile URL for the sponsor.
     /// </summary>
     public Uri? FacebookUrl { get; init; }
@@ -118,26 +108,6 @@ public sealed record SponsorDetailViewModel
     public required IReadOnlyCollection<PhoneNumberResponse> PhoneNumbers { get; init; }
 
     /// <summary>
-    /// Optional internal contact name for the sponsor, intended for authenticated users only. Displayed in a separate section on the sponsor detail page if provided.
-    /// </summary>
-    public string? SponsorContactName { get; init; }
-
-    /// <summary>
-    /// Optional internal contact email address for the sponsor, intended for authenticated users only. Displayed in a separate section on the sponsor detail page if provided.
-    /// </summary>
-    public string? SponsorContactEmail { get; init; }
-
-    /// <summary>
-    /// Optional internal contact phone number for the sponsor, intended for authenticated users only. Displayed in a separate section on the sponsor detail page if provided.
-    /// </summary>
-    public string? SponsorContactPhone { get; init; }
-
-    /// <summary>
-    /// Optional internal contact phone number type for the sponsor, intended for authenticated users only. Displayed in a separate section on the sponsor detail page if provided.
-    /// </summary>
-    public string? SponsorContactPhoneType { get; init; }
-
-    /// <summary>
     /// Indicates whether the sponsor has any business address information available for display.
     /// </summary>
     public bool HasAddress =>
@@ -155,15 +125,4 @@ public sealed record SponsorDetailViewModel
     public bool HasSocialMedia =>
         FacebookUrl is not null || InstagramUrl is not null;
 
-    /// <summary>
-    /// Indicates whether the sponsor has any promotional information (promotional notes or live read script) available for display.
-    /// </summary>
-    public bool HasPromotionalInfo =>
-        PromotionalNotes is not null || LiveReadScript is not null;
-
-    /// <summary>
-    /// Indicates whether the sponsor has any internal contact information available for display to authenticated users.
-    /// </summary>
-    public bool HasInternalContact =>
-        SponsorContactName is not null;
 }

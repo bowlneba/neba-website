@@ -60,8 +60,6 @@ internal sealed class GetSponsorDetailEndpoint(IQueryHandler<GetSponsorDetailQue
             WebsiteUrl = dto.WebsiteUrl,
             TagPhrase = dto.TagPhrase,
             Description = dto.Description,
-            PromotionalNotes = dto.PromotionalNotes,
-            LiveReadText = dto.LiveReadText,
             FacebookUrl = dto.FacebookUrl,
             InstagramUrl = dto.InstagramUrl,
             BusinessStreet = dto.BusinessAddress?.Street,
@@ -76,10 +74,6 @@ internal sealed class GetSponsorDetailEndpoint(IQueryHandler<GetSponsorDetailQue
                 PhoneNumberType = p.PhoneNumberType,
                 PhoneNumber = p.Number,
             })],
-            SponsorContactName = dto.SponsorContactInfo?.Name,
-            SponsorContactEmailAddress = dto.SponsorContactInfo?.EmailAddress,
-            SponsorContactPhoneNumber = dto.SponsorContactInfo?.PhoneNumber.Number,
-            SponsorContactPhoneNumberType = dto.SponsorContactInfo?.PhoneNumber.PhoneNumberType,
         };
 
         // Stryker disable once Statement

@@ -64,16 +64,6 @@ public sealed record SponsorDetailDto
     public string? Description { get; init; }
 
     /// <summary>
-    /// Promotional notes about the sponsor. This is a free-form text field that can contain additional information about the sponsor, such as special offers, upcoming events, or any other promotional content that the sponsor wants to share with users. This information can be used to entice users to engage with the sponsor and can be displayed in various parts of the application to highlight the sponsor's offerings and involvement with the organization.
-    /// </summary>
-    public string? PromotionalNotes { get; init; }
-
-    /// <summary>
-    /// Live read text for the sponsor. This is a script or set of talking points that can be used by presenters or hosts when mentioning the sponsor during live events, such as webinars, conferences, or podcasts. The live read text should be concise and engaging, providing key information about the sponsor and encouraging the audience to learn more or take action. It can be used to ensure that sponsors receive consistent and effective promotion during live events.
-    /// </summary>
-    public string? LiveReadText { get; init; }
-
-    /// <summary>
     /// Facebook URL of the sponsor. This is the URL to the sponsor's official Facebook page. Providing a Facebook URL allows users to easily connect with the sponsor on social media, where they can follow updates, engage with content, and learn more about the sponsor's involvement with the organization. It can also help increase the sponsor's social media presence and foster a sense of community among users who are interested in the sponsor.
     /// </summary>
     public Uri? FacebookUrl { get; init; }
@@ -97,9 +87,4 @@ public sealed record SponsorDetailDto
     /// Phone numbers of the sponsor. This is a collection of phone numbers that users can use to contact the sponsor. Providing multiple phone numbers allows users to choose the most appropriate number for their needs, such as a general inquiry line, a support line, or a sales line. It can also help ensure that users can successfully reach the sponsor, even if one of the phone numbers is unavailable or busy.
     /// </summary>
     public IReadOnlyCollection<PhoneNumberDto> PhoneNumbers { get; init; } = [];
-
-    /// <summary>
-    /// Contact information for the sponsor. This includes the name, phone number, and email address of the primary contact person for the sponsor. Providing contact information allows users to reach out to the sponsor directly for inquiries, support, or further engagement related to the sponsorship. It can also help foster communication between the sponsor and users who are interested in learning more about the sponsor's offerings or involvement with the organization.
-    /// </summary>
-    public ContactInfoDto? SponsorContactInfo { get; init; }
 }

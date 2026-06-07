@@ -79,32 +79,6 @@ else
                     </section>
                 }
 
-                @* TODO: restrict to authenticated users once auth is configured *@
-                @if (_model?.HasPromotionalInfo == true)
-                {
-                    <section class="sponsor-detail__promo" aria-label="Member Exclusive: Promotional Info">
-                        <div class="sponsor-detail__promo-header">
-                            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">stars</span>
-                            <h2 class="sponsor-detail__promo-title">Member Exclusive: Promotional Info</h2>
-                        </div>
-
-                        @if (_model.PromotionalNotes is not null)
-                        {
-                            <div class="sponsor-detail__promo-block">
-                                <h3 class="sponsor-detail__promo-label">Promotional Notes</h3>
-                                <p>@_model.PromotionalNotes</p>
-                            </div>
-                        }
-
-                        @if (_model.LiveReadScript is not null)
-                        {
-                            <div class="sponsor-detail__promo-block">
-                                <h3 class="sponsor-detail__promo-label">Live Read Script</h3>
-                                <pre class="sponsor-detail__live-read">@_model.LiveReadScript</pre>
-                            </div>
-                        }
-                    </section>
-                }
 
             </div>
 
@@ -191,40 +165,6 @@ else
                     }
 
                 </section>
-
-                @* TODO: restrict to authenticated users once auth is configured *@
-                @if (_model?.HasInternalContact == true)
-                {
-                    <section class="neba-card sponsor-detail__internal-contact" aria-label="Internal Sponsor Contact">
-                        <div class="sponsor-detail__internal-header">
-                            <span class="material-symbols-outlined">lock</span>
-                            <h3>Internal Sponsor Contact</h3>
-                        </div>
-                        <p class="sponsor-detail__internal-name">@_model.SponsorContactName</p>
-                        <div class="sponsor-detail__internal-details">
-                            @if (_model.SponsorContactEmail is not null)
-                            {
-                                <div class="sponsor-detail__internal-row">
-                                    <span class="material-symbols-outlined">alternate_email</span>
-                                    <span>@_model.SponsorContactEmail</span>
-                                </div>
-                            }
-                            @if (_model.SponsorContactPhone is not null)
-                            {
-                                <div class="sponsor-detail__internal-row">
-                                    <span class="material-symbols-outlined">call</span>
-                                    <span>@FormatPhoneNumber(_model.SponsorContactPhone!)</span>
-                                    @if (_model.SponsorContactPhoneType is not null)
-                                    {
-                                        <span class="sponsor-detail__internal-phone-type">
-                                            @_model.SponsorContactPhoneType
-                                        </span>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    </section>
-                }
 
             </div>
         </div>

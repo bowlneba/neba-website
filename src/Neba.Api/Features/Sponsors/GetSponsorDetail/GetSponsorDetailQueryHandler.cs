@@ -33,8 +33,6 @@ internal sealed class GetSponsorDetailQueryHandler(AppDbContext appDbContext, IF
                 Category = sponsor.Category.Name,
                 sponsor.TagPhrase,
                 sponsor.Description,
-                sponsor.LiveReadText,
-                sponsor.PromotionalNotes,
                 sponsor.WebsiteUrl,
                 sponsor.FacebookUrl,
                 sponsor.InstagramUrl,
@@ -54,19 +52,7 @@ internal sealed class GetSponsorDetailQueryHandler(AppDbContext appDbContext, IF
                 {
                     Number = phoneNumber.Number,
                     PhoneNumberType = phoneNumber.Type.Name
-                }).ToList(),
-                SponsorContactInfo = sponsor.SponsorContact != null
-                    ? new ContactInfoDto
-                    {
-                        Name = sponsor.SponsorContact.Name,
-                        EmailAddress = sponsor.SponsorContact.Email.Value,
-                        PhoneNumber = new PhoneNumberDto
-                        {
-                            Number = sponsor.SponsorContact.Phone.Number,
-                            PhoneNumberType = sponsor.SponsorContact.Phone.Type.Name
-                        }
-                    }
-                    : null
+                }).ToList()
             }).SingleOrDefaultAsync(cancellationToken);
 
         if (row is null)
@@ -88,15 +74,12 @@ internal sealed class GetSponsorDetailQueryHandler(AppDbContext appDbContext, IF
             Category = row.Category,
             TagPhrase = row.TagPhrase,
             Description = row.Description,
-            LiveReadText = row.LiveReadText,
-            PromotionalNotes = row.PromotionalNotes,
             WebsiteUrl = row.WebsiteUrl,
             FacebookUrl = row.FacebookUrl,
             InstagramUrl = row.InstagramUrl,
             BusinessAddress = row.BusinessAddress,
             BusinessEmailAddress = row.BusinessEmailAddress,
-            PhoneNumbers = row.PhoneNumbers,
-            SponsorContactInfo = row.SponsorContactInfo
+            PhoneNumbers = row.PhoneNumbers
         };
     }
 }

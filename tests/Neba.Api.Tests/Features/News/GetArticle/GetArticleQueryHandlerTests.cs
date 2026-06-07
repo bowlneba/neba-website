@@ -1,5 +1,7 @@
 using ErrorOr;
 
+using Microsoft.Extensions.Time.Testing;
+
 using Neba.Api.Database;
 using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.News.GetArticle;
@@ -28,10 +30,13 @@ public sealed class GetArticleQueryHandlerTests(PostgreSqlFixture fixture)
         await _dbContext.DisposeAsync();
     }
 
-    private GetArticleQueryHandler CreateHandler(IFileStorageService? fileStorageService = null)
+    private GetArticleQueryHandler CreateHandler(
+        IFileStorageService? fileStorageService = null,
+        TimeProvider? timeProvider = null)
     {
         var storage = fileStorageService ?? new Mock<IFileStorageService>(MockBehavior.Strict).Object;
-        return new GetArticleQueryHandler(_dbContext, storage);
+        var time = timeProvider ?? TimeProvider.System;
+        return new GetArticleQueryHandler(_dbContext, time, storage);
     }
 
     private static GetArticleQuery QueryFor(string slug) => new() { Slug = slug };
@@ -212,8 +217,8 @@ public sealed class GetArticleQueryHandlerTests(PostgreSqlFixture fixture)
         result.Value.Attachments.Single().Url.ShouldBe(scheduleUri);
     }
 
-    [Fact(DisplayName = "HandleAsync returns article regardless of publication status")]
-    public async Task HandleAsync_ShouldReturnArticle_RegardlessOfPublicationStatus()
+    [Fact(DisplayName = "HandleAsync returns NotFound when article is a draft")]
+    public async Task HandleAsync_ShouldReturnNotFound_WhenArticleIsDraft()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -230,8 +235,62 @@ public sealed class GetArticleQueryHandlerTests(PostgreSqlFixture fixture)
         var result = await handler.HandleAsync(QueryFor("draft-article"), ct);
 
         // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorType.NotFound);
+        result.FirstError.Code.ShouldBe("Article.NotFound");
+    }
+
+    [Fact(DisplayName = "HandleAsync returns NotFound when article publish date is in the future")]
+    public async Task HandleAsync_ShouldReturnNotFound_WhenPublishDateIsInTheFuture()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var now = new DateTimeOffset(2026, 6, 1, 12, 0, 0, TimeSpan.Zero);
+        var futureDate = now.AddDays(7);
+
+        var article = ArticleFactory.Create(
+            slug: "future-article",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: futureDate);
+        await _dbContext.Articles.AddAsync(article, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fakeTimeProvider = new FakeTimeProvider(now);
+        var handler = CreateHandler(timeProvider: fakeTimeProvider);
+
+        // Act
+        var result = await handler.HandleAsync(QueryFor("future-article"), ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorType.NotFound);
+        result.FirstError.Code.ShouldBe("Article.NotFound");
+    }
+
+    [Fact(DisplayName = "HandleAsync returns article when published and publish date is in the past")]
+    public async Task HandleAsync_ShouldReturnArticle_WhenPublishedAndPublishDateIsInThePast()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var now = new DateTimeOffset(2026, 6, 1, 12, 0, 0, TimeSpan.Zero);
+        var publishDate = now.AddDays(-1);
+
+        var article = ArticleFactory.Create(
+            slug: "published-article",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: publishDate);
+        await _dbContext.Articles.AddAsync(article, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fakeTimeProvider = new FakeTimeProvider(now);
+        var handler = CreateHandler(timeProvider: fakeTimeProvider);
+
+        // Act
+        var result = await handler.HandleAsync(QueryFor("published-article"), ct);
+
+        // Assert
         result.IsError.ShouldBeFalse();
-        result.Value.Slug.ShouldBe("draft-article");
+        result.Value.Slug.ShouldBe("published-article");
     }
 
     [Fact(DisplayName = "HandleAsync returns snapshot of article with header image and attachments")]
