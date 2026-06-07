@@ -19,9 +19,9 @@ test.describe('Contact page', () => {
   });
 
   test('displays the three contact cards', async ({ page }) => {
-    await expect(page.locator('text=Anything else')).toBeVisible();
-    await expect(page.locator('text=Tournaments & membership')).toBeVisible();
-    await expect(page.locator('text=Something broken here?')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Anything else' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Tournaments & membership' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Something broken here?' })).toBeVisible();
   });
 
   test('general inquiries card links to info@bowlneba.com', async ({ page }) => {

@@ -26,9 +26,9 @@ test.describe('Home page', () => {
   });
 
   test('displays motto cards', async ({ page }) => {
-    await expect(page.locator('text=Run by bowlers')).toBeVisible();
-    await expect(page.locator('text=Built on respect')).toBeVisible();
-    await expect(page.locator('text=Driven by competition')).toBeVisible();
+    await expect(page.getByText('Run by bowlers', { exact: true })).toBeVisible();
+    await expect(page.getByText('Built on respect', { exact: true })).toBeVisible();
+    await expect(page.getByText('Driven by competition', { exact: true })).toBeVisible();
   });
 
   test('quick links navigate to the correct pages', async ({ page }) => {

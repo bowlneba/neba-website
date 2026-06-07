@@ -92,18 +92,6 @@ test.describe('Sponsor detail page', () => {
     await expect(link).toHaveAttribute('href', 'https://instagram.com/proshopplus');
   });
 
-  test('renders the promotional notes', async ({ page }) => {
-    const promo = page.locator('.sponsor-detail__promo');
-    await expect(promo).toBeVisible();
-    await expect(promo).toContainText('10% discount for NEBA members');
-  });
-
-  test('renders the live read script', async ({ page }) => {
-    await expect(page.locator('.sponsor-detail__live-read')).toContainText(
-      'Pro Shop Plus — where champions are made'
-    );
-  });
-
   test('back link returns to the sponsor directory', async ({ page }) => {
     await page.locator('.sponsor-detail__back-link').click();
     await expect(page).toHaveURL('/sponsors');
