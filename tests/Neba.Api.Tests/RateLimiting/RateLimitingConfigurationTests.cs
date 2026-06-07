@@ -15,6 +15,53 @@ using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.RateLimiting;
 
+[UnitTest]
+[Component("Api.RateLimiting")]
+public sealed class RateLimitingConfigurationValidationTests
+{
+    [Fact(DisplayName = "AddRateLimiting throws when PermitLimit is zero or negative")]
+    public void AddRateLimiting_ShouldThrow_WhenPermitLimitIsNotPositive()
+    {
+        // Arrange
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["RateLimiting:PermitLimit"] = "0",
+                ["RateLimiting:WindowSeconds"] = "60",
+            })
+            .Build();
+        var services = new ServiceCollection();
+
+        // Act
+        var act = () => services.AddRateLimiting(config);
+
+        // Assert
+        act.ShouldThrow<InvalidOperationException>()
+            .Message.ShouldContain("PermitLimit");
+    }
+
+    [Fact(DisplayName = "AddRateLimiting throws when WindowSeconds is zero or negative")]
+    public void AddRateLimiting_ShouldThrow_WhenWindowSecondsIsNotPositive()
+    {
+        // Arrange
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["RateLimiting:PermitLimit"] = "10",
+                ["RateLimiting:WindowSeconds"] = "0",
+            })
+            .Build();
+        var services = new ServiceCollection();
+
+        // Act
+        var act = () => services.AddRateLimiting(config);
+
+        // Assert
+        act.ShouldThrow<InvalidOperationException>()
+            .Message.ShouldContain("WindowSeconds");
+    }
+}
+
 [IntegrationTest]
 [Component("Api.RateLimiting")]
 public sealed class RateLimitingConfigurationTests : IAsyncLifetime
