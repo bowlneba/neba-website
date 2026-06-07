@@ -6,9 +6,11 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 using Neba.Api.RateLimiting;
 using Neba.TestFactory.Attributes;
@@ -59,6 +61,35 @@ public sealed class RateLimitingConfigurationValidationTests
         // Assert
         act.ShouldThrow<InvalidOperationException>()
             .Message.ShouldContain("WindowSeconds");
+    }
+
+    [Fact(DisplayName = "AddRateLimiting configures ForwardedHeaders with XForwardedFor and RFC 1918 networks")]
+    public void AddRateLimiting_ShouldConfigureForwardedHeaders_WithRfc1918KnownNetworks()
+    {
+        // Arrange
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["RateLimiting:PermitLimit"] = "10",
+                ["RateLimiting:WindowSeconds"] = "60",
+            })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddRateLimiting(config);
+
+        // Act
+        var options = services.BuildServiceProvider()
+            .GetRequiredService<IOptions<ForwardedHeadersOptions>>()
+            .Value;
+
+        // Assert
+        options.ForwardedHeaders.ShouldBe(ForwardedHeaders.XForwardedFor);
+        options.KnownIPNetworks.ShouldContain(n =>
+            n.BaseAddress.Equals(IPAddress.Parse("10.0.0.0")) && n.PrefixLength == 8);
+        options.KnownIPNetworks.ShouldContain(n =>
+            n.BaseAddress.Equals(IPAddress.Parse("172.16.0.0")) && n.PrefixLength == 12);
+        options.KnownIPNetworks.ShouldContain(n =>
+            n.BaseAddress.Equals(IPAddress.Parse("192.168.0.0")) && n.PrefixLength == 16);
     }
 }
 
