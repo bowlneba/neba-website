@@ -6,7 +6,7 @@ namespace Neba.Api.Security.Domain;
 /// Application user class that extends IdentityUser with a strongly typed UserId as the primary key and an optional UsbcId property.
 /// </summary>
 public class ApplicationUser
-    : IdentityUser<UserId>
+    : IdentityUser<Ulid>
 {
     /// <summary>
     /// Gets or sets the optional UsbcId for this user.

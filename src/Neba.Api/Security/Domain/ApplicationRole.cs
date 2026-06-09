@@ -6,7 +6,7 @@ namespace Neba.Api.Security.Domain;
 /// Represents a role in the identity system
 /// </summary>
 public class ApplicationRole
-    : IdentityRole<RoleId>
+    : IdentityRole<Ulid>
 {
     /// <summary>
     /// Initializes a new instance of <see cref="ApplicationRole"/>.

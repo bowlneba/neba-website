@@ -7,11 +7,11 @@ public static class ApplicationRoleFactory
     public const string ValidName = "Admin";
 
     public static ApplicationRole Create(
-        RoleId? id = null,
+        Ulid? id = null,
         string? name = null)
         => new(name ?? ValidName)
         {
-            Id = id ?? RoleId.New()
+            Id = id ?? Ulid.NewUlid()
         };
 
     public static IReadOnlyCollection<ApplicationRole> Bogus(int count, int? seed = null)
@@ -19,7 +19,7 @@ public static class ApplicationRoleFactory
         var faker = new Faker<ApplicationRole>()
             .CustomInstantiator(f => new ApplicationRole(f.Random.Word())
             {
-                Id = new RoleId(Ulid.BogusString(f))
+                Id = new Ulid(f.Random.Guid())
             });
 
         if (seed.HasValue)

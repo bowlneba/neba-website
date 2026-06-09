@@ -8,13 +8,13 @@ public static class ApplicationUserFactory
     public const string ValidEmail = "testuser@bowlneba.com";
 
     public static ApplicationUser Create(
-        UserId? id = null,
+        Ulid? id = null,
         string? userName = null,
         string? email = null,
         string? usbcId = null)
         => new()
         {
-            Id = id ?? UserId.New(),
+            Id = id ?? Ulid.NewUlid(),
             UserName = userName ?? ValidUserName,
             Email = email ?? ValidEmail,
             UsbcId = usbcId
@@ -28,7 +28,7 @@ public static class ApplicationUserFactory
                 var email = f.Internet.Email();
                 return new ApplicationUser
                 {
-                    Id = new UserId(Ulid.BogusString(f)),
+                    Id =new Ulid(f.Random.Guid()),
                     UserName = email,
                     Email = email,
                     UsbcId = f.Random.Bool() ? $"{f.Random.Int(10, 9999)}-{f.Random.Int(1000, 99999)}" : null
