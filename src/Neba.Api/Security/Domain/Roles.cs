@@ -13,7 +13,7 @@ public static class Roles
     /// <summary>
     /// Webmaster role with access to website management features.
     /// </summary>
-    public const string Webmaster =  nameof(Webmaster);
+    public const string Webmaster = nameof(Webmaster);
 
     /// <summary>
     /// Member role with access to standard user features.

@@ -31,7 +31,7 @@ public static class ApplicationUserFactory
                     Id = new UserId(Ulid.BogusString(f)),
                     UserName = email,
                     Email = email,
-                    UsbcId = f.Random.Bool() ? $"{f.Random.Int(10,9999)}-{f.Random.Int(1000, 99999)}" : null
+                    UsbcId = f.Random.Bool() ? $"{f.Random.Int(10, 9999)}-{f.Random.Int(1000, 99999)}" : null
                 };
             });
 
