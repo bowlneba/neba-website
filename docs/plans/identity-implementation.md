@@ -9,8 +9,8 @@ Identity lives in `Neba.Api` under a top-level `Security/` folder — a sibling 
 - Consistent with the existing architecture where the Website is already a thin consumer of the API
 - External providers (Google, Facebook) and 2FA can be added to the API independently of the Blazor UI
 
-**Day 1 scope:** email + password, passkeys (.NET 10 built-in), Admin role, admin-created accounts only.  
-**Future scope:** Google/Facebook/Microsoft OAuth (Phase 6), 2FA/TOTP (Phase 7), member self-registration with USBC ID linking (Phase 8).
+**Day 1 scope:** email + password, Admin role, admin-created accounts only.  
+**Future scope:** Passkeys/WebAuthn (Phase 6), Google/Facebook/Microsoft OAuth (Phase 7), 2FA/TOTP (Phase 8), member self-registration with USBC ID linking (Phase 9).
 
 ---
 
@@ -266,7 +266,23 @@ internal sealed class SecurityDbContextDesignTimeFactory : IDesignTimeDbContextF
 }
 ```
 
-### 1.7 SecurityConfiguration.cs
+### 1.7 JwtSettings
+
+```csharp
+// Security/JwtSettings.cs
+namespace Neba.Api.Security;
+
+internal sealed record JwtSettings
+{
+    public string Issuer                   { get; init; } = string.Empty;
+    public string Audience                 { get; init; } = string.Empty;
+    public string SigningKey               { get; init; } = string.Empty;
+    public int    AccessTokenExpiryMinutes { get; init; } = 15;
+    public int    RefreshTokenExpiryDays   { get; init; } = 7;
+}
+```
+
+### 1.8 SecurityConfiguration.cs
 
 Registers Identity, JWT bearer auth, SecurityDbContext, and seeds roles + initial admin on startup.
 
@@ -302,8 +318,7 @@ internal static class SecurityConfiguration
                     options.User.RequireUniqueEmail = true;
                 })
                 .AddEntityFrameworkStores<SecurityDbContext>()
-                .AddDefaultTokenProviders()
-                .AddPasskeys(); // .NET 10 built-in passkey support
+                .AddDefaultTokenProviders();
 
             var jwtSettings = builder.Configuration
                 .GetSection("JwtSettings")
@@ -352,7 +367,7 @@ internal static class SecurityConfiguration
 }
 ```
 
-### 1.8 Migration commands
+### 1.9 Migration commands
 
 ```bash
 # Add initial security migration
@@ -366,7 +381,7 @@ dotnet ef migrations add Security_Init \
 dotnet ef database update --context SecurityDbContext --project src/Neba.Api
 ```
 
-### 1.9 Email sender (MailKit + Google Workspace SMTP)
+### 1.10 Email sender (MailKit + Google Workspace SMTP)
 
 **MailKit** is the de facto standard for SMTP in .NET — Microsoft deprecated `System.Net.Mail.SmtpClient` and points users to MailKit in their own docs. It occupies the same "obvious choice" position that FluentValidation holds for validation.
 
@@ -687,9 +702,10 @@ Internal DTOs (e.g., `LoginDto`, `UserDto`) live in the operation folder inside 
 | `POST` | `/security/password/reset` | Anonymous + reset token | Phase 3 |
 | `POST` | `/security/email/confirm` | Anonymous + confirm token | Phase 3 |
 | `POST` | `/security/email/resend` | Anonymous | Phase 3 |
-| `POST` | `/security/passkeys/options` | Anonymous | ✓ (.NET 10) |
-| `POST` | `/security/passkeys/register` | Authenticated | ✓ (.NET 10) |
-| `POST` | `/security/passkeys/login` | Anonymous | ✓ (.NET 10) |
+| `POST` | `/security/passkeys/creation-options` | Authenticated | Phase 6 |
+| `POST` | `/security/passkeys/register` | Authenticated | Phase 6 |
+| `POST` | `/security/passkeys/request-options` | Anonymous | Phase 6 |
+| `POST` | `/security/passkeys/login` | Anonymous | Phase 6 |
 
 ### JWT access token claims
 
@@ -922,19 +938,30 @@ Pages with dual read-only / interactive views use `AuthorizeView`:
 
 - Display email, roles
 - Show USBC ID if linked; provide a form to submit a USBC ID for linking (calls API `PUT /security/me/usbc-id`)
-- Passkey management section (Day 1 — list registered passkeys, add/remove)
+- Passkey management section — Phase 6
 
 ---
 
 ## Future Phases
 
-### Phase 6: External Login Providers
+### Phase 6: Passkeys / WebAuthn
+
+Passkeys are built into ASP.NET Core Identity — no extra NuGet package. The implementation does **not** use the CQRS command/handler pattern; endpoints call `SignInManager`/`UserManager` methods directly and pass raw WebAuthn JSON strings.
+
+- `Configure<IdentityPasskeyOptions>` in `SecurityConfiguration` — set `ServerDomain = "bowlneba.com"` explicitly (inferring from Host header is a credential-scoping attack vector)
+- Four endpoints under `Security/Passkeys/`: `creation-options` (auth), `register` (auth), `request-options` (anon), `login` (anon)
+- Each Blazor passkey page needs a `.razor.js` companion for `navigator.credentials.create()` / `navigator.credentials.get()` — see the Blazor Web App template's `PasskeySubmit.razor.js` as the reference
+- Passkey info is stored in the Identity tables in the `security` schema — no new migration
+- Limitations: no default attestation validation; passkeys are a primary factor only (no 2FA)
+- Add `Manage/Passkeys.razor` + `Manage/RenamePasskey.razor` under `Account/Pages/Manage/` for passkey management
+
+### Phase 7: External Login Providers
 
 - `AddGoogle()`, `AddFacebook()`, `AddMicrosoftAccount()` on Identity builder
 - `Account/Pages/ExternalLogin.razor` — handles callback, creates/links `ApplicationUser`
 - `Account/Pages/Manage/ExternalLogins.razor` — manage linked providers
 
-### Phase 7: 2FA / TOTP
+### Phase 8: 2FA / TOTP
 
 - `AddTwoFactorTokenProvider<T>()` on Identity builder
 - `Account/Pages/LoginWith2fa.razor`
@@ -942,7 +969,7 @@ Pages with dual read-only / interactive views use `AuthorizeView`:
 - `Account/Pages/Manage/EnableAuthenticator.razor`
 - `Account/Pages/Manage/GenerateRecoveryCodes.razor`
 
-### Phase 8: Member Self-Registration + USBC ID Linking
+### Phase 9: Member Self-Registration + USBC ID Linking
 
 - Enable `RequireConfirmedEmail` (requires email sender — add `IEmailSender<ApplicationUser>` backed by SendGrid or Azure Communication Services)
 - Open `POST /security/register` to anonymous callers
@@ -991,7 +1018,7 @@ Pages with dual read-only / interactive views use `AuthorizeView`:
 ## Day 1 Checklist
 
 - [ ] **Phase 1** — `ApplicationUser`, `ApplicationRole`, `Roles`, `SecurityDbContext`, `SecurityDbContextDesignTimeFactory`, `SecurityConfiguration` wired into `Program.cs`, initial migration, roles + admin seed; `GoogleWorkspaceEmailSender` registered (1.9)
-- [ ] **Phase 2** — full CQRS stack (Command/CommandHandler/Dto or Query/QueryHandler/Dto) for `Login`, `Register`, `Refresh`, `Logout`, `Me`, `ChangePassword`; passkey endpoints (`.NET 10`)
+- [ ] **Phase 2** — full CQRS stack (Command/CommandHandler/Dto or Query/QueryHandler/Dto) for `Login`, `Register`, `Refresh`, `Logout`, `Me`, `ChangePassword`
 - [ ] **Contracts** — `Neba.Api.Contracts/Security/` with `ISecurityApi` + per-operation request/response types in subfolders
 - [ ] **Phase 3** — `AccountConfiguration`, `Login.razor`, `Register.razor`, `Manage/Index.razor`, `BearerTokenHandler`, `Routes.razor` updated to `AuthorizeRouteView`; `ISecurityApi` registered in `ApiServicesConfiguration`
 - [ ] **Phase 4** — all existing endpoints annotated with `AllowAnonymous()` or `Roles()`; `UseSecurityInfrastructure()` in `Program.cs`

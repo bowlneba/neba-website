@@ -6,6 +6,7 @@ using FastEndpoints;
 using Neba.Api;
 using Neba.Api.ErrorHandling;
 using Neba.Api.OpenApi;
+using Neba.Api.Security;
 using Neba.Api.Versioning;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,7 +29,9 @@ builder.Services
     .AddDomain()
     .AddApplication();
 
-builder.AddInfrastructure();
+builder
+    .AddInfrastructure()
+    .AddSecurity();
 
 var app = builder.Build();
 
@@ -37,6 +40,8 @@ app.UseExceptionHandler();
 
 app.UseForwardedHeaders();
 app.UseRateLimiter();
+
+app.UseSecurityInfrastructure();
 
 app.UseFastEndpoints(config =>
 {

@@ -28,7 +28,7 @@ public static class ApplicationUserFactory
                 var email = f.Internet.Email();
                 return new ApplicationUser
                 {
-                    Id =new Ulid(f.Random.Guid()),
+                    Id = new Ulid(f.Random.Guid()),
                     UserName = email,
                     Email = email,
                     UsbcId = f.Random.Bool() ? $"{f.Random.Int(10, 9999)}-{f.Random.Int(1000, 99999)}" : null
