@@ -25,12 +25,14 @@
   <NuGetReference>HtmlAgilityPack</NuGetReference>
   <NuGetReference>Google.Apis.Sheets.v4</NuGetReference>
   <NuGetReference>Google.Apis.Auth</NuGetReference>
+  <NuGetReference>Microsoft.AspNetCore.Identity</NuGetReference>
   <Namespace>Ardalis.SmartEnum</Namespace>
   <Namespace>Google.Apis.Auth.OAuth2</Namespace>
   <Namespace>Google.Apis.Services</Namespace>
   <Namespace>Google.Apis.Sheets.v4</Namespace>
   <Namespace>Google.Apis.Sheets.v4.Data</Namespace>
   <Namespace>HtmlAgilityPack</Namespace>
+  <Namespace>Microsoft.AspNetCore.Identity</Namespace>
   <Namespace>Microsoft.Data.SqlClient</Namespace>
   <Namespace>NameParser</Namespace>
   <Namespace>System.Globalization</Namespace>
@@ -42,6 +44,79 @@
 </Query>
 
 async Task Main()
+{
+	await SecurityMigration();
+	//await ApplicationMigration();
+	
+	"Migration Complete".Dump();
+}
+
+public async Task SecurityMigration()
+{
+	AspNetRoleClaims.RemoveRange(AspNetRoleClaims);
+	AspNetUserClaims.RemoveRange(AspNetUserClaims);
+	AspNetUserLogins.RemoveRange(AspNetUserLogins);
+	AspNetUserRoles.RemoveRange(AspNetUserRoles);
+	
+	AspNetRoles.RemoveRange(AspNetRoles);
+	AspNetUserTokens.RemoveRange(AspNetUserTokens);
+	AspNetUsers.RemoveRange(AspNetUsers);
+	
+	await SaveChangesAsync();
+
+	var adminRole = new AspNetRoles
+	{
+		Id = Ulid.NewUlid().ToString(),
+		Name = "Admin",
+		NormalizedName = "ADMIN",
+		ConcurrencyStamp = "de5b5abb-3385-4213-9846-d9740a94aeb5"
+	};
+
+	var webmasterRole = new AspNetRoles
+	{
+		Id = Ulid.NewUlid().ToString(),
+		Name = "Webmaster",
+		NormalizedName = "WEBMASTER",
+		ConcurrencyStamp = "8313d897-8063-4fed-b54f-3e9ca2083e76"
+	};
+
+	var memberRole = new AspNetRoles
+	{
+		Id = Ulid.NewUlid().ToString(),
+		Name = "Member",
+		NormalizedName = "MEMBER",
+		ConcurrencyStamp = "04b970f3-a2cf-44b1-bae4-3570ae290d29"
+	};
+	
+	AspNetRoles.AddRange(adminRole, webmasterRole, memberRole);
+
+	var hasher = new PasswordHasher<AspNetUsers>();
+	var adminUser = new AspNetUsers
+	{
+		Id = Ulid.NewUlid().ToString(),
+		UserName = "tech@bowlneba.com",
+		NormalizedUserName = "TECH@BOWLNEBA.COM",
+		Email = "tech@bowlneba.com",
+		NormalizedEmail = "TECH@BOWLNEBA.COM",
+		EmailConfirmed = true,
+		SecurityStamp = Guid.NewGuid().ToString(),
+		ConcurrencyStamp = Guid.NewGuid().ToString()
+	};
+	
+	adminUser.PasswordHash = hasher.HashPassword(adminUser, Util.GetPassword("bowlneba.nebatech.adminpassword"));
+	
+	AspNetUsers.Add(adminUser);
+
+	AspNetUserRoles.Add(new AspNetUserRoles
+	{
+		UserId = adminUser.Id,
+		RoleId = adminRole.Id
+	});
+	
+	await SaveChangesAsync();
+}
+
+public async Task ApplicationMigration()
 {
 	//BowlingCenters.RemoveRange(BowlingCenters);
 	TournamentChampions.RemoveRange(TournamentChampions);
@@ -63,7 +138,7 @@ async Task Main()
 	Articles.RemoveRange(Articles);
 	ArticleAttachments.RemoveRange(ArticleAttachments);
 	SaveChanges();
-	
+
 	//Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowling_centers RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowlers RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.hall_of_fame_inductions RESTART IDENTITY CASCADE;");
@@ -80,20 +155,20 @@ async Task Main()
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.articles RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.article_attachments RESTART IDENTITY CASCADE;");
 	SaveChanges();
-	
+
 	//await MigrateBowlingCentersAsync();
 	var bowlingCenterIds = BowlingCenters.ToList().Select(b => (b.Id, b.CertificationNumber, b.LegacyId, b.WebsiteId)).ToList().AsReadOnly();
-	
+
 	var bowlerIds = await MigrateBowlersAsync();
-	
+
 	var bowlerDomainIdBySoftwareId = bowlerIds.Where(i => i.softwareId.HasValue).ToDictionary(i => i.softwareId!.Value, i => i.bowlerId);
 	await MigrateHallOfFameAsync(bowlerDomainIdBySoftwareId);
-	
+
 	await GenerateSeasonsAsync();
-	
+
 	var seasonIdByEndYear = Seasons.ToDictionary(s => s.EndDate.Year, s => s.Id);
 	var seasonDomainIdByEndYear = Seasons.ToDictionary(s => s.EndDate.Year, s => s.DomainId);
-	
+
 	var bowlerDomainIdByWebsiteName = bowlerIds.Where(b => b.websiteName is not null).ToDictionary(b => b.websiteName!, b => b.bowlerId);
 	var bowlerDomainIdBySoftwareName = bowlerIds.Where(b => b.softwareName is not null).ToDictionary(b => b.softwareName!, b => b.bowlerId);
 
@@ -101,38 +176,36 @@ async Task Main()
 		seasonIdByEndYear,
 		bowlerDomainIdByWebsiteName,
 		bowlerDomainIdBySoftwareName);
-		
+
 	await MigrateHighAverageAsync(
 		seasonIdByEndYear,
 		bowlerDomainIdByWebsiteName,
 		bowlerDomainIdBySoftwareName);
-		
+
 	await MigrateBowlerOfTheYears(
 		seasonIdByEndYear,
 		bowlerDomainIdByWebsiteName,
 		bowlerDomainIdBySoftwareName);
-	
+
 	await MigrateSponsorsAsync();
-	
+
 	await MigrateBowlerSeasonStatsAsync(bowlerDomainIdBySoftwareId);
-	
+
 	var spreadsheetTournaments = await MigrateTournamentsAsync(seasonDomainIdByEndYear);
-	
+
 	await MigrateSideCuts();
-	
+
 	var tournamentDbIdByDomainId = Tournaments.ToDictionary(tournament => Ulid.Parse(tournament.DomainId), tournament => tournament.Id);
 	var bowlerDbIdByWebsiteId = Bowlers.Where(bowler => bowler.WebsiteId.HasValue).ToDictionary(bowler => bowler.WebsiteId!.Value, bowler => bowler.Id);
-	
+
 	await MigrateHistoricalTournamentChampions(bowlerDbIdByWebsiteId, spreadsheetTournaments, tournamentDbIdByDomainId);
 	await MigrateHistoricalTournamentEntries(spreadsheetTournaments, tournamentDbIdByDomainId);
-	
+
 	var bowlerDbIdBySoftwareId = bowlerIds.Where(b => b.softwareId.HasValue).ToDictionary(b => b.softwareId!.Value, b => b.id);
 	var tournamentDbIdBySoftwareId = Tournaments.Where(t => t.LegacyId.HasValue).ToDictionary(t => t.LegacyId!.Value, t => t.Id);
 	await MigrateHistoricalTournamentResults(tournamentDbIdBySoftwareId, bowlerDbIdBySoftwareId);
-	
+
 	await MigrateOilPatterns();
-	
-	"Migration Complete".Dump();
 }
 
 // You can define other methods, fields, classes and namespaces here
