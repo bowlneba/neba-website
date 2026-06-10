@@ -285,3 +285,13 @@ Two patterns that break Razor's lexer even inside `@code { }` blocks:
 3. **Component attribute values always need `@` for C# expressions** — `Foo="fieldName"` passes the literal string `"fieldName"`, not the field's value. Always write `Foo="@fieldName"` for fields/properties, `Foo="@(expr)"` for expressions with operators (e.g. null-forgiving `!`, null-coalescing `??`).
 
 4. **Blazor parameters use `[EditorRequired]` not C# `required`** — the `required` keyword on Blazor `[Parameter]` properties causes compile errors (CS0246/CS7014). Always use `[Parameter, EditorRequired]` with a default initializer (`= default!;`, `= string.Empty;`, `= [];`).
+
+### Page Titles (`<PageTitle>`)
+
+Every routable page must have a `<PageTitle>` component. Sub-components (cards, modals, skeletons) do not.
+
+**Format**: `{Page Name} - NEBA` (dash separator, NEBA suffix). For dynamic detail pages: `@model.Name - NEBA`.
+
+**`<HeadOutlet>` must use `@rendermode="InteractiveServer"`** in `App.razor` — without it, Safari does not update the tab title on client-side navigation (Chrome is more lenient). Static render mode means `<PageTitle>` updates never reach the browser's `document.title` in Safari.
+
+**Every routable page must also declare `@rendermode InteractiveServer`** — if a page is static SSR (no `@rendermode`), the interactive `HeadOutlet` circuit boots with no `<PageTitle>` registered and clears the title (visible as a flash then blank tab). Pages with no async data loading use `@rendermode InteractiveServer` (prerender: true default); data-loading pages use `@rendermode @(new InteractiveServerRenderMode(prerender: false))` to avoid a flash of empty content.
