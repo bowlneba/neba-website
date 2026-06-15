@@ -403,27 +403,23 @@ In Clean Architecture terms the interface is Application, the implementation is 
 
 #### Google Workspace admin setup (one-time, before first deploy)
 
-**1. Create the `noreply@bowlneba.com` mailbox**
+**1. `noreply@bowlneba.com` — Google Group (done)**
 
-Create it as a real mailbox — not a dead address. Receiving servers and bounce processors expect to be able to deliver to the envelope sender. A vanished address causes bounces to disappear silently.
+`noreply@bowlneba.com` is a Google Group with `tech@bowlneba.com` as its only member. Groups cannot authenticate with SMTP, so `tech@bowlneba.com` is the SMTP auth account. The `From:` header still shows `noreply@bowlneba.com` — outbound mail authenticates as `tech@bowlneba.com` but is displayed as coming from `noreply@bowlneba.com`. Receiving servers care about the authenticated sending domain (`bowlneba.com`), not the authenticated user, so DKIM/SPF/DMARC remain unaffected.
 
-- Google Admin Console → Directory → Users → Add user → `noreply@bowlneba.com`
-- Alternatively, create a Google Group at `noreply@bowlneba.com` with "Message moderation: Reject" — this satisfies delivery expectations while discarding all inbound.
-- If using a mailbox, add a Gmail filter: matches `to:noreply@bowlneba.com` → Delete it. This keeps the mailbox from filling up.
+Any inbound delivery to `noreply@bowlneba.com` lands in `tech@bowlneba.com`'s inbox via group membership. Add a Gmail filter on `tech@bowlneba.com`: matches `to:noreply@bowlneba.com` → Skip Inbox + Delete. This silences the noise without losing bounces before they're inspected.
 
-**2. Generate an app password**
+**2. Generate an app password on `tech@bowlneba.com`**
 
-- Sign in to `noreply@bowlneba.com` at `myaccount.google.com`
-- Security → 2-Step Verification → enable it
+- Sign in to `tech@bowlneba.com` at `myaccount.google.com`
+- Security → 2-Step Verification → enable it (if not already enabled)
 - Security → App passwords → name it "BowlNeba API" → copy the 16-character password
 - Store in Azure Key Vault as `EmailSettings--AppPassword`
+- `EmailSettings--UserName` is `tech@bowlneba.com` (the SMTP auth account); `EmailSettings--FromAddress` is `noreply@bowlneba.com` (the display address)
 
-**3. Enable DKIM signing (Google Admin Console)**
+#### 3. DKIM signing — already configured
 
-- Apps → Google Workspace → Gmail → Authenticate email
-- Select `bowlneba.com` → Generate new record (2048-bit)
-- Copy the TXT record value — you'll add it to DNS in the next step
-- After DNS propagates, return here and click "Start authentication"
+DKIM is already enabled for `bowlneba.com` (confirmed working via `info@bowlneba.com`). No action needed.
 
 #### DNS records (bowlneba.com — add at your registrar)
 
@@ -433,7 +429,7 @@ These three records are what receiving servers (Gmail, Outlook, etc.) check befo
 |------|------|-------|
 | `@` | TXT | `v=spf1 include:_spf.google.com ~all` — authorizes Google's mail servers to send for your domain. Google Workspace may have already added this when you verified the domain; confirm it exists. |
 | `google._domainkey` | TXT | The value generated in the DKIM step above. |
-| `_dmarc` | TXT | `v=DMARC1; p=quarantine; rua=mailto:admin@bowlneba.com` — `p=quarantine` sends failing mail to spam rather than rejecting outright; `rua` sends aggregate reports so you can see what's happening. Tighten to `p=reject` once you've confirmed all legitimate senders are covered by SPF/DKIM. |
+| `_dmarc` | TXT | `v=DMARC1; p=quarantine; rua=mailto:tech@bowlneba.com` — `p=quarantine` sends failing mail to spam rather than rejecting outright; `rua` sends aggregate reports so you can see what's happening. Tighten to `p=reject` once you've confirmed all legitimate senders are covered by SPF/DKIM. |
 
 > **Note:** SPF covers the sending IP (Google's servers); DKIM covers the message content signature. DMARC ties them together. All three must pass for reliable inbox delivery to strict domains.
 
@@ -478,9 +474,9 @@ internal sealed class EmailSettings
 {
     public string Host           { get; init; } = "smtp.gmail.com";
     public int    Port           { get; init; } = 587;
-    public string UserName       { get; init; } = string.Empty; // e.g. noreply@bowlneba.com
-    public string AppPassword    { get; init; } = string.Empty; // Google Workspace app password
-    public string FromAddress    { get; init; } = string.Empty;
+    public string UserName       { get; init; } = string.Empty; // SMTP auth account: tech@bowlneba.com
+    public string AppPassword    { get; init; } = string.Empty; // app password for tech@bowlneba.com
+    public string FromAddress    { get; init; } = string.Empty; // display from: noreply@bowlneba.com
     public string FromName       { get; init; } = "BowlNeba";
     // Default reply-to for all outbound mail. Bounces and replies from users who hit
     // "Reply" will route here instead of the dead noreply inbox.
@@ -585,9 +581,9 @@ builder.Services
 
 | Secret | Purpose |
 |--------|---------|
-| `EmailSettings--UserName` | Google Workspace sending address (`noreply@bowlneba.com`) |
-| `EmailSettings--AppPassword` | Google Workspace app password (16-char, generated per mailbox) |
-| `EmailSettings--FromAddress` | Display from address (matches `UserName`) |
+| `EmailSettings--UserName` | SMTP auth account: `tech@bowlneba.com` |
+| `EmailSettings--AppPassword` | App password generated on `tech@bowlneba.com` (16-char) |
+| `EmailSettings--FromAddress` | Display from address: `noreply@bowlneba.com` (the Google Group) |
 | `EmailSettings--ReplyToAddress` | Address user replies route to (`support@bowlneba.com`) |
 
 #### User secrets (local dev, Neba.Api)
