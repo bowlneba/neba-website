@@ -1,3 +1,5 @@
+using MailKit.Security;
+
 namespace Neba.Api.Email;
 
 internal sealed class EmailSettings
@@ -19,4 +21,6 @@ internal sealed class EmailSettings
     public string ReplyToAddress { get; init; } = string.Empty;
 
     public string ReplyToName { get; init; } = "BowlNEBA Support";
+
+    public SecureSocketOptions TlsMode { get; init; } = SecureSocketOptions.StartTls;
 }

@@ -9,6 +9,7 @@
       <PackageReference Include="Microsoft.EntityFrameworkCore" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
       <PackageReference Include="Respawn" />
+      <PackageReference Include="Testcontainers" />
       <PackageReference Include="Testcontainers.Azurite" />
       <PackageReference Include="Testcontainers.PostgreSql" />
     </ItemGroup>
