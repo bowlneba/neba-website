@@ -12,7 +12,6 @@ namespace Neba.Api.Tests.Email;
 
 [IntegrationTest]
 [Component("Email")]
-[Collection<MailpitFixture>]
 public sealed class GoogleWorkspaceEmailSenderTests : IClassFixture<MailpitFixture>
 {
     private readonly MailpitFixture _fixture;
