@@ -7,6 +7,7 @@ namespace Neba.Api.Email;
 internal sealed class GoogleWorkspaceEmailSender(
     EmailSettings emailSettings,
     ILogger<GoogleWorkspaceEmailSender> logger)
+        : IEmailSender
 {
     private readonly EmailSettings _settings = emailSettings;
 
