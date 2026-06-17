@@ -300,9 +300,18 @@ Every routable page must have a `<PageTitle>` component. Sub-components (cards, 
 
 - Each email is an `internal sealed class` in `{Feature}/Emails/{Name}Email.cs` — primary constructor takes email-specific values, exposes `ToHtmlBody()`.
 - `EmailLayout.Wrap(innerHtml)` in `Neba.Api.Email` provides the branded chrome: NEBA blue (`#1a3a6e`) header with logo, white content area, and gray footer.
-- The NEBA logo is an embedded resource at `Email/Resources/neba-logo.png` in `Neba.Api` — loaded once via `Lazy<string>` from `Assembly.GetManifestResourceStream("Neba.Api.Email.Resources.neba-logo.png")`.
+- The NEBA logo is served as a hosted URL (`https://bowlneba.com/images/neba-logo.png`) — **never use base64-embedded images** in email. Gmail Desktop/iOS/Android and many other clients have zero support for base64 images and strip them entirely. The `Email/Resources/neba-logo.png` embedded resource is no longer used.
 - **Use inline styles only** — Gmail strips `<style>` blocks, so all styles must be on the elements themselves.
 - **Always `WebUtility.HtmlEncode` user-supplied values** (links, codes) before embedding them in `href` attributes and visible text — prevents broken HTML when the value contains `&`, and guards against injection.
 - Brand constants: header/button bg `#1a3a6e`, body text `#444`, muted/footer `#999`, page bg `#e8e8e8`.
 - **Adding a new email**: create `{Feature}/Emails/{Name}Email.cs`, take constructor params, call `EmailLayout.Wrap(...)` in `ToHtmlBody()`. No infrastructure changes needed.
 - **Mock-verification tests** (`IdentityEmailSenderAdapterTests`): always add `.Verifiable()` to the `Setup` and call `_sender.VerifyAll()` in the Assert block — the SonarAnalyzer (S2699) requires at least one explicit assertion per test.
+
+#### Email HTML Compatibility Rules (from caniemail.com audit)
+
+- **Use `<table>` for layout, not `<div>`** — `max-width` and `margin:0 auto` centering on `<div>` elements don't work in Outlook Windows. Use nested `<table role="presentation">` with `width` attribute and `align="center"` on the outer `<td>` instead.
+- **Never use `overflow:hidden`** — only 54% email client support. For rounded corners on the outer container, accept that corners will be square in most clients (cosmetic only).
+- **Logo image must be `display:block;margin:0 auto`** — `display:inline-block` has only 57% support (Outlook Windows doesn't support it except `display:none`). `display:block` is safe; centering within a `text-align:center` cell works everywhere.
+- **`border-radius` is cosmetic only** — 64% support; buttons and boxes lose rounded corners in Outlook Windows and others. Acceptable degradation.
+- **`<body>` has only 40% full support** — 34% of clients strip it entirely (Outlook Windows, Apple Mail, Samsung Email); another 26% replace it with a `<div>`. Any styles on `<body>` (background color, font-family) must be duplicated on the outer `<table>` as a fallback. Background color AND font-family both need to be on the outer table, not just the body.
+- **`text-align:center`** is safe; avoid flow-relative values (`start`, `end`) which have ~38% less support.
