@@ -23,6 +23,8 @@ internal sealed class DebugToastService : IDisposable
     public void Dismiss()
     {
         _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = null;
         Current = null;
         NotifyChange();
     }
