@@ -84,5 +84,13 @@ if (builder.ExecutionContext.IsPublishMode)
     web
         .WithReference(appInsights);
 }
+else
+{
+    var mailpit = builder.AddMailPit("mailpit");
+
+    api
+        .WithReference(mailpit)
+        .WaitFor(mailpit);
+}
 
 await builder.Build().RunAsync();
