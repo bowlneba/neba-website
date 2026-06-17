@@ -22,5 +22,5 @@ internal sealed class EmailSettings
 
     public string ReplyToName { get; init; } = "BowlNEBA Support";
 
-    public SecureSocketOptions TlsMode { get; init; } = SecureSocketOptions.StartTls;
+    public SecureSocketOptions TlsMode { get; set; } = SecureSocketOptions.StartTls;
 }

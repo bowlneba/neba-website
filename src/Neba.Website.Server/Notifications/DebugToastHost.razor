@@ -1,0 +1,22 @@
+@implements IDisposable
+
+@inject DebugToastService ToastService
+
+@if (ToastService.Current is not null)
+{
+    <NebaToast Title="@ToastService.Current.Title"
+               Message="@ToastService.Current.Message"
+               Severity="@ToastService.Current.Severity"
+               OnDismiss="ToastService.Dismiss" />
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        ToastService.OnChange += HandleStateChange;
+    }
+
+    private void HandleStateChange() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => ToastService.OnChange -= HandleStateChange;
+}

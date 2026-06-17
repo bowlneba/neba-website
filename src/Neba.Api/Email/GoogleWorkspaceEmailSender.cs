@@ -31,7 +31,8 @@ internal sealed class GoogleWorkspaceEmailSender(
 
         using var client = new SmtpClient();
         await client.ConnectAsync(_settings.Host, _settings.Port, _settings.TlsMode, cancellationToken);
-        await client.AuthenticateAsync(_settings.UserName, _settings.AppPassword, cancellationToken);
+        if (!string.IsNullOrEmpty(_settings.UserName))
+            await client.AuthenticateAsync(_settings.UserName, _settings.AppPassword, cancellationToken);
         await client.SendAsync(mimeMessage, cancellationToken);
         await client.DisconnectAsync(quit: true, cancellationToken);
 

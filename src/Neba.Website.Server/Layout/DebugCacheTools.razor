@@ -1,25 +1,16 @@
-@implements IDisposable
-
 @inject Neba.Website.Server.Services.NebaApiConfiguration ApiConfiguration
 @inject IHttpClientFactory HttpClientFactory
+@inject Neba.Website.Server.Notifications.DebugToastService ToastService
 
 @if (IsDebugBuild)
 {
     <div class="debug-banner-actions">
         <button class="debug-banner-link" @onclick="ClearApiCacheAsync" type="button">Clear API Cache</button>
+        <button class="debug-banner-link" @onclick="SendTestEmailAsync" type="button">Send Test Email</button>
     </div>
-
-    @if (_debugToast is not null)
-    {
-        <NebaToast Title="@_debugToast.Title" Message="@_debugToast.Message" Severity="@_debugToast.Severity"
-                   OnDismiss="DismissToast" />
-    }
 }
 
 @code {
-    private ToastNotification? _debugToast;
-    private CancellationTokenSource? _toastLifetimeCts;
-
     private static bool IsDebugBuild
     {
         get
@@ -35,9 +26,7 @@
     private async Task ClearApiCacheAsync()
     {
         if (!IsDebugBuild)
-        {
             return;
-        }
 
         try
         {
@@ -47,54 +36,46 @@
             if (response.IsSuccessStatusCode)
             {
                 var message = await response.Content.ReadAsStringAsync();
-                ShowToast("API Cache Cleared", string.IsNullOrWhiteSpace(message) ? "Cache was cleared." : message,
-NotifySeverity.Success);
+                ToastService.Show("API Cache Cleared",
+                    string.IsNullOrWhiteSpace(message) ? "Cache was cleared." : message,
+                    NotifySeverity.Success);
             }
             else
             {
-                ShowToast("Cache Clear Failed", $"API returned {(int)response.StatusCode}.", NotifySeverity.Error);
+                ToastService.Show("Cache Clear Failed", $"API returned {(int)response.StatusCode}.", NotifySeverity.Error);
             }
         }
         catch (Exception ex)
         {
-            ShowToast("Cache Clear Failed", ex.Message, NotifySeverity.Error);
+            ToastService.Show("Cache Clear Failed", ex.Message, NotifySeverity.Error);
         }
     }
 
-    private void ShowToast(string title, string message, NotifySeverity severity)
+    private async Task SendTestEmailAsync()
     {
-        _toastLifetimeCts?.Cancel();
-        _toastLifetimeCts?.Dispose();
-        _toastLifetimeCts = new CancellationTokenSource();
+        if (!IsDebugBuild)
+            return;
 
-        _debugToast = new ToastNotification(title, message, severity);
-
-        _ = AutoDismissToastAsync(_toastLifetimeCts.Token);
-    }
-
-    private async Task AutoDismissToastAsync(CancellationToken cancellationToken)
-    {
         try
         {
-            await Task.Delay(TimeSpan.FromSeconds(4), cancellationToken);
-            _debugToast = null;
-            await InvokeAsync(StateHasChanged);
+            using var client = HttpClientFactory.CreateClient();
+            using var response = await client.GetAsync(new Uri(ApiConfiguration.BaseUrl, "/debug/email"));
+
+            if (response.IsSuccessStatusCode)
+            {
+                var message = await response.Content.ReadAsStringAsync();
+                ToastService.Show("Test Email Sent",
+                    string.IsNullOrWhiteSpace(message) ? "Email was sent." : message,
+                    NotifySeverity.Success);
+            }
+            else
+            {
+                ToastService.Show("Test Email Failed", $"API returned {(int)response.StatusCode}.", NotifySeverity.Error);
+            }
         }
-        catch (OperationCanceledException)
+        catch (Exception ex)
         {
-            // Ignored because a newer toast replaced the current one.
+            ToastService.Show("Test Email Failed", ex.Message, NotifySeverity.Error);
         }
-    }
-
-    private void DismissToast()
-    {
-        _toastLifetimeCts?.Cancel();
-        _debugToast = null;
-    }
-
-    public void Dispose()
-    {
-        _toastLifetimeCts?.Cancel();
-        _toastLifetimeCts?.Dispose();
     }
 }

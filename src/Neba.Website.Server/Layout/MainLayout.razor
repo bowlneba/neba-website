@@ -22,6 +22,11 @@
         </div>
     </header>
 
+    @if (IsDebugBuild)
+    {
+        <DebugToastHost @rendermode="InteractiveServer" />
+    }
+
     <!-- Navigation -->
     <NavMenu />
 

@@ -29,6 +29,7 @@ internal static class EmailConfiguration
                     settings.Port = endpoint.Port;
                     settings.UserName = string.Empty;
                     settings.AppPassword = string.Empty;
+                    settings.TlsMode = MailKit.Security.SecureSocketOptions.None;
                 });
             }
         }
