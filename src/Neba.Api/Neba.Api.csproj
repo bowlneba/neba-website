@@ -55,8 +55,4 @@
     <AdditionalFiles Include="ulid-full.typedid" />
   </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Email/Resources/neba-logo.png" />
-  </ItemGroup>
-
 </Project>
