@@ -24,7 +24,8 @@ public sealed class MailpitFixture : IAsyncLifetime
     public async Task DeleteAllMessagesAsync()
     {
         using var client = CreateHttpClient();
-        await client.DeleteAsync(new Uri("/api/v1/messages", UriKind.Relative));
+        var response = await client.DeleteAsync(new Uri("/api/v1/messages", UriKind.Relative));
+        response.EnsureSuccessStatusCode();
     }
 
     public async Task<IReadOnlyList<MailpitMessage>> GetMessagesAsync()
