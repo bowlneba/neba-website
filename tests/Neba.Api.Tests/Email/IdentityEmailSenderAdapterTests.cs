@@ -32,12 +32,14 @@ public sealed class IdentityEmailSenderAdapterTests
                     m.Subject == "Confirm your BowlNEBA Account" &&
                     m.HtmlBody.Contains(link)),
                 CancellationToken.None))
-            .Returns(Task.CompletedTask);
+            .Returns(Task.CompletedTask)
+            .Verifiable();
 
         // Act
         await _sut.SendConfirmationLinkAsync(_user, email, link);
 
-        // Assert (MockBehavior.Strict enforces the interaction via Setup above)
+        // Assert
+        _sender.VerifyAll();
     }
 
     [Fact(DisplayName = "SendPasswordResetCodeAsync should send email with reset code")]
@@ -53,12 +55,14 @@ public sealed class IdentityEmailSenderAdapterTests
                     m.Subject == "Reset your BowlNEBA Password" &&
                     m.HtmlBody.Contains(code)),
                 CancellationToken.None))
-            .Returns(Task.CompletedTask);
+            .Returns(Task.CompletedTask)
+            .Verifiable();
 
         // Act
         await _sut.SendPasswordResetCodeAsync(_user, email, code);
 
-        // Assert (MockBehavior.Strict enforces the interaction via Setup above)
+        // Assert
+        _sender.VerifyAll();
     }
 
     [Fact(DisplayName = "SendPasswordResetLinkAsync should send email with reset link")]
@@ -74,11 +78,13 @@ public sealed class IdentityEmailSenderAdapterTests
                     m.Subject == "Reset your BowlNEBA Password" &&
                     m.HtmlBody.Contains(link)),
                 CancellationToken.None))
-            .Returns(Task.CompletedTask);
+            .Returns(Task.CompletedTask)
+            .Verifiable();
 
         // Act
         await _sut.SendPasswordResetLinkAsync(_user, email, link);
 
-        // Assert (MockBehavior.Strict enforces the interaction via Setup above)
+        // Assert
+        _sender.VerifyAll();
     }
 }

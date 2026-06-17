@@ -88,7 +88,7 @@ app.MapGet("/debug/email", async (
         {
             To = "some_user@test.com",
             Subject = "BowlNEBA Test Email",
-            HtmlBody = $"<p>This is a test email from the BowlNEBA debug tools.</p><p>Sent at: <strong>{timestamp:O}</strong></p>"
+            HtmlBody = Neba.Api.Email.EmailLayout.Wrap($"<p>This is a test email from the BowlNEBA debug tools.</p><p>Sent at: <strong>{timestamp:O}</strong></p>")
         }, ct);
 
         return Results.Ok($"Test email sent at {timestamp:O}.");

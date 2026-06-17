@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 
 using Neba.Api.Security.Domain;
+using Neba.Api.Security.Emails;
 
 namespace Neba.Api.Email;
 
@@ -12,7 +13,7 @@ internal sealed class IdentityEmailSenderAdapter(IEmailSender sender)
         {
             To = email,
             Subject = "Confirm your BowlNEBA Account",
-            HtmlBody = $"Please confirm your account by <a href='{confirmationLink}'>clicking here</a>."
+            HtmlBody = new ConfirmAccountEmail(confirmationLink).ToHtmlBody()
         }, CancellationToken.None);
 
     public Task SendPasswordResetCodeAsync(ApplicationUser user, string email, string resetCode)
@@ -20,7 +21,7 @@ internal sealed class IdentityEmailSenderAdapter(IEmailSender sender)
         {
             To = email,
             Subject = "Reset your BowlNEBA Password",
-            HtmlBody = $"Your password reset code is: {resetCode}"
+            HtmlBody = new ResetPasswordCodeEmail(resetCode).ToHtmlBody()
         }, CancellationToken.None);
 
     public Task SendPasswordResetLinkAsync(ApplicationUser user, string email, string resetLink)
@@ -28,6 +29,6 @@ internal sealed class IdentityEmailSenderAdapter(IEmailSender sender)
         {
             To = email,
             Subject = "Reset your BowlNEBA Password",
-            HtmlBody = $"Reset your password by <a href='{resetLink}'>clicking here</a>."
+            HtmlBody = new ResetPasswordLinkEmail(resetLink).ToHtmlBody()
         }, CancellationToken.None);
 }

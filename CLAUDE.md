@@ -295,3 +295,14 @@ Every routable page must have a `<PageTitle>` component. Sub-components (cards, 
 **`<HeadOutlet>` must use `@rendermode="InteractiveServer"`** in `App.razor` — without it, Safari does not update the tab title on client-side navigation (Chrome is more lenient). Static render mode means `<PageTitle>` updates never reach the browser's `document.title` in Safari.
 
 **Every routable page must also declare `@rendermode InteractiveServer`** — if a page is static SSR (no `@rendermode`), the interactive `HeadOutlet` circuit boots with no `<PageTitle>` registered and clears the title (visible as a flash then blank tab). Pages with no async data loading use `@rendermode InteractiveServer` (prerender: true default); data-loading pages use `@rendermode @(new InteractiveServerRenderMode(prerender: false))` to avoid a flash of empty content.
+
+### Email Template Pattern
+
+- Each email is an `internal sealed class` in `{Feature}/Emails/{Name}Email.cs` — primary constructor takes email-specific values, exposes `ToHtmlBody()`.
+- `EmailLayout.Wrap(innerHtml)` in `Neba.Api.Email` provides the branded chrome: NEBA blue (`#1a3a6e`) header with logo, white content area, and gray footer.
+- The NEBA logo is an embedded resource at `Email/Resources/neba-logo.png` in `Neba.Api` — loaded once via `Lazy<string>` from `Assembly.GetManifestResourceStream("Neba.Api.Email.Resources.neba-logo.png")`.
+- **Use inline styles only** — Gmail strips `<style>` blocks, so all styles must be on the elements themselves.
+- **Always `WebUtility.HtmlEncode` user-supplied values** (links, codes) before embedding them in `href` attributes and visible text — prevents broken HTML when the value contains `&`, and guards against injection.
+- Brand constants: header/button bg `#1a3a6e`, body text `#444`, muted/footer `#999`, page bg `#e8e8e8`.
+- **Adding a new email**: create `{Feature}/Emails/{Name}Email.cs`, take constructor params, call `EmailLayout.Wrap(...)` in `ToHtmlBody()`. No infrastructure changes needed.
+- **Mock-verification tests** (`IdentityEmailSenderAdapterTests`): always add `.Verifiable()` to the `Setup` and call `_sender.VerifyAll()` in the Assert block — the SonarAnalyzer (S2699) requires at least one explicit assertion per test.
