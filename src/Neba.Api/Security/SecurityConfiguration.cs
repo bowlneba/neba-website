@@ -44,7 +44,11 @@ internal static class SecurityConfiguration
 
             var jwtSettings = builder.Configuration
                 .GetSection("JwtSettings")
-                .Get<JwtSettings>()!;
+                .Get<JwtSettings>()
+                ?? throw new InvalidOperationException("JwtSettings configuration section is missing.");
+
+            if (string.IsNullOrWhiteSpace(jwtSettings.SigningKey))
+                throw new InvalidOperationException("JwtSettings:SigningKey must not be empty.");
 
             builder.Services
                 .AddAuthentication(options =>

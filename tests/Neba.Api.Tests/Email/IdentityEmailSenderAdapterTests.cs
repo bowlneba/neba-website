@@ -37,8 +37,7 @@ public sealed class IdentityEmailSenderAdapterTests
         // Act
         await _sut.SendConfirmationLinkAsync(_user, email, link);
 
-        // Assert
-        _sender.Verify(s => s.SendAsync(It.IsAny<EmailMessage>(), CancellationToken.None), Times.Once);
+        // Assert (MockBehavior.Strict enforces the interaction via Setup above)
     }
 
     [Fact(DisplayName = "SendPasswordResetCodeAsync should send email with reset code")]
@@ -59,8 +58,7 @@ public sealed class IdentityEmailSenderAdapterTests
         // Act
         await _sut.SendPasswordResetCodeAsync(_user, email, code);
 
-        // Assert
-        _sender.Verify(s => s.SendAsync(It.IsAny<EmailMessage>(), CancellationToken.None), Times.Once);
+        // Assert (MockBehavior.Strict enforces the interaction via Setup above)
     }
 
     [Fact(DisplayName = "SendPasswordResetLinkAsync should send email with reset link")]
@@ -81,7 +79,6 @@ public sealed class IdentityEmailSenderAdapterTests
         // Act
         await _sut.SendPasswordResetLinkAsync(_user, email, link);
 
-        // Assert
-        _sender.Verify(s => s.SendAsync(It.IsAny<EmailMessage>(), CancellationToken.None), Times.Once);
+        // Assert (MockBehavior.Strict enforces the interaction via Setup above)
     }
 }

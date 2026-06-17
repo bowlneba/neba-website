@@ -5,7 +5,7 @@ namespace Neba.Api.Security.Domain;
 /// <summary>
 /// Represents a role in the identity system
 /// </summary>
-public class ApplicationRole
+public sealed class ApplicationRole
     : IdentityRole<Ulid>
 {
     /// <summary>

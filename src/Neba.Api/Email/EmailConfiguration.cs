@@ -22,7 +22,7 @@ internal static class EmailConfiguration
 
             if (mailpitConnectionString is not null)
             {
-                var endpoint = new Uri(mailpitConnectionString.Replace("Endpoint=", string.Empty, StringComparison.CurrentCulture));
+                var endpoint = new Uri(mailpitConnectionString.Replace("Endpoint=", string.Empty, StringComparison.Ordinal));
                 builder.Services.PostConfigure<EmailSettings>(settings =>
                 {
                     settings.Host = endpoint.Host;
