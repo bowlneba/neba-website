@@ -36,7 +36,7 @@ internal static class SecurityConfiguration
                     options.Password.RequireDigit = true;
                     options.Password.RequiredLength = 8;
                     options.Password.RequireNonAlphanumeric = false;
-                    options.SignIn.RequireConfirmedEmail = false; // enable when email sender is wired
+                    options.SignIn.RequireConfirmedEmail = true;
                     options.User.RequireUniqueEmail = true;
                 })
                 .AddEntityFrameworkStores<SecurityDbContext>()
