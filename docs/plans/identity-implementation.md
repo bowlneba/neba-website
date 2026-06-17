@@ -166,7 +166,9 @@ Neba.Api.Contracts/
 
 ## Phase 1: Neba.Api — Identity Infrastructure
 
-### 1.1 NuGet packages
+> **Status: Complete** (SeedSecurityAsync pending — see 1.8)
+
+### 1.1 NuGet packages ✅
 
 Add to `Directory.Packages.props` and `Neba.Api.csproj`:
 
@@ -176,7 +178,7 @@ Add to `Directory.Packages.props` and `Neba.Api.csproj`:
 | `Microsoft.AspNetCore.Authentication.JwtBearer` | JWT bearer middleware |
 | `System.IdentityModel.Tokens.Jwt` | JWT creation / signing |
 
-### 1.2 ApplicationUser
+### 1.2 ApplicationUser ✅
 
 ```csharp
 // Security/Domain/ApplicationUser.cs
@@ -190,7 +192,7 @@ public sealed class ApplicationUser : IdentityUser<Guid>
 }
 ```
 
-### 1.3 ApplicationRole
+### 1.3 ApplicationRole ✅
 
 ```csharp
 // Security/Domain/ApplicationRole.cs
@@ -203,7 +205,7 @@ public sealed class ApplicationRole : IdentityRole<Guid>
 }
 ```
 
-### 1.4 Roles constants
+### 1.4 Roles constants ✅
 
 ```csharp
 // Security/Domain/Roles.cs
@@ -217,7 +219,7 @@ public static class Roles
 }
 ```
 
-### 1.5 SecurityDbContext
+### 1.5 SecurityDbContext ✅
 
 ```csharp
 // Database/SecurityDbContext.cs
@@ -242,7 +244,7 @@ internal sealed class SecurityDbContext(DbContextOptions<SecurityDbContext> opti
 - Uses `UseSnakeCaseNamingConvention()` (configured in `SecurityConfiguration`)
 - Separate migrations history table: `security.__EFMigrationsHistory`
 
-### 1.6 SecurityDbContextDesignTimeFactory
+### 1.6 SecurityDbContextDesignTimeFactory ✅
 
 ```csharp
 // Database/SecurityDbContextDesignTimeFactory.cs
@@ -266,7 +268,7 @@ internal sealed class SecurityDbContextDesignTimeFactory : IDesignTimeDbContextF
 }
 ```
 
-### 1.7 JwtSettings
+### 1.7 JwtSettings ✅
 
 ```csharp
 // Security/JwtSettings.cs
@@ -282,9 +284,11 @@ internal sealed record JwtSettings
 }
 ```
 
-### 1.8 SecurityConfiguration.cs
+### 1.8 SecurityConfiguration.cs ✅ (SeedSecurityAsync pending)
 
 Registers Identity, JWT bearer auth, SecurityDbContext, and seeds roles + initial admin on startup.
+
+`RequireConfirmedEmail` is already `true` — the email sender was wired as part of this phase, so there was no reason to defer it. JwtSettings is validated eagerly at startup (throws `InvalidOperationException` if missing or the signing key is empty) to catch misconfiguration before the app accepts traffic.
 
 ```csharp
 // Security/SecurityConfiguration.cs
@@ -296,13 +300,12 @@ internal static class SecurityConfiguration
     {
         public WebApplicationBuilder AddSecurity()
         {
-            // SecurityDbContext uses same data source as AppDbContext
             builder.Services.AddDbContext<SecurityDbContext>((sp, options) =>
             {
                 var dataSource = sp.GetRequiredService<NpgsqlDataSource>();
                 options
-                    .UseNpgsql(dataSource, npgsql =>
-                        npgsql.MigrationsHistoryTable(
+                    .UseNpgsql(dataSource, npgsql => npgsql
+                        .MigrationsHistoryTable(
                             SecurityDbContext.MigrationsHistoryTableName,
                             SecurityDbContext.Schema))
                     .UseSnakeCaseNamingConvention();
@@ -314,7 +317,7 @@ internal static class SecurityConfiguration
                     options.Password.RequireDigit = true;
                     options.Password.RequiredLength = 8;
                     options.Password.RequireNonAlphanumeric = false;
-                    options.SignIn.RequireConfirmedEmail = false; // enable when email sender is wired
+                    options.SignIn.RequireConfirmedEmail = true;
                     options.User.RequireUniqueEmail = true;
                 })
                 .AddEntityFrameworkStores<SecurityDbContext>()
@@ -322,7 +325,11 @@ internal static class SecurityConfiguration
 
             var jwtSettings = builder.Configuration
                 .GetSection("JwtSettings")
-                .Get<JwtSettings>()!;
+                .Get<JwtSettings>()
+                ?? throw new InvalidOperationException("JwtSettings configuration section is missing.");
+
+            if (string.IsNullOrWhiteSpace(jwtSettings.SigningKey))
+                throw new InvalidOperationException("JwtSettings:SigningKey must not be empty.");
 
             builder.Services
                 .AddAuthentication(options =>
@@ -360,14 +367,16 @@ internal static class SecurityConfiguration
             return app;
         }
 
-        // Called at startup to ensure roles and seed admin exist.
-        // Uses a scoped IServiceScope; does not block startup if already seeded.
+        // TODO: implement — seeds roles (Admin, ScoreKeeper, Member) and the initial admin account.
+        // Call from Program.cs after app.Build(), before app.RunAsync().
         public static async Task SeedSecurityAsync(WebApplication app) { ... }
     }
 }
 ```
 
-### 1.9 Migration commands
+### 1.9 Migration commands ✅
+
+`Security_Init` migration applied — tables live in the `security` schema.
 
 ```bash
 # Add initial security migration
@@ -381,7 +390,7 @@ dotnet ef migrations add Security_Init \
 dotnet ef database update --context SecurityDbContext --project src/Neba.Api
 ```
 
-### 1.10 Email sender (MailKit + Google Workspace SMTP)
+### 1.10 Email sender (MailKit + Google Workspace SMTP) ✅
 
 **MailKit** is the de facto standard for SMTP in .NET — Microsoft deprecated `System.Net.Mail.SmtpClient` and points users to MailKit in their own docs. It occupies the same "obvious choice" position that FluentValidation holds for validation.
 
@@ -395,6 +404,7 @@ Neba.Api/
 │   ├── IEmailSender.cs                  ← general-purpose abstraction (application-layer equivalent)
 │   ├── EmailMessage.cs                  ← value type carrying to/subject/htmlBody
 │   ├── EmailSettings.cs                 ← SMTP configuration options
+│   ├── EmailConfiguration.cs            ← registers IEmailSender, IEmailSender<ApplicationUser>, Mailpit overrides
 │   ├── GoogleWorkspaceEmailSender.cs    ← MailKit implementation (infrastructure-layer equivalent)
 │   └── IdentityEmailSenderAdapter.cs   ← adapts IEmailSender<ApplicationUser> → IEmailSender
 ```
@@ -449,22 +459,31 @@ namespace Neba.Api.Email;
 
 internal interface IEmailSender
 {
-    Task SendAsync(EmailMessage message, CancellationToken ct = default);
+    Task SendAsync(EmailMessage message, CancellationToken cancellationToken);
 }
 ```
 
 #### EmailMessage
 
+`EmailMessage` uses `required` init properties rather than a positional record constructor — keeps object initializer syntax consistent with how it's used in handlers.
+
 ```csharp
 // Email/EmailMessage.cs
 namespace Neba.Api.Email;
 
-// ReplyTo overrides the default from EmailSettings when set — use for transactional
-// emails where replies should route to a specific address (e.g. support@bowlneba.com).
-internal sealed record EmailMessage(string To, string Subject, string HtmlBody, string? ReplyTo = null);
+public sealed record EmailMessage
+{
+    public required string To       { get; init; }
+    public required string Subject  { get; init; }
+    public required string HtmlBody { get; init; }
+    // ReplyTo overrides the default from EmailSettings when set.
+    public string? ReplyTo { get; init; }
+}
 ```
 
 #### EmailSettings
+
+`Host`, `Port`, `UserName`, `AppPassword`, and `TlsMode` are mutable (`set` not `init`) so `PostConfigure` can override them for Mailpit without touching a separate type. `TlsMode` (`SecureSocketOptions`) is the MailKit enum — it defaults to `StartTls` for prod; Mailpit overrides it to `None`.
 
 ```csharp
 // Email/EmailSettings.cs
@@ -472,41 +491,43 @@ namespace Neba.Api.Email;
 
 internal sealed class EmailSettings
 {
-    public string Host           { get; init; } = "smtp.gmail.com";
-    public int    Port           { get; init; } = 587;
-    public string UserName       { get; init; } = string.Empty; // SMTP auth account: tech@bowlneba.com
-    public string AppPassword    { get; init; } = string.Empty; // app password for tech@bowlneba.com
-    public string FromAddress    { get; init; } = string.Empty; // display from: noreply@bowlneba.com
-    public string FromName       { get; init; } = "BowlNeba";
-    // Default reply-to for all outbound mail. Bounces and replies from users who hit
-    // "Reply" will route here instead of the dead noreply inbox.
+    public const string SectionName = "EmailSettings";
+
+    public string Host        { get; set; } = "smtp.gmail.com";
+    public int    Port        { get; set; } = 587;
+    public string UserName    { get; set; } = string.Empty; // SMTP auth account: tech@bowlneba.com
+    public string AppPassword { get; set; } = string.Empty; // app password for tech@bowlneba.com
+    public string FromAddress { get; init; } = string.Empty; // display from: noreply@bowlneba.com
+    public string FromName    { get; init; } = "BowlNEBA";
+    // Default reply-to for all outbound mail.
     public string ReplyToAddress { get; init; } = string.Empty; // e.g. support@bowlneba.com
-    public string ReplyToName    { get; init; } = "BowlNeba Support";
+    public string ReplyToName    { get; init; } = "BowlNEBA Support";
+    public SecureSocketOptions TlsMode { get; set; } = SecureSocketOptions.StartTls;
 }
 ```
 
 #### GoogleWorkspaceEmailSender
+
+Injects `EmailSettings` directly as a singleton (registered by `EmailConfiguration`) rather than `IOptions<EmailSettings>` — avoids the options indirection since settings are fixed after startup. Auth is skipped when `UserName` is empty (Mailpit dev path).
 
 ```csharp
 // Email/GoogleWorkspaceEmailSender.cs
 namespace Neba.Api.Email;
 
 internal sealed class GoogleWorkspaceEmailSender(
-    IOptions<EmailSettings> options,
+    EmailSettings emailSettings,
     ILogger<GoogleWorkspaceEmailSender> logger)
     : IEmailSender
 {
-    private readonly EmailSettings _settings = options.Value;
+    private readonly EmailSettings _settings = emailSettings;
 
-    public async Task SendAsync(EmailMessage message, CancellationToken ct = default)
+    public async Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
     {
-        var mimeMessage = new MimeMessage();
+        using var mimeMessage = new MimeMessage();
         mimeMessage.From.Add(new MailboxAddress(_settings.FromName, _settings.FromAddress));
         mimeMessage.To.Add(MailboxAddress.Parse(message.To));
         mimeMessage.Subject = message.Subject;
 
-        // Reply-To: per-message override wins; fall back to the settings default.
-        // This routes user replies away from the dead noreply inbox.
         var replyToAddress = message.ReplyTo ?? _settings.ReplyToAddress;
         if (!string.IsNullOrEmpty(replyToAddress))
             mimeMessage.ReplyTo.Add(new MailboxAddress(_settings.ReplyToName, replyToAddress));
@@ -514,10 +535,11 @@ internal sealed class GoogleWorkspaceEmailSender(
         mimeMessage.Body = new BodyBuilder { HtmlBody = message.HtmlBody }.ToMessageBody();
 
         using var client = new SmtpClient();
-        await client.ConnectAsync(_settings.Host, _settings.Port, SecureSocketOptions.StartTls, ct);
-        await client.AuthenticateAsync(_settings.UserName, _settings.AppPassword, ct);
-        await client.SendAsync(mimeMessage, ct);
-        await client.DisconnectAsync(quit: true, ct);
+        await client.ConnectAsync(_settings.Host, _settings.Port, _settings.TlsMode, cancellationToken);
+        if (!string.IsNullOrEmpty(_settings.UserName))
+            await client.AuthenticateAsync(_settings.UserName, _settings.AppPassword, cancellationToken);
+        await client.SendAsync(mimeMessage, cancellationToken);
+        await client.DisconnectAsync(quit: true, cancellationToken);
 
         logger.LogEmailSent(message.To, message.Subject);
     }
@@ -526,7 +548,7 @@ internal sealed class GoogleWorkspaceEmailSender(
 internal static partial class GoogleWorkspaceEmailSenderLogMessages
 {
     [LoggerMessage(Level = LogLevel.Information, Message = "Email sent to {ToAddress}: {Subject}")]
-    public static partial void LogEmailSent(this ILogger logger, string toAddress, string subject);
+    public static partial void LogEmailSent(this ILogger<GoogleWorkspaceEmailSender> logger, string toAddress, string subject);
 }
 ```
 
@@ -542,40 +564,72 @@ internal sealed class IdentityEmailSenderAdapter(IEmailSender sender)
     : IEmailSender<ApplicationUser>
 {
     public Task SendConfirmationLinkAsync(ApplicationUser user, string email, string confirmationLink) =>
-        sender.SendAsync(new EmailMessage(
-            email,
-            "Confirm your BowlNeba account",
-            $"Please confirm your account by <a href='{confirmationLink}'>clicking here</a>."));
+        sender.SendAsync(new EmailMessage
+        {
+            To       = email,
+            Subject  = "Confirm your BowlNEBA Account",
+            HtmlBody = $"Please confirm your account by <a href='{confirmationLink}'>clicking here</a>."
+        }, CancellationToken.None);
 
     public Task SendPasswordResetLinkAsync(ApplicationUser user, string email, string resetLink) =>
-        sender.SendAsync(new EmailMessage(
-            email,
-            "Reset your BowlNeba password",
-            $"Reset your password by <a href='{resetLink}'>clicking here</a>."));
+        sender.SendAsync(new EmailMessage
+        {
+            To       = email,
+            Subject  = "Reset your BowlNEBA Password",
+            HtmlBody = $"Reset your password by <a href='{resetLink}'>clicking here</a>."
+        }, CancellationToken.None);
 
     public Task SendPasswordResetCodeAsync(ApplicationUser user, string email, string resetCode) =>
-        sender.SendAsync(new EmailMessage(
-            email,
-            "Your BowlNeba password reset code",
-            $"Your password reset code is: {resetCode}"));
+        sender.SendAsync(new EmailMessage
+        {
+            To       = email,
+            Subject  = "Reset your BowlNEBA Password",
+            HtmlBody = $"Your password reset code is: {resetCode}"
+        }, CancellationToken.None);
 }
 ```
 
-#### Registration in InfrastructureConfiguration
+#### Registration — EmailConfiguration.cs
 
-Email is infrastructure — it registers alongside `Storage`, `Caching`, etc., not in `SecurityConfiguration`.
+Email registration lives in its own `EmailConfiguration.cs` inside `Email/`, called from `InfrastructureConfiguration.AddInfrastructure()` via `builder.AddEmail()`. `EmailSettings` is registered as both an options instance (for `PostConfigure`) and as a direct singleton (for injection into `GoogleWorkspaceEmailSender`).
 
 ```csharp
-// InfrastructureConfiguration.cs (existing file — add alongside other infrastructure registrations)
-builder.Services
-    .Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"))
-    .AddTransient<IEmailSender, GoogleWorkspaceEmailSender>()
-    .AddTransient<IEmailSender<ApplicationUser>, IdentityEmailSenderAdapter>();
+// Email/EmailConfiguration.cs
+namespace Neba.Api.Email;
+
+internal static class EmailConfiguration
+{
+    extension(WebApplicationBuilder builder)
+    {
+        public void AddEmail()
+        {
+            builder.Services
+                .Configure<EmailSettings>(options =>
+                    builder.Configuration.GetSection(EmailSettings.SectionName).Bind(options))
+                .AddTransient<IEmailSender, GoogleWorkspaceEmailSender>()
+                .AddTransient<IEmailSender<ApplicationUser>, IdentityEmailSenderAdapter>();
+
+            builder.Services.AddSingleton(sp =>
+                sp.GetRequiredService<IOptions<EmailSettings>>().Value);
+
+            var mailpitConnectionString = builder.Configuration.GetConnectionString("mailpit");
+            if (mailpitConnectionString is not null)
+            {
+                var endpoint = new Uri(mailpitConnectionString.Replace(
+                    "Endpoint=", string.Empty, StringComparison.Ordinal));
+                builder.Services.PostConfigure<EmailSettings>(settings =>
+                {
+                    settings.Host        = endpoint.Host;
+                    settings.Port        = endpoint.Port;
+                    settings.UserName    = string.Empty;
+                    settings.AppPassword = string.Empty;
+                    settings.TlsMode     = MailKit.Security.SecureSocketOptions.None;
+                });
+            }
+        }
+    }
+}
 ```
-
-#### RequireConfirmedEmail
-
-`RequireConfirmedEmail` stays `false` for Day 1 (admin-created accounts, no self-registration). It is flipped to `true` in Phase 3 when `ForgotPassword` / `ConfirmEmail` endpoints are wired. The sender will already be registered by then.
 
 #### Azure Key Vault secrets (additions)
 
@@ -598,59 +652,55 @@ Not needed for email when running via Aspire — Mailpit handles it (see below).
 
 **How it fits the existing Aspire pattern**: identical to how `postgres` and `storage` are dev-only containers wired to the API via `WithReference`. In publish mode Mailpit is not added — prod uses Google Workspace SMTP via Key Vault secrets.
 
-##### AppHost changes
+##### AppHost changes ✅
 
-Add to `Directory.Packages.props` and `Neba.AppHost.csproj`:
-
-| Package | Purpose |
-|---------|---------|
-| `CommunityToolkit.Aspire.Hosting.Mailpit` | Mailpit container resource for AppHost |
+`CommunityToolkit.Aspire.Hosting.Mailpit` added to `Directory.Packages.props` and `Neba.AppHost.csproj`. Mailpit is wired in the `else` branch of the publish-mode check alongside postgres and storage:
 
 ```csharp
-// AppHost.cs — add before the publish-mode block, outside IsPublishMode check
-if (!builder.ExecutionContext.IsPublishMode)
+// AppHost.cs
+else
 {
-    var mailpit = builder.AddMailpit("mailpit");
-    api.WithReference(mailpit).WaitFor(mailpit);
+    var mailpit = builder.AddMailPit("mailpit");
+
+    api
+        .WithReference(mailpit)
+        .WaitFor(mailpit);
 }
 ```
 
 `WithReference(mailpit)` injects `ConnectionStrings__mailpit` into the API project at runtime. The Aspire dashboard automatically shows the Mailpit web UI (port 8025) as a resource link — no extra `WithUrls` needed.
 
-##### API changes — post-configure EmailSettings from the injected connection string
+##### API changes — post-configure EmailSettings from the injected connection string ✅
 
-`InfrastructureConfiguration` already owns all infrastructure registrations. Add this alongside the email registration:
+Handled inside `Email/EmailConfiguration.cs` (not `InfrastructureConfiguration`). `PostConfigure` additionally sets `TlsMode = SecureSocketOptions.None` so MailKit doesn't attempt STARTTLS against Mailpit's plain SMTP listener:
 
 ```csharp
-// InfrastructureConfiguration.cs
 var mailpitConnectionString = builder.Configuration.GetConnectionString("mailpit");
 if (mailpitConnectionString is not null)
 {
-    // Connection string format: "Endpoint=smtp://localhost:{port}"
-    // Override EmailSettings to point at Mailpit; no credentials required.
-    var endpoint = new Uri(mailpitConnectionString.Replace("Endpoint=", string.Empty));
+    var endpoint = new Uri(mailpitConnectionString.Replace(
+        "Endpoint=", string.Empty, StringComparison.Ordinal));
     builder.Services.PostConfigure<EmailSettings>(settings =>
     {
         settings.Host        = endpoint.Host;
         settings.Port        = endpoint.Port;
         settings.UserName    = string.Empty;
         settings.AppPassword = string.Empty;
+        settings.TlsMode     = MailKit.Security.SecureSocketOptions.None;
     });
 }
 ```
 
-`PostConfigure` runs after all `Configure` calls, so it cleanly overrides whatever was set by `GetSection("EmailSettings")` without touching the `EmailSettings` options class or the sender.
+##### Sender — skip auth when credentials are absent ✅
 
-##### Sender — skip auth when credentials are absent
-
-Mailpit accepts connections without authentication. One-line guard in `GoogleWorkspaceEmailSender`:
+Auth is skipped when `UserName` is empty (Mailpit path). `TlsMode` is driven by the `EmailSettings` property rather than a hard-coded `StartTls`:
 
 ```csharp
-await client.ConnectAsync(_settings.Host, _settings.Port, SecureSocketOptions.StartTls, ct);
-if (!string.IsNullOrEmpty(_settings.AppPassword))
-    await client.AuthenticateAsync(_settings.UserName, _settings.AppPassword, ct);
-await client.SendAsync(mimeMessage, ct);
-await client.DisconnectAsync(quit: true, ct);
+await client.ConnectAsync(_settings.Host, _settings.Port, _settings.TlsMode, cancellationToken);
+if (!string.IsNullOrEmpty(_settings.UserName))
+    await client.AuthenticateAsync(_settings.UserName, _settings.AppPassword, cancellationToken);
+await client.SendAsync(mimeMessage, cancellationToken);
+await client.DisconnectAsync(quit: true, cancellationToken);
 ```
 
 ##### Dev flow
@@ -1013,7 +1063,8 @@ Passkeys are built into ASP.NET Core Identity — no extra NuGet package. The im
 
 ## Day 1 Checklist
 
-- [ ] **Phase 1** — `ApplicationUser`, `ApplicationRole`, `Roles`, `SecurityDbContext`, `SecurityDbContextDesignTimeFactory`, `SecurityConfiguration` wired into `Program.cs`, initial migration, roles + admin seed; `GoogleWorkspaceEmailSender` registered (1.9)
+- [x] **Phase 1 (infrastructure)** — `ApplicationUser`, `ApplicationRole`, `Roles`, `SecurityDbContext`, `SecurityDbContextDesignTimeFactory`, `SecurityConfiguration` wired into `Program.cs`, initial migration applied, `GoogleWorkspaceEmailSender` + `IdentityEmailSenderAdapter` registered, Mailpit wired in AppHost
+- [ ] **Phase 1 (seed)** — `SeedSecurityAsync`: create `Admin`, `ScoreKeeper`, `Member` roles and the initial admin account if they don't exist; call from `Program.cs` after `app.Build()`
 - [ ] **Phase 2** — full CQRS stack (Command/CommandHandler/Dto or Query/QueryHandler/Dto) for `Login`, `Register`, `Refresh`, `Logout`, `Me`, `ChangePassword`
 - [ ] **Contracts** — `Neba.Api.Contracts/Security/` with `ISecurityApi` + per-operation request/response types in subfolders
 - [ ] **Phase 3** — `AccountConfiguration`, `Login.razor`, `Register.razor`, `Manage/Index.razor`, `BearerTokenHandler`, `Routes.razor` updated to `AuthorizeRouteView`; `ISecurityApi` registered in `ApiServicesConfiguration`
