@@ -49,5 +49,6 @@ internal sealed class DebugToastService : IDisposable
     {
         _cts?.Cancel();
         _cts?.Dispose();
+        _cts = null;
     }
 }
