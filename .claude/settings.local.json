@@ -43,7 +43,8 @@
       "Bash(Get-ChildItem -Path \"C:\\\\source\\\\bowlneba\\\\website\\\\src\\\\Neba.Api\\\\Features\" -Directory)",
       "Bash(Select-Object -ExpandProperty Name)",
       "Bash(Test-Path \"C:\\\\source\\\\bowlneba\\\\website\\\\tests\\\\Neba.Api.Tests\\\\Features\\\\Stats\\\\Domain\")",
-      "Bash(git *)"
+      "Bash(git *)",
+      "WebFetch(domain:productionresultssa19.blob.core.windows.net)"
     ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",
