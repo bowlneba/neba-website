@@ -33,4 +33,28 @@ public sealed class EmailMessageTests
         // Assert
         message.ReplyTo.ShouldBe("support@example.com");
     }
+
+    [Fact(DisplayName = "Two messages with identical properties should be equal")]
+    public void Create_ShouldBeEqual_WhenPropertiesMatch()
+    {
+        // Arrange
+        var a = EmailMessageFactory.Create(to: "a@b.com", subject: "Subject", htmlBody: "<p/>");
+        var b = EmailMessageFactory.Create(to: "a@b.com", subject: "Subject", htmlBody: "<p/>");
+
+        // Act & Assert
+        (a == b).ShouldBeTrue();
+        (a != b).ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "Two messages with different properties should not be equal")]
+    public void Create_ShouldNotBeEqual_WhenPropertiesDiffer()
+    {
+        // Arrange
+        var a = EmailMessageFactory.Create(to: "a@b.com");
+        var b = EmailMessageFactory.Create(to: "different@b.com");
+
+        // Act & Assert
+        (a == b).ShouldBeFalse();
+        (a != b).ShouldBeTrue();
+    }
 }
