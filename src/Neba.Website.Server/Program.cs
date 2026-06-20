@@ -25,6 +25,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddOutputCache();
 
 builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
+builder.Services.AddScoped<Neba.Website.Server.Notifications.DebugToastService>();
 builder.Services.AddScoped<ITournamentApiService, TournamentApiService>();
 
 var app = builder.Build();

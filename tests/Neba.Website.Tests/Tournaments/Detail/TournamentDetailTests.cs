@@ -105,7 +105,7 @@ public sealed class TournamentDetailTests : IDisposable
         var headOutlet = _ctx.Render<HeadOutlet>();
 
         // Assert
-        headOutlet.Find("title").TextContent.ShouldBe("Spring Open | NEBA Tournaments");
+        headOutlet.Find("title").TextContent.ShouldBe("Spring Open - NEBA");
     }
 
     // ── Header ───────────────────────────────────────────────────────────────

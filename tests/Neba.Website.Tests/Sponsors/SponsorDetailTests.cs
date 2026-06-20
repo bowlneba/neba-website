@@ -119,7 +119,7 @@ public sealed class SponsorDetailTests : IDisposable
         var headOutlet = _ctx.Render<HeadOutlet>();
 
         // Assert
-        headOutlet.Find("title").TextContent.ShouldBe("Acme Bowling Supply | NEBA Sponsors");
+        headOutlet.Find("title").TextContent.ShouldBe("Acme Bowling Supply - NEBA");
     }
 
     // ── Header ───────────────────────────────────────────────────────────────

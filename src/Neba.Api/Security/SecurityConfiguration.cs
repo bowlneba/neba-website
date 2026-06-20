@@ -36,7 +36,7 @@ internal static class SecurityConfiguration
                     options.Password.RequireDigit = true;
                     options.Password.RequiredLength = 8;
                     options.Password.RequireNonAlphanumeric = false;
-                    options.SignIn.RequireConfirmedEmail = false; // enable when email sender is wired
+                    options.SignIn.RequireConfirmedEmail = true;
                     options.User.RequireUniqueEmail = true;
                 })
                 .AddEntityFrameworkStores<SecurityDbContext>()
@@ -44,7 +44,11 @@ internal static class SecurityConfiguration
 
             var jwtSettings = builder.Configuration
                 .GetSection("JwtSettings")
-                .Get<JwtSettings>()!;
+                .Get<JwtSettings>()
+                ?? throw new InvalidOperationException("JwtSettings configuration section is missing.");
+
+            if (string.IsNullOrWhiteSpace(jwtSettings.SigningKey))
+                throw new InvalidOperationException("JwtSettings:SigningKey must not be empty.");
 
             builder.Services
                 .AddAuthentication(options =>

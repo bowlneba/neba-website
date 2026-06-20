@@ -4,6 +4,7 @@ using Neba.Api.Caching;
 using Neba.Api.Clock;
 using Neba.Api.Database;
 using Neba.Api.Documents;
+using Neba.Api.Email;
 using Neba.Api.RateLimiting;
 using Neba.Api.Storage;
 using Neba.Api.Telemetry.Tracing;
@@ -37,7 +38,8 @@ public static class InfrastructureConfiguration
             builder
                 .AddDatabase()
                 .AddKeyVault()
-                .AddStorage();
+                .AddStorage()
+                .AddEmail();
 
             builder.Services.AddCaching(builder.Configuration);
             builder.Services.AddBackgroundJobs(builder.Configuration);
