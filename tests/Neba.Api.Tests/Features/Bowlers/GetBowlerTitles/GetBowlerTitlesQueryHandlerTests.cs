@@ -110,11 +110,11 @@ public sealed class GetBowlerTitlesQueryHandlerTests(PostgreSqlFixture fixture)
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        _dbContext.HistoricalTournamentChampions.Add(new HistoricalTournamentChampion
+        await _dbContext.HistoricalTournamentChampions.AddAsync(new HistoricalTournamentChampion
         {
             Bowler = bowler,
             Tournament = tournament
-        });
+        }, ct);
         await _dbContext.SaveChangesAsync(ct);
 
         var handler = new GetBowlerTitlesQueryHandler(_dbContext);
