@@ -25,7 +25,7 @@ public static class BowlerTitlesViewModelFactory
             {
                 BowlerName = f.Name.FullName(),
                 HallOfFame = f.Random.Bool(),
-                Titles = TitleViewModelFactory.Bogus(f.Random.Int(1, 10), seed),
+                Titles = TitleViewModelFactory.Bogus(f.Random.Int(1, 10), f),
             });
 
         if (seed.HasValue)
@@ -34,5 +34,11 @@ public static class BowlerTitlesViewModelFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<BowlerTitlesViewModel> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

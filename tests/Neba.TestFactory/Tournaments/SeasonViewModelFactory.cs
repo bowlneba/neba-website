@@ -45,4 +45,10 @@ public static class SeasonViewModelFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<SeasonViewModel> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

@@ -46,4 +46,10 @@ public static class MatchPlayAppearancesDtoFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<MatchPlayAppearancesDto> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

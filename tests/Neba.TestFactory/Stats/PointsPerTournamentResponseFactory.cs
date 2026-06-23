@@ -49,4 +49,10 @@ public static class PointsPerTournamentResponseFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<PointsPerTournamentResponse> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

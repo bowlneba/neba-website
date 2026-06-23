@@ -66,4 +66,10 @@ public static class BowlerOfTheYearStandingRowViewModelFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

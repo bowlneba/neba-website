@@ -24,7 +24,7 @@ public static class PointsRaceSeriesViewModelFactory
             {
                 BowlerId = Ulid.BogusString(f),
                 BowlerName = f.Name.FullName(),
-                Results = PointsRaceTournamentViewModelFactory.Bogus(f.Random.Int(1, 5), seed)
+                Results = PointsRaceTournamentViewModelFactory.Bogus(f.Random.Int(1, 5), f)
             });
 
         if (seed.HasValue)
@@ -33,5 +33,11 @@ public static class PointsRaceSeriesViewModelFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<PointsRaceSeriesViewModel> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

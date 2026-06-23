@@ -42,4 +42,10 @@ public static class StoredFileFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<StoredFile> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

@@ -41,4 +41,10 @@ public static class HistoricalTournamentChampionFactory
 
         return faker.Generate(count);
     }
+
+    internal static IReadOnlyCollection<HistoricalTournamentChampion> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

@@ -83,31 +83,31 @@ public static class GetSeasonStatsResponseFactory
                         .ToDictionary(i => year - i, i => $"{year - i - 1}-{year - i} Season"),
                     BowlerSearchList = Enumerable.Range(0, f.Random.Int(5, 20))
                         .ToDictionary(_ => Ulid.BogusString(f), _ => f.Name.FullName()),
-                    BowlerOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(5, 20), seed),
-                    SeniorOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(1, 5), seed),
-                    SuperSeniorOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(1, 5), seed),
-                    WomanOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(1, 5), seed),
-                    RookieOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(1, 5), seed),
-                    YouthOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(0, 3), seed),
-                    HighAverage = HighAverageResponseFactory.Bogus(f.Random.Int(5, 20), seed),
-                    HighBlock = HighBlockResponseFactory.Bogus(f.Random.Int(5, 20), seed),
-                    MatchPlayAverage = MatchPlayAverageResponseFactory.Bogus(f.Random.Int(5, 20), seed),
-                    MatchPlayRecord = MatchPlayRecordResponseFactory.Bogus(f.Random.Int(5, 20), seed),
-                    MatchPlayAppearances = MatchPlayAppearancesResponseFactory.Bogus(f.Random.Int(5, 20), seed),
-                    PointsPerEntry = PointsPerEntryResponseFactory.Bogus(f.Random.Int(5, 20), seed),
-                    PointsPerTournament = PointsPerTournamentResponseFactory.Bogus(f.Random.Int(5, 20), seed),
-                    FinalsPerEntry = FinalsPerEntryResponseFactory.Bogus(f.Random.Int(5, 20), seed),
-                    AverageFinishes = AverageFinishResponseFactory.Bogus(f.Random.Int(5, 20), seed),
-                    SeasonAtAGlance = SeasonAtAGlanceResponseFactory.Bogus(1, seed).Single(),
-                    SeasonsBests = SeasonBestsResponseFactory.Bogus(1, seed).Single(),
-                    FieldMatchPlaySummary = FieldMatchPlaySummaryResponseFactory.Bogus(1, seed).Single(),
-                    OpenPointsRace = PointsRaceSeriesResponseFactory.Bogus(f.Random.Int(3, 10), seed),
+                    BowlerOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(5, 20), f),
+                    SeniorOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(1, 5), f),
+                    SuperSeniorOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(1, 5), f),
+                    WomanOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(1, 5), f),
+                    RookieOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(1, 5), f),
+                    YouthOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(0, 3), f),
+                    HighAverage = HighAverageResponseFactory.Bogus(f.Random.Int(5, 20), f),
+                    HighBlock = HighBlockResponseFactory.Bogus(f.Random.Int(5, 20), f),
+                    MatchPlayAverage = MatchPlayAverageResponseFactory.Bogus(f.Random.Int(5, 20), f),
+                    MatchPlayRecord = MatchPlayRecordResponseFactory.Bogus(f.Random.Int(5, 20), f),
+                    MatchPlayAppearances = MatchPlayAppearancesResponseFactory.Bogus(f.Random.Int(5, 20), f),
+                    PointsPerEntry = PointsPerEntryResponseFactory.Bogus(f.Random.Int(5, 20), f),
+                    PointsPerTournament = PointsPerTournamentResponseFactory.Bogus(f.Random.Int(5, 20), f),
+                    FinalsPerEntry = FinalsPerEntryResponseFactory.Bogus(f.Random.Int(5, 20), f),
+                    AverageFinishes = AverageFinishResponseFactory.Bogus(f.Random.Int(5, 20), f),
+                    SeasonAtAGlance = SeasonAtAGlanceResponseFactory.Bogus(1, f).Single(),
+                    SeasonsBests = SeasonBestsResponseFactory.Bogus(1, f).Single(),
+                    FieldMatchPlaySummary = FieldMatchPlaySummaryResponseFactory.Bogus(1, f).Single(),
+                    OpenPointsRace = PointsRaceSeriesResponseFactory.Bogus(f.Random.Int(3, 10), f),
                     SeniorPointsRace = [],
                     SuperSeniorPointsRace = [],
                     WomenPointsRace = [],
                     YouthPointsRace = [],
                     RookiePointsRace = [],
-                    AllBowlers = FullStatModalRowResponseFactory.Bogus(f.Random.Int(10, 30), seed),
+                    AllBowlers = FullStatModalRowResponseFactory.Bogus(f.Random.Int(10, 30), f),
                     MinimumNumberOfGames = f.Random.Decimal(10, 60),
                     MinimumNumberOfTournaments = f.Random.Decimal(2, 8),
                     MinimumNumberOfEntries = f.Random.Decimal(3, 12)
@@ -120,5 +120,11 @@ public static class GetSeasonStatsResponseFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<GetSeasonStatsResponse> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

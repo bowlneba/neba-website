@@ -37,7 +37,7 @@ public static class BowlingCenterSummaryDtoFactory
                 Name = f.Company.CompanyName(),
                 Status = f.PickRandom(BowlingCenterStatus.List.ToArray()).Name,
                 Address = addressPool.GetNext(),
-                PhoneNumbers = PhoneNumberDtoFactory.Bogus(3, seed),
+                PhoneNumbers = PhoneNumberDtoFactory.Bogus(3, f),
                 Website = f.Random.Bool() ? f.Internet.Url() : null
             });
 
@@ -47,5 +47,11 @@ public static class BowlingCenterSummaryDtoFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<BowlingCenterSummaryDto> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

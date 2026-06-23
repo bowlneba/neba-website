@@ -61,4 +61,10 @@ public static class MatchPlayRecordResponseFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<MatchPlayRecordResponse> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

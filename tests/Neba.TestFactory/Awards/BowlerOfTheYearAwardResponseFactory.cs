@@ -38,4 +38,10 @@ public static class BowlerOfTheYearAwardResponseFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<BowlerOfTheYearAwardResponse> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

@@ -42,4 +42,10 @@ public static class ApplicationUserFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<ApplicationUser> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

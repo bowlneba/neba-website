@@ -100,4 +100,10 @@ public static class ArticleFactory
         return faker.Generate(count);
     }
 #pragma warning restore CA1308
+
+    public static IReadOnlyCollection<Article> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

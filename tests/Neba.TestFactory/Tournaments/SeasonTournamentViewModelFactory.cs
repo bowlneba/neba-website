@@ -88,4 +88,10 @@ public static class SeasonTournamentViewModelFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<SeasonTournamentViewModel> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

@@ -40,4 +40,10 @@ public static class BowlerTitleDtoFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<BowlerTitleDto> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

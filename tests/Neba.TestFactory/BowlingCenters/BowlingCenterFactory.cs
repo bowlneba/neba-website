@@ -57,11 +57,11 @@ public static class BowlingCenterFactory
                 CertificationNumber = CertificationNumberFactory.Create(certPool.GetNext()),
                 Name = f.Company.CompanyName(),
                 Status = f.PickRandom(BowlingCenterStatus.List.ToArray()),
-                Address = AddressFactory.BogusUs(seed: seed),
-                PhoneNumbers = PhoneNumberFactory.Bogus(3, seed),
+                Address = AddressFactory.BogusUs(f),
+                PhoneNumbers = PhoneNumberFactory.Bogus(3, f),
                 EmailAddress = EmailAddressFactory.Create(f.Internet.Email()),
                 Website = f.Internet.Url(),
-                Lanes = LaneConfigurationFactory.Bogus(1, seed).Single(),
+                Lanes = LaneConfigurationFactory.Bogus(1, f).Single(),
                 WebsiteId = websiteIdPool.GetNextNullable(),
                 LegacyId = legacyIdPool.GetNextNullable()
             });
@@ -72,5 +72,11 @@ public static class BowlingCenterFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<BowlingCenter> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

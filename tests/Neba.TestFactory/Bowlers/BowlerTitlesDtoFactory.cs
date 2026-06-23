@@ -29,7 +29,7 @@ public static class BowlerTitlesDtoFactory
                     LastName = f.Person.LastName,
                 },
                 HallOfFame = f.Random.Bool(),
-                Titles = BowlerTitleDtoFactory.Bogus(f.Random.Int(0, 10), seed),
+                Titles = BowlerTitleDtoFactory.Bogus(f.Random.Int(0, 10), f),
             });
 
         if (seed.HasValue)
@@ -38,5 +38,11 @@ public static class BowlerTitlesDtoFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<BowlerTitlesDto> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

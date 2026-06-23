@@ -28,7 +28,7 @@ public static class BowlerOfTheYearPointsRaceSeriesDtoFactory
             {
                 BowlerId = new BowlerId(Ulid.BogusString(f)),
                 BowlerName = bowlerNamePool.GetNext(),
-                Results = BowlerOfTheYearPointsRaceTournamentDtoFactory.Bogus(f.Random.Int(1, 5), f.Random.Int(1, int.MaxValue))
+                Results = BowlerOfTheYearPointsRaceTournamentDtoFactory.Bogus(f.Random.Int(1, 5), f)
             });
 
         if (seed.HasValue)
@@ -37,5 +37,11 @@ public static class BowlerOfTheYearPointsRaceSeriesDtoFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

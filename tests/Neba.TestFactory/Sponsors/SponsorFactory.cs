@@ -97,4 +97,10 @@ public static class SponsorFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<Sponsor> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

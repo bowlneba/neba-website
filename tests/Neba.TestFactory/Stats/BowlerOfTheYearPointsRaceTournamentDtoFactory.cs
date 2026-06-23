@@ -43,4 +43,10 @@ public static class BowlerOfTheYearPointsRaceTournamentDtoFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<BowlerOfTheYearPointsRaceTournamentDto> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

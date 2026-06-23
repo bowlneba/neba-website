@@ -35,33 +35,24 @@ public static class SeasonStatsDtoFactory
     public static IReadOnlyCollection<SeasonStatsDto> Bogus(int count, int? seed = null)
     {
         var faker = new Faker<SeasonStatsDto>()
-            .CustomInstantiator(f =>
+            .CustomInstantiator(f => new SeasonStatsDto
             {
-                var seasonSeed = f.Random.Int(1, int.MaxValue);
-                var seasonsWithStatsSeed = f.Random.Int(1, int.MaxValue);
-                var bowlerStatsSeed = f.Random.Int(1, int.MaxValue);
-                var bowlerOfTheYearRaceSeed = f.Random.Int(1, int.MaxValue);
-                var summarySeed = f.Random.Int(1, int.MaxValue);
-
-                return new SeasonStatsDto
+                Season = SeasonWithStatsDtoFactory.Bogus(1, f).Single(),
+                SeasonsWithStats = SeasonWithStatsDtoFactory.Bogus(f.Random.Int(1, 5), f),
+                BowlerStats = BowlerSeasonStatsDtoFactory.Bogus(f.Random.Int(1, 10), f),
+                BowlerOfTheYearRaces = new Dictionary<int, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>>
                 {
-                    Season = SeasonWithStatsDtoFactory.Bogus(1, seasonSeed).Single(),
-                    SeasonsWithStats = SeasonWithStatsDtoFactory.Bogus(f.Random.Int(1, 5), seasonsWithStatsSeed),
-                    BowlerStats = BowlerSeasonStatsDtoFactory.Bogus(f.Random.Int(1, 10), bowlerStatsSeed),
-                    BowlerOfTheYearRaces = new Dictionary<int, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>>
-                    {
-                        [BowlerOfTheYearCategory.Open.Value] = BowlerOfTheYearPointsRaceSeriesDtoFactory.Bogus(f.Random.Int(1, 5), bowlerOfTheYearRaceSeed),
-                        [BowlerOfTheYearCategory.Senior.Value] = [],
-                        [BowlerOfTheYearCategory.SuperSenior.Value] = [],
-                        [BowlerOfTheYearCategory.Woman.Value] = [],
-                        [BowlerOfTheYearCategory.Youth.Value] = [],
-                        [BowlerOfTheYearCategory.Rookie.Value] = [],
-                    },
-                    Summary = SeasonStatsSummaryDtoFactory.Bogus(1, summarySeed).Single(),
-                    MinimumNumberOfGames = f.Random.Decimal(10, 60),
-                    MinimumNumberOfTournaments = f.Random.Decimal(2, 8),
-                    MinimumNumberOfEntries = f.Random.Decimal(3, 12),
-                };
+                    [BowlerOfTheYearCategory.Open.Value] = BowlerOfTheYearPointsRaceSeriesDtoFactory.Bogus(f.Random.Int(1, 5), f),
+                    [BowlerOfTheYearCategory.Senior.Value] = [],
+                    [BowlerOfTheYearCategory.SuperSenior.Value] = [],
+                    [BowlerOfTheYearCategory.Woman.Value] = [],
+                    [BowlerOfTheYearCategory.Youth.Value] = [],
+                    [BowlerOfTheYearCategory.Rookie.Value] = [],
+                },
+                Summary = SeasonStatsSummaryDtoFactory.Bogus(1, f).Single(),
+                MinimumNumberOfGames = f.Random.Decimal(10, 60),
+                MinimumNumberOfTournaments = f.Random.Decimal(2, 8),
+                MinimumNumberOfEntries = f.Random.Decimal(3, 12),
             });
 
         if (seed.HasValue)
@@ -70,5 +61,11 @@ public static class SeasonStatsDtoFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<SeasonStatsDto> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

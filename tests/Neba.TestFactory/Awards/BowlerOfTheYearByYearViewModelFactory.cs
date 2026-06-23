@@ -33,4 +33,10 @@ public static class BowlerOfTheYearByYearViewModelFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyList<BowlerOfTheYearByYearViewModel> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

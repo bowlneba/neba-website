@@ -88,7 +88,7 @@ public static class SponsorDetailViewModelFactory
                 BusinessPostalCode = f.Address.ZipCode(),
                 BusinessCountry = f.Address.CountryCode(),
                 ContactEmail = f.Internet.Email(),
-                PhoneNumbers = PhoneNumberResponseFactory.Bogus(1, seed),
+                PhoneNumbers = PhoneNumberResponseFactory.Bogus(1, f),
             });
 
         if (seed.HasValue)
@@ -97,5 +97,11 @@ public static class SponsorDetailViewModelFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<SponsorDetailViewModel> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

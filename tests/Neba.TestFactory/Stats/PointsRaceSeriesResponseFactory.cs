@@ -25,7 +25,7 @@ public static class PointsRaceSeriesResponseFactory
             {
                 BowlerId = Ulid.BogusString(f),
                 BowlerName = f.Name.FullName(),
-                Results = PointsRaceTournamentResponseFactory.Bogus(f.Random.Int(1, 10), seed)
+                Results = PointsRaceTournamentResponseFactory.Bogus(f.Random.Int(1, 10), f)
             });
 
         if (seed.HasValue)
@@ -34,5 +34,11 @@ public static class PointsRaceSeriesResponseFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<PointsRaceSeriesResponse> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

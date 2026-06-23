@@ -3,34 +3,34 @@
   HallOfFame: true,
   Titles: [
     {
-      TournamentId: 01H5NWSZGV35M086EJNMHDV50C,
-      TournamentName: application Music, Garden & Kids,
+      TournamentId: 01F7SXBGJCNB25MZ9DTWHADJPR,
+      TournamentName: Germany Garden,
       TournamentDate: Date_1,
-      TournamentType: Non-Champions
-    },
-    {
-      TournamentId: 01JB1WD6ATQDZQ599RZC6AP1XZ,
-      TournamentName: Unbranded Granite Salad Metal,
-      TournamentDate: Date_2,
-      TournamentType: Senior
-    },
-    {
-      TournamentId: 01J0YPVYB0BYQ7DV84NCAPW1QW,
-      TournamentName: Gorgeous Steel Car metrics,
-      TournamentDate: Date_3,
-      TournamentType: 40 - 49
-    },
-    {
-      TournamentId: 01H1TT3FARW7BT0XPPTQJREV5R,
-      TournamentName: Massachusetts Tasty,
-      TournamentDate: Date_4,
       TournamentType: Masters
     },
     {
-      TournamentId: 01HA5GZ3PM8J8PXY92HM3AWTRY,
-      TournamentName: Music, Movies & Shoes payment,
+      TournamentId: 01HRPTP8M8CWP8MX9B9AX055RC,
+      TournamentName: New Leu District,
+      TournamentDate: Date_2,
+      TournamentType: Over/Under 40 Doubles
+    },
+    {
+      TournamentId: 01JRP0XBHXTNSW45PFDH06Y2CE,
+      TournamentName: next-generation Berkshire,
+      TournamentDate: Date_3,
+      TournamentType: Doubles
+    },
+    {
+      TournamentId: 01HVNKV1KH24TAMDCS1Z1JMFRP,
+      TournamentName: implementation Club,
+      TournamentDate: Date_4,
+      TournamentType: Over 40
+    },
+    {
+      TournamentId: 01K36H7V13SXVR63CRR14GC8DV,
+      TournamentName: Wooden Plaza,
       TournamentDate: Date_5,
-      TournamentType: High Roller
+      TournamentType: Over/Under 40 Doubles
     }
   ]
 }

@@ -50,4 +50,10 @@ public static class HighAverageDtoFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<HighAverageDto> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

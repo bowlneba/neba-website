@@ -45,7 +45,7 @@ public static class ArticleDetailResponseFactory
                     HeaderImageUrl = hasHeaderImage ? new Uri(f.Internet.Url()) : null,
                     PublishDateUtc = f.Date.PastOffset(2),
                     TournamentId = f.Random.Bool() ? Ulid.NewUlid().ToString() : null,
-                    Attachments = ArticleAttachmentResponseFactory.Bogus(f.Random.Int(0, 3), seed),
+                    Attachments = ArticleAttachmentResponseFactory.Bogus(f.Random.Int(0, 3), f),
                 };
             });
 
@@ -55,5 +55,11 @@ public static class ArticleDetailResponseFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<ArticleDetailResponse> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

@@ -10,7 +10,7 @@ public static class LaneConfigurationFactory
     public static IReadOnlyCollection<LaneConfiguration> Bogus(int count, int? seed = null)
     {
         var faker = new Faker<LaneConfiguration>()
-            .CustomInstantiator(_ => Create([.. LaneRangeFactory.Bogus(1, seed)]));
+            .CustomInstantiator(f => Create([.. LaneRangeFactory.Bogus(1, f)]));
 
         if (seed.HasValue)
         {
@@ -18,5 +18,11 @@ public static class LaneConfigurationFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<LaneConfiguration> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

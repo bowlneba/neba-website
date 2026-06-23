@@ -21,7 +21,7 @@ public static class TitlesByYearViewModelFactory
             .CustomInstantiator(f => new TitlesByYearViewModel
             {
                 Year = f.Date.Past(50).Year,
-                Titles = BowlerTitleViewModelFactory.Bogus(f.Random.Int(1, 6), seed),
+                Titles = BowlerTitleViewModelFactory.Bogus(f.Random.Int(1, 6), f),
             });
 
         if (seed.HasValue)
@@ -30,5 +30,11 @@ public static class TitlesByYearViewModelFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<TitlesByYearViewModel> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

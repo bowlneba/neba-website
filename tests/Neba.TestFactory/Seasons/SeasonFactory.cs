@@ -63,6 +63,12 @@ public static class SeasonFactory
         return seasons;
     }
 
+    public static IReadOnlyCollection<Season> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
+
 #pragma warning disable CA5394 // Random is acceptable here — used only for test data generation, not security
     private static void AssignAwards(Season season, IReadOnlyCollection<BowlerId> bowlerIds, Random rng)
     {

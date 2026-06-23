@@ -78,4 +78,10 @@ public static class FullStatModalRowDtoFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<FullStatModalRowDto> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

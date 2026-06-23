@@ -76,4 +76,10 @@ public static class BoyProgressionResultDtoFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<BoyProgressionResultDto> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

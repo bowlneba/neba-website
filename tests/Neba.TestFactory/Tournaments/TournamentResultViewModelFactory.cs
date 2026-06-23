@@ -55,4 +55,10 @@ public static class TournamentResultViewModelFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<TournamentResultViewModel> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

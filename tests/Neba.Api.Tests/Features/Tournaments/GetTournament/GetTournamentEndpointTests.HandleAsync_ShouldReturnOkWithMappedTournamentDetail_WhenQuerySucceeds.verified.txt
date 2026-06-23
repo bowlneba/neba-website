@@ -1,4 +1,4 @@
-{
+﻿{
   Id: 01GBP3VHXR2YX9DBG4SMXSK1MY,
   Name: impactful function incremental,
   Season: 2026 Season,
@@ -10,7 +10,7 @@
   RegistrationUrl: https://raymond.name,
   AddedMoney: 3462.948614481345000,
   Reservations: 52,
-  EntryCount: 38,
+  EntryCount: 2,
   PatternLengthCategory: Long,
   PatternRatioCategory: Challenge,
   BowlingCenter: {
@@ -38,54 +38,52 @@
   ],
   Results: [
     {
-      BowlerName: Carl Zemlak,
-      Place: 3,
-      PrizeMoney: 668.106465911542000,
-      Points: 14,
-      SideCutName: ut,
-      SideCutIndicator: #085C09
-    },
-    {
-      BowlerName: Laron Bernier,
+      BowlerName: Enrique Wolf,
       Place: 0,
-      PrizeMoney: 125.518289453126000,
-      Points: 52
+      PrizeMoney: 248.561033629142000,
+      Points: 60
     },
     {
-      BowlerName: Melba Gulgowski,
-      Place: 2,
-      PrizeMoney: 168.434224169904000,
-      Points: 26
+      BowlerName: Edmond Bauch,
+      Place: 1,
+      PrizeMoney: 975.172772526356000,
+      Points: 83
     },
     {
-      BowlerName: Rafael Johnston,
-      Place: 5,
-      PrizeMoney: 724.408364726421000,
-      Points: 51
-    },
-    {
-      BowlerName: Alvah Connelly,
+      BowlerName: Lexie Thiel,
       Place: 0,
-      PrizeMoney: 173.651170532057000,
-      Points: 76
+      PrizeMoney: 705.866732497638000,
+      Points: 48
     },
     {
-      BowlerName: Marian O'Reilly,
+      BowlerName: Lyla Gaylord,
       Place: 6,
-      PrizeMoney: 234.588458312018000,
-      Points: 25
+      PrizeMoney: 916.081168184095000,
+      Points: 61
     },
     {
-      BowlerName: Dolores Cassin,
-      Place: 8,
-      PrizeMoney: 505.603544649483000,
+      BowlerName: Pinkie Bernhard,
+      Place: 0,
+      PrizeMoney: 667.984944147982000,
       Points: 32
     },
     {
-      BowlerName: Rachael Ondricka,
-      Place: 4,
-      PrizeMoney: 380.969613502254000,
-      Points: 26
+      BowlerName: Kirk Jenkins,
+      Place: 0,
+      PrizeMoney: 951.352595328983000,
+      Points: 27
+    },
+    {
+      BowlerName: Layne Muller,
+      Place: 0,
+      PrizeMoney: 766.763728934696000,
+      Points: 67
+    },
+    {
+      BowlerName: Arne Morar,
+      Place: 0,
+      PrizeMoney: 745.956161872464000,
+      Points: 78
     }
   ]
 }

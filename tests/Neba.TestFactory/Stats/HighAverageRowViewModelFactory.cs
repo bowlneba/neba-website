@@ -63,4 +63,10 @@ public static class HighAverageRowViewModelFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<HighAverageRowViewModel> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

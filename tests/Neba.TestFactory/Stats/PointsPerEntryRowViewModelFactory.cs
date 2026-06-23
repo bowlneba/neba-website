@@ -52,4 +52,10 @@ public static class PointsPerEntryRowViewModelFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<PointsPerEntryRowViewModel> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

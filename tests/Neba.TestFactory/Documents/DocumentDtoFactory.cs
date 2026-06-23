@@ -44,4 +44,10 @@ public static class DocumentDtoFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<DocumentDto> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

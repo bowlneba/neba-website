@@ -40,4 +40,10 @@ public static class BowlerTitleSummaryViewModelFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<BowlerTitleSummaryViewModel> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

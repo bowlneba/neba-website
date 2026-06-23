@@ -25,7 +25,7 @@ public static class BowlerTitlesResponseFactory
             {
                 BowlerName = f.Name.FullName(),
                 HallOfFame = f.Random.Bool(),
-                Titles = BowlerTitleResponseFactory.Bogus(f.Random.Int(0, 10), seed),
+                Titles = BowlerTitleResponseFactory.Bogus(f.Random.Int(0, 10), f),
             });
 
         if (seed.HasValue)
@@ -34,5 +34,11 @@ public static class BowlerTitlesResponseFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<BowlerTitlesResponse> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

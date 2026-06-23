@@ -184,4 +184,10 @@ public static class BowlerSeasonStatsDtoFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<BowlerSeasonStatsDto> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

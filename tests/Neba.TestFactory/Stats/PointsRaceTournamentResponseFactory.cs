@@ -40,4 +40,10 @@ public static class PointsRaceTournamentResponseFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<PointsRaceTournamentResponse> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

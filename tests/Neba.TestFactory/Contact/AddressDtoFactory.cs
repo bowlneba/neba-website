@@ -49,4 +49,10 @@ public static class AddressDtoFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<AddressDto> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

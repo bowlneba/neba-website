@@ -7,45 +7,50 @@
       TournamentType: Over/Under 40 Doubles,
       Champions: [
         {
-          BowlerId: 01GBP3VHXR2YX9DBG4SMXSK1MY,
-          BowlerName: Clayton Hammes,
-          HallOfFame: true
-        }
-      ]
-    },
-    {
-      TournamentId: 01FP7GC25P4NAHEQECDT5GJ52Q,
-      TournamentName: International Cocos (Keeling) Islands,
-      TournamentDate: Date_2,
-      TournamentType: Invitational,
-      Champions: [
-        {
-          BowlerId: 01GBP3VHXR2YX9DBG4SMXSK1MY,
-          BowlerName: Clayton Hammes,
-          HallOfFame: true
-        },
-        {
-          BowlerId: 01KDCZ51B8G4VPK0CTNQNV7FS9,
-          BowlerName: Brad Schiller,
-          HallOfFame: true
-        },
-        {
-          BowlerId: 01K9GAJRAD4ZQEX06JCH8JADBQ,
-          BowlerName: Katherine Metz,
+          BowlerId: 01F59KXMYW9SY3CMBJDEBTERN7,
+          BowlerName: Jimmy Quigley,
           HallOfFame: false
         }
       ]
     },
     {
-      TournamentId: 01FN6Y18BPRW3XQBQJE3E9A189,
-      TournamentName: Concrete copy,
-      TournamentDate: Date_3,
-      TournamentType: Doubles,
+      TournamentId: 01HKEK4GQT2XEWRVMB14A5F6NG,
+      TournamentName: Cocos (Keeling) Islands Incredible Rubber Bacon,
+      TournamentDate: Date_2,
+      TournamentType: Over/Under 40 Doubles,
       Champions: [
         {
-          BowlerId: 01GBP3VHXR2YX9DBG4SMXSK1MY,
-          BowlerName: Clayton Hammes,
+          BowlerId: 01HQBVCSMSQMJB8YSE8F5PMG3A,
+          BowlerName: Sidney Moore,
+          HallOfFame: false
+        },
+        {
+          BowlerId: 01GQKGDCJV1TBYPY6T7MHYPYPF,
+          BowlerName: Josh Ondricka,
+          HallOfFame: false
+        },
+        {
+          BowlerId: 01HZCT4W0J7S7AJKKF54JXY2AM,
+          BowlerName: Erica Tillman,
           HallOfFame: true
+        },
+        {
+          BowlerId: 01GJAVKSQQZ04V30C1JEHTAJK9,
+          BowlerName: Ross Jaskolski,
+          HallOfFame: true
+        }
+      ]
+    },
+    {
+      TournamentId: 01JQY9HD0HVJAGA2BECXNYFW8D,
+      TournamentName: Generic Granite Car models,
+      TournamentDate: Date_3,
+      TournamentType: Eliminator,
+      Champions: [
+        {
+          BowlerId: 01JZW7P1VRF5HE2HGZM3Y2RCW4,
+          BowlerName: Marco Morar,
+          HallOfFame: false
         }
       ]
     }

@@ -84,31 +84,31 @@ public static class StatsPageViewModelFactory
                         .ToDictionary(i => year - i, i => $"{year - i}-{year - i + 1}"),
                     BowlerSearchList = Enumerable.Range(0, f.Random.Int(1, 10))
                         .ToDictionary(_ => Ulid.BogusString(f), _ => f.Name.FullName()),
-                    BowlerOfTheYear = BowlerOfTheYearStandingRowViewModelFactory.Bogus(10, seed),
-                    SeniorOfTheYear = BowlerOfTheYearStandingRowViewModelFactory.Bogus(5, seed),
-                    SuperSeniorOfTheYear = BowlerOfTheYearStandingRowViewModelFactory.Bogus(5, seed),
-                    WomanOfTheYear = BowlerOfTheYearStandingRowViewModelFactory.Bogus(5, seed),
-                    RookieOfTheYear = BowlerOfTheYearStandingRowViewModelFactory.Bogus(5, seed),
-                    YouthOfTheYear = BowlerOfTheYearStandingRowViewModelFactory.Bogus(5, seed),
-                    HighAverage = HighAverageRowViewModelFactory.Bogus(5, seed),
-                    HighBlock = HighBlockRowViewModelFactory.Bogus(5, seed),
-                    MatchPlayAverage = MatchPlayAverageRowViewModelFactory.Bogus(5, seed),
-                    MatchPlayRecord = MatchPlayRecordRowViewModelFactory.Bogus(5, seed),
-                    MatchPlayAppearances = MatchPlayAppearancesRowViewModelFactory.Bogus(5, seed),
-                    PointsPerEntry = PointsPerEntryRowViewModelFactory.Bogus(5, seed),
-                    PointsPerTournament = PointsPerTournamentRowViewModelFactory.Bogus(5, seed),
-                    FinalsPerEntry = FinalsPerEntryRowViewModelFactory.Bogus(5, seed),
-                    AverageFinishes = AverageFinishRowViewModelFactory.Bogus(5, seed),
-                    SeasonAtAGlance = SeasonAtAGlanceViewModelFactory.Bogus(1, seed).Single(),
-                    SeasonsBests = SeasonBestsViewModelFactory.Bogus(1, seed).Single(),
-                    FieldMatchPlaySummary = FieldMatchPlaySummaryViewModelFactory.Bogus(1, seed).Single(),
-                    OpenPointsRace = PointsRaceSeriesViewModelFactory.Bogus(f.Random.Int(1, 5), seed),
+                    BowlerOfTheYear = BowlerOfTheYearStandingRowViewModelFactory.Bogus(10, f),
+                    SeniorOfTheYear = BowlerOfTheYearStandingRowViewModelFactory.Bogus(5, f),
+                    SuperSeniorOfTheYear = BowlerOfTheYearStandingRowViewModelFactory.Bogus(5, f),
+                    WomanOfTheYear = BowlerOfTheYearStandingRowViewModelFactory.Bogus(5, f),
+                    RookieOfTheYear = BowlerOfTheYearStandingRowViewModelFactory.Bogus(5, f),
+                    YouthOfTheYear = BowlerOfTheYearStandingRowViewModelFactory.Bogus(5, f),
+                    HighAverage = HighAverageRowViewModelFactory.Bogus(5, f),
+                    HighBlock = HighBlockRowViewModelFactory.Bogus(5, f),
+                    MatchPlayAverage = MatchPlayAverageRowViewModelFactory.Bogus(5, f),
+                    MatchPlayRecord = MatchPlayRecordRowViewModelFactory.Bogus(5, f),
+                    MatchPlayAppearances = MatchPlayAppearancesRowViewModelFactory.Bogus(5, f),
+                    PointsPerEntry = PointsPerEntryRowViewModelFactory.Bogus(5, f),
+                    PointsPerTournament = PointsPerTournamentRowViewModelFactory.Bogus(5, f),
+                    FinalsPerEntry = FinalsPerEntryRowViewModelFactory.Bogus(5, f),
+                    AverageFinishes = AverageFinishRowViewModelFactory.Bogus(5, f),
+                    SeasonAtAGlance = SeasonAtAGlanceViewModelFactory.Bogus(1, f).Single(),
+                    SeasonsBests = SeasonBestsViewModelFactory.Bogus(1, f).Single(),
+                    FieldMatchPlaySummary = FieldMatchPlaySummaryViewModelFactory.Bogus(1, f).Single(),
+                    OpenPointsRace = PointsRaceSeriesViewModelFactory.Bogus(f.Random.Int(1, 5), f),
                     SeniorPointsRace = [],
                     SuperSeniorPointsRace = [],
                     WomenPointsRace = [],
                     YouthPointsRace = [],
                     RookiePointsRace = [],
-                    AllBowlers = FullStatModalRowViewModelFactory.Bogus(25, seed),
+                    AllBowlers = FullStatModalRowViewModelFactory.Bogus(25, f),
                     MinimumNumberOfGames = f.Random.Decimal(10, 60),
                     MinimumNumberOfTournaments = f.Random.Decimal(2, 8),
                     MinimumNumberOfEntries = f.Random.Decimal(3, 12),
@@ -121,5 +121,11 @@ public static class StatsPageViewModelFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<StatsPageViewModel> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

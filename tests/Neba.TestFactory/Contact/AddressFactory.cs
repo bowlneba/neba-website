@@ -34,6 +34,18 @@ public static class AddressFactory
     public static Address BogusUs(int? seed = null)
         => BogusUs(1, seed).Single();
 
+    public static Address BogusUs(Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return BogusUs(1, parentFaker.Random.Int()).Single();
+    }
+
+    public static IReadOnlyCollection<Address> BogusUs(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return BogusUs(count, parentFaker.Random.Int());
+    }
+
     public static IReadOnlyCollection<Address> BogusUs(int count, int? seed)
     {
         var faker = new Bogus.Faker<Address>()
@@ -73,6 +85,18 @@ public static class AddressFactory
 
     public static Address BogusCanadian(int? seed = null)
         => BogusCanadian(1, seed).Single();
+
+    public static Address BogusCanadian(Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return BogusCanadian(1, parentFaker.Random.Int()).Single();
+    }
+
+    public static IReadOnlyCollection<Address> BogusCanadian(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return BogusCanadian(count, parentFaker.Random.Int());
+    }
 
     public static IReadOnlyCollection<Address> BogusCanadian(int count, int? seed)
     {

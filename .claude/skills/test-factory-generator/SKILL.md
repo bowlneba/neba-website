@@ -151,17 +151,54 @@ When a ViewModel/Response stores `BowlerId` as a raw `Ulid` (exposed as the `.Va
 
 ### Nested factory calls in Bogus()
 
-When a property is populated by calling another factory's `Bogus()` method inside `Bogus()`, **always forward the seed**:
+There are two distinct patterns depending on WHERE the child factory is called. Using the wrong pattern causes all parent items to receive identical child collections.
+
+#### Pattern A — Pre-computation (pool): call child Bogus() BEFORE the faker
+
+When you need a unique pool of child objects distributed across parent items (e.g., each parent gets a distinct name from a pre-shuffled pool), call `Bogus()` once before the faker and wrap it in a `UniquePool`. Forward `seed` to keep the pool deterministic:
 
 ```csharp
-// ✅ Correct — seed forwarded
-Results = OtherFactory.Bogus(f.Random.Int(1, 5), seed)
+// ✅ Correct — child factory called once, pool distributed via GetNext()
+var namePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
 
-// ❌ Wrong — seed dropped, breaks Verify snapshot tests
-Results = OtherFactory.Bogus(f.Random.Int(1, 5))
+var faker = new Faker<Bowler>()
+    .CustomInstantiator(f => new() { Name = namePool.GetNext(), ... });
 ```
 
-This applies whether the call is inside `CustomInstantiator` or in the pre-computation block before the faker. The seed must flow to every nested `Bogus()` call in the method.
+#### Pattern B — Inside CustomInstantiator: use the parent-faker overload
+
+When each parent item needs its own independently-generated child collection, call the `Bogus(int count, Faker parentFaker)` overload and pass `f` (the parent faker). This derives a unique seed from the parent's RNG state so each iteration produces different children while still being deterministic per seed:
+
+```csharp
+// ✅ Correct — parent faker overload; children unique per parent item
+.CustomInstantiator(f => new()
+{
+    Results = PointsRaceTournamentResponseFactory.Bogus(f.Random.Int(1, 10), f),
+    Champions = ChampionResponseFactory.Bogus(f.Random.Int(1, 4), f),
+})
+
+// ❌ Wrong — same seed passed every iteration → all parents get identical children
+.CustomInstantiator(f => new()
+{
+    Results = PointsRaceTournamentResponseFactory.Bogus(f.Random.Int(1, 10), seed),
+})
+
+// ❌ Wrong — no seed → children non-deterministic, breaks Verify snapshot tests
+.CustomInstantiator(f => new()
+{
+    Results = PointsRaceTournamentResponseFactory.Bogus(f.Random.Int(1, 10)),
+})
+```
+
+Every factory exposes `Bogus(int count, Faker parentFaker)` alongside the `Bogus(int count, int? seed = null)` overload. The parent-faker overload delegates to the seed overload via `parentFaker.Random.Int()`, which advances the parent's RNG state (ensuring each iteration gets a different derived seed) and uses the result as the child's seed (ensuring reproducibility):
+
+```csharp
+public static IReadOnlyCollection<PointsRaceTournamentResponse> Bogus(int count, Faker parentFaker)
+{
+    ArgumentNullException.ThrowIfNull(parentFaker);
+    return Bogus(count, seed: parentFaker.Random.Int());
+}
+```
 
 ### Bogus() implementation — always use Faker<T>
 
