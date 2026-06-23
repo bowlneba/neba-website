@@ -33,44 +33,36 @@ public static class MatchPlayAverageRowViewModelFactory
             Winnings = winnings ?? ValidWinnings
         };
 
-    public static IReadOnlyCollection<MatchPlayAverageRowViewModel> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<MatchPlayAverageRowViewModel> Bogus(int count, Faker faker)
     {
+        ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;
         const decimal maxAverage = 250m;
         const decimal minAverage = 150m;
         var step = count > 1
             ? (maxAverage - minAverage) / (count - 1)
             : 0m;
-
-        var faker = new Faker<MatchPlayAverageRowViewModel>()
-            .CustomInstantiator(f =>
-            {
-                var currentRank = rank++;
-
-                return new MatchPlayAverageRowViewModel
-                {
-                    Rank = currentRank,
-                    BowlerId = Ulid.BogusString(f),
-                    BowlerName = f.Name.FullName(),
-                    MatchPlayAverage = decimal.Round(maxAverage - ((currentRank - 1) * step), 2),
-                    Games = f.Random.Int(0, 20),
-                    Wins = f.Random.Int(0, 20),
-                    Loses = f.Random.Int(0, 20),
-                    Winnings = f.Random.Decimal(0, 10000)
-                };
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            var currentRank = rank++;
+            return new MatchPlayAverageRowViewModel
+            {
+                Rank = currentRank,
+                BowlerId = Ulid.BogusString(faker),
+                BowlerName = faker.Name.FullName(),
+                MatchPlayAverage = decimal.Round(maxAverage - ((currentRank - 1) * step), 2),
+                Games = faker.Random.Int(0, 20),
+                Wins = faker.Random.Int(0, 20),
+                Loses = faker.Random.Int(0, 20),
+                Winnings = faker.Random.Decimal(0, 10000)
+            };
+        })];
     }
 
-    public static IReadOnlyCollection<MatchPlayAverageRowViewModel> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<MatchPlayAverageRowViewModel> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

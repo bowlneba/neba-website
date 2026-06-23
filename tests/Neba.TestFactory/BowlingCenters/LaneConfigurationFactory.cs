@@ -7,22 +7,17 @@ public static class LaneConfigurationFactory
     public static LaneConfiguration Create(IReadOnlyList<LaneRange>? ranges = null)
         => LaneConfiguration.Create(ranges ?? [LaneRangeFactory.Create()]).Value;
 
-    public static IReadOnlyCollection<LaneConfiguration> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<LaneConfiguration> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<LaneConfiguration>()
-            .CustomInstantiator(f => Create([.. LaneRangeFactory.Bogus(1, f)]));
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ =>
+            Create([.. LaneRangeFactory.Bogus(1, faker)]))];
     }
 
-    public static IReadOnlyCollection<LaneConfiguration> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<LaneConfiguration> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

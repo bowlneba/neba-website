@@ -52,58 +52,53 @@ public static class ArticleFactory
 #pragma warning restore S107
 
 #pragma warning disable CA1308
-    public static IReadOnlyCollection<Article> Bogus(int count, int? seed = null, IEnumerable<TournamentId>? tournamentIds = null)
+    public static IReadOnlyCollection<Article> Bogus(int count, Faker faker, IEnumerable<TournamentId>? tournamentIds = null)
     {
-        var uniqueImages = UniquePool.CreateNullable(StoredFileFactory.Bogus(count, seed), seed);
-        var uniqueTournamentIds = UniquePool.CreateNullable(tournamentIds ?? [], seed);
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var uniqueImages = UniquePool.CreateNullable(StoredFileFactory.Bogus(count, faker), poolSeed);
+        var uniqueTournamentIds = UniquePool.CreateNullable(tournamentIds ?? [], poolSeed);
 
-        var faker = new Faker<Article>()
-            .CustomInstantiator(f =>
-            {
-                var title = f.Random.Words(3);
-
-                var article = new Article
-                {
-                    Id = new ArticleId(Ulid.BogusString(f)),
-                    Title = title,
-                    Slug = title.ToLowerInvariant().Replace(' ', '-'),
-                    Content = f.Lorem.Paragraphs(2),
-                    PublicationStatus = f.PickRandom(PublicationStatus.List.ToArray()),
-                    PublishDateUtc = f.Date.PastOffset(2).ToUniversalTime(),
-                    HeaderImage = uniqueImages.GetNextNullable(),
-                    TournamentId = uniqueTournamentIds.GetNextNullable()
-                };
-
-                var attachmentCount = f.Random.Int(0, 3);
-                for (var i = 0; i < attachmentCount; i++)
-                {
-                    article.AddAttachment(
-                        f.Random.Words(2),
-                        new StoredFile
-                        {
-                            Container = $"container-{f.Random.AlphaNumeric(8)}",
-                            Path = f.System.FileName(),
-                            ContentType = f.System.MimeType(),
-                            SizeInBytes = f.Random.Long(1, 10_000_000)
-                        },
-                        f.Random.Bool());
-                }
-
-                return article;
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
+            var title = faker.Random.Words(3);
 
-        return faker.Generate(count);
+            var article = new Article
+            {
+                Id = new ArticleId(Ulid.BogusString(faker)),
+                Title = title,
+                Slug = title.ToLowerInvariant().Replace(' ', '-'),
+                Content = faker.Lorem.Paragraphs(2),
+                PublicationStatus = faker.PickRandom(PublicationStatus.List.ToArray()),
+                PublishDateUtc = faker.Date.PastOffset(2).ToUniversalTime(),
+                HeaderImage = uniqueImages.GetNextNullable(),
+                TournamentId = uniqueTournamentIds.GetNextNullable()
+            };
+
+            var attachmentCount = faker.Random.Int(0, 3);
+            for (var i = 0; i < attachmentCount; i++)
+            {
+                article.AddAttachment(
+                    faker.Random.Words(2),
+                    new StoredFile
+                    {
+                        Container = $"container-{faker.Random.AlphaNumeric(8)}",
+                        Path = faker.System.FileName(),
+                        ContentType = faker.System.MimeType(),
+                        SizeInBytes = faker.Random.Long(1, 10_000_000)
+                    },
+                    faker.Random.Bool());
+            }
+
+            return article;
+        })];
     }
 #pragma warning restore CA1308
 
-    public static IReadOnlyCollection<Article> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<Article> Bogus(int count, int? seed = null, IEnumerable<TournamentId>? tournamentIds = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker, tournamentIds);
     }
 }

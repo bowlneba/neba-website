@@ -30,43 +30,35 @@ public static class HighAverageRowViewModelFactory
             FieldAverage = fieldAverage ?? ValidFieldAverage
         };
 
-    public static IReadOnlyCollection<HighAverageRowViewModel> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<HighAverageRowViewModel> Bogus(int count, Faker faker)
     {
+        ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;
         const decimal maxAverage = 250m;
         const decimal minAverage = 150m;
         var step = count > 1
             ? (maxAverage - minAverage) / (count - 1)
             : 0m;
-
-        var faker = new Faker<HighAverageRowViewModel>()
-            .CustomInstantiator(f =>
-            {
-                var currentRank = rank++;
-
-                return new HighAverageRowViewModel
-                {
-                    Rank = currentRank,
-                    BowlerId = Ulid.BogusString(f),
-                    BowlerName = f.Name.FullName(),
-                    Average = decimal.Round(maxAverage - ((currentRank - 1) * step), 3),
-                    Games = f.Random.Int(0, 20),
-                    Tournaments = f.Random.Int(0, 10),
-                    FieldAverage = f.Random.Decimal(150, 250)
-                };
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            var currentRank = rank++;
+            return new HighAverageRowViewModel
+            {
+                Rank = currentRank,
+                BowlerId = Ulid.BogusString(faker),
+                BowlerName = faker.Name.FullName(),
+                Average = decimal.Round(maxAverage - ((currentRank - 1) * step), 3),
+                Games = faker.Random.Int(0, 20),
+                Tournaments = faker.Random.Int(0, 10),
+                FieldAverage = faker.Random.Decimal(150, 250)
+            };
+        })];
     }
 
-    public static IReadOnlyCollection<HighAverageRowViewModel> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<HighAverageRowViewModel> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

@@ -25,30 +25,23 @@ public static class NameFactory
              Nickname = nickname
          };
 
-    public static IReadOnlyCollection<Name> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<Name> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<Name>()
-            .CustomInstantiator(f =>
-            new Name
-            {
-                FirstName = f.Person.FirstName,
-                LastName = f.Person.LastName,
-                MiddleName = f.Random.Bool() ? f.Name.FirstName() : null,
-                Suffix = f.Random.Bool() ? f.PickRandom(NameSuffix.List.ToList()) : null,
-                Nickname = f.Random.Bool() ? f.Name.FirstName() : null
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new Name
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            FirstName = faker.Person.FirstName,
+            LastName = faker.Person.LastName,
+            MiddleName = faker.Random.Bool() ? faker.Name.FirstName() : null,
+            Suffix = faker.Random.Bool() ? faker.PickRandom(NameSuffix.List.ToList()) : null,
+            Nickname = faker.Random.Bool() ? faker.Name.FirstName() : null
+        })];
     }
 
-    public static IReadOnlyCollection<Name> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<Name> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

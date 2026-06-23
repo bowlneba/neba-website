@@ -33,42 +33,34 @@ public static class MatchPlayRecordRowViewModelFactory
             Winnings = winnings ?? ValidWinnings
         };
 
-    public static IReadOnlyCollection<MatchPlayRecordRowViewModel> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<MatchPlayRecordRowViewModel> Bogus(int count, Faker faker)
     {
+        ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;
         var totalGames = Math.Max(count + 5, 10);
-
-        var faker = new Faker<MatchPlayRecordRowViewModel>()
-            .CustomInstantiator(f =>
-            {
-                var currentRank = rank++;
-                var loses = currentRank - 1;
-                var wins = totalGames - loses;
-
-                return new MatchPlayRecordRowViewModel
-                {
-                    Rank = currentRank,
-                    BowlerId = Ulid.BogusString(f),
-                    BowlerName = f.Name.FullName(),
-                    Wins = wins,
-                    Loses = loses,
-                    Finals = f.Random.Int(0, 10),
-                    MatchPlayAverage = f.Random.Decimal(150, 250),
-                    Winnings = f.Random.Decimal(0, 10000)
-                };
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            var currentRank = rank++;
+            var loses = currentRank - 1;
+            var wins = totalGames - loses;
+            return new MatchPlayRecordRowViewModel
+            {
+                Rank = currentRank,
+                BowlerId = Ulid.BogusString(faker),
+                BowlerName = faker.Name.FullName(),
+                Wins = wins,
+                Loses = loses,
+                Finals = faker.Random.Int(0, 10),
+                MatchPlayAverage = faker.Random.Decimal(150, 250),
+                Winnings = faker.Random.Decimal(0, 10000)
+            };
+        })];
     }
 
-    public static IReadOnlyCollection<MatchPlayRecordRowViewModel> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<MatchPlayRecordRowViewModel> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

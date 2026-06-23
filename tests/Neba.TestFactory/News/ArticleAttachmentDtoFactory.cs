@@ -1,7 +1,5 @@
 using System.Net.Mime;
 
-using Bogus;
-
 using Neba.Api.Features.News.GetArticle;
 
 namespace Neba.TestFactory.News;
@@ -22,27 +20,21 @@ public static class ArticleAttachmentDtoFactory
             ContentType = contentType ?? MediaTypeNames.Application.Pdf,
         };
 
-    public static IReadOnlyCollection<ArticleAttachmentDto> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<ArticleAttachmentDto> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<ArticleAttachmentDto>()
-            .CustomInstantiator(f => new ArticleAttachmentDto
-            {
-                DisplayName = f.Random.Words(2),
-                Url = new Uri(f.Internet.Url()),
-                ContentType = f.System.MimeType()
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new ArticleAttachmentDto
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            DisplayName = faker.Random.Words(2),
+            Url = new Uri(faker.Internet.Url()),
+            ContentType = faker.System.MimeType()
+        })];
     }
 
-    public static IReadOnlyCollection<ArticleAttachmentDto> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<ArticleAttachmentDto> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

@@ -27,40 +27,32 @@ public static class MatchPlayAppearancesRowViewModelFactory
             Entries = entries ?? ValidEntries
         };
 
-    public static IReadOnlyCollection<MatchPlayAppearancesRowViewModel> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<MatchPlayAppearancesRowViewModel> Bogus(int count, Faker faker)
     {
+        ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;
-
-        var faker = new Faker<MatchPlayAppearancesRowViewModel>()
-            .CustomInstantiator(f =>
-            {
-                var currentRank = rank++;
-                var finals = Math.Max(0, count - currentRank + 1);
-                var tournaments = finals + f.Random.Int(0, 5);
-                var entries = tournaments + f.Random.Int(0, 8);
-
-                return new MatchPlayAppearancesRowViewModel
-                {
-                    Rank = currentRank,
-                    BowlerId = Ulid.BogusString(f),
-                    BowlerName = f.Name.FullName(),
-                    Finals = finals,
-                    Tournaments = tournaments,
-                    Entries = entries
-                };
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            var currentRank = rank++;
+            var finals = Math.Max(0, count - currentRank + 1);
+            var tournaments = finals + faker.Random.Int(0, 5);
+            var entries = tournaments + faker.Random.Int(0, 8);
+            return new MatchPlayAppearancesRowViewModel
+            {
+                Rank = currentRank,
+                BowlerId = Ulid.BogusString(faker),
+                BowlerName = faker.Name.FullName(),
+                Finals = finals,
+                Tournaments = tournaments,
+                Entries = entries
+            };
+        })];
     }
 
-    public static IReadOnlyCollection<MatchPlayAppearancesRowViewModel> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<MatchPlayAppearancesRowViewModel> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

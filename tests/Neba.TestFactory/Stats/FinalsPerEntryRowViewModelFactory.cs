@@ -24,38 +24,30 @@ public static class FinalsPerEntryRowViewModelFactory
             Entries = entries ?? ValidEntries
         };
 
-    public static IReadOnlyCollection<FinalsPerEntryRowViewModel> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<FinalsPerEntryRowViewModel> Bogus(int count, Faker faker)
     {
+        ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;
         const int entries = 20;
-
-        var faker = new Faker<FinalsPerEntryRowViewModel>()
-            .CustomInstantiator(f =>
-            {
-                var currentRank = rank++;
-                var finals = Math.Max(0, count - currentRank + 1);
-
-                return new FinalsPerEntryRowViewModel
-                {
-                    Rank = currentRank,
-                    BowlerId = Ulid.BogusString(f),
-                    BowlerName = f.Name.FullName(),
-                    Finals = finals,
-                    Entries = entries
-                };
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            var currentRank = rank++;
+            var finals = Math.Max(0, count - currentRank + 1);
+            return new FinalsPerEntryRowViewModel
+            {
+                Rank = currentRank,
+                BowlerId = Ulid.BogusString(faker),
+                BowlerName = faker.Name.FullName(),
+                Finals = finals,
+                Entries = entries
+            };
+        })];
     }
 
-    public static IReadOnlyCollection<FinalsPerEntryRowViewModel> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<FinalsPerEntryRowViewModel> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

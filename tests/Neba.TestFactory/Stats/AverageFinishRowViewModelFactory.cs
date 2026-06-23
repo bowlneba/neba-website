@@ -27,40 +27,33 @@ public static class AverageFinishRowViewModelFactory
             Winnings = winnings ?? ValidWinnings
         };
 
-    public static IReadOnlyCollection<AverageFinishRowViewModel> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<AverageFinishRowViewModel> Bogus(int count, Faker faker)
     {
+        ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;
-
-        var faker = new Faker<AverageFinishRowViewModel>()
-            .CustomInstantiator(f =>
-            {
-                var currentRank = rank++;
-                var averageFinish = 1.5m + (currentRank * 0.5m);
-                var finals = Math.Max(0, count - currentRank + 1);
-                var winnings = (count - currentRank + 1) * 100m;
-
-                return new AverageFinishRowViewModel
-                {
-                    Rank = currentRank,
-                    BowlerId = Ulid.BogusString(f),
-                    BowlerName = f.Name.FullName(),
-                    AverageFinish = averageFinish,
-                    Finals = finals,
-                    Winnings = winnings
-                };
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
+            var currentRank = rank++;
+            var averageFinish = 1.5m + (currentRank * 0.5m);
+            var finals = Math.Max(0, count - currentRank + 1);
+            var winnings = (count - currentRank + 1) * 100m;
 
-        return faker.Generate(count);
+            return new AverageFinishRowViewModel
+            {
+                Rank = currentRank,
+                BowlerId = Ulid.BogusString(faker),
+                BowlerName = faker.Name.FullName(),
+                AverageFinish = averageFinish,
+                Finals = finals,
+                Winnings = winnings
+            };
+        })];
     }
 
-    public static IReadOnlyCollection<AverageFinishRowViewModel> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<AverageFinishRowViewModel> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

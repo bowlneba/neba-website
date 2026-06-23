@@ -34,37 +34,31 @@ public static class MatchPlayAverageResponseFactory
             Winnings = winnings ?? ValidWinnings
         };
 
-    public static IReadOnlyCollection<MatchPlayAverageResponse> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<MatchPlayAverageResponse> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<MatchPlayAverageResponse>()
-            .CustomInstantiator(f =>
-            {
-                var wins = f.Random.Int(1, 20);
-                var losses = f.Random.Int(1, 20);
-                return new MatchPlayAverageResponse
-                {
-                    BowlerId = Ulid.BogusString(f),
-                    BowlerName = f.Name.FullName(),
-                    MatchPlayAverage = f.Random.Decimal(180, 240),
-                    Games = wins + losses,
-                    Wins = wins,
-                    Losses = losses,
-                    WinPercentage = Math.Round((decimal)wins / (wins + losses) * 100, 2),
-                    Winnings = f.Random.Decimal(0, 5000)
-                };
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            var wins = faker.Random.Int(1, 20);
+            var losses = faker.Random.Int(1, 20);
+            return new MatchPlayAverageResponse
+            {
+                BowlerId = Ulid.BogusString(faker),
+                BowlerName = faker.Name.FullName(),
+                MatchPlayAverage = faker.Random.Decimal(180, 240),
+                Games = wins + losses,
+                Wins = wins,
+                Losses = losses,
+                WinPercentage = Math.Round((decimal)wins / (wins + losses) * 100, 2),
+                Winnings = faker.Random.Decimal(0, 5000)
+            };
+        })];
     }
 
-    public static IReadOnlyCollection<MatchPlayAverageResponse> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<MatchPlayAverageResponse> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

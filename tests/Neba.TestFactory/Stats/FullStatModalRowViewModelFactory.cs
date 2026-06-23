@@ -47,47 +47,39 @@ public static class FullStatModalRowViewModelFactory
             Tournaments = touranments ?? ValidTouranments
         };
 
-    public static IReadOnlyCollection<FullStatModalRowViewModel> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<FullStatModalRowViewModel> Bogus(int count, Faker faker)
     {
+        ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;
         var totalMatchPlayGames = Math.Max(count + 5, 10);
-
-        var faker = new Faker<FullStatModalRowViewModel>()
-            .CustomInstantiator(f =>
-            {
-                var currentRank = rank++;
-                var loses = currentRank - 1;
-                var wins = totalMatchPlayGames - loses;
-
-                return new FullStatModalRowViewModel
-                {
-                    Rank = currentRank,
-                    BowlerId = Ulid.BogusString(f),
-                    BowlerName = f.Name.FullName(),
-                    Points = Math.Max(0, count - currentRank + 1) * 10,
-                    Average = f.Random.Decimal(150, 250),
-                    Games = f.Random.Int(10, 60),
-                    Finals = f.Random.Int(0, 10),
-                    Wins = wins,
-                    Loses = loses,
-                    MatchPlayAverage = f.Random.Bool() ? f.Random.Decimal(150, 250) : null,
-                    Winnings = f.Random.Decimal(0, 10000),
-                    FieldAverage = f.Random.Decimal(150, 250),
-                    Tournaments = f.Random.Int(1, 20)
-                };
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            var currentRank = rank++;
+            var loses = currentRank - 1;
+            var wins = totalMatchPlayGames - loses;
+            return new FullStatModalRowViewModel
+            {
+                Rank = currentRank,
+                BowlerId = Ulid.BogusString(faker),
+                BowlerName = faker.Name.FullName(),
+                Points = Math.Max(0, count - currentRank + 1) * 10,
+                Average = faker.Random.Decimal(150, 250),
+                Games = faker.Random.Int(10, 60),
+                Finals = faker.Random.Int(0, 10),
+                Wins = wins,
+                Loses = loses,
+                MatchPlayAverage = faker.Random.Bool() ? faker.Random.Decimal(150, 250) : null,
+                Winnings = faker.Random.Decimal(0, 10000),
+                FieldAverage = faker.Random.Decimal(150, 250),
+                Tournaments = faker.Random.Int(1, 20)
+            };
+        })];
     }
 
-    public static IReadOnlyCollection<FullStatModalRowViewModel> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<FullStatModalRowViewModel> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

@@ -22,28 +22,22 @@ public static class FieldMatchPlaySummaryResponseFactory
             MostFinalsBowlers = mostFinalsBowlers ?? new Dictionary<string, string> { { ValidBowlerId, ValidBowlerName } }
         };
 
-    public static IReadOnlyCollection<FieldMatchPlaySummaryResponse> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<FieldMatchPlaySummaryResponse> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<FieldMatchPlaySummaryResponse>()
-            .CustomInstantiator(f => new FieldMatchPlaySummaryResponse
-            {
-                HighestWinPercentage = f.Random.Decimal(50, 100),
-                HighestWinPercentageBowlers = new Dictionary<string, string> { { Ulid.BogusString(f), f.Name.FullName() } },
-                MostFinals = f.Random.Int(1, 15),
-                MostFinalsBowlers = new Dictionary<string, string> { { Ulid.BogusString(f), f.Name.FullName() } }
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new FieldMatchPlaySummaryResponse
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            HighestWinPercentage = faker.Random.Decimal(50, 100),
+            HighestWinPercentageBowlers = new Dictionary<string, string> { { Ulid.BogusString(faker), faker.Name.FullName() } },
+            MostFinals = faker.Random.Int(1, 15),
+            MostFinalsBowlers = new Dictionary<string, string> { { Ulid.BogusString(faker), faker.Name.FullName() } }
+        })];
     }
 
-    public static IReadOnlyCollection<FieldMatchPlaySummaryResponse> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<FieldMatchPlaySummaryResponse> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

@@ -14,29 +14,23 @@ public static class LaneRangeFactory
             endLane ?? ValidEndLane,
             pinFallType ?? ValidPinFallType).Value;
 
-    public static IReadOnlyCollection<LaneRange> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<LaneRange> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<LaneRange>()
-            .CustomInstantiator(f =>
-            {
-                var startPairIndex = f.Random.Int(1, 30);
-                var startLane = (startPairIndex * 2) - 1;   // odd: 1, 3, 5, ..., 59
-                var pairCount = f.Random.Int(1, 15);
-                var endLane = startLane + (pairCount * 2) - 1;  // always even
-                return Create(startLane, endLane, f.PickRandom(PinFallType.List.ToArray()));
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            var startPairIndex = faker.Random.Int(1, 30);
+            var startLane = (startPairIndex * 2) - 1;
+            var pairCount = faker.Random.Int(1, 15);
+            var endLane = startLane + (pairCount * 2) - 1;
+            return Create(startLane, endLane, faker.PickRandom(PinFallType.List.ToArray()));
+        })];
     }
 
-    public static IReadOnlyCollection<LaneRange> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<LaneRange> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

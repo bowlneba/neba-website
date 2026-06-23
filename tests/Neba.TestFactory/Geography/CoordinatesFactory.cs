@@ -13,30 +13,25 @@ public static class CoordinatesFactory
     {
         return new Coordinates
         {
-            Latitude = latitude ?? ValidLatitude, // Default to New York City latitude
-            Longitude = longitude ?? ValidLongitude // Default to New York City longitude
+            Latitude = latitude ?? ValidLatitude,
+            Longitude = longitude ?? ValidLongitude
         };
     }
 
-    public static IReadOnlyCollection<Coordinates> Bogus(int count, int? seed)
+    public static IReadOnlyCollection<Coordinates> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<Coordinates>()
-            .CustomInstantiator(f => Coordinates.Create(
-                    latitude: f.Person.Address.Geo.Lat,
-                    longitude: f.Person.Address.Geo.Lng
-                ).Value);
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ =>
+            Coordinates.Create(
+                latitude: faker.Person.Address.Geo.Lat,
+                longitude: faker.Person.Address.Geo.Lng
+            ).Value)];
     }
 
-    public static IReadOnlyCollection<Coordinates> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<Coordinates> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

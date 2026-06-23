@@ -27,32 +27,26 @@ public static class AddressDtoFactory
             Longitude = longitude
         };
 
-    public static IReadOnlyCollection<AddressDto> Bogus(int count, int? seed)
+    public static IReadOnlyCollection<AddressDto> Bogus(int count, Faker faker)
     {
-        var faker = new Bogus.Faker<AddressDto>()
-            .CustomInstantiator(f => new()
-            {
-                Street = f.Address.StreetAddress(),
-                Unit = f.Random.Bool() ? f.Address.SecondaryAddress() : null,
-                City = f.Address.City(),
-                Region = f.Address.StateAbbr(),
-                Country = Country.UnitedStates.Value,
-                PostalCode = f.Address.ZipCode(),
-                Latitude = f.Address.Latitude(),
-                Longitude = f.Address.Longitude()
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new AddressDto
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            Street = faker.Address.StreetAddress(),
+            Unit = faker.Random.Bool() ? faker.Address.SecondaryAddress() : null,
+            City = faker.Address.City(),
+            Region = faker.Address.StateAbbr(),
+            Country = Country.UnitedStates.Value,
+            PostalCode = faker.Address.ZipCode(),
+            Latitude = faker.Address.Latitude(),
+            Longitude = faker.Address.Longitude()
+        })];
     }
 
-    public static IReadOnlyCollection<AddressDto> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<AddressDto> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

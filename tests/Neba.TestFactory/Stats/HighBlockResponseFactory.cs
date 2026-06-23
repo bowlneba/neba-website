@@ -22,28 +22,22 @@ public static class HighBlockResponseFactory
             HighGame = highGame ?? ValidHighGame
         };
 
-    public static IReadOnlyCollection<HighBlockResponse> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<HighBlockResponse> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<HighBlockResponse>()
-            .CustomInstantiator(f => new HighBlockResponse
-            {
-                BowlerId = Ulid.BogusString(f),
-                BowlerName = f.Name.FullName(),
-                HighBlock = f.Random.Int(1000, 1300),
-                HighGame = f.Random.Int(200, 300)
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new HighBlockResponse
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            BowlerId = Ulid.BogusString(faker),
+            BowlerName = faker.Name.FullName(),
+            HighBlock = faker.Random.Int(1000, 1300),
+            HighGame = faker.Random.Int(200, 300)
+        })];
     }
 
-    public static IReadOnlyCollection<HighBlockResponse> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<HighBlockResponse> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

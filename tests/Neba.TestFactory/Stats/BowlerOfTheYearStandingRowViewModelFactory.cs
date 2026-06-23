@@ -36,40 +36,32 @@ public static class BowlerOfTheYearStandingRowViewModelFactory
             Winnings = winnings ?? ValidWinnings
         };
 
-    public static IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> Bogus(int count, Faker faker)
     {
+        ArgumentNullException.ThrowIfNull(faker);
         var ranking = 1;
-
-        var faker = new Faker<BowlerOfTheYearStandingRowViewModel>()
-            .CustomInstantiator(f =>
-            {
-                var rank = ranking++;
-
-                return new BowlerOfTheYearStandingRowViewModel
-                {
-                    Rank = rank,
-                    BowlerId = Ulid.BogusString(f),
-                    BowlerName = f.Name.FullName(),
-                    Points = Math.Max(0, count - rank + 1),
-                    Tournaments = f.Random.Int(0, 20),
-                    Entries = f.Random.Int(0, 50),
-                    Finals = f.Random.Int(0, 10),
-                    AverageFinish = f.Random.Decimal(1, 10),
-                    Winnings = f.Random.Decimal(0, 10000)
-                };
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            var rank = ranking++;
+            return new BowlerOfTheYearStandingRowViewModel
+            {
+                Rank = rank,
+                BowlerId = Ulid.BogusString(faker),
+                BowlerName = faker.Name.FullName(),
+                Points = Math.Max(0, count - rank + 1),
+                Tournaments = faker.Random.Int(0, 20),
+                Entries = faker.Random.Int(0, 50),
+                Finals = faker.Random.Int(0, 10),
+                AverageFinish = faker.Random.Decimal(1, 10),
+                Winnings = faker.Random.Decimal(0, 10000)
+            };
+        })];
     }
 
-    public static IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

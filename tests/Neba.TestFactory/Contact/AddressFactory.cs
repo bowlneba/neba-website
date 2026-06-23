@@ -31,39 +31,33 @@ public static class AddressFactory
             coordinates
         ).Value;
 
+    public static Address BogusUs(Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        return BogusUs(1, faker).Single();
+    }
+
     public static Address BogusUs(int? seed = null)
         => BogusUs(1, seed).Single();
 
-    public static Address BogusUs(Faker parentFaker)
+    public static IReadOnlyCollection<Address> BogusUs(int count, Faker faker)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return BogusUs(1, parentFaker.Random.Int()).Single();
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => CreateUsAddress(
+            street: faker.Address.StreetAddress(),
+            unit: faker.Random.Bool() ? faker.Address.SecondaryAddress() : null,
+            city: faker.Address.City(),
+            state: faker.PickRandom(UsState.List.ToArray()),
+            postalCode: faker.Address.ZipCode(),
+            coordinates: Coordinates.Create(faker.Address.Latitude(), faker.Address.Longitude()).Value
+        ))];
     }
 
-    public static IReadOnlyCollection<Address> BogusUs(int count, Faker parentFaker)
+    public static IReadOnlyCollection<Address> BogusUs(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return BogusUs(count, parentFaker.Random.Int());
-    }
-
-    public static IReadOnlyCollection<Address> BogusUs(int count, int? seed)
-    {
-        var faker = new Bogus.Faker<Address>()
-            .CustomInstantiator(f => CreateUsAddress(
-                street: f.Address.StreetAddress(),
-                unit: f.Random.Bool() ? f.Address.SecondaryAddress() : null,
-                city: f.Address.City(),
-                state: f.PickRandom(UsState.List.ToArray()),
-                postalCode: f.Address.ZipCode(),
-                coordinates: Coordinates.Create(f.Address.Latitude(), f.Address.Longitude()).Value
-            ));
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return BogusUs(count, faker);
     }
 
     public static Address CreateCanadianAddress(
@@ -83,38 +77,32 @@ public static class AddressFactory
             coordinates
         ).Value;
 
+    public static Address BogusCanadian(Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        return BogusCanadian(1, faker).Single();
+    }
+
     public static Address BogusCanadian(int? seed = null)
         => BogusCanadian(1, seed).Single();
 
-    public static Address BogusCanadian(Faker parentFaker)
+    public static IReadOnlyCollection<Address> BogusCanadian(int count, Faker faker)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return BogusCanadian(1, parentFaker.Random.Int()).Single();
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => CreateCanadianAddress(
+            street: faker.Address.StreetAddress(),
+            unit: faker.Random.Bool() ? faker.Address.SecondaryAddress() : null,
+            city: faker.Address.City(),
+            province: faker.PickRandom(CanadianProvince.List.ToArray()),
+            postalCode: faker.Address.ZipCode("?#? #?#"),
+            coordinates: Coordinates.Create(faker.Address.Latitude(), faker.Address.Longitude()).Value
+        ))];
     }
 
-    public static IReadOnlyCollection<Address> BogusCanadian(int count, Faker parentFaker)
+    public static IReadOnlyCollection<Address> BogusCanadian(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return BogusCanadian(count, parentFaker.Random.Int());
-    }
-
-    public static IReadOnlyCollection<Address> BogusCanadian(int count, int? seed)
-    {
-        var faker = new Bogus.Faker<Address>()
-            .CustomInstantiator(f => CreateCanadianAddress(
-                street: f.Address.StreetAddress(),
-                unit: f.Random.Bool() ? f.Address.SecondaryAddress() : null,
-                city: f.Address.City(),
-                province: f.PickRandom(CanadianProvince.List.ToArray()),
-                postalCode: f.Address.ZipCode("?#? #?#"), // Simple pattern for Canadian postal codes
-                coordinates: Coordinates.Create(f.Address.Latitude(), f.Address.Longitude()).Value
-            ));
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return BogusCanadian(count, faker);
     }
 }

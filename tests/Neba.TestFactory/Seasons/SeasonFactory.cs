@@ -29,30 +29,24 @@ public static class SeasonFactory
 
     public static IReadOnlyCollection<Season> Bogus(
         int count,
-        IReadOnlyCollection<BowlerId>? bowlerIds = null,
-        int? seed = null)
+        Faker faker,
+        IReadOnlyCollection<BowlerId>? bowlerIds = null)
     {
-        var faker = new Faker<Season>()
-            .CustomInstantiator(f => new()
-            {
-                Id = new SeasonId(Ulid.BogusString(f)),
-                Description = $"{f.Date.PastDateOnly(100).Year} Season",
-                StartDate = f.Date.PastDateOnly(5),
-                EndDate = f.Date.FutureDateOnly(5),
-                Complete = f.Random.Bool()
-            });
+        ArgumentNullException.ThrowIfNull(faker);
 
-        if (seed.HasValue)
+        List<Season> seasons = [.. Enumerable.Range(0, count).Select(_ => new Season
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        var seasons = faker.Generate(count);
+            Id = new SeasonId(Ulid.BogusString(faker)),
+            Description = $"{faker.Date.PastDateOnly(100).Year} Season",
+            StartDate = faker.Date.PastDateOnly(5),
+            EndDate = faker.Date.FutureDateOnly(5),
+            Complete = faker.Random.Bool()
+        })];
 
         if (bowlerIds is { Count: > 0 })
         {
 #pragma warning disable CA5394 // Random is acceptable here — used only for test data generation, not security
-            var rng = seed.HasValue ? new Random(seed.Value) : Random.Shared;
+            var rng = new Random(faker.Random.Int());
 #pragma warning restore CA5394
             foreach (var season in seasons.Where(s => s.Complete))
             {
@@ -63,10 +57,14 @@ public static class SeasonFactory
         return seasons;
     }
 
-    public static IReadOnlyCollection<Season> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<Season> Bogus(
+        int count,
+        IReadOnlyCollection<BowlerId>? bowlerIds = null,
+        int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker, bowlerIds);
     }
 
 #pragma warning disable CA5394 // Random is acceptable here — used only for test data generation, not security

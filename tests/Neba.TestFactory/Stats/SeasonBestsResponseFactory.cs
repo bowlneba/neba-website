@@ -27,30 +27,24 @@ public static class SeasonBestsResponseFactory
             HighAverageBowlers = highAverageBowlers ?? new Dictionary<string, string> { { ValidBowlerId, ValidBowlerName } }
         };
 
-    public static IReadOnlyCollection<SeasonBestsResponse> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<SeasonBestsResponse> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<SeasonBestsResponse>()
-            .CustomInstantiator(f => new SeasonBestsResponse
-            {
-                HighGame = f.Random.Int(270, 300),
-                HighGameBowlers = new Dictionary<string, string> { { Ulid.BogusString(f), f.Name.FullName() } },
-                HighBlock = f.Random.Int(1200, 1400),
-                HighBlockBowlers = new Dictionary<string, string> { { Ulid.BogusString(f), f.Name.FullName() } },
-                HighAverage = f.Random.Decimal(210, 240),
-                HighAverageBowlers = new Dictionary<string, string> { { Ulid.BogusString(f), f.Name.FullName() } }
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new SeasonBestsResponse
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            HighGame = faker.Random.Int(270, 300),
+            HighGameBowlers = new Dictionary<string, string> { { Ulid.BogusString(faker), faker.Name.FullName() } },
+            HighBlock = faker.Random.Int(1200, 1400),
+            HighBlockBowlers = new Dictionary<string, string> { { Ulid.BogusString(faker), faker.Name.FullName() } },
+            HighAverage = faker.Random.Decimal(210, 240),
+            HighAverageBowlers = new Dictionary<string, string> { { Ulid.BogusString(faker), faker.Name.FullName() } }
+        })];
     }
 
-    public static IReadOnlyCollection<SeasonBestsResponse> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<SeasonBestsResponse> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

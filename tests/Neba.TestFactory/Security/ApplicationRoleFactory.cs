@@ -14,25 +14,19 @@ public static class ApplicationRoleFactory
             Id = id ?? Ulid.NewUlid()
         };
 
-    public static IReadOnlyCollection<ApplicationRole> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<ApplicationRole> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<ApplicationRole>()
-            .CustomInstantiator(f => new ApplicationRole(f.Random.Word())
-            {
-                Id = new Ulid(f.Random.Guid())
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new ApplicationRole(faker.Random.Word())
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            Id = new Ulid(faker.Random.Guid())
+        })];
     }
 
-    public static IReadOnlyCollection<ApplicationRole> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<ApplicationRole> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

@@ -37,46 +37,39 @@ public static class BowlingCenterFactory
             LegacyId = legacyId
         };
 
-    public static IReadOnlyCollection<BowlingCenter> Bogus(int count, int? seed)
+    public static IReadOnlyCollection<BowlingCenter> Bogus(int count, Faker faker)
     {
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
         var certPool = UniquePool.Create(
             Enumerable.Range(10000, 90000).Select(i => i.ToString(CultureInfo.InvariantCulture)),
-            seed);
-
+            poolSeed);
         var websiteIdPool = UniquePool.CreateNullable(
             Enumerable.Range(1, 100_000).Select(i => (int?)i),
-            seed);
-
+            poolSeed);
         var legacyIdPool = UniquePool.CreateNullable(
             Enumerable.Range(100_001, 100_000).Select(i => (int?)i),
-            seed);
+            poolSeed);
 
-        var faker = new Faker<BowlingCenter>()
-            .CustomInstantiator(f => new()
-            {
-                CertificationNumber = CertificationNumberFactory.Create(certPool.GetNext()),
-                Name = f.Company.CompanyName(),
-                Status = f.PickRandom(BowlingCenterStatus.List.ToArray()),
-                Address = AddressFactory.BogusUs(f),
-                PhoneNumbers = PhoneNumberFactory.Bogus(3, f),
-                EmailAddress = EmailAddressFactory.Create(f.Internet.Email()),
-                Website = f.Internet.Url(),
-                Lanes = LaneConfigurationFactory.Bogus(1, f).Single(),
-                WebsiteId = websiteIdPool.GetNextNullable(),
-                LegacyId = legacyIdPool.GetNextNullable()
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ => new BowlingCenter
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            CertificationNumber = CertificationNumberFactory.Create(certPool.GetNext()),
+            Name = faker.Company.CompanyName(),
+            Status = faker.PickRandom(BowlingCenterStatus.List.ToArray()),
+            Address = AddressFactory.BogusUs(faker),
+            PhoneNumbers = PhoneNumberFactory.Bogus(3, faker),
+            EmailAddress = EmailAddressFactory.Create(faker.Internet.Email()),
+            Website = faker.Internet.Url(),
+            Lanes = LaneConfigurationFactory.Bogus(1, faker).Single(),
+            WebsiteId = websiteIdPool.GetNextNullable(),
+            LegacyId = legacyIdPool.GetNextNullable()
+        })];
     }
 
-    public static IReadOnlyCollection<BowlingCenter> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<BowlingCenter> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

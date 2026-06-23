@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Api.Email;
 
 namespace Neba.TestFactory.Email;
@@ -23,28 +21,22 @@ public static class EmailMessageFactory
             ReplyTo = replyTo,
         };
 
-    public static IReadOnlyCollection<EmailMessage> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<EmailMessage> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<EmailMessage>()
-            .CustomInstantiator(f => new EmailMessage
-            {
-                To = f.Internet.Email(),
-                Subject = f.Random.Words(3),
-                HtmlBody = $"<p>{f.Lorem.Paragraph()}</p>",
-                ReplyTo = f.Random.Bool() ? f.Internet.Email() : null,
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new EmailMessage
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            To = faker.Internet.Email(),
+            Subject = faker.Random.Words(3),
+            HtmlBody = $"<p>{faker.Lorem.Paragraph()}</p>",
+            ReplyTo = faker.Random.Bool() ? faker.Internet.Email() : null,
+        })];
     }
 
-    public static IReadOnlyCollection<EmailMessage> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<EmailMessage> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

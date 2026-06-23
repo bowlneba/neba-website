@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Storage.Domain;
 using Neba.TestFactory.Storage;
@@ -24,30 +22,24 @@ public static class ArticleAttachmentFactory
             IsInline = isInline ?? ValidIsInline
         };
 
-    public static IReadOnlyCollection<ArticleAttachment> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<ArticleAttachment> Bogus(int count, Faker faker)
     {
-        var files = new Queue<StoredFile>(StoredFileFactory.Bogus(count, seed));
+        ArgumentNullException.ThrowIfNull(faker);
+        var files = new Queue<StoredFile>(StoredFileFactory.Bogus(count, faker));
 
-        var faker = new Faker<ArticleAttachment>()
-            .CustomInstantiator(f => new()
-            {
-                Id = new ArticleAttachmentId(Ulid.BogusString(f)),
-                DisplayName = f.Random.Words(2),
-                File = files.Dequeue(),
-                IsInline = f.Random.Bool()
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ => new ArticleAttachment
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            Id = new ArticleAttachmentId(Ulid.BogusString(faker)),
+            DisplayName = faker.Random.Words(2),
+            File = files.Dequeue(),
+            IsInline = faker.Random.Bool()
+        })];
     }
 
-    public static IReadOnlyCollection<ArticleAttachment> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<ArticleAttachment> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

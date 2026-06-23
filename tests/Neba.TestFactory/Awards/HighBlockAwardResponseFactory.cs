@@ -19,27 +19,21 @@ public static class HighBlockAwardResponseFactory
             Score = score ?? ValidScore
         };
 
-    public static IReadOnlyCollection<HighBlockAwardResponse> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<HighBlockAwardResponse> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<HighBlockAwardResponse>()
-            .CustomInstantiator(f => new()
-            {
-                Season = $"{f.Date.PastDateOnly(100).Year} Season",
-                BowlerName = f.Person.FullName,
-                Score = f.Random.Int(1250, 1400)
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new HighBlockAwardResponse
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            Season = $"{faker.Date.PastDateOnly(100).Year} Season",
+            BowlerName = faker.Person.FullName,
+            Score = faker.Random.Int(1250, 1400)
+        })];
     }
 
-    public static IReadOnlyCollection<HighBlockAwardResponse> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<HighBlockAwardResponse> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

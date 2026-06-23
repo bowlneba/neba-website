@@ -47,48 +47,43 @@ public static class SponsorDetailDtoFactory
                 PhoneNumbers = phoneNumbers ?? [],
             };
 
-    public static IReadOnlyCollection<SponsorDetailDto> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<SponsorDetailDto> Bogus(int count, Faker faker)
     {
-        var businessAddressPool = UniquePool.CreateNullable(AddressDtoFactory.Bogus(count * 10, seed), seed);
-        var businessEmailPool = UniquePool.CreateNullable(EmailAddressFactory.Bogus(count * 10, seed), seed);
-        var phoneNumberPool = UniquePool.Create(PhoneNumberDtoFactory.Bogus(count * 10, seed), seed);
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var businessAddressPool = UniquePool.CreateNullable(AddressDtoFactory.Bogus(count * 10, faker), poolSeed);
+        var businessEmailPool = UniquePool.CreateNullable(EmailAddressFactory.Bogus(count * 10, faker), poolSeed);
+        var phoneNumberPool = UniquePool.Create(PhoneNumberDtoFactory.Bogus(count * 10, faker), poolSeed);
 
-        var faker = new Faker<SponsorDetailDto>()
-            .CustomInstantiator(f =>
-            {
-                var hasLogo = f.Random.Bool();
-                return new()
-                {
-                    Id = new SponsorId(Ulid.BogusString(f)),
-                    Name = f.Company.CompanyName(),
-                    Slug = f.Lorem.Slug(),
-                    IsCurrentSponsor = f.Random.Bool(),
-                    Priority = f.Random.Int(1, 10),
-                    Tier = f.PickRandom(SponsorTier.List.ToArray()).Name,
-                    Category = f.PickRandom(SponsorCategory.List.ToArray()).Name,
-                    LogoUrl = hasLogo ? new Uri(f.Internet.Url()) : null,
-                    WebsiteUrl = new Uri(f.Internet.Url()),
-                    TagPhrase = f.Company.CatchPhrase(),
-                    Description = f.Company.Bs(),
-                    FacebookUrl = new Uri(f.Internet.UrlWithPath("facebook")),
-                    InstagramUrl = new Uri(f.Internet.UrlWithPath("instagram")),
-                    BusinessAddress = businessAddressPool.GetNextNullable(),
-                    BusinessEmailAddress = businessEmailPool.GetNextNullable()?.Value,
-                    PhoneNumbers = [.. new[] { phoneNumberPool.GetNext(), phoneNumberPool.GetNext() }.DistinctBy(p => p.PhoneNumberType)],
-                };
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            var hasLogo = faker.Random.Bool();
+            return new SponsorDetailDto
+            {
+                Id = new SponsorId(Ulid.BogusString(faker)),
+                Name = faker.Company.CompanyName(),
+                Slug = faker.Lorem.Slug(),
+                IsCurrentSponsor = faker.Random.Bool(),
+                Priority = faker.Random.Int(1, 10),
+                Tier = faker.PickRandom(SponsorTier.List.ToArray()).Name,
+                Category = faker.PickRandom(SponsorCategory.List.ToArray()).Name,
+                LogoUrl = hasLogo ? new Uri(faker.Internet.Url()) : null,
+                WebsiteUrl = new Uri(faker.Internet.Url()),
+                TagPhrase = faker.Company.CatchPhrase(),
+                Description = faker.Company.Bs(),
+                FacebookUrl = new Uri(faker.Internet.UrlWithPath("facebook")),
+                InstagramUrl = new Uri(faker.Internet.UrlWithPath("instagram")),
+                BusinessAddress = businessAddressPool.GetNextNullable(),
+                BusinessEmailAddress = businessEmailPool.GetNextNullable()?.Value,
+                PhoneNumbers = [.. new[] { phoneNumberPool.GetNext(), phoneNumberPool.GetNext() }.DistinctBy(p => p.PhoneNumberType)],
+            };
+        })];
     }
 
-    public static IReadOnlyCollection<SponsorDetailDto> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<SponsorDetailDto> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

@@ -24,42 +24,33 @@ public static class HighBlockRowViewModelFactory
             HighGame = highGame ?? ValidHighGame
         };
 
-    public static IReadOnlyCollection<HighBlockRowViewModel> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<HighBlockRowViewModel> Bogus(int count, Faker faker)
     {
+        ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;
         const int maxHighBlock = 1400;
         const int minHighBlock = 1250;
-
         var step = count > 1
             ? (maxHighBlock - minHighBlock) / (count - 1)
             : 0;
-
-        var faker = new Faker<HighBlockRowViewModel>()
-            .CustomInstantiator(f =>
-            {
-                var currentRank = rank++;
-
-                return new HighBlockRowViewModel
-                {
-                    Rank = currentRank,
-                    BowlerId = Ulid.BogusString(f),
-                    BowlerName = f.Name.FullName(),
-                    HighBlock = maxHighBlock - ((currentRank - 1) * step),
-                    HighGame = f.Random.Int(200, 300)
-                };
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            var currentRank = rank++;
+            return new HighBlockRowViewModel
+            {
+                Rank = currentRank,
+                BowlerId = Ulid.BogusString(faker),
+                BowlerName = faker.Name.FullName(),
+                HighBlock = maxHighBlock - ((currentRank - 1) * step),
+                HighGame = faker.Random.Int(200, 300)
+            };
+        })];
     }
 
-    public static IReadOnlyCollection<HighBlockRowViewModel> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<HighBlockRowViewModel> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

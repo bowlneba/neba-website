@@ -55,29 +55,25 @@ public static class BowlerOfTheYearAwardFactory
 
     public static IReadOnlyCollection<BowlerOfTheYearAward> Bogus(
         int count,
-        UniquePool<BowlerId>? bowlerIds = null,
-        int? seed = null
-    )
+        Faker faker,
+        UniquePool<BowlerId>? bowlerIds = null)
     {
-        var faker = new Faker<BowlerOfTheYearAward>()
-            .CustomInstantiator(f => new()
-            {
-                Id = new SeasonAwardId(Ulid.BogusString(f)),
-                BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.BogusString(f)),
-                Category = f.PickRandom(BowlerOfTheYearCategory.List.ToArray())
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new BowlerOfTheYearAward
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            Id = new SeasonAwardId(Ulid.BogusString(faker)),
+            BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.BogusString(faker)),
+            Category = faker.PickRandom(BowlerOfTheYearCategory.List.ToArray())
+        })];
     }
 
-    public static IReadOnlyCollection<BowlerOfTheYearAward> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<BowlerOfTheYearAward> Bogus(
+        int count,
+        UniquePool<BowlerId>? bowlerIds = null,
+        int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker, bowlerIds);
     }
 }

@@ -43,7 +43,7 @@ Check whether the subfolder already exists and whether a factory for this type a
 If the type has properties that must be logically consistent across a generated collection (a `Bogus()` call), determine the correlation strategy **before** writing code. Look at existing factories for precedent:
 
 **Ranked leaderboard types** (have `Rank` property):
-- Use a closure `var rank = 1;` incremented in `CustomInstantiator`
+- Use a closure `var rank = 1;` incremented in the `Select` lambda
 - The primary ordered field (average, block score, points, wins) should decrease as rank increases using a step calculation, so rank 1 has the best value
 - Avoid having the primary sort field generated purely randomly — it would contradict the rank
 
@@ -51,7 +51,7 @@ If the type has properties that must be logically consistent across a generated 
 - Derive one from the other: e.g., `var loses = currentRank - 1; var wins = totalGames - loses;`
 
 **Hierarchical counts** (e.g., `Finals ≤ Tournaments ≤ Entries`):
-- Build upward: `var finals = ...; var tournaments = finals + f.Random.Int(...); var entries = tournaments + f.Random.Int(...);`
+- Build upward: `var finals = ...; var tournaments = finals + faker.Random.Int(...); var entries = tournaments + faker.Random.Int(...);`
 
 **Related IDs across a collection** (e.g., bowlers — each row must have a distinct `BowlerId`):
 - Pass a `UniquePool<BowlerId>? bowlerIds = null` parameter to `Bogus()` so callers can inject correlated IDs
@@ -110,27 +110,27 @@ public static class <TypeName>Factory
             ...
         };
 
-    public static IReadOnlyCollection<<TypeName>> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<<TypeName>> Bogus(int count, Faker faker)
     {
+        ArgumentNullException.ThrowIfNull(faker);
         // Pre-compute correlation variables here if needed (e.g. UniquePool, rank counter)
 
-        var faker = new Faker<<TypeName>>()
-            .CustomInstantiator(f =>
-            {
-                // compute per-row correlation inside instantiator if needed
-
-                return new <TypeName>
-                {
-                    ...
-                };
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
+            // compute per-row correlation inside selector if needed
 
-        return faker.Generate(count);
+            return new <TypeName>
+            {
+                ...
+            };
+        })];
+    }
+
+    public static IReadOnlyCollection<<TypeName>> Bogus(int count, int? seed = null)
+    {
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }
 ```
@@ -139,100 +139,119 @@ public static class <TypeName>Factory
 
 `Create()` uses `SomeId.New()` or `Ulid.NewUlid()` — these are fine because `Create()` is for unit tests that don't snapshot IDs.
 
-`Bogus()` must **always** use `Ulid.Bogus(f)` or `Ulid.BogusString(f)` from `UlidFakerExtension` — **never** `Ulid.NewUlid()`. The extension methods derive the ULID from the faker's seeded RNG, making them deterministic. `Ulid.NewUlid()` calls the system clock and bypasses the seed, which breaks Verify snapshot tests.
+`Bogus()` must **always** use `Ulid.Bogus(faker)` or `Ulid.BogusString(faker)` from `UlidFakerExtension` — **never** `Ulid.NewUlid()`. The extension methods derive the ULID from the faker's seeded RNG, making them deterministic. `Ulid.NewUlid()` calls the system clock and bypasses the seed, which breaks Verify snapshot tests.
 
-| Property type                     | `Create()` default                      | `Bogus()` value                       |
-|-----------------------------------|-----------------------------------------|---------------------------------------|
-| `SomeId` (StronglyTypedId)        | `id ?? SomeId.New()`                    | `new SomeId(Ulid.BogusString(f))`     |
-| `Ulid` (raw, e.g. stored as Ulid) | `bowlerId?.Value ?? Ulid.NewUlid()`     | `Ulid.Bogus(f)`                       |
-| `BowlerId?` typed param           | `bowlerId ?? BowlerId.New()`            | `new BowlerId(Ulid.BogusString(f))`   |
+| Property type                     | `Create()` default                      | `Bogus()` value                           |
+|-----------------------------------|-----------------------------------------|-------------------------------------------|
+| `SomeId` (StronglyTypedId)        | `id ?? SomeId.New()`                    | `new SomeId(Ulid.BogusString(faker))`     |
+| `Ulid` (raw, e.g. stored as Ulid) | `bowlerId?.Value ?? Ulid.NewUlid()`     | `Ulid.Bogus(faker)`                       |
+| `BowlerId?` typed param           | `bowlerId ?? BowlerId.New()`            | `new BowlerId(Ulid.BogusString(faker))`   |
 
-When a ViewModel/Response stores `BowlerId` as a raw `Ulid` (exposed as the `.Value` property), use the `bowlerId?.Value ?? Ulid.NewUlid()` pattern in `Create()` and `Ulid.Bogus(f)` in `Bogus()`.
+When a ViewModel/Response stores `BowlerId` as a raw `Ulid` (exposed as the `.Value` property), use the `bowlerId?.Value ?? Ulid.NewUlid()` pattern in `Create()` and `Ulid.Bogus(faker)` in `Bogus()`.
 
 ### Nested factory calls in Bogus()
 
 There are two distinct patterns depending on WHERE the child factory is called. Using the wrong pattern causes all parent items to receive identical child collections.
 
-#### Pattern A — Pre-computation (pool): call child Bogus() BEFORE the faker
+#### Pattern A — Pre-computation (pool): derive a pool seed from the faker, then build the pool
 
-When you need a unique pool of child objects distributed across parent items (e.g., each parent gets a distinct name from a pre-shuffled pool), call `Bogus()` once before the faker and wrap it in a `UniquePool`. Forward `seed` to keep the pool deterministic:
+When you need a unique pool of child objects distributed across parent items (e.g., each parent gets a distinct name from a pre-shuffled pool), derive a pool seed from the faker first so `UniquePool.Create` is deterministic, then call the child `Bogus()` with the same `faker` to share RNG state:
 
 ```csharp
-// ✅ Correct — child factory called once, pool distributed via GetNext()
-var namePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
+// ✅ Correct — pool seed derived from faker; child factory shares same faker
+var poolSeed = faker.Random.Int();
+var namePool = UniquePool.Create(NameFactory.Bogus(count, faker), poolSeed);
 
-var faker = new Faker<Bowler>()
-    .CustomInstantiator(f => new() { Name = namePool.GetNext(), ... });
+return [.. Enumerable.Range(0, count).Select(_ => new Bowler { Name = namePool.GetNext(), ... })];
 ```
 
-#### Pattern B — Inside CustomInstantiator: use the parent-faker overload
+#### Pattern B — Inside the Select: pass faker directly to nested child factories
 
-When each parent item needs its own independently-generated child collection, call the `Bogus(int count, Faker parentFaker)` overload and pass `f` (the parent faker). This derives a unique seed from the parent's RNG state so each iteration produces different children while still being deterministic per seed:
+When each parent item needs its own independently-generated child collection, pass `faker` directly to the child factory's `Bogus(int count, Faker faker)` overload. All factories share the same RNG — each `faker.Random.*` call advances state, so children are unique per parent item while remaining fully deterministic:
 
 ```csharp
-// ✅ Correct — parent faker overload; children unique per parent item
-.CustomInstantiator(f => new()
+// ✅ Correct — shared faker flows through; children unique per parent item
+return [.. Enumerable.Range(0, count).Select(_ => new Parent
 {
-    Results = PointsRaceTournamentResponseFactory.Bogus(f.Random.Int(1, 10), f),
-    Champions = ChampionResponseFactory.Bogus(f.Random.Int(1, 4), f),
-})
+    Results = ChildFactory.Bogus(faker.Random.Int(1, 10), faker),
+    Champions = ChampionFactory.Bogus(faker.Random.Int(1, 4), faker),
+})];
 
 // ❌ Wrong — same seed passed every iteration → all parents get identical children
-.CustomInstantiator(f => new()
+return [.. Enumerable.Range(0, count).Select(_ => new Parent
 {
-    Results = PointsRaceTournamentResponseFactory.Bogus(f.Random.Int(1, 10), seed),
-})
+    Results = ChildFactory.Bogus(faker.Random.Int(1, 10), seed),
+})];
 
-// ❌ Wrong — no seed → children non-deterministic, breaks Verify snapshot tests
-.CustomInstantiator(f => new()
+// ❌ Wrong — no faker → children non-deterministic, breaks Verify snapshot tests
+return [.. Enumerable.Range(0, count).Select(_ => new Parent
 {
-    Results = PointsRaceTournamentResponseFactory.Bogus(f.Random.Int(1, 10)),
-})
+    Results = ChildFactory.Bogus(faker.Random.Int(1, 10)),
+})];
 ```
 
-Every factory exposes `Bogus(int count, Faker parentFaker)` alongside the `Bogus(int count, int? seed = null)` overload. The parent-faker overload delegates to the seed overload via `parentFaker.Random.Int()`, which advances the parent's RNG state (ensuring each iteration gets a different derived seed) and uses the result as the child's seed (ensuring reproducibility):
+Every factory exposes `Bogus(int count, Faker faker)` as the primary overload and `Bogus(int count, int? seed = null)` as a convenience wrapper. The seed overload creates a seeded `Faker` and delegates to the primary — it never duplicates implementation:
 
 ```csharp
-public static IReadOnlyCollection<PointsRaceTournamentResponse> Bogus(int count, Faker parentFaker)
+public static IReadOnlyCollection<PointsRaceTournamentResponse> Bogus(int count, int? seed = null)
 {
-    ArgumentNullException.ThrowIfNull(parentFaker);
-    return Bogus(count, seed: parentFaker.Random.Int());
+    var faker = new Faker();
+    if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+    return Bogus(count, faker);
 }
 ```
 
-### Bogus() implementation — always use Faker<T>
+### Bogus() implementation — always use Enumerable.Range + Select with a shared Faker
 
-**Always** implement `Bogus()` using `new Faker<T>().CustomInstantiator(f => ...)` followed by `faker.UseSeed(seed.Value)` / `faker.Generate(count)`. **Never** use `Enumerable.Range(...).Select(...)` with `Random.Shared` or a manual `new Random(seed)` — that pattern bypasses Bogus's seeded RNG, breaks Verify snapshot tests, and cannot use `f.*` faker APIs.
+**Always** implement `Bogus(int count, Faker faker)` using `Enumerable.Range(...).Select(_ => ...)` with the passed `faker` driving all RNG calls. The `Bogus(int count, int? seed = null)` overload is a thin wrapper that creates a seeded `Faker` and delegates to the primary — it never duplicates the construction logic.
+
+**Never** use `Random.Shared`, `new Random(seed)`, or `Ulid.NewUlid()` inside `Bogus()` — these bypass Bogus's seeded RNG and break Verify snapshot tests.
 
 ```csharp
-// ✅ Correct
-var faker = new Faker<MyType>()
-    .CustomInstantiator(f => new MyType { Id = Ulid.BogusString(f), Name = f.Random.Words(2) });
-if (seed.HasValue) faker.UseSeed(seed.Value);
-return faker.Generate(count);
+// ✅ Correct — faker is the engine; shared RNG state flows through all nested calls
+public static IReadOnlyCollection<MyType> Bogus(int count, Faker faker)
+{
+    ArgumentNullException.ThrowIfNull(faker);
+    return [.. Enumerable.Range(0, count).Select(_ => new MyType
+    {
+        Id = new MyTypeId(Ulid.BogusString(faker)),
+        Name = faker.Random.Words(2),
+    })];
+}
 
-// ❌ Wrong — bypasses Bogus RNG, incompatible with seed/Verify
-return [.. Enumerable.Range(0, count).Select(i => new MyType { ... })];
+public static IReadOnlyCollection<MyType> Bogus(int count, int? seed = null)
+{
+    var faker = new Faker();
+    if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+    return Bogus(count, faker);
+}
+
+// ❌ Wrong — Random.Shared bypasses Bogus RNG entirely
+return [.. Enumerable.Range(0, count).Select(_ => new MyType { Name = Random.Shared.Next().ToString() })];
+
+// ❌ Wrong — new Random(seed) is .NET RNG, not Bogus
+var rng = seed.HasValue ? new Random(seed.Value) : new Random();
+return [.. Enumerable.Range(0, count).Select(_ => new MyType { ... })];
 ```
 
 ### Bogus value conventions by type
 
-| C# type             | Bogus expression                                 |
-|---------------------|--------------------------------------------------|
-| `string` (name)     | `f.Name.FullName()` or `f.Person.FullName`       |
-| `string` (label)    | `f.Random.Words(2)`                              |
-| `string` (year label, e.g. "2025 Season") | `` $"{f.Date.PastDateOnly(100).Year} Season" `` |
-| `decimal` (average) | `f.Random.Decimal(150, 250)` (domain range)      |
-| `decimal` (money)   | `f.Random.Decimal(0, 10000)`                     |
-| `int` (count)       | `f.Random.Int(0, 20)`                            |
-| `int` (year)        | `f.Date.Past(50).Year`                           |
-| `bool`              | `f.Random.Bool()`                                |
-| `DateOnly`          | `f.Date.FutureDateOnly()` or `f.Date.PastDateOnly(n)` |
-| `DateTimeOffset`    | `f.Date.PastOffset(n)`                           |
-| `Uri`               | `new Uri(f.Internet.Avatar())`                   |
-| `SmartEnum`         | `f.PickRandom(SomeEnum.List)`                    |
-| `SmartFlagEnum`     | `[.. f.PickRandom(SomeEnum.List, f.Random.Int(1, SomeEnum.List.Count))]` |
-| `IReadOnlyCollection<string>` from enum names | `[.. f.PickRandom(SomeEnum.List).Select(c => c.Name)]` |
+| C# type             | Bogus expression                                              |
+|---------------------|---------------------------------------------------------------|
+| `string` (name)     | `faker.Name.FullName()` or `faker.Person.FullName`           |
+| `string` (label)    | `faker.Random.Words(2)`                                      |
+| `string` (year label, e.g. "2025 Season") | `` $"{faker.Date.PastDateOnly(100).Year} Season" `` |
+| `decimal` (average) | `faker.Random.Decimal(150, 250)` (domain range)              |
+| `decimal` (money)   | `faker.Random.Decimal(0, 10000)`                             |
+| `int` (count)       | `faker.Random.Int(0, 20)`                                    |
+| `int` (year)        | `faker.Date.Past(50).Year`                                   |
+| `bool`              | `faker.Random.Bool()`                                        |
+| `DateOnly`          | `faker.Date.FutureDateOnly()` or `faker.Date.PastDateOnly(n)` |
+| `DateTimeOffset`    | `faker.Date.PastOffset(n)`                                   |
+| `Uri`               | `new Uri(faker.Internet.Avatar())`                           |
+| `SmartEnum`         | `faker.PickRandom(SomeEnum.List)`                            |
+| `SmartFlagEnum`     | `[.. faker.PickRandom(SomeEnum.List, faker.Random.Int(1, SomeEnum.List.Count))]` |
+| `IReadOnlyCollection<string>` from enum names | `[.. faker.PickRandom(SomeEnum.List).Select(c => c.Name)]` |
 
 ### Create() default conventions
 
@@ -250,13 +269,13 @@ When a primitive property (typically `string`) is the serialized form of a domai
 
 | Scenario | Property type | Parameter type | `Create()` extraction | `Bogus()` value |
 |----------|--------------|---------------|----------------------|-----------------|
-| SmartEnum-backed string | `string TournamentType` | `TournamentType? tournamentType = null` | `(tournamentType ?? ValidTournamentType).Name` | `f.PickRandom(TournamentType.List).Name` |
-| StronglyTypedId-backed string | `string TournamentId` | `TournamentId? tournamentId = null` | `tournamentId?.Value.ToString() ?? TournamentId.New().Value.ToString()` | `Ulid.BogusString(f)` |
+| SmartEnum-backed string | `string TournamentType` | `TournamentType? tournamentType = null` | `(tournamentType ?? ValidTournamentType).Name` | `faker.PickRandom(TournamentType.List).Name` |
+| StronglyTypedId-backed string | `string TournamentId` | `TournamentId? tournamentId = null` | `tournamentId?.Value.ToString() ?? TournamentId.New().Value.ToString()` | `Ulid.BogusString(faker)` |
 | Value object-backed primitive | depends on shape | lift to value object type | extract the underlying primitive | generate the primitive directly |
 
 **Constants**: define `public static readonly TournamentType ValidTournamentType = TournamentType.Singles;` using the domain type — no magic string constant.
 
-In `Bogus()`, continue generating the primitive directly (SmartEnum `.List` pick, `Ulid.BogusString(f)`) since `Bogus()` is seeded-random and domain type instantiation adds no test value there.
+In `Bogus()`, continue generating the primitive directly (SmartEnum `.List` pick, `Ulid.BogusString(faker)`) since `Bogus()` is seeded-random and domain type instantiation adds no test value there.
 
 ```csharp
 // ✅ Correct — caller passes TournamentType.Singles, not "Singles"

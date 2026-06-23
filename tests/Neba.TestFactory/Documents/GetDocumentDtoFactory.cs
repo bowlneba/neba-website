@@ -18,26 +18,20 @@ internal static class GetDocumentDtoFactory
         };
     }
 
-    public static IReadOnlyCollection<GetDocumentDto> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<GetDocumentDto> Bogus(int count, Faker faker)
     {
-        var faker = new Bogus.Faker<GetDocumentDto>()
-            .CustomInstantiator(f => new GetDocumentDto
-            {
-                Html = $"<h1>{f.Lorem.Word()}</h1><p>{f.Lorem.Paragraph()}</p>",
-                LastUpdated = new DateTimeOffset(f.Date.Past(), TimeSpan.Zero)
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new GetDocumentDto
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            Html = $"<h1>{faker.Lorem.Word()}</h1><p>{faker.Lorem.Paragraph()}</p>",
+            LastUpdated = new DateTimeOffset(faker.Date.Past(), TimeSpan.Zero)
+        })];
     }
 
-    public static IReadOnlyCollection<GetDocumentDto> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<GetDocumentDto> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

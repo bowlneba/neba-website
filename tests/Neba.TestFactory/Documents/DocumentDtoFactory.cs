@@ -26,28 +26,22 @@ public static class DocumentDtoFactory
         };
     }
 
-    public static IReadOnlyCollection<DocumentDto> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<DocumentDto> Bogus(int count, Faker faker)
     {
-        var faker = new Bogus.Faker<DocumentDto>()
-            .CustomInstantiator(f => new DocumentDto
-            {
-                Id = f.Random.AlphaNumeric(16),
-                Name = f.Lorem.Word(),
-                Content = f.Lorem.Paragraph(),
-                ContentType = "text/plain"
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new DocumentDto
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            Id = faker.Random.AlphaNumeric(16),
+            Name = faker.Lorem.Word(),
+            Content = faker.Lorem.Paragraph(),
+            ContentType = "text/plain"
+        })];
     }
 
-    public static IReadOnlyCollection<DocumentDto> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<DocumentDto> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

@@ -77,68 +77,62 @@ public static class SeasonStatsSummaryDtoFactory
             AllBowlers = allBowlers ?? [FullStatModalRowDtoFactory.Create()]
         };
 
-    public static IReadOnlyCollection<SeasonStatsSummaryDto> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<SeasonStatsSummaryDto> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<SeasonStatsSummaryDto>()
-            .CustomInstantiator(f => new SeasonStatsSummaryDto
-            {
-                TotalEntries = f.Random.Int(50, 500),
-                TotalPrizeMoney = f.Random.Decimal(1000, 50000),
-                HighGame = f.Random.Int(270, 300),
-                HighGameBowlers = new Dictionary<BowlerId, Name>
-                {
-                    { new BowlerId(Ulid.BogusString(f)), NameFactory.Bogus(1, f).Single() },
-                },
-                HighBlock = f.Random.Int(1200, 1400),
-                HighBlockBowlers = new Dictionary<BowlerId, Name>
-                {
-                    { new BowlerId(Ulid.BogusString(f)), NameFactory.Bogus(1, f).Single() },
-                },
-                HighAverage = f.Random.Decimal(210, 240),
-                HighAverageBowlers = new Dictionary<BowlerId, Name>
-                {
-                    { new BowlerId(Ulid.BogusString(f)), NameFactory.Bogus(1, f).Single() },
-                },
-                HighestMatchPlayWinPercentage = f.Random.Decimal(50, 100),
-                HighestMatchPlayWinPercentageBowlers = new Dictionary<BowlerId, Name>
-                {
-                    { new BowlerId(Ulid.BogusString(f)), NameFactory.Bogus(1, f).Single() },
-                },
-                MostFinals = f.Random.Int(1, 15),
-                MostFinalsBowlers = new Dictionary<BowlerId, Name>
-                {
-                    { new BowlerId(Ulid.BogusString(f)), NameFactory.Bogus(1, f).Single() },
-                },
-                BowlerOfTheYear = BowlerOfTheYearStandingDtoFactory.Bogus(f.Random.Int(5, 20), f),
-                SeniorOfTheYear = BowlerOfTheYearStandingDtoFactory.Bogus(f.Random.Int(1, 5), f),
-                SuperSeniorOfTheYear = BowlerOfTheYearStandingDtoFactory.Bogus(f.Random.Int(0, 3), f),
-                WomanOfTheYear = BowlerOfTheYearStandingDtoFactory.Bogus(f.Random.Int(1, 5), f),
-                RookieOfTheYear = BowlerOfTheYearStandingDtoFactory.Bogus(f.Random.Int(0, 5), f),
-                YouthOfTheYear = BowlerOfTheYearStandingDtoFactory.Bogus(f.Random.Int(0, 3), f),
-                BowlerSearchList = BowlerSearchEntryDtoFactory.Bogus(f.Random.Int(5, 20), f),
-                HighAverageLeaderboard = HighAverageDtoFactory.Bogus(f.Random.Int(5, 20), f),
-                HighBlockLeaderboard = HighBlockDtoFactory.Bogus(f.Random.Int(5, 20), f),
-                MatchPlayAverageLeaderboard = MatchPlayAverageDtoFactory.Bogus(f.Random.Int(5, 20), f),
-                MatchPlayRecordLeaderboard = MatchPlayRecordDtoFactory.Bogus(f.Random.Int(5, 20), f),
-                MatchPlayAppearancesLeaderboard = MatchPlayAppearancesDtoFactory.Bogus(f.Random.Int(5, 20), f),
-                PointsPerEntryLeaderboard = PointsPerEntryDtoFactory.Bogus(f.Random.Int(5, 20), f),
-                PointsPerTournamentLeaderboard = PointsPerTournamentDtoFactory.Bogus(f.Random.Int(5, 20), f),
-                FinalsPerEntryLeaderboard = FinalsPerEntryDtoFactory.Bogus(f.Random.Int(5, 20), f),
-                AverageFinishesLeaderboard = AverageFinishDtoFactory.Bogus(f.Random.Int(5, 20), f),
-                AllBowlers = FullStatModalRowDtoFactory.Bogus(f.Random.Int(10, 30), f)
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new SeasonStatsSummaryDto
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            TotalEntries = faker.Random.Int(50, 500),
+            TotalPrizeMoney = faker.Random.Decimal(1000, 50000),
+            HighGame = faker.Random.Int(270, 300),
+            HighGameBowlers = new Dictionary<BowlerId, Name>
+            {
+                { new BowlerId(Ulid.BogusString(faker)), NameFactory.Bogus(1, faker).Single() },
+            },
+            HighBlock = faker.Random.Int(1200, 1400),
+            HighBlockBowlers = new Dictionary<BowlerId, Name>
+            {
+                { new BowlerId(Ulid.BogusString(faker)), NameFactory.Bogus(1, faker).Single() },
+            },
+            HighAverage = faker.Random.Decimal(210, 240),
+            HighAverageBowlers = new Dictionary<BowlerId, Name>
+            {
+                { new BowlerId(Ulid.BogusString(faker)), NameFactory.Bogus(1, faker).Single() },
+            },
+            HighestMatchPlayWinPercentage = faker.Random.Decimal(50, 100),
+            HighestMatchPlayWinPercentageBowlers = new Dictionary<BowlerId, Name>
+            {
+                { new BowlerId(Ulid.BogusString(faker)), NameFactory.Bogus(1, faker).Single() },
+            },
+            MostFinals = faker.Random.Int(1, 15),
+            MostFinalsBowlers = new Dictionary<BowlerId, Name>
+            {
+                { new BowlerId(Ulid.BogusString(faker)), NameFactory.Bogus(1, faker).Single() },
+            },
+            BowlerOfTheYear = BowlerOfTheYearStandingDtoFactory.Bogus(faker.Random.Int(5, 20), faker),
+            SeniorOfTheYear = BowlerOfTheYearStandingDtoFactory.Bogus(faker.Random.Int(1, 5), faker),
+            SuperSeniorOfTheYear = BowlerOfTheYearStandingDtoFactory.Bogus(faker.Random.Int(0, 3), faker),
+            WomanOfTheYear = BowlerOfTheYearStandingDtoFactory.Bogus(faker.Random.Int(1, 5), faker),
+            RookieOfTheYear = BowlerOfTheYearStandingDtoFactory.Bogus(faker.Random.Int(0, 5), faker),
+            YouthOfTheYear = BowlerOfTheYearStandingDtoFactory.Bogus(faker.Random.Int(0, 3), faker),
+            BowlerSearchList = BowlerSearchEntryDtoFactory.Bogus(faker.Random.Int(5, 20), faker),
+            HighAverageLeaderboard = HighAverageDtoFactory.Bogus(faker.Random.Int(5, 20), faker),
+            HighBlockLeaderboard = HighBlockDtoFactory.Bogus(faker.Random.Int(5, 20), faker),
+            MatchPlayAverageLeaderboard = MatchPlayAverageDtoFactory.Bogus(faker.Random.Int(5, 20), faker),
+            MatchPlayRecordLeaderboard = MatchPlayRecordDtoFactory.Bogus(faker.Random.Int(5, 20), faker),
+            MatchPlayAppearancesLeaderboard = MatchPlayAppearancesDtoFactory.Bogus(faker.Random.Int(5, 20), faker),
+            PointsPerEntryLeaderboard = PointsPerEntryDtoFactory.Bogus(faker.Random.Int(5, 20), faker),
+            PointsPerTournamentLeaderboard = PointsPerTournamentDtoFactory.Bogus(faker.Random.Int(5, 20), faker),
+            FinalsPerEntryLeaderboard = FinalsPerEntryDtoFactory.Bogus(faker.Random.Int(5, 20), faker),
+            AverageFinishesLeaderboard = AverageFinishDtoFactory.Bogus(faker.Random.Int(5, 20), faker),
+            AllBowlers = FullStatModalRowDtoFactory.Bogus(faker.Random.Int(10, 30), faker)
+        })];
     }
 
-    public static IReadOnlyCollection<SeasonStatsSummaryDto> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<SeasonStatsSummaryDto> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

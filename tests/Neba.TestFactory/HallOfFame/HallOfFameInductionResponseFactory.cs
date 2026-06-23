@@ -22,30 +22,25 @@ public static class HallOfFameInductionResponseFactory
             PhotoUri = photoUri
         };
 
-    public static IReadOnlyCollection<HallOfFameInductionResponse> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<HallOfFameInductionResponse> Bogus(int count, Faker faker)
     {
-        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, faker), poolSeed);
 
-        var faker = new Faker<HallOfFameInductionResponse>()
-            .CustomInstantiator(f => new()
-            {
-                Year = f.Date.PastDateOnly(50).Year,
-                BowlerName = bowlerNamePool.GetNext().ToFormalName(),
-                Categories = [.. f.PickRandom(HallOfFameCategory.List.Select(c => c.Name), 2)],
-                PhotoUri = f.Random.Bool() ? new Uri(f.Internet.Url()) : null
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ => new HallOfFameInductionResponse
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            Year = faker.Date.PastDateOnly(50).Year,
+            BowlerName = bowlerNamePool.GetNext().ToFormalName(),
+            Categories = [.. faker.PickRandom(HallOfFameCategory.List.Select(c => c.Name), 2)],
+            PhotoUri = faker.Random.Bool() ? new Uri(faker.Internet.Url()) : null
+        })];
     }
 
-    public static IReadOnlyCollection<HallOfFameInductionResponse> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<HallOfFameInductionResponse> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

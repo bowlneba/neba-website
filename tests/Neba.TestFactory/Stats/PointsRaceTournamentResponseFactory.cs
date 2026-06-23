@@ -19,31 +19,25 @@ public static class PointsRaceTournamentResponseFactory
             CumulativePoints = cumulativePoints ?? ValidCumulativePoints
         };
 
-    public static IReadOnlyCollection<PointsRaceTournamentResponse> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<PointsRaceTournamentResponse> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<PointsRaceTournamentResponse>()
-            .CustomInstantiator(f =>
-            {
-                var date = f.Date.PastDateOnly(2);
-                return new PointsRaceTournamentResponse
-                {
-                    TournamentName = $"{f.Address.City()} {f.PickRandom("Open", "Classic", "Invitational")}",
-                    TournamentDate = date,
-                    CumulativePoints = f.Random.Int(20, 500)
-                };
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            var date = faker.Date.PastDateOnly(2);
+            return new PointsRaceTournamentResponse
+            {
+                TournamentName = $"{faker.Address.City()} {faker.PickRandom("Open", "Classic", "Invitational")}",
+                TournamentDate = date,
+                CumulativePoints = faker.Random.Int(20, 500)
+            };
+        })];
     }
 
-    public static IReadOnlyCollection<PointsRaceTournamentResponse> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<PointsRaceTournamentResponse> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

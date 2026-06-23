@@ -25,29 +25,23 @@ public static class MatchPlayAppearancesResponseFactory
             Entries = entries ?? ValidEntries
         };
 
-    public static IReadOnlyCollection<MatchPlayAppearancesResponse> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<MatchPlayAppearancesResponse> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<MatchPlayAppearancesResponse>()
-            .CustomInstantiator(f => new MatchPlayAppearancesResponse
-            {
-                BowlerId = Ulid.BogusString(f),
-                BowlerName = f.Name.FullName(),
-                Finals = f.Random.Int(1, 15),
-                Tournaments = f.Random.Int(1, 15),
-                Entries = f.Random.Int(1, 20)
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new MatchPlayAppearancesResponse
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            BowlerId = Ulid.BogusString(faker),
+            BowlerName = faker.Name.FullName(),
+            Finals = faker.Random.Int(1, 15),
+            Tournaments = faker.Random.Int(1, 15),
+            Entries = faker.Random.Int(1, 20)
+        })];
     }
 
-    public static IReadOnlyCollection<MatchPlayAppearancesResponse> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<MatchPlayAppearancesResponse> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

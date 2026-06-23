@@ -18,28 +18,22 @@ public static class HallOfFameInductionViewModelFactory
             PhotoUri = photoUri
         };
 
-    public static IReadOnlyCollection<HallOfFameInductionViewModel> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<HallOfFameInductionViewModel> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<HallOfFameInductionViewModel>()
-            .CustomInstantiator(f => new()
-            {
-                BowlerName = f.Name.FullName(),
-                InductionYear = f.Date.Past(50).Year,
-                Categories = [.. f.PickRandom(HallOfFameCategory.List).Select(c => c.Name)],
-                PhotoUri = new Uri(f.Internet.Avatar())
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new HallOfFameInductionViewModel
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            BowlerName = faker.Name.FullName(),
+            InductionYear = faker.Date.Past(50).Year,
+            Categories = [.. faker.PickRandom(HallOfFameCategory.List).Select(c => c.Name)],
+            PhotoUri = new Uri(faker.Internet.Avatar())
+        })];
     }
 
-    public static IReadOnlyCollection<HallOfFameInductionViewModel> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<HallOfFameInductionViewModel> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

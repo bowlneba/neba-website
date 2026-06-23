@@ -64,67 +64,61 @@ public static class TournamentFactory
         return tournament;
     }
 
-    public static IReadOnlyCollection<Tournament> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<Tournament> Bogus(int count, Faker faker)
     {
-        var certificationNumberPool = UniquePool.CreateNullable(CertificationNumberFactory.Bogus(count, seed), seed);
-        var seasons = UniquePool.Create(SeasonFactory.Bogus(count, seed: seed), seed);
-        var sponsors = UniquePool.Create(SponsorFactory.Bogus(count, seed: seed), seed);
-        var logos = UniquePool.CreateNullable(StoredFileFactory.Bogus(count, seed), seed);
-
-        var faker = new Faker<Tournament>()
-            .CustomInstantiator(f =>
-            {
-                var startDate = f.Date.FutureDateOnly(1);
-                var endDate = startDate.AddDays(f.Random.Int(0, 1));
-
-                var tournament = new Tournament
-                {
-                    Id = new TournamentId(Ulid.BogusString(f)),
-                    Name = f.Random.Words(2),
-                    TournamentType = f.PickRandom(TournamentType.List.ToArray()),
-                    StartDate = startDate,
-                    EndDate = endDate,
-                    StatsEligible = f.Random.Bool(),
-                    BowlingCenterId = certificationNumberPool.GetNextNullable(),
-                    PatternRatioCategory = f.Random.Bool() ? f.PickRandom(PatternRatioCategory.List.ToArray()) : null,
-                    PatternLengthCategory = f.Random.Bool() ? f.PickRandom(PatternLengthCategory.List.ToArray()) : null,
-                    LegacyId = f.Random.Bool() ? f.Random.Int(1, 9999) : null,
-                    SeasonId = seasons.GetNext().Id,
-                    EntryFee = f.Random.Decimal(0, 500),
-                    ExternalRegistrationUrl = f.Random.Bool() ? new Uri(f.Internet.Url()) : null,
-                    Logo = logos.GetNextNullable()
-                };
-
-                var sponsorCount = f.Random.Int(0, 2);
-
-                for (var i = 0; i < sponsorCount; i++)
-                {
-                    var sponsor = sponsors.GetNext();
-                    var titleSponsor = sponsorCount == 1 && f.Random.Bool(); // only assign title sponsor status if there's one sponsor
-                    var sponsorshipAmount = f.Random.Decimal(0, 10000);
-
-                    var result = tournament.AddSponsor(sponsor.Id, titleSponsor, sponsorshipAmount);
-
-                    if (result.IsError)
-                    {
-                        throw new InvalidOperationException($"Failed to add sponsor with ID {sponsor.Id} to tournament: {result.Errors[0].Description}");
-                    }
-                }
-
-                return tournament;
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var certificationNumberPool = UniquePool.CreateNullable(CertificationNumberFactory.Bogus(count, faker), poolSeed);
+        var seasons = UniquePool.Create(SeasonFactory.Bogus(count, faker), poolSeed);
+        var sponsors = UniquePool.Create(SponsorFactory.Bogus(count, faker), poolSeed);
+        var logos = UniquePool.CreateNullable(StoredFileFactory.Bogus(count, faker), poolSeed);
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
+            var startDate = faker.Date.FutureDateOnly(1);
+            var endDate = startDate.AddDays(faker.Random.Int(0, 1));
 
-        return faker.Generate(count);
+            var tournament = new Tournament
+            {
+                Id = new TournamentId(Ulid.BogusString(faker)),
+                Name = faker.Random.Words(2),
+                TournamentType = faker.PickRandom(TournamentType.List.ToArray()),
+                StartDate = startDate,
+                EndDate = endDate,
+                StatsEligible = faker.Random.Bool(),
+                BowlingCenterId = certificationNumberPool.GetNextNullable(),
+                PatternRatioCategory = faker.Random.Bool() ? faker.PickRandom(PatternRatioCategory.List.ToArray()) : null,
+                PatternLengthCategory = faker.Random.Bool() ? faker.PickRandom(PatternLengthCategory.List.ToArray()) : null,
+                LegacyId = faker.Random.Bool() ? faker.Random.Int(1, 9999) : null,
+                SeasonId = seasons.GetNext().Id,
+                EntryFee = faker.Random.Decimal(0, 500),
+                ExternalRegistrationUrl = faker.Random.Bool() ? new Uri(faker.Internet.Url()) : null,
+                Logo = logos.GetNextNullable()
+            };
+
+            var sponsorCount = faker.Random.Int(0, 2);
+
+            for (var i = 0; i < sponsorCount; i++)
+            {
+                var sponsor = sponsors.GetNext();
+                var titleSponsor = sponsorCount == 1 && faker.Random.Bool(); // only assign title sponsor status if there's one sponsor
+                var sponsorshipAmount = faker.Random.Decimal(0, 10000);
+
+                var result = tournament.AddSponsor(sponsor.Id, titleSponsor, sponsorshipAmount);
+
+                if (result.IsError)
+                {
+                    throw new InvalidOperationException($"Failed to add sponsor with ID {sponsor.Id} to tournament: {result.Errors[0].Description}");
+                }
+            }
+
+            return tournament;
+        })];
     }
 
-    public static IReadOnlyCollection<Tournament> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<Tournament> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

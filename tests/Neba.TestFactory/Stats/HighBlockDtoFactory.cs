@@ -22,30 +22,24 @@ public static class HighBlockDtoFactory
             HighGame = highGame ?? ValidHighGame
         };
 
-    public static IReadOnlyCollection<HighBlockDto> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<HighBlockDto> Bogus(int count, Faker faker)
     {
-        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
-
-        var faker = new Faker<HighBlockDto>()
-            .CustomInstantiator(f => new HighBlockDto
-            {
-                BowlerId = new BowlerId(Ulid.BogusString(f)),
-                BowlerName = bowlerNamePool.GetNext(),
-                HighBlock = f.Random.Int(900, 1500),
-                HighGame = f.Random.Int(200, 300)
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, faker), poolSeed);
+        return [.. Enumerable.Range(0, count).Select(_ => new HighBlockDto
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            BowlerId = new BowlerId(Ulid.BogusString(faker)),
+            BowlerName = bowlerNamePool.GetNext(),
+            HighBlock = faker.Random.Int(900, 1500),
+            HighGame = faker.Random.Int(200, 300)
+        })];
     }
 
-    public static IReadOnlyCollection<HighBlockDto> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<HighBlockDto> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

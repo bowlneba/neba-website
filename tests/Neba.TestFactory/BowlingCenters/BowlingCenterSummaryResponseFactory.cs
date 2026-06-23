@@ -34,38 +34,33 @@ public static class BowlingCenterSummaryResponseFactory
             Website = website
         };
 
-    public static IReadOnlyCollection<BowlingCenterSummaryResponse> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<BowlingCenterSummaryResponse> Bogus(int count, Faker faker)
     {
-        var phoneNumberPool = UniquePool.Create(PhoneNumberResponseFactory.Bogus(count, seed), seed);
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var phoneNumberPool = UniquePool.Create(PhoneNumberResponseFactory.Bogus(count, faker), poolSeed);
 
-        var faker = new Faker<BowlingCenterSummaryResponse>()
-            .CustomInstantiator(f => new()
-            {
-                CertificationNumber = f.Random.Replace("#####"),
-                Name = f.Company.CompanyName(),
-                Status = f.PickRandom(BowlingCenterStatus.List.ToArray()).Name,
-                Street = f.Address.StreetAddress(),
-                Unit = f.Random.Bool() ? f.Address.SecondaryAddress() : null,
-                City = f.Address.City(),
-                State = f.Address.StateAbbr(),
-                PostalCode = f.Address.ZipCode(),
-                Latitude = f.Person.Address.Geo.Lat,
-                Longitude = f.Person.Address.Geo.Lng,
-                PhoneNumbers = phoneNumberPool.GetNext(1),
-                Website = f.Random.Bool() ? f.Internet.Url() : null
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ => new BowlingCenterSummaryResponse
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            CertificationNumber = faker.Random.Replace("#####"),
+            Name = faker.Company.CompanyName(),
+            Status = faker.PickRandom(BowlingCenterStatus.List.ToArray()).Name,
+            Street = faker.Address.StreetAddress(),
+            Unit = faker.Random.Bool() ? faker.Address.SecondaryAddress() : null,
+            City = faker.Address.City(),
+            State = faker.Address.StateAbbr(),
+            PostalCode = faker.Address.ZipCode(),
+            Latitude = faker.Person.Address.Geo.Lat,
+            Longitude = faker.Person.Address.Geo.Lng,
+            PhoneNumbers = phoneNumberPool.GetNext(1),
+            Website = faker.Random.Bool() ? faker.Internet.Url() : null
+        })];
     }
 
-    public static IReadOnlyCollection<BowlingCenterSummaryResponse> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<BowlingCenterSummaryResponse> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

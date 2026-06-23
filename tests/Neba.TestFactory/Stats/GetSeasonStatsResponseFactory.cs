@@ -70,61 +70,55 @@ public static class GetSeasonStatsResponseFactory
             AllBowlers = allBowlers ?? [FullStatModalRowResponseFactory.Create()]
         };
 
-    public static IReadOnlyCollection<GetSeasonStatsResponse> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<GetSeasonStatsResponse> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<GetSeasonStatsResponse>()
-            .CustomInstantiator(f =>
-            {
-                var year = f.Random.Int(2000, 2030);
-                return new GetSeasonStatsResponse
-                {
-                    SelectedSeason = $"{year}-{year + 1} Season",
-                    AvailableSeasons = Enumerable.Range(0, f.Random.Int(1, 5))
-                        .ToDictionary(i => year - i, i => $"{year - i - 1}-{year - i} Season"),
-                    BowlerSearchList = Enumerable.Range(0, f.Random.Int(5, 20))
-                        .ToDictionary(_ => Ulid.BogusString(f), _ => f.Name.FullName()),
-                    BowlerOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(5, 20), f),
-                    SeniorOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(1, 5), f),
-                    SuperSeniorOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(1, 5), f),
-                    WomanOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(1, 5), f),
-                    RookieOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(1, 5), f),
-                    YouthOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(f.Random.Int(0, 3), f),
-                    HighAverage = HighAverageResponseFactory.Bogus(f.Random.Int(5, 20), f),
-                    HighBlock = HighBlockResponseFactory.Bogus(f.Random.Int(5, 20), f),
-                    MatchPlayAverage = MatchPlayAverageResponseFactory.Bogus(f.Random.Int(5, 20), f),
-                    MatchPlayRecord = MatchPlayRecordResponseFactory.Bogus(f.Random.Int(5, 20), f),
-                    MatchPlayAppearances = MatchPlayAppearancesResponseFactory.Bogus(f.Random.Int(5, 20), f),
-                    PointsPerEntry = PointsPerEntryResponseFactory.Bogus(f.Random.Int(5, 20), f),
-                    PointsPerTournament = PointsPerTournamentResponseFactory.Bogus(f.Random.Int(5, 20), f),
-                    FinalsPerEntry = FinalsPerEntryResponseFactory.Bogus(f.Random.Int(5, 20), f),
-                    AverageFinishes = AverageFinishResponseFactory.Bogus(f.Random.Int(5, 20), f),
-                    SeasonAtAGlance = SeasonAtAGlanceResponseFactory.Bogus(1, f).Single(),
-                    SeasonsBests = SeasonBestsResponseFactory.Bogus(1, f).Single(),
-                    FieldMatchPlaySummary = FieldMatchPlaySummaryResponseFactory.Bogus(1, f).Single(),
-                    OpenPointsRace = PointsRaceSeriesResponseFactory.Bogus(f.Random.Int(3, 10), f),
-                    SeniorPointsRace = [],
-                    SuperSeniorPointsRace = [],
-                    WomenPointsRace = [],
-                    YouthPointsRace = [],
-                    RookiePointsRace = [],
-                    AllBowlers = FullStatModalRowResponseFactory.Bogus(f.Random.Int(10, 30), f),
-                    MinimumNumberOfGames = f.Random.Decimal(10, 60),
-                    MinimumNumberOfTournaments = f.Random.Decimal(2, 8),
-                    MinimumNumberOfEntries = f.Random.Decimal(3, 12)
-                };
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            var year = faker.Random.Int(2000, 2030);
+            return new GetSeasonStatsResponse
+            {
+                SelectedSeason = $"{year}-{year + 1} Season",
+                AvailableSeasons = Enumerable.Range(0, faker.Random.Int(1, 5))
+                    .ToDictionary(i => year - i, i => $"{year - i - 1}-{year - i} Season"),
+                BowlerSearchList = Enumerable.Range(0, faker.Random.Int(5, 20))
+                    .ToDictionary(_ => Ulid.BogusString(faker), _ => faker.Name.FullName()),
+                BowlerOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(faker.Random.Int(5, 20), faker),
+                SeniorOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(faker.Random.Int(1, 5), faker),
+                SuperSeniorOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(faker.Random.Int(1, 5), faker),
+                WomanOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(faker.Random.Int(1, 5), faker),
+                RookieOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(faker.Random.Int(1, 5), faker),
+                YouthOfTheYear = BowlerOfTheYearStandingResponseFactory.Bogus(faker.Random.Int(0, 3), faker),
+                HighAverage = HighAverageResponseFactory.Bogus(faker.Random.Int(5, 20), faker),
+                HighBlock = HighBlockResponseFactory.Bogus(faker.Random.Int(5, 20), faker),
+                MatchPlayAverage = MatchPlayAverageResponseFactory.Bogus(faker.Random.Int(5, 20), faker),
+                MatchPlayRecord = MatchPlayRecordResponseFactory.Bogus(faker.Random.Int(5, 20), faker),
+                MatchPlayAppearances = MatchPlayAppearancesResponseFactory.Bogus(faker.Random.Int(5, 20), faker),
+                PointsPerEntry = PointsPerEntryResponseFactory.Bogus(faker.Random.Int(5, 20), faker),
+                PointsPerTournament = PointsPerTournamentResponseFactory.Bogus(faker.Random.Int(5, 20), faker),
+                FinalsPerEntry = FinalsPerEntryResponseFactory.Bogus(faker.Random.Int(5, 20), faker),
+                AverageFinishes = AverageFinishResponseFactory.Bogus(faker.Random.Int(5, 20), faker),
+                SeasonAtAGlance = SeasonAtAGlanceResponseFactory.Bogus(1, faker).Single(),
+                SeasonsBests = SeasonBestsResponseFactory.Bogus(1, faker).Single(),
+                FieldMatchPlaySummary = FieldMatchPlaySummaryResponseFactory.Bogus(1, faker).Single(),
+                OpenPointsRace = PointsRaceSeriesResponseFactory.Bogus(faker.Random.Int(3, 10), faker),
+                SeniorPointsRace = [],
+                SuperSeniorPointsRace = [],
+                WomenPointsRace = [],
+                YouthPointsRace = [],
+                RookiePointsRace = [],
+                AllBowlers = FullStatModalRowResponseFactory.Bogus(faker.Random.Int(10, 30), faker),
+                MinimumNumberOfGames = faker.Random.Decimal(10, 60),
+                MinimumNumberOfTournaments = faker.Random.Decimal(2, 8),
+                MinimumNumberOfEntries = faker.Random.Decimal(3, 12)
+            };
+        })];
     }
 
-    public static IReadOnlyCollection<GetSeasonStatsResponse> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<GetSeasonStatsResponse> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

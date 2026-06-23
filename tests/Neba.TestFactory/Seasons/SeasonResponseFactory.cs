@@ -22,32 +22,26 @@ public static class SeasonResponseFactory
             EndDate = endDate ?? ValidEndDate,
         };
 
-    public static IReadOnlyCollection<SeasonResponse> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<SeasonResponse> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<SeasonResponse>()
-            .CustomInstantiator(f =>
-            {
-                var startDate = f.Date.PastDateOnly(50);
-                return new SeasonResponse
-                {
-                    Id = Ulid.BogusString(f),
-                    Description = $"{startDate.Year}-{startDate.Year + 1} Season",
-                    StartDate = startDate,
-                    EndDate = new DateOnly(startDate.Year + 1, startDate.Month, startDate.Day),
-                };
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            var startDate = faker.Date.PastDateOnly(50);
+            return new SeasonResponse
+            {
+                Id = Ulid.BogusString(faker),
+                Description = $"{startDate.Year}-{startDate.Year + 1} Season",
+                StartDate = startDate,
+                EndDate = new DateOnly(startDate.Year + 1, startDate.Month, startDate.Day),
+            };
+        })];
     }
 
-    public static IReadOnlyCollection<SeasonResponse> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<SeasonResponse> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

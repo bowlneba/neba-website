@@ -16,25 +16,26 @@ public static class HistoricalTournamentEntryFactory
 
     internal static IReadOnlyCollection<HistoricalTournamentEntry> Bogus(
         int count,
+        Faker faker,
+        IReadOnlyCollection<Tournament>? tournaments = null)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var tournamentPool = UniquePool.Create(
+            tournaments?.ToArray() ?? [.. TournamentFactory.Bogus(count, faker)],
+            poolSeed);
+
+        return [.. Enumerable.Range(0, count).Select(_ =>
+            Create(tournamentPool.GetNext(), faker.Random.Int(150, 300)))];
+    }
+
+    internal static IReadOnlyCollection<HistoricalTournamentEntry> Bogus(
+        int count,
         IReadOnlyCollection<Tournament>? tournaments = null,
         int? seed = null)
     {
-        var tournamentPool = UniquePool.Create(tournaments?.ToArray() ?? [.. TournamentFactory.Bogus(count, seed)], seed);
-
-        var faker = new Faker<HistoricalTournamentEntry>()
-            .CustomInstantiator(f => Create(tournamentPool.GetNext(), f.Random.Int(150, 300)));
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
-    }
-
-    internal static IReadOnlyCollection<HistoricalTournamentEntry> Bogus(int count, Faker parentFaker)
-    {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker, tournaments);
     }
 }

@@ -42,36 +42,30 @@ public static class SponsorSummaryViewModelFactory
             InstagramUrl = instagramUrl
         };
 
-    public static IReadOnlyCollection<SponsorSummaryViewModel> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<SponsorSummaryViewModel> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<SponsorSummaryViewModel>()
-            .CustomInstantiator(f => new()
-            {
-                Name = f.Company.CompanyName(),
-                Slug = f.Lorem.Slug(),
-                LogoUrl = new Uri(f.Image.PicsumUrl()),
-                IsCurrentSponsor = f.Random.Bool(),
-                Priority = f.Random.Int(1, 10),
-                Tier = f.PickRandom(SponsorTier.List.ToArray()).Name,
-                Category = f.PickRandom(SponsorCategory.List.ToArray()).Name,
-                TagPhrase = f.Company.CatchPhrase(),
-                Description = f.Lorem.Sentence(2),
-                WebsiteUrl = new Uri(f.Internet.Url()),
-                FacebookUrl = new Uri(f.Internet.UrlWithPath("facebook")),
-                InstagramUrl = new Uri(f.Internet.UrlWithPath("instagram"))
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new SponsorSummaryViewModel
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            Name = faker.Company.CompanyName(),
+            Slug = faker.Lorem.Slug(),
+            LogoUrl = new Uri(faker.Image.PicsumUrl()),
+            IsCurrentSponsor = faker.Random.Bool(),
+            Priority = faker.Random.Int(1, 10),
+            Tier = faker.PickRandom(SponsorTier.List.ToArray()).Name,
+            Category = faker.PickRandom(SponsorCategory.List.ToArray()).Name,
+            TagPhrase = faker.Company.CatchPhrase(),
+            Description = faker.Lorem.Sentence(2),
+            WebsiteUrl = new Uri(faker.Internet.Url()),
+            FacebookUrl = new Uri(faker.Internet.UrlWithPath("facebook")),
+            InstagramUrl = new Uri(faker.Internet.UrlWithPath("instagram"))
+        })];
     }
 
-    public static IReadOnlyCollection<SponsorSummaryViewModel> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<SponsorSummaryViewModel> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

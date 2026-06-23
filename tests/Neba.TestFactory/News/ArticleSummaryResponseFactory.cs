@@ -24,37 +24,30 @@ public static class ArticleSummaryResponseFactory
             PublishDateUtc = publishDateUtc ?? ValidPublishDateUtc
         };
 
-    public static IReadOnlyCollection<ArticleSummaryResponse> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<ArticleSummaryResponse> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<ArticleSummaryResponse>()
-            .CustomInstantiator(f =>
-            {
-                var title = f.Random.Words(3);
-                var hasImage = f.Random.Bool();
-
-                return new ArticleSummaryResponse
-                {
-#pragma warning disable CA1308
-                    Slug = title.ToLowerInvariant().Replace(' ', '-'),
-#pragma warning restore CA1308
-                    Title = title,
-                    Excerpt = f.Lorem.Sentence(),
-                    HeaderImageUrl = hasImage ? new Uri(f.Internet.Avatar()) : null,
-                    PublishDateUtc = f.Date.PastOffset(2)
-                };
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            var title = faker.Random.Words(3);
+            var hasImage = faker.Random.Bool();
+            return new ArticleSummaryResponse
+            {
+#pragma warning disable CA1308
+                Slug = title.ToLowerInvariant().Replace(' ', '-'),
+#pragma warning restore CA1308
+                Title = title,
+                Excerpt = faker.Lorem.Sentence(),
+                HeaderImageUrl = hasImage ? new Uri(faker.Internet.Avatar()) : null,
+                PublishDateUtc = faker.Date.PastOffset(2)
+            };
+        })];
     }
 
-    public static IReadOnlyCollection<ArticleSummaryResponse> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<ArticleSummaryResponse> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

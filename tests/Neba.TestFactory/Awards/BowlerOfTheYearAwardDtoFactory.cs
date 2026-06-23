@@ -21,30 +21,25 @@ public static class BowlerOfTheYearAwardDtoFactory
             Category = category?.Name ?? ValidCategory
         };
 
-    public static IReadOnlyCollection<BowlerOfTheYearAwardDto> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<BowlerOfTheYearAwardDto> Bogus(int count, Faker faker)
     {
-        var bowlerNames = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var bowlerNames = UniquePool.Create(NameFactory.Bogus(count, faker), poolSeed);
         var categories = BowlerOfTheYearCategory.List.Select(c => c.Name).ToArray();
 
-        var faker = new Bogus.Faker<BowlerOfTheYearAwardDto>()
-            .CustomInstantiator(f => new()
-            {
-                Season = $"Season {f.Date.Past(5).Year}",
-                BowlerName = bowlerNames.GetNext(),
-                Category = f.PickRandom(categories)
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ => new BowlerOfTheYearAwardDto
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            Season = $"Season {faker.Date.Past(5).Year}",
+            BowlerName = bowlerNames.GetNext(),
+            Category = faker.PickRandom(categories)
+        })];
     }
 
-    public static IReadOnlyCollection<BowlerOfTheYearAwardDto> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<BowlerOfTheYearAwardDto> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

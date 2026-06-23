@@ -19,30 +19,25 @@ public static class ContactInfoFactory
             Email = email ?? EmailAddressFactory.Create()
         };
 
-    public static IReadOnlyCollection<ContactInfo> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<ContactInfo> Bogus(int count, Faker faker)
     {
-        var phoneNumberPool = UniquePool.Create(PhoneNumberFactory.Bogus(count * 10, seed), seed);
-        var emailAddressPool = UniquePool.Create(EmailAddressFactory.Bogus(count * 10, seed), seed);
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var phoneNumberPool = UniquePool.Create(PhoneNumberFactory.Bogus(count * 10, faker), poolSeed);
+        var emailAddressPool = UniquePool.Create(EmailAddressFactory.Bogus(count * 10, faker), poolSeed);
 
-        var faker = new Faker<ContactInfo>()
-            .CustomInstantiator(f => new()
-            {
-                Name = f.Name.FullName(),
-                Phone = phoneNumberPool.GetNext(),
-                Email = emailAddressPool.GetNext()
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ => new ContactInfo
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            Name = faker.Name.FullName(),
+            Phone = phoneNumberPool.GetNext(),
+            Email = emailAddressPool.GetNext()
+        })];
     }
 
-    public static IReadOnlyCollection<ContactInfo> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<ContactInfo> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

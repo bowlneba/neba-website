@@ -15,26 +15,20 @@ public static class TitlesByYearViewModelFactory
             Titles = titles ?? [BowlerTitleViewModelFactory.Create()],
         };
 
-    public static IReadOnlyCollection<TitlesByYearViewModel> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<TitlesByYearViewModel> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<TitlesByYearViewModel>()
-            .CustomInstantiator(f => new TitlesByYearViewModel
-            {
-                Year = f.Date.Past(50).Year,
-                Titles = BowlerTitleViewModelFactory.Bogus(f.Random.Int(1, 6), f),
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new TitlesByYearViewModel
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            Year = faker.Date.Past(50).Year,
+            Titles = BowlerTitleViewModelFactory.Bogus(faker.Random.Int(1, 6), faker),
+        })];
     }
 
-    public static IReadOnlyCollection<TitlesByYearViewModel> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<TitlesByYearViewModel> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

@@ -64,44 +64,38 @@ public static class SponsorDetailViewModelFactory
             PhoneNumbers = phoneNumbers ?? [PhoneNumberResponseFactory.Create()],
         };
 
-    public static IReadOnlyCollection<SponsorDetailViewModel> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<SponsorDetailViewModel> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<SponsorDetailViewModel>()
-            .CustomInstantiator(f => new()
-            {
-                Id = Ulid.Bogus(f),
-                Slug = f.Lorem.Slug(),
-                Name = f.Company.CompanyName(),
-                IsCurrentSponsor = true,
-                TierName = f.PickRandom(SponsorTier.List.ToArray()).Name,
-                CategoryName = f.PickRandom(SponsorCategory.List.ToArray()).Name,
-                LogoUrl = new Uri(f.Internet.Avatar()),
-                WebsiteUrl = new Uri(f.Internet.Url()),
-                Tagline = f.Company.CatchPhrase(),
-                AboutText = f.Company.Bs(),
-                FacebookUrl = new Uri(f.Internet.Url()),
-                InstagramUrl = new Uri(f.Internet.Url()),
-                BusinessStreet = f.Address.StreetAddress(),
-                BusinessUnit = null,
-                BusinessCity = f.Address.City(),
-                BusinessState = f.Address.StateAbbr(),
-                BusinessPostalCode = f.Address.ZipCode(),
-                BusinessCountry = f.Address.CountryCode(),
-                ContactEmail = f.Internet.Email(),
-                PhoneNumbers = PhoneNumberResponseFactory.Bogus(1, f),
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new SponsorDetailViewModel
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            Id = Ulid.Bogus(faker),
+            Slug = faker.Lorem.Slug(),
+            Name = faker.Company.CompanyName(),
+            IsCurrentSponsor = true,
+            TierName = faker.PickRandom(SponsorTier.List.ToArray()).Name,
+            CategoryName = faker.PickRandom(SponsorCategory.List.ToArray()).Name,
+            LogoUrl = new Uri(faker.Internet.Avatar()),
+            WebsiteUrl = new Uri(faker.Internet.Url()),
+            Tagline = faker.Company.CatchPhrase(),
+            AboutText = faker.Company.Bs(),
+            FacebookUrl = new Uri(faker.Internet.Url()),
+            InstagramUrl = new Uri(faker.Internet.Url()),
+            BusinessStreet = faker.Address.StreetAddress(),
+            BusinessUnit = null,
+            BusinessCity = faker.Address.City(),
+            BusinessState = faker.Address.StateAbbr(),
+            BusinessPostalCode = faker.Address.ZipCode(),
+            BusinessCountry = faker.Address.CountryCode(),
+            ContactEmail = faker.Internet.Email(),
+            PhoneNumbers = PhoneNumberResponseFactory.Bogus(1, faker),
+        })];
     }
 
-    public static IReadOnlyCollection<SponsorDetailViewModel> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<SponsorDetailViewModel> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

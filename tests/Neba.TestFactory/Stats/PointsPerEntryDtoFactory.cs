@@ -25,31 +25,25 @@ public static class PointsPerEntryDtoFactory
             Entries = entries ?? ValidEntries
         };
 
-    public static IReadOnlyCollection<PointsPerEntryDto> Bogus(int count, int? seed = null)
+    public static IReadOnlyCollection<PointsPerEntryDto> Bogus(int count, Faker faker)
     {
-        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
-
-        var faker = new Faker<PointsPerEntryDto>()
-            .CustomInstantiator(f => new PointsPerEntryDto
-            {
-                BowlerId = new BowlerId(Ulid.BogusString(f)),
-                BowlerName = bowlerNamePool.GetNext(),
-                PointsPerEntry = f.Random.Decimal(10, 100),
-                Points = f.Random.Int(50, 1000),
-                Entries = f.Random.Int(1, 20)
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, faker), poolSeed);
+        return [.. Enumerable.Range(0, count).Select(_ => new PointsPerEntryDto
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            BowlerId = new BowlerId(Ulid.BogusString(faker)),
+            BowlerName = bowlerNamePool.GetNext(),
+            PointsPerEntry = faker.Random.Decimal(10, 100),
+            Points = faker.Random.Int(50, 1000),
+            Entries = faker.Random.Int(1, 20)
+        })];
     }
 
-    public static IReadOnlyCollection<PointsPerEntryDto> Bogus(int count, Faker parentFaker)
+    public static IReadOnlyCollection<PointsPerEntryDto> Bogus(int count, int? seed = null)
     {
-        ArgumentNullException.ThrowIfNull(parentFaker);
-        return Bogus(count, seed: parentFaker.Random.Int());
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }
