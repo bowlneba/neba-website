@@ -39,7 +39,7 @@
     <PackageVersion Include="Hangfire.PostgreSql" Version="1.21.1" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.12.4" />
     <PackageVersion Include="MailKit" Version="4.17.0" />
-    <PackageVersion Include="MessagePack" Version="2.5.302" />
+    <PackageVersion Include="MessagePack" Version="3.1.7" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.9" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.9" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.9" />
@@ -56,9 +56,9 @@
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="10.7.0" />
     <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.7.0" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.7.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.7.0" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="[17.14.2]" />
-    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15" />
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
@@ -66,10 +66,10 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
-    <PackageVersion Include="Refit" Version="11.1.0" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="11.1.0" />
+    <PackageVersion Include="Refit" Version="11.2.0" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="11.2.0" />
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.16.4" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.16.5" />
     <PackageVersion Include="Scrutor.AspNetCore" Version="3.3.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.27.0.140913" />
@@ -83,7 +83,7 @@
     <PackageVersion Include="Testcontainers" Version="4.12.0" />
     <PackageVersion Include="Testcontainers.Azurite" Version="4.12.0" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.12.0" />
-    <PackageVersion Include="Verify.XunitV3" Version="31.19.1" />
+    <PackageVersion Include="Verify.XunitV3" Version="31.20.0" />
     <PackageVersion Include="Ulid" Version="1.4.1" />
     <PackageVersion Include="UnitsNet" Version="5.75.0" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
