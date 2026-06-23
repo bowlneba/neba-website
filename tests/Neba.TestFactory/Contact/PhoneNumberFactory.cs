@@ -23,7 +23,7 @@ public static class PhoneNumberFactory
              Extension = extension
          };
 
-    public static IReadOnlyCollection<PhoneNumber> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<PhoneNumber> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var types = faker.Random.Shuffle(PhoneNumberType.List.ToArray()).ToArray();

@@ -34,7 +34,7 @@ public static class MatchPlayAverageDtoFactory
             Winnings = winnings ?? ValidWinnings
         };
 
-    public static IReadOnlyCollection<MatchPlayAverageDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<MatchPlayAverageDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

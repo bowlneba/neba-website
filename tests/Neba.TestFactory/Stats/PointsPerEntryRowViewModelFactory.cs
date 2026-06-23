@@ -24,7 +24,7 @@ public static class PointsPerEntryRowViewModelFactory
             Points = points ?? ValidPoints
         };
 
-    public static IReadOnlyCollection<PointsPerEntryRowViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<PointsPerEntryRowViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;

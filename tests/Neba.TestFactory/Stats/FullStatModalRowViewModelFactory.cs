@@ -47,7 +47,7 @@ public static class FullStatModalRowViewModelFactory
             Tournaments = touranments ?? ValidTouranments
         };
 
-    public static IReadOnlyCollection<FullStatModalRowViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<FullStatModalRowViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;

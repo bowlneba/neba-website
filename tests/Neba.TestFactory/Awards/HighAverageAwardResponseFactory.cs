@@ -23,7 +23,7 @@ public static class HighAverageAwardResponseFactory
             TournamentsParticipated = tournamentsParticipated
         };
 
-    public static IReadOnlyCollection<HighAverageAwardResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<HighAverageAwardResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new HighAverageAwardResponse

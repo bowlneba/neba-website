@@ -19,7 +19,7 @@ public static class BowlerOfTheYearPointsRaceTournamentDtoFactory
             CumulativePoints = cumulativePoints ?? ValidCumulativePoints
         };
 
-    public static IReadOnlyCollection<BowlerOfTheYearPointsRaceTournamentDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<BowlerOfTheYearPointsRaceTournamentDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var cumulativePoints = 0;

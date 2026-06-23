@@ -19,7 +19,7 @@ public static class PointsRaceTournamentResponseFactory
             CumulativePoints = cumulativePoints ?? ValidCumulativePoints
         };
 
-    public static IReadOnlyCollection<PointsRaceTournamentResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<PointsRaceTournamentResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

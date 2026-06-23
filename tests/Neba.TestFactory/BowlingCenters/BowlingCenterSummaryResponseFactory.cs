@@ -34,7 +34,7 @@ public static class BowlingCenterSummaryResponseFactory
             Website = website
         };
 
-    public static IReadOnlyCollection<BowlingCenterSummaryResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<BowlingCenterSummaryResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

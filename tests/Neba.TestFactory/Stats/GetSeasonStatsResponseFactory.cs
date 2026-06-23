@@ -70,7 +70,7 @@ public static class GetSeasonStatsResponseFactory
             AllBowlers = allBowlers ?? [FullStatModalRowResponseFactory.Create()]
         };
 
-    public static IReadOnlyCollection<GetSeasonStatsResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<GetSeasonStatsResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

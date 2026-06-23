@@ -21,7 +21,7 @@ public static class BowlerOfTheYearAwardResponseFactory
             Category = category ?? ValidCategory
         };
 
-    public static IReadOnlyCollection<BowlerOfTheYearAwardResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<BowlerOfTheYearAwardResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new BowlerOfTheYearAwardResponse

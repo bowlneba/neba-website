@@ -47,7 +47,7 @@ public static class SponsorDetailDtoFactory
                 PhoneNumbers = phoneNumbers ?? [],
             };
 
-    public static IReadOnlyCollection<SponsorDetailDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<SponsorDetailDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

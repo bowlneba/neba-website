@@ -24,7 +24,7 @@ public static class PointsPerTournamentRowViewModelFactory
             Tournaments = tournaments ?? ValidTournaments
         };
 
-    public static IReadOnlyCollection<PointsPerTournamentRowViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<PointsPerTournamentRowViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;

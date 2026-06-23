@@ -22,7 +22,7 @@ public static class BowlerTitleSummaryViewModelFactory
             HallOfFame = hallOfFame ?? ValidHallOfFame,
         };
 
-    public static IReadOnlyCollection<BowlerTitleSummaryViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<BowlerTitleSummaryViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new BowlerTitleSummaryViewModel

@@ -15,7 +15,7 @@ public static class BowlerSearchEntryDtoFactory
             BowlerName = bowlerName ?? NameFactory.Create()
         };
 
-    public static IReadOnlyCollection<BowlerSearchEntryDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<BowlerSearchEntryDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

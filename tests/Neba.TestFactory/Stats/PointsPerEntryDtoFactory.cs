@@ -25,7 +25,7 @@ public static class PointsPerEntryDtoFactory
             Entries = entries ?? ValidEntries
         };
 
-    public static IReadOnlyCollection<PointsPerEntryDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<PointsPerEntryDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

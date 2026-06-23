@@ -37,7 +37,7 @@ public static class BowlingCenterFactory
             LegacyId = legacyId
         };
 
-    public static IReadOnlyCollection<BowlingCenter> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<BowlingCenter> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

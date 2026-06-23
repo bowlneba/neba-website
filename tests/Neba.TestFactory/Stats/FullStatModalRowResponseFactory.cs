@@ -49,7 +49,7 @@ public static class FullStatModalRowResponseFactory
             Tournaments = tournaments ?? ValidTournaments
         };
 
-    public static IReadOnlyCollection<FullStatModalRowResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<FullStatModalRowResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

@@ -28,7 +28,7 @@ public static class HighAverageResponseFactory
             FieldAverage = fieldAverage ?? ValidFieldAverage
         };
 
-    public static IReadOnlyCollection<HighAverageResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<HighAverageResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

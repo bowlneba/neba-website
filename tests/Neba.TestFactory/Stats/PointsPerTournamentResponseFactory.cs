@@ -25,7 +25,7 @@ public static class PointsPerTournamentResponseFactory
             PointsPerTournament = pointsPerTournament ?? ValidPointsPerTournament
         };
 
-    public static IReadOnlyCollection<PointsPerTournamentResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<PointsPerTournamentResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

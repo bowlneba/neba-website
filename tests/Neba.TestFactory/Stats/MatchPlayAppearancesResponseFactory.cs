@@ -25,7 +25,7 @@ public static class MatchPlayAppearancesResponseFactory
             Entries = entries ?? ValidEntries
         };
 
-    public static IReadOnlyCollection<MatchPlayAppearancesResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<MatchPlayAppearancesResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new MatchPlayAppearancesResponse

@@ -22,7 +22,7 @@ public static class HighBlockDtoFactory
             HighGame = highGame ?? ValidHighGame
         };
 
-    public static IReadOnlyCollection<HighBlockDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<HighBlockDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

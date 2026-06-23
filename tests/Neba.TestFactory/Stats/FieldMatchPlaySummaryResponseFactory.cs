@@ -22,7 +22,7 @@ public static class FieldMatchPlaySummaryResponseFactory
             MostFinalsBowlers = mostFinalsBowlers ?? new Dictionary<string, string> { { ValidBowlerId, ValidBowlerName } }
         };
 
-    public static IReadOnlyCollection<FieldMatchPlaySummaryResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<FieldMatchPlaySummaryResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new FieldMatchPlaySummaryResponse

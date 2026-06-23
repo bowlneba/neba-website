@@ -20,7 +20,7 @@ public static class ArticleAttachmentDtoFactory
             ContentType = contentType ?? MediaTypeNames.Application.Pdf,
         };
 
-    public static IReadOnlyCollection<ArticleAttachmentDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<ArticleAttachmentDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new ArticleAttachmentDto

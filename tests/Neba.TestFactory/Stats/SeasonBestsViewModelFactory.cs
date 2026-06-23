@@ -26,7 +26,7 @@ public static class SeasonBestsViewModelFactory
             HighAverageBowlers = highAverageBowlers ?? new Dictionary<string, string> { { Ulid.NewUlid().ToString(), ValidBowlerName } },
         };
 
-    public static IReadOnlyCollection<SeasonBestsViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<SeasonBestsViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new SeasonBestsViewModel

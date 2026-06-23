@@ -25,7 +25,7 @@ public static class PointsPerEntryResponseFactory
             Entries = entries ?? ValidEntries
         };
 
-    public static IReadOnlyCollection<PointsPerEntryResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<PointsPerEntryResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

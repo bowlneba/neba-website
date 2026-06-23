@@ -27,7 +27,7 @@ public static class MatchPlayAppearancesRowViewModelFactory
             Entries = entries ?? ValidEntries
         };
 
-    public static IReadOnlyCollection<MatchPlayAppearancesRowViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<MatchPlayAppearancesRowViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;

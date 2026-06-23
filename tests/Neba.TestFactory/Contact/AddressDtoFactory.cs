@@ -27,7 +27,7 @@ public static class AddressDtoFactory
             Longitude = longitude
         };
 
-    public static IReadOnlyCollection<AddressDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<AddressDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new AddressDto

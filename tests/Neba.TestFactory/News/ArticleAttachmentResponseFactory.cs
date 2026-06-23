@@ -19,7 +19,7 @@ public static class ArticleAttachmentResponseFactory
             ContentType = contentType ?? MediaTypeNames.Image.Jpeg,
         };
 
-    public static IReadOnlyCollection<ArticleAttachmentResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<ArticleAttachmentResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new ArticleAttachmentResponse

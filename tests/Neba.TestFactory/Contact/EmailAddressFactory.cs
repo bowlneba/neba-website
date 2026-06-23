@@ -12,7 +12,7 @@ public static class EmailAddressFactory
              Value = email ?? ValidEmail
          };
 
-    public static IReadOnlyCollection<EmailAddress> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<EmailAddress> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => Create(email: faker.Internet.Email()))];

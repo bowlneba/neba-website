@@ -26,7 +26,7 @@ public static class DocumentDtoFactory
         };
     }
 
-    public static IReadOnlyCollection<DocumentDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<DocumentDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new DocumentDto

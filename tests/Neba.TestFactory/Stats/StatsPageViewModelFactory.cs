@@ -70,7 +70,7 @@ public static class StatsPageViewModelFactory
             AllBowlers = allBowlers ?? [FullStatModalRowViewModelFactory.Create()],
         };
 
-    public static IReadOnlyCollection<StatsPageViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<StatsPageViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

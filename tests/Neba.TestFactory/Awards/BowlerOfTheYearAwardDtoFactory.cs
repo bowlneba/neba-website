@@ -21,7 +21,7 @@ public static class BowlerOfTheYearAwardDtoFactory
             Category = category?.Name ?? ValidCategory
         };
 
-    public static IReadOnlyCollection<BowlerOfTheYearAwardDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<BowlerOfTheYearAwardDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

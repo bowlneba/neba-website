@@ -25,7 +25,7 @@ public static class MatchPlayAppearancesDtoFactory
             Entries = entries ?? ValidEntries
         };
 
-    public static IReadOnlyCollection<MatchPlayAppearancesDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<MatchPlayAppearancesDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

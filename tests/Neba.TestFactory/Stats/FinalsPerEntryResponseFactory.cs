@@ -25,7 +25,7 @@ public static class FinalsPerEntryResponseFactory
             FinalsPerEntry = finalsPerEntry ?? ValidFinalsPerEntry
         };
 
-    public static IReadOnlyCollection<FinalsPerEntryResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<FinalsPerEntryResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

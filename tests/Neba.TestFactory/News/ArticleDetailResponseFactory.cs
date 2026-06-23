@@ -28,7 +28,7 @@ public static class ArticleDetailResponseFactory
             Attachments = attachments ?? [],
         };
 
-    public static IReadOnlyCollection<ArticleDetailResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<ArticleDetailResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

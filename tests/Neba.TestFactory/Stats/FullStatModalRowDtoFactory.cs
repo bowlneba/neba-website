@@ -49,7 +49,7 @@ public static class FullStatModalRowDtoFactory
             Tournaments = tournaments ?? ValidTournaments
         };
 
-    public static IReadOnlyCollection<FullStatModalRowDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<FullStatModalRowDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

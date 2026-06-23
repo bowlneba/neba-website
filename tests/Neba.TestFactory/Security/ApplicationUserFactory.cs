@@ -20,7 +20,7 @@ public static class ApplicationUserFactory
             UsbcId = usbcId
         };
 
-    public static IReadOnlyCollection<ApplicationUser> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<ApplicationUser> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

@@ -115,7 +115,7 @@ public static class BowlerSeasonStatsDtoFactory
             LastUpdatedUtc = lastUpdatedUtc ?? ValidLastUpdatedUtc,
         };
 
-    public static IReadOnlyCollection<BowlerSeasonStatsDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<BowlerSeasonStatsDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

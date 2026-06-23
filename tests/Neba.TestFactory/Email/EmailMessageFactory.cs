@@ -21,7 +21,7 @@ public static class EmailMessageFactory
             ReplyTo = replyTo,
         };
 
-    public static IReadOnlyCollection<EmailMessage> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<EmailMessage> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new EmailMessage

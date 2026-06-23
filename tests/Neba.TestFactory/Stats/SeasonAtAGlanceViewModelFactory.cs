@@ -16,7 +16,7 @@ public static class SeasonAtAGlanceViewModelFactory
             TotalPrizeMoney = totalPrizeMoney ?? ValidTotalPrizeMoney,
         };
 
-    public static IReadOnlyCollection<SeasonAtAGlanceViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<SeasonAtAGlanceViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new SeasonAtAGlanceViewModel

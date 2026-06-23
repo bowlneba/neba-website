@@ -84,7 +84,7 @@ public static class IndividualStatsPageViewModelFactory
             BoyProgressions = boyProgressions ?? [],
         };
 
-    public static IReadOnlyCollection<IndividualStatsPageViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<IndividualStatsPageViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

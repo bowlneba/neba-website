@@ -18,7 +18,7 @@ public static class PointsRaceSeriesResponseFactory
             Results = results ?? [PointsRaceTournamentResponseFactory.Create()]
         };
 
-    public static IReadOnlyCollection<PointsRaceSeriesResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<PointsRaceSeriesResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new PointsRaceSeriesResponse

@@ -32,7 +32,7 @@ public static class SeasonStatsDtoFactory
             MinimumNumberOfEntries = minimums?.entries ?? 0m,
         };
 
-    public static IReadOnlyCollection<SeasonStatsDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<SeasonStatsDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new SeasonStatsDto

@@ -29,7 +29,7 @@ public static class ArticleDetailDtoFactory
             TournamentId = tournamentId,
         };
 
-    public static IReadOnlyCollection<ArticleDetailDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<ArticleDetailDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

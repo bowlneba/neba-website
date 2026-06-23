@@ -18,7 +18,7 @@ public static class BowlerTitlesDtoFactory
             Titles = titles ?? [],
         };
 
-    public static IReadOnlyCollection<BowlerTitlesDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<BowlerTitlesDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new BowlerTitlesDto

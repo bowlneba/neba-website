@@ -58,7 +58,7 @@ public static class SponsorFactory
                 SponsorContact = sponsorContact
             };
 
-    public static IReadOnlyCollection<Sponsor> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<Sponsor> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

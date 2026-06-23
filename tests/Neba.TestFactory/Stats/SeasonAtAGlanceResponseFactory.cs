@@ -16,7 +16,7 @@ public static class SeasonAtAGlanceResponseFactory
             TotalPrizeMoney = totalPrizeMoney ?? ValidTotalPrizeMoney
         };
 
-    public static IReadOnlyCollection<SeasonAtAGlanceResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<SeasonAtAGlanceResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new SeasonAtAGlanceResponse

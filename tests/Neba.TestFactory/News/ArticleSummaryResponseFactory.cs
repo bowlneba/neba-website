@@ -24,7 +24,7 @@ public static class ArticleSummaryResponseFactory
             PublishDateUtc = publishDateUtc ?? ValidPublishDateUtc
         };
 
-    public static IReadOnlyCollection<ArticleSummaryResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<ArticleSummaryResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

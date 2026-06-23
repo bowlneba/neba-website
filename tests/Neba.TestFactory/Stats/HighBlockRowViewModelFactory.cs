@@ -24,7 +24,7 @@ public static class HighBlockRowViewModelFactory
             HighGame = highGame ?? ValidHighGame
         };
 
-    public static IReadOnlyCollection<HighBlockRowViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<HighBlockRowViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;

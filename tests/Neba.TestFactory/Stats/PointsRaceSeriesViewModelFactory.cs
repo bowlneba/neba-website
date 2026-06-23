@@ -17,7 +17,7 @@ public static class PointsRaceSeriesViewModelFactory
             Results = results ?? [PointsRaceTournamentViewModelFactory.Create()]
         };
 
-    public static IReadOnlyCollection<PointsRaceSeriesViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<PointsRaceSeriesViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new PointsRaceSeriesViewModel

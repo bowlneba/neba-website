@@ -21,7 +21,7 @@ public static class BowlerFactory
             DateOfBirth = dateOfBirth ?? new DateOnly(2000, 5, 1)
         };
 
-    public static IReadOnlyCollection<Bowler> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<Bowler> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

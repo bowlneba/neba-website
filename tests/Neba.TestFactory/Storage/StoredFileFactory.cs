@@ -24,7 +24,7 @@ public static class StoredFileFactory
         };
     }
 
-    public static IReadOnlyCollection<StoredFile> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<StoredFile> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new StoredFile

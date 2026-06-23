@@ -18,7 +18,7 @@ public static class HallOfFameInductionViewModelFactory
             PhotoUri = photoUri
         };
 
-    public static IReadOnlyCollection<HallOfFameInductionViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<HallOfFameInductionViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new HallOfFameInductionViewModel

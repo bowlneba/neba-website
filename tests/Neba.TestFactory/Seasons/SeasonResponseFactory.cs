@@ -22,7 +22,7 @@ public static class SeasonResponseFactory
             EndDate = endDate ?? ValidEndDate,
         };
 
-    public static IReadOnlyCollection<SeasonResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<SeasonResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

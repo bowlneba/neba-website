@@ -19,7 +19,7 @@ public static class BowlerOfTheYearPointsRaceSeriesDtoFactory
             Results = results ?? [BowlerOfTheYearPointsRaceTournamentDtoFactory.Create()]
         };
 
-    public static IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

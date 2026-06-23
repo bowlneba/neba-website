@@ -14,7 +14,7 @@ public static class PhoneNumberResponseFactory
             PhoneNumber = number ?? (PhoneNumberFactory.ValidCountryCode + PhoneNumberFactory.ValidNumber)
         };
 
-    public static IReadOnlyCollection<PhoneNumberResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<PhoneNumberResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new PhoneNumberResponse

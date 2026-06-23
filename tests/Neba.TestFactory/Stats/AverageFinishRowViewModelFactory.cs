@@ -27,7 +27,7 @@ public static class AverageFinishRowViewModelFactory
             Winnings = winnings ?? ValidWinnings
         };
 
-    public static IReadOnlyCollection<AverageFinishRowViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<AverageFinishRowViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;

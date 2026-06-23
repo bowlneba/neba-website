@@ -24,7 +24,7 @@ public static class FinalsPerEntryRowViewModelFactory
             Entries = entries ?? ValidEntries
         };
 
-    public static IReadOnlyCollection<FinalsPerEntryRowViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<FinalsPerEntryRowViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;

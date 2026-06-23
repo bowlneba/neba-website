@@ -22,7 +22,7 @@ public static class SeasonDtoFactory
             EndDate = endDate ?? ValidEndDate,
         };
 
-    public static IReadOnlyCollection<SeasonDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<SeasonDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var currentYear = faker.Random.Int(2000, 2025 - count);

@@ -64,7 +64,7 @@ public static class SponsorDetailViewModelFactory
             PhoneNumbers = phoneNumbers ?? [PhoneNumberResponseFactory.Create()],
         };
 
-    public static IReadOnlyCollection<SponsorDetailViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<SponsorDetailViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new SponsorDetailViewModel

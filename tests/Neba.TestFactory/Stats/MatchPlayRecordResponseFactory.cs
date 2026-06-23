@@ -34,7 +34,7 @@ public static class MatchPlayRecordResponseFactory
             Winnings = winnings ?? ValidWinnings
         };
 
-    public static IReadOnlyCollection<MatchPlayRecordResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<MatchPlayRecordResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

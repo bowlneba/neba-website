@@ -28,7 +28,7 @@ public static class HighAverageDtoFactory
             FieldAverage = fieldAverage ?? ValidFieldAverage
         };
 
-    public static IReadOnlyCollection<HighAverageDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<HighAverageDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

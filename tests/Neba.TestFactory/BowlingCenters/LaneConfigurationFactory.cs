@@ -7,7 +7,7 @@ public static class LaneConfigurationFactory
     public static LaneConfiguration Create(IReadOnlyList<LaneRange>? ranges = null)
         => LaneConfiguration.Create(ranges ?? [LaneRangeFactory.Create()]).Value;
 
-    public static IReadOnlyCollection<LaneConfiguration> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<LaneConfiguration> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

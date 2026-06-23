@@ -64,7 +64,7 @@ public static class TournamentFactory
         return tournament;
     }
 
-    public static IReadOnlyCollection<Tournament> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<Tournament> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

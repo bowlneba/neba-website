@@ -25,7 +25,7 @@ public static class NameFactory
              Nickname = nickname
          };
 
-    public static IReadOnlyCollection<Name> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<Name> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new Name

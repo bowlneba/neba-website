@@ -19,7 +19,7 @@ public static class PointsRaceTournamentViewModelFactory
             CumulativePoints = cumulativePoints ?? ValidCumulativePoints
         };
 
-    public static IReadOnlyCollection<PointsRaceTournamentViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<PointsRaceTournamentViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var cumulativePoints = 0;

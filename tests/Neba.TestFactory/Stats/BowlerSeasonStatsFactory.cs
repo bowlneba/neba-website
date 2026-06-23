@@ -113,7 +113,7 @@ public static class BowlerSeasonStatsFactory
             LastUpdatedUtc = lastUpdatedUtc ?? ValidLastUpdatedUtc,
         };
 
-    public static IReadOnlyCollection<BowlerSeasonStats> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<BowlerSeasonStats> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

@@ -34,7 +34,7 @@ public static class MatchPlayAverageResponseFactory
             Winnings = winnings ?? ValidWinnings
         };
 
-    public static IReadOnlyCollection<MatchPlayAverageResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<MatchPlayAverageResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

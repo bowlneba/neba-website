@@ -100,7 +100,7 @@ public static class BowlerSeasonStatsSnapshotFactory
             Credits = credits ?? ValidCredits,
         };
 
-    public static IReadOnlyCollection<BowlerSeasonStatsSnapshot> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<BowlerSeasonStatsSnapshot> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

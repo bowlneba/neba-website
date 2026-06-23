@@ -15,7 +15,7 @@ public static class TitlesByYearViewModelFactory
             Titles = titles ?? [BowlerTitleViewModelFactory.Create()],
         };
 
-    public static IReadOnlyCollection<TitlesByYearViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<TitlesByYearViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new TitlesByYearViewModel

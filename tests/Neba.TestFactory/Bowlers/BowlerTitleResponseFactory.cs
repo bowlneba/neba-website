@@ -22,7 +22,7 @@ public static class BowlerTitleResponseFactory
             TournamentType = (tournamentType ?? ValidTournamentType).Name,
         };
 
-    public static IReadOnlyCollection<BowlerTitleResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<BowlerTitleResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new BowlerTitleResponse

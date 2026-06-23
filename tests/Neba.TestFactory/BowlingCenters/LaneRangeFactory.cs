@@ -14,7 +14,7 @@ public static class LaneRangeFactory
             endLane ?? ValidEndLane,
             pinFallType ?? ValidPinFallType).Value;
 
-    public static IReadOnlyCollection<LaneRange> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<LaneRange> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ =>

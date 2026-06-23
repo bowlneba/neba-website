@@ -22,7 +22,7 @@ public static class ArticleAttachmentFactory
             IsInline = isInline ?? ValidIsInline
         };
 
-    public static IReadOnlyCollection<ArticleAttachment> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<ArticleAttachment> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var files = new Queue<StoredFile>(StoredFileFactory.Bogus(count, faker));

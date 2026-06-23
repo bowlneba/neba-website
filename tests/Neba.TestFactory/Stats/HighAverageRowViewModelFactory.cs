@@ -30,7 +30,7 @@ public static class HighAverageRowViewModelFactory
             FieldAverage = fieldAverage ?? ValidFieldAverage
         };
 
-    public static IReadOnlyCollection<HighAverageRowViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<HighAverageRowViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;

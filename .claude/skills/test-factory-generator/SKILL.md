@@ -110,7 +110,7 @@ public static class <TypeName>Factory
             ...
         };
 
-    public static IReadOnlyCollection<<TypeName>> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<<TypeName>> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         // Pre-compute correlation variables here if needed (e.g. UniquePool, rank counter)
@@ -190,9 +190,14 @@ return [.. Enumerable.Range(0, count).Select(_ => new Parent
 })];
 ```
 
-Every factory exposes `Bogus(int count, Faker faker)` as the primary overload and `Bogus(int count, int? seed = null)` as a convenience wrapper. The seed overload creates a seeded `Faker` and delegates to the primary — it never duplicates implementation:
+Every factory exposes `Bogus(int count, Faker faker)` as `internal` (called only from other factories to share RNG state) and `Bogus(int count, int? seed = null)` as `public` (called from tests). The seed overload creates a seeded `Faker` and delegates to the primary — it never duplicates implementation:
 
 ```csharp
+internal static IReadOnlyCollection<PointsRaceTournamentResponse> Bogus(int count, Faker faker)
+{
+    // ... implementation
+}
+
 public static IReadOnlyCollection<PointsRaceTournamentResponse> Bogus(int count, int? seed = null)
 {
     var faker = new Faker();
@@ -209,7 +214,7 @@ public static IReadOnlyCollection<PointsRaceTournamentResponse> Bogus(int count,
 
 ```csharp
 // ✅ Correct — faker is the engine; shared RNG state flows through all nested calls
-public static IReadOnlyCollection<MyType> Bogus(int count, Faker faker)
+internal static IReadOnlyCollection<MyType> Bogus(int count, Faker faker)
 {
     ArgumentNullException.ThrowIfNull(faker);
     return [.. Enumerable.Range(0, count).Select(_ => new MyType

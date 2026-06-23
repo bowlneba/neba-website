@@ -33,7 +33,7 @@ public static class MatchPlayAverageRowViewModelFactory
             Winnings = winnings ?? ValidWinnings
         };
 
-    public static IReadOnlyCollection<MatchPlayAverageRowViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<MatchPlayAverageRowViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var rank = 1;

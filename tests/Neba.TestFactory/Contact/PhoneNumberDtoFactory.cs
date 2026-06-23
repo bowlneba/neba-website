@@ -14,7 +14,7 @@ public static class PhoneNumberDtoFactory
             Number = number ?? (PhoneNumberFactory.ValidCountryCode + PhoneNumberFactory.ValidNumber)
         };
 
-    public static IReadOnlyCollection<PhoneNumberDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<PhoneNumberDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new PhoneNumberDto

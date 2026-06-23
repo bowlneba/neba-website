@@ -14,7 +14,7 @@ public static class ApplicationRoleFactory
             Id = id ?? Ulid.NewUlid()
         };
 
-    public static IReadOnlyCollection<ApplicationRole> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<ApplicationRole> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new ApplicationRole(faker.Random.Word())

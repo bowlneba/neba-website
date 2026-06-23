@@ -27,7 +27,7 @@ public static class SeasonBestsResponseFactory
             HighAverageBowlers = highAverageBowlers ?? new Dictionary<string, string> { { ValidBowlerId, ValidBowlerName } }
         };
 
-    public static IReadOnlyCollection<SeasonBestsResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<SeasonBestsResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new SeasonBestsResponse

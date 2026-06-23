@@ -18,7 +18,7 @@ public static class BowlerTitlesViewModelFactory
             Titles = titles ?? [TitleViewModelFactory.Create()],
         };
 
-    public static IReadOnlyCollection<BowlerTitlesViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<BowlerTitlesViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new BowlerTitlesViewModel

@@ -25,7 +25,7 @@ public static class AverageFinishResponseFactory
             Winnings = winnings ?? ValidWinnings
         };
 
-    public static IReadOnlyCollection<AverageFinishResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<AverageFinishResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new AverageFinishResponse

@@ -21,7 +21,7 @@ public static class FieldMatchPlaySummaryViewModelFactory
             MostFinalsBowlers = mostFinalsBowlers ?? new Dictionary<string, string> { { Ulid.NewUlid().ToString(), ValidBowlerName } },
         };
 
-    public static IReadOnlyCollection<FieldMatchPlaySummaryViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<FieldMatchPlaySummaryViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new FieldMatchPlaySummaryViewModel

@@ -17,7 +17,7 @@ public static class BowlerOfTheYearByYearViewModelFactory
             WinnersByCategory = winnersByCategory ?? [new KeyValuePair<string, string>(ValidCategory, ValidBowlerName)]
         };
 
-    public static IReadOnlyList<BowlerOfTheYearByYearViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyList<BowlerOfTheYearByYearViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new BowlerOfTheYearByYearViewModel

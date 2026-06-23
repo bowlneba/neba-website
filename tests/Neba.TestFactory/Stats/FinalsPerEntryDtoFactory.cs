@@ -25,7 +25,7 @@ public static class FinalsPerEntryDtoFactory
             FinalsPerEntry = finalsPerEntry ?? ValidFinalsPerEntry
         };
 
-    public static IReadOnlyCollection<FinalsPerEntryDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<FinalsPerEntryDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

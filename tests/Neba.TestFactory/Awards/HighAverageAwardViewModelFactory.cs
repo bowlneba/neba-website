@@ -25,7 +25,7 @@ public static class HighAverageAwardViewModelFactory
             TournamentsParticipated = tournamentsParticipated ?? ValidTournamentsParticipated
         };
 
-    public static IReadOnlyCollection<HighAverageAwardViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<HighAverageAwardViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new HighAverageAwardViewModel

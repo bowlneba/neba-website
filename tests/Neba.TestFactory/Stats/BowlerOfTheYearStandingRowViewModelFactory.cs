@@ -36,7 +36,7 @@ public static class BowlerOfTheYearStandingRowViewModelFactory
             Winnings = winnings ?? ValidWinnings
         };
 
-    public static IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var ranking = 1;

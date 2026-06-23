@@ -26,7 +26,7 @@ public static class BowlingCenterSummaryDtoFactory
             Website = website
         };
 
-    public static IReadOnlyCollection<BowlingCenterSummaryDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<BowlingCenterSummaryDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

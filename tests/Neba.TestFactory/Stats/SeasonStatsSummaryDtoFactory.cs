@@ -77,7 +77,7 @@ public static class SeasonStatsSummaryDtoFactory
             AllBowlers = allBowlers ?? [FullStatModalRowDtoFactory.Create()]
         };
 
-    public static IReadOnlyCollection<SeasonStatsSummaryDto> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<SeasonStatsSummaryDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new SeasonStatsSummaryDto

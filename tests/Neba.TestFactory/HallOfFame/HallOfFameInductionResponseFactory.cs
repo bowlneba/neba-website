@@ -22,7 +22,7 @@ public static class HallOfFameInductionResponseFactory
             PhotoUri = photoUri
         };
 
-    public static IReadOnlyCollection<HallOfFameInductionResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<HallOfFameInductionResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         var poolSeed = faker.Random.Int();

@@ -19,7 +19,7 @@ public static class HighBlockAwardResponseFactory
             Score = score ?? ValidScore
         };
 
-    public static IReadOnlyCollection<HighBlockAwardResponse> Bogus(int count, Faker faker)
+    internal static IReadOnlyCollection<HighBlockAwardResponse> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new HighBlockAwardResponse
