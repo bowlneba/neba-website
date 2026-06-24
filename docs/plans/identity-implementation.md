@@ -51,8 +51,8 @@ Each operation folder mirrors the feature folder pattern: the endpoint maps the 
 Neba.Api/
 ├── Security/                                       ← sibling to Features/, NOT inside it
 │   ├── Domain/
-│   │   ├── ApplicationUser.cs                      ← IdentityUser<Guid> + UsbcId
-│   │   ├── ApplicationRole.cs                      ← IdentityRole<Guid>
+│   │   ├── ApplicationUser.cs                      ← IdentityUser<Ulid> + UsbcId
+│   │   ├── ApplicationRole.cs                      ← IdentityRole<Ulid>
 │   │   └── Roles.cs                                ← static constants: Admin, ScoreKeeper, Member
 │   ├── Login/
 │   │   ├── LoginCommand.cs                         ← internal: ICommand<LoginDto>
@@ -100,7 +100,7 @@ Neba.Api/
 │
 ├── Database/
 │   ├── AppDbContext.cs                             ← unchanged
-│   ├── SecurityDbContext.cs                        ← new IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
+│   ├── SecurityDbContext.cs                        ← new IdentityDbContext<ApplicationUser, ApplicationRole, Ulid>
 │   ├── SecurityDbContextDesignTimeFactory.cs       ← new (for migrations CLI)
 │   ├── Configurations/
 │   │   └── (existing app configurations unchanged)
@@ -184,7 +184,7 @@ Add to `Directory.Packages.props` and `Neba.Api.csproj`:
 // Security/Domain/ApplicationUser.cs
 namespace Neba.Api.Security.Domain;
 
-public sealed class ApplicationUser : IdentityUser<Guid>
+public sealed class ApplicationUser : IdentityUser<Ulid>
 {
     // Nullable: set when the user links their account to a bowler in the system.
     // Matches Bowler.UsbcId — not a FK across DbContexts; enforced at the application layer.
@@ -198,7 +198,7 @@ public sealed class ApplicationUser : IdentityUser<Guid>
 // Security/Domain/ApplicationRole.cs
 namespace Neba.Api.Security.Domain;
 
-public sealed class ApplicationRole : IdentityRole<Guid>
+public sealed class ApplicationRole : IdentityRole<Ulid>
 {
     public ApplicationRole() { }
     public ApplicationRole(string roleName) : base(roleName) { }
@@ -226,7 +226,7 @@ public static class Roles
 namespace Neba.Api.Database;
 
 internal sealed class SecurityDbContext(DbContextOptions<SecurityDbContext> options)
-    : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>(options)
+    : IdentityDbContext<ApplicationUser, ApplicationRole, Ulid>(options)
 {
     public const string Schema = "security";
     public const string MigrationsHistoryTableName = "__EFMigrationsHistory";
@@ -760,7 +760,7 @@ internal static class SecurityErrors
     public static Error InvalidRefreshToken =>
         Error.Unauthorized("Security.InvalidRefreshToken", "The refresh token is invalid or has expired.");
 
-    public static Error UserNotFound(Guid userId) =>
+    public static Error UserNotFound(Ulid userId) =>
         Error.NotFound("Security.UserNotFound", $"No user with ID '{userId}' was found.");
 }
 ```
@@ -912,7 +912,7 @@ namespace Neba.Api.Contracts.Security.Register;
 public sealed record RegisterResponse
 {
     /// <summary>The ID of the newly created user.</summary>
-    public required Guid UserId { get; init; }
+    public required string UserId { get; init; }
 }
 ```
 
@@ -923,7 +923,7 @@ using Neba.Api.Messaging;
 
 namespace Neba.Api.Security.Register;
 
-internal sealed record RegisterCommand : ICommand<Guid>
+internal sealed record RegisterCommand : ICommand<string>
 {
     public required string Email { get; init; }
     public required string Password { get; init; }
@@ -943,9 +943,9 @@ using Neba.Api.Security.Domain;
 namespace Neba.Api.Security.Register;
 
 internal sealed class RegisterCommandHandler(UserManager<ApplicationUser> userManager)
-    : ICommandHandler<RegisterCommand, Guid>
+    : ICommandHandler<RegisterCommand, string>
 {
-    public async Task<ErrorOr<Guid>> HandleAsync(RegisterCommand command, CancellationToken cancellationToken)
+    public async Task<ErrorOr<string>> HandleAsync(RegisterCommand command, CancellationToken cancellationToken)
     {
         var user = new ApplicationUser
         {
@@ -967,7 +967,7 @@ internal sealed class RegisterCommandHandler(UserManager<ApplicationUser> userMa
                 .ToList();
         }
 
-        return user.Id;
+        return user.Id.ToString();
     }
 }
 ```
@@ -987,10 +987,10 @@ using Neba.Api.Messaging;
 
 namespace Neba.Api.Security.Register;
 
-internal sealed class RegisterEndpoint(ICommandHandler<RegisterCommand, Guid> commandHandler)
+internal sealed class RegisterEndpoint(ICommandHandler<RegisterCommand, string> commandHandler)
     : Endpoint<RegisterRequest, RegisterResponse>
 {
-    private readonly ICommandHandler<RegisterCommand, Guid> _commandHandler = commandHandler;
+    private readonly ICommandHandler<RegisterCommand, string> _commandHandler = commandHandler;
 
     public override void Configure()
     {
@@ -1096,7 +1096,7 @@ internal sealed class RegisterSummary : Summary<RegisterEndpoint>
 
         Response(201, "The account was created successfully.",
             contentType: MediaTypeNames.Application.Json,
-            example: new RegisterResponse { UserId = Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa6") });
+            example: new RegisterResponse { UserId = "01JXXXXXXXXXXXXXXXXXXXXXXXXX" });
 
         Response(409, "An account with this email already exists.");
         Response(422, "Validation failed (invalid email format, password too short, etc.).");
@@ -1132,7 +1132,7 @@ public sealed record LoginResponse
     public required string AccessToken { get; init; }
     public required string RefreshToken { get; init; }
     public required DateTimeOffset ExpiresAt { get; init; }
-    public required Guid UserId { get; init; }
+    public required string UserId { get; init; }
     public required string Email { get; init; }
     public required IReadOnlyCollection<string> Roles { get; init; }
 }
@@ -1148,7 +1148,7 @@ internal sealed record LoginDto
     public required string AccessToken { get; init; }
     public required string RefreshToken { get; init; }
     public required DateTimeOffset ExpiresAt { get; init; }
-    public required Guid UserId { get; init; }
+    public required Ulid UserId { get; init; }
     public required string Email { get; init; }
     public required IReadOnlyCollection<string> Roles { get; init; }
 }
@@ -1288,7 +1288,7 @@ internal sealed class LoginEndpoint(ICommandHandler<LoginCommand, LoginDto> comm
             AccessToken = dto.AccessToken,
             RefreshToken = dto.RefreshToken,
             ExpiresAt = dto.ExpiresAt,
-            UserId = dto.UserId,
+            UserId = dto.UserId.ToString(),
             Email = dto.Email,
             Roles = dto.Roles,
         }, ct);
@@ -1352,7 +1352,7 @@ internal sealed class LoginSummary : Summary<LoginEndpoint>
                 AccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 RefreshToken = "abc123...",
                 ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(15),
-                UserId = Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
+                UserId = "01JXXXXXXXXXXXXXXXXXXXXXXXXX",
                 Email = "admin@bowlneba.com",
                 Roles = ["Admin"],
             });
@@ -1376,7 +1376,7 @@ namespace Neba.Api.Contracts.Security.RefreshToken;
 public sealed record RefreshTokenRequest
 {
     /// <summary>The ID of the user whose token is being refreshed. Provided in the original LoginResponse.</summary>
-    public required Guid UserId { get; init; }
+    public required string UserId { get; init; }
 
     /// <summary>The opaque refresh token received from login or a previous refresh.</summary>
     public required string RefreshToken { get; init; }
@@ -1396,7 +1396,7 @@ public sealed record RefreshTokenResponse
     public required string AccessToken { get; init; }
     public required string RefreshToken { get; init; }
     public required DateTimeOffset ExpiresAt { get; init; }
-    public required Guid UserId { get; init; }
+    public required string UserId { get; init; }
     public required string Email { get; init; }
     public required IReadOnlyCollection<string> Roles { get; init; }
 }
@@ -1413,7 +1413,7 @@ namespace Neba.Api.Security.RefreshToken;
 // Reuses LoginDto — the response shape is identical to login.
 internal sealed record RefreshTokenCommand : ICommand<LoginDto>
 {
-    public required Guid UserId { get; init; }
+    public required Ulid UserId { get; init; }
     public required string RefreshToken { get; init; }
 }
 ```
@@ -1541,7 +1541,7 @@ internal sealed class RefreshTokenEndpoint(ICommandHandler<RefreshTokenCommand, 
 
     public override async Task HandleAsync(RefreshTokenRequest req, CancellationToken ct)
     {
-        var command = new RefreshTokenCommand { UserId = req.UserId, RefreshToken = req.RefreshToken };
+        var command = new RefreshTokenCommand { UserId = Ulid.Parse(req.UserId), RefreshToken = req.RefreshToken };
         var result = await _commandHandler.HandleAsync(command, ct);
 
         if (result.IsError)
@@ -1559,7 +1559,7 @@ internal sealed class RefreshTokenEndpoint(ICommandHandler<RefreshTokenCommand, 
             AccessToken = dto.AccessToken,
             RefreshToken = dto.RefreshToken,
             ExpiresAt = dto.ExpiresAt,
-            UserId = dto.UserId,
+            UserId = dto.UserId.ToString(),
             Email = dto.Email,
             Roles = dto.Roles,
         }, ct);
@@ -1620,7 +1620,7 @@ internal sealed class RefreshTokenSummary : Summary<RefreshTokenEndpoint>
                 AccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 RefreshToken = "xyz789...",
                 ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(15),
-                UserId = Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
+                UserId = "01JXXXXXXXXXXXXXXXXXXXXXXXXX",
                 Email = "admin@bowlneba.com",
                 Roles = ["Admin"],
             });
@@ -1646,7 +1646,7 @@ namespace Neba.Api.Security.Logout;
 
 internal sealed record LogoutCommand : ICommand
 {
-    public required Guid UserId { get; init; }
+    public required Ulid UserId { get; init; }
 }
 ```
 
@@ -1720,7 +1720,7 @@ internal sealed class LogoutEndpoint(ICommandHandler<LogoutCommand> commandHandl
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
-        if (userIdString is not null && Guid.TryParse(userIdString, out var userId))
+        if (userIdString is not null && Ulid.TryParse(userIdString, out var userId))
         {
             var command = new LogoutCommand { UserId = userId };
             await _commandHandler.HandleAsync(command, ct);
@@ -1766,7 +1766,7 @@ namespace Neba.Api.Contracts.Security.Me;
 /// <summary>The current authenticated user's profile.</summary>
 public sealed record MeResponse
 {
-    public required Guid UserId { get; init; }
+    public required string UserId { get; init; }
     public required string Email { get; init; }
     public required IReadOnlyCollection<string> Roles { get; init; }
     public string? UsbcId { get; init; }
@@ -1780,7 +1780,7 @@ namespace Neba.Api.Security.Me;
 
 internal sealed record UserDto
 {
-    public required Guid UserId { get; init; }
+    public required Ulid UserId { get; init; }
     public required string Email { get; init; }
     public required IReadOnlyCollection<string> Roles { get; init; }
     public string? UsbcId { get; init; }
@@ -1798,7 +1798,7 @@ namespace Neba.Api.Security.Me;
 
 internal sealed record GetCurrentUserQuery : IQuery<ErrorOr<UserDto>>
 {
-    public required Guid UserId { get; init; }
+    public required Ulid UserId { get; init; }
 }
 ```
 
@@ -1881,7 +1881,7 @@ internal sealed class MeEndpoint(IQueryHandler<GetCurrentUserQuery, ErrorOr<User
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
-        if (!Guid.TryParse(userIdString, out var userId))
+        if (!Ulid.TryParse(userIdString, out var userId))
         {
             await Send.UnauthorizedAsync(ct);
             // Stryker disable once Statement
@@ -1902,7 +1902,7 @@ internal sealed class MeEndpoint(IQueryHandler<GetCurrentUserQuery, ErrorOr<User
         // Stryker disable once Statement
         await Send.OkAsync(new MeResponse
         {
-            UserId = dto.UserId,
+            UserId = dto.UserId.ToString(),
             Email = dto.Email,
             Roles = dto.Roles,
             UsbcId = dto.UsbcId,
@@ -1933,7 +1933,7 @@ internal sealed class MeSummary : Summary<MeEndpoint>
             contentType: MediaTypeNames.Application.Json,
             example: new MeResponse
             {
-                UserId = Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
+                UserId = "01JXXXXXXXXXXXXXXXXXXXXXXXXX",
                 Email = "admin@bowlneba.com",
                 Roles = ["Admin"],
                 UsbcId = null,
@@ -1960,7 +1960,7 @@ namespace Neba.Api.Contracts.Security.ChangePassword;
 public sealed record ChangePasswordRequest
 {
     /// <summary>The ID of the user whose password is being reset.</summary>
-    public required Guid UserId { get; init; }
+    public required string UserId { get; init; }
 
     /// <summary>The new password. Must meet the API's password policy (8+ chars, at least one digit).</summary>
     public required string NewPassword { get; init; }
@@ -1976,7 +1976,7 @@ namespace Neba.Api.Security.Password.ChangePassword;
 
 internal sealed record ChangePasswordCommand : ICommand
 {
-    public required Guid UserId { get; init; }
+    public required Ulid UserId { get; init; }
     public required string NewPassword { get; init; }
 }
 ```
@@ -2061,7 +2061,7 @@ internal sealed class ChangePasswordEndpoint(ICommandHandler<ChangePasswordComma
 
     public override async Task HandleAsync(ChangePasswordRequest req, CancellationToken ct)
     {
-        var command = new ChangePasswordCommand { UserId = req.UserId, NewPassword = req.NewPassword };
+        var command = new ChangePasswordCommand { UserId = Ulid.Parse(req.UserId), NewPassword = req.NewPassword };
         var result = await _commandHandler.HandleAsync(command, ct);
 
         if (result.IsError)
