@@ -10,9 +10,9 @@ namespace Neba.Api.Tests.Features.Tournaments.Domain;
 
 [IntegrationTest]
 [Component("Tournaments")]
-[Collection<PostgreSqlFixture>]
-public sealed class TournamentValidationServiceTests(PostgreSqlFixture fixture)
-    : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
+[Collection<AppDbContextFixture>]
+public sealed class TournamentValidationServiceTests(AppDbContextFixture fixture)
+    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
 

@@ -9,9 +9,9 @@ namespace Neba.Api.Tests.Features.Awards.ListHighBlockAwards;
 
 [IntegrationTest]
 [Component("Awards")]
-[Collection<PostgreSqlFixture>]
-public sealed class ListHighBlockAwardsQueryHandlerTests(PostgreSqlFixture fixture)
-    : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
+[Collection<AppDbContextFixture>]
+public sealed class ListHighBlockAwardsQueryHandlerTests(AppDbContextFixture fixture)
+    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
 

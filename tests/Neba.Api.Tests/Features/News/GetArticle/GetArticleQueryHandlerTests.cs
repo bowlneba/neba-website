@@ -15,9 +15,9 @@ namespace Neba.Api.Tests.Features.News.GetArticle;
 
 [IntegrationTest]
 [Component("News")]
-[Collection<PostgreSqlFixture>]
-public sealed class GetArticleQueryHandlerTests(PostgreSqlFixture fixture)
-    : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
+[Collection<AppDbContextFixture>]
+public sealed class GetArticleQueryHandlerTests(AppDbContextFixture fixture)
+    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
 

@@ -13,9 +13,9 @@ namespace Neba.Api.Tests.Features.Stats.GetSeasonStats;
 
 [IntegrationTest]
 [Component("Stats")]
-[Collection<PostgreSqlFixture>]
-public sealed class GetSeasonStatsQueryHandlerTests(PostgreSqlFixture fixture)
-    : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
+[Collection<AppDbContextFixture>]
+public sealed class GetSeasonStatsQueryHandlerTests(AppDbContextFixture fixture)
+    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
     private ServiceProvider _serviceProvider = null!;

@@ -14,9 +14,9 @@ namespace Neba.Api.Tests.Features.Bowlers.GetBowlerTitles;
 
 [IntegrationTest]
 [Component("Bowlers")]
-[Collection<PostgreSqlFixture>]
-public sealed class GetBowlerTitlesQueryHandlerTests(PostgreSqlFixture fixture)
-    : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
+[Collection<AppDbContextFixture>]
+public sealed class GetBowlerTitlesQueryHandlerTests(AppDbContextFixture fixture)
+    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
 

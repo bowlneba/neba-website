@@ -10,9 +10,9 @@ namespace Neba.Api.Tests.Features.Awards.ListBowlerOfTheYearAwards;
 
 [IntegrationTest]
 [Component("Awards")]
-[Collection<PostgreSqlFixture>]
-public sealed class ListBowlerOfTheYearAwardsQueryHandlerTests(PostgreSqlFixture fixture)
-    : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
+[Collection<AppDbContextFixture>]
+public sealed class ListBowlerOfTheYearAwardsQueryHandlerTests(AppDbContextFixture fixture)
+    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
 
