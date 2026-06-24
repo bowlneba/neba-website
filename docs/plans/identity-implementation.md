@@ -714,73 +714,1494 @@ await client.DisconnectAsync(quit: true, cancellationToken);
 
 ## Phase 2: Neba.Api — Auth Endpoints
 
-All endpoints live under `Neba.Api/Security/`, follow the same FastEndpoints conventions as `Features/`, and are versioned consistently with the rest of the API.
+All endpoints live under `Neba.Api/Security/`, follow the same FastEndpoints conventions as `Features/`, and are versioned consistently with the rest of the API. Build one endpoint at a time in the order below — each section lists every file that needs to exist before moving to the next.
 
-### CQRS layer
+### Endpoint overview
 
-Each operation follows the same command/query pattern used throughout `Features/`:
-
-| Operation type | Interfaces | Returns |
-|---------------|-----------|---------|
-| Write (login, register, etc.) | `ICommand<TResponse>` / `ICommandHandler<TCommand, TResponse>` | `ErrorOr<T>` |
-| Write (no result) | `ICommand` / `ICommandHandler<TCommand>` | `ErrorOr<Success>` |
-| Read (me) | `IQuery<TDto>` / `IQueryHandler<TQuery, TDto>` | `TDto` directly |
-
-The endpoint is the translation layer:
-1. Maps the contract request type (`LoginRequest`) to the internal command (`LoginCommand`)
-2. Dispatches to the handler via `ICommandHandler` or `IQueryHandler`
-3. Maps the internal DTO (`LoginDto`) to the contract response (`LoginResponse`)
-4. Handles `ErrorOr` results using the same error-mapping convention as `Features/`
-
-Internal DTOs (e.g., `LoginDto`, `UserDto`) live in the operation folder inside `Neba.Api/Security/` and are never exposed outside the assembly. Contract types (`LoginRequest`, `LoginResponse`) live in `Neba.Api.Contracts/Security/` and are shared with the Website via Refit.
-
-### Endpoint summary
-
-| Verb | Route | Auth | Day 1 |
-|------|-------|------|-------|
-| `POST` | `/security/register` | Anonymous | ✓ (admin-created; self-registration Phase 8) |
-| `POST` | `/security/login` | Anonymous | ✓ |
-| `POST` | `/security/refresh` | Anonymous + refresh token | ✓ |
-| `POST` | `/security/logout` | Authenticated | ✓ |
-| `GET`  | `/security/me` | Authenticated | ✓ |
-| `POST` | `/security/password/change` | Authenticated | ✓ |
+| Verb | Route | Auth | Status |
+| ---- | ----- | ---- | ------ |
+| `POST` | `/security/register` | Anonymous | Day 1 |
+| `POST` | `/security/login` | Anonymous | Day 1 |
+| `POST` | `/security/refresh` | Anonymous + refresh token | Day 1 |
+| `POST` | `/security/logout` | Authenticated | Day 1 |
+| `GET`  | `/security/me` | Authenticated | Day 1 |
+| `POST` | `/security/password/change` | Admin only | Day 1 |
 | `POST` | `/security/password/forgot` | Anonymous | Phase 3 |
 | `POST` | `/security/password/reset` | Anonymous + reset token | Phase 3 |
 | `POST` | `/security/email/confirm` | Anonymous + confirm token | Phase 3 |
 | `POST` | `/security/email/resend` | Anonymous | Phase 3 |
-| `POST` | `/security/passkeys/creation-options` | Authenticated | Phase 6 |
-| `POST` | `/security/passkeys/register` | Authenticated | Phase 6 |
-| `POST` | `/security/passkeys/request-options` | Anonymous | Phase 6 |
-| `POST` | `/security/passkeys/login` | Anonymous | Phase 6 |
 
-### JWT access token claims
+**Refresh token storage:** Raw token is 64 random bytes, base64-encoded. SHA-256 hash + `IssuedAt` are serialized as JSON and stored in `AspNetUserTokens` (the `security` schema) under provider `"RefreshToken"`, name `"RefreshToken"`. On refresh, re-hash the incoming token and do a fixed-time byte comparison. Tokens expire after 7 days (`JwtSettings.RefreshTokenExpiryDays`). Issuing new tokens also rotates the stored refresh token.
 
-| Claim | Value |
-|-------|-------|
-| `sub` | userId (Guid as string) |
-| `email` | user's email address |
-| `roles` | array of role name strings |
-| `usbc_id` | USBC ID if linked (omitted when null) |
-| `iss` | `https://api.bowlneba.com` |
-| `aud` | `https://bowlneba.com` |
-| `iat` / `exp` | issued-at / expiry (15 minutes) |
+**`RefreshTokenRequest` includes `UserId`** so the handler can look up the user before fetching the stored token — avoids a full table scan.
 
-### Login response shape (Neba.Api.Contracts)
+**ChangePassword** is admin-initiated: no current password required. Uses `UserManager.RemovePasswordAsync` + `AddPasswordAsync`.
 
-```json
+**Register auto-confirms email** (`EmailConfirmed = true`) for admin-created accounts. Phase 3 introduces email confirmation for self-registration.
+
+---
+
+### 2.0 Shared infrastructure (build first)
+
+These files have no endpoint — they support everything that follows.
+
+#### `Security/SecurityErrors.cs`
+
+```csharp
+using ErrorOr;
+
+namespace Neba.Api.Security;
+
+internal static class SecurityErrors
 {
-  "accessToken":  "eyJ...",
-  "refreshToken": "...",
-  "expiresAt":    "2026-06-08T14:15:00Z",
-  "userId":       "3fa85f64-...",
-  "email":        "admin@bowlneba.com",
-  "roles":        ["Admin"]
+    public static Error InvalidCredentials =>
+        Error.Unauthorized("Security.InvalidCredentials", "The email or password is incorrect.");
+
+    public static Error InvalidRefreshToken =>
+        Error.Unauthorized("Security.InvalidRefreshToken", "The refresh token is invalid or has expired.");
+
+    public static Error UserNotFound(Guid userId) =>
+        Error.NotFound("Security.UserNotFound", $"No user with ID '{userId}' was found.");
 }
 ```
 
-### Refresh token storage
+#### `Security/TokenPair.cs`
 
-Stored via `IUserTokenStore` in `AspNetUserTokens` (Identity's built-in token table, in the `security` schema), provider name `"RefreshToken"`. Hashed at rest. 7-day rotation window; issuing a new access token also rotates the refresh token.
+```csharp
+namespace Neba.Api.Security;
+
+internal sealed record TokenPair(string AccessToken, string RefreshToken, DateTimeOffset ExpiresAt);
+```
+
+#### `Security/IJwtTokenService.cs`
+
+```csharp
+using Neba.Api.Security.Domain;
+
+namespace Neba.Api.Security;
+
+internal interface IJwtTokenService
+{
+    TokenPair CreateTokenPair(ApplicationUser user, IList<string> roles);
+}
+```
+
+#### `Security/JwtTokenService.cs`
+
+Creates the JWT access token (signed, 15-min expiry) and a raw refresh token (64 random bytes). Does not touch the database — callers are responsible for storing the refresh token via `UserManager`.
+
+```csharp
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+
+using Microsoft.IdentityModel.Tokens;
+
+using Neba.Api.Security.Domain;
+
+namespace Neba.Api.Security;
+
+internal sealed class JwtTokenService(JwtSettings settings) : IJwtTokenService
+{
+    public TokenPair CreateTokenPair(ApplicationUser user, IList<string> roles)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var expiresAt = now.AddMinutes(settings.AccessTokenExpiryMinutes);
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, user.Email!),
+            new(JwtRegisteredClaimNames.Iat, now.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
+        };
+
+        foreach (var role in roles)
+            claims.Add(new Claim(ClaimTypes.Role, role));
+
+        if (user.UsbcId is not null)
+            claims.Add(new Claim("usbc_id", user.UsbcId));
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.SigningKey));
+        var token = new JwtSecurityToken(
+            issuer: settings.Issuer,
+            audience: settings.Audience,
+            claims: claims,
+            expires: expiresAt.UtcDateTime,
+            signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
+
+        var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
+        var refreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
+        return new TokenPair(accessToken, refreshToken, expiresAt);
+    }
+}
+```
+
+#### `Security/StoredRefreshToken.cs`
+
+Value serialized as JSON into `AspNetUserTokens.Value`.
+
+```csharp
+namespace Neba.Api.Security;
+
+internal sealed record StoredRefreshToken(string Hash, DateTimeOffset IssuedAt);
+```
+
+#### `Security/SecurityEndpointGroup.cs`
+
+```csharp
+using Asp.Versioning;
+
+using FastEndpoints;
+using FastEndpoints.AspVersioning;
+
+namespace Neba.Api.Security;
+
+internal sealed class SecurityEndpointGroup : SubGroup<BaseEndpointGroup>
+{
+    public SecurityEndpointGroup()
+    {
+        VersionSets.CreateApi("Security", v => v
+            .HasApiVersion(new ApiVersion(1, 0)));
+
+        Configure("security", endpoint => endpoint
+            .Description(description => description
+                .WithTags("Security")
+                .ProducesProblemDetails(500)));
+    }
+}
+```
+
+#### `Security/SecurityConfiguration.cs` — additions
+
+After reading `jwtSettings` (already present), register it and `JwtTokenService` so handlers can inject them:
+
+```csharp
+// Add after the existing jwtSettings validation block, before AddAuthentication:
+builder.Services.AddSingleton(jwtSettings);
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+```
+
+---
+
+### 2.1 Register
+
+**`Neba.Api.Contracts/Security/Register/RegisterRequest.cs`**
+
+```csharp
+namespace Neba.Api.Contracts.Security.Register;
+
+/// <summary>Registers a new user account. Day 1: admin-created only; self-registration is Phase 8.</summary>
+public sealed record RegisterRequest
+{
+    /// <summary>The new user's email address. Used as both username and login identifier.</summary>
+    public required string Email { get; init; }
+
+    /// <summary>The initial password. Must meet the API's password policy (8+ chars, at least one digit).</summary>
+    public required string Password { get; init; }
+}
+```
+
+**`Neba.Api.Contracts/Security/Register/RegisterResponse.cs`**
+
+```csharp
+namespace Neba.Api.Contracts.Security.Register;
+
+/// <summary>Returned on successful registration.</summary>
+public sealed record RegisterResponse
+{
+    /// <summary>The ID of the newly created user.</summary>
+    public required Guid UserId { get; init; }
+}
+```
+
+**`Security/Register/RegisterCommand.cs`**
+
+```csharp
+using Neba.Api.Messaging;
+
+namespace Neba.Api.Security.Register;
+
+internal sealed record RegisterCommand : ICommand<Guid>
+{
+    public required string Email { get; init; }
+    public required string Password { get; init; }
+}
+```
+
+**`Security/Register/RegisterCommandHandler.cs`**
+
+```csharp
+using ErrorOr;
+
+using Microsoft.AspNetCore.Identity;
+
+using Neba.Api.Messaging;
+using Neba.Api.Security.Domain;
+
+namespace Neba.Api.Security.Register;
+
+internal sealed class RegisterCommandHandler(UserManager<ApplicationUser> userManager)
+    : ICommandHandler<RegisterCommand, Guid>
+{
+    public async Task<ErrorOr<Guid>> HandleAsync(RegisterCommand command, CancellationToken cancellationToken)
+    {
+        var user = new ApplicationUser
+        {
+            UserName = command.Email,
+            Email = command.Email,
+            EmailConfirmed = true, // admin-created; Phase 3 adds confirmation email for self-registration
+        };
+
+        var result = await userManager.CreateAsync(user, command.Password);
+
+        if (!result.Succeeded)
+        {
+            var isDuplicate = result.Errors.Any(e => e.Code is "DuplicateEmail" or "DuplicateUserName");
+            if (isDuplicate)
+                return Error.Conflict("Register.DuplicateEmail", "An account with this email already exists.");
+
+            return result.Errors
+                .Select(e => Error.Validation(e.Code, e.Description))
+                .ToList();
+        }
+
+        return user.Id;
+    }
+}
+```
+
+**`Security/Register/RegisterEndpoint.cs`**
+
+```csharp
+using Asp.Versioning;
+
+using ErrorOr;
+
+using FastEndpoints;
+using FastEndpoints.AspVersioning;
+
+using Neba.Api.Contracts.Security.Register;
+using Neba.Api.Messaging;
+
+namespace Neba.Api.Security.Register;
+
+internal sealed class RegisterEndpoint(ICommandHandler<RegisterCommand, Guid> commandHandler)
+    : Endpoint<RegisterRequest, RegisterResponse>
+{
+    private readonly ICommandHandler<RegisterCommand, Guid> _commandHandler = commandHandler;
+
+    public override void Configure()
+    {
+        Post("register");
+        Group<SecurityEndpointGroup>();
+
+        Options(options => options
+            .WithVersionSet("Security")
+            .MapToApiVersion(new ApiVersion(1, 0)));
+
+        AllowAnonymous();
+
+        Description(description => description
+            .WithName("Register")
+            .Produces<RegisterResponse>(StatusCodes.Status201Created)
+            .ProducesProblemDetails(StatusCodes.Status409Conflict)
+            .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));
+    }
+
+    public override async Task HandleAsync(RegisterRequest req, CancellationToken ct)
+    {
+        var command = new RegisterCommand { Email = req.Email, Password = req.Password };
+        var result = await _commandHandler.HandleAsync(command, ct);
+
+        if (result.IsError)
+        {
+            if (result.FirstError.Type == ErrorType.Conflict)
+            {
+                AddError(result.FirstError.Description);
+                await Send.ErrorsAsync(StatusCodes.Status409Conflict, ct);
+                // Stryker disable once Statement
+                return;
+            }
+
+            foreach (var error in result.Errors)
+                AddError(error.Description);
+
+            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+            // Stryker disable once Statement
+            return;
+        }
+
+        // Stryker disable once Statement
+        await SendAsync(new RegisterResponse { UserId = result.Value }, StatusCodes.Status201Created, ct);
+    }
+}
+```
+
+**`Security/Register/RegisterRequestValidator.cs`**
+
+```csharp
+using FastEndpoints;
+
+using FluentValidation;
+
+using Neba.Api.Contracts.Security.Register;
+
+namespace Neba.Api.Security.Register;
+
+internal sealed class RegisterRequestValidator : Validator<RegisterRequest>
+{
+    public RegisterRequestValidator()
+    {
+        RuleFor(r => r.Email)
+            .NotEmpty()
+            .WithErrorCode("RegisterRequest.EmailRequired")
+            .WithMessage("Email is required.")
+            .EmailAddress()
+            .WithErrorCode("RegisterRequest.EmailInvalid")
+            .WithMessage("A valid email address is required.");
+
+        RuleFor(r => r.Password)
+            .NotEmpty()
+            .WithErrorCode("RegisterRequest.PasswordRequired")
+            .WithMessage("Password is required.")
+            .MinimumLength(8)
+            .WithErrorCode("RegisterRequest.PasswordTooShort")
+            .WithMessage("Password must be at least 8 characters.")
+            .Matches(@"\d")
+            .WithErrorCode("RegisterRequest.PasswordRequiresDigit")
+            .WithMessage("Password must contain at least one digit.");
+    }
+}
+```
+
+**`Security/Register/RegisterSummary.cs`**
+
+```csharp
+using System.Net.Mime;
+
+using FastEndpoints;
+
+using Neba.Api.Contracts.Security.Register;
+
+namespace Neba.Api.Security.Register;
+
+internal sealed class RegisterSummary : Summary<RegisterEndpoint>
+{
+    public RegisterSummary()
+    {
+        Summary = "Registers a new user account.";
+        Description = "Creates a new user account with the given email and password. Day 1: admin-created accounts only. Email is auto-confirmed — the user can log in immediately.";
+
+        Response(201, "The account was created successfully.",
+            contentType: MediaTypeNames.Application.Json,
+            example: new RegisterResponse { UserId = Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa6") });
+
+        Response(409, "An account with this email already exists.");
+        Response(422, "Validation failed (invalid email format, password too short, etc.).");
+    }
+}
+```
+
+---
+
+### 2.2 Login
+
+**`Neba.Api.Contracts/Security/Login/LoginRequest.cs`**
+
+```csharp
+namespace Neba.Api.Contracts.Security.Login;
+
+/// <summary>Authenticates with email and password, returning a JWT access token and refresh token.</summary>
+public sealed record LoginRequest
+{
+    public required string Email { get; init; }
+    public required string Password { get; init; }
+}
+```
+
+**`Neba.Api.Contracts/Security/Login/LoginResponse.cs`**
+
+```csharp
+namespace Neba.Api.Contracts.Security.Login;
+
+/// <summary>Returned on successful login or token refresh.</summary>
+public sealed record LoginResponse
+{
+    public required string AccessToken { get; init; }
+    public required string RefreshToken { get; init; }
+    public required DateTimeOffset ExpiresAt { get; init; }
+    public required Guid UserId { get; init; }
+    public required string Email { get; init; }
+    public required IReadOnlyCollection<string> Roles { get; init; }
+}
+```
+
+**`Security/Login/LoginDto.cs`**
+
+```csharp
+namespace Neba.Api.Security.Login;
+
+internal sealed record LoginDto
+{
+    public required string AccessToken { get; init; }
+    public required string RefreshToken { get; init; }
+    public required DateTimeOffset ExpiresAt { get; init; }
+    public required Guid UserId { get; init; }
+    public required string Email { get; init; }
+    public required IReadOnlyCollection<string> Roles { get; init; }
+}
+```
+
+**`Security/Login/LoginCommand.cs`**
+
+```csharp
+using Neba.Api.Messaging;
+
+namespace Neba.Api.Security.Login;
+
+internal sealed record LoginCommand : ICommand<LoginDto>
+{
+    public required string Email { get; init; }
+    public required string Password { get; init; }
+}
+```
+
+**`Security/Login/LoginCommandHandler.cs`**
+
+Returns a generic "invalid credentials" error for both unknown email and wrong password — never leaks whether the email exists.
+
+```csharp
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+
+using ErrorOr;
+
+using Microsoft.AspNetCore.Identity;
+
+using Neba.Api.Messaging;
+using Neba.Api.Security.Domain;
+
+namespace Neba.Api.Security.Login;
+
+internal sealed class LoginCommandHandler(
+    UserManager<ApplicationUser> userManager,
+    IJwtTokenService jwtTokenService)
+    : ICommandHandler<LoginCommand, LoginDto>
+{
+    private const string RefreshTokenProvider = "RefreshToken";
+    private const string RefreshTokenName = "RefreshToken";
+
+    public async Task<ErrorOr<LoginDto>> HandleAsync(LoginCommand command, CancellationToken cancellationToken)
+    {
+        var user = await userManager.FindByEmailAsync(command.Email);
+        if (user is null)
+            return SecurityErrors.InvalidCredentials;
+
+        var passwordValid = await userManager.CheckPasswordAsync(user, command.Password);
+        if (!passwordValid)
+            return SecurityErrors.InvalidCredentials;
+
+        var roles = await userManager.GetRolesAsync(user);
+        var tokenPair = jwtTokenService.CreateTokenPair(user, roles);
+
+        await StoreRefreshTokenAsync(user, tokenPair.RefreshToken);
+
+        return new LoginDto
+        {
+            AccessToken = tokenPair.AccessToken,
+            RefreshToken = tokenPair.RefreshToken,
+            ExpiresAt = tokenPair.ExpiresAt,
+            UserId = user.Id,
+            Email = user.Email!,
+            Roles = [.. roles],
+        };
+    }
+
+    private async Task StoreRefreshTokenAsync(ApplicationUser user, string rawToken)
+    {
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
+        var stored = new StoredRefreshToken(hash, DateTimeOffset.UtcNow);
+        var json = JsonSerializer.Serialize(stored);
+        await userManager.SetAuthenticationTokenAsync(user, RefreshTokenProvider, RefreshTokenName, json);
+    }
+}
+```
+
+**`Security/Login/LoginEndpoint.cs`**
+
+```csharp
+using Asp.Versioning;
+
+using ErrorOr;
+
+using FastEndpoints;
+using FastEndpoints.AspVersioning;
+
+using Neba.Api.Contracts.Security.Login;
+using Neba.Api.Messaging;
+
+namespace Neba.Api.Security.Login;
+
+internal sealed class LoginEndpoint(ICommandHandler<LoginCommand, LoginDto> commandHandler)
+    : Endpoint<LoginRequest, LoginResponse>
+{
+    private readonly ICommandHandler<LoginCommand, LoginDto> _commandHandler = commandHandler;
+
+    public override void Configure()
+    {
+        Post("login");
+        Group<SecurityEndpointGroup>();
+
+        Options(options => options
+            .WithVersionSet("Security")
+            .MapToApiVersion(new ApiVersion(1, 0)));
+
+        AllowAnonymous();
+
+        Description(description => description
+            .WithName("Login")
+            .Produces<LoginResponse>(StatusCodes.Status200OK)
+            .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
+            .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));
+    }
+
+    public override async Task HandleAsync(LoginRequest req, CancellationToken ct)
+    {
+        var command = new LoginCommand { Email = req.Email, Password = req.Password };
+        var result = await _commandHandler.HandleAsync(command, ct);
+
+        if (result.IsError)
+        {
+            await Send.UnauthorizedAsync(ct);
+            // Stryker disable once Statement
+            return;
+        }
+
+        var dto = result.Value;
+
+        // Stryker disable once Statement
+        await Send.OkAsync(new LoginResponse
+        {
+            AccessToken = dto.AccessToken,
+            RefreshToken = dto.RefreshToken,
+            ExpiresAt = dto.ExpiresAt,
+            UserId = dto.UserId,
+            Email = dto.Email,
+            Roles = dto.Roles,
+        }, ct);
+    }
+}
+```
+
+**`Security/Login/LoginRequestValidator.cs`**
+
+```csharp
+using FastEndpoints;
+
+using FluentValidation;
+
+using Neba.Api.Contracts.Security.Login;
+
+namespace Neba.Api.Security.Login;
+
+internal sealed class LoginRequestValidator : Validator<LoginRequest>
+{
+    public LoginRequestValidator()
+    {
+        RuleFor(r => r.Email)
+            .NotEmpty()
+            .WithErrorCode("LoginRequest.EmailRequired")
+            .WithMessage("Email is required.")
+            .EmailAddress()
+            .WithErrorCode("LoginRequest.EmailInvalid")
+            .WithMessage("A valid email address is required.");
+
+        RuleFor(r => r.Password)
+            .NotEmpty()
+            .WithErrorCode("LoginRequest.PasswordRequired")
+            .WithMessage("Password is required.");
+    }
+}
+```
+
+**`Security/Login/LoginSummary.cs`**
+
+```csharp
+using System.Net.Mime;
+
+using FastEndpoints;
+
+using Neba.Api.Contracts.Security.Login;
+
+namespace Neba.Api.Security.Login;
+
+internal sealed class LoginSummary : Summary<LoginEndpoint>
+{
+    public LoginSummary()
+    {
+        Summary = "Authenticates a user and returns tokens.";
+        Description = "Validates email and password. Returns a signed JWT access token (15 min) and an opaque refresh token (7 days). Always returns 401 for both wrong password and unknown email to avoid user enumeration.";
+
+        Response(200, "Login successful.",
+            contentType: MediaTypeNames.Application.Json,
+            example: new LoginResponse
+            {
+                AccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                RefreshToken = "abc123...",
+                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(15),
+                UserId = Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
+                Email = "admin@bowlneba.com",
+                Roles = ["Admin"],
+            });
+
+        Response(401, "Invalid email or password.");
+        Response(422, "Validation failed (missing email, missing password).");
+    }
+}
+```
+
+---
+
+### 2.3 Refresh Token
+
+**`Neba.Api.Contracts/Security/RefreshToken/RefreshTokenRequest.cs`**
+
+```csharp
+namespace Neba.Api.Contracts.Security.RefreshToken;
+
+/// <summary>Exchanges a valid refresh token for a new token pair. Rotates the refresh token on each use.</summary>
+public sealed record RefreshTokenRequest
+{
+    /// <summary>The ID of the user whose token is being refreshed. Provided in the original LoginResponse.</summary>
+    public required Guid UserId { get; init; }
+
+    /// <summary>The opaque refresh token received from login or a previous refresh.</summary>
+    public required string RefreshToken { get; init; }
+}
+```
+
+**`Neba.Api.Contracts/Security/RefreshToken/RefreshTokenResponse.cs`**
+
+Same shape as `LoginResponse` — client should update all stored token values on refresh.
+
+```csharp
+namespace Neba.Api.Contracts.Security.RefreshToken;
+
+/// <summary>Returned on successful token refresh. Contains a new access token and rotated refresh token.</summary>
+public sealed record RefreshTokenResponse
+{
+    public required string AccessToken { get; init; }
+    public required string RefreshToken { get; init; }
+    public required DateTimeOffset ExpiresAt { get; init; }
+    public required Guid UserId { get; init; }
+    public required string Email { get; init; }
+    public required IReadOnlyCollection<string> Roles { get; init; }
+}
+```
+
+**`Security/RefreshToken/RefreshTokenCommand.cs`**
+
+```csharp
+using Neba.Api.Messaging;
+using Neba.Api.Security.Login;
+
+namespace Neba.Api.Security.RefreshToken;
+
+// Reuses LoginDto — the response shape is identical to login.
+internal sealed record RefreshTokenCommand : ICommand<LoginDto>
+{
+    public required Guid UserId { get; init; }
+    public required string RefreshToken { get; init; }
+}
+```
+
+**`Security/RefreshToken/RefreshTokenCommandHandler.cs`**
+
+```csharp
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+
+using ErrorOr;
+
+using Microsoft.AspNetCore.Identity;
+
+using Neba.Api.Messaging;
+using Neba.Api.Security.Domain;
+using Neba.Api.Security.Login;
+
+namespace Neba.Api.Security.RefreshToken;
+
+internal sealed class RefreshTokenCommandHandler(
+    UserManager<ApplicationUser> userManager,
+    IJwtTokenService jwtTokenService,
+    JwtSettings jwtSettings)
+    : ICommandHandler<RefreshTokenCommand, LoginDto>
+{
+    private const string RefreshTokenProvider = "RefreshToken";
+    private const string RefreshTokenName = "RefreshToken";
+
+    public async Task<ErrorOr<LoginDto>> HandleAsync(RefreshTokenCommand command, CancellationToken cancellationToken)
+    {
+        var user = await userManager.FindByIdAsync(command.UserId.ToString());
+        if (user is null)
+            return SecurityErrors.InvalidRefreshToken;
+
+        var storedJson = await userManager.GetAuthenticationTokenAsync(user, RefreshTokenProvider, RefreshTokenName);
+        if (storedJson is null)
+            return SecurityErrors.InvalidRefreshToken;
+
+        StoredRefreshToken stored;
+        try
+        {
+            stored = JsonSerializer.Deserialize<StoredRefreshToken>(storedJson)
+                ?? throw new InvalidOperationException("Null deserialization result.");
+        }
+        catch (Exception)
+        {
+            return SecurityErrors.InvalidRefreshToken;
+        }
+
+        var incomingHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(command.RefreshToken)));
+
+        // Fixed-time comparison to resist timing attacks.
+        if (!CryptographicOperations.FixedTimeEquals(
+            Convert.FromHexString(stored.Hash),
+            Convert.FromHexString(incomingHash)))
+            return SecurityErrors.InvalidRefreshToken;
+
+        if (DateTimeOffset.UtcNow > stored.IssuedAt.AddDays(jwtSettings.RefreshTokenExpiryDays))
+            return SecurityErrors.InvalidRefreshToken;
+
+        var roles = await userManager.GetRolesAsync(user);
+        var tokenPair = jwtTokenService.CreateTokenPair(user, roles);
+
+        await StoreRefreshTokenAsync(user, tokenPair.RefreshToken);
+
+        return new LoginDto
+        {
+            AccessToken = tokenPair.AccessToken,
+            RefreshToken = tokenPair.RefreshToken,
+            ExpiresAt = tokenPair.ExpiresAt,
+            UserId = user.Id,
+            Email = user.Email!,
+            Roles = [.. roles],
+        };
+    }
+
+    private async Task StoreRefreshTokenAsync(ApplicationUser user, string rawToken)
+    {
+        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
+        var stored = new StoredRefreshToken(hash, DateTimeOffset.UtcNow);
+        var json = JsonSerializer.Serialize(stored);
+        await userManager.SetAuthenticationTokenAsync(user, RefreshTokenProvider, RefreshTokenName, json);
+    }
+}
+```
+
+**`Security/RefreshToken/RefreshTokenEndpoint.cs`**
+
+```csharp
+using Asp.Versioning;
+
+using FastEndpoints;
+using FastEndpoints.AspVersioning;
+
+using Neba.Api.Contracts.Security.RefreshToken;
+using Neba.Api.Messaging;
+using Neba.Api.Security.Login;
+
+namespace Neba.Api.Security.RefreshToken;
+
+internal sealed class RefreshTokenEndpoint(ICommandHandler<RefreshTokenCommand, LoginDto> commandHandler)
+    : Endpoint<RefreshTokenRequest, RefreshTokenResponse>
+{
+    private readonly ICommandHandler<RefreshTokenCommand, LoginDto> _commandHandler = commandHandler;
+
+    public override void Configure()
+    {
+        Post("refresh");
+        Group<SecurityEndpointGroup>();
+
+        Options(options => options
+            .WithVersionSet("Security")
+            .MapToApiVersion(new ApiVersion(1, 0)));
+
+        AllowAnonymous();
+
+        Description(description => description
+            .WithName("RefreshToken")
+            .Produces<RefreshTokenResponse>(StatusCodes.Status200OK)
+            .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
+            .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));
+    }
+
+    public override async Task HandleAsync(RefreshTokenRequest req, CancellationToken ct)
+    {
+        var command = new RefreshTokenCommand { UserId = req.UserId, RefreshToken = req.RefreshToken };
+        var result = await _commandHandler.HandleAsync(command, ct);
+
+        if (result.IsError)
+        {
+            await Send.UnauthorizedAsync(ct);
+            // Stryker disable once Statement
+            return;
+        }
+
+        var dto = result.Value;
+
+        // Stryker disable once Statement
+        await Send.OkAsync(new RefreshTokenResponse
+        {
+            AccessToken = dto.AccessToken,
+            RefreshToken = dto.RefreshToken,
+            ExpiresAt = dto.ExpiresAt,
+            UserId = dto.UserId,
+            Email = dto.Email,
+            Roles = dto.Roles,
+        }, ct);
+    }
+}
+```
+
+**`Security/RefreshToken/RefreshTokenRequestValidator.cs`**
+
+```csharp
+using FastEndpoints;
+
+using FluentValidation;
+
+using Neba.Api.Contracts.Security.RefreshToken;
+
+namespace Neba.Api.Security.RefreshToken;
+
+internal sealed class RefreshTokenRequestValidator : Validator<RefreshTokenRequest>
+{
+    public RefreshTokenRequestValidator()
+    {
+        RuleFor(r => r.UserId)
+            .NotEmpty()
+            .WithErrorCode("RefreshTokenRequest.UserIdRequired")
+            .WithMessage("User ID is required.");
+
+        RuleFor(r => r.RefreshToken)
+            .NotEmpty()
+            .WithErrorCode("RefreshTokenRequest.RefreshTokenRequired")
+            .WithMessage("Refresh token is required.");
+    }
+}
+```
+
+**`Security/RefreshToken/RefreshTokenSummary.cs`**
+
+```csharp
+using System.Net.Mime;
+
+using FastEndpoints;
+
+using Neba.Api.Contracts.Security.RefreshToken;
+
+namespace Neba.Api.Security.RefreshToken;
+
+internal sealed class RefreshTokenSummary : Summary<RefreshTokenEndpoint>
+{
+    public RefreshTokenSummary()
+    {
+        Summary = "Exchanges a refresh token for a new token pair.";
+        Description = "Validates the refresh token (7-day window, hashed at rest) and issues a new access token + rotated refresh token. Always returns 401 for invalid or expired tokens.";
+
+        Response(200, "Token refresh successful.",
+            contentType: MediaTypeNames.Application.Json,
+            example: new RefreshTokenResponse
+            {
+                AccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                RefreshToken = "xyz789...",
+                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(15),
+                UserId = Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
+                Email = "admin@bowlneba.com",
+                Roles = ["Admin"],
+            });
+
+        Response(401, "Invalid, expired, or already-rotated refresh token.");
+        Response(422, "Validation failed (missing UserId or RefreshToken).");
+    }
+}
+```
+
+---
+
+### 2.4 Logout
+
+No request body — the user ID is read from the authenticated JWT claims. Deletes the stored refresh token so existing tokens can no longer be refreshed.
+
+**`Security/Logout/LogoutCommand.cs`**
+
+```csharp
+using Neba.Api.Messaging;
+
+namespace Neba.Api.Security.Logout;
+
+internal sealed record LogoutCommand : ICommand
+{
+    public required Guid UserId { get; init; }
+}
+```
+
+**`Security/Logout/LogoutCommandHandler.cs`**
+
+```csharp
+using ErrorOr;
+
+using Microsoft.AspNetCore.Identity;
+
+using Neba.Api.Messaging;
+using Neba.Api.Security.Domain;
+
+namespace Neba.Api.Security.Logout;
+
+internal sealed class LogoutCommandHandler(UserManager<ApplicationUser> userManager)
+    : ICommandHandler<LogoutCommand>
+{
+    private const string RefreshTokenProvider = "RefreshToken";
+    private const string RefreshTokenName = "RefreshToken";
+
+    public async Task<ErrorOr<Success>> HandleAsync(LogoutCommand command, CancellationToken cancellationToken)
+    {
+        var user = await userManager.FindByIdAsync(command.UserId.ToString());
+        if (user is not null)
+            await userManager.RemoveAuthenticationTokenAsync(user, RefreshTokenProvider, RefreshTokenName);
+
+        return Result.Success;
+    }
+}
+```
+
+**`Security/Logout/LogoutEndpoint.cs`**
+
+```csharp
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
+using Asp.Versioning;
+
+using FastEndpoints;
+using FastEndpoints.AspVersioning;
+
+using Neba.Api.Messaging;
+
+namespace Neba.Api.Security.Logout;
+
+internal sealed class LogoutEndpoint(ICommandHandler<LogoutCommand> commandHandler)
+    : EndpointWithoutRequest
+{
+    private readonly ICommandHandler<LogoutCommand> _commandHandler = commandHandler;
+
+    public override void Configure()
+    {
+        Post("logout");
+        Group<SecurityEndpointGroup>();
+
+        Options(options => options
+            .WithVersionSet("Security")
+            .MapToApiVersion(new ApiVersion(1, 0))
+            .RequireAuthorization());
+
+        Description(description => description
+            .WithName("Logout")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblemDetails(StatusCodes.Status401Unauthorized));
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        if (userIdString is not null && Guid.TryParse(userIdString, out var userId))
+        {
+            var command = new LogoutCommand { UserId = userId };
+            await _commandHandler.HandleAsync(command, ct);
+        }
+
+        // Stryker disable once Statement
+        await Send.NoContentAsync(ct);
+    }
+}
+```
+
+**`Security/Logout/LogoutSummary.cs`**
+
+```csharp
+using FastEndpoints;
+
+namespace Neba.Api.Security.Logout;
+
+internal sealed class LogoutSummary : Summary<LogoutEndpoint>
+{
+    public LogoutSummary()
+    {
+        Summary = "Logs the current user out.";
+        Description = "Revokes the stored refresh token for the authenticated user. The access token remains valid until it expires (15 min). Always returns 204, even if the user was already logged out.";
+
+        Response(204, "Logout successful — refresh token revoked.");
+        Response(401, "No valid bearer token provided.");
+    }
+}
+```
+
+---
+
+### 2.5 Me
+
+No request body — the user ID is read from JWT claims. Returns live profile data from Identity.
+
+**`Neba.Api.Contracts/Security/Me/MeResponse.cs`**
+
+```csharp
+namespace Neba.Api.Contracts.Security.Me;
+
+/// <summary>The current authenticated user's profile.</summary>
+public sealed record MeResponse
+{
+    public required Guid UserId { get; init; }
+    public required string Email { get; init; }
+    public required IReadOnlyCollection<string> Roles { get; init; }
+    public string? UsbcId { get; init; }
+}
+```
+
+**`Security/Me/UserDto.cs`**
+
+```csharp
+namespace Neba.Api.Security.Me;
+
+internal sealed record UserDto
+{
+    public required Guid UserId { get; init; }
+    public required string Email { get; init; }
+    public required IReadOnlyCollection<string> Roles { get; init; }
+    public string? UsbcId { get; init; }
+}
+```
+
+**`Security/Me/GetCurrentUserQuery.cs`**
+
+```csharp
+using ErrorOr;
+
+using Neba.Api.Messaging;
+
+namespace Neba.Api.Security.Me;
+
+internal sealed record GetCurrentUserQuery : IQuery<ErrorOr<UserDto>>
+{
+    public required Guid UserId { get; init; }
+}
+```
+
+**`Security/Me/GetCurrentUserQueryHandler.cs`**
+
+```csharp
+using ErrorOr;
+
+using Microsoft.AspNetCore.Identity;
+
+using Neba.Api.Messaging;
+using Neba.Api.Security.Domain;
+
+namespace Neba.Api.Security.Me;
+
+internal sealed class GetCurrentUserQueryHandler(UserManager<ApplicationUser> userManager)
+    : IQueryHandler<GetCurrentUserQuery, ErrorOr<UserDto>>
+{
+    public async Task<ErrorOr<UserDto>> HandleAsync(GetCurrentUserQuery query, CancellationToken cancellationToken)
+    {
+        var user = await userManager.FindByIdAsync(query.UserId.ToString());
+        if (user is null)
+            return SecurityErrors.UserNotFound(query.UserId);
+
+        var roles = await userManager.GetRolesAsync(user);
+
+        return new UserDto
+        {
+            UserId = user.Id,
+            Email = user.Email!,
+            Roles = [.. roles],
+            UsbcId = user.UsbcId,
+        };
+    }
+}
+```
+
+**`Security/Me/MeEndpoint.cs`**
+
+```csharp
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
+using Asp.Versioning;
+
+using ErrorOr;
+
+using FastEndpoints;
+using FastEndpoints.AspVersioning;
+
+using Neba.Api.Contracts.Security.Me;
+using Neba.Api.Messaging;
+
+namespace Neba.Api.Security.Me;
+
+internal sealed class MeEndpoint(IQueryHandler<GetCurrentUserQuery, ErrorOr<UserDto>> queryHandler)
+    : EndpointWithoutRequest<MeResponse>
+{
+    private readonly IQueryHandler<GetCurrentUserQuery, ErrorOr<UserDto>> _queryHandler = queryHandler;
+
+    public override void Configure()
+    {
+        Get("me");
+        Group<SecurityEndpointGroup>();
+
+        Options(options => options
+            .WithVersionSet("Security")
+            .MapToApiVersion(new ApiVersion(1, 0))
+            .RequireAuthorization());
+
+        Description(description => description
+            .WithName("GetCurrentUser")
+            .Produces<MeResponse>(StatusCodes.Status200OK)
+            .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
+            .ProducesProblemDetails(StatusCodes.Status404NotFound));
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        if (!Guid.TryParse(userIdString, out var userId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            // Stryker disable once Statement
+            return;
+        }
+
+        var result = await _queryHandler.HandleAsync(new GetCurrentUserQuery { UserId = userId }, ct);
+
+        if (result.IsError)
+        {
+            await Send.NotFoundAsync(ct);
+            // Stryker disable once Statement
+            return;
+        }
+
+        var dto = result.Value;
+
+        // Stryker disable once Statement
+        await Send.OkAsync(new MeResponse
+        {
+            UserId = dto.UserId,
+            Email = dto.Email,
+            Roles = dto.Roles,
+            UsbcId = dto.UsbcId,
+        }, ct);
+    }
+}
+```
+
+**`Security/Me/MeSummary.cs`**
+
+```csharp
+using System.Net.Mime;
+
+using FastEndpoints;
+
+using Neba.Api.Contracts.Security.Me;
+
+namespace Neba.Api.Security.Me;
+
+internal sealed class MeSummary : Summary<MeEndpoint>
+{
+    public MeSummary()
+    {
+        Summary = "Returns the current user's profile.";
+        Description = "Reads live data from Identity — not cached. Use after login to confirm roles or check USBC ID linkage.";
+
+        Response(200, "Profile retrieved.",
+            contentType: MediaTypeNames.Application.Json,
+            example: new MeResponse
+            {
+                UserId = Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
+                Email = "admin@bowlneba.com",
+                Roles = ["Admin"],
+                UsbcId = null,
+            });
+
+        Response(401, "No valid bearer token provided.");
+        Response(404, "Authenticated user ID not found in Identity (should not occur in normal operation).");
+    }
+}
+```
+
+---
+
+### 2.6 Change Password
+
+Admin resets any user's password. No current password required. User must be looked up by ID.
+
+**`Neba.Api.Contracts/Security/ChangePassword/ChangePasswordRequest.cs`**
+
+```csharp
+namespace Neba.Api.Contracts.Security.ChangePassword;
+
+/// <summary>Admin-initiated password reset. No current password required.</summary>
+public sealed record ChangePasswordRequest
+{
+    /// <summary>The ID of the user whose password is being reset.</summary>
+    public required Guid UserId { get; init; }
+
+    /// <summary>The new password. Must meet the API's password policy (8+ chars, at least one digit).</summary>
+    public required string NewPassword { get; init; }
+}
+```
+
+**`Security/Password/ChangePassword/ChangePasswordCommand.cs`**
+
+```csharp
+using Neba.Api.Messaging;
+
+namespace Neba.Api.Security.Password.ChangePassword;
+
+internal sealed record ChangePasswordCommand : ICommand
+{
+    public required Guid UserId { get; init; }
+    public required string NewPassword { get; init; }
+}
+```
+
+**`Security/Password/ChangePassword/ChangePasswordCommandHandler.cs`**
+
+```csharp
+using ErrorOr;
+
+using Microsoft.AspNetCore.Identity;
+
+using Neba.Api.Messaging;
+using Neba.Api.Security.Domain;
+
+namespace Neba.Api.Security.Password.ChangePassword;
+
+internal sealed class ChangePasswordCommandHandler(UserManager<ApplicationUser> userManager)
+    : ICommandHandler<ChangePasswordCommand>
+{
+    public async Task<ErrorOr<Success>> HandleAsync(ChangePasswordCommand command, CancellationToken cancellationToken)
+    {
+        var user = await userManager.FindByIdAsync(command.UserId.ToString());
+        if (user is null)
+            return SecurityErrors.UserNotFound(command.UserId);
+
+        var removeResult = await userManager.RemovePasswordAsync(user);
+        if (!removeResult.Succeeded)
+            return removeResult.Errors
+                .Select(e => Error.Failure(e.Code, e.Description))
+                .ToList();
+
+        var addResult = await userManager.AddPasswordAsync(user, command.NewPassword);
+        if (!addResult.Succeeded)
+            return addResult.Errors
+                .Select(e => Error.Validation(e.Code, e.Description))
+                .ToList();
+
+        return Result.Success;
+    }
+}
+```
+
+**`Security/Password/ChangePassword/ChangePasswordEndpoint.cs`**
+
+```csharp
+using Asp.Versioning;
+
+using ErrorOr;
+
+using FastEndpoints;
+using FastEndpoints.AspVersioning;
+
+using Neba.Api.Contracts.Security.ChangePassword;
+using Neba.Api.Messaging;
+
+namespace Neba.Api.Security.Password.ChangePassword;
+
+internal sealed class ChangePasswordEndpoint(ICommandHandler<ChangePasswordCommand> commandHandler)
+    : Endpoint<ChangePasswordRequest>
+{
+    private readonly ICommandHandler<ChangePasswordCommand> _commandHandler = commandHandler;
+
+    public override void Configure()
+    {
+        Post("password/change");
+        Group<SecurityEndpointGroup>();
+
+        Options(options => options
+            .WithVersionSet("Security")
+            .MapToApiVersion(new ApiVersion(1, 0)));
+
+        Roles(Domain.Roles.Admin);
+
+        Description(description => description
+            .WithName("ChangePassword")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
+            .ProducesProblemDetails(StatusCodes.Status403Forbidden)
+            .ProducesProblemDetails(StatusCodes.Status404NotFound)
+            .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));
+    }
+
+    public override async Task HandleAsync(ChangePasswordRequest req, CancellationToken ct)
+    {
+        var command = new ChangePasswordCommand { UserId = req.UserId, NewPassword = req.NewPassword };
+        var result = await _commandHandler.HandleAsync(command, ct);
+
+        if (result.IsError)
+        {
+            if (result.FirstError.Type == ErrorType.NotFound)
+            {
+                await Send.NotFoundAsync(ct);
+                // Stryker disable once Statement
+                return;
+            }
+
+            foreach (var error in result.Errors)
+                AddError(error.Description);
+
+            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+            // Stryker disable once Statement
+            return;
+        }
+
+        // Stryker disable once Statement
+        await Send.NoContentAsync(ct);
+    }
+}
+```
+
+**`Security/Password/ChangePassword/ChangePasswordRequestValidator.cs`**
+
+```csharp
+using FastEndpoints;
+
+using FluentValidation;
+
+using Neba.Api.Contracts.Security.ChangePassword;
+
+namespace Neba.Api.Security.Password.ChangePassword;
+
+internal sealed class ChangePasswordRequestValidator : Validator<ChangePasswordRequest>
+{
+    public ChangePasswordRequestValidator()
+    {
+        RuleFor(r => r.UserId)
+            .NotEmpty()
+            .WithErrorCode("ChangePasswordRequest.UserIdRequired")
+            .WithMessage("User ID is required.");
+
+        RuleFor(r => r.NewPassword)
+            .NotEmpty()
+            .WithErrorCode("ChangePasswordRequest.NewPasswordRequired")
+            .WithMessage("New password is required.")
+            .MinimumLength(8)
+            .WithErrorCode("ChangePasswordRequest.NewPasswordTooShort")
+            .WithMessage("New password must be at least 8 characters.")
+            .Matches(@"\d")
+            .WithErrorCode("ChangePasswordRequest.NewPasswordRequiresDigit")
+            .WithMessage("New password must contain at least one digit.");
+    }
+}
+```
+
+**`Security/Password/ChangePassword/ChangePasswordSummary.cs`**
+
+```csharp
+using FastEndpoints;
+
+namespace Neba.Api.Security.Password.ChangePassword;
+
+internal sealed class ChangePasswordSummary : Summary<ChangePasswordEndpoint>
+{
+    public ChangePasswordSummary()
+    {
+        Summary = "Resets a user's password (admin only).";
+        Description = "Admin-initiated password reset. No current password required. Uses Identity's RemovePasswordAsync + AddPasswordAsync.";
+
+        Response(204, "Password reset successfully.");
+        Response(401, "No valid bearer token provided.");
+        Response(403, "Caller does not have the Admin role.");
+        Response(404, "No user with the given ID was found.");
+        Response(422, "New password does not meet policy requirements.");
+    }
+}
+```
+
+---
+
+### 2.7 Contracts — `ISecurityApi` and registration
+
+**`Neba.Api.Contracts/Security/ISecurityApi.cs`**
+
+```csharp
+using Neba.Api.Contracts.Security.ChangePassword;
+using Neba.Api.Contracts.Security.Login;
+using Neba.Api.Contracts.Security.Me;
+using Neba.Api.Contracts.Security.RefreshToken;
+using Neba.Api.Contracts.Security.Register;
+
+using Refit;
+
+namespace Neba.Api.Contracts.Security;
+
+/// <summary>Defines the Security API contract for authentication and account management.</summary>
+public interface ISecurityApi
+{
+    /// <summary>Registers a new user account.</summary>
+    [Post("/security/register")]
+    Task<IApiResponse<RegisterResponse>> RegisterAsync([Body] RegisterRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Authenticates with email and password, returning a JWT and refresh token.</summary>
+    [Post("/security/login")]
+    Task<IApiResponse<LoginResponse>> LoginAsync([Body] LoginRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Exchanges a valid refresh token for a new token pair.</summary>
+    [Post("/security/refresh")]
+    Task<IApiResponse<RefreshTokenResponse>> RefreshTokenAsync([Body] RefreshTokenRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Revokes the current user's refresh token.</summary>
+    [Post("/security/logout")]
+    Task<IApiResponse> LogoutAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Returns the current authenticated user's profile.</summary>
+    [Get("/security/me")]
+    Task<IApiResponse<MeResponse>> GetCurrentUserAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Resets any user's password (Admin only).</summary>
+    [Post("/security/password/change")]
+    Task<IApiResponse> ChangePasswordAsync([Body] ChangePasswordRequest request, CancellationToken cancellationToken = default);
+}
+```
+
+**`Neba.Website.Server/Services/ApiServicesConfiguration.cs` — add one line**
+
+```csharp
+// Add alongside the existing RegisterApiEndpoint<...> calls:
+services.RegisterApiEndpoint<ISecurityApi>();
+```
+
+Also add the using at the top:
+
+```csharp
+using Neba.Api.Contracts.Security;
+```
 
 ---
 
@@ -1064,9 +2485,14 @@ Passkeys are built into ASP.NET Core Identity — no extra NuGet package. The im
 ## Day 1 Checklist
 
 - [x] **Phase 1 (infrastructure)** — `ApplicationUser`, `ApplicationRole`, `Roles`, `SecurityDbContext`, `SecurityDbContextDesignTimeFactory`, `SecurityConfiguration` wired into `Program.cs`, initial migration applied, `GoogleWorkspaceEmailSender` + `IdentityEmailSenderAdapter` registered, Mailpit wired in AppHost
-- [ ] **Phase 1 (seed)** — `SeedSecurityAsync`: create `Admin`, `ScoreKeeper`, `Member` roles and the initial admin account if they don't exist; call from `Program.cs` after `app.Build()`
-- [ ] **Phase 2** — full CQRS stack (Command/CommandHandler/Dto or Query/QueryHandler/Dto) for `Login`, `Register`, `Refresh`, `Logout`, `Me`, `ChangePassword`
-- [ ] **Contracts** — `Neba.Api.Contracts/Security/` with `ISecurityApi` + per-operation request/response types in subfolders
-- [ ] **Phase 3** — `AccountConfiguration`, `Login.razor`, `Register.razor`, `Manage/Index.razor`, `BearerTokenHandler`, `Routes.razor` updated to `AuthorizeRouteView`; `ISecurityApi` registered in `ApiServicesConfiguration`
-- [ ] **Phase 4** — all existing endpoints annotated with `AllowAnonymous()` or `Roles()`; `UseSecurityInfrastructure()` in `Program.cs`
+- [ ] **Phase 2 — shared infrastructure** — `SecurityErrors`, `TokenPair`, `IJwtTokenService`, `JwtTokenService`, `StoredRefreshToken`, `SecurityEndpointGroup`; add `AddSingleton(jwtSettings)` + `AddSingleton<IJwtTokenService, JwtTokenService>()` to `SecurityConfiguration.AddSecurity()`
+- [ ] **Phase 2 — Register** — `RegisterRequest`, `RegisterResponse` (contracts); `RegisterCommand`, `RegisterCommandHandler`, `RegisterEndpoint`, `RegisterRequestValidator`, `RegisterSummary`
+- [ ] **Phase 2 — Login** — `LoginRequest`, `LoginResponse` (contracts); `LoginDto`, `LoginCommand`, `LoginCommandHandler`, `LoginEndpoint`, `LoginRequestValidator`, `LoginSummary`
+- [ ] **Phase 2 — RefreshToken** — `RefreshTokenRequest`, `RefreshTokenResponse` (contracts); `RefreshTokenCommand`, `RefreshTokenCommandHandler`, `RefreshTokenEndpoint`, `RefreshTokenRequestValidator`, `RefreshTokenSummary`
+- [ ] **Phase 2 — Logout** — `LogoutCommand`, `LogoutCommandHandler`, `LogoutEndpoint`, `LogoutSummary`
+- [ ] **Phase 2 — Me** — `MeResponse` (contracts); `UserDto`, `GetCurrentUserQuery`, `GetCurrentUserQueryHandler`, `MeEndpoint`, `MeSummary`
+- [ ] **Phase 2 — ChangePassword** — `ChangePasswordRequest` (contracts); `ChangePasswordCommand`, `ChangePasswordCommandHandler`, `ChangePasswordEndpoint`, `ChangePasswordRequestValidator`, `ChangePasswordSummary`
+- [ ] **Phase 2 — Contracts** — `ISecurityApi` in `Neba.Api.Contracts/Security/`; add `RegisterApiEndpoint<ISecurityApi>()` to `ApiServicesConfiguration`
+- [ ] **Phase 3** — `AccountConfiguration`, `Login.razor`, `Register.razor`, `Manage/Index.razor`, `BearerTokenHandler`, `Routes.razor` updated to `AuthorizeRouteView`
+- [ ] **Phase 4** — all existing endpoints annotated with `AllowAnonymous()` or `Roles()`; `UseSecurityInfrastructure()` already in `Program.cs` ✓
 - [ ] **Phase 5** — NavMenu auth links, `[Authorize(Roles = Roles.Admin)]` on admin pages
