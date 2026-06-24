@@ -50,6 +50,9 @@ internal static class SecurityConfiguration
             if (string.IsNullOrWhiteSpace(jwtSettings.SigningKey))
                 throw new InvalidOperationException("JwtSettings:SigningKey must not be empty.");
 
+            builder.Services.AddSingleton(jwtSettings);
+            builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+
             builder.Services
                 .AddAuthentication(options =>
                 {
