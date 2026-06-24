@@ -1134,7 +1134,6 @@ public sealed record LoginResponse
     public required DateTimeOffset ExpiresAt { get; init; }
     public required string UserId { get; init; }
     public required string Email { get; init; }
-    public required IReadOnlyCollection<string> Roles { get; init; }
 }
 ```
 
@@ -1150,7 +1149,6 @@ internal sealed record LoginDto
     public required DateTimeOffset ExpiresAt { get; init; }
     public required Ulid UserId { get; init; }
     public required string Email { get; init; }
-    public required IReadOnlyCollection<string> Roles { get; init; }
 }
 ```
 
@@ -1216,7 +1214,6 @@ internal sealed class LoginCommandHandler(
             ExpiresAt = tokenPair.ExpiresAt,
             UserId = user.Id,
             Email = user.Email!,
-            Roles = [.. roles],
         };
     }
 
@@ -1290,7 +1287,6 @@ internal sealed class LoginEndpoint(ICommandHandler<LoginCommand, LoginDto> comm
             ExpiresAt = dto.ExpiresAt,
             UserId = dto.UserId.ToString(),
             Email = dto.Email,
-            Roles = dto.Roles,
         }, ct);
     }
 }
@@ -1354,7 +1350,6 @@ internal sealed class LoginSummary : Summary<LoginEndpoint>
                 ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(15),
                 UserId = "01JXXXXXXXXXXXXXXXXXXXXXXXXX",
                 Email = "admin@bowlneba.com",
-                Roles = ["Admin"],
             });
 
         Response(401, "Invalid email or password.");
@@ -1385,7 +1380,7 @@ public sealed record RefreshTokenRequest
 
 **`Neba.Api.Contracts/Security/RefreshToken/RefreshTokenResponse.cs`**
 
-Same shape as `LoginResponse` — client should update all stored token values on refresh.
+Same shape as `LoginResponse` — client should update all stored token values on refresh. Roles are in the JWT claims, not the response body.
 
 ```csharp
 namespace Neba.Api.Contracts.Security.RefreshToken;
@@ -1398,7 +1393,6 @@ public sealed record RefreshTokenResponse
     public required DateTimeOffset ExpiresAt { get; init; }
     public required string UserId { get; init; }
     public required string Email { get; init; }
-    public required IReadOnlyCollection<string> Roles { get; init; }
 }
 ```
 
@@ -1488,7 +1482,6 @@ internal sealed class RefreshTokenCommandHandler(
             ExpiresAt = tokenPair.ExpiresAt,
             UserId = user.Id,
             Email = user.Email!,
-            Roles = [.. roles],
         };
     }
 
@@ -1561,7 +1554,6 @@ internal sealed class RefreshTokenEndpoint(ICommandHandler<RefreshTokenCommand, 
             ExpiresAt = dto.ExpiresAt,
             UserId = dto.UserId.ToString(),
             Email = dto.Email,
-            Roles = dto.Roles,
         }, ct);
     }
 }
@@ -1622,7 +1614,6 @@ internal sealed class RefreshTokenSummary : Summary<RefreshTokenEndpoint>
                 ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(15),
                 UserId = "01JXXXXXXXXXXXXXXXXXXXXXXXXX",
                 Email = "admin@bowlneba.com",
-                Roles = ["Admin"],
             });
 
         Response(401, "Invalid, expired, or already-rotated refresh token.");
