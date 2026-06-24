@@ -1034,7 +1034,7 @@ internal sealed class RegisterEndpoint(ICommandHandler<RegisterCommand, string> 
         }
 
         // Stryker disable once Statement
-        await SendAsync(new RegisterResponse { UserId = result.Value }, StatusCodes.Status201Created, ct);
+        await Send.CreatedAtAsync("GetCurrentUser", routeValues: null, responseBody: new RegisterResponse { UserId = result.Value }, cancellation: ct);
     }
 }
 ```
