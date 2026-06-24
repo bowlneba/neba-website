@@ -33,8 +33,8 @@
   ],
   Winners: [
     Dolores Cassin,
-    Duane Schinner,
-    Jocelyn Gislason
+    Kathy Cassin,
+    Kathy Cassin
   ],
   Results: [
     {
@@ -44,43 +44,43 @@
       Points: 60
     },
     {
-      BowlerName: Edmond Bauch,
+      BowlerName: Enrique Wolf,
       Place: 1,
       PrizeMoney: 975.172772526356000,
       Points: 83
     },
     {
-      BowlerName: Lexie Thiel,
+      BowlerName: Kariane Wolf,
       Place: 0,
       PrizeMoney: 705.866732497638000,
       Points: 48
     },
     {
-      BowlerName: Lyla Gaylord,
+      BowlerName: Coty Wolf,
       Place: 6,
       PrizeMoney: 916.081168184095000,
       Points: 61
     },
     {
-      BowlerName: Pinkie Bernhard,
+      BowlerName: Enrique Wolf,
       Place: 0,
       PrizeMoney: 667.984944147982000,
       Points: 32
     },
     {
-      BowlerName: Kirk Jenkins,
+      BowlerName: Enrique Wolf,
       Place: 0,
       PrizeMoney: 951.352595328983000,
       Points: 27
     },
     {
-      BowlerName: Layne Muller,
+      BowlerName: Aisha Wolf,
       Place: 0,
       PrizeMoney: 766.763728934696000,
       Points: 67
     },
     {
-      BowlerName: Arne Morar,
+      BowlerName: Enrique Wolf,
       Place: 0,
       PrizeMoney: 745.956161872464000,
       Points: 78

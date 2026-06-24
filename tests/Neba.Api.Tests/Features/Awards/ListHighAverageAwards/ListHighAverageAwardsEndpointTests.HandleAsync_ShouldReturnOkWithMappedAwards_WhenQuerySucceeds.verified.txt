@@ -1,25 +1,25 @@
 ﻿{
   Items: [
     {
-      Season: SSL back-end,
-      BowlerName: Veronica Cremin,
-      Average: 226.644921568988320,
-      TotalGames: 80,
-      TournamentsParticipated: 16
+      Season: Soft archive,
+      BowlerName: Christina Cruickshank,
+      Average: 231.405355258102230,
+      TotalGames: 96,
+      TournamentsParticipated: 20
     },
     {
-      Season: Small Concrete Car Stravenue,
-      BowlerName: Allan Christiansen,
-      Average: 229.481465343610140,
-      TotalGames: 72,
-      TournamentsParticipated: 16
+      Season: Algeria ability,
+      BowlerName: Christina Cruickshank,
+      Average: 225.2707649209866140,
+      TotalGames: 70,
+      TournamentsParticipated: 12
     },
     {
-      Season: Illinois payment,
-      BowlerName: Sherry Schimmel,
-      Average: 230.164571988938640,
+      Season: hacking program,
+      BowlerName: Christina Cruickshank,
+      Average: 231.423375209059280,
       TotalGames: 93,
-      TournamentsParticipated: 13
+      TournamentsParticipated: 15
     }
   ],
   TotalItems: 3

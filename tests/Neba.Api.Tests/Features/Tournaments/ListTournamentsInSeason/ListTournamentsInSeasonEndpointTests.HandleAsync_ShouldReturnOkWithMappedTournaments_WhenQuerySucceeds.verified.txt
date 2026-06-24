@@ -13,9 +13,9 @@
       PatternLengthCategory: Long,
       PatternRatioCategory: Challenge,
       Winners: [
-        Carl Zemlak,
-        Rudolph Vandervort,
-        Unique Kreiger
+        Kathy Cassin,
+        Burley Cassin,
+        Sonny Cassin
       ],
       BowlingCenter: {
         Name: Connelly, Cassin and Ledner Lanes,

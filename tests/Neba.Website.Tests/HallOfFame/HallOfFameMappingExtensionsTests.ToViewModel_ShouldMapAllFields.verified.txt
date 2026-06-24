@@ -1,27 +1,28 @@
 ﻿[
   {
-    BowlerName: Joe Daugherty,
-    InductionYear: 1988,
+    BowlerName: Myron Okuneva,
+    InductionYear: 1992,
     Categories: [
       Superior Performance,
       Meritorious Service
-    ]
-  },
-  {
-    BowlerName: Justin Konopelski,
-    InductionYear: 2009,
-    Categories: [
-      Meritorious Service,
-      Superior Performance
-    ]
-  },
-  {
-    BowlerName: Ellis Powlowski,
-    InductionYear: 1981,
-    Categories: [
-      Meritorious Service,
-      Superior Performance
     ],
-    PhotoUri: http://yesenia.net
+    PhotoUri: http://furman.com
+  },
+  {
+    BowlerName: Myron Okuneva,
+    InductionYear: 2007,
+    Categories: [
+      Friend of NEBA,
+      Superior Performance
+    ]
+  },
+  {
+    BowlerName: Myron Okuneva,
+    InductionYear: 1980,
+    Categories: [
+      Superior Performance,
+      Friend of NEBA
+    ],
+    PhotoUri: https://jarrod.biz
   }
 ]

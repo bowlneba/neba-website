@@ -1,19 +1,19 @@
 ﻿{
   Items: [
     {
-      Season: Season 2023,
-      BowlerName: Carl Zemlak,
-      Category: Open
-    },
-    {
-      Season: Season 2025,
-      BowlerName: Preston Bernier,
+      Season: Season 2026,
+      BowlerName: Jordan Cummings,
       Category: Super Senior
     },
     {
-      Season: Season 2025,
-      BowlerName: Kathy Cassin,
-      Category: Rookie
+      Season: Season 2026,
+      BowlerName: Jordan Cummings,
+      Category: Youth
+    },
+    {
+      Season: Season 2021,
+      BowlerName: Jordan Cummings,
+      Category: Senior
     }
   ],
   TotalItems: 3

@@ -1,32 +1,29 @@
 ﻿{
   Items: [
     {
-      Year: 2025,
-      BowlerName: Leticia Muller,
+      Year: 2026,
+      BowlerName: Elbert D'Amore,
       Categories: [
-        Friend of NEBA,
-        Meritorious Service
-      ],
-      PhotoUri: http://roberta.org
-    },
-    {
-      Year: 2025,
-      BowlerName: Wanda Kub,
-      Categories: [
-        Superior Performance,
-        Meritorious Service
-      ],
-      PhotoUri: http://marisa.org
+        Friend of NEBA
+      ]
     },
     {
       Year: 2026,
-      BowlerName: Kevin Koch,
+      BowlerName: Elbert D'Amore,
+      Categories: [
+        Friend of NEBA,
+        Superior Performance,
+        Meritorious Service
+      ],
+      PhotoUri: http://kellen.net
+    },
+    {
+      Year: 2025,
+      BowlerName: Elbert D'Amore,
       Categories: [
         Meritorious Service,
-        Superior Performance,
-        Friend of NEBA
-      ],
-      PhotoUri: https://sebastian.net
+        Superior Performance
+      ]
     }
   ],
   TotalItems: 3

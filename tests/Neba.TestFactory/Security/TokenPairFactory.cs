@@ -4,7 +4,7 @@ using Neba.Api.Security.Domain;
 
 namespace Neba.TestFactory.Security;
 
-public static class TokenPairFactory
+internal static class TokenPairFactory
 {
     public const string ValidAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test-access-token";
     public const string ValidRefreshToken = "test-refresh-token-value";
