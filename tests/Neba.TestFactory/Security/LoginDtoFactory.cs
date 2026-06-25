@@ -11,7 +11,7 @@ public static class LoginDtoFactory
     public static readonly DateTimeOffset ValidExpiresAt = new(2030, 1, 1, 0, 0, 0, TimeSpan.Zero);
     public const string ValidEmail = "test@bowlneba.com";
 
-    public static LoginDto Create(
+    internal static LoginDto Create(
         string? accessToken = null,
         string? refreshToken = null,
         DateTimeOffset? expiresAt = null,
@@ -39,7 +39,7 @@ public static class LoginDtoFactory
         })];
     }
 
-    public static IReadOnlyCollection<LoginDto> Bogus(int count, int? seed = null)
+    internal static IReadOnlyCollection<LoginDto> Bogus(int count, int? seed = null)
     {
         var faker = new Faker();
         if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
