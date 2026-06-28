@@ -16,9 +16,9 @@ public sealed record RefreshTokenResponse
     public required string RefreshToken { get; init; }
 
     /// <summary>
-    /// Gets or sets the expiration time of the new access token in ISO 8601 format.
+    /// Gets or sets the expiration time of the new access token.
     /// </summary>
-    public required string ExpiresAt { get; init; }
+    public required DateTimeOffset ExpiresAt { get; init; }
 
     /// <summary>
     /// Gets or sets the user ID associated with the refreshed tokens.
