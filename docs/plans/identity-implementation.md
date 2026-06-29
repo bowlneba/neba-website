@@ -85,14 +85,14 @@ Neba.Api/
 │   │   ├── MeEndpoint.cs                           ← maps UserDto→MeResponse
 │   │   └── MeSummary.cs
 │   ├── Password/
-│   │   ├── ChangePassword/
-│   │   │   ├── ChangePasswordCommand.cs            ← internal: ICommand
-│   │   │   ├── ChangePasswordCommandHandler.cs
-│   │   │   ├── ChangePasswordEndpoint.cs
-│   │   │   ├── ChangePasswordRequestValidator.cs
-│   │   │   └── ChangePasswordSummary.cs
-│   │   ├── ForgotPassword/                         ← Phase 3 (same CQRS structure)
-│   │   └── ResetPassword/                          ← Phase 3
+│   │   ├── ResetPassword/                          ← Day 1 (admin-initiated; no token)
+│   │   │   ├── ResetPasswordCommand.cs            ← internal: ICommand
+│   │   │   ├── ResetPasswordCommandHandler.cs
+│   │   │   ├── ResetPasswordEndpoint.cs
+│   │   │   ├── ResetPasswordRequestValidator.cs
+│   │   │   └── ResetPasswordSummary.cs
+│   │   ├── ForgotPassword/                         ← Phase 3 (sends email token)
+│   │   └── ResetPasswordFromToken/                 ← Phase 3 (consumes token → sets password)
 │   ├── Email/                                      ← Phase 3
 │   │   ├── ConfirmEmail/
 │   │   └── ResendConfirmation/
@@ -131,7 +131,7 @@ Neba.Website.Server/
 │   │   └── Manage/
 │   │       ├── _Imports.razor
 │   │       ├── Index.razor                         ← profile: display email, roles, link USBC ID
-│   │       ├── ChangePassword.razor
+│   │       ├── ResetPassword.razor
 │   │       └── (passkey management — Day 1)
 │   ├── Shared/
 │   │   ├── ManageLayout.razor
@@ -156,8 +156,8 @@ Neba.Api.Contracts/
     ├── RefreshToken/
     │   ├── RefreshTokenRequest.cs
     │   └── RefreshTokenResponse.cs                 ← same shape as LoginResponse
-    ├── ChangePassword/
-    │   └── ChangePasswordRequest.cs
+    ├── ResetPassword/
+    │   └── ResetPasswordRequest.cs
     └── Me/
         └── MeResponse.cs
 ```
@@ -725,9 +725,10 @@ All endpoints live under `Neba.Api/Security/`, follow the same FastEndpoints con
 | `POST` | `/security/refresh` | Anonymous + refresh token | Day 1 |
 | `POST` | `/security/logout` | Authenticated | Day 1 |
 | `GET`  | `/security/me` | Authenticated | Day 1 |
-| `POST` | `/security/password/change` | Admin only | Day 1 |
+| `POST` | `/security/password/reset` | Admin only | Day 1 |
+| `POST` | `/security/password/change` | Authenticated | Future |
 | `POST` | `/security/password/forgot` | Anonymous | Phase 3 |
-| `POST` | `/security/password/reset` | Anonymous + reset token | Phase 3 |
+| `POST` | `/security/password/reset-with-token` | Anonymous + reset token | Phase 3 |
 | `POST` | `/security/email/confirm` | Anonymous + confirm token | Phase 3 |
 | `POST` | `/security/email/resend` | Anonymous | Phase 3 |
 
@@ -735,7 +736,7 @@ All endpoints live under `Neba.Api/Security/`, follow the same FastEndpoints con
 
 **`RefreshTokenRequest` includes `UserId`** so the handler can look up the user before fetching the stored token — avoids a full table scan.
 
-**ChangePassword** is admin-initiated: no current password required. Uses `UserManager.RemovePasswordAsync` + `AddPasswordAsync`.
+**ResetPassword** is admin-initiated: no current password required. Uses `UserManager.RemovePasswordAsync` + `AddPasswordAsync`.
 
 **Register auto-confirms email** (`EmailConfirmed = true`) for admin-created accounts. Phase 3 introduces email confirmation for self-registration.
 
@@ -1938,60 +1939,71 @@ internal sealed class MeSummary : Summary<MeEndpoint>
 
 ---
 
-### 2.6 Change Password
+### 2.6 Password Reset (Admin)
 
-Admin resets any user's password. No current password required. User must be looked up by ID.
+Admin triggers a password reset for any user. The handler generates a secure temporary password internally — no `NewPassword` in the request. The temp password is emailed to the user's registered address; the admin never sees it. User must be looked up by ID.
 
-**`Neba.Api.Contracts/Security/ChangePassword/ChangePasswordRequest.cs`**
+**Why generated, not admin-supplied**: if the admin sets the password, they know it even temporarily — a principle-of-least-privilege violation. Generating it server-side and emailing it directly keeps the credential out of the admin's hands.
+
+**Phase 3 upgrade path**: once the Phase 3 forgot-password flow exists (`UserManager.GeneratePasswordResetTokenAsync` + `reset-with-token` endpoint), this endpoint should be upgraded to Option C — admin triggers a reset link, user sets their own password, admin never touches any credential. See the Phase 3 section for the ticket.
+
+**`Neba.Api.Contracts/Security/ResetPassword/ResetPasswordRequest.cs`**
 
 ```csharp
-namespace Neba.Api.Contracts.Security.ChangePassword;
+namespace Neba.Api.Contracts.Security.ResetPassword;
 
-/// <summary>Admin-initiated password reset. No current password required.</summary>
-public sealed record ChangePasswordRequest
+/// <summary>
+/// Admin-initiated password reset. A secure temporary password is generated server-side
+/// and emailed to the user — no password field in the request.
+/// </summary>
+public sealed record ResetPasswordRequest
 {
     /// <summary>The ID of the user whose password is being reset.</summary>
     public required string UserId { get; init; }
-
-    /// <summary>The new password. Must meet the API's password policy (8+ chars, at least one digit).</summary>
-    public required string NewPassword { get; init; }
 }
 ```
 
-**`Security/Password/ChangePassword/ChangePasswordCommand.cs`**
+**`Security/Password/ResetPassword/ResetPasswordCommand.cs`**
 
 ```csharp
 using Neba.Api.Messaging;
 
-namespace Neba.Api.Security.Password.ChangePassword;
+namespace Neba.Api.Security.Password.ResetPassword;
 
-internal sealed record ChangePasswordCommand : ICommand
+internal sealed record ResetPasswordCommand : ICommand
 {
     public required Ulid UserId { get; init; }
-    public required string NewPassword { get; init; }
 }
 ```
 
-**`Security/Password/ChangePassword/ChangePasswordCommandHandler.cs`**
+**`Security/Password/ResetPassword/ResetPasswordCommandHandler.cs`**
 
 ```csharp
+using System.Security.Cryptography;
+using System.Net;
+
 using ErrorOr;
 
 using Microsoft.AspNetCore.Identity;
 
+using Neba.Api.Email;
 using Neba.Api.Messaging;
 using Neba.Api.Security.Domain;
 
-namespace Neba.Api.Security.Password.ChangePassword;
+namespace Neba.Api.Security.Password.ResetPassword;
 
-internal sealed class ChangePasswordCommandHandler(UserManager<ApplicationUser> userManager)
-    : ICommandHandler<ChangePasswordCommand>
+internal sealed class ResetPasswordCommandHandler(
+    UserManager<ApplicationUser> userManager,
+    IEmailSender emailSender)
+    : ICommandHandler<ResetPasswordCommand>
 {
-    public async Task<ErrorOr<Success>> HandleAsync(ChangePasswordCommand command, CancellationToken cancellationToken)
+    public async Task<ErrorOr<Success>> HandleAsync(ResetPasswordCommand command, CancellationToken cancellationToken)
     {
         var user = await userManager.FindByIdAsync(command.UserId.ToString());
         if (user is null)
             return SecurityErrors.UserNotFound(command.UserId);
+
+        var tempPassword = GenerateTempPassword();
 
         var removeResult = await userManager.RemovePasswordAsync(user);
         if (!removeResult.Succeeded)
@@ -1999,18 +2011,36 @@ internal sealed class ChangePasswordCommandHandler(UserManager<ApplicationUser> 
                 .Select(e => Error.Failure(e.Code, e.Description))
                 .ToList();
 
-        var addResult = await userManager.AddPasswordAsync(user, command.NewPassword);
+        var addResult = await userManager.AddPasswordAsync(user, tempPassword);
         if (!addResult.Succeeded)
             return addResult.Errors
-                .Select(e => Error.Validation(e.Code, e.Description))
+                .Select(e => Error.Failure(e.Code, e.Description))
                 .ToList();
 
+        await emailSender.SendAsync(new EmailMessage
+        {
+            To      = user.Email!,
+            Subject = "Your BowlNEBA password has been reset",
+            HtmlBody = $"<p>An administrator has reset your BowlNEBA password.</p>" +
+                       $"<p>Your temporary password is: <strong>{WebUtility.HtmlEncode(tempPassword)}</strong></p>" +
+                       $"<p>Please log in and change your password immediately.</p>",
+        }, cancellationToken);
+
         return Result.Success;
+    }
+
+    // 16-char base64 string (letters, digits, +, /, =).
+    // Last character replaced with a decimal digit to guarantee Identity's RequireDigit policy.
+    private static string GenerateTempPassword()
+    {
+        var bytes = RandomNumberGenerator.GetBytes(12);
+        var b64 = Convert.ToBase64String(bytes);
+        return b64[..15] + (char)('0' + bytes[11] % 10);
     }
 }
 ```
 
-**`Security/Password/ChangePassword/ChangePasswordEndpoint.cs`**
+**`Security/Password/ResetPassword/ResetPasswordEndpoint.cs`**
 
 ```csharp
 using Asp.Versioning;
@@ -2020,19 +2050,19 @@ using ErrorOr;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
-using Neba.Api.Contracts.Security.ChangePassword;
+using Neba.Api.Contracts.Security.ResetPassword;
 using Neba.Api.Messaging;
 
-namespace Neba.Api.Security.Password.ChangePassword;
+namespace Neba.Api.Security.Password.ResetPassword;
 
-internal sealed class ChangePasswordEndpoint(ICommandHandler<ChangePasswordCommand> commandHandler)
-    : Endpoint<ChangePasswordRequest>
+internal sealed class ResetPasswordEndpoint(ICommandHandler<ResetPasswordCommand> commandHandler)
+    : Endpoint<ResetPasswordRequest>
 {
-    private readonly ICommandHandler<ChangePasswordCommand> _commandHandler = commandHandler;
+    private readonly ICommandHandler<ResetPasswordCommand> _commandHandler = commandHandler;
 
     public override void Configure()
     {
-        Post("password/change");
+        Post("password/reset");
         Group<SecurityEndpointGroup>();
 
         Options(options => options
@@ -2042,32 +2072,21 @@ internal sealed class ChangePasswordEndpoint(ICommandHandler<ChangePasswordComma
         Roles(Domain.Roles.Admin);
 
         Description(description => description
-            .WithName("ChangePassword")
+            .WithName("ResetPassword")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
             .ProducesProblemDetails(StatusCodes.Status403Forbidden)
-            .ProducesProblemDetails(StatusCodes.Status404NotFound)
-            .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));
+            .ProducesProblemDetails(StatusCodes.Status404NotFound));
     }
 
-    public override async Task HandleAsync(ChangePasswordRequest req, CancellationToken ct)
+    public override async Task HandleAsync(ResetPasswordRequest req, CancellationToken ct)
     {
-        var command = new ChangePasswordCommand { UserId = Ulid.Parse(req.UserId), NewPassword = req.NewPassword };
+        var command = new ResetPasswordCommand { UserId = Ulid.Parse(req.UserId) };
         var result = await _commandHandler.HandleAsync(command, ct);
 
         if (result.IsError)
         {
-            if (result.FirstError.Type == ErrorType.NotFound)
-            {
-                await Send.NotFoundAsync(ct);
-                // Stryker disable once Statement
-                return;
-            }
-
-            foreach (var error in result.Errors)
-                AddError(error.Description);
-
-            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+            await Send.NotFoundAsync(ct);
             // Stryker disable once Statement
             return;
         }
@@ -2078,59 +2097,47 @@ internal sealed class ChangePasswordEndpoint(ICommandHandler<ChangePasswordComma
 }
 ```
 
-**`Security/Password/ChangePassword/ChangePasswordRequestValidator.cs`**
+**`Security/Password/ResetPassword/ResetPasswordRequestValidator.cs`**
 
 ```csharp
 using FastEndpoints;
 
 using FluentValidation;
 
-using Neba.Api.Contracts.Security.ChangePassword;
+using Neba.Api.Contracts.Security.ResetPassword;
 
-namespace Neba.Api.Security.Password.ChangePassword;
+namespace Neba.Api.Security.Password.ResetPassword;
 
-internal sealed class ChangePasswordRequestValidator : Validator<ChangePasswordRequest>
+internal sealed class ResetPasswordRequestValidator : Validator<ResetPasswordRequest>
 {
-    public ChangePasswordRequestValidator()
+    public ResetPasswordRequestValidator()
     {
         RuleFor(r => r.UserId)
             .NotEmpty()
-            .WithErrorCode("ChangePasswordRequest.UserIdRequired")
+            .WithErrorCode("ResetPasswordRequest.UserIdRequired")
             .WithMessage("User ID is required.");
-
-        RuleFor(r => r.NewPassword)
-            .NotEmpty()
-            .WithErrorCode("ChangePasswordRequest.NewPasswordRequired")
-            .WithMessage("New password is required.")
-            .MinimumLength(8)
-            .WithErrorCode("ChangePasswordRequest.NewPasswordTooShort")
-            .WithMessage("New password must be at least 8 characters.")
-            .Matches(@"\d")
-            .WithErrorCode("ChangePasswordRequest.NewPasswordRequiresDigit")
-            .WithMessage("New password must contain at least one digit.");
     }
 }
 ```
 
-**`Security/Password/ChangePassword/ChangePasswordSummary.cs`**
+**`Security/Password/ResetPassword/ResetPasswordSummary.cs`**
 
 ```csharp
 using FastEndpoints;
 
-namespace Neba.Api.Security.Password.ChangePassword;
+namespace Neba.Api.Security.Password.ResetPassword;
 
-internal sealed class ChangePasswordSummary : Summary<ChangePasswordEndpoint>
+internal sealed class ResetPasswordSummary : Summary<ResetPasswordEndpoint>
 {
-    public ChangePasswordSummary()
+    public ResetPasswordSummary()
     {
         Summary = "Resets a user's password (admin only).";
-        Description = "Admin-initiated password reset. No current password required. Uses Identity's RemovePasswordAsync + AddPasswordAsync.";
+        Description = "Admin-initiated password reset. A secure temporary password is generated server-side and emailed to the user's registered address — no password in the request, admin never sees the credential.";
 
-        Response(204, "Password reset successfully.");
+        Response(204, "Password reset — temporary password emailed to the user.");
         Response(401, "No valid bearer token provided.");
         Response(403, "Caller does not have the Admin role.");
         Response(404, "No user with the given ID was found.");
-        Response(422, "New password does not meet policy requirements.");
     }
 }
 ```
@@ -2142,7 +2149,7 @@ internal sealed class ChangePasswordSummary : Summary<ChangePasswordEndpoint>
 **`Neba.Api.Contracts/Security/ISecurityApi.cs`**
 
 ```csharp
-using Neba.Api.Contracts.Security.ChangePassword;
+using Neba.Api.Contracts.Security.ResetPassword;
 using Neba.Api.Contracts.Security.Login;
 using Neba.Api.Contracts.Security.Me;
 using Neba.Api.Contracts.Security.RefreshToken;
@@ -2175,9 +2182,9 @@ public interface ISecurityApi
     [Get("/security/me")]
     Task<IApiResponse<MeResponse>> GetCurrentUserAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>Resets any user's password (Admin only).</summary>
-    [Post("/security/password/change")]
-    Task<IApiResponse> ChangePasswordAsync([Body] ChangePasswordRequest request, CancellationToken cancellationToken = default);
+    /// <summary>Resets any user's password directly (Admin only). No current password or email token required.</summary>
+    [Post("/security/password/reset")]
+    Task<IApiResponse> ResetPasswordAsync([Body] ResetPasswordRequest request, CancellationToken cancellationToken = default);
 }
 ```
 
@@ -2228,7 +2235,7 @@ public interface ISecurityApi
     Task<IApiResponse<MeResponse>> GetCurrentUserAsync(CancellationToken ct = default);
 
     [Post("/security/password/change")]
-    Task<IApiResponse> ChangePasswordAsync([Body] ChangePasswordRequest request, CancellationToken ct = default);
+    Task<IApiResponse> ResetPasswordAsync([Body] ResetPasswordRequest request, CancellationToken ct = default);
 }
 ```
 
@@ -2402,6 +2409,24 @@ Pages with dual read-only / interactive views use `AuthorizeView`:
 
 ## Future Phases
 
+### Phase 3 (addendum): Upgrade admin password reset to token-based flow (Option C)
+
+**Prerequisite**: Phase 3 `ForgotPassword/` + `ResetPasswordFromToken/` endpoints must exist.
+
+**Current behaviour (Day 1 / Option B)**: Admin triggers `POST /security/password/reset` → system generates a temporary password and emails it to the user in plaintext. The user logs in with it and should change it.
+
+**Target behaviour (Option C)**: Admin triggers the same endpoint → system calls `UserManager.GeneratePasswordResetTokenAsync()` and emails the user a one-time reset link (`/account/reset-password?token=...&userId=...`). User clicks the link, sets their own password. Admin never sees any credential.
+
+**Changes required**:
+
+- `ResetPasswordCommandHandler`: replace `GenerateTempPassword` + `RemovePasswordAsync` + `AddPasswordAsync` with `GeneratePasswordResetTokenAsync` + email a link (same `ResetPasswordFromToken` endpoint the forgot-password flow already uses)
+- Remove `GenerateTempPassword()` helper
+- Email template: replace "your temp password is X" with a reset-link email (same as `ForgotPassword` template)
+- No contract or endpoint changes needed — `ResetPasswordRequest` stays `UserId`-only
+- No new files; the `ResetPasswordFromToken` endpoint already handles token consumption
+
+---
+
 ### Phase 6: Passkeys / WebAuthn
 
 Passkeys are built into ASP.NET Core Identity — no extra NuGet package. The implementation does **not** use the CQRS command/handler pattern; endpoints call `SignInManager`/`UserManager` methods directly and pass raw WebAuthn JSON strings.
@@ -2482,7 +2507,7 @@ Passkeys are built into ASP.NET Core Identity — no extra NuGet package. The im
 - [ ] **Phase 2 — RefreshToken** — `RefreshTokenRequest`, `RefreshTokenResponse` (contracts); `RefreshTokenCommand`, `RefreshTokenCommandHandler`, `RefreshTokenEndpoint`, `RefreshTokenRequestValidator`, `RefreshTokenSummary`
 - [ ] **Phase 2 — Logout** — `LogoutCommand`, `LogoutCommandHandler`, `LogoutEndpoint`, `LogoutSummary`
 - [ ] **Phase 2 — Me** — `MeResponse` (contracts); `UserDto`, `GetCurrentUserQuery`, `GetCurrentUserQueryHandler`, `MeEndpoint`, `MeSummary`
-- [ ] **Phase 2 — ChangePassword** — `ChangePasswordRequest` (contracts); `ChangePasswordCommand`, `ChangePasswordCommandHandler`, `ChangePasswordEndpoint`, `ChangePasswordRequestValidator`, `ChangePasswordSummary`
+- [ ] **Phase 2 — ResetPassword** — `ResetPasswordRequest` (contracts); `ResetPasswordCommand`, `ResetPasswordCommandHandler`, `ResetPasswordEndpoint`, `ResetPasswordRequestValidator`, `ResetPasswordSummary`
 - [ ] **Phase 2 — Contracts** — `ISecurityApi` in `Neba.Api.Contracts/Security/`; add `RegisterApiEndpoint<ISecurityApi>()` to `ApiServicesConfiguration`
 - [ ] **Phase 3** — `AccountConfiguration`, `Login.razor`, `Register.razor`, `Manage/Index.razor`, `BearerTokenHandler`, `Routes.razor` updated to `AuthorizeRouteView`
 - [ ] **Phase 4** — all existing endpoints annotated with `AllowAnonymous()` or `Roles()`; `UseSecurityInfrastructure()` already in `Program.cs` ✓
