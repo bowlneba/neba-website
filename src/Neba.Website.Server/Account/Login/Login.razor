@@ -1,0 +1,160 @@
+@page "/account/login"
+
+@using System.Security.Claims
+@using System.Text
+@using System.Text.Json
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Security.Login
+
+@inject ISecurityApi SecurityApi
+@inject NavigationManager Nav
+
+<PageTitle>Log In - NEBA</PageTitle>
+
+<div class="flex items-center justify-center min-h-[60vh] px-4">
+    <div class="w-full max-w-sm">
+        <div class="neba-card">
+            <div class="text-center mb-6">
+                <img src="/images/neba-logo.png" alt="NEBA" class="h-12 mx-auto mb-3" style="display:block;margin:0 auto;" />
+                <h1 class="text-xl font-bold text-[var(--neba-gray-900)] font-display">Admin Login</h1>
+            </div>
+
+            @if (_error is not null)
+            {
+                <div class="mb-4">
+                    <NebaAlert Severity="NotifySeverity.Error" Message="@_error" Dismissible="false" />
+                </div>
+            }
+
+            <EditForm Model="_model" FormName="LoginForm" OnValidSubmit="HandleLoginAsync" method="post">
+                <DataAnnotationsValidator />
+                <div class="neba-space-y-4">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Email</label>
+                        <InputText id="email" @bind-Value="_model.Email" type="email" autocomplete="email"
+                                   class="neba-input w-full" placeholder="admin@bowlneba.com" />
+                        <ValidationMessage For="@(() => _model.Email)" class="block text-sm text-red-600 mt-1" />
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Password</label>
+                        <InputText id="password" @bind-Value="_model.Password" type="password" autocomplete="current-password"
+                                   class="neba-input w-full" />
+                        <ValidationMessage For="@(() => _model.Password)" class="block text-sm text-red-600 mt-1" />
+                    </div>
+                    <button type="submit" class="neba-btn neba-btn-primary w-full justify-center">Log in</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromForm]
+    private LoginFormModel? Form { get; set; }
+
+    private LoginFormModel _model = new();
+
+    private string? _error;
+
+    protected override void OnParametersSet()
+    {
+        _model = Form ?? _model;
+    }
+
+    private async Task HandleLoginAsync()
+    {
+        var response = await SecurityApi.LoginAsync(new LoginRequest
+        {
+            Email = _model.Email,
+            Password = _model.Password,
+        });
+
+        if (!response.IsSuccessStatusCode || response.Content is null)
+        {
+            _error = "Invalid email or password.";
+            return;
+        }
+
+        var login = response.Content;
+        var claims = BuildClaims(login);
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+        Nav.NavigateTo(GetSafeReturnUrl(), forceLoad: true);
+    }
+
+    private string GetSafeReturnUrl()
+    {
+        if (!string.IsNullOrWhiteSpace(ReturnUrl) && ReturnUrl.StartsWith('/') && !ReturnUrl.StartsWith("//"))
+            return ReturnUrl;
+        return "/";
+    }
+
+    private static List<Claim> BuildClaims(LoginResponse login)
+    {
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, login.UserId),
+            new(ClaimTypes.Email, login.Email),
+            new("access_token", login.AccessToken),
+            new("refresh_token", login.RefreshToken),
+        };
+
+        foreach (var jwtClaim in ParseJwtPayload(login.AccessToken))
+        {
+            // Pick up role claims and any custom claims (e.g. usbc_id) from the JWT
+            if (jwtClaim.Type == ClaimTypes.Role || jwtClaim.Type == "usbc_id")
+                claims.Add(jwtClaim);
+        }
+
+        return claims;
+    }
+
+    private static IEnumerable<Claim> ParseJwtPayload(string jwt)
+    {
+        var parts = jwt.Split('.');
+        if (parts.Length != 3) yield break;
+
+        // base64url → standard base64
+        var payload = parts[1].Replace('-', '+').Replace('_', '/');
+        var padding = (4 - payload.Length % 4) % 4;
+        if (padding < 4)
+            payload += new string('=', padding);
+
+        string json;
+        try
+        {
+            json = Encoding.UTF8.GetString(Convert.FromBase64String(payload));
+        }
+        catch (FormatException)
+        {
+            yield break;
+        }
+
+        using var doc = JsonDocument.Parse(json);
+        foreach (var prop in doc.RootElement.EnumerateObject())
+        {
+            if (prop.Value.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in prop.Value.EnumerateArray())
+                    yield return new Claim(prop.Name, item.GetString() ?? string.Empty);
+            }
+            else
+            {
+                yield return new Claim(prop.Name, prop.Value.ToString());
+            }
+        }
+    }
+
+    
+}
