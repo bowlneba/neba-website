@@ -1,4 +1,4 @@
-namespace Neba.Api.Security.Me;
+namespace Neba.Api.Security.GetCurrentUser;
 
 internal sealed record UserDto
 {

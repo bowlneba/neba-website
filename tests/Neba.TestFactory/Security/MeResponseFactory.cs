@@ -1,6 +1,6 @@
 using Bogus;
 
-using Neba.Api.Contracts.Security.Me;
+using Neba.Api.Contracts.Security.GetCurrentUser;
 
 namespace Neba.TestFactory.Security;
 

@@ -1,4 +1,4 @@
-namespace Neba.Api.Contracts.Security.Me;
+namespace Neba.Api.Contracts.Security.GetCurrentUser;
 
 /// <summary>
 /// Represents the response for the "Me" endpoint, which provides information about the currently authenticated user.

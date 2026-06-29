@@ -1,6 +1,6 @@
 using Bogus;
 
-using Neba.Api.Security.Me;
+using Neba.Api.Security.GetCurrentUser;
 
 namespace Neba.TestFactory.Security;
 
