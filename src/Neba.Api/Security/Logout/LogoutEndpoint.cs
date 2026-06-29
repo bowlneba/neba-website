@@ -19,7 +19,7 @@ internal sealed class LogoutEndpoint(Messaging.ICommandHandler<LogoutCommand> co
         Group<SecurityEndpointGroup>();
 
         Options(options => options
-            .WithVersionSet("security")
+            .WithVersionSet("Security")
             .MapToApiVersion(new ApiVersion(1, 0))
             .RequireAuthorization());
 

@@ -24,7 +24,7 @@ internal sealed class GetCurrentUserEndpoint(IQueryHandler<GetCurrentUserQuery, 
         Group<SecurityEndpointGroup>();
 
         Options(options => options
-            .WithVersionSet("security")
+            .WithVersionSet("Security")
             .MapToApiVersion(new ApiVersion(1, 0))
             .RequireAuthorization());
 

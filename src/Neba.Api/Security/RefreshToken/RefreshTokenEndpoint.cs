@@ -21,7 +21,7 @@ internal sealed class RefreshTokenEndpoint(Messaging.ICommandHandler<RefreshToke
         Group<SecurityEndpointGroup>();
 
         Options(options => options
-            .WithVersionSet("security")
+            .WithVersionSet("Security")
             .MapToApiVersion(new ApiVersion(1, 0)));
 
         AllowAnonymous();
