@@ -12,7 +12,9 @@ public sealed class ApplicationRole
     /// Initializes a new instance of <see cref="ApplicationRole"/>.
     /// </summary>
     public ApplicationRole()
-    { }
+    {
+        Id = Ulid.NewUlid();
+    }
 
     /// <summary>
     /// Initializes a new instance of <see cref="ApplicationRole"/>.
@@ -20,5 +22,7 @@ public sealed class ApplicationRole
     /// <param name="roleName"></param>
     public ApplicationRole(string roleName)
         : base(roleName)
-    { }
+    {
+        Id = Ulid.NewUlid();
+    }
 }
