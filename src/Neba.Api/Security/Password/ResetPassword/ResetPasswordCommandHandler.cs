@@ -25,7 +25,7 @@ internal sealed class ResetPasswordCommandHandler(
         }
 
         var tempPassword = GenerateTempPassword();
-        
+
         var removeResult = await userManager.RemovePasswordAsync(user);
         if (!removeResult.Succeeded)
         {

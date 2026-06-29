@@ -9,9 +9,9 @@ using Neba.Api.Contracts.Documents;
 using Neba.Api.Contracts.HallOfFame;
 using Neba.Api.Contracts.News;
 using Neba.Api.Contracts.Seasons;
+using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Contracts.Stats;
-using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Tournaments;
 
 using Refit;
