@@ -43,7 +43,10 @@
                                    class="neba-input w-full" />
                         <ValidationMessage For="@(() => _model.Password)" class="block text-sm text-red-600 mt-1" />
                     </div>
-                    <button type="submit" class="neba-btn neba-btn-primary w-full justify-center">Log in</button>
+                    <button type="submit" class="neba-btn neba-btn-primary w-full justify-center"
+                            onclick="this.disabled=true;this.textContent='Logging in…'">
+                        Log in
+                    </button>
                 </div>
             </EditForm>
         </div>
