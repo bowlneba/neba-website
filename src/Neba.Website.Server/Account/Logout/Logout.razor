@@ -32,6 +32,6 @@
 
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-        Nav.NavigateTo(apiLogoutSucceeded ? "/?loggedOut=1" : "/?logoutError=1");
+        Nav.NavigateTo(apiLogoutSucceeded ? "/?loggedOut=1" : "/?logoutError=1", forceLoad: true);
     }
 }

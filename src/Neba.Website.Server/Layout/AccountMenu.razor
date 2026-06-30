@@ -13,7 +13,7 @@
             <div class="account-dropdown" role="menu">
                 <span class="account-email">@context.User.FindFirst(ClaimTypes.Email)?.Value</span>
                 <div class="account-divider"></div>
-                <a class="account-dropdown-link" href="/account/logout" role="menuitem">Logout</a>
+                <a class="account-dropdown-link" href="/account/logout" role="menuitem" data-enhance-nav="false">Logout</a>
             </div>
         </div>
     </Authorized>
