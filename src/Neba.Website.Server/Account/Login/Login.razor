@@ -1,8 +1,5 @@
 @page "/account/login"
 
-@using System.Security.Claims
-@using System.Text
-@using System.Text.Json
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
 @using Neba.Api.Contracts.Security
@@ -12,6 +9,7 @@
 @inject ISecurityApi SecurityApi
 @inject NavigationManager Nav
 @inject ILogger<Login> Logger
+@inject AdminLoginSettings AdminLoginSettings
 
 <PageTitle>Log In - NEBA</PageTitle>
 
@@ -20,7 +18,7 @@
         <div class="neba-card">
             <div class="text-center mb-6">
                 <img src="/images/neba-logo.png" alt="NEBA" class="h-12 mx-auto mb-3" style="display:block;margin:0 auto;" />
-                <h1 class="text-xl font-bold text-[var(--neba-gray-900)] font-display">Admin Login</h1>
+                <h1 class="text-xl font-bold text-[var(--neba-gray-900)] font-display">User Login</h1>
             </div>
 
             @if (_error is not null)
@@ -36,7 +34,7 @@
                     <div>
                         <label for="email" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Email</label>
                         <InputText id="email" @bind-Value="_model.Email" type="email" autocomplete="email"
-                                   class="neba-input w-full" placeholder="admin@bowlneba.com" />
+                                   class="neba-input w-full" placeholder="user@bowlneba.com" />
                         <ValidationMessage For="@(() => _model.Email)" class="block text-sm text-red-600 mt-1" />
                     </div>
                     <div>
@@ -59,6 +57,9 @@
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
+    [SupplyParameterFromQuery(Name = "admin")]
+    private bool? PrefillAdmin { get; set; }
+
     [SupplyParameterFromForm(Name = "_model")]
     private LoginFormModel? Form { get; set; }
 
@@ -69,6 +70,14 @@
     protected override void OnParametersSet()
     {
         _model = Form ?? _model;
+
+#if DEBUG
+        if (Form is null && PrefillAdmin == true)
+        {
+            _model.Email = AdminLoginSettings.Email;
+            _model.Password = AdminLoginSettings.Password;
+        }
+#endif
     }
 
     private async Task HandleLoginAsync()
@@ -96,13 +105,11 @@
         }
 
         var login = response.Content;
-        var claims = BuildClaims(login);
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var principal = new ClaimsPrincipal(identity);
+        var principal = SecurityClaimsBuilder.BuildPrincipal(login.AccessToken, login.RefreshToken, login.UserId, login.Email);
 
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-        Nav.NavigateTo(GetSafeReturnUrl(), forceLoad: true);
+        Nav.NavigateTo(AppendLoginSuccessMarker(GetSafeReturnUrl()), forceLoad: true);
     }
 
     private string GetSafeReturnUrl()
@@ -112,62 +119,6 @@
         return "/";
     }
 
-    private List<Claim> BuildClaims(LoginResponse login)
-    {
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, login.UserId),
-            new(ClaimTypes.Email, login.Email),
-            new("access_token", login.AccessToken),
-            new("refresh_token", login.RefreshToken),
-        };
-
-        foreach (var jwtClaim in ParseJwtPayload(login.AccessToken))
-        {
-            // Pick up role claims and any custom claims (e.g. usbc_id) from the JWT
-            if (jwtClaim.Type == ClaimTypes.Role || jwtClaim.Type == "usbc_id")
-                claims.Add(jwtClaim);
-        }
-
-        return claims;
-    }
-
-    private IEnumerable<Claim> ParseJwtPayload(string jwt)
-    {
-        var parts = jwt.Split('.');
-        if (parts.Length != 3) yield break;
-
-        // base64url → standard base64
-        var payload = parts[1].Replace('-', '+').Replace('_', '/');
-        var padding = (4 - payload.Length % 4) % 4;
-        if (padding < 4)
-            payload += new string('=', padding);
-
-        string json;
-        try
-        {
-            json = Encoding.UTF8.GetString(Convert.FromBase64String(payload));
-        }
-        catch (FormatException ex)
-        {
-            Logger.LogWarning(ex, "Access token payload was not valid base64; role and usbc_id claims will be missing.");
-            yield break;
-        }
-
-        using var doc = JsonDocument.Parse(json);
-        foreach (var prop in doc.RootElement.EnumerateObject())
-        {
-            if (prop.Value.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var item in prop.Value.EnumerateArray())
-                    yield return new Claim(prop.Name, item.GetString() ?? string.Empty);
-            }
-            else
-            {
-                yield return new Claim(prop.Name, prop.Value.ToString());
-            }
-        }
-    }
-
-    
+    private static string AppendLoginSuccessMarker(string url) =>
+        url + (url.Contains('?') ? '&' : '?') + "loginSuccess=1";
 }

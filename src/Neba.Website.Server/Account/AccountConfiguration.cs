@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.Options;
 
 namespace Neba.Website.Server.Account;
 
@@ -6,7 +7,7 @@ internal static class AccountConfiguration
 {
     extension(IServiceCollection services)
     {
-        public void AddAccountServices()
+        public void AddAccountServices(IConfiguration configuration)
         {
             services
                 .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -23,6 +24,12 @@ internal static class AccountConfiguration
                 });
 
             services.AddCascadingAuthenticationState();
+
+            // Used only by the DEBUG-only "Log in as Admin" prefill on Login.razor.
+            services.AddOptions<AdminLoginSettings>()
+                .Bind(configuration.GetSection("Admin"));
+
+            services.AddSingleton(sp => sp.GetRequiredService<IOptions<AdminLoginSettings>>().Value);
         }
     }
 }

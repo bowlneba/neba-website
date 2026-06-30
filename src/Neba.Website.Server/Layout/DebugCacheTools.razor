@@ -1,12 +1,13 @@
 @inject Neba.Website.Server.Services.NebaApiConfiguration ApiConfiguration
 @inject IHttpClientFactory HttpClientFactory
-@inject Neba.Website.Server.Notifications.DebugToastService ToastService
+@inject Neba.Website.Server.Notifications.ToastService ToastService
 
 @if (IsDebugBuild)
 {
     <div class="debug-banner-actions">
         <button class="debug-banner-link" @onclick="ClearApiCacheAsync" type="button">Clear API Cache</button>
         <button class="debug-banner-link" @onclick="SendTestEmailAsync" type="button">Send Test Email</button>
+        <a class="debug-banner-link" href="/account/login?admin=1">Log in as Admin</a>
     </div>
 }
 

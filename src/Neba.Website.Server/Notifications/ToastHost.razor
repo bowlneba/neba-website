@@ -1,0 +1,67 @@
+@implements IDisposable
+
+@using Microsoft.AspNetCore.WebUtilities
+
+@inject ToastService ToastService
+@inject NavigationManager NavigationManager
+
+@if (ToastService.Current is not null)
+{
+    <NebaToast Title="@ToastService.Current.Title"
+               Message="@ToastService.Current.Message"
+               Severity="@ToastService.Current.Severity"
+               OnDismiss="ToastService.Dismiss" />
+}
+
+@code {
+    private static readonly string[] RedirectToastMarkers = ["loginSuccess", "loggedOut", "logoutError"];
+
+    protected override void OnInitialized()
+    {
+        ToastService.OnChange += HandleStateChange;
+        ShowRedirectToastIfPresent();
+    }
+
+    private void HandleStateChange() => InvokeAsync(StateHasChanged);
+
+    private void ShowRedirectToastIfPresent()
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        string? title = null;
+        string? message = null;
+        var severity = NotifySeverity.Success;
+
+        if (query.ContainsKey("loginSuccess"))
+        {
+            title = "Logged In";
+            message = "You have been logged in successfully.";
+        }
+        else if (query.ContainsKey("loggedOut"))
+        {
+            title = "Logged Out";
+            message = "You have been logged out.";
+        }
+        else if (query.ContainsKey("logoutError"))
+        {
+            title = "Logout Error";
+            message = "You were signed out, but the server logout request failed.";
+            severity = NotifySeverity.Error;
+        }
+
+        if (title is null)
+            return;
+
+        ToastService.Show(title, message!, severity);
+
+        var remainingQuery = query
+            .Where(kvp => !RedirectToastMarkers.Contains(kvp.Key))
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString());
+
+        var strippedUri = QueryHelpers.AddQueryString(uri.GetLeftPart(UriPartial.Path), remainingQuery!);
+        NavigationManager.NavigateTo(strippedUri, replace: true);
+    }
+
+    public void Dispose() => ToastService.OnChange -= HandleStateChange;
+}

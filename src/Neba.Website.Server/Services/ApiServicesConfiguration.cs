@@ -42,6 +42,7 @@ internal static class ApiServicesConfiguration
 
             services.AddSingleton(sp => sp.GetRequiredService<IOptions<NebaApiConfiguration>>().Value);
             services.AddScoped<ApiExecutor>();
+            services.AddTransient<BearerTokenHandler>();
 
             services.RegisterApiEndpoint<IDocumentsApi>();
             services.RegisterApiEndpoint<INewsApi>();
@@ -67,7 +68,8 @@ internal static class ApiServicesConfiguration
                 {
                     var apiConfig = sp.GetRequiredService<NebaApiConfiguration>();
                     client.BaseAddress = apiConfig.BaseUrl;
-                });
+                })
+                .AddHttpMessageHandler<BearerTokenHandler>();
         }
     }
 }

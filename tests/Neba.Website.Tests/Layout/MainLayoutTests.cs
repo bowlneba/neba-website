@@ -23,12 +23,13 @@ public sealed class MainLayoutTests : IDisposable
         // Setup bUnit's JSInterop to handle module imports (used by NavMenu)
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         _ctx.JSInterop.SetupModule("./Layout/NavMenu.razor.js");
+        _ctx.AddAuthorization();
 
         var mockWebHostEnvironment = new Mock<IWebHostEnvironment>(MockBehavior.Strict);
         mockWebHostEnvironment.Setup(x => x.EnvironmentName).Returns("Development");
 
         _ctx.Services.AddSingleton(mockWebHostEnvironment.Object);
-        _ctx.Services.AddScoped<DebugToastService>();
+        _ctx.Services.AddScoped<ToastService>();
         _ctx.Services.AddHttpClient();
         _ctx.Services.AddSingleton(new NebaApiConfiguration
         {

@@ -1,6 +1,6 @@
 namespace Neba.Website.Server.Notifications;
 
-internal sealed class DebugToastService : IDisposable
+internal sealed class ToastService : IDisposable
 {
     private CancellationTokenSource? _cts;
 

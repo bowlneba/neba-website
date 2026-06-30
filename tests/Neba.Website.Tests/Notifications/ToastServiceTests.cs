@@ -4,14 +4,14 @@ using Neba.Website.Server.Notifications;
 namespace Neba.Website.Tests.Notifications;
 
 [UnitTest]
-[Component("Website.Notifications.DebugToastService")]
-public sealed class DebugToastServiceTests
+[Component("Website.Notifications.ToastService")]
+public sealed class ToastServiceTests
 {
     [Fact(DisplayName = "Show should set Current to the provided notification")]
     public void Show_ShouldSetCurrent_ToProvidedNotification()
     {
         // Arrange
-        using var sut = new DebugToastService();
+        using var sut = new ToastService();
 
         // Act
         sut.Show("Alert", "Something happened", NotifySeverity.Warning);
@@ -27,7 +27,7 @@ public sealed class DebugToastServiceTests
     public void Show_ShouldFireOnChange()
     {
         // Arrange
-        using var sut = new DebugToastService();
+        using var sut = new ToastService();
         var fired = 0;
         sut.OnChange += () => fired++;
 
@@ -42,7 +42,7 @@ public sealed class DebugToastServiceTests
     public void Show_ShouldNotThrow_WhenNoOnChangeSubscribers()
     {
         // Arrange
-        using var sut = new DebugToastService();
+        using var sut = new ToastService();
 
         // Act & Assert
         Should.NotThrow(() => sut.Show("Title", "Message", NotifySeverity.Info));
@@ -52,7 +52,7 @@ public sealed class DebugToastServiceTests
     public void Show_ShouldReplaceExistingNotification()
     {
         // Arrange
-        using var sut = new DebugToastService();
+        using var sut = new ToastService();
         sut.Show("First", "First message", NotifySeverity.Info);
 
         // Act
@@ -67,7 +67,7 @@ public sealed class DebugToastServiceTests
     public void Dismiss_ShouldClearCurrent()
     {
         // Arrange
-        using var sut = new DebugToastService();
+        using var sut = new ToastService();
         sut.Show("Title", "Message", NotifySeverity.Success);
 
         // Act
@@ -81,7 +81,7 @@ public sealed class DebugToastServiceTests
     public void Dismiss_ShouldFireOnChange()
     {
         // Arrange
-        using var sut = new DebugToastService();
+        using var sut = new ToastService();
         sut.Show("Title", "Message", NotifySeverity.Success);
         var fired = 0;
         sut.OnChange += () => fired++;
@@ -97,7 +97,7 @@ public sealed class DebugToastServiceTests
     public void Dismiss_ShouldNotThrow_WhenNothingIsShown()
     {
         // Arrange
-        using var sut = new DebugToastService();
+        using var sut = new ToastService();
 
         // Act & Assert
         Should.NotThrow(() => sut.Dismiss());
@@ -107,7 +107,7 @@ public sealed class DebugToastServiceTests
     public void Dismiss_ShouldNotThrow_WhenCalledAfterDismiss()
     {
         // Arrange
-        using var sut = new DebugToastService();
+        using var sut = new ToastService();
         sut.Show("Title", "Message", NotifySeverity.Info);
         sut.Dismiss();
 
@@ -119,7 +119,7 @@ public sealed class DebugToastServiceTests
     public void Dispose_ShouldLeaveCurrent_Null_WhenIdle()
     {
         // Arrange
-        using var sut = new DebugToastService();
+        using var sut = new ToastService();
 
         // Act
         sut.Dispose();
@@ -132,7 +132,7 @@ public sealed class DebugToastServiceTests
     public void Dispose_ShouldNotClearCurrent_WhenNotificationIsActive()
     {
         // Arrange
-        using var sut = new DebugToastService();
+        using var sut = new ToastService();
         sut.Show("Title", "Message", NotifySeverity.Warning);
 
         // Act

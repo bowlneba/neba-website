@@ -18,7 +18,7 @@ builder.Services.AddMaps(builder.Configuration);
 builder.Services.AddApexCharts();
 builder.Services.AddScoped<IStatsApiService, StatsApiService>();
 
-builder.Services.AddAccountServices();
+builder.Services.AddAccountServices(builder.Configuration);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -28,7 +28,8 @@ builder.Services.AddRazorComponents()
 builder.Services.AddOutputCache();
 
 builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
-builder.Services.AddScoped<Neba.Website.Server.Notifications.DebugToastService>();
+builder.Services.AddScoped<Neba.Website.Server.Notifications.ToastService>();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITournamentApiService, TournamentApiService>();
 
 var app = builder.Build();

@@ -8,13 +8,13 @@ using Neba.Website.Server.Notifications;
 namespace Neba.Website.Tests.Notifications;
 
 [UnitTest]
-[Component("Website.Notifications.DebugToastHost")]
-public sealed class DebugToastHostTests : IDisposable
+[Component("Website.Notifications.ToastHost")]
+public sealed class ToastHostTests : IDisposable
 {
     private readonly BunitContext _ctx = new();
-    private readonly DebugToastService _toastService = new();
+    private readonly ToastService _toastService = new();
 
-    public DebugToastHostTests()
+    public ToastHostTests()
     {
         _ctx.Services.AddScoped(_ => _toastService);
     }
@@ -29,7 +29,7 @@ public sealed class DebugToastHostTests : IDisposable
     public void Render_ShouldRenderNothing_WhenNoNotificationIsActive()
     {
         // Arrange & Act
-        var cut = _ctx.Render<DebugToastHost>();
+        var cut = _ctx.Render<ToastHost>();
 
         // Assert
         cut.Markup.Trim().ShouldBeEmpty();
@@ -39,7 +39,7 @@ public sealed class DebugToastHostTests : IDisposable
     public void Render_ShouldRenderNebaToast_WhenNotificationIsActive()
     {
         // Arrange
-        var cut = _ctx.Render<DebugToastHost>();
+        var cut = _ctx.Render<ToastHost>();
 
         // Act
         _toastService.Show("Cache Cleared", "5 entries evicted.", NotifySeverity.Success);
@@ -54,7 +54,7 @@ public sealed class DebugToastHostTests : IDisposable
     public void Render_ShouldClearToast_AfterDismiss()
     {
         // Arrange
-        var cut = _ctx.Render<DebugToastHost>();
+        var cut = _ctx.Render<ToastHost>();
         _toastService.Show("Title", "Message", NotifySeverity.Info);
         cut.WaitForState(() => cut.Markup.Contains("Title", StringComparison.Ordinal));
 
