@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Security.Login;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Security;
 using Neba.Website.Server.Account;
 
 using Refit;
@@ -109,14 +110,12 @@ public sealed class LoginTests : IDisposable
     public void Submit_ShouldSignInAndNavigateHome_WhenCredentialsAreValid()
     {
         // Arrange
-        var loginResponse = new LoginResponse
-        {
-            AccessToken = BuildJwt(),
-            RefreshToken = "refresh-token",
-            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(15),
-            UserId = "user-1",
-            Email = "bowler@bowlneba.com"
-        };
+        var loginResponse = LoginResponseFactory.Create(
+            accessToken: BuildJwt(),
+            refreshToken: "refresh-token",
+            expiresAt: DateTimeOffset.UtcNow.AddMinutes(15),
+            userId: "user-1",
+            email: "bowler@bowlneba.com");
 
         var response = new Mock<IApiResponse<LoginResponse>>(MockBehavior.Strict);
         response.Setup(r => r.IsSuccessStatusCode).Returns(true);

@@ -103,8 +103,8 @@ public sealed class GetCurrentUserQueryHandlerIntegrationTests(SecurityDbContext
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var user = await SeedUserAsync(userManager);
 
-        await roleManager.CreateAsync(new ApplicationRole(Roles.Admin));
-        await roleManager.CreateAsync(new ApplicationRole(Roles.Member));
+        await roleManager.CreateAsync(ApplicationRoleFactory.Create(name: Roles.Admin));
+        await roleManager.CreateAsync(ApplicationRoleFactory.Create(name: Roles.Member));
         await userManager.AddToRoleAsync(user, Roles.Admin);
         await userManager.AddToRoleAsync(user, Roles.Member);
 

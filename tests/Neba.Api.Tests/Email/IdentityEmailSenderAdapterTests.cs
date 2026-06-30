@@ -2,6 +2,7 @@ using Neba.Api.Email;
 using Neba.Api.Security.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Email;
+using Neba.TestFactory.Security;
 
 namespace Neba.Api.Tests.Email;
 
@@ -11,7 +12,7 @@ public sealed class IdentityEmailSenderAdapterTests
 {
     private readonly Mock<IEmailSender> _sender;
     private readonly IdentityEmailSenderAdapter _sut;
-    private readonly ApplicationUser _user = new();
+    private readonly ApplicationUser _user = ApplicationUserFactory.Create();
 
     public IdentityEmailSenderAdapterTests()
     {
