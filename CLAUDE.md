@@ -191,6 +191,8 @@ When writing Configure tests with `Factory.Create<TEndpoint>()`, several categor
 
 5. **`await Send.OkAsync(...)` at the end of `HandleAsync`** — When this is the last statement, removing it is equivalent (no assertion fails on a void-like call with no state side-effects visible to unit tests). Use `// Stryker disable once Statement` before the final `Send.OkAsync` call.
 
+6. **`Send.CreatedAtAsync(...)` throws `InvalidOperationException` in `Factory.Create<>()` unit tests** — `CreatedAtAsync` resolves a `LinkGenerator` from the endpoint's `HttpContext.RequestServices` to build the `Location` header, and `Factory.Create<>()` does not register one. Rather than skip testing the success path, assert that the call throws with `"LinkGenerator"` in the message — this proves the success branch was reached (the `ErrorOr` mapping and `Strict` mock setup already verify the command was dispatched with the right arguments before the throw). See `RegisterEndpointTests.HandleAsync_ShouldMapRequestToCommandAndTakeSuccessBranch_WhenRegistrationSucceeds` for the pattern.
+
 **`ignore-methods` for API layer** (all five categories above): `"Description"`, `"Options"`, `"Get"`, `"Version"` — add all four to stryker-config.json. Use `// Stryker disable once Statement` inline for the `return;` and `Send.OkAsync` guards.
 
 ### API Layer Mutation Testing — `static readonly Lazy<>` Limitation
