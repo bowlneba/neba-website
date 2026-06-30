@@ -57,6 +57,9 @@ internal static class SecurityConfiguration
             if (string.IsNullOrWhiteSpace(jwtSettings.SigningKey))
                 throw new InvalidOperationException("JwtSettings:SigningKey must not be empty.");
 
+            if (Encoding.UTF8.GetByteCount(jwtSettings.SigningKey) < 32)
+                throw new InvalidOperationException("JwtSettings:SigningKey must be at least 32 bytes (256 bits) for HMAC-SHA256.");
+
             builder.Services.AddSingleton(jwtSettings);
             builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
