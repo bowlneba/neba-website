@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -35,7 +34,7 @@ public sealed class AccountConfigurationTests
         options.LogoutPath.Value.ShouldBe("/account/logout");
     }
 
-    [Fact(DisplayName = "AddAccountServices should register the cascading authentication state provider")]
+    [Fact(DisplayName = "AddAccountServices should register the cascading authentication state supplier")]
     public void AddAccountServices_ShouldRegisterCascadingAuthenticationState()
     {
         // Arrange
@@ -45,8 +44,8 @@ public sealed class AccountConfigurationTests
         // Act
         services.AddAccountServices(configuration);
 
-        // Assert
-        services.ShouldContain(sd => sd.ServiceType == typeof(AuthenticationStateProvider));
+        // Assert (ICascadingValueSupplier is internal to Microsoft.AspNetCore.Components)
+        services.ShouldContain(sd => sd.ServiceType.Name == "ICascadingValueSupplier");
     }
 
     [Fact(DisplayName = "AddAccountServices should bind AdminLoginSettings from the Admin configuration section")]

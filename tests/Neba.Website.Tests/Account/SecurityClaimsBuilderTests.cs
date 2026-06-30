@@ -15,7 +15,6 @@ public sealed class SecurityClaimsBuilderTests
 {
     private static readonly string[] ExpectedRoles = ["Admin", "Editor"];
 
-
     [Fact(DisplayName = "Should include the NameIdentifier and Email claims")]
     public void BuildPrincipal_ShouldIncludeIdentityClaims()
     {
@@ -48,7 +47,13 @@ public sealed class SecurityClaimsBuilderTests
     public void BuildPrincipal_ShouldIncludeRoleClaims_FromJwtPayload()
     {
         // Arrange
-        var jwt = BuildJwt(new { sub = "user-1", role = ExpectedRoles });
+        // JwtTokenService builds the JwtSecurityToken from raw Claims (no outbound claim-type
+        // mapping), so the JSON payload key is the full ClaimTypes.Role URI, not "role".
+        var jwt = BuildJwt(new Dictionary<string, object>
+        {
+            ["sub"] = "user-1",
+            [ClaimTypes.Role] = ExpectedRoles,
+        });
 
         // Act
         var principal = SecurityClaimsBuilder.BuildPrincipal(jwt, "user-1", "bowler@bowlneba.com");
@@ -61,7 +66,11 @@ public sealed class SecurityClaimsBuilderTests
     public void BuildPrincipal_ShouldIncludeUsbcId_FromJwtPayload()
     {
         // Arrange
-        var jwt = BuildJwt(new { sub = "user-1", usbc_id = "12345" });
+        var jwt = BuildJwt(new Dictionary<string, object>
+        {
+            ["sub"] = "user-1",
+            ["usbc_id"] = "12345",
+        });
 
         // Act
         var principal = SecurityClaimsBuilder.BuildPrincipal(jwt, "user-1", "bowler@bowlneba.com");
@@ -74,7 +83,12 @@ public sealed class SecurityClaimsBuilderTests
     public void BuildPrincipal_ShouldIgnoreOtherJwtClaims()
     {
         // Arrange
-        var jwt = BuildJwt(new { sub = "user-1", exp = 1234567890, iss = "neba-api" });
+        var jwt = BuildJwt(new Dictionary<string, object>
+        {
+            ["sub"] = "user-1",
+            ["exp"] = 1234567890,
+            ["iss"] = "neba-api",
+        });
 
         // Act
         var principal = SecurityClaimsBuilder.BuildPrincipal(jwt, "user-1", "bowler@bowlneba.com");

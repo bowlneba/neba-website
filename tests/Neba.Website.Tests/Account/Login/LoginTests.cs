@@ -35,6 +35,7 @@ public sealed class LoginTests : IDisposable
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(new AdminLoginSettings());
         _ctx.Services.AddSingleton(NullLogger<Neba.Website.Server.Account.Login.Login>.Instance);
+        _ctx.SetRendererInfo(new RendererInfo("Server", isInteractive: true));
     }
 
     public void Dispose() => _ctx.Dispose();
