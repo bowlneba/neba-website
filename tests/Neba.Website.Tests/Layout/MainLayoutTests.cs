@@ -1,5 +1,6 @@
 using Bunit;
 
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -35,6 +36,8 @@ public sealed class MainLayoutTests : IDisposable
         {
             BaseUrl = new Uri("https://api.bowlneba.test")
         });
+
+        _ctx.SetRendererInfo(new RendererInfo("Server", isInteractive: true));
     }
 
     public void Dispose() => _ctx.Dispose();

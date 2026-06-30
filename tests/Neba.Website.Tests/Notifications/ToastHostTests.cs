@@ -1,5 +1,6 @@
 using Bunit;
 
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 
 using Neba.TestFactory.Attributes;
@@ -17,6 +18,7 @@ public sealed class ToastHostTests : IDisposable
     public ToastHostTests()
     {
         _ctx.Services.AddScoped(_ => _toastService);
+        _ctx.SetRendererInfo(new RendererInfo("Server", isInteractive: true));
     }
 
     public void Dispose()
