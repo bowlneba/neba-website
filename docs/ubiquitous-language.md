@@ -1662,7 +1662,10 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 - Namespace: `Neba.Api.Security.Domain`
 - Type: `ApplicationRole` (extends `IdentityRole<Ulid>`)
-- Known roles: `Roles.Admin`
+- Known roles: `Roles.Admin`, `Roles.Webmaster`, `Roles.Member`
+- `Admin` — full access to all resources, including admin-only endpoints (e.g., register user, reset password)
+- `Webmaster` — access to website management features (defined but not yet assigned to any endpoint)
+- `Member` — standard authenticated user access (defined but not yet assigned to any endpoint)
 
 ---
 
