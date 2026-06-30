@@ -31,8 +31,8 @@ public sealed class AccountConfigurationTests
         options.Cookie.HttpOnly.ShouldBeTrue();
         options.SlidingExpiration.ShouldBeTrue();
         options.ExpireTimeSpan.ShouldBe(TimeSpan.FromDays(7));
-        options.LoginPath.ShouldBe("/account/login");
-        options.LogoutPath.ShouldBe("/account/logout");
+        options.LoginPath.Value.ShouldBe("/account/login");
+        options.LogoutPath.Value.ShouldBe("/account/logout");
     }
 
     [Fact(DisplayName = "AddAccountServices should register the cascading authentication state provider")]

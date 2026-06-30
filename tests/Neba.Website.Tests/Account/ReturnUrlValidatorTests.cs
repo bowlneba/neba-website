@@ -14,10 +14,10 @@ public sealed class ReturnUrlValidatorTests
     [InlineData("//evil.com", TestDisplayName = "Protocol-relative URL is rejected")]
     [InlineData("https://evil.com", TestDisplayName = "Absolute URL is rejected")]
     [InlineData("evil.com", TestDisplayName = "URL without leading slash is rejected")]
-    public void GetSafeReturnUrl_ShouldReturnRoot_WhenUrlIsUnsafe(string? returnUrl)
+    public void GetSafeReturnUrl_ShouldReturnRoot_WhenUrlIsUnsafe(string? input)
     {
         // Act
-        var result = ReturnUrlValidator.GetSafeReturnUrl(returnUrl);
+        var result = ReturnUrlValidator.GetSafeReturnUrl(input);
 
         // Assert
         result.ShouldBe("/");
@@ -27,12 +27,12 @@ public sealed class ReturnUrlValidatorTests
     [InlineData("/", TestDisplayName = "Root path")]
     [InlineData("/tournaments", TestDisplayName = "Simple relative path")]
     [InlineData("/tournaments/2026?season=1", TestDisplayName = "Relative path with query string")]
-    public void GetSafeReturnUrl_ShouldReturnGivenUrl_WhenUrlIsSafe(string returnUrl)
+    public void GetSafeReturnUrl_ShouldReturnGivenUrl_WhenUrlIsSafe(string input)
     {
         // Act
-        var result = ReturnUrlValidator.GetSafeReturnUrl(returnUrl);
+        var result = ReturnUrlValidator.GetSafeReturnUrl(input);
 
         // Assert
-        result.ShouldBe(returnUrl);
+        result.ShouldBe(input);
     }
 }

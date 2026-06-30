@@ -2,6 +2,8 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 
+using Microsoft.AspNetCore.Authentication;
+
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Account;
 
@@ -11,6 +13,9 @@ namespace Neba.Website.Tests.Account;
 [Component("Website.Account.SecurityClaimsBuilder")]
 public sealed class SecurityClaimsBuilderTests
 {
+    private static readonly string[] ExpectedRoles = ["Admin", "Editor"];
+
+
     [Fact(DisplayName = "Should include the NameIdentifier and Email claims")]
     public void BuildPrincipal_ShouldIncludeIdentityClaims()
     {
@@ -43,13 +48,13 @@ public sealed class SecurityClaimsBuilderTests
     public void BuildPrincipal_ShouldIncludeRoleClaims_FromJwtPayload()
     {
         // Arrange
-        var jwt = BuildJwt(new { sub = "user-1", role = new[] { "Admin", "Editor" } });
+        var jwt = BuildJwt(new { sub = "user-1", role = ExpectedRoles });
 
         // Act
         var principal = SecurityClaimsBuilder.BuildPrincipal(jwt, "user-1", "bowler@bowlneba.com");
 
         // Assert
-        principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ShouldBe(["Admin", "Editor"], ignoreOrder: true);
+        principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ShouldBe(ExpectedRoles, ignoreOrder: true);
     }
 
     [Fact(DisplayName = "Should pick up the usbc_id claim from the JWT payload")]

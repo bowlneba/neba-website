@@ -146,7 +146,7 @@ public sealed class LoginTests : IDisposable
         nav.Uri.ShouldEndWith("/");
     }
 
-    private BunitContext.BunitRenderedComponent<Neba.Website.Server.Account.Login.Login> RenderLogin()
+    private IRenderedComponent<Neba.Website.Server.Account.Login.Login> RenderLogin()
     {
         var httpContext = new DefaultHttpContext
         {
