@@ -27,18 +27,11 @@ internal sealed class ResetPasswordCommandHandler(
 
         var tempPassword = GenerateTempPassword();
 
-        var removeResult = await userManager.RemovePasswordAsync(user);
-        if (!removeResult.Succeeded)
+        var resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
+        var resetResult = await userManager.ResetPasswordAsync(user, resetToken, tempPassword);
+        if (!resetResult.Succeeded)
         {
-            return removeResult.Errors
-                .Select(error => Error.Failure(error.Code, error.Description))
-                .ToList();
-        }
-
-        var addResult = await userManager.AddPasswordAsync(user, tempPassword);
-        if (!addResult.Succeeded)
-        {
-            return addResult.Errors
+            return resetResult.Errors
                 .Select(error => Error.Failure(error.Code, error.Description))
                 .ToList();
         }
