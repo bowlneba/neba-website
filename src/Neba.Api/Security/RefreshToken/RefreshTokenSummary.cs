@@ -11,7 +11,7 @@ internal sealed class RefreshTokenSummary : Summary<RefreshTokenEndpoint>
     public RefreshTokenSummary()
     {
         Summary = "Exchanges a refresh token for a new token pair.";
-        Description = "Validates the refresh token (7-day window, hashed at rest) and issues a new access token and rotated refresh token. Always returns 401 for invalid or expired tokens.";
+        Description = "Validates the refresh token (7-day window, hashed at rest) and issues a new access token and refresh token, overwriting the stored token so the previous one no longer validates. Always returns 401 for invalid, expired, or superseded tokens.";
 
 #pragma warning disable S1075
         Response(200, "Token refresh successful.",
@@ -28,7 +28,7 @@ internal sealed class RefreshTokenSummary : Summary<RefreshTokenEndpoint>
             });
 #pragma warning restore S1075
 
-        Response(401, "Invalid, expired, or already-rotated refresh token.");
+        Response(401, "Invalid, expired, or superseded refresh token (a newer token has since been issued).");
         Response(422, "Validation failed (missing or malformed UserId or RefreshToken).");
     }
 }

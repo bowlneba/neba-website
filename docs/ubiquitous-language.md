@@ -1641,6 +1641,54 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 ---
 
+## Security
+
+### Application User
+
+**Definition**: An ASP.NET Identity account used to authenticate against the NEBA API — admin/staff login, not a public Bowler profile. Separate bounded context from `Bowlers`; the optional `UsbcId` is a typed link to a bowler's USBC number, not a foreign key to the `Bowler` aggregate.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Security.Domain`
+- Type: `ApplicationUser` (extends `IdentityUser<Ulid>`)
+
+---
+
+### Application Role
+
+**Definition**: An ASP.NET Identity role granting a named set of permissions to an Application User (e.g., Admin). Roles drive endpoint authorization via `Roles()`/`Policies()` on FastEndpoints.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Security.Domain`
+- Type: `ApplicationRole` (extends `IdentityRole<Ulid>`)
+- Known roles: `Roles.Admin`
+
+---
+
+### Token Pair
+
+**Definition**: The pair of credentials issued together on a successful login or refresh — a short-lived signed JWT access token and a longer-lived opaque refresh token. Ephemeral; never persisted as-is (see Stored Refresh Token).
+
+**In Code**:
+
+- Namespace: `Neba.Api.Security.Domain`
+- Type: `TokenPair` (record: `AccessToken`, `RefreshToken`, `ExpiresAt`)
+
+---
+
+### Stored Refresh Token
+
+**Definition**: The server-side record of an issued refresh token, kept via ASP.NET Identity's authentication token store. Holds a SHA-256 hash of the raw token (never the raw value) plus the issue time, so validity can be checked without retaining the secret itself. One stored token per user — issuing a new one overwrites the previous, which is how rotation is enforced (see `RefreshTokenStore`).
+
+**In Code**:
+
+- Namespace: `Neba.Api.Security.Domain`
+- Type: `StoredRefreshToken` (record: `Hash`, `IssuedAt`)
+- Helper: `RefreshTokenStore` (centralizes the Identity token-provider/name pair and store/retrieve/remove operations)
+
+---
+
 ## Maintaining This Document
 
 This is a **living document**. As the project evolves:

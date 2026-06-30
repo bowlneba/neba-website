@@ -20,9 +20,6 @@ internal sealed class RefreshTokenCommandHandler(
     ILogger<RefreshTokenCommandHandler> logger)
         : ICommandHandler<RefreshTokenCommand, LoginDto>
 {
-    private const string RefreshTokenProvider = "RefreshToken";
-    private const string RefreshTokenName = "RefreshToken";
-
     public async Task<ErrorOr<LoginDto>> HandleAsync(RefreshTokenCommand command, CancellationToken cancellationToken)
     {
         var user = await userManager.FindByIdAsync(command.UserId.ToString());
@@ -31,7 +28,7 @@ internal sealed class RefreshTokenCommandHandler(
             return RefreshTokenErrors.InvalidRefreshToken;
         }
 
-        var storedJson = await userManager.GetAuthenticationTokenAsync(user, RefreshTokenProvider, RefreshTokenName);
+        var storedJson = await RefreshTokenStore.GetStoredJsonAsync(userManager, user);
         if (storedJson is null)
         {
             return RefreshTokenErrors.InvalidRefreshToken;
@@ -67,7 +64,10 @@ internal sealed class RefreshTokenCommandHandler(
         var roles = await userManager.GetRolesAsync(user);
         var tokenPair = jwtTokenService.CreateTokenPair(user, roles.AsReadOnly());
 
-        await StoreRefreshTokenAsync(user, tokenPair.RefreshToken);
+        // Single stored token per user, overwritten on each refresh: rotation is enforced by
+        // replacement, not by tracking a token family/generation, so there's no replay signal
+        // beyond "the presented token no longer matches what's stored."
+        await RefreshTokenStore.StoreAsync(userManager, user, tokenPair.RefreshToken, timeProvider);
 
         return new LoginDto
         {
@@ -77,19 +77,6 @@ internal sealed class RefreshTokenCommandHandler(
             UserId = user.Id,
             Email = user.Email!
         };
-    }
-
-    private async Task StoreRefreshTokenAsync(ApplicationUser user, string rawToken)
-    {
-        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
-        var stored = new StoredRefreshToken
-        {
-            Hash = hash,
-            IssuedAt = timeProvider.GetUtcNow()
-        };
-        var json = JsonSerializer.Serialize(stored);
-
-        await userManager.SetAuthenticationTokenAsync(user, RefreshTokenProvider, RefreshTokenName, json);
     }
 }
 
