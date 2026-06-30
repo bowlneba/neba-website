@@ -14,8 +14,11 @@ public static class RegisterRequestFactory
         string? password = null)
         => new()
         {
-            Email = email ?? ValidEmail,
-            Password = password ?? ValidPassword,
+            Input = new RegisterInput
+            {
+                Email = email ?? ValidEmail,
+                Password = password ?? ValidPassword,
+            }
         };
 
     internal static IReadOnlyCollection<RegisterRequest> Bogus(int count, Faker faker)
@@ -23,8 +26,11 @@ public static class RegisterRequestFactory
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new RegisterRequest
         {
-            Email = faker.Internet.Email(),
-            Password = faker.Internet.Password(8, false, "\\w", $"{faker.Random.Int(0, 9)}"),
+            Input = new RegisterInput
+            {
+                Email = faker.Internet.Email(),
+                Password = faker.Internet.Password(8, false, "\\w", $"{faker.Random.Int(0, 9)}"),
+            }
         })];
     }
 

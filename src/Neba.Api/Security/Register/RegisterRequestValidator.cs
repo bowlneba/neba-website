@@ -10,7 +10,7 @@ internal sealed class RegisterRequestValidator : Validator<RegisterRequest>
 {
     public RegisterRequestValidator()
     {
-        RuleFor(r => r.Email)
+        RuleFor(r => r.Input.Email)
             .NotEmpty()
             .WithErrorCode("RegisterRequest.EmailRequired")
             .WithMessage("Email is required.")
@@ -18,7 +18,7 @@ internal sealed class RegisterRequestValidator : Validator<RegisterRequest>
             .WithErrorCode("RegisterRequest.EmailInvalid")
             .WithMessage("A valid email address is required.");
 
-        RuleFor(r => r.Password)
+        RuleFor(r => r.Input.Password)
             .NotEmpty()
             .WithErrorCode("RegisterRequest.PasswordRequired")
             .WithMessage("Password is required.")

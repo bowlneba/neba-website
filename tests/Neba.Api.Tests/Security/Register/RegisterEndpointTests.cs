@@ -26,7 +26,7 @@ public sealed class RegisterEndpointTests
         var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<RegisterCommand, Ulid>>(MockBehavior.Strict);
         commandHandlerMock
             .Setup(h => h.HandleAsync(
-                It.Is<RegisterCommand>(c => c.Email == request.Email && c.Password == request.Password),
+                It.Is<RegisterCommand>(c => c.Email == request.Input.Email && c.Password == request.Input.Password),
                 ct))
             .ReturnsAsync(userId);
 

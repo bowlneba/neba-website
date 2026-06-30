@@ -30,7 +30,7 @@ public sealed class RegisterRequestValidatorTests
     {
         // Arrange
 #nullable disable
-        var request = new RegisterRequest { Email = null, Password = RegisterRequestFactory.ValidPassword };
+        var request = new RegisterRequest { Input = new RegisterInput { Email = null, Password = RegisterRequestFactory.ValidPassword } };
 #nullable enable
 
         // Act
@@ -39,7 +39,7 @@ public sealed class RegisterRequestValidatorTests
         // Assert
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e =>
-            e.PropertyName == nameof(RegisterRequest.Email)
+            e.PropertyName == $"Input.{nameof(RegisterInput.Email)}"
             && e.ErrorCode == "RegisterRequest.EmailRequired"
             && e.ErrorMessage == "Email is required.");
     }
@@ -50,7 +50,7 @@ public sealed class RegisterRequestValidatorTests
     public void Validate_ShouldFailWithEmailRequired_WhenEmailIsEmptyOrWhitespace(string email)
     {
         // Arrange
-        var request = new RegisterRequest { Email = email, Password = RegisterRequestFactory.ValidPassword };
+        var request = new RegisterRequest { Input = new RegisterInput { Email = email, Password = RegisterRequestFactory.ValidPassword } };
 
         // Act
         var result = _validator.Validate(request);
@@ -58,7 +58,7 @@ public sealed class RegisterRequestValidatorTests
         // Assert
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e =>
-            e.PropertyName == nameof(RegisterRequest.Email)
+            e.PropertyName == $"Input.{nameof(RegisterInput.Email)}"
             && e.ErrorCode == "RegisterRequest.EmailRequired"
             && e.ErrorMessage == "Email is required.");
     }
@@ -70,7 +70,7 @@ public sealed class RegisterRequestValidatorTests
     public void Validate_ShouldFailWithEmailInvalid_WhenEmailIsNotValidFormat(string email)
     {
         // Arrange
-        var request = new RegisterRequest { Email = email, Password = RegisterRequestFactory.ValidPassword };
+        var request = new RegisterRequest { Input = new RegisterInput { Email = email, Password = RegisterRequestFactory.ValidPassword } };
 
         // Act
         var result = _validator.Validate(request);
@@ -78,7 +78,7 @@ public sealed class RegisterRequestValidatorTests
         // Assert
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e =>
-            e.PropertyName == nameof(RegisterRequest.Email)
+            e.PropertyName == $"Input.{nameof(RegisterInput.Email)}"
             && e.ErrorCode == "RegisterRequest.EmailInvalid"
             && e.ErrorMessage == "A valid email address is required.");
     }
@@ -88,7 +88,7 @@ public sealed class RegisterRequestValidatorTests
     {
         // Arrange
 #nullable disable
-        var request = new RegisterRequest { Email = RegisterRequestFactory.ValidEmail, Password = null };
+        var request = new RegisterRequest { Input = new RegisterInput { Email = RegisterRequestFactory.ValidEmail, Password = null } };
 #nullable enable
 
         // Act
@@ -97,7 +97,7 @@ public sealed class RegisterRequestValidatorTests
         // Assert
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e =>
-            e.PropertyName == nameof(RegisterRequest.Password)
+            e.PropertyName == $"Input.{nameof(RegisterInput.Password)}"
             && e.ErrorCode == "RegisterRequest.PasswordRequired"
             && e.ErrorMessage == "Password is required.");
     }
@@ -108,7 +108,7 @@ public sealed class RegisterRequestValidatorTests
     public void Validate_ShouldFailWithPasswordRequired_WhenPasswordIsEmptyOrWhitespace(string password)
     {
         // Arrange
-        var request = new RegisterRequest { Email = RegisterRequestFactory.ValidEmail, Password = password };
+        var request = new RegisterRequest { Input = new RegisterInput { Email = RegisterRequestFactory.ValidEmail, Password = password } };
 
         // Act
         var result = _validator.Validate(request);
@@ -116,7 +116,7 @@ public sealed class RegisterRequestValidatorTests
         // Assert
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e =>
-            e.PropertyName == nameof(RegisterRequest.Password)
+            e.PropertyName == $"Input.{nameof(RegisterInput.Password)}"
             && e.ErrorCode == "RegisterRequest.PasswordRequired"
             && e.ErrorMessage == "Password is required.");
     }
@@ -127,7 +127,7 @@ public sealed class RegisterRequestValidatorTests
     public void Validate_ShouldFailWithPasswordTooShort_WhenPasswordIsTooShort(string password)
     {
         // Arrange
-        var request = new RegisterRequest { Email = RegisterRequestFactory.ValidEmail, Password = password };
+        var request = new RegisterRequest { Input = new RegisterInput { Email = RegisterRequestFactory.ValidEmail, Password = password } };
 
         // Act
         var result = _validator.Validate(request);
@@ -135,7 +135,7 @@ public sealed class RegisterRequestValidatorTests
         // Assert
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e =>
-            e.PropertyName == nameof(RegisterRequest.Password)
+            e.PropertyName == $"Input.{nameof(RegisterInput.Password)}"
             && e.ErrorCode == "RegisterRequest.PasswordTooShort"
             && e.ErrorMessage == "Password must be at least 8 characters.");
     }
@@ -146,7 +146,7 @@ public sealed class RegisterRequestValidatorTests
     public void Validate_ShouldFailWithPasswordRequiresDigit_WhenPasswordHasNoDigit(string password)
     {
         // Arrange
-        var request = new RegisterRequest { Email = RegisterRequestFactory.ValidEmail, Password = password };
+        var request = new RegisterRequest { Input = new RegisterInput { Email = RegisterRequestFactory.ValidEmail, Password = password } };
 
         // Act
         var result = _validator.Validate(request);
@@ -154,7 +154,7 @@ public sealed class RegisterRequestValidatorTests
         // Assert
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(e =>
-            e.PropertyName == nameof(RegisterRequest.Password)
+            e.PropertyName == $"Input.{nameof(RegisterInput.Password)}"
             && e.ErrorCode == "RegisterRequest.PasswordRequiresDigit"
             && e.ErrorMessage == "Password must contain at least one digit.");
     }

@@ -35,7 +35,7 @@ internal sealed class RegisterEndpoint(Messaging.ICommandHandler<RegisterCommand
 
     public override async Task HandleAsync(RegisterRequest req, CancellationToken ct)
     {
-        var command = new RegisterCommand { Email = req.Email, Password = req.Password };
+        var command = new RegisterCommand { Email = req.Input.Email, Password = req.Input.Password };
         var result = await _commandHandler.HandleAsync(command, ct);
 
         if (result.IsSuccess)
