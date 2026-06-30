@@ -6,27 +6,27 @@ namespace Neba.Api.Contracts.Security.Login;
 public sealed record LoginResponse
 {
     /// <summary>
-    /// Gets or sets the access token issued to the user upon successful authentication.
+    /// Gets the access token issued to the user upon successful authentication.
     /// </summary>
     public required string AccessToken { get; init; }
 
     /// <summary>
-    /// Gets or sets the refresh token issued to the user, which can be used to obtain a new access token when the current one expires.
+    /// Gets the refresh token issued to the user, which can be used to obtain a new access token when the current one expires.
     /// </summary>
     public required string RefreshToken { get; init; }
 
     /// <summary>
-    /// Gets or sets the expiration time of the access token, indicating when the token will no longer be valid.
+    /// Gets the expiration time of the access token, indicating when the token will no longer be valid.
     /// </summary>
     public required DateTimeOffset ExpiresAt { get; init; }
 
     /// <summary>
-    /// Gets or sets the unique identifier of the user who has successfully logged in.
+    /// Gets the unique identifier of the user who has successfully logged in.
     /// </summary>
     public required string UserId { get; init; }
 
     /// <summary>
-    /// Gets or sets the email address of the user who has successfully logged in.
+    /// Gets the email address of the user who has successfully logged in.
     /// </summary>
     public required string Email { get; init; }
 }

@@ -6,12 +6,12 @@ namespace Neba.Api.Contracts.Security.Login;
 public sealed record LoginRequest
 {
     /// <summary>
-    /// Gets or sets the email address of the user attempting to log in.
+    /// Gets the email address of the user attempting to log in.
     /// </summary>
     public required string Email { get; init; }
 
     /// <summary>
-    /// Gets or sets the password of the user attempting to log in.
+    /// Gets the password of the user attempting to log in.
     /// </summary>
     public required string Password { get; init; }
 }

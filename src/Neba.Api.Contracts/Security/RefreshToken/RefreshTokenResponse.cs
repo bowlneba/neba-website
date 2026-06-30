@@ -6,27 +6,27 @@ namespace Neba.Api.Contracts.Security.RefreshToken;
 public sealed record RefreshTokenResponse
 {
     /// <summary>
-    /// Gets or sets the new access token issued after a successful refresh operation.
+    /// Gets the new access token issued after a successful refresh operation.
     /// </summary>
     public required string AccessToken { get; init; }
 
     /// <summary>
-    /// Gets or sets the new refresh token issued after a successful refresh operation.
+    /// Gets the new refresh token issued after a successful refresh operation.
     /// </summary>
     public required string RefreshToken { get; init; }
 
     /// <summary>
-    /// Gets or sets the expiration time of the new access token.
+    /// Gets the expiration time of the new access token.
     /// </summary>
     public required DateTimeOffset ExpiresAt { get; init; }
 
     /// <summary>
-    /// Gets or sets the user ID associated with the refreshed tokens.
+    /// Gets the user ID associated with the refreshed tokens.
     /// </summary>
     public required string UserId { get; init; }
 
     /// <summary>
-    /// Gets or sets the email address of the user associated with the refreshed tokens.
+    /// Gets the email address of the user associated with the refreshed tokens.
     /// </summary>
     public required string Email { get; init; }
 }

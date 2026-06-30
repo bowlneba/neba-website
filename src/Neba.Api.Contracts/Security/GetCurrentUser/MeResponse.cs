@@ -6,12 +6,12 @@ namespace Neba.Api.Contracts.Security.GetCurrentUser;
 public sealed record MeResponse
 {
     /// <summary>
-    /// Gets or sets the unique identifier of the user.
+    /// Gets the unique identifier of the user.
     /// </summary>
     public required string UserId { get; init; }
 
     /// <summary>
-    /// Gets or sets the email address of the user.
+    /// Gets the email address of the user.
     /// </summary>
     public required string Email { get; init; }
 
@@ -21,7 +21,7 @@ public sealed record MeResponse
     public required IReadOnlyCollection<string> Roles { get; init; }
 
     /// <summary>
-    /// Gets or sets the USBC ID of the user, if available. This property is optional and may be null if the user does not have a USBC ID associated with their account.
+    /// Gets the USBC ID of the user, if available. This property is optional and may be null if the user does not have a USBC ID associated with their account.
     /// </summary>
     public string? UsbcId { get; init; }
 }

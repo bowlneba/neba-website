@@ -6,12 +6,12 @@ namespace Neba.Api.Contracts.Security.RefreshToken;
 public sealed record RefreshTokenRequest
 {
     /// <summary>
-    /// Gets or sets the user ID associated with the refresh token.
+    /// Gets the user ID associated with the refresh token.
     /// </summary>
     public required string UserId { get; init; }
 
     /// <summary>
-    /// Gets or sets the refresh token used to obtain a new access token.
+    /// Gets the refresh token used to obtain a new access token.
     /// </summary>
     public required string RefreshToken { get; init; }
 }
