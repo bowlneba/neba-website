@@ -16,7 +16,7 @@ public sealed record MeResponse
     public required string Email { get; init; }
 
     /// <summary>
-    /// Gets or sets the username of the user.
+    /// Gets the roles assigned to the user.
     /// </summary>
     public required IReadOnlyCollection<string> Roles { get; init; }
 
