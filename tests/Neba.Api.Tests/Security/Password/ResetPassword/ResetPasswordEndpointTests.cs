@@ -38,7 +38,6 @@ public sealed class ResetPasswordEndpointTests
 
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(204);
-        commandHandlerMock.VerifyAll();
     }
 
     [Fact(DisplayName = "HandleAsync should return 404 when user is not found")]

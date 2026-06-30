@@ -14,6 +14,10 @@ namespace Neba.Api.Security;
 
 internal static class SecurityConfiguration
 {
+    // Used by endpoints that require any authenticated user (no specific role) — see
+    // LogoutEndpoint and GetCurrentUserEndpoint, which call Policies(AuthenticatedPolicy).
+    public const string AuthenticatedPolicy = "Authenticated";
+
     extension(WebApplicationBuilder builder)
     {
         public WebApplicationBuilder AddSecurity()
@@ -77,7 +81,9 @@ internal static class SecurityConfiguration
                     };
                 });
 
-            builder.Services.AddAuthorization();
+            builder.Services
+                .AddAuthorizationBuilder()
+                .AddPolicy(AuthenticatedPolicy, policy => policy.RequireAuthenticatedUser());
 
             return builder;
         }

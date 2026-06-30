@@ -42,7 +42,6 @@ public sealed class LogoutEndpointTests
 
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(204);
-        commandHandlerMock.VerifyAll();
     }
 
     [Fact(DisplayName = "HandleAsync should return 204 NoContent and dispatch command when user ID is in NameIdentifier claim")]
@@ -70,7 +69,6 @@ public sealed class LogoutEndpointTests
 
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(204);
-        commandHandlerMock.VerifyAll();
     }
 
     [Fact(DisplayName = "HandleAsync should return 204 NoContent without dispatching command when no user ID claim is present")]

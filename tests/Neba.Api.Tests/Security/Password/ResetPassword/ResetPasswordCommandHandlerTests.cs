@@ -96,15 +96,13 @@ public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContex
         emailSender
             .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
             .Callback<EmailMessage, CancellationToken>((msg, _) => sentMessage = msg)
-            .Returns(Task.CompletedTask)
-            .Verifiable();
+            .Returns(Task.CompletedTask);
         var command = new ResetPasswordCommand { UserId = user.Id };
 
         // Act
         await CreateHandler(userManager, emailSender.Object).HandleAsync(command, ct);
 
         // Assert
-        emailSender.VerifyAll();
         sentMessage.ShouldNotBeNull();
         sentMessage!.To.ShouldBe(RegisterRequestFactory.ValidEmail);
     }
@@ -162,10 +160,10 @@ public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContex
 
     private static string ExtractTempPasswordFromBody(string htmlBody)
     {
-        const string open = "<strong>";
-        const string close = "</strong>";
+        const string open = "monospace;\">";
+        const string close = "</div>";
         var start = htmlBody.IndexOf(open, StringComparison.Ordinal) + open.Length;
         var end = htmlBody.IndexOf(close, start, StringComparison.Ordinal);
-        return htmlBody[start..end];
+        return htmlBody[start..end].Trim();
     }
 }

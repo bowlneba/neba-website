@@ -20,11 +20,13 @@ internal sealed class LogoutEndpoint(Messaging.ICommandHandler<LogoutCommand> co
 
         Options(options => options
             .WithVersionSet("Security")
-            .MapToApiVersion(new ApiVersion(1, 0))
-            .RequireAuthorization());
+            .MapToApiVersion(new ApiVersion(1, 0)));
+
+        Policies(SecurityConfiguration.AuthenticatedPolicy);
 
         Description(description => description
             .WithName("Logout")
+            .WithTags("Authenticated")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized));
     }

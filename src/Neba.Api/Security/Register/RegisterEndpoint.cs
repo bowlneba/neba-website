@@ -27,6 +27,7 @@ internal sealed class RegisterEndpoint(Messaging.ICommandHandler<RegisterCommand
 
         Description(description => description
             .WithName("Register")
+            .WithTags("Public")
             .Produces<RegisterResponse>(StatusCodes.Status201Created)
             .ProducesProblemDetails(StatusCodes.Status409Conflict)
             .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Neba.Api.Email;
 using Neba.Api.Messaging;
 using Neba.Api.Security.Domain;
+using Neba.Api.Security.Emails;
 
 namespace Neba.Api.Security.Password.ResetPassword;
 
@@ -46,12 +47,7 @@ internal sealed class ResetPasswordCommandHandler(
         {
             To = user.Email!,
             Subject = "Your BowlNEBA password has been reset",
-            HtmlBody =
-$"""
-<p>An administrator has reset your BowlNEBA password.</p>
-<p>Your new temporary password is: <strong>{tempPassword}</strong></p>
-<p>Please log in and change your password as soon as possible.</p>
-"""
+            HtmlBody = new AdminResetPasswordEmail(tempPassword).ToHtmlBody()
         }, cancellationToken);
 
         return Result.Success;

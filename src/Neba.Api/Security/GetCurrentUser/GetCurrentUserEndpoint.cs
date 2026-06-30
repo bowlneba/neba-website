@@ -25,11 +25,13 @@ internal sealed class GetCurrentUserEndpoint(IQueryHandler<GetCurrentUserQuery, 
 
         Options(options => options
             .WithVersionSet("Security")
-            .MapToApiVersion(new ApiVersion(1, 0))
-            .RequireAuthorization());
+            .MapToApiVersion(new ApiVersion(1, 0)));
+
+        Policies(SecurityConfiguration.AuthenticatedPolicy);
 
         Description(description => description
             .WithName("GetCurrentUser")
+            .WithTags("Authenticated")
             .Produces<MeResponse>(StatusCodes.Status200OK)
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
             .ProducesProblemDetails(StatusCodes.Status404NotFound));

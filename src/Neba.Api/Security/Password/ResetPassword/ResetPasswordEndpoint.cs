@@ -32,6 +32,7 @@ internal sealed class ResetPasswordEndpoint(Messaging.ICommandHandler<ResetPassw
 
         Description(description => description
             .WithName("ResetPassword")
+            .WithTags("Admin")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
             .ProducesProblemDetails(StatusCodes.Status403Forbidden)
