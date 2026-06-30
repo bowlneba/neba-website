@@ -109,7 +109,7 @@
 
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-        Nav.NavigateTo(AppendLoginSuccessMarker(GetSafeReturnUrl()), forceLoad: true);
+        Nav.NavigateTo(GetSafeReturnUrl(), forceLoad: true);
     }
 
     private string GetSafeReturnUrl()
@@ -118,7 +118,4 @@
             return ReturnUrl;
         return "/";
     }
-
-    private static string AppendLoginSuccessMarker(string url) =>
-        url + (url.Contains('?') ? '&' : '?') + "loginSuccess=1";
 }

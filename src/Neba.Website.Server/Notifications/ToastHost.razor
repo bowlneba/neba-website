@@ -14,7 +14,7 @@
 }
 
 @code {
-    private static readonly string[] RedirectToastMarkers = ["loginSuccess", "loggedOut", "logoutError"];
+    private static readonly string[] RedirectToastMarkers = ["loggedOut", "logoutError"];
 
     protected override void OnInitialized()
     {
@@ -26,6 +26,9 @@
 
     private void ShowRedirectToastIfPresent()
     {
+        if (!RendererInfo.IsInteractive)
+            return;
+
         var uri = new Uri(NavigationManager.Uri);
         var query = QueryHelpers.ParseQuery(uri.Query);
 
@@ -33,12 +36,7 @@
         string? message = null;
         var severity = NotifySeverity.Success;
 
-        if (query.ContainsKey("loginSuccess"))
-        {
-            title = "Logged In";
-            message = "You have been logged in successfully.";
-        }
-        else if (query.ContainsKey("loggedOut"))
+        if (query.ContainsKey("loggedOut"))
         {
             title = "Logged Out";
             message = "You have been logged out.";
