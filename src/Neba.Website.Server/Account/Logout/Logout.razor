@@ -47,7 +47,7 @@
             using var response = await client.SendAsync(request, HttpContext.RequestAborted);
             return response.IsSuccessStatusCode;
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
         {
             Logger.LogWarning(ex, "Logout request to the security API failed; the local session was cleared anyway.");
             return false;

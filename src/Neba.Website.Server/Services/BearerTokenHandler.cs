@@ -89,7 +89,7 @@ internal sealed class BearerTokenHandler(
 
             refreshed = await refreshResponse.Content.ReadFromJsonAsync<RefreshTokenResponse>(JsonOptions, cancellationToken);
         }
-        catch (Exception ex) when (ex is HttpRequestException or JsonException)
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or OperationCanceledException)
         {
             logger.LogSilentRefreshFailed(ex);
             return null;
