@@ -2,6 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Neba.Website.Server.Account.Login;
 
+// Properties use `set` rather than the project-wide `init` convention because this model is
+// bound via [SupplyParameterFromForm], which requires mutable setters for Blazor's form binder.
 internal sealed record LoginFormModel
 {
     [Required(ErrorMessage = "Email is required.")]

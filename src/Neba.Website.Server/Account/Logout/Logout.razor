@@ -1,10 +1,12 @@
 @page "/account/logout"
 
+@using System.Net.Http.Headers
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
-@using Neba.Api.Contracts.Security
+@using Neba.Website.Server.Services
 
-@inject ISecurityApi SecurityApi
+@inject IHttpClientFactory HttpClientFactory
+@inject NebaApiConfiguration ApiConfiguration
 @inject NavigationManager Nav
 @inject ILogger<Logout> Logger
 
@@ -18,20 +20,37 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var apiLogoutSucceeded = true;
-
-        try
-        {
-            await SecurityApi.LogoutAsync();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "Logout request to the security API failed; clearing the local session anyway.");
-            apiLogoutSucceeded = false;
-        }
+        // Capture the access token before signing out, then revoke it server-side using a raw
+        // HttpClient call (bypassing BearerTokenHandler/ISecurityApi) so signing out can't race
+        // with the handler's silent refresh-and-retry logic, which would otherwise re-authenticate
+        // the user mid-logout.
+        var accessToken = await HttpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.AccessTokenName);
 
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
+        var apiLogoutSucceeded = await TryRevokeServerSideAsync(accessToken);
+
         Nav.NavigateTo(apiLogoutSucceeded ? "/?loggedOut=1" : "/?logoutError=1", forceLoad: true);
+    }
+
+    private async Task<bool> TryRevokeServerSideAsync(string? accessToken)
+    {
+        if (accessToken is null)
+            return true;
+
+        try
+        {
+            using var client = HttpClientFactory.CreateClient();
+            using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(ApiConfiguration.BaseUrl, "/security/logout"));
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            using var response = await client.SendAsync(request, HttpContext.RequestAborted);
+            return response.IsSuccessStatusCode;
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogWarning(ex, "Logout request to the security API failed; the local session was cleared anyway.");
+            return false;
+        }
     }
 }

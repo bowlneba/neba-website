@@ -110,13 +110,6 @@
 
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);
 
-        Nav.NavigateTo(GetSafeReturnUrl(), forceLoad: true);
-    }
-
-    private string GetSafeReturnUrl()
-    {
-        if (!string.IsNullOrWhiteSpace(ReturnUrl) && ReturnUrl.StartsWith('/') && !ReturnUrl.StartsWith("//"))
-            return ReturnUrl;
-        return "/";
+        Nav.NavigateTo(ReturnUrlValidator.GetSafeReturnUrl(ReturnUrl), forceLoad: true);
     }
 }
