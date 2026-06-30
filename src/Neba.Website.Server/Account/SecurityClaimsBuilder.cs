@@ -2,29 +2,47 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace Neba.Website.Server.Account;
 
 internal static class SecurityClaimsBuilder
 {
-    public static ClaimsPrincipal BuildPrincipal(string accessToken, string refreshToken, string userId, string email)
+    public const string AccessTokenName = "access_token";
+    public const string RefreshTokenName = "refresh_token";
+
+    public static ClaimsPrincipal BuildPrincipal(string accessToken, string userId, string email)
     {
         var identity = new ClaimsIdentity(
-            BuildClaims(accessToken, refreshToken, userId, email),
+            BuildClaims(accessToken, userId, email),
             CookieAuthenticationDefaults.AuthenticationScheme);
 
         return new ClaimsPrincipal(identity);
     }
 
-    private static List<Claim> BuildClaims(string accessToken, string refreshToken, string userId, string email)
+    // Tokens are credential material, not identity claims — kept out of ClaimsPrincipal.Claims
+    // (where arbitrary code might enumerate/display them) and stored via the framework's
+    // purpose-built AuthenticationProperties token store instead.
+    public static AuthenticationProperties BuildAuthenticationProperties(string accessToken, string refreshToken)
+    {
+        var properties = new AuthenticationProperties();
+
+        properties.StoreTokens(
+        [
+            new AuthenticationToken { Name = AccessTokenName, Value = accessToken },
+            new AuthenticationToken { Name = RefreshTokenName, Value = refreshToken },
+        ]);
+
+        return properties;
+    }
+
+    private static List<Claim> BuildClaims(string accessToken, string userId, string email)
     {
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, userId),
             new(ClaimTypes.Email, email),
-            new("access_token", accessToken),
-            new("refresh_token", refreshToken),
         };
 
         foreach (var jwtClaim in ParseJwtPayload(accessToken))

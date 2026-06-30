@@ -37,7 +37,9 @@ internal sealed class BearerTokenHandler(
         ArgumentNullException.ThrowIfNull(request);
 
         var httpContext = httpContextAccessor.HttpContext;
-        var token = httpContext?.User.FindFirst("access_token")?.Value;
+        var token = httpContext is null
+            ? null
+            : await httpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.AccessTokenName);
 
         if (token is not null)
         {
@@ -66,7 +68,7 @@ internal sealed class BearerTokenHandler(
 
     private async Task<string?> TryRefreshAsync(HttpContext httpContext, CancellationToken cancellationToken)
     {
-        var refreshToken = httpContext.User.FindFirst("refresh_token")?.Value;
+        var refreshToken = await httpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.RefreshTokenName);
         var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         if (refreshToken is null || userId is null)
@@ -96,10 +98,10 @@ internal sealed class BearerTokenHandler(
         if (refreshed is null)
             return null;
 
-        var principal = SecurityClaimsBuilder.BuildPrincipal(
-            refreshed.AccessToken, refreshed.RefreshToken, refreshed.UserId, refreshed.Email);
+        var principal = SecurityClaimsBuilder.BuildPrincipal(refreshed.AccessToken, refreshed.UserId, refreshed.Email);
+        var properties = SecurityClaimsBuilder.BuildAuthenticationProperties(refreshed.AccessToken, refreshed.RefreshToken);
 
-        await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+        await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);
 
         return refreshed.AccessToken;
     }

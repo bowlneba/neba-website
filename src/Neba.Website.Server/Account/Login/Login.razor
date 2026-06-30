@@ -105,9 +105,10 @@
         }
 
         var login = response.Content;
-        var principal = SecurityClaimsBuilder.BuildPrincipal(login.AccessToken, login.RefreshToken, login.UserId, login.Email);
+        var principal = SecurityClaimsBuilder.BuildPrincipal(login.AccessToken, login.UserId, login.Email);
+        var properties = SecurityClaimsBuilder.BuildAuthenticationProperties(login.AccessToken, login.RefreshToken);
 
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);
 
         Nav.NavigateTo(GetSafeReturnUrl(), forceLoad: true);
     }
