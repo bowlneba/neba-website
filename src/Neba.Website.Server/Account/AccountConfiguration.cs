@@ -28,6 +28,7 @@ internal static class AccountConfiguration
                     options.Cookie.SameSite = SameSiteMode.Lax;
                 });
 
+            services.AddAuthorization();
             services.AddCascadingAuthenticationState();
 
             // Used only by the DEBUG-only "Log in as Admin" prefill on Login.razor.
