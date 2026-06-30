@@ -32,7 +32,7 @@ internal sealed class ResetPasswordCommandHandler(
         if (!resetResult.Succeeded)
         {
             return resetResult.Errors
-                .Select(error => Error.Failure($"ResetPassword.{error.Code}", error.Description))
+                .Select(error => Error.Validation($"ResetPassword.{error.Code}", error.Description))
                 .ToList();
         }
 
