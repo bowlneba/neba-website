@@ -25,8 +25,7 @@ internal sealed class ResetPasswordEndpoint(Messaging.ICommandHandler<ResetPassw
 
         Options(options => options
             .WithVersionSet("Security")
-            .MapToApiVersion(new ApiVersion(1, 0))
-            .RequireAuthorization());
+            .MapToApiVersion(new ApiVersion(1, 0)));
 
         Roles(SecurityRoles.Admin);
 
