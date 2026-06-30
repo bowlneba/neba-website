@@ -7,9 +7,11 @@
 @using Microsoft.AspNetCore.Authentication.Cookies
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Security.Login
+@using Refit
 
 @inject ISecurityApi SecurityApi
 @inject NavigationManager Nav
+@inject ILogger<Login> Logger
 
 <PageTitle>Log In - NEBA</PageTitle>
 
@@ -28,7 +30,7 @@
                 </div>
             }
 
-            <EditForm Model="_model" FormName="LoginForm" OnValidSubmit="HandleLoginAsync" method="post">
+            <EditForm Model="_model" FormName="LoginForm" OnValidSubmit="HandleLoginAsync" method="post" novalidate>
                 <DataAnnotationsValidator />
                 <div class="neba-space-y-4">
                     <div>
@@ -57,7 +59,7 @@
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
-    [SupplyParameterFromForm]
+    [SupplyParameterFromForm(Name = "_model")]
     private LoginFormModel? Form { get; set; }
 
     private LoginFormModel _model = new();
@@ -71,11 +73,21 @@
 
     private async Task HandleLoginAsync()
     {
-        var response = await SecurityApi.LoginAsync(new LoginRequest
+        IApiResponse<LoginResponse> response;
+        try
         {
-            Email = _model.Email,
-            Password = _model.Password,
-        });
+            response = await SecurityApi.LoginAsync(new LoginRequest
+            {
+                Email = _model.Email,
+                Password = _model.Password,
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Login request to the security API failed.");
+            _error = "Unable to reach the server. Please try again.";
+            return;
+        }
 
         if (!response.IsSuccessStatusCode || response.Content is null)
         {
@@ -100,7 +112,7 @@
         return "/";
     }
 
-    private static List<Claim> BuildClaims(LoginResponse login)
+    private List<Claim> BuildClaims(LoginResponse login)
     {
         var claims = new List<Claim>
         {
@@ -120,7 +132,7 @@
         return claims;
     }
 
-    private static IEnumerable<Claim> ParseJwtPayload(string jwt)
+    private IEnumerable<Claim> ParseJwtPayload(string jwt)
     {
         var parts = jwt.Split('.');
         if (parts.Length != 3) yield break;
@@ -136,8 +148,9 @@
         {
             json = Encoding.UTF8.GetString(Convert.FromBase64String(payload));
         }
-        catch (FormatException)
+        catch (FormatException ex)
         {
+            Logger.LogWarning(ex, "Access token payload was not valid base64; role and usbc_id claims will be missing.");
             yield break;
         }
 
