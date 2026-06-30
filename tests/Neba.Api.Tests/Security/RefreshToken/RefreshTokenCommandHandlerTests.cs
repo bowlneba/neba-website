@@ -216,8 +216,8 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         result.FirstError.Code.ShouldBe("RefreshToken.InvalidRefreshToken");
     }
 
-    [Fact(DisplayName = "HandleAsync returns LoginDto with non-empty tokens when the refresh token is valid")]
-    public async Task HandleAsync_ShouldReturnLoginDto_WhenRefreshTokenIsValid()
+    [Fact(DisplayName = "HandleAsync returns RefreshTokenDto with non-empty tokens when the refresh token is valid")]
+    public async Task HandleAsync_ShouldReturnRefreshTokenDto_WhenRefreshTokenIsValid()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -241,8 +241,8 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         result.Value.ExpiresAt.ShouldBeGreaterThan(DateTimeOffset.UtcNow);
     }
 
-    [Fact(DisplayName = "HandleAsync returns LoginDto with correct email and userId when the refresh token is valid")]
-    public async Task HandleAsync_ShouldReturnLoginDto_WithCorrectEmailAndUserId_WhenRefreshTokenIsValid()
+    [Fact(DisplayName = "HandleAsync returns RefreshTokenDto with correct email and userId when the refresh token is valid")]
+    public async Task HandleAsync_ShouldReturnRefreshTokenDto_WithCorrectEmailAndUserId_WhenRefreshTokenIsValid()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;

@@ -5,7 +5,6 @@ using ErrorOr;
 using FastEndpoints;
 
 using Neba.Api.Contracts.Security.RefreshToken;
-using Neba.Api.Security.Login;
 using Neba.Api.Security.RefreshToken;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Security;
@@ -22,11 +21,11 @@ public sealed class RefreshTokenEndpointTests
     public async Task HandleAsync_ShouldReturn200WithMappedResponse_WhenRefreshTokenIsValid()
     {
         // Arrange
-        var dto = LoginDtoFactory.Create(userId: Ulid.Parse("01000000000000000000000001", CultureInfo.InvariantCulture));
+        var dto = RefreshTokenDtoFactory.Create(userId: Ulid.Parse("01000000000000000000000001", CultureInfo.InvariantCulture));
         var request = RefreshTokenRequestFactory.Create();
         var ct = TestContext.Current.CancellationToken;
 
-        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<RefreshTokenCommand, LoginDto>>(MockBehavior.Strict);
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<RefreshTokenCommand, RefreshTokenDto>>(MockBehavior.Strict);
         commandHandlerMock
             .Setup(h => h.HandleAsync(
                 It.Is<RefreshTokenCommand>(c =>
@@ -51,7 +50,7 @@ public sealed class RefreshTokenEndpointTests
         var request = RefreshTokenRequestFactory.Create();
         var ct = TestContext.Current.CancellationToken;
 
-        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<RefreshTokenCommand, LoginDto>>(MockBehavior.Strict);
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<RefreshTokenCommand, RefreshTokenDto>>(MockBehavior.Strict);
         commandHandlerMock
             .Setup(h => h.HandleAsync(It.IsAny<RefreshTokenCommand>(), ct))
             .ReturnsAsync(RefreshTokenErrors.InvalidRefreshToken);
@@ -69,7 +68,7 @@ public sealed class RefreshTokenEndpointTests
     public void Configure_ShouldRegisterAnonymousPostRoute_ContainingRefresh()
     {
         // Arrange
-        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<RefreshTokenCommand, LoginDto>>(MockBehavior.Strict);
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<RefreshTokenCommand, RefreshTokenDto>>(MockBehavior.Strict);
         var endpoint = Factory.Create<RefreshTokenEndpoint>(commandHandlerMock.Object);
 
         // Assert

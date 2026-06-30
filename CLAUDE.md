@@ -292,7 +292,7 @@ Two patterns that break Razor's lexer even inside `@code { }` blocks:
 
 Every routable page must have a `<PageTitle>` component. Sub-components (cards, modals, skeletons) do not.
 
-**Format**: `{Page Name} - NEBA` (dash separator, NEBA suffix). For dynamic detail pages: `@model.Name - NEBA`.
+**Format**: `{Page Name} - BowlNEBA` (dash separator, BowlNEBA suffix). For dynamic detail pages: `@model.Name - BowlNEBA`.
 
 **`<HeadOutlet>` must use `@rendermode="InteractiveServer"`** in `App.razor` — without it, Safari does not update the tab title on client-side navigation (Chrome is more lenient). Static render mode means `<PageTitle>` updates never reach the browser's `document.title` in Safari.
 

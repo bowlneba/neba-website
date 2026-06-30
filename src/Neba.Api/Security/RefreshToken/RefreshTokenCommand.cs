@@ -1,10 +1,9 @@
 using Neba.Api.Messaging;
-using Neba.Api.Security.Login;
 
 namespace Neba.Api.Security.RefreshToken;
 
 internal sealed record RefreshTokenCommand
-    : ICommand<LoginDto>
+    : ICommand<RefreshTokenDto>
 {
     public required Ulid UserId { get; init; }
 

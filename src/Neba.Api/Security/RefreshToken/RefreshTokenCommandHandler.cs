@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Identity;
 
 using Neba.Api.Messaging;
 using Neba.Api.Security.Domain;
-using Neba.Api.Security.Login;
 
 namespace Neba.Api.Security.RefreshToken;
 
@@ -18,9 +17,9 @@ internal sealed class RefreshTokenCommandHandler(
     JwtSettings jwtSettings,
     TimeProvider timeProvider,
     ILogger<RefreshTokenCommandHandler> logger)
-        : ICommandHandler<RefreshTokenCommand, LoginDto>
+        : ICommandHandler<RefreshTokenCommand, RefreshTokenDto>
 {
-    public async Task<ErrorOr<LoginDto>> HandleAsync(RefreshTokenCommand command, CancellationToken cancellationToken)
+    public async Task<ErrorOr<RefreshTokenDto>> HandleAsync(RefreshTokenCommand command, CancellationToken cancellationToken)
     {
         var user = await userManager.FindByIdAsync(command.UserId.ToString());
         if (user is null)
@@ -69,7 +68,7 @@ internal sealed class RefreshTokenCommandHandler(
         // beyond "the presented token no longer matches what's stored."
         await RefreshTokenStore.StoreAsync(userManager, user, tokenPair.RefreshToken, timeProvider);
 
-        return new LoginDto
+        return new RefreshTokenDto
         {
             AccessToken = tokenPair.AccessToken,
             RefreshToken = tokenPair.RefreshToken,

@@ -6,14 +6,13 @@ using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts.Security.RefreshToken;
-using Neba.Api.Security.Login;
 
 namespace Neba.Api.Security.RefreshToken;
 
-internal sealed class RefreshTokenEndpoint(Messaging.ICommandHandler<RefreshTokenCommand, LoginDto> commandHandler)
+internal sealed class RefreshTokenEndpoint(Messaging.ICommandHandler<RefreshTokenCommand, RefreshTokenDto> commandHandler)
     : Endpoint<RefreshTokenRequest, RefreshTokenResponse>
 {
-    private readonly Messaging.ICommandHandler<RefreshTokenCommand, LoginDto> _commandHandler = commandHandler;
+    private readonly Messaging.ICommandHandler<RefreshTokenCommand, RefreshTokenDto> _commandHandler = commandHandler;
 
     public override void Configure()
     {
