@@ -17,7 +17,7 @@ internal sealed class RegisterCommandHandler(UserManager<ApplicationUser> userMa
             Id = Ulid.NewUlid(),
             UserName = command.Email,
             Email = command.Email,
-            EmailConfirmed = false
+            EmailConfirmed = true
         };
 
         var result = await userManager.CreateAsync(user, command.Password);
