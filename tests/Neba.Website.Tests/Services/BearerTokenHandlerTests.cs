@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.TestFactory.Attributes;
+using Neba.Website.Server.Account;
 using Neba.Website.Server.Services;
 
 namespace Neba.Website.Tests.Services;
@@ -26,8 +27,8 @@ public sealed class BearerTokenHandlerTests
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    [Fact(DisplayName = "Should attach the access_token claim as a bearer header when present")]
-    public async Task SendAsync_ShouldAttachBearerHeader_WhenAccessTokenClaimPresent()
+    [Fact(DisplayName = "Should attach the access token as a bearer header when present")]
+    public async Task SendAsync_ShouldAttachBearerHeader_WhenAccessTokenPresent()
     {
         // Arrange
         using var innerHandler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
@@ -91,12 +92,11 @@ public sealed class BearerTokenHandlerTests
 
         var authServiceMock = new Mock<IAuthenticationService>(MockBehavior.Strict);
         authServiceMock
-            .Setup(s => s.SignInAsync(It.IsAny<HttpContext>(), CookieAuthenticationDefaults.AuthenticationScheme, It.IsAny<ClaimsPrincipal>(), null))
+            .Setup(s => s.SignInAsync(It.IsAny<HttpContext>(), CookieAuthenticationDefaults.AuthenticationScheme, It.IsAny<ClaimsPrincipal>(), It.IsAny<AuthenticationProperties>()))
             .Returns(Task.CompletedTask)
             .Verifiable();
 
-        var httpContext = BuildHttpContext(accessToken: "old-token", refreshToken: "refresh-abc", userId: "user-123");
-        httpContext.RequestServices = new ServiceCollection().AddSingleton(authServiceMock.Object).BuildServiceProvider();
+        var httpContext = BuildHttpContext(accessToken: "old-token", refreshToken: "refresh-abc", userId: "user-123", authServiceMock: authServiceMock);
 
         var httpContextAccessorMock = CreateAccessor(httpContext);
         var factoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
@@ -118,8 +118,8 @@ public sealed class BearerTokenHandlerTests
         authServiceMock.VerifyAll();
     }
 
-    [Fact(DisplayName = "Should return the original Unauthorized response when the refresh_token claim is missing")]
-    public async Task SendAsync_ShouldReturnOriginalUnauthorized_WhenRefreshTokenClaimMissing()
+    [Fact(DisplayName = "Should return the original Unauthorized response when the refresh token is missing")]
+    public async Task SendAsync_ShouldReturnOriginalUnauthorized_WhenRefreshTokenMissing()
     {
         // Arrange
         using var innerHandler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.Unauthorized));
@@ -186,20 +186,37 @@ public sealed class BearerTokenHandlerTests
         return mock;
     }
 
-    private static DefaultHttpContext BuildHttpContext(string? accessToken, string? refreshToken = null, string? userId = null)
+    private static DefaultHttpContext BuildHttpContext(
+        string? accessToken,
+        string? refreshToken = null,
+        string? userId = null,
+        Mock<IAuthenticationService>? authServiceMock = null)
     {
         var claims = new List<Claim>();
-
-        if (accessToken is not null)
-            claims.Add(new Claim("access_token", accessToken));
-
-        if (refreshToken is not null)
-            claims.Add(new Claim("refresh_token", refreshToken));
 
         if (userId is not null)
             claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
 
-        return new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(claims)) };
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
+
+        var tokens = new List<AuthenticationToken>();
+        if (accessToken is not null)
+            tokens.Add(new AuthenticationToken { Name = SecurityClaimsBuilder.AccessTokenName, Value = accessToken });
+        if (refreshToken is not null)
+            tokens.Add(new AuthenticationToken { Name = SecurityClaimsBuilder.RefreshTokenName, Value = refreshToken });
+
+        var properties = new AuthenticationProperties();
+        properties.StoreTokens(tokens);
+
+        var httpContext = new DefaultHttpContext { User = principal };
+
+        var auth = authServiceMock ?? new Mock<IAuthenticationService>(MockBehavior.Strict);
+        auth.Setup(s => s.AuthenticateAsync(httpContext, CookieAuthenticationDefaults.AuthenticationScheme))
+            .ReturnsAsync(AuthenticateResult.Success(new AuthenticationTicket(principal, properties, CookieAuthenticationDefaults.AuthenticationScheme)));
+
+        httpContext.RequestServices = new ServiceCollection().AddSingleton(auth.Object).BuildServiceProvider();
+
+        return httpContext;
     }
 
     private sealed class RecordingHandler(Func<HttpRequestMessage, HttpResponseMessage> responder) : HttpMessageHandler

@@ -6,7 +6,7 @@ internal static class ReturnUrlValidator
     // crafted `?ReturnUrl=` query parameter redirect a logged-in user off-site after login.
     public static string GetSafeReturnUrl(string? returnUrl)
     {
-        if (!string.IsNullOrWhiteSpace(returnUrl) && returnUrl.StartsWith('/') && !returnUrl.StartsWith("//"))
+        if (!string.IsNullOrWhiteSpace(returnUrl) && returnUrl.StartsWith('/') && !returnUrl.StartsWith("//", StringComparison.Ordinal))
             return returnUrl;
 
         return "/";
