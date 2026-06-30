@@ -298,6 +298,8 @@ Every routable page must have a `<PageTitle>` component. Sub-components (cards, 
 
 **Every routable page must also declare `@rendermode InteractiveServer`** — if a page is static SSR (no `@rendermode`), the interactive `HeadOutlet` circuit boots with no `<PageTitle>` registered and clears the title (visible as a flash then blank tab). Pages with no async data loading use `@rendermode InteractiveServer` (prerender: true default); data-loading pages use `@rendermode @(new InteractiveServerRenderMode(prerender: false))` to avoid a flash of empty content.
 
+**Exception — auth pages that call `SignInAsync`/`SignOutAsync` (`Login.razor`, `Logout.razor`) intentionally omit `@rendermode`.** The auth cookie write must happen in the static-SSR pipeline; inside an established `InteractiveServer` circuit, the response has already started and `SignInAsync`/`SignOutAsync` cannot write the `Set-Cookie` header. These pages accept the title-flash tradeoff in exchange for a working cookie write.
+
 ### Email Template Pattern
 
 - Each email is an `internal sealed class` in `{Feature}/Emails/{Name}Email.cs` — primary constructor takes email-specific values, exposes `ToHtmlBody()`.

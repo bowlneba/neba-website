@@ -19,6 +19,7 @@ public sealed class ReturnUrlValidatorTests
     [InlineData("evil.com", TestDisplayName = "URL without leading slash is rejected")]
     public void GetSafeReturnUrl_ShouldReturnRoot_WhenUrlIsUnsafe(string? input)
     {
+        // Arrange
         // Act
         var result = ReturnUrlValidator.GetSafeReturnUrl(input);
 
@@ -32,6 +33,7 @@ public sealed class ReturnUrlValidatorTests
     [InlineData("/tournaments/2026?season=1", TestDisplayName = "Relative path with query string")]
     public void GetSafeReturnUrl_ShouldReturnGivenUrl_WhenUrlIsSafe(string input)
     {
+        // Arrange
         // Act
         var result = ReturnUrlValidator.GetSafeReturnUrl(input);
 

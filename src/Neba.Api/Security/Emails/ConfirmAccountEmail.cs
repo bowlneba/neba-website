@@ -17,11 +17,15 @@ internal sealed class ConfirmAccountEmail(string confirmationLink)
             <p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#444;">
               If you did not create an account with us, you can safely ignore this email.
             </p>
-            <div style="text-align:center;margin:36px 0 28px;">
-              <a href="{link}" style="display:inline-block;background:#1a3a6e;color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:4px;font-size:15px;font-weight:700;">
-                Confirm Account
-              </a>
-            </div>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:36px auto 28px;">
+              <tr>
+                <td style="background:#1a3a6e;border-radius:4px;">
+                  <a href="{link}" style="display:block;color:#ffffff;text-decoration:none;padding:14px 40px;font-size:15px;font-weight:700;">
+                    Confirm Account
+                  </a>
+                </td>
+              </tr>
+            </table>
             <hr style="border:none;border-top:1px solid #ececec;margin:28px 0;" />
             <p style="font-size:12px;color:#999;line-height:1.6;margin:0;">
               If the button above does not work, copy and paste this link into your browser:<br />
