@@ -17,6 +17,9 @@ internal sealed class RegisterCommandHandler(UserManager<ApplicationUser> userMa
             Id = Ulid.NewUlid(),
             UserName = command.Email,
             Email = command.Email,
+            // Intentionally bypasses the RequireConfirmedEmail Identity option:
+            // admin-created accounts are active immediately. Remove when the self-registration
+            // flow ships and real email confirmation is added.
             EmailConfirmed = true
         };
 

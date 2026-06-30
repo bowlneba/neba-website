@@ -40,6 +40,9 @@ internal static class SecurityConfiguration
                     options.Password.RequireDigit = true;
                     options.Password.RequiredLength = 8;
                     options.Password.RequireNonAlphanumeric = false;
+                    // Email confirmation is configured but intentionally bypassed for now:
+                    // RegisterCommandHandler sets EmailConfirmed on creation so admin-created accounts
+                    // are immediately active. Remove that bypass when the self-registration flow ships.
                     options.SignIn.RequireConfirmedEmail = true;
                     options.User.RequireUniqueEmail = true;
                     options.Lockout.AllowedForNewUsers = true;
