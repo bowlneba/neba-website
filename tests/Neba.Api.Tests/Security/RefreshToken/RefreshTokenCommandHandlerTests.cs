@@ -65,9 +65,7 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         await new RegisterCommandHandler(userManager).HandleAsync(command, CancellationToken.None);
 
         var user = await userManager.FindByEmailAsync(command.Email);
-        user!.EmailConfirmed = true;
-        await userManager.UpdateAsync(user);
-        return user;
+        return user!;
     }
 
     private static async Task<(ApplicationUser User, string RefreshToken)> SeedLoginAsync(
