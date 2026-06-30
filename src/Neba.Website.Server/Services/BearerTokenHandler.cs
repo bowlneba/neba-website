@@ -98,6 +98,12 @@ internal sealed class BearerTokenHandler(
         if (refreshed is null)
             return null;
 
+        if (httpContext.Response.HasStarted)
+        {
+            logger.LogSilentRefreshCookieSkipped();
+            return refreshed.AccessToken;
+        }
+
         var principal = SecurityClaimsBuilder.BuildPrincipal(refreshed.AccessToken, refreshed.UserId, refreshed.Email);
         var properties = SecurityClaimsBuilder.BuildAuthenticationProperties(refreshed.AccessToken, refreshed.RefreshToken);
 
@@ -136,4 +142,7 @@ internal static partial class BearerTokenHandlerLogMessages
 {
     [LoggerMessage(Level = LogLevel.Warning, Message = "Silent token refresh failed.")]
     public static partial void LogSilentRefreshFailed(this ILogger<BearerTokenHandler> logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Silent token refresh succeeded but the auth cookie could not be updated because the response had already started.")]
+    public static partial void LogSilentRefreshCookieSkipped(this ILogger<BearerTokenHandler> logger);
 }
