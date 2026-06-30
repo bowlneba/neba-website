@@ -13,6 +13,7 @@ namespace Neba.Api.Security.Login;
 
 internal sealed class LoginCommandHandler(
     UserManager<ApplicationUser> userManager,
+    SignInManager<ApplicationUser> signInManager,
     IJwtTokenService jwtTokenService,
     TimeProvider timeProvider)
         : ICommandHandler<LoginCommand, LoginDto>
@@ -28,8 +29,10 @@ internal sealed class LoginCommandHandler(
             return LoginErrors.InvalidCredentials;
         }
 
-        var passwordValid = await userManager.CheckPasswordAsync(user, command.Password);
-        if (!passwordValid)
+        // SignInManager enforces lockout and confirmed-email policy; the endpoint always
+        // returns a generic 401 regardless of reason to avoid leaking account state (see LoginSummary).
+        var signInResult = await signInManager.CheckPasswordSignInAsync(user, command.Password, lockoutOnFailure: true);
+        if (!signInResult.Succeeded)
         {
             return LoginErrors.InvalidCredentials;
         }
