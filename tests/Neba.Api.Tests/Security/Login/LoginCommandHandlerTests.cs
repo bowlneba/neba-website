@@ -39,8 +39,8 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
     public ValueTask DisposeAsync()
         => ValueTask.CompletedTask;
 
-    private static LoginCommandHandler CreateHandler(UserManager<ApplicationUser> userManager)
-        => new(userManager, new JwtTokenService(TestJwtSettings, TimeProvider.System), TimeProvider.System);
+    private static LoginCommandHandler CreateHandler(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+        => new(userManager, signInManager, new JwtTokenService(TestJwtSettings, TimeProvider.System), TimeProvider.System);
 
     private static async Task<ApplicationUser> SeedUserAsync(UserManager<ApplicationUser> userManager)
     {
@@ -52,9 +52,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         await new RegisterCommandHandler(userManager).HandleAsync(command, CancellationToken.None);
 
         var user = await userManager.FindByEmailAsync(command.Email);
-        user!.EmailConfirmed = true;
-        await userManager.UpdateAsync(user);
-        return user;
+        return user!;
     }
 
     [Fact(DisplayName = "HandleAsync returns LoginDto with non-empty tokens when credentials are valid")]
@@ -64,6 +62,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
         await SeedUserAsync(userManager);
         var command = new LoginCommand
         {
@@ -72,7 +71,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         };
 
         // Act
-        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, signInManager).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -88,6 +87,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
         var user = await SeedUserAsync(userManager);
         var command = new LoginCommand
         {
@@ -96,7 +96,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         };
 
         // Act
-        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, signInManager).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -111,6 +111,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
         await SeedUserAsync(userManager);
         var command = new LoginCommand
         {
@@ -119,7 +120,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         };
 
         // Act
-        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, signInManager).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -142,6 +143,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
         var command = new LoginCommand
         {
             Email = "nobody@bowlneba.com",
@@ -149,7 +151,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         };
 
         // Act
-        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, signInManager).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -164,6 +166,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
         await SeedUserAsync(userManager);
         var command = new LoginCommand
         {
@@ -172,7 +175,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         };
 
         // Act
-        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, signInManager).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeTrue();

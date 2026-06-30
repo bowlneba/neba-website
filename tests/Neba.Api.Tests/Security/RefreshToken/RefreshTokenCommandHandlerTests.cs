@@ -72,12 +72,14 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
 
     private static async Task<(ApplicationUser User, string RefreshToken)> SeedLoginAsync(
         UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
         TimeProvider? timeProvider = null)
     {
         var user = await SeedUserAsync(userManager);
         var tp = timeProvider ?? TimeProvider.System;
         var loginResult = await new LoginCommandHandler(
                 userManager,
+                signInManager,
                 new JwtTokenService(TestJwtSettings, tp),
                 tp)
             .HandleAsync(
@@ -171,7 +173,8 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var (user, _) = await SeedLoginAsync(userManager);
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
+        var (user, _) = await SeedLoginAsync(userManager, signInManager);
         var command = new RefreshTokenCommand
         {
             UserId = user.Id,
@@ -196,7 +199,8 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var issuedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
         var seedTimeProvider = new FakeTimeProvider(issuedAt);
-        var (user, refreshToken) = await SeedLoginAsync(userManager, seedTimeProvider);
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
+        var (user, refreshToken) = await SeedLoginAsync(userManager, signInManager, seedTimeProvider);
 
         var expiredTimeProvider = new FakeTimeProvider(issuedAt.AddDays(TestJwtSettings.RefreshTokenExpiryDays + 1));
         var command = new RefreshTokenCommand
@@ -221,7 +225,8 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var (user, refreshToken) = await SeedLoginAsync(userManager);
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
+        var (user, refreshToken) = await SeedLoginAsync(userManager, signInManager);
         var command = new RefreshTokenCommand
         {
             UserId = user.Id,
@@ -245,7 +250,8 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var (user, refreshToken) = await SeedLoginAsync(userManager);
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
+        var (user, refreshToken) = await SeedLoginAsync(userManager, signInManager);
         var command = new RefreshTokenCommand
         {
             UserId = user.Id,
@@ -268,7 +274,8 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var (user, oldRefreshToken) = await SeedLoginAsync(userManager);
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
+        var (user, oldRefreshToken) = await SeedLoginAsync(userManager, signInManager);
         var command = new RefreshTokenCommand
         {
             UserId = user.Id,
