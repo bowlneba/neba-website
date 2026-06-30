@@ -36,6 +36,14 @@
     gap: 1rem;
 }
 
+/* Banner Actions (right-aligned account/debug controls) */
+.banner-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
 .banner-logo {
     height: 5rem;
     width: auto;

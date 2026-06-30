@@ -9,16 +9,20 @@
 <div class="layout-container">
     <!-- Top Banner -->
     <header class="neba-top-banner" role="banner">
+        <div class="neba-banner-shimmer" aria-hidden="true"></div>
         <div class="neba-banner-content">
             <div class="banner-logo-container">
                 <a href="/" aria-label="NEBA - Go to home page">
                     <img src="images/neba-logo.png" alt="New England Bowling Association logo" class="banner-logo" />
                 </a>
             </div>
-            @if (IsDebugBuild)
-            {
-                <DebugCacheTools @rendermode="InteractiveServer" />
-            }
+            <div class="banner-actions">
+                @if (IsDebugBuild)
+                {
+                    <DebugCacheTools @rendermode="InteractiveServer" />
+                }
+                <AccountMenu @rendermode="InteractiveServer" />
+            </div>
         </div>
     </header>
 

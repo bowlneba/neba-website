@@ -1,7 +1,5 @@
 @rendermode InteractiveServer
 @implements IAsyncDisposable
-@using System.Security.Claims
-@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.JSInterop
 
 @inject NavigationManager Nav
@@ -88,18 +86,6 @@
                                     Centers
                                 </NavLink>
                             </li>
-                            <AuthorizeView>
-                                <Authorized>
-                                    <li class="neba-nav-item">
-                                        <span class="neba-nav-link" aria-label="Logged in as @context.User.FindFirst(ClaimTypes.Email)?.Value">
-                                            @context.User.FindFirst(ClaimTypes.Email)?.Value
-                                        </span>
-                                    </li>
-                                    <li class="neba-nav-item">
-                                        <a class="neba-nav-link" href="/account/logout">Logout</a>
-                                    </li>
-                                </Authorized>
-                            </AuthorizeView>
                         </ul>
                     </div>
                 </div>

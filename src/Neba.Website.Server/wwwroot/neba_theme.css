@@ -840,10 +840,21 @@ a:focus-visible {
   background: linear-gradient(135deg, var(--neba-banner-bg) 0%, var(--neba-banner-gradient-end) 100%);
   padding: 1rem 0;
   position: relative;
-  overflow: hidden;
+  z-index: 41;
 }
 
-.neba-top-banner::before {
+/* Dedicated clipping layer for the shimmer sweep, kept separate from
+   .neba-top-banner so dropdowns (e.g. the account menu) aren't clipped
+   by it — overflow-x: hidden alone isn't enough since the UA forces
+   overflow-y to auto whenever overflow-x isn't visible. */
+.neba-banner-shimmer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.neba-banner-shimmer::before {
   content: '';
   position: absolute;
   top: 0;
@@ -1404,7 +1415,7 @@ a:focus-visible {
     scroll-behavior: auto !important;
   }
 
-  .neba-top-banner::before {
+  .neba-banner-shimmer::before {
     animation: none !important;
   }
 
