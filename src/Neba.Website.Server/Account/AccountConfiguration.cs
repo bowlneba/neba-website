@@ -22,7 +22,10 @@ internal static class AccountConfiguration
                     // SameAsRequest (not Always) — local dev runs over plain HTTP, and CookieSecurePolicy.Always
                     // causes the browser to silently drop the auth cookie on an insecure connection.
                     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-                    options.Cookie.SameSite = SameSiteMode.Strict;
+                    // Lax (not Strict) — Strict drops the cookie on top-level navigations arriving
+                    // from outside the site (e.g. an email link), forcing an extra login. CSRF
+                    // protection for state-changing requests comes from UseAntiforgery(), not SameSite.
+                    options.Cookie.SameSite = SameSiteMode.Lax;
                 });
 
             services.AddCascadingAuthenticationState();
