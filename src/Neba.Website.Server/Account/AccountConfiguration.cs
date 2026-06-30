@@ -19,7 +19,9 @@ internal static class AccountConfiguration
                     options.ExpireTimeSpan = TimeSpan.FromDays(7);
                     options.SlidingExpiration = true;
                     options.Cookie.HttpOnly = true;
-                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                    // SameAsRequest (not Always) — local dev runs over plain HTTP, and CookieSecurePolicy.Always
+                    // causes the browser to silently drop the auth cookie on an insecure connection.
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
                     options.Cookie.SameSite = SameSiteMode.Strict;
                 });
 
