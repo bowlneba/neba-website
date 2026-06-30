@@ -12,6 +12,9 @@ public sealed class ReturnUrlValidatorTests
     [InlineData("", TestDisplayName = "Empty string returns root")]
     [InlineData("   ", TestDisplayName = "Whitespace returns root")]
     [InlineData("//evil.com", TestDisplayName = "Protocol-relative URL is rejected")]
+    [InlineData("/\\evil.com", TestDisplayName = "Backslash-based bypass /\\evil.com is rejected")]
+    [InlineData("\\/evil.com", TestDisplayName = "Backslash-based bypass \\/evil.com is rejected")]
+    [InlineData("/path\\..\\evil.com", TestDisplayName = "Backslash in path segment is rejected")]
     [InlineData("https://evil.com", TestDisplayName = "Absolute URL is rejected")]
     [InlineData("evil.com", TestDisplayName = "URL without leading slash is rejected")]
     public void GetSafeReturnUrl_ShouldReturnRoot_WhenUrlIsUnsafe(string? input)
