@@ -45,8 +45,8 @@ public sealed class ResetPasswordRequestValidatorTests
     }
 
     [Theory(DisplayName = "Validate should fail with UserIdRequired when user ID is empty or whitespace")]
-    [InlineData("")]
-    [InlineData("   ")]
+    [InlineData("", TestDisplayName = "Empty string")]
+    [InlineData("   ", TestDisplayName = "Whitespace only")]
     public void Validate_ShouldFailWithUserIdRequired_WhenUserIdIsEmptyOrWhitespace(string userId)
     {
         // Arrange
@@ -64,9 +64,9 @@ public sealed class ResetPasswordRequestValidatorTests
     }
 
     [Theory(DisplayName = "Validate should fail with UserIdInvalid when user ID is not a valid ULID")]
-    [InlineData("not-a-ulid")]
-    [InlineData("12345")]
-    [InlineData("00000000-0000-0000-0000-000000000000")]
+    [InlineData("not-a-ulid", TestDisplayName = "Not a Ulid")]
+    [InlineData("12345", TestDisplayName = "Too short")]
+    [InlineData("00000000-0000-0000-0000-000000000000", TestDisplayName = "GUID format, not Ulid")]
     public void Validate_ShouldFailWithUserIdInvalid_WhenUserIdIsNotAValidUlid(string userId)
     {
         // Arrange

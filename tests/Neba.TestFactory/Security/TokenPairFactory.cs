@@ -4,13 +4,13 @@ using Neba.Api.Security.Domain;
 
 namespace Neba.TestFactory.Security;
 
-internal static class TokenPairFactory
+public static class TokenPairFactory
 {
     public const string ValidAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test-access-token";
     public const string ValidRefreshToken = "test-refresh-token-value";
     public static readonly DateTimeOffset ValidExpiresAt = new(2030, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
-    public static TokenPair Create(
+    internal static TokenPair Create(
         string? accessToken = null,
         string? refreshToken = null,
         DateTimeOffset? expiresAt = null)
@@ -32,7 +32,7 @@ internal static class TokenPairFactory
         })];
     }
 
-    public static IReadOnlyCollection<TokenPair> Bogus(int count, int? seed = null)
+    internal static IReadOnlyCollection<TokenPair> Bogus(int count, int? seed = null)
     {
         var faker = new Faker();
         if (seed.HasValue) faker.Random = new Randomizer(seed.Value);

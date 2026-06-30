@@ -42,8 +42,8 @@ public sealed class RegisterCommandHandlerIntegrationTests(SecurityDbContextFixt
         result.Value.ShouldNotBe(Ulid.Empty);
     }
 
-    [Fact(DisplayName = "HandleAsync persists the user with EmailConfirmed=false")]
-    public async Task HandleAsync_ShouldPersistUser_WithEmailConfirmedFalse()
+    [Fact(DisplayName = "HandleAsync persists the user with EmailConfirmed=true")]
+    public async Task HandleAsync_ShouldPersistUser_WithEmailConfirmedTrue()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -61,7 +61,7 @@ public sealed class RegisterCommandHandlerIntegrationTests(SecurityDbContextFixt
         // Assert
         var stored = await userManager.FindByEmailAsync(command.Email);
         stored.ShouldNotBeNull();
-        stored.EmailConfirmed.ShouldBeFalse();
+        stored.EmailConfirmed.ShouldBeTrue();
         stored.Email.ShouldBe(command.Email);
         stored.UserName.ShouldBe(command.Email);
     }

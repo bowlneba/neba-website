@@ -45,8 +45,8 @@ public sealed class RegisterRequestValidatorTests
     }
 
     [Theory(DisplayName = "Validate should fail with EmailRequired when email is empty or whitespace")]
-    [InlineData("")]
-    [InlineData("   ")]
+    [InlineData("", TestDisplayName = "Empty string")]
+    [InlineData("   ", TestDisplayName = "Whitespace only")]
     public void Validate_ShouldFailWithEmailRequired_WhenEmailIsEmptyOrWhitespace(string email)
     {
         // Arrange
@@ -64,9 +64,9 @@ public sealed class RegisterRequestValidatorTests
     }
 
     [Theory(DisplayName = "Validate should fail with EmailInvalid when email is not a valid address")]
-    [InlineData("notanemail")]
-    [InlineData("missing@")]
-    [InlineData("@nodomain.com")]
+    [InlineData("notanemail", TestDisplayName = "Missing @ and domain")]
+    [InlineData("missing@", TestDisplayName = "Missing domain")]
+    [InlineData("@nodomain.com", TestDisplayName = "Missing local part")]
     public void Validate_ShouldFailWithEmailInvalid_WhenEmailIsNotValidFormat(string email)
     {
         // Arrange
@@ -103,8 +103,8 @@ public sealed class RegisterRequestValidatorTests
     }
 
     [Theory(DisplayName = "Validate should fail with PasswordRequired when password is empty or whitespace")]
-    [InlineData("")]
-    [InlineData("   ")]
+    [InlineData("", TestDisplayName = "Empty string")]
+    [InlineData("   ", TestDisplayName = "Whitespace only")]
     public void Validate_ShouldFailWithPasswordRequired_WhenPasswordIsEmptyOrWhitespace(string password)
     {
         // Arrange
@@ -122,8 +122,8 @@ public sealed class RegisterRequestValidatorTests
     }
 
     [Theory(DisplayName = "Validate should fail with PasswordTooShort when password is fewer than 8 characters")]
-    [InlineData("Pass1")]
-    [InlineData("Ab1cd")]
+    [InlineData("Pass1", TestDisplayName = "5 characters")]
+    [InlineData("Ab1cd", TestDisplayName = "5 characters, mixed case")]
     public void Validate_ShouldFailWithPasswordTooShort_WhenPasswordIsTooShort(string password)
     {
         // Arrange
@@ -141,8 +141,8 @@ public sealed class RegisterRequestValidatorTests
     }
 
     [Theory(DisplayName = "Validate should fail with PasswordRequiresDigit when password has no digit")]
-    [InlineData("NoDigitsHere")]
-    [InlineData("PasswordWithNoNumber")]
+    [InlineData("NoDigitsHere", TestDisplayName = "No digits, mixed case")]
+    [InlineData("PasswordWithNoNumber", TestDisplayName = "No digits, descriptive text")]
     public void Validate_ShouldFailWithPasswordRequiresDigit_WhenPasswordHasNoDigit(string password)
     {
         // Arrange
