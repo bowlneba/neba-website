@@ -32,7 +32,7 @@ internal sealed class RegisterCommandHandler(UserManager<ApplicationUser> userMa
         return isDuplicate
             ? RegisterErrors.DuplicateEmail
             : result.Errors
-            .Select(error => Error.Validation(error.Code, error.Description))
+            .Select(error => Error.Validation($"Register.{error.Code}", error.Description))
             .ToList();
     }
 }
