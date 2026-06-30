@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+// "error state" below mutates a shared mock-server response override for
+// /news. Running it in parallel races against other tests in this file that
+// load /news without expecting an override, so the whole file runs serially.
+test.describe.configure({ mode: 'serial' });
+
 test.describe('News list page', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
 
@@ -50,7 +55,7 @@ test.describe('News list page — loading state', () => {
 
     await page.goto('/news');
     await expect(page.locator('[aria-busy="true"]')).toBeVisible();
-    await page.request.post('http://localhost:5151/__mock/reset');
+    await page.request.post('http://localhost:5151/__mock/reset?path=/news');
   });
 });
 
@@ -62,7 +67,7 @@ test.describe('News list page — error state', () => {
     await page.goto('/news');
     await page.waitForSelector('.neba-alert');
     await expect(page.locator('.neba-alert')).toContainText('Error Loading Articles');
-    await page.request.post('http://localhost:5151/__mock/reset');
+    await page.request.post('http://localhost:5151/__mock/reset?path=/news');
   });
 });
 
@@ -147,7 +152,7 @@ test.describe('News detail page — loading state', () => {
 
     await page.goto('/news/season-champions-2026');
     await expect(page.locator('[aria-busy="true"]')).toBeVisible();
-    await page.request.post('http://localhost:5151/__mock/reset');
+    await page.request.post('http://localhost:5151/__mock/reset?path=/news/season-champions-2026');
   });
 });
 
@@ -175,6 +180,6 @@ test.describe('News detail page — error state', () => {
     await page.goto('/news/season-champions-2026');
     await page.waitForSelector('.neba-alert');
     await expect(page.locator('.neba-alert')).toContainText('Error Loading Article');
-    await page.request.post('http://localhost:5151/__mock/reset');
+    await page.request.post('http://localhost:5151/__mock/reset?path=/news/season-champions-2026');
   });
 });

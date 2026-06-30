@@ -1,6 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { PRIMARY_BOWLER_ID } from './mock-api/mock-api-server';
 
+// Several describe blocks below mutate shared mock-server response overrides
+// for /tournaments/champions and /bowlers/{id}/titles. Running them in
+// parallel races against other tests in this file that load the same
+// endpoints without expecting an override, so the whole file runs serially.
+test.describe.configure({ mode: 'serial' });
+
 const MOCK_ADMIN = 'http://localhost:5151/__mock';
 
 // Hero stat values from mock data:
@@ -350,7 +356,7 @@ test.describe('Champions page — Bowler Titles Modal (Loading & Data)', () => {
   });
 
   test.afterEach(async ({ page }) => {
-    await page.request.post(`${MOCK_ADMIN}/reset`);
+    await page.request.post(`${MOCK_ADMIN}/reset?path=/bowlers/${PRIMARY_BOWLER_ID}/titles`);
   });
 
   test('modal shows loading indicator while fetching titles', async ({ page }) => {
@@ -414,7 +420,7 @@ test.describe('Champions page — Bowler Titles Modal (Error & Retry)', () => {
   });
 
   test.afterEach(async ({ page }) => {
-    await page.request.post(`${MOCK_ADMIN}/reset`);
+    await page.request.post(`${MOCK_ADMIN}/reset?path=/bowlers/${PRIMARY_BOWLER_ID}/titles`);
   });
 
   test('modal shows error state when API returns 500 for bowler titles', async ({ page }) => {
@@ -429,7 +435,7 @@ test.describe('Champions page — Bowler Titles Modal (Error & Retry)', () => {
     await page.locator('.bowler-card', { has: page.locator('.bowler-card__name', { hasText: 'Current Leader' }) }).click();
     await expect(page.locator('.modal-state__retry')).toBeVisible();
     // Clear the failure so the retry call succeeds — proves a second request was made and handled
-    await page.request.post(`${MOCK_ADMIN}/reset`);
+    await page.request.post(`${MOCK_ADMIN}/reset?path=/bowlers/${PRIMARY_BOWLER_ID}/titles`);
     await page.locator('.modal-state__retry').click();
     await expect(page.locator('.titles-table')).toBeVisible();
   });
@@ -438,7 +444,7 @@ test.describe('Champions page — Bowler Titles Modal (Error & Retry)', () => {
     await page.request.post(`${MOCK_ADMIN}/fail?path=/bowlers/${PRIMARY_BOWLER_ID}/titles&status=422`);
     await page.locator('.bowler-card', { has: page.locator('.bowler-card__name', { hasText: 'Current Leader' }) }).click();
     await expect(page.locator('.modal-state__retry')).toBeVisible();
-    await page.request.post(`${MOCK_ADMIN}/reset`);
+    await page.request.post(`${MOCK_ADMIN}/reset?path=/bowlers/${PRIMARY_BOWLER_ID}/titles`);
     await page.locator('.modal-state__retry').click();
     await expect(page.locator('.titles-table')).toBeVisible();
   });
@@ -492,7 +498,7 @@ test.describe('Champions page — Loading Skeleton', () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
   test.afterEach(async ({ page }) => {
-    await page.request.post(`${MOCK_ADMIN}/reset`);
+    await page.request.post(`${MOCK_ADMIN}/reset?path=/tournaments/champions`);
   });
 
   test('shows skeleton boxes in hero stats while API is loading', async ({ page }) => {
@@ -521,7 +527,7 @@ test.describe('Champions page — Error State on Page Load', () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
   test.afterEach(async ({ page }) => {
-    await page.request.post(`${MOCK_ADMIN}/reset`);
+    await page.request.post(`${MOCK_ADMIN}/reset?path=/tournaments/champions`);
   });
 
   test('shows error alert when champions API fails to load', async ({ page }) => {
