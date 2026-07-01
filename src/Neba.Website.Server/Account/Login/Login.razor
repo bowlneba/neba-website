@@ -43,9 +43,8 @@
                                    class="neba-input w-full" />
                         <ValidationMessage For="@(() => _model.Password)" class="block text-sm text-red-600 mt-1" />
                     </div>
-                    <button type="submit" class="neba-btn neba-btn-primary w-full justify-center"
-                            onclick="this.disabled=true;this.textContent='Logging in…'">
-                        Log in
+                    <button type="submit" class="neba-btn neba-btn-primary w-full justify-center" disabled="@_isSubmitting">
+                        @(_isSubmitting ? "Logging in…" : "Log in")
                     </button>
                 </div>
             </EditForm>
@@ -70,6 +69,8 @@
 
     private string? _error;
 
+    private bool _isSubmitting;
+
     protected override void OnParametersSet()
     {
         _model = Form ?? _model;
@@ -85,6 +86,8 @@
 
     private async Task HandleLoginAsync()
     {
+        _isSubmitting = true;
+
         IApiResponse<LoginResponse> response;
         try
         {
@@ -98,12 +101,14 @@
         {
             Logger.LogError(ex, "Login request to the security API failed.");
             _error = "Unable to reach the server. Please try again.";
+            _isSubmitting = false;
             return;
         }
 
         if (!response.IsSuccessStatusCode || response.Content is null)
         {
             _error = "Invalid email or password.";
+            _isSubmitting = false;
             return;
         }
 
