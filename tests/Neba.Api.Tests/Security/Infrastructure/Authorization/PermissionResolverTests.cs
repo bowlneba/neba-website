@@ -2,6 +2,7 @@ using System.Security.Claims;
 
 using Microsoft.AspNetCore.Identity;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Security.Domain;
 using Neba.Api.Security.Infrastructure;
 using Neba.Api.Security.Infrastructure.Authorization;
@@ -62,13 +63,13 @@ public sealed class PermissionResolverTests
             .ReturnsAsync(role);
         roleManagerMock
             .Setup(m => m.GetClaimsAsync(role))
-            .ReturnsAsync([new Claim(SecurityRoleSeeder.PermissionClaimType, "Read")]);
+            .ReturnsAsync([new Claim(SecurityRoleSeeder.PermissionClaimType, Permissions.Read.Value)]);
 
         // Act
         var result = await PermissionResolver.ResolveAsync(roleManagerMock.Object, [Roles.Admin]);
 
         // Assert
-        result.ShouldBe(["Read"]);
+        result.ShouldBe([Permissions.Read]);
     }
 
     [Fact(DisplayName = "ResolveAsync should ignore claims whose claim type is not the permission claim type")]
@@ -116,7 +117,7 @@ public sealed class PermissionResolverTests
         var result = await PermissionResolver.ResolveAsync(roleManagerMock.Object, [Roles.Admin, memberRoleName]);
 
         // Assert
-        result.ShouldBe(["Read"]);
+        result.ShouldBe([Permissions.Read]);
     }
 
     [Fact(DisplayName = "ResolveAsync should aggregate distinct permission keys across multiple roles")]
@@ -145,7 +146,7 @@ public sealed class PermissionResolverTests
 
         // Assert
         result.Count.ShouldBe(2);
-        result.ShouldContain("Read");
-        result.ShouldContain("Write");
+        result.ShouldContain(Permissions.Read);
+        result.ShouldContain(Permissions.Write);
     }
 }

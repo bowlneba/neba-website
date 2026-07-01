@@ -41,4 +41,16 @@
           WorkingDirectory="$(MSBuildThisFileDirectory)" />
   </Target>
 
+  <!-- ReactiveUI.Primitives (a transitive dependency of Refit) ships a source generator that emits a
+       per-assembly internal attribute. NuGet asset exclusion (PrivateAssets/ExcludeAssets) does not stop it
+       from flowing across multi-hop ProjectReference chains, so projects that transitively depend on Refit
+       through more than one project reference (e.g. Neba.TestFactory -> Neba.Api -> Neba.Api.Contracts)
+       end up compiling a duplicate copy of the type, tripping CS0436 under TreatWarningsAsErrors. We don't
+       use ReactiveUI/R3 interop anywhere, so it's safe to drop this analyzer solution-wide. -->
+  <Target Name="RemoveReactiveUIPrimitivesAnalyzer" Condition=" '$(MSBuildProjectExtension)' == '.csproj'" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Filename)' == 'ReactiveUI.Primitives.R3Bridge.Generator'" />
+    </ItemGroup>
+  </Target>
+
 </Project>

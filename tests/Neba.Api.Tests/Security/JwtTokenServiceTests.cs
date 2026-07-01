@@ -6,6 +6,7 @@ using System.Text;
 using Microsoft.Extensions.Time.Testing;
 using Microsoft.IdentityModel.Tokens;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Security;
 using Neba.Api.Security.Domain;
 using Neba.TestFactory.Attributes;
@@ -177,7 +178,7 @@ public sealed class JwtTokenServiceTests
     {
         // Arrange
         var user = ApplicationUserFactory.Create();
-        string[] permissions = ["Read", "Write"];
+        Permissions[] permissions = [Permissions.Read, Permissions.Write];
 
         // Act
         var result = _sut.CreateTokenPair(user, [], permissions);

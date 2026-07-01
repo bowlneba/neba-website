@@ -3,5 +3,8 @@
   Email: test@bowlneba.com,
   Roles: [
     Member
+  ],
+  Permissions: [
+    Read
   ]
 }

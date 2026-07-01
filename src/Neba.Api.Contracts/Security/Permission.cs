@@ -16,6 +16,11 @@ public sealed class Permissions
     /// This is a temporary permission to set us up until real permissions come into the picture
     /// </summary>
     public static readonly Permissions Read = new("Read", "Read");
+
+    /// <summary>
+    /// This is a temporary permission to set us up until real permissions come into the picture
+    /// </summary>
+    public static readonly Permissions Write = new("Write", "Write");
     private Permissions(string key, string name)
         : base(name, key)
     { }
