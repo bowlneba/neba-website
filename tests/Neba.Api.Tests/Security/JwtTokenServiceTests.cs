@@ -63,7 +63,7 @@ public sealed class JwtTokenServiceTests
         var user = ApplicationUserFactory.Create();
 
         // Act
-        var result = _sut.CreateTokenPair(user, []);
+        var result = _sut.CreateTokenPair(user, [], []);
 
         // Assert
         result.AccessToken.ShouldNotBeEmpty();
@@ -76,7 +76,7 @@ public sealed class JwtTokenServiceTests
         var user = ApplicationUserFactory.Create();
 
         // Act
-        var result = _sut.CreateTokenPair(user, []);
+        var result = _sut.CreateTokenPair(user, [], []);
 
         // Assert
         result.RefreshToken.ShouldNotBeEmpty();
@@ -90,7 +90,7 @@ public sealed class JwtTokenServiceTests
         var now = _fakeTimeProvider.GetUtcNow();
 
         // Act
-        var result = _sut.CreateTokenPair(user, []);
+        var result = _sut.CreateTokenPair(user, [], []);
 
         // Assert
         result.ExpiresAt.ShouldBe(now.AddMinutes(ValidSettings.AccessTokenExpiryMinutes));
@@ -104,7 +104,7 @@ public sealed class JwtTokenServiceTests
         var user = ApplicationUserFactory.Create(id: userId);
 
         // Act
-        var result = _sut.CreateTokenPair(user, []);
+        var result = _sut.CreateTokenPair(user, [], []);
         var token = ReadToken(result.AccessToken);
 
         // Assert
@@ -119,7 +119,7 @@ public sealed class JwtTokenServiceTests
         var user = ApplicationUserFactory.Create(email: email);
 
         // Act
-        var result = _sut.CreateTokenPair(user, []);
+        var result = _sut.CreateTokenPair(user, [], []);
         var token = ReadToken(result.AccessToken);
 
         // Assert
@@ -134,7 +134,7 @@ public sealed class JwtTokenServiceTests
         var expectedIat = _fakeTimeProvider.GetUtcNow().ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture);
 
         // Act
-        var result = _sut.CreateTokenPair(user, []);
+        var result = _sut.CreateTokenPair(user, [], []);
         var token = ReadToken(result.AccessToken);
 
         // Assert
@@ -149,7 +149,7 @@ public sealed class JwtTokenServiceTests
         string[] roles = [Roles.Admin, Roles.Member];
 
         // Act
-        var result = _sut.CreateTokenPair(user, roles);
+        var result = _sut.CreateTokenPair(user, roles, []);
         var token = ReadToken(result.AccessToken);
         var roleClaims = token.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
 
@@ -165,11 +165,42 @@ public sealed class JwtTokenServiceTests
         var user = ApplicationUserFactory.Create();
 
         // Act
-        var result = _sut.CreateTokenPair(user, []);
+        var result = _sut.CreateTokenPair(user, [], []);
         var token = ReadToken(result.AccessToken);
 
         // Assert
         token.Claims.ShouldNotContain(c => c.Type == ClaimTypes.Role);
+    }
+
+    [Fact(DisplayName = "CreateTokenPair should include a permission claim for each provided permission")]
+    public void CreateTokenPair_ShouldIncludePermissionClaims()
+    {
+        // Arrange
+        var user = ApplicationUserFactory.Create();
+        string[] permissions = ["Read", "Write"];
+
+        // Act
+        var result = _sut.CreateTokenPair(user, [], permissions);
+        var token = ReadToken(result.AccessToken);
+        var permissionClaims = token.Claims.Where(c => c.Type == "permission").Select(c => c.Value).ToList();
+
+        // Assert
+        permissionClaims.ShouldContain("Read");
+        permissionClaims.ShouldContain("Write");
+    }
+
+    [Fact(DisplayName = "CreateTokenPair should not include any permission claims when permissions are empty")]
+    public void CreateTokenPair_ShouldNotIncludePermissionClaims_WhenPermissionsEmpty()
+    {
+        // Arrange
+        var user = ApplicationUserFactory.Create();
+
+        // Act
+        var result = _sut.CreateTokenPair(user, [], []);
+        var token = ReadToken(result.AccessToken);
+
+        // Assert
+        token.Claims.ShouldNotContain(c => c.Type == "permission");
     }
 
     [Fact(DisplayName = "CreateTokenPair should include the usbc_id claim when the user has a UsbcId")]
@@ -180,7 +211,7 @@ public sealed class JwtTokenServiceTests
         var user = ApplicationUserFactory.Create(usbcId: usbcId);
 
         // Act
-        var result = _sut.CreateTokenPair(user, []);
+        var result = _sut.CreateTokenPair(user, [], []);
         var token = ReadToken(result.AccessToken);
 
         // Assert
@@ -194,7 +225,7 @@ public sealed class JwtTokenServiceTests
         var user = ApplicationUserFactory.Create(usbcId: null);
 
         // Act
-        var result = _sut.CreateTokenPair(user, []);
+        var result = _sut.CreateTokenPair(user, [], []);
         var token = ReadToken(result.AccessToken);
 
         // Assert
@@ -208,7 +239,7 @@ public sealed class JwtTokenServiceTests
         var user = ApplicationUserFactory.Create();
 
         // Act
-        var result = _sut.CreateTokenPair(user, []);
+        var result = _sut.CreateTokenPair(user, [], []);
         var token = ReadToken(result.AccessToken);
 
         // Assert
@@ -222,7 +253,7 @@ public sealed class JwtTokenServiceTests
         var user = ApplicationUserFactory.Create();
 
         // Act
-        var result = _sut.CreateTokenPair(user, []);
+        var result = _sut.CreateTokenPair(user, [], []);
 
         // Assert — ReadToken validates signature; an exception means the test fails
         Should.NotThrow(() => ReadToken(result.AccessToken));
@@ -235,7 +266,7 @@ public sealed class JwtTokenServiceTests
         var user = ApplicationUserFactory.Create();
 
         // Act
-        var result = _sut.CreateTokenPair(user, []);
+        var result = _sut.CreateTokenPair(user, [], []);
 
         // Assert
         var bytes = Should.NotThrow(() => Convert.FromBase64String(result.RefreshToken));
@@ -249,8 +280,8 @@ public sealed class JwtTokenServiceTests
         var user = ApplicationUserFactory.Create();
 
         // Act
-        var first = _sut.CreateTokenPair(user, []);
-        var second = _sut.CreateTokenPair(user, []);
+        var first = _sut.CreateTokenPair(user, [], []);
+        var second = _sut.CreateTokenPair(user, [], []);
 
         // Assert
         first.RefreshToken.ShouldNotBe(second.RefreshToken);

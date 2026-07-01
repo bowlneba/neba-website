@@ -8,11 +8,13 @@ using Microsoft.AspNetCore.Identity;
 
 using Neba.Api.Messaging;
 using Neba.Api.Security.Domain;
+using Neba.Api.Security.Infrastructure.Authorization;
 
 namespace Neba.Api.Security.RefreshToken;
 
 internal sealed class RefreshTokenCommandHandler(
     UserManager<ApplicationUser> userManager,
+    RoleManager<ApplicationRole> roleManager,
     IJwtTokenService jwtTokenService,
     JwtSettings jwtSettings,
     TimeProvider timeProvider,
@@ -61,7 +63,8 @@ internal sealed class RefreshTokenCommandHandler(
         }
 
         var roles = await userManager.GetRolesAsync(user);
-        var tokenPair = jwtTokenService.CreateTokenPair(user, roles.AsReadOnly());
+        var permissions = await PermissionResolver.ResolveAsync(roleManager, roles);
+        var tokenPair = jwtTokenService.CreateTokenPair(user, roles.AsReadOnly(), permissions);
 
         // Single stored token per user, overwritten on each refresh: rotation is enforced by
         // replacement, not by tracking a token family/generation, so there's no replay signal

@@ -4,5 +4,5 @@ namespace Neba.Api.Security;
 
 internal interface IJwtTokenService
 {
-    TokenPair CreateTokenPair(ApplicationUser user, IReadOnlyCollection<string> roles);
+    TokenPair CreateTokenPair(ApplicationUser user, IReadOnlyCollection<string> roles, IReadOnlyCollection<string> permissions);
 }

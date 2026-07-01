@@ -45,11 +45,13 @@ public sealed class LogoutCommandHandlerIntegrationTests(SecurityDbContextFixtur
 
     private static async Task<(ApplicationUser User, string RefreshToken)> SeedLoginAsync(
         UserManager<ApplicationUser> userManager,
+        RoleManager<ApplicationRole> roleManager,
         SignInManager<ApplicationUser> signInManager)
     {
         var user = await SeedUserAsync(userManager);
         var loginResult = await new LoginCommandHandler(
                 userManager,
+                roleManager,
                 signInManager,
                 new JwtTokenService(
                     new JwtSettings
@@ -79,8 +81,9 @@ public sealed class LogoutCommandHandlerIntegrationTests(SecurityDbContextFixtur
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
-        var (user, _) = await SeedLoginAsync(userManager, signInManager);
+        var (user, _) = await SeedLoginAsync(userManager, roleManager, signInManager);
         var command = new LogoutCommand { UserId = user.Id };
 
         // Act

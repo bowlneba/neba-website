@@ -46,10 +46,12 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
 
     private static RefreshTokenCommandHandler CreateHandler(
         UserManager<ApplicationUser> userManager,
+        RoleManager<ApplicationRole> roleManager,
         TimeProvider? timeProvider = null,
         ILogger<RefreshTokenCommandHandler>? logger = null)
         => new(
             userManager,
+            roleManager,
             new JwtTokenService(TestJwtSettings, timeProvider ?? TimeProvider.System),
             TestJwtSettings,
             timeProvider ?? TimeProvider.System,
@@ -70,6 +72,7 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
 
     private static async Task<(ApplicationUser User, string RefreshToken)> SeedLoginAsync(
         UserManager<ApplicationUser> userManager,
+        RoleManager<ApplicationRole> roleManager,
         SignInManager<ApplicationUser> signInManager,
         TimeProvider? timeProvider = null)
     {
@@ -77,6 +80,7 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         var tp = timeProvider ?? TimeProvider.System;
         var loginResult = await new LoginCommandHandler(
                 userManager,
+                roleManager,
                 signInManager,
                 new JwtTokenService(TestJwtSettings, tp),
                 tp)
@@ -97,6 +101,7 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var command = new RefreshTokenCommand
         {
             UserId = Ulid.NewUlid(),
@@ -104,7 +109,7 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         };
 
         // Act
-        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, roleManager).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -119,6 +124,7 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var user = await SeedUserAsync(userManager);
         var command = new RefreshTokenCommand
         {
@@ -127,7 +133,7 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         };
 
         // Act
-        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, roleManager).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -142,6 +148,7 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var user = await SeedUserAsync(userManager);
         await userManager.SetAuthenticationTokenAsync(user, RefreshTokenProvider, RefreshTokenName, "not-valid-json{{{");
 
@@ -153,7 +160,7 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         };
 
         // Act
-        var result = await CreateHandler(userManager, logger: logger).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, roleManager, logger: logger).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -171,8 +178,9 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
-        var (user, _) = await SeedLoginAsync(userManager, signInManager);
+        var (user, _) = await SeedLoginAsync(userManager, roleManager, signInManager);
         var command = new RefreshTokenCommand
         {
             UserId = user.Id,
@@ -180,7 +188,7 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         };
 
         // Act
-        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, roleManager).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -195,10 +203,11 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var issuedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
         var seedTimeProvider = new FakeTimeProvider(issuedAt);
         var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
-        var (user, refreshToken) = await SeedLoginAsync(userManager, signInManager, seedTimeProvider);
+        var (user, refreshToken) = await SeedLoginAsync(userManager, roleManager, signInManager, seedTimeProvider);
 
         var expiredTimeProvider = new FakeTimeProvider(issuedAt.AddDays(TestJwtSettings.RefreshTokenExpiryDays + 1));
         var command = new RefreshTokenCommand
@@ -208,7 +217,7 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         };
 
         // Act
-        var result = await CreateHandler(userManager, expiredTimeProvider).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, roleManager, expiredTimeProvider).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -223,8 +232,9 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
-        var (user, refreshToken) = await SeedLoginAsync(userManager, signInManager);
+        var (user, refreshToken) = await SeedLoginAsync(userManager, roleManager, signInManager);
         var command = new RefreshTokenCommand
         {
             UserId = user.Id,
@@ -232,7 +242,7 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         };
 
         // Act
-        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, roleManager).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -248,8 +258,9 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
-        var (user, refreshToken) = await SeedLoginAsync(userManager, signInManager);
+        var (user, refreshToken) = await SeedLoginAsync(userManager, roleManager, signInManager);
         var command = new RefreshTokenCommand
         {
             UserId = user.Id,
@@ -257,7 +268,7 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         };
 
         // Act
-        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, roleManager).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -272,8 +283,9 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
-        var (user, oldRefreshToken) = await SeedLoginAsync(userManager, signInManager);
+        var (user, oldRefreshToken) = await SeedLoginAsync(userManager, roleManager, signInManager);
         var command = new RefreshTokenCommand
         {
             UserId = user.Id,
@@ -281,7 +293,7 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         };
 
         // Act
-        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+        var result = await CreateHandler(userManager, roleManager).HandleAsync(command, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();

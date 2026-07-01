@@ -4,11 +4,13 @@ using Microsoft.AspNetCore.Identity;
 
 using Neba.Api.Messaging;
 using Neba.Api.Security.Domain;
+using Neba.Api.Security.Infrastructure.Authorization;
 
 namespace Neba.Api.Security.Login;
 
 internal sealed class LoginCommandHandler(
     UserManager<ApplicationUser> userManager,
+    RoleManager<ApplicationRole> roleManager,
     SignInManager<ApplicationUser> signInManager,
     IJwtTokenService jwtTokenService,
     TimeProvider timeProvider)
@@ -31,7 +33,8 @@ internal sealed class LoginCommandHandler(
         }
 
         var roles = await userManager.GetRolesAsync(user);
-        var tokenPair = jwtTokenService.CreateTokenPair(user, roles.AsReadOnly());
+        var permissions = await PermissionResolver.ResolveAsync(roleManager, roles);
+        var tokenPair = jwtTokenService.CreateTokenPair(user, roles.AsReadOnly(), permissions);
 
         await RefreshTokenStore.StoreAsync(userManager, user, tokenPair.RefreshToken, timeProvider);
 

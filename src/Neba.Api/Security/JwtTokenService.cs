@@ -13,21 +13,26 @@ namespace Neba.Api.Security;
 internal sealed class JwtTokenService(JwtSettings settings, TimeProvider timeProvider)
     : IJwtTokenService
 {
-    public TokenPair CreateTokenPair(ApplicationUser user, IReadOnlyCollection<string> roles)
+    public TokenPair CreateTokenPair(ApplicationUser user, IReadOnlyCollection<string> roles, IReadOnlyCollection<string> permissions)
     {
         var now = timeProvider.GetUtcNow();
         var expiresAt = now.AddMinutes(settings.AccessTokenExpiryMinutes);
 
-        List<Claim> claims = new()
-        {
+        List<Claim> claims =
+        [
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email!),
             new Claim(JwtRegisteredClaimNames.Iat, now.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture), ClaimValueTypes.Integer64)
-        };
+        ];
 
         foreach (var role in roles)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));
+        }
+
+        foreach (var permission in permissions)
+        {
+            claims.Add(new Claim("permission", permission));
         }
 
         if (user.UsbcId is not null)
