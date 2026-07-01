@@ -276,9 +276,9 @@ public sealed class HallOfFameTests : IDisposable
             IsSuccessStatusCode = true,
             StatusCode = System.Net.HttpStatusCode.OK,
             Content = new CollectionResponse<HallOfFameInductionResponse>
-        {
-            Items = inductions,
-        }
+            {
+                Items = inductions,
+            }
         };
 
         _mockApi

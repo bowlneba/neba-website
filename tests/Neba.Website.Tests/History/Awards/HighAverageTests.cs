@@ -218,9 +218,9 @@ public sealed class HighAverageTests : IDisposable
             IsSuccessStatusCode = true,
             StatusCode = System.Net.HttpStatusCode.OK,
             Content = new CollectionResponse<HighAverageAwardResponse>
-        {
-            Items = awards,
-        }
+            {
+                Items = awards,
+            }
         };
 
         _mockApi

@@ -380,9 +380,9 @@ public sealed class BowlingCentersTests : IDisposable
             IsSuccessStatusCode = true,
             StatusCode = System.Net.HttpStatusCode.OK,
             Content = new CollectionResponse<BowlingCenterSummaryResponse>
-        {
-            Items = centers,
-        }
+            {
+                Items = centers,
+            }
         };
 
         _mockApi

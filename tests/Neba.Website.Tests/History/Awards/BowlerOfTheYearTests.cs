@@ -191,9 +191,9 @@ public sealed class BowlerOfTheYearTests : IDisposable
             IsSuccessStatusCode = true,
             StatusCode = System.Net.HttpStatusCode.OK,
             Content = new CollectionResponse<BowlerOfTheYearAwardResponse>
-        {
-            Items = awards,
-        }
+            {
+                Items = awards,
+            }
         };
 
         _mockApi

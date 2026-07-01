@@ -275,11 +275,11 @@ public sealed class BowlerTitlesModalTests : IDisposable
             IsSuccessStatusCode = true,
             StatusCode = System.Net.HttpStatusCode.OK,
             Content = new BowlerTitlesResponse
-        {
-            BowlerName = bowlerName,
-            HallOfFame = false,
-            Titles = titles,
-        }
+            {
+                BowlerName = bowlerName,
+                HallOfFame = false,
+                Titles = titles,
+            }
         };
 
         _mockBowlersApi

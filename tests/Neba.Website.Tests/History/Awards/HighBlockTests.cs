@@ -209,9 +209,9 @@ public sealed class HighBlockTests : IDisposable
             IsSuccessStatusCode = true,
             StatusCode = System.Net.HttpStatusCode.OK,
             Content = new CollectionResponse<HighBlockAwardResponse>
-        {
-            Items = awards,
-        }
+            {
+                Items = awards,
+            }
         };
 
         _mockApi

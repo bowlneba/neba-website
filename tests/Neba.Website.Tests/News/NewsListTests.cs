@@ -317,12 +317,12 @@ public sealed class NewsListTests : IDisposable
             IsSuccessStatusCode = true,
             StatusCode = System.Net.HttpStatusCode.OK,
             Content = new PaginationResponse<ArticleSummaryResponse>
-        {
-            Items = articles,
-            TotalItems = totalItems,
-            PageNumber = pageNumber,
-            PageSize = 10,
-        }
+            {
+                Items = articles,
+                TotalItems = totalItems,
+                PageNumber = pageNumber,
+                PageSize = 10,
+            }
         };
 
         _mockApi
