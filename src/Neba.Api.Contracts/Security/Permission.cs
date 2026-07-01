@@ -19,4 +19,14 @@ public sealed class Permissions
     private Permissions(string key, string name)
         : base(name, key)
     { }
+
+    /// <summary>
+    /// Gets the name of the policy associated with this permission.
+    /// This is used to create authorization policies dynamically based on permissions.
+    /// The policy name is in the format "Permission:{PermissionValue}".
+    /// For example, if the permission value is "Read", the policy name will be "Permission:Read".
+    /// This allows for a consistent way to reference permissions in authorization checks.
+    /// </summary>
+    public string PolicyName
+        => $"Permission:{Value}";
 }

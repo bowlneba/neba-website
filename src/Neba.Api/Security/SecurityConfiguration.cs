@@ -1,12 +1,14 @@
 using System.Text;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 using Neba.Api.Database;
 using Neba.Api.Security.Domain;
+using Neba.Api.Security.Infrastructure.Authorization;
 
 using Npgsql;
 
@@ -90,6 +92,10 @@ internal static class SecurityConfiguration
             builder.Services
                 .AddAuthorizationBuilder()
                 .AddPolicy(AuthenticatedPolicy, policy => policy.RequireAuthenticatedUser());
+
+            builder.Services
+                .AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>()
+                .AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
             return builder;
         }
