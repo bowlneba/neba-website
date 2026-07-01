@@ -4,6 +4,7 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <PackageReference Include="Ardalis.SmartEnum" />
     <PackageReference Include="Refit" />
   </ItemGroup>
   
