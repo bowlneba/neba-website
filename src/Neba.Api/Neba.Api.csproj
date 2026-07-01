@@ -35,6 +35,7 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
+    <PackageReference Include="Microsoft.OpenApi" />
     <PackageReference Include="Scalar.AspNetCore" />
     <PackageReference Include="Scrutor.AspNetCore" />
     <PackageReference Include="StronglyTypedId" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
