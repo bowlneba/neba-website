@@ -161,7 +161,7 @@ public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContex
     private static string ExtractTempPasswordFromBody(string htmlBody)
     {
         const string open = "monospace;\">";
-        const string close = "</div>";
+        const string close = "</span>";
         var start = htmlBody.IndexOf(open, StringComparison.Ordinal) + open.Length;
         var end = htmlBody.IndexOf(close, start, StringComparison.Ordinal);
         return htmlBody[start..end].Trim();

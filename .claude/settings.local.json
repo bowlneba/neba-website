@@ -43,7 +43,8 @@
       "Bash(git *)",
       "WebFetch(domain:productionresultssa19.blob.core.windows.net)",
       "WebFetch(domain:productionresultssa5.blob.core.windows.net)",
-      "Bash(VERIFY_UPDATE_SNAPSHOTS=true dotnet test tests/Neba.Api.Tests --filter \"Category=Unit\" --no-build)"
+      "Bash(VERIFY_UPDATE_SNAPSHOTS=true dotnet test tests/Neba.Api.Tests --filter \"Category=Unit\" --no-build)",
+      "Bash(/Users/kippermand/Projects/bowlneba/neba-website/tests/Neba.Api.Tests/bin/Debug/net10.0/Neba.Api.Tests --filter-class \"*ResetPasswordCommandHandlerIntegrationTests*\")"
     ],
     "additionalDirectories": [
       "/Users/kippermand/Projects/bowlneba/neba-website/src",

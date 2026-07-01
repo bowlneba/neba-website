@@ -46,12 +46,32 @@ internal sealed class ResetPasswordCommandHandler(
         return Result.Success;
     }
 
-    // 16-char base64 string (letters, digits, +, /, =).
-    // Last character replaced with a decimal digit to guarantee Identity's RequireDigit policy.
+    // Guarantees at least one uppercase letter, one lowercase letter, and one digit
+    // (Identity's RequireUppercase/RequireLowercase/RequireDigit policies), then shuffles
+    // so the guaranteed characters aren't always in fixed positions.
     private static string GenerateTempPassword()
     {
-        var bytes = RandomNumberGenerator.GetBytes(12);
-        var b64 = Convert.ToBase64String(bytes);
-        return b64[..15] + (char)('0' + (bytes[11] % 10));
+        const string uppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+        const string lowercase = "abcdefghijkmnopqrstuvwxyz";
+        const string digits = "23456789";
+        const string all = uppercase + lowercase + digits;
+
+        Span<char> password = stackalloc char[16];
+        password[0] = uppercase[RandomNumberGenerator.GetInt32(uppercase.Length)];
+        password[1] = lowercase[RandomNumberGenerator.GetInt32(lowercase.Length)];
+        password[2] = digits[RandomNumberGenerator.GetInt32(digits.Length)];
+
+        for (var i = 3; i < password.Length; i++)
+        {
+            password[i] = all[RandomNumberGenerator.GetInt32(all.Length)];
+        }
+
+        for (var i = password.Length - 1; i > 0; i--)
+        {
+            var j = RandomNumberGenerator.GetInt32(i + 1);
+            (password[i], password[j]) = (password[j], password[i]);
+        }
+
+        return new string(password);
     }
 }
