@@ -30,11 +30,11 @@
     <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
     <PackageVersion Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="10.0.1" />
     <PackageVersion Include="ErrorOr" Version="2.1.1" />
-    <PackageVersion Include="FastEndpoints" Version="8.1.0" />
-    <PackageVersion Include="FastEndpoints.AspVersioning" Version="8.1.0" />
-    <PackageVersion Include="FastEndpoints.Swagger" Version="8.1.0" />
+    <PackageVersion Include="FastEndpoints" Version="8.2.0" />
+    <PackageVersion Include="FastEndpoints.AspVersioning" Version="8.2.0" />
+    <PackageVersion Include="FastEndpoints.Swagger" Version="8.2.0" />
     <PackageVersion Include="Google.Apis.Auth" Version="1.75.0" />
-    <PackageVersion Include="Google.Apis.Drive.v3" Version="1.74.0.4135" />
+    <PackageVersion Include="Google.Apis.Drive.v3" Version="1.75.0.4192" />
     <PackageVersion Include="Hangfire.AspNetCore" Version="1.8.23" />
     <PackageVersion Include="Hangfire.InMemory" Version="1.0.0" />
     <PackageVersion Include="Hangfire.PostgreSql" Version="1.21.1" />
@@ -64,13 +64,13 @@
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.16.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.16.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
-    <PackageVersion Include="Refit" Version="11.2.0" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="11.2.0" />
+    <PackageVersion Include="Refit" Version="13.0.0" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="13.0.0" />
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.16.5" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.16.7" />
     <PackageVersion Include="Scrutor.AspNetCore" Version="3.3.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.27.0.140913" />
