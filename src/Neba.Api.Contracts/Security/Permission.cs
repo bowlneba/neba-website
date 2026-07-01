@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Ardalis.SmartEnum;
 
 namespace Neba.Api.Contracts.Security;
@@ -5,6 +7,8 @@ namespace Neba.Api.Contracts.Security;
 /// <summary>
 /// Represents a permission in the system.
 /// </summary>
+[SuppressMessage("Naming", "CA1724:Type names should not match namespaces",
+    Justification = "Permissions is the established domain term for this concept; System.Security.Permissions is not referenced anywhere in this codebase.")]
 public sealed class Permissions
     : SmartEnum<Permissions, string>
 {
