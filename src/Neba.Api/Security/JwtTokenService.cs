@@ -6,6 +6,7 @@ using System.Text;
 
 using Microsoft.IdentityModel.Tokens;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Security.Domain;
 
 namespace Neba.Api.Security;
@@ -13,7 +14,7 @@ namespace Neba.Api.Security;
 internal sealed class JwtTokenService(JwtSettings settings, TimeProvider timeProvider)
     : IJwtTokenService
 {
-    public TokenPair CreateTokenPair(ApplicationUser user, IReadOnlyCollection<string> roles, IReadOnlyCollection<string> permissions)
+    public TokenPair CreateTokenPair(ApplicationUser user, IReadOnlyCollection<string> roles, IReadOnlyCollection<Permissions> permissions)
     {
         var now = timeProvider.GetUtcNow();
         var expiresAt = now.AddMinutes(settings.AccessTokenExpiryMinutes);
@@ -32,7 +33,7 @@ internal sealed class JwtTokenService(JwtSettings settings, TimeProvider timePro
 
         foreach (var permission in permissions)
         {
-            claims.Add(new Claim("permission", permission));
+            claims.Add(new Claim("permission", permission.Value));
         }
 
         if (user.UsbcId is not null)

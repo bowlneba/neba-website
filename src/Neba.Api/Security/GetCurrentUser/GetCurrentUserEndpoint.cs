@@ -14,7 +14,7 @@ using Neba.Api.Messaging;
 namespace Neba.Api.Security.GetCurrentUser;
 
 internal sealed class GetCurrentUserEndpoint(IQueryHandler<GetCurrentUserQuery, ErrorOr<UserDto>> queryHandler)
-    : EndpointWithoutRequest<MeResponse>
+    : EndpointWithoutRequest<GetCurrentUserResponse>
 {
     private readonly IQueryHandler<GetCurrentUserQuery, ErrorOr<UserDto>> _queryHandler = queryHandler;
 
@@ -32,7 +32,7 @@ internal sealed class GetCurrentUserEndpoint(IQueryHandler<GetCurrentUserQuery, 
         Description(description => description
             .WithName("GetCurrentUser")
             .WithTags("Authenticated")
-            .Produces<MeResponse>(StatusCodes.Status200OK)
+            .Produces<GetCurrentUserResponse>(StatusCodes.Status200OK)
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
             .ProducesProblemDetails(StatusCodes.Status404NotFound));
     }
@@ -61,11 +61,12 @@ internal sealed class GetCurrentUserEndpoint(IQueryHandler<GetCurrentUserQuery, 
         var dto = result.Value;
 
         // Stryker disable once Statement
-        await Send.OkAsync(new MeResponse
+        await Send.OkAsync(new GetCurrentUserResponse
         {
             UserId = dto.UserId.ToString(),
             Email = dto.Email,
             Roles = dto.Roles,
+            Permissions = [.. dto.Permissions.Select(permission => permission.Value)],
             UsbcId = dto.UsbcId,
         }, ct);
     }

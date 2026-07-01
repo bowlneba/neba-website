@@ -29,7 +29,7 @@ public interface ISecurityApi
 
     /// <summary>Returns the current authenticated user's profile.</summary>
     [Get("/security/me")]
-    Task<IApiResponse<MeResponse>> GetCurrentUserAsync(CancellationToken cancellationToken = default);
+    Task<IApiResponse<GetCurrentUserResponse>> GetCurrentUserAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Resets any user's password directly (Admin only). No current password or email token required.</summary>
     [Post("/security/password/reset")]

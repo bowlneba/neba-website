@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Identity;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Security.Domain;
 
 namespace Neba.Api.Security.Infrastructure.Authorization;
 
 internal static class PermissionResolver
 {
-    public static async Task<IReadOnlyCollection<string>> ResolveAsync(RoleManager<ApplicationRole> roleManager, IEnumerable<string> roleNames)
+    public static async Task<IReadOnlyCollection<Permissions>> ResolveAsync(RoleManager<ApplicationRole> roleManager, IEnumerable<string> roleNames)
     {
         var permissionKeys = new HashSet<string>();
 
@@ -26,6 +27,6 @@ internal static class PermissionResolver
             }
         }
 
-        return permissionKeys;
+        return [.. permissionKeys.Select(key => Permissions.FromValue(key))];
     }
 }

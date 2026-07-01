@@ -1,5 +1,6 @@
 using Bogus;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Security.GetCurrentUser;
 
 namespace Neba.TestFactory.Security;
@@ -14,12 +15,14 @@ public static class UserDtoFactory
         Ulid? userId = null,
         string? email = null,
         IReadOnlyCollection<string>? roles = null,
+        IReadOnlyCollection<Permissions>? permissions = null,
         string? usbcId = null)
         => new()
         {
             UserId = userId ?? Ulid.NewUlid(),
             Email = email ?? ValidEmail,
             Roles = roles ?? [ValidRole],
+            Permissions = permissions ?? [Permissions.Read],
             UsbcId = usbcId
         };
 
@@ -31,6 +34,7 @@ public static class UserDtoFactory
             UserId = Ulid.Bogus(faker),
             Email = faker.Internet.Email(),
             Roles = [faker.Random.Word()],
+            Permissions = [.. faker.PickRandom(Permissions.List.ToArray(), faker.Random.Int(1, Permissions.List.Count))],
             UsbcId = faker.Random.Bool() ? $"{faker.Random.Int(10, 9999)}-{faker.Random.Int(1000, 99999)}" : null
         })];
     }

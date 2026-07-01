@@ -16,11 +16,12 @@ internal sealed class GetCurrentUserSummary : Summary<GetCurrentUserEndpoint>
 #pragma warning disable S1075
         Response(200, "Profile retrieved.",
             contentType: MediaTypeNames.Application.Json,
-            example: new MeResponse
+            example: new GetCurrentUserResponse
             {
                 UserId = "01JXXXXXXXXXXXXXXXXXXXXXXXXX",
                 Email = "admin@bowlneba.com",
                 Roles = ["Admin"],
+                Permissions = ["Tournament.Complete", "Article.Create", "Member.Search"],
                 UsbcId = null,
             });
 #pragma warning restore S1075
