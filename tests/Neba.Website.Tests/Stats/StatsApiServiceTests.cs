@@ -9,6 +9,7 @@ using Neba.Website.Server.Services;
 using Neba.Website.Server.Stats;
 
 using Refit;
+using Refit.Testing;
 
 namespace Neba.Website.Tests.Stats;
 
@@ -484,25 +485,29 @@ public sealed class StatsApiServiceTests
 
     private void SetupSuccess(GetSeasonStatsResponse response)
     {
-        var apiResponse = new Mock<IApiResponse<GetSeasonStatsResponse>>(MockBehavior.Strict);
-        apiResponse.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        apiResponse.Setup(r => r.Content).Returns(response);
-        apiResponse.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
+        using var apiResponse = new StubApiResponse<GetSeasonStatsResponse>
+        {
+            IsSuccessStatusCode = true,
+            Content = response,
+            StatusCode = System.Net.HttpStatusCode.OK
+        };
 
         _mockStatsApi
             .Setup(x => x.GetSeasonStatsAsync(It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(apiResponse.Object);
+            .ReturnsAsync(apiResponse);
     }
 
     private void SetupFailure()
     {
-        var apiResponse = new Mock<IApiResponse<GetSeasonStatsResponse>>(MockBehavior.Strict);
-        apiResponse.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        apiResponse.Setup(r => r.Content).Returns((GetSeasonStatsResponse?)null);
-        apiResponse.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.InternalServerError);
+        using var apiResponse = new StubApiResponse<GetSeasonStatsResponse>
+        {
+            IsSuccessStatusCode = false,
+            Content = (GetSeasonStatsResponse?)null,
+            StatusCode = System.Net.HttpStatusCode.InternalServerError
+        };
 
         _mockStatsApi
             .Setup(x => x.GetSeasonStatsAsync(It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(apiResponse.Object);
+            .ReturnsAsync(apiResponse);
     }
 }

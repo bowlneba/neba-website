@@ -16,6 +16,7 @@ using Neba.TestFactory.Security;
 using Neba.Website.Server.Account;
 
 using Refit;
+using Refit.Testing;
 
 namespace Neba.Website.Tests.Account.Login;
 
@@ -70,13 +71,15 @@ public sealed class LoginTests : IDisposable
     public void Submit_ShouldShowErrorMessage_WhenCredentialsAreInvalid()
     {
         // Arrange
-        var response = new Mock<IApiResponse<LoginResponse>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        response.Setup(r => r.Content).Returns((LoginResponse?)null);
+        using var response = new StubApiResponse<LoginResponse>
+        {
+            IsSuccessStatusCode = false,
+            Content = (LoginResponse?)null
+        };
 
         _mockApi
             .Setup(x => x.LoginAsync(It.IsAny<LoginRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
 
         var cut = RenderLogin();
         FillForm(cut, "bowler@bowlneba.com", "WrongPassword1");
@@ -117,13 +120,15 @@ public sealed class LoginTests : IDisposable
             userId: "user-1",
             email: "bowler@bowlneba.com");
 
-        var response = new Mock<IApiResponse<LoginResponse>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        response.Setup(r => r.Content).Returns(loginResponse);
+        using var response = new StubApiResponse<LoginResponse>
+        {
+            IsSuccessStatusCode = true,
+            Content = loginResponse
+        };
 
         _mockApi
             .Setup(x => x.LoginAsync(It.IsAny<LoginRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
 
         _authServiceMock
             .Setup(s => s.SignInAsync(

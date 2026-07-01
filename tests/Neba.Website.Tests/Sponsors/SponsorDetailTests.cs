@@ -15,6 +15,7 @@ using Neba.Website.Server.Services;
 using Neba.Website.Server.Sponsors;
 
 using Refit;
+using Refit.Testing;
 
 namespace Neba.Website.Tests.Sponsors;
 
@@ -412,25 +413,29 @@ public sealed class SponsorDetailTests : IDisposable
 
     private void SetupSuccessResponse(SponsorDetailResponse sponsor)
     {
-        var response = new Mock<IApiResponse<SponsorDetailResponse>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        response.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
-        response.Setup(r => r.Content).Returns(sponsor);
+        using var response = new StubApiResponse<SponsorDetailResponse>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = sponsor
+        };
 
         _mockApi
             .Setup(x => x.GetSponsorBySlugAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 
     private void SetupFailureResponse(System.Net.HttpStatusCode statusCode)
     {
-        var response = new Mock<IApiResponse<SponsorDetailResponse>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        response.Setup(r => r.StatusCode).Returns(statusCode);
-        response.Setup(r => r.Content).Returns((SponsorDetailResponse?)null);
+        using var response = new StubApiResponse<SponsorDetailResponse>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = statusCode,
+            Content = (SponsorDetailResponse?)null
+        };
 
         _mockApi
             .Setup(x => x.GetSponsorBySlugAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 }

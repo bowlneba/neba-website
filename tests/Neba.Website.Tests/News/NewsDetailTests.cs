@@ -12,6 +12,7 @@ using Neba.Website.Server.News;
 using Neba.Website.Server.Services;
 
 using Refit;
+using Refit.Testing;
 
 namespace Neba.Website.Tests.News;
 
@@ -342,25 +343,29 @@ public sealed class NewsDetailTests : IDisposable
 
     private void SetupSuccessResponse(ArticleDetailResponse article)
     {
-        var response = new Mock<IApiResponse<ArticleDetailResponse>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        response.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
-        response.Setup(r => r.Content).Returns(article);
+        using var response = new StubApiResponse<ArticleDetailResponse>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = article
+        };
 
         _mockApi
             .Setup(x => x.GetArticleAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 
     private void SetupFailureResponse(System.Net.HttpStatusCode statusCode)
     {
-        var response = new Mock<IApiResponse<ArticleDetailResponse>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        response.Setup(r => r.StatusCode).Returns(statusCode);
-        response.Setup(r => r.Content).Returns((ArticleDetailResponse?)null);
+        using var response = new StubApiResponse<ArticleDetailResponse>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = statusCode,
+            Content = (ArticleDetailResponse?)null
+        };
 
         _mockApi
             .Setup(x => x.GetArticleAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 }

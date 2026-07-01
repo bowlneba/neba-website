@@ -11,6 +11,7 @@ using Neba.Website.Server.Clock;
 using Neba.Website.Server.Services;
 
 using Refit;
+using Refit.Testing;
 
 using BowlerOfTheYearPage = Neba.Website.Server.History.Awards.BowlerOfTheYear;
 
@@ -185,28 +186,32 @@ public sealed class BowlerOfTheYearTests : IDisposable
 
     private void SetupSuccessResponse(IReadOnlyCollection<BowlerOfTheYearAwardResponse> awards)
     {
-        var response = new Mock<IApiResponse<CollectionResponse<BowlerOfTheYearAwardResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        response.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
-        response.Setup(r => r.Content).Returns(new CollectionResponse<BowlerOfTheYearAwardResponse>
+        using var response = new StubApiResponse<CollectionResponse<BowlerOfTheYearAwardResponse>>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = new CollectionResponse<BowlerOfTheYearAwardResponse>
         {
             Items = awards,
-        });
+        }
+        };
 
         _mockApi
             .Setup(x => x.ListBowlerOfTheYearAwardsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 
     private void SetupFailureResponse(System.Net.HttpStatusCode statusCode)
     {
-        var response = new Mock<IApiResponse<CollectionResponse<BowlerOfTheYearAwardResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        response.Setup(r => r.StatusCode).Returns(statusCode);
-        response.Setup(r => r.Content).Returns((CollectionResponse<BowlerOfTheYearAwardResponse>?)null);
+        using var response = new StubApiResponse<CollectionResponse<BowlerOfTheYearAwardResponse>>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = statusCode,
+            Content = (CollectionResponse<BowlerOfTheYearAwardResponse>?)null
+        };
 
         _mockApi
             .Setup(x => x.ListBowlerOfTheYearAwardsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 }

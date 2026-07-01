@@ -11,6 +11,7 @@ using Neba.Website.Server.Clock;
 using Neba.Website.Server.Services;
 
 using Refit;
+using Refit.Testing;
 
 using HighBlockPage = Neba.Website.Server.History.Awards.HighBlock;
 
@@ -203,28 +204,32 @@ public sealed class HighBlockTests : IDisposable
 
     private void SetupSuccessResponse(IReadOnlyCollection<HighBlockAwardResponse> awards)
     {
-        var response = new Mock<IApiResponse<CollectionResponse<HighBlockAwardResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        response.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
-        response.Setup(r => r.Content).Returns(new CollectionResponse<HighBlockAwardResponse>
+        using var response = new StubApiResponse<CollectionResponse<HighBlockAwardResponse>>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = new CollectionResponse<HighBlockAwardResponse>
         {
             Items = awards,
-        });
+        }
+        };
 
         _mockApi
             .Setup(x => x.ListHighBlockAwardsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 
     private void SetupFailureResponse(System.Net.HttpStatusCode statusCode)
     {
-        var response = new Mock<IApiResponse<CollectionResponse<HighBlockAwardResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        response.Setup(r => r.StatusCode).Returns(statusCode);
-        response.Setup(r => r.Content).Returns((CollectionResponse<HighBlockAwardResponse>?)null);
+        using var response = new StubApiResponse<CollectionResponse<HighBlockAwardResponse>>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = statusCode,
+            Content = (CollectionResponse<HighBlockAwardResponse>?)null
+        };
 
         _mockApi
             .Setup(x => x.ListHighBlockAwardsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 }

@@ -14,6 +14,7 @@ using Neba.Website.Server.News;
 using Neba.Website.Server.Services;
 
 using Refit;
+using Refit.Testing;
 
 namespace Neba.Website.Tests.News;
 
@@ -311,31 +312,35 @@ public sealed class NewsListTests : IDisposable
         int totalItems,
         int pageNumber = 1)
     {
-        var response = new Mock<IApiResponse<PaginationResponse<ArticleSummaryResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        response.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
-        response.Setup(r => r.Content).Returns(new PaginationResponse<ArticleSummaryResponse>
+        using var response = new StubApiResponse<PaginationResponse<ArticleSummaryResponse>>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = new PaginationResponse<ArticleSummaryResponse>
         {
             Items = articles,
             TotalItems = totalItems,
             PageNumber = pageNumber,
             PageSize = 10,
-        });
+        }
+        };
 
         _mockApi
             .Setup(x => x.ListArticlesAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 
     private void SetupFailureResponse(System.Net.HttpStatusCode statusCode)
     {
-        var response = new Mock<IApiResponse<PaginationResponse<ArticleSummaryResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        response.Setup(r => r.StatusCode).Returns(statusCode);
-        response.Setup(r => r.Content).Returns((PaginationResponse<ArticleSummaryResponse>?)null);
+        using var response = new StubApiResponse<PaginationResponse<ArticleSummaryResponse>>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = statusCode,
+            Content = (PaginationResponse<ArticleSummaryResponse>?)null
+        };
 
         _mockApi
             .Setup(x => x.ListArticlesAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 }

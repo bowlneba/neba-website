@@ -13,6 +13,7 @@ using Neba.Website.Server.Clock;
 using Neba.Website.Server.Services;
 
 using Refit;
+using Refit.Testing;
 
 using HallOfFamePage = Neba.Website.Server.HallOfFame.HallOfFame;
 
@@ -270,28 +271,32 @@ public sealed class HallOfFameTests : IDisposable
 
     private void SetupSuccessResponse(IReadOnlyCollection<HallOfFameInductionResponse> inductions)
     {
-        var response = new Mock<IApiResponse<CollectionResponse<HallOfFameInductionResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        response.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
-        response.Setup(r => r.Content).Returns(new CollectionResponse<HallOfFameInductionResponse>
+        using var response = new StubApiResponse<CollectionResponse<HallOfFameInductionResponse>>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = new CollectionResponse<HallOfFameInductionResponse>
         {
             Items = inductions,
-        });
+        }
+        };
 
         _mockApi
             .Setup(x => x.ListHallOfFameInductionsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 
     private void SetupFailureResponse(System.Net.HttpStatusCode statusCode)
     {
-        var response = new Mock<IApiResponse<CollectionResponse<HallOfFameInductionResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        response.Setup(r => r.StatusCode).Returns(statusCode);
-        response.Setup(r => r.Content).Returns((CollectionResponse<HallOfFameInductionResponse>?)null);
+        using var response = new StubApiResponse<CollectionResponse<HallOfFameInductionResponse>>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = statusCode,
+            Content = (CollectionResponse<HallOfFameInductionResponse>?)null
+        };
 
         _mockApi
             .Setup(x => x.ListHallOfFameInductionsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 }

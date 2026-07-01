@@ -15,6 +15,7 @@ using Neba.Website.Server.Services;
 using Neba.Website.Server.Tournaments.Detail;
 
 using Refit;
+using Refit.Testing;
 
 namespace Neba.Website.Tests.Tournaments.Detail;
 
@@ -550,25 +551,29 @@ public sealed class TournamentDetailTests : IDisposable
 
     private void SetupSuccessResponse(TournamentDetailResponse tournament)
     {
-        var response = new Mock<IApiResponse<TournamentDetailResponse>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        response.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
-        response.Setup(r => r.Content).Returns(tournament);
+        using var response = new StubApiResponse<TournamentDetailResponse>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = tournament
+        };
 
         _mockApi
             .Setup(x => x.GetTournamentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 
     private void SetupFailureResponse(System.Net.HttpStatusCode statusCode)
     {
-        var response = new Mock<IApiResponse<TournamentDetailResponse>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        response.Setup(r => r.StatusCode).Returns(statusCode);
-        response.Setup(r => r.Content).Returns((TournamentDetailResponse?)null);
+        using var response = new StubApiResponse<TournamentDetailResponse>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = statusCode,
+            Content = (TournamentDetailResponse?)null
+        };
 
         _mockApi
             .Setup(x => x.GetTournamentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 }

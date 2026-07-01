@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 using Microsoft.Extensions.Options;
 
@@ -20,15 +21,29 @@ namespace Neba.Website.Server.Services;
 
 internal static class ApiServicesConfiguration
 {
-    private static readonly RefitSettings RefitSettings = new()
+    internal static readonly RefitSettings RefitSettings = new()
     {
         ContentSerializer = new SystemTextJsonContentSerializer(
             new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new Cysharp.Serialization.Json.UlidJsonConverter() }
+                Converters = { new Cysharp.Serialization.Json.UlidJsonConverter() },
+                NumberHandling = JsonNumberHandling.Strict
             }
-        )
+        ),
+        // ApiException/ApiExceptionBase carry the live request (Authorization header) and response
+        // (Set-Cookie header, body) — logging/OTel export can serialize these via reflection, so scrub
+        // them before the exception propagates to ApiExecutor's logging/telemetry path.
+        MaxExceptionContentLength = 2048,
+        ExceptionRedactor = exception =>
+        {
+            exception.RequestMessage.Headers.Authorization = null;
+
+            if (exception is ApiException apiException)
+            {
+                apiException.Headers.Remove("Set-Cookie");
+            }
+        }
     };
 
     extension(IServiceCollection services)

@@ -72,6 +72,7 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
     <PackageVersion Include="Refit" Version="13.0.0" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="13.0.0" />
+    <PackageVersion Include="Refit.Testing" Version="13.0.0" />
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.16.7" />
     <PackageVersion Include="Scrutor.AspNetCore" Version="3.3.0" />
