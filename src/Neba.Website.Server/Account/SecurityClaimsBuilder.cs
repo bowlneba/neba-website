@@ -48,8 +48,12 @@ internal static class SecurityClaimsBuilder
         foreach (var jwtClaim in ParseJwtPayload(accessToken))
         {
             // Pick up role claims and any custom claims (e.g. usbc_id) from the JWT
-            if (jwtClaim.Type == ClaimTypes.Role || jwtClaim.Type == "usbc_id")
+            if (jwtClaim.Type == ClaimTypes.Role
+                || jwtClaim.Type == "usbc_id"
+                || jwtClaim.Type == "permissions")
+            {
                 claims.Add(jwtClaim);
+            }
         }
 
         return claims;
