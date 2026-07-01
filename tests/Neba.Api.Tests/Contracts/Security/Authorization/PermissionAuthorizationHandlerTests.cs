@@ -2,14 +2,14 @@ using System.Security.Claims;
 
 using Microsoft.AspNetCore.Authorization;
 
-using Neba.Api.Security.Infrastructure;
-using Neba.Api.Security.Infrastructure.Authorization;
+using Neba.Api.Contracts.Security;
+using Neba.Api.Contracts.Security.Authorization;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Api.Tests.Security.Infrastructure.Authorization;
+namespace Neba.Api.Tests.Contracts.Security.Authorization;
 
 [UnitTest]
-[Component("Security")]
+[Component("Api.Contracts")]
 public sealed class PermissionAuthorizationHandlerTests
 {
     private static AuthorizationHandlerContext CreateContext(PermissionRequirement requirement, ClaimsPrincipal user)
@@ -22,7 +22,7 @@ public sealed class PermissionAuthorizationHandlerTests
         var requirement = new PermissionRequirement("Read");
         var user = new ClaimsPrincipal(new ClaimsIdentity(
         [
-            new Claim(SecurityRoleSeeder.PermissionClaimType, "Read"),
+            new Claim(Permissions.ClaimType, "Read"),
         ]));
         var context = CreateContext(requirement, user);
         var handler = new PermissionAuthorizationHandler();
@@ -41,7 +41,7 @@ public sealed class PermissionAuthorizationHandlerTests
         var requirement = new PermissionRequirement("Read");
         var user = new ClaimsPrincipal(new ClaimsIdentity(
         [
-            new Claim(SecurityRoleSeeder.PermissionClaimType, "Write"),
+            new Claim(Permissions.ClaimType, "Write"),
         ]));
         var context = CreateContext(requirement, user);
         var handler = new PermissionAuthorizationHandler();

@@ -9,7 +9,7 @@ namespace Neba.Api.Security.Infrastructure;
 
 internal static class SecurityRoleSeeder
 {
-    public const string PermissionClaimType = "permission";
+    public const string PermissionClaimType = Permissions.ClaimType;
     private static readonly Dictionary<string, IReadOnlyCollection<Permissions>> RolePermissions = new()
     {
         [Roles.Admin] = Permissions.List

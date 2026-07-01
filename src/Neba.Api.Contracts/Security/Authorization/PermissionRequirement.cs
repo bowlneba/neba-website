@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 
-namespace Neba.Api.Security.Infrastructure.Authorization;
+namespace Neba.Api.Contracts.Security.Authorization;
 
-internal sealed class PermissionRequirement(string permission)
+public sealed class PermissionRequirement(string permission)
     : IAuthorizationRequirement
 {
     public string Permission

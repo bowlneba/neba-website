@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
+using Neba.Api.Contracts.Security.Authorization;
 using Neba.Api.Database;
 using Neba.Api.Security.Domain;
-using Neba.Api.Security.Infrastructure.Authorization;
 
 using Npgsql;
 

@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 
-using Neba.Api.Security.Infrastructure.Authorization;
+using Neba.Api.Contracts.Security.Authorization;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Api.Tests.Security.Infrastructure.Authorization;
+namespace Neba.Api.Tests.Contracts.Security.Authorization;
 
 [UnitTest]
-[Component("Security")]
+[Component("Api.Contracts")]
 public sealed class PermissionPolicyProviderTests
 {
     private static PermissionPolicyProvider CreateProvider()

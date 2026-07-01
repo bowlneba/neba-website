@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 
-namespace Neba.Api.Security.Infrastructure.Authorization;
+namespace Neba.Api.Contracts.Security.Authorization;
 
-internal sealed class PermissionPolicyProvider(IOptions<AuthorizationOptions> options)
+public sealed class PermissionPolicyProvider(IOptions<AuthorizationOptions> options)
     : IAuthorizationPolicyProvider
 {
     private const string Prefix = "Permission:";

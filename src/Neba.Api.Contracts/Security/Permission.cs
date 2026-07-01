@@ -13,6 +13,12 @@ public sealed class Permissions
     : SmartEnum<Permissions, string>
 {
     /// <summary>
+    /// The claim type used to carry a permission value on a <see cref="System.Security.Claims.ClaimsPrincipal"/>
+    /// (JWT claim, role claim, and cookie identity claim all agree on this single constant).
+    /// </summary>
+    public const string ClaimType = "permission";
+
+    /// <summary>
     /// This is a temporary permission to set us up until real permissions come into the picture
     /// </summary>
     public static readonly Permissions Read = new("Read", "Read");

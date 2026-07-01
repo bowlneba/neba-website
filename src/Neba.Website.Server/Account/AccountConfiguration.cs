@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
+
+using Neba.Api.Contracts.Security.Authorization;
 
 namespace Neba.Website.Server.Account;
 
@@ -29,6 +32,10 @@ internal static class AccountConfiguration
                 });
 
             services.AddAuthorization();
+            services
+                .AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>()
+                .AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
             services.AddCascadingAuthenticationState();
 
             // Used only by the DEBUG-only "Log in as Admin" prefill on Login.razor.

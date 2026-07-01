@@ -33,7 +33,7 @@ internal sealed class JwtTokenService(JwtSettings settings, TimeProvider timePro
 
         foreach (var permission in permissions)
         {
-            claims.Add(new Claim("permission", permission.Value));
+            claims.Add(new Claim(Permissions.ClaimType, permission.Value));
         }
 
         if (user.UsbcId is not null)

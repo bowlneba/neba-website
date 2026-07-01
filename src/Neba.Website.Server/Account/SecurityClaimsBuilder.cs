@@ -5,6 +5,8 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
+using Neba.Api.Contracts.Security;
+
 namespace Neba.Website.Server.Account;
 
 internal static class SecurityClaimsBuilder
@@ -50,7 +52,7 @@ internal static class SecurityClaimsBuilder
             // Pick up role claims and any custom claims (e.g. usbc_id) from the JWT
             if (jwtClaim.Type == ClaimTypes.Role
                 || jwtClaim.Type == "usbc_id"
-                || jwtClaim.Type == "permissions")
+                || jwtClaim.Type == Permissions.ClaimType)
             {
                 claims.Add(jwtClaim);
             }

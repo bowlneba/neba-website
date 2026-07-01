@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 
-namespace Neba.Api.Security.Infrastructure.Authorization;
+namespace Neba.Api.Contracts.Security.Authorization;
 
-internal sealed class PermissionAuthorizationHandler
+public sealed class PermissionAuthorizationHandler
     : AuthorizationHandler<PermissionRequirement>
 {
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionRequirement requirement)
     {
-        if (context.User.HasClaim(SecurityRoleSeeder.PermissionClaimType, requirement.Permission))
+        if (context.User.HasClaim(Permissions.ClaimType, requirement.Permission))
         {
             context.Succeed(requirement);
         }
