@@ -1,4 +1,4 @@
-namespace Neba.Api.Contracts;
+namespace Neba.Api.Contracts.FeatureManagement;
 
 /// <summary>
 /// Contains the feature flags used in the application.

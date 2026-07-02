@@ -65,16 +65,21 @@ Standard `Microsoft.FeatureManagement` config section, in each project's `appset
 
 Flag names are `PascalCase` and match a `static class FeatureFlags` constants holder (avoid magic strings), mirroring how `SecurityConfiguration.AuthenticatedPolicy` is a const today.
 
-- `src/Neba.Api/FeatureFlags.cs` — `internal static class FeatureFlags { internal const string UserRegistration = "UserRegistration"; }`
-- Mirror in `Neba.Website.Server` once a UI flag exists (Phase 1 sets up the pattern; no UI flags yet in this plan — see "UI feature flagging" note below).
+- `src/Neba.Api.Contracts/FeatureFlags.cs` — `public static class FeatureFlags { public const string UserRegistration = "UserRegistration"; }`. **Public and in `Contracts`, not `internal` in `Neba.Api`** — `Neba.Website.Server` already references `Neba.Api.Contracts` (`Neba.Website.Server.csproj:18`), and flag names need to be usable from both processes so a UI check and an API check for the same flag can't drift.
 
 ### 1.3 Custom feature filter — `AllowedEmailFilter`
 
-Location: `src/Neba.Api/Infrastructure/FeatureManagement/AllowedEmailFilter.cs` (new `Infrastructure/FeatureManagement` folder — cross-cutting, not owned by any single feature).
+**Same sharing concern applies to the filter, not just the flag name.** `Microsoft.FeatureManagement` filters are registered into each process's own DI container — `Neba.Api` and `Neba.Website.Server` are separate processes with separate `appsettings.json` and separate `AddFeatureManagement()` calls. If a Blazor page ever wants to gate on "is the current caller's email on the allow-list" (e.g. hiding an admin nav link), the Website needs the *same filter type* registered in its own container — reusing `Neba.Api`'s `internal` filter wouldn't be visible across the assembly boundary. So `AllowedEmailFilter` (and its context/settings types) live in `Neba.Api.Contracts` too, next to `FeatureFlags`, as `public`:
+
+Location: `src/Neba.Api.Contracts/FeatureManagement/AllowedEmailFilter.cs` (new `FeatureManagement` folder in `Contracts` — shared, not owned by either process).
+
+`Neba.Api.Contracts.csproj` needs a new `<PackageReference Include="Microsoft.FeatureManagement" />` (the core package, not `.AspNetCore` — `Contracts` shouldn't depend on ASP.NET Core hosting types).
 
 ```csharp
+namespace Neba.Api.Contracts.FeatureManagement;
+
 [FilterAlias("AllowedEmail")]
-internal sealed class AllowedEmailFilter : IContextualFeatureFilter<AllowedEmailContext>
+public sealed class AllowedEmailFilter : IContextualFeatureFilter<AllowedEmailContext>
 {
     public Task<bool> EvaluateAsync(FeatureFilterEvaluationContext context, AllowedEmailContext appContext)
     {
@@ -87,26 +92,30 @@ internal sealed class AllowedEmailFilter : IContextualFeatureFilter<AllowedEmail
     }
 }
 
-internal sealed class AllowedEmailContext
+public sealed class AllowedEmailContext
 {
     public string? Email { get; init; }
 }
 
-internal sealed record AllowedEmailFilterSettings
+public sealed record AllowedEmailFilterSettings
 {
     public IReadOnlyCollection<string> AllowedEmails { get; init; } = [];
 }
 ```
 
-`Email` is nullable because `RegisterEndpoint` stays `AllowAnonymous()` (see Phase 2) — an unauthenticated caller has no claim to supply.
+`Email` is nullable because `RegisterEndpoint` stays `AllowAnonymous()` (see Phase 2) — an unauthenticated caller has no claim to supply. All four types are `public` (not `internal`) since they cross the `Neba.Api` / `Neba.Website.Server` assembly boundary via `Neba.Api.Contracts`.
 
 Using `IContextualFeatureFilter<TContext>` (not the plain `IFeatureFilter`) lets the endpoint pass the caller's email explicitly — pulled from `User` claims when a token is present, or `null` when the request is fully anonymous (see Phase 2).
 
 ### 1.4 Registration
 
-New `src/Neba.Api/Infrastructure/FeatureManagement/FeatureManagementConfiguration.cs`, following the existing `extension` syntax used by `InfrastructureConfiguration.cs`:
+Both processes register `Microsoft.FeatureManagement` plus the shared `AllowedEmailFilter` from `Neba.Api.Contracts` — this is not forward-looking scaffolding, it's needed now so the Website *can* reuse the same filter/flag the moment a UI check is added, without a second implementation to keep in sync.
+
+`src/Neba.Api/Infrastructure/FeatureManagement/FeatureManagementConfiguration.cs`, following the existing `extension` syntax used by `InfrastructureConfiguration.cs`:
 
 ```csharp
+using Neba.Api.Contracts.FeatureManagement;
+
 namespace Neba.Api.Infrastructure.FeatureManagement;
 
 internal static class FeatureManagementConfiguration
@@ -131,7 +140,15 @@ Wire into `src/Neba.Api/Program.cs` alongside the existing chain:
 builder.AddInfrastructure().AddSecurity().AddFeatureManagement();
 ```
 
-Same pattern added to `Neba.Website.Server/Program.cs` (`builder.Services.AddFeatureManagement(...)`) even though Phase 2 has no UI flag yet — this satisfies "keep in mind we'll want feature flagging on the UI as well" by establishing the wiring now rather than bolting it on later.
+`src/Neba.Website.Server/Program.cs` gets the equivalent call (mirroring whatever local extension-method convention `Neba.Website.Server` already uses for its own registrations, e.g. `AddApiServices`/`AddAccountServices`), registering `Microsoft.FeatureManagement` against its own `appsettings.json` `FeatureManagement` section and the same `AllowedEmailFilter`:
+
+```csharp
+builder.Services
+    .AddFeatureManagement(builder.Configuration.GetSection("FeatureManagement"))
+    .AddFeatureFilter<AllowedEmailFilter>();
+```
+
+Each process still evaluates the flag independently against its *own* `appsettings.json` — the config section (allow-list) needs to be kept in sync between `src/Neba.Api/appsettings.json` and `src/Neba.Website.Server/appsettings.json` by hand for now (no shared/centralized config source yet — see the Azure App Configuration note below).
 
 ### 1.5 Testing
 
@@ -171,8 +188,9 @@ public override async Task HandleAsync(RegisterRequest req, CancellationToken ct
 
 - `src/Neba.Api/Security/Register/RegisterEndpoint.cs` — add flag check (as above); `Configure()` untouched
 - `src/Neba.Api/Security/Register/RegisterEndpointTests.cs` (or wherever existing endpoint tests live) — add cases: no bearer token → 404 before handler is ever invoked; token present but email doesn't match → 404; token present with `email == tech@bowlneba.com` → falls through to existing success/error branches. `MockBehavior.Strict` on the command handler mock proves it's never invoked in the blocked cases.
-- `src/Neba.Api/Infrastructure/FeatureManagement/AllowedEmailFilter.cs` — null/empty-email handling (see 2.1)
+- `src/Neba.Api.Contracts/FeatureManagement/AllowedEmailFilter.cs` — null/empty-email handling (see 2.1); this file is created in Phase 1, not new in Phase 2
 - `src/Neba.Api/appsettings.json` — add the `FeatureManagement:UserRegistration` section (see 1.2)
+- `src/Neba.Website.Server/appsettings.json` — add the same `FeatureManagement:UserRegistration` section, kept in sync by hand (see 1.4)
 - `src/Neba.Api/Security/Register/RegisterSummary.cs` — add `ProducesProblemDetails(StatusCodes.Status404NotFound)` (or equivalent `Produces(404)`) to the OpenAPI description per the API Endpoint Checklist
 
 ### 2.3 Out of scope for this phase
@@ -186,10 +204,11 @@ public override async Task HandleAsync(RegisterRequest req, CancellationToken ct
 
 ## Future: UI feature flagging (not in this plan's scope, noted for follow-up)
 
-Phase 1 registers `Microsoft.FeatureManagement` in `Neba.Website.Server` so the wiring exists, but no Blazor-specific pattern (e.g. a `<FeatureGate>` component wrapping `IVariantFeatureManager`, or flag-aware `AuthenticationStateProvider` claims) is designed yet. When the first UI flag is needed:
+Phase 1 registers `Microsoft.FeatureManagement` and the shared `AllowedEmailFilter` in `Neba.Website.Server` so both the package wiring and the filter logic already exist there — a Blazor page can call `IVariantFeatureManager.IsEnabledAsync(FeatureFlags.UserRegistration, new AllowedEmailContext { Email = ... })` today using the current user's email from the Blazor auth cookie claims (`identity-implementation.md` confirms the cookie already carries an `email` claim). What's still undesigned is the *Blazor-specific ergonomics* around that call:
 
-- Decide whether Blazor components check `IVariantFeatureManager` directly (server-rendered, simplest) or need a client-visible flag (WASM/interactive client component in `Neba.Website.Client` — would need the flag state passed down via a Blazor cascading parameter or fetched from an API endpoint, since `Neba.Website.Client` can't read server-side `appsettings.json` directly).
-- Revisit whether Azure App Configuration becomes worthwhile once flags need to change without a redeploy across both API and UI simultaneously.
+- No `<FeatureGate>`-style component wrapping `IVariantFeatureManager` yet — each page/component would call the feature manager directly for now.
+- `Neba.Website.Server` is server-rendered, so `IVariantFeatureManager` is trivially available via DI in `@code` blocks. A client-visible flag (interactive WASM component in `Neba.Website.Client`) is a different problem — `Neba.Website.Client` can't read server-side `appsettings.json` or resolve server-only services directly, so that case would need the flag state passed down via a cascading parameter or fetched from an API endpoint. Out of scope until a client-rendered flag is actually needed.
+- Revisit whether Azure App Configuration becomes worthwhile once flags need to change without a redeploy across both API and UI simultaneously — right now `appsettings.json` in each project must be kept in sync by hand (Phase 1, 1.4).
 
 ---
 
@@ -197,20 +216,21 @@ Phase 1 registers `Microsoft.FeatureManagement` in `Neba.Website.Server` so the 
 
 **New:**
 
-- `src/Neba.Api/FeatureFlags.cs`
-- `src/Neba.Api/Infrastructure/FeatureManagement/AllowedEmailFilter.cs`
+- `src/Neba.Api.Contracts/FeatureFlags.cs` — already created (public flag-name constants, shared by both processes)
+- `src/Neba.Api.Contracts/FeatureManagement/AllowedEmailFilter.cs` — filter + `AllowedEmailContext` + `AllowedEmailFilterSettings`, public, shared by both processes
 - `src/Neba.Api/Infrastructure/FeatureManagement/FeatureManagementConfiguration.cs`
-- `tests/Neba.Api.Tests/Infrastructure/FeatureManagement/AllowedEmailFilterTests.cs`
+- `tests/Neba.Api.Tests/Infrastructure/FeatureManagement/AllowedEmailFilterTests.cs` (or under a `Neba.Api.Contracts.Tests` project if one exists — confirm at implementation time)
 
 **Changed:**
 
 - `Directory.Packages.props` — add `Microsoft.FeatureManagement` + `.AspNetCore`
-- `src/Neba.Api/Neba.Api.csproj` — package reference
-- `src/Neba.Website.Server/Neba.Website.Server.csproj` — package reference
+- `src/Neba.Api.Contracts/Neba.Api.Contracts.csproj` — `Microsoft.FeatureManagement` package reference (core package only)
+- `src/Neba.Api/Neba.Api.csproj` — `Microsoft.FeatureManagement.AspNetCore` package reference
+- `src/Neba.Website.Server/Neba.Website.Server.csproj` — `Microsoft.FeatureManagement.AspNetCore` package reference
 - `src/Neba.Api/Program.cs` — `.AddFeatureManagement()` in the builder chain
-- `src/Neba.Website.Server/Program.cs` — `AddFeatureManagement()` registration
+- `src/Neba.Website.Server/Program.cs` — equivalent `AddFeatureManagement()` registration, using the shared `AllowedEmailFilter`
 - `src/Neba.Api/appsettings.json` — `FeatureManagement` section
-- `src/Neba.Website.Server/appsettings.json` — empty/placeholder `FeatureManagement` section
+- `src/Neba.Website.Server/appsettings.json` — same `FeatureManagement` section, kept in sync by hand
 - `src/Neba.Api/Security/Register/RegisterEndpoint.cs` — flag check + 404 path
 - `src/Neba.Api/Security/Register/RegisterSummary.cs` — document 404 response
 - Register endpoint test file — new test cases for gated/ungated email
