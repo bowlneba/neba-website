@@ -1,0 +1,10 @@
+﻿{
+  UserId: 01000000000000000000000001,
+  Email: test@bowlneba.com,
+  Roles: [
+    Member
+  ],
+  Permissions: [
+    Read
+  ]
+}

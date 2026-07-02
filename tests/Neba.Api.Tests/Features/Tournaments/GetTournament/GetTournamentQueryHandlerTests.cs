@@ -13,9 +13,9 @@ namespace Neba.Api.Tests.Features.Tournaments.GetTournament;
 
 [IntegrationTest]
 [Component("Tournaments")]
-[Collection<PostgreSqlFixture>]
-public sealed class GetTournamentQueryHandlerTests(PostgreSqlFixture fixture)
-    : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
+[Collection<AppDbContextFixture>]
+public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
+    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
 

@@ -12,6 +12,7 @@ using Neba.Website.Server.Clock;
 using Neba.Website.Server.Services;
 
 using Refit;
+using Refit.Testing;
 
 using SponsorsPage = Neba.Website.Server.Sponsors.Sponsors;
 
@@ -502,25 +503,29 @@ public sealed class SponsorsTests : IDisposable
 
     private void SetupSuccessResponse(IReadOnlyCollection<SponsorSummaryResponse> sponsors)
     {
-        var response = new Mock<IApiResponse<CollectionResponse<SponsorSummaryResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        response.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
-        response.Setup(r => r.Content).Returns(new CollectionResponse<SponsorSummaryResponse> { Items = sponsors });
+        using var response = new StubApiResponse<CollectionResponse<SponsorSummaryResponse>>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = new CollectionResponse<SponsorSummaryResponse> { Items = sponsors }
+        };
 
         _mockApi
             .Setup(x => x.ListActiveSponsorsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 
     private void SetupFailureResponse(System.Net.HttpStatusCode statusCode)
     {
-        var response = new Mock<IApiResponse<CollectionResponse<SponsorSummaryResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        response.Setup(r => r.StatusCode).Returns(statusCode);
-        response.Setup(r => r.Content).Returns((CollectionResponse<SponsorSummaryResponse>?)null);
+        using var response = new StubApiResponse<CollectionResponse<SponsorSummaryResponse>>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = statusCode,
+            Content = null
+        };
 
         _mockApi
             .Setup(x => x.ListActiveSponsorsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 }

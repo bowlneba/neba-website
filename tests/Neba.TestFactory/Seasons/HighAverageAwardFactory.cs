@@ -28,25 +28,27 @@ public static class HighAverageAwardFactory
 
     public static IReadOnlyCollection<HighAverageAward> Bogus(
         int count,
-        UniquePool<BowlerId>? bowlerIds = null,
-        int? seed = null
-    )
+        Faker faker,
+        UniquePool<BowlerId>? bowlerIds = null)
     {
-        var faker = new Faker<HighAverageAward>()
-            .CustomInstantiator(f => new()
-            {
-                Id = new SeasonAwardId(Ulid.BogusString(f)),
-                BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.BogusString(f)),
-                Average = f.Random.Decimal(200, 250),
-                TotalGames = f.Random.Int(40, 60),
-                TournamentsParticipated = f.Random.Int(10, 15)
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new HighAverageAward
         {
-            faker.UseSeed(seed.Value);
-        }
+            Id = new SeasonAwardId(Ulid.BogusString(faker)),
+            BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.BogusString(faker)),
+            Average = faker.Random.Decimal(200, 250),
+            TotalGames = faker.Random.Int(40, 60),
+            TournamentsParticipated = faker.Random.Int(10, 15)
+        })];
+    }
 
-        return faker.Generate(count);
+    public static IReadOnlyCollection<HighAverageAward> Bogus(
+        int count,
+        UniquePool<BowlerId>? bowlerIds = null,
+        int? seed = null)
+    {
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker, bowlerIds);
     }
 }

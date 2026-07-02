@@ -18,27 +18,30 @@ public static class HistoricalTournamentChampionFactory
 
     internal static IReadOnlyCollection<HistoricalTournamentChampion> Bogus(
         int count,
+        Faker faker,
+        IReadOnlyCollection<Bowler>? bowlers = null,
+        IReadOnlyCollection<Tournament>? tournaments = null)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        var bowlersToUse = bowlers?.ToArray() ?? [.. BowlerFactory.Bogus(count, faker)];
+        var tournamentsToUse = tournaments?.ToArray() ?? [.. TournamentFactory.Bogus(count, faker)];
+
+        return [.. Enumerable.Range(0, count).Select(_ =>
+        {
+            var bowler = faker.PickRandom(bowlersToUse);
+            var tournament = faker.PickRandom(tournamentsToUse);
+            return Create(bowler, tournament);
+        })];
+    }
+
+    internal static IReadOnlyCollection<HistoricalTournamentChampion> Bogus(
+        int count,
         IReadOnlyCollection<Bowler>? bowlers = null,
         IReadOnlyCollection<Tournament>? tournaments = null,
         int? seed = null)
     {
-        var bowlersToUse = bowlers?.ToArray() ?? [.. BowlerFactory.Bogus(count, seed)];
-        var tournamentsToUse = tournaments?.ToArray() ?? [.. TournamentFactory.Bogus(count, seed)];
-
-        var faker = new Faker<HistoricalTournamentChampion>()
-            .CustomInstantiator(faker =>
-            {
-                var bowler = faker.PickRandom(bowlersToUse);
-                var tournament = faker.PickRandom(tournamentsToUse);
-
-                return Create(bowler, tournament);
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker, bowlers, tournaments);
     }
 }

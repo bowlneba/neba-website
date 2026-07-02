@@ -33,7 +33,7 @@ public static class TournamentChampionResponseFactory
                 TournamentName = f.Random.Words(2),
                 TournamentDate = f.Date.PastDateOnly(10),
                 TournamentType = f.PickRandom(TournamentType.List.ToArray()).Name,
-                Champions = ChampionResponseFactory.Bogus(f.Random.Int(1, 4), seed),
+                Champions = ChampionResponseFactory.Bogus(f.Random.Int(1, 4), f),
             });
 
         if (seed.HasValue)
@@ -42,5 +42,11 @@ public static class TournamentChampionResponseFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<TournamentChampionResponse> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

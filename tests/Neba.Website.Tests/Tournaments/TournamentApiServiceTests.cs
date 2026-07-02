@@ -14,6 +14,7 @@ using Neba.Website.Server.Tournaments;
 using Neba.Website.Server.Tournaments.Schedule;
 
 using Refit;
+using Refit.Testing;
 
 namespace Neba.Website.Tests.Tournaments;
 
@@ -250,73 +251,85 @@ public sealed class TournamentApiServiceTests
 
     private void SetupChampionsSuccess(IReadOnlyCollection<TournamentChampionResponse> items)
     {
-        var response = new Mock<IApiResponse<CollectionResponse<TournamentChampionResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        response.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
-        response.Setup(r => r.Content).Returns(new CollectionResponse<TournamentChampionResponse> { Items = items });
+        using var response = new StubApiResponse<CollectionResponse<TournamentChampionResponse>>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = new CollectionResponse<TournamentChampionResponse> { Items = items }
+        };
 
         _mockTournamentsApi
             .Setup(x => x.ListTournamentChampionsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 
     private void SetupChampionsFailure(System.Net.HttpStatusCode statusCode)
     {
-        var response = new Mock<IApiResponse<CollectionResponse<TournamentChampionResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        response.Setup(r => r.StatusCode).Returns(statusCode);
-        response.Setup(r => r.Content).Returns((CollectionResponse<TournamentChampionResponse>?)null);
+        using var response = new StubApiResponse<CollectionResponse<TournamentChampionResponse>>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = statusCode,
+            Content = (CollectionResponse<TournamentChampionResponse>?)null
+        };
 
         _mockTournamentsApi
             .Setup(x => x.ListTournamentChampionsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 
     private void SetupSeasonsSuccess(IReadOnlyCollection<SeasonResponse> items)
     {
-        var response = new Mock<IApiResponse<CollectionResponse<SeasonResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        response.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
-        response.Setup(r => r.Content).Returns(new CollectionResponse<SeasonResponse> { Items = items });
+        using var response = new StubApiResponse<CollectionResponse<SeasonResponse>>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = new CollectionResponse<SeasonResponse> { Items = items }
+        };
 
         _mockSeasonsApi
             .Setup(x => x.ListSeasonsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 
     private void SetupSeasonsFailure(System.Net.HttpStatusCode statusCode)
     {
-        var response = new Mock<IApiResponse<CollectionResponse<SeasonResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        response.Setup(r => r.StatusCode).Returns(statusCode);
-        response.Setup(r => r.Content).Returns((CollectionResponse<SeasonResponse>?)null);
+        using var response = new StubApiResponse<CollectionResponse<SeasonResponse>>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = statusCode,
+            Content = (CollectionResponse<SeasonResponse>?)null
+        };
 
         _mockSeasonsApi
             .Setup(x => x.ListSeasonsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 
     private void SetupTournamentsInSeasonSuccess(string seasonId, IReadOnlyCollection<SeasonTournamentResponse> items)
     {
-        var response = new Mock<IApiResponse<CollectionResponse<SeasonTournamentResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        response.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
-        response.Setup(r => r.Content).Returns(new CollectionResponse<SeasonTournamentResponse> { Items = items });
+        using var response = new StubApiResponse<CollectionResponse<SeasonTournamentResponse>>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = new CollectionResponse<SeasonTournamentResponse> { Items = items }
+        };
 
         _mockSeasonsApi
             .Setup(x => x.ListTournamentsInSeasonAsync(seasonId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 
     private void SetupTournamentsInSeasonFailure(string seasonId, System.Net.HttpStatusCode statusCode)
     {
-        var response = new Mock<IApiResponse<CollectionResponse<SeasonTournamentResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        response.Setup(r => r.StatusCode).Returns(statusCode);
-        response.Setup(r => r.Content).Returns((CollectionResponse<SeasonTournamentResponse>?)null);
+        using var response = new StubApiResponse<CollectionResponse<SeasonTournamentResponse>>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = statusCode,
+            Content = (CollectionResponse<SeasonTournamentResponse>?)null
+        };
 
         _mockSeasonsApi
             .Setup(x => x.ListTournamentsInSeasonAsync(seasonId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 }

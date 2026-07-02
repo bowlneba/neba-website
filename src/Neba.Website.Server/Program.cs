@@ -1,6 +1,7 @@
 using ApexCharts;
 
 using Neba.Website.Server;
+using Neba.Website.Server.Account;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Maps;
 using Neba.Website.Server.Services;
@@ -17,6 +18,8 @@ builder.Services.AddMaps(builder.Configuration);
 builder.Services.AddApexCharts();
 builder.Services.AddScoped<IStatsApiService, StatsApiService>();
 
+builder.Services.AddAccountServices(builder.Configuration);
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
@@ -25,6 +28,8 @@ builder.Services.AddRazorComponents()
 builder.Services.AddOutputCache();
 
 builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
+builder.Services.AddScoped<Neba.Website.Server.Notifications.ToastService>();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITournamentApiService, TournamentApiService>();
 
 var app = builder.Build();
@@ -35,6 +40,9 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseAntiforgery();
 

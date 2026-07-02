@@ -13,9 +13,9 @@ namespace Neba.Api.Tests.Features.News.ListArticles;
 
 [IntegrationTest]
 [Component("News")]
-[Collection<PostgreSqlFixture>]
-public sealed class ListArticlesQueryHandlerTests(PostgreSqlFixture fixture)
-    : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
+[Collection<AppDbContextFixture>]
+public sealed class ListArticlesQueryHandlerTests(AppDbContextFixture fixture)
+    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
     private static readonly DateTimeOffset Now = new(2025, 6, 1, 12, 0, 0, TimeSpan.Zero);

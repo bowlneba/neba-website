@@ -100,68 +100,68 @@ public static class BowlerSeasonStatsSnapshotFactory
             Credits = credits ?? ValidCredits,
         };
 
+    internal static IReadOnlyCollection<BowlerSeasonStatsSnapshot> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ =>
+        {
+            var mpWins = faker.Random.Int(0, 15);
+            var mpLosses = faker.Random.Int(0, 10);
+            var mpGames = mpWins + mpLosses;
+            var mpPinfall = mpGames * faker.Random.Int(150, 280);
+
+            var tournaments = faker.Random.Int(1, 20);
+            var totalTournaments = tournaments + faker.Random.Int(0, 5);
+            var entries = faker.Random.Int(tournaments, tournaments * 2);
+            var totalEntries = entries + faker.Random.Int(0, 5);
+            var finals = faker.Random.Int(0, entries);
+            var cashes = faker.Random.Int(finals, entries);
+
+            var totalGames = faker.Random.Int(60, 300);
+            var totalPinfall = totalGames * faker.Random.Int(150, 280);
+
+            return new BowlerSeasonStatsSnapshot
+            {
+                IsMember = faker.Random.Bool(),
+                IsRookie = faker.Random.Bool(),
+                IsSenior = faker.Random.Bool(),
+                IsSuperSenior = faker.Random.Bool(),
+                IsWoman = faker.Random.Bool(),
+                IsYouth = faker.Random.Bool(),
+                EligibleTournaments = tournaments,
+                TotalTournaments = totalTournaments,
+                EligibleEntries = entries,
+                TotalEntries = totalEntries,
+                Cashes = cashes,
+                Finals = finals,
+                QualifyingHighGame = faker.Random.Bool() ? faker.Random.Int(200, 300) : null,
+                HighBlock = faker.Random.Bool() ? faker.Random.Int(800, 1400) : null,
+                MatchPlayWins = mpWins,
+                MatchPlayLosses = mpLosses,
+                MatchPlayGames = mpGames,
+                MatchPlayPinfall = mpPinfall,
+                MatchPlayHighGame = faker.Random.Bool() ? faker.Random.Int(180, 300) : null,
+                TotalGames = totalGames,
+                TotalPinfall = totalPinfall,
+                FieldAverage = faker.Random.Bool() ? faker.Random.Decimal(-20, 30) : null,
+                HighFinish = faker.Random.Bool() ? faker.Random.Int(1, 10) : null,
+                AverageFinish = faker.Random.Bool() ? faker.Random.Decimal(1, 50) : null,
+                BowlerOfTheYearPoints = faker.Random.Int(0, 2000),
+                SeniorOfTheYearPoints = faker.Random.Int(0, 2000),
+                SuperSeniorOfTheYearPoints = faker.Random.Int(0, 2000),
+                WomanOfTheYearPoints = faker.Random.Int(0, 2000),
+                YouthOfTheYearPoints = faker.Random.Int(0, 2000),
+                TournamentWinnings = faker.Random.Decimal(0, 10000),
+                CupEarnings = faker.Random.Decimal(0, 5000),
+                Credits = faker.Random.Decimal(0, 1000),
+            };
+        })];
+    }
+
     public static IReadOnlyCollection<BowlerSeasonStatsSnapshot> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<BowlerSeasonStatsSnapshot>()
-            .CustomInstantiator(f =>
-            {
-                var mpWins = f.Random.Int(0, 15);
-                var mpLosses = f.Random.Int(0, 10);
-                var mpGames = mpWins + mpLosses;
-                var mpPinfall = mpGames * f.Random.Int(150, 280);
-
-                var tournaments = f.Random.Int(1, 20);
-                var totalTournaments = tournaments + f.Random.Int(0, 5);
-                var entries = f.Random.Int(tournaments, tournaments * 2);
-                var totalEntries = entries + f.Random.Int(0, 5);
-                var finals = f.Random.Int(0, entries);
-                var cashes = f.Random.Int(finals, entries);
-
-                var totalGames = f.Random.Int(60, 300);
-                var totalPinfall = totalGames * f.Random.Int(150, 280);
-
-                return new BowlerSeasonStatsSnapshot
-                {
-                    IsMember = f.Random.Bool(),
-                    IsRookie = f.Random.Bool(),
-                    IsSenior = f.Random.Bool(),
-                    IsSuperSenior = f.Random.Bool(),
-                    IsWoman = f.Random.Bool(),
-                    IsYouth = f.Random.Bool(),
-                    EligibleTournaments = tournaments,
-                    TotalTournaments = totalTournaments,
-                    EligibleEntries = entries,
-                    TotalEntries = totalEntries,
-                    Cashes = cashes,
-                    Finals = finals,
-                    QualifyingHighGame = f.Random.Bool() ? f.Random.Int(200, 300) : null,
-                    HighBlock = f.Random.Bool() ? f.Random.Int(800, 1400) : null,
-                    MatchPlayWins = mpWins,
-                    MatchPlayLosses = mpLosses,
-                    MatchPlayGames = mpGames,
-                    MatchPlayPinfall = mpPinfall,
-                    MatchPlayHighGame = f.Random.Bool() ? f.Random.Int(180, 300) : null,
-                    TotalGames = totalGames,
-                    TotalPinfall = totalPinfall,
-                    FieldAverage = f.Random.Bool() ? f.Random.Decimal(-20, 30) : null,
-                    HighFinish = f.Random.Bool() ? f.Random.Int(1, 10) : null,
-                    AverageFinish = f.Random.Bool() ? f.Random.Decimal(1, 50) : null,
-                    BowlerOfTheYearPoints = f.Random.Int(0, 2000),
-                    SeniorOfTheYearPoints = f.Random.Int(0, 2000),
-                    SuperSeniorOfTheYearPoints = f.Random.Int(0, 2000),
-                    WomanOfTheYearPoints = f.Random.Int(0, 2000),
-                    YouthOfTheYearPoints = f.Random.Int(0, 2000),
-                    TournamentWinnings = f.Random.Decimal(0, 10000),
-                    CupEarnings = f.Random.Decimal(0, 5000),
-                    Credits = f.Random.Decimal(0, 1000),
-                };
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

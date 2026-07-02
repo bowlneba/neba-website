@@ -25,28 +25,28 @@ public static class PointsPerEntryResponseFactory
             Entries = entries ?? ValidEntries
         };
 
+    internal static IReadOnlyCollection<PointsPerEntryResponse> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ =>
+        {
+            var points = faker.Random.Int(50, 500);
+            var entries = faker.Random.Int(1, 20);
+            return new PointsPerEntryResponse
+            {
+                BowlerId = Ulid.BogusString(faker),
+                BowlerName = faker.Name.FullName(),
+                PointsPerEntry = Math.Round((decimal)points / entries, 2),
+                Points = points,
+                Entries = entries
+            };
+        })];
+    }
+
     public static IReadOnlyCollection<PointsPerEntryResponse> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<PointsPerEntryResponse>()
-            .CustomInstantiator(f =>
-            {
-                var points = f.Random.Int(50, 500);
-                var entries = f.Random.Int(1, 20);
-                return new PointsPerEntryResponse
-                {
-                    BowlerId = Ulid.BogusString(f),
-                    BowlerName = f.Name.FullName(),
-                    PointsPerEntry = Math.Round((decimal)points / entries, 2),
-                    Points = points,
-                    Entries = entries
-                };
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

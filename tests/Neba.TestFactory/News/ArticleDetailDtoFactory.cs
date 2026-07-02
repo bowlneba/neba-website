@@ -1,5 +1,3 @@
-using Bogus;
-
 using Neba.Api.Features.News.GetArticle;
 using Neba.Api.Features.Tournaments.Domain;
 
@@ -31,29 +29,29 @@ public static class ArticleDetailDtoFactory
             TournamentId = tournamentId,
         };
 
+    internal static IReadOnlyCollection<ArticleDetailDto> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ =>
+        {
+            var hasHeaderImage = faker.Random.Bool();
+            return new ArticleDetailDto
+            {
+                Slug = string.Join("-", faker.Lorem.Words(4)),
+                Title = faker.Random.Words(4),
+                Content = faker.Lorem.Paragraphs(2),
+                HeaderImageUrl = hasHeaderImage ? new Uri(faker.Internet.Url()) : null,
+                PublishDateUtc = faker.Date.PastOffset(2),
+                Attachments = ArticleAttachmentDtoFactory.Bogus(faker.Random.Int(0, 3), faker),
+                TournamentId = faker.Random.Bool() ? new TournamentId(Ulid.BogusString(faker)) : null,
+            };
+        })];
+    }
+
     public static IReadOnlyCollection<ArticleDetailDto> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<ArticleDetailDto>()
-            .CustomInstantiator(f =>
-            {
-                var hasHeaderImage = f.Random.Bool();
-                return new ArticleDetailDto
-                {
-                    Slug = string.Join("-", f.Lorem.Words(4)),
-                    Title = f.Random.Words(4),
-                    Content = f.Lorem.Paragraphs(2),
-                    HeaderImageUrl = hasHeaderImage ? new Uri(f.Internet.Url()) : null,
-                    PublishDateUtc = f.Date.PastOffset(2),
-                    Attachments = ArticleAttachmentDtoFactory.Bogus(f.Random.Int(0, 3), seed),
-                    TournamentId = f.Random.Bool() ? new TournamentId(Ulid.BogusString(f)) : null,
-                };
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

@@ -28,26 +28,26 @@ public static class HighAverageDtoFactory
             FieldAverage = fieldAverage ?? ValidFieldAverage
         };
 
+    internal static IReadOnlyCollection<HighAverageDto> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, faker), poolSeed);
+        return [.. Enumerable.Range(0, count).Select(_ => new HighAverageDto
+        {
+            BowlerId = new BowlerId(Ulid.BogusString(faker)),
+            BowlerName = bowlerNamePool.GetNext(),
+            Average = faker.Random.Decimal(150, 230),
+            Games = faker.Random.Int(20, 200),
+            Tournaments = faker.Random.Int(1, 15),
+            FieldAverage = faker.Random.Decimal(-10, 15)
+        })];
+    }
+
     public static IReadOnlyCollection<HighAverageDto> Bogus(int count, int? seed = null)
     {
-        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
-
-        var faker = new Faker<HighAverageDto>()
-            .CustomInstantiator(f => new HighAverageDto
-            {
-                BowlerId = new BowlerId(Ulid.BogusString(f)),
-                BowlerName = bowlerNamePool.GetNext(),
-                Average = f.Random.Decimal(150, 230),
-                Games = f.Random.Int(20, 200),
-                Tournaments = f.Random.Int(1, 15),
-                FieldAverage = f.Random.Decimal(-10, 15)
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

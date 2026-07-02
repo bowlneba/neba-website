@@ -32,4 +32,10 @@ public static class TournamentDetailArticleDtoFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<TournamentDetailArticleDto> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

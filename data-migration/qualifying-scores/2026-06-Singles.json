@@ -1,0 +1,3071 @@
+{
+  "TournamentId": 159,
+  "Squads": [
+    {
+      "SquadId": 339,
+      "SquadScores": [
+        {
+          "BowlerId": 4252,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 194
+            },
+            {
+              "Game": 2,
+              "Score": 214
+            },
+            {
+              "Game": 3,
+              "Score": 202
+            },
+            {
+              "Game": 4,
+              "Score": 160
+            },
+            {
+              "Game": 5,
+              "Score": 180
+            }
+          ]
+        },
+        {
+          "BowlerId": 4642,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 157
+            },
+            {
+              "Game": 2,
+              "Score": 155
+            },
+            {
+              "Game": 3,
+              "Score": 192
+            },
+            {
+              "Game": 4,
+              "Score": 251
+            },
+            {
+              "Game": 5,
+              "Score": 191
+            }
+          ]
+        },
+        {
+          "BowlerId": 3554,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 206
+            },
+            {
+              "Game": 2,
+              "Score": 180
+            },
+            {
+              "Game": 3,
+              "Score": 184
+            },
+            {
+              "Game": 4,
+              "Score": 215
+            },
+            {
+              "Game": 5,
+              "Score": 223
+            }
+          ]
+        },
+        {
+          "BowlerId": 4910,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 181
+            },
+            {
+              "Game": 2,
+              "Score": 129
+            },
+            {
+              "Game": 3,
+              "Score": 124
+            }
+          ]
+        },
+        {
+          "BowlerId": 8,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 188
+            },
+            {
+              "Game": 2,
+              "Score": 199
+            },
+            {
+              "Game": 3,
+              "Score": 175
+            },
+            {
+              "Game": 4,
+              "Score": 160
+            },
+            {
+              "Game": 5,
+              "Score": 202
+            }
+          ]
+        },
+        {
+          "BowlerId": 1373,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 212
+            },
+            {
+              "Game": 2,
+              "Score": 183
+            },
+            {
+              "Game": 3,
+              "Score": 201
+            },
+            {
+              "Game": 4,
+              "Score": 183
+            },
+            {
+              "Game": 5,
+              "Score": 176
+            }
+          ]
+        },
+        {
+          "BowlerId": 2146,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 158
+            },
+            {
+              "Game": 2,
+              "Score": 153
+            },
+            {
+              "Game": 3,
+              "Score": 168
+            },
+            {
+              "Game": 4,
+              "Score": 157
+            },
+            {
+              "Game": 5,
+              "Score": 152
+            }
+          ]
+        },
+        {
+          "BowlerId": 2296,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 186
+            },
+            {
+              "Game": 2,
+              "Score": 212
+            },
+            {
+              "Game": 3,
+              "Score": 133
+            },
+            {
+              "Game": 4,
+              "Score": 101
+            }
+          ]
+        },
+        {
+          "BowlerId": 5108,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 165
+            },
+            {
+              "Game": 2,
+              "Score": 173
+            },
+            {
+              "Game": 3,
+              "Score": 129
+            },
+            {
+              "Game": 4,
+              "Score": 142
+            },
+            {
+              "Game": 5,
+              "Score": 116
+            }
+          ]
+        },
+        {
+          "BowlerId": 5031,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 164
+            },
+            {
+              "Game": 2,
+              "Score": 186
+            },
+            {
+              "Game": 3,
+              "Score": 147
+            },
+            {
+              "Game": 4,
+              "Score": 206
+            },
+            {
+              "Game": 5,
+              "Score": 181
+            }
+          ]
+        },
+        {
+          "BowlerId": 2151,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 251
+            },
+            {
+              "Game": 2,
+              "Score": 224
+            },
+            {
+              "Game": 3,
+              "Score": 222
+            },
+            {
+              "Game": 4,
+              "Score": 183
+            },
+            {
+              "Game": 5,
+              "Score": 199
+            }
+          ]
+        },
+        {
+          "BowlerId": 3032,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 159
+            },
+            {
+              "Game": 2,
+              "Score": 216
+            },
+            {
+              "Game": 3,
+              "Score": 227
+            },
+            {
+              "Game": 4,
+              "Score": 189
+            },
+            {
+              "Game": 5,
+              "Score": 190
+            }
+          ]
+        },
+        {
+          "BowlerId": 653,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 203
+            },
+            {
+              "Game": 2,
+              "Score": 217
+            },
+            {
+              "Game": 3,
+              "Score": 182
+            },
+            {
+              "Game": 4,
+              "Score": 190
+            },
+            {
+              "Game": 5,
+              "Score": 172
+            }
+          ]
+        },
+        {
+          "BowlerId": 4632,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 199
+            },
+            {
+              "Game": 2,
+              "Score": 178
+            },
+            {
+              "Game": 3,
+              "Score": 300
+            },
+            {
+              "Game": 4,
+              "Score": 234
+            },
+            {
+              "Game": 5,
+              "Score": 242
+            }
+          ]
+        },
+        {
+          "BowlerId": 4867,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 220
+            },
+            {
+              "Game": 2,
+              "Score": 180
+            },
+            {
+              "Game": 3,
+              "Score": 175
+            },
+            {
+              "Game": 4,
+              "Score": 169
+            },
+            {
+              "Game": 5,
+              "Score": 204
+            }
+          ]
+        },
+        {
+          "BowlerId": 4386,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 193
+            },
+            {
+              "Game": 2,
+              "Score": 194
+            },
+            {
+              "Game": 3,
+              "Score": 215
+            },
+            {
+              "Game": 4,
+              "Score": 236
+            },
+            {
+              "Game": 5,
+              "Score": 168
+            }
+          ]
+        },
+        {
+          "BowlerId": 3701,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 143
+            },
+            {
+              "Game": 2,
+              "Score": 145
+            },
+            {
+              "Game": 3,
+              "Score": 159
+            },
+            {
+              "Game": 4,
+              "Score": 207
+            },
+            {
+              "Game": 5,
+              "Score": 215
+            }
+          ]
+        },
+        {
+          "BowlerId": 4667,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 189
+            },
+            {
+              "Game": 2,
+              "Score": 240
+            },
+            {
+              "Game": 3,
+              "Score": 164
+            },
+            {
+              "Game": 4,
+              "Score": 173
+            },
+            {
+              "Game": 5,
+              "Score": 174
+            }
+          ]
+        },
+        {
+          "BowlerId": 701,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 208
+            },
+            {
+              "Game": 2,
+              "Score": 262
+            },
+            {
+              "Game": 3,
+              "Score": 133
+            },
+            {
+              "Game": 4,
+              "Score": 245
+            },
+            {
+              "Game": 5,
+              "Score": 171
+            }
+          ]
+        },
+        {
+          "BowlerId": 4431,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 175
+            },
+            {
+              "Game": 2,
+              "Score": 152
+            },
+            {
+              "Game": 3,
+              "Score": 211
+            },
+            {
+              "Game": 4,
+              "Score": 190
+            },
+            {
+              "Game": 5,
+              "Score": 179
+            }
+          ]
+        },
+        {
+          "BowlerId": 5063,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 158
+            },
+            {
+              "Game": 2,
+              "Score": 107
+            },
+            {
+              "Game": 3,
+              "Score": 180
+            },
+            {
+              "Game": 4,
+              "Score": 112
+            },
+            {
+              "Game": 5,
+              "Score": 113
+            }
+          ]
+        },
+        {
+          "BowlerId": 4224,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 169
+            },
+            {
+              "Game": 2,
+              "Score": 193
+            },
+            {
+              "Game": 3,
+              "Score": 234
+            },
+            {
+              "Game": 4,
+              "Score": 149
+            },
+            {
+              "Game": 5,
+              "Score": 189
+            }
+          ]
+        },
+        {
+          "BowlerId": 4462,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 164
+            },
+            {
+              "Game": 2,
+              "Score": 191
+            },
+            {
+              "Game": 3,
+              "Score": 278
+            },
+            {
+              "Game": 4,
+              "Score": 256
+            },
+            {
+              "Game": 5,
+              "Score": 167
+            }
+          ]
+        },
+        {
+          "BowlerId": 1944,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 155
+            },
+            {
+              "Game": 2,
+              "Score": 179
+            },
+            {
+              "Game": 3,
+              "Score": 211
+            },
+            {
+              "Game": 4,
+              "Score": 162
+            },
+            {
+              "Game": 5,
+              "Score": 179
+            }
+          ]
+        },
+        {
+          "BowlerId": 4704,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 197
+            },
+            {
+              "Game": 2,
+              "Score": 173
+            },
+            {
+              "Game": 3,
+              "Score": 242
+            },
+            {
+              "Game": 4,
+              "Score": 189
+            },
+            {
+              "Game": 5,
+              "Score": 181
+            }
+          ]
+        },
+        {
+          "BowlerId": 4929,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 221
+            },
+            {
+              "Game": 2,
+              "Score": 233
+            },
+            {
+              "Game": 3,
+              "Score": 139
+            },
+            {
+              "Game": 4,
+              "Score": 190
+            },
+            {
+              "Game": 5,
+              "Score": 196
+            }
+          ]
+        },
+        {
+          "BowlerId": 4138,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 258
+            },
+            {
+              "Game": 2,
+              "Score": 204
+            },
+            {
+              "Game": 3,
+              "Score": 208
+            },
+            {
+              "Game": 4,
+              "Score": 269
+            },
+            {
+              "Game": 5,
+              "Score": 229
+            }
+          ]
+        },
+        {
+          "BowlerId": 2928,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 300
+            },
+            {
+              "Game": 2,
+              "Score": 234
+            },
+            {
+              "Game": 3,
+              "Score": 254
+            },
+            {
+              "Game": 4,
+              "Score": 258
+            },
+            {
+              "Game": 5,
+              "Score": 246
+            }
+          ]
+        },
+        {
+          "BowlerId": 4730,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 175
+            },
+            {
+              "Game": 2,
+              "Score": 172
+            },
+            {
+              "Game": 3,
+              "Score": 174
+            },
+            {
+              "Game": 4,
+              "Score": 258
+            },
+            {
+              "Game": 5,
+              "Score": 180
+            }
+          ]
+        },
+        {
+          "BowlerId": 4539,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 222
+            },
+            {
+              "Game": 2,
+              "Score": 160
+            },
+            {
+              "Game": 3,
+              "Score": 190
+            },
+            {
+              "Game": 4,
+              "Score": 165
+            },
+            {
+              "Game": 5,
+              "Score": 256
+            }
+          ]
+        },
+        {
+          "BowlerId": 4281,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 202
+            },
+            {
+              "Game": 2,
+              "Score": 191
+            },
+            {
+              "Game": 3,
+              "Score": 202
+            },
+            {
+              "Game": 4,
+              "Score": 212
+            },
+            {
+              "Game": 5,
+              "Score": 279
+            }
+          ]
+        },
+        {
+          "BowlerId": 2203,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 201
+            },
+            {
+              "Game": 2,
+              "Score": 178
+            },
+            {
+              "Game": 3,
+              "Score": 197
+            },
+            {
+              "Game": 4,
+              "Score": 206
+            },
+            {
+              "Game": 5,
+              "Score": 232
+            }
+          ]
+        },
+        {
+          "BowlerId": 4826,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 151
+            },
+            {
+              "Game": 2,
+              "Score": 166
+            },
+            {
+              "Game": 3,
+              "Score": 131
+            },
+            {
+              "Game": 4,
+              "Score": 171
+            },
+            {
+              "Game": 5,
+              "Score": 199
+            }
+          ]
+        },
+        {
+          "BowlerId": 4067,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 258
+            },
+            {
+              "Game": 2,
+              "Score": 169
+            },
+            {
+              "Game": 3,
+              "Score": 249
+            },
+            {
+              "Game": 4,
+              "Score": 226
+            },
+            {
+              "Game": 5,
+              "Score": 184
+            }
+          ]
+        },
+        {
+          "BowlerId": 4842,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 192
+            },
+            {
+              "Game": 2,
+              "Score": 138
+            },
+            {
+              "Game": 3,
+              "Score": 157
+            },
+            {
+              "Game": 4,
+              "Score": 155
+            },
+            {
+              "Game": 5,
+              "Score": 158
+            }
+          ]
+        },
+        {
+          "BowlerId": 418,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 168
+            },
+            {
+              "Game": 2,
+              "Score": 216
+            },
+            {
+              "Game": 3,
+              "Score": 247
+            },
+            {
+              "Game": 4,
+              "Score": 203
+            },
+            {
+              "Game": 5,
+              "Score": 242
+            }
+          ]
+        },
+        {
+          "BowlerId": 4876,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 214
+            },
+            {
+              "Game": 2,
+              "Score": 165
+            },
+            {
+              "Game": 3,
+              "Score": 191
+            },
+            {
+              "Game": 4,
+              "Score": 169
+            },
+            {
+              "Game": 5,
+              "Score": 171
+            }
+          ]
+        },
+        {
+          "BowlerId": 4751,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 262
+            },
+            {
+              "Game": 2,
+              "Score": 210
+            },
+            {
+              "Game": 3,
+              "Score": 170
+            },
+            {
+              "Game": 4,
+              "Score": 173
+            },
+            {
+              "Game": 5,
+              "Score": 148
+            }
+          ]
+        },
+        {
+          "BowlerId": 4299,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 207
+            },
+            {
+              "Game": 2,
+              "Score": 205
+            },
+            {
+              "Game": 3,
+              "Score": 195
+            },
+            {
+              "Game": 4,
+              "Score": 169
+            },
+            {
+              "Game": 5,
+              "Score": 186
+            }
+          ]
+        },
+        {
+          "BowlerId": 5064,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 113
+            },
+            {
+              "Game": 2,
+              "Score": 118
+            },
+            {
+              "Game": 3,
+              "Score": 139
+            },
+            {
+              "Game": 4,
+              "Score": 183
+            },
+            {
+              "Game": 5,
+              "Score": 122
+            }
+          ]
+        },
+        {
+          "BowlerId": 4139,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 237
+            },
+            {
+              "Game": 2,
+              "Score": 209
+            },
+            {
+              "Game": 3,
+              "Score": 199
+            },
+            {
+              "Game": 4,
+              "Score": 235
+            },
+            {
+              "Game": 5,
+              "Score": 237
+            }
+          ]
+        },
+        {
+          "BowlerId": 4325,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 173
+            },
+            {
+              "Game": 2,
+              "Score": 149
+            },
+            {
+              "Game": 3,
+              "Score": 160
+            },
+            {
+              "Game": 4,
+              "Score": 200
+            },
+            {
+              "Game": 5,
+              "Score": 144
+            }
+          ]
+        },
+        {
+          "BowlerId": 3142,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 206
+            }
+          ]
+        },
+        {
+          "BowlerId": 4435,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 224
+            },
+            {
+              "Game": 2,
+              "Score": 214
+            },
+            {
+              "Game": 3,
+              "Score": 245
+            },
+            {
+              "Game": 4,
+              "Score": 257
+            },
+            {
+              "Game": 5,
+              "Score": 182
+            }
+          ]
+        },
+        {
+          "BowlerId": 4188,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 151
+            },
+            {
+              "Game": 2,
+              "Score": 205
+            },
+            {
+              "Game": 3,
+              "Score": 179
+            },
+            {
+              "Game": 4,
+              "Score": 225
+            },
+            {
+              "Game": 5,
+              "Score": 170
+            }
+          ]
+        },
+        {
+          "BowlerId": 2046,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 179
+            },
+            {
+              "Game": 2,
+              "Score": 168
+            },
+            {
+              "Game": 3,
+              "Score": 234
+            },
+            {
+              "Game": 4,
+              "Score": 235
+            },
+            {
+              "Game": 5,
+              "Score": 245
+            }
+          ]
+        },
+        {
+          "BowlerId": 4900,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 151
+            },
+            {
+              "Game": 2,
+              "Score": 194
+            },
+            {
+              "Game": 3,
+              "Score": 172
+            },
+            {
+              "Game": 4,
+              "Score": 167
+            },
+            {
+              "Game": 5,
+              "Score": 183
+            }
+          ]
+        },
+        {
+          "BowlerId": 4278,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 203
+            },
+            {
+              "Game": 2,
+              "Score": 197
+            },
+            {
+              "Game": 3,
+              "Score": 205
+            },
+            {
+              "Game": 4,
+              "Score": 278
+            },
+            {
+              "Game": 5,
+              "Score": 213
+            }
+          ]
+        },
+        {
+          "BowlerId": 4823,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 170
+            },
+            {
+              "Game": 2,
+              "Score": 162
+            },
+            {
+              "Game": 3,
+              "Score": 149
+            },
+            {
+              "Game": 4,
+              "Score": 133
+            },
+            {
+              "Game": 5,
+              "Score": 149
+            }
+          ]
+        },
+        {
+          "BowlerId": 3405,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 224
+            },
+            {
+              "Game": 2,
+              "Score": 227
+            },
+            {
+              "Game": 3,
+              "Score": 227
+            },
+            {
+              "Game": 4,
+              "Score": 237
+            },
+            {
+              "Game": 5,
+              "Score": 203
+            }
+          ]
+        },
+        {
+          "BowlerId": 943,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 212
+            },
+            {
+              "Game": 2,
+              "Score": 204
+            },
+            {
+              "Game": 3,
+              "Score": 192
+            },
+            {
+              "Game": 4,
+              "Score": 220
+            },
+            {
+              "Game": 5,
+              "Score": 247
+            }
+          ]
+        },
+        {
+          "BowlerId": 4703,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 247
+            },
+            {
+              "Game": 2,
+              "Score": 264
+            },
+            {
+              "Game": 3,
+              "Score": 170
+            },
+            {
+              "Game": 4,
+              "Score": 192
+            },
+            {
+              "Game": 5,
+              "Score": 216
+            }
+          ]
+        },
+        {
+          "BowlerId": 5087,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 148
+            },
+            {
+              "Game": 2,
+              "Score": 157
+            },
+            {
+              "Game": 3,
+              "Score": 159
+            },
+            {
+              "Game": 4,
+              "Score": 145
+            },
+            {
+              "Game": 5,
+              "Score": 183
+            }
+          ]
+        },
+        {
+          "BowlerId": 4307,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 170
+            },
+            {
+              "Game": 2,
+              "Score": 203
+            },
+            {
+              "Game": 3,
+              "Score": 187
+            },
+            {
+              "Game": 4,
+              "Score": 178
+            },
+            {
+              "Game": 5,
+              "Score": 169
+            }
+          ]
+        },
+        {
+          "BowlerId": 2000,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 162
+            },
+            {
+              "Game": 2,
+              "Score": 176
+            },
+            {
+              "Game": 3,
+              "Score": 215
+            },
+            {
+              "Game": 4,
+              "Score": 190
+            },
+            {
+              "Game": 5,
+              "Score": 148
+            }
+          ]
+        },
+        {
+          "BowlerId": 1309,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 214
+            },
+            {
+              "Game": 2,
+              "Score": 188
+            },
+            {
+              "Game": 3,
+              "Score": 152
+            },
+            {
+              "Game": 4,
+              "Score": 195
+            },
+            {
+              "Game": 5,
+              "Score": 152
+            }
+          ]
+        },
+        {
+          "BowlerId": 2300,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 199
+            },
+            {
+              "Game": 2,
+              "Score": 195
+            },
+            {
+              "Game": 3,
+              "Score": 205
+            },
+            {
+              "Game": 4,
+              "Score": 186
+            },
+            {
+              "Game": 5,
+              "Score": 155
+            }
+          ]
+        },
+        {
+          "BowlerId": 4234,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 207
+            },
+            {
+              "Game": 2,
+              "Score": 175
+            },
+            {
+              "Game": 3,
+              "Score": 144
+            },
+            {
+              "Game": 4,
+              "Score": 159
+            },
+            {
+              "Game": 5,
+              "Score": 149
+            }
+          ]
+        },
+        {
+          "BowlerId": 4442,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 216
+            },
+            {
+              "Game": 2,
+              "Score": 267
+            },
+            {
+              "Game": 3,
+              "Score": 215
+            },
+            {
+              "Game": 4,
+              "Score": 180
+            },
+            {
+              "Game": 5,
+              "Score": 165
+            }
+          ]
+        },
+        {
+          "BowlerId": 4868,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 204
+            },
+            {
+              "Game": 2,
+              "Score": 269
+            },
+            {
+              "Game": 3,
+              "Score": 196
+            },
+            {
+              "Game": 4,
+              "Score": 192
+            },
+            {
+              "Game": 5,
+              "Score": 176
+            }
+          ]
+        },
+        {
+          "BowlerId": 5082,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 160
+            },
+            {
+              "Game": 2,
+              "Score": 142
+            },
+            {
+              "Game": 3,
+              "Score": 169
+            },
+            {
+              "Game": 4,
+              "Score": 111
+            },
+            {
+              "Game": 5,
+              "Score": 142
+            }
+          ]
+        },
+        {
+          "BowlerId": 4742,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 148
+            },
+            {
+              "Game": 2,
+              "Score": 187
+            },
+            {
+              "Game": 3,
+              "Score": 126
+            },
+            {
+              "Game": 4,
+              "Score": 170
+            },
+            {
+              "Game": 5,
+              "Score": 176
+            }
+          ]
+        },
+        {
+          "BowlerId": 4287,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 218
+            },
+            {
+              "Game": 2,
+              "Score": 161
+            },
+            {
+              "Game": 3,
+              "Score": 189
+            },
+            {
+              "Game": 4,
+              "Score": 167
+            },
+            {
+              "Game": 5,
+              "Score": 220
+            }
+          ]
+        },
+        {
+          "BowlerId": 867,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 142
+            },
+            {
+              "Game": 2,
+              "Score": 153
+            },
+            {
+              "Game": 3,
+              "Score": 162
+            },
+            {
+              "Game": 4,
+              "Score": 140
+            },
+            {
+              "Game": 5,
+              "Score": 201
+            }
+          ]
+        },
+        {
+          "BowlerId": 4601,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 136
+            },
+            {
+              "Game": 2,
+              "Score": 195
+            },
+            {
+              "Game": 3,
+              "Score": 245
+            },
+            {
+              "Game": 4,
+              "Score": 279
+            },
+            {
+              "Game": 5,
+              "Score": 268
+            }
+          ]
+        },
+        {
+          "BowlerId": 4500,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 200
+            },
+            {
+              "Game": 2,
+              "Score": 168
+            },
+            {
+              "Game": 3,
+              "Score": 212
+            },
+            {
+              "Game": 4,
+              "Score": 205
+            },
+            {
+              "Game": 5,
+              "Score": 266
+            }
+          ]
+        },
+        {
+          "BowlerId": 4860,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 186
+            },
+            {
+              "Game": 2,
+              "Score": 179
+            },
+            {
+              "Game": 3,
+              "Score": 232
+            },
+            {
+              "Game": 4,
+              "Score": 170
+            },
+            {
+              "Game": 5,
+              "Score": 167
+            }
+          ]
+        },
+        {
+          "BowlerId": 2531,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 213
+            },
+            {
+              "Game": 2,
+              "Score": 235
+            },
+            {
+              "Game": 3,
+              "Score": 202
+            },
+            {
+              "Game": 4,
+              "Score": 225
+            },
+            {
+              "Game": 5,
+              "Score": 204
+            }
+          ]
+        },
+        {
+          "BowlerId": 4643,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 155
+            },
+            {
+              "Game": 2,
+              "Score": 133
+            },
+            {
+              "Game": 3,
+              "Score": 181
+            },
+            {
+              "Game": 4,
+              "Score": 189
+            },
+            {
+              "Game": 5,
+              "Score": 202
+            }
+          ]
+        },
+        {
+          "BowlerId": 2461,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 183
+            },
+            {
+              "Game": 2,
+              "Score": 192
+            },
+            {
+              "Game": 3,
+              "Score": 245
+            },
+            {
+              "Game": 4,
+              "Score": 137
+            },
+            {
+              "Game": 5,
+              "Score": 189
+            }
+          ]
+        },
+        {
+          "BowlerId": 4361,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 212
+            },
+            {
+              "Game": 2,
+              "Score": 183
+            },
+            {
+              "Game": 3,
+              "Score": 161
+            },
+            {
+              "Game": 4,
+              "Score": 191
+            },
+            {
+              "Game": 5,
+              "Score": 215
+            }
+          ]
+        },
+        {
+          "BowlerId": 4600,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 157
+            },
+            {
+              "Game": 2,
+              "Score": 166
+            },
+            {
+              "Game": 3,
+              "Score": 162
+            },
+            {
+              "Game": 4,
+              "Score": 151
+            },
+            {
+              "Game": 5,
+              "Score": 200
+            }
+          ]
+        },
+        {
+          "BowlerId": 594,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 169
+            },
+            {
+              "Game": 2,
+              "Score": 145
+            },
+            {
+              "Game": 3,
+              "Score": 139
+            },
+            {
+              "Game": 4,
+              "Score": 132
+            },
+            {
+              "Game": 5,
+              "Score": 174
+            }
+          ]
+        },
+        {
+          "BowlerId": 934,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 246
+            },
+            {
+              "Game": 2,
+              "Score": 184
+            },
+            {
+              "Game": 3,
+              "Score": 190
+            },
+            {
+              "Game": 4,
+              "Score": 162
+            },
+            {
+              "Game": 5,
+              "Score": 235
+            }
+          ]
+        },
+        {
+          "BowlerId": 4236,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 184
+            },
+            {
+              "Game": 2,
+              "Score": 205
+            },
+            {
+              "Game": 3,
+              "Score": 133
+            },
+            {
+              "Game": 4,
+              "Score": 152
+            },
+            {
+              "Game": 5,
+              "Score": 132
+            }
+          ]
+        },
+        {
+          "BowlerId": 4859,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 169
+            },
+            {
+              "Game": 2,
+              "Score": 166
+            },
+            {
+              "Game": 3,
+              "Score": 190
+            },
+            {
+              "Game": 4,
+              "Score": 139
+            },
+            {
+              "Game": 5,
+              "Score": 199
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "SquadId": 340,
+      "SquadScores": [
+        {
+          "BowlerId": 4826,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 167
+            },
+            {
+              "Game": 2,
+              "Score": 182
+            },
+            {
+              "Game": 3,
+              "Score": 229
+            },
+            {
+              "Game": 4,
+              "Score": 172
+            },
+            {
+              "Game": 5,
+              "Score": 163
+            }
+          ]
+        },
+        {
+          "BowlerId": 5109,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 195
+            },
+            {
+              "Game": 2,
+              "Score": 129
+            },
+            {
+              "Game": 3,
+              "Score": 115
+            },
+            {
+              "Game": 4,
+              "Score": 136
+            },
+            {
+              "Game": 5,
+              "Score": 149
+            }
+          ]
+        },
+        {
+          "BowlerId": 3554,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 181
+            },
+            {
+              "Game": 2,
+              "Score": 186
+            },
+            {
+              "Game": 3,
+              "Score": 182
+            },
+            {
+              "Game": 4,
+              "Score": 191
+            },
+            {
+              "Game": 5,
+              "Score": 254
+            }
+          ]
+        },
+        {
+          "BowlerId": 934,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 229
+            },
+            {
+              "Game": 2,
+              "Score": 205
+            },
+            {
+              "Game": 3,
+              "Score": 224
+            },
+            {
+              "Game": 4,
+              "Score": 186
+            },
+            {
+              "Game": 5,
+              "Score": 178
+            }
+          ]
+        },
+        {
+          "BowlerId": 4929,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 246
+            },
+            {
+              "Game": 2,
+              "Score": 240
+            },
+            {
+              "Game": 3,
+              "Score": 254
+            },
+            {
+              "Game": 4,
+              "Score": 227
+            },
+            {
+              "Game": 5,
+              "Score": 224
+            }
+          ]
+        },
+        {
+          "BowlerId": 1944,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 170
+            },
+            {
+              "Game": 2,
+              "Score": 157
+            },
+            {
+              "Game": 3,
+              "Score": 217
+            },
+            {
+              "Game": 4,
+              "Score": 237
+            },
+            {
+              "Game": 5,
+              "Score": 148
+            }
+          ]
+        },
+        {
+          "BowlerId": 594,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 171
+            },
+            {
+              "Game": 2,
+              "Score": 160
+            },
+            {
+              "Game": 3,
+              "Score": 170
+            },
+            {
+              "Game": 4,
+              "Score": 183
+            },
+            {
+              "Game": 5,
+              "Score": 199
+            }
+          ]
+        },
+        {
+          "BowlerId": 4361,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 237
+            },
+            {
+              "Game": 2,
+              "Score": 189
+            },
+            {
+              "Game": 3,
+              "Score": 207
+            },
+            {
+              "Game": 4,
+              "Score": 206
+            },
+            {
+              "Game": 5,
+              "Score": 180
+            }
+          ]
+        },
+        {
+          "BowlerId": 4299,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 205
+            },
+            {
+              "Game": 2,
+              "Score": 232
+            },
+            {
+              "Game": 3,
+              "Score": 237
+            },
+            {
+              "Game": 4,
+              "Score": 185
+            },
+            {
+              "Game": 5,
+              "Score": 214
+            }
+          ]
+        },
+        {
+          "BowlerId": 5087,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 151
+            },
+            {
+              "Game": 2,
+              "Score": 215
+            },
+            {
+              "Game": 3,
+              "Score": 181
+            },
+            {
+              "Game": 4,
+              "Score": 182
+            },
+            {
+              "Game": 5,
+              "Score": 183
+            }
+          ]
+        },
+        {
+          "BowlerId": 4224,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 233
+            },
+            {
+              "Game": 2,
+              "Score": 189
+            },
+            {
+              "Game": 3,
+              "Score": 214
+            },
+            {
+              "Game": 4,
+              "Score": 209
+            },
+            {
+              "Game": 5,
+              "Score": 181
+            }
+          ]
+        },
+        {
+          "BowlerId": 4859,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 227
+            },
+            {
+              "Game": 2,
+              "Score": 173
+            },
+            {
+              "Game": 3,
+              "Score": 164
+            },
+            {
+              "Game": 4,
+              "Score": 158
+            },
+            {
+              "Game": 5,
+              "Score": 198
+            }
+          ]
+        },
+        {
+          "BowlerId": 4252,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 145
+            },
+            {
+              "Game": 2,
+              "Score": 198
+            },
+            {
+              "Game": 3,
+              "Score": 198
+            },
+            {
+              "Game": 4,
+              "Score": 222
+            },
+            {
+              "Game": 5,
+              "Score": 254
+            }
+          ]
+        },
+        {
+          "BowlerId": 4667,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 188
+            },
+            {
+              "Game": 2,
+              "Score": 225
+            },
+            {
+              "Game": 3,
+              "Score": 170
+            },
+            {
+              "Game": 4,
+              "Score": 190
+            },
+            {
+              "Game": 5,
+              "Score": 245
+            }
+          ]
+        },
+        {
+          "BowlerId": 4860,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 142
+            },
+            {
+              "Game": 2,
+              "Score": 157
+            },
+            {
+              "Game": 3,
+              "Score": 146
+            },
+            {
+              "Game": 4,
+              "Score": 190
+            },
+            {
+              "Game": 5,
+              "Score": 206
+            }
+          ]
+        },
+        {
+          "BowlerId": 2203,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 209
+            },
+            {
+              "Game": 2,
+              "Score": 203
+            },
+            {
+              "Game": 3,
+              "Score": 213
+            },
+            {
+              "Game": 4,
+              "Score": 198
+            },
+            {
+              "Game": 5,
+              "Score": 243
+            }
+          ]
+        },
+        {
+          "BowlerId": 4742,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 223
+            },
+            {
+              "Game": 2,
+              "Score": 143
+            },
+            {
+              "Game": 3,
+              "Score": 164
+            },
+            {
+              "Game": 4,
+              "Score": 167
+            },
+            {
+              "Game": 5,
+              "Score": 159
+            }
+          ]
+        },
+        {
+          "BowlerId": 4500,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 165
+            },
+            {
+              "Game": 2,
+              "Score": 267
+            },
+            {
+              "Game": 3,
+              "Score": 176
+            },
+            {
+              "Game": 4,
+              "Score": 203
+            },
+            {
+              "Game": 5,
+              "Score": 206
+            }
+          ]
+        },
+        {
+          "BowlerId": 4823,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 185
+            },
+            {
+              "Game": 2,
+              "Score": 184
+            },
+            {
+              "Game": 3,
+              "Score": 150
+            },
+            {
+              "Game": 4,
+              "Score": 172
+            },
+            {
+              "Game": 5,
+              "Score": 167
+            }
+          ]
+        },
+        {
+          "BowlerId": 1373,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 246
+            },
+            {
+              "Game": 2,
+              "Score": 204
+            },
+            {
+              "Game": 3,
+              "Score": 196
+            },
+            {
+              "Game": 4,
+              "Score": 289
+            },
+            {
+              "Game": 5,
+              "Score": 159
+            }
+          ]
+        },
+        {
+          "BowlerId": 4876,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 167
+            }
+          ]
+        },
+        {
+          "BowlerId": 5064,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 121
+            },
+            {
+              "Game": 2,
+              "Score": 120
+            },
+            {
+              "Game": 3,
+              "Score": 169
+            },
+            {
+              "Game": 4,
+              "Score": 175
+            },
+            {
+              "Game": 5,
+              "Score": 148
+            }
+          ]
+        },
+        {
+          "BowlerId": 5063,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 166
+            },
+            {
+              "Game": 2,
+              "Score": 133
+            },
+            {
+              "Game": 3,
+              "Score": 129
+            },
+            {
+              "Game": 4,
+              "Score": 149
+            },
+            {
+              "Game": 5,
+              "Score": 153
+            }
+          ]
+        },
+        {
+          "BowlerId": 4842,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 213
+            },
+            {
+              "Game": 2,
+              "Score": 212
+            },
+            {
+              "Game": 3,
+              "Score": 190
+            },
+            {
+              "Game": 4,
+              "Score": 180
+            },
+            {
+              "Game": 5,
+              "Score": 208
+            }
+          ]
+        },
+        {
+          "BowlerId": 4307,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 183
+            },
+            {
+              "Game": 2,
+              "Score": 179
+            },
+            {
+              "Game": 3,
+              "Score": 203
+            },
+            {
+              "Game": 4,
+              "Score": 187
+            },
+            {
+              "Game": 5,
+              "Score": 177
+            }
+          ]
+        },
+        {
+          "BowlerId": 4900,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 201
+            },
+            {
+              "Game": 2,
+              "Score": 161
+            },
+            {
+              "Game": 3,
+              "Score": 151
+            },
+            {
+              "Game": 4,
+              "Score": 177
+            },
+            {
+              "Game": 5,
+              "Score": 187
+            }
+          ]
+        },
+        {
+          "BowlerId": 867,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 160
+            },
+            {
+              "Game": 2,
+              "Score": 153
+            },
+            {
+              "Game": 3,
+              "Score": 163
+            },
+            {
+              "Game": 4,
+              "Score": 147
+            },
+            {
+              "Game": 5,
+              "Score": 138
+            }
+          ]
+        },
+        {
+          "BowlerId": 4642,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 256
+            },
+            {
+              "Game": 2,
+              "Score": 228
+            },
+            {
+              "Game": 3,
+              "Score": 193
+            },
+            {
+              "Game": 4,
+              "Score": 236
+            },
+            {
+              "Game": 5,
+              "Score": 152
+            }
+          ]
+        },
+        {
+          "BowlerId": 4287,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 165
+            },
+            {
+              "Game": 2,
+              "Score": 174
+            },
+            {
+              "Game": 3,
+              "Score": 213
+            },
+            {
+              "Game": 4,
+              "Score": 172
+            },
+            {
+              "Game": 5,
+              "Score": 202
+            }
+          ]
+        },
+        {
+          "BowlerId": 2000,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 177
+            },
+            {
+              "Game": 2,
+              "Score": 258
+            },
+            {
+              "Game": 3,
+              "Score": 176
+            },
+            {
+              "Game": 4,
+              "Score": 204
+            },
+            {
+              "Game": 5,
+              "Score": 137
+            }
+          ]
+        },
+        {
+          "BowlerId": 538,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 234
+            },
+            {
+              "Game": 2,
+              "Score": 216
+            },
+            {
+              "Game": 3,
+              "Score": 202
+            },
+            {
+              "Game": 4,
+              "Score": 178
+            },
+            {
+              "Game": 5,
+              "Score": 227
+            }
+          ]
+        },
+        {
+          "BowlerId": 2709,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 227
+            },
+            {
+              "Game": 2,
+              "Score": 195
+            },
+            {
+              "Game": 3,
+              "Score": 247
+            },
+            {
+              "Game": 4,
+              "Score": 216
+            },
+            {
+              "Game": 5,
+              "Score": 238
+            }
+          ]
+        },
+        {
+          "BowlerId": 4234,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 245
+            },
+            {
+              "Game": 2,
+              "Score": 199
+            },
+            {
+              "Game": 3,
+              "Score": 181
+            },
+            {
+              "Game": 4,
+              "Score": 203
+            },
+            {
+              "Game": 5,
+              "Score": 203
+            }
+          ]
+        },
+        {
+          "BowlerId": 701,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 175
+            },
+            {
+              "Game": 2,
+              "Score": 198
+            },
+            {
+              "Game": 3,
+              "Score": 173
+            },
+            {
+              "Game": 4,
+              "Score": 169
+            },
+            {
+              "Game": 5,
+              "Score": 185
+            }
+          ]
+        },
+        {
+          "BowlerId": 2210,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 169
+            },
+            {
+              "Game": 2,
+              "Score": 152
+            },
+            {
+              "Game": 3,
+              "Score": 173
+            },
+            {
+              "Game": 4,
+              "Score": 213
+            },
+            {
+              "Game": 5,
+              "Score": 167
+            }
+          ]
+        },
+        {
+          "BowlerId": 4650,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 179
+            },
+            {
+              "Game": 2,
+              "Score": 216
+            },
+            {
+              "Game": 3,
+              "Score": 197
+            },
+            {
+              "Game": 4,
+              "Score": 193
+            },
+            {
+              "Game": 5,
+              "Score": 238
+            }
+          ]
+        },
+        {
+          "BowlerId": 498,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 216
+            },
+            {
+              "Game": 2,
+              "Score": 213
+            },
+            {
+              "Game": 3,
+              "Score": 226
+            },
+            {
+              "Game": 4,
+              "Score": 231
+            },
+            {
+              "Game": 5,
+              "Score": 208
+            }
+          ]
+        },
+        {
+          "BowlerId": 5040,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 113
+            },
+            {
+              "Game": 2,
+              "Score": 161
+            },
+            {
+              "Game": 3,
+              "Score": 162
+            },
+            {
+              "Game": 4,
+              "Score": 216
+            },
+            {
+              "Game": 5,
+              "Score": 133
+            }
+          ]
+        },
+        {
+          "BowlerId": 2510,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 206
+            },
+            {
+              "Game": 2,
+              "Score": 214
+            },
+            {
+              "Game": 3,
+              "Score": 202
+            },
+            {
+              "Game": 4,
+              "Score": 256
+            },
+            {
+              "Game": 5,
+              "Score": 191
+            }
+          ]
+        },
+        {
+          "BowlerId": 1290,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 189
+            },
+            {
+              "Game": 2,
+              "Score": 265
+            },
+            {
+              "Game": 3,
+              "Score": 255
+            },
+            {
+              "Game": 4,
+              "Score": 133
+            },
+            {
+              "Game": 5,
+              "Score": 197
+            }
+          ]
+        },
+        {
+          "BowlerId": 4829,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 149
+            },
+            {
+              "Game": 2,
+              "Score": 216
+            },
+            {
+              "Game": 3,
+              "Score": 223
+            },
+            {
+              "Game": 4,
+              "Score": 243
+            },
+            {
+              "Game": 5,
+              "Score": 170
+            }
+          ]
+        },
+        {
+          "BowlerId": 5107,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 148
+            },
+            {
+              "Game": 2,
+              "Score": 158
+            },
+            {
+              "Game": 3,
+              "Score": 197
+            },
+            {
+              "Game": 4,
+              "Score": 197
+            },
+            {
+              "Game": 5,
+              "Score": 173
+            }
+          ]
+        },
+        {
+          "BowlerId": 4918,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 176
+            },
+            {
+              "Game": 2,
+              "Score": 213
+            },
+            {
+              "Game": 3,
+              "Score": 168
+            },
+            {
+              "Game": 4,
+              "Score": 201
+            },
+            {
+              "Game": 5,
+              "Score": 235
+            }
+          ]
+        },
+        {
+          "BowlerId": 5105,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 180
+            },
+            {
+              "Game": 2,
+              "Score": 191
+            },
+            {
+              "Game": 3,
+              "Score": 224
+            },
+            {
+              "Game": 4,
+              "Score": 224
+            },
+            {
+              "Game": 5,
+              "Score": 222
+            }
+          ]
+        },
+        {
+          "BowlerId": 5106,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 157
+            },
+            {
+              "Game": 2,
+              "Score": 186
+            },
+            {
+              "Game": 3,
+              "Score": 148
+            },
+            {
+              "Game": 4,
+              "Score": 245
+            },
+            {
+              "Game": 5,
+              "Score": 151
+            }
+          ]
+        },
+        {
+          "BowlerId": 4868,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 195
+            },
+            {
+              "Game": 2,
+              "Score": 182
+            },
+            {
+              "Game": 3,
+              "Score": 189
+            },
+            {
+              "Game": 4,
+              "Score": 190
+            },
+            {
+              "Game": 5,
+              "Score": 196
+            }
+          ]
+        },
+        {
+          "BowlerId": 4730,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 190
+            },
+            {
+              "Game": 2,
+              "Score": 268
+            },
+            {
+              "Game": 3,
+              "Score": 204
+            },
+            {
+              "Game": 4,
+              "Score": 212
+            },
+            {
+              "Game": 5,
+              "Score": 234
+            }
+          ]
+        },
+        {
+          "BowlerId": 4751,
+          "Scores": [
+            {
+              "Game": 1,
+              "Score": 236
+            },
+            {
+              "Game": 2,
+              "Score": 242
+            },
+            {
+              "Game": 3,
+              "Score": 216
+            },
+            {
+              "Game": 4,
+              "Score": 234
+            },
+            {
+              "Game": 5,
+              "Score": 177
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

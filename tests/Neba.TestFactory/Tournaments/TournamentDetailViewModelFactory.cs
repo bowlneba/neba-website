@@ -85,11 +85,11 @@ public static class TournamentDetailViewModelFactory
                     BowlingCenterName = f.Company.CompanyName() + " Lanes",
                     BowlingCenterCity = f.Address.City(),
                     BowlingCenterState = f.Address.StateAbbr(),
-                    Sponsors = TournamentDetailSponsorViewModelFactory.Bogus(f.Random.Int(0, 2), seed),
-                    OilPatterns = TournamentDetailOilPatternViewModelFactory.Bogus(f.Random.Int(0, 2), seed),
+                    Sponsors = TournamentDetailSponsorViewModelFactory.Bogus(f.Random.Int(0, 2), f),
+                    OilPatterns = TournamentDetailOilPatternViewModelFactory.Bogus(f.Random.Int(0, 2), f),
                     Winners = [f.Name.FullName()],
-                    Results = TournamentResultViewModelFactory.Bogus(f.Random.Int(0, 10), seed),
-                    Articles = TournamentDetailArticleViewModelFactory.Bogus(f.Random.Int(0, 2), seed),
+                    Results = TournamentResultViewModelFactory.Bogus(f.Random.Int(0, 10), f),
+                    Articles = TournamentDetailArticleViewModelFactory.Bogus(f.Random.Int(0, 2), f),
                 };
             });
 
@@ -99,5 +99,11 @@ public static class TournamentDetailViewModelFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<TournamentDetailViewModel> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

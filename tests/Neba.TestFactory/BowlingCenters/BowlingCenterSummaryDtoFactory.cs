@@ -26,26 +26,27 @@ public static class BowlingCenterSummaryDtoFactory
             Website = website
         };
 
+    internal static IReadOnlyCollection<BowlingCenterSummaryDto> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var addressPool = UniquePool.Create(AddressDtoFactory.Bogus(count, faker), poolSeed);
+
+        return [.. Enumerable.Range(0, count).Select(_ => new BowlingCenterSummaryDto
+        {
+            CertificationNumber = faker.Random.Replace("#####"),
+            Name = faker.Company.CompanyName(),
+            Status = faker.PickRandom(BowlingCenterStatus.List.ToArray()).Name,
+            Address = addressPool.GetNext(),
+            PhoneNumbers = PhoneNumberDtoFactory.Bogus(3, faker),
+            Website = faker.Random.Bool() ? faker.Internet.Url() : null
+        })];
+    }
+
     public static IReadOnlyCollection<BowlingCenterSummaryDto> Bogus(int count, int? seed = null)
     {
-        var addressPool = UniquePool.Create(AddressDtoFactory.Bogus(count, seed), seed);
-
-        var faker = new Faker<BowlingCenterSummaryDto>()
-            .CustomInstantiator(f => new()
-            {
-                CertificationNumber = f.Random.Replace("#####"),
-                Name = f.Company.CompanyName(),
-                Status = f.PickRandom(BowlingCenterStatus.List.ToArray()).Name,
-                Address = addressPool.GetNext(),
-                PhoneNumbers = PhoneNumberDtoFactory.Bogus(3, seed),
-                Website = f.Random.Bool() ? f.Internet.Url() : null
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

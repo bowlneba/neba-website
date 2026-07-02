@@ -25,26 +25,26 @@ public static class TitleViewModelFactory
             TournamentType = (tournamentType ?? ValidTournamentType).Name,
         };
 
+    internal static IReadOnlyCollection<TitleViewModel> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ =>
+        {
+            var date = faker.Date.PastDateOnly(10);
+            return new TitleViewModel
+            {
+                TournamentId = Ulid.BogusString(faker),
+                TournamentName = faker.Random.Words(2),
+                TournamentDate = date.ToString("MMM yyyy", CultureInfo.InvariantCulture),
+                TournamentType = faker.PickRandom(TournamentType.List.ToArray()).Name,
+            };
+        })];
+    }
+
     public static IReadOnlyCollection<TitleViewModel> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<TitleViewModel>()
-            .CustomInstantiator(f =>
-            {
-                var date = f.Date.PastDateOnly(10);
-                return new TitleViewModel
-                {
-                    TournamentId = Ulid.BogusString(f),
-                    TournamentName = f.Random.Words(2),
-                    TournamentDate = date.ToString("MMM yyyy", CultureInfo.InvariantCulture),
-                    TournamentType = f.PickRandom(TournamentType.List.ToArray()).Name,
-                };
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

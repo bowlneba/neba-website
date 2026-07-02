@@ -13,6 +13,7 @@ using Neba.Website.Server.Services;
 using Neba.Website.Tests.TestSupport;
 
 using Refit;
+using Refit.Testing;
 
 namespace Neba.Website.Tests.Pages;
 
@@ -152,25 +153,29 @@ public sealed class BylawsTests : IDisposable
 
     private void SetupSuccessResponse(string html)
     {
-        var response = new Mock<IApiResponse<GetDocumentResponse>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        response.Setup(r => r.Content).Returns(new GetDocumentResponse { Html = html });
-        response.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
+        using var response = new StubApiResponse<GetDocumentResponse>
+        {
+            IsSuccessStatusCode = true,
+            Content = new GetDocumentResponse { Html = html },
+            StatusCode = System.Net.HttpStatusCode.OK
+        };
 
         _mockDocumentsApi
             .Setup(x => x.GetDocumentAsync("bylaws", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 
     private void SetupFailureResponse(System.Net.HttpStatusCode statusCode)
     {
-        var response = new Mock<IApiResponse<GetDocumentResponse>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        response.Setup(r => r.Content).Returns((GetDocumentResponse?)null);
-        response.Setup(r => r.StatusCode).Returns(statusCode);
+        using var response = new StubApiResponse<GetDocumentResponse>
+        {
+            IsSuccessStatusCode = false,
+            Content = (GetDocumentResponse?)null,
+            StatusCode = statusCode
+        };
 
         _mockDocumentsApi
             .Setup(x => x.GetDocumentAsync("bylaws", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 }

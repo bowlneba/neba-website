@@ -108,7 +108,7 @@ When adding Playwright tests:
 
 ### 4. Present the review
 
-Structure the output as:
+Structure the review as:
 
 ---
 
@@ -127,6 +127,8 @@ Structure the output as:
 [Brief note on what was done well or what was verified clean.]
 
 ---
+
+Write this review verbatim to `pr-review.md` at the repo root (overwrite if it already exists) so it's available for reference when addressing the findings later. Then show the same content in the chat response.
 
 Ask the user: **"Ready to generate the PR description, or would you like to address any of these first?"**
 

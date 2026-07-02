@@ -17,21 +17,21 @@ public static class PointsRaceSeriesViewModelFactory
             Results = results ?? [PointsRaceTournamentViewModelFactory.Create()]
         };
 
+    internal static IReadOnlyCollection<PointsRaceSeriesViewModel> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new PointsRaceSeriesViewModel
+        {
+            BowlerId = Ulid.BogusString(faker),
+            BowlerName = faker.Name.FullName(),
+            Results = PointsRaceTournamentViewModelFactory.Bogus(faker.Random.Int(1, 5), faker)
+        })];
+    }
+
     public static IReadOnlyCollection<PointsRaceSeriesViewModel> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<PointsRaceSeriesViewModel>()
-            .CustomInstantiator(f => new PointsRaceSeriesViewModel
-            {
-                BowlerId = Ulid.BogusString(f),
-                BowlerName = f.Name.FullName(),
-                Results = PointsRaceTournamentViewModelFactory.Bogus(f.Random.Int(1, 5), seed)
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

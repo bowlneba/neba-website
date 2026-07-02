@@ -34,31 +34,31 @@ public static class MatchPlayAverageResponseFactory
             Winnings = winnings ?? ValidWinnings
         };
 
+    internal static IReadOnlyCollection<MatchPlayAverageResponse> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ =>
+        {
+            var wins = faker.Random.Int(1, 20);
+            var losses = faker.Random.Int(1, 20);
+            return new MatchPlayAverageResponse
+            {
+                BowlerId = Ulid.BogusString(faker),
+                BowlerName = faker.Name.FullName(),
+                MatchPlayAverage = faker.Random.Decimal(180, 240),
+                Games = wins + losses,
+                Wins = wins,
+                Losses = losses,
+                WinPercentage = Math.Round((decimal)wins / (wins + losses) * 100, 2),
+                Winnings = faker.Random.Decimal(0, 5000)
+            };
+        })];
+    }
+
     public static IReadOnlyCollection<MatchPlayAverageResponse> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<MatchPlayAverageResponse>()
-            .CustomInstantiator(f =>
-            {
-                var wins = f.Random.Int(1, 20);
-                var losses = f.Random.Int(1, 20);
-                return new MatchPlayAverageResponse
-                {
-                    BowlerId = Ulid.BogusString(f),
-                    BowlerName = f.Name.FullName(),
-                    MatchPlayAverage = f.Random.Decimal(180, 240),
-                    Games = wins + losses,
-                    Wins = wins,
-                    Losses = losses,
-                    WinPercentage = Math.Round((decimal)wins / (wins + losses) * 100, 2),
-                    Winnings = f.Random.Decimal(0, 5000)
-                };
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

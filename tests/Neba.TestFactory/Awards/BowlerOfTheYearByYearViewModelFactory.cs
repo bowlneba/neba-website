@@ -17,20 +17,20 @@ public static class BowlerOfTheYearByYearViewModelFactory
             WinnersByCategory = winnersByCategory ?? [new KeyValuePair<string, string>(ValidCategory, ValidBowlerName)]
         };
 
+    internal static IReadOnlyList<BowlerOfTheYearByYearViewModel> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new BowlerOfTheYearByYearViewModel
+        {
+            Season = $"{faker.Date.PastDateOnly(100).Year} Season",
+            WinnersByCategory = [new KeyValuePair<string, string>("Bowler of the Year", faker.Person.FullName)]
+        })];
+    }
+
     public static IReadOnlyList<BowlerOfTheYearByYearViewModel> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<BowlerOfTheYearByYearViewModel>()
-            .CustomInstantiator(f => new()
-            {
-                Season = $"{f.Date.PastDateOnly(100).Year} Season",
-                WinnersByCategory = [new KeyValuePair<string, string>("Bowler of the Year", f.Person.FullName)]
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

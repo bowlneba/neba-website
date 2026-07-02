@@ -25,25 +25,25 @@ public static class FinalsPerEntryDtoFactory
             FinalsPerEntry = finalsPerEntry ?? ValidFinalsPerEntry
         };
 
+    internal static IReadOnlyCollection<FinalsPerEntryDto> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, faker), poolSeed);
+        return [.. Enumerable.Range(0, count).Select(_ => new FinalsPerEntryDto
+        {
+            BowlerId = new BowlerId(Ulid.BogusString(faker)),
+            BowlerName = bowlerNamePool.GetNext(),
+            Finals = faker.Random.Int(1, 15),
+            Entries = faker.Random.Int(1, 20),
+            FinalsPerEntry = faker.Random.Decimal(0.05m, 1.0m)
+        })];
+    }
+
     public static IReadOnlyCollection<FinalsPerEntryDto> Bogus(int count, int? seed = null)
     {
-        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
-
-        var faker = new Faker<FinalsPerEntryDto>()
-            .CustomInstantiator(f => new FinalsPerEntryDto
-            {
-                BowlerId = new BowlerId(Ulid.BogusString(f)),
-                BowlerName = bowlerNamePool.GetNext(),
-                Finals = f.Random.Int(1, 15),
-                Entries = f.Random.Int(1, 20),
-                FinalsPerEntry = f.Random.Decimal(0.05m, 1.0m)
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

@@ -1,7 +1,5 @@
 using System.Net.Mime;
 
-using Bogus;
-
 using Neba.Api.Contracts.News.GetArticle;
 
 namespace Neba.TestFactory.News;
@@ -21,21 +19,21 @@ public static class ArticleAttachmentResponseFactory
             ContentType = contentType ?? MediaTypeNames.Image.Jpeg,
         };
 
+    internal static IReadOnlyCollection<ArticleAttachmentResponse> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new ArticleAttachmentResponse
+        {
+            DisplayName = faker.Random.Words(2),
+            Url = faker.Random.Bool() ? new Uri(faker.Internet.Url()) : null,
+            ContentType = faker.System.MimeType()
+        })];
+    }
+
     public static IReadOnlyCollection<ArticleAttachmentResponse> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<ArticleAttachmentResponse>()
-            .CustomInstantiator(f => new ArticleAttachmentResponse
-            {
-                DisplayName = f.Random.Words(2),
-                Url = f.Random.Bool() ? new Uri(f.Internet.Url()) : null,
-                ContentType = f.System.MimeType()
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

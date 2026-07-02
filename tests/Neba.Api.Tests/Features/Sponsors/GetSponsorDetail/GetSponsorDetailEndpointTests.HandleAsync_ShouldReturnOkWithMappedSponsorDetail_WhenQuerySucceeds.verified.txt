@@ -1,30 +1,20 @@
 ﻿{
-  Id: 01GC6AP3YHBWBQHSDJ0YZTQCAP,
-  Name: Ebert and Sons,
-  Slug: rerum-neque-explicabo,
+  Id: 01J2NKK41C3Y0EMX07V1QYGW31,
+  Name: Hansen - Murray,
+  Slug: tempore-sed-animi,
   IsCurrentSponsor: false,
-  Priority: 3,
-  Tier: Standard,
-  Category: Bowling Center,
-  WebsiteUrl: https://tevin.com,
-  TagPhrase: Networked attitude-oriented local area network,
-  Description: generate proactive markets,
-  FacebookUrl: facebook://norris.name/cambridgeshire/stravenue,
-  InstagramUrl: instagram://arjun.name/awesome/dynamic,
-  BusinessStreet: 95799 Damion Ramp,
-  BusinessCity: New Keshaunhaven,
-  BusinessState: AR,
-  BusinessPostalCode: 92837,
-  BusinessCountry: US,
-  BusinessEmailAddress: Carolyne.Botsford56@yahoo.com,
+  Priority: 2,
+  Tier: Title Sponsor,
+  Category: Manufacturer,
+  WebsiteUrl: https://forrest.org,
+  TagPhrase: Programmable holistic success,
+  Description: whiteboard interactive platforms,
+  FacebookUrl: facebook://omari.name/small-soft-bacon/primary/paradigms,
+  InstagramUrl: instagram://santos.com/transmit/redefine/persevering,
   PhoneNumbers: [
     {
-      PhoneNumberType: Work,
-      PhoneNumber: 14876305960
-    },
-    {
-      PhoneNumberType: Mobile,
-      PhoneNumber: 18792400585
+      PhoneNumberType: Home,
+      PhoneNumber: 13726933769
     }
   ]
 }

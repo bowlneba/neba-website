@@ -13,9 +13,9 @@ namespace Neba.Api.Tests.Features.Tournaments.ListChampions;
 
 [IntegrationTest]
 [Component("Tournaments")]
-[Collection<PostgreSqlFixture>]
-public sealed class ListChampionsQueryHandlerTests(PostgreSqlFixture fixture)
-    : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
+[Collection<AppDbContextFixture>]
+public sealed class ListChampionsQueryHandlerTests(AppDbContextFixture fixture)
+    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
 
@@ -60,11 +60,11 @@ public sealed class ListChampionsQueryHandlerTests(PostgreSqlFixture fixture)
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        _dbContext.HistoricalTournamentChampions.Add(new HistoricalTournamentChampion
+        await _dbContext.HistoricalTournamentChampions.AddAsync(new HistoricalTournamentChampion
         {
             Bowler = bowler,
             Tournament = tournament
-        });
+        }, ct);
         await _dbContext.SaveChangesAsync(ct);
 
         var handler = new ListChampionsQueryHandler(_dbContext);
@@ -172,11 +172,11 @@ public sealed class ListChampionsQueryHandlerTests(PostgreSqlFixture fixture)
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        _dbContext.HistoricalTournamentChampions.Add(new HistoricalTournamentChampion
+        await _dbContext.HistoricalTournamentChampions.AddAsync(new HistoricalTournamentChampion
         {
             Bowler = bowler,
             Tournament = tournament
-        });
+        }, ct);
         await _dbContext.SaveChangesAsync(ct);
 
         var handler = new ListChampionsQueryHandler(_dbContext);
@@ -204,11 +204,11 @@ public sealed class ListChampionsQueryHandlerTests(PostgreSqlFixture fixture)
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        _dbContext.HistoricalTournamentChampions.Add(new HistoricalTournamentChampion
+        await _dbContext.HistoricalTournamentChampions.AddAsync(new HistoricalTournamentChampion
         {
             Bowler = bowler,
             Tournament = tournament
-        });
+        }, ct);
         await _dbContext.SaveChangesAsync(ct);
 
         var handler = new ListChampionsQueryHandler(_dbContext);

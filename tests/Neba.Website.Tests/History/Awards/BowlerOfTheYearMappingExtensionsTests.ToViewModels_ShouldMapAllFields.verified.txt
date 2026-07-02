@@ -3,7 +3,7 @@
     Season: 2014 Season,
     WinnersByCategory: [
       {
-        Bowler of the Year: Carmen Bradtke
+        Woman: Neil Russel
       }
     ]
   },
@@ -16,10 +16,10 @@
     ]
   },
   {
-    Season: 1933 Season,
+    Season: 1948 Season,
     WinnersByCategory: [
       {
-        Super Senior: Bryan Boehm
+        Bowler of the Year: Neil Russel
       }
     ]
   }

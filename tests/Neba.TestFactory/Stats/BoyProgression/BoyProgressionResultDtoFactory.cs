@@ -49,31 +49,31 @@ public static class BoyProgressionResultDtoFactory
             SideCutName = sideCutName,
         };
 
+    internal static IReadOnlyCollection<BoyProgressionResultDto> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new BoyProgressionResultDto
+        {
+            BowlerId = BowlerId.Parse(Ulid.BogusString(faker, faker.Date.Past()), CultureInfo.InvariantCulture),
+            BowlerName = new Name { FirstName = faker.Person.FirstName, LastName = faker.Person.LastName },
+            BowlerDateOfBirth = faker.Random.Bool() ? DateOnly.FromDateTime(faker.Date.Past(yearsToGoBack: 70)) : null,
+            BowlerGender = faker.Random.Bool() ? faker.PickRandom(Gender.List.ToArray()).Value : null,
+            TournamentId = TournamentId.Parse(Ulid.BogusString(faker, faker.Date.Past()), CultureInfo.InvariantCulture),
+            TournamentName = faker.Commerce.ProductName(),
+            TournamentDate = DateOnly.FromDateTime(faker.Date.Past()),
+            TournamentEndDate = DateOnly.FromDateTime(faker.Date.Past()),
+            StatsEligible = faker.Random.Bool(),
+            TournamentType = faker.PickRandom(TournamentType.List.ToArray()).Value,
+            Points = faker.Random.Int(5, 300),
+            SideCutId = faker.Random.Bool() ? faker.Random.Int(1, 10) : null,
+            SideCutName = faker.Random.Bool() ? faker.PickRandom("Senior", "Super Senior", "Women") : null,
+        })];
+    }
+
     public static IReadOnlyCollection<BoyProgressionResultDto> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<BoyProgressionResultDto>()
-            .CustomInstantiator(f => new BoyProgressionResultDto
-            {
-                BowlerId = BowlerId.Parse(Ulid.BogusString(f, f.Date.Past()), CultureInfo.InvariantCulture),
-                BowlerName = new Name { FirstName = f.Person.FirstName, LastName = f.Person.LastName },
-                BowlerDateOfBirth = f.Random.Bool() ? DateOnly.FromDateTime(f.Date.Past(yearsToGoBack: 70)) : null,
-                BowlerGender = f.Random.Bool() ? f.PickRandom(Gender.List.ToArray()).Value : null,
-                TournamentId = TournamentId.Parse(Ulid.BogusString(f, f.Date.Past()), CultureInfo.InvariantCulture),
-                TournamentName = f.Commerce.ProductName(),
-                TournamentDate = DateOnly.FromDateTime(f.Date.Past()),
-                TournamentEndDate = DateOnly.FromDateTime(f.Date.Past()),
-                StatsEligible = f.Random.Bool(),
-                TournamentType = f.PickRandom(TournamentType.List.ToArray()).Value,
-                Points = f.Random.Int(5, 300),
-                SideCutId = f.Random.Bool() ? f.Random.Int(1, 10) : null,
-                SideCutName = f.Random.Bool() ? f.PickRandom("Senior", "Super Senior", "Women") : null,
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

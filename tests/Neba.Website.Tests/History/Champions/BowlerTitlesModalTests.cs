@@ -14,6 +14,7 @@ using Neba.Website.Server.History.Champions;
 using Neba.Website.Server.Services;
 
 using Refit;
+using Refit.Testing;
 
 namespace Neba.Website.Tests.History.Champions;
 
@@ -269,30 +270,34 @@ public sealed class BowlerTitlesModalTests : IDisposable
         string bowlerName,
         IReadOnlyCollection<BowlerTitleResponse> titles)
     {
-        var response = new Mock<IApiResponse<BowlerTitlesResponse>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        response.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
-        response.Setup(r => r.Content).Returns(new BowlerTitlesResponse
+        using var response = new StubApiResponse<BowlerTitlesResponse>
         {
-            BowlerName = bowlerName,
-            HallOfFame = false,
-            Titles = titles,
-        });
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = new BowlerTitlesResponse
+            {
+                BowlerName = bowlerName,
+                HallOfFame = false,
+                Titles = titles,
+            }
+        };
 
         _mockBowlersApi
             .Setup(x => x.GetBowlerTitlesAsync(bowlerId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 
     private void SetupFailureResponse(string bowlerId, System.Net.HttpStatusCode statusCode)
     {
-        var response = new Mock<IApiResponse<BowlerTitlesResponse>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        response.Setup(r => r.StatusCode).Returns(statusCode);
-        response.Setup(r => r.Content).Returns((BowlerTitlesResponse?)null);
+        using var response = new StubApiResponse<BowlerTitlesResponse>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = statusCode,
+            Content = (BowlerTitlesResponse?)null
+        };
 
         _mockBowlersApi
             .Setup(x => x.GetBowlerTitlesAsync(bowlerId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 }

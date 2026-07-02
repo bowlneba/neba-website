@@ -22,23 +22,25 @@ public static class HighBlockAwardFactory
 
     public static IReadOnlyCollection<HighBlockAward> Bogus(
         int count,
-        UniquePool<BowlerId>? bowlerIds = null,
-        int? seed = null
-    )
+        Faker faker,
+        UniquePool<BowlerId>? bowlerIds = null)
     {
-        var faker = new Faker<HighBlockAward>()
-            .CustomInstantiator(f => new()
-            {
-                Id = new SeasonAwardId(Ulid.BogusString(f)),
-                BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.BogusString(f)),
-                BlockScore = f.Random.Int(1250, 1400)
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new HighBlockAward
         {
-            faker.UseSeed(seed.Value);
-        }
+            Id = new SeasonAwardId(Ulid.BogusString(faker)),
+            BowlerId = bowlerIds?.GetNext() ?? new BowlerId(Ulid.BogusString(faker)),
+            BlockScore = faker.Random.Int(1250, 1400)
+        })];
+    }
 
-        return faker.Generate(count);
+    public static IReadOnlyCollection<HighBlockAward> Bogus(
+        int count,
+        UniquePool<BowlerId>? bowlerIds = null,
+        int? seed = null)
+    {
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker, bowlerIds);
     }
 }

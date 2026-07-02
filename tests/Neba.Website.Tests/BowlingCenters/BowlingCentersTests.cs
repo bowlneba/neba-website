@@ -17,6 +17,7 @@ using Neba.Website.Server.Maps;
 using Neba.Website.Server.Services;
 
 using Refit;
+using Refit.Testing;
 
 using BowlingCentersPage = Neba.Website.Server.BowlingCenters.BowlingCenters;
 
@@ -374,28 +375,32 @@ public sealed class BowlingCentersTests : IDisposable
 
     private void SetupSuccessResponse(IReadOnlyCollection<BowlingCenterSummaryResponse> centers)
     {
-        var response = new Mock<IApiResponse<CollectionResponse<BowlingCenterSummaryResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        response.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
-        response.Setup(r => r.Content).Returns(new CollectionResponse<BowlingCenterSummaryResponse>
+        using var response = new StubApiResponse<CollectionResponse<BowlingCenterSummaryResponse>>
         {
-            Items = centers,
-        });
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = new CollectionResponse<BowlingCenterSummaryResponse>
+            {
+                Items = centers,
+            }
+        };
 
         _mockApi
             .Setup(x => x.ListBowlingCentersAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 
     private void SetupFailureResponse(System.Net.HttpStatusCode statusCode)
     {
-        var response = new Mock<IApiResponse<CollectionResponse<BowlingCenterSummaryResponse>>>(MockBehavior.Strict);
-        response.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        response.Setup(r => r.StatusCode).Returns(statusCode);
-        response.Setup(r => r.Content).Returns((CollectionResponse<BowlingCenterSummaryResponse>?)null);
+        using var response = new StubApiResponse<CollectionResponse<BowlingCenterSummaryResponse>>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = statusCode,
+            Content = (CollectionResponse<BowlingCenterSummaryResponse>?)null
+        };
 
         _mockApi
             .Setup(x => x.ListBowlingCentersAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response.Object);
+            .ReturnsAsync(response);
     }
 }

@@ -11,6 +11,9 @@ using Neba.Website.Server.Services;
 using Neba.Website.Server.Telemetry.Metrics;
 
 using Refit;
+using Refit.Testing;
+
+#pragma warning disable CA2000 // StubApiResponse<T>.Dispose() is a documented no-op (Refit.Testing owns no resources); disposal is optional here.
 
 namespace Neba.Website.Tests.Services;
 
@@ -43,13 +46,15 @@ public sealed class ApiExecutorTests
         var duration = TimeSpan.FromMilliseconds(50);
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var apiResponseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
-        apiResponseMock.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        apiResponseMock.Setup(r => r.Content).Returns(expectedData);
-        apiResponseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
+        var apiResponseMock = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = true,
+            Content = expectedData,
+            StatusCode = System.Net.HttpStatusCode.OK
+        };
 
         var apiCallMock = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            _ => Task.FromResult(apiResponseMock.Object)
+            _ => Task.FromResult<IApiResponse<string>>(apiResponseMock)
         );
 
         _stopwatchProviderMock
@@ -77,13 +82,15 @@ public sealed class ApiExecutorTests
         var duration = TimeSpan.FromMilliseconds(100);
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var apiResponseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
-        apiResponseMock.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        apiResponseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.BadRequest);
-        apiResponseMock.Setup(r => r.Content).Returns((string?)null);
+        var apiResponseMock = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.BadRequest,
+            Content = (string?)null
+        };
 
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            _ => Task.FromResult(apiResponseMock.Object)
+            _ => Task.FromResult<IApiResponse<string>>(apiResponseMock)
         );
 
         _stopwatchProviderMock
@@ -113,13 +120,15 @@ public sealed class ApiExecutorTests
         var duration = TimeSpan.FromMilliseconds(50);
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var apiResponseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
-        apiResponseMock.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        apiResponseMock.Setup(r => r.Content).Returns((string?)null);
-        apiResponseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
+        var apiResponseMock = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = true,
+            Content = (string?)null,
+            StatusCode = System.Net.HttpStatusCode.OK
+        };
 
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            _ => Task.FromResult(apiResponseMock.Object)
+            _ => Task.FromResult<IApiResponse<string>>(apiResponseMock)
         );
 
         _stopwatchProviderMock
@@ -318,16 +327,18 @@ public sealed class ApiExecutorTests
         var cancellationToken = TestContext.Current.CancellationToken;
 
         CancellationToken? capturedToken = null;
-        var apiResponseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
-        apiResponseMock.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        apiResponseMock.Setup(r => r.Content).Returns("data");
-        apiResponseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
+        var apiResponseMock = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = true,
+            Content = "data",
+            StatusCode = System.Net.HttpStatusCode.OK
+        };
 
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
             ct =>
             {
                 capturedToken = ct;
-                return Task.FromResult(apiResponseMock.Object);
+                return Task.FromResult<IApiResponse<string>>(apiResponseMock);
             }
         );
 
@@ -362,13 +373,15 @@ public sealed class ApiExecutorTests
         var cancellationToken = TestContext.Current.CancellationToken;
 
         var httpStatusCode = (System.Net.HttpStatusCode)statusCode;
-        var apiResponseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
-        apiResponseMock.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        apiResponseMock.Setup(r => r.StatusCode).Returns(httpStatusCode);
-        apiResponseMock.Setup(r => r.Content).Returns((string?)null);
+        var apiResponseMock = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = httpStatusCode,
+            Content = (string?)null
+        };
 
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            _ => Task.FromResult(apiResponseMock.Object)
+            _ => Task.FromResult<IApiResponse<string>>(apiResponseMock)
         );
 
         _stopwatchProviderMock
@@ -396,10 +409,12 @@ public sealed class ApiExecutorTests
         const long startTimestamp = 1000;
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var apiResponseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
-        apiResponseMock.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        apiResponseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.NotFound);
-        apiResponseMock.Setup(r => r.Content).Returns((string?)null);
+        var apiResponseMock = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.NotFound,
+            Content = (string?)null
+        };
 
         _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
         _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(TimeSpan.FromMilliseconds(50));
@@ -407,7 +422,7 @@ public sealed class ApiExecutorTests
         // Act
         var result = await _executor.ExecuteAsync(
             apiName, operationName,
-            _ => Task.FromResult(apiResponseMock.Object),
+            _ => Task.FromResult<IApiResponse<string>>(apiResponseMock),
             cancellationToken);
 
         // Assert
@@ -426,13 +441,15 @@ public sealed class ApiExecutorTests
         var duration = TimeSpan.FromMilliseconds(42);
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var apiResponseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
-        apiResponseMock.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        apiResponseMock.Setup(r => r.Content).Returns("data");
-        apiResponseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
+        var apiResponseMock = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = true,
+            Content = "data",
+            StatusCode = System.Net.HttpStatusCode.OK
+        };
 
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            _ => Task.FromResult(apiResponseMock.Object)
+            _ => Task.FromResult<IApiResponse<string>>(apiResponseMock)
         );
 
         _stopwatchProviderMock
@@ -466,16 +483,18 @@ public sealed class ApiExecutorTests
         var doubles = new List<(string Name, double Value, IReadOnlyDictionary<string, object?> Tags)>();
         using var meterListener = CreateMeterListener(longs, doubles);
 
-        var responseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
-        responseMock.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        responseMock.Setup(r => r.Content).Returns("data");
-        responseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
+        var responseMock = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = true,
+            Content = "data",
+            StatusCode = System.Net.HttpStatusCode.OK
+        };
 
         _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
         _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(duration);
 
         // Act
-        await _executor.ExecuteAsync(apiName, operationName, _ => Task.FromResult(responseMock.Object), cancellationToken);
+        await _executor.ExecuteAsync(apiName, operationName, _ => Task.FromResult<IApiResponse<string>>(responseMock), cancellationToken);
 
         // Assert — activity tags
         var activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
@@ -515,16 +534,18 @@ public sealed class ApiExecutorTests
         var doubles = new List<(string Name, double Value, IReadOnlyDictionary<string, object?> Tags)>();
         using var meterListener = CreateMeterListener(longs, doubles);
 
-        var responseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
-        responseMock.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        responseMock.Setup(r => r.Content).Returns((string?)null);
-        responseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
+        var responseMock = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = true,
+            Content = (string?)null,
+            StatusCode = System.Net.HttpStatusCode.OK
+        };
 
         _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
         _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(duration);
 
         // Act
-        await _executor.ExecuteAsync(apiName, operationName, _ => Task.FromResult(responseMock.Object), cancellationToken);
+        await _executor.ExecuteAsync(apiName, operationName, _ => Task.FromResult<IApiResponse<string>>(responseMock), cancellationToken);
 
         // Assert — activity tags
         var activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
@@ -554,16 +575,18 @@ public sealed class ApiExecutorTests
         var doubles = new List<(string Name, double Value, IReadOnlyDictionary<string, object?> Tags)>();
         using var meterListener = CreateMeterListener(longs, doubles);
 
-        var responseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
-        responseMock.Setup(r => r.IsSuccessStatusCode).Returns(false);
-        responseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.BadRequest);
-        responseMock.Setup(r => r.Content).Returns((string?)null);
+        var responseMock = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.BadRequest,
+            Content = (string?)null
+        };
 
         _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
         _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(duration);
 
         // Act
-        await _executor.ExecuteAsync(apiName, operationName, _ => Task.FromResult(responseMock.Object), cancellationToken);
+        await _executor.ExecuteAsync(apiName, operationName, _ => Task.FromResult<IApiResponse<string>>(responseMock), cancellationToken);
 
         // Assert — metric
         longs.Any(m =>
@@ -691,13 +714,15 @@ public sealed class ApiExecutorTests
         const long startTimestamp = 1000;
         var duration = TimeSpan.FromMilliseconds(50);
 
-        var apiResponseMock = new Mock<IApiResponse<string>>(MockBehavior.Strict);
-        apiResponseMock.Setup(r => r.IsSuccessStatusCode).Returns(true);
-        apiResponseMock.Setup(r => r.Content).Returns("data");
-        apiResponseMock.Setup(r => r.StatusCode).Returns(System.Net.HttpStatusCode.OK);
+        var apiResponseMock = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = true,
+            Content = "data",
+            StatusCode = System.Net.HttpStatusCode.OK
+        };
 
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
-            _ => Task.FromResult(apiResponseMock.Object)
+            _ => Task.FromResult<IApiResponse<string>>(apiResponseMock)
         );
 
         _stopwatchProviderMock

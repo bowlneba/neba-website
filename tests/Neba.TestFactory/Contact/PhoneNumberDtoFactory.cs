@@ -14,21 +14,20 @@ public static class PhoneNumberDtoFactory
             Number = number ?? (PhoneNumberFactory.ValidCountryCode + PhoneNumberFactory.ValidNumber)
         };
 
-    public static IReadOnlyCollection<PhoneNumberDto> Bogus(int count, int? seed = null)
+    internal static IReadOnlyCollection<PhoneNumberDto> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<PhoneNumberDto>()
-            .CustomInstantiator(f => new PhoneNumberDto
-            {
-                PhoneNumberType = f.PickRandom(PhoneNumberType.List.Select(t => t.Name).ToArray()),
-                Number = f.Phone.PhoneNumber("1##########")
-            });
-
-        if (seed.HasValue)
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new PhoneNumberDto
         {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+            PhoneNumberType = faker.PickRandom(PhoneNumberType.List.Select(t => t.Name).ToArray()),
+            Number = faker.Phone.PhoneNumber("1##########")
+        })];
     }
 
+    public static IReadOnlyCollection<PhoneNumberDto> Bogus(int count, int? seed = null)
+    {
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
+    }
 }

@@ -152,7 +152,7 @@ ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Usernam
 
 ### Public Website
 
-- [ ] Champions (History)
+- [x] Champions (History)
 - [x] Bowler of the Year
   - [x] Open
   - [x] Senior
@@ -170,8 +170,8 @@ ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Usernam
 - [ ] Tournament Documents
 - [x] Tournament Detail
 - [x] Sponsors
-- [ ] News
-- [ ] About
+- [x] News
+- [x] About
 - [x] Stats
 
 ### Website Administration
@@ -189,7 +189,7 @@ ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Usernam
 - [x] Background Jobs
 - [x] Global Exception Handling
 - [x] OpenTelemetry
-- [ ] Rate Limiting & Throttling
+- [x] Rate Limiting & Throttling
 - [ ] API Documentation (Scalar)
 
 ### Documentation

@@ -8,9 +8,9 @@ namespace Neba.Api.Tests.Features.Seasons.ListSeasons;
 
 [IntegrationTest]
 [Component("Seasons")]
-[Collection<PostgreSqlFixture>]
-public sealed class ListSeasonsQueryHandlerTests(PostgreSqlFixture fixture)
-    : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
+[Collection<AppDbContextFixture>]
+public sealed class ListSeasonsQueryHandlerTests(AppDbContextFixture fixture)
+    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
 

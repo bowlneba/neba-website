@@ -1,0 +1,123 @@
+@page "/account/login"
+
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Security.Login
+@using Refit
+
+@inject ISecurityApi SecurityApi
+@inject NavigationManager Nav
+@inject ILogger<Login> Logger
+@inject AdminLoginSettings AdminLoginSettings
+
+<PageTitle>Log In - BowlNEBA</PageTitle>
+
+<div class="flex items-center justify-center min-h-[60vh] px-4">
+    <div class="w-full max-w-sm">
+        <div class="neba-card">
+            <div class="text-center mb-6">
+                <img src="/images/neba-logo.png" alt="NEBA" class="h-12 mx-auto mb-3" style="display:block;margin:0 auto;" />
+                <h1 class="text-xl font-bold text-[var(--neba-gray-900)] font-display">User Login</h1>
+            </div>
+
+            @if (_error is not null)
+            {
+                <div class="mb-4">
+                    <NebaAlert Severity="NotifySeverity.Error" Message="@_error" Dismissible="false" />
+                </div>
+            }
+
+            <EditForm Model="_model" FormName="LoginForm" OnValidSubmit="HandleLoginAsync" method="post" novalidate>
+                <DataAnnotationsValidator />
+                <div class="neba-space-y-4">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Email</label>
+                        <InputText id="email" @bind-Value="_model.Email" type="email" autocomplete="email"
+                                   class="neba-input w-full" placeholder="user@bowlneba.com" />
+                        <ValidationMessage For="@(() => _model.Email)" class="block text-sm text-red-600 mt-1" />
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Password</label>
+                        <InputText id="password" @bind-Value="_model.Password" type="password" autocomplete="current-password"
+                                   class="neba-input w-full" />
+                        <ValidationMessage For="@(() => _model.Password)" class="block text-sm text-red-600 mt-1" />
+                    </div>
+                    <button type="submit" class="neba-btn neba-btn-primary w-full justify-center" disabled="@_isSubmitting">
+                        @(_isSubmitting ? "Logging in…" : "Log in")
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery(Name = "admin")]
+    private bool? PrefillAdmin { get; set; }
+
+    [SupplyParameterFromForm(Name = "_model")]
+    private LoginFormModel? Form { get; set; }
+
+    private LoginFormModel _model = new();
+
+    private string? _error;
+
+    private bool _isSubmitting;
+
+    protected override void OnParametersSet()
+    {
+        _model = Form ?? _model;
+
+#if DEBUG
+        if (Form is null && PrefillAdmin == true)
+        {
+            _model.Email = AdminLoginSettings.Email;
+            _model.Password = AdminLoginSettings.Password;
+        }
+#endif
+    }
+
+    private async Task HandleLoginAsync()
+    {
+        _isSubmitting = true;
+
+        IApiResponse<LoginResponse> response;
+        try
+        {
+            response = await SecurityApi.LoginAsync(new LoginRequest
+            {
+                Email = _model.Email,
+                Password = _model.Password,
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Login request to the security API failed.");
+            _error = "Unable to reach the server. Please try again.";
+            _isSubmitting = false;
+            return;
+        }
+
+        if (!response.IsSuccessStatusCode || response.Content is null)
+        {
+            _error = "Invalid email or password.";
+            _isSubmitting = false;
+            return;
+        }
+
+        var login = response.Content;
+        var principal = SecurityClaimsBuilder.BuildPrincipal(login.AccessToken, login.UserId, login.Email);
+        var properties = SecurityClaimsBuilder.BuildAuthenticationProperties(login.AccessToken, login.RefreshToken);
+
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);
+
+        Nav.NavigateTo(ReturnUrlValidator.GetSafeReturnUrl(ReturnUrl), forceLoad: true);
+    }
+}

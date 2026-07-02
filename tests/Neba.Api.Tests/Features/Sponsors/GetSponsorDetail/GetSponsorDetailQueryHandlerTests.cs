@@ -10,9 +10,9 @@ namespace Neba.Api.Tests.Features.Sponsors.GetSponsorDetail;
 
 [IntegrationTest]
 [Component("Sponsors")]
-[Collection<PostgreSqlFixture>]
-public sealed class GetSponsorDetailQueryHandlerTests(PostgreSqlFixture fixture)
-    : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
+[Collection<AppDbContextFixture>]
+public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixture)
+    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
 

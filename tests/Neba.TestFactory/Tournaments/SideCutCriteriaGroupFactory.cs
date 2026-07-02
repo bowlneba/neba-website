@@ -67,7 +67,7 @@ public static class SideCutCriteriaGroupFactory
                     f.PickRandom(new[] { LogicalOperator.And, LogicalOperator.Or }.ToArray()),
                     sortOrder).Value;
 
-                foreach (var criterion in SideCutCriteriaFactory.Bogus(f.Random.Int(1, 3)))
+                foreach (var criterion in SideCutCriteriaFactory.Bogus(f.Random.Int(1, 3), f))
                 {
                     if (criterion.GenderRequirement is not null)
                     {
@@ -88,5 +88,11 @@ public static class SideCutCriteriaGroupFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<SideCutCriteriaGroup> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

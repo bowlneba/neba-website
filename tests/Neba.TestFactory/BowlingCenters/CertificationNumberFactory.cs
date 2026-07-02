@@ -15,18 +15,17 @@ public static class CertificationNumberFactory
     public static CertificationNumber CreatePlaceholder(string? sequence = null)
         => CertificationNumber.Placeholder(sequence ?? ValidPlaceholderSequence).Value;
 
-    public static IReadOnlyCollection<CertificationNumber> Bogus(int count, int? seed)
+    internal static IReadOnlyCollection<CertificationNumber> Bogus(int count, Faker faker)
     {
-        var faker = new Faker<CertificationNumber>()
-            .CustomInstantiator(f => Create(
-                value: f.Random.Number(10000, 99999).ToString(CultureInfo.InvariantCulture)
-            ));
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ =>
+            Create(value: faker.Random.Number(10000, 99999).ToString(CultureInfo.InvariantCulture)))];
+    }
 
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+    public static IReadOnlyCollection<CertificationNumber> Bogus(int count, int? seed = null)
+    {
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

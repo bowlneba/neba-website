@@ -34,28 +34,28 @@ public static class MatchPlayAverageDtoFactory
             Winnings = winnings ?? ValidWinnings
         };
 
+    internal static IReadOnlyCollection<MatchPlayAverageDto> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, faker), poolSeed);
+        return [.. Enumerable.Range(0, count).Select(_ => new MatchPlayAverageDto
+        {
+            BowlerId = new BowlerId(Ulid.BogusString(faker)),
+            BowlerName = bowlerNamePool.GetNext(),
+            MatchPlayAverage = faker.Random.Decimal(150, 230),
+            Games = faker.Random.Int(2, 20),
+            Wins = faker.Random.Int(0, 10),
+            Losses = faker.Random.Int(0, 10),
+            WinPercentage = faker.Random.Decimal(0, 100),
+            Winnings = faker.Random.Decimal(0, 5000)
+        })];
+    }
+
     public static IReadOnlyCollection<MatchPlayAverageDto> Bogus(int count, int? seed = null)
     {
-        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
-
-        var faker = new Faker<MatchPlayAverageDto>()
-            .CustomInstantiator(f => new MatchPlayAverageDto
-            {
-                BowlerId = new BowlerId(Ulid.BogusString(f)),
-                BowlerName = bowlerNamePool.GetNext(),
-                MatchPlayAverage = f.Random.Decimal(150, 230),
-                Games = f.Random.Int(2, 20),
-                Wins = f.Random.Int(0, 10),
-                Losses = f.Random.Int(0, 10),
-                WinPercentage = f.Random.Decimal(0, 100),
-                Winnings = f.Random.Decimal(0, 5000)
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

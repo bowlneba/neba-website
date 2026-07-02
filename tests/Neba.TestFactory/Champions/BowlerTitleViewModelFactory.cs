@@ -32,29 +32,29 @@ public static class BowlerTitleViewModelFactory
             HallOfFame = hallOfFame ?? ValidHallOfFame,
         };
 
+    internal static IReadOnlyCollection<BowlerTitleViewModel> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ =>
+        {
+            var date = faker.Date.PastDateOnly(10);
+            return new BowlerTitleViewModel
+            {
+                BowlerId = Ulid.BogusString(faker),
+                BowlerName = faker.Name.FullName(),
+                TournamentId = Ulid.BogusString(faker),
+                TournamentMonth = date.Month,
+                TournamentYear = date.Year,
+                TournamentType = faker.PickRandom(TournamentType.List.ToArray()).Name,
+                HallOfFame = faker.Random.Bool(),
+            };
+        })];
+    }
+
     public static IReadOnlyCollection<BowlerTitleViewModel> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<BowlerTitleViewModel>()
-            .CustomInstantiator(f =>
-            {
-                var date = f.Date.PastDateOnly(10);
-                return new BowlerTitleViewModel
-                {
-                    BowlerId = Ulid.BogusString(f),
-                    BowlerName = f.Name.FullName(),
-                    TournamentId = Ulid.BogusString(f),
-                    TournamentMonth = date.Month,
-                    TournamentYear = date.Year,
-                    TournamentType = f.PickRandom(TournamentType.List.ToArray()).Name,
-                    HallOfFame = f.Random.Bool(),
-                };
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

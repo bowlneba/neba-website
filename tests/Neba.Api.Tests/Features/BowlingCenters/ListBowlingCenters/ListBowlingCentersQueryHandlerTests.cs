@@ -10,9 +10,9 @@ namespace Neba.Api.Tests.Features.BowlingCenters.ListBowlingCenters;
 
 [IntegrationTest]
 [Component("BowlingCenters")]
-[Collection<PostgreSqlFixture>]
-public sealed class ListBowlingCentersQueryHandlerTests(PostgreSqlFixture fixture)
-    : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
+[Collection<AppDbContextFixture>]
+public sealed class ListBowlingCentersQueryHandlerTests(AppDbContextFixture fixture)
+    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
 

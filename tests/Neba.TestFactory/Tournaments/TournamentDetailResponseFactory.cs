@@ -87,7 +87,7 @@ public static class TournamentDetailResponseFactory
                 Sponsors = [.. f.PickRandom(sponsors, f.Random.Int(0, 2))],
                 OilPatterns = [.. f.PickRandom(oilPatterns, f.Random.Int(0, 2))],
                 Winners = [.. f.PickRandom(winners, f.Random.Int(0, 3)).Select(w => w.ToDisplayName())],
-                Results = TournamentResultResponseFactory.Bogus(f.Random.Int(0, 10), seed),
+                Results = TournamentResultResponseFactory.Bogus(f.Random.Int(0, 10), f),
                 Articles = [.. f.PickRandom(articles, f.Random.Int(0, 2))],
             });
 
@@ -97,5 +97,11 @@ public static class TournamentDetailResponseFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<TournamentDetailResponse> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

@@ -41,4 +41,10 @@ public static class TournamentDetailSponsorResponseFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<TournamentDetailSponsorResponse> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

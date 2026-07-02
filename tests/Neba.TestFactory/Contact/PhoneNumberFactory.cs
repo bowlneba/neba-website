@@ -23,32 +23,31 @@ public static class PhoneNumberFactory
              Extension = extension
          };
 
-    public static IReadOnlyCollection<PhoneNumber> Bogus(int count, int? seed = null)
+    internal static IReadOnlyCollection<PhoneNumber> Bogus(int count, Faker faker)
     {
-        var preFaker = seed.HasValue ? new Faker { Random = new Randomizer(seed.Value) } : new Faker();
-        var types = preFaker.Random.Shuffle(PhoneNumberType.List.ToArray()).ToArray();
+        ArgumentNullException.ThrowIfNull(faker);
+        var types = faker.Random.Shuffle(PhoneNumberType.List.ToArray()).ToArray();
         var index = 0;
 
-        var faker = new Faker<PhoneNumber>()
-            .CustomInstantiator(f =>
-            {
-                var type = index < types.Length ? types[index++] : f.PickRandom(types);
-                return new PhoneNumber
-                {
-                    Type = type,
-                    CountryCode = "1",
-                    Number = f.Phone.PhoneNumber("##########"),
-                    Extension = f.Random.Bool()
-                        ? f.Random.Number(1, 9999).ToString(CultureInfo.InvariantCulture)
-                        : null
-                };
-            });
-
-        if (seed.HasValue)
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            faker.UseSeed(seed.Value);
-        }
+            var type = index < types.Length ? types[index++] : faker.PickRandom(types);
+            return new PhoneNumber
+            {
+                Type = type,
+                CountryCode = "1",
+                Number = faker.Phone.PhoneNumber("##########"),
+                Extension = faker.Random.Bool()
+                    ? faker.Random.Number(1, 9999).ToString(CultureInfo.InvariantCulture)
+                    : null
+            };
+        })];
+    }
 
-        return faker.Generate(count);
+    public static IReadOnlyCollection<PhoneNumber> Bogus(int count, int? seed = null)
+    {
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

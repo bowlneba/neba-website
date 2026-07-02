@@ -25,28 +25,28 @@ public static class FinalsPerEntryResponseFactory
             FinalsPerEntry = finalsPerEntry ?? ValidFinalsPerEntry
         };
 
+    internal static IReadOnlyCollection<FinalsPerEntryResponse> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ =>
+        {
+            var finals = faker.Random.Int(1, 10);
+            var entries = faker.Random.Int(finals, 20);
+            return new FinalsPerEntryResponse
+            {
+                BowlerId = Ulid.BogusString(faker),
+                BowlerName = faker.Name.FullName(),
+                Finals = finals,
+                Entries = entries,
+                FinalsPerEntry = Math.Round((decimal)finals / entries, 2)
+            };
+        })];
+    }
+
     public static IReadOnlyCollection<FinalsPerEntryResponse> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<FinalsPerEntryResponse>()
-            .CustomInstantiator(f =>
-            {
-                var finals = f.Random.Int(1, 10);
-                var entries = f.Random.Int(finals, 20);
-                return new FinalsPerEntryResponse
-                {
-                    BowlerId = Ulid.BogusString(f),
-                    BowlerName = f.Name.FullName(),
-                    Finals = finals,
-                    Entries = entries,
-                    FinalsPerEntry = Math.Round((decimal)finals / entries, 2)
-                };
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

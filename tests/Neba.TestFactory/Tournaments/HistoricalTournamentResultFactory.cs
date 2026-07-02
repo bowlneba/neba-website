@@ -34,29 +34,33 @@ public static class HistoricalTournamentResultFactory
 
     internal static IReadOnlyCollection<HistoricalTournamentResult> Bogus(
         int count,
+        Faker faker,
+        IReadOnlyCollection<Bowler>? bowlers = null,
+        IReadOnlyCollection<Tournament>? tournaments = null)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        var bowlersToUse = bowlers?.ToArray() ?? [.. BowlerFactory.Bogus(count, faker)];
+        var tournamentsToUse = tournaments?.ToArray() ?? [.. TournamentFactory.Bogus(count, faker)];
+
+        return [.. Enumerable.Range(0, count).Select(_ => new HistoricalTournamentResult
+        {
+            Bowler = faker.PickRandom(bowlersToUse),
+            Tournament = faker.PickRandom(tournamentsToUse),
+            Place = faker.Random.Bool() ? faker.Random.Int(1, 20) : null,
+            PrizeMoney = faker.Random.Decimal(0, 10000),
+            SideCutId = null,
+            SideCut = null,
+        })];
+    }
+
+    internal static IReadOnlyCollection<HistoricalTournamentResult> Bogus(
+        int count,
         IReadOnlyCollection<Bowler>? bowlers = null,
         IReadOnlyCollection<Tournament>? tournaments = null,
         int? seed = null)
     {
-        var bowlersToUse = bowlers?.ToArray() ?? [.. BowlerFactory.Bogus(count, seed)];
-        var tournamentsToUse = tournaments?.ToArray() ?? [.. TournamentFactory.Bogus(count, seed)];
-
-        var faker = new Faker<HistoricalTournamentResult>()
-            .CustomInstantiator(f => new HistoricalTournamentResult
-            {
-                Bowler = f.PickRandom(bowlersToUse),
-                Tournament = f.PickRandom(tournamentsToUse),
-                Place = f.Random.Bool() ? f.Random.Int(1, 20) : null,
-                PrizeMoney = f.Random.Decimal(0, 10000),
-                SideCutId = null,
-                SideCut = null,
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker, bowlers, tournaments);
     }
 }

@@ -14,9 +14,9 @@ namespace Neba.Api.Tests.Features.Bowlers.GetBowlerTitles;
 
 [IntegrationTest]
 [Component("Bowlers")]
-[Collection<PostgreSqlFixture>]
-public sealed class GetBowlerTitlesQueryHandlerTests(PostgreSqlFixture fixture)
-    : IClassFixture<PostgreSqlFixture>, IAsyncLifetime
+[Collection<AppDbContextFixture>]
+public sealed class GetBowlerTitlesQueryHandlerTests(AppDbContextFixture fixture)
+    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
 
@@ -110,11 +110,11 @@ public sealed class GetBowlerTitlesQueryHandlerTests(PostgreSqlFixture fixture)
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        _dbContext.HistoricalTournamentChampions.Add(new HistoricalTournamentChampion
+        await _dbContext.HistoricalTournamentChampions.AddAsync(new HistoricalTournamentChampion
         {
             Bowler = bowler,
             Tournament = tournament
-        });
+        }, ct);
         await _dbContext.SaveChangesAsync(ct);
 
         var handler = new GetBowlerTitlesQueryHandler(_dbContext);

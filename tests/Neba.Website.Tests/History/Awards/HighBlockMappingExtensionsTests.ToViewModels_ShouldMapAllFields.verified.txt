@@ -9,15 +9,15 @@
   {
     Season: 2014 Season,
     Bowlers: [
-      Carmen Bradtke
+      Neil Russel
     ],
-    Score: 1269
+    Score: 1370
   },
   {
-    Season: 1933 Season,
+    Season: 1948 Season,
     Bowlers: [
-      Bryan Boehm
+      Neil Russel
     ],
-    Score: 1330
+    Score: 1265
   }
 ]

@@ -40,30 +40,30 @@ public static class BowlingCenterSummaryViewModelFactory
         };
     }
 
+    internal static IReadOnlyCollection<BowlingCenterSummaryViewModel> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new BowlingCenterSummaryViewModel
+        {
+            Name = faker.Company.CompanyName(),
+            CertificationNumber = faker.Random.Replace("NEBA-###"),
+            Street = faker.Address.StreetAddress(),
+            Unit = faker.Random.Bool() ? faker.Address.SecondaryAddress() : null,
+            City = faker.Address.City(),
+            State = faker.Address.StateAbbr(),
+            PostalCode = faker.Address.ZipCode(),
+            Latitude = faker.Person.Address.Geo.Lat,
+            Longitude = faker.Person.Address.Geo.Lng,
+            PhoneDisplay = faker.Phone.PhoneNumber("(###) ###-####"),
+            PhoneUri = new Uri($"tel:+1{faker.Phone.PhoneNumber("##########").Replace("-", "", StringComparison.InvariantCulture)}"),
+            Website = faker.Random.Bool() ? new Uri(faker.Internet.Url()) : null
+        })];
+    }
+
     public static IReadOnlyCollection<BowlingCenterSummaryViewModel> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<BowlingCenterSummaryViewModel>()
-            .CustomInstantiator(f => new()
-            {
-                Name = f.Company.CompanyName(),
-                CertificationNumber = f.Random.Replace("NEBA-###"),
-                Street = f.Address.StreetAddress(),
-                Unit = f.Random.Bool() ? f.Address.SecondaryAddress() : null,
-                City = f.Address.City(),
-                State = f.Address.StateAbbr(),
-                PostalCode = f.Address.ZipCode(),
-                Latitude = f.Person.Address.Geo.Lat,
-                Longitude = f.Person.Address.Geo.Lng,
-                PhoneDisplay = f.Phone.PhoneNumber("(###) ###-####"),
-                PhoneUri = new Uri($"tel:+1{f.Phone.PhoneNumber("##########").Replace("-", "", StringComparison.InvariantCulture)}"),
-                Website = f.Random.Bool() ? new Uri(f.Internet.Url()) : null
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

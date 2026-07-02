@@ -85,7 +85,7 @@ public static class TournamentDetailDtoFactory
                 OilPatterns = [.. f.PickRandom(oilPatterns, f.Random.Int(0, 2))],
                 LogoUrl = f.Random.Bool() ? new Uri(f.Internet.Url()) : null,
                 Winners = [.. f.PickRandom(winners, f.Random.Int(0, 3))],
-                Results = TournamentResultDtoFactory.Bogus(f.Random.Int(0, 10), seed),
+                Results = TournamentResultDtoFactory.Bogus(f.Random.Int(0, 10), f),
                 EntryCount = f.Random.Int(0, 100),
                 Articles = [.. f.PickRandom(articles, f.Random.Int(0, 2))],
             });
@@ -96,5 +96,11 @@ public static class TournamentDetailDtoFactory
         }
 
         return faker.Generate(count);
+    }
+
+    public static IReadOnlyCollection<TournamentDetailDto> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
     }
 }

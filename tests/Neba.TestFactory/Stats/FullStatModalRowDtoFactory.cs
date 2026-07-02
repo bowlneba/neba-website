@@ -49,33 +49,33 @@ public static class FullStatModalRowDtoFactory
             Tournaments = tournaments ?? ValidTournaments
         };
 
+    internal static IReadOnlyCollection<FullStatModalRowDto> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, faker), poolSeed);
+        return [.. Enumerable.Range(0, count).Select(_ => new FullStatModalRowDto
+        {
+            BowlerId = new BowlerId(Ulid.BogusString(faker)),
+            BowlerName = bowlerNamePool.GetNext(),
+            Points = faker.Random.Int(0, 1000),
+            Average = faker.Random.Decimal(150, 230),
+            Games = faker.Random.Int(20, 200),
+            Finals = faker.Random.Int(0, 15),
+            Wins = faker.Random.Int(0, 10),
+            Losses = faker.Random.Int(0, 10),
+            WinPercentage = faker.Random.Decimal(0, 100),
+            MatchPlayAverage = faker.Random.Decimal(150, 230),
+            Winnings = faker.Random.Decimal(0, 5000),
+            FieldAverage = faker.Random.Decimal(-10, 15),
+            Tournaments = faker.Random.Int(1, 15)
+        })];
+    }
+
     public static IReadOnlyCollection<FullStatModalRowDto> Bogus(int count, int? seed = null)
     {
-        var bowlerNamePool = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
-
-        var faker = new Faker<FullStatModalRowDto>()
-            .CustomInstantiator(f => new FullStatModalRowDto
-            {
-                BowlerId = new BowlerId(Ulid.BogusString(f)),
-                BowlerName = bowlerNamePool.GetNext(),
-                Points = f.Random.Int(0, 1000),
-                Average = f.Random.Decimal(150, 230),
-                Games = f.Random.Int(20, 200),
-                Finals = f.Random.Int(0, 15),
-                Wins = f.Random.Int(0, 10),
-                Losses = f.Random.Int(0, 10),
-                WinPercentage = f.Random.Decimal(0, 100),
-                MatchPlayAverage = f.Random.Decimal(150, 230),
-                Winnings = f.Random.Decimal(0, 5000),
-                FieldAverage = f.Random.Decimal(-10, 15),
-                Tournaments = f.Random.Int(1, 15)
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

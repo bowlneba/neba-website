@@ -19,28 +19,26 @@ public static class BowlerOfTheYearPointsRaceTournamentDtoFactory
             CumulativePoints = cumulativePoints ?? ValidCumulativePoints
         };
 
+    internal static IReadOnlyCollection<BowlerOfTheYearPointsRaceTournamentDto> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        var cumulativePoints = 0;
+        return [.. Enumerable.Range(0, count).Select(_ =>
+        {
+            cumulativePoints += faker.Random.Int(5, 20);
+            return new BowlerOfTheYearPointsRaceTournamentDto
+            {
+                TournamentName = faker.Company.CompanyName(),
+                TournamentDate = faker.Date.PastDateOnly(2),
+                CumulativePoints = cumulativePoints
+            };
+        })];
+    }
+
     public static IReadOnlyCollection<BowlerOfTheYearPointsRaceTournamentDto> Bogus(int count, int? seed = null)
     {
-        var cumulativePoints = 0;
-
-        var faker = new Faker<BowlerOfTheYearPointsRaceTournamentDto>()
-            .CustomInstantiator(f =>
-            {
-                cumulativePoints += f.Random.Int(5, 20);
-
-                return new BowlerOfTheYearPointsRaceTournamentDto
-                {
-                    TournamentName = f.Company.CompanyName(),
-                    TournamentDate = f.Date.PastDateOnly(2),
-                    CumulativePoints = cumulativePoints
-                };
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

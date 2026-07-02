@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 using Microsoft.Extensions.Options;
 
@@ -9,6 +10,7 @@ using Neba.Api.Contracts.Documents;
 using Neba.Api.Contracts.HallOfFame;
 using Neba.Api.Contracts.News;
 using Neba.Api.Contracts.Seasons;
+using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Contracts.Stats;
 using Neba.Api.Contracts.Tournaments;
@@ -19,15 +21,29 @@ namespace Neba.Website.Server.Services;
 
 internal static class ApiServicesConfiguration
 {
-    private static readonly RefitSettings RefitSettings = new()
+    internal static readonly RefitSettings RefitSettings = new()
     {
         ContentSerializer = new SystemTextJsonContentSerializer(
             new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                Converters = { new Cysharp.Serialization.Json.UlidJsonConverter() }
+                Converters = { new Cysharp.Serialization.Json.UlidJsonConverter() },
+                NumberHandling = JsonNumberHandling.Strict
             }
-        )
+        ),
+        // ApiException/ApiExceptionBase carry the live request (Authorization header) and response
+        // (Set-Cookie header, body) — logging/OTel export can serialize these via reflection, so scrub
+        // them before the exception propagates to ApiExecutor's logging/telemetry path.
+        MaxExceptionContentLength = 2048,
+        ExceptionRedactor = exception =>
+        {
+            exception.RequestMessage.Headers.Authorization = null;
+
+            if (exception is ApiException apiException)
+            {
+                apiException.Headers.Remove("Set-Cookie");
+            }
+        }
     };
 
     extension(IServiceCollection services)
@@ -41,6 +57,7 @@ internal static class ApiServicesConfiguration
 
             services.AddSingleton(sp => sp.GetRequiredService<IOptions<NebaApiConfiguration>>().Value);
             services.AddScoped<ApiExecutor>();
+            services.AddTransient<BearerTokenHandler>();
 
             services.RegisterApiEndpoint<IDocumentsApi>();
             services.RegisterApiEndpoint<INewsApi>();
@@ -52,6 +69,7 @@ internal static class ApiServicesConfiguration
             services.RegisterApiEndpoint<IStatsApi>();
             services.RegisterApiEndpoint<ITournamentsApi>();
             services.RegisterApiEndpoint<IBowlersApi>();
+            services.RegisterApiEndpoint<ISecurityApi>();
 
             return services;
         }
@@ -65,7 +83,8 @@ internal static class ApiServicesConfiguration
                 {
                     var apiConfig = sp.GetRequiredService<NebaApiConfiguration>();
                     client.BaseAddress = apiConfig.BaseUrl;
-                });
+                })
+                .AddHttpMessageHandler<BearerTokenHandler>();
         }
     }
 }

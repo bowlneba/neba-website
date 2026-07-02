@@ -51,4 +51,10 @@ public static class OilPatternDtoFactory
 
         return faker.Generate(count);
     }
+
+    public static IReadOnlyCollection<OilPatternDto> Bogus(int count, Faker parentFaker)
+    {
+        ArgumentNullException.ThrowIfNull(parentFaker);
+        return Bogus(count, seed: parentFaker.Random.Int());
+    }
 }

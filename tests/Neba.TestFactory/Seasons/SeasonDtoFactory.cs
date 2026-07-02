@@ -22,29 +22,28 @@ public static class SeasonDtoFactory
             EndDate = endDate ?? ValidEndDate,
         };
 
+    internal static IReadOnlyCollection<SeasonDto> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        var currentYear = faker.Random.Int(2000, 2025 - count);
+
+        return [.. Enumerable.Range(0, count).Select(_ =>
+        {
+            var year = currentYear++;
+            return new SeasonDto
+            {
+                Id = new SeasonId(Ulid.BogusString(faker)),
+                Description = $"{year} Season",
+                StartDate = new DateOnly(year, 9, 1),
+                EndDate = new DateOnly(year + 1, 8, 31),
+            };
+        })];
+    }
+
     public static IReadOnlyCollection<SeasonDto> Bogus(int count, int? seed = null)
     {
-        var preFaker = seed.HasValue ? new Faker { Random = new Randomizer(seed.Value) } : new Faker();
-        var currentYear = preFaker.Random.Int(2000, 2025 - count);
-
-        var faker = new Faker<SeasonDto>()
-            .CustomInstantiator(f =>
-            {
-                var year = currentYear++;
-                return new SeasonDto
-                {
-                    Id = new SeasonId(Ulid.BogusString(f)),
-                    Description = $"{year} Season",
-                    StartDate = new DateOnly(year, 9, 1),
-                    EndDate = new DateOnly(year + 1, 8, 31),
-                };
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

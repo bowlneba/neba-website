@@ -339,6 +339,74 @@ public async Task HandleAsync_ShouldMapPaginationFields_CorrectlyFromRequestAndR
 }
 ```
 
+### 5. Blazor Consumer Tests (`tests/Neba.Website.Tests/{Domain}/`, if a page/component calls `I{Domain}Api`)
+
+When a Blazor page or component calls the new `I{Domain}Api` method (via `ApiExecutor`), mock the Refit interface with Moq as usual, but build the `IApiResponse<T>` it returns with **`StubApiResponse<T>`** from `Refit.Testing` — not `Mock<IApiResponse<T>>`. `StubApiResponse<T>` is a hand-written `IApiResponse<T>` with init-only properties, purpose-built for this exact case (testing code that consumes `IApiResponse<T>` directly, without going through HTTP).
+
+```csharp
+using Refit;
+using Refit.Testing;
+
+[UnitTest]
+[Component("Website.{Domain}")]
+public sealed class {Entity}PageTests : IDisposable
+{
+    private readonly BunitContext _ctx;
+    private readonly Mock<I{Domain}Api> _mockApi;
+
+    public {Entity}PageTests()
+    {
+        _mockApi = new Mock<I{Domain}Api>(MockBehavior.Strict);
+
+        var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
+        mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
+        mockStopwatch.Setup(x => x.GetElapsedTime(It.IsAny<long>())).Returns(TimeSpan.Zero);
+
+        _ctx = new BunitContext();
+        _ctx.Services.AddSingleton(_mockApi.Object);
+        _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
+    }
+
+    public void Dispose() => _ctx.Dispose();
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private void SetupSuccessResponse(IReadOnlyCollection<{Entity}Response> items)
+    {
+        using var response = new StubApiResponse<CollectionResponse<{Entity}Response>>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            Content = new CollectionResponse<{Entity}Response> { Items = items }
+        };
+
+        _mockApi
+            .Setup(x => x.{Action}{Entity}Async(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+    }
+
+    private void SetupFailureResponse(System.Net.HttpStatusCode statusCode)
+    {
+        using var response = new StubApiResponse<CollectionResponse<{Entity}Response>>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = statusCode,
+            Content = null
+        };
+
+        _mockApi
+            .Setup(x => x.{Action}{Entity}Async(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+    }
+}
+```
+
+**Rules**:
+- `using var response = new StubApiResponse<T> { ... };` — `StubApiResponse<T>.Dispose()` is a documented no-op, but Roslyn's `CA2000` still flags direct construction of an `IDisposable`, so wrap it in `using` to satisfy the analyzer.
+- Pass the stub directly to `.ReturnsAsync(response)` — no `.Object` (unlike `Mock<T>`, `StubApiResponse<T>` *is* the `IApiResponse<T>`, not a wrapper).
+- If the stub is captured inside a lambda passed through `Task.FromResult(...)` (e.g. testing `ApiExecutor` itself rather than a page), `Task<T>` is invariant, so `Task.FromResult(response)` infers `Task<StubApiResponse<T>>`, not `Task<IApiResponse<T>>`. Use `Task.FromResult<IApiResponse<T>>(response)` explicitly, or declare `IApiResponse<T> response = new StubApiResponse<T> { ... };` so the static type is already the interface. In that scenario, prefer `#pragma warning disable CA2000` with a rationale comment over `using var`, since wrapping in `using` alongside `Task.FromResult` trips `CA2025` (disposal-before-task-completion) as a false positive.
+- Reserve `Mock<I{Domain}Api>` for the Refit interface itself — only the `IApiResponse<T>` it returns should be a `StubApiResponse<T>`.
+
 ## Checklist
 
 - [ ] `{Domain}EndpointGroup` exists (create if missing)
@@ -353,3 +421,4 @@ public async Task HandleAsync_ShouldMapPaginationFields_CorrectlyFromRequestAndR
 - [ ] `{Entity}ResponseFactory` exists in `Neba.TestFactory/{Domain}/`
 - [ ] Endpoint tests: snapshot test (Verify), empty/edge case (Shouldly), Configure (route + anon)
 - [ ] Snapshot `.verified.txt` accepted after first run
+- [ ] Blazor consumer tests (if applicable): `IApiResponse<T>` built with `StubApiResponse<T>` from `Refit.Testing`, not `Mock<IApiResponse<T>>`

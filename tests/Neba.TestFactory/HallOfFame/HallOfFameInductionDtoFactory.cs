@@ -22,29 +22,29 @@ public static class HallOfFameInductionDtoFactory
             PhotoUri = photoUri
         };
 
+    internal static IReadOnlyCollection<HallOfFameInductionDto> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var bowlerNames = UniquePool.Create(NameFactory.Bogus(count, faker), poolSeed);
+
+        return [.. Enumerable.Range(0, count).Select(_ =>
+        {
+            var hasPhoto = faker.Random.Bool();
+            return new HallOfFameInductionDto
+            {
+                Year = faker.Date.PastDateOnly().Year,
+                BowlerName = bowlerNames.GetNext(),
+                Categories = [.. faker.PickRandom(HallOfFameCategory.List, faker.Random.Int(1, HallOfFameCategory.List.Count))],
+                PhotoUri = hasPhoto ? new Uri(faker.Internet.Url()) : null
+            };
+        })];
+    }
+
     public static IReadOnlyCollection<HallOfFameInductionDto> Bogus(int count, int? seed = null)
     {
-        var bowlerNames = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
-
-        var faker = new Faker<HallOfFameInductionDto>()
-            .CustomInstantiator(f =>
-            {
-                var hasPhoto = f.Random.Bool();
-
-                return new HallOfFameInductionDto
-                {
-                    Year = f.Date.PastDateOnly().Year,
-                    BowlerName = bowlerNames.GetNext(),
-                    Categories = [.. f.PickRandom(HallOfFameCategory.List, f.Random.Int(1, HallOfFameCategory.List.Count))],
-                    PhotoUri = hasPhoto ? new Uri(f.Internet.Url()) : null
-                };
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

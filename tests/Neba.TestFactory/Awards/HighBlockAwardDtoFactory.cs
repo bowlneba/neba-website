@@ -20,23 +20,24 @@ public static class HighBlockAwardDtoFactory
             Score = score ?? ValidScore
         };
 
+    internal static IReadOnlyCollection<HighBlockAwardDto> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        var poolSeed = faker.Random.Int();
+        var bowlerNames = UniquePool.Create(NameFactory.Bogus(count, faker), poolSeed);
+
+        return [.. Enumerable.Range(0, count).Select(_ => new HighBlockAwardDto
+        {
+            Season = $"Season {faker.Date.Past(5).Year}",
+            BowlerName = bowlerNames.GetNext(),
+            Score = faker.Random.Int(1250, 1400)
+        })];
+    }
+
     public static IReadOnlyCollection<HighBlockAwardDto> Bogus(int count, int? seed = null)
     {
-        var bowlerNames = UniquePool.Create(NameFactory.Bogus(count, seed), seed);
-
-        var faker = new Bogus.Faker<HighBlockAwardDto>()
-            .CustomInstantiator(f => new()
-            {
-                Season = $"Season {f.Date.Past(5).Year}",
-                BowlerName = bowlerNames.GetNext(),
-                Score = f.Random.Int(1250, 1400)
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

@@ -41,30 +41,30 @@ public static class SponsorSummaryDtoFactory
             InstagramUrl = instagramUrl
         };
 
+    internal static IReadOnlyCollection<SponsorSummaryDto> Bogus(int count, Faker faker)
+    {
+        ArgumentNullException.ThrowIfNull(faker);
+        return [.. Enumerable.Range(0, count).Select(_ => new SponsorSummaryDto
+        {
+            Name = faker.Company.CompanyName(),
+            Slug = faker.Lorem.Slug(),
+            LogoUrl = new Uri(faker.Image.PicsumUrl()),
+            IsCurrentSponsor = faker.Random.Bool(),
+            Priority = faker.Random.Int(1, 10),
+            Tier = faker.PickRandom(SponsorTier.List.ToArray()).Name,
+            Category = faker.PickRandom(SponsorCategory.List.ToArray()).Name,
+            TagPhrase = faker.Company.CatchPhrase(),
+            Description = faker.Lorem.Sentence(2),
+            WebsiteUrl = new Uri(faker.Internet.Url()),
+            FacebookUrl = new Uri(faker.Internet.UrlWithPath("facebook")),
+            InstagramUrl = new Uri(faker.Internet.UrlWithPath("instagram"))
+        })];
+    }
+
     public static IReadOnlyCollection<SponsorSummaryDto> Bogus(int count, int? seed = null)
     {
-        var faker = new Faker<SponsorSummaryDto>()
-            .CustomInstantiator(f => new()
-            {
-                Name = f.Company.CompanyName(),
-                Slug = f.Lorem.Slug(),
-                LogoUrl = new Uri(f.Image.PicsumUrl()),
-                IsCurrentSponsor = f.Random.Bool(),
-                Priority = f.Random.Int(1, 10),
-                Tier = f.PickRandom(SponsorTier.List.ToArray()).Name,
-                Category = f.PickRandom(SponsorCategory.List.ToArray()).Name,
-                TagPhrase = f.Company.CatchPhrase(),
-                Description = f.Lorem.Sentence(2),
-                WebsiteUrl = new Uri(f.Internet.Url()),
-                FacebookUrl = new Uri(f.Internet.UrlWithPath("facebook")),
-                InstagramUrl = new Uri(f.Internet.UrlWithPath("instagram"))
-            });
-
-        if (seed.HasValue)
-        {
-            faker.UseSeed(seed.Value);
-        }
-
-        return faker.Generate(count);
+        var faker = new Faker();
+        if (seed.HasValue) faker.Random = new Randomizer(seed.Value);
+        return Bogus(count, faker);
     }
 }

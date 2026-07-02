@@ -653,7 +653,12 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     }
 
     if (pathname === '/__mock/reset') {
-      mockOverrides.clear();
+      const path = requestUrl.searchParams.get('path');
+      if (path) {
+        mockOverrides.delete(path);
+      } else {
+        mockOverrides.clear();
+      }
       res.writeHead(200);
       res.end();
       return;

@@ -65,6 +65,8 @@ jobs:
           GOOGLE_PRIVATE_KEY: ${{ secrets.GOOGLE_PRIVATE_KEY }}
           GOOGLE_PRIVATE_KEY_ID: ${{ secrets.GOOGLE_PRIVATE_KEY_ID }}
           GOOGLE_CLIENT_EMAIL: ${{ secrets.GOOGLE_CLIENT_EMAIL }}
+          GOOGLE_PASSWORD: ${{ secrets.GOOGLE_PASSWORD }}
+          JWT_SIGNING_KEY: ${{ secrets.JWT_SIGNING_KEY }}
         run: |
           set -euo pipefail
 
@@ -81,6 +83,14 @@ jobs:
           az keyvault secret set --vault-name "$VAULT_NAME" \
             --name "GoogleDrive--Credentials--ClientEmail" \
             --value "$GOOGLE_CLIENT_EMAIL"
+
+          az keyvault secret set --vault-name "$VAULT_NAME" \
+            --name "EmailSettings--AppPassword" \
+            --value "$GOOGLE_PASSWORD"
+
+          az keyvault secret set --vault-name "$VAULT_NAME" \
+            --name "JwtSettings--SigningKey" \
+            --value "$JWT_SIGNING_KEY"
 
       - name: Deploy application
         env:

@@ -22,6 +22,7 @@ public sealed class NavMenuTests : IDisposable
         // Setup bUnit's JSInterop to handle module imports
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         _ctx.JSInterop.SetupModule("./Layout/NavMenu.razor.js");
+        _ctx.AddAuthorization();
 
         var mockWebHostEnvironment = new Mock<IWebHostEnvironment>(MockBehavior.Strict);
         mockWebHostEnvironment.Setup(x => x.EnvironmentName).Returns("Development");
