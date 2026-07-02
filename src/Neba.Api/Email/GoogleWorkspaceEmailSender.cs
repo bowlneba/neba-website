@@ -36,7 +36,16 @@ internal sealed class GoogleWorkspaceEmailSender(
         await client.SendAsync(mimeMessage, cancellationToken);
         await client.DisconnectAsync(quit: true, cancellationToken);
 
-        logger.LogEmailSent(message.To, message.Subject);
+        logger.LogEmailSent(MaskEmail(message.To), message.Subject);
+    }
+
+    // Masks the local part so recipient addresses never reach log storage in clear text.
+    private static string MaskEmail(string email)
+    {
+        var atIndex = email.IndexOf('@');
+        return atIndex <= 0
+            ? "***"
+            : $"{email[0]}***{email[atIndex..]}";
     }
 }
 
