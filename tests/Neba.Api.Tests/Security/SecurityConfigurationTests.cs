@@ -194,10 +194,10 @@ public sealed class SecurityConfigurationTests
         var builder = WebApplication.CreateSlimBuilder();
 
         // Act
-        var act = () => builder.AddSecurity();
+        WebApplicationBuilder Act() => builder.AddSecurity();
 
         // Assert
-        Should.Throw<InvalidOperationException>(act)
+        Should.Throw<InvalidOperationException>((Func<WebApplicationBuilder>)Act)
             .Message.ShouldContain("JwtSettings");
     }
 
@@ -214,10 +214,10 @@ public sealed class SecurityConfigurationTests
         });
 
         // Act
-        var act = () => builder.AddSecurity();
+        WebApplicationBuilder Act() => builder.AddSecurity();
 
         // Assert
-        Should.Throw<InvalidOperationException>(act)
+        Should.Throw<InvalidOperationException>((Func<WebApplicationBuilder>)Act)
             .Message.ShouldContain("SigningKey must not be empty");
     }
 
@@ -234,10 +234,10 @@ public sealed class SecurityConfigurationTests
         });
 
         // Act
-        var act = () => builder.AddSecurity();
+        WebApplicationBuilder Act() => builder.AddSecurity();
 
         // Assert
-        Should.Throw<InvalidOperationException>(act)
+        Should.Throw<InvalidOperationException>((Func<WebApplicationBuilder>)Act)
             .Message.ShouldContain("at least 32 bytes");
     }
 }

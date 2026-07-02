@@ -71,10 +71,10 @@ public sealed class ApiServicesConfigurationTests
         var provider = services.BuildServiceProvider();
 
         // Act
-        var act = () => provider.GetRequiredService<IOptions<NebaApiConfiguration>>().Value;
+        NebaApiConfiguration Act() => provider.GetRequiredService<IOptions<NebaApiConfiguration>>().Value;
 
         // Assert
-        Should.Throw<OptionsValidationException>(act)
+        Should.Throw<OptionsValidationException>((Func<NebaApiConfiguration>)Act)
             .Message.ShouldContain("BaseUrl must be a valid absolute URI");
     }
 
@@ -88,10 +88,10 @@ public sealed class ApiServicesConfigurationTests
         var provider = services.BuildServiceProvider();
 
         // Act
-        var act = () => provider.GetRequiredService<IOptions<NebaApiConfiguration>>().Value;
+        NebaApiConfiguration Act() => provider.GetRequiredService<IOptions<NebaApiConfiguration>>().Value;
 
         // Assert
-        Should.Throw<OptionsValidationException>(act)
+        Should.Throw<OptionsValidationException>((Func<NebaApiConfiguration>)Act)
             .Message.ShouldContain("BaseUrl must be a valid absolute URI");
     }
 
