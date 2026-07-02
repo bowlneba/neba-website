@@ -8,6 +8,7 @@
     <PackageReference Include="Blazor-ApexCharts" />
     <PackageReference Include="ErrorOr" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
+    <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="Refit.HttpClientFactory" />
     <PackageReference Include="UnitsNet" />
