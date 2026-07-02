@@ -10,8 +10,4 @@
     <PackageReference Include="Refit" />
   </ItemGroup>
 
-  <ItemGroup>
-    <InternalsVisibleTo Include="Neba.Api.Tests" />
-  </ItemGroup>
-
 </Project>

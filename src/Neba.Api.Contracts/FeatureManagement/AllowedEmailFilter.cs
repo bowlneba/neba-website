@@ -24,7 +24,7 @@ public sealed class AllowedEmailFilter
         var settings = featureFilterContext.Parameters.Get<AllowedEmailFilterSettings>()
             ?? new();
 
-        var allowed = settings.AllowedEmails.Contains(appContext.Email);
+        var allowed = settings.AllowedEmails.Contains(appContext.Email, StringComparer.OrdinalIgnoreCase);
 
         return Task.FromResult(allowed);
     }

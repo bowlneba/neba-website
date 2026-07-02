@@ -85,6 +85,20 @@ public sealed class AllowedEmailFilterTests
         result.ShouldBeTrue();
     }
 
+    [Fact(DisplayName = "EvaluateAsync should return true when email matches the allowed list with different casing")]
+    public async Task EvaluateAsync_ShouldReturnTrue_WhenEmailMatchesAllowedListWithDifferentCasing()
+    {
+        // Arrange
+        var featureFilterContext = CreateFeatureFilterContext(["allowed@bowlneba.com"]);
+        var appContext = new AllowedEmailContext { Email = "ALLOWED@BowlNeba.com" };
+
+        // Act
+        var result = await _filter.EvaluateAsync(featureFilterContext, appContext);
+
+        // Assert
+        result.ShouldBeTrue();
+    }
+
     [Fact(DisplayName = "EvaluateAsync should return false when email is not in the allowed list")]
     public async Task EvaluateAsync_ShouldReturnFalse_WhenEmailIsNotInAllowedList()
     {

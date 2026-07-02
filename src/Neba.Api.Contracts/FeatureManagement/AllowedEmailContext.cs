@@ -6,7 +6,7 @@ namespace Neba.Api.Contracts.FeatureManagement;
 public sealed record AllowedEmailContext
 {
     /// <summary>
-    /// Gets or sets the email address of the user for whom the feature is being evaluated.
+    /// Gets the email address of the user for whom the feature is being evaluated.
     /// </summary>
     public string? Email { get; init; }
 }

@@ -17,6 +17,7 @@ internal sealed class RegisterSummary : Summary<RegisterEndpoint>
             contentType: MediaTypeNames.Application.Json,
             example: new RegisterResponse { UserId = "01JXXXXXXXXXXXXXXXXXXXXXXXXX" });
 
+        Response(404, "User registration is not enabled for this account.");
         Response(409, "An account with this email already exists.");
         Response(422, "Validation failed (invalid email format, password too short, etc.).");
     }
