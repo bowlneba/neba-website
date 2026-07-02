@@ -3,6 +3,7 @@ using ApexCharts;
 using Neba.Website.Server;
 using Neba.Website.Server.Account;
 using Neba.Website.Server.Clock;
+using Neba.Website.Server.FeatureManagement;
 using Neba.Website.Server.Maps;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Stats;
@@ -11,7 +12,9 @@ using Neba.Website.Server.Tournaments;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
-builder.AddServiceDefaults();
+builder
+    .AddServiceDefaults()
+    .AddFeatureManagement();
 
 builder.Services.AddApiServices(builder.Configuration);
 builder.Services.AddMaps(builder.Configuration);

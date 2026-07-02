@@ -11,6 +11,34 @@ public sealed class AllowedEmailFilterTests
 {
     private readonly AllowedEmailFilter _filter = new();
 
+#nullable disable
+    [Fact(DisplayName = "EvaluateAsync should throw when featureFilterContext is null")]
+    public async Task EvaluateAsync_ShouldThrow_WhenFeatureFilterContextIsNull()
+    {
+        // Arrange
+        var appContext = new AllowedEmailContext { Email = "allowed@bowlneba.com" };
+
+        // Act
+        var act = () => _filter.EvaluateAsync(null, appContext);
+
+        // Assert
+        await Should.ThrowAsync<ArgumentNullException>(act);
+    }
+
+    [Fact(DisplayName = "EvaluateAsync should throw when appContext is null")]
+    public async Task EvaluateAsync_ShouldThrow_WhenAppContextIsNull()
+    {
+        // Arrange
+        var featureFilterContext = CreateFeatureFilterContext(["allowed@bowlneba.com"]);
+
+        // Act
+        var act = () => _filter.EvaluateAsync(featureFilterContext, null);
+
+        // Assert
+        await Should.ThrowAsync<ArgumentNullException>(act);
+    }
+#nullable enable
+
     [Fact(DisplayName = "EvaluateAsync should return false when email is null")]
     public async Task EvaluateAsync_ShouldReturnFalse_WhenEmailIsNull()
     {

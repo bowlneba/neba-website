@@ -5,6 +5,7 @@ using FastEndpoints;
 
 using Neba.Api;
 using Neba.Api.ErrorHandling;
+using Neba.Api.FeatureManagement;
 using Neba.Api.OpenApi;
 using Neba.Api.Security;
 using Neba.Api.Versioning;
@@ -31,7 +32,8 @@ builder.Services
 
 builder
     .AddInfrastructure()
-    .AddSecurity();
+    .AddSecurity()
+    .AddFeatureManagement();
 
 var app = builder.Build();
 
