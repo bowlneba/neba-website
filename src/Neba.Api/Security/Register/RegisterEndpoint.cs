@@ -1,3 +1,6 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
 using Asp.Versioning;
 
 using ErrorOr;
@@ -5,14 +8,20 @@ using ErrorOr;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
+using Microsoft.FeatureManagement;
+
+using Neba.Api.Contracts.FeatureManagement;
 using Neba.Api.Contracts.Security.Register;
 
 namespace Neba.Api.Security.Register;
 
-internal sealed class RegisterEndpoint(Messaging.ICommandHandler<RegisterCommand, Ulid> commandHandler)
+internal sealed class RegisterEndpoint(
+        Messaging.ICommandHandler<RegisterCommand, Ulid> commandHandler,
+        IFeatureManager featureManager)
     : Endpoint<RegisterRequest, RegisterResponse>
 {
     private readonly Messaging.ICommandHandler<RegisterCommand, Ulid> _commandHandler = commandHandler;
+    private readonly IFeatureManager _featureManager = featureManager;
 
     public override void Configure()
     {
@@ -35,6 +44,17 @@ internal sealed class RegisterEndpoint(Messaging.ICommandHandler<RegisterCommand
 
     public override async Task HandleAsync(RegisterRequest req, CancellationToken ct)
     {
+        var callerEmail = User.FindFirstValue(JwtRegisteredClaimNames.Email);
+        var context = new AllowedEmailContext {Email = callerEmail};
+
+        if (!await _featureManager.IsEnabledAsync(FeatureFlags.UserRegistration, context))
+        {
+            await Send.NotFoundAsync(ct);
+
+            // Stryker disable once Statement
+            return;
+        }
+
         var command = new RegisterCommand { Email = req.Input.Email, Password = req.Input.Password };
         var result = await _commandHandler.HandleAsync(command, ct);
 

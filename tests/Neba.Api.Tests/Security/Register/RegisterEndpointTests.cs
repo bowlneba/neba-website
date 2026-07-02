@@ -2,6 +2,9 @@ using ErrorOr;
 
 using FastEndpoints;
 
+using Microsoft.FeatureManagement;
+
+using Neba.Api.Contracts.FeatureManagement;
 using Neba.Api.Contracts.Security.Register;
 using Neba.Api.Security.Register;
 using Neba.TestFactory.Attributes;
@@ -30,7 +33,9 @@ public sealed class RegisterEndpointTests
                 ct))
             .ReturnsAsync(userId);
 
-        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object);
+        var featureManagerMock = CreateFeatureManagerMock(isEnabled: true);
+
+        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object, featureManagerMock.Object);
 
         // Act — Send.CreatedAtAsync requires LinkGenerator, which Factory.Create does not provide.
         // The strict mock verifies the command mapping; the LinkGenerator exception confirms the success branch was taken.
@@ -53,7 +58,9 @@ public sealed class RegisterEndpointTests
             .Setup(h => h.HandleAsync(It.IsAny<RegisterCommand>(), ct))
             .ReturnsAsync(RegisterErrors.DuplicateEmail);
 
-        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object);
+        var featureManagerMock = CreateFeatureManagerMock(isEnabled: true);
+
+        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object, featureManagerMock.Object);
 
         // Act
         await endpoint.HandleAsync(request, ct);
@@ -74,7 +81,9 @@ public sealed class RegisterEndpointTests
             .Setup(h => h.HandleAsync(It.IsAny<RegisterCommand>(), ct))
             .ReturnsAsync(Error.Validation("Register.WeakPassword", "Password does not meet requirements."));
 
-        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object);
+        var featureManagerMock = CreateFeatureManagerMock(isEnabled: true);
+
+        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object, featureManagerMock.Object);
 
         // Act
         await endpoint.HandleAsync(request, ct);
@@ -83,16 +92,47 @@ public sealed class RegisterEndpointTests
         endpoint.HttpContext.Response.StatusCode.ShouldBe(422);
     }
 
+    [Fact(DisplayName = "HandleAsync should return 404 and not invoke the command handler when the UserRegistration feature is disabled")]
+    public async Task HandleAsync_ShouldReturn404AndNotInvokeCommandHandler_WhenFeatureIsDisabled()
+    {
+        // Arrange
+        var request = RegisterRequestFactory.Create();
+        var ct = TestContext.Current.CancellationToken;
+
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<RegisterCommand, Ulid>>(MockBehavior.Strict);
+
+        var featureManagerMock = CreateFeatureManagerMock(isEnabled: false);
+
+        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object, featureManagerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(request, ct);
+
+        // Assert — strict command handler mock has no setups, so any invocation would throw
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(404);
+    }
+
     [Fact(DisplayName = "Configure should register anonymous POST route containing 'register'")]
     public void Configure_ShouldRegisterAnonymousPostRoute_ContainingRegister()
     {
         // Arrange
         var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<RegisterCommand, Ulid>>(MockBehavior.Strict);
-        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object);
+        var featureManagerMock = CreateFeatureManagerMock(isEnabled: true);
+        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object, featureManagerMock.Object);
 
         // Assert
         endpoint.Definition.Verbs.ShouldContain("POST");
         endpoint.Definition.Routes.ShouldContain(r => r.Contains("register"), "should include a 'register' route");
         endpoint.Definition.AnonymousVerbs.ShouldNotBeEmpty();
+    }
+
+    private static Mock<IFeatureManager> CreateFeatureManagerMock(bool isEnabled)
+    {
+        var featureManagerMock = new Mock<IFeatureManager>(MockBehavior.Strict);
+        featureManagerMock
+            .Setup(f => f.IsEnabledAsync(FeatureFlags.UserRegistration, It.IsAny<AllowedEmailContext>()))
+            .ReturnsAsync(isEnabled);
+
+        return featureManagerMock;
     }
 }
