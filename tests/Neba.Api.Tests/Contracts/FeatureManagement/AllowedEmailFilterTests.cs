@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.FeatureManagement;
+
 using Neba.Api.Contracts.FeatureManagement;
 using Neba.TestFactory.Attributes;
 

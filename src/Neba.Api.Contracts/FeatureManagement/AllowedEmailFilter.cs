@@ -15,7 +15,7 @@ public sealed class AllowedEmailFilter
     {
         ArgumentNullException.ThrowIfNull(featureFilterContext);
         ArgumentNullException.ThrowIfNull(appContext);
-        
+
         if (string.IsNullOrEmpty(appContext.Email))
         {
             return Task.FromResult(false);

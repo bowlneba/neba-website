@@ -45,7 +45,7 @@ internal sealed class RegisterEndpoint(
     public override async Task HandleAsync(RegisterRequest req, CancellationToken ct)
     {
         var callerEmail = User.FindFirstValue(JwtRegisteredClaimNames.Email);
-        var context = new AllowedEmailContext {Email = callerEmail};
+        var context = new AllowedEmailContext { Email = callerEmail };
 
         if (!await _featureManager.IsEnabledAsync(FeatureFlags.UserRegistration, context))
         {
