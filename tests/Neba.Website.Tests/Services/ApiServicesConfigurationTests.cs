@@ -1,5 +1,11 @@
 using System.Net;
 
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+
+using Neba.Api.Contracts.Documents;
+using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Services;
 
@@ -11,6 +17,84 @@ namespace Neba.Website.Tests.Services;
 [Component("Website.Services")]
 public sealed class ApiServicesConfigurationTests
 {
+    private static IConfiguration BuildConfiguration(string? baseUrl)
+    {
+        var data = new Dictionary<string, string?>();
+        if (baseUrl is not null)
+            data["NebaApi:BaseUrl"] = baseUrl;
+
+        return new ConfigurationBuilder().AddInMemoryCollection(data).Build();
+    }
+
+    [Fact(DisplayName = "AddApiServices should register ApiExecutor as scoped and BearerTokenHandler as transient")]
+    public void AddApiServices_ShouldRegisterApiExecutorAndBearerTokenHandler()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var configuration = BuildConfiguration("https://api.example.com");
+
+        // Act
+        services.AddApiServices(configuration);
+
+        // Assert
+        services.ShouldContain(sd => sd.ServiceType == typeof(ApiExecutor) && sd.Lifetime == ServiceLifetime.Scoped);
+        services.ShouldContain(sd => sd.ServiceType == typeof(BearerTokenHandler) && sd.Lifetime == ServiceLifetime.Transient);
+    }
+
+    [Fact(DisplayName = "AddApiServices should resolve each Refit endpoint with the configured BaseUrl applied")]
+    public void AddApiServices_ShouldResolveRefitEndpoints()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        services.AddHttpContextAccessor();
+        services.AddLogging();
+        var configuration = BuildConfiguration("https://api.example.com");
+        services.AddApiServices(configuration);
+        var provider = services.BuildServiceProvider();
+
+        // Act
+        var documentsApi = provider.GetRequiredService<IDocumentsApi>();
+        var securityApi = provider.GetRequiredService<ISecurityApi>();
+
+        // Assert
+        documentsApi.ShouldNotBeNull();
+        securityApi.ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "AddApiServices should throw on start validation when BaseUrl is missing")]
+    public void AddApiServices_ShouldThrowOnValidation_WhenBaseUrlIsMissing()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var configuration = BuildConfiguration(baseUrl: null);
+        services.AddApiServices(configuration);
+        var provider = services.BuildServiceProvider();
+
+        // Act
+        var act = () => provider.GetRequiredService<IOptions<NebaApiConfiguration>>().Value;
+
+        // Assert
+        Should.Throw<OptionsValidationException>(act)
+            .Message.ShouldContain("BaseUrl must be a valid absolute URI");
+    }
+
+    [Fact(DisplayName = "AddApiServices should throw on start validation when BaseUrl is not absolute")]
+    public void AddApiServices_ShouldThrowOnValidation_WhenBaseUrlIsRelative()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        var configuration = BuildConfiguration("/relative-path");
+        services.AddApiServices(configuration);
+        var provider = services.BuildServiceProvider();
+
+        // Act
+        var act = () => provider.GetRequiredService<IOptions<NebaApiConfiguration>>().Value;
+
+        // Assert
+        Should.Throw<OptionsValidationException>(act)
+            .Message.ShouldContain("BaseUrl must be a valid absolute URI");
+    }
+
     [Fact(DisplayName = "Should strip Authorization header when redacting an ApiException")]
     public async Task ExceptionRedactor_ShouldStripAuthorizationHeader_WhenApplied()
     {

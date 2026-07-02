@@ -136,7 +136,8 @@ public sealed class GoogleWorkspaceEmailSenderTests : IClassFixture<MailpitFixtu
         var logs = _logger.Collector.GetSnapshot();
         logs.Count.ShouldBe(1);
         logs[0].Level.ShouldBe(LogLevel.Information);
-        logs[0].Message.ShouldContain("log-target@example.com");
+        logs[0].Message.ShouldContain("l***@example.com");
+        logs[0].Message.ShouldNotContain("log-target@example.com");
         logs[0].Message.ShouldContain("Log Verification");
     }
 }
