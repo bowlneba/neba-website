@@ -65,7 +65,7 @@ public sealed class SecurityRoleSeederTests
             .ReturnsAsync(existingRole);
         roleManagerMock
             .Setup(m => m.GetClaimsAsync(existingRole))
-            .ReturnsAsync(new List<Claim>());
+            .ReturnsAsync([]);
 
         foreach (var permission in Permissions.List)
         {

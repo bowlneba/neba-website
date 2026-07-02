@@ -7,12 +7,11 @@ internal static class ReturnUrlValidator
     // Leading "/\" is normalized to "//" by some browsers and treated as protocol-relative.
     public static string GetSafeReturnUrl(string? returnUrl)
     {
-        if (!string.IsNullOrWhiteSpace(returnUrl)
+        return !string.IsNullOrWhiteSpace(returnUrl)
             && returnUrl.StartsWith('/')
             && !returnUrl.StartsWith("//", StringComparison.Ordinal)
-            && !returnUrl.Contains('\\', StringComparison.Ordinal))
-            return returnUrl;
-
-        return "/";
+            && !returnUrl.Contains('\\', StringComparison.Ordinal)
+            ? returnUrl
+            : "/";
     }
 }

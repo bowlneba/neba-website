@@ -68,7 +68,7 @@ internal static class SecurityClaimsBuilder
 
         // base64url → standard base64
         var payload = parts[1].Replace('-', '+').Replace('_', '/');
-        var padding = (4 - payload.Length % 4) % 4;
+        var padding = (4 - (payload.Length % 4)) % 4;
         if (padding < 4)
             payload += new string('=', padding);
 
