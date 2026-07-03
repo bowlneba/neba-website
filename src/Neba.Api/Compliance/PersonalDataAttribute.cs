@@ -3,10 +3,10 @@ using Microsoft.Extensions.Compliance.Classification;
 namespace Neba.Api.Compliance;
 
 [AttributeUsage(AttributeTargets.Parameter)]
-internal sealed class PrivateDataAttribute
+internal sealed class PersonalDataAttribute
     : DataClassificationAttribute
 {
-    public PrivateDataAttribute()
-        : base(DataTaxonomy.Private)
+    public PersonalDataAttribute()
+        : base(DataTaxonomy.Personal)
     { }
 }

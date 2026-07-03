@@ -10,7 +10,14 @@ internal static class RedactionConfiguration
         public void AddRedaction()
         {
             builder.Services.AddRedaction(options => options
-                .SetRedactor<ErasingRedactor>(new DataClassificationSet(DataTaxonomy.PrivateData)));
+                .SetRedactor<NullRedactor>(new DataClassificationSet(DataTaxonomy.Public))
+                .SetRedactor<StarMaskingRedactor>(new DataClassificationSet(DataTaxonomy.Personal))
+                .SetRedactor<ErasingRedactor>(new DataClassificationSet(DataTaxonomy.Private)));
+
+            // [LoggerMessage] classified parameters are only redacted when the logging
+            // pipeline itself is wrapped by ExtendedLogger; AddRedaction() alone only
+            // registers IRedactorProvider and has no effect on ILogger.Log calls.
+            builder.Logging.EnableRedaction();
         }
     }
 }

@@ -1,8 +1,11 @@
 using MailKit.Security;
 
+using Microsoft.Extensions.Compliance.Classification;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
+using Neba.Api.Compliance;
 using Neba.Api.Email;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Email;
@@ -120,24 +123,50 @@ public sealed class GoogleWorkspaceEmailSenderTests : IClassFixture<MailpitFixtu
         messages[0].ReplyTo.ShouldBeEmpty();
     }
 
-    [Fact(DisplayName = "SendAsync should log email sent with recipient and subject")]
-    public async Task SendAsync_ShouldLog_EmailSent_WithRecipientAndSubject()
+    [Fact(DisplayName = "SendAsync should mask recipient address in both formatted message and structured state")]
+    public async Task SendAsync_ShouldMaskRecipientAddress_InFormattedMessageAndStructuredState()
     {
         // Arrange
         await _fixture.DeleteAllMessagesAsync();
+
+        // [LoggerMessage]-generated redaction is only applied by the ExtendedLogger created
+        // through the DI logging pipeline (ILoggingBuilder.EnableRedaction()) — a FakeLogger<T>
+        // constructed directly via `new` bypasses that pipeline entirely and never redacts.
+        await using var provider = new ServiceCollection()
+            .AddLogging(logging => logging
+                .AddFakeLogging()
+                .EnableRedaction())
+            .AddRedaction(options => options
+                .SetRedactor<StarMaskingRedactor>(new DataClassificationSet(DataTaxonomy.Personal)))
+            .BuildServiceProvider();
+
+        var redactingLogger = provider.GetRequiredService<ILogger<GoogleWorkspaceEmailSender>>();
+        var collector = provider.GetFakeLogCollector();
+        var sut = new GoogleWorkspaceEmailSender(BuildSettings(), redactingLogger);
+
         var message = EmailMessageFactory.Create(
             to: "log-target@example.com",
             subject: "Log Verification");
 
         // Act
-        await _sut.SendAsync(message, CancellationToken.None);
+        await sut.SendAsync(message, CancellationToken.None);
 
         // Assert
-        var logs = _logger.Collector.GetSnapshot();
+        var logs = collector.GetSnapshot();
         logs.Count.ShouldBe(1);
         logs[0].Level.ShouldBe(LogLevel.Information);
-        logs[0].Message.ShouldContain("l***@example.com");
+        // ApplyDiscriminator (default true) folds the tag name into the redacted value to
+        // prevent cross-tag correlation, so the exact masked length is an implementation
+        // detail — assert on the externally-visible contract instead: first character kept,
+        // everything else starred out, no fragment of the real address anywhere.
+        logs[0].Message.ShouldMatch(@"^Email sent to l\*+: Log Verification$");
         logs[0].Message.ShouldNotContain("log-target@example.com");
-        logs[0].Message.ShouldContain("Log Verification");
+        logs[0].Message.ShouldNotContain("@example.com");
+
+        var toAddressTag = logs[0].StructuredState!.Single(kvp => kvp.Key == "ToAddress").Value;
+        toAddressTag.ShouldNotBeNull();
+        toAddressTag.ShouldMatch(@"^l\*+$");
+        toAddressTag.ShouldNotContain("log-target@example.com");
+        toAddressTag.ShouldNotContain("@example.com");
     }
 }

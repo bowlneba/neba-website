@@ -225,13 +225,28 @@ This applies to any `ISchemaProcessor`, startup-cached registries, or other stat
 
 ### Log-Content Testing with FakeLogger
 
-- Use `FakeLogger<T>` from the `Microsoft.Extensions.Diagnostics.Testing` NuGet package (version `9.0.0` in `Directory.Packages.props`) when a class's primary behavior involves logging and you need to assert on log level, message content, or structured attributes.
+- Use `FakeLogger<T>` from the `Microsoft.Extensions.Diagnostics.Testing` NuGet package (version `10.7.0` in `Directory.Packages.props`) when a class's primary behavior involves logging and you need to assert on log level, message content, or structured attributes.
 - Add `using Microsoft.Extensions.Logging.Testing;` — that is the namespace `FakeLogger<T>` lives in (the NuGet package name and the namespace differ).
 - `FakeLogger<T>` is a real `ILogger<T>` implementation — not a mock — so it satisfies the "never mock ILogger" rule.
 - Assert via `logger.Collector.GetSnapshot()` which returns `IReadOnlyList<FakeLogRecord>`, each with `.Level` and `.Message`.
 - Each test project that uses `FakeLogger<T>` needs `<PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" />` in its `.csproj`.
 
 All classes that use `[LoggerMessage]` source-generated log methods have dedicated log-assertion tests using `FakeLogger<T>`. When adding a new class that logs, add `Microsoft.Extensions.Diagnostics.Testing` to its test project (if not already present) and add log-assertion tests covering every log level/path.
+
+### PII Redaction in Logs
+
+- Taxonomy: `Neba.Api.Compliance.DataTaxonomy` (`src/Neba.Api/Compliance/DataTaxonomy.cs`) — three `DataClassification`s: `Public` (not sensitive, no redaction), `Personal` (identifying but low-risk, partially masked), `Private` (sensitive PII, fully redacted). Extend this taxonomy rather than inventing a parallel one when a new category is needed.
+- Attributes: `[PublicData]`, `[PersonalData]`, `[PrivateData]` (`Neba.Api.Compliance.*Attribute`, each wraps `DataClassificationAttribute` for its classification) — apply directly to any `[LoggerMessage]` parameter carrying a bowler's name/email/phone/address or similar. This is the whole convention: no manual masking helpers.
+  - Use `[PrivateData]` for values that should never appear even partially (SSNs, payment info).
+  - Use `[PersonalData]` for values that are useful to partially see for debugging/support (email addresses, names) — masked to first-character-plus-stars via `StarMaskingRedactor`.
+  - Use `[PublicData]` only when you want to document that a parameter was deliberately reviewed and found non-sensitive (it's a no-op redaction-wise — `NullRedactor` passes the value through unchanged); omitting any attribute has the same runtime effect.
+- Redactors registered per classification in `src/Neba.Api/Compliance/RedactionConfiguration.cs`, `AddRedaction()`: `NullRedactor` → `Public`, `StarMaskingRedactor` → `Personal` (custom, `src/Neba.Api/Compliance/StarMaskingRedactor.cs` — keeps the first character, stars out the rest), `ErasingRedactor` → `Private`. Called from `InfrastructureConfiguration.AddInfrastructure()`.
+- **Gotcha — `builder.Services.AddRedaction(...)` alone does nothing.** It only registers `IRedactorProvider`/`IRedactor` in the container. The `[LoggerMessage]` source generator (`Microsoft.Gen.Logging`, from the `Microsoft.Extensions.Telemetry` package) emits code that reads `state.RedactedTagArray`, which is only populated when the logger itself is an `ExtendedLogger` — and that wrapper is only installed by calling **`builder.Logging.EnableRedaction()`** (from `Microsoft.Extensions.Telemetry`'s `LoggingRedactionExtensions`). Both calls are required; `AddRedaction()` in this codebase wires up both.
+- Confirmed empirically: redaction applies to **both** the formatted `Message` string and the structured state tags (`FakeLogRecord.StructuredState`) — there's no separate code path to wire for Application Insights or other sinks, since they all consume the same `ILogger` state.
+- `ErasingRedactor.Redact(...)` replaces the value with an **empty string**, not a placeholder token like `<redacted>`. E.g. a `[PrivateData]` parameter with value `"x@example.com"` produces an empty structured tag and an empty substitution in the formatted message.
+- **`LoggerRedactionOptions.ApplyDiscriminator` (default `true`) folds the tag name into the value before redacting**, to prevent correlating redacted values across differently-named tags. This means a length-preserving redactor like `StarMaskingRedactor` produces more stars than the source value's own length (source + tag name length) — don't assert on an exact expected length; assert on the pattern instead (first char kept, rest starred, `ShouldNotContain` the original value/substrings).
+- **Testing gotcha**: `FakeLogger<T>` constructed directly via `new FakeLogger<T>()` bypasses the DI logging pipeline entirely and never redacts anything, even with a classification attribute on the parameter — because it isn't wrapped by `ExtendedLogger`. Tests asserting on redaction must build a small DI container instead: `new ServiceCollection().AddLogging(l => l.AddFakeLogging().EnableRedaction()).AddRedaction(...).BuildServiceProvider()`, then resolve `ILogger<T>` and `IServiceProvider.GetFakeLogCollector()` from it. See `GoogleWorkspaceEmailSenderTests.SendAsync_ShouldMaskRecipientAddress_InFormattedMessageAndStructuredState` for the pattern. Tests that don't assert on log content (e.g. constructed with a plain `new FakeLogger<T>()`) are unaffected and don't need this.
+- `RefitSettings.ExceptionRedactor` in `src/Neba.Website.Server/Services/ApiServicesConfiguration.cs` is an unrelated, pre-existing HTTP-header-scrubbing mechanism — do not confuse it with this feature despite the similar name.
 
 ### FusionCache Deserialization Recovery
 

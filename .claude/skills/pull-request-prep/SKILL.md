@@ -99,7 +99,10 @@ When adding Playwright tests:
 
 **Observability**
 - [ ] Logging present with appropriate levels
-- [ ] No sensitive data logged
+- [ ] No sensitive data logged unredacted — check every new/changed `[LoggerMessage]` parameter for PII (bowler name, email, phone, address, or similar). If found:
+  - Apply `[PrivateData]` (`Neba.Api.Compliance.PrivateDataAttribute`) to the parameter — do not hand-roll masking helpers. See CLAUDE.md's "PII Redaction in Logs" learning for the full pattern and the `EnableRedaction()` gotcha.
+  - If the PII category doesn't fit the existing `DataTaxonomy.PrivateData` classification, flag it as a 💡 suggestion to extend the taxonomy rather than inventing a parallel mechanism.
+  - Flag raw SQL/query text or full request/response bodies logged at any level as a 🚫 blocker or ⚠️ should-fix (depending on log level and whether it's gated behind `IsEnabled` checks) — these can carry parameter values that bypass classification entirely.
 - [ ] Business operations have activity spans
 
 **Blazor**
