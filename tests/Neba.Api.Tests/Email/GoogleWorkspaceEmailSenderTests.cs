@@ -1,6 +1,6 @@
 using MailKit.Security;
 
-using Microsoft.Extensions.Compliance.Classification;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
@@ -132,13 +132,13 @@ public sealed class GoogleWorkspaceEmailSenderTests : IClassFixture<MailpitFixtu
         // [LoggerMessage]-generated redaction is only applied by the ExtendedLogger created
         // through the DI logging pipeline (ILoggingBuilder.EnableRedaction()) — a FakeLogger<T>
         // constructed directly via `new` bypasses that pipeline entirely and never redacts.
-        await using var provider = new ServiceCollection()
-            .AddLogging(logging => logging
-                .AddFakeLogging()
-                .EnableRedaction())
-            .AddRedaction(options => options
-                .SetRedactor<StarMaskingRedactor>(new DataClassificationSet(DataTaxonomy.Personal)))
-            .BuildServiceProvider();
+        // Uses the real RedactionConfiguration.AddRedaction() production wiring (rather than
+        // a hand-rolled equivalent) so this test also exercises that extension method.
+        var builder = WebApplication.CreateBuilder();
+        builder.Logging.ClearProviders().AddFakeLogging();
+        builder.AddRedaction();
+
+        await using var provider = builder.Services.BuildServiceProvider();
 
         var redactingLogger = provider.GetRequiredService<ILogger<GoogleWorkspaceEmailSender>>();
         var collector = provider.GetFakeLogCollector();
