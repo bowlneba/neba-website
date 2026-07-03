@@ -27,7 +27,7 @@ public sealed class StarMaskingRedactorTests
     {
         // Arrange
         ReadOnlySpan<char> source = [];
-        Span<char> destination = stackalloc char[0];
+        Span<char> destination = [];
 
         // Act
         var written = _sut.Redact(source, destination);
