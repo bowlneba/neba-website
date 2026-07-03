@@ -9,7 +9,7 @@ internal static class EmailConfiguration
 {
     extension(WebApplicationBuilder builder)
     {
-        public void AddEmail()
+        public WebApplicationBuilder AddEmail()
         {
             builder.Services
                 .Configure<EmailSettings>(options => builder.Configuration.GetSection(EmailSettings.SectionName).Bind(options))
@@ -32,6 +32,8 @@ internal static class EmailConfiguration
                     settings.TlsMode = MailKit.Security.SecureSocketOptions.None;
                 });
             }
+
+            return builder;
         }
     }
 }
