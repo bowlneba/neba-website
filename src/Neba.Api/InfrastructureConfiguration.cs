@@ -2,6 +2,7 @@
 using Neba.Api.BackgroundJobs;
 using Neba.Api.Caching;
 using Neba.Api.Clock;
+using Neba.Api.Compliance;
 using Neba.Api.Database;
 using Neba.Api.Documents;
 using Neba.Api.Email;
@@ -39,7 +40,8 @@ public static class InfrastructureConfiguration
                 .AddDatabase()
                 .AddKeyVault()
                 .AddStorage()
-                .AddEmail();
+                .AddEmail()
+                .AddRedaction();
 
             builder.Services.AddCaching(builder.Configuration);
             builder.Services.AddBackgroundJobs(builder.Configuration);

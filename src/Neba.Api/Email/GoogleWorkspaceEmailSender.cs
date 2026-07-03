@@ -2,6 +2,8 @@ using MailKit.Net.Smtp;
 
 using MimeKit;
 
+using Neba.Api.Compliance;
+
 namespace Neba.Api.Email;
 
 internal sealed class GoogleWorkspaceEmailSender(
@@ -36,24 +38,12 @@ internal sealed class GoogleWorkspaceEmailSender(
         await client.SendAsync(mimeMessage, cancellationToken);
         await client.DisconnectAsync(quit: true, cancellationToken);
 
-        if (logger.IsEnabled(LogLevel.Information))
-        {
-            logger.LogEmailSent(MaskEmail(message.To), message.Subject);
-        }
-    }
-
-    // Masks the local part so recipient addresses never reach log storage in clear text.
-    private static string MaskEmail(string email)
-    {
-        var atIndex = email.IndexOf('@', StringComparison.Ordinal);
-        return atIndex <= 0
-            ? "***"
-            : $"{email[0]}***{email[atIndex..]}";
+        logger.LogEmailSent(message.To, message.Subject);
     }
 }
 
 internal static partial class GoogleWorkspaceEmailSenderLogMessages
 {
     [LoggerMessage(Level = LogLevel.Information, Message = "Email sent to {ToAddress}: {Subject}")]
-    public static partial void LogEmailSent(this ILogger<GoogleWorkspaceEmailSender> logger, string toAddress, string subject);
+    public static partial void LogEmailSent(this ILogger<GoogleWorkspaceEmailSender> logger, [PersonalData] string toAddress, string subject);
 }
