@@ -98,7 +98,7 @@
 
 .col-champs {
     color: var(--t-ink);
-    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 /* Champion links */

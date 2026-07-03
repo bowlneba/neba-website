@@ -1,7 +1,13 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
 using ErrorOr;
 
 using FastEndpoints;
 
+using Microsoft.FeatureManagement;
+
+using Neba.Api.Contracts.FeatureManagement;
 using Neba.Api.Contracts.Security.Register;
 using Neba.Api.Security.Register;
 using Neba.TestFactory.Attributes;
@@ -30,7 +36,9 @@ public sealed class RegisterEndpointTests
                 ct))
             .ReturnsAsync(userId);
 
-        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object);
+        var featureManagerMock = CreateFeatureManagerMock(isEnabled: true);
+
+        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object, featureManagerMock.Object);
 
         // Act — Send.CreatedAtAsync requires LinkGenerator, which Factory.Create does not provide.
         // The strict mock verifies the command mapping; the LinkGenerator exception confirms the success branch was taken.
@@ -53,7 +61,9 @@ public sealed class RegisterEndpointTests
             .Setup(h => h.HandleAsync(It.IsAny<RegisterCommand>(), ct))
             .ReturnsAsync(RegisterErrors.DuplicateEmail);
 
-        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object);
+        var featureManagerMock = CreateFeatureManagerMock(isEnabled: true);
+
+        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object, featureManagerMock.Object);
 
         // Act
         await endpoint.HandleAsync(request, ct);
@@ -74,7 +84,9 @@ public sealed class RegisterEndpointTests
             .Setup(h => h.HandleAsync(It.IsAny<RegisterCommand>(), ct))
             .ReturnsAsync(Error.Validation("Register.WeakPassword", "Password does not meet requirements."));
 
-        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object);
+        var featureManagerMock = CreateFeatureManagerMock(isEnabled: true);
+
+        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object, featureManagerMock.Object);
 
         // Act
         await endpoint.HandleAsync(request, ct);
@@ -83,16 +95,107 @@ public sealed class RegisterEndpointTests
         endpoint.HttpContext.Response.StatusCode.ShouldBe(422);
     }
 
+    [Fact(DisplayName = "HandleAsync should return 404 and not invoke the command handler when the UserRegistration feature is disabled")]
+    public async Task HandleAsync_ShouldReturn404AndNotInvokeCommandHandler_WhenFeatureIsDisabled()
+    {
+        // Arrange
+        var request = RegisterRequestFactory.Create();
+        var ct = TestContext.Current.CancellationToken;
+
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<RegisterCommand, Ulid>>(MockBehavior.Strict);
+
+        var featureManagerMock = CreateFeatureManagerMock(isEnabled: false);
+
+        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object, featureManagerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(request, ct);
+
+        // Assert — strict command handler mock has no setups, so any invocation would throw
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(404);
+    }
+
+    [Fact(DisplayName = "HandleAsync should pass the caller's JWT email claim to feature evaluation and take the success branch when the caller is allow-listed")]
+    public async Task HandleAsync_ShouldPassCallerEmailToFeatureEvaluationAndSucceed_WhenCallerIsAllowListed()
+    {
+        // Arrange
+        const string callerEmail = "allowed@bowlneba.com";
+        var userId = Ulid.NewUlid();
+        var request = RegisterRequestFactory.Create();
+        var ct = TestContext.Current.CancellationToken;
+
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<RegisterCommand, Ulid>>(MockBehavior.Strict);
+        commandHandlerMock
+            .Setup(h => h.HandleAsync(
+                It.Is<RegisterCommand>(c => c.Email == request.Input.Email && c.Password == request.Input.Password),
+                ct))
+            .ReturnsAsync(userId);
+
+        var featureManagerMock = CreateFeatureManagerMock(isEnabled: true, expectedEmail: callerEmail);
+
+        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object, featureManagerMock.Object);
+        endpoint.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(
+        [
+            new Claim(JwtRegisteredClaimNames.Email, callerEmail),
+        ]));
+
+        // Act — Send.CreatedAtAsync requires LinkGenerator, which Factory.Create does not provide.
+        // The strict mocks verify the caller's email reached feature evaluation and the command handler.
+        var exception = await Should.ThrowAsync<InvalidOperationException>(
+            () => endpoint.HandleAsync(request, ct));
+
+        // Assert
+        exception.Message.ShouldContain("LinkGenerator");
+    }
+
+    [Fact(DisplayName = "HandleAsync should pass the caller's JWT email claim to feature evaluation and return 404 when the caller is not allow-listed")]
+    public async Task HandleAsync_ShouldPassCallerEmailToFeatureEvaluationAndReturn404_WhenCallerIsNotAllowListed()
+    {
+        // Arrange
+        const string callerEmail = "notallowed@bowlneba.com";
+        var request = RegisterRequestFactory.Create();
+        var ct = TestContext.Current.CancellationToken;
+
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<RegisterCommand, Ulid>>(MockBehavior.Strict);
+
+        var featureManagerMock = CreateFeatureManagerMock(isEnabled: false, expectedEmail: callerEmail);
+
+        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object, featureManagerMock.Object);
+        endpoint.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(
+        [
+            new Claim(JwtRegisteredClaimNames.Email, callerEmail),
+        ]));
+
+        // Act
+        await endpoint.HandleAsync(request, ct);
+
+        // Assert — strict command handler mock has no setups, so any invocation would throw
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(404);
+    }
+
     [Fact(DisplayName = "Configure should register anonymous POST route containing 'register'")]
     public void Configure_ShouldRegisterAnonymousPostRoute_ContainingRegister()
     {
         // Arrange
         var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<RegisterCommand, Ulid>>(MockBehavior.Strict);
-        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object);
+        var featureManagerMock = CreateFeatureManagerMock(isEnabled: true);
+        var endpoint = Factory.Create<RegisterEndpoint>(commandHandlerMock.Object, featureManagerMock.Object);
 
         // Assert
         endpoint.Definition.Verbs.ShouldContain("POST");
         endpoint.Definition.Routes.ShouldContain(r => r.Contains("register"), "should include a 'register' route");
         endpoint.Definition.AnonymousVerbs.ShouldNotBeEmpty();
+    }
+
+    private static Mock<IFeatureManager> CreateFeatureManagerMock(bool isEnabled, string? expectedEmail = null)
+    {
+        var featureManagerMock = new Mock<IFeatureManager>(MockBehavior.Strict);
+        featureManagerMock
+            .Setup(f => f.IsEnabledAsync(
+                FeatureFlags.UserRegistration,
+                It.Is<AllowedEmailContext>(c => c.Email == expectedEmail)))
+            .ReturnsAsync(isEnabled);
+
+        return featureManagerMock;
     }
 }

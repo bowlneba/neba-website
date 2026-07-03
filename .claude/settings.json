@@ -4,7 +4,8 @@
       "Bash(dotnet-stryker --verbosity diagnostic)",
       "Bash(dotnet-stryker --verbosity Trace)",
       "Bash(tests/Neba.Api.Tests/bin/Debug/net10.0/Neba.Api.Tests.dll)",
-      "Bash(dotnet-stryker)"
+      "Bash(dotnet-stryker)",
+      "Bash(ilspycmd -t \"Microsoft.FeatureManagement.FeatureFilterEvaluationContext\" /Users/kippermand/.nuget/packages/microsoft.featuremanagement/4.6.0/lib/netstandard2.1/Microsoft.FeatureManagement.dll)"
     ]
   }
 }
