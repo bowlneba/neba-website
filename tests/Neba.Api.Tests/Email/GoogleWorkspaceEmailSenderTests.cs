@@ -166,7 +166,7 @@ public sealed class GoogleWorkspaceEmailSenderTests : IClassFixture<MailpitFixtu
         var toAddressTag = logs[0].GetStructuredStateValue("ToAddress")?.ToString();
         toAddressTag.ShouldNotBeNull();
         toAddressTag!.ShouldMatch(@"^l\*+$");
-        toAddressTag.ShouldNotContain("log-target@example.com");
-        toAddressTag.ShouldNotContain("@example.com");
+        toAddressTag!.ShouldNotContain("log-target@example.com");
+        toAddressTag!.ShouldNotContain("@example.com");
     }
 }
