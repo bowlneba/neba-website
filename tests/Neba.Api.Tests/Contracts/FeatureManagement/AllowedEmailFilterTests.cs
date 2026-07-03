@@ -20,10 +20,10 @@ public sealed class AllowedEmailFilterTests
         var appContext = new AllowedEmailContext { Email = "allowed@bowlneba.com" };
 
         // Act
-        var act = () => _filter.EvaluateAsync(null, appContext);
+        Task<bool> Act() => _filter.EvaluateAsync(null, appContext);
 
         // Assert
-        await Should.ThrowAsync<ArgumentNullException>(act);
+        await Should.ThrowAsync<ArgumentNullException>((Func<Task<bool>>)Act);
     }
 
     [Fact(DisplayName = "EvaluateAsync should throw when appContext is null")]
@@ -33,10 +33,10 @@ public sealed class AllowedEmailFilterTests
         var featureFilterContext = CreateFeatureFilterContext(["allowed@bowlneba.com"]);
 
         // Act
-        var act = () => _filter.EvaluateAsync(featureFilterContext, null);
+        Task<bool> Act() => _filter.EvaluateAsync(featureFilterContext, null);
 
         // Assert
-        await Should.ThrowAsync<ArgumentNullException>(act);
+        await Should.ThrowAsync<ArgumentNullException>((Func<Task<bool>>)Act);
     }
 #nullable enable
 
