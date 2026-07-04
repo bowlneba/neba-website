@@ -1,4 +1,5 @@
 using Neba.Api.Compliance;
+using Neba.Api.Security.Domain;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Compliance;
@@ -131,6 +132,46 @@ public sealed class AuditPayloadScrubberTests
         // Assert
         firstResult[nameof(TestPayload.PublicName)].ShouldBe("First");
         secondResult[nameof(TestPayload.PublicName)].ShouldBe("Second");
+    }
+
+    [Fact(DisplayName = "Scrub should omit ApplicationUser's private identity properties")]
+    public void Scrub_ShouldOmitPrivateProperties_WhenSourceIsApplicationUser()
+    {
+        // Arrange
+        var source = new ApplicationUser
+        {
+            PasswordHash = "hashed-password",
+            SecurityStamp = "security-stamp",
+            ConcurrencyStamp = "concurrency-stamp",
+        };
+
+        // Act
+        var result = AuditPayloadScrubber.Scrub(source);
+
+        // Assert
+        result.ShouldNotContainKey(nameof(ApplicationUser.PasswordHash));
+        result.ShouldNotContainKey(nameof(ApplicationUser.SecurityStamp));
+        result.ShouldNotContainKey(nameof(ApplicationUser.ConcurrencyStamp));
+    }
+
+    [Fact(DisplayName = "Scrub should star-mask ApplicationUser's personal identity properties")]
+    public void Scrub_ShouldMaskPersonalProperties_WhenSourceIsApplicationUser()
+    {
+        // Arrange
+        var source = new ApplicationUser
+        {
+            Email = "bowler@example.com",
+            PhoneNumber = "555-123-4567",
+            UserName = "bowler",
+        };
+
+        // Act
+        var result = AuditPayloadScrubber.Scrub(source);
+
+        // Assert
+        result[nameof(ApplicationUser.Email)].ShouldBe("b*****************");
+        result[nameof(ApplicationUser.PhoneNumber)].ShouldBe("5***********");
+        result[nameof(ApplicationUser.UserName)].ShouldBe("b*****");
     }
 
     private sealed class TestPayload
