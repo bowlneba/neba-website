@@ -18,7 +18,7 @@
     <PackageReference Include="Aspire.Azure.Security.KeyVault" />
     <PackageReference Include="Aspire.Azure.Storage.Blobs" />
     <PackageReference Include="AspNetCore.HealthChecks.Hangfire" />
-    <PackageReference Include="Audit.EntityFramework" />
+    <PackageReference Include="Audit.EntityFramework.Core" />
     <PackageReference Include="Audit.NET" />
     <PackageReference Include="Audit.NET.AzureStorageTables" />
     <PackageReference Include="Community.Microsoft.Extensions.Caching.PostgreSql" />

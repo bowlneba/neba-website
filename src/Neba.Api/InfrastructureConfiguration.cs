@@ -1,4 +1,5 @@
 
+using Neba.Api.Auditing;
 using Neba.Api.BackgroundJobs;
 using Neba.Api.Caching;
 using Neba.Api.Clock;
@@ -37,6 +38,7 @@ public static class InfrastructureConfiguration
             builder.Services.DecorateCachedQueryHandlers();
 
             builder
+                .AddAuditing()
                 .AddDatabase()
                 .AddKeyVault()
                 .AddStorage()

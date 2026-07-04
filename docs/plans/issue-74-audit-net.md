@@ -140,7 +140,7 @@ No changes needed to the `IsPublishMode` branch — `AddAzureStorage` already pr
 ```xml
 <ItemGroup>
   <PackageVersion Include="Audit.NET" Version="27.2.1" />
-  <PackageVersion Include="Audit.EntityFramework" Version="27.2.1" />
+  <PackageVersion Include="Audit.EntityFramework.Core" Version="27.2.1" />
   <PackageVersion Include="Audit.NET.AzureStorageTables" Version="27.2.1" />
   <PackageVersion Include="Aspire.Azure.Data.Tables" Version="9.5.1" />
 </ItemGroup>
@@ -151,13 +151,15 @@ No changes needed to the `IsPublishMode` branch — `AddAzureStorage` already pr
 ```xml
 <ItemGroup>
   <PackageReference Include="Audit.NET" />
-  <PackageReference Include="Audit.EntityFramework" />
+  <PackageReference Include="Audit.EntityFramework.Core" />
   <PackageReference Include="Audit.NET.AzureStorageTables" />
   <PackageReference Include="Aspire.Azure.Data.Tables" />
 </ItemGroup>
 ```
 
 > Package versions above are placeholders — pin to whatever is current on NuGet.org at implementation time; match the major version across the three `Audit.*` packages.
+>
+> **Use `Audit.EntityFramework.Core`, not `Audit.EntityFramework`.** The plain `Audit.EntityFramework` package targets EF6/full-framework `DbContext` inheritance (`AuditDbContext`) and does not ship `AuditSaveChangesInterceptor` at all — that type only exists in `Audit.EntityFramework.Core`, which depends on `Audit.EntityFramework.Abstractions` (not on the EF6 package) and targets EF Core's `SaveChangesInterceptor` pipeline directly. Both packages share the root `Audit.EntityFramework` namespace, which is why the `using` statements below look unchanged — only the package id differs. Confirmed against the installed `Audit.EntityFramework.Core` 32.2.0 assembly.
 
 ### 1c. `ICurrentUserService`
 
@@ -323,25 +325,18 @@ using Audit.Core;
 using Audit.EntityFramework;
 
 using Neba.Api.Database;
+using Neba.Api.Features.BowlingCenters.Domain;
+using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Features.HallOfFame.Domain;
+using Neba.Api.Features.Seasons.Domain;
+using Neba.Api.Features.Sponsors.Domain;
+using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Identity;
 
 namespace Neba.Api.Auditing;
 
 internal static class AuditingConfiguration
 {
-    private static readonly string[] AuditedTableNames =
-    [
-        "bowlers",
-        "seasons",
-        "tournaments",
-        "hall_of_fame_inductions",
-        "high_average_awards",
-        "high_block_awards",
-        "bowler_of_the_year_awards",
-        "bowling_centers",
-        "sponsors",
-    ];
-
     extension(WebApplicationBuilder builder)
     {
         public WebApplicationBuilder AddAuditing()
@@ -350,37 +345,39 @@ internal static class AuditingConfiguration
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-            builder.Services.AddSingleton<AuditSaveChangesInterceptor>(sp =>
-                new AuditSaveChangesInterceptor(new AuditSaveChangesInterceptorOptions
-                {
-                    AuditEventType = "EF:{context}",
-                    IncludeEntityObjects = false, // scrubbed snapshots are attached manually below
-                }));
+            builder.Services.AddSingleton<AuditSaveChangesInterceptor>();
 
-            Configuration.Setup()
+            Audit.Core.Configuration.Setup()
                 .UseAzureTableStorage(config => config
                     .ConnectionString(builder.Configuration.GetConnectionString("tables"))
                     .TableName(_ => "EFAuditEvents")
                     .EntityBuilder(entity => entity
                         .PartitionKey(ev => ev.EventType ?? "unknown")
-                        .RowKey(ev => $"{DateTimeOffset.UtcNow:O}_{Guid.NewGuid()}")
-                        .Timestamp(_ => DateTimeOffset.UtcNow)))
+                        .RowKey(_ => $"{DateTimeOffset.UtcNow:O}_{Guid.NewGuid()}")))
                 .WithCreationPolicy(EventCreationPolicy.InsertOnStartReplaceOnEnd);
 
             Audit.EntityFramework.Configuration.Setup()
                 .ForContext<AppDbContext>(auditConfig => auditConfig
-                    .ForEntity<object>() // baseline; narrowed by IncludeFilter below
-                    .IncludeEntityObjects(false))
-                .UseOptIn(); // only entities matching IncludeFilter are audited
+                    .AuditEventType("EF:{context}")
+                    .IncludeEntityObjects(false)) // scrubbed snapshots are attached manually below
+                .UseOptIn()
+                .Include<Bowler>()
+                .Include<Season>()
+                .Include<Tournament>()
+                .Include<HallOfFameInduction>()
+                .Include<HighAverageAward>()
+                .Include<HighBlockAward>()
+                .Include<BowlerOfTheYearAward>()
+                .Include<BowlingCenter>()
+                .Include<Sponsor>();
 
             return builder;
         }
-
-        internal static bool IsAuditedTable(string? tableName)
-            => tableName is not null && AuditedTableNames.Contains(tableName, StringComparer.Ordinal);
     }
 }
 ```
+
+> **Corrected from an earlier draft of this doc**, which called `.ForEntity<object>()` and constructed `new AuditSaveChangesInterceptor(new AuditSaveChangesInterceptorOptions { ... })`. Neither member exists on `Audit.EntityFramework.Core` 32.2.0: `AuditSaveChangesInterceptor` only has a parameterless constructor (it's a plain EF Core `SaveChangesInterceptor` subclass — configuration comes from the `Audit.EntityFramework.Configuration.Setup()` chain, not interceptor constructor args), and there is no `ForEntity<T>()` method on `IContextSettingsConfigurator<T>`. The per-entity opt-in list uses `.AuditEventType(...)` + `.IncludeEntityObjects(false)` + explicit `.Include<TEntity>()` calls per audited type, which is what's actually implemented in `src/Neba.Api/Auditing/AuditingConfiguration.cs` today. The `AuditedTableNames` allowlist and `IsAuditedTable` helper shown in the original draft aren't part of the shipped implementation and aren't needed elsewhere either — `.UseOptIn().Include<T>()` already does the real filtering per `ForContext<T>()` call (see the `OnEventSaving` custom action below, which no longer relies on it). Drop the allowlist entirely unless a genuinely new table-name-based need arises.
 
 `src/Neba.Api/Database/DatabaseConfiguration.cs` (diff against current file — new interceptor added to the resolution + `.AddInterceptors(...)` call):
 
@@ -455,12 +452,14 @@ internal static class DatabaseConfiguration
 ```
 
 > **Ordering constraint**: `AddAuditing()` must run **before** `AddDatabase()` in `AddInfrastructure()` since `AddDatabase()`'s `AddDbContextPool` callback resolves `AuditSaveChangesInterceptor` from `sp`, which `AddAuditing()` registers. See 1f's `InfrastructureConfiguration.cs` diff below.
+>
+> **Not yet applied**: as of this writing, `src/Neba.Api/Database/DatabaseConfiguration.cs` registers `SlowQueryInterceptor`, `QueryTagEnrichmentInterceptor`, and `DomainEventDispatcherInterceptor` and passes all three to `.AddInterceptors(...)`, but does **not** resolve or pass `AuditSaveChangesInterceptor` — even though `AuditingConfiguration.AddAuditing()` already registers it as a singleton. Until the `audit` variable and its `.AddInterceptors(slowQuery, queryTag, domainEvents, audit)` addition shown above are applied, the interceptor is registered in DI but never attached to `AppDbContext`'s save pipeline, so no EF audit events are produced regardless of the `ForContext<AppDbContext>` configuration. This wiring step is still outstanding and should be treated as unfinished Phase 1 work, not a documentation-only fix.
 
 Custom-field enrichment (actor + correlation ID) and payload scrubbing happen via an `Audit.Core` global filter rather than inside the interceptor itself, since `AuditSaveChangesInterceptor` doesn't expose a per-event customization hook directly — `Audit.Core.Configuration` does, via `AddCustomAction`:
 
 ```csharp
 // Inside AddAuditing(), after the UseAzureTableStorage(...) call:
-Configuration.AddCustomAction(ActionType.OnEventSaving, (scope, _) =>
+Audit.Core.Configuration.AddCustomAction(ActionType.OnEventSaving, (scope, _) =>
 {
     var httpContextAccessor = builder.Services.BuildServiceProvider().GetRequiredService<IHttpContextAccessor>();
     var currentUser = new CurrentUserService(httpContextAccessor);
@@ -475,11 +474,10 @@ Configuration.AddCustomAction(ActionType.OnEventSaving, (scope, _) =>
     {
         foreach (var entry in efEvent.EntityFrameworkEvent.Entries)
         {
-            if (!AuditingConfiguration.IsAuditedTable(entry.Table))
-            {
-                continue; // guideline: only the 7 listed tables produce audit rows
-            }
-
+            // No table-name filter needed here: `.UseOptIn().Include<T>(...)` on the
+            // ForContext<AppDbContext> (and ForContext<SecurityDbContext>, per 1i) configuration
+            // already restricts which entities produce entries at all — anything reaching this
+            // loop was already opted in.
             entry.ColumnValues = entry.Entity is not null
                 ? AuditPayloadScrubber.Scrub(entry.Entity)
                     .ToDictionary(kv => kv.Key, kv => kv.Value)
@@ -490,6 +488,8 @@ Configuration.AddCustomAction(ActionType.OnEventSaving, (scope, _) =>
 ```
 
 > **Caveat**: building a fresh `ServiceProvider` inside a custom action is a smell — `IHttpContextAccessor` should be captured once as a field via a small wrapper class registered as a singleton (constructed with `IHttpContextAccessor` injected normally), not rebuilt per save. Restructure this as a dedicated `EfAuditEnrichmentAction` class resolved from DI once at `AddAuditing()` time, rather than the inline lambda sketched above — flag this for cleanup during actual implementation, not left as-is.
+>
+> **Corrected from an earlier draft**: this action previously gated scrubbing behind `AuditingConfiguration.IsAuditedTable(entry.Table)` backed by a `AuditedTableNames` allowlist — neither exists in the shipped `AuditingConfiguration.cs`, and the check was redundant anyway once `.UseOptIn().Include<T>()` is doing the real filtering per `ForContext<T>()` call. If a table-name-based filter is wanted later (e.g. to distinguish `AppDbContext` tables from the `"security"` schema tables added in 1i within this single global action), reintroduce it deliberately rather than resurrecting the old allowlist.
 
 `src/Neba.Api/InfrastructureConfiguration.cs` (diff — `AddAuditing()` inserted before `AddDatabase()`):
 
@@ -750,6 +750,45 @@ public sealed class EfAuditIntegrationTests(AzuriteFixture azurite) : IClassFixt
     }
 }
 ```
+
+### 1i. `SecurityDbContext` audit scope
+
+Currently `AddAuditing()` only calls `ForContext<AppDbContext>(...)` — `SecurityDbContext` (the `IdentityDbContext<ApplicationUser, ApplicationRole, Ulid>` in `Neba.Api.Database.SecurityDbContext`) is not registered with `AuditSaveChangesInterceptor` at all, so identity events (account creation, role grants, lockouts, password hash changes) currently produce zero audit trail. For a compliance-driven feature this is a gap worth closing in Phase 1 rather than deferring, since identity changes are typically the first thing an auditor or incident investigation asks for.
+
+Add a second opt-in `ForContext<SecurityDbContext>(...)` block alongside the existing `AppDbContext` one:
+
+```csharp
+Audit.EntityFramework.Configuration.Setup()
+    .ForContext<AppDbContext>(auditConfig => auditConfig
+        .AuditEventType("EF:{context}")
+        .IncludeEntityObjects(false))
+    .UseOptIn()
+    .Include<Bowler>()
+    .Include<Season>()
+    .Include<Tournament>()
+    .Include<HallOfFameInduction>()
+    .Include<HighAverageAward>()
+    .Include<HighBlockAward>()
+    .Include<BowlerOfTheYearAward>()
+    .Include<BowlingCenter>()
+    .Include<Sponsor>();
+
+Audit.EntityFramework.Configuration.Setup()
+    .ForContext<SecurityDbContext>(auditConfig => auditConfig
+        .AuditEventType("EF:{context}")
+        .IncludeEntityObjects(false))
+    .UseOptIn()
+    .Include<ApplicationUser>()
+    .Include<IdentityUserRole<Ulid>>();
+```
+
+Scope notes:
+
+- Include `ApplicationUser` (account created/updated/deleted) and `IdentityUserRole<Ulid>` (role grants/revocations) — these are the compliance-relevant identity events.
+- Do **not** include `ApplicationRole` (rarely changes, low audit value) or the token/claim/login tables (`IdentityUserToken<>`, `IdentityUserClaim<>`, `IdentityUserLogin<>`) — high noise, low compliance value.
+- `ApplicationUser` extends `IdentityUser<Ulid>` directly and carries `PasswordHash`, `SecurityStamp`, `ConcurrencyStamp`, `PhoneNumber`, `Email`. The same `AuditPayloadScrubber` used for `AppDbContext` entities must run over `ApplicationUser` snapshots too — `PasswordHash`/`SecurityStamp`/`ConcurrencyStamp` need `[PrivateData]` (omit entirely), `Email`/`PhoneNumber`/`UserName` need `[PersonalData]` (masked). Add these attributes to `ApplicationUser` alongside the Phase 1d compliance taxonomy work rather than as a separate pass.
+- Add `"security"` schema tables to `AuditedTableNames` (or an equivalent identity-specific allowlist) so the `OnEventSaving` custom action's `IsAuditedTable` filter recognizes `AspNetUsers`/`AspNetUserRoles` (Identity's default table names under the `security` schema) alongside the existing 9 `AppDbContext` tables.
+- Extend the Phase 1h integration test (`EfAuditIntegrationTests`) with a case asserting a role grant against `SecurityDbContext` produces an audit event with the password hash/security stamp omitted.
 
 ---
 

@@ -20,7 +20,7 @@
     <PackageVersion Include="AspNetCore.HealthChecks.Hangfire" Version="9.0.0" />
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.6" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="13.4.6" />
-    <PackageVersion Include="Audit.EntityFramework" Version="32.2.0" />
+    <PackageVersion Include="Audit.EntityFramework.Core" Version="32.2.0" />
     <PackageVersion Include="Audit.NET" Version="32.2.0" />
     <PackageVersion Include="Audit.NET.AzureStorageTables" Version="32.2.0" />
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.5.0" />
