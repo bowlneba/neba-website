@@ -17,7 +17,7 @@ internal static class AuditPayloadScrubber
         ArgumentNullException.ThrowIfNull(source);
 
         var type = source.GetType();
-        var properties = PropertyCache.GetOrAdd(type, static t 
+        var properties = PropertyCache.GetOrAdd(type, static t
             => t.GetProperties(BindingFlags.Public | BindingFlags.Instance));
 
         var result = new Dictionary<string, object?>(properties.Length);
