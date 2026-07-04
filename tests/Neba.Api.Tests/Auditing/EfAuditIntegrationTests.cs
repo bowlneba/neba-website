@@ -32,6 +32,7 @@ public sealed class EfAuditIntegrationTests(AppDbContextFixture appDbContextFixt
 
         _tableClient = new TableClient(azuriteFixture.ConnectionString, TableName);
         await _tableClient.CreateIfNotExistsAsync(TestContext.Current.CancellationToken);
+        await ClearTableAsync();
 
         Audit.Core.Configuration.Setup()
             .UseAzureTableStorage(config => config
@@ -57,7 +58,7 @@ public sealed class EfAuditIntegrationTests(AppDbContextFixture appDbContextFixt
     {
         // Arrange
         await using var dbContext = appDbContextFixture.CreateDbContext(_auditInterceptor);
-        dbContext.Bowlers.Add(BowlerFactory.Create());
+        await dbContext.Bowlers.AddAsync(BowlerFactory.Create(), TestContext.Current.CancellationToken);
 
         // Act
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -72,7 +73,7 @@ public sealed class EfAuditIntegrationTests(AppDbContextFixture appDbContextFixt
     {
         // Arrange
         await using var dbContext = appDbContextFixture.CreateDbContext(_auditInterceptor);
-        dbContext.OilPatterns.Add(OilPatternFactory.Create());
+        await dbContext.OilPatterns.AddAsync(OilPatternFactory.Create(), TestContext.Current.CancellationToken);
 
         // Act
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -92,5 +93,13 @@ public sealed class EfAuditIntegrationTests(AppDbContextFixture appDbContextFixt
         }
 
         return count;
+    }
+
+    private async Task ClearTableAsync()
+    {
+        await foreach (var entity in _tableClient.QueryAsync<TableEntity>(cancellationToken: TestContext.Current.CancellationToken))
+        {
+            await _tableClient.DeleteEntityAsync(entity.PartitionKey, entity.RowKey, cancellationToken: TestContext.Current.CancellationToken);
+        }
     }
 }
