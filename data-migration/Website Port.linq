@@ -15,7 +15,7 @@
       <PreserveNumeric1>True</PreserveNumeric1>
       <EFProvider>Npgsql.EntityFrameworkCore.PostgreSQL</EFProvider>
       <ExtraCxOptions>Include Error Detail=true;</ExtraCxOptions>
-      <Port>19630</Port>
+      <Port>60153</Port>
     </DriverData>
   </Connection>
   <NuGetReference>Microsoft.Data.SqlClient</NuGetReference>
@@ -46,7 +46,7 @@
 async Task Main()
 {
 	await SecurityMigration();
-	//await ApplicationMigration();
+	await ApplicationMigration();
 	
 	"Migration Complete".Dump();
 }
@@ -3867,10 +3867,21 @@ public async Task MigrateOilPatterns()
 		KegelId = new Guid("320c3be5-e957-ee11-be6f-00224805fa07")
 	};
 
+	var julSingles2026 = new OilPatterns
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "2022 USBC Women's Championships",
+		Length = 42,
+		Volume = 25.6m,
+		LeftRatio = 5.79m,
+		RightRatio = 5.79m,
+		KegelId = new Guid("b8f40013-c6fe-ec11-82e5-000d3a3b9d76")
+	};
+
 	OilPatterns.AddRange(
 		janSingles2026, febDoubles2026, febTrios2026, marSingles2026,
 		aprNonChamp2026, aprSenior2026, aprSingles2026, maySingles2026,
-		junSingles2026, junOverUnder2026);
+		junSingles2026, junOverUnder2026, julSingles2026);
 
 	TournamentOilPatterns.AddRange(
 		new TournamentOilPatterns 
@@ -3931,6 +3942,12 @@ public async Task MigrateOilPatterns()
 		{
 			TournamentId = Tournaments.Single(t => t.EndDate == new DateOnly(2026, 06, 14)).Id,
 			OilPattern = junOverUnder2026,
+			TournamentRounds = 5
+		},
+		new TournamentOilPatterns
+		{
+			TournamentId = Tournaments.Single(t => t.EndDate == new DateOnly(2026, 7, 12)).Id,
+			OilPattern = julSingles2026,
 			TournamentRounds = 5
 		}
 	);
