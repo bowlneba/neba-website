@@ -78,27 +78,27 @@ app.MapGet("/debug/cache", async (
     return Results.Ok("Cache cleared.");
 }).AllowAnonymous();
 
-app.MapGet("/debug/email", async (
-    Neba.Api.Email.IEmailSender emailSender,
+app.MapGet("/debug/clear-audits", async (
+    Azure.Data.Tables.TableServiceClient tableServiceClient,
     ILogger<Program> logger,
     CancellationToken ct) =>
 {
-    var timestamp = DateTimeOffset.UtcNow;
+    string[] auditTableNames = ["EFAuditEvents", "SecurityAuditEvents", "JobAuditEvents"];
+
     try
     {
-        await emailSender.SendAsync(new Neba.Api.Email.EmailMessage
+        foreach (var tableName in auditTableNames)
         {
-            To = "some_user@test.com",
-            Subject = "BowlNEBA Test Email",
-            HtmlBody = Neba.Api.Email.EmailLayout.Wrap($"<p>This is a test email from the BowlNEBA debug tools.</p><p>Sent at: <strong>{timestamp:O}</strong></p>")
-        }, ct);
+            await tableServiceClient.DeleteTableAsync(tableName, ct);
+            await tableServiceClient.CreateTableIfNotExistsAsync(tableName, ct);
+        }
 
-        return Results.Ok($"Test email sent at {timestamp:O}.");
+        return Results.Ok("Audit tables cleared.");
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Debug test email failed at {Timestamp}", timestamp);
-        return Results.Problem("Failed to send test email. See API logs for details.", statusCode: 500);
+        logger.LogError(ex, "Debug clear audit tables failed");
+        return Results.Problem("Failed to clear audit tables. See API logs for details.", statusCode: 500);
     }
 }).AllowAnonymous();
 #pragma warning restore

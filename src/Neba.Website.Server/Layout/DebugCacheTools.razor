@@ -6,7 +6,7 @@
 {
     <div class="debug-banner-actions">
         <button class="debug-banner-link" @onclick="ClearApiCacheAsync" type="button">Clear API Cache</button>
-        <button class="debug-banner-link" @onclick="SendTestEmailAsync" type="button">Send Test Email</button>
+        <button class="debug-banner-link" @onclick="ClearAuditTablesAsync" type="button">Clear Audit Tables</button>
         <a class="debug-banner-link" href="/account/login?admin=true">Log in as Admin</a>
     </div>
 }
@@ -52,7 +52,7 @@
         }
     }
 
-    private async Task SendTestEmailAsync()
+    private async Task ClearAuditTablesAsync()
     {
         if (!IsDebugBuild)
             return;
@@ -60,23 +60,23 @@
         try
         {
             using var client = HttpClientFactory.CreateClient();
-            using var response = await client.GetAsync(new Uri(ApiConfiguration.BaseUrl, "/debug/email"));
+            using var response = await client.GetAsync(new Uri(ApiConfiguration.BaseUrl, "/debug/clear-audits"));
 
             if (response.IsSuccessStatusCode)
             {
                 var message = await response.Content.ReadAsStringAsync();
-                ToastService.Show("Test Email Sent",
-                    string.IsNullOrWhiteSpace(message) ? "Email was sent." : message,
+                ToastService.Show("Audit Tables Cleared",
+                    string.IsNullOrWhiteSpace(message) ? "Audit tables were cleared." : message,
                     NotifySeverity.Success);
             }
             else
             {
-                ToastService.Show("Test Email Failed", $"API returned {(int)response.StatusCode}.", NotifySeverity.Error);
+                ToastService.Show("Clear Audit Tables Failed", $"API returned {(int)response.StatusCode}.", NotifySeverity.Error);
             }
         }
         catch (Exception ex)
         {
-            ToastService.Show("Test Email Failed", ex.Message, NotifySeverity.Error);
+            ToastService.Show("Clear Audit Tables Failed", ex.Message, NotifySeverity.Error);
         }
     }
 }
