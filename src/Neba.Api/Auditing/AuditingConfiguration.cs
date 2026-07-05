@@ -1,3 +1,4 @@
+using Audit.AzureStorageTables.Providers;
 using Audit.Core;
 using Audit.EntityFramework;
 using Audit.WebApi;
@@ -38,13 +39,22 @@ internal static class AuditingConfiguration
             builder.Services.AddSingleton<AuditEnrichmentAction>();
             builder.Services.AddSingleton<ApiAuditPayloadScrubbingAction>();
 
+            var defaultProvider = new AzureTableDataProvider(config => config
+                .ConnectionString(builder.Configuration.GetConnectionString("tables"))
+                .TableName(_ => "EFAuditEvents")
+                .EntityBuilder(entity => entity
+                    .PartitionKey(ev => ev.EventType ?? "unknown")
+                    .RowKey(_ => Ulid.NewUlid().ToString())));
+
+            var securityProvider = new AzureTableDataProvider(config => config
+                .ConnectionString(builder.Configuration.GetConnectionString("tables"))
+                .TableName(_ => "SecurityAuditEvents")
+                .EntityBuilder(entity => entity
+                    .PartitionKey(ev => ev.EventType ?? "unknown")
+                    .RowKey(_ => Ulid.NewUlid().ToString())));
+
             Audit.Core.Configuration.Setup()
-                .UseAzureTableStorage(config => config
-                    .ConnectionString(builder.Configuration.GetConnectionString("tables"))
-                    .TableName(_ => "EFAuditEvents")
-                    .EntityBuilder(entity => entity
-                        .PartitionKey(ev => ev.EventType ?? "unknown")
-                        .RowKey(_ => Ulid.NewUlid().ToString())))
+                .Use(new SecurityAuditDataProviderRouter(securityProvider, defaultProvider))
                 .WithCreationPolicy(EventCreationPolicy.InsertOnStartReplaceOnEnd);
 
             using (var serviceProvider = builder.Services.BuildServiceProvider())
