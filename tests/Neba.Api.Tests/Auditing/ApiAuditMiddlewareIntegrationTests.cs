@@ -23,11 +23,14 @@ namespace Neba.Api.Tests.Auditing;
 public sealed class ApiAuditMiddlewareIntegrationTests : IAsyncLifetime
 {
     private WebApplication _app = null!;
+    private InMemoryDataProvider _provider = null!;
 
     public async ValueTask InitializeAsync()
     {
+        _provider = new InMemoryDataProvider();
+
         Configuration.Setup()
-            .Use(new InMemoryDataProvider())
+            .Use(_provider)
             .WithCreationPolicy(EventCreationPolicy.InsertOnStartReplaceOnEnd);
         Configuration.ResetCustomActions();
 
@@ -41,12 +44,9 @@ public sealed class ApiAuditMiddlewareIntegrationTests : IAsyncLifetime
 
         _app = builder.Build();
 
-        var enrichmentAction = _app.Services.GetRequiredService<AuditEnrichmentAction>();
-        Configuration.AddCustomAction(ActionType.OnEventSaving, enrichmentAction.OnEventSaving);
-
-        var scrubbingAction = _app.Services.GetRequiredService<ApiAuditPayloadScrubbingAction>();
-        Configuration.AddCustomAction(ActionType.OnEventSaving, scrubbingAction.OnEventSaving);
-
+        // UseApiAuditMiddleware() itself resolves AuditEnrichmentAction/ApiAuditPayloadScrubbingAction
+        // from app.Services and registers them as custom actions, and wraps Configuration.DataProvider
+        // in a ResilientAuditDataProvider - so _provider (captured above) is what GetAllEvents() reads.
         _app.UseApiAuditMiddleware();
         _app.UseFastEndpoints();
 
@@ -60,7 +60,7 @@ public sealed class ApiAuditMiddlewareIntegrationTests : IAsyncLifetime
         Configuration.ResetCustomActions();
     }
 
-    private static InMemoryDataProvider Provider => (InMemoryDataProvider)Configuration.DataProvider;
+    private InMemoryDataProvider Provider => _provider;
 
     [Fact(DisplayName = "A GET request does not produce an audit event")]
     public async Task Get_ShouldNotProduceAuditEvent()

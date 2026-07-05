@@ -46,7 +46,7 @@ public sealed class EfAuditIntegrationTests(AppDbContextFixture appDbContextFixt
         Audit.EntityFramework.Configuration.Setup()
             .ForContext<AppDbContext>(auditConfig => auditConfig
                 .AuditEventType("EF:{context}")
-                .IncludeEntityObjects(false))
+                .IncludeEntityObjects(true))
             .UseOptIn()
             .Include<Bowler>();
     }

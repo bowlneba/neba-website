@@ -57,22 +57,13 @@ internal static class AuditingConfiguration
                 .Use(new SecurityAuditDataProviderRouter(securityProvider, defaultProvider))
                 .WithCreationPolicy(EventCreationPolicy.InsertOnStartReplaceOnEnd);
 
-            using (var serviceProvider = builder.Services.BuildServiceProvider())
-            {
-                var enrichmentAction = serviceProvider.GetRequiredService<AuditEnrichmentAction>();
-                Audit.Core.Configuration.AddCustomAction(ActionType.OnEventSaving, enrichmentAction.OnEventSaving);
-
-                var apiScrubbingAction = serviceProvider.GetRequiredService<ApiAuditPayloadScrubbingAction>();
-                Audit.Core.Configuration.AddCustomAction(ActionType.OnEventSaving, apiScrubbingAction.OnEventSaving);
-
-                var providerLogger = serviceProvider.GetRequiredService<ILogger<ResilientAuditDataProvider>>();
-                Audit.Core.Configuration.DataProvider = new ResilientAuditDataProvider(Audit.Core.Configuration.DataProvider, providerLogger);
-            }
-
             Audit.EntityFramework.Configuration.Setup()
                 .ForContext<AppDbContext>(auditConfig => auditConfig
                     .AuditEventType("EF:{context}")
-                    .IncludeEntityObjects(false)) // scrubbed snapshots are attached manually below
+                    // Must be true so AuditEnrichmentAction.Enrich can read entry.Entity to build
+                    // scrubbed ColumnValues; it clears entry.Entity afterward so the raw,
+                    // unscrubbed entity is never itself serialized into the audit event.
+                    .IncludeEntityObjects(true))
                 .UseOptIn()
                 .Include<Bowler>()
                 .Include<Season>()
@@ -87,7 +78,7 @@ internal static class AuditingConfiguration
             Audit.EntityFramework.Configuration.Setup()
                 .ForContext<SecurityDbContext>(auditConfig => auditConfig
                     .AuditEventType("EF:{context}")
-                    .IncludeEntityObjects(false))
+                    .IncludeEntityObjects(true))
                 .UseOptIn()
                 .Include<ApplicationUser>()
                 .Include<IdentityUserRole<Ulid>>();
@@ -100,6 +91,15 @@ internal static class AuditingConfiguration
     {
         public WebApplication UseApiAuditMiddleware()
         {
+            var enrichmentAction = app.Services.GetRequiredService<AuditEnrichmentAction>();
+            Audit.Core.Configuration.AddCustomAction(ActionType.OnEventSaving, enrichmentAction.OnEventSaving);
+
+            var apiScrubbingAction = app.Services.GetRequiredService<ApiAuditPayloadScrubbingAction>();
+            Audit.Core.Configuration.AddCustomAction(ActionType.OnEventSaving, apiScrubbingAction.OnEventSaving);
+
+            var providerLogger = app.Services.GetRequiredService<ILogger<ResilientAuditDataProvider>>();
+            Audit.Core.Configuration.DataProvider = new ResilientAuditDataProvider(Audit.Core.Configuration.DataProvider, providerLogger);
+
             app.Use(async (context, next) =>
             {
                 context.Request.EnableBuffering();

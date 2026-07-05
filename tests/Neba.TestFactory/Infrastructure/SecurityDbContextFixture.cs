@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Api.Database;
@@ -62,6 +63,18 @@ public sealed class SecurityDbContextFixture : IAsyncLifetime
     }
 
     public IServiceScope CreateScope() => _serviceProvider.CreateScope();
+
+    internal SecurityDbContext CreateDbContext(params IReadOnlyList<IInterceptor> extraInterceptors)
+    {
+        var options = new DbContextOptionsBuilder<SecurityDbContext>()
+            .UseNpgsql(_postgres.ConnectionString, npgsql => npgsql
+                .MigrationsHistoryTable(SecurityDbContext.MigrationsHistoryTableName, SecurityDbContext.Schema))
+            .UseSnakeCaseNamingConvention()
+            .AddInterceptors(extraInterceptors)
+            .Options;
+
+        return new SecurityDbContext(options);
+    }
 
     public async ValueTask DisposeAsync()
     {
