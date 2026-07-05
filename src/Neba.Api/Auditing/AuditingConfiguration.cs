@@ -72,4 +72,14 @@ internal static class AuditingConfiguration
             return builder;
         }
     }
+
+    extension(WebApplication app)
+    {
+        public WebApplication UseApiAuditMiddleware()
+        {
+            app.UseMiddleware<ApiAuditMiddleware>();
+
+            return app;
+        }
+    }
 }

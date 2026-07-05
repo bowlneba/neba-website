@@ -82,6 +82,7 @@ public static class InfrastructureConfiguration
         {
             app.UseBackgroundJobsDashboard();
             app.UseDocumentSyncJobs();
+            app.UseApiAuditMiddleware();
 
             return app;
         }
