@@ -21,6 +21,7 @@
     <PackageReference Include="Audit.EntityFramework.Core" />
     <PackageReference Include="Audit.NET" />
     <PackageReference Include="Audit.NET.AzureStorageTables" />
+    <PackageReference Include="Audit.WebApi.Core" />
     <PackageReference Include="Community.Microsoft.Extensions.Caching.PostgreSql" />
     <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" />

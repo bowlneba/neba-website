@@ -1,5 +1,6 @@
 using Audit.Core;
 using Audit.EntityFramework;
+using Audit.WebApi;
 
 using Microsoft.AspNetCore.Identity;
 
@@ -17,6 +18,14 @@ namespace Neba.Api.Auditing;
 
 internal static class AuditingConfiguration
 {
+    private static readonly string[] ExcludedPathPrefixes =
+    [
+        "/health",
+        "/scalar",
+        "/background-jobs",
+        "/debug"
+    ];
+
     extension(WebApplicationBuilder builder)
     {
         public WebApplicationBuilder AddAuditing()
@@ -26,7 +35,8 @@ internal static class AuditingConfiguration
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
             builder.Services.AddSingleton<AuditSaveChangesInterceptor>();
-            builder.Services.AddSingleton<EfAuditEnrichmentAction>();
+            builder.Services.AddSingleton<AuditEnrichmentAction>();
+            builder.Services.AddSingleton<ApiAuditPayloadScrubbingAction>();
 
             Audit.Core.Configuration.Setup()
                 .UseAzureTableStorage(config => config
@@ -39,8 +49,11 @@ internal static class AuditingConfiguration
 
             using (var serviceProvider = builder.Services.BuildServiceProvider())
             {
-                var enrichmentAction = serviceProvider.GetRequiredService<EfAuditEnrichmentAction>();
+                var enrichmentAction = serviceProvider.GetRequiredService<AuditEnrichmentAction>();
                 Audit.Core.Configuration.AddCustomAction(ActionType.OnEventSaving, enrichmentAction.OnEventSaving);
+
+                var apiScrubbingAction = serviceProvider.GetRequiredService<ApiAuditPayloadScrubbingAction>();
+                Audit.Core.Configuration.AddCustomAction(ActionType.OnEventSaving, apiScrubbingAction.OnEventSaving);
 
                 var providerLogger = serviceProvider.GetRequiredService<ILogger<ResilientAuditDataProvider>>();
                 Audit.Core.Configuration.DataProvider = new ResilientAuditDataProvider(Audit.Core.Configuration.DataProvider, providerLogger);
@@ -77,7 +90,18 @@ internal static class AuditingConfiguration
     {
         public WebApplication UseApiAuditMiddleware()
         {
-            app.UseMiddleware<ApiAuditMiddleware>();
+            app.Use(async (context, next) =>
+            {
+                context.Request.EnableBuffering();
+                await next(context);
+            });
+
+            app.UseAuditMiddleware(config => config
+                .WithEventType(context => $"Api:{context.Request.Method}:{context.Request.Path}")
+                .FilterByRequest(request => !HttpMethods.IsGet(request.Method)
+                    && !ExcludedPathPrefixes.Any(prefix => request.Path.StartsWithSegments(prefix, StringComparison.OrdinalIgnoreCase)))
+                .IncludeRequestBody(true)
+                .IncludeResponseBody(true));
 
             return app;
         }
