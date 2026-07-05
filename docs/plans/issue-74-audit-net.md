@@ -142,6 +142,7 @@ No changes needed to the `IsPublishMode` branch — `AddAzureStorage` already pr
   <PackageVersion Include="Audit.NET" Version="27.2.1" />
   <PackageVersion Include="Audit.EntityFramework.Core" Version="27.2.1" />
   <PackageVersion Include="Audit.NET.AzureStorageTables" Version="27.2.1" />
+  <PackageVersion Include="Audit.Hangfire" Version="27.2.1" />
   <PackageVersion Include="Aspire.Azure.Data.Tables" Version="9.5.1" />
 </ItemGroup>
 ```
@@ -153,6 +154,7 @@ No changes needed to the `IsPublishMode` branch — `AddAzureStorage` already pr
   <PackageReference Include="Audit.NET" />
   <PackageReference Include="Audit.EntityFramework.Core" />
   <PackageReference Include="Audit.NET.AzureStorageTables" />
+  <PackageReference Include="Audit.Hangfire" />
   <PackageReference Include="Aspire.Azure.Data.Tables" />
 </ItemGroup>
 ```
@@ -930,69 +932,58 @@ public sealed class ApiAuditMiddlewareIntegrationTests(NebaApiFactory factory) :
 
 ## Phase 3 — Hangfire background job audit
 
-`src/Neba.Api/BackgroundJobs/AuditJobFilterAttribute.cs`, mirroring `HangfireJobExpirationFilterAttribute`'s shape:
+> **Use the official `Audit.Hangfire` package, not a hand-rolled `IServerFilter`.** An earlier draft of this plan sketched a custom `AuditJobFilterAttribute` built directly on `Audit.Core.AuditScope` — that duplicates functionality `Audit.Hangfire` already ships: purpose-built job-creation and job-execution filters with `ExcludeArguments()`, `AuditWhen()`, `EventType()`, and `DataProvider()` hooks, registered the same way `HangfireJobExpirationFilterAttribute`/`AutomaticRetryAttribute` already are (`.UseFilter(...)` in `BackgroundJobsConfiguration`). Use the package.
+
+`Audit.Hangfire` ships two independent filters:
+
+- `AuditJobCreationFilterAttribute` — client-side; fires when a job is created/enqueued/scheduled. Captures `JobId`, `TypeName`, `MethodName`, `InitialState`, `CreatedAt`/`ScheduledAt`/`EnqueuedAt`, `Queue`, `Args`, continuation metadata.
+- `AuditJobExecutionFilterAttribute` — server-side; fires when a job actually executes. Captures `JobId`, `TypeName`, `MethodName`, `ServerId`, `IsSuccess`, `Exception`, `Canceled`, `CreatedAt`, `Result`, `Args`.
+
+Per guideline #9 (outcome only, never the serialized job arguments), only the **execution** filter is registered, and `ExcludeArguments()` is set so `Args`/`Result` are omitted from the event — this codebase's audit trail records that a job ran and how it ended, not its payload.
+
+`src/Neba.Api/BackgroundJobs/BackgroundJobsConfiguration.cs` diff (add the filter alongside the existing ones, via the package's own `GlobalConfiguration` extension rather than a first-party attribute):
 
 ```csharp
-using System.Diagnostics;
+using Audit.Hangfire;
 
-using Audit.Core;
+// ...
 
-using Hangfire.Common;
-using Hangfire.Server;
-
-namespace Neba.Api.BackgroundJobs;
-
-[AttributeUsage(AttributeTargets.Class)]
-internal sealed class AuditJobFilterAttribute : JobFilterAttribute, IServerFilter
-{
-    private const string StartedAtKey = "AuditJobFilter.StartedAt";
-
-    public void OnPerforming(PerformingContext context)
-    {
-        context.Items[StartedAtKey] = DateTimeOffset.UtcNow;
-    }
-
-    public void OnPerformed(PerformedContext context)
-    {
-        var startedAt = context.Items.TryGetValue(StartedAtKey, out var value) && value is DateTimeOffset started
-            ? started
-            : DateTimeOffset.UtcNow;
-
-        var scope = AuditScope.Create(options => options
-            .EventType("Job:{jobType}")
-            .ExtraFields(new
-            {
-                JobType = context.BackgroundJob.Job.Type.Name,
-                StartedAt = startedAt,
-                CompletedAt = DateTimeOffset.UtcNow,
-                Succeeded = context.Exception is null,
-                // guideline #9 — outcome only, never the serialized job arguments
-                ExceptionSummary = context.Exception?.Message,
-            }));
-
-        scope.Dispose();
-    }
-}
-```
-
-`src/Neba.Api/BackgroundJobs/BackgroundJobsConfiguration.cs` diff (add the filter alongside the existing one):
-
-```csharp
 options
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
     .UseSimpleAssemblyNameTypeSerializer()
     .UseRecommendedSerializerSettings()
     .UseFilter(new AutomaticRetryAttribute { Attempts = settings.AutomaticRetryAttempts })
     .UseFilter(new HangfireJobExpirationFilterAttribute(settings))
-    .UseFilter(new AuditJobFilterAttribute()) // new
+    .AddAuditJobExecutionFilter(config => config
+        .EventType("Job:{type}.{method}")
+        .ExcludeArguments()) // new — guideline #9, outcome only
     .UsePostgreSqlStorage(...);
 ```
 
-Separate Azure Table (`JobAuditEvents`) registered in `AddAuditing()`.
+`AddAuditJobExecutionFilter(...)` reads global `Audit.Core.Configuration` for its data provider by default (same `EventCreationPolicy`/failure-isolation wiring configured in `AddAuditing()`, 1e/1f), so no separate `.DataProvider(...)` call is needed here — only add one if job audit events need to land in a table distinct from `AddAuditing()`'s default. Per the issue's suggested per-provider table scheme, point job events at their own table:
+
+```csharp
+// Inside AddAuditing() (1e/1f), alongside the EFAuditEvents / ApiAuditEvents setup:
+.AddAuditJobExecutionFilter(config => config
+    .EventType("Job:{type}.{method}")
+    .ExcludeArguments()
+    .DataProvider(new Audit.NET.AzureStorageTables.Providers.AzureTableDataProvider(azureConfig => azureConfig
+        .ConnectionString(builder.Configuration.GetConnectionString("tables"))
+        .TableName(_ => "JobAuditEvents")
+        .EntityBuilder(entity => entity
+            .PartitionKey(ev => ev.EventType ?? "unknown")
+            .RowKey(_ => $"{DateTimeOffset.UtcNow:O}_{Guid.NewGuid()}")))))
+```
+
+> Because `.AddAuditJobExecutionFilter(...)` is a `GlobalConfiguration` extension (registered where Hangfire itself is configured, in `BackgroundJobsConfiguration`), while the `DataProvider(...)` override above needs the same `builder.Configuration`/table-naming pattern used by `AddAuditing()`, keep the actual `.AddAuditJobExecutionFilter(...)` call physically inside `BackgroundJobsConfiguration.AddBackgroundJobs(...)` and pass in whatever `IConfiguration`/table name it needs as a parameter — don't move Hangfire registration into `AuditingConfiguration` just to share the connection string lookup.
+
+No custom filter attribute, no manual `AuditScope.Create`/`Dispose` — the package's `IServerFilter` implementation owns the scope lifecycle (including exception capture) internally.
 
 ### Phase 3 Tests
 
-`tests/Neba.Api.Tests/BackgroundJobs/AuditJobFilterAttributeTests.cs` — unit tests around `OnPerforming`/`OnPerformed` using Hangfire's testable filter contexts (construct `PerformingContext`/`PerformedContext` directly, matching however `HangfireJobExpirationFilterAttributeTests` — if one exists — builds `ApplyStateContext`). Integration test: run `SyncDocumentToStorageJobHandler` end-to-end via the real Hangfire pipeline, assert a `JobAuditEvents` row for both a successful run and a forced-failure run.
+Since there's no first-party filter class to unit test, coverage shifts to an integration test asserting the wiring is effective end-to-end:
+
+`tests/Neba.Api.Tests/BackgroundJobs/AuditJobExecutionIntegrationTests.cs` — run `SyncDocumentToStorageJobHandler` end-to-end via the real Hangfire pipeline (mirroring however existing Hangfire integration tests in this suite drive a job to completion), assert a `JobAuditEvents` row for both a successful run and a forced-failure run, and assert the row's serialized event does **not** contain the job's arguments (proves `ExcludeArguments()` took effect).
 
 ---
 

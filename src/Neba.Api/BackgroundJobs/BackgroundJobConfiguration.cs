@@ -1,3 +1,6 @@
+using Audit.AzureStorageTables.Providers;
+using Audit.Hangfire;
+
 using Hangfire;
 using Hangfire.PostgreSql;
 
@@ -11,10 +14,10 @@ internal static class BackgroundJobsConfiguration
 {
     extension(IServiceCollection services)
     {
-        public void AddBackgroundJobs(IConfiguration config)
+        public void AddBackgroundJobs(IConfiguration configuration)
         {
             services.AddOptions<HangfireSettings>()
-                .Bind(config.GetSection(HangfireSettings.SectionName))
+                .Bind(configuration.GetSection(HangfireSettings.SectionName))
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
 
@@ -25,7 +28,7 @@ internal static class BackgroundJobsConfiguration
                 return settings;
             });
 
-            services.AddHangfireInfrastructure();
+            services.AddHangfireInfrastructure(configuration);
 
             string[] tags = ["infrastructure", "background-jobs"];
 
@@ -51,7 +54,7 @@ internal static class BackgroundJobsConfiguration
                 .WithScopedLifetime());
         }
 
-        private void AddHangfireInfrastructure()
+        private void AddHangfireInfrastructure(IConfiguration configuration)
         {
             services.AddHangfire((serviceProvider, options) =>
             {
@@ -64,6 +67,15 @@ internal static class BackgroundJobsConfiguration
                     .UseRecommendedSerializerSettings()
                     .UseFilter(new AutomaticRetryAttribute { Attempts = settings.AutomaticRetryAttempts })
                     .UseFilter(new HangfireJobExpirationFilterAttribute(settings))
+                    .AddAuditJobExecutionFilter(config => config
+                        .EventType("Job:{type}.{method}")
+                        .ExcludeArguments()
+                        .DataProvider(new AzureTableDataProvider(azureConfig => azureConfig
+                            .ConnectionString(configuration.GetConnectionString("tables"))
+                            .TableName(_ => "JobAuditEvents")
+                            .EntityBuilder(entity => entity
+                                .PartitionKey(ev => ev.EventType ?? "unknown")
+                                .RowKey(_ => Ulid.NewUlid().ToString())))))
                     .UsePostgreSqlStorage(postgres => postgres
                         .UseConnectionFactory(new HangfireConnectionFactory(dataSource)),
                         new PostgreSqlStorageOptions
