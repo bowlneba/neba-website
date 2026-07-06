@@ -50,7 +50,16 @@ public sealed class ApiAuditMiddlewareIntegrationTests : IAsyncLifetime
         // from app.Services and registers them as custom actions, and wraps Configuration.DataProvider
         // in a ResilientAuditDataProvider - so _provider (captured above) is what GetAllEvents() reads.
         _app.UseApiAuditMiddleware();
-        _app.UseFastEndpoints();
+
+        // UseFastEndpoints() overwrites the process-wide static ValidatorOptions.Global.PropertyNameResolver
+        // (to apply the app's JSON naming policy to FluentValidation error PropertyNames) whenever
+        // Config.Validation.UsePropertyNamingPolicy is true and a PropertyNamingPolicy is configured - both true
+        // by default. Since MTP runs the whole test assembly in one shared process, that mutation leaks into
+        // every other validator's bare .Validate() call for the rest of the run - including tests running
+        // concurrently in other collections - converting PascalCase PropertyName assertions (e.g. "SeasonId")
+        // to camelCase and breaking unrelated validator tests. This test doesn't exercise FluentValidation
+        // naming at all, so disable the option here rather than merely restoring it afterward.
+        _app.UseFastEndpoints(c => c.Validation.UsePropertyNamingPolicy = false);
 
         await _app.StartAsync(TestContext.Current.CancellationToken);
     }
