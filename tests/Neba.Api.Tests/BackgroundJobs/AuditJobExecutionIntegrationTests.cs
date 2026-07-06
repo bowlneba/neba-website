@@ -93,9 +93,13 @@ public sealed class AuditJobExecutionIntegrationTests : IAsyncLifetime
 
         while (DateTimeOffset.UtcNow < deadline)
         {
+            // EventCreationPolicy.InsertOnStartReplaceOnEnd inserts a start-of-job event before
+            // JobExecution.IsSuccess/Exception are known, then replaces it once the job finishes.
+            // Match on EndDate too so a poll landing between insert and replace doesn't return the
+            // pre-execution snapshot and assert against its (still-default) IsSuccess/Exception.
             var match = Provider.GetAllEvents()
                 .OfType<AuditEventHangfireJobExecution>()
-                .FirstOrDefault(e => e.EventType == eventType);
+                .FirstOrDefault(e => e.EventType == eventType && e.EndDate.HasValue);
 
             if (match is not null)
             {

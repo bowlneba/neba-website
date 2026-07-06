@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Json;
 
 using Audit.Core;
@@ -20,6 +21,7 @@ namespace Neba.Api.Tests.Auditing;
 [IntegrationTest]
 [Component("Auditing")]
 [Collection("AuditConfigurationSequential")]
+[SuppressMessage("Design", "CA2213:Disposable fields should be disposed", Justification = "_app is intentionally never disposed - see DisposeAsync.")]
 public sealed class ApiAuditMiddlewareIntegrationTests : IAsyncLifetime
 {
     private WebApplication _app = null!;
@@ -56,7 +58,14 @@ public sealed class ApiAuditMiddlewareIntegrationTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _app.StopAsync(TestContext.Current.CancellationToken);
-        await _app.DisposeAsync();
+
+        // Deliberately not disposing _app: UseFastEndpoints() points FastEndpoints' process-wide
+        // static service resolver at this host's IServiceProvider. Disposing it here would leave
+        // that global resolver pointing at a disposed provider for the rest of the test run,
+        // breaking every unrelated Factory.Create<TEndpoint>() call (unit tests in other classes)
+        // that happens to execute concurrently afterward with an ObjectDisposedException. The host
+        // is in-memory (TestServer) and short-lived for the process, so leaking it is an acceptable
+        // trade-off versus corrupting shared FastEndpoints test infrastructure.
         Configuration.ResetCustomActions();
     }
 
