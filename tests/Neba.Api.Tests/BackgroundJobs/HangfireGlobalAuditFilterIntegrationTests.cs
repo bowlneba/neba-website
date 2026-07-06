@@ -76,6 +76,15 @@ public sealed class HangfireGlobalAuditFilterIntegrationTests(AppDbContextFixtur
         }
 
         await _serviceProvider.DisposeAsync();
+
+        // Hangfire.AspNetCore's AddHangfire/AddHangfireServer wire Hangfire's static, process-wide
+        // LogProvider to an AspNetCoreLogProvider backed by this container's ILoggerFactory. Once the
+        // container above is disposed, that ILoggerFactory is disposed too, but the static reference
+        // survives - so any later Hangfire storage construction anywhere in the test process (e.g.
+        // AuditJobExecutionIntegrationTests's `new InMemoryStorage()`) throws ObjectDisposedException.
+        // Resetting to null makes Hangfire re-resolve its log provider on next use instead of reusing
+        // the disposed one.
+        Hangfire.Logging.LogProvider.SetCurrentLogProvider(null!);
     }
 
     [Fact(DisplayName = "The globally registered Hangfire audit filter writes an audit event without job arguments, for a job with no explicit attribute")]
