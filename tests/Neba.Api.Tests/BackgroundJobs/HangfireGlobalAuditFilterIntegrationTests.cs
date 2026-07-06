@@ -72,29 +72,40 @@ public sealed class HangfireGlobalAuditFilterIntegrationTests(AppDbContextFixtur
 
     public async ValueTask DisposeAsync()
     {
-        foreach (var hostedService in _serviceProvider.GetServices<IHostedService>())
+        try
         {
-            await hostedService.StopAsync(TestContext.Current.CancellationToken);
+            foreach (var hostedService in _serviceProvider.GetServices<IHostedService>())
+            {
+                await hostedService.StopAsync(TestContext.Current.CancellationToken);
+            }
+
+            await _serviceProvider.DisposeAsync();
         }
+        finally
+        {
+            // AddAuditJobExecutionFilter(...) in InitializeAsync resolves to IGlobalConfiguration.UseFilter(...),
+            // which adds the filter to Hangfire's static, process-wide GlobalJobFilters.Filters collection - not
+            // anything scoped to this test's _serviceProvider/storage. Left unregistered, this filter (configured
+            // to write to this test's Azurite-backed AzureTableDataProvider) would keep firing for every job on
+            // every Hangfire server in the process for the rest of the run, including AuditJobExecutionIntegrationTests's
+            // own InMemoryStorage-backed server - and since that job carries its own [AuditJobExecutionFilter]
+            // attribute, having both instances active simultaneously means their OnPerforming handlers race to
+            // overwrite the same PerformContext.Items keys (AuditJobExecutionFilterAttribute uses fixed string
+            // keys, not per-instance ones), so whichever filter's OnPerformed runs second finds its own AuditScope
+            // already removed from Items and returns early without ever finalizing it - leaving that job's audit
+            // event stuck at its "start" snapshot with IsSuccess still false. This cleanup must run even if
+            // StopAsync/DisposeAsync above throws, so it's in `finally` rather than after them unconditionally.
+            GlobalJobFilters.Filters.Remove<AuditJobExecutionFilterAttribute>();
 
-        await _serviceProvider.DisposeAsync();
-
-        // Hangfire.AspNetCore's AddHangfire/AddHangfireServer wire Hangfire's static, process-wide
-        // LogProvider to an AspNetCoreLogProvider backed by this container's ILoggerFactory. Once the
-        // container above is disposed, that ILoggerFactory is disposed too, but the static reference
-        // survives - so any later Hangfire storage construction anywhere in the test process (e.g.
-        // AuditJobExecutionIntegrationTests's `new InMemoryStorage()`) throws ObjectDisposedException.
-        // Resetting to null makes Hangfire re-resolve its log provider on next use instead of reusing
-        // the disposed one.
-        Hangfire.Logging.LogProvider.SetCurrentLogProvider(null!);
-
-        // AddAuditJobExecutionFilter(...) above resolves to IGlobalConfiguration.UseFilter(...), which adds
-        // the filter to Hangfire's static, process-wide GlobalJobFilters.Filters collection - not anything
-        // scoped to this test's _serviceProvider/storage. Left unregistered, this filter (configured to
-        // write to this test's Azurite-backed AzureTableDataProvider) would keep firing for every job on
-        // every Hangfire server in the process for the rest of the run, including AuditJobExecutionIntegrationTests's
-        // own InMemoryStorage-backed server, corrupting its job outcomes.
-        GlobalJobFilters.Filters.Remove<AuditJobExecutionFilterAttribute>();
+            // Hangfire.AspNetCore's AddHangfire/AddHangfireServer wire Hangfire's static, process-wide
+            // LogProvider to an AspNetCoreLogProvider backed by this container's ILoggerFactory. Once the
+            // container above is disposed, that ILoggerFactory is disposed too, but the static reference
+            // survives - so any later Hangfire storage construction anywhere in the test process (e.g.
+            // AuditJobExecutionIntegrationTests's `new InMemoryStorage()`) throws ObjectDisposedException.
+            // Resetting to null makes Hangfire re-resolve its log provider on next use instead of reusing
+            // the disposed one.
+            Hangfire.Logging.LogProvider.SetCurrentLogProvider(null!);
+        }
     }
 
     [Fact(DisplayName = "The globally registered Hangfire audit filter writes an audit event without job arguments, for a job with no explicit attribute")]
