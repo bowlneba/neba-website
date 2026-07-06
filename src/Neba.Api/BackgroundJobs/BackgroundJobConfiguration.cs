@@ -1,3 +1,5 @@
+using System.Reflection;
+
 using Audit.AzureStorageTables.Providers;
 using Audit.Hangfire;
 
@@ -70,6 +72,16 @@ internal static class BackgroundJobsConfiguration
                     .AddAuditJobExecutionFilter(config => config
                         .EventType("Job:{type}.{method}")
                         .ExcludeArguments()
+                        // AuditJobExecutionFilterAttribute stashes its IAuditScope in PerformContext.Items
+                        // under fixed string keys (not per-instance keys). If a job's method/type already
+                        // carries its own [AuditJobExecutionFilter] attribute, that instance and this global
+                        // one would both run OnPerforming/OnPerformed for the same job, clobbering each
+                        // other's Items entry - whichever OnPerformed runs second finds its scope already
+                        // removed and returns early, leaving its own audit event stuck unfinalized. Skip
+                        // globally auditing any job that already opted in explicitly via its own attribute.
+                        .AuditWhen(context =>
+                            context.BackgroundJob.Job.Method.GetCustomAttribute<AuditJobExecutionFilterAttribute>() is null
+                            && context.BackgroundJob.Job.Method.DeclaringType?.GetCustomAttribute<AuditJobExecutionFilterAttribute>() is null)
                         .DataProvider(new AzureTableDataProvider(azureConfig => azureConfig
                             .ConnectionString(configuration.GetConnectionString("tables"))
                             .TableName(_ => "JobAuditEvents")
