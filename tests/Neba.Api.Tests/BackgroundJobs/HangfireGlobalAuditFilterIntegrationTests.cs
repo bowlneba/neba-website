@@ -1,3 +1,5 @@
+using Audit.Hangfire;
+
 using Azure.Data.Tables;
 
 using Hangfire;
@@ -85,6 +87,14 @@ public sealed class HangfireGlobalAuditFilterIntegrationTests(AppDbContextFixtur
         // Resetting to null makes Hangfire re-resolve its log provider on next use instead of reusing
         // the disposed one.
         Hangfire.Logging.LogProvider.SetCurrentLogProvider(null!);
+
+        // AddAuditJobExecutionFilter(...) above resolves to IGlobalConfiguration.UseFilter(...), which adds
+        // the filter to Hangfire's static, process-wide GlobalJobFilters.Filters collection - not anything
+        // scoped to this test's _serviceProvider/storage. Left unregistered, this filter (configured to
+        // write to this test's Azurite-backed AzureTableDataProvider) would keep firing for every job on
+        // every Hangfire server in the process for the rest of the run, including AuditJobExecutionIntegrationTests's
+        // own InMemoryStorage-backed server, corrupting its job outcomes.
+        GlobalJobFilters.Filters.Remove<AuditJobExecutionFilterAttribute>();
     }
 
     [Fact(DisplayName = "The globally registered Hangfire audit filter writes an audit event without job arguments, for a job with no explicit attribute")]
