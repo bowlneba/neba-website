@@ -16,7 +16,7 @@ namespace Neba.Api.Auditing;
 /// endpoint that handled the request. Bodies that can't be mapped to a known DTO type (or fail to
 /// deserialize) are dropped rather than stored unscrubbed — fail closed on PII.
 /// </summary>
-internal sealed class ApiAuditPayloadScrubbingAction(IHttpContextAccessor httpContextAccessor)
+internal sealed class ApiAuditPayloadScrubbingAction(IHttpContextAccessor httpContextAccessor, ILogger<ApiAuditPayloadScrubbingAction> logger)
 {
     private static readonly JsonSerializerOptions DeserializationOptions = new()
     {
@@ -39,7 +39,7 @@ internal sealed class ApiAuditPayloadScrubbingAction(IHttpContextAccessor httpCo
     }
 
     [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Audit scrubbing must never fail the request; an unscrubbable body is dropped, not stored raw.")]
-    private static void ScrubBody(BodyContent? body, Type? dtoType)
+    private void ScrubBody(BodyContent? body, Type? dtoType)
     {
         if (body is null)
         {
@@ -61,9 +61,21 @@ internal sealed class ApiAuditPayloadScrubbingAction(IHttpContextAccessor httpCo
             var instance = JsonSerializer.Deserialize(json, dtoType, DeserializationOptions);
             body.Value = instance is null ? null : AuditPayloadScrubber.Scrub(instance);
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            logger.LogAuditBodyScrubFailed(dtoType, exception);
             body.Value = null;
         }
     }
+}
+
+internal static partial class ApiAuditPayloadScrubbingActionLogMessages
+{
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Failed to scrub audit body for DTO type {DtoType}; dropping the body from the audit event.")]
+    public static partial void LogAuditBodyScrubFailed(
+        this ILogger<ApiAuditPayloadScrubbingAction> logger,
+        Type dtoType,
+        Exception exception);
 }

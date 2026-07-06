@@ -4,6 +4,9 @@ using Audit.WebApi;
 using FastEndpoints;
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.Auditing;
 using Neba.Api.Compliance;
@@ -36,7 +39,7 @@ public sealed class ApiAuditPayloadScrubbingActionTests
     {
         // Arrange
         var accessor = new HttpContextAccessor { HttpContext = new DefaultHttpContext() };
-        var sut = new ApiAuditPayloadScrubbingAction(accessor);
+        var sut = new ApiAuditPayloadScrubbingAction(accessor, NullLogger<ApiAuditPayloadScrubbingAction>.Instance);
         var auditEvent = new AuditEvent();
 
         // Act
@@ -57,7 +60,7 @@ public sealed class ApiAuditPayloadScrubbingActionTests
             "test"));
 
         var accessor = new HttpContextAccessor { HttpContext = httpContext };
-        var sut = new ApiAuditPayloadScrubbingAction(accessor);
+        var sut = new ApiAuditPayloadScrubbingAction(accessor, NullLogger<ApiAuditPayloadScrubbingAction>.Instance);
 
         var auditEvent = new AuditEventWebApi
         {
@@ -88,7 +91,7 @@ public sealed class ApiAuditPayloadScrubbingActionTests
             "test"));
 
         var accessor = new HttpContextAccessor { HttpContext = httpContext };
-        var sut = new ApiAuditPayloadScrubbingAction(accessor);
+        var sut = new ApiAuditPayloadScrubbingAction(accessor, NullLogger<ApiAuditPayloadScrubbingAction>.Instance);
 
         var auditEvent = new AuditEventWebApi
         {
@@ -112,7 +115,7 @@ public sealed class ApiAuditPayloadScrubbingActionTests
         // Arrange
         var httpContext = new DefaultHttpContext();
         var accessor = new HttpContextAccessor { HttpContext = httpContext };
-        var sut = new ApiAuditPayloadScrubbingAction(accessor);
+        var sut = new ApiAuditPayloadScrubbingAction(accessor, NullLogger<ApiAuditPayloadScrubbingAction>.Instance);
 
         var auditEvent = new AuditEventWebApi
         {
@@ -134,7 +137,7 @@ public sealed class ApiAuditPayloadScrubbingActionTests
     {
         // Arrange
         var accessor = new HttpContextAccessor { HttpContext = null };
-        var sut = new ApiAuditPayloadScrubbingAction(accessor);
+        var sut = new ApiAuditPayloadScrubbingAction(accessor, NullLogger<ApiAuditPayloadScrubbingAction>.Instance);
 
         var auditEvent = new AuditEventWebApi
         {
@@ -162,7 +165,8 @@ public sealed class ApiAuditPayloadScrubbingActionTests
             "test"));
 
         var accessor = new HttpContextAccessor { HttpContext = httpContext };
-        var sut = new ApiAuditPayloadScrubbingAction(accessor);
+        var logger = new FakeLogger<ApiAuditPayloadScrubbingAction>();
+        var sut = new ApiAuditPayloadScrubbingAction(accessor, logger);
 
         var auditEvent = new AuditEventWebApi
         {
@@ -178,6 +182,10 @@ public sealed class ApiAuditPayloadScrubbingActionTests
         // Assert
         exception.ShouldBeNull();
         auditEvent.Action.RequestBody!.Value.ShouldBeNull();
+
+        var logRecord = logger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        logRecord.Level.ShouldBe(LogLevel.Warning);
+        logRecord.Message.ShouldContain(nameof(SampleRequest));
     }
 
     [Fact(DisplayName = "Scrub leaves a null body untouched")]
@@ -186,7 +194,7 @@ public sealed class ApiAuditPayloadScrubbingActionTests
         // Arrange
         var httpContext = new DefaultHttpContext();
         var accessor = new HttpContextAccessor { HttpContext = httpContext };
-        var sut = new ApiAuditPayloadScrubbingAction(accessor);
+        var sut = new ApiAuditPayloadScrubbingAction(accessor, NullLogger<ApiAuditPayloadScrubbingAction>.Instance);
 
         var auditEvent = new AuditEventWebApi
         {

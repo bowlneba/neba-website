@@ -89,7 +89,15 @@ app.MapGet("/debug/clear-audits", async (
     {
         foreach (var tableName in auditTableNames)
         {
-            await tableServiceClient.DeleteTableAsync(tableName, ct);
+            try
+            {
+                await tableServiceClient.DeleteTableAsync(tableName, ct);
+            }
+            catch (Azure.RequestFailedException ex) when (ex.Status == 404)
+            {
+                // Table didn't exist; nothing to delete.
+            }
+
             await tableServiceClient.CreateTableIfNotExistsAsync(tableName, ct);
         }
 

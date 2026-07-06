@@ -118,6 +118,63 @@ public sealed class AuditPayloadScrubberTests
         result[nameof(TestPayload.PersonalAge)].ShouldBe(34);
     }
 
+    [Fact(DisplayName = "Scrub should recursively scrub nested complex properties")]
+    public void Scrub_ShouldRecursivelyScrubNestedProperties_WhenPropertyIsComplexType()
+    {
+        // Arrange
+        var source = new OuterPayload
+        {
+            Input = new TestPayload
+            {
+                PublicName = "NEBA Tournament",
+                PrivateSsn = "123-45-6789",
+                PersonalEmail = "bowler@example.com",
+            },
+        };
+
+        // Act
+        var result = AuditPayloadScrubber.Scrub(source);
+
+        // Assert
+        var nested = result[nameof(OuterPayload.Input)].ShouldBeOfType<Dictionary<string, object?>>();
+        nested[nameof(TestPayload.PublicName)].ShouldBe("NEBA Tournament");
+        nested.ShouldNotContainKey(nameof(TestPayload.PrivateSsn));
+        nested[nameof(TestPayload.PersonalEmail)].ShouldBe("b*****************");
+    }
+
+    [Fact(DisplayName = "Scrub should recursively scrub complex properties inside a collection")]
+    public void Scrub_ShouldRecursivelyScrubCollectionItems_WhenPropertyIsCollectionOfComplexType()
+    {
+        // Arrange
+        var source = new CollectionPayload
+        {
+            Items =
+            [
+                new TestPayload { PrivateSsn = "123-45-6789", PersonalEmail = "bowler@example.com" },
+            ],
+        };
+
+        // Act
+        var result = AuditPayloadScrubber.Scrub(source);
+
+        // Assert
+        var items = result[nameof(CollectionPayload.Items)].ShouldBeOfType<List<object?>>();
+        var nested = items[0].ShouldBeOfType<Dictionary<string, object?>>();
+        nested.ShouldNotContainKey(nameof(TestPayload.PrivateSsn));
+        nested[nameof(TestPayload.PersonalEmail)].ShouldBe("b*****************");
+    }
+
+    [Fact(DisplayName = "Scrub should not recurse infinitely when the object graph is circular")]
+    public void Scrub_ShouldNotThrow_WhenObjectGraphIsCircular()
+    {
+        // Arrange
+        var source = new CircularPayload();
+        source.Self = source;
+
+        // Act & Assert
+        Should.NotThrow(() => AuditPayloadScrubber.Scrub(source));
+    }
+
     [Fact(DisplayName = "Scrub should cache reflected properties across repeated calls for the same type")]
     public void Scrub_ShouldProduceConsistentResults_WhenCalledMultipleTimesForSameType()
     {
@@ -189,5 +246,20 @@ public sealed class AuditPayloadScrubberTests
 
         [PersonalData]
         public int PersonalAge { get; set; }
+    }
+
+    private sealed class OuterPayload
+    {
+        public TestPayload? Input { get; set; }
+    }
+
+    private sealed class CollectionPayload
+    {
+        public List<TestPayload> Items { get; set; } = [];
+    }
+
+    private sealed class CircularPayload
+    {
+        public CircularPayload? Self { get; set; }
     }
 }
