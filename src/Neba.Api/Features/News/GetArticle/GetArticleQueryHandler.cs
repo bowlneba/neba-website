@@ -29,6 +29,7 @@ internal sealed class GetArticleQueryHandler(
                 && article.PublishDateUtc <= now)
             .Select(article => new
             {
+                article.Id,
                 article.Slug,
                 article.Title,
                 article.Content,
@@ -59,6 +60,7 @@ internal sealed class GetArticleQueryHandler(
 
         return new ArticleDetailDto
         {
+            Id = row.Id,
             Slug = row.Slug,
             Title = row.Title,
             Content = row.Content,

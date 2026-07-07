@@ -1,3 +1,5 @@
+using Neba.Api.Features.News.Domain;
+
 namespace Neba.Api.Features.News.ListArticles;
 
 /// <summary>
@@ -5,6 +7,11 @@ namespace Neba.Api.Features.News.ListArticles;
 /// </summary>
 public sealed record ArticleSummaryDto
 {
+    /// <summary>
+    /// Gets the unique identifier of the article, which is a strongly-typed ID to ensure type safety when working with article IDs throughout the codebase. The underlying value is a ULID, which provides both uniqueness and chronological sorting capabilities. This ID is required for all articles and is used as the primary key in the database.
+    /// </summary>
+    public required ArticleId Id { get; init; }
+
     /// <summary>
     /// Gets the slug of the article, which is a URL-friendly identifier used to access the article.
     /// </summary>

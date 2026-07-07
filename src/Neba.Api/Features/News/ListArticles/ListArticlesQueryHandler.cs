@@ -33,6 +33,7 @@ internal sealed partial class ListArticlesQueryHandler(
         var rows = await baseQuery
             .Select(article => new
             {
+                article.Id,
                 article.Slug,
                 article.Title,
                 article.Content,
@@ -48,6 +49,7 @@ internal sealed partial class ListArticlesQueryHandler(
         var items = rows
             .ConvertAll(row => new ArticleSummaryDto
             {
+                Id = row.Id,
                 Slug = row.Slug,
                 Title = row.Title,
                 Excerpt = BuildExcerpt(row.Content),

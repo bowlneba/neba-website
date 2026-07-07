@@ -1,3 +1,4 @@
+using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.News.ListArticles;
 
 namespace Neba.TestFactory.News;
@@ -10,6 +11,7 @@ public static class ArticleSummaryDtoFactory
     public static readonly DateTimeOffset ValidPublishDateUtc = new(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
     public static ArticleSummaryDto Create(
+        ArticleId? id = null,
         string? slug = null,
         string? title = null,
         string? excerpt = null,
@@ -17,6 +19,7 @@ public static class ArticleSummaryDtoFactory
         DateTimeOffset? publishDateUtc = null)
         => new()
         {
+            Id = id ?? ArticleId.New(),
             Slug = slug ?? ValidSlug,
             Title = title ?? ValidTitle,
             Excerpt = excerpt ?? ValidExcerpt,
@@ -33,6 +36,7 @@ public static class ArticleSummaryDtoFactory
             var hasImage = faker.Random.Bool();
             return new ArticleSummaryDto
             {
+                Id = new ArticleId(Ulid.BogusString(faker)),
 #pragma warning disable CA1308
                 Slug = title.ToLowerInvariant().Replace(' ', '-'),
 #pragma warning restore CA1308
