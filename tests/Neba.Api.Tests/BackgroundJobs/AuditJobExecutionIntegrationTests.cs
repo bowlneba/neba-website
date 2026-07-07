@@ -62,31 +62,9 @@ public sealed class AuditJobExecutionIntegrationTests : IAsyncLifetime
         client.Enqueue(() => AuditableTestJob.Succeed(SecretArgument));
 
         // Assert
-        const string eventType = "Job:" + nameof(AuditableTestJob) + ".Succeed";
-        var auditEvent = await WaitForEventAsync(eventType);
+        var auditEvent = await WaitForEventAsync("Job:" + nameof(AuditableTestJob) + ".Succeed");
 
-        // Diagnostic message only (kept temporarily): this test has intermittently failed in CI with
-        // IsSuccess=false for a job body that provably succeeds, and the cause hasn't been reproduced
-        // locally or conclusively identified despite several rounds of fixes (see CLAUDE.md). Surface
-        // how many completed events exist for this EventType and each one's Exception/attempt count so
-        // the next CI failure carries the data needed to diagnose it, instead of just the boolean result.
-        string diagnostic;
-        try
-        {
-            var allMatches = Provider.GetAllEvents()
-                .OfType<AuditEventHangfireJobExecution>()
-                .Where(e => e.EventType == eventType && e.EndDate.HasValue)
-                .Select(e => $"[Exception={e.JobExecution.Exception ?? "<none>"}, EndDate={e.EndDate:o}]")
-                .ToList();
-            diagnostic = $"Matching completed events for '{eventType}': {string.Join(", ", allMatches)}";
-        }
-        catch (InvalidOperationException)
-        {
-            diagnostic = "Matching completed events: <enumeration raced a concurrent write>";
-        }
-
-        auditEvent.JobExecution.IsSuccess.ShouldBeTrue(
-            $"{diagnostic}. Selected event Exception={auditEvent.JobExecution.Exception ?? "<none>"}");
+        auditEvent.JobExecution.IsSuccess.ShouldBeTrue();
         auditEvent.JobExecution.Args.ShouldBeNull();
         auditEvent.ToJson().ShouldNotContain(SecretArgument);
     }
