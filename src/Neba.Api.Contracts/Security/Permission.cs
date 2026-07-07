@@ -23,6 +23,15 @@ public sealed class Permissions
     /// </summary>
     public static readonly Permissions Read = new("Read", "Read");
 
+    #region News
+
+    /// <summary>
+    /// This is a temporary permission to set us up until real permissions come into the picture
+    /// </summary>
+    public static readonly Permissions DeleteArticle = new("News.DeleteArticle", "Delete Article");
+
+    #endregion
+
     /// <summary>
     /// This is a temporary permission to set us up until real permissions come into the picture
     /// </summary>
