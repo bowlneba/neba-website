@@ -1,5 +1,3 @@
-using Audit.Hangfire;
-
 using Azure.Data.Tables;
 
 using Hangfire;
@@ -83,19 +81,22 @@ public sealed class HangfireGlobalAuditFilterIntegrationTests(AppDbContextFixtur
         }
         finally
         {
-            // AddAuditJobExecutionFilter(...) in InitializeAsync resolves to IGlobalConfiguration.UseFilter(...),
-            // which adds the filter to Hangfire's static, process-wide GlobalJobFilters.Filters collection - not
-            // anything scoped to this test's _serviceProvider/storage. Left unregistered, this filter (configured
-            // to write to this test's Azurite-backed AzureTableDataProvider) would keep firing for every job on
-            // every Hangfire server in the process for the rest of the run, including AuditJobExecutionIntegrationTests's
-            // own InMemoryStorage-backed server - and since that job carries its own [AuditJobExecutionFilter]
-            // attribute, having both instances active simultaneously means their OnPerforming handlers race to
-            // overwrite the same PerformContext.Items keys (AuditJobExecutionFilterAttribute uses fixed string
-            // keys, not per-instance ones), so whichever filter's OnPerformed runs second finds its own AuditScope
-            // already removed from Items and returns early without ever finalizing it - leaving that job's audit
-            // event stuck at its "start" snapshot with IsSuccess still false. This cleanup must run even if
-            // StopAsync/DisposeAsync above throws, so it's in `finally` rather than after them unconditionally.
-            GlobalJobFilters.Filters.Remove<AuditJobExecutionFilterAttribute>();
+            // AddBackgroundJobs(...) in InitializeAsync registers several filters (AutomaticRetryAttribute,
+            // HangfireJobExpirationFilterAttribute, AuditJobExecutionFilterAttribute via
+            // AddAuditJobExecutionFilter/IGlobalConfiguration.UseFilter) into Hangfire's static, process-wide
+            // GlobalJobFilters.Filters collection - none of it scoped to this test's _serviceProvider/storage.
+            // Left registered, ALL of these keep firing for every job on every Hangfire server in the process
+            // for the rest of the run, including AuditJobExecutionIntegrationTests's own InMemoryStorage-backed
+            // server: the leftover AuditJobExecutionFilterAttribute can double-apply alongside that job's own
+            // [AuditJobExecutionFilter] attribute (Audit.Hangfire keys IAuditScope into PerformContext.Items
+            // via fixed strings, not per-instance ones, so two active instances clobber each other's entry),
+            // and - more subtly - the leftover AutomaticRetryAttribute means ANY transient exception from ANY
+            // leftover filter (or Hangfire itself) on that job silently triggers a retry, producing a second,
+            // separate completed audit event that can be picked up instead of the real outcome. This test is
+            // the only one in the suite that populates GlobalJobFilters.Filters, so a full Clear() here is safe
+            // and doesn't risk removing something another test depends on. Must run even if StopAsync/
+            // DisposeAsync above throws, so it's in `finally` rather than after them unconditionally.
+            GlobalJobFilters.Filters.Clear();
 
             // Hangfire.AspNetCore's AddHangfire/AddHangfireServer wire Hangfire's static, process-wide
             // LogProvider to an AspNetCoreLogProvider backed by this container's ILoggerFactory. Once the
