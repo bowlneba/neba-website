@@ -1,6 +1,7 @@
 using EntityFramework.Exceptions.PostgreSQL;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Api.Database;
@@ -43,9 +44,10 @@ public sealed class AppDbContextFixture : IAsyncLifetime
         await _respawner.ResetAsync(connection);
     }
 
-    internal AppDbContext CreateDbContext() => new(CreateDbContextOptions());
+    internal AppDbContext CreateDbContext(params IReadOnlyList<IInterceptor> extraInterceptors)
+        => new(CreateDbContextOptions(extraInterceptors));
 
-    internal DbContextOptions<AppDbContext> CreateDbContextOptions()
+    internal DbContextOptions<AppDbContext> CreateDbContextOptions(params IReadOnlyList<IInterceptor> extraInterceptors)
     {
         var builder = new NpgsqlConnectionStringBuilder(ConnectionString)
         {
@@ -56,6 +58,8 @@ public sealed class AppDbContextFixture : IAsyncLifetime
             NullLogger<SlowQueryInterceptor>.Instance,
             new SlowQueryOptions());
 
+        IInterceptor[] interceptors = [slowQueryInterceptor, .. extraInterceptors];
+
         return new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(builder.ConnectionString, options =>
                 options.MigrationsHistoryTable(AppDbContext.MigrationsHistoryTableName, AppDbContext.DefaultSchema))
@@ -63,7 +67,7 @@ public sealed class AppDbContextFixture : IAsyncLifetime
             .UseExceptionProcessor()
             .EnableDetailedErrors()
             .EnableSensitiveDataLogging()
-            .AddInterceptors(slowQueryInterceptor)
+            .AddInterceptors(interceptors)
             .Options;
     }
 

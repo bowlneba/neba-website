@@ -2,7 +2,7 @@ using Microsoft.Extensions.Compliance.Classification;
 
 namespace Neba.Api.Compliance;
 
-[AttributeUsage(AttributeTargets.Parameter)]
+[AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
 internal sealed class PersonalDataAttribute
     : DataClassificationAttribute
 {

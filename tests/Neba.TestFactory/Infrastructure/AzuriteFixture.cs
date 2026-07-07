@@ -13,6 +13,8 @@ public sealed class AzuriteFixture
 
     public BlobServiceClient BlobServiceClient { get; private set; } = null!;
 
+    public string ConnectionString => _container.GetConnectionString();
+
     public async ValueTask InitializeAsync()
     {
         await _container.StartAsync();

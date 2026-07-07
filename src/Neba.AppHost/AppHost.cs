@@ -27,6 +27,7 @@ var storage = builder.AddAzureStorage("storage")
         .WithTablePort(19634));
 
 var blobs = storage.AddBlobs("blob");
+var tables = storage.AddTables("tables");
 
 var api = builder.AddProject<Projects.Neba_Api>("api")
     .WithExternalHttpEndpoints()
@@ -35,6 +36,8 @@ var api = builder.AddProject<Projects.Neba_Api>("api")
     .WaitFor(database)
     .WithReference(blobs)
     .WaitFor(blobs)
+    .WithReference(tables)
+    .WaitFor(tables)
     .WithUrlForEndpoint("http", callback =>
     {
         callback.DisplayText = "Scalar API";

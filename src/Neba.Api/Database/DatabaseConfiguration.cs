@@ -1,3 +1,5 @@
+using Audit.EntityFramework;
+
 using EntityFramework.Exceptions.PostgreSQL;
 
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +39,7 @@ internal static class DatabaseConfiguration
                 var slowQuery = sp.GetRequiredService<SlowQueryInterceptor>();
                 var queryTag = sp.GetRequiredService<QueryTagEnrichmentInterceptor>();
                 var domainEvents = sp.GetRequiredService<DomainEventDispatcherInterceptor>();
+                var audit = sp.GetRequiredService<AuditSaveChangesInterceptor>();
 
                 options
                     .UseNpgsql(dataSource, npgsqlOptions =>
@@ -44,7 +47,7 @@ internal static class DatabaseConfiguration
                     .UseExceptionProcessor()
                     .UseSnakeCaseNamingConvention()
                     .EnableDetailedErrors()
-                    .AddInterceptors(slowQuery, queryTag, domainEvents);
+                    .AddInterceptors(slowQuery, queryTag, domainEvents, audit);
 
 #if DEBUG
                 options.EnableSensitiveDataLogging();
@@ -57,7 +60,8 @@ internal static class DatabaseConfiguration
             builder.Services.AddSingleton<SlowQueryInterceptor>();
             builder.Services.AddSingleton<QueryTagEnrichmentInterceptor>();
             builder.Services.AddSingleton<DomainEventDispatcherInterceptor>();
-
+            // AuditSaveChanges Interceptor is registered by AddAuditing()
+            // which must run before this in AddInfrastructure
             return builder;
         }
 
