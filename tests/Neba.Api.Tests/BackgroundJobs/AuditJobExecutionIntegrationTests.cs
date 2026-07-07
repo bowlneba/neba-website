@@ -93,20 +93,33 @@ public sealed class AuditJobExecutionIntegrationTests : IAsyncLifetime
 
         while (DateTimeOffset.UtcNow < deadline)
         {
-            // EventCreationPolicy.InsertOnStartReplaceOnEnd inserts a start-of-job event before
-            // JobExecution.IsSuccess/Exception are known, then replaces it once the job finishes.
-            // Match on EndDate too so a poll landing between insert and replace doesn't return the
-            // pre-execution snapshot and assert against its (still-default) IsSuccess/Exception.
-            //
-            // Order by EndDate descending (not FirstOrDefault by insertion order): Hangfire's default
-            // AutomaticRetryAttribute can transparently retry a job execution that transiently fails for
-            // reasons unrelated to the job body itself (e.g. filter/storage interference), which produces
-            // a second, separate completed audit event for the same EventType. Picking by insertion order
-            // would return the stale first (failed) attempt's event instead of the final outcome.
-            var match = Provider.GetAllEvents()
-                .OfType<AuditEventHangfireJobExecution>()
-                .Where(e => e.EventType == eventType && e.EndDate.HasValue)
-                .MaxBy(e => e.EndDate);
+            AuditEventHangfireJobExecution? match;
+            try
+            {
+                // EventCreationPolicy.InsertOnStartReplaceOnEnd inserts a start-of-job event before
+                // JobExecution.IsSuccess/Exception are known, then replaces it once the job finishes.
+                // Match on EndDate too so a poll landing between insert and replace doesn't return the
+                // pre-execution snapshot and assert against its (still-default) IsSuccess/Exception.
+                //
+                // Order by EndDate descending (not FirstOrDefault by insertion order): Hangfire's default
+                // AutomaticRetryAttribute can transparently retry a job execution that transiently fails for
+                // reasons unrelated to the job body itself (e.g. filter/storage interference), which produces
+                // a second, separate completed audit event for the same EventType. Picking by insertion order
+                // would return the stale first (failed) attempt's event instead of the final outcome.
+                match = Provider.GetAllEvents()
+                    .OfType<AuditEventHangfireJobExecution>()
+                    .Where(e => e.EventType == eventType && e.EndDate.HasValue)
+                    .MaxBy(e => e.EndDate);
+            }
+            catch (InvalidOperationException)
+            {
+                // InMemoryDataProvider.GetAllEvents() returns _events.AsReadOnly() - a live view over its
+                // internal list, not a snapshot. Enumerating it here can race with the Hangfire worker
+                // thread concurrently inserting/replacing events for this job (or a retried attempt),
+                // throwing "Collection was modified; enumeration operation may not execute." Treat that as
+                // "try again next poll" rather than letting it fail the test.
+                match = null;
+            }
 
             if (match is not null)
             {
