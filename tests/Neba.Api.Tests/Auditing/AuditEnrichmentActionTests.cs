@@ -23,7 +23,7 @@ public sealed class AuditEnrichmentActionTests
         var httpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) };
         var accessor = new HttpContextAccessor { HttpContext = httpContext };
         var sut = new AuditEnrichmentAction(accessor);
-        var auditEvent = new AuditEvent { CustomFields = new Dictionary<string, object?>() };
+        var auditEvent = new AuditEvent { CustomFields = [] };
 
         // Act
         sut.Enrich(auditEvent);
@@ -38,7 +38,7 @@ public sealed class AuditEnrichmentActionTests
         // Arrange
         var accessor = new HttpContextAccessor { HttpContext = null };
         var sut = new AuditEnrichmentAction(accessor);
-        var auditEvent = new AuditEvent { CustomFields = new Dictionary<string, object?>() };
+        var auditEvent = new AuditEvent { CustomFields = [] };
 
         // Act
         sut.Enrich(auditEvent);
@@ -54,7 +54,7 @@ public sealed class AuditEnrichmentActionTests
         var httpContext = new DefaultHttpContext { TraceIdentifier = "trace-1" };
         var accessor = new HttpContextAccessor { HttpContext = httpContext };
         var sut = new AuditEnrichmentAction(accessor);
-        var auditEvent = new AuditEvent { CustomFields = new Dictionary<string, object?>() };
+        var auditEvent = new AuditEvent { CustomFields = [] };
 
         // Act
         sut.Enrich(auditEvent);
@@ -69,7 +69,7 @@ public sealed class AuditEnrichmentActionTests
         // Arrange
         var accessor = new HttpContextAccessor { HttpContext = null };
         var sut = new AuditEnrichmentAction(accessor);
-        var auditEvent = new AuditEvent { CustomFields = new Dictionary<string, object?>() };
+        var auditEvent = new AuditEvent { CustomFields = [] };
 
         // Act
         sut.Enrich(auditEvent);
@@ -84,7 +84,7 @@ public sealed class AuditEnrichmentActionTests
         // Arrange
         var accessor = new HttpContextAccessor { HttpContext = new DefaultHttpContext() };
         var sut = new AuditEnrichmentAction(accessor);
-        var auditEvent = new AuditEvent { CustomFields = new Dictionary<string, object?>() };
+        var auditEvent = new AuditEvent { CustomFields = [] };
 
         // Act
         var exception = Record.Exception(() => sut.Enrich(auditEvent));
@@ -107,7 +107,7 @@ public sealed class AuditEnrichmentActionTests
 
         var auditEvent = new AuditEventEntityFramework
         {
-            CustomFields = new Dictionary<string, object?>(),
+            CustomFields = [],
             EntityFrameworkEvent = new EntityFrameworkEvent
             {
                 Entries = [entry]
@@ -139,7 +139,7 @@ public sealed class AuditEnrichmentActionTests
 
         var auditEvent = new AuditEventEntityFramework
         {
-            CustomFields = new Dictionary<string, object?>(),
+            CustomFields = [],
             EntityFrameworkEvent = new EntityFrameworkEvent
             {
                 Entries = [entry]

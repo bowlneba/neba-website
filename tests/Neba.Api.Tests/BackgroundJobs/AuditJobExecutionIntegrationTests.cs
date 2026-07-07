@@ -59,7 +59,7 @@ public sealed class AuditJobExecutionIntegrationTests : IAsyncLifetime
         var client = new BackgroundJobClient(_storage);
 
         // Act
-        client.Enqueue(() => AuditableTestJob.Succeed(SecretArgument));
+        client.Enqueue(() => AuditableTestJob.Succeed());
 
         // Assert
         var auditEvent = await WaitForEventAsync("Job:" + nameof(AuditableTestJob) + ".Succeed");
@@ -76,7 +76,7 @@ public sealed class AuditJobExecutionIntegrationTests : IAsyncLifetime
         var client = new BackgroundJobClient(_storage);
 
         // Act
-        client.Enqueue(() => AuditableTestJob.Fail(SecretArgument));
+        client.Enqueue(() => AuditableTestJob.Fail());
 
         // Assert
         var auditEvent = await WaitForEventAsync("Job:" + typeof(AuditableTestJob).Name + ".Fail");
@@ -137,9 +137,9 @@ public sealed class AuditJobExecutionIntegrationTests : IAsyncLifetime
         public static int SucceedCallCount { get; private set; }
 
         [AuditJobExecutionFilter(EventType = "Job:{type}.{method}", ExcludeArguments = true)]
-        public static void Succeed(string secretArgument) => SucceedCallCount++;
+        public static void Succeed() => SucceedCallCount++;
 
         [AuditJobExecutionFilter(EventType = "Job:{type}.{method}", ExcludeArguments = true)]
-        public static void Fail(string secretArgument) => throw new InvalidOperationException("Simulated job failure for audit testing.");
+        public static void Fail() => throw new InvalidOperationException("Simulated job failure for audit testing.");
     }
 }

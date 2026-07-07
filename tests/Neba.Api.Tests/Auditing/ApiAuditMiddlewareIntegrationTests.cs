@@ -7,7 +7,6 @@ using Audit.Core.Providers;
 using FastEndpoints;
 
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -25,14 +24,13 @@ namespace Neba.Api.Tests.Auditing;
 public sealed class ApiAuditMiddlewareIntegrationTests : IAsyncLifetime
 {
     private WebApplication _app = null!;
-    private InMemoryDataProvider _provider = null!;
 
     public async ValueTask InitializeAsync()
     {
-        _provider = new InMemoryDataProvider();
+        Provider = new InMemoryDataProvider();
 
         Configuration.Setup()
-            .Use(_provider)
+            .Use(Provider)
             .WithCreationPolicy(EventCreationPolicy.InsertOnStartReplaceOnEnd);
         Configuration.ResetCustomActions();
 
@@ -78,7 +76,7 @@ public sealed class ApiAuditMiddlewareIntegrationTests : IAsyncLifetime
         Configuration.ResetCustomActions();
     }
 
-    private InMemoryDataProvider Provider => _provider;
+    private InMemoryDataProvider Provider { get; set; } = null!;
 
     [Fact(DisplayName = "A GET request does not produce an audit event")]
     public async Task Get_ShouldNotProduceAuditEvent()

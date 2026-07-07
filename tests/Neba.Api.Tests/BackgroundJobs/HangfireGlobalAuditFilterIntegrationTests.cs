@@ -129,13 +129,13 @@ public sealed class HangfireGlobalAuditFilterIntegrationTests(AppDbContextFixtur
         var client = _serviceProvider.GetRequiredService<IBackgroundJobClient>();
 
         // Act
-        client.Enqueue(() => UnattributedTestJob.Run(SecretArgument));
+        client.Enqueue(() => UnattributedTestJob.Run());
 
         // Assert
         var entity = await WaitForEventAsync();
         entity.ShouldNotBeNull();
 
-        var json = entity.GetString("Data") ?? string.Join(string.Empty, entity.Keys.Select(k => entity[k]?.ToString()));
+        var json = entity.GetString("Data") ?? string.Concat(entity.Keys.Select(k => entity[k]?.ToString()));
         json.ShouldNotContain(SecretArgument);
     }
 
@@ -169,7 +169,7 @@ public sealed class HangfireGlobalAuditFilterIntegrationTests(AppDbContextFixtur
 
     public static class UnattributedTestJob
     {
-        public static void Run(string secretArgument)
+        public static void Run()
         {
             // Intentionally empty - only the audit event produced by the global Hangfire
             // filter for this job execution is under test, not the job's own behavior.
