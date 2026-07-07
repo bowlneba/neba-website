@@ -106,6 +106,19 @@ public sealed class HangfireGlobalAuditFilterIntegrationTests(AppDbContextFixtur
             // Resetting to null makes Hangfire re-resolve its log provider on next use instead of reusing
             // the disposed one.
             Hangfire.Logging.LogProvider.SetCurrentLogProvider(null!);
+
+            // Hangfire.AspNetCore also wires Hangfire's static, process-wide JobActivator.Current to an
+            // AspNetCoreJobActivator bound to THIS test's _serviceProvider. Once that provider is disposed
+            // above, JobActivator.Current keeps pointing at it - and every job on every Hangfire server in
+            // the process afterward calls the ambient JobActivator.Current.BeginScope(...) to construct the
+            // job instance, throwing ObjectDisposedException before the job body ever runs. This is what was
+            // actually causing AuditJobExecutionIntegrationTests's "successful" job to record IsSuccess=false:
+            // BeginScope failed before AuditableTestJob.Succeed() ever executed, and Hangfire's (now-cleared)
+            // AutomaticRetryAttribute retried it - but every retry hit the same disposed provider and failed
+            // identically, so even the "final" attempt recorded a failure. Resetting to the default activator
+            // makes Hangfire re-resolve job instances via Activator.CreateInstance instead of the disposed DI
+            // container.
+            JobActivator.Current = new JobActivator();
         }
     }
 
