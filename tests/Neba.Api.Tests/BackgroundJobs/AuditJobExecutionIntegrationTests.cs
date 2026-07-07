@@ -97,9 +97,16 @@ public sealed class AuditJobExecutionIntegrationTests : IAsyncLifetime
             // JobExecution.IsSuccess/Exception are known, then replaces it once the job finishes.
             // Match on EndDate too so a poll landing between insert and replace doesn't return the
             // pre-execution snapshot and assert against its (still-default) IsSuccess/Exception.
+            //
+            // Order by EndDate descending (not FirstOrDefault by insertion order): Hangfire's default
+            // AutomaticRetryAttribute can transparently retry a job execution that transiently fails for
+            // reasons unrelated to the job body itself (e.g. filter/storage interference), which produces
+            // a second, separate completed audit event for the same EventType. Picking by insertion order
+            // would return the stale first (failed) attempt's event instead of the final outcome.
             var match = Provider.GetAllEvents()
                 .OfType<AuditEventHangfireJobExecution>()
-                .FirstOrDefault(e => e.EventType == eventType && e.EndDate.HasValue);
+                .Where(e => e.EventType == eventType && e.EndDate.HasValue)
+                .MaxBy(e => e.EndDate);
 
             if (match is not null)
             {
