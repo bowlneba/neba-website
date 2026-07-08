@@ -14,7 +14,7 @@ Source of truth is code — this table describes it for reviewers and help-doc a
 | --- | --- | --- | --- | --- |
 | `Authenticated` | Static | Any signed-in user (no specific permission/role) | `LogoutEndpoint`, `GetCurrentUserEndpoint` | — |
 | `Permission:{value}` | Dynamic (one per `Permissions` value, resolved by `PermissionPolicyProvider`) | Caller holds the single named permission claim (e.g. `Permission:Read`, `Permission:News.DeleteArticle`) | Any endpoint calling `.Policies(Permissions.X.PolicyName)` | — |
-| `CanManageArticles` | Static, OR-of-many | Any permission in `Permissions.ArticleManagementPermissions` (currently just `News.DeleteArticle`) | `DeleteArticleEndpoint`; UI badges/buttons in `NewsDetail.razor`, `ArticleCard.razor` | [can-manage-articles.md](can-manage-articles.md) |
+| `CanManageArticles` | Static, OR-of-many (constant defined, **not yet registered**) | Would be any permission in `Permissions.ArticleManagementPermissions` (currently just `News.DeleteArticle`) once registered | Not enforced anywhere yet — `DeleteArticleEndpoint` and the delete UI (`NewsDetail.razor`, `NewsList.razor`) currently gate on `Permission:News.DeleteArticle` directly, not this policy | [can-manage-articles.md](can-manage-articles.md) |
 
 ## When to update this file
 
