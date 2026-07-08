@@ -1,19 +1,20 @@
 using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Hybrid;
 
 using Neba.Api.BackgroundJobs;
 using Neba.Api.Database;
 using Neba.Api.Features.News.Domain;
 using Neba.Api.Messaging;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Features.News.DeleteArticle;
 
 internal sealed class DeleteArticleCommandHandler(
     AppDbContext appDbContext,
     IBackgroundJobScheduler backgroundJobScheduler,
-    HybridCache cache)
+    IFusionCache cache)
         : ICommandHandler<DeleteArticleCommand, Deleted>
 {
     public async Task<ErrorOr<Deleted>> HandleAsync(DeleteArticleCommand command, CancellationToken cancellationToken)
@@ -32,8 +33,8 @@ internal sealed class DeleteArticleCommandHandler(
         appDbContext.Articles.Remove(article);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await cache.RemoveByTagAsync("neba:news:articles", cancellationToken);
-        await cache.RemoveByTagAsync($"neba:news:{article.Slug}", cancellationToken);
+        await cache.RemoveByTagAsync("neba:news:articles", token: cancellationToken);
+        await cache.RemoveByTagAsync($"neba:news:{article.Slug}", token: cancellationToken);
 
         if (filesToDelete.Count > 0)
         {

@@ -37,7 +37,7 @@ public sealed class SecurityConfigurationTests
     }
 
     [Fact(DisplayName = "UseSecurityInfrastructure should return the same WebApplication instance")]
-    public void UseSecurityInfrastructure_ShouldReturnSameApp()
+    public async Task UseSecurityInfrastructure_ShouldReturnSameApp()
     {
         // Arrange
         var builder = WebApplication.CreateSlimBuilder();
@@ -46,7 +46,7 @@ public sealed class SecurityConfigurationTests
         var app = builder.Build();
 
         // Act
-        var result = app.UseSecurityInfrastructure();
+        var result = await app.UseSecurityInfrastructureAsync();
 
         // Assert
         result.ShouldBeSameAs(app);

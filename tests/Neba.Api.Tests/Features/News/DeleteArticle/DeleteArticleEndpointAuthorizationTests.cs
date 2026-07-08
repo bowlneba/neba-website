@@ -70,7 +70,7 @@ public sealed class DeleteArticleEndpointAuthorizationTests : IAsyncLifetime
         builder.AddSecurity();
 
         _app = builder.Build();
-        _app.UseSecurityInfrastructure();
+        await _app.UseSecurityInfrastructureAsync();
 
         // UseFastEndpoints() overwrites the process-wide static ValidatorOptions.Global.PropertyNameResolver
         // (to apply the app's JSON naming policy to FluentValidation error PropertyNames) whenever

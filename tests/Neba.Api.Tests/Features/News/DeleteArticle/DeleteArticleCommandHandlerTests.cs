@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Api.BackgroundJobs;
@@ -11,6 +10,8 @@ using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.News;
 using Neba.TestFactory.Storage;
+
+using ZiggyCreatures.Caching.Fusion;
 
 namespace Neba.Api.Tests.Features.News.DeleteArticle;
 
@@ -27,7 +28,8 @@ public sealed class DeleteArticleCommandHandlerTests(AppDbContextFixture fixture
     {
         await fixture.ResetAsync();
         var services = new ServiceCollection();
-        services.AddHybridCache();
+        services.AddFusionCache()
+            .WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
         _serviceProvider = services.BuildServiceProvider();
     }
 
@@ -40,7 +42,7 @@ public sealed class DeleteArticleCommandHandlerTests(AppDbContextFixture fixture
 
     private DeleteArticleCommandHandler CreateHandler(IBackgroundJobScheduler? backgroundJobScheduler = null)
     {
-        var cache = _serviceProvider.GetRequiredService<HybridCache>();
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
         var scheduler = backgroundJobScheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object;
         return new DeleteArticleCommandHandler(_dbContext, scheduler, cache);
     }
@@ -231,21 +233,21 @@ public sealed class DeleteArticleCommandHandlerTests(AppDbContextFixture fixture
         await _dbContext.Articles.AddAsync(article, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        var cache = _serviceProvider.GetRequiredService<HybridCache>();
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
 
         const string listCacheKey = "neba:news:articles:list:page:1:size:10";
         var detailCacheKey = $"neba:news:{article.Slug}:article";
 
-        await cache.GetOrCreateAsync(
+        await cache.GetOrSetAsync(
             listCacheKey,
-            _ => ValueTask.FromResult("cached-list"),
+            _ => Task.FromResult("cached-list"),
             tags: ["neba:news:articles"],
-            cancellationToken: ct);
-        await cache.GetOrCreateAsync(
+            token: ct);
+        await cache.GetOrSetAsync(
             detailCacheKey,
-            _ => ValueTask.FromResult("cached-detail"),
+            _ => Task.FromResult("cached-detail"),
             tags: [$"neba:news:{article.Slug}"],
-            cancellationToken: ct);
+            token: ct);
 
         var handler = CreateHandler();
         var command = new DeleteArticleCommand { ArticleId = article.Id };
@@ -253,17 +255,17 @@ public sealed class DeleteArticleCommandHandlerTests(AppDbContextFixture fixture
         // Act
         await handler.HandleAsync(command, ct);
 
-        // Assert — a stale cached value would be returned by GetOrCreateAsync instead of invoking the factory
-        var listAfterDelete = await cache.GetOrCreateAsync(
+        // Assert — a stale cached value would be returned by GetOrSetAsync instead of invoking the factory
+        var listAfterDelete = await cache.GetOrSetAsync(
             listCacheKey,
-            _ => ValueTask.FromResult("fresh-list"),
-            cancellationToken: ct);
+            _ => Task.FromResult("fresh-list"),
+            token: ct);
         listAfterDelete.ShouldBe("fresh-list");
 
-        var detailAfterDelete = await cache.GetOrCreateAsync(
+        var detailAfterDelete = await cache.GetOrSetAsync(
             detailCacheKey,
-            _ => ValueTask.FromResult("fresh-detail"),
-            cancellationToken: ct);
+            _ => Task.FromResult("fresh-detail"),
+            token: ct);
         detailAfterDelete.ShouldBe("fresh-detail");
     }
 
@@ -272,14 +274,14 @@ public sealed class DeleteArticleCommandHandlerTests(AppDbContextFixture fixture
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var cache = _serviceProvider.GetRequiredService<HybridCache>();
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
         const string listCacheKey = "neba:news:articles:list:page:1:size:10";
 
-        await cache.GetOrCreateAsync(
+        await cache.GetOrSetAsync(
             listCacheKey,
-            _ => ValueTask.FromResult("cached-list"),
+            _ => Task.FromResult("cached-list"),
             tags: ["neba:news:articles"],
-            cancellationToken: ct);
+            token: ct);
 
         var handler = CreateHandler();
         var command = new DeleteArticleCommand { ArticleId = ArticleId.New() };
@@ -288,10 +290,10 @@ public sealed class DeleteArticleCommandHandlerTests(AppDbContextFixture fixture
         await handler.HandleAsync(command, ct);
 
         // Assert — the cached value survives since nothing was deleted
-        var listAfterDelete = await cache.GetOrCreateAsync(
+        var listAfterDelete = await cache.GetOrSetAsync(
             listCacheKey,
-            _ => ValueTask.FromResult("fresh-list"),
-            cancellationToken: ct);
+            _ => Task.FromResult("fresh-list"),
+            token: ct);
         listAfterDelete.ShouldBe("cached-list");
     }
 }
