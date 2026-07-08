@@ -98,7 +98,14 @@
                         </div>
                         <div class="hero-body">
                             <div class="hero-featured-tag">&#11088; Latest</div>
-                            <div class="hero-date">@hero.PublishDateUtc.ToString("MMMM d, yyyy")</div>
+                            <div class="hero-meta-row">
+                                <div class="hero-date">@hero.PublishDateUtc.ToString("MMMM d, yyyy")</div>
+                                <AuthorizeView Policy="@Permissions.CanManageArticlesPolicyName">
+                                    <Authorized>
+                                        <ArticleStatusBadge PublicationStatus="@hero.PublicationStatus" PublishDateUtc="@hero.PublishDateUtc" />
+                                    </Authorized>
+                                </AuthorizeView>
+                            </div>
                             <h2 class="hero-title">@hero.Title</h2>
                             <p class="hero-excerpt">@hero.Excerpt</p>
                             <span class="neba-btn neba-btn-primary" style="width: fit-content;">

@@ -136,6 +136,35 @@ public sealed class ArticleCardTests : IDisposable
         cut.Find("button.icon-btn").ShouldNotBeNull();
     }
 
+    [Fact(DisplayName = "Should not render status badge when user lacks CanManageArticles permission")]
+    public void Render_ShouldNotShowStatusBadge_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var article = ArticleSummaryResponseFactory.Create();
+
+        // Act
+        var cut = _ctx.Render<ArticleCard>(p => p.Add(x => x.Article, article));
+
+        // Assert
+        cut.FindAll("span.article-status-badge").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should render status badge when user has CanManageArticles permission")]
+    public void Render_ShouldShowStatusBadge_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.CanManageArticlesPolicyName);
+        var article = ArticleSummaryResponseFactory.Create();
+
+        // Act
+        var cut = _ctx.Render<ArticleCard>(p => p.Add(x => x.Article, article));
+
+        // Assert
+        cut.Find("span.article-status-badge").ShouldNotBeNull();
+    }
+
     [Fact(DisplayName = "Should invoke OnDeleteRequested with the article when delete button is clicked")]
     public void Click_ShouldInvokeOnDeleteRequestedWithArticle_WhenDeleteButtonIsClicked()
     {

@@ -80,7 +80,14 @@ else if (_article is not null)
                     </div>
                 }
 
-                <div class="news-detail-date">@_article.PublishDateUtc.ToString("MMMM d, yyyy")</div>
+                <div class="news-detail-meta-row">
+                    <div class="news-detail-date">@_article.PublishDateUtc.ToString("MMMM d, yyyy")</div>
+                    <AuthorizeView Policy="@Permissions.CanManageArticlesPolicyName">
+                        <Authorized>
+                            <ArticleStatusBadge PublicationStatus="@_article.PublicationStatus" PublishDateUtc="@_article.PublishDateUtc" />
+                        </Authorized>
+                    </AuthorizeView>
+                </div>
                 <h1 class="news-detail-title">@_article.Title</h1>
 
                 <div class="news-detail-body article-body">

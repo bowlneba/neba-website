@@ -314,6 +314,39 @@ public sealed class NewsListTests : IDisposable
             Times.Once);
     }
 
+    // ── Status badge ─────────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not show status badge on hero when user lacks CanManageArticles permission")]
+    public void Render_ShouldNotShowHeroStatusBadge_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var articles = ArticleSummaryResponseFactory.Bogus(2, 30);
+        SetupSuccessResponse(articles, totalItems: 2);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.FindAll("span.article-status-badge").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show status badge on hero when user has CanManageArticles permission")]
+    public void Render_ShouldShowHeroStatusBadge_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.CanManageArticlesPolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(1, 31);
+        SetupSuccessResponse(articles, totalItems: 1);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.Find("span.article-status-badge").ShouldNotBeNull();
+    }
+
     // ── Delete flow ──────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should not show delete icon on cards when user lacks DeleteArticle permission")]

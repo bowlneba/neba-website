@@ -336,6 +336,39 @@ public sealed class NewsDetailTests : IDisposable
         cut.Markup.ShouldContain("Unavailable");
     }
 
+    // ── Status badge ─────────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not show status badge when user lacks CanManageArticles permission")]
+    public void Render_ShouldNotShowStatusBadge_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var article = ArticleDetailResponseFactory.Create();
+        SetupSuccessResponse(article);
+
+        // Act
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Assert
+        cut.FindAll("span.article-status-badge").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show status badge when user has CanManageArticles permission")]
+    public void Render_ShouldShowStatusBadge_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.CanManageArticlesPolicyName);
+        var article = ArticleDetailResponseFactory.Create();
+        SetupSuccessResponse(article);
+
+        // Act
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Assert
+        cut.Find("span.article-status-badge").ShouldNotBeNull();
+    }
+
     // ── Sidebar: Danger zone / delete ─────────────────────────────────────────
 
     [Fact(DisplayName = "Should not show delete button when user lacks DeleteArticle permission")]

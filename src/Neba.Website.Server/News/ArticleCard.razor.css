@@ -30,6 +30,13 @@
     gap: 0.3rem;
 }
 
+.card-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
 .card-date {
     font-size: 0.72rem;
     font-weight: 600;
