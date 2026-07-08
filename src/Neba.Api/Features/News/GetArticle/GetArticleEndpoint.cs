@@ -8,6 +8,7 @@ using FastEndpoints.AspVersioning;
 using Neba.Api.Contracts.News.GetArticle;
 using Neba.Api.Contracts.Security;
 using Neba.Api.Messaging;
+
 using PermissionsScope = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Features.News.GetArticle;
@@ -39,7 +40,7 @@ internal sealed class GetArticleEndpoint(
 
     public override async Task HandleAsync(GetArticleRequest req, CancellationToken ct)
     {
-        var result = await _queryHandler.HandleAsync(new GetArticleQuery 
+        var result = await _queryHandler.HandleAsync(new GetArticleQuery
         {
             Slug = req.Slug,
             CallerHasArticleManagementPermission = User.HasAnyPermission(PermissionsScope.ArticleManagementPermissions)

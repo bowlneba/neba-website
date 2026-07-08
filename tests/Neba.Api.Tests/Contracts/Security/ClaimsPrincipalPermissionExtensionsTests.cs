@@ -1,4 +1,5 @@
 using System.Security.Claims;
+
 using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
 

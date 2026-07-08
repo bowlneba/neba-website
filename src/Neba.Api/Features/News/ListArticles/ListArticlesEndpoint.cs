@@ -7,6 +7,7 @@ using Neba.Api.Contracts;
 using Neba.Api.Contracts.News.ListArticles;
 using Neba.Api.Contracts.Security;
 using Neba.Api.Messaging;
+
 using PermissionsScope = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Features.News.ListArticles;
