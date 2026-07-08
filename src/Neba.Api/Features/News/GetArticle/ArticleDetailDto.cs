@@ -19,6 +19,11 @@ public sealed record ArticleDetailDto
     public required string Slug { get; init; }
 
     /// <summary>
+    /// Gets the publication status of the article, which indicates whether the article is published, draft, or archived. This status is used to control the visibility and accessibility of the article in the application.
+    /// </summary>
+    public required PublicationStatus PublicationStatus { get; init; }
+
+    /// <summary>
     /// The title of the news article. This is a required field and should be a concise summary of the article's content. The title is used for display purposes on the website and should be unique enough to distinguish it from other articles. It is also used in the generation of the article's slug for SEO-friendly URLs.
     /// </summary>
     public required string Title { get; init; }

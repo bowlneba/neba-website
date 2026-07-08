@@ -18,6 +18,11 @@ public sealed record ArticleSummaryDto
     public required string Slug { get; init; }
 
     /// <summary>
+    /// Gets the publication status of the article, which indicates whether the article is published, draft, or archived. This status is used to control the visibility and accessibility of the article in the application.
+    /// </summary>
+    public required PublicationStatus PublicationStatus { get; init; }
+
+    /// <summary>
     /// Gets the title of the article, which is a brief and descriptive heading that summarizes the content of the article.
     /// </summary>
     public required string Title { get; init; }

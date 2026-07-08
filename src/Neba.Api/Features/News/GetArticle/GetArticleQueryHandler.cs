@@ -31,6 +31,7 @@ internal sealed class GetArticleQueryHandler(
             {
                 article.Id,
                 article.Slug,
+                article.PublicationStatus,
                 article.Title,
                 article.Content,
                 HeaderImageContainer = article.HeaderImage != null ? article.HeaderImage.Container : null,
@@ -62,6 +63,7 @@ internal sealed class GetArticleQueryHandler(
         {
             Id = row.Id,
             Slug = row.Slug,
+            PublicationStatus = row.PublicationStatus,
             Title = row.Title,
             Content = row.Content,
             HeaderImageUrl = headerImageUrl,

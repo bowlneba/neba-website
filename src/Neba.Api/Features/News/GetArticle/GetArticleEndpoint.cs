@@ -64,6 +64,7 @@ internal sealed class GetArticleEndpoint(
         {
             ArticleId = dto.Id.Value.ToString(),
             Slug = dto.Slug,
+            PublicationStatus = dto.PublicationStatus.Name,
             Title = dto.Title,
             Content = dto.Content,
             HeaderImageUrl = dto.HeaderImageUrl,

@@ -14,6 +14,7 @@ public static class ArticleDetailDtoFactory
     public static ArticleDetailDto Create(
         ArticleId? id = null,
         string? slug = null,
+        PublicationStatus? publicationStatus = null,
         string? title = null,
         string? content = null,
         Uri? headerImageUrl = null,
@@ -24,6 +25,7 @@ public static class ArticleDetailDtoFactory
         {
             Id = id ?? ArticleId.New(),
             Slug = slug ?? ValidSlug,
+            PublicationStatus = publicationStatus ?? PublicationStatus.Published,
             Title = title ?? ValidTitle,
             Content = content ?? ValidContent,
             HeaderImageUrl = headerImageUrl,
@@ -42,6 +44,7 @@ public static class ArticleDetailDtoFactory
             {
                 Id = new ArticleId(Ulid.BogusString(faker)),
                 Slug = string.Join("-", faker.Lorem.Words(4)),
+                PublicationStatus = faker.PickRandom(PublicationStatus.List.ToArray()),
                 Title = faker.Random.Words(4),
                 Content = faker.Lorem.Paragraphs(2),
                 HeaderImageUrl = hasHeaderImage ? new Uri(faker.Internet.Url()) : null,

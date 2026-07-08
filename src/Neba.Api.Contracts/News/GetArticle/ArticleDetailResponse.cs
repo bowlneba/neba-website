@@ -16,6 +16,11 @@ public sealed record ArticleDetailResponse
     public required string Slug { get; init; }
 
     /// <summary>
+    /// The publication status of the article, which indicates whether the article is published, draft, or archived. This status is used to control the visibility and accessibility of the article in the application.
+    /// </summary>
+    public required string PublicationStatus { get; init; }
+
+    /// <summary>
     /// The title of the article.
     /// </summary>
     public required string Title { get; init; }

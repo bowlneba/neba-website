@@ -1,27 +1,19 @@
 ﻿{
   ArticleId: 01JS4X26NHQABAW16D7ECRD7JP,
   Slug: quas-voluptatem-vel-quaerat,
-  Title: Antigua and Barbuda multi-byte platforms Handcrafted,
+  PublicationStatus: Published,
+  Title: Toys, Tools & Games Handcrafted haptic Handmade Wooden Salad,
   Content:
-Ipsa quo ratione et eligendi sint amet. Nemo qui qui. Sed aut placeat. Voluptatem accusantium ab dolor fuga fugit. Est nostrum est qui. Id sint ab.
+Amet ipsa nemo qui qui alias sed. Placeat eum voluptatem accusantium ab dolor fuga fugit magnam. Nostrum est qui quae id sint ab quam nihil. Eius perferendis commodi ut quasi porro quasi laudantium. Quibusdam odio excepturi.
 
-Et eius perferendis commodi ut quasi porro quasi. Aut quibusdam odio excepturi et aut. Perferendis alias veritatis et aperiam repudiandae non praesentium autem. Quae quis qui iusto autem provident in.,
+Eum perferendis alias. Et aperiam repudiandae. Praesentium autem et quae quis qui iusto autem provident in. Et officia id sit aut.,
   PublishDateUtc: DateTimeOffset_1,
+  TournamentId: 01GPXHEJ3DG0WBBFN0C05ZGJGQ,
   Attachments: [
     {
-      DisplayName: Rue Industrial, Garden & Clothing,
-      ContentType: application/vnd.igloader,
-      Url: http://beatrice.info
-    },
-    {
-      DisplayName: hack Concrete,
-      ContentType: audio/l16,
-      Url: https://jonas.org
-    },
-    {
-      DisplayName: payment knowledge user,
-      ContentType: application/vnd.intu.qfx,
-      Url: https://mac.com
+      DisplayName: Chilean Peso Practical,
+      ContentType: application/rdap+json,
+      Url: http://oral.com
     }
   ]
 }

@@ -35,6 +35,7 @@ internal sealed partial class ListArticlesQueryHandler(
             {
                 article.Id,
                 article.Slug,
+                article.PublicationStatus,
                 article.Title,
                 article.Content,
                 HeaderImageContainer = article.HeaderImage != null ? article.HeaderImage.Container : null,
@@ -51,6 +52,7 @@ internal sealed partial class ListArticlesQueryHandler(
             {
                 Id = row.Id,
                 Slug = row.Slug,
+                PublicationStatus = row.PublicationStatus,
                 Title = row.Title,
                 Excerpt = BuildExcerpt(row.Content),
                 HeaderImageUrl = row.HeaderImageContainer != null && row.HeaderImagePath != null

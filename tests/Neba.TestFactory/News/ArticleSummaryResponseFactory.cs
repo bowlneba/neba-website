@@ -1,4 +1,5 @@
 using Neba.Api.Contracts.News.ListArticles;
+using Neba.Api.Features.News.Domain;
 
 namespace Neba.TestFactory.News;
 
@@ -12,6 +13,7 @@ public static class ArticleSummaryResponseFactory
     public static ArticleSummaryResponse Create(
         string? articleId = null,
         string? slug = null,
+        PublicationStatus? publicationStatus = null,
         string? title = null,
         string? excerpt = null,
         Uri? headerImageUrl = null,
@@ -20,6 +22,7 @@ public static class ArticleSummaryResponseFactory
         {
             ArticleId = articleId ?? Ulid.NewUlid().ToString(),
             Slug = slug ?? ValidSlug,
+            PublicationStatus = publicationStatus?.Name ?? PublicationStatus.Published.Name,
             Title = title ?? ValidTitle,
             Excerpt = excerpt ?? ValidExcerpt,
             HeaderImageUrl = headerImageUrl,
@@ -39,6 +42,7 @@ public static class ArticleSummaryResponseFactory
 #pragma warning disable CA1308
                 Slug = title.ToLowerInvariant().Replace(' ', '-'),
 #pragma warning restore CA1308
+                PublicationStatus = faker.PickRandom(PublicationStatus.List.ToArray()).Name,
                 Title = title,
                 Excerpt = faker.Lorem.Sentence(),
                 HeaderImageUrl = hasImage ? new Uri(faker.Internet.Avatar()) : null,
