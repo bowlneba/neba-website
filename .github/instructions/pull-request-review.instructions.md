@@ -479,6 +479,33 @@ Suggest E2E tests for:
 
 ---
 
+## User Help Documentation
+
+Every user-facing command or feature must ship with a help doc at `docs/help/<feature-or-command-name>.md`. See [ADR-0007](../../docs/adr/0007-in-repo-user-help-documentation.md) for the rationale and required structure.
+
+Flag when:
+
+- A new user-facing command (endpoint + UI that an admin or end user directly triggers, e.g. create/update/delete actions) is added without a corresponding new file under `docs/help/`
+- An existing documented command's UI changes (new steps, new fields, different flow) but its `docs/help/*.md` file and screenshots aren't updated to match
+- A help doc is missing prerequisites (required role/permission), numbered steps, or at least one screenshot per distinct UI state
+- Screenshots are added ad hoc instead of via the project's Playwright screenshot-generation flow (see ADR-0007) — inconsistent screenshot sourcing makes them hard to regenerate later
+
+**Do NOT flag** purely internal/background changes (e.g. a background job, an internal refactor, an API-only change with no direct UI trigger) for missing help docs — this requirement applies to user-triggered commands only.
+
+## Policy Documentation
+
+Every authorization policy must have an entry in `docs/policies/README.md`. See [ADR-0008](../../docs/adr/0008-policy-documentation-structure.md) for the rationale and required structure.
+
+Flag when:
+
+- A new policy (a new `AddPolicy(...)` call in `SecurityConfiguration.cs` / `AccountConfiguration.cs`) is added without a corresponding row in `docs/policies/README.md`
+- A policy with real behavioral nuance (OR/AND-of-many permission semantics, exceptions) doesn't have a dedicated `docs/policies/<policy-name>.md` file linked from its README row
+- An existing policy's semantics change (e.g. a permission added to a policy's OR-set) but its `docs/policies/` entry isn't updated to match
+
+**Do NOT flag** the dynamic per-permission `Permission:{value}` policies individually — they're covered collectively by the single README row describing the mechanism, not one row per permission value.
+
+---
+
 ## Code Style & Conventions
 
 ### C# Language Features
@@ -646,3 +673,13 @@ When reviewing, verify:
 ### Blazor
 
 - [ ] Blazor components don't fetch data directly
+
+### User Help Documentation
+
+- [ ] New user-facing commands have a corresponding `docs/help/*.md` file ([ADR-0007](../../docs/adr/0007-in-repo-user-help-documentation.md))
+- [ ] Changes to a documented command's UI are reflected in its help doc and screenshots
+
+### Policy Documentation
+
+- [ ] New authorization policies have a row in `docs/policies/README.md` ([ADR-0008](../../docs/adr/0008-policy-documentation-structure.md))
+- [ ] Policies with OR/AND-of-many or otherwise non-trivial semantics have a dedicated `docs/policies/<policy-name>.md` file
