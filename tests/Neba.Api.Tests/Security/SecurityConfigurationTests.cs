@@ -14,6 +14,7 @@ using Neba.Api.Database;
 using Neba.Api.Security;
 using Neba.Api.Security.Domain;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Infrastructure;
 
 using Npgsql;
 
@@ -21,8 +22,15 @@ namespace Neba.Api.Tests.Security;
 
 [IntegrationTest]
 [Component("Security")]
-public sealed class SecurityConfigurationTests
+[Collection<SecurityDbContextFixture>]
+public sealed class SecurityConfigurationTests(SecurityDbContextFixture fixture) : IClassFixture<SecurityDbContextFixture>, IAsyncLifetime
 {
+    public async ValueTask InitializeAsync()
+        => await fixture.ResetAsync();
+
+    public ValueTask DisposeAsync()
+        => ValueTask.CompletedTask;
+
     private static WebApplicationBuilder CreateBuilderWithValidJwtSettings()
     {
         var builder = WebApplication.CreateSlimBuilder();
@@ -40,9 +48,12 @@ public sealed class SecurityConfigurationTests
     public async Task UseSecurityInfrastructure_ShouldReturnSameApp()
     {
         // Arrange
-        var builder = WebApplication.CreateSlimBuilder();
-        builder.Services.AddAuthentication();
-        builder.Services.AddAuthorization();
+        // UseSecurityInfrastructureAsync() seeds roles/permission claims via RoleManager on startup,
+        // which requires AddSecurity()'s full Identity/SecurityDbContext registration against a real
+        // Postgres connection - hence the Testcontainers-backed fixture rather than a bare builder.
+        var builder = CreateBuilderWithValidJwtSettings();
+        builder.Services.AddSingleton(new NpgsqlDataSourceBuilder(fixture.ConnectionString).Build());
+        builder.AddSecurity();
         var app = builder.Build();
 
         // Act

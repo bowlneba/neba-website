@@ -30,7 +30,9 @@ namespace Neba.Api.Tests.Features.News.DeleteArticle;
 [IntegrationTest]
 [Component("News")]
 [SuppressMessage("Design", "CA2213:Disposable fields should be disposed", Justification = "_app is intentionally never disposed - see DisposeAsync.")]
-public sealed class DeleteArticleEndpointAuthorizationTests : IAsyncLifetime
+[Collection<SecurityDbContextFixture>]
+public sealed class DeleteArticleEndpointAuthorizationTests(SecurityDbContextFixture fixture)
+    : IClassFixture<SecurityDbContextFixture>, IAsyncLifetime
 {
     private const string ValidArticleId = "01000000000000000000000001";
 
@@ -39,6 +41,8 @@ public sealed class DeleteArticleEndpointAuthorizationTests : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
+        await fixture.ResetAsync();
+
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseSetting(WebHostDefaults.ServerUrlsKey, "http://127.0.0.1:0");
 
@@ -49,9 +53,10 @@ public sealed class DeleteArticleEndpointAuthorizationTests : IAsyncLifetime
             ["JwtSettings:SigningKey"] = TestAccessTokenFactory.Settings.SigningKey,
         });
 
-        // AddSecurity() registers SecurityDbContext against a NpgsqlDataSource; the connection is
-        // never opened by these tests since no endpoint here touches Identity/SecurityDbContext.
-        builder.Services.AddSingleton(new NpgsqlDataSourceBuilder("Host=localhost;Database=x;Username=y;Password=z").Build());
+        // AddSecurity() registers SecurityDbContext against a NpgsqlDataSource, and
+        // UseSecurityInfrastructureAsync() seeds roles/permission claims via RoleManager on
+        // startup - both require a real Postgres connection, hence the Testcontainers-backed fixture.
+        builder.Services.AddSingleton(new NpgsqlDataSourceBuilder(fixture.ConnectionString).Build());
 
         var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<DeleteArticleCommand, Deleted>>(MockBehavior.Strict);
         commandHandlerMock
