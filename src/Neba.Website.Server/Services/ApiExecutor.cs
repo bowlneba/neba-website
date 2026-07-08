@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Net;
+using System.Net.Http.Headers;
 
 using ErrorOr;
 
@@ -159,6 +162,21 @@ internal sealed class ApiExecutor(
         }
     }
 
+    /// <summary>
+    /// Executes an API call that returns no response body (e.g. a 204 delete), reusing the generic
+    /// overload's activity/metrics/error-mapping logic via a thin <see cref="IApiResponse{T}"/> adapter.
+    /// </summary>
+    public Task<ErrorOr<Success>> ExecuteAsync(
+        string apiName,
+        string operationName,
+        Func<CancellationToken, Task<IApiResponse>> apiCall,
+        CancellationToken cancellationToken = default)
+        => ExecuteAsync<Success>(
+            apiName,
+            operationName,
+            async ct => new SuccessApiResponse(await apiCall(ct)),
+            cancellationToken);
+
     private ErrorOr<TResponse> HandleException<TResponse>(
         string apiName,
         string operationName,
@@ -190,6 +208,36 @@ internal sealed class ApiExecutor(
         );
 
         return Error.Failure($"{apiName}.{operationName}.Exception", ex.Message);
+    }
+
+    /// <summary>
+    /// Adapts a bodyless <see cref="IApiResponse"/> to <see cref="IApiResponse{Success}"/> so the
+    /// non-generic <see cref="ExecuteAsync(string, string, Func{CancellationToken, Task{IApiResponse}}, CancellationToken)"/>
+    /// overload can reuse the generic overload's activity/metrics/error-mapping logic verbatim.
+    /// </summary>
+    private sealed class SuccessApiResponse(IApiResponse inner) : IApiResponse<Success>
+    {
+        public Success Content => Result.Success;
+        public bool HasContent => inner.IsSuccessStatusCode;
+        public bool IsSuccessfulWithContent => inner.IsSuccessStatusCode;
+        public HttpResponseHeaders? Headers => inner.Headers;
+        public HttpContentHeaders? ContentHeaders => inner.ContentHeaders;
+        public bool IsSuccessStatusCode => inner.IsSuccessStatusCode;
+        public bool IsSuccessful => inner.IsSuccessful;
+        public bool IsReceived => inner.IsReceived;
+        public HttpStatusCode? StatusCode => inner.StatusCode;
+        public string? ReasonPhrase => inner.ReasonPhrase;
+        public HttpRequestMessage? RequestMessage => inner.RequestMessage;
+        public Version? Version => inner.Version;
+        public ApiExceptionBase? Error => inner.Error;
+
+        public bool HasRequestError([NotNullWhen(true)] out ApiRequestException? error)
+            => inner.HasRequestError(out error);
+
+        public bool HasResponseError([NotNullWhen(true)] out ApiException? error)
+            => inner.HasResponseError(out error);
+
+        public void Dispose() => inner.Dispose();
     }
 }
 

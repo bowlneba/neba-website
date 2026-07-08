@@ -1,4 +1,5 @@
 using Bunit;
+using Bunit.TestDoubles;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.News;
 using Neba.Api.Contracts.News.ListArticles;
+using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.News;
 using Neba.Website.Server.Clock;
@@ -24,6 +26,7 @@ public sealed class NewsListTests : IDisposable
 {
     private readonly BunitContext _ctx;
     private readonly Mock<INewsApi> _mockApi;
+    private readonly BunitAuthorizationContext _authContext;
 
     public NewsListTests()
     {
@@ -35,6 +38,8 @@ public sealed class NewsListTests : IDisposable
 
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        _authContext = _ctx.AddAuthorization();
+        _authContext.SetNotAuthorized();
 
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
@@ -167,7 +172,7 @@ public sealed class NewsListTests : IDisposable
         cut.Markup.ShouldContain("news-grid");
         foreach (var article in articles.Skip(1))
         {
-            cut.Markup.ShouldContain(article.Title);
+            cut.Markup.ShouldContain(System.Net.WebUtility.HtmlEncode(article.Title));
         }
     }
 
@@ -298,6 +303,121 @@ public sealed class NewsListTests : IDisposable
         _mockApi.Verify(
             x => x.ListArticlesAsync(3, 10, It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    // ── Delete flow ──────────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not show delete icon on cards when user lacks DeleteArticle permission")]
+    public void Render_ShouldNotShowDeleteIcon_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var articles = ArticleSummaryResponseFactory.Bogus(2, 21);
+        SetupSuccessResponse(articles, totalItems: 2, pageNumber: 2);
+        NavigateToPage(2);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.FindAll("button.icon-btn").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show delete icon on cards when user has DeleteArticle permission")]
+    public void Render_ShouldShowDeleteIcon_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(2, 22);
+        SetupSuccessResponse(articles, totalItems: 2, pageNumber: 2);
+        NavigateToPage(2);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.FindAll("button.icon-btn").Count.ShouldBe(2);
+    }
+
+    [Fact(DisplayName = "Should open confirm dialog naming the article when delete icon is clicked")]
+    public void Click_ShouldOpenConfirmDialog_WhenDeleteIconIsClicked()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(1, 23);
+        SetupSuccessResponse(articles, totalItems: 1, pageNumber: 2);
+        NavigateToPage(2);
+        var cut = _ctx.Render<NewsList>();
+
+        // Act
+        cut.Find("button.icon-btn").Click();
+
+        // Assert
+        cut.Markup.ShouldContain("Delete article?");
+        cut.Markup.ShouldContain(System.Net.WebUtility.HtmlEncode(articles.Single().Title));
+    }
+
+    [Fact(DisplayName = "Should remove article from grid when delete succeeds")]
+    public void ConfirmDelete_ShouldRemoveArticleFromGrid_WhenDeleteSucceeds()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(2, 24);
+        var deletedArticle = articles.First();
+        SetupSuccessResponse(articles, totalItems: 2, pageNumber: 2);
+
+        using var deleteResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockApi
+            .Setup(x => x.DeleteArticleAsync(deletedArticle.ArticleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(deleteResponse);
+
+        NavigateToPage(2);
+        var cut = _ctx.Render<NewsList>();
+        cut.FindAll("button.icon-btn")[0].Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        cut.Markup.ShouldNotContain(System.Net.WebUtility.HtmlEncode(deletedArticle.Title));
+    }
+
+    [Fact(DisplayName = "Should show error alert and keep article in grid when delete fails")]
+    public void ConfirmDelete_ShouldShowErrorAlert_WhenDeleteFails()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(1, 25);
+        var targetArticle = articles.Single();
+        SetupSuccessResponse(articles, totalItems: 1, pageNumber: 2);
+
+        using var deleteResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.Forbidden
+        };
+        _mockApi
+            .Setup(x => x.DeleteArticleAsync(targetArticle.ArticleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(deleteResponse);
+
+        NavigateToPage(2);
+        var cut = _ctx.Render<NewsList>();
+        cut.Find("button.icon-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        cut.Markup.ShouldContain("Error Loading Articles");
+        cut.Markup.ShouldContain(System.Net.WebUtility.HtmlEncode(targetArticle.Title));
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

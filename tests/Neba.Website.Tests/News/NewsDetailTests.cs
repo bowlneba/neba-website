@@ -1,10 +1,13 @@
 using Bunit;
+using Bunit.TestDoubles;
 
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Api.Contracts.News;
 using Neba.Api.Contracts.News.GetArticle;
+using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.News;
 using Neba.Website.Server.Clock;
@@ -22,6 +25,7 @@ public sealed class NewsDetailTests : IDisposable
 {
     private readonly BunitContext _ctx;
     private readonly Mock<INewsApi> _mockApi;
+    private readonly BunitAuthorizationContext _authContext;
 
     public NewsDetailTests()
     {
@@ -33,6 +37,8 @@ public sealed class NewsDetailTests : IDisposable
 
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        _authContext = _ctx.AddAuthorization();
+        _authContext.SetNotAuthorized();
 
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
@@ -319,6 +325,117 @@ public sealed class NewsDetailTests : IDisposable
         // Assert
         cut.Markup.ShouldContain("Qualifying Scores");
         cut.Markup.ShouldContain("Unavailable");
+    }
+
+    // ── Sidebar: Danger zone / delete ─────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not show delete button when user lacks DeleteArticle permission")]
+    public void Render_ShouldNotShowDeleteButton_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var article = ArticleDetailResponseFactory.Create();
+        SetupSuccessResponse(article);
+
+        // Act
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Assert
+        cut.Markup.ShouldNotContain("Danger zone");
+    }
+
+    [Fact(DisplayName = "Should show delete button in sidebar when user has DeleteArticle permission")]
+    public void Render_ShouldShowDeleteButton_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var article = ArticleDetailResponseFactory.Create();
+        SetupSuccessResponse(article);
+
+        // Act
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Assert
+        cut.Markup.ShouldContain("Danger zone");
+        cut.Find("button.sidebar-danger-zone-btn").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should open confirm dialog when delete button is clicked")]
+    public void Click_ShouldOpenConfirmDialog_WhenDeleteButtonIsClicked()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var article = ArticleDetailResponseFactory.Create(title: "Season Champions Crowned");
+        SetupSuccessResponse(article);
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Act
+        cut.Find("button.sidebar-danger-zone-btn").Click();
+
+        // Assert
+        cut.Markup.ShouldContain("Delete article?");
+        cut.Markup.ShouldContain("Season Champions Crowned");
+    }
+
+    [Fact(DisplayName = "Should navigate to /news when delete succeeds")]
+    public void ConfirmDelete_ShouldNavigateToNews_WhenDeleteSucceeds()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var article = ArticleDetailResponseFactory.Create();
+        SetupSuccessResponse(article);
+
+        using var deleteResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockApi
+            .Setup(x => x.DeleteArticleAsync(article.ArticleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(deleteResponse);
+
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+        cut.Find("button.sidebar-danger-zone-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
+        navigationManager.Uri.ShouldEndWith("/news");
+    }
+
+    [Fact(DisplayName = "Should show error message and keep dialog result visible when delete fails")]
+    public void ConfirmDelete_ShouldShowErrorMessage_WhenDeleteFails()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var article = ArticleDetailResponseFactory.Create();
+        SetupSuccessResponse(article);
+
+        using var deleteResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.Forbidden
+        };
+        _mockApi
+            .Setup(x => x.DeleteArticleAsync(article.ArticleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(deleteResponse);
+
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+        cut.Find("button.sidebar-danger-zone-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        cut.Markup.ShouldContain("Error Loading Article");
+        var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
+        navigationManager.Uri.ShouldNotEndWith("/news");
     }
 
     // ── API call ─────────────────────────────────────────────────────────────

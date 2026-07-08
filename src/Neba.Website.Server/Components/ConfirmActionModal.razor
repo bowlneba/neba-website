@@ -1,0 +1,39 @@
+<NebaModal IsOpen="@IsOpen" OnClose="@OnCancel" Title="@Title" MaxWidth="480px">
+    <ChildContent>
+        <p>@Message</p>
+    </ChildContent>
+    <FooterContent>
+        <div class="flex justify-end gap-2">
+            <button type="button" class="neba-btn neba-btn-secondary confirm-action-modal-cancel" @onclick="OnCancel" disabled="@IsBusy">@CancelLabel</button>
+            <button type="button" class="neba-btn neba-btn-danger confirm-action-modal-confirm" @onclick="OnConfirm" disabled="@IsBusy">
+                @(IsBusy ? "Deleting..." : ConfirmLabel)
+            </button>
+        </div>
+    </FooterContent>
+</NebaModal>
+
+@code {
+    [Parameter, EditorRequired]
+    public bool IsOpen { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnConfirm { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Message { get; set; } = string.Empty;
+
+    [Parameter]
+    public string ConfirmLabel { get; set; } = "Delete";
+
+    [Parameter]
+    public string CancelLabel { get; set; } = "Cancel";
+
+    [Parameter]
+    public bool IsBusy { get; set; }
+}

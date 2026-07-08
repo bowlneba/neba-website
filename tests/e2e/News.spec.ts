@@ -37,7 +37,7 @@ test.describe('News list page', () => {
   });
 
   test('article cards link to their detail pages', async ({ page }) => {
-    const cards = page.locator('.article-card');
+    const cards = page.locator('.article-card .article-card-link');
     await expect(cards.nth(0)).toHaveAttribute('href', '/news/june-lane-pattern');
     await expect(cards.nth(1)).toHaveAttribute('href', '/news/points-race-update');
   });
@@ -181,5 +181,110 @@ test.describe('News detail page — error state', () => {
     await page.waitForSelector('.neba-alert');
     await expect(page.locator('.neba-alert')).toContainText('Error Loading Article');
     await page.request.post('http://localhost:5151/__mock/reset?path=/news/season-champions-2026');
+  });
+});
+
+test.describe('News list page — delete article (unauthenticated)', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test('does not show a delete icon on article cards', async ({ page }) => {
+    await page.goto('/news');
+    await page.waitForSelector('.news-hero');
+    await expect(page.locator('.article-card button.icon-btn')).toHaveCount(0);
+  });
+});
+
+test.describe('News detail page — delete article (unauthenticated)', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test('does not show the danger zone or delete button', async ({ page }) => {
+    await page.goto('/news/season-champions-2026');
+    await page.waitForSelector('.news-detail-layout');
+    await expect(page.locator('.sidebar-danger-zone')).toHaveCount(0);
+  });
+});
+
+test.describe('News list page — delete article (authenticated)', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test.beforeEach(async ({ page }) => {
+    await page.request.post('/__test/login?permissions=News.DeleteArticle');
+  });
+
+  test('shows a delete icon on article cards', async ({ page }) => {
+    await page.goto('/news');
+    await page.waitForSelector('.news-hero');
+    await expect(page.locator('.article-card button.icon-btn')).toHaveCount(2);
+  });
+
+  test('removes the article card after confirming delete', async ({ page }) => {
+    await page.goto('/news');
+    await page.waitForSelector('.news-hero');
+
+    const cardTitles = page.locator('.article-card .card-title');
+    const deletedTitle = await cardTitles.first().textContent();
+
+    await page.locator('.article-card').first().locator('button.icon-btn').click();
+    await expect(page.locator('.neba-modal-content')).toContainText('Delete article?');
+    await expect(page.locator('.neba-modal-content')).toContainText(deletedTitle ?? '');
+
+    await page.locator('button.confirm-action-modal-confirm').click();
+
+    await expect(page.locator('.article-card')).toHaveCount(1);
+    await expect(page.locator('.article-card .card-title')).not.toContainText(deletedTitle ?? '');
+  });
+
+  test('cancelling the confirm dialog leaves the article in place', async ({ page }) => {
+    await page.goto('/news');
+    await page.waitForSelector('.news-hero');
+
+    await page.locator('.article-card').first().locator('button.icon-btn').click();
+    await expect(page.locator('.neba-modal-content')).toBeVisible();
+
+    await page.locator('button.confirm-action-modal-cancel').click();
+
+    await expect(page.locator('.neba-modal-content')).toHaveCount(0);
+    await expect(page.locator('.article-card')).toHaveCount(2);
+  });
+});
+
+test.describe('News detail page — delete article (authenticated)', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test.beforeEach(async ({ page }) => {
+    await page.request.post('/__test/login?permissions=News.DeleteArticle');
+  });
+
+  test('shows the danger zone delete button', async ({ page }) => {
+    await page.goto('/news/june-lane-pattern');
+    await page.waitForSelector('.news-detail-layout');
+    await expect(page.locator('.sidebar-danger-zone-btn')).toBeVisible();
+  });
+
+  test('navigates back to the news list after confirming delete', async ({ page }) => {
+    await page.goto('/news/june-lane-pattern');
+    await page.waitForSelector('.news-detail-layout');
+
+    await page.locator('.sidebar-danger-zone-btn').click();
+    await expect(page.locator('.neba-modal-content')).toContainText('Delete article?');
+
+    await page.locator('button.confirm-action-modal-confirm').click();
+
+    await expect(page).toHaveURL(/\/news$/);
+  });
+
+  test('shows an error alert and stays on the page when delete fails', async ({ page }) => {
+    await page.request.post('http://localhost:5151/__mock/fail?path=/news/01JX0000000000000000000103&status=403');
+
+    await page.goto('/news/points-race-update');
+    await page.waitForSelector('.news-detail-layout');
+
+    await page.locator('.sidebar-danger-zone-btn').click();
+    await page.locator('button.confirm-action-modal-confirm').click();
+
+    await expect(page.locator('.neba-alert')).toContainText('Error Loading Article');
+    await expect(page).toHaveURL(/\/news\/points-race-update$/);
+
+    await page.request.post('http://localhost:5151/__mock/reset?path=/news/01JX0000000000000000000103');
   });
 });

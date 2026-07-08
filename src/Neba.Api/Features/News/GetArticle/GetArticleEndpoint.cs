@@ -62,6 +62,7 @@ internal sealed class GetArticleEndpoint(
 
         var response = new ArticleDetailResponse
         {
+            ArticleId = dto.Id.Value.ToString(),
             Slug = dto.Slug,
             Title = dto.Title,
             Content = dto.Content,

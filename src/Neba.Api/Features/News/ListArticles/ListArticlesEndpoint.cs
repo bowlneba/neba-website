@@ -41,6 +41,7 @@ internal sealed class ListArticlesEndpoint(IQueryHandler<ListArticlesQuery, Page
         {
             Items = [.. result.Items.Select(a => new ArticleSummaryResponse
             {
+                ArticleId = a.Id.Value.ToString(),
                 Slug = a.Slug,
                 Title = a.Title,
                 Excerpt = a.Excerpt,

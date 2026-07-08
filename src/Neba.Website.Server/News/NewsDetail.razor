@@ -3,11 +3,13 @@
 @using ErrorOr
 @using Neba.Api.Contracts.News
 @using Neba.Api.Contracts.News.GetArticle
+@using Neba.Api.Contracts.Security
 @using Neba.Website.Server.Services
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject ApiExecutor ApiExecutor
 @inject INewsApi NewsApi
+@inject NavigationManager NavigationManager
 @inject ILogger<NewsDetail> Logger
 
 <PageTitle>@(_article?.Title is not null ? _article.Title + " - BowlNEBA" : "News - BowlNEBA")</PageTitle>
@@ -112,6 +114,23 @@ else if (_article is not null)
                             </a>
                         </div>
                     }
+                    <AuthorizeView Policy="@Permissions.DeleteArticle.PolicyName">
+                        <Authorized>
+                            <div class="sidebar-danger-zone">
+                                <div class="sidebar-danger-zone-label">Danger zone</div>
+                                <button type="button" class="neba-btn neba-btn-danger sidebar-danger-zone-btn" @onclick="OpenDeleteConfirm">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M3 6h18" />
+                                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                        <path d="M10 11v6" />
+                                        <path d="M14 11v6" />
+                                    </svg>
+                                    Delete article
+                                </button>
+                            </div>
+                        </Authorized>
+                    </AuthorizeView>
                 </div>
 
                 @if (_article.Attachments.Count > 0)
@@ -153,6 +172,13 @@ else if (_article is not null)
         </div>
 
     </div>
+
+    <ConfirmActionModal IsOpen="@_isDeleteConfirmOpen"
+                         Title="Delete article?"
+                         Message="@($"This permanently removes \"{_article.Title}\" and its images. This can't be undone.")"
+                         IsBusy="@_isDeleteBusy"
+                         OnConfirm="ConfirmDeleteAsync"
+                         OnCancel="@(() => _isDeleteConfirmOpen = false)" />
 }
 
 @code {
@@ -163,6 +189,9 @@ else if (_article is not null)
     private bool _isLoading = true;
     private bool _notFound;
     private string? _errorMessage;
+
+    private bool _isDeleteConfirmOpen;
+    private bool _isDeleteBusy;
 
     private static string GetFileTypeLabel(string contentType) => contentType switch
     {
@@ -202,5 +231,36 @@ else if (_article is not null)
         }
 
         _article = result.Value;
+    }
+
+    private void OpenDeleteConfirm()
+    {
+        _isDeleteConfirmOpen = true;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_article is null)
+        {
+            return;
+        }
+
+        _isDeleteBusy = true;
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "News",
+            "DeleteArticle",
+            ct => NewsApi.DeleteArticleAsync(_article.ArticleId, ct));
+
+        _isDeleteBusy = false;
+
+        if (result.IsError)
+        {
+            _isDeleteConfirmOpen = false;
+            _errorMessage = result.FirstError.Description;
+            return;
+        }
+
+        NavigationManager.NavigateTo("/news");
     }
 }

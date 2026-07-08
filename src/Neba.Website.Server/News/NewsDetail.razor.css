@@ -132,6 +132,27 @@
     justify-content: space-between;
 }
 
+/* ─── Danger zone ────────────────────────────────────────── */
+.sidebar-danger-zone {
+    padding: 0.75rem 1rem;
+    border-top: 1px dashed var(--neba-border, #CCCCCC);
+}
+
+.sidebar-danger-zone-label {
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--neba-accent-red, #CC080A);
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-danger-zone-btn {
+    width: 100%;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
 /* ─── File list ──────────────────────────────────────────── */
 .sidebar-files-body {
     padding: 0.25rem 0.75rem;

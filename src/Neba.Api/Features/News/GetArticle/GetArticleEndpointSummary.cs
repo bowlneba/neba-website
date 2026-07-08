@@ -19,6 +19,7 @@ internal sealed class GetArticleEndpointSummary
             contentType: MediaTypeNames.Application.Json,
             example: new ArticleDetailResponse
             {
+                ArticleId = "01J7ZK8X6ZQJ8V3F8N9T9C9R2E",
                 Slug = "spring-2026-results",
                 Title = "Spring 2026 Tournament Results",
                 Content = "<p>The Spring 2026 season wrapped up with an exciting finals...</p>",

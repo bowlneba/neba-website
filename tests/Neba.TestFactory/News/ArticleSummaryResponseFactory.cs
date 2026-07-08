@@ -10,6 +10,7 @@ public static class ArticleSummaryResponseFactory
     public static readonly DateTimeOffset ValidPublishDateUtc = new(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
     public static ArticleSummaryResponse Create(
+        string? articleId = null,
         string? slug = null,
         string? title = null,
         string? excerpt = null,
@@ -17,6 +18,7 @@ public static class ArticleSummaryResponseFactory
         DateTimeOffset? publishDateUtc = null)
         => new()
         {
+            ArticleId = articleId ?? Ulid.NewUlid().ToString(),
             Slug = slug ?? ValidSlug,
             Title = title ?? ValidTitle,
             Excerpt = excerpt ?? ValidExcerpt,
@@ -33,6 +35,7 @@ public static class ArticleSummaryResponseFactory
             var hasImage = faker.Random.Bool();
             return new ArticleSummaryResponse
             {
+                ArticleId = Ulid.BogusString(faker),
 #pragma warning disable CA1308
                 Slug = title.ToLowerInvariant().Replace(' ', '-'),
 #pragma warning restore CA1308

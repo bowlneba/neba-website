@@ -47,6 +47,11 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 app.UseAuthentication();
 app.UseAuthorization();
 
+if (app.Environment.IsDevelopment())
+{
+    app.MapTestAuthEndpoints();
+}
+
 app.UseAntiforgery();
 
 app.UseOutputCache();

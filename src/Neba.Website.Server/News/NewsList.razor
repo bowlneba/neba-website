@@ -111,7 +111,7 @@
                     <div class="news-grid">
                         @foreach (var article in _articles.Items.Skip(1))
                         {
-                            <ArticleCard Article="@article" />
+                            <ArticleCard Article="@article" OnDeleteRequested="RequestDelete" />
                         }
                     </div>
                 }
@@ -121,7 +121,7 @@
                 <div class="news-grid">
                     @foreach (var article in _articles.Items)
                     {
-                        <ArticleCard Article="@article" />
+                        <ArticleCard Article="@article" OnDeleteRequested="RequestDelete" />
                     }
                 </div>
             }
@@ -156,6 +156,13 @@
 
 </div>
 
+<ConfirmActionModal IsOpen="@_isDeleteConfirmOpen"
+                     Title="Delete article?"
+                     Message="@(_articlePendingDelete is null ? string.Empty : $"This permanently removes \"{_articlePendingDelete.Title}\" and its images. This can't be undone.")"
+                     IsBusy="@_isDeleteBusy"
+                     OnConfirm="ConfirmDeleteAsync"
+                     OnCancel="CancelDelete" />
+
 @code {
     [Parameter, SupplyParameterFromQuery(Name = "page")]
     public int? Page { get; set; }
@@ -165,6 +172,10 @@
     private PaginationResponse<ArticleSummaryResponse>? _articles;
     private bool _isLoading = true;
     private string? _errorMessage;
+
+    private ArticleSummaryResponse? _articlePendingDelete;
+    private bool _isDeleteConfirmOpen;
+    private bool _isDeleteBusy;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -186,5 +197,54 @@
         }
 
         _articles = result.Value;
+    }
+
+    private void RequestDelete(ArticleSummaryResponse article)
+    {
+        _articlePendingDelete = article;
+        _isDeleteConfirmOpen = true;
+    }
+
+    private void CancelDelete()
+    {
+        _isDeleteConfirmOpen = false;
+        _articlePendingDelete = null;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_articlePendingDelete is null)
+        {
+            return;
+        }
+
+        _isDeleteBusy = true;
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "News",
+            "DeleteArticle",
+            ct => NewsApi.DeleteArticleAsync(_articlePendingDelete.ArticleId, ct));
+
+        _isDeleteBusy = false;
+        _isDeleteConfirmOpen = false;
+
+        if (result.IsError)
+        {
+            _errorMessage = result.FirstError.Description;
+            _articlePendingDelete = null;
+            return;
+        }
+
+        var deletedArticleId = _articlePendingDelete.ArticleId;
+        _articlePendingDelete = null;
+
+        if (_articles is not null)
+        {
+            _articles = _articles with
+            {
+                Items = [.. _articles.Items.Where(a => a.ArticleId != deletedArticleId)],
+                TotalItems = Math.Max(0, _articles.TotalItems - 1),
+            };
+        }
     }
 }

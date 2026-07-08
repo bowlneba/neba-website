@@ -1,6 +1,7 @@
 ﻿{
   Items: [
     {
+      ArticleId: 01FY05KFZNKSBF1BDZ79QVEK95,
       Slug: deposit-granite-gorgeous-metal-hat,
       Title: deposit Granite Gorgeous Metal Hat,
       Excerpt: Voluptatem sunt nihil illum ut ipsa.,
@@ -8,6 +9,7 @@
       PublishDateUtc: DateTimeOffset_1
     },
     {
+      ArticleId: 01GZ4J43X2VEQF4W6WJM2GJVK7,
       Slug: international-cocos-(keeling)-islands-incredible-rubber-bacon,
       Title: International Cocos (Keeling) Islands Incredible Rubber Bacon,
       Excerpt: Nostrum est qui quae id sint ab quam nihil.,
@@ -15,6 +17,7 @@
       PublishDateUtc: DateTimeOffset_2
     },
     {
+      ArticleId: 01HDAFPG0HN2QQ4XK3MY0KETC1,
       Slug: computers-&-movies-protocol-branch,
       Title: Computers & Movies protocol Branch,
       Excerpt: Praesentium autem et quae quis qui iusto autem provident in.,
