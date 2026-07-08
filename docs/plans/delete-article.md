@@ -59,19 +59,24 @@ New folder: `src/Neba.Api/Features/News/DeleteArticle/`
 
 ## Phase 2 — Background job for blob cleanup
 
-### 2a. `DeleteArticleFilesJob`
+> **Status**: `DeleteArticleFilesJob` and `StoredFileReference` already exist in `src/Neba.Api/Features/News/DeleteArticle/`. `DeleteArticleCommandHandler` deletes the article row and invalidates cache but does **not** yet enqueue the cleanup job. What remains: the job handler, wiring the handler's enqueue call into the command handler, and registration (which is automatic — see below).
 
-New folder: `src/Neba.Api/Features/News/DeleteArticle/` (co-located with the command) or a shared `src/Neba.Api/Features/News/Jobs/` — **decide based on whether other News background jobs are anticipated**; if this is the only one, co-locate with `DeleteArticleCommand`.
-
-Per your answered question: **one job, takes a collection of files.**
+### 2a. `DeleteArticleFilesJob` (done)
 
 ```csharp
-public sealed record DeleteArticleFilesJob : IBackgroundJob
+// src/Neba.Api/Features/News/DeleteArticle/DeleteArticleFilesJob.cs
+public sealed record DeleteArticleFilesJob
+    : IBackgroundJob
 {
     public required IReadOnlyCollection<StoredFileReference> Files { get; init; }
-    public string JobName => $"DeleteArticleFiles: {Files.Count} file(s)";
-}
 
+    public string JobName
+        => $"{nameof(DeleteArticleFilesJob)}: {Files.Count} file(s)";
+}
+```
+
+```csharp
+// src/Neba.Api/Features/News/DeleteArticle/StoredFileReference.cs
 public sealed record StoredFileReference
 {
     public required string Container { get; init; }
@@ -79,61 +84,300 @@ public sealed record StoredFileReference
 }
 ```
 
-(`StoredFileReference` needed because `StoredFile` the domain value object may not be directly serializable/appropriate to pass through Hangfire's job storage — confirm whether `StoredFile` itself is already a simple serializable record and can be reused directly instead of introducing a parallel type.)
+`StoredFileReference` is a deliberate parallel type, not a reuse of the domain `StoredFile` value object (`Neba.Api.Features.Storage.Domain.StoredFile`) — `DeleteArticleCommandHandler` lives in `Neba.Api.Features.News`, and domain value objects from `Storage` shouldn't be threaded through Hangfire's job-storage serialization as a cross-feature contract. `StoredFileReference` is projected from `StoredFile.Container`/`StoredFile.Path` at the call site (2c).
 
-### 2b. `DeleteArticleFilesJobHandler`
+### 2b. `DeleteArticleFilesJobHandler` (to build)
 
-- `IBackgroundJobHandler<DeleteArticleFilesJob>`.
-- Loop through `job.Files`, call `_fileStorageService.DeleteAsync(file.Container, file.Path, ct)` for each.
-- Decide error handling for partial failure: log and continue (best-effort, matches "we don't need to worry about" tone from your Phase-1 scoping) vs. fail the whole job on first exception (Hangfire would then retry the *whole* job, re-attempting already-deleted files — `DeleteAsync` should be idempotent/no-op on a missing blob, confirm `AzureBlobStorageService.DeleteAsync` doesn't throw on not-found). **Recommendation**: catch per-file, log a warning per failure, don't rethrow — since this is best-effort cleanup after the article record is already gone; a stuck orphaned blob is a minor issue, not worth blocking/retrying the whole job indefinitely.
-- Add `[LoggerMessage]` partials + a small metrics class, matching `SyncDocumentToStorageJobHandler`'s shape (`SyncDocumentToStorageMetrics` as the template) if you want parity — **optional, ask whether full OTel/metrics parity is warranted for this job or if plain logging suffices** (it's a much simpler job than document sync).
+New file: `src/Neba.Api/Features/News/DeleteArticle/DeleteArticleFilesJobHandler.cs`
 
-### 2c. Wire into `DeleteArticleCommandHandler`
+Kept lean — plain `[LoggerMessage]` logging, no dedicated metrics class. This is a much simpler job than `SyncDocumentToStorageJobHandler` (no external API call, no OTel activity tags beyond what Hangfire itself records); metrics parity isn't worth the extra ceremony here. Per-file failures are caught and logged, not rethrown — this is best-effort cleanup running after the article row is already gone, so a stuck orphaned blob is a minor, non-blocking issue. `IFileStorageService.DeleteAsync` already no-ops on a missing blob (confirmed via `AzureBlobStorageService`'s use of `BlobClient.DeleteIfExistsAsync`), so a retry of the whole job would also be safe if that approach were used instead — but per-file catch is still preferred so one bad file doesn't block cleanup of the rest.
 
-- Before deleting the article row, capture the header image + all attachments' `StoredFile` (Container/Path) — you specifically called out "we will need to do a get beforehand to get the attachment/header file details," meaning: don't rely on the entity still being in memory/tracked after `SaveChangesAsync` if there's any risk of it being detached — but since we already loaded `article` as tracked in 1c to delete it, we already have `article.HeaderImage` and `article.Attachments` in memory before deletion. Confirm no extra "get" query is actually needed beyond the load already done in 1c — likely your "get beforehand" instinct is satisfied by the existing tracked load, not a second round-trip.
-- After `SaveChangesAsync` succeeds, build the file list (header image if non-null, each attachment's `File`) and `backgroundJobScheduler.Enqueue(new DeleteArticleFilesJob { Files = [...] })`.
-- If `article` was null (not-found case), skip the enqueue entirely — nothing to clean up.
+```csharp
+using Neba.Api.BackgroundJobs;
+using Neba.Api.Storage;
+
+namespace Neba.Api.Features.News.DeleteArticle;
+
+internal sealed class DeleteArticleFilesJobHandler(
+    IFileStorageService fileStorageService,
+    ILogger<DeleteArticleFilesJobHandler> logger)
+        : IBackgroundJobHandler<DeleteArticleFilesJob>
+{
+    private readonly IFileStorageService _fileStorageService = fileStorageService;
+    private readonly ILogger<DeleteArticleFilesJobHandler> _logger = logger;
+
+    public async Task ExecuteAsync(DeleteArticleFilesJob job, CancellationToken cancellationToken)
+    {
+        foreach (var file in job.Files)
+        {
+            try
+            {
+                await _fileStorageService.DeleteAsync(file.Container, file.Path, cancellationToken);
+
+                _logger.LogDeletedArticleFile(file.Container, file.Path);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogFailedToDeleteArticleFile(ex, file.Container, file.Path);
+            }
+        }
+    }
+}
+
+internal static partial class DeleteArticleFilesJobLogMessages
+{
+    [LoggerMessage(
+        Level = LogLevel.Debug,
+        Message = "Deleted article file '{Path}' from container '{Container}'.")]
+    public static partial void LogDeletedArticleFile(
+        this ILogger<DeleteArticleFilesJobHandler> logger,
+        string container,
+        string path);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Failed to delete article file '{Path}' from container '{Container}'.")]
+    public static partial void LogFailedToDeleteArticleFile(
+        this ILogger<DeleteArticleFilesJobHandler> logger,
+        Exception ex,
+        string container,
+        string path);
+}
+```
+
+`catch (Exception ex)` here is an intentional broad catch — matches the "always log a caught exception before swallowing" convention. No custom `[BackgroundJobsAssembly]`/interface registration is needed: `BackgroundJobsConfiguration.AddBackgroundJobs` already Scrutor-scans `IBackgroundJobHandler<>` implementations in the `Neba.Api` assembly and registers them scoped — this handler is picked up automatically once it exists.
+
+### 2c. Wire into `DeleteArticleCommandHandler` (to build)
+
+The tracked `article` loaded in Phase 1 already has `HeaderImage` and `Attachments` in memory before deletion — no second "get" query is needed. Build the file list from that same instance, after `SaveChangesAsync` succeeds, and enqueue. Include inline attachments too — they're still blobs in storage even though `GetArticleQueryHandler`'s response DTO filters them out of the "attachments" list shown in the UI.
+
+```csharp
+// src/Neba.Api/Features/News/DeleteArticle/DeleteArticleCommandHandler.cs
+using ErrorOr;
+
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
+
+using Neba.Api.BackgroundJobs;
+using Neba.Api.Database;
+using Neba.Api.Messaging;
+
+namespace Neba.Api.Features.News.DeleteArticle;
+
+internal sealed class DeleteArticleCommandHandler(
+    AppDbContext appDbContext,
+    HybridCache cache,
+    IBackgroundJobScheduler backgroundJobScheduler)
+        : ICommandHandler<DeleteArticleCommand, Deleted>
+{
+    public async Task<ErrorOr<Deleted>> HandleAsync(DeleteArticleCommand command, CancellationToken cancellationToken)
+    {
+        var article = await appDbContext.Articles
+            .SingleOrDefaultAsync(a => a.Id == command.ArticleId, cancellationToken);
+
+        if (article is null)
+        {
+            return Result.Deleted;
+        }
+
+        var filesToDelete = BuildFileReferences(article);
+
+        appDbContext.Articles.Remove(article);
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await cache.RemoveByTagAsync("neba:news:articles", cancellationToken);
+        await cache.RemoveByTagAsync($"neba:news:{article.Slug}", cancellationToken);
+
+        if (filesToDelete.Count > 0)
+        {
+            backgroundJobScheduler.Enqueue(new DeleteArticleFilesJob { Files = filesToDelete });
+        }
+
+        return Result.Deleted;
+    }
+
+    private static List<StoredFileReference> BuildFileReferences(Domain.Article article)
+    {
+        List<StoredFileReference> files = [];
+
+        if (article.HeaderImage is not null)
+        {
+            files.Add(new StoredFileReference
+            {
+                Container = article.HeaderImage.Container,
+                Path = article.HeaderImage.Path
+            });
+        }
+
+        files.AddRange(article.Attachments.Select(a => new StoredFileReference
+        {
+            Container = a.File.Container,
+            Path = a.File.Path
+        }));
+
+        return files;
+    }
+}
+```
+
+Note: `filesToDelete` is captured **before** `appDbContext.Articles.Remove(article)`/`SaveChangesAsync` purely for readability (the entity itself isn't mutated by removal, so capturing before or after `SaveChangesAsync` is equivalent here) — but capturing it before the delete keeps the "gather facts, then act" shape consistent with the rest of the handler.
 
 ### 2d. Tests (Phase 2)
 
-- `DeleteArticleFilesJobHandlerTests`: all-succeed, partial-failure (one file throws, others still attempted), empty collection.
-- `DeleteArticleCommandHandlerTests`: assert `Enqueue` is called with the correct file list (header image + non-inline + inline attachments — confirm whether inline attachments, which `GetArticleQueryHandler` filters out of the response DTO, should still be included in the deletion list; they should, since they're still blobs in storage even if not shown as separate "attachments" in the UI).
+Deferred to the dedicated test-writing pass — not detailed here. Will cover: `DeleteArticleFilesJobHandler` (all-succeed, partial-failure, empty collection) and `DeleteArticleCommandHandler`'s enqueue behavior (header image + inline + non-inline attachments all included; not-found case skips enqueue; empty article — no header, no attachments — also skips enqueue).
 
 ---
 
 ## Phase 3 — UI (article list + detail pages)
 
-### 3a. Permission-gated trash icon — placement mockups (to be discussed live, not decided here)
+> **Status**: `INewsApi.DeleteArticleAsync` already exists in `src/Neba.Api.Contracts/News/INewsApi.cs`. Everything else in this phase — the `ApiExecutor` overload, the confirm-dialog component, and both pages' delete flows — is new.
 
-Candidate placements to mock up when we get to this phase:
-1. **List page** (`NewsList.razor`) — trash icon overlaid on each `ArticleCard` (e.g. top-right corner, shown on hover or always-visible if permission granted).
-2. **Detail page** (`NewsDetail.razor`) — trash icon near the article title/header, or in a small admin action bar above the article body.
+### 3a. `ApiExecutor` non-generic overload (to build)
 
-No existing permission-gated UI pattern beyond generic `<AuthorizeView>` — will need a way to check the specific `News.DeleteArticle` permission client-side (likely a custom `IsInRole`-equivalent claim check, or a small `HasPermissionAsync`/`<AuthorizeView Policy="...">` if ASP.NET Core policy-based auth extends cleanly into Blazor's `AuthorizeView` — confirm during implementation).
+`DeleteArticleAsync` returns non-generic `Task<IApiResponse>` (no response body, matching the 204 the endpoint sends), but `ApiExecutor.ExecuteAsync<TResponse>` (`src/Neba.Website.Server/Services/ApiExecutor.cs`) only accepts `Func<CancellationToken, Task<IApiResponse<TResponse>>>`. Add a non-generic overload rather than forcing a `TResponse` through a bodyless response:
 
-### 3b. Confirmation dialog
+```csharp
+// src/Neba.Website.Server/Services/ApiExecutor.cs
+public async Task<ErrorOr<Success>> ExecuteAsync(
+    string apiName,
+    string operationName,
+    Func<CancellationToken, Task<IApiResponse>> apiCall,
+    CancellationToken cancellationToken = default)
+{
+    // Same activity/metrics/try-catch shape as the generic overload above,
+    // but branches on response.IsSuccessStatusCode directly (no response.Content
+    // null-check branch, since IApiResponse has no Content) and returns
+    // Result.Success instead of response.Content on the success path.
+    // Reuses HandleException<TResponse> by instantiating it as HandleException<Success>
+    // for the catch blocks, or extracts a shared non-generic error-mapping helper —
+    // decide the least-duplication shape when implementing.
+}
+```
 
-No existing destructive-action confirm dialog to copy. Build using `NebaModal.razor` as the base (`HeaderContent`/`ChildContent`/`FooterContent`, `IsOpen`/`OnClose`) with a `ConfirmDeleteArticleModal` (or a generic reusable `ConfirmActionModal` if you want this to also serve future destructive actions — **worth deciding now**: generic reusable component vs. article-specific one-off).
+### 3b. Permission-gated trash icon
 
-### 3c. Delete flow
+Client-side permission checks aren't used anywhere in the Website project yet (only a bare `<AuthorizeView>` with no `Policy=`/`Roles=` in `AccountMenu.razor`), but the underlying plumbing is already registered — `AccountConfiguration.cs` wires `PermissionPolicyProvider`/`PermissionAuthorizationHandler` and `AddCascadingAuthenticationState()`, and `Permissions.DeleteArticle.PolicyName` (`"Permission:News.DeleteArticle"`) already exists in `Neba.Api.Contracts.Security`. So `<AuthorizeView Policy="...">` works directly, no new claim-checking helper needed:
 
-- Call `DELETE news/{id}` via the API client (`INewsApi` or equivalent, check `ApiExecutor` usage in `NewsList.razor`/`NewsDetail.razor` for the pattern).
-- **List page**: on success, remove the article from the in-memory list (no full reload needed) — client-side splice, not a re-fetch.
-- **Detail page**: on success, navigate back to `/news` (`NavigationManager.NavigateTo("/news")`).
-- No client-side cache to worry about beyond what the server already invalidates (Phase 1c) — confirm the Blazor Server pages aren't doing their own separate client-side caching layer that would also need invalidation.
+```razor
+@* src/Neba.Website.Server/News/ArticleCard.razor — added to the existing card markup *@
+<AuthorizeView Policy="@Permissions.DeleteArticle.PolicyName">
+    <Authorized>
+        <button type="button"
+                class="article-card-delete"
+                aria-label="Delete article"
+                @onclick="OnDeleteRequested"
+                @onclick:stopPropagation="true"
+                @onclick:preventDefault="true">
+            <TrashIcon />
+        </button>
+    </Authorized>
+</AuthorizeView>
+```
 
-### 3d. Tests (Phase 3)
+`@onclick:stopPropagation`/`preventDefault` are required because `ArticleCard` itself is a wrapping `<a>` — without them, clicking the trash icon would also navigate to the article. `ArticleCard` gains an `[Parameter] EventCallback<ArticleSummaryResponse> OnDeleteRequested` that `NewsList.razor` binds to open the confirm modal for that article.
 
-- bUnit tests for the trash icon visibility (permission granted vs. not), confirm-dialog interaction (cancel vs. confirm), list-removal behavior, detail-page navigation-on-delete.
-- E2E test (`tests/e2e/`) covering the full delete flow if there's an existing E2E suite for News.
+Detail page (`NewsDetail.razor`) gets the same `<AuthorizeView Policy="...">` block near the title, wired to a local `OpenDeleteConfirm()` instead of a parameter.
+
+### 3c. Confirmation dialog
+
+No existing destructive-action confirm dialog to copy from, but `NebaModal.razor` (`HeaderContent`/`ChildContent`/`FooterContent`, `IsOpen`/`OnClose`, `MaxWidth`) is already used for non-destructive dialogs (`DirectionsModal.razor`, `BowlerTitlesModal.razor`) and composes cleanly for this. Build a **generic reusable `ConfirmActionModal`** rather than an article-specific one — deleting articles won't be the last destructive action in this app (bowling centers, sponsors, etc. are plausible future candidates), and the component is trivial enough that genericizing it now costs nothing:
+
+```razor
+@* src/Neba.Website.Server/Components/ConfirmActionModal.razor *@
+<NebaModal IsOpen="@IsOpen" OnClose="@OnCancel" Title="@Title" MaxWidth="480px">
+    <ChildContent>
+        <p>@Message</p>
+    </ChildContent>
+    <FooterContent>
+        <div class="flex justify-end gap-2">
+            <button class="neba-btn neba-btn-secondary" @onclick="OnCancel">@CancelLabel</button>
+            <button class="neba-btn neba-btn-danger" @onclick="OnConfirm" disabled="@IsBusy">
+                @(IsBusy ? "Deleting..." : ConfirmLabel)
+            </button>
+        </div>
+    </FooterContent>
+</NebaModal>
+
+@code {
+    [Parameter, EditorRequired] public bool IsOpen { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnConfirm { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnCancel { get; set; }
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Message { get; set; } = string.Empty;
+    [Parameter] public string ConfirmLabel { get; set; } = "Delete";
+    [Parameter] public string CancelLabel { get; set; } = "Cancel";
+    [Parameter] public bool IsBusy { get; set; }
+}
+```
+
+`IsBusy` disables the confirm button while the delete API call is in flight, preventing a double-submit.
+
+### 3d. Delete flow
+
+**List page** (`NewsList.razor`) — on confirm, call the API, then splice the deleted article out of the in-memory list rather than re-fetching the page:
+
+```csharp
+private async Task ConfirmDeleteAsync()
+{
+    _isDeleteBusy = true;
+
+    var result = await ApiExecutor.ExecuteAsync(
+        "News", "DeleteArticle",
+        ct => NewsApi.DeleteArticleAsync(_articlePendingDelete!.ArticleId, ct));
+
+    _isDeleteBusy = false;
+    _isDeleteConfirmOpen = false;
+
+    if (result.IsError)
+    {
+        _errorMessage = result.FirstError.Description;
+        return;
+    }
+
+    _articles.Remove(_articlePendingDelete!);
+    _articlePendingDelete = null;
+}
+```
+
+**Detail page** (`NewsDetail.razor`) — on confirm, call the API, then navigate back to the list:
+
+```csharp
+private async Task ConfirmDeleteAsync()
+{
+    _isDeleteBusy = true;
+
+    var result = await ApiExecutor.ExecuteAsync(
+        "News", "DeleteArticle",
+        ct => NewsApi.DeleteArticleAsync(Article!.ArticleId, ct));
+
+    _isDeleteBusy = false;
+
+    if (result.IsError)
+    {
+        _isDeleteConfirmOpen = false;
+        _errorMessage = result.FirstError.Description;
+        return;
+    }
+
+    NavigationManager.NavigateTo("/news");
+}
+```
+
+Both pages are `@rendermode @(new InteractiveServerRenderMode(prerender: false))` already, so `@onclick` handlers and the modal's JS interop work without further rendermode changes. No separate client-side cache exists in the Blazor Server pages beyond what `DeleteArticleCommandHandler` already invalidates server-side (Phase 1c) — `NewsList.razor`/`NewsDetail.razor` re-fetch from the API on navigation, they don't maintain their own cache layer.
+
+### 3e. Tests (Phase 3)
+
+Deferred to the dedicated test-writing pass — not detailed here. Will cover: bUnit tests for trash-icon visibility (permission granted vs. not), `ConfirmActionModal` cancel/confirm interaction, list-splice behavior, detail-page navigation-on-delete, and an E2E test for the full delete flow if `tests/e2e/` has an existing News suite to extend.
 
 ---
 
-## Open questions to resolve as you implement
+## Resolved decisions
 
-1. Does a permission-based authorization policy (`"Permission:{value}"`) actually get registered in `AddAuthorization(...)` today, or does Phase 1a need to add that wiring for the very first time?
-2. Is `StoredFile` (the domain value object) directly reusable as a Hangfire job payload, or does it need a lightweight serializable projection (`StoredFileReference`)?
-3. Does `AzureBlobStorageService.DeleteAsync` no-op safely on a missing blob (needed for the "best-effort, don't fail the whole job" approach in 2b)?
-4. Full OTel/metrics parity for `DeleteArticleFilesJobHandler` (like `SyncDocumentToStorageJobHandler`), or keep it lean with just logging?
-5. Generic reusable `ConfirmActionModal` vs. article-specific `ConfirmDeleteArticleModal`?
-6. Confirm final route shape — `DELETE news/{id}` (given the `NewsEndpointGroup` prefix) vs. some other path structure implied by "/articles/{id}" in your original framing.
+These were open questions in earlier drafts of this plan; resolved during Phase 1–2 implementation and this doc update:
+
+1. **Permission-based authorization policy wiring** — confirmed registered (`PermissionPolicyProvider`/`PermissionAuthorizationHandler`, wired in both API and Website `AccountConfiguration.cs`/security configuration). No first-time wiring needed.
+2. **`StoredFile` vs. `StoredFileReference` for the job payload** — `StoredFileReference` is the deliberate choice (§2a): keeps the Hangfire job payload decoupled from the `Storage` feature's domain value object.
+3. **Blob delete idempotency** — `IFileStorageService.DeleteAsync` no-ops on a missing blob, confirmed via `AzureBlobStorageService`'s use of `DeleteIfExistsAsync`. Per-file catch-and-log in the job handler is still used (§2b) so one bad file doesn't block the rest.
+4. **Metrics parity for `DeleteArticleFilesJobHandler`** — kept lean, logging only, no dedicated metrics class (§2b).
+5. **Generic vs. article-specific confirm modal** — generic `ConfirmActionModal` (§3c).
+6. **Final route shape** — `DELETE news/{id}` (confirmed live in `DeleteArticleEndpoint.cs`, under `NewsEndpointGroup`'s `"news"` prefix).
