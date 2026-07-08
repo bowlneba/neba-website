@@ -30,6 +30,14 @@
     pointer-events: auto;
 }
 
+.neba-modal-container--compact {
+    height: auto;
+}
+
+.neba-modal-container--compact .neba-modal-content {
+    height: auto;
+}
+
 .neba-modal-content {
     background: white;
     border-radius: 0.75rem;
