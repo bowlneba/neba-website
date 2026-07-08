@@ -3,12 +3,14 @@
 @using Neba.Api.Contracts.News
 @using Neba.Api.Contracts.News.ListArticles
 @using Neba.Api.Contracts.Security
+@using Neba.Website.Server.Notifications
 @using Neba.Website.Server.Services
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject ApiExecutor ApiExecutor
 @inject INewsApi NewsApi
 @inject ILogger<NewsList> Logger
+@inject ToastService ToastService
 
 <PageTitle>News - BowlNEBA</PageTitle>
 <HeadContent>
@@ -249,12 +251,13 @@
 
         if (result.IsError)
         {
-            _errorMessage = result.FirstError.Description;
+            ToastService.Show("Delete Failed", result.FirstError.Description, NotifySeverity.Error);
             _articlePendingDelete = null;
             return;
         }
 
         var deletedArticleId = _articlePendingDelete.ArticleId;
+        var deletedArticleTitle = _articlePendingDelete.Title;
         _articlePendingDelete = null;
 
         if (_articles is not null)
@@ -265,5 +268,7 @@
                 TotalItems = Math.Max(0, _articles.TotalItems - 1),
             };
         }
+
+        ToastService.Show("Article Deleted", $"\"{deletedArticleTitle}\" was successfully deleted.", NotifySeverity.Success);
     }
 }

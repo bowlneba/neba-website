@@ -12,6 +12,7 @@ using Neba.TestFactory.Attributes;
 using Neba.TestFactory.News;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.News;
+using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 
 using Refit;
@@ -26,6 +27,7 @@ public sealed class NewsDetailTests : IDisposable
     private readonly BunitContext _ctx;
     private readonly Mock<INewsApi> _mockApi;
     private readonly BunitAuthorizationContext _authContext;
+    private readonly ToastService _toastService;
 
     public NewsDetailTests()
     {
@@ -40,11 +42,18 @@ public sealed class NewsDetailTests : IDisposable
         _authContext = _ctx.AddAuthorization();
         _authContext.SetNotAuthorized();
 
+        _toastService = new ToastService();
+
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
+        _ctx.Services.AddSingleton(_toastService);
     }
 
-    public void Dispose() => _ctx.Dispose();
+    public void Dispose()
+    {
+        _ctx.Dispose();
+        _toastService.Dispose();
+    }
 
     // ── Loading state ────────────────────────────────────────────────────────
 
@@ -406,15 +415,17 @@ public sealed class NewsDetailTests : IDisposable
         // Assert
         var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
         navigationManager.Uri.ShouldEndWith("/news");
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Success);
     }
 
-    [Fact(DisplayName = "Should show error message and keep dialog result visible when delete fails")]
-    public void ConfirmDelete_ShouldShowErrorMessage_WhenDeleteFails()
+    [Fact(DisplayName = "Should show error toast and stay on the page when delete fails")]
+    public void ConfirmDelete_ShouldShowErrorToastAndStayOnPage_WhenDeleteFails()
     {
         // Arrange
         _authContext.SetAuthorized("test-user");
         _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
-        var article = ArticleDetailResponseFactory.Create();
+        var article = ArticleDetailResponseFactory.Create(title: "Season Champions Crowned");
         SetupSuccessResponse(article);
 
         using var deleteResponse = new StubApiResponse<object>
@@ -433,7 +444,9 @@ public sealed class NewsDetailTests : IDisposable
         cut.Find("button.confirm-action-modal-confirm").Click();
 
         // Assert
-        cut.Markup.ShouldContain("Error Loading Article");
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Error);
+        cut.Markup.ShouldContain("Season Champions Crowned");
         var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
         navigationManager.Uri.ShouldNotEndWith("/news");
     }

@@ -4,6 +4,7 @@
 @using Neba.Api.Contracts.News
 @using Neba.Api.Contracts.News.GetArticle
 @using Neba.Api.Contracts.Security
+@using Neba.Website.Server.Notifications
 @using Neba.Website.Server.Services
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
@@ -11,6 +12,7 @@
 @inject INewsApi NewsApi
 @inject NavigationManager NavigationManager
 @inject ILogger<NewsDetail> Logger
+@inject ToastService ToastService
 
 <PageTitle>@(_article?.Title is not null ? _article.Title + " - BowlNEBA" : "News - BowlNEBA")</PageTitle>
 <HeadContent>
@@ -253,14 +255,16 @@ else if (_article is not null)
             ct => NewsApi.DeleteArticleAsync(_article.ArticleId, ct));
 
         _isDeleteBusy = false;
+        _isDeleteConfirmOpen = false;
 
         if (result.IsError)
         {
-            _isDeleteConfirmOpen = false;
-            _errorMessage = result.FirstError.Description;
+            ToastService.Show("Delete Failed", result.FirstError.Description, NotifySeverity.Error);
             return;
         }
 
+        var deletedArticleTitle = _article.Title;
+        ToastService.Show("Article Deleted", $"\"{deletedArticleTitle}\" was successfully deleted.", NotifySeverity.Success);
         NavigationManager.NavigateTo("/news");
     }
 }

@@ -13,6 +13,7 @@ using Neba.TestFactory.Attributes;
 using Neba.TestFactory.News;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.News;
+using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 
 using Refit;
@@ -27,6 +28,7 @@ public sealed class NewsListTests : IDisposable
     private readonly BunitContext _ctx;
     private readonly Mock<INewsApi> _mockApi;
     private readonly BunitAuthorizationContext _authContext;
+    private readonly ToastService _toastService;
 
     public NewsListTests()
     {
@@ -41,11 +43,18 @@ public sealed class NewsListTests : IDisposable
         _authContext = _ctx.AddAuthorization();
         _authContext.SetNotAuthorized();
 
+        _toastService = new ToastService();
+
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
+        _ctx.Services.AddSingleton(_toastService);
     }
 
-    public void Dispose() => _ctx.Dispose();
+    public void Dispose()
+    {
+        _ctx.Dispose();
+        _toastService.Dispose();
+    }
 
     // ── Loading state ────────────────────────────────────────────────────────
 
@@ -399,6 +408,8 @@ public sealed class NewsListTests : IDisposable
 
         // Assert
         cut.Markup.ShouldNotContain(System.Net.WebUtility.HtmlEncode(hero.Title));
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Success);
     }
 
     [Fact(DisplayName = "Should open confirm dialog naming the article when delete icon is clicked")]
@@ -448,10 +459,12 @@ public sealed class NewsListTests : IDisposable
 
         // Assert
         cut.Markup.ShouldNotContain(System.Net.WebUtility.HtmlEncode(deletedArticle.Title));
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Success);
     }
 
-    [Fact(DisplayName = "Should show error alert and keep article in grid when delete fails")]
-    public void ConfirmDelete_ShouldShowErrorAlert_WhenDeleteFails()
+    [Fact(DisplayName = "Should show error toast and keep article in grid when delete fails")]
+    public void ConfirmDelete_ShouldShowErrorToast_WhenDeleteFails()
     {
         // Arrange
         _authContext.SetAuthorized("test-user");
@@ -477,7 +490,8 @@ public sealed class NewsListTests : IDisposable
         cut.Find("button.confirm-action-modal-confirm").Click();
 
         // Assert
-        cut.Markup.ShouldContain("Error Loading Articles");
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Error);
         cut.Markup.ShouldContain(System.Net.WebUtility.HtmlEncode(targetArticle.Title));
     }
 
