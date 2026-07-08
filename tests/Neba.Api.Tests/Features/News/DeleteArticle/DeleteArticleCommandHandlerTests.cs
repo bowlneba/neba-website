@@ -4,8 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Api.Database;
 using Neba.Api.Database.Configurations;
-using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.News.DeleteArticle;
+using Neba.Api.Features.News.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.News;

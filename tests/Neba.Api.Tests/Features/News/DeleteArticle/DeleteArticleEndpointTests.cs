@@ -2,8 +2,8 @@ using ErrorOr;
 
 using FastEndpoints;
 
-using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.News.DeleteArticle;
+using Neba.Api.Features.News.Domain;
 using Neba.TestFactory.Attributes;
 
 using NebaMessaging = Neba.Api.Messaging;
