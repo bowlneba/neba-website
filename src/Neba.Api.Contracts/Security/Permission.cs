@@ -30,6 +30,19 @@ public sealed class Permissions
     /// </summary>
     public static readonly Permissions DeleteArticle = new("News.DeleteArticle", "Delete Article");
 
+    /// <summary>
+    /// A collection of permissions related to article management.
+    /// </summary>
+    public static readonly IReadOnlyCollection<Permissions> ArticleManagementPermissions =
+    [
+        DeleteArticle,
+    ];
+
+    /// <summary>
+    /// Policy name satisfied when the caller holds any permission in <see cref="ArticleManagementPermissions"/>.
+    /// </summary>
+    public const string CanManageArticlesPolicyName = "CanManageArticles";
+
     #endregion
 
     /// <summary>

@@ -19,4 +19,34 @@ public sealed class PermissionsTests
         // Assert
         policyName.ShouldBe($"Permission:{permission.Value}");
     }
+
+    [Fact(DisplayName = "ArticleManagementPermissions should contain DeleteArticle")]
+    public void ArticleManagementPermissions_ShouldContainDeleteArticle()
+    {
+        // Arrange & Act
+        var permissions = Permissions.ArticleManagementPermissions;
+
+        // Assert
+        permissions.ShouldContain(Permissions.DeleteArticle);
+    }
+
+    [Fact(DisplayName = "ArticleManagementPermissions should only contain DeleteArticle")]
+    public void ArticleManagementPermissions_ShouldOnlyContainDeleteArticle()
+    {
+        // Arrange & Act
+        var permissions = Permissions.ArticleManagementPermissions;
+
+        // Assert
+        permissions.Count.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "CanManageArticlesPolicyName should be CanManageArticles")]
+    public void CanManageArticlesPolicyName_ShouldBeCanManageArticles()
+    {
+        // Arrange & Act
+        var policyName = Permissions.CanManageArticlesPolicyName;
+
+        // Assert
+        policyName.ShouldBe("CanManageArticles");
+    }
 }
