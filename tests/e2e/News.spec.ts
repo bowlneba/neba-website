@@ -246,6 +246,23 @@ test.describe('News list page — delete article (authenticated)', () => {
     await expect(page.locator('.neba-modal-content')).toHaveCount(0);
     await expect(page.locator('.article-card')).toHaveCount(2);
   });
+
+  test('shows a delete icon on the hero and removes it after confirming delete', async ({ page }) => {
+    await page.goto('/news');
+    await page.waitForSelector('.news-hero');
+
+    await expect(page.locator('.hero-delete-btn')).toHaveCount(1);
+
+    const heroTitle = await page.locator('.hero-title').textContent();
+
+    await page.locator('.hero-delete-btn').click();
+    await expect(page.locator('.neba-modal-content')).toContainText('Delete article?');
+    await expect(page.locator('.neba-modal-content')).toContainText(heroTitle ?? '');
+
+    await page.locator('button.confirm-action-modal-confirm').click();
+
+    await expect(page.locator('.hero-title')).not.toContainText(heroTitle ?? '');
+  });
 });
 
 test.describe('News detail page — delete article (authenticated)', () => {

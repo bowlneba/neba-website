@@ -2,6 +2,7 @@
 @using Neba.Api.Contracts
 @using Neba.Api.Contracts.News
 @using Neba.Api.Contracts.News.ListArticles
+@using Neba.Api.Contracts.Security
 @using Neba.Website.Server.Services
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
@@ -85,26 +86,44 @@
             @if (PageNumber == 1)
             {
                 var hero = _articles.Items.First();
-                <a href="/news/@hero.Slug" class="news-hero" aria-label="Read: @hero.Title">
-                    <div class="hero-img" aria-hidden="true">
-                        @if (hero.HeaderImageUrl is not null)
-                        {
-                            <img src="@hero.HeaderImageUrl" alt="" class="w-full h-full object-cover" />
-                        }
-                    </div>
-                    <div class="hero-body">
-                        <div class="hero-featured-tag">&#11088; Latest</div>
-                        <div class="hero-date">@hero.PublishDateUtc.ToString("MMMM d, yyyy")</div>
-                        <h2 class="hero-title">@hero.Title</h2>
-                        <p class="hero-excerpt">@hero.Excerpt</p>
-                        <span class="neba-btn neba-btn-primary" style="width: fit-content;">
-                            Read full story
-                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </span>
-                    </div>
-                </a>
+                <div class="news-hero-wrap">
+                    <a href="/news/@hero.Slug" class="news-hero" aria-label="Read: @hero.Title">
+                        <div class="hero-img" aria-hidden="true">
+                            @if (hero.HeaderImageUrl is not null)
+                            {
+                                <img src="@hero.HeaderImageUrl" alt="" class="w-full h-full object-cover" />
+                            }
+                        </div>
+                        <div class="hero-body">
+                            <div class="hero-featured-tag">&#11088; Latest</div>
+                            <div class="hero-date">@hero.PublishDateUtc.ToString("MMMM d, yyyy")</div>
+                            <h2 class="hero-title">@hero.Title</h2>
+                            <p class="hero-excerpt">@hero.Excerpt</p>
+                            <span class="neba-btn neba-btn-primary" style="width: fit-content;">
+                                Read full story
+                                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </span>
+                        </div>
+                    </a>
+                    @* Sibling of the anchor, not a descendant: HTML5 disallows interactive content inside <a>,
+                       and Blazor's enhanced navigation hijacks clicks anywhere within an anchor's subtree
+                       regardless of a descendant button's own stopPropagation/preventDefault (see ArticleCard.razor). *@
+                    <AuthorizeView Policy="@Permissions.DeleteArticle.PolicyName">
+                        <Authorized>
+                            <button type="button" class="hero-delete-btn" aria-label="Delete article" @onclick="@(() => RequestDelete(hero))">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M3 6h18" />
+                                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                    <path d="M10 11v6" />
+                                    <path d="M14 11v6" />
+                                </svg>
+                            </button>
+                        </Authorized>
+                    </AuthorizeView>
+                </div>
 
                 @if (_articles.Items.Count > 1)
                 {

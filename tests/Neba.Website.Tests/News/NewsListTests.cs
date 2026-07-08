@@ -340,6 +340,67 @@ public sealed class NewsListTests : IDisposable
         cut.FindAll("button.icon-btn").Count.ShouldBe(2);
     }
 
+    [Fact(DisplayName = "Should not show delete icon on hero when user lacks DeleteArticle permission")]
+    public void Render_ShouldNotShowHeroDeleteIcon_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var articles = ArticleSummaryResponseFactory.Bogus(3, 26);
+        SetupSuccessResponse(articles, totalItems: 3);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.FindAll("button.hero-delete-btn").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show delete icon on hero when user has DeleteArticle permission")]
+    public void Render_ShouldShowHeroDeleteIcon_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(3, 27);
+        SetupSuccessResponse(articles, totalItems: 3);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.FindAll("button.hero-delete-btn").Count.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "Should remove the hero's article from the grid when deleting the hero succeeds")]
+    public void ConfirmDelete_ShouldRemoveHeroArticle_WhenDeleteSucceeds()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(2, 28);
+        var hero = articles.First();
+        SetupSuccessResponse(articles, totalItems: 2);
+
+        using var deleteResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockApi
+            .Setup(x => x.DeleteArticleAsync(hero.ArticleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(deleteResponse);
+
+        var cut = _ctx.Render<NewsList>();
+        cut.Find("button.hero-delete-btn").Click();
+        cut.Markup.ShouldContain("Delete article?");
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        cut.Markup.ShouldNotContain(System.Net.WebUtility.HtmlEncode(hero.Title));
+    }
+
     [Fact(DisplayName = "Should open confirm dialog naming the article when delete icon is clicked")]
     public void Click_ShouldOpenConfirmDialog_WhenDeleteIconIsClicked()
     {

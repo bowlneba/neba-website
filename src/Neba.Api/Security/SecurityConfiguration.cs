@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using Neba.Api.Contracts.Security.Authorization;
 using Neba.Api.Database;
 using Neba.Api.Security.Domain;
+using Neba.Api.Security.Infrastructure;
 
 using Npgsql;
 
@@ -100,10 +101,19 @@ internal static class SecurityConfiguration
 
     extension(WebApplication app)
     {
-        public WebApplication UseSecurityInfrastructure()
+        public async Task<WebApplication> UseSecurityInfrastructureAsync()
         {
             app.UseAuthentication();
             app.UseAuthorization();
+
+            // Keeps each role's permission claims (AspNetRoleClaims) in sync with the RolePermissions
+            // mapping in SecurityRoleSeeder, so adding a new Permissions value takes effect for existing
+            // roles/users on the next app restart without a manual DB edit.
+            await using (var seedScope = app.Services.CreateAsyncScope())
+            {
+                var roleManager = seedScope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+                await SecurityRoleSeeder.SeedAsync(roleManager);
+            }
 
             return app;
         }
