@@ -1,8 +1,8 @@
 # CanManageArticles
 
-Static ASP.NET Core policy (`RequireAssertion`), registered in `SecurityConfiguration.cs` and `AccountConfiguration.cs`.
+**Status: constant defined, policy not yet registered.** `Permissions.CanManageArticlesPolicyName` and `Permissions.ArticleManagementPermissions` exist in `Permission.cs`, but there is currently no `AddPolicy(Permissions.CanManageArticlesPolicyName, ...)` call in `SecurityConfiguration.cs` or `AccountConfiguration.cs`, and nothing references this policy name in an endpoint or `<AuthorizeView>`. `DeleteArticleEndpoint` and the delete UI (`NewsDetail.razor`, `NewsList.razor`) currently gate on `Permissions.DeleteArticle.PolicyName` (the dynamic `Permission:News.DeleteArticle` policy) directly instead.
 
-> This describes the policy's current, shipped behavior. It is not an implementation plan — for the phased rollout of the article-management feature (badges, draft preview, etc.), see `docs/plans/CanManageArticlesPolicy.md`. Update this file as later phases land and the policy's real-world behavior changes.
+This file describes what the policy is *designed* to mean once it's wired up (per `docs/plans/CanManageArticlesPolicy.md`), so it's ready to correct in place the moment that lands — see the "Where it's enforced" section below for the current, real state.
 
 ## What it means
 
@@ -26,16 +26,17 @@ The existing `PermissionPolicyProvider` / `"Permission:{value}"` mechanism resol
     ctx.User.HasAnyPermission(Permissions.ArticleManagementPermissions)));
 ```
 
-## Who satisfies it today
+## Who would satisfy it once registered
 
 - `Roles.Webmaster` — has `Permissions.DeleteArticle` directly.
 - `Roles.Admin` — has every permission via `Permissions.List`.
-- `Roles.Member` — does not satisfy this policy.
+- `Roles.Member` — would not satisfy this policy.
 
 ## Where it's enforced
 
-- **API**: `DeleteArticleEndpoint` (`.Policies(Permissions.CanManageArticlesPolicyName)`).
-- **UI**: `<AuthorizeView Policy="@Permissions.CanManageArticlesPolicyName">` gates management-only affordances (e.g. the delete button on `NewsDetail.razor`; a publication-status badge is planned per the implementation plan above).
+**Nowhere yet.** `DeleteArticleEndpoint` (`.Policies(Permissions.DeleteArticle.PolicyName)`) and the UI (`<AuthorizeView Policy="@Permissions.DeleteArticle.PolicyName">` in `NewsDetail.razor` / `NewsList.razor`) currently gate directly on the single `News.DeleteArticle` permission via the dynamic per-permission mechanism, not on `CanManageArticles`. Since `ArticleManagementPermissions` today contains only `DeleteArticle`, the two checks are currently equivalent in practice — but they are not the same policy, and a caller could be granted `News.DeleteArticle` without `CanManageArticles` ever being registered or checked.
+
+Once `News.CreateArticle` / `News.UpdateArticle` exist and this policy is actually registered and wired to those endpoints/UI affordances, update this section to reflect the real enforcement points.
 
 ## Related
 

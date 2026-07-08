@@ -81,6 +81,7 @@ Create or update `tests/e2e/docs-screenshots/{use-case-kebab}.spec.ts`, modeled 
 - Navigate to each page found in Step 3, waiting on a stable selector before each screenshot.
 - Capture one screenshot per placeholder inserted in Step 4, writing to `path.join('docs', 'help', 'images', '{use-case-kebab}', '{step-slug}.png')`.
 - **Prefer non-mutating capture paths.** If the flow has a natural "cancel"/"back out" step (like the confirm/cancel modal in the delete-article example), end the test there instead of completing the action, so the script is safe to re-run against the same mock data without a reset step. If the action has no natural undo (e.g. a create form), capture the pre-submit state and stop short of submitting; note in a comment why the flow doesn't go further.
+- The Blazor server in `playwright.docs.config.ts`'s `webServer` block runs `dotnet run --configuration Release` — Debug builds surface debug-only UI chrome (e.g. a debug toolbar/buttons) that must never appear in a user-facing help screenshot. If this config's `dotnet run` command is ever changed, keep `--configuration Release` in it.
 - Regardless of whether the doc or spec already existed, **always run the screenshots this pass** — do not skip regeneration just because files with the right names already exist:
   ```
   npm run docs:screenshots -- tests/e2e/docs-screenshots/{use-case-kebab}.spec.ts

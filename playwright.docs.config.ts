@@ -39,7 +39,7 @@ export default defineConfig({
     },
     {
       command:
-        'NebaApi__BaseUrl=http://localhost:5151 AzureMaps__SubscriptionKey=mock-key-for-e2e dotnet run --project src/Neba.Website.Server --urls https://localhost:5200',
+        'NebaApi__BaseUrl=http://localhost:5151 AzureMaps__SubscriptionKey=mock-key-for-e2e dotnet run --project src/Neba.Website.Server --configuration Release --urls https://localhost:5200',
       url: 'https://localhost:5200',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
