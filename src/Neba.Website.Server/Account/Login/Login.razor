@@ -46,6 +46,9 @@
                     <button type="submit" class="neba-btn neba-btn-primary w-full justify-center" disabled="@_isSubmitting">
                         @(_isSubmitting ? "Logging in…" : "Log in")
                     </button>
+                    <button type="button" class="neba-btn neba-btn-secondary w-full justify-center" @onclick="HandleCancel" disabled="@_isSubmitting">
+                        Cancel
+                    </button>
                 </div>
             </EditForm>
         </div>
@@ -118,6 +121,11 @@
 
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);
 
+        Nav.NavigateTo(ReturnUrlValidator.GetSafeReturnUrl(ReturnUrl), forceLoad: true);
+    }
+
+    private void HandleCancel()
+    {
         Nav.NavigateTo(ReturnUrlValidator.GetSafeReturnUrl(ReturnUrl), forceLoad: true);
     }
 }
