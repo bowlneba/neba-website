@@ -230,7 +230,34 @@ Deferred to the dedicated test-writing pass — not detailed here. Will cover: `
 
 ## Phase 3 — UI (article list + detail pages)
 
-> **Status**: `INewsApi.DeleteArticleAsync` already exists in `src/Neba.Api.Contracts/News/INewsApi.cs`. Everything else in this phase — the `ApiExecutor` overload, the confirm-dialog component, and both pages' delete flows — is new.
+> **Status: done.** All of 3a–3e landed, including two pieces of work discovered along the way that weren't visible until implementation started (see below). Mockups for the delete affordance were shown to the user first (list: icon beside the publish date; detail: a labeled "Danger zone" block in the sidebar `Article Info` panel) and both were approved before building.
+
+### Prerequisite discovered during implementation: `ArticleId` was missing from the public response DTOs
+
+Phase 1b's note that `ArticleSummaryResponse`/`ArticleDetailResponse` already carried `ArticleId` turned out to be stale — the internal query DTOs (`ArticleSummaryDto`/`ArticleDetailDto`) had `Id`, but `ListArticlesEndpoint`/`GetArticleEndpoint`'s mapping blocks never projected it onto the public response types, so neither `ArticleCard` nor `NewsDetail` had anything to pass to `DeleteArticleAsync`. Fixed as part of this phase:
+
+- Added `public required string ArticleId { get; init; }` to both response records, mapped as `a.Id.Value.ToString()` / `dto.Id.Value.ToString()` in the two endpoints (same convention as `TournamentId`).
+- Updated `ArticleSummaryResponseFactory`/`ArticleDetailResponseFactory` to accept/generate an `articleId`.
+- Re-verified `ListArticlesEndpointTests`/`GetArticleEndpointTests` snapshots (`.verified.txt`) with the new field.
+
+### 3a. `ApiExecutor` non-generic overload — done, refactored to avoid duplication
+
+Built as sketched, then simplified on review: rather than copy-pasting the whole activity/metrics/try-catch block, the non-generic overload wraps the caller's `IApiResponse` in a private `SuccessApiResponse : IApiResponse<Success>` adapter and delegates straight to the existing generic `ExecuteAsync<TResponse>` — so there's exactly one place that owns the activity/metrics/error-mapping logic. See `src/Neba.Website.Server/Services/ApiExecutor.cs`.
+
+### 3b/3c/3d — delete UI, confirm modal, delete flow
+
+- `ConfirmActionModal.razor` (`src/Neba.Website.Server/Components/`) — generic, matches the plan's sketch. Cancel/confirm buttons carry `confirm-action-modal-cancel`/`confirm-action-modal-confirm` classes (added for reliable test targeting — the sidebar's "Delete article" trigger button also uses `neba-btn-danger`, so a bare `.neba-btn-danger` selector is ambiguous).
+- `ArticleCard.razor` — delete icon sits beside the publish date, gated by `<AuthorizeView Policy="@Permissions.DeleteArticle.PolicyName">`. **Structural fix required**: the icon can't be a descendant of the card's `<a>` — HTML5 disallows interactive content inside `<a>`, and more importantly Blazor Web's enhanced navigation (`blazor.web.js`) intercepts clicks anywhere within an anchor's subtree independently of a descendant button's own `@onclick:stopPropagation`/`preventDefault`, so the button's click was silently triggering full navigation instead of opening the confirm dialog (caught by the e2e run, not bUnit — see below). Fixed by making the delete button a sibling of the anchor (`<div class="article-card"><a class="article-card-link">...</a><AuthorizeView>...delete button...</AuthorizeView></div>`), positioned with CSS to still read as "beside the date" visually (`.card-delete-btn`, absolutely positioned relative to `.article-card`).
+- `NewsDetail.razor` — "Danger zone" block added to the existing `Article Info` sidebar panel, using the plain `neba-btn-danger` class (no anchor-nesting issue here since the sidebar isn't inside a link).
+- Both pages use `ConfirmActionModal`; `NewsList` splices the deleted article out of `_articles` (rebuilt via `with { Items = ... }` since `PaginationResponse<T>.Items` is `IReadOnlyCollection<T>`, not a mutable list); `NewsDetail` navigates to `/news` on success via `NavigationManager`.
+
+### 3e. Tests — done
+
+- **bUnit**: `ArticleCardTests`, `NewsListTests`, `NewsDetailTests` all extended with `BunitAuthorizationContext` (`SetPolicies(Permissions.DeleteArticle.PolicyName)` to simulate a granted permission — bUnit's fake authorization service treats a policy name as always-satisfied once added via `SetPolicies`, it doesn't evaluate real claims). New `ConfirmActionModalTests.cs`. `ApiExecutorTests` extended for the non-generic overload.
+- **E2E**: extended `tests/e2e/News.spec.ts` with unauthenticated (delete affordance absent) and authenticated (full delete flow, cancel, and failure-path) coverage for both pages.
+  - **New test-only login endpoint**: no auth-simulation mechanism existed anywhere in `tests/e2e/` before this. Added `POST /__test/login?permissions=...` (`src/Neba.Website.Server/Account/TestAuthEndpoints.cs`), mapped only `if (app.Environment.IsDevelopment())` in `Program.cs`. It builds a `ClaimsPrincipal` directly (`ClaimTypes.NameIdentifier`/`Email` + one `Permissions.ClaimType` claim per requested permission) and calls `HttpContext.SignInAsync` — same cookie scheme production login uses, but skips `ISecurityApi`/JWT entirely, since the e2e mock API doesn't implement `/security/login`.
+  - **Mock API server** (`tests/e2e/mock-api/mock-api-server.ts`) extended: added `articleId` to the mocked news list/detail payloads, added `DELETE` to the CORS allow-list, and added a `DELETE /news/{id}` handler (respects the existing `/__mock/fail` override mechanism for failure-path testing).
+  - **Known pre-existing flakiness, not introduced by this phase**: `mockOverrides` in the mock server is a single in-process `Map` shared across all three Playwright browser projects (chrome/mobile-chrome/mobile-safari), which each run `News.spec.ts` in parallel. The file's `test.describe.configure({ mode: 'serial' })` only serializes tests *within* one project's run of the file — it doesn't stop a different project's concurrent run from resetting the same override mid-test. Confirmed this by reproducing the same timeout on the pre-existing (not-this-phase) "shows error alert when API returns an error" test when running all three projects together, and confirming it and the full new delete-flow suite pass reliably with `--project=chrome` alone. Not fixed here — it's a test-infra gap in the shared mock server, orthogonal to the delete-article feature, and fixing it (e.g., namespacing overrides per project/worker) is a bigger change than this phase warrants.
 
 ### 3a. `ApiExecutor` non-generic overload (to build)
 
@@ -381,3 +408,5 @@ These were open questions in earlier drafts of this plan; resolved during Phase 
 4. **Metrics parity for `DeleteArticleFilesJobHandler`** — kept lean, logging only, no dedicated metrics class (§2b).
 5. **Generic vs. article-specific confirm modal** — generic `ConfirmActionModal` (§3c).
 6. **Final route shape** — `DELETE news/{id}` (confirmed live in `DeleteArticleEndpoint.cs`, under `NewsEndpointGroup`'s `"news"` prefix).
+7. **E2E auth simulation** — built a dev-only `POST /__test/login` endpoint (§3e) rather than standing up a full login flow against the mock API or skipping authenticated e2e coverage entirely.
+8. **Delete icon placement vs. HTML/enhanced-nav constraints** — the approved "icon beside the date" mockup is preserved visually, but the icon is rendered as a CSS-positioned sibling of the card's `<a>` rather than a true descendant (§3b/3d), since Blazor Web's enhanced navigation hijacks clicks anywhere inside an anchor regardless of a descendant button's own `stopPropagation`/`preventDefault`.
