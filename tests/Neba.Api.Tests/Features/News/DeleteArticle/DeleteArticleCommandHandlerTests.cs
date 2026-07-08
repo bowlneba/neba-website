@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 
+using Neba.Api.BackgroundJobs;
 using Neba.Api.Database;
 using Neba.Api.Database.Configurations;
 using Neba.Api.Features.News.DeleteArticle;
@@ -37,10 +38,11 @@ public sealed class DeleteArticleCommandHandlerTests(AppDbContextFixture fixture
         await _serviceProvider.DisposeAsync();
     }
 
-    private DeleteArticleCommandHandler CreateHandler()
+    private DeleteArticleCommandHandler CreateHandler(IBackgroundJobScheduler? backgroundJobScheduler = null)
     {
         var cache = _serviceProvider.GetRequiredService<HybridCache>();
-        return new DeleteArticleCommandHandler(_dbContext, cache);
+        var scheduler = backgroundJobScheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object;
+        return new DeleteArticleCommandHandler(_dbContext, scheduler, cache);
     }
 
     [Fact(DisplayName = "HandleAsync returns Deleted when article does not exist")]
@@ -134,7 +136,9 @@ public sealed class DeleteArticleCommandHandlerTests(AppDbContextFixture fixture
         var articleDbId = _dbContext.Entry(article)
             .Property<int>(ShadowIdConfiguration.DefaultPropertyName).CurrentValue;
 
-        var handler = CreateHandler();
+        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        scheduler.Setup(s => s.Enqueue(It.IsAny<DeleteArticleFilesJob>())).Returns("job-id");
+        var handler = CreateHandler(scheduler.Object);
         var command = new DeleteArticleCommand { ArticleId = article.Id };
 
         // Act
@@ -147,6 +151,75 @@ public sealed class DeleteArticleCommandHandlerTests(AppDbContextFixture fixture
             .SqlQueryRaw<int>(sql, articleDbId)
             .SingleAsync(ct);
         remainingAttachments.ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "HandleAsync enqueues a file deletion job for the article's attachments and header image when article exists")]
+    public async Task HandleAsync_ShouldEnqueueFileDeletionJob_WhenArticleHasAttachmentsAndHeaderImage()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var headerImage = StoredFileFactory.Create(container: "header-container", path: "header.jpg");
+        var attachmentFile = StoredFileFactory.Create(container: "attachment-container", path: "attachment.pdf");
+        var attachments = new[]
+        {
+            ArticleAttachmentFactory.Create(displayName: "Schedule", file: attachmentFile),
+        };
+        var article = ArticleFactory.Create(headerImage: headerImage, attachments: attachments);
+        await _dbContext.Articles.AddAsync(article, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        DeleteArticleFilesJob? enqueuedJob = null;
+        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        scheduler.Setup(s => s.Enqueue(It.IsAny<DeleteArticleFilesJob>()))
+            .Callback<DeleteArticleFilesJob>(job => enqueuedJob = job)
+            .Returns("job-id");
+        var handler = CreateHandler(scheduler.Object);
+        var command = new DeleteArticleCommand { ArticleId = article.Id };
+
+        // Act
+        await handler.HandleAsync(command, ct);
+
+        // Assert
+        enqueuedJob.ShouldNotBeNull();
+        enqueuedJob.Files.ShouldContain(f => f.Container == headerImage.Container && f.Path == headerImage.Path);
+        enqueuedJob.Files.ShouldContain(f => f.Container == attachmentFile.Container && f.Path == attachmentFile.Path);
+        enqueuedJob.Files.Count.ShouldBe(2);
+    }
+
+    [Fact(DisplayName = "HandleAsync does not enqueue a file deletion job when article has no header image or attachments")]
+    public async Task HandleAsync_ShouldNotEnqueueFileDeletionJob_WhenArticleHasNoFiles()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var article = ArticleFactory.Create();
+        await _dbContext.Articles.AddAsync(article, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        var handler = CreateHandler(scheduler.Object);
+        var command = new DeleteArticleCommand { ArticleId = article.Id };
+
+        // Act
+        await handler.HandleAsync(command, ct);
+
+        // Assert — a strict mock with no Enqueue setup would throw if called
+        scheduler.Verify(s => s.Enqueue(It.IsAny<DeleteArticleFilesJob>()), Times.Never);
+    }
+
+    [Fact(DisplayName = "HandleAsync does not enqueue a file deletion job when article does not exist")]
+    public async Task HandleAsync_ShouldNotEnqueueFileDeletionJob_WhenArticleDoesNotExist()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var scheduler = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        var handler = CreateHandler(scheduler.Object);
+        var command = new DeleteArticleCommand { ArticleId = ArticleId.New() };
+
+        // Act
+        await handler.HandleAsync(command, ct);
+
+        // Assert
+        scheduler.Verify(s => s.Enqueue(It.IsAny<DeleteArticleFilesJob>()), Times.Never);
     }
 
     [Fact(DisplayName = "HandleAsync invalidates the article list and detail cache tags when article exists")]
