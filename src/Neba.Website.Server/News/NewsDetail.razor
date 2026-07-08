@@ -177,7 +177,7 @@ else if (_article is not null)
 
     <ConfirmActionModal IsOpen="@_isDeleteConfirmOpen"
                          Title="Delete article?"
-                         Message="@($"This permanently removes \"{_article.Title}\" and its images. This can't be undone.")"
+                         Message="@($"This permanently removes \"{_article.Title}\" and its images/attachments. This can't be undone.")"
                          IsBusy="@_isDeleteBusy"
                          OnConfirm="ConfirmDeleteAsync"
                          OnCancel="@(() => _isDeleteConfirmOpen = false)" />

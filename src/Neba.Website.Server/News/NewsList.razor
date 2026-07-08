@@ -179,7 +179,7 @@
 
 <ConfirmActionModal IsOpen="@_isDeleteConfirmOpen"
                      Title="Delete article?"
-                     Message="@(_articlePendingDelete is null ? string.Empty : $"This permanently removes \"{_articlePendingDelete.Title}\" and its images. This can't be undone.")"
+                     Message="@(_articlePendingDelete is null ? string.Empty : $"This permanently removes \"{_articlePendingDelete.Title}\" and its images/attachments. This can't be undone.")"
                      IsBusy="@_isDeleteBusy"
                      OnConfirm="ConfirmDeleteAsync"
                      OnCancel="CancelDelete" />
