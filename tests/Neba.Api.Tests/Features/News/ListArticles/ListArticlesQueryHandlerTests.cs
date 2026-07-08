@@ -36,7 +36,7 @@ public sealed class ListArticlesQueryHandlerTests(AppDbContextFixture fixture)
         return new ListArticlesQueryHandler(_dbContext, timeProvider, storage);
     }
 
-    private static ListArticlesQuery DefaultQuery => new() { Page = 1, PageSize = 10 };
+    private static ListArticlesQuery DefaultQuery => new() { Page = 1, PageSize = 10, CallerHasArticleManagementPermission = false };
 
     [Fact(DisplayName = "HandleAsync returns empty collection when no articles exist")]
     public async Task HandleAsync_ShouldReturnEmpty_WhenNoArticlesExist()
@@ -96,6 +96,56 @@ public sealed class ListArticlesQueryHandlerTests(AppDbContextFixture fixture)
         // Assert
         result.Items.ShouldBeEmpty();
         result.TotalItems.ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "HandleAsync includes draft articles when caller has article management permission")]
+    public async Task HandleAsync_ShouldIncludeDraftArticles_WhenCallerHasArticleManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var draft = ArticleFactory.Create(
+            slug: "draft-article-management",
+            content: new string('x', 250),
+            publicationStatus: PublicationStatus.Draft,
+            publishDateUtc: Now.AddDays(-1));
+        await _dbContext.Articles.AddAsync(draft, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+        var query = new ListArticlesQuery { Page = 1, PageSize = 10, CallerHasArticleManagementPermission = true };
+
+        // Act
+        var result = await handler.HandleAsync(query, ct);
+
+        // Assert
+        result.Items.ShouldHaveSingleItem();
+        result.Items.Single().Slug.ShouldBe("draft-article-management");
+        result.TotalItems.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "HandleAsync includes future-dated published articles when caller has article management permission")]
+    public async Task HandleAsync_ShouldIncludeFutureDatedArticles_WhenCallerHasArticleManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var scheduled = ArticleFactory.Create(
+            slug: "future-article-management",
+            content: new string('x', 250),
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: Now.AddDays(1));
+        await _dbContext.Articles.AddAsync(scheduled, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+        var query = new ListArticlesQuery { Page = 1, PageSize = 10, CallerHasArticleManagementPermission = true };
+
+        // Act
+        var result = await handler.HandleAsync(query, ct);
+
+        // Assert
+        result.Items.ShouldHaveSingleItem();
+        result.Items.Single().Slug.ShouldBe("future-article-management");
+        result.TotalItems.ShouldBe(1);
     }
 
     [Fact(DisplayName = "HandleAsync returns published article with correct fields")]
@@ -233,8 +283,8 @@ public sealed class ListArticlesQueryHandlerTests(AppDbContextFixture fixture)
         var handler = CreateHandler();
 
         // Act
-        var paged = await handler.HandleAsync(new ListArticlesQuery { Page = 1, PageSize = 5 }, ct);
-        var all = await handler.HandleAsync(new ListArticlesQuery { Page = 1, PageSize = 500 }, ct);
+        var paged = await handler.HandleAsync(new ListArticlesQuery { Page = 1, PageSize = 5, CallerHasArticleManagementPermission = false }, ct);
+        var all = await handler.HandleAsync(new ListArticlesQuery { Page = 1, PageSize = 500, CallerHasArticleManagementPermission = false }, ct);
 
         // Assert — TotalItems must be identical regardless of page size; fetching all items at once must equal TotalItems
         paged.TotalItems.ShouldBe(all.TotalItems);
@@ -259,8 +309,8 @@ public sealed class ListArticlesQueryHandlerTests(AppDbContextFixture fixture)
         var handler = CreateHandler();
 
         // Act
-        var page1 = await handler.HandleAsync(new ListArticlesQuery { Page = 1, PageSize = 5 }, ct);
-        var page2 = await handler.HandleAsync(new ListArticlesQuery { Page = 2, PageSize = 5 }, ct);
+        var page1 = await handler.HandleAsync(new ListArticlesQuery { Page = 1, PageSize = 5, CallerHasArticleManagementPermission = false }, ct);
+        var page2 = await handler.HandleAsync(new ListArticlesQuery { Page = 2, PageSize = 5, CallerHasArticleManagementPermission = false }, ct);
 
         // Assert — TotalItems is consistent across pages; items on different pages do not overlap
         page1.TotalItems.ShouldBe(page2.TotalItems);

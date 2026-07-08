@@ -39,7 +39,8 @@ public sealed class GetArticleQueryHandlerTests(AppDbContextFixture fixture)
         return new GetArticleQueryHandler(_dbContext, time, storage);
     }
 
-    private static GetArticleQuery QueryFor(string slug) => new() { Slug = slug };
+    private static GetArticleQuery QueryFor(string slug, bool callerHasArticleManagementPermission = false)
+        => new() { Slug = slug, CallerHasArticleManagementPermission = callerHasArticleManagementPermission };
 
     [Fact(DisplayName = "HandleAsync returns NotFound error when article does not exist")]
     public async Task HandleAsync_ShouldReturnNotFoundError_WhenArticleDoesNotExist()
@@ -265,6 +266,54 @@ public sealed class GetArticleQueryHandlerTests(AppDbContextFixture fixture)
         result.IsError.ShouldBeTrue();
         result.FirstError.Type.ShouldBe(ErrorType.NotFound);
         result.FirstError.Code.ShouldBe("Article.NotFound");
+    }
+
+    [Fact(DisplayName = "HandleAsync returns draft article when caller has article management permission")]
+    public async Task HandleAsync_ShouldReturnDraftArticle_WhenCallerHasArticleManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var draft = ArticleFactory.Create(
+            slug: "draft-article-management",
+            publicationStatus: PublicationStatus.Draft,
+            publishDateUtc: new DateTimeOffset(2025, 5, 1, 0, 0, 0, TimeSpan.Zero));
+        await _dbContext.Articles.AddAsync(draft, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(QueryFor("draft-article-management", callerHasArticleManagementPermission: true), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Slug.ShouldBe("draft-article-management");
+    }
+
+    [Fact(DisplayName = "HandleAsync returns future-dated article when caller has article management permission")]
+    public async Task HandleAsync_ShouldReturnFutureDatedArticle_WhenCallerHasArticleManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var now = new DateTimeOffset(2026, 6, 1, 12, 0, 0, TimeSpan.Zero);
+        var futureDate = now.AddDays(7);
+
+        var article = ArticleFactory.Create(
+            slug: "future-article-management",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: futureDate);
+        await _dbContext.Articles.AddAsync(article, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fakeTimeProvider = new FakeTimeProvider(now);
+        var handler = CreateHandler(timeProvider: fakeTimeProvider);
+
+        // Act
+        var result = await handler.HandleAsync(QueryFor("future-article-management", callerHasArticleManagementPermission: true), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Slug.ShouldBe("future-article-management");
     }
 
     [Fact(DisplayName = "HandleAsync returns article when published and publish date is in the past")]

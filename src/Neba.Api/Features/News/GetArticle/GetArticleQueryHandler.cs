@@ -25,8 +25,9 @@ internal sealed class GetArticleQueryHandler(
 
         var row = await _articles
             .Where(article => article.Slug == query.Slug
-                && article.PublicationStatus == PublicationStatus.Published
-                && article.PublishDateUtc <= now)
+                    && (query.CallerHasArticleManagementPermission
+                        || (article.PublicationStatus == PublicationStatus.Published
+                            && article.PublishDateUtc <= now)))
             .Select(article => new
             {
                 article.Id,
