@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Security.Authorization;
 
 namespace Neba.Website.Server.Account;
@@ -31,7 +32,11 @@ internal static class AccountConfiguration
                     options.Cookie.SameSite = SameSiteMode.Lax;
                 });
 
-            services.AddAuthorization();
+            services
+                .AddAuthorization()
+                .AddAuthorizationBuilder()
+                    .AddNebaPolicies();
+
             services
                 .AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>()
                 .AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();

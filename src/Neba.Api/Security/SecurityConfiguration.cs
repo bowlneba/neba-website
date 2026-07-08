@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Security.Authorization;
 using Neba.Api.Database;
 using Neba.Api.Security.Domain;
@@ -89,7 +90,8 @@ internal static class SecurityConfiguration
 
             builder.Services
                 .AddAuthorizationBuilder()
-                .AddPolicy(AuthenticatedPolicy, policy => policy.RequireAuthenticatedUser());
+                .AddPolicy(AuthenticatedPolicy, policy => policy.RequireAuthenticatedUser())
+                .AddNebaPolicies();
 
             builder.Services
                 .AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>()
