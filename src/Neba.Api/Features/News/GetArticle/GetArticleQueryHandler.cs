@@ -25,11 +25,14 @@ internal sealed class GetArticleQueryHandler(
 
         var row = await _articles
             .Where(article => article.Slug == query.Slug
-                && article.PublicationStatus == PublicationStatus.Published
-                && article.PublishDateUtc <= now)
+                    && (query.CallerHasArticleManagementPermission
+                        || (article.PublicationStatus == PublicationStatus.Published
+                            && article.PublishDateUtc <= now)))
             .Select(article => new
             {
+                article.Id,
                 article.Slug,
+                PublicationStatus = article.PublicationStatus.Name,
                 article.Title,
                 article.Content,
                 HeaderImageContainer = article.HeaderImage != null ? article.HeaderImage.Container : null,
@@ -59,7 +62,9 @@ internal sealed class GetArticleQueryHandler(
 
         return new ArticleDetailDto
         {
+            Id = row.Id,
             Slug = row.Slug,
+            PublicationStatus = row.PublicationStatus,
             Title = row.Title,
             Content = row.Content,
             HeaderImageUrl = headerImageUrl,

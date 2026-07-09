@@ -5,7 +5,10 @@ using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.News.ListArticles;
+using Neba.Api.Contracts.Security;
 using Neba.Api.Messaging;
+
+using PermissionsScope = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Features.News.ListArticles;
 
@@ -34,14 +37,22 @@ internal sealed class ListArticlesEndpoint(IQueryHandler<ListArticlesQuery, Page
 
     public override async Task HandleAsync(ListArticlesRequest req, CancellationToken ct)
     {
-        var query = new ListArticlesQuery { Page = req.Page, PageSize = req.PageSize };
+        var query = new ListArticlesQuery
+        {
+            Page = req.Page,
+            PageSize = req.PageSize,
+            CallerHasArticleManagementPermission = User.HasAnyPermission(PermissionsScope.ArticleManagementPermissions)
+        };
+
         var result = await _queryHandler.HandleAsync(query, ct);
 
         var response = new PaginationResponse<ArticleSummaryResponse>
         {
             Items = [.. result.Items.Select(a => new ArticleSummaryResponse
             {
+                ArticleId = a.Id.Value.ToString(),
                 Slug = a.Slug,
+                PublicationStatus = a.PublicationStatus,
                 Title = a.Title,
                 Excerpt = a.Excerpt,
                 HeaderImageUrl = a.HeaderImageUrl,

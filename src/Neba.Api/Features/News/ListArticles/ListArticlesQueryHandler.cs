@@ -24,16 +24,22 @@ internal sealed partial class ListArticlesQueryHandler(
 
     public async Task<PagedResult<ArticleSummaryDto>> HandleAsync(ListArticlesQuery query, CancellationToken cancellationToken)
     {
-        var baseQuery = _articles
-            .Where(article => article.PublicationStatus == PublicationStatus.Published
+        var baseQuery = _articles;
+
+        if (!query.CallerHasArticleManagementPermission)
+        {
+            baseQuery = baseQuery.Where(article => article.PublicationStatus == PublicationStatus.Published
                 && article.PublishDateUtc <= _timeProvider.GetUtcNow());
+        }
 
         var totalItems = await baseQuery.CountAsync(cancellationToken);
 
         var rows = await baseQuery
             .Select(article => new
             {
+                article.Id,
                 article.Slug,
+                PublicationStatus = article.PublicationStatus.Name,
                 article.Title,
                 article.Content,
                 HeaderImageContainer = article.HeaderImage != null ? article.HeaderImage.Container : null,
@@ -48,7 +54,9 @@ internal sealed partial class ListArticlesQueryHandler(
         var items = rows
             .ConvertAll(row => new ArticleSummaryDto
             {
+                Id = row.Id,
                 Slug = row.Slug,
+                PublicationStatus = row.PublicationStatus,
                 Title = row.Title,
                 Excerpt = BuildExcerpt(row.Content),
                 HeaderImageUrl = row.HeaderImageContainer != null && row.HeaderImagePath != null

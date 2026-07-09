@@ -1,20 +1,52 @@
 @using Neba.Api.Contracts.News.ListArticles
+@using Neba.Api.Contracts.Security
 
-<a href="/news/@Article.Slug" class="article-card neba-card neba-card--interactive" aria-label="Read article: @Article.Title">
-    <div class="card-img" aria-hidden="true">
-        @if (Article.HeaderImageUrl is not null)
-        {
-            <img src="@Article.HeaderImageUrl" alt="" class="w-full h-full object-contain" loading="lazy" />
-        }
-    </div>
-    <div class="card-body">
-        <div class="card-date">@Article.PublishDateUtc.ToString("MMM d, yyyy")</div>
-        <h3 class="card-title">@Article.Title</h3>
-        <p class="card-excerpt">@Article.Excerpt</p>
-    </div>
-</a>
+@* The delete button is deliberately a sibling of the <a>, not nested inside it: HTML5 disallows
+   interactive content (like <button>) inside <a>, and Blazor's enhanced navigation intercepts
+   clicks anywhere within an anchor's subtree regardless of per-button stopPropagation/preventDefault. *@
+<div class="article-card neba-card neba-card--interactive">
+    <a href="/news/@Article.Slug" class="article-card-link" aria-label="Read article: @Article.Title">
+        <div class="card-img" aria-hidden="true">
+            @if (Article.HeaderImageUrl is not null)
+            {
+                <img src="@Article.HeaderImageUrl" alt="" class="w-full h-full object-contain" loading="lazy" />
+            }
+        </div>
+        <div class="card-body">
+            <div class="card-meta-row">
+                <div class="card-date">@Article.PublishDateUtc.ToString("MMM d, yyyy")</div>
+                <AuthorizeView Policy="@Permissions.CanManageArticlesPolicyName">
+                    <Authorized>
+                        <ArticleStatusBadge PublicationStatus="@Article.PublicationStatus" PublishDateUtc="@Article.PublishDateUtc" />
+                    </Authorized>
+                </AuthorizeView>
+            </div>
+            <h3 class="card-title">@Article.Title</h3>
+            <p class="card-excerpt">@Article.Excerpt</p>
+        </div>
+    </a>
+    <AuthorizeView Policy="@Permissions.DeleteArticle.PolicyName">
+        <Authorized>
+            <button type="button" class="icon-btn card-delete-btn" aria-label="Delete article" @onclick="HandleDeleteRequested">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6" />
+                    <path d="M14 11v6" />
+                </svg>
+            </button>
+        </Authorized>
+    </AuthorizeView>
+</div>
 
 @code {
     [Parameter, EditorRequired]
     public ArticleSummaryResponse Article { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<ArticleSummaryResponse> OnDeleteRequested { get; set; }
+
+    private Task HandleDeleteRequested()
+        => OnDeleteRequested.InvokeAsync(Article);
 }

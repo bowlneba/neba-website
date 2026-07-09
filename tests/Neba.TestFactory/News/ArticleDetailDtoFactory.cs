@@ -1,3 +1,4 @@
+using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.News.GetArticle;
 using Neba.Api.Features.Tournaments.Domain;
 
@@ -11,7 +12,9 @@ public static class ArticleDetailDtoFactory
     public static readonly DateTimeOffset ValidPublishDateUtc = new(2025, 10, 1, 12, 0, 0, TimeSpan.Zero);
 
     public static ArticleDetailDto Create(
+        ArticleId? id = null,
         string? slug = null,
+        string? publicationStatus = null,
         string? title = null,
         string? content = null,
         Uri? headerImageUrl = null,
@@ -20,7 +23,9 @@ public static class ArticleDetailDtoFactory
         TournamentId? tournamentId = null)
         => new()
         {
+            Id = id ?? ArticleId.New(),
             Slug = slug ?? ValidSlug,
+            PublicationStatus = publicationStatus ?? PublicationStatus.Published.Name,
             Title = title ?? ValidTitle,
             Content = content ?? ValidContent,
             HeaderImageUrl = headerImageUrl,
@@ -37,7 +42,9 @@ public static class ArticleDetailDtoFactory
             var hasHeaderImage = faker.Random.Bool();
             return new ArticleDetailDto
             {
+                Id = new ArticleId(Ulid.BogusString(faker)),
                 Slug = string.Join("-", faker.Lorem.Words(4)),
+                PublicationStatus = faker.PickRandom(PublicationStatus.List.ToArray()).Name,
                 Title = faker.Random.Words(4),
                 Content = faker.Lorem.Paragraphs(2),
                 HeaderImageUrl = hasHeaderImage ? new Uri(faker.Internet.Url()) : null,

@@ -1,5 +1,8 @@
 using Bunit;
+using Bunit.TestDoubles;
 
+using Neba.Api.Contracts.News.ListArticles;
+using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.News;
 using Neba.Website.Server.News;
@@ -11,11 +14,14 @@ namespace Neba.Website.Tests.News;
 public sealed class ArticleCardTests : IDisposable
 {
     private readonly BunitContext _ctx;
+    private readonly BunitAuthorizationContext _authContext;
 
     public ArticleCardTests()
     {
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        _authContext = _ctx.AddAuthorization();
+        _authContext.SetNotAuthorized();
     }
 
     public void Dispose() => _ctx.Dispose();
@@ -99,5 +105,83 @@ public sealed class ArticleCardTests : IDisposable
 
         // Assert
         cut.FindAll("img").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should not render delete button when user lacks DeleteArticle permission")]
+    public void Render_ShouldNotShowDeleteButton_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var article = ArticleSummaryResponseFactory.Create();
+
+        // Act
+        var cut = _ctx.Render<ArticleCard>(p => p.Add(x => x.Article, article));
+
+        // Assert
+        cut.FindAll("button.icon-btn").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should render delete button when user has DeleteArticle permission")]
+    public void Render_ShouldShowDeleteButton_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var article = ArticleSummaryResponseFactory.Create();
+
+        // Act
+        var cut = _ctx.Render<ArticleCard>(p => p.Add(x => x.Article, article));
+
+        // Assert
+        cut.Find("button.icon-btn").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should not render status badge when user lacks CanManageArticles permission")]
+    public void Render_ShouldNotShowStatusBadge_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var article = ArticleSummaryResponseFactory.Create();
+
+        // Act
+        var cut = _ctx.Render<ArticleCard>(p => p.Add(x => x.Article, article));
+
+        // Assert
+        cut.FindAll("span.article-status-badge").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should render status badge when user has CanManageArticles permission")]
+    public void Render_ShouldShowStatusBadge_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.CanManageArticlesPolicyName);
+        var article = ArticleSummaryResponseFactory.Create();
+
+        // Act
+        var cut = _ctx.Render<ArticleCard>(p => p.Add(x => x.Article, article));
+
+        // Assert
+        cut.Find("span.article-status-badge").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should invoke OnDeleteRequested with the article when delete button is clicked")]
+    public void Click_ShouldInvokeOnDeleteRequestedWithArticle_WhenDeleteButtonIsClicked()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var article = ArticleSummaryResponseFactory.Create();
+        ArticleSummaryResponse? requested = null;
+
+        var cut = _ctx.Render<ArticleCard>(p => p
+            .Add(x => x.Article, article)
+            .Add(x => x.OnDeleteRequested, a => requested = a));
+
+        // Act
+        cut.Find("button.icon-btn").Click();
+
+        // Assert
+        requested.ShouldBe(article);
     }
 }

@@ -1,10 +1,18 @@
 .article-card {
+    position: relative;
     padding: 0;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.article-card-link {
     text-decoration: none;
     color: inherit;
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-width: 0;
 }
 
 .card-img {
@@ -22,12 +30,55 @@
     gap: 0.3rem;
 }
 
+.card-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
 .card-date {
     font-size: 0.72rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: var(--neba-blue-600, #5563DD);
+}
+
+.icon-btn {
+    background: transparent;
+    border: none;
+    padding: 0.3rem;
+    width: 1.9rem;
+    height: 1.9rem;
+    border-radius: var(--neba-radius, 0.375rem);
+    color: var(--neba-gray-500, #737373);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    transition: background-color 150ms ease-in-out, color 150ms ease-in-out;
+}
+
+.icon-btn:hover {
+    background-color: var(--neba-gray-100, #F5F5F5);
+    color: var(--neba-accent-red, #CC080A);
+}
+
+.icon-btn:focus-visible {
+    outline: 2px solid var(--neba-blue-500, #6C77E1);
+    outline-offset: 1px;
+}
+
+/* Positioned to sit visually beside the publish date without being a descendant
+   of the card's anchor (see ArticleCard.razor comment for why). */
+.card-delete-btn {
+    position: absolute;
+    top: calc(140px + 0.6rem);
+    right: 1rem;
+    z-index: 2;
+    background-color: var(--neba-bg-panel, #fff);
 }
 
 .card-title {

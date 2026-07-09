@@ -1,4 +1,5 @@
 using Bunit;
+using Bunit.TestDoubles;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,10 +8,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.News;
 using Neba.Api.Contracts.News.ListArticles;
+using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.News;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.News;
+using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 
 using Refit;
@@ -24,6 +27,8 @@ public sealed class NewsListTests : IDisposable
 {
     private readonly BunitContext _ctx;
     private readonly Mock<INewsApi> _mockApi;
+    private readonly BunitAuthorizationContext _authContext;
+    private readonly ToastService _toastService;
 
     public NewsListTests()
     {
@@ -35,12 +40,21 @@ public sealed class NewsListTests : IDisposable
 
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        _authContext = _ctx.AddAuthorization();
+        _authContext.SetNotAuthorized();
+
+        _toastService = new ToastService();
 
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
+        _ctx.Services.AddSingleton(_toastService);
     }
 
-    public void Dispose() => _ctx.Dispose();
+    public void Dispose()
+    {
+        _ctx.Dispose();
+        _toastService.Dispose();
+    }
 
     // ── Loading state ────────────────────────────────────────────────────────
 
@@ -167,7 +181,7 @@ public sealed class NewsListTests : IDisposable
         cut.Markup.ShouldContain("news-grid");
         foreach (var article in articles.Skip(1))
         {
-            cut.Markup.ShouldContain(article.Title);
+            cut.Markup.ShouldContain(System.Net.WebUtility.HtmlEncode(article.Title));
         }
     }
 
@@ -298,6 +312,240 @@ public sealed class NewsListTests : IDisposable
         _mockApi.Verify(
             x => x.ListArticlesAsync(3, 10, It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    // ── Status badge ─────────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not show status badge on hero when user lacks CanManageArticles permission")]
+    public void Render_ShouldNotShowHeroStatusBadge_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var articles = ArticleSummaryResponseFactory.Bogus(2, 30);
+        SetupSuccessResponse(articles, totalItems: 2);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.FindAll("span.article-status-badge").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show status badge on hero when user has CanManageArticles permission")]
+    public void Render_ShouldShowHeroStatusBadge_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.CanManageArticlesPolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(1, 31);
+        SetupSuccessResponse(articles, totalItems: 1);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.Find("span.article-status-badge").ShouldNotBeNull();
+    }
+
+    // ── Delete flow ──────────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not show delete icon on cards when user lacks DeleteArticle permission")]
+    public void Render_ShouldNotShowDeleteIcon_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var articles = ArticleSummaryResponseFactory.Bogus(2, 21);
+        SetupSuccessResponse(articles, totalItems: 2, pageNumber: 2);
+        NavigateToPage(2);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.FindAll("button.icon-btn").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show delete icon on cards when user has DeleteArticle permission")]
+    public void Render_ShouldShowDeleteIcon_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(2, 22);
+        SetupSuccessResponse(articles, totalItems: 2, pageNumber: 2);
+        NavigateToPage(2);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.FindAll("button.icon-btn").Count.ShouldBe(2);
+    }
+
+    [Fact(DisplayName = "Should not show delete icon on hero when user lacks DeleteArticle permission")]
+    public void Render_ShouldNotShowHeroDeleteIcon_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var articles = ArticleSummaryResponseFactory.Bogus(3, 26);
+        SetupSuccessResponse(articles, totalItems: 3);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.FindAll("button.hero-delete-btn").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show delete icon on hero when user has DeleteArticle permission")]
+    public void Render_ShouldShowHeroDeleteIcon_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(3, 27);
+        SetupSuccessResponse(articles, totalItems: 3);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.FindAll("button.hero-delete-btn").Count.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "Should remove the hero's article from the grid when deleting the hero succeeds")]
+    public void ConfirmDelete_ShouldRemoveHeroArticle_WhenDeleteSucceeds()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(2, 28);
+        var hero = articles.First();
+        SetupSuccessResponse(articles, totalItems: 2);
+
+        using var deleteResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockApi
+            .Setup(x => x.DeleteArticleAsync(hero.ArticleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(deleteResponse);
+
+        var cut = _ctx.Render<NewsList>();
+        cut.Find("button.hero-delete-btn").Click();
+        cut.Markup.ShouldContain("Delete article?");
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        cut.Markup.ShouldNotContain(System.Net.WebUtility.HtmlEncode(hero.Title));
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Success);
+    }
+
+    [Fact(DisplayName = "Should open confirm dialog naming the article when delete icon is clicked")]
+    public void Click_ShouldOpenConfirmDialog_WhenDeleteIconIsClicked()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(1, 23);
+        SetupSuccessResponse(articles, totalItems: 1, pageNumber: 2);
+        NavigateToPage(2);
+        var cut = _ctx.Render<NewsList>();
+
+        // Act
+        cut.Find("button.icon-btn").Click();
+
+        // Assert
+        cut.Markup.ShouldContain("Delete article?");
+        cut.Markup.ShouldContain(System.Net.WebUtility.HtmlEncode(articles.Single().Title));
+    }
+
+    [Fact(DisplayName = "Should close confirm dialog and keep article in grid when delete is cancelled")]
+    public void CancelDelete_ShouldCloseDialogAndKeepArticle_WhenCancelled()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(1, 26);
+        SetupSuccessResponse(articles, totalItems: 1, pageNumber: 2);
+        NavigateToPage(2);
+        var cut = _ctx.Render<NewsList>();
+        cut.Find("button.icon-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-cancel").Click();
+
+        // Assert
+        cut.Markup.ShouldNotContain("Delete article?");
+        cut.Markup.ShouldContain(System.Net.WebUtility.HtmlEncode(articles.Single().Title));
+    }
+
+    [Fact(DisplayName = "Should remove article from grid when delete succeeds")]
+    public void ConfirmDelete_ShouldRemoveArticleFromGrid_WhenDeleteSucceeds()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(2, 24);
+        var deletedArticle = articles.First();
+        SetupSuccessResponse(articles, totalItems: 2, pageNumber: 2);
+
+        using var deleteResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockApi
+            .Setup(x => x.DeleteArticleAsync(deletedArticle.ArticleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(deleteResponse);
+
+        NavigateToPage(2);
+        var cut = _ctx.Render<NewsList>();
+        cut.FindAll("button.icon-btn")[0].Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        cut.Markup.ShouldNotContain(System.Net.WebUtility.HtmlEncode(deletedArticle.Title));
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Success);
+    }
+
+    [Fact(DisplayName = "Should show error toast and keep article in grid when delete fails")]
+    public void ConfirmDelete_ShouldShowErrorToast_WhenDeleteFails()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(1, 25);
+        var targetArticle = articles.Single();
+        SetupSuccessResponse(articles, totalItems: 1, pageNumber: 2);
+
+        using var deleteResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.Forbidden
+        };
+        _mockApi
+            .Setup(x => x.DeleteArticleAsync(targetArticle.ArticleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(deleteResponse);
+
+        NavigateToPage(2);
+        var cut = _ctx.Render<NewsList>();
+        cut.Find("button.icon-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Error);
+        cut.Markup.ShouldContain(System.Net.WebUtility.HtmlEncode(targetArticle.Title));
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

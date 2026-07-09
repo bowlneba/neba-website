@@ -33,4 +33,14 @@ public interface INewsApi
     Task<IApiResponse<ArticleDetailResponse>> GetArticleAsync(
         string slug,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes an article by its ID. Returns 204 whether or not an article with the given ID existed.
+    /// </summary>
+    /// <param name="id">The article's strongly-typed ID.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    [Delete("/news/{id}")]
+    Task<IApiResponse> DeleteArticleAsync(
+        string id,
+        CancellationToken cancellationToken = default);
 }

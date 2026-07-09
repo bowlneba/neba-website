@@ -1,14 +1,18 @@
 using Bunit;
+using Bunit.TestDoubles;
 
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Api.Contracts.News;
 using Neba.Api.Contracts.News.GetArticle;
+using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.News;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.News;
+using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 
 using Refit;
@@ -22,6 +26,8 @@ public sealed class NewsDetailTests : IDisposable
 {
     private readonly BunitContext _ctx;
     private readonly Mock<INewsApi> _mockApi;
+    private readonly BunitAuthorizationContext _authContext;
+    private readonly ToastService _toastService;
 
     public NewsDetailTests()
     {
@@ -33,12 +39,21 @@ public sealed class NewsDetailTests : IDisposable
 
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        _authContext = _ctx.AddAuthorization();
+        _authContext.SetNotAuthorized();
+
+        _toastService = new ToastService();
 
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
+        _ctx.Services.AddSingleton(_toastService);
     }
 
-    public void Dispose() => _ctx.Dispose();
+    public void Dispose()
+    {
+        _ctx.Dispose();
+        _toastService.Dispose();
+    }
 
     // ── Loading state ────────────────────────────────────────────────────────
 
@@ -319,6 +334,174 @@ public sealed class NewsDetailTests : IDisposable
         // Assert
         cut.Markup.ShouldContain("Qualifying Scores");
         cut.Markup.ShouldContain("Unavailable");
+    }
+
+    // ── Status badge ─────────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not show status badge when user lacks CanManageArticles permission")]
+    public void Render_ShouldNotShowStatusBadge_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var article = ArticleDetailResponseFactory.Create();
+        SetupSuccessResponse(article);
+
+        // Act
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Assert
+        cut.FindAll("span.article-status-badge").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show status badge when user has CanManageArticles permission")]
+    public void Render_ShouldShowStatusBadge_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.CanManageArticlesPolicyName);
+        var article = ArticleDetailResponseFactory.Create();
+        SetupSuccessResponse(article);
+
+        // Act
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Assert
+        cut.Find("span.article-status-badge").ShouldNotBeNull();
+    }
+
+    // ── Sidebar: Danger zone / delete ─────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not show delete button when user lacks DeleteArticle permission")]
+    public void Render_ShouldNotShowDeleteButton_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var article = ArticleDetailResponseFactory.Create();
+        SetupSuccessResponse(article);
+
+        // Act
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Assert
+        cut.Markup.ShouldNotContain("Danger zone");
+    }
+
+    [Fact(DisplayName = "Should show delete button in sidebar when user has DeleteArticle permission")]
+    public void Render_ShouldShowDeleteButton_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var article = ArticleDetailResponseFactory.Create();
+        SetupSuccessResponse(article);
+
+        // Act
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Assert
+        cut.Markup.ShouldContain("Danger zone");
+        cut.Find("button.sidebar-danger-zone-btn").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should open confirm dialog when delete button is clicked")]
+    public void Click_ShouldOpenConfirmDialog_WhenDeleteButtonIsClicked()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var article = ArticleDetailResponseFactory.Create(title: "Season Champions Crowned");
+        SetupSuccessResponse(article);
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Act
+        cut.Find("button.sidebar-danger-zone-btn").Click();
+
+        // Assert
+        cut.Markup.ShouldContain("Delete article?");
+        cut.Markup.ShouldContain("Season Champions Crowned");
+    }
+
+    [Fact(DisplayName = "Should close confirm dialog and stay on page when delete is cancelled")]
+    public void CancelDelete_ShouldCloseDialogAndStayOnPage_WhenCancelled()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var article = ArticleDetailResponseFactory.Create(title: "Season Champions Crowned");
+        SetupSuccessResponse(article);
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+        cut.Find("button.sidebar-danger-zone-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-cancel").Click();
+
+        // Assert
+        cut.Markup.ShouldNotContain("Delete article?");
+        var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
+        navigationManager.Uri.ShouldNotEndWith("/news");
+    }
+
+    [Fact(DisplayName = "Should navigate to /news when delete succeeds")]
+    public void ConfirmDelete_ShouldNavigateToNews_WhenDeleteSucceeds()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var article = ArticleDetailResponseFactory.Create();
+        SetupSuccessResponse(article);
+
+        using var deleteResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockApi
+            .Setup(x => x.DeleteArticleAsync(article.ArticleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(deleteResponse);
+
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+        cut.Find("button.sidebar-danger-zone-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
+        navigationManager.Uri.ShouldEndWith("/news");
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Success);
+    }
+
+    [Fact(DisplayName = "Should show error toast and stay on the page when delete fails")]
+    public void ConfirmDelete_ShouldShowErrorToastAndStayOnPage_WhenDeleteFails()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var article = ArticleDetailResponseFactory.Create(title: "Season Champions Crowned");
+        SetupSuccessResponse(article);
+
+        using var deleteResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.Forbidden
+        };
+        _mockApi
+            .Setup(x => x.DeleteArticleAsync(article.ArticleId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(deleteResponse);
+
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+        cut.Find("button.sidebar-danger-zone-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Error);
+        cut.Markup.ShouldContain("Season Champions Crowned");
+        var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
+        navigationManager.Uri.ShouldNotEndWith("/news");
     }
 
     // ── API call ─────────────────────────────────────────────────────────────

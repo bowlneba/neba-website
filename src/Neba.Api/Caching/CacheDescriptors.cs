@@ -239,15 +239,18 @@ public static class CacheDescriptors
         /// <param name="pageSize">
         /// The number of items per page.
         /// </param>
+        /// <param name="callerHasArticleManagementPermission">
+        /// Indicates whether the caller has permission to manage articles.
+        /// </param>
         /// <returns>
         /// A cache descriptor for the paginated article list.
         /// </returns>
-        public static CacheDescriptor ListArticles(int page, int pageSize)
-            => new()
-            {
-                Key = $"neba:news:articles:list:page:{page}:size:{pageSize}",
-                Tags = ["neba", "neba:news", "neba:news:articles"]
-            };
+        public static CacheDescriptor ListArticles(int page, int pageSize, bool callerHasArticleManagementPermission)
+        => new()
+        {
+            Key = $"neba:news:articles:list:page:{page}:size:{pageSize}:scope:{(callerHasArticleManagementPermission ? "management" : "public")}",
+            Tags = ["neba", "neba:news", "neba:news:articles"]
+        };
 
         /// <summary>
         /// Returns a cache descriptor for a specific news article identified by its slug.
@@ -255,15 +258,18 @@ public static class CacheDescriptors
         /// <param name="slug">
         /// The article slug.
         /// </param>
+        /// <param name="callerHasArticleManagementPermission">
+        /// Indicates whether the caller has permission to manage articles.
+        /// </param>
         /// <returns>
         /// A cache descriptor for the article detail.
         /// </returns>
-        public static CacheDescriptor Article(string slug)
-            => new()
-            {
-                Key = $"neba:news:{slug}:article",
-                Tags = ["neba", "neba:news", $"neba:news:{slug}"]
-            };
+        public static CacheDescriptor Article(string slug, bool callerHasArticleManagementPermission)
+        => new()
+        {
+            Key = $"neba:news:{slug}:article:scope:{(callerHasArticleManagementPermission ? "management" : "public")}",
+            Tags = ["neba", "neba:news", $"neba:news:{slug}"]
+        };
     }
 
     /// <summary>

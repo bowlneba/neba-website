@@ -1,0 +1,26 @@
+.article-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.article-status-badge--draft {
+    background: var(--neba-gray-100, #F5F5F5);
+    color: var(--neba-gray-600, #525252);
+}
+
+.article-status-badge--scheduled {
+    background: rgba(217, 119, 6, 0.10);
+    color: var(--neba-warning, #D97706);
+}
+
+.article-status-badge--published {
+    background: rgba(22, 163, 74, 0.10);
+    color: var(--neba-success, #16A34A);
+}

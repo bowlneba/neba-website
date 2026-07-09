@@ -11,15 +11,20 @@ public sealed record ListArticlesQuery
 {
     /// <inheritdoc />
     public CacheDescriptor Cache
-        => CacheDescriptors.News.ListArticles(Page, PageSize);
+        => CacheDescriptors.News.ListArticles(Page, PageSize, CallerHasArticleManagementPermission);
 
     /// <inheritdoc />
     public TimeSpan Expiry
-        => new(0, 45, 0);
+        => TimeSpan.FromMinutes(45);
 
     /// <inheritdoc />
     public int Page { get; init; }
 
     /// <inheritdoc />
     public int PageSize { get; init; }
+
+    /// <summary>
+    /// Indicates whether the caller has permission to manage articles. This property is required and must be set when creating an instance of the ListArticlesQuery record. It is used to determine if the caller has the necessary permissions to perform article management operations, such as creating, updating, or deleting articles.
+    /// </summary>
+    public required bool CallerHasArticleManagementPermission { get; init; }
 }

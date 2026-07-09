@@ -151,6 +151,20 @@ public sealed class LoginTests : IDisposable
         nav.Uri.ShouldEndWith("/");
     }
 
+    [Fact(DisplayName = "Should navigate to the safe return URL when Cancel is clicked")]
+    public void Click_ShouldNavigateToSafeReturnUrl_WhenCancelIsClicked()
+    {
+        // Arrange
+        var cut = RenderLogin();
+
+        // Act
+        cut.Find("button.neba-btn-secondary").Click();
+
+        // Assert
+        var nav = _ctx.Services.GetRequiredService<NavigationManager>();
+        nav.Uri.ShouldEndWith("/");
+    }
+
     private IRenderedComponent<Neba.Website.Server.Account.Login.Login> RenderLogin()
     {
         var httpContext = new DefaultHttpContext

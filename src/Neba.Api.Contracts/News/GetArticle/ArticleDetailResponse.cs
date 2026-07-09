@@ -6,9 +6,19 @@ namespace Neba.Api.Contracts.News.GetArticle;
 public sealed record ArticleDetailResponse
 {
     /// <summary>
+    /// The ULID string that uniquely identifies the article.
+    /// </summary>
+    public required string ArticleId { get; init; }
+
+    /// <summary>
     /// The URL-friendly identifier for the article.
     /// </summary>
     public required string Slug { get; init; }
+
+    /// <summary>
+    /// The publication status of the article, which indicates whether the article is published, draft, or archived. This status is used to control the visibility and accessibility of the article in the application.
+    /// </summary>
+    public required string PublicationStatus { get; init; }
 
     /// <summary>
     /// The title of the article.

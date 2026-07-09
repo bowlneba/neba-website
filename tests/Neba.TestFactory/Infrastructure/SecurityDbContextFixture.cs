@@ -17,6 +17,8 @@ public sealed class SecurityDbContextFixture : IAsyncLifetime
     private Respawner _respawner = null!;
     private ServiceProvider _serviceProvider = null!;
 
+    public string ConnectionString => _postgres.ConnectionString;
+
     public async ValueTask InitializeAsync()
     {
         await _postgres.InitializeAsync();
