@@ -52,7 +52,7 @@ internal sealed class ListArticlesEndpoint(IQueryHandler<ListArticlesQuery, Page
             {
                 ArticleId = a.Id.Value.ToString(),
                 Slug = a.Slug,
-                PublicationStatus = a.PublicationStatus.Name,
+                PublicationStatus = a.PublicationStatus,
                 Title = a.Title,
                 Excerpt = a.Excerpt,
                 HeaderImageUrl = a.HeaderImageUrl,

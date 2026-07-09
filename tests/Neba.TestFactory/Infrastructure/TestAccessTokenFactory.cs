@@ -20,7 +20,7 @@ public static class TestAccessTokenFactory
     /// JwtSettings a test host's configuration must be seeded with so tokens created by
     /// <see cref="Create"/> validate against that host's JWT bearer options.
     /// </summary>
-    public static readonly JwtSettings Settings = new()
+    internal static readonly JwtSettings Settings = new()
     {
         Issuer = "https://bowlneba.com",
         Audience = "https://bowlneba.com",

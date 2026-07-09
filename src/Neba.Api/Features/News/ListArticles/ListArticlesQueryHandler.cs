@@ -39,7 +39,7 @@ internal sealed partial class ListArticlesQueryHandler(
             {
                 article.Id,
                 article.Slug,
-                article.PublicationStatus,
+                PublicationStatus = article.PublicationStatus.Name,
                 article.Title,
                 article.Content,
                 HeaderImageContainer = article.HeaderImage != null ? article.HeaderImage.Container : null,

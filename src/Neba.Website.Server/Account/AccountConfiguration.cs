@@ -33,7 +33,6 @@ internal static class AccountConfiguration
                 });
 
             services
-                .AddAuthorization()
                 .AddAuthorizationBuilder()
                     .AddNebaPolicies();
 

@@ -246,11 +246,11 @@ public static class CacheDescriptors
         /// A cache descriptor for the paginated article list.
         /// </returns>
         public static CacheDescriptor ListArticles(int page, int pageSize, bool callerHasArticleManagementPermission)
-    => new()
-    {
-        Key = $"neba:news:articles:list:page:{page}:size:{pageSize}:scope:{(callerHasArticleManagementPermission ? "management" : "public")}",
-        Tags = ["neba", "neba:news", "neba:news:articles"]
-    };
+        => new()
+        {
+            Key = $"neba:news:articles:list:page:{page}:size:{pageSize}:scope:{(callerHasArticleManagementPermission ? "management" : "public")}",
+            Tags = ["neba", "neba:news", "neba:news:articles"]
+        };
 
         /// <summary>
         /// Returns a cache descriptor for a specific news article identified by its slug.

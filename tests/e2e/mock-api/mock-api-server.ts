@@ -516,6 +516,7 @@ const MOCK_NEWS_PAGE_1 = {
     {
       articleId: ARTICLE_ID_SEASON_CHAMPIONS,
       slug: 'season-champions-2026',
+      publicationStatus: 'Published',
       title: '2025–26 Season Champions Crowned at Tournament of Champions',
       excerpt: 'After a dominant season, the finals came down to two of NEBA\'s most decorated veterans. Find out who took home the title and how the points race shook out heading into next year.',
       headerImageUrl: null,
@@ -524,6 +525,7 @@ const MOCK_NEWS_PAGE_1 = {
     {
       articleId: ARTICLE_ID_JUNE_LANE_PATTERN,
       slug: 'june-lane-pattern',
+      publicationStatus: 'Published',
       title: 'Lane Pattern Announced for June Southside Classic',
       excerpt: 'The June monthly at Southside Bowl will feature the WTBA London sport pattern. Download the PDF and check qualifying details.',
       headerImageUrl: null,
@@ -532,6 +534,7 @@ const MOCK_NEWS_PAGE_1 = {
     {
       articleId: ARTICLE_ID_POINTS_RACE,
       slug: 'points-race-update',
+      publicationStatus: 'Published',
       title: 'Points Race Update: Three Bowlers Separated by Eight Points',
       excerpt: 'With two tournaments left, the Bowler of the Year race is razor-thin. Here\'s the current standings and what each contender needs.',
       headerImageUrl: null,
@@ -546,6 +549,7 @@ const MOCK_NEWS_PAGE_1 = {
 const MOCK_ARTICLE_SEASON_CHAMPIONS: object = {
   articleId: ARTICLE_ID_SEASON_CHAMPIONS,
   slug: 'season-champions-2026',
+  publicationStatus: 'Published',
   title: '2025–26 Season Champions Crowned at Tournament of Champions',
   content: '<p>After a dominant regular season, the 2025–26 NEBA Tournament of Champions brought together the top performers from across New England for a single-elimination finale at Baxter Bowl in Springfield.</p><p>The field was deep. Twelve qualifiers entered match play, but it was two bowlers who had been trading the points lead all season who ultimately met in the final: defending champion Marcus Roark and two-time high-average winner Diane Pellerin.</p><p>Pellerin answered with a strike in the 10th to post a 267 and claim her first Tournament of Champions title.</p>',
   headerImageUrl: null,
@@ -560,6 +564,7 @@ const MOCK_ARTICLE_SEASON_CHAMPIONS: object = {
 const MOCK_ARTICLE_JUNE_LANE_PATTERN: object = {
   articleId: ARTICLE_ID_JUNE_LANE_PATTERN,
   slug: 'june-lane-pattern',
+  publicationStatus: 'Published',
   title: 'Lane Pattern Announced for June Southside Classic',
   content: '<p>The June monthly at Southside Bowl will feature the WTBA London sport pattern. Download the PDF below and check qualifying details.</p><p>Registration opens May 20th. Entry fee is $75 per bowler.</p>',
   headerImageUrl: null,
@@ -573,6 +578,7 @@ const MOCK_ARTICLE_JUNE_LANE_PATTERN: object = {
 const MOCK_ARTICLE_POINTS_RACE: object = {
   articleId: ARTICLE_ID_POINTS_RACE,
   slug: 'points-race-update',
+  publicationStatus: 'Published',
   title: 'Points Race Update: Three Bowlers Separated by Eight Points',
   content: '<p>With two tournaments left, the Bowler of the Year race is razor-thin. Here\'s the current standings and what each contender needs to clinch the title heading into the final stretch.</p>',
   headerImageUrl: null,

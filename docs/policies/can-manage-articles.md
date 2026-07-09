@@ -1,8 +1,6 @@
 # CanManageArticles
 
-**Status: constant defined, policy not yet registered.** `Permissions.CanManageArticlesPolicyName` and `Permissions.ArticleManagementPermissions` exist in `Permission.cs`, but there is currently no `AddPolicy(Permissions.CanManageArticlesPolicyName, ...)` call in `SecurityConfiguration.cs` or `AccountConfiguration.cs`, and nothing references this policy name in an endpoint or `<AuthorizeView>`. `DeleteArticleEndpoint` and the delete UI (`NewsDetail.razor`, `NewsList.razor`) currently gate on `Permissions.DeleteArticle.PolicyName` (the dynamic `Permission:News.DeleteArticle` policy) directly instead.
-
-This file describes what the policy is *designed* to mean once it's wired up (per `docs/plans/CanManageArticlesPolicy.md`), so it's ready to correct in place the moment that lands — see the "Where it's enforced" section below for the current, real state.
+**Status: registered and enforced.** `Permissions.CanManageArticlesPolicyName` and `Permissions.ArticleManagementPermissions` are defined in `Permission.cs`, and `AddNebaPolicies()` (`PolicyExtensions.cs`) registers `AddPolicy(Permissions.CanManageArticlesPolicyName, ...)`. This is called from both `SecurityConfiguration.cs` (API) and `AccountConfiguration.cs` (Website), so the policy is available to both `[Authorize]`-style endpoint gating and Blazor `<AuthorizeView>`.
 
 ## What it means
 
@@ -22,21 +20,28 @@ Today that set is just `News.DeleteArticle`. `News.CreateArticle` / `News.Update
 The existing `PermissionPolicyProvider` / `"Permission:{value}"` mechanism resolves one permission per policy by design (see `PermissionRequirement` / `PermissionAuthorizationHandler`). Generalizing it to OR-of-many wasn't worth it for one call site, so `CanManageArticles` is registered as a plain static policy instead:
 
 ```csharp
-.AddPolicy(Permissions.CanManageArticlesPolicyName, policy => policy.RequireAssertion(ctx =>
-    ctx.User.HasAnyPermission(Permissions.ArticleManagementPermissions)));
+builder.AddPolicy(Permissions.CanManageArticlesPolicyName, policy => policy
+    .RequireAssertion(context => context.User.HasAnyPermission(Permissions.ArticleManagementPermissions)));
 ```
 
-## Who would satisfy it once registered
+## Who satisfies it
 
 - `Roles.Webmaster` — has `Permissions.DeleteArticle` directly.
 - `Roles.Admin` — has every permission via `Permissions.List`.
-- `Roles.Member` — would not satisfy this policy.
+- `Roles.Member` — does not satisfy this policy.
 
 ## Where it's enforced
 
-**Nowhere yet.** `DeleteArticleEndpoint` (`.Policies(Permissions.DeleteArticle.PolicyName)`) and the UI (`<AuthorizeView Policy="@Permissions.DeleteArticle.PolicyName">` in `NewsDetail.razor` / `NewsList.razor`) currently gate directly on the single `News.DeleteArticle` permission via the dynamic per-permission mechanism, not on `CanManageArticles`. Since `ArticleManagementPermissions` today contains only `DeleteArticle`, the two checks are currently equivalent in practice — but they are not the same policy, and a caller could be granted `News.DeleteArticle` without `CanManageArticles` ever being registered or checked.
+`CanManageArticles` currently drives **visibility of the article status badge**, not the delete action itself:
 
-Once `News.CreateArticle` / `News.UpdateArticle` exist and this policy is actually registered and wired to those endpoints/UI affordances, update this section to reflect the real enforcement points.
+- `<AuthorizeView Policy="@Permissions.CanManageArticlesPolicyName">` in `ArticleCard.razor`, `NewsDetail.razor`, and `NewsList.razor` gates whether the publication-status badge is shown to the caller.
+
+The delete action is gated separately, directly on the single `News.DeleteArticle` permission via the dynamic per-permission mechanism, not on `CanManageArticles`:
+
+- `DeleteArticleEndpoint` — `.Policies(Permissions.DeleteArticle.PolicyName)`.
+- `<AuthorizeView Policy="@Permissions.DeleteArticle.PolicyName">` in `ArticleCard.razor`, `NewsDetail.razor`, `NewsList.razor` gates the delete button itself.
+
+Since `ArticleManagementPermissions` today contains only `DeleteArticle`, the two checks are currently equivalent in practice for who satisfies them — but they are not the same policy, and a future permission added only to `ArticleManagementPermissions` (e.g. `News.CreateArticle`) would grant status-badge visibility without granting delete access.
 
 ## Related
 

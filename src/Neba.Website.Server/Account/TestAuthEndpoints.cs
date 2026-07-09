@@ -15,27 +15,30 @@ namespace Neba.Website.Server.Account;
 /// </summary>
 internal static class TestAuthEndpoints
 {
-    public static void MapTestAuthEndpoints(this WebApplication app)
+    extension(WebApplication app)
     {
-        app.MapPost("/__test/login", async (HttpContext httpContext, string? permissions, string? returnUrl) =>
+        public void MapTestAuthEndpoints()
         {
-            var claims = new List<Claim>
+            app.MapPost("/__test/login", async (HttpContext httpContext, string? permissions, string? returnUrl) =>
             {
-                new(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
-                new(ClaimTypes.Email, "e2e-test-user@bowlneba.com"),
-            };
+                var claims = new List<Claim>
+                {
+                    new(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+                    new(ClaimTypes.Email, "e2e-test-user@bowlneba.com"),
+                };
 
-            foreach (var permission in (permissions ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries))
-            {
-                claims.Add(new Claim(Permissions.ClaimType, permission));
-            }
+                foreach (var permission in (permissions ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    claims.Add(new Claim(Permissions.ClaimType, permission));
+                }
 
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var principal = new ClaimsPrincipal(identity);
 
-            await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+                await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-            return Results.Redirect(ReturnUrlValidator.GetSafeReturnUrl(returnUrl));
-        });
+                return Results.Redirect(ReturnUrlValidator.GetSafeReturnUrl(returnUrl));
+            });
+        }
     }
 }

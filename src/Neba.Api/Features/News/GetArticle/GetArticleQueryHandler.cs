@@ -32,7 +32,7 @@ internal sealed class GetArticleQueryHandler(
             {
                 article.Id,
                 article.Slug,
-                article.PublicationStatus,
+                PublicationStatus = article.PublicationStatus.Name,
                 article.Title,
                 article.Content,
                 HeaderImageContainer = article.HeaderImage != null ? article.HeaderImage.Container : null,

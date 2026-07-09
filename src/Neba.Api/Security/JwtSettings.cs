@@ -3,7 +3,7 @@ namespace Neba.Api.Security;
 /// <summary>
 /// Represents the settings for JWT (JSON Web Token) authentication, including issuer, audience, signing key, and token expiration times.
 /// </summary>
-public sealed record JwtSettings
+internal sealed record JwtSettings
 {
     /// <summary>
     /// Gets or sets the issuer of the JWT tokens. This is typically the URL of the authentication server or service that issues the tokens.

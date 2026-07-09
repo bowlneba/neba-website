@@ -13,7 +13,7 @@ public static class ArticleSummaryDtoFactory
     public static ArticleSummaryDto Create(
         ArticleId? id = null,
         string? slug = null,
-        PublicationStatus? publicationStatus = null,
+        string? publicationStatus = null,
         string? title = null,
         string? excerpt = null,
         Uri? headerImageUrl = null,
@@ -22,7 +22,7 @@ public static class ArticleSummaryDtoFactory
         {
             Id = id ?? ArticleId.New(),
             Slug = slug ?? ValidSlug,
-            PublicationStatus = publicationStatus ?? PublicationStatus.Published,
+            PublicationStatus = publicationStatus ?? PublicationStatus.Published.Name,
             Title = title ?? ValidTitle,
             Excerpt = excerpt ?? ValidExcerpt,
             HeaderImageUrl = headerImageUrl,
@@ -42,7 +42,7 @@ public static class ArticleSummaryDtoFactory
 #pragma warning disable CA1308
                 Slug = title.ToLowerInvariant().Replace(' ', '-'),
 #pragma warning restore CA1308
-                PublicationStatus = faker.PickRandom(PublicationStatus.List.ToArray()),
+                PublicationStatus = faker.PickRandom(PublicationStatus.List.ToArray()).Name,
                 Title = title,
                 Excerpt = faker.Lorem.Sentence(),
                 HeaderImageUrl = hasImage ? new Uri(faker.Internet.Avatar()) : null,
