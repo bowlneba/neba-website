@@ -1,4 +1,4 @@
-import { test, type Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import path from 'node:path';
 
 /**
@@ -43,9 +43,13 @@ test.describe('delete-article help screenshots', () => {
     await page.waitForSelector('.neba-modal-content');
     await waitForModalAnimations(page);
 
+    await expect(page.locator('.neba-modal-content')).toBeVisible();
+
     await page.screenshot({ path: path.join(outDir, 'list-confirm-dialog.png') });
 
     await page.locator('button.confirm-action-modal-cancel').click();
+
+    await expect(page.locator('.neba-modal-content')).toBeHidden();
   });
 
   test('detail page danger zone + confirm dialog', async ({ page }) => {
@@ -58,8 +62,12 @@ test.describe('delete-article help screenshots', () => {
     await page.waitForSelector('.neba-modal-content');
     await waitForModalAnimations(page);
 
+    await expect(page.locator('.neba-modal-content')).toBeVisible();
+
     await page.screenshot({ path: path.join(outDir, 'detail-confirm-dialog.png') });
 
     await page.locator('button.confirm-action-modal-cancel').click();
+
+    await expect(page.locator('.neba-modal-content')).toBeHidden();
   });
 });

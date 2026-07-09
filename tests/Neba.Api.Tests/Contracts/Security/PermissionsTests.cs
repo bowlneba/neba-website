@@ -44,7 +44,7 @@ public sealed class PermissionsTests
     public void CanManageArticlesPolicyName_ShouldBeCanManageArticles()
     {
         // Arrange & Act
-        var policyName = Permissions.CanManageArticlesPolicyName;
+        const string policyName = Permissions.CanManageArticlesPolicyName;
 
         // Assert
         policyName.ShouldBe("CanManageArticles");
