@@ -66,6 +66,35 @@ Scope: `Title`, `Slug` (optional override), `Content`, `PublicationStatus`, `Pub
 - Form fields: Title, Slug (client-derived from Title as the user types, editable), Content, PublicationStatus, PublishDateUtc. No tournament field rendered yet — always submits `null`.
 - Gated behind `CanManageArticles` (same policy as the delete button today).
 
+### Content field — rich text editor
+
+- **Quill** (not Tiptap, not MudBlazor) — this repo has no JS bundler for runtime code (`wwwroot/js/*.js` are plain scripts; webpack/vite aren't in play, jest/stryker are dev/test-only), which rules out Tiptap's module-bundled packages. Quill ships as a single script + stylesheet, needs no build step, and comes with its own toolbar UI out of the box. Pulling in a full component library like MudBlazor for one field isn't worth the dependency footprint.
+- New `RichTextEditor.razor` component wrapping Quill via JS interop (`wwwroot/js/rich-text-editor.js`: init/getHtml/setHtml/dispose), two-way bound to the `Content` field. `NewsDetail.razor:94` already renders `Content` as `(MarkupString)_article.Content`, so Quill's HTML output slots in with no format conversion.
+- **New requirement this introduces: server-side HTML sanitization.** Today `Article.Create` only checks `Content` is non-empty — nothing sanitizes it. Once a rich text editor is the input source, arbitrary HTML (including `<script>`, event handler attributes, etc., whether from a compromised staff account or a malicious paste) can reach `Content` and then `MarkupString` renders it unescaped. Needs a sanitization step (e.g. an allowlist-based HTML sanitizer) applied server-side before persisting — either in `Article.Create`/`CreateArticleCommandHandler` or as a shared helper reused by the eventual `UpdateArticleCommandHandler`. Library choice (e.g. `HtmlSanitizer`/Ganss.XSS) and exact placement is an open question to resolve when this sub-phase starts.
+
+#### Tests
+
+- **`RichTextEditor.razor` (bUnit, `Neba.Website.Tests`)**:
+  - Renders the Quill container element and initializes JS interop on first render (`JSInterop.VerifyInvoke("initRichTextEditor")`), not on subsequent re-renders.
+  - Two-way binding: pushing a value into the component's `Content`/`Value` parameter calls the JS `setHtml` interop method; simulating a JS-side change callback (`[JSInvokable]` update) updates the bound value and raises `ValueChanged`.
+  - Component disposal invokes the JS `dispose` call (`JSInterop.VerifyInvoke("disposeRichTextEditor")`) so no orphaned Quill instance/listener survives navigation away from the page.
+  - Renders read-only/disabled state correctly if the component supports it (relevant if reused later on an edit page).
+  - Initial value round-trip: given a non-empty starting `Content`, the JS `setHtml` call receives that exact value.
+- **`rich-text-editor.js` (Jest, matches existing `wwwroot/js/*.tests.js` pattern e.g. `breakpoints.tests.js`)**:
+  - `init` creates a Quill instance bound to the given container and returns/exposes a handle usable by `getHtml`/`setHtml`/`dispose`.
+  - `getHtml` returns the current editor HTML exactly as Quill produces it (`.root.innerHTML`).
+  - `setHtml` replaces editor content and `getHtml` reflects the new value immediately after.
+  - `dispose` tears down the Quill instance/DOM listeners cleanly — calling `dispose` twice, or calling `getHtml`/`setHtml` after `dispose`, does not throw.
+  - Editor content changes fire the expected `.NET` invoke callback (mock `DotNet.invokeMethodAsync`) with the updated HTML.
+- **Sanitization unit tests (`Neba.Api.Tests`)**, wherever the sanitizer is placed (`Article.Create` or a shared helper):
+  - Benign formatting HTML (bold/italic/lists/links/headings — Quill's actual output shapes) passes through unchanged.
+  - `<script>` tags, inline event handler attributes (`onclick`, `onerror`, etc.), and `javascript:` URLs in `href`/`src` are stripped or neutralized.
+  - `<iframe>`/`<object>`/`<embed>` and other non-allowlisted tags are removed.
+  - Malformed/unclosed HTML doesn't throw and produces safe output.
+  - Idempotency: sanitizing already-sanitized content is a no-op (matters once `UpdateArticleCommandHandler` re-sanitizes existing content on edit).
+  - Empty/whitespace-only content after sanitization is still caught by the existing `Article.Content.Required` rule (i.e. a payload that's *entirely* disallowed markup, like a bare `<script>` tag with no visible text, must not slip past required-content validation once stripped).
+- **Integration test** for the create endpoint: submitting `Content` containing a script tag returns a persisted `Article` whose stored `Content` has the script tag removed (end-to-end proof sanitization is actually wired into the handler, not just unit-tested in isolation).
+
 ### Deferred to a later sub-phase (tournament linking)
 
 - Page accepts an optional route/query parameter (e.g. `?tournamentId=`) so a tournament-portal context can deep-link into `/news/new` with the tournament pre-selected and the picker hidden; outside that context, a dropdown/picker appears.
