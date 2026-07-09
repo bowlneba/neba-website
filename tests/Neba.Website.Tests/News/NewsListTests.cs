@@ -464,6 +464,26 @@ public sealed class NewsListTests : IDisposable
         cut.Markup.ShouldContain(System.Net.WebUtility.HtmlEncode(articles.Single().Title));
     }
 
+    [Fact(DisplayName = "Should close confirm dialog and keep article in grid when delete is cancelled")]
+    public void CancelDelete_ShouldCloseDialogAndKeepArticle_WhenCancelled()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(1, 26);
+        SetupSuccessResponse(articles, totalItems: 1, pageNumber: 2);
+        NavigateToPage(2);
+        var cut = _ctx.Render<NewsList>();
+        cut.Find("button.icon-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-cancel").Click();
+
+        // Assert
+        cut.Markup.ShouldNotContain("Delete article?");
+        cut.Markup.ShouldContain(System.Net.WebUtility.HtmlEncode(articles.Single().Title));
+    }
+
     [Fact(DisplayName = "Should remove article from grid when delete succeeds")]
     public void ConfirmDelete_ShouldRemoveArticleFromGrid_WhenDeleteSucceeds()
     {

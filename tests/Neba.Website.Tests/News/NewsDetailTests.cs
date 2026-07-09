@@ -421,6 +421,26 @@ public sealed class NewsDetailTests : IDisposable
         cut.Markup.ShouldContain("Season Champions Crowned");
     }
 
+    [Fact(DisplayName = "Should close confirm dialog and stay on page when delete is cancelled")]
+    public void CancelDelete_ShouldCloseDialogAndStayOnPage_WhenCancelled()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var article = ArticleDetailResponseFactory.Create(title: "Season Champions Crowned");
+        SetupSuccessResponse(article);
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+        cut.Find("button.sidebar-danger-zone-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-cancel").Click();
+
+        // Assert
+        cut.Markup.ShouldNotContain("Delete article?");
+        var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
+        navigationManager.Uri.ShouldNotEndWith("/news");
+    }
+
     [Fact(DisplayName = "Should navigate to /news when delete succeeds")]
     public void ConfirmDelete_ShouldNavigateToNews_WhenDeleteSucceeds()
     {

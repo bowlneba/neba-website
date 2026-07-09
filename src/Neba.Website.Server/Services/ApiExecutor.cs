@@ -215,7 +215,7 @@ internal sealed class ApiExecutor(
     /// non-generic <see cref="ExecuteAsync(string, string, Func{CancellationToken, Task{IApiResponse}}, CancellationToken)"/>
     /// overload can reuse the generic overload's activity/metrics/error-mapping logic verbatim.
     /// </summary>
-    private sealed class SuccessApiResponse(IApiResponse inner) : IApiResponse<Success>
+    internal sealed class SuccessApiResponse(IApiResponse inner) : IApiResponse<Success>
     {
         public Success Content => Result.Success;
         public bool HasContent => inner.IsSuccessStatusCode;
