@@ -24,39 +24,546 @@ Related: [`docs/ubiquitous-language.md`](../ubiquitous-language.md) (§ News) is
 
 Scope: `Title`, `Slug` (optional override), `Content`, `PublicationStatus`, `PublishDateUtc`, `TournamentId` (always `null` from the UI this phase, but handled correctly if set). No header image, no attachments — those are Phase 3.
 
+**Precedent note**: this is the first "create an aggregate root" feature in the codebase — no existing `CreateXCommandHandler` persists via `appDbContext.Add(...)`, and no aggregate root (only value objects) currently has a `Create` factory. The code below mirrors the closest existing patterns instead: `ArticleAttachment.Create` (always-valid child entity factory), `RegisterEndpoint`/`RegisterCommandHandler` (the only `Send.CreatedAtAsync` + Conflict/Validation split in the repo), and `DeleteArticleCommandHandler` (EF persistence + `IFusionCache` tag invalidation style for this exact aggregate).
+
 ### Domain (`Neba.Api/Features/News/Domain`)
 
-- `Article`: add private/internal constructor + `internal static ErrorOr<Article> Create(string title, string? slug, string content, PublicationStatus status, DateTimeOffset publishDateUtc, TournamentId? tournamentId)`.
-  - Derives slug from `title` when `slug` is null/blank; otherwise normalizes the supplied value.
-  - Validates: title required, content required, slug format valid (empty-after-normalization is an error), slug not a reserved word.
-  - Does **not** validate slug uniqueness or tournament existence — those require persistence lookups and belong in the handler.
-- `ArticleErrors`: add `Article.Title.Required`, `Article.Content.Required`, `Article.Slug.Invalid`, `Article.Slug.Reserved`, `Article.Slug.AlreadyExists` (Conflict), `Article.Tournament.NotFound` (Conflict).
+**`Article.cs`** — add a slug-normalization helper and a factory method. `Article` stays constructible via object initializer (same as today, same as `ArticleAttachment`) since `internal` factories in this codebase gate *intended* construction by convention, not by a private constructor:
+
+```csharp
+using System.Text;
+
+using ErrorOr;
+
+using Neba.Api.Domain;
+using Neba.Api.Features.Storage.Domain;
+using Neba.Api.Features.Tournaments.Domain;
+
+namespace Neba.Api.Features.News.Domain;
+
+public sealed class Article
+    : AggregateRoot
+{
+    // ... existing properties unchanged ...
+
+    private const string ReservedSlugNew = "new";
+
+    internal static ErrorOr<Article> Create(
+        string title,
+        string? slug,
+        string content,
+        PublicationStatus status,
+        DateTimeOffset publishDateUtc,
+        TournamentId? tournamentId)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return ArticleErrors.TitleRequired;
+        }
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return ArticleErrors.ContentRequired;
+        }
+
+        var normalizedSlug = NormalizeSlug(string.IsNullOrWhiteSpace(slug) ? title : slug);
+
+        if (string.IsNullOrEmpty(normalizedSlug))
+        {
+            return ArticleErrors.SlugInvalid;
+        }
+
+        if (normalizedSlug == ReservedSlugNew)
+        {
+            return ArticleErrors.SlugReserved;
+        }
+
+        return new Article
+        {
+            Id = ArticleId.New(),
+            Title = title,
+            Slug = normalizedSlug,
+            Content = content,
+            PublicationStatus = status,
+            PublishDateUtc = publishDateUtc,
+            TournamentId = tournamentId
+        };
+    }
+
+    /// <summary>
+    /// Normalizes a title or a staff-supplied slug override into a URL-safe slug: lowercase,
+    /// alphanumeric runs joined by single hyphens, no leading/trailing hyphen. Exposed so the
+    /// command handler can compute the same candidate for a uniqueness check before calling
+    /// <see cref="Create"/> — both call this so there is one normalization rule, not two.
+    /// </summary>
+    internal static string NormalizeSlug(string value)
+    {
+        var lowered = value.Trim().ToLowerInvariant();
+        var builder = new StringBuilder(lowered.Length);
+        var lastWasHyphen = false;
+
+        foreach (var c in lowered)
+        {
+            if (char.IsLetterOrDigit(c))
+            {
+                builder.Append(c);
+                lastWasHyphen = false;
+            }
+            else if (!lastWasHyphen && builder.Length > 0)
+            {
+                builder.Append('-');
+                lastWasHyphen = true;
+            }
+        }
+
+        return builder.ToString().TrimEnd('-');
+    }
+}
+```
+
+**`ArticleErrors.cs`** — add the new error factories (mirroring the existing `ArticleAttachmentDisplayNameRequired`/`ArticleNotFound` style):
+
+```csharp
+internal static class ArticleErrors
+{
+    // ... existing ArticleAttachmentDisplayNameRequired, ArticleNotFound(slug) unchanged ...
+
+    public static Error TitleRequired
+        => Error.Validation("Article.Title.Required", "Title must not be empty.");
+
+    public static Error ContentRequired
+        => Error.Validation("Article.Content.Required", "Content must not be empty.");
+
+    public static Error SlugInvalid
+        => Error.Validation("Article.Slug.Invalid", "Slug must contain at least one alphanumeric character.");
+
+    public static Error SlugReserved
+        => Error.Validation("Article.Slug.Reserved", "Slug 'new' is reserved for the article-creation route.");
+
+    public static Error SlugAlreadyExists(string slug)
+        => Error.Conflict(
+            code: "Article.Slug.AlreadyExists",
+            description: "An article with this slug already exists.",
+            metadata: new Dictionary<string, object> { { "Slug", slug } });
+
+    public static Error TournamentNotFound(TournamentId tournamentId)
+        => Error.Conflict(
+            code: "Article.Tournament.NotFound",
+            description: "The specified tournament does not exist.",
+            metadata: new Dictionary<string, object> { { "TournamentId", tournamentId.Value.ToString() } });
+}
+```
 
 ### Application/API (`Neba.Api/Features/News/CreateArticle/`)
 
-- `CreateArticleCommand(string Title, string? Slug, string Content, PublicationStatus Status, DateTimeOffset PublishDateUtc, TournamentId? TournamentId)`
-- `CreateArticleCommandHandler`:
-  1. If `TournamentId` provided, verify the tournament exists → `Article.Tournament.NotFound` (Conflict) if not.
-  2. Check slug uniqueness (derived or supplied) → `Article.Slug.AlreadyExists` (Conflict) if taken.
-  3. Call `Article.Create(...)`, persist, return DTO.
-- `CreateArticleEndpoint` — `Post(string.Empty)` + `Group<NewsEndpointGroup>()` (routes to `POST news/`, matching `ListArticlesEndpoint`'s `Get(string.Empty)`), `Policies(Permissions.CanManageArticlesPolicyName)`, `WithName("CreateArticle")`, `Produces<ArticleResponse>(201)`, `ProducesProblemDetails(400)`, `ProducesProblemDetails(409)`.
-- `CreateArticleSummary`, `CreateArticleValidator` (structural only: title/content non-empty + max length, publish date required).
+**`CreateArticleCommand.cs`**
+
+```csharp
+using Neba.Api.Features.News.Domain;
+using Neba.Api.Features.Tournaments.Domain;
+using Neba.Api.Messaging;
+
+namespace Neba.Api.Features.News.CreateArticle;
+
+internal sealed record CreateArticleCommand
+    : ICommand<CreatedArticle>
+{
+    public required string Title { get; init; }
+
+    public string? Slug { get; init; }
+
+    public required string Content { get; init; }
+
+    public required PublicationStatus Status { get; init; }
+
+    public required DateTimeOffset PublishDateUtc { get; init; }
+
+    public TournamentId? TournamentId { get; init; }
+}
+
+internal sealed record CreatedArticle(ArticleId ArticleId, string Slug);
+```
+
+**`CreateArticleCommandHandler.cs`**
+
+```csharp
+using ErrorOr;
+
+using Microsoft.EntityFrameworkCore;
+
+using Neba.Api.Database;
+using Neba.Api.Features.News.Domain;
+using Neba.Api.Messaging;
+
+using ZiggyCreatures.Caching.Fusion;
+
+namespace Neba.Api.Features.News.CreateArticle;
+
+internal sealed class CreateArticleCommandHandler(AppDbContext appDbContext, IFusionCache cache)
+    : ICommandHandler<CreateArticleCommand, CreatedArticle>
+{
+    public async Task<ErrorOr<CreatedArticle>> HandleAsync(CreateArticleCommand command, CancellationToken cancellationToken)
+    {
+        if (command.TournamentId is not null)
+        {
+            var tournamentExists = await appDbContext.Tournaments
+                .AnyAsync(t => t.Id == command.TournamentId, cancellationToken);
+
+            if (!tournamentExists)
+            {
+                return ArticleErrors.TournamentNotFound(command.TournamentId.Value);
+            }
+        }
+
+        var slugCandidate = Article.NormalizeSlug(
+            string.IsNullOrWhiteSpace(command.Slug) ? command.Title : command.Slug);
+
+        var slugExists = await appDbContext.Articles
+            .AnyAsync(a => a.Slug == slugCandidate, cancellationToken);
+
+        if (slugExists)
+        {
+            return ArticleErrors.SlugAlreadyExists(slugCandidate);
+        }
+
+        var article = Article.Create(
+            command.Title,
+            command.Slug,
+            command.Content,
+            command.Status,
+            command.PublishDateUtc,
+            command.TournamentId);
+
+        if (article.IsError)
+        {
+            return article.Errors;
+        }
+
+        appDbContext.Articles.Add(article.Value);
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await cache.RemoveByTagAsync("neba:news:articles", token: cancellationToken);
+
+        return new CreatedArticle(article.Value.Id, article.Value.Slug);
+    }
+}
+```
+
+**`CreateArticleEndpoint.cs`**
+
+```csharp
+using Asp.Versioning;
+
+using ErrorOr;
+
+using FastEndpoints;
+using FastEndpoints.AspVersioning;
+
+using Neba.Api.Contracts.News.CreateArticle;
+using Neba.Api.Features.News.Domain;
+using Neba.Api.Features.Tournaments.Domain;
+
+using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
+
+namespace Neba.Api.Features.News.CreateArticle;
+
+internal sealed class CreateArticleEndpoint(Messaging.ICommandHandler<CreateArticleCommand, CreatedArticle> commandHandler)
+    : Endpoint<CreateArticleRequest, ArticleResponse>
+{
+    private readonly Messaging.ICommandHandler<CreateArticleCommand, CreatedArticle> _commandHandler = commandHandler;
+
+    public override void Configure()
+    {
+        Post(string.Empty);
+        Group<NewsEndpointGroup>();
+
+        Options(options => options
+            .WithVersionSet("News")
+            .MapToApiVersion(new ApiVersion(1, 0)));
+
+        Policies(PermissionCatalog.CanManageArticlesPolicyName);
+
+        Description(description => description
+            .WithName("CreateArticle")
+            .WithTags("Admin")
+            .Produces<ArticleResponse>(StatusCodes.Status201Created)
+            .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
+            .ProducesProblemDetails(StatusCodes.Status403Forbidden)
+            .ProducesProblemDetails(StatusCodes.Status409Conflict)
+            .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));
+    }
+
+    public override async Task HandleAsync(CreateArticleRequest req, CancellationToken ct)
+    {
+        var command = new CreateArticleCommand
+        {
+            Title = req.Input.Title,
+            Slug = req.Input.Slug,
+            Content = req.Input.Content,
+            Status = PublicationStatus.FromName(req.Input.PublicationStatus),
+            PublishDateUtc = req.Input.PublishDateUtc,
+            TournamentId = string.IsNullOrWhiteSpace(req.Input.TournamentId)
+                ? null
+                : new TournamentId(req.Input.TournamentId)
+        };
+
+        var result = await _commandHandler.HandleAsync(command, ct);
+
+        if (result.IsError)
+        {
+            if (result.FirstError.Type == ErrorType.Conflict)
+            {
+                AddError(result.FirstError.Description);
+                await Send.ErrorsAsync(StatusCodes.Status409Conflict, ct);
+
+                // Stryker disable once Statement
+                return;
+            }
+
+            foreach (var error in result.Errors)
+                AddError(error.Description);
+
+            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+
+            // Stryker disable once Statement
+            return;
+        }
+
+        var response = new ArticleResponse
+        {
+            ArticleId = result.Value.ArticleId.Value.ToString(),
+            Slug = result.Value.Slug
+        };
+
+        // Stryker disable once Statement
+        await Send.CreatedAtAsync(
+            "GetArticle",
+            routeValues: new { slug = result.Value.Slug },
+            responseBody: response,
+            cancellation: ct);
+    }
+}
+```
+
+**`CreateArticleRequestValidator.cs`** (structural only — no DB lookups, no business rules, per the codebase's validator convention):
+
+```csharp
+using FastEndpoints;
+
+using FluentValidation;
+
+using Neba.Api.Contracts.News.CreateArticle;
+using Neba.Api.Features.News.Domain;
+
+namespace Neba.Api.Features.News.CreateArticle;
+
+internal sealed class CreateArticleRequestValidator
+    : Validator<CreateArticleRequest>
+{
+    public CreateArticleRequestValidator()
+    {
+        RuleFor(r => r.Input.Title)
+            .NotEmpty()
+            .WithErrorCode("CreateArticleRequest.TitleRequired")
+            .WithMessage("Title is required.")
+            .MaximumLength(256)
+            .WithErrorCode("CreateArticleRequest.TitleTooLong")
+            .WithMessage("Title must be 256 characters or fewer.");
+
+        RuleFor(r => r.Input.Slug)
+            .MaximumLength(256)
+            .WithErrorCode("CreateArticleRequest.SlugTooLong")
+            .WithMessage("Slug must be 256 characters or fewer.")
+            .When(r => !string.IsNullOrWhiteSpace(r.Input.Slug));
+
+        RuleFor(r => r.Input.Content)
+            .NotEmpty()
+            .WithErrorCode("CreateArticleRequest.ContentRequired")
+            .WithMessage("Content is required.");
+
+        RuleFor(r => r.Input.PublicationStatus)
+            .NotEmpty()
+            .WithErrorCode("CreateArticleRequest.PublicationStatusRequired")
+            .WithMessage("Publication status is required.")
+            .Must(status => PublicationStatus.List.Any(s => s.Name == status))
+            .WithErrorCode("CreateArticleRequest.PublicationStatusInvalid")
+            .WithMessage("Publication status must be one of: Draft, Published.");
+
+        RuleFor(r => r.Input.PublishDateUtc)
+            .NotEqual(default(DateTimeOffset))
+            .WithErrorCode("CreateArticleRequest.PublishDateRequired")
+            .WithMessage("Publish date is required.");
+
+        RuleFor(r => r.Input.TournamentId)
+            .Length(26)
+            .WithErrorCode("CreateArticleRequest.TournamentIdInvalidLength")
+            .WithMessage("TournamentId must be a 26-character ULID.")
+            .When(r => !string.IsNullOrWhiteSpace(r.Input.TournamentId));
+    }
+}
+```
+
+**`CreateArticleSummary.cs`**
+
+```csharp
+using FastEndpoints;
+
+using Neba.Api.Contracts.News.CreateArticle;
+
+namespace Neba.Api.Features.News.CreateArticle;
+
+internal sealed class CreateArticleSummary : Summary<CreateArticleEndpoint>
+{
+    public CreateArticleSummary()
+    {
+        Summary = "Creates a news article.";
+        Description = "Creates a draft or published article. Slug is derived from the title unless a staff-supplied override is given; either way it is normalized and must be unique. Requires the News.CreateArticle permission.";
+
+        Response(201, "Article created.");
+        Response(401, "No valid bearer token provided.");
+        Response(403, "Authenticated user does not have the News.CreateArticle permission.");
+        Response(409, "Slug already taken, or TournamentId does not reference an existing tournament.");
+        Response(422, "Title, content, or slug failed a domain validation rule.");
+    }
+}
+```
 
 ### Contracts (`Neba.Api.Contracts/News/CreateArticle/`)
 
-- `ArticleInput` (Title, Slug?, Content, PublicationStatus, PublishDateUtc, TournamentId?)
-- `CreateArticleRequest` (wraps `ArticleInput`, per the Request-wraps-Input convention)
-- `INewsApi` gets `CreateAsync`
+**`ArticleInput.cs`**
+
+```csharp
+namespace Neba.Api.Contracts.News.CreateArticle;
+
+/// <summary>
+/// The fields required to create a news article.
+/// </summary>
+public sealed record ArticleInput
+{
+    /// <summary>
+    /// The article's title.
+    /// </summary>
+    public required string Title { get; init; }
+
+    /// <summary>
+    /// An optional staff-supplied slug override. When null or blank, the slug is derived from <see cref="Title"/>.
+    /// </summary>
+    public string? Slug { get; init; }
+
+    /// <summary>
+    /// The full HTML content of the article.
+    /// </summary>
+    public required string Content { get; init; }
+
+    /// <summary>
+    /// The publication status: "Draft" or "Published".
+    /// </summary>
+    public required string PublicationStatus { get; init; }
+
+    /// <summary>
+    /// The UTC date and time the article is (or will be) published.
+    /// </summary>
+    public required DateTimeOffset PublishDateUtc { get; init; }
+
+    /// <summary>
+    /// The ULID string of an associated tournament, or null if the article is not linked to a tournament.
+    /// </summary>
+    public string? TournamentId { get; init; }
+}
+```
+
+**`CreateArticleRequest.cs`**
+
+```csharp
+namespace Neba.Api.Contracts.News.CreateArticle;
+
+/// <summary>
+/// Creates a news article.
+/// </summary>
+public sealed record CreateArticleRequest
+{
+    /// <summary>
+    /// The article fields to create.
+    /// </summary>
+    public required ArticleInput Input { get; init; }
+}
+```
+
+**`ArticleResponse.cs`**
+
+```csharp
+namespace Neba.Api.Contracts.News.CreateArticle;
+
+/// <summary>
+/// Response returned after successfully creating a news article.
+/// </summary>
+public sealed record ArticleResponse
+{
+    /// <summary>
+    /// The ULID string that uniquely identifies the newly created article.
+    /// </summary>
+    public required string ArticleId { get; init; }
+
+    /// <summary>
+    /// The normalized, unique slug assigned to the article (derived from title, or the supplied override).
+    /// </summary>
+    public required string Slug { get; init; }
+}
+```
+
+**`INewsApi.cs`** — add:
+
+```csharp
+using Neba.Api.Contracts.News.CreateArticle;
+// ... existing usings ...
+
+public interface INewsApi
+{
+    // ... existing members ...
+
+    /// <summary>
+    /// Creates a news article. Requires the News.CreateArticle permission.
+    /// </summary>
+    /// <param name="request">The article fields to create.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The created article's ID and slug.</returns>
+    [Post("/news")]
+    Task<IApiResponse<ArticleResponse>> CreateArticleAsync(
+        CreateArticleRequest request,
+        CancellationToken cancellationToken = default);
+}
+```
 
 ### Security (`Neba.Api.Contracts/Security/Permission.cs`)
 
-- Add `News.CreateArticle` permission, add to `ArticleManagementPermissions`.
+Add inside the `#region News` block, alongside `DeleteArticle`:
+
+```csharp
+/// <summary>
+/// Permission required to create a news article.
+/// </summary>
+public static readonly Permissions CreateArticle = new("News.CreateArticle", "Create Article");
+
+/// <summary>
+/// This is a temporary permission to set us up until real permissions come into the picture
+/// </summary>
+public static readonly Permissions DeleteArticle = new("News.DeleteArticle", "Delete Article");
+
+/// <summary>
+/// A collection of permissions related to article management.
+/// </summary>
+public static readonly IReadOnlyCollection<Permissions> ArticleManagementPermissions =
+[
+    CreateArticle,
+    DeleteArticle,
+];
+```
 
 ### Tests
 
-- `Article.Create` unit tests: title/content required, slug derivation, slug normalization of a supplied override, reserved-slug rejection.
-- `CreateArticleCommandHandler` unit tests: duplicate slug → Conflict, unknown tournament → Conflict, success path (derived slug, supplied slug override).
-- Integration test for the endpoint (201 + Location header, 400 on structural validation failure, 409 on duplicate slug).
+- `Article.Create` unit tests (`Neba.Api.Tests`): title required, content required, slug derived from title when `slug` is null/blank, slug normalization of a supplied override (mixed case, spaces, punctuation → hyphenated lowercase), empty-after-normalization slug is an error, reserved slug `"new"` is rejected (for both a derived and a supplied slug).
+- `CreateArticleCommandHandler` unit tests: unknown `TournamentId` → `Article.Tournament.NotFound` (Conflict), duplicate slug (derived and supplied cases) → `Article.Slug.AlreadyExists` (Conflict), success path persists the article and returns `CreatedArticle`, cache tag `neba:news:articles` is invalidated on success.
+- Integration test for the endpoint (`CreateArticleEndpointIntegrationTests` alongside the existing `DeleteArticleEndpointAuthorizationTests` pattern): 201 + `Location` header + body shape on success, 400 on structural validation failure (missing title, invalid `PublicationStatus` value), 409 on duplicate slug, 401/403 for missing/insufficient permission — remember the FastEndpoints/Hangfire static-state pitfalls documented in `CLAUDE.md`'s Learnings section if this test spins up a real `WebApplication`.
 
 ---
 
