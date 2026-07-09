@@ -169,8 +169,9 @@ An Article is only publicly visible when its Publication Status is `Published` *
 
 - An Article is publicly visible only when `PublicationStatus == Published` and `PublishDate <= UtcNow`
 - A `Draft` article is never publicly visible, regardless of `PublishDate`
-- `PublishDate` is required when publishing. It may be set to a past, present, or future date and time
+- `PublishDate` is required regardless of status — there is no rule tying its value to `PublicationStatus`; visibility is a query-time concern, not a creation-time invariant
 - Slug must be unique across all Articles
+- Slug must not equal a reserved word (currently: `new`), since `/news/new` is the route for the article-creation page rather than an article detail page
 
 **In Code**:
 
@@ -218,7 +219,7 @@ An Article is only publicly visible when its Publication Status is `Published` *
 
 ### Slug
 
-**Definition**: A URL-friendly string that uniquely identifies an Article within the `/news` route (e.g., `2025-masters-results`). Used as the path segment in `/news/{slug}`. Slugs are set by staff at authoring time and must be unique across all Articles.
+**Definition**: A URL-friendly string that uniquely identifies an Article within the `/news` route (e.g., `2025-masters-results`). Used as the path segment in `/news/{slug}`. Slugs are derived automatically from the Article's Title (lowercased, hyphenated) at authoring time, but staff may override the generated value before saving. Must be unique across all Articles and must not equal a reserved word (currently: `new`).
 
 **In Code**: `Article.Slug` (`string`)
 
@@ -228,7 +229,9 @@ An Article is only publicly visible when its Publication Status is `Published` *
 
 **Definition**: An optional image displayed prominently at the top of an Article on both the News list page and the Article detail page. Stored as a `StoredFile` reference in Azure Blob Storage. When no Header Image is present, the NEBA logo is displayed as a fallback — this is a presentation-layer convention, not a domain concept.
 
-Blob path convention: `news/{articleId}/header/{filename}`
+Uploaded independently of the Article record — staff select the file before the Article is ever saved, so the blob cannot be keyed by `ArticleId`. The upload endpoint stores the file and returns a `StoredFile` pointer immediately; that pointer is carried through the create/update form and only becomes associated with the Article when the Article is saved (the `Article` row simply starts referencing that pointer — the blob itself never moves). A file uploaded this way but never attached to a saved Article is an orphan, swept up by a periodic cleanup job.
+
+Blob path convention: `news/uploads/header/{ulid}-{filename}`
 
 **In Code**: `Article.HeaderImage` (`StoredFile?`)
 
@@ -240,6 +243,8 @@ Blob path convention: `news/{articleId}/header/{filename}`
 
 An Article Attachment with `IsInline = true` is also embedded within the Article body. The blob URL referenced in the rich-text body and the `StoredFile` on the attachment record refer to the same file — staff uploads once and inserts inline via the editor.
 
+Like the Header Image, attachments are uploaded independently of the Article record and only become associated with it when the Article is saved — see the Header Image entry above for the upload/orphan-cleanup mechanism, which applies identically here.
+
 **Properties**:
 
 | Property | Type | Required | Notes |
@@ -250,7 +255,7 @@ An Article Attachment with `IsInline = true` is also embedded within the Article
 | `DisplayName` | string | Yes | Staff-provided label shown in the attachment list |
 | `IsInline` | bool | Yes | Whether this attachment is also embedded within the Article body. Defaults to `false` |
 
-Blob path convention: `news/{articleId}/attachments/{filename}`
+Blob path convention: `news/uploads/attachments/{ulid}-{filename}`
 
 **In Code**:
 
