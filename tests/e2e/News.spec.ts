@@ -299,7 +299,7 @@ test.describe('News detail page — delete article (authenticated)', () => {
     await page.locator('.sidebar-danger-zone-btn').click();
     await page.locator('button.confirm-action-modal-confirm').click();
 
-    await expect(page.locator('.neba-alert')).toContainText('Error Loading Article');
+    await expect(page.locator('.neba-toast')).toContainText('Delete Failed');
     await expect(page).toHaveURL(/\/news\/points-race-update$/);
 
     await page.request.post('http://localhost:5151/__mock/reset?path=/news/01JX0000000000000000000103');
