@@ -9,6 +9,7 @@ using Neba.Api.Database;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.HallOfFame.Domain;
+using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Tournaments.Domain;
@@ -73,7 +74,8 @@ internal static class AuditingConfiguration
                 .Include<HighBlockAward>()
                 .Include<BowlerOfTheYearAward>()
                 .Include<BowlingCenter>()
-                .Include<Sponsor>();
+                .Include<Sponsor>()
+                .Include<Article>();
 
             Audit.EntityFramework.Configuration.Setup()
                 .ForContext<SecurityDbContext>(auditConfig => auditConfig

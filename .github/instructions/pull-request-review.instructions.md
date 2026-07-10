@@ -319,6 +319,16 @@ Suggest spans for:
 - Operations involving multiple steps
 - Operations where timing breakdown aids debugging
 
+### Entity-Level Auditing
+
+EF-level audit (`Audit.EntityFramework`, configured in `Neba.Api/Auditing/AuditingConfiguration.cs`) uses `UseOptIn()` — an entity type produces **no** audit row on insert/update/delete unless it's explicitly registered via `.Include<T>()`. There is no compiler or runtime error when this is skipped; the entity just silently goes unaudited.
+
+Flag when:
+
+- A PR adds a new aggregate root or entity under `Features/*/Domain/` that should be audited (i.e. it's user-facing content or state, analogous to existing audited types like `Bowler`, `Tournament`, `Sponsor`) but is not added to the `.Include<T>()` chain in `AuditingConfiguration.cs`
+
+Not every new entity needs this — use judgment (e.g. pure value objects or entities owned entirely by an already-audited aggregate don't need their own `Include<T>()`), but any new top-level aggregate root should be checked against the list.
+
 ### Metrics
 
 Look for opportunities to suggest metrics:
@@ -669,6 +679,7 @@ When reviewing, verify:
 - [ ] Logging present with appropriate levels
 - [ ] Spans added for business operations
 - [ ] No sensitive data logged
+- [ ] New auditable aggregate roots added to `.Include<T>()` in `AuditingConfiguration.cs`
 
 ### Blazor
 
