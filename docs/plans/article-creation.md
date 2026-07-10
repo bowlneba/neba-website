@@ -567,6 +567,130 @@ public static readonly IReadOnlyCollection<Permissions> ArticleManagementPermiss
 
 ---
 
+## Phase 1b — Server-side HTML sanitization
+
+Resolves the open item originally flagged under Phase 2's rich text editor work (library choice + placement). Landing it here, against `Article.Create`, rather than waiting for the Phase 2 UI, because `Article.Create` already accepts arbitrary `Content` today — the domain invariant ("`Content` is always safe HTML") shouldn't depend on which UI happens to submit it first.
+
+**Decisions**:
+
+- **Library: `HtmlSanitizer` (Ganss.Xss), not a hand-rolled allowlist on top of the already-referenced `HtmlAgilityPack`.** `HtmlAgilityPack` is already a dependency (`Neba.Api.csproj`), but it's used in `Documents/HtmlProcessor.cs` purely as a parser — no sanitization/allowlist logic to reuse. `HtmlSanitizer` is the de facto standard allowlist sanitizer for .NET, and its **defaults already satisfy every requirement below with zero custom configuration**: strips `<script>`, inline event handler attributes (`onclick`, `onerror`, etc.), `<iframe>`/`<object>`/`<embed>`; default `AllowedSchemes` is `http`/`https`/`mailto` only, so `data:` URIs in `href`/`src` are rejected out of the box (this is also the Phase 3 "reject `<img src="data:...">`" requirement, satisfied for free). Default allowed tags/attributes already cover Quill's actual output shapes (bold/italic/lists/links/headings/blockquote/code/`img[src,alt]`).
+- **Placement: inside `Article.Create` itself, not `CreateArticleCommandHandler`.** Mirrors how `NormalizeSlug` already works — a transformation owned by the aggregate so the invariant holds regardless of caller. This matters because the eventual `UpdateArticleCommandHandler` needs the same behavior; if sanitization lived in the create handler, it would have to be duplicated (and could be forgotten) in the update path. A future `Article.UpdateContent(...)`-style method reuses the same static helper.
+- **Namespace: its own top-level, feature-agnostic folder — not nested under `Features/News`.** Follows the same precedent as `Compliance/` (PII redaction) — a cross-cutting concern that lives as a sibling to `Features/`, not inside any one feature's domain folder, so any future feature needing rich-text content can call it without creating a cross-feature-domain dependency.
+- **Ordering: sanitize first, then re-check for emptiness.** A payload that's *entirely* disallowed markup (e.g. a bare `<script>` tag with no visible text) must not slip past the required-content rule once stripped. Reusing the existing `ArticleErrors.ContentRequired` error for this case (rather than adding a new one) keeps the error surface small — the caller experience is the same either way ("Content must not be empty").
+
+### Package (`Directory.Packages.props` / `src/Neba.Api/Neba.Api.csproj`)
+
+```xml
+<!-- Directory.Packages.props -->
+<PackageVersion Include="HtmlSanitizer" Version="9.0.892" />
+```
+
+```xml
+<!-- src/Neba.Api/Neba.Api.csproj -->
+<PackageReference Include="HtmlSanitizer" />
+```
+
+### `Neba.Api/RichText/HtmlContentSanitizer.cs`
+
+```csharp
+using Ganss.Xss;
+
+namespace Neba.Api.RichText;
+
+/// <summary>
+/// Sanitizes rich-text HTML (e.g. Quill editor output) before it is persisted, stripping any
+/// construct that could lead to XSS when later rendered via <c>MarkupString</c> — script tags,
+/// event handler attributes, non-http(s)/mailto URL schemes (including <c>data:</c> URIs), and
+/// non-allowlisted tags such as &lt;iframe&gt;/&lt;object&gt;/&lt;embed&gt;. Feature-agnostic by
+/// design (sibling to <c>Compliance</c>, not nested under any one feature's domain folder) so any
+/// future rich-text field can reuse it, not just <c>Article.Content</c>.
+/// </summary>
+internal static class HtmlContentSanitizer
+{
+    // Stryker disable once all : HtmlSanitizer is a third-party allowlist sanitizer; its default
+    // configuration is the tested surface, not a mutable rule set authored here.
+    private static readonly HtmlSanitizer Sanitizer = new();
+
+    internal static string Sanitize(string html)
+        => Sanitizer.Sanitize(html);
+}
+```
+
+### `Article.cs` — wire into `Create`
+
+```csharp
+using Neba.Api.RichText;
+
+// ...
+
+public static ErrorOr<Article> Create(
+    string title,
+    string? slug,
+    string content,
+    PublicationStatus publicationStatus,
+    DateTimeOffset publishDateUtc,
+    TournamentId? tournamentId)
+{
+    if (string.IsNullOrWhiteSpace(title))
+    {
+        return ArticleErrors.TitleRequired;
+    }
+
+    if (string.IsNullOrWhiteSpace(content))
+    {
+        return ArticleErrors.ContentRequired;
+    }
+
+    var sanitizedContent = HtmlContentSanitizer.Sanitize(content);
+
+    if (string.IsNullOrWhiteSpace(sanitizedContent))
+    {
+        return ArticleErrors.ContentRequired;
+    }
+
+    var normalizedSlug = NormalizeSlug(string.IsNullOrEmpty(slug)
+        ? title
+        : slug);
+
+    if (string.IsNullOrWhiteSpace(normalizedSlug))
+    {
+        return ArticleErrors.SlugInvalid;
+    }
+
+    if (normalizedSlug == ReservedSlugNew)
+    {
+        return ArticleErrors.SlugReserved;
+    }
+
+    return new Article
+    {
+        Id = ArticleId.New(),
+        Title = title,
+        Slug = normalizedSlug,
+        Content = sanitizedContent,
+        PublicationStatus = publicationStatus,
+        PublishDateUtc = publishDateUtc,
+        TournamentId = tournamentId
+    };
+}
+```
+
+### Tests
+
+- **`HtmlContentSanitizerTests` (`Neba.Api.Tests`, new file alongside `Neba.Api/RichText/HtmlContentSanitizer.cs`'s mirrored test path)**:
+  - Benign formatting HTML (bold/italic/lists/links/headings/blockquote/code — Quill's actual output shapes) passes through unchanged.
+  - `<script>` tags and inline event handler attributes (`onclick`, `onerror`, etc.) are stripped.
+  - `javascript:` and `data:` URLs in `href`/`src` are stripped (asserts the default `AllowedSchemes` behavior explicitly, so a future config change that widens the scheme list fails loudly here rather than silently).
+  - `<iframe>`/`<object>`/`<embed>` and other non-allowlisted tags are removed.
+  - Malformed/unclosed HTML doesn't throw and produces safe output.
+  - Idempotency: sanitizing already-sanitized content is a no-op (matters once `UpdateArticleCommandHandler` re-sanitizes existing content on edit).
+- **`Article.Create` unit tests** — add to the existing test class:
+  - Content that is *entirely* disallowed markup (e.g. `"<script>alert(1)</script>"`, no visible text) returns `ArticleErrors.ContentRequired`, not a successful `Article` with empty `Content`.
+  - Content containing a mix of benign and disallowed markup persists with only the disallowed portion removed (`article.Value.Content` assertion against the expected sanitized string).
+- **Integration test** for the create endpoint: submitting `Content` containing a script tag returns a persisted `Article` whose stored `Content` has the script tag removed (end-to-end proof sanitization is actually wired into `Article.Create`, not just unit-tested in isolation).
+
+---
+
 ## Phase 2 — UI: `/news/new` create page
 
 - New Blazor page under `Neba.Website.Server/News/` at route `"/news/new"`.
@@ -582,9 +706,10 @@ public static readonly IReadOnlyCollection<Permissions> ArticleManagementPermiss
 
 ### Content field — rich text editor
 
-- **Quill** (not Tiptap, not MudBlazor) — this repo has no JS bundler for runtime code (`wwwroot/js/*.js` are plain scripts; webpack/vite aren't in play, jest/stryker are dev/test-only), which rules out Tiptap's module-bundled packages. Quill ships as a single script + stylesheet, needs no build step, and comes with its own toolbar UI out of the box. Pulling in a full component library like MudBlazor for one field isn't worth the dependency footprint.
-- New `RichTextEditor.razor` component wrapping Quill via JS interop (`wwwroot/js/rich-text-editor.js`: init/getHtml/setHtml/dispose), two-way bound to the `Content` field. `NewsDetail.razor:94` already renders `Content` as `(MarkupString)_article.Content`, so Quill's HTML output slots in with no format conversion.
-- **New requirement this introduces: server-side HTML sanitization.** Today `Article.Create` only checks `Content` is non-empty — nothing sanitizes it. Once a rich text editor is the input source, arbitrary HTML (including `<script>`, event handler attributes, etc., whether from a compromised staff account or a malicious paste) can reach `Content` and then `MarkupString` renders it unescaped. Needs a sanitization step (e.g. an allowlist-based HTML sanitizer) applied server-side before persisting — either in `Article.Create`/`CreateArticleCommandHandler` or as a shared helper reused by the eventual `UpdateArticleCommandHandler`. Library choice (e.g. `HtmlSanitizer`/Ganss.XSS) and exact placement is an open question to resolve when this sub-phase starts.
+- **Quill** (not Tiptap, not MudBlazor) — this repo has no JS bundler for runtime code (`wwwroot/js/*.js` are plain scripts; webpack/vite aren't in play, jest/stryker are dev/test-only), which rules out Tiptap's module-bundled packages. Quill ships as a single script + stylesheet, needs no build step, and comes with its own toolbar UI out of the box. Pulling in a full component library like MudBlazor for one field isn't worth the dependency footprint. Loaded globally via CDN script/stylesheet tags in `App.razor` (same pattern as the Azure Maps SDK), not as an npm dependency.
+- **`RichTextEditor.razor` — done.** Lives in `Neba.Website.Server/Components/`, following this codebase's colocated-JS convention (`Components/RichTextEditor.razor.js`, imported via `JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/RichTextEditor.razor.js")` — matching `NebaMap.razor`/`NebaModal.razor`/etc.), **not** the `wwwroot/js/rich-text-editor.js` path originally sketched above. Generic `Value`/`ValueChanged` two-way binding (not `Content`-specific, so it's reusable), plus `ReadOnly`/`Placeholder`/`CssClass` parameters. The JS module keys Quill instances by container id in a `Map`, so multiple editors can coexist on one page. `NewsDetail.razor:94` already renders `Content` as `(MarkupString)_article.Content`, so Quill's HTML output slots in with no format conversion once the create/edit form binds `Value` to `Content`.
+- Verified via a temporary `/test-component` page (`Pages/ComponentTest.razor`) exercising: typed-content two-way binding, read-only toggle, programmatic `Value` overwrite (`setHtml` path), two simultaneous instances (proves no cross-instance state leakage), and mount/unmount (proves clean dispose). **Kept around past Phase 2** — Phase 3 extends this same component with inline image embedding (see below), so this page stays until that work is verified too; delete it only once Phase 3's image-embedding flow is confirmed working end-to-end.
+- **Server-side HTML sanitization is already handled** — see Phase 1b above. `Article.Create` sanitizes `Content` before persisting regardless of which UI submits it, so nothing further is needed here once this page binds `Value` to `Content` and submits it as-is.
 
 #### Tests
 
@@ -600,14 +725,7 @@ public static readonly IReadOnlyCollection<Permissions> ArticleManagementPermiss
   - `setHtml` replaces editor content and `getHtml` reflects the new value immediately after.
   - `dispose` tears down the Quill instance/DOM listeners cleanly — calling `dispose` twice, or calling `getHtml`/`setHtml` after `dispose`, does not throw.
   - Editor content changes fire the expected `.NET` invoke callback (mock `DotNet.invokeMethodAsync`) with the updated HTML.
-- **Sanitization unit tests (`Neba.Api.Tests`)**, wherever the sanitizer is placed (`Article.Create` or a shared helper):
-  - Benign formatting HTML (bold/italic/lists/links/headings — Quill's actual output shapes) passes through unchanged.
-  - `<script>` tags, inline event handler attributes (`onclick`, `onerror`, etc.), and `javascript:` URLs in `href`/`src` are stripped or neutralized.
-  - `<iframe>`/`<object>`/`<embed>` and other non-allowlisted tags are removed.
-  - Malformed/unclosed HTML doesn't throw and produces safe output.
-  - Idempotency: sanitizing already-sanitized content is a no-op (matters once `UpdateArticleCommandHandler` re-sanitizes existing content on edit).
-  - Empty/whitespace-only content after sanitization is still caught by the existing `Article.Content.Required` rule (i.e. a payload that's *entirely* disallowed markup, like a bare `<script>` tag with no visible text, must not slip past required-content validation once stripped).
-- **Integration test** for the create endpoint: submitting `Content` containing a script tag returns a persisted `Article` whose stored `Content` has the script tag removed (end-to-end proof sanitization is actually wired into the handler, not just unit-tested in isolation).
+- Sanitization tests are covered under Phase 1b, not repeated here.
 
 ### Deferred to a later sub-phase (tournament linking)
 
@@ -646,6 +764,30 @@ Four UX features are in scope for day 1, each with a different amount of API imp
 - **Per-file upload progress** — the one feature with real API-side consequence, covered above: the component wraps `IBrowserFile.OpenReadStream()` in a progress-reporting `Stream` and pipes it straight into the outbound multipart request rather than buffering the file first, so the endpoint must consume `IFormFile` via streaming (`OpenReadStream()`), not a fully-buffered `byte[]`, to keep progress meaningful and memory flat.
 
 Deferred (explicitly not day 1): clipboard paste-to-upload, attachment reordering, chunked/resumable upload, client-side image compression before upload.
+
+### Inline images embedded in the article body
+
+This **modifies the already-built `RichTextEditor.razor`/`RichTextEditor.razor.js` from Phase 2** rather than introducing a new component. `NewArticleAttachment.IsInline` already models "this file is shown inline in the article" — an image embedded in the article body via the editor is simply an attachment with `IsInline: true`, reusing `UploadArticleAttachmentEndpoint`'s validation/size-cap/orphan-tracking wholesale. No new endpoint or table.
+
+- **Quill's default image button is not used.** Out of the box it base64-encodes the picked file and embeds it directly as `<img src="data:image/png;base64,...">` — no upload, no blob storage, and it turns `Content` itself into the file store (bloats the DB row, ~33% larger than the binary, no size cap). That violates the "UI never talks to blob storage directly" constraint in spirit (nothing is uploaded at all) and is explicitly disabled.
+- **`RichTextEditor.razor` gains an optional parameter**, keeping the component itself News-agnostic:
+
+  ```csharp
+  [Parameter]
+  public Func<IJSStreamReference, string, string, Task<string?>>? OnImageSelected { get; set; }
+  ```
+
+  Signature is `(fileStream, fileName, contentType) => Task<url-or-null>`. When null, the toolbar's image control is omitted entirely (not rendered disabled) — a bare `RichTextEditor` with no upload wiring (e.g. the `/test-component` page) simply doesn't offer image embedding, rather than silently no-op-ing.
+- **JS-to-.NET file streaming** is the bridge for images the user pastes/drops/picks directly in the editor (they don't come through an `<InputFile>`, so `FileUpload.razor`'s streaming approach doesn't directly apply here): the custom Quill image handler wraps the browser `File` with `DotNet.createJSStreamReference(file)` and invokes a `[JSInvokable]` method on `RichTextEditor`, e.g. `Task<string?> RequestImageEmbedAsync(IJSStreamReference fileStream, string fileName, string contentType)`. That method calls the caller-supplied `OnImageSelected`, which the News create page implements: upload via the same code path `UploadArticleAttachmentEndpoint`/`FileUpload.razor` already use, get back a `StoredFile`, resolve a displayable blob URL, add `NewArticleAttachment(DisplayName: fileName, IsInline: true, File: storedFile)` to the page's tracked `Attachments` list, and return the URL. `RichTextEditor` then calls back into JS (`insertEmbeddedImage(containerId, url)`) to `quill.insertEmbed(range.index, 'image', url)` at the cursor position that triggered the upload.
+- **Sanitizer note** (ties back to Phase 1b): `HtmlSanitizer`'s default config already permits `<img src alt>` and rejects `src="data:..."` (default `AllowedSchemes` excludes `data:`), so no config change is needed here. Since the only path that ever inserts `<img>` into `Content` is the upload-then-URL flow above, a `data:` URI appearing in submitted `Content` means something bypassed it (e.g. a raw HTML paste) — `Article.Create`'s existing sanitization already strips it.
+
+### Attachments list UI (regular + inline attachments, unified)
+
+- Below the `FileUpload` widget, the create page renders one flat list of everything currently tracked in `Attachments` — both files uploaded via `FileUpload` and images embedded via `RichTextEditor`'s `OnImageSelected` flow — since both are just `NewArticleAttachment` entries differing only in `IsInline`. No separate "inline images" list.
+- Each row shows the display name, an **"Inline" badge/icon** when `IsInline == true` (e.g. an image icon with a "Used in article body" tooltip — same tooltip-via-`title`-attribute pattern `RichTextEditor.razor.js` already uses for its toolbar), and the same three actions regardless of `IsInline`: **Download**, **Open in new tab** (both just link to the blob URL — no special-casing), and **Delete**.
+- **Deleting an inline attachment requires an extra confirmation step the non-inline delete path doesn't need.** Reuse `ConfirmActionModal` (`Neba.Website.Server/Components/ConfirmActionModal.razor`) with copy specific to inline attachments — e.g. *"This image is embedded in the article body. Removing it will leave a broken image where it appears — you'll need to edit the article body to remove or replace it."* Non-inline attachments keep today's plain delete flow.
+- **Deleting does not touch `Content`'s HTML.** Automatically scrubbing the corresponding `<img>` tag out of the rich text body (so no broken image is ever visible) is deliberately **out of scope for v1** — it would require reaching into `RichTextEditor`'s live Quill document from the parent page's delete handler, matched only by URL (there's no other correlation key), which is nontrivial for the value it adds this early. The confirmation warning above is the v1 mitigation; revisit if broken embedded images turn out to be a real support burden.
+- This applies just as much pre-save as post-save: a user who embeds an image, sees it render inline, then removes its row from the attachments list while still on the create form still needs the same warning — the image is already visible in the live editor regardless of whether `SaveChangesAsync` has run yet.
 
 ### Command shape for uploaded files
 
@@ -707,6 +849,7 @@ The endpoint maps each `AttachmentInput` → `NewArticleAttachment(input.Display
 ## Status
 
 - [ ] Phase 1 — API
+- [ ] Phase 1b — Server-side HTML sanitization
 - [ ] Phase 2 — UI create page
 - [ ] Phase 2b — Tournament linking (deferred sub-phase)
 - [ ] Phase 3 — Header image + attachments
