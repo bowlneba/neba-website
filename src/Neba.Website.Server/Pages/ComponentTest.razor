@@ -1,0 +1,93 @@
+@page "/test-component"
+@rendermode InteractiveServer
+
+<PageTitle>Component Test - BowlNEBA</PageTitle>
+
+<div class="max-w-5xl mx-auto py-8 px-4 space-y-10">
+    <div>
+        <h1 class="text-2xl font-bold mb-2">RichTextEditor Test Page</h1>
+        <p class="text-sm text-gray-600">
+            Temporary page for manually verifying <code>RichTextEditor.razor</code>. Delete this file (and its route)
+            once verification is complete.
+        </p>
+    </div>
+
+    <section class="space-y-3 border rounded-lg p-4">
+        <h2 class="text-lg font-semibold">Editor A — two-way binding + read-only toggle</h2>
+        <p class="text-sm text-gray-600">
+            Things to verify: typing updates the "Live bound Value" panel below as you type; toggling read-only
+            disables editing without losing content; "Set from code" pushes new HTML into the editor without you
+            typing it.
+        </p>
+
+        <div class="flex flex-wrap gap-2">
+            <button class="neba-btn neba-btn-sm neba-btn-secondary" @onclick="ToggleReadOnlyA">
+                @(_readOnlyA ? "Make Editable" : "Make Read-Only")
+            </button>
+            <button class="neba-btn neba-btn-sm neba-btn-secondary" @onclick="SetFromCodeA">
+                Set From Code
+            </button>
+            <button class="neba-btn neba-btn-sm neba-btn-secondary" @onclick="ClearA">
+                Clear
+            </button>
+        </div>
+
+        <RichTextEditor @bind-Value="_contentA"
+                         ReadOnly="_readOnlyA"
+                         Placeholder="Write your article..."
+                         CssClass="border rounded" />
+
+        <div class="text-xs">
+            <div class="font-semibold mb-1">Live bound Value (raw HTML):</div>
+            <pre class="bg-gray-100 p-2 rounded overflow-x-auto">@_contentA</pre>
+        </div>
+    </section>
+
+    <section class="space-y-3 border rounded-lg p-4">
+        <h2 class="text-lg font-semibold">Editor B — independent second instance</h2>
+        <p class="text-sm text-gray-600">
+            Things to verify: this editor's content is completely independent of Editor A (proves the JS module's
+            per-container instance map isn't leaking state between multiple editors on the same page).
+        </p>
+
+        <RichTextEditor @bind-Value="_contentB" CssClass="border rounded" />
+
+        <div class="text-xs">
+            <div class="font-semibold mb-1">Live bound Value (raw HTML):</div>
+            <pre class="bg-gray-100 p-2 rounded overflow-x-auto">@_contentB</pre>
+        </div>
+    </section>
+
+    <section class="space-y-3 border rounded-lg p-4">
+        <h2 class="text-lg font-semibold">Editor C — mount/unmount (dispose check)</h2>
+        <p class="text-sm text-gray-600">
+            Things to verify: toggling this off and back on should not throw, leak console errors, or leave a
+            duplicate toolbar behind (proves <code>DisposeAsync</code> tears down cleanly).
+        </p>
+
+        <button class="neba-btn neba-btn-sm neba-btn-secondary" @onclick="ToggleMounted">
+            @(_showEditorC ? "Unmount" : "Mount")
+        </button>
+
+        @if (_showEditorC)
+        {
+            <RichTextEditor @bind-Value="_contentC" CssClass="border rounded" />
+        }
+    </section>
+</div>
+
+@code {
+    private string _contentA = "<p>Hello, this is <strong>Editor A</strong>.</p>";
+    private string _contentB = "<p>Hello, this is <em>Editor B</em>.</p>";
+    private string _contentC = "<p>Mount/unmount me.</p>";
+    private bool _readOnlyA;
+    private bool _showEditorC = true;
+
+    private void ToggleReadOnlyA() => _readOnlyA = !_readOnlyA;
+
+    private void SetFromCodeA() => _contentA = "<p>Replaced <u>from code</u> at " + DateTime.Now.ToLongTimeString() + ".</p>";
+
+    private void ClearA() => _contentA = string.Empty;
+
+    private void ToggleMounted() => _showEditorC = !_showEditorC;
+}
