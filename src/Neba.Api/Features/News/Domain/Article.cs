@@ -1,3 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
+
 using ErrorOr;
 
 using Neba.Api.Domain;
@@ -61,6 +64,87 @@ public sealed class Article
     /// </summary>
     public IReadOnlyList<ArticleAttachment> Attachments
         => _attachments.AsReadOnly();
+
+    private const string ReservedSlugNew = "new";
+
+    /// <summary>
+    /// Creates a new article. If <paramref name="slug"/> is null or empty, the slug is generated
+    /// from <paramref name="title"/>. Returns a validation error if title/content are empty, the
+    /// normalized slug has no alphanumeric characters, or the normalized slug is the reserved value "new".
+    /// </summary>
+    public static ErrorOr<Article> Create(
+        string title,
+        string? slug,
+        string content,
+        PublicationStatus publicationStatus,
+        DateTimeOffset publishDateUtc,
+        TournamentId? tournamentId)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return ArticleErrors.TitleRequired;
+        }
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return ArticleErrors.ContentRequired;
+        }
+
+        var normalizedSlug = NormalizeSlug(string.IsNullOrEmpty(slug)
+            ? title
+            : slug);
+
+        if (string.IsNullOrWhiteSpace(normalizedSlug))
+        {
+            return ArticleErrors.SlugInvalid;
+        }
+
+        if (normalizedSlug == ReservedSlugNew)
+        {
+            return ArticleErrors.SlugReserved;
+        }
+
+        return new Article
+        {
+            Id = ArticleId.New(),
+            Title = title,
+            Slug = normalizedSlug,
+            Content = content,
+            PublicationStatus = publicationStatus,
+            PublishDateUtc = publishDateUtc,
+            TournamentId = tournamentId
+        };
+    }
+
+    /// <summary>
+    /// Normalizes a title or a staff-supplied slug override into a URL-safe slug: lowercase,
+    /// alphanumeric runs joined by single hyphens, no leading/trailing hyphen. Exposed so the
+    /// command handler can compute the same candidate for a uniqueness check before calling
+    /// <see cref="Create"/> — both call this so there is one normalization rule, not two.
+    /// </summary>
+    [SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase", Justification = "Slugs are URL-facing and must be lowercase, not normalized for security comparisons.")]
+    private static string NormalizeSlug(string value)
+    {
+        var lowered = value.Trim().ToLowerInvariant();
+        var builder = new StringBuilder(lowered.Length);
+        var lastWasHyphen = false;
+
+        foreach (var c in lowered)
+        {
+            if (char.IsLetterOrDigit(c))
+            {
+                builder.Append(c);
+                lastWasHyphen = false;
+            }
+            else if (!lastWasHyphen && builder.Length > 0)
+            {
+                builder.Append('-');
+                lastWasHyphen = true;
+            }
+        }
+
+        return builder.ToString().TrimEnd('-');
+    }
 
     /// <summary>
     /// Adds an attachment to the article. Returns a validation error if the display name is empty.
