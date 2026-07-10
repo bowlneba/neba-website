@@ -570,8 +570,15 @@ public static readonly IReadOnlyCollection<Permissions> ArticleManagementPermiss
 ## Phase 2 — UI: `/news/new` create page
 
 - New Blazor page under `Neba.Website.Server/News/` at route `"/news/new"`.
-- Form fields: Title, Slug (client-derived from Title as the user types, editable), Content, PublicationStatus, PublishDateUtc. No tournament field rendered yet — always submits `null`.
+- Form fields: Title, Slug (see below), Content, PublicationStatus, PublishDateUtc. No tournament field rendered yet — always submits `null`.
 - Gated behind `CanManageArticles` (same policy as the delete button today).
+
+### Slug field — placeholder-driven, not value-driven
+
+- The Slug textbox's **bound value stays empty** unless the user explicitly types into it. As the user types the Title, the client recomputes the would-be slug (mirroring `Article.NormalizeSlug` — lowercase, alphanumeric runs joined by single hyphens, no leading/trailing hyphen) and renders it as the Slug field's **placeholder text**, not its value.
+- If the computed slug looks right, the user does nothing — the field stays empty, and the form submits `Slug: null`, letting the API derive the slug from `Title` itself (same code path, same normalization, single source of truth).
+- If the user wants something different, they type into the field; that typed value becomes the bound value and is sent verbatim as `Slug` in the command, same as today.
+- This avoids duplicating slug-normalization logic between "what's shown" and "what's submitted" — the client-side preview is cosmetic only (a placeholder), never the actual submitted value unless the user opts in by typing.
 
 ### Content field — rich text editor
 
