@@ -1,5 +1,7 @@
 using System.Net;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 
 using Bunit;
 
@@ -109,16 +111,84 @@ public sealed class LogoutTests : IDisposable
         cut.WaitForAssertion(() => nav.Uri.ShouldContain("logoutError=1"));
     }
 
+    [Fact(DisplayName = "Should refresh and retry the revoke call when the captured access token has expired, then navigate home with loggedOut")]
+    public void OnInitializedAsync_ShouldRefreshAndRetryRevoke_WhenAccessTokenExpired()
+    {
+        // Arrange
+        var logoutCallCount = 0;
+        using var handler = new RecordingHandler(request =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/security/refresh")
+            {
+                var json = JsonSerializer.Serialize(new
+                {
+                    accessToken = "new-token",
+                    refreshToken = "new-refresh",
+                    expiresAt = DateTimeOffset.UtcNow.AddMinutes(15),
+                    userId = "user-123",
+                    email = "admin@bowlneba.com",
+                });
+
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+            }
+
+            logoutCallCount++;
+            return new HttpResponseMessage(logoutCallCount == 1 ? HttpStatusCode.Unauthorized : HttpStatusCode.OK);
+        });
+
+        _ctx.Services.AddSingleton<IHttpClientFactory>(new StubHttpClientFactory(handler));
+
+        var httpContext = BuildAuthenticatedHttpContext(accessToken: "old-token", refreshToken: "refresh-abc", userId: "user-123");
+
+        // Act
+        var cut = RenderLogout(httpContext);
+
+        // Assert
+        var nav = _ctx.Services.GetRequiredService<NavigationManager>();
+        cut.WaitForAssertion(() => nav.Uri.ShouldContain("loggedOut=1"));
+        handler.Requests.Count(r => r.RequestUri!.AbsolutePath == "/security/logout").ShouldBe(2);
+        handler.Requests.Count(r => r.RequestUri!.AbsolutePath == "/security/refresh").ShouldBe(1);
+        handler.Requests.First(r => r.RequestUri!.AbsolutePath == "/security/logout" && r == handler.Requests[^1])
+            .Headers.Authorization.ShouldBe(new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "new-token"));
+    }
+
+    [Fact(DisplayName = "Should navigate home with logoutError when the revoke call fails and there is no refresh token to fall back on")]
+    public void OnInitializedAsync_ShouldNavigateWithLogoutError_WhenAccessTokenExpiredAndNoRefreshToken()
+    {
+        // Arrange
+        using var innerHandler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.Unauthorized));
+        _ctx.Services.AddSingleton<IHttpClientFactory>(new StubHttpClientFactory(innerHandler));
+
+        var httpContext = BuildAuthenticatedHttpContext(accessToken: "old-token");
+
+        // Act
+        var cut = RenderLogout(httpContext);
+
+        // Assert
+        var nav = _ctx.Services.GetRequiredService<NavigationManager>();
+        cut.WaitForAssertion(() => nav.Uri.ShouldContain("logoutError=1"));
+        innerHandler.Requests.ShouldHaveSingleItem();
+    }
+
     private IRenderedComponent<Neba.Website.Server.Account.Logout.Logout> RenderLogout(HttpContext httpContext)
         => _ctx.Render<Neba.Website.Server.Account.Logout.Logout>(p => p.AddCascadingValue(httpContext));
 
-    private DefaultHttpContext BuildAuthenticatedHttpContext(string? accessToken)
+    private DefaultHttpContext BuildAuthenticatedHttpContext(string? accessToken, string? refreshToken = null, string? userId = null)
     {
-        var principal = new ClaimsPrincipal(new ClaimsIdentity([], CookieAuthenticationDefaults.AuthenticationScheme));
+        var claims = new List<Claim>();
+        if (userId is not null)
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
+
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
 
         var tokens = new List<AuthenticationToken>();
         if (accessToken is not null)
             tokens.Add(new AuthenticationToken { Name = SecurityClaimsBuilder.AccessTokenName, Value = accessToken });
+        if (refreshToken is not null)
+            tokens.Add(new AuthenticationToken { Name = SecurityClaimsBuilder.RefreshTokenName, Value = refreshToken });
 
         var properties = new AuthenticationProperties();
         properties.StoreTokens(tokens);
