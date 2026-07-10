@@ -738,19 +738,764 @@ public static ErrorOr<Article> Create(
 
 Hard constraint: **UI never talks to blob storage directly, only through the API.**
 
-- **Two separate upload endpoints** — header image and attachment are differentiated by *route*, not by a discriminator field on a shared endpoint, matching this codebase's one-use-case-per-folder REPR convention (and letting each enforce its own validation independently). Both live under the existing `news` group (`Group<NewsEndpointGroup>()`), consistent with List/Get/Delete/Create Article:
-  - `POST news/header-image` — `UploadArticleHeaderImageEndpoint`, stores under `news/uploads/header/{ulid}-{filename}`, validator restricted to image content types (+ size cap, see below).
-  - `POST news/attachments` — `UploadArticleAttachmentEndpoint`, stores under `news/uploads/attachments/{ulid}-{filename}`, broader allowed file types (+ its own, larger size cap).
-  - **Single file per request, even though the UI's attachment picker allows selecting multiple files.** The `FileUpload` component (see below) uploads each selected file as its own request the moment it's picked — a multi-file selection just means N requests fired back-to-back, one per file, each independently tracked through `Uploading → Uploaded/Failed`. This keeps both endpoints' request/response shape identical to the single-header-image case and avoids a partial-batch-failure story (file 3 of 5 fails, do the other 4 still count?) that a true batch endpoint would have to solve.
-  - Neither requires an `ArticleId`. Both accept the file as `multipart/form-data` (FastEndpoints `AllowFileUploads()` + `IFormFile`, not a JSON body) and return the same `StoredFile`-shaped response (e.g. `UploadedFileResponse`: Container, Path, ContentType, SizeInBytes).
-  - **Size/type limits are enforced server-side, not just by the client's `Accept`/`MaxFileSizeBytes` params** — those client params are a UX nicety (reject obviously-wrong files before spending an upload round-trip), never the actual gate. Each endpoint's validator checks `IFormFile.ContentType`/`.Length` structurally (no DB lookup, consistent with the existing validator convention): header image restricted to `image/jpeg`, `image/png`, `image/webp`, `image/gif`, capped at 5 MB; attachments allow a broader allowlist (PDF + common office/image types), capped at 25 MB. Both numbers are starting points to revisit once real usage is observed — no longer an open question, just not tuned yet.
-  - **Streaming, not full-buffer-then-forward.** Because the `FileUpload` component reports upload progress by wrapping `IBrowserFile.OpenReadStream()` and piping it directly into the outbound `HttpClient` multipart request (see below), the request arrives at Kestrel as a normal chunked multipart body — no API-side change needed to *receive* it, but the endpoint handler must read `IFormFile` via its stream (`OpenReadStream()` → `UploadFileAsync`) rather than buffering the whole file into a `byte[]` first, so memory use stays flat regardless of the 25 MB cap.
+Split into two sub-phases, each landing as its own PR: **3a (API)** — upload endpoints, staging/orphan-tracking infrastructure, and the `CreateArticleCommand` changes that claim staged uploads — and **3b (UI)** — the `FileUpload` component, inline image embedding in the rich text editor, and the attachments list. 3a is fully detailed below; 3b keeps its existing high-level design (detailed pass deferred).
+
+Architecture decisions that span both sub-phases:
+
+- **Two separate upload endpoints** — header image and attachment are differentiated by *route*, not by a discriminator field on a shared endpoint, matching this codebase's one-use-case-per-folder REPR convention (and letting each enforce its own validation independently). Both live under the existing `news` group (`Group<NewsEndpointGroup>()`), consistent with List/Get/Delete/Create Article. Neither requires an `ArticleId`.
+- **Single file per request, even though the UI's attachment picker allows selecting multiple files.** The `FileUpload` component (3b) uploads each selected file as its own request the moment it's picked — a multi-file selection just means N requests fired back-to-back, one per file, each independently tracked through `Uploading → Uploaded/Failed`. This keeps both endpoints' request/response shape identical to the single-header-image case and avoids a partial-batch-failure story (file 3 of 5 fails, do the other 4 still count?) that a true batch endpoint would have to solve.
 - **Files stay at their upload path forever — they are never moved to a per-article folder once the Article saves.** `Article.HeaderImage`/`ArticleAttachment.File` simply store the `news/uploads/header/{ulid}-{filename}` or `news/uploads/attachments/{ulid}-{filename}` path permanently; there is no `news/{articleId}/...` reorganization step. This was a deliberate choice over moving files post-save:
   - Azure Blob Storage has no real folders — paths are just prefixes used for browsing in the portal/CLI. Grouping by `ArticleId` is a cosmetic convenience only, not a functional requirement, since the app always locates a file via the `StoredFile` (Container/Path) stored on the entity, never by directory listing.
   - A move requires a copy+delete (blobs can't be renamed atomically) plus updating the `StoredFile` path on the entity before it's persisted, and introduces a real partial-failure mode to handle (copy succeeds/delete fails → harmless orphan, already covered by the cleanup job below; copy fails outright → must fall back to the original path rather than fail the whole article save).
   - None of that complexity buys anything the app actually needs, so we don't do it. If per-article organization in blob storage ever becomes a real requirement (not just tidiness), this is the section to revisit.
 - UI uploads each file **as soon as it's selected**, not on form submit — perceived save stays fast. The final `CreateArticleCommand` carries the already-returned `StoredFile` pointers: one for `HeaderImage`, a list of `{DisplayName, StoredFile, IsInline}` for `Attachments`. `Article.Create`/`AddAttachment` consume them exactly as `ArticleAttachment.Create` already does today.
 - **Save-while-uploading is gated client-side, not server-side.** The create form tracks each selected file's upload as `Uploading` → `Uploaded(StoredFile)` / `Failed(error)`. The Save button is disabled (with an inline "Uploading N of M files…" indicator) while anything is `Uploading`, and stays disabled on `Failed` until removed/retried. This guarantees `CreateArticleCommand` is only ever built once every `StoredFile` pointer it needs already exists — the handler never has to special-case an in-flight or missing upload. A user who abandons the page mid-upload just produces an orphaned blob, handled by the cleanup job below like any other abandoned upload.
+
+---
+
+## Phase 3a — API
+
+Three parts, in dependency order: (1) shared upload infrastructure both endpoints sit on top of, (2) the header image endpoint, (3) the attachment endpoint. A fourth section covers the `CreateArticleCommand` changes that let a saved `Article` claim the `StoredFile`s these endpoints hand back.
+
+### Part 1 — Shared upload infrastructure
+
+Both endpoints need the same three things: somewhere to stage the blob + bookkeeping row, a place for the size/content-type validation predicates so the two validators don't duplicate the same boundary logic with copy-pasted drift risk, and a shared response shape. This is a genuine shared dependency (not a premature abstraction over two call sites) because the orphan-cleanup contract — "every successful upload gets a `PendingArticleUpload` row, every claim removes it" — has to hold identically for both endpoints, and duplicating that insert/claim logic is exactly the kind of thing that silently drifts (one endpoint gets a bug fix, the other doesn't).
+
+All new files live under `Neba.Api/Features/News/Uploads/` (new folder, sibling to `CreateArticle`/`DeleteArticle`/`Domain`).
+
+**`PendingArticleUpload.cs`** — bookkeeping row, not a domain aggregate. Natural key is `(Container, Path)`, the same two fields already needed to construct a `StoredFile`, so no separate id needs to travel through the UI → API round trip:
+
+```csharp
+namespace Neba.Api.Features.News.Uploads;
+
+internal sealed class PendingArticleUpload
+{
+    public required string Container { get; init; }
+
+    public required string Path { get; init; }
+
+    public required DateTimeOffset UploadedAtUtc { get; init; }
+}
+```
+
+**`PendingArticleUploadConfiguration.cs`** — table `pending_article_uploads`, shadow int PK (matches every other entity in this codebase), unique index on the natural key:
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+using Neba.Api.Database;
+
+namespace Neba.Api.Features.News.Uploads;
+
+internal sealed class PendingArticleUploadConfiguration : IEntityTypeConfiguration<PendingArticleUpload>
+{
+    public void Configure(EntityTypeBuilder<PendingArticleUpload> builder)
+    {
+        builder.ToTable("pending_article_uploads");
+        builder.ConfigureShadowId();
+
+        builder.Property(p => p.Container)
+            .HasColumnName("container")
+            .HasMaxLength(64)
+            .IsRequired();
+
+        builder.Property(p => p.Path)
+            .HasColumnName("path")
+            .HasMaxLength(512)
+            .IsRequired();
+
+        builder.Property(p => p.UploadedAtUtc)
+            .HasColumnName("uploaded_at_utc")
+            .IsRequired();
+
+        builder.HasIndex(p => new { p.Container, p.Path }).IsUnique();
+    }
+}
+```
+
+Add `internal DbSet<PendingArticleUpload> PendingArticleUploads => Set<PendingArticleUpload>();` to `AppDbContext`, and generate the EF migration.
+
+**`FileUploadValidationRules.cs`** — the two predicates both validators need. Deliberately not tied to either endpoint's specific allowlist/cap so each validator supplies its own constants:
+
+```csharp
+namespace Neba.Api.Features.News.Uploads;
+
+internal static class FileUploadValidationRules
+{
+    internal static bool HasAllowedContentType(string? contentType, IReadOnlySet<string> allowedContentTypes)
+        => contentType is not null && allowedContentTypes.Contains(contentType);
+
+    internal static bool IsWithinSizeLimit(long lengthInBytes, long maxSizeBytes)
+        => lengthInBytes > 0 && lengthInBytes <= maxSizeBytes;
+}
+```
+
+**`IArticleUploadStagingService.cs` / `ArticleUploadStagingService.cs`** — the one piece both endpoints actually call: builds the blob path, streams the upload through `IFileStorageService` (never buffers the whole file into a `byte[]`), inserts the `PendingArticleUpload` row, and hands back a `StoredFile` pointer. `pathPrefix` is `"header"` or `"attachments"`, matching the two path conventions above.
+
+```csharp
+using Microsoft.AspNetCore.Http;
+
+using Neba.Api.Database;
+using Neba.Api.Features.Storage.Domain;
+using Neba.Application.Storage;
+using Neba.Api.Time;
+
+namespace Neba.Api.Features.News.Uploads;
+
+internal interface IArticleUploadStagingService
+{
+    Task<StoredFile> StageUploadAsync(IFormFile file, string pathPrefix, CancellationToken cancellationToken);
+}
+
+internal sealed class ArticleUploadStagingService(
+    IFileStorageService fileStorageService,
+    AppDbContext appDbContext,
+    IDateTimeProvider dateTimeProvider)
+    : IArticleUploadStagingService
+{
+    private const string ContainerName = "news";
+
+    public async Task<StoredFile> StageUploadAsync(IFormFile file, string pathPrefix, CancellationToken cancellationToken)
+    {
+        var path = $"news/uploads/{pathPrefix}/{Ulid.NewUlid()}-{file.FileName}";
+
+        await using (var stream = file.OpenReadStream())
+        {
+            await fileStorageService.UploadFileAsync(ContainerName, path, stream, file.ContentType, cancellationToken);
+        }
+
+        appDbContext.PendingArticleUploads.Add(new PendingArticleUpload
+        {
+            Container = ContainerName,
+            Path = path,
+            UploadedAtUtc = dateTimeProvider.UtcNow
+        });
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        return new StoredFile
+        {
+            Container = ContainerName,
+            Path = path,
+            ContentType = file.ContentType,
+            SizeInBytes = file.Length
+        };
+    }
+}
+```
+
+Registered in DI the same way as the feature's other internal services (Scrutor scan picking up `IArticleUploadStagingService` → `ArticleUploadStagingService`, alongside `IFileStorageService` → `AzureBlobStorageService`).
+
+**`UploadedFileResponse.cs`** (`Neba.Api.Contracts/News/Uploads/`) — the shared response shape for both endpoints, flattening `StoredFile`'s fields (Contracts can't reference the domain type, same rule as `AttachmentInput` below):
+
+```csharp
+namespace Neba.Api.Contracts.News.Uploads;
+
+/// <summary>
+/// The stored-file pointer returned after a successful header image or attachment upload.
+/// </summary>
+public sealed record UploadedFileResponse
+{
+    /// <summary>
+    /// The blob storage container the file was uploaded to.
+    /// </summary>
+    public required string Container { get; init; }
+
+    /// <summary>
+    /// The blob path within the container.
+    /// </summary>
+    public required string Path { get; init; }
+
+    /// <summary>
+    /// The file's MIME content type as uploaded.
+    /// </summary>
+    public required string ContentType { get; init; }
+
+    /// <summary>
+    /// The file's size in bytes.
+    /// </summary>
+    public required long SizeInBytes { get; init; }
+}
+```
+
+**Orphan cleanup job** — the other half of the staging contract (every staged row eventually either gets claimed by a saved `Article`, or swept). Claiming is covered in Part 4 below (it happens in `CreateArticleCommandHandler`, not here); this is just the sweep side, following the same recurring-Hangfire-job pattern as `SyncDocumentToStorageJob`:
+
+```csharp
+namespace Neba.Api.Features.News.Uploads;
+
+internal sealed record CleanupOrphanedArticleUploadsJob;
+```
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+using Neba.Api.Database;
+using Neba.Api.Messaging;
+using Neba.Api.Time;
+using Neba.Application.Storage;
+
+namespace Neba.Api.Features.News.Uploads;
+
+internal sealed class CleanupOrphanedArticleUploadsJobHandler(
+    AppDbContext appDbContext,
+    IFileStorageService fileStorageService,
+    IDateTimeProvider dateTimeProvider,
+    ILogger<CleanupOrphanedArticleUploadsJobHandler> logger)
+    : IBackgroundJobHandler<CleanupOrphanedArticleUploadsJob>
+{
+    private static readonly TimeSpan OrphanThreshold = TimeSpan.FromHours(24);
+
+    public async Task HandleAsync(CleanupOrphanedArticleUploadsJob job, CancellationToken cancellationToken)
+    {
+        var cutoffUtc = dateTimeProvider.UtcNow - OrphanThreshold;
+
+        var orphans = await appDbContext.PendingArticleUploads
+            .Where(p => p.UploadedAtUtc < cutoffUtc)
+            .ToListAsync(cancellationToken);
+
+        foreach (var orphan in orphans)
+        {
+            var deleted = await fileStorageService.DeleteAsync(orphan.Container, orphan.Path, cancellationToken);
+
+            if (!deleted)
+            {
+                logger.LogWarning(
+                    "Failed to delete orphaned article upload blob {Container}/{Path}; leaving PendingArticleUpload row for the next sweep.",
+                    orphan.Container,
+                    orphan.Path);
+                continue;
+            }
+
+            appDbContext.PendingArticleUploads.Remove(orphan);
+        }
+
+        await appDbContext.SaveChangesAsync(cancellationToken);
+    }
+}
+```
+
+Registered as a recurring job (`"0 * * * *"` — hourly; a stale-by-up-to-an-hour orphan is cheap, and this avoids a bigger sweep backlog than the once-a-month document sync job needs) from `NewsConfiguration`, mirroring `DocumentsConfiguration.UseDocumentSyncJobs()`. Threshold of 24 hours is a starting point — long enough that a slow upload or a user still filling out the rest of the form isn't punished, short enough that orphaned blobs don't pile up — revisit once real usage is observed.
+
+### Part 2 — Header image upload endpoint
+
+`Neba.Api/Features/News/UploadArticleHeaderImage/` (new folder). Route `POST news/header-image`, path prefix `"header"`, restricted to image content types, capped at 5 MB.
+
+The request DTO carries a raw `IFormFile` and therefore lives in `Neba.Api` only (the endpoint layer) — it is **not** a `Neba.Api.Contracts` type, since `Neba.Api.Contracts` is shared with the Blazor client and `IFormFile` is a server-side ASP.NET Core type with nothing to serialize across the wire. The client instead builds a Refit multipart request directly (`StreamPart`), calling into the shared `UploadedFileResponse` for the response side only.
+
+**`UploadArticleHeaderImageRequest.cs`**
+
+```csharp
+using Microsoft.AspNetCore.Http;
+
+namespace Neba.Api.Features.News.UploadArticleHeaderImage;
+
+internal sealed class UploadArticleHeaderImageRequest
+{
+    public IFormFile File { get; init; } = default!;
+}
+```
+
+**`UploadArticleHeaderImageRequestValidator.cs`**
+
+```csharp
+using FastEndpoints;
+
+using FluentValidation;
+
+using Neba.Api.Features.News.Uploads;
+
+namespace Neba.Api.Features.News.UploadArticleHeaderImage;
+
+internal sealed class UploadArticleHeaderImageRequestValidator
+    : Validator<UploadArticleHeaderImageRequest>
+{
+    private const long MaxSizeBytes = 5 * 1024 * 1024;
+
+    private static readonly IReadOnlySet<string> AllowedContentTypes = new HashSet<string>
+    {
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif"
+    };
+
+    public UploadArticleHeaderImageRequestValidator()
+    {
+        RuleFor(r => r.File)
+            .NotNull()
+            .WithErrorCode("UploadArticleHeaderImageRequest.FileRequired")
+            .WithMessage("A file is required.");
+
+        RuleFor(r => r.File.ContentType)
+            .Must(contentType => FileUploadValidationRules.HasAllowedContentType(contentType, AllowedContentTypes))
+            .WithErrorCode("UploadArticleHeaderImageRequest.ContentTypeNotAllowed")
+            .WithMessage("Header image must be JPEG, PNG, WebP, or GIF.")
+            .When(r => r.File is not null);
+
+        RuleFor(r => r.File.Length)
+            .Must(length => FileUploadValidationRules.IsWithinSizeLimit(length, MaxSizeBytes))
+            .WithErrorCode("UploadArticleHeaderImageRequest.FileTooLarge")
+            .WithMessage("Header image must be 5 MB or smaller.")
+            .When(r => r.File is not null);
+    }
+}
+```
+
+**`UploadArticleHeaderImageEndpoint.cs`**
+
+```csharp
+using Asp.Versioning;
+
+using FastEndpoints;
+using FastEndpoints.AspVersioning;
+
+using Neba.Api.Contracts.News.Uploads;
+
+using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
+
+namespace Neba.Api.Features.News.UploadArticleHeaderImage;
+
+internal sealed class UploadArticleHeaderImageEndpoint(IArticleUploadStagingService stagingService)
+    : Endpoint<UploadArticleHeaderImageRequest, UploadedFileResponse>
+{
+    public override void Configure()
+    {
+        Post("header-image");
+        Group<NewsEndpointGroup>();
+        AllowFileUploads();
+
+        Options(options => options
+            .WithVersionSet("News")
+            .MapToApiVersion(new ApiVersion(1, 0)));
+
+        Policies(PermissionCatalog.CreateArticle.PolicyName);
+
+        Description(description => description
+            .WithName("UploadArticleHeaderImage")
+            .WithTags("Admin")
+            .Produces<UploadedFileResponse>(StatusCodes.Status200OK)
+            .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
+            .ProducesProblemDetails(StatusCodes.Status403Forbidden)
+            .ProducesProblemDetails(StatusCodes.Status400BadRequest));
+    }
+
+    public override async Task HandleAsync(UploadArticleHeaderImageRequest req, CancellationToken ct)
+    {
+        var storedFile = await stagingService.StageUploadAsync(req.File, "header", ct);
+
+        var response = new UploadedFileResponse
+        {
+            Container = storedFile.Container,
+            Path = storedFile.Path,
+            ContentType = storedFile.ContentType,
+            SizeInBytes = storedFile.SizeInBytes
+        };
+
+        // Stryker disable once Statement
+        await Send.OkAsync(response, ct);
+    }
+}
+```
+
+**`UploadArticleHeaderImageSummary.cs`**
+
+```csharp
+using FastEndpoints;
+
+using Neba.Api.Contracts.News.Uploads;
+
+namespace Neba.Api.Features.News.UploadArticleHeaderImage;
+
+internal sealed class UploadArticleHeaderImageSummary : Summary<UploadArticleHeaderImageEndpoint>
+{
+    public UploadArticleHeaderImageSummary()
+    {
+        Summary = "Uploads a news article header image.";
+        Description = "Stages an image file in blob storage ahead of article creation and returns a pointer to it. The pointer is orphaned (and later swept) unless it's included as HeaderImage in a subsequent CreateArticle command. Requires the News.CreateArticle permission.";
+
+        Response<UploadedFileResponse>(200, "File uploaded.");
+        Response(400, "File missing, wrong content type, or too large.");
+        Response(401, "No valid bearer token provided.");
+        Response(403, "Authenticated user does not have the News.CreateArticle permission.");
+    }
+}
+```
+
+**`INewsApi.cs`** — add (Refit multipart, not a JSON body):
+
+```csharp
+using Neba.Api.Contracts.News.Uploads;
+// ... existing usings ...
+
+public interface INewsApi
+{
+    // ... existing members ...
+
+    /// <summary>
+    /// Uploads a news article header image. Requires the News.CreateArticle permission.
+    /// </summary>
+    [Multipart]
+    [Post("/news/header-image")]
+    Task<IApiResponse<UploadedFileResponse>> UploadArticleHeaderImageAsync(
+        [AliasAs("File")] StreamPart file,
+        CancellationToken cancellationToken = default);
+}
+```
+
+### Part 3 — Attachment upload endpoint
+
+`Neba.Api/Features/News/UploadArticleAttachment/` (new folder). Route `POST news/attachments`, path prefix `"attachments"`, broader allowlist, capped at 25 MB. Structurally identical to Part 2 — only the route, allowlist, and cap differ — so only the deltas are shown in full.
+
+**`UploadArticleAttachmentRequest.cs`** — same shape as the header image request:
+
+```csharp
+using Microsoft.AspNetCore.Http;
+
+namespace Neba.Api.Features.News.UploadArticleAttachment;
+
+internal sealed class UploadArticleAttachmentRequest
+{
+    public IFormFile File { get; init; } = default!;
+}
+```
+
+**`UploadArticleAttachmentRequestValidator.cs`** — same structure as `UploadArticleHeaderImageRequestValidator`, different constants:
+
+```csharp
+using FastEndpoints;
+
+using FluentValidation;
+
+using Neba.Api.Features.News.Uploads;
+
+namespace Neba.Api.Features.News.UploadArticleAttachment;
+
+internal sealed class UploadArticleAttachmentRequestValidator
+    : Validator<UploadArticleAttachmentRequest>
+{
+    private const long MaxSizeBytes = 25 * 1024 * 1024;
+
+    private static readonly IReadOnlySet<string> AllowedContentTypes = new HashSet<string>
+    {
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif"
+    };
+
+    public UploadArticleAttachmentRequestValidator()
+    {
+        RuleFor(r => r.File)
+            .NotNull()
+            .WithErrorCode("UploadArticleAttachmentRequest.FileRequired")
+            .WithMessage("A file is required.");
+
+        RuleFor(r => r.File.ContentType)
+            .Must(contentType => FileUploadValidationRules.HasAllowedContentType(contentType, AllowedContentTypes))
+            .WithErrorCode("UploadArticleAttachmentRequest.ContentTypeNotAllowed")
+            .WithMessage("Attachment must be a PDF, Word/Excel document, or JPEG/PNG/WebP/GIF image.")
+            .When(r => r.File is not null);
+
+        RuleFor(r => r.File.Length)
+            .Must(length => FileUploadValidationRules.IsWithinSizeLimit(length, MaxSizeBytes))
+            .WithErrorCode("UploadArticleAttachmentRequest.FileTooLarge")
+            .WithMessage("Attachment must be 25 MB or smaller.")
+            .When(r => r.File is not null);
+    }
+}
+```
+
+**`UploadArticleAttachmentEndpoint.cs`** — identical to `UploadArticleHeaderImageEndpoint` except the route and path prefix:
+
+```csharp
+using Asp.Versioning;
+
+using FastEndpoints;
+using FastEndpoints.AspVersioning;
+
+using Neba.Api.Contracts.News.Uploads;
+
+using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
+
+namespace Neba.Api.Features.News.UploadArticleAttachment;
+
+internal sealed class UploadArticleAttachmentEndpoint(IArticleUploadStagingService stagingService)
+    : Endpoint<UploadArticleAttachmentRequest, UploadedFileResponse>
+{
+    public override void Configure()
+    {
+        Post("attachments");
+        Group<NewsEndpointGroup>();
+        AllowFileUploads();
+
+        Options(options => options
+            .WithVersionSet("News")
+            .MapToApiVersion(new ApiVersion(1, 0)));
+
+        Policies(PermissionCatalog.CreateArticle.PolicyName);
+
+        Description(description => description
+            .WithName("UploadArticleAttachment")
+            .WithTags("Admin")
+            .Produces<UploadedFileResponse>(StatusCodes.Status200OK)
+            .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
+            .ProducesProblemDetails(StatusCodes.Status403Forbidden)
+            .ProducesProblemDetails(StatusCodes.Status400BadRequest));
+    }
+
+    public override async Task HandleAsync(UploadArticleAttachmentRequest req, CancellationToken ct)
+    {
+        var storedFile = await stagingService.StageUploadAsync(req.File, "attachments", ct);
+
+        var response = new UploadedFileResponse
+        {
+            Container = storedFile.Container,
+            Path = storedFile.Path,
+            ContentType = storedFile.ContentType,
+            SizeInBytes = storedFile.SizeInBytes
+        };
+
+        // Stryker disable once Statement
+        await Send.OkAsync(response, ct);
+    }
+}
+```
+
+**`UploadArticleAttachmentSummary.cs`**
+
+```csharp
+using FastEndpoints;
+
+using Neba.Api.Contracts.News.Uploads;
+
+namespace Neba.Api.Features.News.UploadArticleAttachment;
+
+internal sealed class UploadArticleAttachmentSummary : Summary<UploadArticleAttachmentEndpoint>
+{
+    public UploadArticleAttachmentSummary()
+    {
+        Summary = "Uploads a news article attachment (or inline embedded image).";
+        Description = "Stages a file in blob storage ahead of article creation and returns a pointer to it. Used both for regular downloadable attachments and for images embedded inline in the article body via the rich text editor — the distinction (IsInline) is supplied later, when the pointer is included in the CreateArticle command's Attachments list. The pointer is orphaned (and later swept) unless it's claimed by a subsequent CreateArticle command. Requires the News.CreateArticle permission.";
+
+        Response<UploadedFileResponse>(200, "File uploaded.");
+        Response(400, "File missing, wrong content type, or too large.");
+        Response(401, "No valid bearer token provided.");
+        Response(403, "Authenticated user does not have the News.CreateArticle permission.");
+    }
+}
+```
+
+**`INewsApi.cs`** — add:
+
+```csharp
+/// <summary>
+/// Uploads a news article attachment (or inline embedded image). Requires the News.CreateArticle permission.
+/// </summary>
+[Multipart]
+[Post("/news/attachments")]
+Task<IApiResponse<UploadedFileResponse>> UploadArticleAttachmentAsync(
+    [AliasAs("File")] StreamPart file,
+    CancellationToken cancellationToken = default);
+```
+
+### Part 4 — Command shape and claiming staged uploads
+
+Extends the `CreateArticleCommand`/`Article.Create` from Phase 1 to accept the `StoredFile` pointers these endpoints hand back, and claims them (deletes the matching `PendingArticleUpload` rows) as part of the same save.
+
+**Layer boundary matters for naming, not just placement.** `Neba.Api.Contracts` is shared with `Neba.Website` (Blazor), so its types must never reference a domain type — `AttachmentInput` below is deliberately flattened to raw primitives. The command lives in `Neba.Api` (application layer) and *can* reference the domain `StoredFile` value object directly, since it never crosses the wire. To avoid the nested command-level type looking like another wire-shaped "Input" DTO, it's named `NewArticleAttachment` rather than `ArticleAttachmentInput` — same data, but the name signals "application-layer, may hold domain types" instead of "contract-layer, primitives only."
+
+**`CreateArticleCommand.cs`** — adds `HeaderImage`/`Attachments`:
+
+```csharp
+internal sealed record CreateArticleCommand
+    : ICommand<CreatedArticle>
+{
+    public required string Title { get; init; }
+
+    public string? Slug { get; init; }
+
+    public required string Content { get; init; }
+
+    public required PublicationStatus Status { get; init; }
+
+    public required DateTimeOffset PublishDateUtc { get; init; }
+
+    public TournamentId? TournamentId { get; init; }
+
+    public StoredFile? HeaderImage { get; init; }
+
+    public IReadOnlyCollection<NewArticleAttachment> Attachments { get; init; } = [];
+}
+
+internal sealed record NewArticleAttachment(string DisplayName, bool IsInline, StoredFile File);
+
+internal sealed record CreatedArticle(ArticleId ArticleId, string Slug);
+```
+
+`StoredFile` (`Neba.Api.Features.Storage.Domain`) is already a plain `sealed record` (`Container`, `Path`, `ContentType`, `SizeInBytes`, no factory/invariants) — the command carries it directly rather than inventing a parallel shape.
+
+**`Article.cs`** — `Create` gains a `StoredFile? headerImage` parameter, and a new `AddAttachment` method mirrors the always-valid aggregate-assignment pattern from this doc's Architecture Rules (delegates entity validation to `ArticleAttachment.Create`, only enforces its own invariants):
+
+```csharp
+internal static ErrorOr<Article> Create(
+    string title,
+    string? slug,
+    string content,
+    PublicationStatus status,
+    DateTimeOffset publishDateUtc,
+    TournamentId? tournamentId,
+    StoredFile? headerImage)
+{
+    // ... existing title/content/sanitization/slug validation unchanged (Phase 1 + 1b) ...
+
+    return new Article
+    {
+        Id = ArticleId.New(),
+        Title = title,
+        Slug = normalizedSlug,
+        Content = sanitizedContent,
+        PublicationStatus = status,
+        PublishDateUtc = publishDateUtc,
+        TournamentId = tournamentId,
+        HeaderImage = headerImage
+    };
+}
+
+internal ErrorOr<Success> AddAttachment(string displayName, bool isInline, StoredFile file)
+{
+    var attachment = ArticleAttachment.Create(displayName, isInline, file);
+
+    if (attachment.IsError)
+    {
+        return attachment.Errors;
+    }
+
+    _attachments.Add(attachment.Value);
+    return Result.Success;
+}
+```
+
+**`CreateArticleCommandHandler.cs`** — after `Article.Create` succeeds, adds each attachment, then claims every referenced `StoredFile`'s staging row before the single `SaveChangesAsync`:
+
+```csharp
+internal sealed class CreateArticleCommandHandler(AppDbContext appDbContext, IFusionCache cache)
+    : ICommandHandler<CreateArticleCommand, CreatedArticle>
+{
+    public async Task<ErrorOr<CreatedArticle>> HandleAsync(CreateArticleCommand command, CancellationToken cancellationToken)
+    {
+        // ... existing TournamentId existence check + slug uniqueness check unchanged ...
+
+        var article = Article.Create(
+            command.Title,
+            command.Slug,
+            command.Content,
+            command.Status,
+            command.PublishDateUtc,
+            command.TournamentId,
+            command.HeaderImage);
+
+        if (article.IsError)
+        {
+            return article.Errors;
+        }
+
+        foreach (var attachment in command.Attachments)
+        {
+            var added = article.Value.AddAttachment(attachment.DisplayName, attachment.IsInline, attachment.File);
+
+            if (added.IsError)
+            {
+                return added.Errors;
+            }
+        }
+
+        appDbContext.Articles.Add(article.Value);
+
+        var claimedFiles = command.Attachments
+            .Select(a => a.File)
+            .Concat(command.HeaderImage is null ? [] : [command.HeaderImage])
+            .ToList();
+
+        foreach (var file in claimedFiles)
+        {
+            var pending = await appDbContext.PendingArticleUploads
+                .FirstOrDefaultAsync(p => p.Container == file.Container && p.Path == file.Path, cancellationToken);
+
+            if (pending is not null)
+            {
+                appDbContext.PendingArticleUploads.Remove(pending);
+            }
+        }
+
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await cache.RemoveByTagAsync("neba:news:articles", token: cancellationToken);
+
+        return new CreatedArticle(article.Value.Id, article.Value.Slug);
+    }
+}
+```
+
+A missing `PendingArticleUpload` row (`pending is null`) is not an error — it just means the row was already swept by the cleanup job (upload sat unclaimed past the 24-hour threshold) or, for a resubmitted form, was already claimed by an earlier attempt. Either way the `StoredFile` pointer itself is still valid; only the bookkeeping row is gone, and the `Article` save proceeds normally.
+
+**Contract-level (`Neba.Api.Contracts/News/CreateArticle/ArticleInput.cs`)** — flattens `StoredFile`'s fields and adds `HeaderImage`/`Attachments` to `ArticleInput`:
+
+```csharp
+public sealed record ArticleInput
+{
+    // ... existing Title, Slug, Content, PublicationStatus, PublishDateUtc, TournamentId unchanged ...
+
+    /// <summary>
+    /// The pointer returned by a prior POST /news/header-image call, or null for no header image.
+    /// </summary>
+    public HeaderImageInput? HeaderImage { get; init; }
+
+    /// <summary>
+    /// Pointers returned by prior POST /news/attachments calls, one per attachment/inline image.
+    /// </summary>
+    public IReadOnlyCollection<AttachmentInput> Attachments { get; init; } = [];
+}
+
+public sealed record HeaderImageInput
+{
+    public required string Container { get; init; }
+    public required string Path { get; init; }
+    public required string ContentType { get; init; }
+    public required long SizeInBytes { get; init; }
+}
+
+public sealed record AttachmentInput
+{
+    public required string DisplayName { get; init; }
+    public required bool IsInline { get; init; }
+    public required string Container { get; init; }
+    public required string Path { get; init; }
+    public required string ContentType { get; init; }
+    public required long SizeInBytes { get; init; }
+}
+```
+
+The endpoint maps `req.Input.HeaderImage`/each `AttachmentInput` into `StoredFile`/`NewArticleAttachment`, e.g. `input.Attachments.Select(a => new NewArticleAttachment(a.DisplayName, a.IsInline, new StoredFile { Container = a.Container, Path = a.Path, ContentType = a.ContentType, SizeInBytes = a.SizeInBytes }))`.
+
+### Tests (Phase 3a)
+
+- **`FileUploadValidationRules` unit tests**: content type allowed/not-allowed (including null content type), size within/at/over the limit (boundary at exactly `maxSizeBytes`), zero-length file rejected.
+- **`ArticleUploadStagingService` unit tests**: builds the expected `news/uploads/{prefix}/{ulid}-{filename}` path, calls `IFileStorageService.UploadFileAsync` with the file's stream/content type (not a buffered copy — assert the stream reference, not a byte array), inserts exactly one `PendingArticleUpload` row with `UploadedAtUtc` from `IDateTimeProvider`, returns a `StoredFile` matching the uploaded blob.
+- **`UploadArticleHeaderImageRequestValidator` / `UploadArticleAttachmentRequestValidator` unit tests**: each allowed content type passes, a disallowed content type fails, file at/under the cap passes, file over the cap fails, null file fails.
+- **`UploadArticleHeaderImageEndpoint` / `UploadArticleAttachmentEndpoint` unit tests** (`Factory.Create<TEndpoint>()`): success path stages via `IArticleUploadStagingService` and returns 200 with the mapped `UploadedFileResponse`.
+- **Integration tests** for both endpoints: 200 + response shape + a `PendingArticleUpload` row actually persisted on success; 400 for disallowed content type and oversized file; 401/403 for missing/insufficient permission. Remember the FastEndpoints/Hangfire static-state pitfalls documented in `CLAUDE.md`'s Learnings section if these spin up a real `WebApplication`.
+- **`CreateArticleCommandHandler` unit tests** — add to the existing test class: success with a `HeaderImage` and multiple `Attachments` persists them all and returns `CreatedArticle`; a `AddAttachment` validation failure (e.g. blank `DisplayName`) short-circuits before `SaveChangesAsync`; claiming removes the matching `PendingArticleUpload` rows for both `HeaderImage` and each attachment's `File`; a claim with no matching pending row (already swept/already claimed) does not throw and still succeeds.
+- **`CleanupOrphanedArticleUploadsJobHandler` unit tests**: rows older than the threshold are deleted (blob + row); rows within the threshold are left alone; a blob delete failure leaves the row in place and logs a warning rather than throwing.
+- **Integration test for claiming**: `CreateArticleEndpointIntegrationTests` gains a case that uploads a header image via `UploadArticleHeaderImageEndpoint` first, includes the returned pointer in the `CreateArticle` request, and asserts the `PendingArticleUpload` row is gone after the create succeeds.
+
+---
+
+## Phase 3b — UI
 
 ### `FileUpload.razor` component (day 1 feature set)
 
