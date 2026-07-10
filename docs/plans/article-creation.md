@@ -699,10 +699,10 @@ public static ErrorOr<Article> Create(
 
 ### Slug field — placeholder-driven, not value-driven
 
-- The Slug textbox's **bound value stays empty** unless the user explicitly types into it. As the user types the Title, the client recomputes the would-be slug (mirroring `Article.NormalizeSlug` — lowercase, alphanumeric runs joined by single hyphens, no leading/trailing hyphen) and renders it as the Slug field's **placeholder text**, not its value.
+- The Slug textbox's **bound value stays empty** unless the user explicitly types into it. As the user types the Title, the would-be slug is recomputed (mirroring `Article.NormalizeSlug` — lowercase, alphanumeric runs joined by single hyphens, no leading/trailing hyphen) and rendered as the Slug field's **placeholder text**, not its value.
 - If the computed slug looks right, the user does nothing — the field stays empty, and the form submits `Slug: null`, letting the API derive the slug from `Title` itself (same code path, same normalization, single source of truth).
 - If the user wants something different, they type into the field; that typed value becomes the bound value and is sent verbatim as `Slug` in the command, same as today.
-- This avoids duplicating slug-normalization logic between "what's shown" and "what's submitted" — the client-side preview is cosmetic only (a placeholder), never the actual submitted value unless the user opts in by typing.
+- **As built: the preview is computed server-side in C#** (`CreateArticle.razor`'s own `NormalizeSlug`, mirroring `Article.NormalizeSlug`), recomputed on Blazor Server's interactive per-keystroke round-trip — not client-side JS as originally sketched here. Accepted as-is: this is a low-traffic admin-only page, so the extra round-trip per keystroke isn't a real cost, and it avoids introducing a JS-side reimplementation of the normalization rule (one fewer place the algorithm can drift from `Article.NormalizeSlug`).
 
 ### Content field — rich text editor
 
