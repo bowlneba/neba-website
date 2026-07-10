@@ -188,6 +188,54 @@ html, body {
 
 
 
+/* Floating action button — standard "add new" entry point on list pages */
+.neba-fab {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  background-color: var(--neba-blue-600);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(62, 79, 217, 0.4);
+  transition: var(--neba-transition);
+  z-index: 40;
+}
+
+.neba-fab:hover {
+  background-color: var(--neba-blue-500);
+  transform: translateY(-2px);
+}
+
+.neba-fab:active {
+  background-color: var(--neba-blue-700);
+  transform: translateY(0);
+}
+
+.neba-fab:focus-visible {
+  outline: 2px solid var(--neba-blue-500);
+  outline-offset: 3px;
+}
+
+.neba-fab svg {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .neba-fab {
+    transition: none;
+  }
+
+  .neba-fab:hover {
+    transform: none;
+  }
+}
+
 /* Spinner */
 .neba-spinner {
   height: 1.5rem;

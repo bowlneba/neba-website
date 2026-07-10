@@ -33,6 +33,12 @@
         </div>
     </div>
 
+    <AuthorizeView Policy="@Permissions.CreateArticle.PolicyName">
+        <Authorized>
+            <FabCreateButton Href="/news/new" Label="Create Article" />
+        </Authorized>
+    </AuthorizeView>
+
     @if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
         <NebaAlert Severity="NotifySeverity.Error" Title="Error Loading Articles" Message="@_errorMessage" Dismissible="true"

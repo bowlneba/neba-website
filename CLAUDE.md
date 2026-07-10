@@ -325,6 +325,20 @@ Two patterns that break Razor's lexer even inside `@code { }` blocks:
 
 4. **Blazor parameters use `[EditorRequired]` not C# `required`** — the `required` keyword on Blazor `[Parameter]` properties causes compile errors (CS0246/CS7014). Always use `[Parameter, EditorRequired]` with a default initializer (`= default!;`, `= string.Empty;`, `= [];`).
 
+### List Page "Add New" Pattern — Floating Action Button
+
+Any admin-gated list page (News, and future Sponsors/Bowling Centers/etc. admin views) uses the shared `FabCreateButton` component (`Neba.Website.Server/Components/FabCreateButton.razor`) as its "create new" entry point — a circular button fixed to the bottom-right of the viewport (`.neba-fab` in `wwwroot/neba_theme.css`), not a button embedded in the page's gradient title bar. Usage:
+
+```razor
+<AuthorizeView Policy="@Permissions.CreateArticle.PolicyName">
+    <Authorized>
+        <FabCreateButton Href="/news/new" Label="Create Article" />
+    </Authorized>
+</AuthorizeView>
+```
+
+`Href` is the create-page route; `Label` is both the accessible name and hover tooltip (e.g. "Create Article", "Add Sponsor"). This was chosen over embedding the button in the gradient `page-title-bar` because a solid/glass button there had low, position-dependent contrast against the gradient and competed visually with the hero content below it — the FAB sits outside page content entirely, at a fixed screen position, so it doesn't fight the header for attention and its position/behavior is identical across every list page it's added to.
+
 ### Page Titles (`<PageTitle>`)
 
 Every routable page must have a `<PageTitle>` component. Sub-components (cards, modals, skeletons) do not.

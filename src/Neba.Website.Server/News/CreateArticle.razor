@@ -1,0 +1,242 @@
+@page "/news/new"
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using ErrorOr
+@using Neba.Api.Contracts.News
+@using Neba.Api.Contracts.News.CreateArticle
+@using Neba.Api.Contracts.Security
+@using Neba.Website.Server.Notifications
+@using Neba.Website.Server.Services
+@implements IAsyncDisposable
+@rendermode InteractiveServer
+
+@inject ApiExecutor ApiExecutor
+@inject INewsApi NewsApi
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+@inject IJSRuntime JsRuntime
+
+<PageTitle>Create Article - BowlNEBA</PageTitle>
+
+<AuthorizeView Policy="@Permissions.CreateArticle.PolicyName" Context="authContext">
+    <Authorized>
+        <div class="neba-space-y-6">
+
+            <div class="page-title-bar">
+                <div class="page-title-inner">
+                    <h1>Create Article</h1>
+                    <p>Write a new news article for BowlNEBA</p>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <NebaAlert Severity="NotifySeverity.Error" Title="Unable to Create Article" Message="@_errorMessage" Dismissible="true"
+                           OnDismiss="@(() => _errorMessage = null)" />
+            }
+
+            <div class="neba-card">
+                <EditForm Model="_model" FormName="CreateArticleForm" OnValidSubmit="HandleCreateAsync">
+                    <DataAnnotationsValidator />
+                    <div class="neba-space-y-4">
+
+                        <div>
+                            <label for="title" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Title</label>
+                            <InputText id="title" @bind-Value="_model.Title" class="neba-input" placeholder="Article title" />
+                            <ValidationMessage For="@(() => _model.Title)" class="block text-sm text-red-600 mt-1" />
+                        </div>
+
+                        <div>
+                            <label for="slug" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Slug</label>
+                            <InputText id="slug" @bind-Value="_model.Slug" class="neba-input" placeholder="@SlugPlaceholder" />
+                            <p class="text-sm text-[var(--neba-gray-500)] mt-1">
+                                Leave blank to auto-generate from the title.
+                            </p>
+                            <ValidationMessage For="@(() => _model.Slug)" class="block text-sm text-red-600 mt-1" />
+                        </div>
+
+                        <div>
+                            <label for="content" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Content</label>
+                            <RichTextEditor @bind-Value="_model.Content" Placeholder="Write the article content…" />
+                            <ValidationMessage For="@(() => _model.Content)" class="block text-sm text-red-600 mt-1" />
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="publication-status" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Status</label>
+                                <InputSelect id="publication-status" @bind-Value="_model.PublicationStatus" class="neba-select">
+                                    <option value="Draft">Draft</option>
+                                    <option value="Published">Published</option>
+                                </InputSelect>
+                                <ValidationMessage For="@(() => _model.PublicationStatus)" class="block text-sm text-red-600 mt-1" />
+                            </div>
+
+                            <div>
+                                <label for="publish-date" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Publish Date</label>
+                                <InputDate id="publish-date" Type="InputDateType.DateTimeLocal" @bind-Value="_model.PublishDateLocal" class="neba-input" />
+                                <ValidationMessage For="@(() => _model.PublishDateLocal)" class="block text-sm text-red-600 mt-1" />
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <button type="submit" class="neba-btn neba-btn-primary" disabled="@_isSubmitting">
+                                @(_isSubmitting ? "Creating…" : "Create Article")
+                            </button>
+                            <button type="button" class="neba-btn neba-btn-secondary" @onclick="HandleCancel" disabled="@_isSubmitting">
+                                Cancel
+                            </button>
+                        </div>
+
+                    </div>
+                </EditForm>
+            </div>
+
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="news-empty">
+            <p class="news-empty-text">You don't have permission to create articles.</p>
+            <a href="/news" class="neba-btn neba-btn-secondary">Back to News</a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private readonly CreateArticleFormModel _model = new();
+
+    private IJSObjectReference? _jsModule;
+    private bool _isSubmitting;
+    private string? _errorMessage;
+
+    private string SlugPlaceholder => NormalizeSlug(_model.Title);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
+                "import", "./News/CreateArticle.razor.js");
+        }
+    }
+
+    private async Task HandleCreateAsync()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        var publishDateUtc = await ToUtcAsync(_model.PublishDateLocal);
+
+        var request = new CreateArticleRequest
+        {
+            Article = new ArticleInput
+            {
+                Title = _model.Title,
+                Slug = string.IsNullOrWhiteSpace(_model.Slug) ? null : _model.Slug,
+                Content = _model.Content,
+                PublicationStatus = _model.PublicationStatus,
+                PublishDateUtc = publishDateUtc,
+                TournamentId = null,
+            },
+        };
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "News",
+            "CreateArticle",
+            ct => NewsApi.CreateArticleAsync(request, ct));
+
+        _isSubmitting = false;
+
+        if (result.IsError)
+        {
+            _errorMessage = result.FirstError.Description;
+            return;
+        }
+
+        ToastService.Show("Article Created", $"\"{_model.Title}\" was successfully created.", NotifySeverity.Success);
+        NavigationManager.NavigateTo($"/news/{result.Value.Slug}");
+    }
+
+    private void HandleCancel()
+    {
+        NavigationManager.NavigateTo("/news");
+    }
+
+    /// <summary>
+    /// Converts a wall-clock value from the &lt;input type="datetime-local"&gt; (which carries no
+    /// timezone info — it's just whatever digits the user typed) into a true UTC instant, using the
+    /// browser's own timezone offset rather than assuming the server's. <c>Date.getTimezoneOffset()</c>
+    /// returns minutes to ADD to local time to reach UTC (e.g. +300 for US Eastern).
+    /// </summary>
+    private async Task<DateTimeOffset> ToUtcAsync(DateTime localValue)
+    {
+        if (_jsModule is null)
+        {
+            return new DateTimeOffset(localValue, TimeSpan.Zero);
+        }
+
+        var timezoneOffsetMinutes = await _jsModule.InvokeAsync<int>("getTimezoneOffsetMinutes");
+        return new DateTimeOffset(localValue.AddMinutes(timezoneOffsetMinutes), TimeSpan.Zero);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule is not null)
+        {
+            try
+            {
+                await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit already gone — nothing to clean up.
+            }
+        }
+    }
+
+    /// <summary>
+    /// Client-side preview mirroring <c>Article.NormalizeSlug</c> (lowercase, alphanumeric runs joined by
+    /// single hyphens, no leading/trailing hyphen). Cosmetic only — the actual slug is always computed
+    /// server-side from whichever value is submitted (this preview, or a staff-typed override).
+    /// </summary>
+    private static string NormalizeSlug(string value)
+    {
+        var lowered = value.Trim().ToLowerInvariant();
+        var builder = new StringBuilder(lowered.Length);
+        var lastWasHyphen = false;
+
+        foreach (var c in lowered)
+        {
+            if (char.IsLetterOrDigit(c))
+            {
+                builder.Append(c);
+                lastWasHyphen = false;
+            }
+            else if (!lastWasHyphen && builder.Length > 0)
+            {
+                builder.Append('-');
+                lastWasHyphen = true;
+            }
+        }
+
+        return builder.ToString().TrimEnd('-');
+    }
+
+    private sealed class CreateArticleFormModel
+    {
+        [Required(ErrorMessage = "Title is required.")]
+        [StringLength(256, ErrorMessage = "Title must be 256 characters or fewer.")]
+        public string Title { get; set; } = string.Empty;
+
+        [StringLength(256, ErrorMessage = "Slug must be 256 characters or fewer.")]
+        public string? Slug { get; set; }
+
+        [Required(ErrorMessage = "Content is required.")]
+        public string Content { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Status is required.")]
+        public string PublicationStatus { get; set; } = "Draft";
+
+        [Required(ErrorMessage = "Publish date is required.")]
+        public DateTime PublishDateLocal { get; set; } = DateTime.Now;
+    }
+}

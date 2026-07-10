@@ -14,7 +14,7 @@ Source of truth is code — this table describes it for reviewers and help-doc a
 | --- | --- | --- | --- | --- |
 | `Authenticated` | Static | Any signed-in user (no specific permission/role) | `LogoutEndpoint`, `GetCurrentUserEndpoint` | — |
 | `Permission:{value}` | Dynamic (one per `Permissions` value, resolved by `PermissionPolicyProvider`) | Caller holds the single named permission claim (e.g. `Permission:Read`, `Permission:News.DeleteArticle`) | Any endpoint calling `.Policies(Permissions.X.PolicyName)` | — |
-| `CanManageArticles` | Static, OR-of-many | Any permission in `Permissions.ArticleManagementPermissions` (currently just `News.DeleteArticle`) | Registered via `AddNebaPolicies()` (API and Website); drives status-badge visibility in `ArticleCard.razor`, `NewsDetail.razor`, `NewsList.razor` — the delete action itself still gates on `Permission:News.DeleteArticle` directly, not this policy | [can-manage-articles.md](can-manage-articles.md) |
+| `CanManageArticles` | Static, OR-of-many | Any permission in `Permissions.ArticleManagementPermissions` (`News.CreateArticle` or `News.DeleteArticle`) | Registered via `AddNebaPolicies()` (API and Website); drives status-badge visibility only in `ArticleCard.razor`, `NewsDetail.razor`, `NewsList.razor` — every actual page/action (Create Article, Delete) gates on the specific `Permission:News.CreateArticle` / `Permission:News.DeleteArticle` policy matching its own endpoint, not this one | [can-manage-articles.md](can-manage-articles.md) |
 
 ## When to update this file
 

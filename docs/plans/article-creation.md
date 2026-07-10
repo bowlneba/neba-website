@@ -848,8 +848,8 @@ The endpoint maps each `AttachmentInput` → `NewArticleAttachment(input.Display
 
 ## Status
 
-- [ ] Phase 1 — API
-- [ ] Phase 1b — Server-side HTML sanitization
-- [ ] Phase 2 — UI create page
+- [x] Phase 1 — API
+- [x] Phase 1b — Server-side HTML sanitization
+- [x] Phase 2 — UI create page
 - [ ] Phase 2b — Tournament linking (deferred sub-phase)
 - [ ] Phase 3 — Header image + attachments

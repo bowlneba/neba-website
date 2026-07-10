@@ -52,4 +52,5 @@ You can delete an article from either the News list page or the article's own de
 ## Related
 
 - [`docs/policies/README.md`](../policies/README.md) — the `Permission:{value}` policy this action requires and how it's evaluated.
-- [`docs/policies/can-manage-articles.md`](../policies/can-manage-articles.md) — a related, not-yet-enforced policy intended to eventually cover article management more broadly (create/update/delete together).
+- [`docs/policies/can-manage-articles.md`](../policies/can-manage-articles.md) — the broader `CanManageArticles` policy (satisfied by holding either `News.CreateArticle` or `News.DeleteArticle`), which only drives status-badge visibility. Deletion itself still gates on `Permission:News.DeleteArticle` directly, not this policy.
+- [`docs/help/create-article.md`](create-article.md) — the equivalent doc for adding an article.

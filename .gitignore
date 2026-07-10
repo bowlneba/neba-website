@@ -55,6 +55,9 @@ bld/
 # Visual Studio 2017 auto generated files
 Generated\ Files/
 
+# Playwright CLI files
+.playwright-cli/*
+
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
