@@ -4,6 +4,7 @@ using System.Text;
 using ErrorOr;
 
 using Neba.Api.Domain;
+using Neba.Api.Features.News.CreateArticle;
 using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 
@@ -85,7 +86,9 @@ public sealed class Article
             return ArticleErrors.TitleRequired;
         }
 
-        if (string.IsNullOrWhiteSpace(content))
+        var sanitizedContent = HtmlContentSanitizer.Sanitize(content);
+
+        if (string.IsNullOrWhiteSpace(sanitizedContent))
         {
             return ArticleErrors.ContentRequired;
         }
@@ -109,7 +112,7 @@ public sealed class Article
             Id = ArticleId.New(),
             Title = title,
             Slug = normalizedSlug,
-            Content = content,
+            Content = sanitizedContent,
             PublicationStatus = publicationStatus,
             PublishDateUtc = publishDateUtc,
             TournamentId = tournamentId
