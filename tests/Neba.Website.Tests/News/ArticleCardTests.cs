@@ -69,8 +69,9 @@ public sealed class ArticleCardTests : IDisposable
     [Fact(DisplayName = "Should format LocalPublishDate instead of Article.PublishDateUtc when supplied")]
     public void Render_ShouldFormatLocalPublishDate_WhenSupplied()
     {
-        // Arrange — the parent page (NewsList) resolves the viewer's local time and passes it down;
-        // the card must display that instead of recomputing anything from the raw UTC value.
+        // Arrange
+        // The parent page (NewsList) resolves the viewer's local time and passes it down,
+        // and the card must display that instead of recomputing anything from the raw UTC value.
         var article = ArticleSummaryResponseFactory.Create(
             publishDateUtc: new DateTimeOffset(2026, 5, 15, 2, 0, 0, TimeSpan.Zero));
         var localPublishDate = new DateTimeOffset(2026, 5, 14, 22, 0, 0, TimeSpan.FromHours(-4));
