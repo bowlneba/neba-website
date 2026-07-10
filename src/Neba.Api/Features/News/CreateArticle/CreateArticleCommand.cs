@@ -11,6 +11,8 @@ internal sealed record CreateArticleCommand
 
     public string? Slug { get; init; }
 
+    public required string Content { get; init; }
+
     public required PublicationStatus PublicationStatus { get; init; }
 
     public required DateTimeOffset PublishDateUtc { get; init; }
