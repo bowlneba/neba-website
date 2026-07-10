@@ -38,6 +38,7 @@ internal sealed class RegisterEndpoint(
             .WithName("Register")
             .WithTags("Public")
             .Produces<RegisterResponse>(StatusCodes.Status201Created)
+            .ProducesProblemDetails(StatusCodes.Status400BadRequest)
             .ProducesProblemDetails(StatusCodes.Status404NotFound)
             .ProducesProblemDetails(StatusCodes.Status409Conflict)
             .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));

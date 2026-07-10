@@ -33,6 +33,7 @@ internal sealed class CreateArticleEndpoint(Messaging.ICommandHandler<CreateArti
             .WithName("CreateArticle")
             .WithTags("Admin")
             .Produces<ArticleResponse>(StatusCodes.Status201Created)
+            .ProducesProblemDetails(StatusCodes.Status400BadRequest)
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
             .ProducesProblemDetails(StatusCodes.Status403Forbidden)
             .ProducesProblemDetails(StatusCodes.Status409Conflict)
