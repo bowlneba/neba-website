@@ -20,6 +20,16 @@ public sealed class PermissionsTests
         policyName.ShouldBe($"Permission:{permission.Value}");
     }
 
+    [Fact(DisplayName = "ArticleManagementPermissions should contain CreateArticle")]
+    public void ArticleManagementPermissions_ShouldContainCreateArticle()
+    {
+        // Arrange & Act
+        var permissions = Permissions.ArticleManagementPermissions;
+
+        // Assert
+        permissions.ShouldContain(Permissions.CreateArticle);
+    }
+
     [Fact(DisplayName = "ArticleManagementPermissions should contain DeleteArticle")]
     public void ArticleManagementPermissions_ShouldContainDeleteArticle()
     {
@@ -30,14 +40,14 @@ public sealed class PermissionsTests
         permissions.ShouldContain(Permissions.DeleteArticle);
     }
 
-    [Fact(DisplayName = "ArticleManagementPermissions should only contain DeleteArticle")]
-    public void ArticleManagementPermissions_ShouldOnlyContainDeleteArticle()
+    [Fact(DisplayName = "ArticleManagementPermissions should only contain CreateArticle and DeleteArticle")]
+    public void ArticleManagementPermissions_ShouldOnlyContainCreateArticleAndDeleteArticle()
     {
         // Arrange & Act
         var permissions = Permissions.ArticleManagementPermissions;
 
         // Assert
-        permissions.Count.ShouldBe(1);
+        permissions.Count.ShouldBe(2);
     }
 
     [Fact(DisplayName = "CanManageArticlesPolicyName should be CanManageArticles")]

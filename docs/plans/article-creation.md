@@ -16,7 +16,7 @@ Related: [`docs/ubiquitous-language.md`](../ubiquitous-language.md) (§ News) is
 - **Header image and attachments upload independently of the Article record.** Staff pick files before the Article is ever saved (see Phase 3), so blobs can't be keyed by `ArticleId`. The upload endpoint stores the file and returns a `StoredFile` pointer immediately; the create form carries that pointer through to the final `CreateArticleCommand`, which is what actually associates it with the saved `Article`/`ArticleAttachment` row. A file uploaded but never attached to a saved Article is an orphan, swept by a periodic cleanup job. Blob paths: `news/uploads/header/{ulid}-{filename}` and `news/uploads/attachments/{ulid}-{filename}`.
 - **UI never talks to blob storage directly** — all uploads go through the API, even though this costs an extra hop vs. a SAS-token direct-to-blob approach. Locked in as a hard constraint, not just a phase-1 shortcut.
 - **`TournamentId` is part of the command from day one**, even though the Phase 1/2 UI always sends `null`. The handler must already validate a non-null `TournamentId` correctly (existence check, `Conflict` if not found) so Phase 2's tournament-linking UI work doesn't require handler changes.
-- **Auth**: this endpoint needs a new `News.CreateArticle` permission added to `Permissions.ArticleManagementPermissions` (alongside the existing `News.DeleteArticle`), per the extension point already called out in `CanManageArticlesPolicy.md`. Endpoint uses `Policies(Permissions.CanManageArticlesPolicyName)`, matching the delete endpoint's convention.
+- **Auth**: this endpoint needs a new `News.CreateArticle` permission added to `Permissions.ArticleManagementPermissions` (alongside the existing `News.DeleteArticle`), per the extension point already called out in `CanManageArticlesPolicy.md`. Endpoint uses `Policies(Permissions.CreateArticle.PolicyName)`, matching the delete endpoint's convention (`Policies(PermissionCatalog.DeleteArticle.PolicyName)`).
 
 ---
 
@@ -281,7 +281,7 @@ internal sealed class CreateArticleEndpoint(Messaging.ICommandHandler<CreateArti
             .WithVersionSet("News")
             .MapToApiVersion(new ApiVersion(1, 0)));
 
-        Policies(PermissionCatalog.CanManageArticlesPolicyName);
+        Policies(PermissionCatalog.CreateArticle.PolicyName);
 
         Description(description => description
             .WithName("CreateArticle")

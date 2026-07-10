@@ -1,3 +1,4 @@
+using Neba.Api.Contracts.News.CreateArticle;
 using Neba.Api.Contracts.News.GetArticle;
 using Neba.Api.Contracts.News.ListArticles;
 
@@ -42,5 +43,16 @@ public interface INewsApi
     [Delete("/news/{id}")]
     Task<IApiResponse> DeleteArticleAsync(
         string id,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a news article. Requires the News.CreateArticle permission.
+    /// </summary>
+    /// <param name="request">The article fields to create.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The created article's ID and slug.</returns>
+    [Post("/news")]
+    Task<IApiResponse<ArticleResponse>> CreateArticleAsync(
+        CreateArticleRequest request,
         CancellationToken cancellationToken = default);
 }
