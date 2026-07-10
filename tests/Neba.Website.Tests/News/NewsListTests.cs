@@ -29,6 +29,7 @@ public sealed class NewsListTests : IDisposable
     private readonly Mock<INewsApi> _mockApi;
     private readonly BunitAuthorizationContext _authContext;
     private readonly ToastService _toastService;
+    private readonly BunitJSModuleInterop _browserTimeModule;
 
     public NewsListTests()
     {
@@ -40,6 +41,7 @@ public sealed class NewsListTests : IDisposable
 
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        _browserTimeModule = _ctx.JSInterop.SetupModule("./js/browser-time.js");
         _authContext = _ctx.AddAuthorization();
         _authContext.SetNotAuthorized();
 
@@ -152,6 +154,24 @@ public sealed class NewsListTests : IDisposable
         cut.Markup.ShouldContain(articles.First().Title);
     }
 
+    [Fact(DisplayName = "Should format hero publish date using the viewer's local timezone offset")]
+    public void Render_ShouldFormatHeroPublishDate_UsingViewerLocalTimezoneOffset()
+    {
+        // Arrange — Date.getTimezoneOffset() returns +240 for US Eastern (summer); the UTC instant
+        // just after midnight on May 15 falls on May 14 local, so the displayed date must shift back.
+        _browserTimeModule.Setup<int>("getTimezoneOffsetMinutes").SetResult(240);
+        var hero = ArticleSummaryResponseFactory.Create(
+            publishDateUtc: new DateTimeOffset(2026, 5, 15, 2, 0, 0, TimeSpan.Zero));
+        SetupSuccessResponse([hero], totalItems: 1);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.Markup.ShouldContain("May 14, 2026");
+        cut.Markup.ShouldNotContain("May 15, 2026");
+    }
+
     [Fact(DisplayName = "Should link hero to first article's slug")]
     public void Render_ShouldLinkHero_ToFirstArticleSlug()
     {
@@ -183,6 +203,24 @@ public sealed class NewsListTests : IDisposable
         {
             cut.Markup.ShouldContain(System.Net.WebUtility.HtmlEncode(article.Title));
         }
+    }
+
+    [Fact(DisplayName = "Should format grid card publish dates using the viewer's local timezone offset")]
+    public void Render_ShouldFormatGridCardPublishDates_UsingViewerLocalTimezoneOffset()
+    {
+        // Arrange
+        _browserTimeModule.Setup<int>("getTimezoneOffsetMinutes").SetResult(240);
+        var hero = ArticleSummaryResponseFactory.Create(slug: "hero-article");
+        var gridArticle = ArticleSummaryResponseFactory.Create(
+            slug: "grid-article",
+            publishDateUtc: new DateTimeOffset(2026, 5, 15, 2, 0, 0, TimeSpan.Zero));
+        SetupSuccessResponse([hero, gridArticle], totalItems: 2);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.Find(".article-card .card-date").TextContent.ShouldBe("May 14, 2026");
     }
 
     [Fact(DisplayName = "Should not show grid when only one article exists on page 1")]

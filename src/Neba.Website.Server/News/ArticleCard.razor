@@ -14,7 +14,7 @@
         </div>
         <div class="card-body">
             <div class="card-meta-row">
-                <div class="card-date">@Article.PublishDateUtc.ToString("MMM d, yyyy")</div>
+                <div class="card-date">@DisplayDate.ToString("MMM d, yyyy")</div>
                 <AuthorizeView Policy="@Permissions.CanManageArticlesPolicyName">
                     <Authorized>
                         <ArticleStatusBadge PublicationStatus="@Article.PublicationStatus" PublishDateUtc="@Article.PublishDateUtc" />
@@ -44,8 +44,18 @@
     [Parameter, EditorRequired]
     public ArticleSummaryResponse Article { get; set; } = default!;
 
+    /// <summary>
+    /// The publish date converted to the viewer's local time by the parent page, which owns the
+    /// browser-timezone lookup. Falls back to the raw UTC value when the caller doesn't supply one
+    /// (e.g. before the parent's JS interop has resolved, or in isolated rendering/tests).
+    /// </summary>
+    [Parameter]
+    public DateTimeOffset? LocalPublishDate { get; set; }
+
     [Parameter]
     public EventCallback<ArticleSummaryResponse> OnDeleteRequested { get; set; }
+
+    private DateTimeOffset DisplayDate => LocalPublishDate ?? Article.PublishDateUtc;
 
     private Task HandleDeleteRequested()
         => OnDeleteRequested.InvokeAsync(Article);
