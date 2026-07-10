@@ -47,7 +47,7 @@ public sealed class CreateArticleEndpointTests
         capturedCommand.Slug.ShouldBe(input.Slug);
         capturedCommand.Content.ShouldBe(input.Content);
         capturedCommand.PublicationStatus.ShouldBe(PublicationStatus.FromName(input.PublicationStatus));
-        capturedCommand.PublishDateUtc.ShouldBe(input.PublishDateUtc);
+        capturedCommand.PublishDate.ShouldBe(input.PublishDate);
         capturedCommand.TournamentId.ShouldBeNull();
     }
 

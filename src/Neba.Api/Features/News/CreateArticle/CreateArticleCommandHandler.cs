@@ -32,7 +32,7 @@ internal sealed class CreateArticleCommandHandler(
             command.Slug,
             command.Content,
             command.PublicationStatus,
-            command.PublishDateUtc,
+            command.PublishDate.ToUniversalTime(),
             command.TournamentId);
 
         if (articleResult.IsError)

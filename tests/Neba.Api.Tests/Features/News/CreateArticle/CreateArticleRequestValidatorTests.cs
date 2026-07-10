@@ -125,11 +125,11 @@ public sealed class CreateArticleRequestValidatorTests
         result.Errors.ShouldContain(e => e.ErrorCode == "CreateArticleRequest.PublicationStatusInvalid");
     }
 
-    [Fact(DisplayName = "Validate should fail with PublishDateRequired when PublishDateUtc is default")]
-    public void Validate_ShouldFailWithPublishDateRequired_WhenPublishDateUtcIsDefault()
+    [Fact(DisplayName = "Validate should fail with PublishDateRequired when PublishDate is default")]
+    public void Validate_ShouldFailWithPublishDateRequired_WhenPublishDateIsDefault()
     {
         // Arrange
-        var input = ArticleInputFactory.Create() with { PublishDateUtc = default };
+        var input = ArticleInputFactory.Create() with { PublishDate = default };
         var request = new CreateArticleRequest { Article = input };
 
         // Act

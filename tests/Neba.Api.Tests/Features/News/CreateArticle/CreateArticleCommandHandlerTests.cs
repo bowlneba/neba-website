@@ -53,7 +53,7 @@ public sealed class CreateArticleCommandHandlerTests(AppDbContextFixture fixture
         string? slug = null,
         string? content = null,
         PublicationStatus? publicationStatus = null,
-        DateTimeOffset? publishDateUtc = null,
+        DateTimeOffset? publishDate = null,
         TournamentId? tournamentId = null)
         => new()
         {
@@ -61,7 +61,7 @@ public sealed class CreateArticleCommandHandlerTests(AppDbContextFixture fixture
             Slug = slug ?? ArticleFactory.ValidSlug,
             Content = content ?? ArticleFactory.ValidContent,
             PublicationStatus = publicationStatus ?? ArticleFactory.ValidPublicationStatus,
-            PublishDateUtc = publishDateUtc ?? ArticleFactory.ValidPublishDateUtc,
+            PublishDate = publishDate ?? ArticleFactory.ValidPublishDateUtc,
             TournamentId = tournamentId
         };
 
@@ -204,7 +204,7 @@ public sealed class CreateArticleCommandHandlerTests(AppDbContextFixture fixture
             slug: "my-new-article",
             content: "Some content.",
             publicationStatus: PublicationStatus.Published,
-            publishDateUtc: new DateTimeOffset(2025, 6, 1, 0, 0, 0, TimeSpan.Zero));
+            publishDate: new DateTimeOffset(2025, 6, 1, 0, 0, 0, TimeSpan.Zero));
 
         // Act
         var result = await handler.HandleAsync(command, ct);
@@ -217,6 +217,26 @@ public sealed class CreateArticleCommandHandlerTests(AppDbContextFixture fixture
         persisted.Content.ShouldBe("Some content.");
         persisted.PublicationStatus.ShouldBe(PublicationStatus.Published);
         persisted.PublishDateUtc.ShouldBe(new DateTimeOffset(2025, 6, 1, 0, 0, 0, TimeSpan.Zero));
+    }
+
+    [Fact(DisplayName = "HandleAsync converts the local publish date to UTC using its embedded offset")]
+    public async Task HandleAsync_ShouldConvertLocalPublishDateToUtc_UsingItsEmbeddedOffset()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var handler = CreateHandler();
+        var command = ValidCommand(
+            slug: "eastern-offset-article",
+            publishDate: new DateTimeOffset(2025, 6, 1, 9, 0, 0, TimeSpan.FromHours(-4)));
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var persisted = await _dbContext.Articles.AsNoTracking()
+            .SingleAsync(a => a.Slug == "eastern-offset-article", ct);
+        persisted.PublishDateUtc.ShouldBe(new DateTimeOffset(2025, 6, 1, 13, 0, 0, TimeSpan.Zero));
     }
 
     [Fact(DisplayName = "HandleAsync returns the created article's id and normalized slug when command is valid")]
@@ -249,7 +269,7 @@ public sealed class CreateArticleCommandHandlerTests(AppDbContextFixture fixture
             Title = "A Brand New Headline",
             Content = ArticleFactory.ValidContent,
             PublicationStatus = ArticleFactory.ValidPublicationStatus,
-            PublishDateUtc = ArticleFactory.ValidPublishDateUtc
+            PublishDate = ArticleFactory.ValidPublishDateUtc
         };
 
         // Act

@@ -15,7 +15,11 @@ internal sealed record CreateArticleCommand
 
     public required PublicationStatus PublicationStatus { get; init; }
 
-    public required DateTimeOffset PublishDateUtc { get; init; }
+    /// <summary>
+    /// The publish date/time, local to the caller (offset embedded). The handler converts this to UTC
+    /// before it reaches the domain, which requires UTC.
+    /// </summary>
+    public required DateTimeOffset PublishDate { get; init; }
 
     public TournamentId? TournamentId { get; init; }
 }

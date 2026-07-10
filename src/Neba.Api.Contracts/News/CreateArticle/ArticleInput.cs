@@ -26,9 +26,11 @@ public sealed record ArticleInput
     public required string PublicationStatus { get; init; }
 
     /// <summary>
-    /// The UTC date and time the article is (or will be) published.
+    /// The date and time the article is (or will be) published, local to the caller. Unsuffixed date/time
+    /// properties in this API are always local to the caller — the offset is embedded in the value, and
+    /// the server converts to UTC where needed.
     /// </summary>
-    public required DateTimeOffset PublishDateUtc { get; init; }
+    public required DateTimeOffset PublishDate { get; init; }
 
     /// <summary>
     /// The ULID string of an associated tournament, or null if the article is not linked to a tournament.

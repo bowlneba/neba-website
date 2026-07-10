@@ -39,7 +39,7 @@ internal sealed class CreateArticleRequestValidator
             .WithErrorCode("CreateArticleRequest.PublicationStatusInvalid")
             .WithMessage("Publication status must be one of: Draft, Published.");
 
-        RuleFor(r => r.Article.PublishDateUtc)
+        RuleFor(r => r.Article.PublishDate)
             .NotEqual(default(DateTimeOffset))
             .WithErrorCode("CreateArticleRequest.PublishDateRequired")
             .WithMessage("Publish date is required.");

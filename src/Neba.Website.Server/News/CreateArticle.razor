@@ -124,7 +124,7 @@
         _isSubmitting = true;
         _errorMessage = null;
 
-        var publishDateUtc = await ToUtcAsync(_model.PublishDateLocal);
+        var publishDate = await ToLocalDateTimeOffsetAsync(_model.PublishDateLocal);
 
         var request = new CreateArticleRequest
         {
@@ -134,7 +134,7 @@
                 Slug = string.IsNullOrWhiteSpace(_model.Slug) ? null : _model.Slug,
                 Content = _model.Content,
                 PublicationStatus = _model.PublicationStatus,
-                PublishDateUtc = publishDateUtc,
+                PublishDate = publishDate,
                 TournamentId = null,
             },
         };
@@ -162,20 +162,23 @@
     }
 
     /// <summary>
-    /// Converts a wall-clock value from the &lt;input type="datetime-local"&gt; (which carries no
-    /// timezone info — it's just whatever digits the user typed) into a true UTC instant, using the
-    /// browser's own timezone offset rather than assuming the server's. <c>Date.getTimezoneOffset()</c>
-    /// returns minutes to ADD to local time to reach UTC (e.g. +300 for US Eastern).
+    /// Attaches the browser's real UTC offset to a wall-clock value from the
+    /// &lt;input type="datetime-local"&gt; element (which carries no timezone info on its own), producing
+    /// a self-describing <see cref="DateTimeOffset"/> the API can convert to UTC itself.
+    /// <c>Date.getTimezoneOffset()</c> returns minutes to ADD to local time to reach UTC (e.g. +300 for
+    /// US Eastern), i.e. the negation of the actual UTC offset.
     /// </summary>
-    private async Task<DateTimeOffset> ToUtcAsync(DateTime localValue)
+    private async Task<DateTimeOffset> ToLocalDateTimeOffsetAsync(DateTime localValue)
     {
+        var unspecifiedLocalValue = DateTime.SpecifyKind(localValue, DateTimeKind.Unspecified);
+
         if (_jsModule is null)
         {
-            return new DateTimeOffset(localValue, TimeSpan.Zero);
+            return new DateTimeOffset(unspecifiedLocalValue, TimeSpan.Zero);
         }
 
         var timezoneOffsetMinutes = await _jsModule.InvokeAsync<int>("getTimezoneOffsetMinutes");
-        return new DateTimeOffset(localValue.AddMinutes(timezoneOffsetMinutes), TimeSpan.Zero);
+        return new DateTimeOffset(unspecifiedLocalValue, TimeSpan.FromMinutes(-timezoneOffsetMinutes));
     }
 
     public async ValueTask DisposeAsync()

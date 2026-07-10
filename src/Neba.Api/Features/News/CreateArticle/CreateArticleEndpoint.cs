@@ -48,7 +48,7 @@ internal sealed class CreateArticleEndpoint(Messaging.ICommandHandler<CreateArti
             Slug = req.Article.Slug,
             Content = req.Article.Content,
             PublicationStatus = PublicationStatus.FromName(req.Article.PublicationStatus),
-            PublishDateUtc = req.Article.PublishDateUtc,
+            PublishDate = req.Article.PublishDate,
             TournamentId = string.IsNullOrWhiteSpace(req.Article.TournamentId)
                 ? null
                 : new TournamentId(req.Article.TournamentId)
