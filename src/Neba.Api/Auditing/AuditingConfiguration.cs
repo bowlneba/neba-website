@@ -1,3 +1,4 @@
+using Audit.AzureStorageTables.ConfigurationApi;
 using Audit.AzureStorageTables.Providers;
 using Audit.Core;
 using Audit.EntityFramework;
@@ -43,16 +44,16 @@ internal static class AuditingConfiguration
             var defaultProvider = new AzureTableDataProvider(config => config
                 .ConnectionString(builder.Configuration.GetConnectionString("tables"))
                 .TableName(_ => "EFAuditEvents")
-                .EntityBuilder(entity => entity
-                    .PartitionKey(ev => ev.EventType ?? "unknown")
-                    .RowKey(_ => Ulid.NewUlid().ToString())));
+                // EntityMapper (not EntityBuilder) is required to retain the event payload:
+                // AuditEventTableEntity serializes the full event to JSON in an "AuditEvent"
+                // column. EntityBuilder without a .Columns(...) call produces a TableEntity
+                // with no properties at all, silently discarding the payload.
+                .EntityMapper(ev => new AuditEventTableEntity(ev.EventType ?? "unknown", Ulid.NewUlid().ToString(), ev)));
 
             var securityProvider = new AzureTableDataProvider(config => config
                 .ConnectionString(builder.Configuration.GetConnectionString("tables"))
                 .TableName(_ => "SecurityAuditEvents")
-                .EntityBuilder(entity => entity
-                    .PartitionKey(ev => ev.EventType ?? "unknown")
-                    .RowKey(_ => Ulid.NewUlid().ToString())));
+                .EntityMapper(ev => new AuditEventTableEntity(ev.EventType ?? "unknown", Ulid.NewUlid().ToString(), ev)));
 
             Audit.Core.Configuration.Setup()
                 .Use(new SecurityAuditDataProviderRouter(securityProvider, defaultProvider))
