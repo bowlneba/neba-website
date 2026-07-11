@@ -60,8 +60,8 @@ public sealed class UploadArticleAttachmentEndpointAuthorizationTests(SecurityDb
         stagingServiceMock
             .Setup(s => s.StageUploadAsync(
                 It.IsAny<IFormFile>(),
-                "news",
-                "attachments",
+                "bowlneba-public",
+                "news/attachments",
                 null,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(StoredFileFactory.Create());

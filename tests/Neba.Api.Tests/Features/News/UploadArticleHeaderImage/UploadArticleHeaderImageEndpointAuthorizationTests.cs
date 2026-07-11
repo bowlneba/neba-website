@@ -60,8 +60,8 @@ public sealed class UploadArticleHeaderImageEndpointAuthorizationTests(SecurityD
         stagingServiceMock
             .Setup(s => s.StageUploadAsync(
                 It.IsAny<IFormFile>(),
-                "news",
-                "header",
+                "bowlneba-public",
+                "news/header",
                 null,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(StoredFileFactory.Create());
