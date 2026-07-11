@@ -13,7 +13,7 @@ Related: [`docs/ubiquitous-language.md`](../ubiquitous-language.md) (§ News) is
 - **Slug is auto-generated from `Title` (lowercased, hyphenated) but staff-editable.** `Create` accepts an optional `slug` parameter — null/blank derives from title, a supplied value is used verbatim (after the same normalization/validation).
 - **Slug uniqueness is enforced by the command handler**, not `Create` — it requires a repository lookup, which is a cross-aggregate/DB concern. Returns `Article.Slug.AlreadyExists` as a `Conflict` (resubmitting with a different slug succeeds).
 - **Slug reserved-word rule**: slugs may not equal `"new"` (or other future reserved route segments), since `/news/new` is the article-creation route, not an article detail page. Blazor's router prioritizes literal segments over `{Slug}`, so there's no runtime routing collision — the risk is purely "an article with that slug would be permanently unreachable." This is a validation rule on `Create`.
-- **Header image and attachments upload independently of the Article record.** Staff pick files before the Article is ever saved (see Phase 3), so blobs can't be keyed by `ArticleId`. The upload endpoint stores the file and returns a `StoredFile` pointer immediately; the create form carries that pointer through to the final `CreateArticleCommand`, which is what actually associates it with the saved `Article`/`ArticleAttachment` row. A file uploaded but never attached to a saved Article is an orphan, swept by a periodic cleanup job. Blob paths: `news/uploads/header/{ulid}-{filename}` and `news/uploads/attachments/{ulid}-{filename}`.
+- **Header image and attachments upload independently of the Article record.** Staff pick files before the Article is ever saved (see Phase 3), so blobs can't be keyed by `ArticleId`. The upload endpoint stores the file and returns a `StoredFile` pointer immediately; the create form carries that pointer through to the final `CreateArticleCommand`, which is what actually associates it with the saved `Article`/`ArticleAttachment` row. A file uploaded but never attached to a saved Article is an orphan, swept by a periodic cleanup job. Blob addresses: container `news`, paths `uploads/header/{ulid}-{filename}` and `uploads/attachments/{ulid}-{filename}`.
 - **UI never talks to blob storage directly** — all uploads go through the API, even though this costs an extra hop vs. a SAS-token direct-to-blob approach. Locked in as a hard constraint, not just a phase-1 shortcut.
 - **`TournamentId` is part of the command from day one**, even though the Phase 1/2 UI always sends `null`. The handler must already validate a non-null `TournamentId` correctly (existence check, `Conflict` if not found) so Phase 2's tournament-linking UI work doesn't require handler changes.
 - **Auth**: this endpoint needs a new `News.CreateArticle` permission added to `Permissions.ArticleManagementPermissions` (alongside the existing `News.DeleteArticle`), per the extension point already called out in `CanManageArticlesPolicy.md`. Endpoint uses `Policies(Permissions.CreateArticle.PolicyName)`, matching the delete endpoint's convention (`Policies(PermissionCatalog.DeleteArticle.PolicyName)`).
@@ -744,7 +744,7 @@ Architecture decisions that span both sub-phases:
 
 - **Two separate upload endpoints** — header image and attachment are differentiated by *route*, not by a discriminator field on a shared endpoint, matching this codebase's one-use-case-per-folder REPR convention (and letting each enforce its own validation independently). Both live under the existing `news` group (`Group<NewsEndpointGroup>()`), consistent with List/Get/Delete/Create Article. Neither requires an `ArticleId`.
 - **Single file per request, even though the UI's attachment picker allows selecting multiple files.** The `FileUpload` component (3b) uploads each selected file as its own request the moment it's picked — a multi-file selection just means N requests fired back-to-back, one per file, each independently tracked through `Uploading → Uploaded/Failed`. This keeps both endpoints' request/response shape identical to the single-header-image case and avoids a partial-batch-failure story (file 3 of 5 fails, do the other 4 still count?) that a true batch endpoint would have to solve.
-- **Files stay at their upload path forever — they are never moved to a per-article folder once the Article saves.** `Article.HeaderImage`/`ArticleAttachment.File` simply store the `news/uploads/header/{ulid}-{filename}` or `news/uploads/attachments/{ulid}-{filename}` path permanently; there is no `news/{articleId}/...` reorganization step. This was a deliberate choice over moving files post-save:
+- **Files stay at their upload path forever — they are never moved to a per-article folder once the Article saves.** `Article.HeaderImage`/`ArticleAttachment.File` simply store the `news` container + `uploads/header/{ulid}-{filename}` (or `uploads/attachments/{ulid}-{filename}`) path permanently; there is no `news/{articleId}/...` reorganization step. This was a deliberate choice over moving files post-save:
   - Azure Blob Storage has no real folders — paths are just prefixes used for browsing in the portal/CLI. Grouping by `ArticleId` is a cosmetic convenience only, not a functional requirement, since the app always locates a file via the `StoredFile` (Container/Path) stored on the entity, never by directory listing.
   - A move requires a copy+delete (blobs can't be renamed atomically) plus updating the `StoredFile` path on the entity before it's persisted, and introduces a real partial-failure mode to handle (copy succeeds/delete fails → harmless orphan, already covered by the cleanup job below; copy fails outright → must fall back to the original path rather than fail the whole article save).
   - None of that complexity buys anything the app actually needs, so we don't do it. If per-article organization in blob storage ever becomes a real requirement (not just tidiness), this is the section to revisit.
@@ -759,16 +759,23 @@ Three parts, in dependency order: (1) shared upload infrastructure both endpoint
 
 ### Part 1 — Shared upload infrastructure
 
-Both endpoints need the same three things: somewhere to stage the blob + bookkeeping row, a place for the size/content-type validation predicates so the two validators don't duplicate the same boundary logic with copy-pasted drift risk, and a shared response shape. This is a genuine shared dependency (not a premature abstraction over two call sites) because the orphan-cleanup contract — "every successful upload gets a `PendingArticleUpload` row, every claim removes it" — has to hold identically for both endpoints, and duplicating that insert/claim logic is exactly the kind of thing that silently drifts (one endpoint gets a bug fix, the other doesn't).
+Both endpoints need the same three things: somewhere to stage the blob + bookkeeping row, a place for the size/content-type validation predicates so the two validators don't duplicate the same boundary logic with copy-pasted drift risk, and a shared response shape. This is a genuine shared dependency (not a premature abstraction over two call sites) because the orphan-cleanup contract — "every successful upload gets a `PendingUpload` row, every claim removes it" — has to hold identically for both endpoints, and duplicating that insert/claim logic is exactly the kind of thing that silently drifts (one endpoint gets a bug fix, the other doesn't).
 
-All new files live under `Neba.Api/Features/News/Uploads/` (new folder, sibling to `CreateArticle`/`DeleteArticle`/`Domain`).
+**Module boundary: feature-agnostic from day one, not News-scoped.** Everything in this Part is genuinely reusable staging infrastructure — it knows nothing about `Article`, and the only feature-specific thing about it today is that News happens to be the first caller. A future tournament-documents upload flow would need the identical contract (stage a file, get a pointer + bookkeeping row, claim it later, get swept if abandoned). So rather than build it under `Features/News/` and extract it later, it lands in its own top-level module now: `Neba.Api/Uploads/` (namespace `Neba.Api.Uploads`), a sibling to `Features/` — the same placement precedent as `Compliance/` (PII redaction) and `RichText/` (HTML sanitization), both cross-cutting concerns that don't belong inside any one feature's folder. Consequences of this:
 
-**`PendingArticleUpload.cs`** — bookkeeping row, not a domain aggregate. Natural key is `(Container, Path)`, the same two fields already needed to construct a `StoredFile`, so no separate id needs to travel through the UI → API round trip:
+- The bookkeeping entity is `PendingUpload`, not `PendingArticleUpload` — nothing in its shape (`Container`, `Path`, `UploadedAtUtc`) is News-specific, so the name shouldn't be either.
+- The staging service takes `container` as a caller-supplied parameter instead of hardcoding `"news"` — News passes `"news"`; a future tournament-documents flow would pass its own container.
+- The orphan-sweep job operates over the whole `PendingUpload` table with no feature discriminator (there's nothing to discriminate on — `Container`+`Path` is the only identity), so it's a single job shared by every feature that stages uploads, not one job per feature.
+- `UploadedFileResponse` (the wire shape) moves to `Neba.Api.Contracts/Uploads/` for the same reason — any future upload endpoint, in News or elsewhere, returns the same pointer shape.
+
+The two News-specific pieces — the endpoints themselves (routes, permissions, allowlists/caps) — stay put under `Features/News/UploadArticleHeaderImage/` and `Features/News/UploadArticleAttachment/` (Parts 2 and 3 below). Only the shared staging mechanics move.
+
+**`PendingUpload.cs`** — bookkeeping row, not a domain aggregate. Natural key is `(Container, Path)`, the same two fields already needed to construct a `StoredFile`, so no separate id needs to travel through the UI → API round trip:
 
 ```csharp
-namespace Neba.Api.Features.News.Uploads;
+namespace Neba.Api.Uploads;
 
-internal sealed class PendingArticleUpload
+internal sealed class PendingUpload
 {
     public required string Container { get; init; }
 
@@ -778,7 +785,9 @@ internal sealed class PendingArticleUpload
 }
 ```
 
-**`PendingArticleUploadConfiguration.cs`** — table `pending_article_uploads`, shadow int PK (matches every other entity in this codebase), unique index on the natural key:
+**`PendingUploadConfiguration.cs`** — table `pending_uploads`, in its own `staging` schema rather than the default `app` schema, shadow int PK (matches every other entity in this codebase), unique index on the natural key.
+
+**Why a separate schema**: this table isn't part of the core domain model — it's ephemeral, feature-agnostic bookkeeping with its own lifecycle (rows live at most ~24h, swept by a job) entirely unlike the durable business data in `app`. `AppDbContext` already has precedent for exactly this split — `HistoricalSchema` (`"historical"`) holds point-in-time snapshot tables (`tournament_entries`, `tournament_champions`, `tournament_results`) that are conceptually distinct from live `app`-schema state. `pending_uploads` gets the same treatment: add `public const string StagingSchema = "staging";` alongside the existing `DefaultSchema`/`HistoricalSchema` constants in `AppDbContext.cs`.
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
@@ -786,13 +795,13 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 using Neba.Api.Database;
 
-namespace Neba.Api.Features.News.Uploads;
+namespace Neba.Api.Uploads;
 
-internal sealed class PendingArticleUploadConfiguration : IEntityTypeConfiguration<PendingArticleUpload>
+internal sealed class PendingUploadConfiguration : IEntityTypeConfiguration<PendingUpload>
 {
-    public void Configure(EntityTypeBuilder<PendingArticleUpload> builder)
+    public void Configure(EntityTypeBuilder<PendingUpload> builder)
     {
-        builder.ToTable("pending_article_uploads");
+        builder.ToTable("pending_uploads", AppDbContext.StagingSchema);
         builder.ConfigureShadowId();
 
         builder.Property(p => p.Container)
@@ -814,12 +823,12 @@ internal sealed class PendingArticleUploadConfiguration : IEntityTypeConfigurati
 }
 ```
 
-Add `internal DbSet<PendingArticleUpload> PendingArticleUploads => Set<PendingArticleUpload>();` to `AppDbContext`, and generate the EF migration.
+Add `internal DbSet<PendingUpload> PendingUploads => Set<PendingUpload>();` to `AppDbContext`, add the `StagingSchema` constant, and generate the EF migration (the migration needs to create the `staging` schema — same as whatever migration originally created `historical`).
 
 **`FileUploadValidationRules.cs`** — the two predicates both validators need. Deliberately not tied to either endpoint's specific allowlist/cap so each validator supplies its own constants:
 
 ```csharp
-namespace Neba.Api.Features.News.Uploads;
+namespace Neba.Api.Uploads;
 
 internal static class FileUploadValidationRules
 {
@@ -831,7 +840,7 @@ internal static class FileUploadValidationRules
 }
 ```
 
-**`IArticleUploadStagingService.cs` / `ArticleUploadStagingService.cs`** — the one piece both endpoints actually call: builds the blob path, streams the upload through `IFileStorageService` (never buffers the whole file into a `byte[]`), inserts the `PendingArticleUpload` row, and hands back a `StoredFile` pointer. `pathPrefix` is `"header"` or `"attachments"`, matching the two path conventions above.
+**`IUploadStagingService.cs` / `UploadStagingService.cs`** — the one piece every upload endpoint actually calls: builds the blob path, streams the upload through `IFileStorageService` (never buffers the whole file into a `byte[]`), inserts the `PendingUpload` row, and hands back a `StoredFile` pointer. Both `container` and `pathPrefix` are caller-supplied — News passes `"news"` and `"header"`/`"attachments"`; nothing here hardcodes a feature:
 
 ```csharp
 using Microsoft.AspNetCore.Http;
@@ -841,33 +850,31 @@ using Neba.Api.Features.Storage.Domain;
 using Neba.Application.Storage;
 using Neba.Api.Time;
 
-namespace Neba.Api.Features.News.Uploads;
+namespace Neba.Api.Uploads;
 
-internal interface IArticleUploadStagingService
+internal interface IUploadStagingService
 {
-    Task<StoredFile> StageUploadAsync(IFormFile file, string pathPrefix, CancellationToken cancellationToken);
+    Task<StoredFile> StageUploadAsync(IFormFile file, string container, string pathPrefix, CancellationToken cancellationToken);
 }
 
-internal sealed class ArticleUploadStagingService(
+internal sealed class UploadStagingService(
     IFileStorageService fileStorageService,
     AppDbContext appDbContext,
     IDateTimeProvider dateTimeProvider)
-    : IArticleUploadStagingService
+    : IUploadStagingService
 {
-    private const string ContainerName = "news";
-
-    public async Task<StoredFile> StageUploadAsync(IFormFile file, string pathPrefix, CancellationToken cancellationToken)
+    public async Task<StoredFile> StageUploadAsync(IFormFile file, string container, string pathPrefix, CancellationToken cancellationToken)
     {
-        var path = $"news/uploads/{pathPrefix}/{Ulid.NewUlid()}-{file.FileName}";
+        var path = $"uploads/{pathPrefix}/{Ulid.NewUlid()}-{file.FileName}";
 
         await using (var stream = file.OpenReadStream())
         {
-            await fileStorageService.UploadFileAsync(ContainerName, path, stream, file.ContentType, cancellationToken);
+            await fileStorageService.UploadFileAsync(container, path, stream, file.ContentType, cancellationToken);
         }
 
-        appDbContext.PendingArticleUploads.Add(new PendingArticleUpload
+        appDbContext.PendingUploads.Add(new PendingUpload
         {
-            Container = ContainerName,
+            Container = container,
             Path = path,
             UploadedAtUtc = dateTimeProvider.UtcNow
         });
@@ -875,7 +882,7 @@ internal sealed class ArticleUploadStagingService(
 
         return new StoredFile
         {
-            Container = ContainerName,
+            Container = container,
             Path = path,
             ContentType = file.ContentType,
             SizeInBytes = file.Length
@@ -884,15 +891,15 @@ internal sealed class ArticleUploadStagingService(
 }
 ```
 
-Registered in DI the same way as the feature's other internal services (Scrutor scan picking up `IArticleUploadStagingService` → `ArticleUploadStagingService`, alongside `IFileStorageService` → `AzureBlobStorageService`).
+Registered in DI the same way as any other internal service (Scrutor scan picking up `IUploadStagingService` → `UploadStagingService`, alongside `IFileStorageService` → `AzureBlobStorageService`) — registered once, not per-feature.
 
-**`UploadedFileResponse.cs`** (`Neba.Api.Contracts/News/Uploads/`) — the shared response shape for both endpoints, flattening `StoredFile`'s fields (Contracts can't reference the domain type, same rule as `AttachmentInput` below):
+**`UploadedFileResponse.cs`** (`Neba.Api.Contracts/Uploads/`) — the shared response shape for every upload endpoint, flattening `StoredFile`'s fields (Contracts can't reference the domain type, same rule as `AttachmentInput` below):
 
 ```csharp
-namespace Neba.Api.Contracts.News.Uploads;
+namespace Neba.Api.Contracts.Uploads;
 
 /// <summary>
-/// The stored-file pointer returned after a successful header image or attachment upload.
+/// The stored-file pointer returned after a successful upload.
 /// </summary>
 public sealed record UploadedFileResponse
 {
@@ -918,12 +925,12 @@ public sealed record UploadedFileResponse
 }
 ```
 
-**Orphan cleanup job** — the other half of the staging contract (every staged row eventually either gets claimed by a saved `Article`, or swept). Claiming is covered in Part 4 below (it happens in `CreateArticleCommandHandler`, not here); this is just the sweep side, following the same recurring-Hangfire-job pattern as `SyncDocumentToStorageJob`:
+**Orphan cleanup job** — the other half of the staging contract (every staged row eventually either gets claimed by a saved aggregate, or swept). Claiming is covered in Part 4 below (it happens in `CreateArticleCommandHandler`, not here); this is just the sweep side, following the same recurring-Hangfire-job pattern as `SyncDocumentToStorageJob`. It lives in `Neba.Api/Uploads/` alongside the rest of this Part, and sweeps the whole `PendingUpload` table — there's no per-feature variant to register, since the table carries no feature discriminator:
 
 ```csharp
-namespace Neba.Api.Features.News.Uploads;
+namespace Neba.Api.Uploads;
 
-internal sealed record CleanupOrphanedArticleUploadsJob;
+internal sealed record CleanupOrphanedUploadsJob;
 ```
 
 ```csharp
@@ -934,22 +941,22 @@ using Neba.Api.Messaging;
 using Neba.Api.Time;
 using Neba.Application.Storage;
 
-namespace Neba.Api.Features.News.Uploads;
+namespace Neba.Api.Uploads;
 
-internal sealed class CleanupOrphanedArticleUploadsJobHandler(
+internal sealed class CleanupOrphanedUploadsJobHandler(
     AppDbContext appDbContext,
     IFileStorageService fileStorageService,
     IDateTimeProvider dateTimeProvider,
-    ILogger<CleanupOrphanedArticleUploadsJobHandler> logger)
-    : IBackgroundJobHandler<CleanupOrphanedArticleUploadsJob>
+    ILogger<CleanupOrphanedUploadsJobHandler> logger)
+    : IBackgroundJobHandler<CleanupOrphanedUploadsJob>
 {
     private static readonly TimeSpan OrphanThreshold = TimeSpan.FromHours(24);
 
-    public async Task HandleAsync(CleanupOrphanedArticleUploadsJob job, CancellationToken cancellationToken)
+    public async Task HandleAsync(CleanupOrphanedUploadsJob job, CancellationToken cancellationToken)
     {
         var cutoffUtc = dateTimeProvider.UtcNow - OrphanThreshold;
 
-        var orphans = await appDbContext.PendingArticleUploads
+        var orphans = await appDbContext.PendingUploads
             .Where(p => p.UploadedAtUtc < cutoffUtc)
             .ToListAsync(cancellationToken);
 
@@ -960,13 +967,13 @@ internal sealed class CleanupOrphanedArticleUploadsJobHandler(
             if (!deleted)
             {
                 logger.LogWarning(
-                    "Failed to delete orphaned article upload blob {Container}/{Path}; leaving PendingArticleUpload row for the next sweep.",
+                    "Failed to delete orphaned upload blob {Container}/{Path}; leaving PendingUpload row for the next sweep.",
                     orphan.Container,
                     orphan.Path);
                 continue;
             }
 
-            appDbContext.PendingArticleUploads.Remove(orphan);
+            appDbContext.PendingUploads.Remove(orphan);
         }
 
         await appDbContext.SaveChangesAsync(cancellationToken);
@@ -974,7 +981,7 @@ internal sealed class CleanupOrphanedArticleUploadsJobHandler(
 }
 ```
 
-Registered as a recurring job (`"0 * * * *"` — hourly; a stale-by-up-to-an-hour orphan is cheap, and this avoids a bigger sweep backlog than the once-a-month document sync job needs) from `NewsConfiguration`, mirroring `DocumentsConfiguration.UseDocumentSyncJobs()`. Threshold of 24 hours is a starting point — long enough that a slow upload or a user still filling out the rest of the form isn't punished, short enough that orphaned blobs don't pile up — revisit once real usage is observed.
+Registered as a recurring job (`"0 * * * *"` — hourly; a stale-by-up-to-an-hour orphan is cheap, and this avoids a bigger sweep backlog than the once-a-month document sync job needs) from an `UploadsConfiguration` (new, mirroring `DocumentsConfiguration.UseDocumentSyncJobs()`) rather than from `NewsConfiguration` — registration lives with the generic module, not with whichever feature happened to land first. Threshold of 24 hours is a starting point — long enough that a slow upload or a user still filling out the rest of the form isn't punished, short enough that orphaned blobs don't pile up — revisit once real usage is observed.
 
 ### Part 2 — Header image upload endpoint
 
@@ -1002,7 +1009,7 @@ using FastEndpoints;
 
 using FluentValidation;
 
-using Neba.Api.Features.News.Uploads;
+using Neba.Api.Uploads;
 
 namespace Neba.Api.Features.News.UploadArticleHeaderImage;
 
@@ -1049,13 +1056,14 @@ using Asp.Versioning;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
-using Neba.Api.Contracts.News.Uploads;
+using Neba.Api.Contracts.Uploads;
+using Neba.Api.Uploads;
 
 using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Features.News.UploadArticleHeaderImage;
 
-internal sealed class UploadArticleHeaderImageEndpoint(IArticleUploadStagingService stagingService)
+internal sealed class UploadArticleHeaderImageEndpoint(IUploadStagingService stagingService)
     : Endpoint<UploadArticleHeaderImageRequest, UploadedFileResponse>
 {
     public override void Configure()
@@ -1081,7 +1089,7 @@ internal sealed class UploadArticleHeaderImageEndpoint(IArticleUploadStagingServ
 
     public override async Task HandleAsync(UploadArticleHeaderImageRequest req, CancellationToken ct)
     {
-        var storedFile = await stagingService.StageUploadAsync(req.File, "header", ct);
+        var storedFile = await stagingService.StageUploadAsync(req.File, "news", "header", ct);
 
         var response = new UploadedFileResponse
         {
@@ -1102,7 +1110,7 @@ internal sealed class UploadArticleHeaderImageEndpoint(IArticleUploadStagingServ
 ```csharp
 using FastEndpoints;
 
-using Neba.Api.Contracts.News.Uploads;
+using Neba.Api.Contracts.Uploads;
 
 namespace Neba.Api.Features.News.UploadArticleHeaderImage;
 
@@ -1124,7 +1132,7 @@ internal sealed class UploadArticleHeaderImageSummary : Summary<UploadArticleHea
 **`INewsApi.cs`** — add (Refit multipart, not a JSON body):
 
 ```csharp
-using Neba.Api.Contracts.News.Uploads;
+using Neba.Api.Contracts.Uploads;
 // ... existing usings ...
 
 public interface INewsApi
@@ -1166,7 +1174,7 @@ using FastEndpoints;
 
 using FluentValidation;
 
-using Neba.Api.Features.News.Uploads;
+using Neba.Api.Uploads;
 
 namespace Neba.Api.Features.News.UploadArticleAttachment;
 
@@ -1218,13 +1226,14 @@ using Asp.Versioning;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
-using Neba.Api.Contracts.News.Uploads;
+using Neba.Api.Contracts.Uploads;
+using Neba.Api.Uploads;
 
 using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Features.News.UploadArticleAttachment;
 
-internal sealed class UploadArticleAttachmentEndpoint(IArticleUploadStagingService stagingService)
+internal sealed class UploadArticleAttachmentEndpoint(IUploadStagingService stagingService)
     : Endpoint<UploadArticleAttachmentRequest, UploadedFileResponse>
 {
     public override void Configure()
@@ -1250,7 +1259,7 @@ internal sealed class UploadArticleAttachmentEndpoint(IArticleUploadStagingServi
 
     public override async Task HandleAsync(UploadArticleAttachmentRequest req, CancellationToken ct)
     {
-        var storedFile = await stagingService.StageUploadAsync(req.File, "attachments", ct);
+        var storedFile = await stagingService.StageUploadAsync(req.File, "news", "attachments", ct);
 
         var response = new UploadedFileResponse
         {
@@ -1271,7 +1280,7 @@ internal sealed class UploadArticleAttachmentEndpoint(IArticleUploadStagingServi
 ```csharp
 using FastEndpoints;
 
-using Neba.Api.Contracts.News.Uploads;
+using Neba.Api.Contracts.Uploads;
 
 namespace Neba.Api.Features.News.UploadArticleAttachment;
 
@@ -1305,7 +1314,7 @@ Task<IApiResponse<UploadedFileResponse>> UploadArticleAttachmentAsync(
 
 ### Part 4 — Command shape and claiming staged uploads
 
-Extends the `CreateArticleCommand`/`Article.Create` from Phase 1 to accept the `StoredFile` pointers these endpoints hand back, and claims them (deletes the matching `PendingArticleUpload` rows) as part of the same save.
+Extends the `CreateArticleCommand`/`Article.Create` from Phase 1 to accept the `StoredFile` pointers these endpoints hand back, and claims them (deletes the matching `PendingUpload` rows) as part of the same save.
 
 **Layer boundary matters for naming, not just placement.** `Neba.Api.Contracts` is shared with `Neba.Website` (Blazor), so its types must never reference a domain type — `AttachmentInput` below is deliberately flattened to raw primitives. The command lives in `Neba.Api` (application layer) and *can* reference the domain `StoredFile` value object directly, since it never crosses the wire. To avoid the nested command-level type looking like another wire-shaped "Input" DTO, it's named `NewArticleAttachment` rather than `ArticleAttachmentInput` — same data, but the name signals "application-layer, may hold domain types" instead of "contract-layer, primitives only."
 
@@ -1423,12 +1432,12 @@ internal sealed class CreateArticleCommandHandler(AppDbContext appDbContext, IFu
 
         foreach (var file in claimedFiles)
         {
-            var pending = await appDbContext.PendingArticleUploads
+            var pending = await appDbContext.PendingUploads
                 .FirstOrDefaultAsync(p => p.Container == file.Container && p.Path == file.Path, cancellationToken);
 
             if (pending is not null)
             {
-                appDbContext.PendingArticleUploads.Remove(pending);
+                appDbContext.PendingUploads.Remove(pending);
             }
         }
 
@@ -1441,7 +1450,7 @@ internal sealed class CreateArticleCommandHandler(AppDbContext appDbContext, IFu
 }
 ```
 
-A missing `PendingArticleUpload` row (`pending is null`) is not an error — it just means the row was already swept by the cleanup job (upload sat unclaimed past the 24-hour threshold) or, for a resubmitted form, was already claimed by an earlier attempt. Either way the `StoredFile` pointer itself is still valid; only the bookkeeping row is gone, and the `Article` save proceeds normally.
+A missing `PendingUpload` row (`pending is null`) is not an error — it just means the row was already swept by the cleanup job (upload sat unclaimed past the 24-hour threshold) or, for a resubmitted form, was already claimed by an earlier attempt. Either way the `StoredFile` pointer itself is still valid; only the bookkeeping row is gone, and the `Article` save proceeds normally.
 
 **Contract-level (`Neba.Api.Contracts/News/CreateArticle/ArticleInput.cs`)** — flattens `StoredFile`'s fields and adds `HeaderImage`/`Attachments` to `ArticleInput`:
 
@@ -1485,13 +1494,13 @@ The endpoint maps `req.Input.HeaderImage`/each `AttachmentInput` into `StoredFil
 ### Tests (Phase 3a)
 
 - **`FileUploadValidationRules` unit tests**: content type allowed/not-allowed (including null content type), size within/at/over the limit (boundary at exactly `maxSizeBytes`), zero-length file rejected.
-- **`ArticleUploadStagingService` unit tests**: builds the expected `news/uploads/{prefix}/{ulid}-{filename}` path, calls `IFileStorageService.UploadFileAsync` with the file's stream/content type (not a buffered copy — assert the stream reference, not a byte array), inserts exactly one `PendingArticleUpload` row with `UploadedAtUtc` from `IDateTimeProvider`, returns a `StoredFile` matching the uploaded blob.
+- **`UploadStagingService` unit tests**: builds the expected `uploads/{prefix}/{ulid}-{filename}` path under the caller-supplied container, calls `IFileStorageService.UploadFileAsync` with that container and the file's stream/content type (not a buffered copy — assert the stream reference, not a byte array), inserts exactly one `PendingUpload` row with `UploadedAtUtc` from `IDateTimeProvider`, returns a `StoredFile` matching the uploaded blob.
 - **`UploadArticleHeaderImageRequestValidator` / `UploadArticleAttachmentRequestValidator` unit tests**: each allowed content type passes, a disallowed content type fails, file at/under the cap passes, file over the cap fails, null file fails.
-- **`UploadArticleHeaderImageEndpoint` / `UploadArticleAttachmentEndpoint` unit tests** (`Factory.Create<TEndpoint>()`): success path stages via `IArticleUploadStagingService` and returns 200 with the mapped `UploadedFileResponse`.
-- **Integration tests** for both endpoints: 200 + response shape + a `PendingArticleUpload` row actually persisted on success; 400 for disallowed content type and oversized file; 401/403 for missing/insufficient permission. Remember the FastEndpoints/Hangfire static-state pitfalls documented in `CLAUDE.md`'s Learnings section if these spin up a real `WebApplication`.
-- **`CreateArticleCommandHandler` unit tests** — add to the existing test class: success with a `HeaderImage` and multiple `Attachments` persists them all and returns `CreatedArticle`; a `AddAttachment` validation failure (e.g. blank `DisplayName`) short-circuits before `SaveChangesAsync`; claiming removes the matching `PendingArticleUpload` rows for both `HeaderImage` and each attachment's `File`; a claim with no matching pending row (already swept/already claimed) does not throw and still succeeds.
-- **`CleanupOrphanedArticleUploadsJobHandler` unit tests**: rows older than the threshold are deleted (blob + row); rows within the threshold are left alone; a blob delete failure leaves the row in place and logs a warning rather than throwing.
-- **Integration test for claiming**: `CreateArticleEndpointIntegrationTests` gains a case that uploads a header image via `UploadArticleHeaderImageEndpoint` first, includes the returned pointer in the `CreateArticle` request, and asserts the `PendingArticleUpload` row is gone after the create succeeds.
+- **`UploadArticleHeaderImageEndpoint` / `UploadArticleAttachmentEndpoint` unit tests** (`Factory.Create<TEndpoint>()`): success path stages via `IUploadStagingService` (asserting it's called with container `"news"`) and returns 200 with the mapped `UploadedFileResponse`.
+- **Integration tests** for both endpoints: 200 + response shape + a `PendingUpload` row actually persisted on success; 400 for disallowed content type and oversized file; 401/403 for missing/insufficient permission. Remember the FastEndpoints/Hangfire static-state pitfalls documented in `CLAUDE.md`'s Learnings section if these spin up a real `WebApplication`.
+- **`CreateArticleCommandHandler` unit tests** — add to the existing test class: success with a `HeaderImage` and multiple `Attachments` persists them all and returns `CreatedArticle`; a `AddAttachment` validation failure (e.g. blank `DisplayName`) short-circuits before `SaveChangesAsync`; claiming removes the matching `PendingUpload` rows for both `HeaderImage` and each attachment's `File`; a claim with no matching pending row (already swept/already claimed) does not throw and still succeeds.
+- **`CleanupOrphanedUploadsJobHandler` unit tests**: rows older than the threshold are deleted (blob + row); rows within the threshold are left alone; a blob delete failure leaves the row in place and logs a warning rather than throwing.
+- **Integration test for claiming**: `CreateArticleEndpointIntegrationTests` gains a case that uploads a header image via `UploadArticleHeaderImageEndpoint` first, includes the returned pointer in the `CreateArticle` request, and asserts the `PendingUpload` row is gone after the create succeeds.
 
 ---
 
@@ -1536,7 +1545,7 @@ This **modifies the already-built `RichTextEditor.razor`/`RichTextEditor.razor.j
 
 ### Command shape for uploaded files
 
-No PK or domain id for the `PendingArticleUpload` row needs to travel through the UI → API round trip — that row's natural key is `Container`+`Path`, the same two fields already required to build the `StoredFile`, so the claiming step (below) looks the row up by that pair instead of a separate identifier.
+No PK or domain id for the `PendingUpload` row needs to travel through the UI → API round trip — that row's natural key is `Container`+`Path`, the same two fields already required to build the `StoredFile`, so the claiming step (below) looks the row up by that pair instead of a separate identifier.
 
 **Layer boundary matters for naming, not just placement.** `Neba.Api.Contracts` is shared with `Neba.Website` (Blazor), so its types must never reference a domain type — `AttachmentInput` below is deliberately flattened to raw primitives. The command lives in `Neba.Api` (application layer) and *can* reference the domain `StoredFile` value object directly, since it never crosses the wire. To avoid the nested command-level type looking like another wire-shaped "Input" DTO, it's named `NewArticleAttachment` rather than `ArticleAttachmentInput` — same data, but the name signals "application-layer, may hold domain types" instead of "contract-layer, primitives only."
 
@@ -1579,14 +1588,14 @@ The endpoint maps each `AttachmentInput` → `NewArticleAttachment(input.Display
 
 ### Orphan cleanup job
 
-`IFileStorageService` has no blob-listing capability today (`ExistsAsync`/`GetFileAsync`/`UploadFileAsync`/`DeleteAsync`/`GetBlobUri` only), so rather than add one just to sweep storage and cross-reference the DB, orphan tracking is done with a small DB-backed bookkeeping table:
+Fully covered under Phase 3a Part 1 above (`Neba.Api/Uploads/`, not News-specific) — summary for reference: `IFileStorageService` has no blob-listing capability today (`ExistsAsync`/`GetFileAsync`/`UploadFileAsync`/`DeleteAsync`/`GetBlobUri` only), so rather than add one just to sweep storage and cross-reference the DB, orphan tracking is done with a small, feature-agnostic DB-backed bookkeeping table:
 
-- **New table `PendingArticleUpload`** (`Container`, `Path`, `UploadedAtUtc`). Both `UploadArticleHeaderImageEndpoint` and `UploadArticleAttachmentEndpoint` insert a row here immediately after a successful blob upload, before returning the `StoredFile` pointer to the caller.
-- **Claiming**: `CreateArticleCommandHandler` (and later `UpdateArticleCommandHandler`) deletes the matching `PendingArticleUpload` row for every `StoredFile` actually referenced by the saved `Article` (`HeaderImage` + each `Attachment.File`), as part of the same `SaveChangesAsync` that persists the `Article`. If the save fails, the staging rows are left alone — correct, since nothing actually claimed those blobs.
-- **Sweep**: a new recurring Hangfire job, `CleanupOrphanedArticleUploadsJob`/`CleanupOrphanedArticleUploadsJobHandler`, registered the same way `DocumentsConfiguration` registers its recurring sync job (`scheduler.AddOrUpdateRecurring(...)`):
-  1. Query `PendingArticleUpload` rows where `UploadedAtUtc < now - threshold`.
+- **Table `pending_uploads`** (`Container`, `Path`, `UploadedAtUtc`), in its own `staging` schema (`AppDbContext.StagingSchema`), separate from the `app` schema holding domain data. Both `UploadArticleHeaderImageEndpoint` and `UploadArticleAttachmentEndpoint` insert a row here (via `IUploadStagingService`) immediately after a successful blob upload, before returning the `StoredFile` pointer to the caller. A future tournament-documents upload flow reuses the same table with its own `Container` value — no schema change needed.
+- **Claiming**: `CreateArticleCommandHandler` (and later `UpdateArticleCommandHandler`) deletes the matching `PendingUpload` row for every `StoredFile` actually referenced by the saved `Article` (`HeaderImage` + each `Attachment.File`), as part of the same `SaveChangesAsync` that persists the `Article`. If the save fails, the staging rows are left alone — correct, since nothing actually claimed those blobs.
+- **Sweep**: a recurring Hangfire job, `CleanupOrphanedUploadsJob`/`CleanupOrphanedUploadsJobHandler` (in `Neba.Api/Uploads/`), registered by a new `UploadsConfiguration` the same way `DocumentsConfiguration` registers its recurring sync job (`scheduler.AddOrUpdateRecurring(...)`) — one registration covers every feature that stages uploads, since the table has no feature discriminator:
+  1. Query `PendingUpload` rows where `UploadedAtUtc < now - threshold`.
   2. Delete each blob via the existing `IFileStorageService.DeleteAsync` (same delete-and-log-on-failure shape as `DeleteArticleFilesJobHandler`).
-  3. Remove those rows from `PendingArticleUpload`.
+  3. Remove those rows from `PendingUpload`.
 - **Threshold**: proposing 24 hours as a starting point (long enough that a slow upload or a user still filling out the rest of the form isn't punished; short enough that orphaned blobs don't pile up) — revisit once we see real usage.
 
 ---
