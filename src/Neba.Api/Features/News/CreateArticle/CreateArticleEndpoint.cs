@@ -7,6 +7,7 @@ using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts.News.CreateArticle;
 using Neba.Api.Features.News.Domain;
+using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 
 using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
@@ -51,7 +52,28 @@ internal sealed class CreateArticleEndpoint(Messaging.ICommandHandler<CreateArti
             PublishDate = req.Article.PublishDate,
             TournamentId = string.IsNullOrWhiteSpace(req.Article.TournamentId)
                 ? null
-                : new TournamentId(req.Article.TournamentId)
+                : new TournamentId(req.Article.TournamentId),
+            HeaderImage = req.Article.HeaderImage is null
+                ? null
+                : new StoredFile
+                {
+                    Container = req.Article.HeaderImage.Container,
+                    Path = req.Article.HeaderImage.Path,
+                    ContentType = req.Article.HeaderImage.ContentType,
+                    SizeInBytes = req.Article.HeaderImage.SizeInBytes
+                },
+            Attachments = [.. req.Article.Attachments.Select(attachment => new NewArticleAttachment
+            {
+                DisplayName = attachment.DisplayName,
+                IsInline = attachment.IsInline,
+                File = new StoredFile
+                {
+                    Container = attachment.Container,
+                    Path = attachment.Path,
+                    ContentType = attachment.ContentType,
+                    SizeInBytes = attachment.SizeInBytes
+                }
+            })]
         };
 
         var result = await _commandHandler.HandleAsync(command, ct);

@@ -1,3 +1,4 @@
+using Neba.Api.Contracts.News;
 using Neba.Api.Contracts.News.CreateArticle;
 using Neba.Api.Features.News.Domain;
 
@@ -15,7 +16,9 @@ public static class ArticleInputFactory
         string? content = null,
         PublicationStatus? publicationStatus = null,
         DateTimeOffset? publishDate = null,
-        string? tournamentId = null)
+        string? tournamentId = null,
+        HeaderImageInput? headerImage = null,
+        IReadOnlyCollection<AttachmentInput>? attachments = null)
         => new()
         {
             Title = title ?? ValidTitle,
@@ -23,6 +26,8 @@ public static class ArticleInputFactory
             Content = content ?? ValidContent,
             PublicationStatus = (publicationStatus ?? PublicationStatus.Draft).Name,
             PublishDate = publishDate ?? ValidPublishDate,
-            TournamentId = tournamentId
+            TournamentId = tournamentId,
+            HeaderImage = headerImage,
+            Attachments = attachments ?? []
         };
 }

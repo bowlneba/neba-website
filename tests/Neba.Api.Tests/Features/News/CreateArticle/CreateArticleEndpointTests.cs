@@ -2,6 +2,7 @@ using ErrorOr;
 
 using FastEndpoints;
 
+using Neba.Api.Contracts.News;
 using Neba.Api.Contracts.News.CreateArticle;
 using Neba.Api.Features.News.CreateArticle;
 using Neba.Api.Features.News.Domain;
@@ -78,6 +79,63 @@ public sealed class CreateArticleEndpointTests
         // Assert
         capturedCommand.ShouldNotBeNull();
         capturedCommand.TournamentId.ShouldBe(new Neba.Api.Features.Tournaments.Domain.TournamentId(tournamentId));
+    }
+
+    [Fact(DisplayName = "HandleAsync should map a supplied header image and attachments onto the command")]
+    public async Task HandleAsync_ShouldMapHeaderImageAndAttachments_WhenSupplied()
+    {
+        // Arrange
+        var headerImage = new HeaderImageInput
+        {
+            Container = "news",
+            Path = "uploads/header/01ARZ3-header.png",
+            ContentType = "image/png",
+            SizeInBytes = 2048
+        };
+        var attachment = new AttachmentInput
+        {
+            DisplayName = "Bracket.pdf",
+            IsInline = false,
+            Container = "news",
+            Path = "uploads/attachments/01ARZ4-bracket.pdf",
+            ContentType = "application/pdf",
+            SizeInBytes = 4096
+        };
+        var input = ArticleInputFactory.Create(headerImage: headerImage, attachments: [attachment]);
+        var request = new CreateArticleRequest { Article = input };
+        var ct = TestContext.Current.CancellationToken;
+        var createdArticle = CreatedArticleFactory.Create();
+
+        CreateArticleCommand? capturedCommand = null;
+
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<CreateArticleCommand, CreatedArticle>>(MockBehavior.Strict);
+        commandHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<CreateArticleCommand>(), ct))
+            .Callback<CreateArticleCommand, CancellationToken>((c, _) => capturedCommand = c)
+            .ReturnsAsync(createdArticle);
+
+        var endpoint = Factory.Create<CreateArticleEndpoint>(commandHandlerMock.Object);
+
+        // Act
+        await Should.ThrowAsync<InvalidOperationException>(
+            () => endpoint.HandleAsync(request, ct));
+
+        // Assert
+        capturedCommand.ShouldNotBeNull();
+        capturedCommand.HeaderImage.ShouldNotBeNull();
+        capturedCommand.HeaderImage.Container.ShouldBe(headerImage.Container);
+        capturedCommand.HeaderImage.Path.ShouldBe(headerImage.Path);
+        capturedCommand.HeaderImage.ContentType.ShouldBe(headerImage.ContentType);
+        capturedCommand.HeaderImage.SizeInBytes.ShouldBe(headerImage.SizeInBytes);
+
+        capturedCommand.Attachments.ShouldHaveSingleItem();
+        var capturedAttachment = capturedCommand.Attachments.Single();
+        capturedAttachment.DisplayName.ShouldBe(attachment.DisplayName);
+        capturedAttachment.IsInline.ShouldBe(attachment.IsInline);
+        capturedAttachment.File.Container.ShouldBe(attachment.Container);
+        capturedAttachment.File.Path.ShouldBe(attachment.Path);
+        capturedAttachment.File.ContentType.ShouldBe(attachment.ContentType);
+        capturedAttachment.File.SizeInBytes.ShouldBe(attachment.SizeInBytes);
     }
 
     [Fact(DisplayName = "HandleAsync should return 409 Conflict when the command returns a conflict error")]
