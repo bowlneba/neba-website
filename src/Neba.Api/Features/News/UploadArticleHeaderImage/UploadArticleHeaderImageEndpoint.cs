@@ -22,7 +22,7 @@ internal sealed class UploadArticleHeaderImageEndpoint(IUploadStagingService sta
 
         Options(options => options
             .WithVersionSet("News")
-            .MapToApiVersion(new ApiVersion(1,0)));
+            .MapToApiVersion(new ApiVersion(1, 0)));
 
         Policies(PermissionCatalog.CreateArticle.PolicyName);
 
