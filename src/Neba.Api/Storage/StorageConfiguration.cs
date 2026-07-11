@@ -1,3 +1,5 @@
+using Neba.Api.Uploads;
+
 namespace Neba.Api.Storage;
 
 internal static class StorageConfiguration
@@ -7,7 +9,9 @@ internal static class StorageConfiguration
         public WebApplicationBuilder AddStorage()
         {
             builder.AddAzureBlobServiceClient("blob");
+
             builder.Services.AddSingleton<IFileStorageService, AzureBlobStorageService>();
+            builder.Services.AddSingleton<IUploadStagingService, UploadStagingService>();
 
             return builder;
         }

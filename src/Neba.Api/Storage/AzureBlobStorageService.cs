@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
@@ -147,6 +148,15 @@ internal sealed class AzureBlobStorageService
 
     public async Task UploadFileAsync(string container, string path, string content, string contentType, IDictionary<string, string> metadata, CancellationToken cancellationToken)
     {
+        await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
+        await UploadFileCoreAsync(container, path, stream, contentType, metadata, cancellationToken);
+    }
+
+    public Task UploadFileAsync(string container, string path, Stream content, string contentType, IDictionary<string, string> metadata, CancellationToken cancellationToken)
+        => UploadFileCoreAsync(container, path, content, contentType, metadata, cancellationToken);
+
+    private async Task UploadFileCoreAsync(string container, string path, Stream content, string contentType, IDictionary<string, string> metadata, CancellationToken cancellationToken)
+    {
         using var activity = ActivitySource.StartActivity("storage.upload", ActivityKind.Client);
         activity?.SetCodeAttributes(nameof(UploadFileAsync), StorageMetricsNamespace);
         activity?.SetTag(StorageContainerTag, container);
@@ -158,7 +168,7 @@ internal sealed class AzureBlobStorageService
 
         try
         {
-            _logger.LogUploadingFile(container, path, content.Length, contentType);
+            _logger.LogUploadingFile(container, path, (int)content.Length, contentType);
 
             var containerClient = _blobServiceClient.GetBlobContainerClient(container);
             await containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
@@ -166,7 +176,7 @@ internal sealed class AzureBlobStorageService
             var blobClient = containerClient.GetBlobClient(path);
 
             await blobClient.UploadAsync(
-                BinaryData.FromString(content),
+                content,
                 new BlobUploadOptions
                 {
                     HttpHeaders = new BlobHttpHeaders
@@ -179,9 +189,9 @@ internal sealed class AzureBlobStorageService
 
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileUploaded(container, path, content.Length, durationMs.TotalMilliseconds);
+            _logger.LogFileUploaded(container, path, (int)content.Length, durationMs.TotalMilliseconds);
 
-            StorageMetrics.RecordOperationSuccess(container, "upload", durationMs.TotalMilliseconds, content.Length);
+            StorageMetrics.RecordOperationSuccess(container, "upload", durationMs.TotalMilliseconds, (int)content.Length);
 
             activity?.SetTag(StorageDurationMsTag, durationMs.TotalMilliseconds);
             activity?.SetStatus(ActivityStatusCode.Ok);
@@ -190,7 +200,7 @@ internal sealed class AzureBlobStorageService
         {
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileUploadFailed(ex, container, path, content.Length);
+            _logger.LogFileUploadFailed(ex, container, path, (int)content.Length);
 
             StorageMetrics.RecordOperationFailure(container, "upload", durationMs.TotalMilliseconds, ex.GetType().Name);
 
@@ -201,7 +211,7 @@ internal sealed class AzureBlobStorageService
         }
     }
 
-    public async Task DeleteAsync(string container, string path, CancellationToken cancellationToken)
+    public async Task<bool> DeleteAsync(string container, string path, CancellationToken cancellationToken)
     {
         using var activity = ActivitySource.StartActivity("storage.delete", ActivityKind.Client);
         activity?.SetCodeAttributes(nameof(DeleteAsync), StorageMetricsNamespace);
@@ -215,7 +225,7 @@ internal sealed class AzureBlobStorageService
             _logger.LogDeletingFile(container, path);
 
             var blobClient = GetBlobClient(container, path);
-            await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+            var response = await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
 
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
@@ -225,6 +235,8 @@ internal sealed class AzureBlobStorageService
 
             activity?.SetTag(StorageDurationMsTag, durationMs.TotalMilliseconds);
             activity?.SetStatus(ActivityStatusCode.Ok);
+
+            return response.Value;
         }
         catch (Exception ex)
         {
