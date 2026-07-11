@@ -36,4 +36,14 @@ public sealed record ArticleInput
     /// The ULID string of an associated tournament, or null if the article is not linked to a tournament.
     /// </summary>
     public string? TournamentId { get; init; }
+
+    /// <summary>
+    /// The header image associated with the article, or null if there is no header image.
+    /// </summary>
+    public HeaderImageInput? HeaderImage { get; init; }
+
+    /// <summary>
+    /// The collection of attachments associated with the article.
+    /// </summary>
+    public IReadOnlyCollection<AttachmentInput> Attachments { get; init; } = [];
 }

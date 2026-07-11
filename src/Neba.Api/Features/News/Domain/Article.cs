@@ -79,7 +79,8 @@ public sealed class Article
         string content,
         PublicationStatus publicationStatus,
         DateTimeOffset publishDateUtc,
-        TournamentId? tournamentId)
+        TournamentId? tournamentId,
+        StoredFile? headerImage)
     {
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -115,7 +116,8 @@ public sealed class Article
             Content = sanitizedContent,
             PublicationStatus = publicationStatus,
             PublishDateUtc = publishDateUtc,
-            TournamentId = tournamentId
+            TournamentId = tournamentId,
+            HeaderImage = headerImage
         };
     }
 

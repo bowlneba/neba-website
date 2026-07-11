@@ -20,7 +20,8 @@ public sealed class ArticleTests
             ArticleFactory.ValidContent,
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -36,7 +37,8 @@ public sealed class ArticleTests
             ArticleFactory.ValidContent,
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.Value.Id.ShouldNotBe(default);
@@ -55,7 +57,8 @@ public sealed class ArticleTests
             ArticleFactory.ValidContent,
             PublicationStatus.Published,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId);
+            tournamentId,
+            headerImage: null);
 
         // Assert
         var article = result.Value;
@@ -64,6 +67,43 @@ public sealed class ArticleTests
         article.PublicationStatus.ShouldBe(PublicationStatus.Published);
         article.PublishDateUtc.ShouldBe(ArticleFactory.ValidPublishDateUtc);
         article.TournamentId.ShouldBe(tournamentId);
+    }
+
+    [Fact(DisplayName = "Create sets HeaderImage when one is provided")]
+    public void Create_ShouldSetHeaderImage_WhenProvided()
+    {
+        // Arrange
+        var headerImage = StoredFileFactory.Create();
+
+        // Act
+        var result = Article.Create(
+            ArticleFactory.ValidTitle,
+            ArticleFactory.ValidSlug,
+            ArticleFactory.ValidContent,
+            ArticleFactory.ValidPublicationStatus,
+            ArticleFactory.ValidPublishDateUtc,
+            tournamentId: null,
+            headerImage: headerImage);
+
+        // Assert
+        result.Value.HeaderImage.ShouldBe(headerImage);
+    }
+
+    [Fact(DisplayName = "Create sets HeaderImage to null when no header image is provided")]
+    public void Create_ShouldSetHeaderImageToNull_WhenNotProvided()
+    {
+        // Arrange & Act
+        var result = Article.Create(
+            ArticleFactory.ValidTitle,
+            ArticleFactory.ValidSlug,
+            ArticleFactory.ValidContent,
+            ArticleFactory.ValidPublicationStatus,
+            ArticleFactory.ValidPublishDateUtc,
+            tournamentId: null,
+            headerImage: null);
+
+        // Assert
+        result.Value.HeaderImage.ShouldBeNull();
     }
 
     [Fact(DisplayName = "Create sets TournamentId to null when no tournament is provided")]
@@ -76,7 +116,8 @@ public sealed class ArticleTests
             ArticleFactory.ValidContent,
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.Value.TournamentId.ShouldBeNull();
@@ -92,7 +133,8 @@ public sealed class ArticleTests
             ArticleFactory.ValidContent,
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.Value.Attachments.ShouldBeEmpty();
@@ -108,7 +150,8 @@ public sealed class ArticleTests
             ArticleFactory.ValidContent,
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.Value.Slug.ShouldBe("custom-slug");
@@ -126,7 +169,8 @@ public sealed class ArticleTests
             ArticleFactory.ValidContent,
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.Value.Slug.ShouldBe("my-great-title");
@@ -142,7 +186,8 @@ public sealed class ArticleTests
             ArticleFactory.ValidContent,
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -164,7 +209,8 @@ public sealed class ArticleTests
             ArticleFactory.ValidContent,
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.Value.Slug.ShouldBe(expectedSlug);
@@ -180,7 +226,8 @@ public sealed class ArticleTests
             ArticleFactory.ValidContent,
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -201,7 +248,8 @@ public sealed class ArticleTests
             ArticleFactory.ValidContent,
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -218,7 +266,8 @@ public sealed class ArticleTests
             ArticleFactory.ValidContent,
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -237,7 +286,8 @@ public sealed class ArticleTests
             ArticleFactory.ValidContent,
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -255,7 +305,8 @@ public sealed class ArticleTests
             ArticleFactory.ValidContent,
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -275,7 +326,8 @@ public sealed class ArticleTests
             content,
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -292,7 +344,8 @@ public sealed class ArticleTests
             "<p>Hello</p><script>alert('xss')</script>",
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -310,7 +363,8 @@ public sealed class ArticleTests
             "<p onclick=\"alert('xss')\">Hello</p>",
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -327,7 +381,8 @@ public sealed class ArticleTests
             "<script>alert('xss')</script>",
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -345,7 +400,8 @@ public sealed class ArticleTests
             null,
             ArticleFactory.ValidPublicationStatus,
             ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null);
+            tournamentId: null,
+            headerImage: null);
 
         // Assert
         result.IsError.ShouldBeTrue();

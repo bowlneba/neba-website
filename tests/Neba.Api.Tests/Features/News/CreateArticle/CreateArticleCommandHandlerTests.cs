@@ -6,12 +6,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Neba.Api.Database;
 using Neba.Api.Features.News.CreateArticle;
 using Neba.Api.Features.News.Domain;
+using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.News;
 using Neba.TestFactory.Seasons;
+using Neba.TestFactory.Storage;
 using Neba.TestFactory.Tournaments;
+using Neba.TestFactory.Uploads;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -54,7 +57,9 @@ public sealed class CreateArticleCommandHandlerTests(AppDbContextFixture fixture
         string? content = null,
         PublicationStatus? publicationStatus = null,
         DateTimeOffset? publishDate = null,
-        TournamentId? tournamentId = null)
+        TournamentId? tournamentId = null,
+        StoredFile? headerImage = null,
+        IReadOnlyCollection<NewArticleAttachment>? attachments = null)
         => new()
         {
             Title = title ?? ArticleFactory.ValidTitle,
@@ -62,7 +67,9 @@ public sealed class CreateArticleCommandHandlerTests(AppDbContextFixture fixture
             Content = content ?? ArticleFactory.ValidContent,
             PublicationStatus = publicationStatus ?? ArticleFactory.ValidPublicationStatus,
             PublishDate = publishDate ?? ArticleFactory.ValidPublishDateUtc,
-            TournamentId = tournamentId
+            TournamentId = tournamentId,
+            HeaderImage = headerImage,
+            Attachments = attachments ?? []
         };
 
     [Fact(DisplayName = "HandleAsync returns Conflict error when tournament does not exist")]
@@ -334,5 +341,148 @@ public sealed class CreateArticleCommandHandlerTests(AppDbContextFixture fixture
             _ => Task.FromResult("fresh-list"),
             token: ct);
         listAfterCreate.ShouldBe("cached-list");
+    }
+
+    [Fact(DisplayName = "HandleAsync persists the header image when one is provided")]
+    public async Task HandleAsync_ShouldPersistHeaderImage_WhenProvided()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var handler = CreateHandler();
+        var headerImage = StoredFileFactory.Create(container: "header-container", path: "header.jpg");
+        var command = ValidCommand(slug: "header-image-article", headerImage: headerImage);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var persisted = await _dbContext.Articles.AsNoTracking()
+            .SingleAsync(a => a.Slug == "header-image-article", ct);
+        persisted.HeaderImage.ShouldBe(headerImage);
+    }
+
+    [Fact(DisplayName = "HandleAsync persists attachments when provided")]
+    public async Task HandleAsync_ShouldPersistAttachments_WhenProvided()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var handler = CreateHandler();
+        var attachment = NewArticleAttachmentFactory.Create(displayName: "My Attachment", isInline: true);
+        var command = ValidCommand(slug: "attachment-article", attachments: [attachment]);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var persisted = await _dbContext.Articles.AsNoTracking()
+            .Include(a => a.Attachments)
+            .SingleAsync(a => a.Slug == "attachment-article", ct);
+        var persistedAttachment = persisted.Attachments.ShouldHaveSingleItem();
+        persistedAttachment.DisplayName.ShouldBe("My Attachment");
+        persistedAttachment.IsInline.ShouldBeTrue();
+        persistedAttachment.File.ShouldBe(attachment.File);
+    }
+
+    [Fact(DisplayName = "HandleAsync returns a validation error when an attachment is invalid")]
+    public async Task HandleAsync_ShouldReturnValidationError_WhenAttachmentIsInvalid()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var handler = CreateHandler();
+        var invalidAttachment = NewArticleAttachmentFactory.Create(displayName: string.Empty);
+        var command = ValidCommand(attachments: [invalidAttachment]);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("ArticleAttachment.DisplayName");
+    }
+
+    [Fact(DisplayName = "HandleAsync does not persist an article when an attachment is invalid")]
+    public async Task HandleAsync_ShouldNotPersistArticle_WhenAttachmentIsInvalid()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var handler = CreateHandler();
+        var invalidAttachment = NewArticleAttachmentFactory.Create(displayName: string.Empty);
+        var command = ValidCommand(slug: "invalid-attachment-article", attachments: [invalidAttachment]);
+
+        // Act
+        await handler.HandleAsync(command, ct);
+
+        // Assert
+        var exists = await _dbContext.Articles.AsNoTracking()
+            .AnyAsync(a => a.Slug == "invalid-attachment-article", ct);
+        exists.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync removes the pending upload record for the header image when command is valid")]
+    public async Task HandleAsync_ShouldRemovePendingUpload_ForHeaderImage_WhenCommandIsValid()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var headerImage = StoredFileFactory.Create(container: "header-pending-container", path: "header-pending.jpg");
+        var pendingUpload = PendingUploadFactory.Create(container: headerImage.Container, path: headerImage.Path);
+        await _dbContext.PendingUploads.AddAsync(pendingUpload, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+        var command = ValidCommand(slug: "header-pending-upload-article", headerImage: headerImage);
+
+        // Act
+        await handler.HandleAsync(command, ct);
+
+        // Assert
+        var stillPending = await _dbContext.PendingUploads.AsNoTracking()
+            .AnyAsync(p => p.Container == headerImage.Container && p.Path == headerImage.Path, ct);
+        stillPending.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync removes the pending upload record for an attachment when command is valid")]
+    public async Task HandleAsync_ShouldRemovePendingUpload_ForAttachment_WhenCommandIsValid()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var attachment = NewArticleAttachmentFactory.Create(
+            file: StoredFileFactory.Create(container: "attachment-pending-container", path: "attachment-pending.pdf"));
+        var pendingUpload = PendingUploadFactory.Create(container: attachment.File.Container, path: attachment.File.Path);
+        await _dbContext.PendingUploads.AddAsync(pendingUpload, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+        var command = ValidCommand(slug: "attachment-pending-upload-article", attachments: [attachment]);
+
+        // Act
+        await handler.HandleAsync(command, ct);
+
+        // Assert
+        var stillPending = await _dbContext.PendingUploads.AsNoTracking()
+            .AnyAsync(p => p.Container == attachment.File.Container && p.Path == attachment.File.Path, ct);
+        stillPending.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync does not remove unrelated pending upload records")]
+    public async Task HandleAsync_ShouldNotRemoveUnrelatedPendingUploads()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var unrelatedPendingUpload = PendingUploadFactory.Create(container: "unrelated-container", path: "unrelated-file.jpg");
+        await _dbContext.PendingUploads.AddAsync(unrelatedPendingUpload, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+        var command = ValidCommand(slug: "no-matching-pending-upload-article");
+
+        // Act
+        await handler.HandleAsync(command, ct);
+
+        // Assert
+        var stillPending = await _dbContext.PendingUploads.AsNoTracking()
+            .AnyAsync(p => p.Container == "unrelated-container" && p.Path == "unrelated-file.jpg", ct);
+        stillPending.ShouldBeTrue();
     }
 }

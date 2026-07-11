@@ -1,4 +1,5 @@
 using Neba.Api.Features.News.Domain;
+using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Messaging;
 
@@ -22,4 +23,8 @@ internal sealed record CreateArticleCommand
     public required DateTimeOffset PublishDate { get; init; }
 
     public TournamentId? TournamentId { get; init; }
+
+    public StoredFile? HeaderImage { get; init; }
+
+    public IReadOnlyCollection<NewArticleAttachment> Attachments { get; init; } = [];
 }
