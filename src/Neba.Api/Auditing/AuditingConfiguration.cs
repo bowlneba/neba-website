@@ -16,6 +16,7 @@ using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Identity;
 using Neba.Api.Security.Domain;
+using Neba.Api.Uploads;
 
 namespace Neba.Api.Auditing;
 
@@ -76,7 +77,8 @@ internal static class AuditingConfiguration
                 .Include<BowlerOfTheYearAward>()
                 .Include<BowlingCenter>()
                 .Include<Sponsor>()
-                .Include<Article>();
+                .Include<Article>()
+                .Include<PendingUpload>();
 
             Audit.EntityFramework.Configuration.Setup()
                 .ForContext<SecurityDbContext>(auditConfig => auditConfig
