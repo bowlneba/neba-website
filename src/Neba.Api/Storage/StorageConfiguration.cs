@@ -14,7 +14,7 @@ internal static class StorageConfiguration
             builder.AddAzureBlobServiceClient("blob");
 
             builder.Services.AddSingleton<IFileStorageService, AzureBlobStorageService>();
-            builder.Services.AddSingleton<IUploadStagingService, UploadStagingService>();
+            builder.Services.AddScoped<IUploadStagingService, UploadStagingService>();
 
             return builder;
         }
