@@ -7,8 +7,8 @@ namespace Neba.Api.Tests.Uploads;
 [Component("Uploads")]
 public sealed class FileUploadValidationRulesTests
 {
-    [Fact(DisplayName = "HasAllowedContentType should succeed when content type is allowed")]
-    public void HasAllowedContentType_ShouldSucceed_WhenContentTypeIsAllowed()
+    [Fact(DisplayName = "HasAllowedContentType should return true when content type is allowed")]
+    public void HasAllowedContentType_ShouldReturnTrue_WhenContentTypeIsAllowed()
     {
         // Arrange
         const string contentType = "image/png";
@@ -18,11 +18,11 @@ public sealed class FileUploadValidationRulesTests
         var result = FileUploadValidationRules.HasAllowedContentType(contentType, allowedContentTypes);
 
         // Assert
-        result.IsError.ShouldBeFalse();
+        result.ShouldBeTrue();
     }
 
-    [Fact(DisplayName = "HasAllowedContentType should return validation error when content type is not allowed")]
-    public void HasAllowedContentType_ShouldReturnValidationError_WhenContentTypeIsNotAllowed()
+    [Fact(DisplayName = "HasAllowedContentType should return false when content type is not allowed")]
+    public void HasAllowedContentType_ShouldReturnFalse_WhenContentTypeIsNotAllowed()
     {
         // Arrange
         const string contentType = "application/pdf";
@@ -32,13 +32,11 @@ public sealed class FileUploadValidationRulesTests
         var result = FileUploadValidationRules.HasAllowedContentType(contentType, allowedContentTypes);
 
         // Assert
-        result.IsError.ShouldBeTrue();
-        result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.Validation);
-        result.FirstError.Code.ShouldBe("FileUpload.InvalidContentType");
+        result.ShouldBeFalse();
     }
 
-    [Fact(DisplayName = "HasAllowedContentType should return validation error when content type is null")]
-    public void HasAllowedContentType_ShouldReturnValidationError_WhenContentTypeIsNull()
+    [Fact(DisplayName = "HasAllowedContentType should return false when content type is null")]
+    public void HasAllowedContentType_ShouldReturnFalse_WhenContentTypeIsNull()
     {
         // Arrange
         var allowedContentTypes = new HashSet<string> { "image/png", "image/jpeg" };
@@ -47,12 +45,11 @@ public sealed class FileUploadValidationRulesTests
         var result = FileUploadValidationRules.HasAllowedContentType(null, allowedContentTypes);
 
         // Assert
-        result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("FileUpload.InvalidContentType");
+        result.ShouldBeFalse();
     }
 
-    [Fact(DisplayName = "HasAllowedContentType should return validation error when allowed set is empty")]
-    public void HasAllowedContentType_ShouldReturnValidationError_WhenAllowedSetIsEmpty()
+    [Fact(DisplayName = "HasAllowedContentType should return false when allowed set is empty")]
+    public void HasAllowedContentType_ShouldReturnFalse_WhenAllowedSetIsEmpty()
     {
         // Arrange
         const string contentType = "image/png";
@@ -62,24 +59,23 @@ public sealed class FileUploadValidationRulesTests
         var result = FileUploadValidationRules.HasAllowedContentType(contentType, allowedContentTypes);
 
         // Assert
-        result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("FileUpload.InvalidContentType");
+        result.ShouldBeFalse();
     }
 
-    [Theory(DisplayName = "IsWithinSizeLimit should succeed when length is greater than zero and within the max size")]
+    [Theory(DisplayName = "IsWithinSizeLimit should return true when length is greater than zero and within the max size")]
     [InlineData(1, 100)]
     [InlineData(100, 100)]
-    public void IsWithinSizeLimit_ShouldSucceed_WhenLengthIsGreaterThanZeroAndWithinMaxSize(long lengthInBytes, long maxSizeBytes)
+    public void IsWithinSizeLimit_ShouldReturnTrue_WhenLengthIsGreaterThanZeroAndWithinMaxSize(long lengthInBytes, long maxSizeBytes)
     {
         // Act
         var result = FileUploadValidationRules.IsWithinSizeLimit(lengthInBytes, maxSizeBytes);
 
         // Assert
-        result.IsError.ShouldBeFalse();
+        result.ShouldBeTrue();
     }
 
-    [Fact(DisplayName = "IsWithinSizeLimit should return validation error when length exceeds the max size")]
-    public void IsWithinSizeLimit_ShouldReturnValidationError_WhenLengthExceedsMaxSize()
+    [Fact(DisplayName = "IsWithinSizeLimit should return false when length exceeds the max size")]
+    public void IsWithinSizeLimit_ShouldReturnFalse_WhenLengthExceedsMaxSize()
     {
         // Arrange
         const long maxSizeBytes = 100;
@@ -89,15 +85,11 @@ public sealed class FileUploadValidationRulesTests
         var result = FileUploadValidationRules.IsWithinSizeLimit(lengthInBytes, maxSizeBytes);
 
         // Assert
-        result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("FileUpload.FileSizeExceedsLimit");
-        result.FirstError.Metadata.ShouldNotBeNull();
-        result.FirstError.Metadata!["MaxSizeBytes"].ShouldBe(maxSizeBytes);
-        result.FirstError.Metadata!["ActualSizeBytes"].ShouldBe(lengthInBytes);
+        result.ShouldBeFalse();
     }
 
-    [Fact(DisplayName = "IsWithinSizeLimit should return validation error when length is zero")]
-    public void IsWithinSizeLimit_ShouldReturnValidationError_WhenLengthIsZero()
+    [Fact(DisplayName = "IsWithinSizeLimit should return false when length is zero")]
+    public void IsWithinSizeLimit_ShouldReturnFalse_WhenLengthIsZero()
     {
         // Arrange
         const long maxSizeBytes = 100;
@@ -107,12 +99,11 @@ public sealed class FileUploadValidationRulesTests
         var result = FileUploadValidationRules.IsWithinSizeLimit(lengthInBytes, maxSizeBytes);
 
         // Assert
-        result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("FileUpload.FileSizeExceedsLimit");
+        result.ShouldBeFalse();
     }
 
-    [Fact(DisplayName = "IsWithinSizeLimit should return validation error when length is negative")]
-    public void IsWithinSizeLimit_ShouldReturnValidationError_WhenLengthIsNegative()
+    [Fact(DisplayName = "IsWithinSizeLimit should return false when length is negative")]
+    public void IsWithinSizeLimit_ShouldReturnFalse_WhenLengthIsNegative()
     {
         // Arrange
         const long maxSizeBytes = 100;
@@ -122,7 +113,6 @@ public sealed class FileUploadValidationRulesTests
         var result = FileUploadValidationRules.IsWithinSizeLimit(lengthInBytes, maxSizeBytes);
 
         // Assert
-        result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("FileUpload.FileSizeExceedsLimit");
+        result.ShouldBeFalse();
     }
 }
