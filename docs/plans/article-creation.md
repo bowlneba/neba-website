@@ -1089,7 +1089,7 @@ internal sealed class UploadArticleHeaderImageEndpoint(IUploadStagingService sta
 
     public override async Task HandleAsync(UploadArticleHeaderImageRequest req, CancellationToken ct)
     {
-        var storedFile = await stagingService.StageUploadAsync(req.File, "news", "header", ct);
+        var storedFile = await stagingService.StageUploadAsync(req.File, "bowlneba-public", "news/header", ct);
 
         var response = new UploadedFileResponse
         {
@@ -1259,7 +1259,7 @@ internal sealed class UploadArticleAttachmentEndpoint(IUploadStagingService stag
 
     public override async Task HandleAsync(UploadArticleAttachmentRequest req, CancellationToken ct)
     {
-        var storedFile = await stagingService.StageUploadAsync(req.File, "news", "attachments", ct);
+        var storedFile = await stagingService.StageUploadAsync(req.File, "bowlneba-public", "news/attachments", ct);
 
         var response = new UploadedFileResponse
         {

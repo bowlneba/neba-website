@@ -33,7 +33,7 @@ public sealed class UploadArticleAttachmentEndpointTests
 
         var stagingServiceMock = new Mock<IUploadStagingService>(MockBehavior.Strict);
         stagingServiceMock
-            .Setup(s => s.StageUploadAsync(It.IsAny<IFormFile>(), "news", "attachments", null, ct))
+            .Setup(s => s.StageUploadAsync(It.IsAny<IFormFile>(), "bowlneba-public", "news/attachments", null, ct))
             .ReturnsAsync(storedFile);
 
         var endpoint = Factory.Create<UploadArticleAttachmentEndpoint>(stagingServiceMock.Object);
@@ -82,8 +82,8 @@ public sealed class UploadArticleAttachmentEndpointTests
 
         // Assert
         capturedFile.ShouldBeSameAs(file);
-        capturedContainer.ShouldBe("news");
-        capturedPathPrefix.ShouldBe("attachments");
+        capturedContainer.ShouldBe("bowlneba-public");
+        capturedPathPrefix.ShouldBe("news/attachments");
         capturedMetadata.ShouldBeNull();
     }
 

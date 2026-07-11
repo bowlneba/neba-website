@@ -1,5 +1,13 @@
 @page "/test-component"
 @rendermode InteractiveServer
+@using ErrorOr
+@using Neba.Api.Contracts.News
+@using Neba.Api.Contracts.Uploads
+@using Neba.Website.Server.Services
+@using Refit
+
+@inject INewsApi NewsApi
+@inject ApiExecutor ApiExecutor
 
 <PageTitle>Component Test - BowlNEBA</PageTitle>
 
@@ -74,6 +82,59 @@
             <RichTextEditor @bind-Value="_contentC" CssClass="border rounded" />
         }
     </section>
+
+    <section class="space-y-3 border rounded-lg p-4">
+        <h2 class="text-lg font-semibold">FileUpload D — article header image (single file)</h2>
+        <p class="text-sm text-gray-600">
+            Things to verify: drag-and-drop and click-to-browse both work; selecting an image shows a
+            thumbnail preview immediately; the progress bar advances during upload; selecting a second
+            file replaces the first (MaxFiles=1); the result hits the real
+            <code>UploadArticleHeaderImageEndpoint</code> (requires the API + Azurite emulator running).
+        </p>
+
+        <FileUpload MaxFiles="1"
+                    Accept="image/*"
+                    Label="Upload header image"
+                    OnUploadRequestedAsync="UploadHeaderImageAsync"
+                    OnFileUploaded="HandleHeaderImageUploaded"
+                    OnFileRemoved="HandleHeaderImageRemoved" />
+
+        @if (_headerImageResult is not null)
+        {
+            <div class="text-xs">
+                <div class="font-semibold mb-1">Last uploaded header image:</div>
+                <pre class="bg-gray-100 p-2 rounded overflow-x-auto">@_headerImageResult</pre>
+            </div>
+        }
+    </section>
+
+    <section class="space-y-3 border rounded-lg p-4">
+        <h2 class="text-lg font-semibold">FileUpload E — article attachments (multi file)</h2>
+        <p class="text-sm text-gray-600">
+            Things to verify: multiple files can be selected/dropped at once, each uploads and tracks
+            progress independently; non-image files show a generic icon instead of a thumbnail; removing
+            a file mid-upload cancels its request; results hit the real
+            <code>UploadArticleAttachmentEndpoint</code>.
+        </p>
+
+        <FileUpload MaxFiles="5"
+                    Accept="image/*,.pdf,.doc,.docx"
+                    Label="Upload attachments"
+                    OnUploadRequestedAsync="UploadAttachmentAsync"
+                    OnFileUploaded="HandleAttachmentUploaded"
+                    OnFileRemoved="HandleAttachmentRemoved" />
+
+        @if (_attachmentResults.Count > 0)
+        {
+            <div class="text-xs">
+                <div class="font-semibold mb-1">Uploaded attachments:</div>
+                @foreach (var attachment in _attachmentResults)
+                {
+                    <pre class="bg-gray-100 p-2 rounded overflow-x-auto">@FormatAttachment(attachment)</pre>
+                }
+            </div>
+        }
+    </section>
 </div>
 
 @code {
@@ -90,4 +151,38 @@
     private void ClearA() => _contentA = string.Empty;
 
     private void ToggleMounted() => _showEditorC = !_showEditorC;
+
+    private string? _headerImageResult;
+    private readonly List<UploadedFileResponse> _attachmentResults = [];
+
+    private async Task<ErrorOr<UploadedFileResponse>> UploadHeaderImageAsync(
+        Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
+        => await ApiExecutor.ExecuteAsync(
+            "News",
+            "UploadArticleHeaderImage",
+            c => NewsApi.UploadArticleHeaderImageAsync(new StreamPart(stream, fileName, contentType), c),
+            ct);
+
+    private void HandleHeaderImageUploaded(UploadedFileResponse response)
+        => _headerImageResult = $"{response.Container}/{response.Path} ({response.ContentType}, {response.SizeInBytes} bytes)";
+
+    private void HandleHeaderImageRemoved(UploadedFileResponse response)
+        => _headerImageResult = null;
+
+    private async Task<ErrorOr<UploadedFileResponse>> UploadAttachmentAsync(
+        Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
+        => await ApiExecutor.ExecuteAsync(
+            "News",
+            "UploadArticleAttachment",
+            c => NewsApi.UploadArticleAttachmentAsync(new StreamPart(stream, fileName, contentType), c),
+            ct);
+
+    private void HandleAttachmentUploaded(UploadedFileResponse response)
+        => _attachmentResults.Add(response);
+
+    private void HandleAttachmentRemoved(UploadedFileResponse response)
+        => _attachmentResults.RemoveAll(a => a.Path == response.Path);
+
+    private static string FormatAttachment(UploadedFileResponse response)
+        => $"{response.Container}/{response.Path} ({response.ContentType}, {response.SizeInBytes} bytes)";
 }

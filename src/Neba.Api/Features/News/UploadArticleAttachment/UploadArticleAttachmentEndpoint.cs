@@ -37,7 +37,7 @@ internal sealed class UploadArticleAttachmentEndpoint(IUploadStagingService stag
 
     public override async Task HandleAsync(UploadArticleAttachmentRequest req, CancellationToken ct)
     {
-        var storedFile = await stagingService.StageUploadAsync(req.File, "news", "attachments", null, ct);
+        var storedFile = await stagingService.StageUploadAsync(req.File, "bowlneba-public", "news/attachments", null, ct);
 
         var response = new UploadedFileResponse
         {

@@ -1,0 +1,382 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JsRuntime
+@inject ILogger<FileUpload> Logger
+@using ErrorOr
+@using Neba.Api.Contracts.Uploads
+
+<div id="@DropZoneId" class="neba-file-upload-dropzone">
+    <label for="@InputId" class="neba-file-upload-label">
+        <span class="neba-file-upload-icon material-symbols-outlined" aria-hidden="true">upload_file</span>
+        <span>@Label</span>
+        <span class="neba-file-upload-hint">Drag and drop, or click to browse</span>
+    </label>
+    <InputFile id="@InputId" class="neba-file-upload-input" OnChange="HandleFilesSelectedAsync"
+               multiple="@(MaxFiles > 1)" accept="@Accept" />
+</div>
+
+@if (_trackedFiles.Count > 0)
+{
+    <ul class="neba-file-upload-list">
+        @foreach (var trackedFile in _trackedFiles)
+        {
+            <li class="neba-file-upload-item">
+                @if (trackedFile.PreviewUrl is not null)
+                {
+                    <img src="@trackedFile.PreviewUrl" alt="" class="neba-file-upload-thumbnail" />
+                }
+                else
+                {
+                    <span class="neba-file-upload-icon material-symbols-outlined" aria-hidden="true">description</span>
+                }
+
+                <div class="neba-file-upload-item-details">
+                    <span class="neba-file-upload-item-name @(trackedFile.Status == FileUploadStatus.Failed ? "neba-file-upload-item-name--failed" : null)">@trackedFile.FileName</span>
+
+                    @switch (trackedFile.Status)
+                    {
+                        case FileUploadStatus.Uploading:
+                            <div class="neba-file-upload-progress-track">
+                                <div class="neba-file-upload-progress-fill" style="width: @(trackedFile.ProgressPercent)%"></div>
+                            </div>
+                            break;
+                        case FileUploadStatus.Uploaded:
+                            <span class="neba-file-upload-item-status neba-file-upload-item-status--success">Uploaded</span>
+                            break;
+                        case FileUploadStatus.Failed:
+                            <span class="neba-file-upload-item-status neba-file-upload-item-status--error">@trackedFile.ErrorMessage</span>
+                            break;
+                    }
+                </div>
+
+                <button type="button" class="neba-file-upload-remove" title="Remove" @onclick="() => RemoveFileAsync(trackedFile)">
+                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                </button>
+            </li>
+        }
+    </ul>
+}
+
+@* Deferred (explicitly not day 1, see docs/plans/article-creation.md Phase 3b): clipboard
+   paste-to-upload, attachment reordering, chunked/resumable upload, client-side image
+   compression before upload. *@
+@code {
+    private readonly List<TrackedFile> _trackedFiles = [];
+
+    private IJSObjectReference? _jsModule;
+
+    private string DropZoneId { get; } = $"neba-file-upload-{Guid.NewGuid():N}";
+
+    private string InputId { get; } = $"neba-file-upload-input-{Guid.NewGuid():N}";
+
+    [Parameter]
+    public int MaxFiles { get; set; } = 1;
+
+    [Parameter]
+    public string Accept { get; set; } = "*";
+
+    [Parameter]
+    public long MaxFileSizeBytes { get; set; } = 10 * 1024 * 1024;
+
+    [Parameter]
+    public string Label { get; set; } = "Upload a file";
+
+    /// <summary>
+    /// Performs the actual upload for a single selected file. Kept feature-agnostic (same pattern as
+    /// <c>RichTextEditor.OnImageSelected</c>) so this component has no knowledge of which endpoint it's
+    /// talking to — the header image and attachments upload endpoints are different API calls with the
+    /// same shape, and the caller wires up whichever one applies.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public Func<Stream, string, string, IProgress<int>, CancellationToken, Task<ErrorOr<UploadedFileResponse>>> OnUploadRequestedAsync { get; set; } = default!;
+
+    /// <summary>
+    /// Raised once per file immediately after a successful upload.
+    /// </summary>
+    [Parameter]
+    public EventCallback<UploadedFileResponse> OnFileUploaded { get; set; }
+
+    /// <summary>
+    /// Raised when a file that was previously uploaded successfully is removed, so the caller can
+    /// drop it from whatever it's tracking for save (e.g. an article's attachment list).
+    /// </summary>
+    [Parameter]
+    public EventCallback<UploadedFileResponse> OnFileRemoved { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
+                "import", "./Components/FileUpload.razor.js");
+
+            await _jsModule.InvokeVoidAsync("initialize", DropZoneId, InputId);
+        }
+    }
+
+    private async Task HandleFilesSelectedAsync(InputFileChangeEventArgs e)
+    {
+        var remainingSlots = MaxFiles - (_trackedFiles.Count(f => f.Status != FileUploadStatus.Failed));
+
+        // A single-file uploader (MaxFiles == 1, e.g. the header image) replaces its current file rather
+        // than rejecting the new selection once one slot is already filled.
+        if (MaxFiles == 1)
+        {
+            foreach (var existing in _trackedFiles.ToArray())
+            {
+                await RemoveFileAsync(existing);
+            }
+
+            remainingSlots = 1;
+        }
+
+        if (remainingSlots <= 0)
+        {
+            return;
+        }
+
+        // GetMultipleFiles throws if the selection exceeds its argument, so it must be given the actual
+        // selected count (never MaxFiles) — truncation to the remaining slots happens via Take() below.
+        var browserFiles = e.GetMultipleFiles(e.FileCount).Take(remainingSlots).ToArray();
+
+        string?[] previewUrls = _jsModule is null
+            ? new string?[browserFiles.Length]
+            : await _jsModule.InvokeAsync<string?[]>("getPreviewUrls", DropZoneId);
+
+        for (var i = 0; i < browserFiles.Length; i++)
+        {
+            var browserFile = browserFiles[i];
+            var previewUrl = i < previewUrls.Length ? previewUrls[i] : null;
+
+            var trackedFile = new TrackedFile(browserFile, previewUrl);
+            _trackedFiles.Add(trackedFile);
+
+            _ = UploadTrackedFileAsync(trackedFile);
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task UploadTrackedFileAsync(TrackedFile trackedFile)
+    {
+        try
+        {
+            await using var browserStream = trackedFile.BrowserFile.OpenReadStream(MaxFileSizeBytes, trackedFile.CancellationTokenSource.Token);
+            await using var progressStream = new ProgressReportingStream(browserStream);
+
+            var progress = new Progress<int>(percent =>
+            {
+                trackedFile.ProgressPercent = percent;
+                InvokeAsync(StateHasChanged);
+            });
+
+            progressStream.OnBytesRead += bytesRead => ReportProgress(trackedFile, progress, bytesRead);
+
+            var result = await OnUploadRequestedAsync(
+                progressStream,
+                trackedFile.FileName,
+                trackedFile.ContentType,
+                progress,
+                trackedFile.CancellationTokenSource.Token);
+
+            if (result.IsError)
+            {
+                trackedFile.Status = FileUploadStatus.Failed;
+                trackedFile.ErrorMessage = result.FirstError.Description;
+            }
+            else
+            {
+                trackedFile.Status = FileUploadStatus.Uploaded;
+                trackedFile.ProgressPercent = 100;
+                trackedFile.UploadedResponse = result.Value;
+                await OnFileUploaded.InvokeAsync(result.Value);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Removal already dropped this file from the tracked list — nothing left to update.
+        }
+        catch (IOException ex)
+        {
+            trackedFile.Status = FileUploadStatus.Failed;
+            trackedFile.ErrorMessage = $"File exceeds the maximum allowed size of {MaxFileSizeBytes / (1024 * 1024)} MB.";
+            Logger.LogWarning(ex, "[FileUpload] File '{FileName}' exceeded the maximum allowed size.", trackedFile.FileName);
+        }
+        catch (Exception ex)
+        {
+            trackedFile.Status = FileUploadStatus.Failed;
+            trackedFile.ErrorMessage = "Upload failed.";
+            Logger.LogError(ex, "[FileUpload] Unexpected error uploading '{FileName}'.", trackedFile.FileName);
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static void ReportProgress(TrackedFile trackedFile, IProgress<int> progress, int bytesRead)
+    {
+        trackedFile.BytesUploaded += bytesRead;
+        var percent = trackedFile.SizeInBytes == 0
+            ? 100
+            : (int)Math.Min(100, trackedFile.BytesUploaded * 100 / trackedFile.SizeInBytes);
+        progress.Report(percent);
+    }
+
+    private async Task RemoveFileAsync(TrackedFile trackedFile)
+    {
+        await trackedFile.CancellationTokenSource.CancelAsync();
+        trackedFile.CancellationTokenSource.Dispose();
+        _trackedFiles.Remove(trackedFile);
+
+        if (trackedFile.PreviewUrl is not null && _jsModule is not null)
+        {
+            try
+            {
+                await _jsModule.InvokeVoidAsync("revokePreviewUrl", trackedFile.PreviewUrl);
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit already gone — nothing to clean up.
+            }
+        }
+
+        if (trackedFile.UploadedResponse is not null)
+        {
+            await OnFileRemoved.InvokeAsync(trackedFile.UploadedResponse);
+        }
+
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var cancellationTokenSource in _trackedFiles.Select(trackedFile => trackedFile.CancellationTokenSource))
+        {
+            await cancellationTokenSource.CancelAsync();
+            cancellationTokenSource.Dispose();
+        }
+
+        if (_jsModule is not null)
+        {
+            try
+            {
+                await _jsModule.InvokeVoidAsync("dispose", DropZoneId);
+            }
+            catch (JSDisconnectedException ex)
+            {
+                Logger.LogInformation(ex, "[FileUpload] JS cleanup skipped because the circuit disconnected.");
+            }
+            catch (JSException ex)
+            {
+                Logger.LogWarning(ex, "[FileUpload] Error during JS cleanup.");
+            }
+
+            try
+            {
+                await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException ex)
+            {
+                Logger.LogInformation(ex, "[FileUpload] JS module disposal skipped because the circuit disconnected.");
+            }
+            catch (JSException ex)
+            {
+                Logger.LogWarning(ex, "[FileUpload] Failed to dispose JS module.");
+            }
+        }
+    }
+
+    private enum FileUploadStatus
+    {
+        Uploading,
+        Uploaded,
+        Failed
+    }
+
+    private sealed class TrackedFile(IBrowserFile browserFile, string? previewUrl)
+    {
+        public IBrowserFile BrowserFile { get; } = browserFile;
+
+        public string FileName { get; } = browserFile.Name;
+
+        public string ContentType { get; } = browserFile.ContentType;
+
+        public long SizeInBytes { get; } = browserFile.Size;
+
+        public string? PreviewUrl { get; } = previewUrl;
+
+        public CancellationTokenSource CancellationTokenSource { get; } = new();
+
+        public FileUploadStatus Status { get; set; } = FileUploadStatus.Uploading;
+
+        public int ProgressPercent { get; set; }
+
+        public long BytesUploaded { get; set; }
+
+        public string? ErrorMessage { get; set; }
+
+        public UploadedFileResponse? UploadedResponse { get; set; }
+    }
+
+    /// <summary>
+    /// Wraps a browser file's read stream to report bytes as they're read, which happens while the
+    /// outbound multipart request is being written — not before it starts — so progress reflects the
+    /// actual upload rather than a pre-buffered file.
+    /// </summary>
+    private sealed class ProgressReportingStream(Stream inner) : Stream
+    {
+        public event Action<int>? OnBytesRead;
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => inner.Length;
+
+        public override long Position
+        {
+            get => inner.Position;
+            set => throw new NotSupportedException();
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            var read = inner.Read(buffer, offset, count);
+            if (read > 0)
+            {
+                OnBytesRead?.Invoke(read);
+            }
+
+            return read;
+        }
+
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            var read = await inner.ReadAsync(buffer, cancellationToken);
+            if (read > 0)
+            {
+                OnBytesRead?.Invoke(read);
+            }
+
+            return read;
+        }
+
+        public override void Flush() => inner.Flush();
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                inner.Dispose();
+            }
+
+            base.Dispose(disposing);
+        }
+    }
+}
