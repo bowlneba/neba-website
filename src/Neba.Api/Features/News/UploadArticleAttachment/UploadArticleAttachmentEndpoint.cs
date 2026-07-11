@@ -3,31 +3,31 @@ using Asp.Versioning;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
-using Neba.Api.Contracts.News.UploadArticleHeaderImage;
+using Neba.Api.Contracts.News.UploadArticleAttachment;
 using Neba.Api.Contracts.Uploads;
 using Neba.Api.Uploads;
 
 using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
 
-namespace Neba.Api.Features.News.UploadArticleHeaderImage;
+namespace Neba.Api.Features.News.UploadArticleAttachment;
 
-internal sealed class UploadArticleHeaderImageEndpoint(IUploadStagingService stagingService)
-    : Endpoint<UploadArticleHeaderImageRequest, UploadedFileResponse>
+internal sealed class UploadArticleAttachmentEndpoint(IUploadStagingService stagingService)
+    : Endpoint<UploadArticleAttachmentRequest, UploadedFileResponse>
 {
     public override void Configure()
     {
-        Post("header-image");
+        Post("attachments");
         Group<NewsEndpointGroup>();
         AllowFileUploads();
 
         Options(options => options
             .WithVersionSet("News")
-            .MapToApiVersion(new ApiVersion(1,0)));
+            .MapToApiVersion(new ApiVersion(1, 0)));
 
         Policies(PermissionCatalog.CreateArticle.PolicyName);
 
         Description(description => description
-            .WithName("UploadArticleHeaderImage")
+            .WithName("UploadArticleAttachment")
             .WithTags("Admin")
             .Produces<UploadedFileResponse>(StatusCodes.Status200OK)
             .ProducesProblemDetails(StatusCodes.Status400BadRequest)
@@ -35,9 +35,9 @@ internal sealed class UploadArticleHeaderImageEndpoint(IUploadStagingService sta
             .ProducesProblemDetails(StatusCodes.Status403Forbidden));
     }
 
-    public override async Task HandleAsync(UploadArticleHeaderImageRequest req, CancellationToken ct)
+    public override async Task HandleAsync(UploadArticleAttachmentRequest req, CancellationToken ct)
     {
-        var storedFile = await stagingService.StageUploadAsync(req.File, "news", "header", null, ct);
+        var storedFile = await stagingService.StageUploadAsync(req.File, "news", "attachments", null, ct);
 
         var response = new UploadedFileResponse
         {

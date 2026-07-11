@@ -68,4 +68,16 @@ public interface INewsApi
     Task<IApiResponse<UploadedFileResponse>> UploadArticleHeaderImageAsync(
         [AliasAs("File")] StreamPart file,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Uploads a news article attachment (or inline embedded image). Requires the News.CreateArticle permission.
+    /// </summary>
+    /// <param name="file">The attachment file to upload.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The uploaded file's metadata.</returns>
+    [Multipart]
+    [Post("/news/attachments")]
+    Task<IApiResponse<UploadedFileResponse>> UploadArticleAttachmentAsync(
+        [AliasAs("File")] StreamPart file,
+        CancellationToken cancellationToken = default);
 }
