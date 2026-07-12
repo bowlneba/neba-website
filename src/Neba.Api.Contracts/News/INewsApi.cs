@@ -1,4 +1,5 @@
 using Neba.Api.Contracts.News.CreateArticle;
+using Neba.Api.Contracts.News.EditArticle;
 using Neba.Api.Contracts.News.GetArticle;
 using Neba.Api.Contracts.News.ListArticles;
 using Neba.Api.Contracts.Uploads;
@@ -55,6 +56,18 @@ public interface INewsApi
     [Post("/news")]
     Task<IApiResponse<ArticleResponse>> CreateArticleAsync(
         CreateArticleRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Edits a news article. Requires the News.EditArticle permission.
+    /// </summary>
+    /// <param name="id">The article's strongly-typed ID.</param>
+    /// <param name="request">The article fields to update.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    [Put("/news/{id}")]
+    Task<IApiResponse> EditArticleAsync(
+        string id,
+        EditArticleRequest request,
         CancellationToken cancellationToken = default);
 
     /// <summary>
