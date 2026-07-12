@@ -5,13 +5,14 @@ using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts.News.UploadArticleHeaderImage;
 using Neba.Api.Contracts.Uploads;
+using Neba.Api.Storage;
 using Neba.Api.Uploads;
 
 using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Features.News.UploadArticleHeaderImage;
 
-internal sealed class UploadArticleHeaderImageEndpoint(IUploadStagingService stagingService)
+internal sealed class UploadArticleHeaderImageEndpoint(IUploadStagingService stagingService, IFileStorageService fileStorageService)
     : Endpoint<UploadArticleHeaderImageRequest, UploadedFileResponse>
 {
     public override void Configure()
@@ -43,8 +44,10 @@ internal sealed class UploadArticleHeaderImageEndpoint(IUploadStagingService sta
         {
             Container = storedFile.Container,
             Path = storedFile.Path,
+            FileName = req.File.FileName,
             ContentType = storedFile.ContentType,
-            SizeInBytes = storedFile.SizeInBytes
+            SizeInBytes = storedFile.SizeInBytes,
+            Url = fileStorageService.GetBlobUri(storedFile.Container, storedFile.Path)
         };
 
         // Stryker disable once Statement

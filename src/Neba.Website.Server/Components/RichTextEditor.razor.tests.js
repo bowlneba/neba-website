@@ -35,17 +35,39 @@ class MockQuill {
                 <button class="ql-list" value="ordered"></button>
                 <button class="ql-list" value="bullet"></button>
             </span>
+            <span class="ql-formats"><button class="ql-image"></button></span>
             <span class="ql-formats"><button class="ql-clean"></button></span>
         `;
         container.parentElement?.insertBefore(this.toolbarElement, container);
         container.classList.add('ql-container', 'ql-snow');
         container.appendChild(this.root);
 
+        this.toolbarHandlers = {};
+
         MockQuill.instances.push(this);
     }
 
     getModule(name) {
-        return name === 'toolbar' ? { container: this.toolbarElement } : null;
+        if (name !== 'toolbar') {
+            return null;
+        }
+
+        return {
+            container: this.toolbarElement,
+            addHandler: (name, fn) => {
+                this.toolbarHandlers[name] = fn;
+            }
+        };
+    }
+
+    getSelection() {
+        return { index: 0 };
+    }
+
+    insertEmbed() {
+    }
+
+    setSelection() {
     }
 
     on(event, callback) {
@@ -186,6 +208,7 @@ describe('RichTextEditor', () => {
             expect(toolbar.querySelector('button.ql-link').getAttribute('title')).toBe('Insert link');
             expect(toolbar.querySelector('button.ql-list[value="ordered"]').getAttribute('title')).toBe('Numbered list');
             expect(toolbar.querySelector('button.ql-list[value="bullet"]').getAttribute('title')).toBe('Bulleted list');
+            expect(toolbar.querySelector('button.ql-image').getAttribute('title')).toBe('Insert image');
             expect(toolbar.querySelector('button.ql-clean').getAttribute('title')).toBe('Remove formatting');
         });
 
@@ -317,6 +340,116 @@ describe('RichTextEditor', () => {
 
         test('should not throw when disposing a container that was never initialized', () => {
             expect(() => dispose('never-initialized')).not.toThrow();
+        });
+    });
+
+    describe('image embedding', () => {
+        beforeEach(() => {
+            globalThis.DotNet = { createJSStreamReference: jest.fn((file) => ({ file })) };
+        });
+
+        afterEach(() => {
+            delete globalThis.DotNet;
+        });
+
+        test('should register a custom image handler when hasImageHandler is true', async () => {
+            makeContainer('rte-img-1');
+            const dotNetRef = makeDotNetRef();
+
+            await initialize('rte-img-1', dotNetRef, '', false, '', true);
+
+            const quill = lastQuillInstance();
+            expect(typeof quill.toolbarHandlers.image).toBe('function');
+            expect(quill.options.modules.toolbar.handlers.image).toBeNull();
+        });
+
+        test('should not register an image handler when hasImageHandler is false', async () => {
+            makeContainer('rte-img-2');
+            const dotNetRef = makeDotNetRef();
+
+            await initialize('rte-img-2', dotNetRef, '', false, '', false);
+
+            const quill = lastQuillInstance();
+            expect(quill.toolbarHandlers.image).toBeUndefined();
+            expect(Array.isArray(quill.options.modules.toolbar)).toBe(true);
+        });
+
+        test('should upload the picked file and embed the returned URL at the saved selection', async () => {
+            makeContainer('rte-img-3');
+            const dotNetRef = makeDotNetRef();
+            dotNetRef.invokeMethodAsync.mockResolvedValue('https://example.com/photo.png');
+
+            await initialize('rte-img-3', dotNetRef, '', false, '', true);
+            const quill = lastQuillInstance();
+            quill.getSelection = jest.fn(() => ({ index: 4 }));
+            quill.insertEmbed = jest.fn();
+            quill.setSelection = jest.fn();
+
+            let capturedInput;
+            const originalCreateElement = document.createElement.bind(document);
+            jest.spyOn(document, 'createElement').mockImplementation((tag) => {
+                const element = originalCreateElement(tag);
+                if (tag === 'input') {
+                    capturedInput = element;
+                }
+                return element;
+            });
+
+            quill.toolbarHandlers.image();
+
+            const file = new File(['data'], 'photo.png', { type: 'image/png' });
+            Object.defineProperty(capturedInput, 'files', { value: [file] });
+            capturedInput.dispatchEvent(new Event('change'));
+
+            // Flush the async handler chain (file-picked callback -> invokeMethodAsync -> insertEmbed).
+            await Promise.resolve();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            expect(globalThis.DotNet.createJSStreamReference).toHaveBeenCalledWith(file);
+            expect(dotNetRef.invokeMethodAsync).toHaveBeenCalledWith(
+                'RequestImageEmbedAsync', expect.anything(), 'photo.png', 'image/png');
+            expect(quill.insertEmbed).toHaveBeenCalledWith(4, 'image', 'https://example.com/photo.png', 'user');
+            expect(quill.setSelection).toHaveBeenCalledWith(5, 0, 'user');
+
+            document.createElement.mockRestore();
+        });
+
+        test('should not embed anything when the caller returns no URL (e.g. upload failed)', async () => {
+            makeContainer('rte-img-4');
+            const dotNetRef = makeDotNetRef();
+            dotNetRef.invokeMethodAsync.mockResolvedValue(null);
+
+            await initialize('rte-img-4', dotNetRef, '', false, '', true);
+            const quill = lastQuillInstance();
+            quill.getSelection = jest.fn(() => ({ index: 2 }));
+            quill.insertEmbed = jest.fn();
+            quill.setSelection = jest.fn();
+
+            let capturedInput;
+            const originalCreateElement = document.createElement.bind(document);
+            jest.spyOn(document, 'createElement').mockImplementation((tag) => {
+                const element = originalCreateElement(tag);
+                if (tag === 'input') {
+                    capturedInput = element;
+                }
+                return element;
+            });
+
+            quill.toolbarHandlers.image();
+
+            const file = new File(['data'], 'photo.png', { type: 'image/png' });
+            Object.defineProperty(capturedInput, 'files', { value: [file] });
+            capturedInput.dispatchEvent(new Event('change'));
+
+            await Promise.resolve();
+            await Promise.resolve();
+            await Promise.resolve();
+
+            expect(quill.insertEmbed).not.toHaveBeenCalled();
+            expect(quill.setSelection).not.toHaveBeenCalled();
+
+            document.createElement.mockRestore();
         });
     });
 

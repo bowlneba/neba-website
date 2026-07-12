@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 
 using Neba.Api.Contracts.News.UploadArticleAttachment;
 using Neba.Api.Features.News.UploadArticleAttachment;
+using Neba.Api.Storage;
 using Neba.Api.Uploads;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Storage;
@@ -24,19 +25,30 @@ public sealed class UploadArticleAttachmentEndpointTests
         };
     }
 
+    private static Mock<IFileStorageService> CreateFileStorageServiceMock(Uri? blobUri = null)
+    {
+        var mock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        mock.Setup(s => s.GetBlobUri(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(blobUri ?? new Uri("https://storage.example.com/test-container/attachment.pdf"));
+        return mock;
+    }
+
     [Fact(DisplayName = "HandleAsync should return OK with the staged file mapped to the response")]
     public async Task HandleAsync_ShouldReturnOkWithMappedFile_WhenStagingSucceeds()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var storedFile = StoredFileFactory.Create();
+        var blobUri = new Uri("https://storage.example.com/test-container/attachment.pdf");
 
         var stagingServiceMock = new Mock<IUploadStagingService>(MockBehavior.Strict);
         stagingServiceMock
             .Setup(s => s.StageUploadAsync(It.IsAny<IFormFile>(), "bowlneba-public", "news/attachments", null, ct))
             .ReturnsAsync(storedFile);
 
-        var endpoint = Factory.Create<UploadArticleAttachmentEndpoint>(stagingServiceMock.Object);
+        var fileStorageServiceMock = CreateFileStorageServiceMock(blobUri);
+
+        var endpoint = Factory.Create<UploadArticleAttachmentEndpoint>(stagingServiceMock.Object, fileStorageServiceMock.Object);
 
         // Act
         await endpoint.HandleAsync(new UploadArticleAttachmentRequest { File = CreateFile() }, ct);
@@ -45,8 +57,10 @@ public sealed class UploadArticleAttachmentEndpointTests
         endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
         endpoint.Response.Container.ShouldBe(storedFile.Container);
         endpoint.Response.Path.ShouldBe(storedFile.Path);
+        endpoint.Response.FileName.ShouldBe("attachment.pdf");
         endpoint.Response.ContentType.ShouldBe(storedFile.ContentType);
         endpoint.Response.SizeInBytes.ShouldBe(storedFile.SizeInBytes);
+        endpoint.Response.Url.ShouldBe(blobUri);
     }
 
     [Fact(DisplayName = "HandleAsync should stage the request file under the news/attachments container and prefix")]
@@ -75,7 +89,7 @@ public sealed class UploadArticleAttachmentEndpointTests
                 })
             .ReturnsAsync(StoredFileFactory.Create());
 
-        var endpoint = Factory.Create<UploadArticleAttachmentEndpoint>(stagingServiceMock.Object);
+        var endpoint = Factory.Create<UploadArticleAttachmentEndpoint>(stagingServiceMock.Object, CreateFileStorageServiceMock().Object);
 
         // Act
         await endpoint.HandleAsync(request, ct);
@@ -92,7 +106,7 @@ public sealed class UploadArticleAttachmentEndpointTests
     {
         // Arrange
         var stagingServiceMock = new Mock<IUploadStagingService>(MockBehavior.Strict);
-        var endpoint = Factory.Create<UploadArticleAttachmentEndpoint>(stagingServiceMock.Object);
+        var endpoint = Factory.Create<UploadArticleAttachmentEndpoint>(stagingServiceMock.Object, CreateFileStorageServiceMock().Object);
 
         // Assert
         endpoint.Definition.Verbs.ShouldContain("POST");

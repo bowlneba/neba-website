@@ -5,8 +5,10 @@
 @using Neba.Api.Contracts.News
 @using Neba.Api.Contracts.News.CreateArticle
 @using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Uploads
 @using Neba.Website.Server.Notifications
 @using Neba.Website.Server.Services
+@using Refit
 @implements IAsyncDisposable
 @rendermode InteractiveServer
 
@@ -57,9 +59,49 @@
 
                         <div>
                             <label for="content" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Content</label>
-                            <RichTextEditor @bind-Value="_model.Content" Placeholder="Write the article content…" />
+                            <RichTextEditor @bind-Value="_model.Content" Placeholder="Write the article content…" OnImageSelected="HandleInlineImageSelectedAsync" />
                             <ValidationMessage For="@(() => _model.Content)" class="block text-sm text-red-600 mt-1" />
                         </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Header Image</label>
+                            <FileUpload MaxFiles="1" Accept="image/*" MaxFileSizeBytes="@(5 * 1024 * 1024)" Label="Upload a header image"
+                                        OnUploadRequestedAsync="UploadHeaderImageAsync"
+                                        OnFileUploaded="@(response => _headerImage = response)"
+                                        OnFileRemoved="@(_ => _headerImage = null)"
+                                        OnBusyChanged="@(busy => _isHeaderImageUploading = busy)" />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Attachments</label>
+                            <FileUpload MaxFiles="10" Accept=".pdf,.doc,.docx,.xls,.xlsx,image/*" MaxFileSizeBytes="@(25 * 1024 * 1024)" Label="Upload attachments"
+                                        OnUploadRequestedAsync="UploadAttachmentAsync"
+                                        OnFileUploaded="@(response => AddAttachment(response, isInline: false))"
+                                        OnFileRemoved="@(response => RemoveAttachmentByUpload(response))"
+                                        OnBusyChanged="@(busy => _isAttachmentsUploading = busy)" />
+                        </div>
+
+                        @if (_attachments.Count > 0)
+                        {
+                            <div>
+                                <label class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Files</label>
+                                <ul class="create-article-attachment-list">
+                                    @foreach (var attachment in _attachments)
+                                    {
+                                        <li class="create-article-attachment-row">
+                                            <span class="create-article-attachment-name">@attachment.DisplayName</span>
+                                            @if (attachment.IsInline)
+                                            {
+                                                <span class="create-article-attachment-badge" title="Used in article body">Inline</span>
+                                            }
+                                            <a href="@attachment.Upload.Url" download="@attachment.DisplayName" class="neba-btn neba-btn-secondary create-article-attachment-action">Download</a>
+                                            <a href="@attachment.Upload.Url" target="_blank" rel="noopener noreferrer" class="neba-btn neba-btn-secondary create-article-attachment-action">Open</a>
+                                            <button type="button" class="neba-btn neba-btn-danger create-article-attachment-action" @onclick="@(() => RequestRemoveAttachment(attachment))">Remove</button>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        }
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
@@ -78,8 +120,13 @@
                             </div>
                         </div>
 
+                        @if (_isHeaderImageUploading || _isAttachmentsUploading)
+                        {
+                            <p class="text-sm text-[var(--neba-gray-500)]">Uploading files…</p>
+                        }
+
                         <div class="flex items-center gap-3">
-                            <button type="submit" class="neba-btn neba-btn-primary" disabled="@_isSubmitting">
+                            <button type="submit" class="neba-btn neba-btn-primary" disabled="@(_isSubmitting || _isHeaderImageUploading || _isAttachmentsUploading)">
                                 @(_isSubmitting ? "Creating…" : "Create Article")
                             </button>
                             <button type="button" class="neba-btn neba-btn-secondary" @onclick="HandleCancel" disabled="@_isSubmitting">
@@ -101,12 +148,26 @@
     </NotAuthorized>
 </AuthorizeView>
 
+<ConfirmActionModal IsOpen="@_isRemoveInlineConfirmOpen"
+                     Title="Remove embedded image?"
+                     Message="This image is embedded in the article body. Removing it will leave a broken image where it appears — you'll need to edit the article body to remove or replace it."
+                     ConfirmLabel="Remove"
+                     OnConfirm="ConfirmRemoveAttachment"
+                     OnCancel="CancelRemoveAttachment" />
+
 @code {
     private readonly CreateArticleFormModel _model = new();
 
     private IJSObjectReference? _jsModule;
     private bool _isSubmitting;
     private string? _errorMessage;
+
+    private UploadedFileResponse? _headerImage;
+    private bool _isHeaderImageUploading;
+    private bool _isAttachmentsUploading;
+    private readonly List<TrackedAttachment> _attachments = [];
+    private TrackedAttachment? _attachmentPendingRemoval;
+    private bool _isRemoveInlineConfirmOpen;
 
     private string SlugPlaceholder => NormalizeSlug(_model.Title);
 
@@ -136,6 +197,22 @@
                 PublicationStatus = _model.PublicationStatus,
                 PublishDate = publishDate,
                 TournamentId = null,
+                HeaderImage = _headerImage is null ? null : new HeaderImageInput
+                {
+                    Container = _headerImage.Container,
+                    Path = _headerImage.Path,
+                    ContentType = _headerImage.ContentType,
+                    SizeInBytes = _headerImage.SizeInBytes
+                },
+                Attachments = [.. _attachments.Select(a => new AttachmentInput
+                {
+                    DisplayName = a.DisplayName,
+                    IsInline = a.IsInline,
+                    Container = a.Upload.Container,
+                    Path = a.Upload.Path,
+                    ContentType = a.Upload.ContentType,
+                    SizeInBytes = a.Upload.SizeInBytes
+                })],
             },
         };
 
@@ -159,6 +236,95 @@
     private void HandleCancel()
     {
         NavigationManager.NavigateTo("/news");
+    }
+
+    private async Task<ErrorOr<UploadedFileResponse>> UploadHeaderImageAsync(
+        Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
+        => await ApiExecutor.ExecuteAsync(
+            "News",
+            "UploadArticleHeaderImage",
+            c => NewsApi.UploadArticleHeaderImageAsync(new StreamPart(stream, fileName, contentType), c),
+            ct);
+
+    private async Task<ErrorOr<UploadedFileResponse>> UploadAttachmentAsync(
+        Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
+        => await ApiExecutor.ExecuteAsync(
+            "News",
+            "UploadArticleAttachment",
+            c => NewsApi.UploadArticleAttachmentAsync(new StreamPart(stream, fileName, contentType), c),
+            ct);
+
+    private void AddAttachment(UploadedFileResponse upload, bool isInline)
+        => _attachments.Add(new TrackedAttachment
+        {
+            DisplayName = upload.FileName,
+            IsInline = isInline,
+            Upload = upload
+        });
+
+    private void RemoveAttachmentByUpload(UploadedFileResponse upload)
+        => _attachments.RemoveAll(a => a.Upload.Container == upload.Container && a.Upload.Path == upload.Path);
+
+    private void RequestRemoveAttachment(TrackedAttachment attachment)
+    {
+        if (!attachment.IsInline)
+        {
+            _attachments.Remove(attachment);
+            return;
+        }
+
+        _attachmentPendingRemoval = attachment;
+        _isRemoveInlineConfirmOpen = true;
+    }
+
+    private void ConfirmRemoveAttachment()
+    {
+        if (_attachmentPendingRemoval is not null)
+        {
+            _attachments.Remove(_attachmentPendingRemoval);
+        }
+
+        _attachmentPendingRemoval = null;
+        _isRemoveInlineConfirmOpen = false;
+    }
+
+    private void CancelRemoveAttachment()
+    {
+        _attachmentPendingRemoval = null;
+        _isRemoveInlineConfirmOpen = false;
+    }
+
+    /// <summary>
+    /// Wired to <c>RichTextEditor.OnImageSelected</c>: uploads an image picked/dropped directly in the
+    /// editor via the same attachment endpoint <see cref="FileUpload" /> uses, tracks it as an inline
+    /// attachment, and returns the resulting URL for Quill to embed at the cursor. Returns null (aborting
+    /// the embed) if the upload fails.
+    /// </summary>
+    private async Task<string?> HandleInlineImageSelectedAsync(IJSStreamReference fileStream, string fileName, string contentType)
+    {
+        await using var stream = await fileStream.OpenReadStreamAsync(25 * 1024 * 1024);
+
+        var result = await UploadAttachmentAsync(stream, fileName, contentType, new Progress<int>(), CancellationToken.None);
+
+        if (result.IsError)
+        {
+            ToastService.Show("Image Upload Failed", result.FirstError.Description, NotifySeverity.Error);
+            return null;
+        }
+
+        AddAttachment(result.Value, isInline: true);
+        StateHasChanged();
+
+        return result.Value.Url.ToString();
+    }
+
+    private sealed class TrackedAttachment
+    {
+        public required string DisplayName { get; init; }
+
+        public required bool IsInline { get; init; }
+
+        public required UploadedFileResponse Upload { get; init; }
     }
 
     /// <summary>

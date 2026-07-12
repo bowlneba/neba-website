@@ -27,6 +27,15 @@
     [Parameter]
     public string CssClass { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Invoked when the user picks an image via the editor's toolbar image control. Receives the
+    /// picked file's stream, name, and content type; returns the URL to embed, or null to abort the
+    /// embed (e.g. the caller's upload failed). When null, the toolbar's image control is omitted
+    /// entirely rather than rendered disabled, keeping this component News-agnostic by default.
+    /// </summary>
+    [Parameter]
+    public Func<IJSStreamReference, string, string, Task<string?>>? OnImageSelected { get; set; }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -38,8 +47,25 @@
             _lastKnownValue = Value;
             _lastKnownReadOnly = ReadOnly;
 
-            await _jsModule.InvokeVoidAsync("initialize", ContainerId, _dotNetHelper, Value, ReadOnly, Placeholder);
+            await _jsModule.InvokeVoidAsync(
+                "initialize", ContainerId, _dotNetHelper, Value, ReadOnly, Placeholder, OnImageSelected is not null);
         }
+    }
+
+    /// <summary>
+    /// Invoked by JS when the user picks an image via the toolbar's image control. Delegates to
+    /// <see cref="OnImageSelected"/> and returns the resulting URL (or null) back to JS to either
+    /// embed at the cursor position or abort the embed.
+    /// </summary>
+    [JSInvokable]
+    public async Task<string?> RequestImageEmbedAsync(IJSStreamReference fileStream, string fileName, string contentType)
+    {
+        if (OnImageSelected is null)
+        {
+            return null;
+        }
+
+        return await OnImageSelected(fileStream, fileName, contentType);
     }
 
     protected override async Task OnParametersSetAsync()

@@ -15,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Neba.Api.Contracts.Security;
 using Neba.Api.Features.News.UploadArticleHeaderImage;
 using Neba.Api.Security;
+using Neba.Api.Storage;
 using Neba.Api.Uploads;
 using Neba.Api.Versioning;
 using Neba.TestFactory.Attributes;
@@ -66,6 +67,12 @@ public sealed class UploadArticleHeaderImageEndpointAuthorizationTests(SecurityD
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(StoredFileFactory.Create());
         builder.Services.AddSingleton(stagingServiceMock.Object);
+
+        var fileStorageServiceMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        fileStorageServiceMock
+            .Setup(s => s.GetBlobUri(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new Uri("https://storage.example.com/test-container/header.png"));
+        builder.Services.AddSingleton(fileStorageServiceMock.Object);
 
         builder.Services
             .AddFastEndpoints(options =>

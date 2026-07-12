@@ -102,6 +102,14 @@
     [Parameter]
     public EventCallback<UploadedFileResponse> OnFileRemoved { get; set; }
 
+    /// <summary>
+    /// Raised whenever this component's overall "at least one file is uploading" state changes, so a
+    /// caller can gate a Save button — a save must never be built while a <c>StoredFile</c> pointer it
+    /// needs is still in flight.
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> OnBusyChanged { get; set; }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -153,8 +161,12 @@
             _ = UploadTrackedFileAsync(trackedFile);
         }
 
+        await NotifyBusyChangedAsync();
         StateHasChanged();
     }
+
+    private Task NotifyBusyChangedAsync()
+        => OnBusyChanged.InvokeAsync(_trackedFiles.Any(f => f.Status == FileUploadStatus.Uploading));
 
     private async Task UploadTrackedFileAsync(TrackedFile trackedFile)
     {
@@ -208,6 +220,7 @@
             Logger.LogError(ex, "[FileUpload] Unexpected error uploading '{FileName}'.", trackedFile.FileName);
         }
 
+        await NotifyBusyChangedAsync();
         await InvokeAsync(StateHasChanged);
     }
 
@@ -243,6 +256,7 @@
             await OnFileRemoved.InvokeAsync(trackedFile.UploadedResponse);
         }
 
+        await NotifyBusyChangedAsync();
         StateHasChanged();
     }
 

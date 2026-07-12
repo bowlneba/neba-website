@@ -179,6 +179,89 @@ public sealed class RichTextEditorTests : IDisposable
         _moduleInterop.VerifyNotInvoke("setHtml");
     }
 
+    [Fact(DisplayName = "Should pass hasImageHandler false to initialize when OnImageSelected is not set")]
+    public void OnAfterRender_ShouldPassHasImageHandlerFalse_WhenOnImageSelectedNotSet()
+    {
+        // Act
+        _ctx.Render<RichTextEditor>();
+
+        // Assert
+        var invocation = _moduleInterop.VerifyInvoke("initialize");
+        invocation.Arguments[5].ShouldBe(false);
+    }
+
+    [Fact(DisplayName = "Should pass hasImageHandler true to initialize when OnImageSelected is set")]
+    public void OnAfterRender_ShouldPassHasImageHandlerTrue_WhenOnImageSelectedSet()
+    {
+        // Act
+        _ctx.Render<RichTextEditor>(parameters => parameters
+            .Add(p => p.OnImageSelected, (IJSStreamReference _, string _, string _) => Task.FromResult<string?>("https://example.com/image.png")));
+
+        // Assert
+        var invocation = _moduleInterop.VerifyInvoke("initialize");
+        invocation.Arguments[5].ShouldBe(true);
+    }
+
+    [Fact(DisplayName = "RequestImageEmbedAsync should delegate to OnImageSelected and return its result")]
+    public async Task RequestImageEmbedAsync_ShouldDelegateToOnImageSelected_AndReturnItsResult()
+    {
+        // Arrange
+        IJSStreamReference? receivedStream = null;
+        string? receivedFileName = null;
+        string? receivedContentType = null;
+
+        var cut = _ctx.Render<RichTextEditor>(parameters => parameters
+            .Add(p => p.OnImageSelected, (IJSStreamReference stream, string fileName, string contentType) =>
+            {
+                receivedStream = stream;
+                receivedFileName = fileName;
+                receivedContentType = contentType;
+                return Task.FromResult<string?>("https://example.com/image.png");
+            }));
+
+        await using var streamRef = new FakeJSStreamReference();
+
+        // Act
+        var result = await cut.InvokeAsync(() =>
+            cut.Instance.RequestImageEmbedAsync(streamRef, "photo.png", "image/png"));
+
+        // Assert
+        result.ShouldBe("https://example.com/image.png");
+        receivedStream.ShouldBeSameAs(streamRef);
+        receivedFileName.ShouldBe("photo.png");
+        receivedContentType.ShouldBe("image/png");
+    }
+
+    [Fact(DisplayName = "RequestImageEmbedAsync should return null when OnImageSelected is not set")]
+    public async Task RequestImageEmbedAsync_ShouldReturnNull_WhenOnImageSelectedNotSet()
+    {
+        // Arrange
+        var cut = _ctx.Render<RichTextEditor>();
+        await using var streamRef = new FakeJSStreamReference();
+
+        // Act
+        var result = await cut.InvokeAsync(() =>
+            cut.Instance.RequestImageEmbedAsync(streamRef, "photo.png", "image/png"));
+
+        // Assert
+        result.ShouldBeNull();
+    }
+
+    /// <summary>
+    /// Minimal <see cref="IJSStreamReference"/> stand-in — this test project has no Moq dependency,
+    /// and the interface has too small a surface to justify adding one for a single test.
+    /// </summary>
+    private sealed class FakeJSStreamReference : IJSStreamReference
+    {
+        public long Length => 0;
+
+        public ValueTask<Stream> OpenReadStreamAsync(long maxAllowedSize = 512000, CancellationToken cancellationToken = default)
+            => ValueTask.FromResult<Stream>(Stream.Null);
+
+        // Nothing to release — this stub never opens a real stream.
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
     [Fact(DisplayName = "Should call dispose JS function when component is disposed")]
     public async Task DisposeAsync_ShouldCallDisposeJs_WhenDisposed()
     {

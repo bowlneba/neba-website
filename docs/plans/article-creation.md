@@ -1606,4 +1606,4 @@ Fully covered under Phase 3a Part 1 above (`Neba.Api/Uploads/`, not News-specifi
 - [x] Phase 1b — Server-side HTML sanitization
 - [x] Phase 2 — UI create page
 - [ ] Phase 2b — Tournament linking (deferred sub-phase)
-- [ ] Phase 3 — Header image + attachments
+- [x] Phase 3 — Header image + attachments

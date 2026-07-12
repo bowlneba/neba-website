@@ -40,8 +40,10 @@ public sealed class FileUploadTests : IDisposable
         {
             Container = "news",
             Path = $"uploads/{fileName}",
+            FileName = fileName,
             ContentType = contentType,
-            SizeInBytes = 10
+            SizeInBytes = 10,
+            Url = new Uri($"https://storage.example.com/news/uploads/{fileName}")
         });
 
     private static Task<ErrorOr<UploadedFileResponse>> FailAsync(
@@ -399,6 +401,43 @@ public sealed class FileUploadTests : IDisposable
         // Assert
         var invocation = _moduleInterop.VerifyInvoke("revokePreviewUrl");
         invocation.Arguments[0].ShouldBe("blob:preview-url");
+    }
+
+    [Fact(DisplayName = "Should raise OnBusyChanged(true) once upload starts and OnBusyChanged(false) once it completes")]
+    public async Task OnBusyChanged_ShouldToggle_AsUploadStartsAndCompletes()
+    {
+        // Arrange
+        var busyStates = new List<bool>();
+        var tcs = new TaskCompletionSource<ErrorOr<UploadedFileResponse>>();
+
+#pragma warning disable VSTHRD003
+        Task<ErrorOr<UploadedFileResponse>> PendingUpload(Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
+            => tcs.Task;
+#pragma warning restore VSTHRD003
+
+        var cut = _ctx.Render<FileUpload>(parameters => parameters
+            .Add(p => p.OnUploadRequestedAsync, PendingUpload)
+            .Add(p => p.OnBusyChanged, EventCallback.Factory.Create<bool>(this, b => busyStates.Add(b))));
+        var input = cut.FindComponent<InputFile>();
+
+        // Act
+        await cut.InvokeAsync(() => input.UploadFiles(
+            InputFileContent.CreateFromBinary([1], "header.png", contentType: "image/png")));
+        await cut.WaitForStateAsync(() => busyStates.Contains(true));
+
+        tcs.SetResult(new UploadedFileResponse
+        {
+            Container = "news",
+            Path = "uploads/header.png",
+            FileName = "header.png",
+            ContentType = "image/png",
+            SizeInBytes = 3,
+            Url = new Uri("https://storage.example.com/news/uploads/header.png")
+        });
+
+        // Assert
+        await cut.WaitForAssertionAsync(() => busyStates.ShouldContain(false));
+        busyStates.ShouldBe([true, false]);
     }
 
     [Fact(DisplayName = "Should call dispose JS function when component is disposed")]

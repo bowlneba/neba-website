@@ -41,8 +41,55 @@ const toolbarTooltips = [
     ['button.ql-link', 'Insert link'],
     ['button.ql-list[value="ordered"]', 'Numbered list'],
     ['button.ql-list[value="bullet"]', 'Bulleted list'],
+    ['button.ql-image', 'Insert image'],
     ['button.ql-clean', 'Remove formatting']
 ];
+
+/**
+ * Opens a native file picker restricted to images, and hands the picked file to `onFilePicked`.
+ * @param {(file: File) => void} onFilePicked - Called once with the picked file, if any.
+ */
+function pickImageFile(onFilePicked) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+
+    input.addEventListener('change', () => {
+        const file = input.files && input.files[0];
+        if (file) {
+            onFilePicked(file);
+        }
+    });
+
+    input.click();
+}
+
+/**
+ * Quill toolbar handler for the image control: picks an image file, streams it to .NET via
+ * `RequestImageEmbedAsync` (which uploads it and returns a displayable URL), then embeds the
+ * returned URL at the selection that was active when the control was clicked. Quill loses the
+ * selection once the (async, out-of-band) file picker/upload completes, so the range is captured
+ * up front and restored before inserting.
+ * @param {any} quill - The Quill instance.
+ * @param {any} dotNetRef - DotNet object reference to invoke back into .NET.
+ */
+function createImageHandler(quill, dotNetRef) {
+    return function handleImageClick() {
+        const range = quill.getSelection(true);
+
+        pickImageFile(async (file) => {
+            const streamRef = DotNet.createJSStreamReference(file);
+
+            const url = await dotNetRef.invokeMethodAsync(
+                'RequestImageEmbedAsync', streamRef, file.name, file.type);
+
+            if (url) {
+                quill.insertEmbed(range.index, 'image', url, 'user');
+                quill.setSelection(range.index + 1, 0, 'user');
+            }
+        });
+    };
+}
 
 /**
  * Sets a native `title` attribute on each toolbar control so hovering shows what it does.
@@ -67,8 +114,10 @@ function applyToolbarTooltips(toolbarElement) {
  * @param {string} initialHtml - The initial HTML content to load into the editor.
  * @param {boolean} readOnly - Whether the editor should start in read-only mode.
  * @param {string} placeholder - Placeholder text shown when the editor is empty.
+ * @param {boolean} hasImageHandler - Whether the caller wired up `OnImageSelected`. When false, the
+ * toolbar's image control is omitted entirely rather than rendered disabled.
  */
-export async function initialize(containerId, dotNetRef, initialHtml, readOnly, placeholder) {
+export async function initialize(containerId, dotNetRef, initialHtml, readOnly, placeholder, hasImageHandler) {
     await waitForQuill();
 
     const container = document.getElementById(containerId);
@@ -92,21 +141,33 @@ export async function initialize(containerId, dotNetRef, initialHtml, readOnly, 
     container.innerHTML = '';
     container.classList.remove('ql-container', 'ql-snow');
 
+    const toolbar = [
+        [{ header: [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline'],
+        [{ color: [] }],
+        ['link'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        ...(hasImageHandler ? [['image']] : []),
+        ['clean']
+    ];
+
     const quill = new Quill(container, {
         theme: 'snow',
         readOnly: !!readOnly,
         placeholder: placeholder || '',
         modules: {
-            toolbar: [
-                [{ header: [1, 2, 3, false] }],
-                ['bold', 'italic', 'underline'],
-                [{ color: [] }],
-                ['link'],
-                [{ list: 'ordered' }, { list: 'bullet' }],
-                ['clean']
-            ]
+            toolbar: hasImageHandler
+                ? { container: toolbar, handlers: { image: null } }
+                : toolbar
         }
     });
+
+    if (hasImageHandler) {
+        // Quill's default image handler base64-encodes the file inline — replaced with our own
+        // upload-then-embed flow (see createImageHandler) after construction, since the handler
+        // needs a reference to the constructed `quill` instance.
+        quill.getModule('toolbar').addHandler('image', createImageHandler(quill, dotNetRef));
+    }
 
     applyToolbarTooltips(quill.getModule('toolbar')?.container);
 

@@ -16,6 +16,11 @@ public sealed record UploadedFileResponse
     public required string Path { get; init; }
 
     /// <summary>
+    /// The file's original file name, as uploaded.
+    /// </summary>
+    public required string FileName { get; init; }
+
+    /// <summary>
     /// The file's MIME content type as uploaded.
     /// </summary>
     public required string ContentType { get; init; }
@@ -24,4 +29,9 @@ public sealed record UploadedFileResponse
     /// The file's size in bytes.
     /// </summary>
     public required long SizeInBytes { get; init; }
+
+    /// <summary>
+    /// A directly-browsable URL for the uploaded file. Valid immediately, since the upload container is public.
+    /// </summary>
+    public required Uri Url { get; init; }
 }
