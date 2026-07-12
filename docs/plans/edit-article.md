@@ -6,12 +6,12 @@
 - **HTTP verb**: `PUT {id}` — full replace of the editable field set, mirroring `CreateArticle`'s `ArticleInput` shape one-for-one (title, content, publication status, publish date, tournament, header image, attachments). No `PATCH`.
 - **Slug**: immutable after creation. Edit form displays it read-only; the edit payload does not include it. Avoids broken external links/bookmarks and keeps the `neba:news:{slug}` cache tag stable across an edit. `CreateArticle.razor`'s slug field gets a small help text/tooltip ("Cannot be changed after saving") added in Phase 1 so this is surfaced at creation time, not just discovered when editing later.
 - **Attachments**: full replace-set. The edit request carries the complete desired attachments collection (kept + newly uploaded). The handler diffs against `Article.Attachments`: anything in the current set but missing from the new set is removed (blob cleanup enqueued via the existing async job pattern); anything new is added via a new `Article.AddAttachment` call (already exists) or equivalent.
-- **Shared attachment input type**: promote `CreateArticle`'s internal `NewArticleAttachment` record out of the `CreateArticle` namespace so both `CreateArticle` and `EditArticle` reference the same type instead of each having their own. **Naming collision to resolve during implementation**: `Neba.Api.Features.News.Domain.ArticleAttachment` already exists as the domain entity (Id, DisplayName, File, IsInline). Renaming `NewArticleAttachment` to plain `ArticleAttachment` in a different namespace (e.g. `Neba.Api.Features.News`) is legal C# but will read confusingly next to the domain type of the same simple name in the same feature. Recommend a name that keeps the promotion but avoids the exact collision — e.g. `ArticleAttachmentInput` — placed in a shared location like `Features/News/ArticleAttachmentInput.cs` (sibling to `CreateArticle/` and `EditArticle/`), `internal` to `Neba.Api`. Confirm final name before implementing.
+- **Attachment input type**: `EditArticle` gets its own dedicated attachment input record, `EditArticleAttachmentInput`, in `Features/News/EditArticle/`. It is **not** shared with `CreateArticle`'s internal `NewArticleAttachment` — the two use cases keep independent types even though the shape is currently identical, matching the "dedicated form model, not shared" decision below and avoiding coupling two otherwise-unrelated use cases through a common wire type that would need to evolve in lockstep. `CreateArticle`'s `NewArticleAttachment` is untouched by this work.
 - **Form model**: `EditArticle.razor` uses its own dedicated form model, not shared with `CreateArticle.razor`'s. The two pages have different constraints (slug read-only, attachments pre-populated from existing data, no "new" defaults) that make a shared model more confusing than two small, independent ones.
 
 ## Phase 1 — API
 
-Naming decision resolved: the promoted attachment-input type is called `ArticleAttachmentInput` (avoids colliding with the domain's `ArticleAttachment`).
+Naming decision resolved: `EditArticle` gets its own attachment-input type, `EditArticleAttachmentInput`, kept separate from `CreateArticle`'s `NewArticleAttachment` (no shared/promoted type).
 
 Reuse note: `DeleteArticleCommandHandler`'s orphaned-blob cleanup already goes through `DeleteArticleFilesJob` + `StoredFileReference` (`src/Neba.Api/Features/News/DeleteArticle/`). Edit reuses both types as-is for cleaning up a replaced header image or removed attachments — no new job type needed.
 
@@ -292,16 +292,16 @@ public static Error AttachmentNotFound(ArticleAttachmentId attachmentId)
 
 ---
 
-### 3. Shared attachment input type — `src/Neba.Api/Features/News/ArticleAttachmentInput.cs` (new file)
+### 3. Attachment input type — `src/Neba.Api/Features/News/EditArticle/EditArticleAttachmentInput.cs` (new file)
 
-Promotes `CreateArticle`'s `NewArticleAttachment` out of that namespace so `EditArticle` can use the same type. **Delete** `src/Neba.Api/Features/News/CreateArticle/NewArticleAttachment.cs` once this lands.
+Dedicated to `EditArticle` — `CreateArticle`'s `NewArticleAttachment` is left as-is, no changes to that file or its references.
 
 ```csharp
 using Neba.Api.Features.Storage.Domain;
 
-namespace Neba.Api.Features.News;
+namespace Neba.Api.Features.News.EditArticle;
 
-internal sealed record ArticleAttachmentInput
+internal sealed record EditArticleAttachmentInput
 {
     public required string DisplayName { get; init; }
 
@@ -310,12 +310,6 @@ internal sealed record ArticleAttachmentInput
     public required StoredFile File { get; init; }
 }
 ```
-
-**Update references** in `CreateArticle`:
-
-- `CreateArticleCommand.cs` — change `Attachments` to `IReadOnlyCollection<ArticleAttachmentInput>`.
-- `CreateArticleCommandHandler.cs` — change `AddAttachments`'s parameter type to `IReadOnlyCollection<ArticleAttachmentInput>`.
-- `CreateArticleEndpoint.cs` — change `new NewArticleAttachment { ... }` to `new ArticleAttachmentInput { ... }` in the attachment projection.
 
 ---
 
@@ -350,7 +344,7 @@ internal sealed record EditArticleCommand
 
     public StoredFile? HeaderImage { get; init; }
 
-    public IReadOnlyCollection<ArticleAttachmentInput> Attachments { get; init; } = [];
+    public IReadOnlyCollection<EditArticleAttachmentInput> Attachments { get; init; } = [];
 }
 ```
 
@@ -475,7 +469,7 @@ internal sealed class EditArticleCommandHandler(
     // storage address (container + path) since new attachments have no ArticleAttachmentId yet.
     private static ErrorOr<Success> ReconcileAttachments(
         Article article,
-        IReadOnlyCollection<ArticleAttachmentInput> desiredAttachments,
+        IReadOnlyCollection<EditArticleAttachmentInput> desiredAttachments,
         out List<StoredFileReference> orphanedFiles)
     {
         orphanedFiles = [];
@@ -550,7 +544,7 @@ internal sealed class EditArticleCommandHandler(
 }
 ```
 
-**Note on attachment matching by (container, path)**: newly uploaded attachments arrive from the client with no `ArticleAttachmentId` (only `EditArticle.razor`'s form model would carry one for pre-existing attachments, and that id isn't part of `ArticleAttachmentInput`/`AttachmentInput` today). Matching by storage address is simplest given the current wire shape. If Phase 2 needs to distinguish "kept, unchanged" from "removed-then-re-added-under-a-different-path" more precisely, revisit whether `AttachmentInput` should carry the existing `ArticleAttachmentId` for pre-existing attachments — but the above is sufficient for correctness (it never loses or double-counts a file) and keeps Phase 1 self-contained.
+**Note on attachment matching by (container, path)**: newly uploaded attachments arrive from the client with no `ArticleAttachmentId` (only `EditArticle.razor`'s form model would carry one for pre-existing attachments, and that id isn't part of `EditArticleAttachmentInput`/`AttachmentInput` today). Matching by storage address is simplest given the current wire shape. If Phase 2 needs to distinguish "kept, unchanged" from "removed-then-re-added-under-a-different-path" more precisely, revisit whether `AttachmentInput` should carry the existing `ArticleAttachmentId` for pre-existing attachments — but the above is sufficient for correctness (it never loses or double-counts a file) and keeps Phase 1 self-contained.
 
 ---
 
@@ -622,7 +616,7 @@ internal sealed class EditArticleEndpoint(Messaging.ICommandHandler<EditArticleC
                     ContentType = req.Article.HeaderImage.ContentType,
                     SizeInBytes = req.Article.HeaderImage.SizeInBytes
                 },
-            Attachments = [.. req.Article.Attachments.Select(attachment => new ArticleAttachmentInput
+            Attachments = [.. req.Article.Attachments.Select(attachment => new EditArticleAttachmentInput
             {
                 DisplayName = attachment.DisplayName,
                 IsInline = attachment.IsInline,
@@ -877,7 +871,6 @@ Task<IApiResponse> EditArticleAsync(
   - **Header image added where none existed before** (`previousHeaderImage` is `null`, `command.HeaderImage` is not) → no cleanup job (nothing to orphan), `article.HeaderImage` set to the new value. Confirms the `previousHeaderImage is not null` guard doesn't also suppress the case where the article gains a header image for the first time.
 - **Validator unit tests** (`EditArticleRequestValidatorTests.cs`): mirror `CreateArticleRequestValidatorTests`, replacing slug-related cases with the `Id` length/required cases from `DeleteArticleRequestValidatorTests`.
 - **Endpoint authorization integration test**: mirror `DeleteArticleEndpointAuthorizationTests` (watch for the FastEndpoints static-state gotchas in CLAUDE.md's "Process-Wide Static State Leaks Between Integration Tests" section if this spins up a real `WebApplication` — disable `UsePropertyNamingPolicy`, use `StopAsync` not `DisposeAsync`).
-- Update `CreateArticleCommandHandlerTests`/related tests for the `NewArticleAttachment` → `ArticleAttachmentInput` rename (compile-time only change, no behavior difference).
 - If a test enumerates all `Permissions`/policies, add `EditArticle`.
 
 ## Phase 2 — UI
