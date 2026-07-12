@@ -153,7 +153,7 @@ public sealed class UploadArticleAttachmentEndpointAuthorizationTests(SecurityDb
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var token = TestAccessTokenFactory.Create(permissions: [Permissions.Read]);
+        var token = TestAccessTokenFactory.Create(permissions: [Permissions.EditArticle]);
 
         // Act
         using var response = await SendUploadAsync(token, ct);

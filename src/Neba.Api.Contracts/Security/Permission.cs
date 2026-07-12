@@ -18,11 +18,6 @@ public sealed class Permissions
     /// </summary>
     public const string ClaimType = "permission";
 
-    /// <summary>
-    /// This is a temporary permission to set us up until real permissions come into the picture
-    /// </summary>
-    public static readonly Permissions Read = new("Read", "Read");
-
     #region News
 
     /// <summary>
@@ -30,6 +25,11 @@ public sealed class Permissions
     /// </summary>
     public static readonly Permissions CreateArticle = new("News.CreateArticle", "Create Article");
 
+    /// <summary>
+    /// Permission to edit a news article.
+    /// </summary>
+    public static readonly Permissions EditArticle = new("News.EditArticle", "Edit Article");
+    
     /// <summary>
     /// Permission to delete a news article.
     /// </summary>
@@ -41,6 +41,7 @@ public sealed class Permissions
     public static readonly IReadOnlyCollection<Permissions> ArticleManagementPermissions =
     [
         CreateArticle,
+        EditArticle,
         DeleteArticle,
     ];
 
@@ -51,10 +52,6 @@ public sealed class Permissions
 
     #endregion
 
-    /// <summary>
-    /// This is a temporary permission to set us up until real permissions come into the picture
-    /// </summary>
-    public static readonly Permissions Write = new("Write", "Write");
     private Permissions(string key, string name)
         : base(name, key)
     { }

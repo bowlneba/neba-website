@@ -178,7 +178,7 @@ public sealed class JwtTokenServiceTests
     {
         // Arrange
         var user = ApplicationUserFactory.Create();
-        Permissions[] permissions = [Permissions.Read, Permissions.Write];
+        Permissions[] permissions = [Permissions.CreateArticle, Permissions.EditArticle];
 
         // Act
         var result = _sut.CreateTokenPair(user, [], permissions);
@@ -186,8 +186,8 @@ public sealed class JwtTokenServiceTests
         var permissionClaims = token.Claims.Where(c => c.Type == "permission").Select(c => c.Value).ToList();
 
         // Assert
-        permissionClaims.ShouldContain("Read");
-        permissionClaims.ShouldContain("Write");
+        permissionClaims.ShouldContain("News.CreateArticle");
+        permissionClaims.ShouldContain("News.EditArticle");
     }
 
     [Fact(DisplayName = "CreateTokenPair should not include any permission claims when permissions are empty")]

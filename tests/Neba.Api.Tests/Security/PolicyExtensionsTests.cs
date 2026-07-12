@@ -34,7 +34,7 @@ public sealed class PolicyExtensionsTests
         // Arrange
         var provider = BuildAuthorizationServiceProvider();
         var authorizationService = provider.GetRequiredService<IAuthorizationService>();
-        var identity = new ClaimsIdentity([new Claim(Permissions.ClaimType, Permissions.Read.Value)]);
+        var identity = new ClaimsIdentity([new Claim(Permissions.ClaimType, "News.UnrelatedPermission")]);
         var principal = new ClaimsPrincipal(identity);
 
         // Act

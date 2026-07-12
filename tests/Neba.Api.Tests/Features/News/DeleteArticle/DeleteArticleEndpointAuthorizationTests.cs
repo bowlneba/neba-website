@@ -139,7 +139,7 @@ public sealed class DeleteArticleEndpointAuthorizationTests(SecurityDbContextFix
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var token = TestAccessTokenFactory.Create(permissions: [Permissions.Read]);
+        var token = TestAccessTokenFactory.Create(permissions: [Permissions.CreateArticle]);
 
         // Act
         using var response = await SendDeleteAsync(token, ct);
