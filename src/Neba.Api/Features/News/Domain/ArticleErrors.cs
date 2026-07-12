@@ -9,6 +9,12 @@ internal static class ArticleErrors
     public static Error ArticleAttachmentDisplayNameRequired
         => Error.Validation("ArticleAttachment.DisplayName", "Display name must not be empty.");
 
+    public static Error AttachmentNotFound(ArticleAttachmentId attachmentId)
+        => Error.NotFound(
+            code: "Article.Attachment.NotFound",
+            description: "No attachment with this ID exists on the article.",
+            metadata: new Dictionary<string, object> { { "ArticleAttachmentId", attachmentId.Value.ToString() } });
+
     public static Error ArticleNotFound(string slug)
         => Error.NotFound(
             code: "Article.NotFound",

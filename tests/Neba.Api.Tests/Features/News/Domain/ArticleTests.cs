@@ -480,4 +480,328 @@ public sealed class ArticleTests
         // Assert
         article.Attachments.Count.ShouldBe(2);
     }
+
+    [Fact(DisplayName = "Update returns Success when all inputs are valid")]
+    public void Update_ShouldReturnSuccess_WhenInputsAreValid()
+    {
+        // Arrange
+        var article = ArticleFactory.Create();
+
+        // Act
+        var result = article.Update(
+            "Updated Title",
+            "Updated Content",
+            PublicationStatus.Published,
+            ArticleFactory.ValidPublishDateUtc,
+            tournamentId: null,
+            headerImage: null);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "Update sets Title, Content, PublicationStatus, PublishDateUtc, and TournamentId")]
+    public void Update_ShouldSetProperties()
+    {
+        // Arrange
+        var article = ArticleFactory.Create();
+        var tournamentId = TournamentId.New();
+        var publishDateUtc = ArticleFactory.ValidPublishDateUtc.AddDays(1);
+
+        // Act
+        article.Update(
+            "Updated Title",
+            "Updated Content",
+            PublicationStatus.Published,
+            publishDateUtc,
+            tournamentId,
+            headerImage: null);
+
+        // Assert
+        article.Title.ShouldBe("Updated Title");
+        article.Content.ShouldBe("Updated Content");
+        article.PublicationStatus.ShouldBe(PublicationStatus.Published);
+        article.PublishDateUtc.ShouldBe(publishDateUtc);
+        article.TournamentId.ShouldBe(tournamentId);
+    }
+
+    [Fact(DisplayName = "Update sets HeaderImage when one is provided")]
+    public void Update_ShouldSetHeaderImage_WhenProvided()
+    {
+        // Arrange
+        var article = ArticleFactory.Create();
+        var headerImage = StoredFileFactory.Create();
+
+        // Act
+        article.Update(
+            "Updated Title",
+            "Updated Content",
+            ArticleFactory.ValidPublicationStatus,
+            ArticleFactory.ValidPublishDateUtc,
+            tournamentId: null,
+            headerImage);
+
+        // Assert
+        article.HeaderImage.ShouldBe(headerImage);
+    }
+
+    [Fact(DisplayName = "Update clears HeaderImage when null is provided")]
+    public void Update_ShouldClearHeaderImage_WhenNullProvided()
+    {
+        // Arrange
+        var article = ArticleFactory.Create(headerImage: StoredFileFactory.Create());
+
+        // Act
+        article.Update(
+            "Updated Title",
+            "Updated Content",
+            ArticleFactory.ValidPublicationStatus,
+            ArticleFactory.ValidPublishDateUtc,
+            tournamentId: null,
+            headerImage: null);
+
+        // Assert
+        article.HeaderImage.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "Update clears TournamentId when null is provided")]
+    public void Update_ShouldClearTournamentId_WhenNullProvided()
+    {
+        // Arrange
+        var article = ArticleFactory.Create(tournamentId: TournamentId.New());
+
+        // Act
+        article.Update(
+            "Updated Title",
+            "Updated Content",
+            ArticleFactory.ValidPublicationStatus,
+            ArticleFactory.ValidPublishDateUtc,
+            tournamentId: null,
+            headerImage: null);
+
+        // Assert
+        article.TournamentId.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "Update does not change the Slug")]
+    public void Update_ShouldNotChangeSlug()
+    {
+        // Arrange
+        var article = ArticleFactory.Create(slug: "original-slug");
+
+        // Act
+        article.Update(
+            "Updated Title",
+            "Updated Content",
+            ArticleFactory.ValidPublicationStatus,
+            ArticleFactory.ValidPublishDateUtc,
+            tournamentId: null,
+            headerImage: null);
+
+        // Assert
+        article.Slug.ShouldBe("original-slug");
+    }
+
+    [Fact(DisplayName = "Update does not change the Id")]
+    public void Update_ShouldNotChangeId()
+    {
+        // Arrange
+        var article = ArticleFactory.Create();
+        var originalId = article.Id;
+
+        // Act
+        article.Update(
+            "Updated Title",
+            "Updated Content",
+            ArticleFactory.ValidPublicationStatus,
+            ArticleFactory.ValidPublishDateUtc,
+            tournamentId: null,
+            headerImage: null);
+
+        // Assert
+        article.Id.ShouldBe(originalId);
+    }
+
+    [Theory(DisplayName = "Update returns Article.Title.Required when title is empty or whitespace")]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Update_ShouldReturnTitleRequiredError_WhenTitleIsEmptyOrWhitespace(string title)
+    {
+        // Arrange
+        var article = ArticleFactory.Create();
+
+        // Act
+        var result = article.Update(
+            title,
+            ArticleFactory.ValidContent,
+            ArticleFactory.ValidPublicationStatus,
+            ArticleFactory.ValidPublishDateUtc,
+            tournamentId: null,
+            headerImage: null);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Article.Title.Required");
+    }
+
+#nullable disable
+    [Fact(DisplayName = "Update returns Article.Title.Required when title is null")]
+    public void Update_ShouldReturnTitleRequiredError_WhenTitleIsNull()
+    {
+        // Arrange
+        var article = ArticleFactory.Create();
+
+        // Act
+        var result = article.Update(
+            null,
+            ArticleFactory.ValidContent,
+            ArticleFactory.ValidPublicationStatus,
+            ArticleFactory.ValidPublishDateUtc,
+            tournamentId: null,
+            headerImage: null);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Article.Title.Required");
+    }
+#nullable enable
+
+    [Theory(DisplayName = "Update returns Article.Content.Required when content is empty or whitespace")]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Update_ShouldReturnContentRequiredError_WhenContentIsEmptyOrWhitespace(string content)
+    {
+        // Arrange
+        var article = ArticleFactory.Create();
+
+        // Act
+        var result = article.Update(
+            ArticleFactory.ValidTitle,
+            content,
+            ArticleFactory.ValidPublicationStatus,
+            ArticleFactory.ValidPublishDateUtc,
+            tournamentId: null,
+            headerImage: null);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Article.Content.Required");
+    }
+
+#nullable disable
+    [Fact(DisplayName = "Update returns Article.Content.Required when content is null")]
+    public void Update_ShouldReturnContentRequiredError_WhenContentIsNull()
+    {
+        // Arrange
+        var article = ArticleFactory.Create();
+
+        // Act
+        var result = article.Update(
+            ArticleFactory.ValidTitle,
+            null,
+            ArticleFactory.ValidPublicationStatus,
+            ArticleFactory.ValidPublishDateUtc,
+            tournamentId: null,
+            headerImage: null);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Article.Content.Required");
+    }
+#nullable enable
+
+    [Fact(DisplayName = "Update does not change Title or Content when title is invalid")]
+    public void Update_ShouldNotChangeProperties_WhenTitleIsInvalid()
+    {
+        // Arrange
+        var article = ArticleFactory.Create(title: "Original Title", content: "Original Content");
+
+        // Act
+        article.Update(
+            string.Empty,
+            "Updated Content",
+            ArticleFactory.ValidPublicationStatus,
+            ArticleFactory.ValidPublishDateUtc,
+            tournamentId: null,
+            headerImage: null);
+
+        // Assert
+        article.Title.ShouldBe("Original Title");
+        article.Content.ShouldBe("Original Content");
+    }
+
+    [Fact(DisplayName = "RemoveAttachment returns Success when the attachment exists")]
+    public void RemoveAttachment_ShouldReturnSuccess_WhenAttachmentExists()
+    {
+        // Arrange
+        var article = ArticleFactory.Create();
+        article.AddAttachment("My Attachment", StoredFileFactory.Create(), isInline: false);
+        var attachmentId = article.Attachments.Single().Id;
+
+        // Act
+        var result = article.RemoveAttachment(attachmentId);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "RemoveAttachment removes the attachment from the Attachments collection")]
+    public void RemoveAttachment_ShouldRemoveAttachmentFromCollection()
+    {
+        // Arrange
+        var article = ArticleFactory.Create();
+        article.AddAttachment("My Attachment", StoredFileFactory.Create(), isInline: false);
+        var attachmentId = article.Attachments.Single().Id;
+
+        // Act
+        article.RemoveAttachment(attachmentId);
+
+        // Assert
+        article.Attachments.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "RemoveAttachment only removes the matching attachment")]
+    public void RemoveAttachment_ShouldOnlyRemoveMatchingAttachment()
+    {
+        // Arrange
+        var article = ArticleFactory.Create();
+        article.AddAttachment("First", StoredFileFactory.Create(), isInline: true);
+        article.AddAttachment("Second", StoredFileFactory.Create(), isInline: false);
+        var attachmentIdToRemove = article.Attachments[0].Id;
+
+        // Act
+        article.RemoveAttachment(attachmentIdToRemove);
+
+        // Assert
+        var remaining = article.Attachments.Single();
+        remaining.DisplayName.ShouldBe("Second");
+    }
+
+    [Fact(DisplayName = "RemoveAttachment returns Article.Attachment.NotFound when no attachment matches")]
+    public void RemoveAttachment_ShouldReturnNotFoundError_WhenAttachmentDoesNotExist()
+    {
+        // Arrange
+        var article = ArticleFactory.Create();
+
+        // Act
+        var result = article.RemoveAttachment(ArticleAttachmentId.New());
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Article.Attachment.NotFound");
+    }
+
+    [Fact(DisplayName = "RemoveAttachment does not change the Attachments collection when no attachment matches")]
+    public void RemoveAttachment_ShouldNotChangeCollection_WhenAttachmentDoesNotExist()
+    {
+        // Arrange
+        var article = ArticleFactory.Create();
+        article.AddAttachment("My Attachment", StoredFileFactory.Create(), isInline: false);
+
+        // Act
+        article.RemoveAttachment(ArticleAttachmentId.New());
+
+        // Assert
+        article.Attachments.Count.ShouldBe(1);
+    }
 }
