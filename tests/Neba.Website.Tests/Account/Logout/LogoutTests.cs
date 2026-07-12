@@ -177,18 +177,13 @@ public sealed class LogoutTests : IDisposable
     public void OnInitializedAsync_ShouldNavigateWithLogoutError_WhenRefreshResponseBodyIsMalformed()
     {
         // Arrange
-        using var handler = new RecordingHandler(request =>
-        {
-            if (request.RequestUri!.AbsolutePath == "/security/refresh")
-            {
-                return new HttpResponseMessage(HttpStatusCode.OK)
+        using var handler = new RecordingHandler(request
+            => request.RequestUri!.AbsolutePath == "/security/refresh"
+                ? new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent("not-json", Encoding.UTF8, "application/json")
-                };
-            }
-
-            return new HttpResponseMessage(HttpStatusCode.Unauthorized);
-        });
+                }
+                : new HttpResponseMessage(HttpStatusCode.Unauthorized));
 
         _ctx.Services.AddSingleton<IHttpClientFactory>(new StubHttpClientFactory(handler));
 
