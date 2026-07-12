@@ -727,10 +727,12 @@ public static ErrorOr<Article> Create(
   - Editor content changes fire the expected `.NET` invoke callback (mock `DotNet.invokeMethodAsync`) with the updated HTML.
 - Sanitization tests are covered under Phase 1b, not repeated here.
 
-### Deferred to a later sub-phase (tournament linking)
+### Tournament linking — done
 
-- Page accepts an optional route/query parameter (e.g. `?tournamentId=`) so a tournament-portal context can deep-link into `/news/new` with the tournament pre-selected and the picker hidden; outside that context, a dropdown/picker appears.
-- Data source for the picker is undecided — `ListTournamentsInSeason` (`Neba.Api/Features/Tournaments/ListTournamentsInSeason/`) is a plausible fit, but scope (all seasons? current season only? active/upcoming only?) needs a decision when this sub-phase starts.
+- **Data source: reused, not a new endpoint.** `ITournamentApiService.GetSeasonsAsync()`/`GetTournamentsForSeasonAsync(season)` (already built for `Tournaments.razor`'s schedule page, backed by `ListSeasonsQuery`/`ListTournamentsInSeasonQuery`) are called as-is from `CreateArticle.razor` and mapped down to just `Id`/`Name` for the dropdown. No new lightweight query/endpoint was added — a season has at most a few dozen tournaments, so the extra fields the existing DTO carries are a non-issue. See the "Lightweight Collection Projections — Naming Convention" entry in `CLAUDE.md`'s Learnings for the reuse-first rule this follows, and the naming split (DTO keeps `Summary`/`Summaries`; query/handler/endpoint stay named after the resource) to apply *if* a genuinely new lightweight query is ever justified.
+- **Season scope**: defaults to whichever season's `StartDate..EndDate` contains today; falls back to the most recent season (`ListSeasons` already orders by `StartDate` descending) if none currently contains today. Staff can switch seasons via a dropdown to link an article to a past-season tournament.
+- **Deep-link**: `CreateArticle.razor` accepts `?tournamentId=` (`[SupplyParameterFromQuery]`). When present, the season/tournament dropdowns are hidden entirely and replaced with a read-only label (tournament name, resolved via `ITournamentsApi.GetTournamentAsync`); the value is submitted as-is. No caller exists yet (no "tournament portal" page links into this), but the plumbing is in place for when one does.
+- UI order: Tournament picker sits between Content and Header Image in the form.
 
 ---
 

@@ -172,6 +172,17 @@ Mutation testing (Stryker) is **not currently in the CI pipeline** — removed M
 
 ## Learnings
 
+### Lightweight Collection Projections — Naming Convention
+
+When a UI need (e.g. a picker/dropdown) only requires a reduced projection of an existing collection (a few scalar fields instead of the full aggregate graph), check whether an existing query already returns a superset of that data before adding a new query/endpoint. Reuse-and-project-down at the consuming layer is preferred over a parallel lightweight endpoint — e.g. a tournament-linking picker in the news create form reuses `ListTournamentsInSeasonQuery`/`ISeasonsApi.ListTournamentsInSeasonAsync` (already consumed via `ITournamentApiService.GetTournamentsForSeasonAsync` → `SeasonTournamentViewModel`) rather than adding a second, near-duplicate "just Id/Name/StartDate" query — the existing one already returns everything a picker needs, and a second query with the same route shape only invites drift between two sources of truth for the same data.
+
+**If a genuinely new lightweight query/endpoint turns out to be justified** (the existing query is too expensive to call just for a picker, or scoped differently), follow this naming split so the "reduced projection" distinction lives in exactly one place:
+
+- **The DTO/response type** is named with `Summary`/`Summaries` (e.g. `TournamentSummaryDto`, `TournamentSummaryResponse`) — this is the one place that signals "deliberately reduced fields."
+- **The query, handler, and endpoint class names — and the route — stay named after the resource itself**, with no `Summary`/`Summaries` suffix (e.g. `ListTournamentsInSeasonQuery`, route `{seasonId}/tournaments`) — matching whatever the "full" operation for that resource would be named, not a variant name. Do not let the operation name double up on the same "reduced" signal the DTO name already carries.
+
+This means a new lightweight query for an existing resource **cannot reuse the same class/route names as an existing heavier query for that resource** without a genuine rename of one of them — check for an existing `List{Resource}` query/endpoint first, since a collision here means either reusing the existing one (preferred, see above) or deliberately renaming the existing "full" variant to something more specific (a larger, higher-risk change touching its existing consumers) rather than inventing a suffix on the new one.
+
 ### API Route Conventions
 
 - **No `/api` prefix** — the API is served from `api.bowlneba.com`, so routes start directly with the resource (e.g. `/documents/{DocumentName}`, not `/api/documents/{DocumentName}`)

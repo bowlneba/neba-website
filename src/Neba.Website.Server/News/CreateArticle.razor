@@ -5,15 +5,20 @@
 @using Neba.Api.Contracts.News
 @using Neba.Api.Contracts.News.CreateArticle
 @using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Tournaments
 @using Neba.Api.Contracts.Uploads
 @using Neba.Website.Server.Notifications
 @using Neba.Website.Server.Services
+@using Neba.Website.Server.Tournaments
+@using Neba.Website.Server.Tournaments.Schedule
 @using Refit
 @implements IAsyncDisposable
 @rendermode InteractiveServer
 
 @inject ApiExecutor ApiExecutor
 @inject INewsApi NewsApi
+@inject ITournamentApiService TournamentApiService
+@inject ITournamentsApi TournamentsApi
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 @inject IJSRuntime JsRuntime
@@ -61,6 +66,36 @@
                             <label for="content" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Content</label>
                             <RichTextEditor @bind-Value="_model.Content" Placeholder="Write the article content…" OnImageSelected="HandleInlineImageSelectedAsync" />
                             <ValidationMessage For="@(() => _model.Content)" class="block text-sm text-red-600 mt-1" />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Tournament</label>
+                            @if (_deepLinkedTournamentName is not null)
+                            {
+                                <p class="neba-input" style="background:var(--neba-gray-050,#FAFAFA);">@_deepLinkedTournamentName</p>
+                            }
+                            else
+                            {
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <select class="neba-select" value="@_selectedSeasonId" @onchange="HandleSeasonChangedAsync">
+                                            @foreach (var season in _seasons)
+                                            {
+                                                <option value="@season.Id">@season.Description</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <select class="neba-select" @bind="_model.TournamentId">
+                                            <option value="">No tournament</option>
+                                            @foreach (var tournament in _tournaments)
+                                            {
+                                                <option value="@tournament.Id">@tournament.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            }
                         </div>
 
                         <div>
@@ -169,7 +204,71 @@
     private TrackedAttachment? _attachmentPendingRemoval;
     private bool _isRemoveInlineConfirmOpen;
 
+    private List<SeasonViewModel> _seasons = [];
+    private List<SeasonTournamentViewModel> _tournaments = [];
+    private string? _selectedSeasonId;
+    private string? _deepLinkedTournamentName;
+
+    /// <summary>
+    /// Deep-links this page from a tournament-portal context: pre-selects and locks in the tournament
+    /// (season/tournament picker hidden) rather than requiring staff to re-find it in the dropdowns.
+    /// </summary>
+    [Parameter, SupplyParameterFromQuery(Name = "tournamentId")]
+    public string? TournamentId { get; set; }
+
     private string SlugPlaceholder => NormalizeSlug(_model.Title);
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(TournamentId))
+        {
+            _model.TournamentId = TournamentId;
+
+            var result = await ApiExecutor.ExecuteAsync(
+                "Tournaments",
+                "GetTournament",
+                ct => TournamentsApi.GetTournamentAsync(TournamentId, ct));
+
+            _deepLinkedTournamentName = result.IsError
+                ? $"Tournament {TournamentId}"
+                : result.Value.Name;
+
+            return;
+        }
+
+        var seasonsResult = await TournamentApiService.GetSeasonsAsync();
+
+        if (seasonsResult.IsError || seasonsResult.Value.Count == 0)
+        {
+            return;
+        }
+
+        _seasons = seasonsResult.Value;
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var currentSeason = _seasons.Find(s => today >= s.StartDate && today <= s.EndDate) ?? _seasons[0];
+
+        _selectedSeasonId = currentSeason.Id;
+        await LoadTournamentsForSeasonAsync(currentSeason);
+    }
+
+    private async Task LoadTournamentsForSeasonAsync(SeasonViewModel season)
+    {
+        var tournamentsResult = await TournamentApiService.GetTournamentsForSeasonAsync(season);
+        _tournaments = tournamentsResult.IsError ? [] : tournamentsResult.Value;
+    }
+
+    private async Task HandleSeasonChangedAsync(ChangeEventArgs e)
+    {
+        _selectedSeasonId = e.Value?.ToString();
+        _model.TournamentId = null;
+
+        var season = _seasons.Find(s => s.Id == _selectedSeasonId);
+        if (season is not null)
+        {
+            await LoadTournamentsForSeasonAsync(season);
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -196,7 +295,7 @@
                 Content = _model.Content,
                 PublicationStatus = _model.PublicationStatus,
                 PublishDate = publishDate,
-                TournamentId = null,
+                TournamentId = string.IsNullOrWhiteSpace(_model.TournamentId) ? null : _model.TournamentId,
                 HeaderImage = _headerImage is null ? null : new HeaderImageInput
                 {
                     Container = _headerImage.Container,
@@ -407,5 +506,7 @@
 
         [Required(ErrorMessage = "Publish date is required.")]
         public DateTime PublishDateLocal { get; set; } = DateTime.Now;
+
+        public string? TournamentId { get; set; }
     }
 }
