@@ -1,5 +1,7 @@
+using Neba.Api.Contracts.News.CreateArticle;
 using Neba.Api.Contracts.News.GetArticle;
 using Neba.Api.Contracts.News.ListArticles;
+using Neba.Api.Contracts.Uploads;
 
 using Refit;
 
@@ -42,5 +44,40 @@ public interface INewsApi
     [Delete("/news/{id}")]
     Task<IApiResponse> DeleteArticleAsync(
         string id,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a news article. Requires the News.CreateArticle permission.
+    /// </summary>
+    /// <param name="request">The article fields to create.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The created article's ID and slug.</returns>
+    [Post("/news")]
+    Task<IApiResponse<ArticleResponse>> CreateArticleAsync(
+        CreateArticleRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Uploads a news article header image. Requires the News.CreateArticle permission.
+    /// </summary>
+    /// <param name="file">The image file to upload.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The uploaded file's metadata.</returns>
+    [Multipart]
+    [Post("/news/header-image")]
+    Task<IApiResponse<UploadedFileResponse>> UploadArticleHeaderImageAsync(
+        [AliasAs("File")] StreamPart file,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Uploads a news article attachment (or inline embedded image). Requires the News.CreateArticle permission.
+    /// </summary>
+    /// <param name="file">The attachment file to upload.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The uploaded file's metadata.</returns>
+    [Multipart]
+    [Post("/news/attachments")]
+    Task<IApiResponse<UploadedFileResponse>> UploadArticleAttachmentAsync(
+        [AliasAs("File")] StreamPart file,
         CancellationToken cancellationToken = default);
 }

@@ -1,5 +1,6 @@
 using System.Reflection;
 
+using Audit.AzureStorageTables.ConfigurationApi;
 using Audit.AzureStorageTables.Providers;
 using Audit.Hangfire;
 
@@ -85,9 +86,9 @@ internal static class BackgroundJobsConfiguration
                         .DataProvider(new AzureTableDataProvider(azureConfig => azureConfig
                             .ConnectionString(configuration.GetConnectionString("tables"))
                             .TableName(_ => "JobAuditEvents")
-                            .EntityBuilder(entity => entity
-                                .PartitionKey(ev => ev.EventType ?? "unknown")
-                                .RowKey(_ => Ulid.NewUlid().ToString())))))
+                            // EntityMapper (not EntityBuilder) is required to retain the event payload -
+                            // see the matching comment in AuditingConfiguration.cs.
+                            .EntityMapper(ev => new AuditEventTableEntity(ev.EventType ?? "unknown", Ulid.NewUlid().ToString(), ev)))))
                     .UsePostgreSqlStorage(postgres => postgres
                         .UseConnectionFactory(new HangfireConnectionFactory(dataSource)),
                         new PostgreSqlStorageOptions

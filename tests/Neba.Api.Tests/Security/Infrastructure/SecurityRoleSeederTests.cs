@@ -44,7 +44,7 @@ public sealed class SecurityRoleSeederTests
 
         if (roleUnderTest != Roles.Webmaster)
         {
-            SetupRoleAlreadySynced(mock, Roles.Webmaster, [Permissions.DeleteArticle]);
+            SetupRoleAlreadySynced(mock, Roles.Webmaster, [Permissions.CreateArticle, Permissions.DeleteArticle]);
         }
 
         if (roleUnderTest != Roles.Member)
@@ -209,8 +209,8 @@ public sealed class SecurityRoleSeederTests
         roleManagerMock.Verify(m => m.RemoveClaimAsync(existingRole, It.IsAny<Claim>()), Times.Never);
     }
 
-    [Fact(DisplayName = "SeedAsync should create the Webmaster role and add only the DeleteArticle permission claim when the role does not exist")]
-    public async Task SeedAsync_ShouldCreateWebmasterRoleAndAddOnlyDeleteArticleClaim_WhenRoleDoesNotExist()
+    [Fact(DisplayName = "SeedAsync should create the Webmaster role and add exactly the CreateArticle and DeleteArticle permission claims when the role does not exist")]
+    public async Task SeedAsync_ShouldCreateWebmasterRoleAndAddCreateAndDeleteArticleClaims_WhenRoleDoesNotExist()
     {
         // Arrange
         var roleManagerMock = CreateRoleManagerMock();
@@ -228,6 +228,11 @@ public sealed class SecurityRoleSeederTests
         roleManagerMock
             .Setup(m => m.AddClaimAsync(
                 It.Is<ApplicationRole>(r => r.Name == Roles.Webmaster),
+                It.Is<Claim>(c => c.Type == SecurityRoleSeeder.PermissionClaimType && c.Value == Permissions.CreateArticle.Value)))
+            .ReturnsAsync(IdentityResult.Success);
+        roleManagerMock
+            .Setup(m => m.AddClaimAsync(
+                It.Is<ApplicationRole>(r => r.Name == Roles.Webmaster),
                 It.Is<Claim>(c => c.Type == SecurityRoleSeeder.PermissionClaimType && c.Value == Permissions.DeleteArticle.Value)))
             .ReturnsAsync(IdentityResult.Success);
 
@@ -239,7 +244,9 @@ public sealed class SecurityRoleSeederTests
         roleManagerMock.Verify(
             m => m.AddClaimAsync(
                 It.Is<ApplicationRole>(r => r.Name == Roles.Webmaster),
-                It.Is<Claim>(c => c.Type == SecurityRoleSeeder.PermissionClaimType && c.Value != Permissions.DeleteArticle.Value)),
+                It.Is<Claim>(c => c.Type == SecurityRoleSeeder.PermissionClaimType
+                    && c.Value != Permissions.CreateArticle.Value
+                    && c.Value != Permissions.DeleteArticle.Value)),
             Times.Never);
     }
 

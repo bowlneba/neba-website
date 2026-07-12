@@ -112,6 +112,20 @@ public sealed class AzureBlobStorageServiceUnitTests
                 new Dictionary<string, string>(), CancellationToken.None));
     }
 
+    [Fact(DisplayName = "UploadFileAsync (stream) should rethrow when storage client throws")]
+    public async Task UploadFileAsync_Stream_ShouldRethrow_WhenStorageClientThrows()
+    {
+        // Arrange
+        var sut = CreateSutWithThrowingClient(new InvalidOperationException("Storage failure"));
+        await using var stream = new MemoryStream("content"u8.ToArray());
+
+        // Act & Assert
+        await Should.ThrowAsync<InvalidOperationException>(
+            () => sut.UploadFileAsync(
+                "container", "path.txt", stream, "text/plain",
+                new Dictionary<string, string>(), CancellationToken.None));
+    }
+
     [Fact(DisplayName = "GetBlobUri should return URI from blob client")]
     public void GetBlobUri_ShouldReturnUri_FromBlobClient()
     {

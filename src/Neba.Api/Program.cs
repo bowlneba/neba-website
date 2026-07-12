@@ -3,15 +3,11 @@ using System.Text.Json.Serialization;
 
 using FastEndpoints;
 
-using Microsoft.AspNetCore.Identity;
-
 using Neba.Api;
 using Neba.Api.ErrorHandling;
 using Neba.Api.FeatureManagement;
 using Neba.Api.OpenApi;
 using Neba.Api.Security;
-using Neba.Api.Security.Domain;
-using Neba.Api.Security.Infrastructure;
 using Neba.Api.Versioning;
 
 var builder = WebApplication.CreateBuilder(args);

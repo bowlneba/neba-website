@@ -34,11 +34,11 @@ public sealed class DeleteArticleFilesJobHandlerTests
 
         _fileStorageServiceMock
             .Setup(s => s.DeleteAsync(file1.Container, file1.Path, TestContext.Current.CancellationToken))
-            .Returns(Task.CompletedTask);
+            .Returns(Task.FromResult(true));
 
         _fileStorageServiceMock
             .Setup(s => s.DeleteAsync(file2.Container, file2.Path, TestContext.Current.CancellationToken))
-            .Returns(Task.CompletedTask);
+            .Returns(Task.FromResult(true));
 
         // Act
         await Should.NotThrowAsync(
@@ -68,7 +68,7 @@ public sealed class DeleteArticleFilesJobHandlerTests
 
         _fileStorageServiceMock
             .Setup(s => s.DeleteAsync(succeedingFile.Container, succeedingFile.Path, TestContext.Current.CancellationToken))
-            .Returns(Task.CompletedTask);
+            .Returns(Task.FromResult(true));
 
         // Act
         await Should.NotThrowAsync(

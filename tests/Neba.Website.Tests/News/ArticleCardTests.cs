@@ -66,6 +66,26 @@ public sealed class ArticleCardTests : IDisposable
         cut.Markup.ShouldContain("May 15, 2026");
     }
 
+    [Fact(DisplayName = "Should format LocalPublishDate instead of Article.PublishDateUtc when supplied")]
+    public void Render_ShouldFormatLocalPublishDate_WhenSupplied()
+    {
+        // Arrange
+        // The parent page (NewsList) resolves the viewer's local time and passes it down,
+        // and the card must display that instead of recomputing anything from the raw UTC value.
+        var article = ArticleSummaryResponseFactory.Create(
+            publishDateUtc: new DateTimeOffset(2026, 5, 15, 2, 0, 0, TimeSpan.Zero));
+        var localPublishDate = new DateTimeOffset(2026, 5, 14, 22, 0, 0, TimeSpan.FromHours(-4));
+
+        // Act
+        var cut = _ctx.Render<ArticleCard>(p => p
+            .Add(x => x.Article, article)
+            .Add(x => x.LocalPublishDate, localPublishDate));
+
+        // Assert
+        cut.Markup.ShouldContain("May 14, 2026");
+        cut.Markup.ShouldNotContain("May 15, 2026");
+    }
+
     [Fact(DisplayName = "Should link to /news/{slug}")]
     public void Render_ShouldLinkToArticleDetailPage_UsingSlug()
     {

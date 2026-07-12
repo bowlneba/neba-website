@@ -172,6 +172,35 @@ Mutation testing (Stryker) is **not currently in the CI pipeline** — removed M
 
 ## Learnings
 
+### Dirty Form Guard — Warn Before Losing Unsaved Changes
+
+Every data-entry page (any page with an `EditForm`, file uploads, or similar user input) must warn the user before they lose unsaved changes via Cancel, in-app navigation, or browser refresh/close/address-bar navigation. Use the shared `Components/DirtyFormGuard.razor` component — do not hand-roll this per page.
+
+**How it works**:
+
+- `<DirtyFormGuard IsDirty="@_isDirty" />` wraps Blazor's built-in `<NavigationLock>`:
+  - `ConfirmExternalNavigation="@IsDirty"` triggers the browser's **native** "leave site?" dialog for refresh/close/address-bar navigation/back-forward — this is built into Blazor and cannot be customized (no custom JS/`beforeunload` interop needed or possible).
+  - `OnBeforeInternalNavigation` intercepts in-app navigation (Cancel button's `NavigationManager.NavigateTo(...)`, `NavLink` clicks, etc.), calls `context.PreventNavigation()`, and shows a custom `ConfirmActionModal` ("Discard unsaved changes?" / Leave / Stay). Confirming re-issues the navigation with a one-shot bypass flag so the guard doesn't re-intercept its own confirmed navigation.
+- The **page** owns dirty-tracking and passes the result in — the guard has no opinion on how dirty state is computed. Pattern (see `CreateArticle.razor`):
+  - Create the `EditContext` explicitly in the constructor (`EditForm EditContext="_editContext"` instead of `Model="_model"`) and subscribe `_editContext.OnFieldChanged += (_, _) => MarkDirty();` — this covers any field bound through an `InputBase` descendant (`InputText`, `InputSelect`, `InputDate`, etc.) for free.
+  - Anything **not** wired through `EditContext` needs an explicit `MarkDirty()` call: components that aren't `InputBase` (e.g. a custom `RichTextEditor` using plain `Value`/`ValueChanged`, not `@bind-Value` through an Input component), raw `<select>`/`@onchange` bindings, file upload add/remove callbacks, etc.
+  - Reset `_isDirty = false` right before navigating away after a **successful** save — otherwise the guard fires again on the post-save `NavigateTo`.
+  - Unsubscribe `_editContext.OnFieldChanged` in `DisposeAsync`.
+- Login/credential-only forms are excluded — losing a half-typed password isn't the kind of "lost work" this guards against.
+
+Enforced going forward via `.github/instructions/pull-request-review.instructions.md` (Blazor section + Review Checklist).
+
+### Lightweight Collection Projections — Naming Convention
+
+When a UI need (e.g. a picker/dropdown) only requires a reduced projection of an existing collection (a few scalar fields instead of the full aggregate graph), check whether an existing query already returns a superset of that data before adding a new query/endpoint. Reuse-and-project-down at the consuming layer is preferred over a parallel lightweight endpoint — e.g. a tournament-linking picker in the news create form reuses `ListTournamentsInSeasonQuery`/`ISeasonsApi.ListTournamentsInSeasonAsync` (already consumed via `ITournamentApiService.GetTournamentsForSeasonAsync` → `SeasonTournamentViewModel`) rather than adding a second, near-duplicate "just Id/Name/StartDate" query — the existing one already returns everything a picker needs, and a second query with the same route shape only invites drift between two sources of truth for the same data.
+
+**If a genuinely new lightweight query/endpoint turns out to be justified** (the existing query is too expensive to call just for a picker, or scoped differently), follow this naming split so the "reduced projection" distinction lives in exactly one place:
+
+- **The DTO/response type** is named with `Summary`/`Summaries` (e.g. `TournamentSummaryDto`, `TournamentSummaryResponse`) — this is the one place that signals "deliberately reduced fields."
+- **The query, handler, and endpoint class names — and the route — stay named after the resource itself**, with no `Summary`/`Summaries` suffix (e.g. `ListTournamentsInSeasonQuery`, route `{seasonId}/tournaments`) — matching whatever the "full" operation for that resource would be named, not a variant name. Do not let the operation name double up on the same "reduced" signal the DTO name already carries.
+
+This means a new lightweight query for an existing resource **cannot reuse the same class/route names as an existing heavier query for that resource** without a genuine rename of one of them — check for an existing `List{Resource}` query/endpoint first, since a collision here means either reusing the existing one (preferred, see above) or deliberately renaming the existing "full" variant to something more specific (a larger, higher-risk change touching its existing consumers) rather than inventing a suffix on the new one.
+
 ### API Route Conventions
 
 - **No `/api` prefix** — the API is served from `api.bowlneba.com`, so routes start directly with the resource (e.g. `/documents/{DocumentName}`, not `/api/documents/{DocumentName}`)
@@ -324,6 +353,20 @@ Two patterns that break Razor's lexer even inside `@code { }` blocks:
 3. **Component attribute values always need `@` for C# expressions** — `Foo="fieldName"` passes the literal string `"fieldName"`, not the field's value. Always write `Foo="@fieldName"` for fields/properties, `Foo="@(expr)"` for expressions with operators (e.g. null-forgiving `!`, null-coalescing `??`).
 
 4. **Blazor parameters use `[EditorRequired]` not C# `required`** — the `required` keyword on Blazor `[Parameter]` properties causes compile errors (CS0246/CS7014). Always use `[Parameter, EditorRequired]` with a default initializer (`= default!;`, `= string.Empty;`, `= [];`).
+
+### List Page "Add New" Pattern — Floating Action Button
+
+Any admin-gated list page (News, and future Sponsors/Bowling Centers/etc. admin views) uses the shared `FabCreateButton` component (`Neba.Website.Server/Components/FabCreateButton.razor`) as its "create new" entry point — a circular button fixed to the bottom-right of the viewport (`.neba-fab` in `wwwroot/neba_theme.css`), not a button embedded in the page's gradient title bar. Usage:
+
+```razor
+<AuthorizeView Policy="@Permissions.CreateArticle.PolicyName">
+    <Authorized>
+        <FabCreateButton Href="/news/new" Label="Create Article" />
+    </Authorized>
+</AuthorizeView>
+```
+
+`Href` is the create-page route; `Label` is both the accessible name and hover tooltip (e.g. "Create Article", "Add Sponsor"). This was chosen over embedding the button in the gradient `page-title-bar` because a solid/glass button there had low, position-dependent contrast against the gradient and competed visually with the hero content below it — the FAB sits outside page content entirely, at a fixed screen position, so it doesn't fight the header for attention and its position/behavior is identical across every list page it's added to.
 
 ### Page Titles (`<PageTitle>`)
 

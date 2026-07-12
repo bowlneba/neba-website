@@ -26,7 +26,12 @@ public sealed class Permissions
     #region News
 
     /// <summary>
-    /// This is a temporary permission to set us up until real permissions come into the picture
+    /// Permission to create a news article.
+    /// </summary>
+    public static readonly Permissions CreateArticle = new("News.CreateArticle", "Create Article");
+
+    /// <summary>
+    /// Permission to delete a news article.
     /// </summary>
     public static readonly Permissions DeleteArticle = new("News.DeleteArticle", "Delete Article");
 
@@ -35,6 +40,7 @@ public sealed class Permissions
     /// </summary>
     public static readonly IReadOnlyCollection<Permissions> ArticleManagementPermissions =
     [
+        CreateArticle,
         DeleteArticle,
     ];
 

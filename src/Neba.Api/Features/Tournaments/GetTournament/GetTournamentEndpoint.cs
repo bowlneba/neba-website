@@ -32,6 +32,7 @@ internal sealed class GetTournamentEndpoint(
             .WithName("GetTournament")
             .WithTags("Public")
             .Produces<TournamentDetailResponse>(StatusCodes.Status200OK)
+            .ProducesProblemDetails(StatusCodes.Status400BadRequest)
             .ProducesProblemDetails(StatusCodes.Status404NotFound)
             .ProducesProblemDetails(StatusCodes.Status500InternalServerError));
     }

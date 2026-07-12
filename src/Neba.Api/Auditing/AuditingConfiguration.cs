@@ -1,3 +1,4 @@
+using Audit.AzureStorageTables.ConfigurationApi;
 using Audit.AzureStorageTables.Providers;
 using Audit.Core;
 using Audit.EntityFramework;
@@ -9,11 +10,13 @@ using Neba.Api.Database;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.HallOfFame.Domain;
+using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Identity;
 using Neba.Api.Security.Domain;
+using Neba.Api.Uploads;
 
 namespace Neba.Api.Auditing;
 
@@ -42,16 +45,16 @@ internal static class AuditingConfiguration
             var defaultProvider = new AzureTableDataProvider(config => config
                 .ConnectionString(builder.Configuration.GetConnectionString("tables"))
                 .TableName(_ => "EFAuditEvents")
-                .EntityBuilder(entity => entity
-                    .PartitionKey(ev => ev.EventType ?? "unknown")
-                    .RowKey(_ => Ulid.NewUlid().ToString())));
+                // EntityMapper (not EntityBuilder) is required to retain the event payload:
+                // AuditEventTableEntity serializes the full event to JSON in an "AuditEvent"
+                // column. EntityBuilder without a .Columns(...) call produces a TableEntity
+                // with no properties at all, silently discarding the payload.
+                .EntityMapper(ev => new AuditEventTableEntity(ev.EventType ?? "unknown", Ulid.NewUlid().ToString(), ev)));
 
             var securityProvider = new AzureTableDataProvider(config => config
                 .ConnectionString(builder.Configuration.GetConnectionString("tables"))
                 .TableName(_ => "SecurityAuditEvents")
-                .EntityBuilder(entity => entity
-                    .PartitionKey(ev => ev.EventType ?? "unknown")
-                    .RowKey(_ => Ulid.NewUlid().ToString())));
+                .EntityMapper(ev => new AuditEventTableEntity(ev.EventType ?? "unknown", Ulid.NewUlid().ToString(), ev)));
 
             Audit.Core.Configuration.Setup()
                 .Use(new SecurityAuditDataProviderRouter(securityProvider, defaultProvider))
@@ -73,7 +76,9 @@ internal static class AuditingConfiguration
                 .Include<HighBlockAward>()
                 .Include<BowlerOfTheYearAward>()
                 .Include<BowlingCenter>()
-                .Include<Sponsor>();
+                .Include<Sponsor>()
+                .Include<Article>()
+                .Include<PendingUpload>();
 
             Audit.EntityFramework.Configuration.Setup()
                 .ForContext<SecurityDbContext>(auditConfig => auditConfig

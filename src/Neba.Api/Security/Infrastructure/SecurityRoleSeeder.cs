@@ -15,6 +15,7 @@ internal static class SecurityRoleSeeder
         [Roles.Admin] = Permissions.List,
         [Roles.Webmaster] =
         [
+            Permissions.CreateArticle,
             Permissions.DeleteArticle
         ],
         [Roles.Member] = []

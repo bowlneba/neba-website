@@ -1,0 +1,136 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JsRuntime
+@inject ILogger<RichTextEditor> Logger
+
+<div id="@ContainerId" class="@CssClass"></div>
+
+@code {
+    private IJSObjectReference? _jsModule;
+    private DotNetObjectReference<RichTextEditor>? _dotNetHelper;
+    private string? _lastKnownValue;
+    private bool _lastKnownReadOnly;
+
+    private string ContainerId { get; } = $"neba-rte-{Guid.NewGuid():N}";
+
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter]
+    public bool ReadOnly { get; set; }
+
+    [Parameter]
+    public string Placeholder { get; set; } = string.Empty;
+
+    [Parameter]
+    public string CssClass { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Invoked when the user picks an image via the editor's toolbar image control. Receives the
+    /// picked file's stream, name, and content type; returns the URL to embed, or null to abort the
+    /// embed (e.g. the caller's upload failed). When null, the toolbar's image control is omitted
+    /// entirely rather than rendered disabled, keeping this component News-agnostic by default.
+    /// </summary>
+    [Parameter]
+    public Func<IJSStreamReference, string, string, Task<string?>>? OnImageSelected { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
+                "import", "./Components/RichTextEditor.razor.js");
+
+            _dotNetHelper = DotNetObjectReference.Create(this);
+            _lastKnownValue = Value;
+            _lastKnownReadOnly = ReadOnly;
+
+            await _jsModule.InvokeVoidAsync(
+                "initialize", ContainerId, _dotNetHelper, Value, ReadOnly, Placeholder, OnImageSelected is not null);
+        }
+    }
+
+    /// <summary>
+    /// Invoked by JS when the user picks an image via the toolbar's image control. Delegates to
+    /// <see cref="OnImageSelected"/> and returns the resulting URL (or null) back to JS to either
+    /// embed at the cursor position or abort the embed.
+    /// </summary>
+    [JSInvokable]
+    public async Task<string?> RequestImageEmbedAsync(IJSStreamReference fileStream, string fileName, string contentType)
+    {
+        if (OnImageSelected is null)
+        {
+            return null;
+        }
+
+        return await OnImageSelected(fileStream, fileName, contentType);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_jsModule is null)
+        {
+            return;
+        }
+
+        if (Value != _lastKnownValue)
+        {
+            _lastKnownValue = Value;
+            await _jsModule.InvokeVoidAsync("setHtml", ContainerId, Value);
+        }
+
+        if (ReadOnly != _lastKnownReadOnly)
+        {
+            _lastKnownReadOnly = ReadOnly;
+            await _jsModule.InvokeVoidAsync("setReadOnly", ContainerId, ReadOnly);
+        }
+    }
+
+    /// <summary>
+    /// Invoked by JS whenever the user edits the document (Quill's "text-change" event with source "user").
+    /// </summary>
+    [JSInvokable]
+    public async Task NotifyContentChanged(string html)
+    {
+        _lastKnownValue = html;
+        Value = html;
+
+        await ValueChanged.InvokeAsync(html);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule is not null)
+        {
+            try
+            {
+                await _jsModule.InvokeVoidAsync("dispose", ContainerId);
+            }
+            catch (JSDisconnectedException ex)
+            {
+                Logger.LogInformation(ex, "[RichTextEditor] JS cleanup skipped because the circuit disconnected.");
+            }
+            catch (JSException ex)
+            {
+                Logger.LogWarning(ex, "[RichTextEditor] Error during JS cleanup.");
+            }
+
+            try
+            {
+                await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException ex)
+            {
+                Logger.LogInformation(ex, "[RichTextEditor] JS module disposal skipped because the circuit disconnected.");
+            }
+            catch (JSException ex)
+            {
+                Logger.LogWarning(ex, "[RichTextEditor] Failed to dispose JS module.");
+            }
+        }
+
+        _dotNetHelper?.Dispose();
+    }
+}

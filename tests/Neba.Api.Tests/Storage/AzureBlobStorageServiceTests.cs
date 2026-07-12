@@ -170,6 +170,31 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
         result.Metadata.ShouldContainKeyAndValue("Source", "GoogleDrive");
     }
 
+    [Fact(DisplayName = "UploadFileAsync should upload content from a stream")]
+    public async Task UploadFileAsync_ShouldUploadContent_FromStream()
+    {
+        // Arrange
+        var container = UniqueContainer();
+        const string path = "stream-upload.txt";
+        const string content = "stream content";
+        await using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));
+
+        // Act
+        await _sut.UploadFileAsync(
+            container,
+            path,
+            stream,
+            "text/plain",
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
+            CancellationToken.None);
+
+        // Assert
+        var result = await _sut.GetFileAsync(container, path, CancellationToken.None);
+        result.ShouldNotBeNull();
+        result.Content.ShouldBe(content);
+        result.ContentType.ShouldBe("text/plain");
+    }
+
     [Fact(DisplayName = "GetBlobUri should return URI containing container and path")]
     public void GetBlobUri_ReturnsUri_ContainingContainerAndPath()
     {

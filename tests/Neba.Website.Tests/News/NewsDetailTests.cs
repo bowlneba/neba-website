@@ -28,6 +28,7 @@ public sealed class NewsDetailTests : IDisposable
     private readonly Mock<INewsApi> _mockApi;
     private readonly BunitAuthorizationContext _authContext;
     private readonly ToastService _toastService;
+    private readonly BunitJSModuleInterop _browserTimeModule;
 
     public NewsDetailTests()
     {
@@ -39,6 +40,7 @@ public sealed class NewsDetailTests : IDisposable
 
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        _browserTimeModule = _ctx.JSInterop.SetupModule("./js/browser-time.js");
         _authContext = _ctx.AddAuthorization();
         _authContext.SetNotAuthorized();
 
@@ -159,6 +161,24 @@ public sealed class NewsDetailTests : IDisposable
 
         // Assert
         cut.Markup.ShouldContain("May 15, 2026");
+    }
+
+    [Fact(DisplayName = "Should format publish date using the viewer's local timezone offset")]
+    public void Render_ShouldFormatPublishDate_UsingViewerLocalTimezoneOffset()
+    {
+        // Arrange — Date.getTimezoneOffset() returns +240 for US Eastern (summer); the UTC instant
+        // just after midnight on May 15 falls on May 14 local, so the displayed date must shift back.
+        _browserTimeModule.Setup<int>("getTimezoneOffsetMinutes").SetResult(240);
+        var article = ArticleDetailResponseFactory.Create(
+            publishDateUtc: new DateTimeOffset(2026, 5, 15, 2, 0, 0, TimeSpan.Zero));
+        SetupSuccessResponse(article);
+
+        // Act
+        var cut = _ctx.Render<NewsDetail>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Assert
+        cut.Markup.ShouldContain("May 14, 2026");
+        cut.Markup.ShouldNotContain("May 15, 2026");
     }
 
     // ── Header image ─────────────────────────────────────────────────────────
