@@ -23,6 +23,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Neba.Website.Tests" />
     <InternalsVisibleTo Include="Neba.TestFactory" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 
   <!-- Exclude JavaScript test files from publish -->

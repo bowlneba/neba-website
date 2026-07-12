@@ -1,0 +1,75 @@
+@inject NavigationManager NavigationManager
+
+<NavigationLock ConfirmExternalNavigation="@IsDirty" OnBeforeInternalNavigation="HandleBeforeInternalNavigation" />
+
+<ConfirmActionModal IsOpen="@_isConfirmOpen"
+                     Title="@Title"
+                     Message="@Message"
+                     ConfirmLabel="@ConfirmLabel"
+                     CancelLabel="@CancelLabel"
+                     OnConfirm="ConfirmNavigation"
+                     OnCancel="CancelNavigation" />
+
+@code {
+    private string? _pendingLocation;
+    private bool _isConfirmOpen;
+    private bool _allowNextNavigation;
+
+    /// <summary>
+    /// Whether the guarded form currently has unsaved changes. Pages own their own dirty-tracking
+    /// (field-level via <see cref="EditContext.OnFieldChanged"/>, plus explicit marking for anything
+    /// outside the EditForm, e.g. file uploads) and pass the result in here.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public bool IsDirty { get; set; }
+
+    [Parameter]
+    public string Title { get; set; } = "Discard unsaved changes?";
+
+    [Parameter]
+    public string Message { get; set; } = "You have unsaved changes. If you leave this page now, they will be lost.";
+
+    [Parameter]
+    public string ConfirmLabel { get; set; } = "Leave";
+
+    [Parameter]
+    public string CancelLabel { get; set; } = "Stay";
+
+    private void HandleBeforeInternalNavigation(LocationChangingContext context)
+    {
+        if (_allowNextNavigation)
+        {
+            _allowNextNavigation = false;
+            return;
+        }
+
+        if (!IsDirty)
+        {
+            return;
+        }
+
+        _pendingLocation = context.TargetLocation;
+        _isConfirmOpen = true;
+        context.PreventNavigation();
+    }
+
+    private void ConfirmNavigation()
+    {
+        _isConfirmOpen = false;
+
+        var target = _pendingLocation;
+        _pendingLocation = null;
+
+        if (target is not null)
+        {
+            _allowNextNavigation = true;
+            NavigationManager.NavigateTo(target);
+        }
+    }
+
+    private void CancelNavigation()
+    {
+        _isConfirmOpen = false;
+        _pendingLocation = null;
+    }
+}

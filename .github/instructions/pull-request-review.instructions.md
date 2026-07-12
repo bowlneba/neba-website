@@ -218,6 +218,7 @@ Flag when:
 - Feature-specific components placed in generic `Components/` folder
 - Missing loading state handling
 - Components placed in Client project without clear justification (offline, browser APIs, latency-sensitive)
+- Data-entry pages/forms (anything with `EditForm`, file uploads, or similar user input) don't guard against losing unsaved changes on Cancel, in-app navigation, or refresh/close — wrap with `<DirtyFormGuard IsDirty="@_isDirty" />` (`Components/DirtyFormGuard.razor`) and track `_isDirty` via `EditContext.OnFieldChanged` plus explicit `MarkDirty()` calls for anything outside the `EditForm` (file uploads, non-`InputBase` bound fields). See `CreateArticle.razor` for the reference implementation.
 
 ---
 
@@ -684,6 +685,7 @@ When reviewing, verify:
 ### Blazor
 
 - [ ] Blazor components don't fetch data directly
+- [ ] Data-entry pages/forms use `DirtyFormGuard` to warn before losing unsaved changes
 
 ### User Help Documentation
 

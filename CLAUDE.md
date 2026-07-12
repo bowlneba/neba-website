@@ -172,6 +172,24 @@ Mutation testing (Stryker) is **not currently in the CI pipeline** — removed M
 
 ## Learnings
 
+### Dirty Form Guard — Warn Before Losing Unsaved Changes
+
+Every data-entry page (any page with an `EditForm`, file uploads, or similar user input) must warn the user before they lose unsaved changes via Cancel, in-app navigation, or browser refresh/close/address-bar navigation. Use the shared `Components/DirtyFormGuard.razor` component — do not hand-roll this per page.
+
+**How it works**:
+
+- `<DirtyFormGuard IsDirty="@_isDirty" />` wraps Blazor's built-in `<NavigationLock>`:
+  - `ConfirmExternalNavigation="@IsDirty"` triggers the browser's **native** "leave site?" dialog for refresh/close/address-bar navigation/back-forward — this is built into Blazor and cannot be customized (no custom JS/`beforeunload` interop needed or possible).
+  - `OnBeforeInternalNavigation` intercepts in-app navigation (Cancel button's `NavigationManager.NavigateTo(...)`, `NavLink` clicks, etc.), calls `context.PreventNavigation()`, and shows a custom `ConfirmActionModal` ("Discard unsaved changes?" / Leave / Stay). Confirming re-issues the navigation with a one-shot bypass flag so the guard doesn't re-intercept its own confirmed navigation.
+- The **page** owns dirty-tracking and passes the result in — the guard has no opinion on how dirty state is computed. Pattern (see `CreateArticle.razor`):
+  - Create the `EditContext` explicitly in the constructor (`EditForm EditContext="_editContext"` instead of `Model="_model"`) and subscribe `_editContext.OnFieldChanged += (_, _) => MarkDirty();` — this covers any field bound through an `InputBase` descendant (`InputText`, `InputSelect`, `InputDate`, etc.) for free.
+  - Anything **not** wired through `EditContext` needs an explicit `MarkDirty()` call: components that aren't `InputBase` (e.g. a custom `RichTextEditor` using plain `Value`/`ValueChanged`, not `@bind-Value` through an Input component), raw `<select>`/`@onchange` bindings, file upload add/remove callbacks, etc.
+  - Reset `_isDirty = false` right before navigating away after a **successful** save — otherwise the guard fires again on the post-save `NavigateTo`.
+  - Unsubscribe `_editContext.OnFieldChanged` in `DisposeAsync`.
+- Login/credential-only forms are excluded — losing a half-typed password isn't the kind of "lost work" this guards against.
+
+Enforced going forward via `.github/instructions/pull-request-review.instructions.md` (Blazor section + Review Checklist).
+
 ### Lightweight Collection Projections — Naming Convention
 
 When a UI need (e.g. a picker/dropdown) only requires a reduced projection of an existing collection (a few scalar fields instead of the full aggregate graph), check whether an existing query already returns a superset of that data before adding a new query/endpoint. Reuse-and-project-down at the consuming layer is preferred over a parallel lightweight endpoint — e.g. a tournament-linking picker in the news create form reuses `ListTournamentsInSeasonQuery`/`ISeasonsApi.ListTournamentsInSeasonAsync` (already consumed via `ITournamentApiService.GetTournamentsForSeasonAsync` → `SeasonTournamentViewModel`) rather than adding a second, near-duplicate "just Id/Name/StartDate" query — the existing one already returns everything a picker needs, and a second query with the same route shape only invites drift between two sources of truth for the same data.
