@@ -127,6 +127,41 @@ public sealed class CreateArticleCommandHandlerTests(AppDbContextFixture fixture
         result.IsError.ShouldBeFalse();
     }
 
+    [Fact(DisplayName = "HandleAsync sanitizes script tags out of content before persisting")]
+    public async Task HandleAsync_ShouldSanitizeScriptTagsOutOfContent_WhenCommandIsValid()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var handler = CreateHandler();
+        var command = ValidCommand(
+            slug: "sanitized-content-article",
+            content: "<p>Hello</p><script>alert('xss')</script>");
+
+        // Act
+        await handler.HandleAsync(command, ct);
+
+        // Assert
+        var article = await _dbContext.Articles.SingleAsync(a => a.Slug == "sanitized-content-article", ct);
+        article.Content.ShouldNotContain("<script", Case.Insensitive);
+        article.Content.ShouldContain("<p>Hello</p>");
+    }
+
+    [Fact(DisplayName = "HandleAsync returns Article.Content.Required when content sanitizes to an empty string")]
+    public async Task HandleAsync_ShouldReturnContentRequiredError_WhenContentSanitizesToEmpty()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var handler = CreateHandler();
+        var command = ValidCommand(content: "<script>alert('xss')</script>");
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Article.Content.Required");
+    }
+
     [Fact(DisplayName = "HandleAsync returns validation error when article creation fails")]
     public async Task HandleAsync_ShouldReturnValidationError_WhenArticleCreationFails()
     {

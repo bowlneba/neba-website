@@ -168,7 +168,7 @@ internal sealed class AzureBlobStorageService
 
         try
         {
-            _logger.LogUploadingFile(container, path, (int)content.Length, contentType);
+            _logger.LogUploadingFile(container, path, content.Length, contentType);
 
             var containerClient = _blobServiceClient.GetBlobContainerClient(container);
             await containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
@@ -189,9 +189,9 @@ internal sealed class AzureBlobStorageService
 
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileUploaded(container, path, (int)content.Length, durationMs.TotalMilliseconds);
+            _logger.LogFileUploaded(container, path, content.Length, durationMs.TotalMilliseconds);
 
-            StorageMetrics.RecordOperationSuccess(container, "upload", durationMs.TotalMilliseconds, (int)content.Length);
+            StorageMetrics.RecordOperationSuccess(container, "upload", durationMs.TotalMilliseconds, content.Length);
 
             activity?.SetTag(StorageDurationMsTag, durationMs.TotalMilliseconds);
             activity?.SetStatus(ActivityStatusCode.Ok);
@@ -200,7 +200,7 @@ internal sealed class AzureBlobStorageService
         {
             var durationMs = _stopwatchProvider.GetElapsedTime(startTimestamp);
 
-            _logger.LogFileUploadFailed(ex, container, path, (int)content.Length);
+            _logger.LogFileUploadFailed(ex, container, path, content.Length);
 
             StorageMetrics.RecordOperationFailure(container, "upload", durationMs.TotalMilliseconds, ex.GetType().Name);
 
@@ -328,7 +328,7 @@ internal static partial class AzureBlobStorageServiceLogMessages
         this ILogger<AzureBlobStorageService> logger,
         string container,
         string path,
-        int sizeBytes,
+        long sizeBytes,
         double durationMs);
 
     [LoggerMessage(
@@ -347,7 +347,7 @@ internal static partial class AzureBlobStorageServiceLogMessages
         this ILogger<AzureBlobStorageService> logger,
         string container,
         string path,
-        int sizeBytes,
+        long sizeBytes,
         string contentType);
 
     [LoggerMessage(
@@ -357,7 +357,7 @@ internal static partial class AzureBlobStorageServiceLogMessages
         this ILogger<AzureBlobStorageService> logger,
         string container,
         string path,
-        int sizeBytes,
+        long sizeBytes,
         double durationMs);
 
     [LoggerMessage(
@@ -368,7 +368,7 @@ internal static partial class AzureBlobStorageServiceLogMessages
         Exception exception,
         string container,
         string path,
-        int sizeBytes);
+        long sizeBytes);
 
     [LoggerMessage(
         Level = LogLevel.Debug,

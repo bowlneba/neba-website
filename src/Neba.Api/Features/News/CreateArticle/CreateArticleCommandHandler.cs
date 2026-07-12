@@ -25,10 +25,12 @@ internal sealed class CreateArticleCommandHandler(
             return tournamentCheck.Errors;
         }
 
+        var sanitizedContent = HtmlContentSanitizer.Sanitize(command.Content);
+
         var articleResult = Article.Create(
             command.Title,
             command.Slug,
-            command.Content,
+            sanitizedContent,
             command.PublicationStatus,
             command.PublishDate.ToUniversalTime(),
             command.TournamentId,
@@ -85,6 +87,11 @@ internal sealed class CreateArticleCommandHandler(
             : ArticleErrors.TournamentNotFound(tournamentId.Value);
     }
 
+    // Check-then-insert: two concurrent submissions producing the same slug could both pass this
+    // check and one would then fail SaveChangesAsync with an unhandled DbUpdateException instead of
+    // the Article.Slug.AlreadyExists conflict below. Not worth a unique-constraint-violation retry
+    // path at current volume (a handful of articles per month, published by a small staff), but if
+    // article creation throughput or concurrent editors grow, catch the constraint violation here.
     private async Task<ErrorOr<Success>> EnsureSlugIsAvailableAsync(string slug, CancellationToken cancellationToken)
     {
         var slugExists = await appDbContext.Articles.AnyAsync(a => a.Slug == slug, cancellationToken);
@@ -116,16 +123,20 @@ internal sealed class CreateArticleCommandHandler(
             .Concat(command.HeaderImage is null ? [] : [command.HeaderImage])
             .ToList();
 
-        foreach (var file in claimedFiles)
+        if (claimedFiles.Count == 0)
         {
-            var pending = await appDbContext.PendingUploads
-                .FirstOrDefaultAsync(pending => pending.Container == file.Container
-                    && pending.Path == file.Path, cancellationToken);
-
-            if (pending is not null)
-            {
-                appDbContext.PendingUploads.Remove(pending);
-            }
+            return;
         }
+
+        var claimedContainers = claimedFiles.Select(file => file.Container).Distinct().ToList();
+
+        var candidates = await appDbContext.PendingUploads
+            .Where(pending => claimedContainers.Contains(pending.Container))
+            .ToListAsync(cancellationToken);
+
+        var claimedPaths = claimedFiles.Select(file => (file.Container, file.Path)).ToHashSet();
+        var claimed = candidates.Where(pending => claimedPaths.Contains((pending.Container, pending.Path)));
+
+        appDbContext.PendingUploads.RemoveRange(claimed);
     }
 }

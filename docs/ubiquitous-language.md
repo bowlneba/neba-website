@@ -111,6 +111,25 @@
 
 ---
 
+### Pending Upload
+
+**Definition**: A staging record marking a File that has been uploaded to Azure Blob Storage before the domain entity it belongs to has been saved. Forms with file inputs (e.g. Article creation) upload each file to blob storage as soon as it's selected, rather than making the user wait for every file to finish uploading before they can submit — the form only carries the resulting `StoredFile` pointers, not the file bytes. A Pending Upload record is removed once its File is claimed by the entity being saved; if the form is abandoned and the File is never claimed, a periodic cleanup job removes both the orphaned blob and its Pending Upload record.
+
+Not a domain entity — it carries no business invariants of its own (any container/path/timestamp is "valid") and does not live in a `Features/*/Domain` namespace. It exists purely to support this upload-before-save UX pattern and the orphan-cleanup job that reconciles it.
+
+**Characteristics**:
+
+- **Container** / **Path**: Identify the staged File, matching a `StoredFile`'s `Container`/`Path` once the File is claimed
+- **UploadedAtUtc**: When the File was staged — used by the cleanup job to determine orphan age
+
+**In Code**:
+
+- Namespace: `Neba.Api.Uploads`
+- Type: `PendingUpload` (sealed class, system/staging record — not an aggregate or domain entity)
+- Cleanup: `CleanupOrphanedUploadsJob` / `CleanupOrphanedUploadsJobHandler`
+
+---
+
 ### Document Refresh
 
 **Definition**: The process of synchronizing a Document from its source system (Google Drive) to the application's cache layers.
@@ -159,7 +178,7 @@ An Article is only publicly visible when its Publication Status is `Published` *
 | `Id` | ULID | Yes | System-generated unique identifier |
 | `Title` | string | Yes | The heading displayed on the list and detail pages |
 | `Slug` | string | Yes | URL-friendly route identifier. Used in `/news/{slug}` |
-| `Body` | string | Yes | Rich-text content of the article (HTML). May contain embedded inline images referencing blob URLs |
+| `Content` | string | Yes | Rich-text content of the article (HTML), sanitized before persisting. May contain embedded inline images referencing blob URLs |
 | `PublicationStatus` | `PublicationStatus` | Yes | Whether the article is a Draft or Published. Defaults to `Draft` |
 | `PublishDate` | DateTimeOffset | No | The date and time the article becomes publicly visible. Required when status is `Published` |
 | `HeaderImage` | `StoredFile?` | No | Storage address of the article's header image. When absent, the NEBA logo is displayed as a fallback (presentation layer — not a domain concept) |
@@ -231,7 +250,7 @@ An Article is only publicly visible when its Publication Status is `Published` *
 
 Uploaded independently of the Article record — staff select the file before the Article is ever saved, so the blob cannot be keyed by `ArticleId`. The upload endpoint stores the file and returns a `StoredFile` pointer immediately; that pointer is carried through the create/update form and only becomes associated with the Article when the Article is saved (the `Article` row simply starts referencing that pointer — the blob itself never moves). A file uploaded this way but never attached to a saved Article is an orphan, swept up by a periodic cleanup job.
 
-Blob path convention: `news/uploads/header/{ulid}-{filename}`
+Blob path convention: `uploads/news/header/{ulid}-{filename}`
 
 **In Code**: `Article.HeaderImage` (`StoredFile?`)
 
@@ -255,7 +274,7 @@ Like the Header Image, attachments are uploaded independently of the Article rec
 | `DisplayName` | string | Yes | Staff-provided label shown in the attachment list |
 | `IsInline` | bool | Yes | Whether this attachment is also embedded within the Article body. Defaults to `false` |
 
-Blob path convention: `news/uploads/attachments/{ulid}-{filename}`
+Blob path convention: `uploads/news/attachments/{ulid}-{filename}`
 
 **In Code**:
 

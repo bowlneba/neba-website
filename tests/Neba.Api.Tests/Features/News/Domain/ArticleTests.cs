@@ -334,61 +334,6 @@ public sealed class ArticleTests
         result.FirstError.Code.ShouldBe("Article.Content.Required");
     }
 
-    [Fact(DisplayName = "Create sanitizes script tags out of content")]
-    public void Create_ShouldSanitizeScriptTagsOutOfContent()
-    {
-        // Arrange & Act
-        var result = Article.Create(
-            ArticleFactory.ValidTitle,
-            ArticleFactory.ValidSlug,
-            "<p>Hello</p><script>alert('xss')</script>",
-            ArticleFactory.ValidPublicationStatus,
-            ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null,
-            headerImage: null);
-
-        // Assert
-        result.IsError.ShouldBeFalse();
-        result.Value.Content.ShouldNotContain("<script", Case.Insensitive);
-        result.Value.Content.ShouldContain("<p>Hello</p>");
-    }
-
-    [Fact(DisplayName = "Create sanitizes event handler attributes out of content")]
-    public void Create_ShouldSanitizeEventHandlerAttributesOutOfContent()
-    {
-        // Arrange & Act
-        var result = Article.Create(
-            ArticleFactory.ValidTitle,
-            ArticleFactory.ValidSlug,
-            "<p onclick=\"alert('xss')\">Hello</p>",
-            ArticleFactory.ValidPublicationStatus,
-            ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null,
-            headerImage: null);
-
-        // Assert
-        result.IsError.ShouldBeFalse();
-        result.Value.Content.ShouldNotContain("onclick", Case.Insensitive);
-    }
-
-    [Fact(DisplayName = "Create returns Article.Content.Required when content sanitizes to an empty string")]
-    public void Create_ShouldReturnContentRequiredError_WhenContentSanitizesToEmpty()
-    {
-        // Arrange & Act
-        var result = Article.Create(
-            ArticleFactory.ValidTitle,
-            ArticleFactory.ValidSlug,
-            "<script>alert('xss')</script>",
-            ArticleFactory.ValidPublicationStatus,
-            ArticleFactory.ValidPublishDateUtc,
-            tournamentId: null,
-            headerImage: null);
-
-        // Assert
-        result.IsError.ShouldBeTrue();
-        result.FirstError.Code.ShouldBe("Article.Content.Required");
-    }
-
 #nullable disable
     [Fact(DisplayName = "Create returns Article.Content.Required when content is null")]
     public void Create_ShouldReturnContentRequiredError_WhenContentIsNull()

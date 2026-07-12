@@ -1,7 +1,9 @@
 namespace Neba.Api.Uploads;
 
 /// <summary>
-/// Represents a pending file upload with its container, path, and upload timestamp.
+/// Tracks a file uploaded to blob storage before its owning record (e.g. an article) was saved. A
+/// system/staging record, not a domain entity — removed once claimed, or by
+/// <see cref="CleanupOrphanedUploadsJob"/> if never claimed.
 /// </summary>
 public sealed class PendingUpload
 {
