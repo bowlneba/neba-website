@@ -33,6 +33,8 @@ test.describe('create-article help screenshots', () => {
     await page.getByRole('link', { name: 'Create Article' }).click();
     await page.waitForSelector('#title');
 
-    await page.screenshot({ path: path.join(outDir, 'create-form.png') });
+    // fullPage so the Tournament/Header Image/Attachments sections (added after the initial
+    // title/slug/content/status/publish-date fields) are captured, not just the first viewport.
+    await page.screenshot({ path: path.join(outDir, 'create-form.png'), fullPage: true });
   });
 });

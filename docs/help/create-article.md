@@ -16,13 +16,22 @@ You need the `News.CreateArticle` permission (granted to the `Webmaster` and `Ad
 3. On the **Create Article** page, fill in:
    - **Title** — required.
    - **Slug** — optional. Leave it blank and the URL slug is generated from the title automatically; type your own value only if you want to override that.
-   - **Content** — required. Uses the rich text editor (bold/italic/lists/links/headings, etc.).
+   - **Content** — required. Uses the rich text editor (bold/italic/lists/links/headings, etc.). You can also drag an image directly into the editor (or use its image button) to embed it inline in the article body — this uploads the image immediately and inserts it at the cursor.
+   - **Tournament** — optional. Pick a season, then a tournament within that season, to link the article to it, or leave both as-is to publish with no tournament link. If you opened this page from a tournament's page (a "tournamentId" link), the tournament is already chosen and shown as read-only text instead of the dropdowns.
+   - **Header Image** — optional. Drag and drop, or click to browse for, a single image (JPEG/PNG/etc., up to 5 MB) to use as the article's header image.
+   - **Attachments** — optional. Drag and drop, or click to browse for, up to 10 files (PDF, Word, Excel, or images, up to 25 MB each) to attach to the article. Any image embedded inline in the Content editor also appears here, tagged **Inline**, alongside any files you add through this uploader.
    - **Status** — `Draft` (not visible to the public) or `Published`.
    - **Publish Date** — shown and entered in your own local time; it's converted to UTC automatically when the article is saved.
 
    ![Blank Create Article form](images/create-article/create-form.png)
 
+   Once a header image or attachment finishes uploading, it's listed with a **Download**, **Open**, and **Remove** action. Removing a regular attachment just drops it from the list; removing an inline embedded image (used in the article body) asks you to confirm first, since the image will still appear — broken — wherever you embedded it in the content, and you'll need to edit the body yourself to fully remove or replace it.
+
+   The **Create Article** button is disabled while any header image or attachment upload is still in progress, so you can't submit with a half-uploaded file.
+
 4. Click **Create Article** to save, or **Cancel** to discard and return to the News list.
+
+   If you've made any changes and try to leave the page before saving — via **Cancel**, clicking away to another page, or closing/refreshing the browser tab — you're asked to confirm first ("Discard unsaved changes?" with **Leave**/**Stay** options, or your browser's own "leave site?" prompt for a tab close/refresh). Choose **Stay** (or cancel the browser prompt) to keep working on the form.
 
 ## What happens after you confirm
 
@@ -36,6 +45,8 @@ You need the `News.CreateArticle` permission (granted to the `Webmaster` and `Ad
 | No "Create Article" button on the News list page, or a "you don't have permission" message on `/news/new` | You don't hold `News.CreateArticle` — ask an admin to grant it if you believe you should have it. |
 | "An article with this slug already exists" | Another article is already using that slug (either auto-generated from a matching title, or a typed override). Change the title or supply a different slug and try again — this doesn't require a whole new submission of the rest of the form. |
 | "Title must not be empty." / "Content must not be empty." | Title or Content was blank, or Content was entirely stripped during sanitization (e.g. it contained only disallowed markup like a bare script tag). Add real content and try again. |
+| A red error status next to a file in the Header Image or Attachments list (e.g. "File exceeds the maximum allowed size of 5 MB." / "Upload failed.") | That individual file failed to upload — the rest of the form is unaffected. Remove it and try again with a smaller file or a different file. |
+| "TournamentId must be a 26-character ULID." or a tournament-not-found error | The linked tournament no longer exists or wasn't recognized. Re-pick the season and tournament from the dropdowns and try again. |
 | Any other "Unable to Create Article" message | The server rejected the request; the message describes the specific problem. The article was not created — correct the issue and submit again. |
 
 ## Related
