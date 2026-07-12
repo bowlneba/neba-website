@@ -29,7 +29,7 @@ public sealed class Permissions
     /// Permission to edit a news article.
     /// </summary>
     public static readonly Permissions EditArticle = new("News.EditArticle", "Edit Article");
-    
+
     /// <summary>
     /// Permission to delete a news article.
     /// </summary>
