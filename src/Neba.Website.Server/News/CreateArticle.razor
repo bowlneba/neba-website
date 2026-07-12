@@ -368,6 +368,16 @@
 
         _isDirty = false;
         ToastService.Show("Article Created", "\"" + _model.Title + "\" was successfully created.", NotifySeverity.Success);
+
+        // DirtyFormGuard is a child component: its IsDirty parameter only reflects the line above once
+        // this component re-renders and the render is actually processed. StateHasChanged() alone only
+        // queues that render on the renderer's dispatch queue — it will not run until this method yields.
+        // Without the Task.Yield() below, NavigateTo would run the NavigationLock's before-navigate check
+        // against the guard's stale (still-dirty) parameter and incorrectly show the discard-changes
+        // prompt on a successful save.
+        StateHasChanged();
+        await Task.Yield();
+
         NavigationManager.NavigateTo($"/news/{result.Value.Slug}");
     }
 

@@ -173,6 +173,37 @@ public sealed class LogoutTests : IDisposable
         innerHandler.Requests.ShouldHaveSingleItem();
     }
 
+    [Fact(DisplayName = "Should navigate home with logoutError when the refresh call returns a malformed response body")]
+    public void OnInitializedAsync_ShouldNavigateWithLogoutError_WhenRefreshResponseBodyIsMalformed()
+    {
+        // Arrange
+        using var handler = new RecordingHandler(request =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/security/refresh")
+            {
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("not-json", Encoding.UTF8, "application/json")
+                };
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.Unauthorized);
+        });
+
+        _ctx.Services.AddSingleton<IHttpClientFactory>(new StubHttpClientFactory(handler));
+
+        var httpContext = BuildAuthenticatedHttpContext(accessToken: "old-token", refreshToken: "refresh-abc", userId: "user-123");
+
+        // Act
+        var cut = RenderLogout(httpContext);
+
+        // Assert
+        var nav = _ctx.Services.GetRequiredService<NavigationManager>();
+        cut.WaitForAssertion(() => nav.Uri.ShouldContain("logoutError=1"));
+        handler.Requests.Count(r => r.RequestUri!.AbsolutePath == "/security/refresh").ShouldBe(1);
+        handler.Requests.Count(r => r.RequestUri!.AbsolutePath == "/security/logout").ShouldBe(1);
+    }
+
     private IRenderedComponent<Neba.Website.Server.Account.Logout.Logout> RenderLogout(HttpContext httpContext)
         => _ctx.Render<Neba.Website.Server.Account.Logout.Logout>(p => p.AddCascadingValue(httpContext));
 

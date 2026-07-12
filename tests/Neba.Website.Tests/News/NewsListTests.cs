@@ -385,6 +385,39 @@ public sealed class NewsListTests : IDisposable
         cut.Find("span.article-status-badge").ShouldNotBeNull();
     }
 
+    // ── Create FAB ───────────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not show the create-article FAB when user lacks CreateArticle permission")]
+    public void Render_ShouldNotShowCreateFab_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var articles = ArticleSummaryResponseFactory.Bogus(1, 32);
+        SetupSuccessResponse(articles, totalItems: 1);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.FindAll("a.neba-fab").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show a create-article FAB linking to /news/new when user has CreateArticle permission")]
+    public void Render_ShouldShowCreateFab_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.CreateArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(1, 33);
+        SetupSuccessResponse(articles, totalItems: 1);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.Find("a.neba-fab").GetAttribute("href").ShouldBe("/news/new");
+    }
+
     // ── Delete flow ──────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should not show delete icon on cards when user lacks DeleteArticle permission")]
