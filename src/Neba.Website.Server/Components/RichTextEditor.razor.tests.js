@@ -64,12 +64,6 @@ class MockQuill {
         return { index: 0 };
     }
 
-    insertEmbed() {
-    }
-
-    setSelection() {
-    }
-
     on(event, callback) {
         this.listeners[event] = callback;
     }

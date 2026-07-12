@@ -1,4 +1,4 @@
-namespace Neba.Api.Contracts.News;
+namespace Neba.Api.Contracts.News.CreateArticle;
 
 /// <summary>
 /// Represents the input required for a header image associated with a news article.

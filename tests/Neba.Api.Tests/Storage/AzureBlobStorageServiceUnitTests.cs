@@ -117,7 +117,7 @@ public sealed class AzureBlobStorageServiceUnitTests
     {
         // Arrange
         var sut = CreateSutWithThrowingClient(new InvalidOperationException("Storage failure"));
-        using var stream = new MemoryStream("content"u8.ToArray());
+        await using var stream = new MemoryStream("content"u8.ToArray());
 
         // Act & Assert
         await Should.ThrowAsync<InvalidOperationException>(

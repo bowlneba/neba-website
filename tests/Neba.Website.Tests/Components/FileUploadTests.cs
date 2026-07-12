@@ -309,7 +309,7 @@ public sealed class FileUploadTests : IDisposable
         CancellationToken capturedToken = default;
 
 #pragma warning disable VSTHRD003
-        Task<ErrorOr<UploadedFileResponse>> PendingUpload(Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
+        Task<ErrorOr<UploadedFileResponse>> PendingUpload(Stream _, string __, string ___, IProgress<int> ____, CancellationToken ct)
         {
             capturedToken = ct;
             uploadStarted = true;
@@ -411,7 +411,7 @@ public sealed class FileUploadTests : IDisposable
         var tcs = new TaskCompletionSource<ErrorOr<UploadedFileResponse>>();
 
 #pragma warning disable VSTHRD003
-        Task<ErrorOr<UploadedFileResponse>> PendingUpload(Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
+        Task<ErrorOr<UploadedFileResponse>> PendingUpload(Stream _, string __, string ___, IProgress<int> ____, CancellationToken _____)
             => tcs.Task;
 #pragma warning restore VSTHRD003
 
@@ -462,7 +462,7 @@ public sealed class FileUploadTests : IDisposable
         CancellationToken capturedToken = default;
 
 #pragma warning disable VSTHRD003
-        Task<ErrorOr<UploadedFileResponse>> PendingUpload(Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
+        Task<ErrorOr<UploadedFileResponse>> PendingUpload(Stream _, string __, string ___, IProgress<int> ____, CancellationToken ct)
         {
             capturedToken = ct;
             uploadStarted = true;

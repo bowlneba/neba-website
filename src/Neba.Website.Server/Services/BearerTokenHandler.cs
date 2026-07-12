@@ -109,7 +109,7 @@ internal sealed class BearerTokenHandler(
         tokenCache.AccessToken = refreshed.AccessToken;
         tokenCache.RefreshToken = refreshed.RefreshToken;
 
-        if (httpContext is null || httpContext.Response.HasStarted)
+        if (httpContext?.Response.HasStarted != false)
         {
             if (httpContext is not null)
                 logger.LogSilentRefreshCookieSkipped();

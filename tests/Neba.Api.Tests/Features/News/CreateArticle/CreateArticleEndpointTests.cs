@@ -56,7 +56,7 @@ public sealed class CreateArticleEndpointTests
     public async Task HandleAsync_ShouldMapTournamentId_WhenSupplied()
     {
         // Arrange
-        var tournamentId = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
+        const string tournamentId = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
         var input = ArticleInputFactory.Create(tournamentId: tournamentId);
         var request = new CreateArticleRequest { Article = input };
         var ct = TestContext.Current.CancellationToken;
