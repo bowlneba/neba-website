@@ -28,10 +28,9 @@ internal sealed class GetArticleQueryHandler(
         var row = await ProjectArticleRow(FilterVisibleArticles(query.Slug, canManageArticles, now), canManageArticles)
             .SingleOrDefaultAsync(cancellationToken);
 
-        if (row is null)
-            return ArticleErrors.ArticleNotFound(query.Slug);
-
-        return MapToDto(row, canManageArticles, _fileStorageService);
+        return row is null 
+            ? ArticleErrors.ArticleNotFound(query.Slug)
+            : MapToDto(row, canManageArticles, _fileStorageService);
     }
 
     private IQueryable<Article> FilterVisibleArticles(string slug, bool canManageArticles, DateTimeOffset now) =>

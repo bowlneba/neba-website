@@ -36,7 +36,7 @@ function setCorsHeaders(res: ServerResponse): void {
 function readRequestBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', (chunk) => { body += chunk; });
+    req.on('data', (chunk: string | Uint8Array) => { body += chunk; });
     req.on('end', () => resolve(body));
     req.on('error', reject);
   });
@@ -52,7 +52,8 @@ function slugify(title: string): string {
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
 }
 
 const MOCK_BOWLING_CENTERS = {
