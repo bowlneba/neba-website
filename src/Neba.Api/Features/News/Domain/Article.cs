@@ -16,12 +16,9 @@ public sealed class Article
     : AggregateRoot
 {
     /// <summary>
-    /// Unique identifier for the article. The setter is <c>internal</c> (rather than <c>init</c>) solely
-    /// so test factories in friend assemblies (<c>Neba.TestFactory</c>, <c>Neba.Api.Tests</c>) can assign
-    /// a deterministic ID for stable Verify snapshots — production code always goes through
-    /// <see cref="Create"/>, which generates a new ID and never exposes this setter.
+    /// Unique identifier for the article.
     /// </summary>
-    public ArticleId Id { get; internal set; }
+    public ArticleId Id { get; init; }
 
     /// <summary>
     /// The article's title, displayed on the list and detail pages.
@@ -76,7 +73,9 @@ public sealed class Article
     /// validates that it is non-empty, it does not sanitize HTML itself. If <paramref name="slug"/>
     /// is null or empty, the slug is generated from <paramref name="title"/>. Returns a validation
     /// error if title/content are empty, the normalized slug has no alphanumeric characters, or the
-    /// normalized slug is the reserved value "new".
+    /// normalized slug is the reserved value "new". <paramref name="id"/> is production-optional —
+    /// it exists only so test factories can assign a deterministic ID for stable Verify snapshots;
+    /// production callers always omit it and get a newly generated <see cref="ArticleId"/>.
     /// </summary>
     public static ErrorOr<Article> Create(
         string title,
@@ -85,7 +84,8 @@ public sealed class Article
         PublicationStatus publicationStatus,
         DateTimeOffset publishDateUtc,
         TournamentId? tournamentId,
-        StoredFile? headerImage)
+        StoredFile? headerImage,
+        ArticleId? id = null)
     {
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -113,7 +113,7 @@ public sealed class Article
 
         return new Article
         {
-            Id = ArticleId.New(),
+            Id = id ?? ArticleId.New(),
             Title = title,
             Slug = normalizedSlug,
             Content = content,

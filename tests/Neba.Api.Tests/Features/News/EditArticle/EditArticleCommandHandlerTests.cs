@@ -318,10 +318,10 @@ public sealed class EditArticleCommandHandlerTests(AppDbContextFixture fixture)
         var command = ValidCommand(article.Id, headerImage: headerImage);
 
         // Act
-        await handler.HandleAsync(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
-        // Assert
-        scheduler.Verify(s => s.Enqueue(It.IsAny<DeleteArticleFilesJob>()), Times.Never);
+        // Assert — a strict mock with no Enqueue setup would throw if Enqueue was called
+        result.IsError.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "HandleAsync removes attachments no longer in the desired list")]
@@ -425,7 +425,6 @@ public sealed class EditArticleCommandHandlerTests(AppDbContextFixture fixture)
             .SingleAsync(a => a.Id == article.Id, ct);
         var persistedAttachment = persisted.Attachments.ShouldHaveSingleItem();
         persistedAttachment.File.ShouldBe(keptFile);
-        scheduler.Verify(s => s.Enqueue(It.IsAny<DeleteArticleFilesJob>()), Times.Never);
     }
 
     [Fact(DisplayName = "HandleAsync returns validation error when a new attachment is invalid")]
@@ -457,10 +456,10 @@ public sealed class EditArticleCommandHandlerTests(AppDbContextFixture fixture)
         var command = ValidCommand(article.Id);
 
         // Act
-        await handler.HandleAsync(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
-        // Assert — a strict mock with no Enqueue setup would throw if called
-        scheduler.Verify(s => s.Enqueue(It.IsAny<DeleteArticleFilesJob>()), Times.Never);
+        // Assert — a strict mock with no Enqueue setup would throw if Enqueue was called
+        result.IsError.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "HandleAsync invalidates the article list and detail cache tags when command is valid")]

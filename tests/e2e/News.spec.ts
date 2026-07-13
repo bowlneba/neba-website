@@ -305,3 +305,37 @@ test.describe('News detail page — delete article (authenticated)', () => {
     await page.request.post('http://localhost:5151/__mock/reset?path=/news/01JX0000000000000000000103');
   });
 });
+
+test.describe('News detail page — edit article (authenticated)', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test.beforeEach(async ({ page }) => {
+    await page.request.post('/__test/login?permissions=News.EditArticle');
+  });
+
+  test('saves changes and navigates to the article detail page', async ({ page }) => {
+    await page.goto('/news/june-lane-pattern/edit');
+    await page.waitForSelector('#title');
+
+    await page.locator('#title').fill('Updated Lane Pattern Title');
+    await page.locator('button[type="submit"].neba-btn-primary').click();
+
+    await expect(page.locator('.neba-toast')).toContainText('Article Updated');
+    await expect(page).toHaveURL(/\/news\/june-lane-pattern$/);
+  });
+
+  test('shows an error alert and stays on the page when saving fails', async ({ page }) => {
+    await page.request.post('http://localhost:5151/__mock/fail?path=/news/01JX0000000000000000000102&status=409');
+
+    await page.goto('/news/june-lane-pattern/edit');
+    await page.waitForSelector('#title');
+
+    await page.locator('#title').fill('Updated Lane Pattern Title');
+    await page.locator('button[type="submit"].neba-btn-primary').click();
+
+    await expect(page.locator('.neba-alert-title')).toContainText('Unable to Save Article');
+    await expect(page).toHaveURL(/\/news\/june-lane-pattern\/edit$/);
+
+    await page.request.post('http://localhost:5151/__mock/reset?path=/news/01JX0000000000000000000102');
+  });
+});

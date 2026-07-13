@@ -32,7 +32,8 @@ public static class ArticleFactory
             publicationStatus ?? ValidPublicationStatus,
             publishDateUtc ?? ValidPublishDateUtc,
             tournamentId,
-            headerImage);
+            headerImage,
+            id);
 
         if (createResult.IsError)
         {
@@ -40,11 +41,6 @@ public static class ArticleFactory
         }
 
         var article = createResult.Value;
-
-        if (id is not null)
-        {
-            article.Id = id.Value;
-        }
 
         foreach (var attachment in attachments ?? [])
         {
@@ -79,7 +75,8 @@ public static class ArticleFactory
                 faker.PickRandom(PublicationStatus.List.ToArray()),
                 faker.Date.PastOffset(2).ToUniversalTime(),
                 uniqueTournamentIds.GetNextNullable(),
-                uniqueImages.GetNextNullable());
+                uniqueImages.GetNextNullable(),
+                new ArticleId(Ulid.BogusString(faker)));
 
             if (result.IsError)
             {
@@ -87,7 +84,6 @@ public static class ArticleFactory
             }
 
             var article = result.Value;
-            article.Id = new ArticleId(Ulid.BogusString(faker));
 
             var attachmentCount = faker.Random.Int(0, 3);
             for (var i = 0; i < attachmentCount; i++)
