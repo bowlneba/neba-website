@@ -25,17 +25,22 @@ public static class ArticleFactory
         TournamentId? tournamentId = null,
         IReadOnlyCollection<ArticleAttachment>? attachments = null)
     {
-        var article = new Article
+        var createResult = Article.Create(
+            title ?? ValidTitle,
+            slug ?? ValidSlug,
+            content ?? ValidContent,
+            publicationStatus ?? ValidPublicationStatus,
+            publishDateUtc ?? ValidPublishDateUtc,
+            tournamentId,
+            headerImage,
+            id);
+
+        if (createResult.IsError)
         {
-            Id = id ?? ArticleId.New(),
-            Title = title ?? ValidTitle,
-            Slug = slug ?? ValidSlug,
-            Content = content ?? ValidContent,
-            PublicationStatus = publicationStatus ?? ValidPublicationStatus,
-            PublishDateUtc = publishDateUtc ?? ValidPublishDateUtc,
-            HeaderImage = headerImage,
-            TournamentId = tournamentId
-        };
+            throw new InvalidOperationException($"Failed to create article: {createResult.Errors[0].Description}");
+        }
+
+        var article = createResult.Value;
 
         foreach (var attachment in attachments ?? [])
         {
@@ -63,17 +68,22 @@ public static class ArticleFactory
         {
             var title = faker.Random.Words(3);
 
-            var article = new Article
+            var result = Article.Create(
+                title,
+                title.ToLowerInvariant().Replace(' ', '-'),
+                faker.Lorem.Paragraphs(2),
+                faker.PickRandom(PublicationStatus.List.ToArray()),
+                faker.Date.PastOffset(2).ToUniversalTime(),
+                uniqueTournamentIds.GetNextNullable(),
+                uniqueImages.GetNextNullable(),
+                new ArticleId(Ulid.BogusString(faker)));
+
+            if (result.IsError)
             {
-                Id = new ArticleId(Ulid.BogusString(faker)),
-                Title = title,
-                Slug = title.ToLowerInvariant().Replace(' ', '-'),
-                Content = faker.Lorem.Paragraphs(2),
-                PublicationStatus = faker.PickRandom(PublicationStatus.List.ToArray()),
-                PublishDateUtc = faker.Date.PastOffset(2).ToUniversalTime(),
-                HeaderImage = uniqueImages.GetNextNullable(),
-                TournamentId = uniqueTournamentIds.GetNextNullable()
-            };
+                throw new InvalidOperationException($"Failed to create article: {result.Errors[0].Description}");
+            }
+
+            var article = result.Value;
 
             var attachmentCount = faker.Random.Int(0, 3);
             for (var i = 0; i < attachmentCount; i++)

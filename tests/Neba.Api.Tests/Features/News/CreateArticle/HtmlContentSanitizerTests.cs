@@ -135,4 +135,44 @@ public sealed class HtmlContentSanitizerTests
         // Assert
         result.ShouldBeEmpty();
     }
+
+    [Theory(DisplayName = "Sanitize linkifies bare URLs typed as plain text")]
+    [InlineData("<p>Visit BowlNEBA.com/Tournaments for details.</p>", "<a href=\"https://BowlNEBA.com/Tournaments\">BowlNEBA.com/Tournaments</a>")]
+    [InlineData("<p>Visit www.bowlneba.com for details.</p>", "<a href=\"https://www.bowlneba.com\">www.bowlneba.com</a>")]
+    [InlineData("<p>Visit https://bowlneba.com/stats for details.</p>", "<a href=\"https://bowlneba.com/stats\">https://bowlneba.com/stats</a>")]
+    public void Sanitize_ShouldLinkifyBareUrls(string html, string expectedAnchor)
+    {
+        // Act
+        var result = HtmlContentSanitizer.Sanitize(html);
+
+        // Assert
+        result.ShouldContain(expectedAnchor);
+    }
+
+    [Fact(DisplayName = "Sanitize does not double-wrap a URL that is already a link")]
+    public void Sanitize_ShouldNotDoubleWrapExistingLink()
+    {
+        // Arrange
+        const string html = "<p><a href=\"https://bowlneba.com/tournaments\">bowlneba.com/tournaments</a></p>";
+
+        // Act
+        var result = HtmlContentSanitizer.Sanitize(html);
+
+        // Assert
+        result.ShouldContain("<a href=\"https://bowlneba.com/tournaments\">bowlneba.com/tournaments</a>");
+        result.ShouldNotContain("<a href=\"https://bowlneba.com/tournaments\"><a href");
+    }
+
+    [Fact(DisplayName = "Sanitize excludes trailing sentence punctuation from a linkified URL")]
+    public void Sanitize_ShouldExcludeTrailingPunctuationFromLinkifiedUrl()
+    {
+        // Arrange
+        const string html = "<p>Visit BowlNEBA.com/Tournaments, then check stats.</p>";
+
+        // Act
+        var result = HtmlContentSanitizer.Sanitize(html);
+
+        // Assert
+        result.ShouldContain("<a href=\"https://BowlNEBA.com/Tournaments\">BowlNEBA.com/Tournaments</a>,");
+    }
 }

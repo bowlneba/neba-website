@@ -11,12 +11,20 @@ public static class ArticleAttachmentResponseFactory
     public static ArticleAttachmentResponse Create(
         string? displayName = null,
         Uri? url = null,
-        string? contentType = null)
+        string? contentType = null,
+        bool isInline = false,
+        string? container = null,
+        string? path = null,
+        long? sizeInBytes = null)
         => new()
         {
             DisplayName = displayName ?? ValidDisplayName,
             Url = url,
             ContentType = contentType ?? MediaTypeNames.Image.Jpeg,
+            IsInline = isInline,
+            Container = container,
+            Path = path,
+            SizeInBytes = sizeInBytes,
         };
 
     internal static IReadOnlyCollection<ArticleAttachmentResponse> Bogus(int count, Faker faker)
@@ -26,7 +34,11 @@ public static class ArticleAttachmentResponseFactory
         {
             DisplayName = faker.Random.Words(2),
             Url = faker.Random.Bool() ? new Uri(faker.Internet.Url()) : null,
-            ContentType = faker.System.MimeType()
+            ContentType = faker.System.MimeType(),
+            IsInline = faker.Random.Bool(),
+            Container = faker.Random.Bool() ? faker.System.CommonFileName() : null,
+            Path = faker.Random.Bool() ? faker.System.FilePath() : null,
+            SizeInBytes = faker.Random.Bool() ? faker.Random.Long(1, 10_000_000) : null,
         })];
     }
 

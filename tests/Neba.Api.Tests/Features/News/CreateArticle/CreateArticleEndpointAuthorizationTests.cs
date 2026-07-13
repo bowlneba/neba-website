@@ -147,7 +147,7 @@ public sealed class CreateArticleEndpointAuthorizationTests(SecurityDbContextFix
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var token = TestAccessTokenFactory.Create(permissions: [Permissions.Read]);
+        var token = TestAccessTokenFactory.Create(permissions: [Permissions.EditArticle]);
 
         // Act
         using var response = await SendCreateAsync(token, ct);

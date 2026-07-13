@@ -18,12 +18,12 @@ public sealed class Article
     /// <summary>
     /// Unique identifier for the article.
     /// </summary>
-    public required ArticleId Id { get; init; }
+    public ArticleId Id { get; init; }
 
     /// <summary>
     /// The article's title, displayed on the list and detail pages.
     /// </summary>
-    public required string Title { get; init; }
+    public string Title { get; private set; } = string.Empty;
 
     /// <summary>
     /// URL-friendly, unique identifier used in the article's route (<c>/news/{slug}</c>).
@@ -33,27 +33,27 @@ public sealed class Article
     /// <summary>
     /// The article's sanitized rich-text (HTML) body.
     /// </summary>
-    public required string Content { get; init; }
+    public string Content { get; private set; } = string.Empty;
 
     /// <summary>
     /// Whether the article is a draft or published.
     /// </summary>
-    public required PublicationStatus PublicationStatus { get; init; }
+    public PublicationStatus PublicationStatus { get; private set; } = PublicationStatus.Draft;
 
     /// <summary>
     /// The UTC date/time the article becomes publicly visible when published.
     /// </summary>
-    public required DateTimeOffset PublishDateUtc { get; init; }
+    public DateTimeOffset PublishDateUtc { get; private set; }
 
     /// <summary>
     /// Optional header image displayed at the top of the article.
     /// </summary>
-    public StoredFile? HeaderImage { get; init; }
+    public StoredFile? HeaderImage { get; private set; }
 
     /// <summary>
     /// Optional tournament this article relates to.
     /// </summary>
-    public TournamentId? TournamentId { get; init; }
+    public TournamentId? TournamentId { get; private set; }
 
     internal Tournament? Tournament { get; init; }
 
@@ -73,8 +73,11 @@ public sealed class Article
     /// validates that it is non-empty, it does not sanitize HTML itself. If <paramref name="slug"/>
     /// is null or empty, the slug is generated from <paramref name="title"/>. Returns a validation
     /// error if title/content are empty, the normalized slug has no alphanumeric characters, or the
-    /// normalized slug is the reserved value "new".
+    /// normalized slug is the reserved value "new". <paramref name="id"/> is production-optional —
+    /// it exists only so test factories can assign a deterministic ID for stable Verify snapshots;
+    /// production callers always omit it and get a newly generated <see cref="ArticleId"/>.
     /// </summary>
+    [SuppressMessage("Major Code Smell", "S107:Methods should not have too many parameters", Justification = "Aggregate factory method — each parameter is a required field of the always-valid Article invariant (see CLAUDE.md 'Always-Valid Entities'); splitting into a parameter object would just move the same required fields into a second type with no behavior of its own.")]
     public static ErrorOr<Article> Create(
         string title,
         string? slug,
@@ -82,7 +85,8 @@ public sealed class Article
         PublicationStatus publicationStatus,
         DateTimeOffset publishDateUtc,
         TournamentId? tournamentId,
-        StoredFile? headerImage)
+        StoredFile? headerImage,
+        ArticleId? id = null)
     {
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -110,7 +114,7 @@ public sealed class Article
 
         return new Article
         {
-            Id = ArticleId.New(),
+            Id = id ?? ArticleId.New(),
             Title = title,
             Slug = normalizedSlug,
             Content = content,
@@ -119,6 +123,39 @@ public sealed class Article
             TournamentId = tournamentId,
             HeaderImage = headerImage
         };
+    }
+
+    /// <summary>
+    /// Updates the article's editable fields in place. The slug is immutable and is not a parameter —
+    /// see the remarks on <see cref="Slug"/>. <paramref name="content"/> must already be sanitized by
+    /// the caller, matching <see cref="Create"/>. Returns a validation error if title/content are empty.
+    /// </summary>
+    public ErrorOr<Updated> Update(
+        string title,
+        string content,
+        PublicationStatus publicationStatus,
+        DateTimeOffset publishDateUtc,
+        TournamentId? tournamentId,
+        StoredFile? headerImage)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return ArticleErrors.TitleRequired;
+        }
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return ArticleErrors.ContentRequired;
+        }
+
+        Title = title;
+        Content = content;
+        PublicationStatus = publicationStatus;
+        PublishDateUtc = publishDateUtc;
+        TournamentId = tournamentId;
+        HeaderImage = headerImage;
+
+        return Result.Updated;
     }
 
     /// <summary>
@@ -164,6 +201,25 @@ public sealed class Article
         }
 
         _attachments.Add(attachment.Value);
+
+        return Result.Success;
+    }
+
+    /// <summary>
+    /// Removes an attachment from the article. Returns <see cref="ArticleErrors.AttachmentNotFound"/>
+    /// if no attachment with <paramref name="attachmentId"/> exists. Does not delete the underlying
+    /// blob — callers are responsible for enqueuing that separately (see <c>EditArticleCommandHandler</c>).
+    /// </summary>
+    public ErrorOr<Success> RemoveAttachment(ArticleAttachmentId attachmentId)
+    {
+        var attachment = _attachments.Find(a => a.Id == attachmentId);
+
+        if (attachment is null)
+        {
+            return ArticleErrors.AttachmentNotFound(attachmentId);
+        }
+
+        _attachments.Remove(attachment);
 
         return Result.Success;
     }

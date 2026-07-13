@@ -15,11 +15,11 @@ public sealed class ClaimsPrincipalPermissionExtensionsTests
         // Arrange
         var user = new ClaimsPrincipal(new ClaimsIdentity(
         [
-            new Claim(Permissions.ClaimType, Permissions.Read.Value),
+            new Claim(Permissions.ClaimType, Permissions.CreateArticle.Value),
         ]));
 
         // Act
-        var result = user.HasAnyPermission([Permissions.Read, Permissions.Write]);
+        var result = user.HasAnyPermission([Permissions.CreateArticle, Permissions.EditArticle]);
 
         // Assert
         result.ShouldBeTrue();
@@ -31,12 +31,12 @@ public sealed class ClaimsPrincipalPermissionExtensionsTests
         // Arrange
         var user = new ClaimsPrincipal(new ClaimsIdentity(
         [
-            new Claim(Permissions.ClaimType, Permissions.Read.Value),
-            new Claim(Permissions.ClaimType, Permissions.Write.Value),
+            new Claim(Permissions.ClaimType, Permissions.CreateArticle.Value),
+            new Claim(Permissions.ClaimType, Permissions.EditArticle.Value),
         ]));
 
         // Act
-        var result = user.HasAnyPermission([Permissions.Read, Permissions.Write]);
+        var result = user.HasAnyPermission([Permissions.CreateArticle, Permissions.EditArticle]);
 
         // Assert
         result.ShouldBeTrue();
@@ -52,7 +52,7 @@ public sealed class ClaimsPrincipalPermissionExtensionsTests
         ]));
 
         // Act
-        var result = user.HasAnyPermission([Permissions.Read, Permissions.Write]);
+        var result = user.HasAnyPermission([Permissions.CreateArticle, Permissions.EditArticle]);
 
         // Assert
         result.ShouldBeFalse();
@@ -65,7 +65,7 @@ public sealed class ClaimsPrincipalPermissionExtensionsTests
         var user = new ClaimsPrincipal(new ClaimsIdentity());
 
         // Act
-        var result = user.HasAnyPermission([Permissions.Read, Permissions.Write]);
+        var result = user.HasAnyPermission([Permissions.CreateArticle, Permissions.EditArticle]);
 
         // Assert
         result.ShouldBeFalse();
@@ -77,7 +77,7 @@ public sealed class ClaimsPrincipalPermissionExtensionsTests
         // Arrange
         var user = new ClaimsPrincipal(new ClaimsIdentity(
         [
-            new Claim(Permissions.ClaimType, Permissions.Read.Value),
+            new Claim(Permissions.ClaimType, Permissions.CreateArticle.Value),
         ]));
 
         // Act
@@ -93,11 +93,11 @@ public sealed class ClaimsPrincipalPermissionExtensionsTests
         // Arrange
         var user = new ClaimsPrincipal(new ClaimsIdentity(
         [
-            new Claim(ClaimTypes.Role, Permissions.Read.Value),
+            new Claim(ClaimTypes.Role, Permissions.CreateArticle.Value),
         ]));
 
         // Act
-        var result = user.HasAnyPermission([Permissions.Read]);
+        var result = user.HasAnyPermission([Permissions.CreateArticle]);
 
         // Assert
         result.ShouldBeFalse();

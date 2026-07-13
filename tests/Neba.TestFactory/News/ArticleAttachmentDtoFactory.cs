@@ -8,16 +8,27 @@ public static class ArticleAttachmentDtoFactory
 {
     public const string ValidDisplayName = "NEBA Rulebook";
     public static readonly Uri ValidUrl = new("https://storage.example.com/documents/attachments/rulebook.pdf");
+    public const string ValidContainer = "documents";
+    public const string ValidPath = "attachments/rulebook.pdf";
+    public const long ValidSizeInBytes = 204800;
 
     public static ArticleAttachmentDto Create(
         string? displayName = null,
         Uri? url = null,
-        string? contentType = null)
+        string? contentType = null,
+        bool isInline = false,
+        string? container = null,
+        string? path = null,
+        long? sizeInBytes = null)
         => new()
         {
             DisplayName = displayName ?? ValidDisplayName,
             Url = url ?? ValidUrl,
             ContentType = contentType ?? MediaTypeNames.Application.Pdf,
+            IsInline = isInline,
+            Container = container,
+            Path = path,
+            SizeInBytes = sizeInBytes,
         };
 
     internal static IReadOnlyCollection<ArticleAttachmentDto> Bogus(int count, Faker faker)
@@ -27,7 +38,11 @@ public static class ArticleAttachmentDtoFactory
         {
             DisplayName = faker.Random.Words(2),
             Url = new Uri(faker.Internet.Url()),
-            ContentType = faker.System.MimeType()
+            ContentType = faker.System.MimeType(),
+            IsInline = faker.Random.Bool(),
+            Container = faker.Random.Bool() ? faker.System.CommonFileName() : null,
+            Path = faker.Random.Bool() ? faker.System.FilePath() : null,
+            SizeInBytes = faker.Random.Bool() ? faker.Random.Long(1, 10_000_000) : null,
         })];
     }
 
