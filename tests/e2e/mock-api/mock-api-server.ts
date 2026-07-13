@@ -29,13 +29,30 @@ const MOCK_BYLAWS_HTML = `
 
 function setCorsHeaders(res: ServerResponse): void {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
+function readRequestBody(req: IncomingMessage): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => resolve(body));
+    req.on('error', reject);
+  });
 }
 
 function sendJsonResponse(res: ServerResponse, data: unknown, statusCode = 200): void {
   res.writeHead(statusCode, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(data));
+}
+
+function slugify(title: string): string {
+  return title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 const MOCK_BOWLING_CENTERS = {
@@ -648,6 +665,22 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
   const requestUrl = new URL(req.url ?? '/', 'http://localhost');
   const pathname = requestUrl.pathname;
+
+  if (req.method === 'POST' && pathname === '/news') {
+    const override = mockOverrides.get(pathname);
+
+    if (override?.status != null && override.status >= 400) {
+      sendJsonResponse(res, { error: 'Mock error' }, override.status);
+      return;
+    }
+
+    const body = await readRequestBody(req);
+    const parsed = JSON.parse(body) as { article?: { title?: string; slug?: string } };
+    const slug = parsed.article?.slug || slugify(parsed.article?.title ?? '');
+
+    sendJsonResponse(res, { articleId: '01JX0000000000000000000199', slug }, 201);
+    return;
+  }
 
   if (req.method === 'POST') {
     if (pathname === '/__mock/fail') {

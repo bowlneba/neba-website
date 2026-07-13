@@ -339,3 +339,82 @@ test.describe('News detail page — edit article (authenticated)', () => {
     await page.request.post('http://localhost:5151/__mock/reset?path=/news/01JX0000000000000000000102');
   });
 });
+
+test.describe('News list page — create article (unauthenticated)', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test('does not show the Create Article button', async ({ page }) => {
+    await page.goto('/news');
+    await page.waitForSelector('.news-hero');
+    await expect(page.getByRole('link', { name: 'Create Article' })).toHaveCount(0);
+  });
+
+  test('shows a permission message when navigating directly to the create page', async ({ page }) => {
+    await page.goto('/news/new');
+    await expect(page.locator('.news-empty-text')).toContainText("don't have permission to create articles");
+  });
+});
+
+test.describe('News list page — create article (authenticated)', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test.beforeEach(async ({ page }) => {
+    await page.request.post('/__test/login?permissions=News.CreateArticle');
+  });
+
+  test('shows the Create Article button and navigates to the create page', async ({ page }) => {
+    await page.goto('/news');
+    await page.waitForSelector('.news-hero');
+
+    await expect(page.getByRole('link', { name: 'Create Article' })).toBeVisible();
+    await page.getByRole('link', { name: 'Create Article' }).click();
+
+    await expect(page).toHaveURL(/\/news\/new$/);
+    await page.waitForSelector('#title');
+  });
+
+  test('shows validation errors when submitting an empty form', async ({ page }) => {
+    await page.goto('/news/new');
+    await page.waitForSelector('#title');
+
+    await page.locator('button[type="submit"].neba-btn-primary').click();
+
+    await expect(page.locator('.neba-card')).toContainText('Title is required.');
+    await expect(page.locator('.neba-card')).toContainText('Content is required.');
+    await expect(page).toHaveURL(/\/news\/new$/);
+  });
+
+  test('creates the article and navigates to its detail page', async ({ page }) => {
+    await page.goto('/news/new');
+    await page.waitForSelector('#title');
+
+    await page.locator('#title').fill('New Playwright Article');
+
+    await page.locator('.ql-editor').click();
+    await page.keyboard.type('This article was created by an end-to-end test.');
+
+    await page.locator('button[type="submit"].neba-btn-primary').click();
+
+    await expect(page.locator('.neba-toast')).toContainText('Article Created');
+    await expect(page).toHaveURL(/\/news\/new-playwright-article$/);
+  });
+
+  test('shows an error alert and stays on the page when creation fails', async ({ page }) => {
+    await page.request.post('http://localhost:5151/__mock/fail?path=/news&status=409');
+
+    await page.goto('/news/new');
+    await page.waitForSelector('#title');
+
+    await page.locator('#title').fill('Conflicting Article');
+
+    await page.locator('.ql-editor').click();
+    await page.keyboard.type('Some content that should fail to save.');
+
+    await page.locator('button[type="submit"].neba-btn-primary').click();
+
+    await expect(page.locator('.neba-alert-title')).toContainText('Unable to Create Article');
+    await expect(page).toHaveURL(/\/news\/new$/);
+
+    await page.request.post('http://localhost:5151/__mock/reset?path=/news');
+  });
+});
