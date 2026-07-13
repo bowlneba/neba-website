@@ -342,6 +342,89 @@ public sealed class GetArticleQueryHandlerTests(AppDbContextFixture fixture)
         result.Value.Slug.ShouldBe("published-article");
     }
 
+    [Fact(DisplayName = "HandleAsync includes inline attachments and storage details when caller has article management permission")]
+    public async Task HandleAsync_ShouldIncludeInlineAttachmentsAndStorageDetails_WhenCallerHasArticleManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var headerImage = StoredFileFactory.Create(container: "news-images", path: "articles/hero.jpg", contentType: "image/jpeg", sizeInBytes: 1024);
+        var inlineFile = StoredFileFactory.Create(container: "news-files", path: "docs/inline-image.jpg", contentType: "image/jpeg", sizeInBytes: 2048);
+        var downloadFile = StoredFileFactory.Create(container: "news-files", path: "docs/schedule.pdf", contentType: "application/pdf", sizeInBytes: 4096);
+        var attachments = new[]
+        {
+            ArticleAttachmentFactory.Create(displayName: "Inline Image", file: inlineFile, isInline: true),
+            ArticleAttachmentFactory.Create(displayName: "Schedule", file: downloadFile, isInline: false)
+        };
+        var article = ArticleFactory.Create(
+            slug: "admin-mixed-attachments",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: new DateTimeOffset(2025, 5, 1, 0, 0, 0, TimeSpan.Zero),
+            headerImage: headerImage,
+            attachments: attachments);
+        await _dbContext.Articles.AddAsync(article, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        fileStorageMock.Setup(s => s.GetBlobUri("news-images", "articles/hero.jpg")).Returns(new Uri("https://storage.example.com/news-images/articles/hero.jpg"));
+        fileStorageMock.Setup(s => s.GetBlobUri("news-files", "docs/inline-image.jpg")).Returns(new Uri("https://storage.example.com/news-files/docs/inline-image.jpg"));
+        fileStorageMock.Setup(s => s.GetBlobUri("news-files", "docs/schedule.pdf")).Returns(new Uri("https://storage.example.com/news-files/docs/schedule.pdf"));
+
+        var handler = CreateHandler(fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(QueryFor("admin-mixed-attachments", callerHasArticleManagementPermission: true), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var dto = result.Value;
+        dto.HeaderImageContainer.ShouldBe("news-images");
+        dto.HeaderImagePath.ShouldBe("articles/hero.jpg");
+        dto.HeaderImageContentType.ShouldBe("image/jpeg");
+        dto.HeaderImageSizeInBytes.ShouldBe(1024);
+        dto.Attachments.Count.ShouldBe(2);
+        dto.Attachments.ShouldContain(a => a.DisplayName == "Inline Image" && a.IsInline && a.Container == "news-files" && a.Path == "docs/inline-image.jpg" && a.SizeInBytes == 2048);
+        dto.Attachments.ShouldContain(a => a.DisplayName == "Schedule" && !a.IsInline && a.Container == "news-files" && a.Path == "docs/schedule.pdf" && a.SizeInBytes == 4096);
+    }
+
+    [Fact(DisplayName = "HandleAsync excludes storage details when caller lacks article management permission")]
+    public async Task HandleAsync_ShouldExcludeStorageDetails_WhenCallerLacksArticleManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var headerImage = StoredFileFactory.Create(container: "news-images", path: "articles/hero.jpg");
+        var downloadFile = StoredFileFactory.Create(container: "news-files", path: "docs/schedule.pdf");
+        var attachments = new[] { ArticleAttachmentFactory.Create(displayName: "Schedule", file: downloadFile, isInline: false) };
+        var article = ArticleFactory.Create(
+            slug: "public-attachments",
+            publicationStatus: PublicationStatus.Published,
+            publishDateUtc: new DateTimeOffset(2025, 5, 1, 0, 0, 0, TimeSpan.Zero),
+            headerImage: headerImage,
+            attachments: attachments);
+        await _dbContext.Articles.AddAsync(article, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        fileStorageMock.Setup(s => s.GetBlobUri("news-images", "articles/hero.jpg")).Returns(new Uri("https://storage.example.com/news-images/articles/hero.jpg"));
+        fileStorageMock.Setup(s => s.GetBlobUri("news-files", "docs/schedule.pdf")).Returns(new Uri("https://storage.example.com/news-files/docs/schedule.pdf"));
+
+        var handler = CreateHandler(fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(QueryFor("public-attachments"), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var dto = result.Value;
+        dto.HeaderImageContainer.ShouldBeNull();
+        dto.HeaderImagePath.ShouldBeNull();
+        dto.HeaderImageContentType.ShouldBeNull();
+        dto.HeaderImageSizeInBytes.ShouldBeNull();
+        dto.Attachments.Single().Container.ShouldBeNull();
+        dto.Attachments.Single().Path.ShouldBeNull();
+        dto.Attachments.Single().SizeInBytes.ShouldBeNull();
+        dto.Attachments.Single().IsInline.ShouldBeFalse();
+    }
+
     [Fact(DisplayName = "HandleAsync returns snapshot of article with header image and attachments")]
     public async Task HandleAsync_ShouldReturnSnapshot_OfArticleWithHeaderImageAndAttachments()
     {

@@ -37,15 +37,20 @@ internal sealed class GetArticleQueryHandler(
                 article.Content,
                 HeaderImageContainer = article.HeaderImage != null ? article.HeaderImage.Container : null,
                 HeaderImagePath = article.HeaderImage != null ? article.HeaderImage.Path : null,
+                HeaderImageContentType = article.HeaderImage != null ? article.HeaderImage.ContentType : null,
+                HeaderImageSizeInBytes = article.HeaderImage != null ? article.HeaderImage.SizeInBytes : (long?)null,
                 article.PublishDateUtc,
-                Attachments = article.Attachments
-                    .Where(attachment => !attachment.IsInline)
+                Attachments = (query.CallerHasArticleManagementPermission
+                        ? article.Attachments
+                        : article.Attachments.Where(attachment => !attachment.IsInline))
                     .Select(attachment => new
                     {
                         attachment.DisplayName,
                         attachment.File.Container,
                         attachment.File.Path,
-                        attachment.File.ContentType
+                        attachment.File.ContentType,
+                        attachment.File.SizeInBytes,
+                        attachment.IsInline
                     }).ToList(),
                 article.TournamentId
             })
@@ -68,12 +73,20 @@ internal sealed class GetArticleQueryHandler(
             Title = row.Title,
             Content = row.Content,
             HeaderImageUrl = headerImageUrl,
+            HeaderImageContainer = query.CallerHasArticleManagementPermission ? row.HeaderImageContainer : null,
+            HeaderImagePath = query.CallerHasArticleManagementPermission ? row.HeaderImagePath : null,
+            HeaderImageContentType = query.CallerHasArticleManagementPermission ? row.HeaderImageContentType : null,
+            HeaderImageSizeInBytes = query.CallerHasArticleManagementPermission ? row.HeaderImageSizeInBytes : null,
             PublishDateUtc = row.PublishDateUtc,
             Attachments = [.. row.Attachments.Select(a => new ArticleAttachmentDto
             {
                 DisplayName = a.DisplayName,
                 ContentType = a.ContentType,
-                Url = _fileStorageService.GetBlobUri(a.Container, a.Path)
+                Url = _fileStorageService.GetBlobUri(a.Container, a.Path),
+                IsInline = a.IsInline,
+                Container = query.CallerHasArticleManagementPermission ? a.Container : null,
+                Path = query.CallerHasArticleManagementPermission ? a.Path : null,
+                SizeInBytes = query.CallerHasArticleManagementPermission ? a.SizeInBytes : null
             })],
             TournamentId = row.TournamentId
         };

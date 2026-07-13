@@ -1,0 +1,64 @@
+.edit-article-current-file {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--neba-gray-200, #E5E5E5);
+    border-radius: var(--neba-radius, 0.375rem);
+    background-color: var(--neba-bg-panel, #fff);
+}
+
+.edit-article-header-preview {
+    width: 3.5rem;
+    height: 3.5rem;
+    object-fit: cover;
+    border-radius: var(--neba-radius, 0.375rem);
+    flex-shrink: 0;
+}
+
+.edit-article-attachment-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.edit-article-attachment-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--neba-gray-200, #E5E5E5);
+    border-radius: var(--neba-radius, 0.375rem);
+    background-color: var(--neba-bg-panel, #fff);
+}
+
+.edit-article-attachment-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--neba-gray-700, #333333);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.edit-article-attachment-badge {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border-radius: 999px;
+    background-color: var(--neba-blue-100, #D4D9F5);
+    color: var(--neba-blue-600, #5563DD);
+}
+
+.edit-article-attachment-action {
+    flex-shrink: 0;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.8rem;
+}

@@ -8,12 +8,12 @@ Amet ipsa nemo qui qui alias sed. Placeat eum voluptatem accusantium ab dolor fu
 
 Eum perferendis alias. Et aperiam repudiandae. Praesentium autem et quae quis qui iusto autem provident in. Et officia id sit aut.,
   PublishDateUtc: DateTimeOffset_1,
-  TournamentId: 01GPXHEJ3DG0WBBFN0C05ZGJGQ,
   Attachments: [
     {
       DisplayName: Chilean Peso Practical,
       ContentType: application/rdap+json,
-      Url: http://oral.com
+      Url: http://oral.com,
+      IsInline: true
     }
   ]
 }

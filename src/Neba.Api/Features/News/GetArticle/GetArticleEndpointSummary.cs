@@ -35,6 +35,7 @@ internal sealed class GetArticleEndpointSummary
                         DisplayName = "Results Sheet",
                         ContentType = "application/pdf",
                         Url = new Uri("https://files.bowlneba.com/news/spring-2026/results.pdf", UriKind.Absolute),
+                        IsInline = false,
                     },
                 ],
             });

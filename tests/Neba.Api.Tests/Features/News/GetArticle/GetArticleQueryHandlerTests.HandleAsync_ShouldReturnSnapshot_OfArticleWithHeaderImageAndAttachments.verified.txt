@@ -10,12 +10,14 @@
     {
       DisplayName: Bracket,
       ContentType: text/plain,
-      Url: https://cdn.example.com/news-files/docs/bracket.pdf
+      Url: https://cdn.example.com/news-files/docs/bracket.pdf,
+      IsInline: false
     },
     {
       DisplayName: Scores,
       ContentType: text/plain,
-      Url: https://cdn.example.com/news-files/docs/scores.pdf
+      Url: https://cdn.example.com/news-files/docs/scores.pdf,
+      IsInline: false
     }
   ]
 }

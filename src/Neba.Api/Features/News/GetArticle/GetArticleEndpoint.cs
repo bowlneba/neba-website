@@ -75,6 +75,10 @@ internal sealed class GetArticleEndpoint(
             Title = dto.Title,
             Content = dto.Content,
             HeaderImageUrl = dto.HeaderImageUrl,
+            HeaderImageContainer = dto.HeaderImageContainer,
+            HeaderImagePath = dto.HeaderImagePath,
+            HeaderImageContentType = dto.HeaderImageContentType,
+            HeaderImageSizeInBytes = dto.HeaderImageSizeInBytes,
             PublishDateUtc = dto.PublishDateUtc,
             TournamentId = dto.TournamentId?.Value.ToString(),
             Attachments = [.. dto.Attachments.Select(a => new ArticleAttachmentResponse
@@ -82,6 +86,10 @@ internal sealed class GetArticleEndpoint(
                 DisplayName = a.DisplayName,
                 ContentType = a.ContentType,
                 Url = a.Url,
+                IsInline = a.IsInline,
+                Container = a.Container,
+                Path = a.Path,
+                SizeInBytes = a.SizeInBytes,
             })],
         };
 

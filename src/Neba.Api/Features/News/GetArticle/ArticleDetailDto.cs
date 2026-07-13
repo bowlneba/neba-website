@@ -39,6 +39,31 @@ public sealed record ArticleDetailDto
     public Uri? HeaderImageUrl { get; init; }
 
     /// <summary>
+    /// The Azure Blob Storage container the header image is stored in, populated only when the caller
+    /// has article management permission (needed to resubmit the header image unchanged on edit). Null
+    /// for anonymous callers or when there is no header image.
+    /// </summary>
+    public string? HeaderImageContainer { get; init; }
+
+    /// <summary>
+    /// The blob path of the header image, populated only when the caller has article management
+    /// permission. Null for anonymous callers or when there is no header image.
+    /// </summary>
+    public string? HeaderImagePath { get; init; }
+
+    /// <summary>
+    /// The MIME content type of the header image, populated only when the caller has article management
+    /// permission. Null for anonymous callers or when there is no header image.
+    /// </summary>
+    public string? HeaderImageContentType { get; init; }
+
+    /// <summary>
+    /// The header image's file size in bytes, populated only when the caller has article management
+    /// permission. Null for anonymous callers or when there is no header image.
+    /// </summary>
+    public long? HeaderImageSizeInBytes { get; init; }
+
+    /// <summary>
     /// The date and time when the news article was published, stored in UTC. This is a required field for all articles and is used to determine the chronological order of articles on the website. The PublishDateUtc should be set to the current date and time when an article's PublicationStatus is changed to "Published". This allows for accurate sorting and display of articles based on their publication date, and it also provides important information for users about when the news event being reported occurred.
     /// </summary>
     public required DateTimeOffset PublishDateUtc { get; init; }

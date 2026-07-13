@@ -81,6 +81,18 @@
     background-color: var(--neba-bg-panel, #fff);
 }
 
+.card-edit-btn {
+    position: absolute;
+    top: calc(140px + 0.6rem);
+    right: calc(1rem + 2.3rem);
+    z-index: 2;
+    background-color: var(--neba-bg-panel, #fff);
+}
+
+.card-edit-btn:hover {
+    color: var(--neba-blue-600, #5563DD);
+}
+
 .card-title {
     font-family: var(--neba-font-display);
     font-size: 0.92rem;
