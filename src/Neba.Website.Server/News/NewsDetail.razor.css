@@ -80,6 +80,17 @@
     margin-top: 1em;
 }
 
+.article-body ::deep a {
+    color: var(--neba-blue-700);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+}
+
+.article-body ::deep a:hover {
+    color: var(--neba-blue-500);
+}
+
 /* ─── Sticky sidebar ─────────────────────────────────────── */
 .news-detail-sidebar {
     display: flex;
