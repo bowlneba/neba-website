@@ -484,6 +484,39 @@ public sealed class NewsListTests : IDisposable
         cut.FindAll("button.hero-delete-btn").Count.ShouldBe(1);
     }
 
+    [Fact(DisplayName = "Should not show edit icon on hero when user lacks EditArticle permission")]
+    public void Render_ShouldNotShowHeroEditIcon_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var articles = ArticleSummaryResponseFactory.Bogus(3, 29);
+        SetupSuccessResponse(articles, totalItems: 3);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.FindAll("a.hero-edit-btn").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show edit icon on hero when user has EditArticle permission")]
+    public void Render_ShouldShowHeroEditIcon_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.EditArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(3, 30);
+        var hero = articles.First();
+        SetupSuccessResponse(articles, totalItems: 3);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.FindAll("a.hero-edit-btn").Count.ShouldBe(1);
+        cut.Find("a.hero-edit-btn").GetAttribute("href").ShouldBe($"/news/{hero.Slug}/edit");
+    }
+
     [Fact(DisplayName = "Should remove the hero's article from the grid when deleting the hero succeeds")]
     public void ConfirmDelete_ShouldRemoveHeroArticle_WhenDeleteSucceeds()
     {
