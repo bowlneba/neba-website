@@ -27,7 +27,7 @@ internal sealed class DeleteArticleFilesJobHandler(
 
             logger.LogDeletedArticleFile(file.Container, file.Path);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogFailedToDeleteArticleFile(ex, file.Container, file.Path);
         }
