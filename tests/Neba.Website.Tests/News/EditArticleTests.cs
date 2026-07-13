@@ -128,9 +128,9 @@ public sealed class EditArticleTests : IDisposable
         // Arrange
         var article = ArticleDetailResponseFactory.Create(
             slug: "season-recap-2026",
+            publicationStatus: PublicationStatus.Published,
             title: "Season Recap 2026",
-            content: "<p>Great season!</p>",
-            publicationStatus: PublicationStatus.Published);
+            content: "<p>Great season!</p>");
         SetupGetArticleSuccess(article);
 
         // Act

@@ -77,6 +77,7 @@ public sealed class Article
     /// it exists only so test factories can assign a deterministic ID for stable Verify snapshots;
     /// production callers always omit it and get a newly generated <see cref="ArticleId"/>.
     /// </summary>
+    [SuppressMessage("Major Code Smell", "S107:Methods should not have too many parameters", Justification = "Aggregate factory method — each parameter is a required field of the always-valid Article invariant (see CLAUDE.md 'Always-Valid Entities'); splitting into a parameter object would just move the same required fields into a second type with no behavior of its own.")]
     public static ErrorOr<Article> Create(
         string title,
         string? slug,
