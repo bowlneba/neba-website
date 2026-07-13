@@ -167,7 +167,7 @@
                 <div class="news-grid">
                     @foreach (var article in _articles.Items)
                     {
-                        <ArticleCard Article="@article" OnDeleteRequested="RequestDelete" />
+                        <ArticleCard Article="@article" LocalPublishDate="@ToLocal(article.PublishDateUtc)" OnDeleteRequested="RequestDelete" />
                     }
                 </div>
             }

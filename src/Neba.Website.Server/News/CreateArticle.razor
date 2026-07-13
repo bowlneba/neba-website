@@ -253,20 +253,7 @@
                 return;
             }
 
-            var seasonsResult = await TournamentApiService.GetSeasonsAsync();
-
-            if (seasonsResult.IsError || seasonsResult.Value.Count == 0)
-            {
-                return;
-            }
-
-            _seasons = seasonsResult.Value;
-
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            var currentSeason = _seasons.Find(s => today >= s.StartDate && today <= s.EndDate) ?? _seasons[0];
-
-            _selectedSeasonId = currentSeason.Id;
-            await LoadTournamentsForSeasonAsync(currentSeason);
+            (_seasons, _selectedSeasonId, _tournaments) = await ArticleTournamentPickerHelper.LoadDefaultSeasonAsync(TournamentApiService);
         }
         finally
         {

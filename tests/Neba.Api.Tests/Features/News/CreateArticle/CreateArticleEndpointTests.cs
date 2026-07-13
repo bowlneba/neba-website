@@ -159,6 +159,27 @@ public sealed class CreateArticleEndpointTests
         endpoint.HttpContext.Response.StatusCode.ShouldBe(409);
     }
 
+    [Fact(DisplayName = "HandleAsync should return 422 when the command returns a tournament-not-found error")]
+    public async Task HandleAsync_ShouldReturn422_WhenCommandReturnsTournamentNotFoundError()
+    {
+        // Arrange
+        var request = new CreateArticleRequest { Article = ArticleInputFactory.Create() };
+        var ct = TestContext.Current.CancellationToken;
+
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<CreateArticleCommand, CreatedArticle>>(MockBehavior.Strict);
+        commandHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<CreateArticleCommand>(), ct))
+            .ReturnsAsync(ArticleErrors.TournamentNotFound(new Neba.Api.Features.Tournaments.Domain.TournamentId("01ARZ3NDEKTSV4RRFFQ69G5FAV")));
+
+        var endpoint = Factory.Create<CreateArticleEndpoint>(commandHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(request, ct);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(422);
+    }
+
     [Fact(DisplayName = "HandleAsync should return 422 when the command returns validation errors")]
     public async Task HandleAsync_ShouldReturn422_WhenCommandReturnsValidationErrors()
     {

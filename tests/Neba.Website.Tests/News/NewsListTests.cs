@@ -274,6 +274,24 @@ public sealed class NewsListTests : IDisposable
         }
     }
 
+    [Fact(DisplayName = "Should format grid card publish dates using the viewer's local timezone offset on page 2")]
+    public void Render_ShouldFormatGridCardPublishDates_UsingViewerLocalTimezoneOffset_OnPageTwo()
+    {
+        // Arrange
+        _browserTimeModule.Setup<int>("getTimezoneOffsetMinutes").SetResult(240);
+        var gridArticle = ArticleSummaryResponseFactory.Create(
+            slug: "grid-article-page-2",
+            publishDateUtc: new DateTimeOffset(2026, 5, 15, 2, 0, 0, TimeSpan.Zero));
+        SetupSuccessResponse([gridArticle], totalItems: 11, pageNumber: 2);
+        NavigateToPage(2);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert — regression guard: page 2+ cards must convert to local time like the page-1 grid does.
+        cut.Find(".article-card .card-date").TextContent.ShouldBe("May 14, 2026");
+    }
+
     // ── Pagination ───────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should show pagination when there are multiple pages")]

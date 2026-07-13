@@ -13,6 +13,11 @@ namespace Neba.Website.Server.Account;
 /// delete controls) without a login flow the mock API doesn't implement. Only mapped in
 /// Development — see <c>Program.cs</c>.
 /// </summary>
+/// <remarks>
+/// Accepts arbitrary permission claims via an unauthenticated query string with no CSRF protection —
+/// this must never be reachable in any shared or staging environment, including one that happens to
+/// run with a Development <c>ASPNETCORE_ENVIRONMENT</c> value.
+/// </remarks>
 internal static class TestAuthEndpoints
 {
     extension(WebApplication app)

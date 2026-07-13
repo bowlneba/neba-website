@@ -72,8 +72,8 @@ public sealed class CreateArticleCommandHandlerTests(AppDbContextFixture fixture
             Attachments = attachments ?? []
         };
 
-    [Fact(DisplayName = "HandleAsync returns Conflict error when tournament does not exist")]
-    public async Task HandleAsync_ShouldReturnConflictError_WhenTournamentDoesNotExist()
+    [Fact(DisplayName = "HandleAsync returns Validation error when tournament does not exist")]
+    public async Task HandleAsync_ShouldReturnValidationError_WhenTournamentDoesNotExist()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -85,7 +85,7 @@ public sealed class CreateArticleCommandHandlerTests(AppDbContextFixture fixture
 
         // Assert
         result.IsError.ShouldBeTrue();
-        result.FirstError.Type.ShouldBe(ErrorType.Conflict);
+        result.FirstError.Type.ShouldBe(ErrorType.Validation);
         result.FirstError.Code.ShouldBe("Article.Tournament.NotFound");
     }
 

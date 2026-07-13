@@ -25,7 +25,7 @@ internal sealed class CreateArticleSummary : Summary<CreateArticleEndpoint>
 
         Response(401, "No valid bearer token provided.");
         Response(403, "Authenticated user does not have the News.CreateArticle permission.");
-        Response(409, "Slug already taken, or TournamentId does not reference an existing tournament.");
-        Response(422, "Title, content, or slug failed a domain validation rule.");
+        Response(409, "Slug already taken.");
+        Response(422, "Title, content, or slug failed a domain validation rule, or TournamentId does not reference an existing tournament.");
     }
 }

@@ -190,7 +190,7 @@ test.describe('News list page — delete article (unauthenticated)', () => {
   test('does not show a delete icon on article cards', async ({ page }) => {
     await page.goto('/news');
     await page.waitForSelector('.news-hero');
-    await expect(page.locator('.article-card button.icon-btn')).toHaveCount(0);
+    await expect(page.locator('.article-card button.card-delete-btn')).toHaveCount(0);
   });
 });
 
@@ -214,7 +214,7 @@ test.describe('News list page — delete article (authenticated)', () => {
   test('shows a delete icon on article cards', async ({ page }) => {
     await page.goto('/news');
     await page.waitForSelector('.news-hero');
-    await expect(page.locator('.article-card button.icon-btn')).toHaveCount(2);
+    await expect(page.locator('.article-card button.card-delete-btn')).toHaveCount(2);
   });
 
   test('removes the article card after confirming delete', async ({ page }) => {
@@ -224,7 +224,7 @@ test.describe('News list page — delete article (authenticated)', () => {
     const cardTitles = page.locator('.article-card .card-title');
     const deletedTitle = await cardTitles.first().textContent();
 
-    await page.locator('.article-card').first().locator('button.icon-btn').click();
+    await page.locator('.article-card').first().locator('button.card-delete-btn').click();
     await expect(page.locator('.neba-modal-content')).toContainText('Delete article?');
     await expect(page.locator('.neba-modal-content')).toContainText(deletedTitle ?? '');
 
@@ -238,7 +238,7 @@ test.describe('News list page — delete article (authenticated)', () => {
     await page.goto('/news');
     await page.waitForSelector('.news-hero');
 
-    await page.locator('.article-card').first().locator('button.icon-btn').click();
+    await page.locator('.article-card').first().locator('button.card-delete-btn').click();
     await expect(page.locator('.neba-modal-content')).toBeVisible();
 
     await page.locator('button.confirm-action-modal-cancel').click();

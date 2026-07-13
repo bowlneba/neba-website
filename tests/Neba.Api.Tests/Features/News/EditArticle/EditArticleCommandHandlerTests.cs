@@ -102,8 +102,8 @@ public sealed class EditArticleCommandHandlerTests(AppDbContextFixture fixture)
         result.FirstError.Code.ShouldBe("Article.NotFound");
     }
 
-    [Fact(DisplayName = "HandleAsync returns Conflict error when tournament does not exist")]
-    public async Task HandleAsync_ShouldReturnConflictError_WhenTournamentDoesNotExist()
+    [Fact(DisplayName = "HandleAsync returns Validation error when tournament does not exist")]
+    public async Task HandleAsync_ShouldReturnValidationError_WhenTournamentDoesNotExist()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -116,7 +116,7 @@ public sealed class EditArticleCommandHandlerTests(AppDbContextFixture fixture)
 
         // Assert
         result.IsError.ShouldBeTrue();
-        result.FirstError.Type.ShouldBe(ErrorType.Conflict);
+        result.FirstError.Type.ShouldBe(ErrorType.Validation);
         result.FirstError.Code.ShouldBe("Article.Tournament.NotFound");
     }
 

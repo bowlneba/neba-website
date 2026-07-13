@@ -163,7 +163,7 @@ public sealed class EditArticleEndpointTests
         var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<EditArticleCommand, Updated>>(MockBehavior.Strict);
         commandHandlerMock
             .Setup(h => h.HandleAsync(It.IsAny<EditArticleCommand>(), ct))
-            .ReturnsAsync(ArticleErrors.TournamentNotFound(new Neba.Api.Features.Tournaments.Domain.TournamentId("01ARZ3NDEKTSV4RRFFQ69G5FAV")));
+            .ReturnsAsync(Error.Conflict("Test.Conflict", "A conflict occurred."));
 
         var endpoint = Factory.Create<EditArticleEndpoint>(commandHandlerMock.Object);
 
@@ -172,6 +172,27 @@ public sealed class EditArticleEndpointTests
 
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(409);
+    }
+
+    [Fact(DisplayName = "HandleAsync should return 422 when the command returns a tournament-not-found error")]
+    public async Task HandleAsync_ShouldReturn422_WhenCommandReturnsTournamentNotFoundError()
+    {
+        // Arrange
+        var request = new EditArticleRequest { Id = ValidArticleId, Article = EditArticleInputFactory.Create() };
+        var ct = TestContext.Current.CancellationToken;
+
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<EditArticleCommand, Updated>>(MockBehavior.Strict);
+        commandHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<EditArticleCommand>(), ct))
+            .ReturnsAsync(ArticleErrors.TournamentNotFound(new Neba.Api.Features.Tournaments.Domain.TournamentId("01ARZ3NDEKTSV4RRFFQ69G5FAV")));
+
+        var endpoint = Factory.Create<EditArticleEndpoint>(commandHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(request, ct);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(422);
     }
 
     [Fact(DisplayName = "HandleAsync should return 422 when the command returns validation errors")]

@@ -88,6 +88,39 @@ public sealed class UploadStagingServiceTests(AppDbContextFixture fixture)
         uploadedPath.ShouldEndWith("-cover.png");
     }
 
+    [Theory(DisplayName = "StageUploadAsync should strip directory components from the file name before building the path")]
+    [InlineData("../../etc/evil.png", "evil.png", TestDisplayName = "Unix-style path traversal")]
+    [InlineData("..\\..\\evil.png", "evil.png", TestDisplayName = "Windows-style path traversal")]
+    [InlineData("sub/dir/photo.png", "photo.png", TestDisplayName = "Nested forward-slash path")]
+    public async Task StageUploadAsync_ShouldStripDirectoryComponents_FromFileName(string suppliedFileName, string expectedSuffix)
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var formFile = CreateFormFile(fileName: suppliedFileName);
+        const string container = "bowlneba-private";
+
+        _fileStorageServiceMock
+            .Setup(s => s.UploadFileAsync(
+                container,
+                It.IsAny<string>(),
+                It.IsAny<Stream>(),
+                It.IsAny<string>(),
+                It.IsAny<IDictionary<string, string>>(),
+                ct))
+            .Returns(Task.CompletedTask);
+
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.StageUploadAsync(formFile.Object, container, "articles/traversal", null, ct);
+
+        // Assert
+        _fileStorageServiceMock.VerifyAll();
+        result.Path.ShouldStartWith("uploads/articles/traversal/");
+        result.Path.ShouldEndWith("-" + expectedSuffix);
+        result.Path.ShouldNotContain("..");
+    }
+
     [Fact(DisplayName = "StageUploadAsync should pass an empty metadata dictionary when metadata is null")]
     public async Task StageUploadAsync_ShouldPassEmptyMetadata_WhenMetadataIsNull()
     {

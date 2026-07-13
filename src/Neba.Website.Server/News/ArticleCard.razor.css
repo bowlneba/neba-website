@@ -1,4 +1,5 @@
 .article-card {
+    --card-img-height: 140px;
     position: relative;
     padding: 0;
     overflow: hidden;
@@ -16,7 +17,7 @@
 }
 
 .card-img {
-    height: 140px;
+    height: var(--card-img-height);
     background: linear-gradient(135deg, var(--neba-blue-100, #D4D9F5) 0%, var(--neba-blue-300, #A5AEEB) 100%);
     overflow: hidden;
     flex-shrink: 0;
@@ -75,7 +76,7 @@
    of the card's anchor (see ArticleCard.razor comment for why). */
 .card-delete-btn {
     position: absolute;
-    top: calc(140px + 0.6rem);
+    top: calc(var(--card-img-height) + 0.6rem);
     right: 1rem;
     z-index: 2;
     background-color: var(--neba-bg-panel, #fff);
@@ -83,7 +84,7 @@
 
 .card-edit-btn {
     position: absolute;
-    top: calc(140px + 0.6rem);
+    top: calc(var(--card-img-height) + 0.6rem);
     right: calc(1rem + 2.3rem);
     z-index: 2;
     background-color: var(--neba-bg-panel, #fff);

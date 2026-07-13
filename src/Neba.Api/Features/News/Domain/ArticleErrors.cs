@@ -43,7 +43,7 @@ internal static class ArticleErrors
             metadata: new Dictionary<string, object> { { "Slug", slug } });
 
     public static Error TournamentNotFound(TournamentId tournamentId)
-        => Error.Conflict(
+        => Error.Validation(
             code: "Article.Tournament.NotFound",
             description: "The specified tournament does not exist.",
             metadata: new Dictionary<string, object> { { "TournamentId", tournamentId.Value.ToString() } });

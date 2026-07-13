@@ -39,7 +39,7 @@ test.describe('delete-article help screenshots', () => {
 
     await page.screenshot({ path: path.join(outDir, 'list-with-delete-icons.png') });
 
-    await page.locator('.article-card').first().locator('button.icon-btn').click();
+    await page.locator('.article-card').first().locator('button.card-delete-btn').click();
     await page.waitForSelector('.neba-modal-content');
     await waitForModalAnimations(page);
 

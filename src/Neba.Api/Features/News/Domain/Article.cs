@@ -18,7 +18,7 @@ public sealed class Article
     /// <summary>
     /// Unique identifier for the article.
     /// </summary>
-    public ArticleId Id { get; init; }
+    public required ArticleId Id { get; init; }
 
     /// <summary>
     /// The article's title, displayed on the list and detail pages.

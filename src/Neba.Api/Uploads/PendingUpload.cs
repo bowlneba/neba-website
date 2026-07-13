@@ -8,17 +8,17 @@ namespace Neba.Api.Uploads;
 public sealed class PendingUpload
 {
     /// <summary>
-    /// Gets or sets the container name for the pending upload.
+    /// The container name for the pending upload.
     /// </summary>
-    public required string Container { get; set; }
+    public required string Container { get; init; }
 
     /// <summary>
-    /// Gets or sets the path of the pending upload.
+    /// The path of the pending upload.
     /// </summary>
-    public required string Path { get; set; }
+    public required string Path { get; init; }
 
     /// <summary>
-    /// Gets or sets the upload timestamp of the pending upload in UTC.
+    /// The upload timestamp of the pending upload in UTC.
     /// </summary>
-    public required DateTimeOffset UploadedAtUtc { get; set; }
+    public required DateTimeOffset UploadedAtUtc { get; init; }
 }

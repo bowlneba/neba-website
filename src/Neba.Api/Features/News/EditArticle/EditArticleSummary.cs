@@ -13,7 +13,7 @@ internal sealed class EditArticleSummary : Summary<EditArticleEndpoint>
         Response(401, "No valid bearer token provided.");
         Response(403, "Authenticated user does not have the News.EditArticle permission.");
         Response(404, "No article exists with the given ID.");
-        Response(409, "TournamentId does not reference an existing tournament.");
-        Response(422, "Title or content failed a domain validation rule.");
+        Response(409, "A conflict prevents the update.");
+        Response(422, "Title or content failed a domain validation rule, or TournamentId does not reference an existing tournament.");
     }
 }

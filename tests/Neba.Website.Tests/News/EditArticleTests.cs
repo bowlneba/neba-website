@@ -26,6 +26,7 @@ using Neba.Website.Server.News;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Tournaments;
+using Neba.Website.Server.Tournaments.Schedule;
 
 using Refit;
 using Refit.Testing;
@@ -48,6 +49,13 @@ public sealed class EditArticleTests : IDisposable
         _mockNewsApi = new Mock<INewsApi>(MockBehavior.Strict);
         _mockTournamentApiService = new Mock<ITournamentApiService>(MockBehavior.Strict);
         _mockTournamentsApi = new Mock<ITournamentsApi>(MockBehavior.Strict);
+
+        // Default: an article with no tournament assigned triggers the season/tournament picker load
+        // on init (see EditArticle.razor's OnInitializedAsync) — tests that care about that picker's
+        // behavior override this with their own Setup.
+        _mockTournamentApiService
+            .Setup(x => x.GetSeasonsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<SeasonViewModel>());
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
         mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
@@ -165,6 +173,39 @@ public sealed class EditArticleTests : IDisposable
         var cut = _ctx.Render<EditArticle>(p => p.Add(x => x.Slug, article.Slug));
 
         // Assert
+        cut.Markup.ShouldContain("Granite State Open");
+    }
+
+    // ── Season/tournament picker (no tournament already assigned) ───────────
+
+    [Fact(DisplayName = "Should show and populate the season/tournament picker immediately when the article has no tournament")]
+    public void OnInit_ShouldShowAndPopulateTournamentPicker_WhenArticleHasNoTournament()
+    {
+        // Arrange
+        var article = ArticleDetailResponseFactory.Create();
+        SetupGetArticleSuccess(article);
+
+        var currentSeason = SeasonViewModelFactory.Create(
+            id: "season-current",
+            description: "Current Season",
+            startDate: DateOnly.FromDateTime(DateTime.Today.AddDays(-1)),
+            endDate: DateOnly.FromDateTime(DateTime.Today.AddDays(1)));
+        var tournament = SeasonTournamentViewModelFactory.Create(id: "tournament-42", name: "Granite State Open");
+
+        _mockTournamentApiService
+            .Setup(x => x.GetSeasonsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<SeasonViewModel> { currentSeason });
+        _mockTournamentApiService
+            .Setup(x => x.GetTournamentsForSeasonAsync(currentSeason, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<SeasonTournamentViewModel> { tournament });
+
+        // Act
+        var cut = _ctx.Render<EditArticle>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Assert — regression guard: the picker must load without requiring a "Change tournament"
+        // click, which only exists once a tournament is already assigned.
+        cut.FindAll("button").ShouldNotContain(b => b.TextContent.Contains("Change tournament"));
+        cut.Find("select.neba-select").GetAttribute("value").ShouldBe("season-current");
         cut.Markup.ShouldContain("Granite State Open");
     }
 

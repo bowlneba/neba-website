@@ -270,7 +270,7 @@
     private List<SeasonTournamentViewModel> _tournaments = [];
     private string? _selectedSeasonId;
     private string? _deepLinkedTournamentName;
-    private bool _isLoadingTournamentOptions;
+    private bool _isLoadingTournamentOptions = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -342,7 +342,14 @@
             _deepLinkedTournamentName = tournamentResult.IsError
                 ? "Tournament " + _article.TournamentId
                 : tournamentResult.Value.Name;
+
+            _isLoadingTournamentOptions = false;
+            return;
         }
+
+        // No tournament already assigned — show the season/tournament picker immediately rather than
+        // waiting for a "Change tournament" button that only exists once a tournament IS assigned.
+        await LoadSeasonPickerAsync();
     }
 
     private async Task SwitchToTournamentPicker()
@@ -350,22 +357,14 @@
         _deepLinkedTournamentName = null;
         _isLoadingTournamentOptions = true;
 
+        await LoadSeasonPickerAsync();
+    }
+
+    private async Task LoadSeasonPickerAsync()
+    {
         try
         {
-            var seasonsResult = await TournamentApiService.GetSeasonsAsync();
-
-            if (seasonsResult.IsError || seasonsResult.Value.Count == 0)
-            {
-                return;
-            }
-
-            _seasons = seasonsResult.Value;
-
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            var currentSeason = _seasons.Find(s => today >= s.StartDate && today <= s.EndDate) ?? _seasons[0];
-
-            _selectedSeasonId = currentSeason.Id;
-            await LoadTournamentsForSeasonAsync(currentSeason);
+            (_seasons, _selectedSeasonId, _tournaments) = await ArticleTournamentPickerHelper.LoadDefaultSeasonAsync(TournamentApiService);
         }
         finally
         {

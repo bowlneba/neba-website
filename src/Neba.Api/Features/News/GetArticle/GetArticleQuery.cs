@@ -12,9 +12,7 @@ public sealed record GetArticleQuery
     /// <summary>URL-friendly identifier for the article.</summary>
     public required string Slug { get; init; }
 
-    /// <summary>
-    /// Indicates whether the caller has permission to manage articles. This property is required and must be set when creating an instance of the GetArticleQuery record. It is used to determine if the caller has the necessary permissions to perform article management operations, such as creating, updating, or deleting articles.
-    /// </summary>
+    /// <summary>Whether the caller can manage articles; gates draft visibility and is part of the cache key so results aren't shared across permission levels.</summary>
     public required bool CallerHasArticleManagementPermission { get; init; }
 
     /// <inheritdoc />

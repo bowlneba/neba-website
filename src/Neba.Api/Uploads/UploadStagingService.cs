@@ -17,7 +17,7 @@ internal sealed class UploadStagingService(
         IDictionary<string, string>? metadata,
         CancellationToken cancellationToken)
     {
-        var path = $"uploads/{pathPrefix}/{Ulid.NewUlid()}-{file.FileName}";
+        var path = $"uploads/{pathPrefix}/{Ulid.NewUlid()}-{SanitizeFileName(file.FileName)}";
 
         await using var stream = file.OpenReadStream();
         await fileStorageService.UploadFileAsync(container, path, stream, file.ContentType, metadata ?? new Dictionary<string, string>(), cancellationToken);
@@ -37,6 +37,19 @@ internal sealed class UploadStagingService(
             ContentType = file.ContentType,
             SizeInBytes = file.Length
         };
+    }
+
+    /// <summary>
+    /// Strips any directory component from a client-supplied file name before it's interpolated into
+    /// a blob path — an unsanitized name containing '/' or '\' could otherwise let a caller influence
+    /// the storage path's structure.
+    /// </summary>
+    private static string SanitizeFileName(string fileName)
+    {
+        var normalized = fileName.Replace('\\', '/');
+        var lastSeparator = normalized.LastIndexOf('/');
+
+        return lastSeparator >= 0 ? normalized[(lastSeparator + 1)..] : normalized;
     }
 }
 
