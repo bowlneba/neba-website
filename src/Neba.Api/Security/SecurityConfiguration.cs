@@ -34,7 +34,8 @@ internal static class SecurityConfiguration
                         .MigrationsHistoryTable(
                             SecurityDbContext.MigrationsHistoryTableName,
                             SecurityDbContext.Schema
-                        ))
+                        )
+                        .EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorCodesToAdd: null))
                     .UseSnakeCaseNamingConvention();
             });
 
