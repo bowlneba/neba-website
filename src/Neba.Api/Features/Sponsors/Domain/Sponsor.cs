@@ -1,4 +1,8 @@
 
+using System.Diagnostics.CodeAnalysis;
+
+using ErrorOr;
+
 using Neba.Api.Contacts.Domain;
 using Neba.Api.Domain;
 using Neba.Api.Features.Storage.Domain;
@@ -111,4 +115,79 @@ public sealed class Sponsor
     public ContactInfo? SponsorContact { get; init; }
 
     internal IReadOnlyCollection<TournamentSponsor> TournamentsSponsored { get; init; } = [];
+
+    private const string ReservedSlugNew = "new";
+
+    /// <summary>
+    /// Creates a new sponsor. If <paramref name="slug"/> is null or empty, the slug is generated from
+    /// <paramref name="name"/>. Returns a validation error if <paramref name="name"/> is empty, the
+    /// normalized slug has no alphanumeric characters, or the normalized slug is the reserved value
+    /// "new" (reserved for the <c>/sponsors/new</c> create route). <paramref name="id"/> is
+    /// production-optional — it exists so test factories can assign a deterministic ID for stable
+    /// Verify snapshots; production callers always omit it.
+    /// </summary>
+    [SuppressMessage("Major Code Smell", "S107:Methods should not have too many parameters", Justification = "Aggregate factory method — each parameter is a required or optional field of the always-valid Sponsor invariant (see CLAUDE.md 'Always-Valid Entities'); splitting into a parameter object would just move the same fields into a second type with no behavior of its own.")]
+    public static ErrorOr<Sponsor> Create(
+        string name,
+        bool isCurrentSponsor,
+        int priority,
+        SponsorTier tier,
+        SponsorCategory category,
+        string? slug = null,
+        StoredFile? logo = null,
+        Uri? websiteUrl = null,
+        string? tagPhrase = null,
+        string? description = null,
+        string? liveReadText = null,
+        string? promotionalNotes = null,
+        Uri? facebookUrl = null,
+        Uri? instagramUrl = null,
+        Address? businessAddress = null,
+        EmailAddress? businessEmail = null,
+        IReadOnlyCollection<PhoneNumber>? phoneNumbers = null,
+        ContactInfo? sponsorContact = null,
+        SponsorId? id = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return SponsorErrors.NameRequired;
+        }
+
+        var normalizedSlug = SlugNormalizer.Normalize(string.IsNullOrEmpty(slug)
+            ? name
+            : slug);
+
+        if (string.IsNullOrWhiteSpace(normalizedSlug))
+        {
+            return SponsorErrors.SlugInvalid;
+        }
+
+        if (normalizedSlug == ReservedSlugNew)
+        {
+            return SponsorErrors.SlugReserved;
+        }
+
+        return new Sponsor
+        {
+            Id = id ?? SponsorId.New(),
+            Name = name,
+            Slug = normalizedSlug,
+            IsCurrentSponsor = isCurrentSponsor,
+            Priority = priority,
+            Tier = tier,
+            Category = category,
+            Logo = logo,
+            WebsiteUrl = websiteUrl,
+            TagPhrase = tagPhrase,
+            Description = description,
+            LiveReadText = liveReadText,
+            PromotionalNotes = promotionalNotes,
+            FacebookUrl = facebookUrl,
+            InstagramUrl = instagramUrl,
+            BusinessAddress = businessAddress,
+            BusinessEmail = businessEmail,
+            PhoneNumbers = phoneNumbers ?? [],
+            SponsorContact = sponsorContact
+        };
+    }
 }
