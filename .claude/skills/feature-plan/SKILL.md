@@ -20,7 +20,7 @@ Turn a feature description into `docs/plans/{feature-name}.md` — a plan detail
   Do not start a stage until the user has confirmed the previous one. "Confirmed" means an explicit yes/approval — proceeding on silence or an unrelated reply is not a confirmation.
 - **A "functional" draft describes changes at the level of: what files get created/edited, what each does, and why** — no method bodies, no full class listings. Think PR-description depth, not diff depth.
 - **A "code" draft shows the actual code changes** — real class/method signatures, real field names, real routes, close enough to paste into the editor and adjust. It replaces the functional bullets for that phase in the markdown file, it doesn't just append below them.
-- The plan file is written and updated incrementally — after every stage, not just at the end — so `docs/plans/{feature-name}.md` always reflects the latest confirmed + in-progress state if the session is interrupted.
+- **The plan file's full skeleton — both phase headings, all four stage placeholders — is written on first creation** (Step 3, before any content is drafted), not built up heading-by-heading as stages are confirmed. From then on the file is updated incrementally in place: each stage replaces its own section's placeholder/prior content, so `docs/plans/{feature-name}.md` always reflects the latest confirmed + in-progress state if the session is interrupted, and the reader can see the shape of the whole plan (including not-yet-drafted phases) from the first write onward.
 - This skill produces a plan. It does not write feature code, run `dotnet build`, or create branches — that happens afterward, driven by the user from the finished markdown file.
 
 ## Step 1 — Scope and clarify
@@ -45,7 +45,27 @@ Scope the review to what this feature plausibly touches — do not scan the whol
 
 Keep this focused — a handful of targeted lookups, not an exhaustive audit. The goal is to know what already exists so the plan proposes extending it, not duplicating it.
 
-## Step 3 — Phase 1 functional draft (API)
+## Step 3 — Initialize the plan file
+
+Before drafting any content, create `docs/plans/{feature-name}.md` (kebab-case the feature name from the description; create `docs/plans/` if it doesn't exist) with the full skeleton for both phases:
+
+```markdown
+# {Feature Title}
+
+{One- or two-sentence restatement of what the feature does.}
+
+## Phase 1: API
+
+*(Not yet drafted.)*
+
+## Phase 2: UI
+
+*(Not yet drafted.)*
+```
+
+If Step 1/Step 2 surfaced decisions, assumptions, or things the user explicitly ruled in/out while scoping, capture them under a short `## Decisions locked in during scoping` section between the title and `## Phase 1` — this is where cross-phase context that isn't specific to either phase belongs, so it doesn't get lost or duplicated across both phase sections.
+
+## Step 4 — Phase 1 functional draft (API)
 
 Draft, at functional level:
 - New files to create (path + one-line purpose each), following the use-case folder structure (Endpoint + Summary + Validator + Command/Query + Handler) per CLAUDE.md's API Endpoint Checklist.
@@ -58,13 +78,13 @@ Draft, at functional level:
 
 If `ddd-clean-architecture`, `dotnet-aspnet-core`, or `dotnet-entity-framework-core` skills are relevant to decisions being made in this draft (e.g. aggregate boundaries, EF Core modeling choices), invoke them to inform the draft rather than guessing at conventions — don't just cite them by name without applying what they say.
 
-Write this to `docs/plans/{feature-name}.md` (kebab-case the feature name from the description; create `docs/plans/` if it doesn't exist) under a `## Phase 1: API` heading, structured as a checklist-style breakdown by layer (Domain / Application / Infrastructure / API / Contracts / Tests), mirroring the "What Changed" layer grouping used in `pull-request-prep`.
+Replace the `*(Not yet drafted.)*` placeholder under `## Phase 1: API` (written in Step 3) with this draft, structured as a checklist-style breakdown by layer (Domain / Application / Infrastructure / API / Contracts / Tests), mirroring the "What Changed" layer grouping used in `pull-request-prep`.
 
 Show the same content in chat and ask: **"Does this functional breakdown for Phase 1 look right, or should anything change before I draft the actual code?"**
 
 Do not proceed until confirmed.
 
-## Step 4 — Phase 1 code draft (API)
+## Step 5 — Phase 1 code draft (API)
 
 Once Step 3 is confirmed, expand each item in the Phase 1 section into actual code: real class/record signatures, method bodies where the logic isn't obvious boilerplate, route strings, validator rules, DI registration snippets, and factory method signatures. Use the patterns and templates in the `new-endpoint` command and `ddd-clean-architecture` skill as the baseline shape, adapted to this feature's actual types and rules — don't reproduce their placeholder syntax verbatim.
 
@@ -74,7 +94,7 @@ Show the update in chat and ask: **"Does the Phase 1 code look right? Once you c
 
 Do not proceed until confirmed.
 
-## Step 5 — Phase 2 functional draft (UI)
+## Step 6 — Phase 2 functional draft (UI)
 
 Same shape as Step 3, but for the Blazor side:
 - New pages/components to create (path, route if a page, one-line purpose).
@@ -88,15 +108,15 @@ Same shape as Step 3, but for the Blazor side:
 
 If `dotnet-blazor` skill guidance is relevant to a decision in this draft, apply it rather than guessing.
 
-Append this under a `## Phase 2: UI` heading in the same plan file (same layer/checklist style, adapted to Blazor: Pages / Components / API Client / Tests).
+Replace the `*(Not yet drafted.)*` placeholder under `## Phase 2: UI` (written in Step 3) with this draft (same layer/checklist style, adapted to Blazor: Pages / Components / API Client / Tests).
 
 Show it in chat and ask: **"Does this functional breakdown for Phase 2 look right, or should anything change before I draft the actual code?"**
 
 Do not proceed until confirmed.
 
-## Step 6 — Phase 2 code draft (UI)
+## Step 7 — Phase 2 code draft (UI)
 
-Once Step 5 is confirmed, expand each item into actual `.razor`/`.razor.cs` code: markup, `@code` blocks, event handlers, DirtyFormGuard wiring if applicable, and the Refit client call. Replace the Step 5 functional bullets under `## Phase 2: UI` with this code-level detail, same fenced-code-per-item structure as Step 4.
+Once Step 6 is confirmed, expand each item into actual `.razor`/`.razor.cs` code: markup, `@code` blocks, event handlers, DirtyFormGuard wiring if applicable, and the Refit client call. Replace the Step 6 functional bullets under `## Phase 2: UI` with this code-level detail, same fenced-code-per-item structure as Step 5.
 
 Show the update in chat and report the plan is complete: **"Phase 2 code is in. The full plan is in `docs/plans/{feature-name}.md` — let me know if you want any adjustments, or you're ready to start implementing from it."**
 
