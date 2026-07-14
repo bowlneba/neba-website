@@ -1,8 +1,12 @@
 @page "/account/logout"
 
 @using System.Net.Http.Headers
+@using System.Net.Http.Json
+@using System.Security.Claims
+@using System.Text.Json
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
+@using Neba.Api.Contracts.Security.RefreshToken
 @using Neba.Website.Server.Services
 
 @inject IHttpClientFactory HttpClientFactory
@@ -15,29 +19,51 @@
 <p>Logging out&hellip;</p>
 
 @code {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
-        // Capture the access token before signing out, then revoke it server-side using a raw
-        // HttpClient call (bypassing BearerTokenHandler/ISecurityApi) so signing out can't race
-        // with the handler's silent refresh-and-retry logic, which would otherwise re-authenticate
-        // the user mid-logout.
+        // Capture tokens and revoke server-side BEFORE signing out, using a raw HttpClient call
+        // (bypassing BearerTokenHandler/ISecurityApi) so the revoke can't race with the handler's
+        // own silent refresh-and-retry logic, which would otherwise re-authenticate the user
+        // mid-logout. If the captured access token is already stale (its 15-minute lifetime is far
+        // shorter than the 7-day sliding cookie it lives in), fall back to a one-shot silent refresh
+        // before giving up, rather than surfacing a false "logout failed" to an idle user.
         var accessToken = await HttpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.AccessTokenName);
+        var refreshToken = await HttpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.RefreshTokenName);
+        var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        var apiLogoutSucceeded = await TryRevokeServerSideAsync(accessToken, refreshToken, userId);
 
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-        var apiLogoutSucceeded = await TryRevokeServerSideAsync(accessToken);
 
         Nav.NavigateTo(apiLogoutSucceeded ? "/?loggedOut=1" : "/?logoutError=1", forceLoad: true);
     }
 
-    private async Task<bool> TryRevokeServerSideAsync(string? accessToken)
+    private async Task<bool> TryRevokeServerSideAsync(string? accessToken, string? refreshToken, string? userId)
     {
         if (accessToken is null)
             return true;
 
+        if (await PostLogoutAsync(accessToken))
+            return true;
+
+        if (refreshToken is null || userId is null)
+            return false;
+
+        var refreshedAccessToken = await TryRefreshAccessTokenAsync(userId, refreshToken);
+
+        return refreshedAccessToken is not null && await PostLogoutAsync(refreshedAccessToken);
+    }
+
+    private async Task<bool> PostLogoutAsync(string accessToken)
+    {
         try
         {
             using var client = HttpClientFactory.CreateClient();
@@ -51,6 +77,30 @@
         {
             Logger.LogWarning(ex, "Logout request to the security API failed; the local session was cleared anyway.");
             return false;
+        }
+    }
+
+    private async Task<string?> TryRefreshAccessTokenAsync(string userId, string refreshToken)
+    {
+        try
+        {
+            using var client = HttpClientFactory.CreateClient();
+            using var response = await client.PostAsJsonAsync(
+                new Uri(ApiConfiguration.BaseUrl, "/security/refresh"),
+                new RefreshTokenRequest { UserId = userId, RefreshToken = refreshToken },
+                JsonOptions,
+                HttpContext.RequestAborted);
+
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            var refreshed = await response.Content.ReadFromJsonAsync<RefreshTokenResponse>(JsonOptions, HttpContext.RequestAborted);
+            return refreshed?.AccessToken;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or OperationCanceledException)
+        {
+            Logger.LogWarning(ex, "Silent token refresh during logout failed; the local session was cleared anyway.");
+            return null;
         }
     }
 }

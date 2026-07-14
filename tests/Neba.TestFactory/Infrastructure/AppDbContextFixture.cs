@@ -33,7 +33,7 @@ public sealed class AppDbContextFixture : IAsyncLifetime
         _respawner = await Respawner.CreateAsync(connection, new RespawnerOptions
         {
             DbAdapter = DbAdapter.Postgres,
-            SchemasToInclude = [AppDbContext.DefaultSchema],
+            SchemasToInclude = [AppDbContext.DefaultSchema, AppDbContext.StagingSchema],
             TablesToIgnore = [new Table(AppDbContext.DefaultSchema, AppDbContext.MigrationsHistoryTableName)]
         });
     }

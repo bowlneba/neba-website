@@ -16,6 +16,7 @@ using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Stats.Domain;
 using Neba.Api.Features.Tournaments.Domain;
+using Neba.Api.Uploads;
 
 using SmartEnum.EFCore;
 
@@ -27,8 +28,12 @@ internal sealed class AppDbContext(
 {
     public const string DefaultSchema = "app";
     public const string HistoricalSchema = "historical";
+    public const string StagingSchema = "staging";
 
     public const string MigrationsHistoryTableName = "__EFMigrationsHistory";
+
+    internal DbSet<PendingUpload> PendingUploads
+        => Set<PendingUpload>();
 
     public DbSet<BowlingCenter> BowlingCenters
         => Set<BowlingCenter>();
@@ -92,6 +97,8 @@ internal sealed class AppDbContext(
         modelBuilder.ApplyConfiguration(new HistoricalTournamentChampionConfiguration());
         modelBuilder.ApplyConfiguration(new HistoricalTournamentEntryConfiguration());
         modelBuilder.ApplyConfiguration(new HistoricalTournamentResultConfiguration());
+
+        modelBuilder.ApplyConfiguration(new PendingUploadConfiguration());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

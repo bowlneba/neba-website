@@ -11,6 +11,9 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests/e2e',
+  /* docs-screenshots/ generates docs/help/ images (see playwright.docs.config.ts) — it's a
+   * documentation task, not a correctness check, so it must never run as part of this suite. */
+  testIgnore: '**/docs-screenshots/**',
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code */

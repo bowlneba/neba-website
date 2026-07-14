@@ -49,7 +49,7 @@ internal sealed class {Action}{Entity}Endpoint(IQueryHandler<{Action}{Entity}Que
             .WithName("{Action}{Entity}")
             .WithTags("Public")
             .Produces<{Response}>(StatusCodes.Status200OK)
-            .ProducesProblemDetails(StatusCodes.Status400BadRequest)
+            .ProducesProblemDetails(StatusCodes.Status400BadRequest)  // required whenever {Action}{Entity}RequestValidator exists — see note below
             .ProducesProblemDetails(StatusCodes.Status404NotFound));
     }
 
@@ -105,6 +105,13 @@ internal sealed class {Action}{Entity}RequestValidator : Validator<{Action}{Enti
     }
 }
 ```
+
+**400 vs 422 vs 409** — whenever an endpoint has a `RequestValidator`, its `Description()` MUST declare `.ProducesProblemDetails(StatusCodes.Status400BadRequest)`. FastEndpoints intercepts validator failures automatically before `HandleAsync` ever runs and returns 400 (`options.StatusCode = 400` in `ErrorHandlingConfiguration.ConfigureErrorHandling()`) — the endpoint code never sees this branch, but the response contract must still document it. This is distinct from the status codes the handler code chooses explicitly:
+- **400** = structural/shape failure caught by the `Validator<T>` (missing field, too long, wrong format) — automatic, framework-owned.
+- **422** = `Error.Validation` returned by the command/query handler (domain rule violation on otherwise well-formed input) — explicit `Send.ErrorsAsync(422, ct)` in `HandleAsync`.
+- **409** = `Error.Conflict` returned by the handler (valid input, current state blocks it — retrying the same payload could succeed later) — explicit `Send.ErrorsAsync(409, ct)` in `HandleAsync`.
+
+If an endpoint has no `RequestValidator` (e.g. `EndpointWithoutRequest`), omit 400.
 
 **`{Action}{Entity}Request.cs`** (for GET endpoints with query params — internal to the API, not in Contracts):
 
@@ -412,6 +419,7 @@ public sealed class {Entity}PageTests : IDisposable
 - [ ] `{Domain}EndpointGroup` exists (create if missing)
 - [ ] Authorization explicitly configured (`AllowAnonymous()`, `Roles()`, or `Policies()`)
 - [ ] All status codes documented with `Produces()`/`ProducesProblemDetails()`
+- [ ] If a `RequestValidator` exists, `Description()` declares `.ProducesProblemDetails(StatusCodes.Status400BadRequest)`
 - [ ] `WithName()` and `WithTags()` set in `Description`
 - [ ] `[BindFrom("key")]` on every query-param property in request classes
 - [ ] Validator has structural validation only (no DB lookups, no business rules)

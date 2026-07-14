@@ -22,7 +22,7 @@ public static class UserDtoFactory
             UserId = userId ?? Ulid.NewUlid(),
             Email = email ?? ValidEmail,
             Roles = roles ?? [ValidRole],
-            Permissions = permissions ?? [Permissions.Read],
+            Permissions = permissions ?? [Permissions.CreateArticle],
             UsbcId = usbcId
         };
 

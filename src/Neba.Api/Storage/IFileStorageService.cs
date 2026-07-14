@@ -74,6 +74,35 @@ internal interface IFileStorageService
         CancellationToken cancellationToken);
 
     /// <summary>
+    /// Uploads a stream's content as a file to the specified container.
+    /// </summary>
+    /// <param name="container">
+    /// The storage container name.
+    /// </param>
+    /// <param name="path">
+    /// The blob path within the container.
+    /// </param>
+    /// <param name="content">
+    /// The file content stream. Not buffered into memory.
+    /// </param>
+    /// <param name="contentType">
+    /// The MIME content type (e.g., "image/png").
+    /// </param>
+    /// <param name="metadata">
+    /// Key-value metadata to associate with the file.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// Cancellation token for async operation.
+    /// </param>
+    Task UploadFileAsync(
+        string container,
+        string path,
+        Stream content,
+        string contentType,
+        IDictionary<string, string> metadata,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// Deletes a file from the specified container if it exists.
     /// </summary>
     /// <param name="container">
@@ -85,7 +114,10 @@ internal interface IFileStorageService
     /// <param name="cancellationToken">
     /// Cancellation token for async operation.
     /// </param>
-    Task DeleteAsync(string container, string path, CancellationToken cancellationToken);
+    /// <returns>
+    /// <c>true</c> if the blob was deleted; <c>false</c> if it did not exist.
+    /// </returns>
+    Task<bool> DeleteAsync(string container, string path, CancellationToken cancellationToken);
 
     /// <summary>
     /// Gets the URI of a blob in the specified container and path.

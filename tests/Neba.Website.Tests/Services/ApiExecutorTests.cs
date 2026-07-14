@@ -739,6 +739,193 @@ public sealed class ApiExecutorTests
         result.IsError.ShouldBeFalse();
     }
 
+    [Fact(DisplayName = "Should return success result when non-generic API call succeeds")]
+    public async Task ExecuteAsync_NonGeneric_ShouldReturnSuccess_WhenApiCallSucceeds()
+    {
+        // Arrange
+        const string apiName = "TestApi";
+        const string operationName = "DeleteData";
+        const long startTimestamp = 1000;
+        var duration = TimeSpan.FromMilliseconds(50);
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var apiResponseMock = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+
+        var apiCall = new Func<CancellationToken, Task<IApiResponse>>(
+            _ => Task.FromResult<IApiResponse>(apiResponseMock)
+        );
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(duration);
+
+        // Act
+        var result = await _executor.ExecuteAsync(apiName, operationName, apiCall, cancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.ShouldBe(ErrorOr.Result.Success);
+    }
+
+    [Fact(DisplayName = "Should return failure when non-generic API response is not success")]
+    public async Task ExecuteAsync_NonGeneric_ShouldReturnFailure_WhenApiResponseNotSuccess()
+    {
+        // Arrange
+        const string apiName = "TestApi";
+        const string operationName = "DeleteData";
+        const long startTimestamp = 1000;
+        var duration = TimeSpan.FromMilliseconds(100);
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var apiResponseMock = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.Forbidden
+        };
+
+        var apiCall = new Func<CancellationToken, Task<IApiResponse>>(
+            _ => Task.FromResult<IApiResponse>(apiResponseMock)
+        );
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(duration);
+
+        // Act
+        var result = await _executor.ExecuteAsync(apiName, operationName, apiCall, cancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldContain("HttpError");
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Error);
+    }
+
+    [Fact(DisplayName = "Should return NotFound error for non-generic 404 response")]
+    public async Task ExecuteAsync_NonGeneric_ShouldReturnNotFoundError_For404()
+    {
+        // Arrange
+        const string apiName = "TestApi";
+        const string operationName = "DeleteData";
+        const long startTimestamp = 1000;
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var apiResponseMock = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.NotFound
+        };
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(TimeSpan.FromMilliseconds(50));
+
+        // Act
+        var result = await _executor.ExecuteAsync(
+            apiName, operationName,
+            _ => Task.FromResult<IApiResponse>(apiResponseMock),
+            cancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe($"{apiName}.{operationName}.NotFound");
+        result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.NotFound);
+    }
+
+    [Fact(DisplayName = "Should handle ApiException gracefully on non-generic overload")]
+    public async Task ExecuteAsync_NonGeneric_ShouldHandleApiException_AndReturnFailure()
+    {
+        // Arrange
+        const string apiName = "TestApi";
+        const string operationName = "DeleteData";
+        const long startTimestamp = 1000;
+        var duration = TimeSpan.FromMilliseconds(75);
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        using var requestMessage = new HttpRequestMessage(HttpMethod.Delete, "https://api.example.com/data");
+        using var responseMessage = new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError)
+        {
+            Content = new StringContent("Error")
+        };
+        var apiException = await ApiException.Create(
+            requestMessage,
+            HttpMethod.Delete,
+            responseMessage,
+            new RefitSettings()
+        );
+
+        var apiCall = new Func<CancellationToken, Task<IApiResponse>>(
+            _ => throw apiException
+        );
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(duration);
+
+        // Act
+        var result = await _executor.ExecuteAsync(apiName, operationName, apiCall, cancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldContain("Exception");
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Error);
+    }
+
+    [Fact(DisplayName = "Should handle operation cancellation by caller on non-generic overload")]
+    public async Task ExecuteAsync_NonGeneric_ShouldHandleOperationCancellation_WhenCallerCancels()
+    {
+        // Arrange
+        const string apiName = "TestApi";
+        const string operationName = "DeleteData";
+        const long startTimestamp = 1000;
+        var duration = TimeSpan.FromMilliseconds(10);
+
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+        var cancellationToken = cts.Token;
+
+        var taskCanceledException = new TaskCanceledException("Operation canceled", null, cancellationToken);
+        var apiCall = new Func<CancellationToken, Task<IApiResponse>>(
+            _ => throw taskCanceledException
+        );
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(duration);
+
+        // Act
+        var result = await _executor.ExecuteAsync(apiName, operationName, apiCall, cancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldContain("Cancelled");
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Warning);
+    }
+
+    [Fact(DisplayName = "Should handle generic Exception gracefully on non-generic overload")]
+    public async Task ExecuteAsync_NonGeneric_ShouldHandleGenericException_AndReturnFailure()
+    {
+        // Arrange
+        const string apiName = "TestApi";
+        const string operationName = "DeleteData";
+        const long startTimestamp = 1000;
+        var duration = TimeSpan.FromMilliseconds(50);
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var generalException = new InvalidOperationException("Invalid state");
+        var apiCall = new Func<CancellationToken, Task<IApiResponse>>(
+            _ => throw generalException
+        );
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(duration);
+
+        // Act
+        var result = await _executor.ExecuteAsync(apiName, operationName, apiCall, cancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Description.ShouldContain("Invalid state");
+    }
+
     private static ActivityListener CreateActivityListener(List<Activity> captured)
     {
         var listener = new ActivityListener

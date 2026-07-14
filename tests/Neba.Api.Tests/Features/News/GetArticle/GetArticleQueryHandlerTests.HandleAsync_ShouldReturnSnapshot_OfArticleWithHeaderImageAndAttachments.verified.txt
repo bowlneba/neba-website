@@ -1,5 +1,7 @@
 ﻿{
+  Id: 01000000000000000000000001,
   Slug: tournament-recap,
+  PublicationStatus: Published,
   Title: Tournament Recap,
   Content: The annual tournament concluded last weekend with exciting results across all divisions.,
   HeaderImageUrl: https://cdn.example.com/news/articles/recap.jpg,
@@ -8,12 +10,14 @@
     {
       DisplayName: Bracket,
       ContentType: text/plain,
-      Url: https://cdn.example.com/news-files/docs/bracket.pdf
+      Url: https://cdn.example.com/news-files/docs/bracket.pdf,
+      IsInline: false
     },
     {
       DisplayName: Scores,
       ContentType: text/plain,
-      Url: https://cdn.example.com/news-files/docs/scores.pdf
+      Url: https://cdn.example.com/news-files/docs/scores.pdf,
+      IsInline: false
     }
   ]
 }

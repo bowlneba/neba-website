@@ -25,6 +25,8 @@ internal sealed class QueryTagEnrichmentInterceptor(IHttpContextAccessor httpCon
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA2100:Review SQL queries for security vulnerabilities",
         Justification = "CommandText is prepended with a diagnostic comment only. User-controlled values (userId, endpoint, traceId) are sanitized by stripping '*/' to prevent comment breakout.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2077:Use a parameterized query instead of string formatting.",
+        Justification = "CommandText is prepended with a diagnostic comment only, not user-controlled query logic. User-controlled values (userId, endpoint, traceId) are sanitized by stripping '*/' to prevent comment breakout.")]
     private void EnrichCommand(DbCommand command)
     {
         var ctx = httpContextAccessor.HttpContext;

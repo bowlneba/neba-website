@@ -18,15 +18,40 @@ public sealed class Permissions
     /// </summary>
     public const string ClaimType = "permission";
 
-    /// <summary>
-    /// This is a temporary permission to set us up until real permissions come into the picture
-    /// </summary>
-    public static readonly Permissions Read = new("Read", "Read");
+    #region News
 
     /// <summary>
-    /// This is a temporary permission to set us up until real permissions come into the picture
+    /// Permission to create a news article.
     /// </summary>
-    public static readonly Permissions Write = new("Write", "Write");
+    public static readonly Permissions CreateArticle = new("News.CreateArticle", "Create Article");
+
+    /// <summary>
+    /// Permission to edit a news article.
+    /// </summary>
+    public static readonly Permissions EditArticle = new("News.EditArticle", "Edit Article");
+
+    /// <summary>
+    /// Permission to delete a news article.
+    /// </summary>
+    public static readonly Permissions DeleteArticle = new("News.DeleteArticle", "Delete Article");
+
+    /// <summary>
+    /// A collection of permissions related to article management.
+    /// </summary>
+    public static readonly IReadOnlyCollection<Permissions> ArticleManagementPermissions =
+    [
+        CreateArticle,
+        EditArticle,
+        DeleteArticle,
+    ];
+
+    /// <summary>
+    /// Policy name satisfied when the caller holds any permission in <see cref="ArticleManagementPermissions"/>.
+    /// </summary>
+    public const string CanManageArticlesPolicyName = "CanManageArticles";
+
+    #endregion
+
     private Permissions(string key, string name)
         : base(name, key)
     { }

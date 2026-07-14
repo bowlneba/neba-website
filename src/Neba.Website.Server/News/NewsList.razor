@@ -2,12 +2,17 @@
 @using Neba.Api.Contracts
 @using Neba.Api.Contracts.News
 @using Neba.Api.Contracts.News.ListArticles
+@using Neba.Api.Contracts.Security
+@using Neba.Website.Server.Notifications
 @using Neba.Website.Server.Services
+@implements IAsyncDisposable
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject ApiExecutor ApiExecutor
 @inject INewsApi NewsApi
 @inject ILogger<NewsList> Logger
+@inject ToastService ToastService
+@inject IJSRuntime JsRuntime
 
 <PageTitle>News - BowlNEBA</PageTitle>
 <HeadContent>
@@ -29,6 +34,12 @@
             <p>The latest from NEBA</p>
         </div>
     </div>
+
+    <AuthorizeView Policy="@Permissions.CreateArticle.PolicyName">
+        <Authorized>
+            <FabCreateButton Href="/news/new" Label="Create Article" />
+        </Authorized>
+    </AuthorizeView>
 
     @if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
@@ -85,33 +96,68 @@
             @if (PageNumber == 1)
             {
                 var hero = _articles.Items.First();
-                <a href="/news/@hero.Slug" class="news-hero" aria-label="Read: @hero.Title">
-                    <div class="hero-img" aria-hidden="true">
-                        @if (hero.HeaderImageUrl is not null)
-                        {
-                            <img src="@hero.HeaderImageUrl" alt="" class="w-full h-full object-cover" />
-                        }
-                    </div>
-                    <div class="hero-body">
-                        <div class="hero-featured-tag">&#11088; Latest</div>
-                        <div class="hero-date">@hero.PublishDateUtc.ToString("MMMM d, yyyy")</div>
-                        <h2 class="hero-title">@hero.Title</h2>
-                        <p class="hero-excerpt">@hero.Excerpt</p>
-                        <span class="neba-btn neba-btn-primary" style="width: fit-content;">
-                            Read full story
-                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </span>
-                    </div>
-                </a>
+                <div class="news-hero-wrap">
+                    <a href="/news/@hero.Slug" class="news-hero" aria-label="Read: @hero.Title">
+                        <div class="hero-img" aria-hidden="true">
+                            @if (hero.HeaderImageUrl is not null)
+                            {
+                                <img src="@hero.HeaderImageUrl" alt="" class="w-full h-full object-cover" />
+                            }
+                        </div>
+                        <div class="hero-body">
+                            <div class="hero-featured-tag">&#11088; Latest</div>
+                            <div class="hero-meta-row">
+                                <div class="hero-date">@ToLocal(hero.PublishDateUtc).ToString("MMMM d, yyyy")</div>
+                                <AuthorizeView Policy="@Permissions.CanManageArticlesPolicyName">
+                                    <Authorized>
+                                        <ArticleStatusBadge PublicationStatus="@hero.PublicationStatus" PublishDateUtc="@hero.PublishDateUtc" />
+                                    </Authorized>
+                                </AuthorizeView>
+                            </div>
+                            <h2 class="hero-title">@hero.Title</h2>
+                            <p class="hero-excerpt">@hero.Excerpt</p>
+                            <span class="neba-btn neba-btn-primary" style="width: fit-content;">
+                                Read full story
+                                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </span>
+                        </div>
+                    </a>
+                    @* Sibling of the anchor, not a descendant: HTML5 disallows interactive content inside <a>,
+                       and Blazor's enhanced navigation hijacks clicks anywhere within an anchor's subtree
+                       regardless of a descendant button's own stopPropagation/preventDefault (see ArticleCard.razor). *@
+                    <AuthorizeView Policy="@Permissions.EditArticle.PolicyName">
+                        <Authorized>
+                            <a href="/news/@hero.Slug/edit" class="hero-edit-btn" aria-label="Edit article">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z" />
+                                </svg>
+                            </a>
+                        </Authorized>
+                    </AuthorizeView>
+                    <AuthorizeView Policy="@Permissions.DeleteArticle.PolicyName">
+                        <Authorized>
+                            <button type="button" class="hero-delete-btn" aria-label="Delete article" @onclick="@(() => RequestDelete(hero))">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M3 6h18" />
+                                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                    <path d="M10 11v6" />
+                                    <path d="M14 11v6" />
+                                </svg>
+                            </button>
+                        </Authorized>
+                    </AuthorizeView>
+                </div>
 
                 @if (_articles.Items.Count > 1)
                 {
                     <div class="news-grid">
                         @foreach (var article in _articles.Items.Skip(1))
                         {
-                            <ArticleCard Article="@article" />
+                            <ArticleCard Article="@article" LocalPublishDate="@ToLocal(article.PublishDateUtc)" OnDeleteRequested="RequestDelete" />
                         }
                     </div>
                 }
@@ -121,7 +167,7 @@
                 <div class="news-grid">
                     @foreach (var article in _articles.Items)
                     {
-                        <ArticleCard Article="@article" />
+                        <ArticleCard Article="@article" LocalPublishDate="@ToLocal(article.PublishDateUtc)" OnDeleteRequested="RequestDelete" />
                     }
                 </div>
             }
@@ -156,6 +202,13 @@
 
 </div>
 
+<ConfirmActionModal IsOpen="@_isDeleteConfirmOpen"
+                     Title="Delete article?"
+                     Message="@(_articlePendingDelete is null ? string.Empty : $"This permanently removes \"{_articlePendingDelete.Title}\" and its images/attachments. This can't be undone.")"
+                     IsBusy="@_isDeleteBusy"
+                     OnConfirm="ConfirmDeleteAsync"
+                     OnCancel="CancelDelete" />
+
 @code {
     [Parameter, SupplyParameterFromQuery(Name = "page")]
     public int? Page { get; set; }
@@ -165,6 +218,46 @@
     private PaginationResponse<ArticleSummaryResponse>? _articles;
     private bool _isLoading = true;
     private string? _errorMessage;
+
+    private ArticleSummaryResponse? _articlePendingDelete;
+    private bool _isDeleteConfirmOpen;
+    private bool _isDeleteBusy;
+
+    private IJSObjectReference? _jsModule;
+    private TimeSpan? _localOffset;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./js/browser-time.js");
+            var timezoneOffsetMinutes = await _jsModule.InvokeAsync<int>("getTimezoneOffsetMinutes");
+            _localOffset = TimeSpan.FromMinutes(-timezoneOffsetMinutes);
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Converts a UTC instant to the viewer's local time for display. Until the browser's offset is
+    /// known (briefly, on first render), falls back to displaying the UTC value unconverted.
+    /// </summary>
+    private DateTimeOffset ToLocal(DateTimeOffset utc)
+        => _localOffset is null ? utc : utc.ToOffset(_localOffset.Value);
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule is not null)
+        {
+            try
+            {
+                await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit already gone — nothing to clean up.
+            }
+        }
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -186,5 +279,57 @@
         }
 
         _articles = result.Value;
+    }
+
+    private void RequestDelete(ArticleSummaryResponse article)
+    {
+        _articlePendingDelete = article;
+        _isDeleteConfirmOpen = true;
+    }
+
+    private void CancelDelete()
+    {
+        _isDeleteConfirmOpen = false;
+        _articlePendingDelete = null;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_articlePendingDelete is null)
+        {
+            return;
+        }
+
+        _isDeleteBusy = true;
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "News",
+            "DeleteArticle",
+            ct => NewsApi.DeleteArticleAsync(_articlePendingDelete.ArticleId, ct));
+
+        _isDeleteBusy = false;
+        _isDeleteConfirmOpen = false;
+
+        if (result.IsError)
+        {
+            ToastService.Show("Delete Failed", result.FirstError.Description, NotifySeverity.Error);
+            _articlePendingDelete = null;
+            return;
+        }
+
+        var deletedArticleId = _articlePendingDelete.ArticleId;
+        var deletedArticleTitle = _articlePendingDelete.Title;
+        _articlePendingDelete = null;
+
+        if (_articles is not null)
+        {
+            _articles = _articles with
+            {
+                Items = [.. _articles.Items.Where(a => a.ArticleId != deletedArticleId)],
+                TotalItems = Math.Max(0, _articles.TotalItems - 1),
+            };
+        }
+
+        ToastService.Show("Article Deleted", $"\"{deletedArticleTitle}\" was successfully deleted.", NotifySeverity.Success);
     }
 }

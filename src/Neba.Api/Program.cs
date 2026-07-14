@@ -43,7 +43,7 @@ app.UseExceptionHandler();
 app.UseForwardedHeaders();
 app.UseRateLimiter();
 
-app.UseSecurityInfrastructure();
+await app.UseSecurityInfrastructureAsync();
 
 app.UseFastEndpoints(config =>
 {

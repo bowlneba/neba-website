@@ -1,0 +1,29 @@
+<span class="article-status-badge article-status-badge--@Modifier">@Label</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public string PublicationStatus { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public DateTimeOffset PublishDateUtc { get; set; }
+
+    private string Label
+    {
+        get
+        {
+            if (PublicationStatus != "Published")
+            {
+                return "Draft";
+            }
+
+            if (PublishDateUtc > DateTimeOffset.UtcNow)
+            {
+                return "Scheduled";
+            }
+
+            return "Published";
+        }
+    }
+
+    private string Modifier => Label.ToLowerInvariant();
+}

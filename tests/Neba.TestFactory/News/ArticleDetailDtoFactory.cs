@@ -1,3 +1,4 @@
+using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.News.GetArticle;
 using Neba.Api.Features.Tournaments.Domain;
 
@@ -11,19 +12,31 @@ public static class ArticleDetailDtoFactory
     public static readonly DateTimeOffset ValidPublishDateUtc = new(2025, 10, 1, 12, 0, 0, TimeSpan.Zero);
 
     public static ArticleDetailDto Create(
+        ArticleId? id = null,
         string? slug = null,
+        string? publicationStatus = null,
         string? title = null,
         string? content = null,
         Uri? headerImageUrl = null,
+        string? headerImageContainer = null,
+        string? headerImagePath = null,
+        string? headerImageContentType = null,
+        long? headerImageSizeInBytes = null,
         DateTimeOffset? publishDateUtc = null,
         IReadOnlyCollection<ArticleAttachmentDto>? attachments = null,
         TournamentId? tournamentId = null)
         => new()
         {
+            Id = id ?? ArticleId.New(),
             Slug = slug ?? ValidSlug,
+            PublicationStatus = publicationStatus ?? PublicationStatus.Published.Name,
             Title = title ?? ValidTitle,
             Content = content ?? ValidContent,
             HeaderImageUrl = headerImageUrl,
+            HeaderImageContainer = headerImageContainer,
+            HeaderImagePath = headerImagePath,
+            HeaderImageContentType = headerImageContentType,
+            HeaderImageSizeInBytes = headerImageSizeInBytes,
             PublishDateUtc = publishDateUtc ?? ValidPublishDateUtc,
             Attachments = attachments ?? [],
             TournamentId = tournamentId,
@@ -37,10 +50,16 @@ public static class ArticleDetailDtoFactory
             var hasHeaderImage = faker.Random.Bool();
             return new ArticleDetailDto
             {
+                Id = new ArticleId(Ulid.BogusString(faker)),
                 Slug = string.Join("-", faker.Lorem.Words(4)),
+                PublicationStatus = faker.PickRandom(PublicationStatus.List.ToArray()).Name,
                 Title = faker.Random.Words(4),
                 Content = faker.Lorem.Paragraphs(2),
                 HeaderImageUrl = hasHeaderImage ? new Uri(faker.Internet.Url()) : null,
+                HeaderImageContainer = hasHeaderImage ? faker.System.CommonFileName() : null,
+                HeaderImagePath = hasHeaderImage ? faker.System.FilePath() : null,
+                HeaderImageContentType = hasHeaderImage ? faker.System.MimeType() : null,
+                HeaderImageSizeInBytes = hasHeaderImage ? faker.Random.Long(1, 10_000_000) : null,
                 PublishDateUtc = faker.Date.PastOffset(2),
                 Attachments = ArticleAttachmentDtoFactory.Bogus(faker.Random.Int(0, 3), faker),
                 TournamentId = faker.Random.Bool() ? new TournamentId(Ulid.BogusString(faker)) : null,

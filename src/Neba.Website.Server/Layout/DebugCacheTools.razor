@@ -1,17 +1,29 @@
+@implements IDisposable
 @inject Neba.Website.Server.Services.NebaApiConfiguration ApiConfiguration
 @inject IHttpClientFactory HttpClientFactory
 @inject Neba.Website.Server.Notifications.ToastService ToastService
+@inject NavigationManager Nav
 
 @if (IsDebugBuild)
 {
     <div class="debug-banner-actions">
         <button class="debug-banner-link" @onclick="ClearApiCacheAsync" type="button">Clear API Cache</button>
         <button class="debug-banner-link" @onclick="ClearAuditTablesAsync" type="button">Clear Audit Tables</button>
-        <a class="debug-banner-link" href="/account/login?admin=true">Log in as Admin</a>
+        <a class="debug-banner-link" href="@AdminLoginUrl">Log in as Admin</a>
     </div>
 }
 
 @code {
+    private string AdminLoginUrl
+    {
+        get
+        {
+            var currentPath = Nav.ToBaseRelativePath(Nav.Uri);
+            var returnUrl = Uri.EscapeDataString("/" + currentPath);
+            return $"/account/login?admin=true&ReturnUrl={returnUrl}";
+        }
+    }
+
     private static bool IsDebugBuild
     {
         get
@@ -22,6 +34,21 @@
             return false;
 #endif
         }
+    }
+
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += HandleLocationChanged;
+    }
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= HandleLocationChanged;
     }
 
     private async Task ClearApiCacheAsync()

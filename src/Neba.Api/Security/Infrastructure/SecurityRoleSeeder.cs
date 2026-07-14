@@ -12,7 +12,13 @@ internal static class SecurityRoleSeeder
     public const string PermissionClaimType = Permissions.ClaimType;
     private static readonly Dictionary<string, IReadOnlyCollection<Permissions>> RolePermissions = new()
     {
-        [Roles.Admin] = Permissions.List
+        [Roles.Admin] = Permissions.List,
+        [Roles.Webmaster] =
+        [
+            Permissions.CreateArticle,
+            Permissions.DeleteArticle
+        ],
+        [Roles.Member] = []
     };
 
     public static async Task SeedAsync(RoleManager<ApplicationRole> roleManager)

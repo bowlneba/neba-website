@@ -48,7 +48,7 @@ internal static class StorageMetrics
         string container,
         string operation,
         double durationMilliseconds,
-        int? sizeBytes = null)
+        long? sizeBytes = null)
     {
         TagList countTags = new()
         {

@@ -57,6 +57,7 @@ internal static class ApiServicesConfiguration
 
             services.AddSingleton(sp => sp.GetRequiredService<IOptions<NebaApiConfiguration>>().Value);
             services.AddScoped<ApiExecutor>();
+            services.AddScoped<CircuitTokenCache>();
             services.AddTransient<BearerTokenHandler>();
 
             services.RegisterApiEndpoint<IDocumentsApi>();

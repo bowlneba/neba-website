@@ -32,6 +32,10 @@
           type="text/css" />
     <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/3/atlas.min.js"></script>
 
+    <!-- Quill rich text editor (loaded globally; waitForQuill() in RichTextEditor.razor.js handles async load) -->
+    <link rel="stylesheet" href="https://cdn.quilljs.com/2.0.3/quill.snow.css" type="text/css" />
+    <script src="https://cdn.quilljs.com/2.0.3/quill.js"></script>
+
     <HeadOutlet @rendermode="InteractiveServer" />
 </head>
 

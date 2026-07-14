@@ -22,7 +22,7 @@ public static class GetCurrentUserResponseFactory
             UserId = userId?.ToString() ?? ValidUserId,
             Email = email ?? ValidEmail,
             Roles = roles ?? [ValidRole],
-            Permissions = permissions?.Select(p => p.Value).ToList() ?? [Permissions.Read.Value],
+            Permissions = permissions?.Select(p => p.Value).ToList() ?? [Permissions.CreateArticle.Value],
             UsbcId = usbcId
         };
 

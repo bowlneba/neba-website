@@ -4,6 +4,7 @@ using FastEndpoints;
 
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.News.ListArticles;
+using Neba.Api.Features.News.Domain;
 
 namespace Neba.Api.Features.News.ListArticles;
 
@@ -24,7 +25,9 @@ internal sealed class ListArticlesEndpointSummary
                 [
                     new ArticleSummaryResponse
                     {
+                        ArticleId = "01J7ZK8X6ZQJ8V3F8N9T9C9R2E",
                         Slug = "spring-2026-results",
+                        PublicationStatus = PublicationStatus.Published.Name,
                         Title = "Spring 2026 Tournament Results",
                         Excerpt = "The Spring 2026 season wrapped up with an exciting finals...",
                         HeaderImageUrl = new Uri("https://files.bowlneba.com/news/spring-2026/header.jpg", UriKind.Absolute),

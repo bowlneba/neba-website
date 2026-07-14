@@ -1,5 +1,8 @@
+using System.Security.Claims;
+
 using FastEndpoints;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Features.News.ListArticles;
 using Neba.Api.Messaging;
 using Neba.TestFactory;
@@ -85,6 +88,57 @@ public sealed class ListArticlesEndpointTests
         capturedQuery.PageSize.ShouldBe(5);
         endpoint.Response.PageNumber.ShouldBe(3);
         endpoint.Response.PageSize.ShouldBe(5);
+    }
+
+    [Fact(DisplayName = "HandleAsync should set CallerHasArticleManagementPermission true when user has an article management permission")]
+    public async Task HandleAsync_ShouldSetCallerHasArticleManagementPermissionTrue_WhenUserHasArticleManagementPermission()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        ListArticlesQuery? capturedQuery = null;
+
+        var queryHandlerMock = new Mock<IQueryHandler<ListArticlesQuery, PagedResult<ArticleSummaryDto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<ListArticlesQuery>(), cancellationToken))
+            .Callback<ListArticlesQuery, CancellationToken>((q, _) => capturedQuery = q)
+            .ReturnsAsync(new PagedResult<ArticleSummaryDto>([], 0));
+
+        var endpoint = Factory.Create<ListArticlesEndpoint>(queryHandlerMock.Object);
+        endpoint.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(
+        [
+            new Claim(Permissions.ClaimType, Permissions.DeleteArticle.Value),
+        ]));
+
+        // Act
+        await endpoint.HandleAsync(new ListArticlesRequest { Page = 1, PageSize = 10 }, cancellationToken);
+
+        // Assert
+        capturedQuery.ShouldNotBeNull();
+        capturedQuery.CallerHasArticleManagementPermission.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "HandleAsync should set CallerHasArticleManagementPermission false when user has no article management permission")]
+    public async Task HandleAsync_ShouldSetCallerHasArticleManagementPermissionFalse_WhenUserHasNoArticleManagementPermission()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        ListArticlesQuery? capturedQuery = null;
+
+        var queryHandlerMock = new Mock<IQueryHandler<ListArticlesQuery, PagedResult<ArticleSummaryDto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<ListArticlesQuery>(), cancellationToken))
+            .Callback<ListArticlesQuery, CancellationToken>((q, _) => capturedQuery = q)
+            .ReturnsAsync(new PagedResult<ArticleSummaryDto>([], 0));
+
+        var endpoint = Factory.Create<ListArticlesEndpoint>(queryHandlerMock.Object);
+        endpoint.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
+
+        // Act
+        await endpoint.HandleAsync(new ListArticlesRequest { Page = 1, PageSize = 10 }, cancellationToken);
+
+        // Assert
+        capturedQuery.ShouldNotBeNull();
+        capturedQuery.CallerHasArticleManagementPermission.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "Configure should register anonymous GET route under /news")]

@@ -29,13 +29,31 @@ const MOCK_BYLAWS_HTML = `
 
 function setCorsHeaders(res: ServerResponse): void {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
+function readRequestBody(req: IncomingMessage): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', (chunk: string | Uint8Array) => { body += chunk; });
+    req.on('end', () => resolve(body));
+    req.on('error', reject);
+  });
 }
 
 function sendJsonResponse(res: ServerResponse, data: unknown, statusCode = 200): void {
   res.writeHead(statusCode, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(data));
+}
+
+function slugify(title: string): string {
+  return title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-/, '')
+    .replace(/-$/, '');
 }
 
 const MOCK_BOWLING_CENTERS = {
@@ -507,24 +525,34 @@ export const MOCK_SEASONS = {
   ],
 };
 
+export const ARTICLE_ID_SEASON_CHAMPIONS = '01JX0000000000000000000101';
+export const ARTICLE_ID_JUNE_LANE_PATTERN = '01JX0000000000000000000102';
+export const ARTICLE_ID_POINTS_RACE = '01JX0000000000000000000103';
+
 const MOCK_NEWS_PAGE_1 = {
   items: [
     {
+      articleId: ARTICLE_ID_SEASON_CHAMPIONS,
       slug: 'season-champions-2026',
+      publicationStatus: 'Published',
       title: '2025–26 Season Champions Crowned at Tournament of Champions',
       excerpt: 'After a dominant season, the finals came down to two of NEBA\'s most decorated veterans. Find out who took home the title and how the points race shook out heading into next year.',
       headerImageUrl: null,
       publishDateUtc: '2026-05-15T00:00:00+00:00',
     },
     {
+      articleId: ARTICLE_ID_JUNE_LANE_PATTERN,
       slug: 'june-lane-pattern',
+      publicationStatus: 'Published',
       title: 'Lane Pattern Announced for June Southside Classic',
       excerpt: 'The June monthly at Southside Bowl will feature the WTBA London sport pattern. Download the PDF and check qualifying details.',
       headerImageUrl: null,
       publishDateUtc: '2026-05-01T00:00:00+00:00',
     },
     {
+      articleId: ARTICLE_ID_POINTS_RACE,
       slug: 'points-race-update',
+      publicationStatus: 'Published',
       title: 'Points Race Update: Three Bowlers Separated by Eight Points',
       excerpt: 'With two tournaments left, the Bowler of the Year race is razor-thin. Here\'s the current standings and what each contender needs.',
       headerImageUrl: null,
@@ -537,32 +565,38 @@ const MOCK_NEWS_PAGE_1 = {
 };
 
 const MOCK_ARTICLE_SEASON_CHAMPIONS: object = {
+  articleId: ARTICLE_ID_SEASON_CHAMPIONS,
   slug: 'season-champions-2026',
+  publicationStatus: 'Published',
   title: '2025–26 Season Champions Crowned at Tournament of Champions',
   content: '<p>After a dominant regular season, the 2025–26 NEBA Tournament of Champions brought together the top performers from across New England for a single-elimination finale at Baxter Bowl in Springfield.</p><p>The field was deep. Twelve qualifiers entered match play, but it was two bowlers who had been trading the points lead all season who ultimately met in the final: defending champion Marcus Roark and two-time high-average winner Diane Pellerin.</p><p>Pellerin answered with a strike in the 10th to post a 267 and claim her first Tournament of Champions title.</p>',
   headerImageUrl: null,
   publishDateUtc: '2026-05-15T00:00:00+00:00',
   tournamentId: MOCK_TOURNAMENT_ID,
   attachments: [
-    { displayName: 'Tournament Results & Bracket', contentType: 'application/pdf', url: 'https://files.bowlneba.com/news/season-champions-2026/bracket.pdf' },
-    { displayName: 'Lane Pattern (WTBA London)', contentType: 'application/pdf', url: 'https://files.bowlneba.com/news/season-champions-2026/lane-pattern.pdf' },
+    { displayName: 'Tournament Results & Bracket', contentType: 'application/pdf', url: 'https://files.bowlneba.com/news/season-champions-2026/bracket.pdf', isInline: false, container: 'news', path: 'season-champions-2026/bracket.pdf', sizeInBytes: 245760 },
+    { displayName: 'Lane Pattern (WTBA London)', contentType: 'application/pdf', url: 'https://files.bowlneba.com/news/season-champions-2026/lane-pattern.pdf', isInline: false, container: 'news', path: 'season-champions-2026/lane-pattern.pdf', sizeInBytes: 189440 },
   ],
 };
 
 const MOCK_ARTICLE_JUNE_LANE_PATTERN: object = {
+  articleId: ARTICLE_ID_JUNE_LANE_PATTERN,
   slug: 'june-lane-pattern',
+  publicationStatus: 'Published',
   title: 'Lane Pattern Announced for June Southside Classic',
   content: '<p>The June monthly at Southside Bowl will feature the WTBA London sport pattern. Download the PDF below and check qualifying details.</p><p>Registration opens May 20th. Entry fee is $75 per bowler.</p>',
   headerImageUrl: null,
   publishDateUtc: '2026-05-01T00:00:00+00:00',
   tournamentId: null,
   attachments: [
-    { displayName: 'Lane Pattern PDF', contentType: 'application/pdf', url: 'https://files.bowlneba.com/news/june-lane-pattern/pattern.pdf' },
+    { displayName: 'Lane Pattern PDF', contentType: 'application/pdf', url: 'https://files.bowlneba.com/news/june-lane-pattern/pattern.pdf', isInline: false, container: 'news', path: 'june-lane-pattern/pattern.pdf', sizeInBytes: 156672 },
   ],
 };
 
 const MOCK_ARTICLE_POINTS_RACE: object = {
+  articleId: ARTICLE_ID_POINTS_RACE,
   slug: 'points-race-update',
+  publicationStatus: 'Published',
   title: 'Points Race Update: Three Bowlers Separated by Eight Points',
   content: '<p>With two tournaments left, the Bowler of the Year race is razor-thin. Here\'s the current standings and what each contender needs to clinch the title heading into the final stretch.</p>',
   headerImageUrl: null,
@@ -633,6 +667,22 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   const requestUrl = new URL(req.url ?? '/', 'http://localhost');
   const pathname = requestUrl.pathname;
 
+  if (req.method === 'POST' && pathname === '/news') {
+    const override = mockOverrides.get(pathname);
+
+    if (override?.status != null && override.status >= 400) {
+      sendJsonResponse(res, { error: 'Mock error' }, override.status);
+      return;
+    }
+
+    const body = await readRequestBody(req);
+    const parsed = JSON.parse(body) as { article?: { title?: string; slug?: string } };
+    const slug = parsed.article?.slug || slugify(parsed.article?.title ?? '');
+
+    sendJsonResponse(res, { articleId: '01JX0000000000000000000199', slug }, 201);
+    return;
+  }
+
   if (req.method === 'POST') {
     if (pathname === '/__mock/fail') {
       const path = requestUrl.searchParams.get('path') ?? '';
@@ -683,6 +733,32 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       sendJsonResponse(res, data);
       return;
     }
+  }
+
+  if (req.method === 'DELETE' && pathname.startsWith('/news/')) {
+    const override = mockOverrides.get(pathname);
+
+    if (override?.status != null && override.status >= 400) {
+      sendJsonResponse(res, { error: 'Mock error' }, override.status);
+      return;
+    }
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method === 'PUT' && pathname.startsWith('/news/')) {
+    const override = mockOverrides.get(pathname);
+
+    if (override?.status != null && override.status >= 400) {
+      sendJsonResponse(res, { error: 'Mock error' }, override.status);
+      return;
+    }
+
+    res.writeHead(204);
+    res.end();
+    return;
   }
 
   sendJsonResponse(res, { error: 'Not Found' }, 404);

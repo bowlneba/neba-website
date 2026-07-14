@@ -15,12 +15,14 @@ namespace Neba.Website.Server.Services;
 /// <summary>
 /// A delegating handler that adds a bearer token to outgoing HTTP requests.
 /// </summary>
-/// <param name="httpContextAccessor">The HTTP context accessor.</param>
+/// <param name="httpContextAccessor">The HTTP context accessor. Only populated for the duration of an actual HTTP request — null for calls made purely over an established SignalR circuit (e.g. from a <c>prerender: false</c> component), in which case <paramref name="tokenCache"/> is used instead.</param>
+/// <param name="tokenCache">Circuit-scoped fallback token cache, seeded once per circuit by <c>Routes.razor</c>.</param>
 /// <param name="httpClientFactory">Used to build a plain HTTP client for the silent-refresh call (bypasses Refit to avoid a circular dependency on this same handler).</param>
 /// <param name="apiConfiguration">The base URL of the security API.</param>
 /// <param name="logger">Logger for silent-refresh failures.</param>
 internal sealed class BearerTokenHandler(
     IHttpContextAccessor httpContextAccessor,
+    CircuitTokenCache tokenCache,
     IHttpClientFactory httpClientFactory,
     NebaApiConfiguration apiConfiguration,
     ILogger<BearerTokenHandler> logger)
@@ -37,9 +39,9 @@ internal sealed class BearerTokenHandler(
         ArgumentNullException.ThrowIfNull(request);
 
         var httpContext = httpContextAccessor.HttpContext;
-        var token = httpContext is null
-            ? null
-            : await httpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.AccessTokenName);
+        var token = httpContext is not null
+            ? await httpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.AccessTokenName)
+            : tokenCache.AccessToken;
 
         if (token is not null)
         {
@@ -48,7 +50,7 @@ internal sealed class BearerTokenHandler(
 
         var response = await base.SendAsync(request, cancellationToken);
 
-        if (response.StatusCode == HttpStatusCode.Unauthorized && httpContext is not null)
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
             var refreshedToken = await TryRefreshAsync(httpContext, cancellationToken);
 
@@ -66,10 +68,14 @@ internal sealed class BearerTokenHandler(
         return response;
     }
 
-    private async Task<string?> TryRefreshAsync(HttpContext httpContext, CancellationToken cancellationToken)
+    private async Task<string?> TryRefreshAsync(HttpContext? httpContext, CancellationToken cancellationToken)
     {
-        var refreshToken = await httpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.RefreshTokenName);
-        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var refreshToken = httpContext is not null
+            ? await httpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.RefreshTokenName)
+            : tokenCache.RefreshToken;
+        var userId = httpContext is not null
+            ? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            : tokenCache.UserId;
 
         if (refreshToken is null || userId is null)
             return null;
@@ -98,9 +104,16 @@ internal sealed class BearerTokenHandler(
         if (refreshed is null)
             return null;
 
-        if (httpContext.Response.HasStarted)
+        // Keep the circuit-scoped cache current regardless of whether the cookie itself can be
+        // rewritten below, so later HttpContext-less calls on this circuit keep using a live token.
+        tokenCache.AccessToken = refreshed.AccessToken;
+        tokenCache.RefreshToken = refreshed.RefreshToken;
+
+        if (httpContext?.Response.HasStarted != false)
         {
-            logger.LogSilentRefreshCookieSkipped();
+            if (httpContext is not null)
+                logger.LogSilentRefreshCookieSkipped();
+
             return refreshed.AccessToken;
         }
 

@@ -66,6 +66,9 @@ ADRs are numbered sequentially:
 - [ADR-0003](0003-handler-decoration-over-direct-service-calls.md): Handler Decoration Over Direct Service Calls
 - [ADR-0004](0004-error-code-naming-convention.md): Error Code Naming Convention
 - [ADR-0005](0005-shadow-db-pk-for-natural-key-aggregates.md): Shadow Database PK for Natural-Key Aggregates
+- [ADR-0006](0006-explicit-new-on-stronglytypedid-partial-structs.md): Explicit `New()` on StronglyTypedId Partial Structs
+- [ADR-0007](0007-in-repo-user-help-documentation.md): In-Repo User Help Documentation
+- [ADR-0008](0008-policy-documentation-structure.md): Policy Documentation Structure
 
 ## Resources
 

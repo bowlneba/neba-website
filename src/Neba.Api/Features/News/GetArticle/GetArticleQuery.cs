@@ -12,9 +12,12 @@ public sealed record GetArticleQuery
     /// <summary>URL-friendly identifier for the article.</summary>
     public required string Slug { get; init; }
 
+    /// <summary>Whether the caller can manage articles; gates draft visibility and is part of the cache key so results aren't shared across permission levels.</summary>
+    public required bool CallerHasArticleManagementPermission { get; init; }
+
     /// <inheritdoc />
     public CacheDescriptor Cache
-        => CacheDescriptors.News.Article(Slug);
+        => CacheDescriptors.News.Article(Slug, CallerHasArticleManagementPermission);
 
     /// <inheritdoc />
     public TimeSpan Expiry

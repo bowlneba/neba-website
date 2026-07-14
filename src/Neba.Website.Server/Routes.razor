@@ -1,4 +1,11 @@
-﻿@using Neba.Website.Server.Pages
+﻿@using System.Security.Claims
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Neba.Website.Server.Account
+@using Neba.Website.Server.Pages
+@using Neba.Website.Server.Services
+
+@inject CircuitTokenCache TokenCache
 
 <CascadingAuthenticationState>
     <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(NotFound)">
@@ -8,3 +15,23 @@
         </Found>
     </Router>
 </CascadingAuthenticationState>
+
+@code {
+    // Routes.razor renders once per circuit and is the last point in the render tree where a real
+    // HttpContext (cascaded by the framework) is reliably available — components further down the
+    // tree may render with prerender:false, entirely over the SignalR circuit, where HttpContext is
+    // no longer populated. Seed the circuit-scoped token cache here so BearerTokenHandler can still
+    // authenticate outgoing API calls made from those later, HttpContext-less renders.
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (HttpContext is null)
+            return;
+
+        TokenCache.UserId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        TokenCache.AccessToken = await HttpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.AccessTokenName);
+        TokenCache.RefreshToken = await HttpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.RefreshTokenName);
+    }
+}

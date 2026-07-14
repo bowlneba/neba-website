@@ -1,4 +1,5 @@
 using Neba.Api.Contracts.News.ListArticles;
+using Neba.Api.Features.News.Domain;
 
 namespace Neba.TestFactory.News;
 
@@ -10,14 +11,18 @@ public static class ArticleSummaryResponseFactory
     public static readonly DateTimeOffset ValidPublishDateUtc = new(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
     public static ArticleSummaryResponse Create(
+        string? articleId = null,
         string? slug = null,
+        PublicationStatus? publicationStatus = null,
         string? title = null,
         string? excerpt = null,
         Uri? headerImageUrl = null,
         DateTimeOffset? publishDateUtc = null)
         => new()
         {
+            ArticleId = articleId ?? Ulid.NewUlid().ToString(),
             Slug = slug ?? ValidSlug,
+            PublicationStatus = publicationStatus?.Name ?? PublicationStatus.Published.Name,
             Title = title ?? ValidTitle,
             Excerpt = excerpt ?? ValidExcerpt,
             HeaderImageUrl = headerImageUrl,
@@ -33,9 +38,11 @@ public static class ArticleSummaryResponseFactory
             var hasImage = faker.Random.Bool();
             return new ArticleSummaryResponse
             {
+                ArticleId = Ulid.BogusString(faker),
 #pragma warning disable CA1308
                 Slug = title.ToLowerInvariant().Replace(' ', '-'),
 #pragma warning restore CA1308
+                PublicationStatus = faker.PickRandom(PublicationStatus.List.ToArray()).Name,
                 Title = title,
                 Excerpt = faker.Lorem.Sentence(),
                 HeaderImageUrl = hasImage ? new Uri(faker.Internet.Avatar()) : null,

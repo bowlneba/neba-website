@@ -42,13 +42,19 @@
     object-fit: cover;
 }
 
+.news-detail-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+}
+
 .news-detail-date {
     font-size: 0.8rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--neba-blue-600, #5563DD);
-    margin-bottom: 0.5rem;
 }
 
 .news-detail-title {
@@ -72,6 +78,17 @@
 
 .article-body p + p {
     margin-top: 1em;
+}
+
+.article-body ::deep a {
+    color: var(--neba-blue-700);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+}
+
+.article-body ::deep a:hover {
+    color: var(--neba-blue-500);
 }
 
 /* ─── Sticky sidebar ─────────────────────────────────────── */
@@ -130,6 +147,39 @@
 .sidebar-tournament-btn {
     width: 100%;
     justify-content: space-between;
+}
+
+/* ─── Edit action ────────────────────────────────────────── */
+.sidebar-edit-action {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--neba-border, #CCCCCC);
+}
+
+.sidebar-edit-btn {
+    width: 100%;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+/* ─── Danger zone ────────────────────────────────────────── */
+.sidebar-danger-zone {
+    padding: 0.75rem 1rem;
+    border-top: 1px dashed var(--neba-border, #CCCCCC);
+}
+
+.sidebar-danger-zone-label {
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--neba-accent-red, #CC080A);
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-danger-zone-btn {
+    width: 100%;
+    justify-content: center;
+    gap: 0.4rem;
 }
 
 /* ─── File list ──────────────────────────────────────────── */

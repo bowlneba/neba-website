@@ -27,6 +27,7 @@ internal sealed class LoginEndpoint(Messaging.ICommandHandler<LoginCommand, Logi
             .WithName("Login")
             .WithTags("Public")
             .Produces<LoginResponse>(StatusCodes.Status200OK)
+            .ProducesProblemDetails(StatusCodes.Status400BadRequest)
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
             .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));
     }

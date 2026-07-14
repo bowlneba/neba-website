@@ -29,6 +29,7 @@ internal sealed class RefreshTokenEndpoint(Messaging.ICommandHandler<RefreshToke
             .WithName("RefreshToken")
             .WithTags("Public")
             .Produces<RefreshTokenResponse>(StatusCodes.Status200OK)
+            .ProducesProblemDetails(StatusCodes.Status400BadRequest)
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
             .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));
     }

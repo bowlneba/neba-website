@@ -46,8 +46,8 @@ public sealed class BearerTokenHandlerTests
         innerHandler.Requests[0].Headers.Authorization.ShouldBe(new AuthenticationHeaderValue("Bearer", "old-token"));
     }
 
-    [Fact(DisplayName = "Should not attach a bearer header when there is no HttpContext")]
-    public async Task SendAsync_ShouldNotAttachBearerHeader_WhenNoHttpContext()
+    [Fact(DisplayName = "Should not attach a bearer header when there is no HttpContext and no cached token")]
+    public async Task SendAsync_ShouldNotAttachBearerHeader_WhenNoHttpContextAndNoCachedToken()
     {
         // Arrange
         using var innerHandler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
@@ -64,6 +64,72 @@ public sealed class BearerTokenHandlerTests
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         innerHandler.Requests.ShouldHaveSingleItem();
         innerHandler.Requests[0].Headers.Authorization.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "Should attach the cached access token as a bearer header when there is no HttpContext")]
+    public async Task SendAsync_ShouldAttachCachedBearerHeader_WhenNoHttpContext()
+    {
+        // Arrange
+        using var innerHandler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var httpContextAccessorMock = new Mock<IHttpContextAccessor>(MockBehavior.Strict);
+        httpContextAccessorMock.SetupGet(a => a.HttpContext).Returns((HttpContext?)null);
+        var factoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
+        var tokenCache = new CircuitTokenCache { AccessToken = "circuit-token" };
+        using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, tokenCache);
+        using var client = new HttpClient(sut, disposeHandler: false);
+
+        // Act
+        using var response = await client.GetAsync(new Uri("https://downstream.example.com/resource"), TestContext.Current.CancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        innerHandler.Requests.ShouldHaveSingleItem();
+        innerHandler.Requests[0].Headers.Authorization.ShouldBe(new AuthenticationHeaderValue("Bearer", "circuit-token"));
+    }
+
+    [Fact(DisplayName = "Should silently refresh and retry using the cached refresh token when there is no HttpContext")]
+    public async Task SendAsync_ShouldRefreshAndRetryUsingCache_WhenNoHttpContextAndRefreshSucceeds()
+    {
+        // Arrange
+        var responses = new Queue<HttpStatusCode>([HttpStatusCode.Unauthorized, HttpStatusCode.OK]);
+        using var innerHandler = new RecordingHandler(_ => new HttpResponseMessage(responses.Dequeue()));
+
+        using var refreshHandler = new RecordingHandler(_ =>
+        {
+            var json = JsonSerializer.Serialize(new
+            {
+                accessToken = "new-token",
+                refreshToken = "new-refresh",
+                expiresAt = DateTimeOffset.UtcNow.AddMinutes(15),
+                userId = "user-123",
+                email = "admin@bowlneba.com",
+            }, JsonOptions);
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            };
+        });
+
+        var httpContextAccessorMock = new Mock<IHttpContextAccessor>(MockBehavior.Strict);
+        httpContextAccessorMock.SetupGet(a => a.HttpContext).Returns((HttpContext?)null);
+        var factoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
+        factoryMock.Setup(f => f.CreateClient(string.Empty)).Returns(() => new HttpClient(refreshHandler));
+
+        var tokenCache = new CircuitTokenCache { AccessToken = "old-token", RefreshToken = "refresh-abc", UserId = "user-123" };
+        using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, tokenCache);
+        using var client = new HttpClient(sut, disposeHandler: false);
+
+        // Act
+        using var response = await client.GetAsync(new Uri("https://downstream.example.com/resource"), TestContext.Current.CancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        innerHandler.Requests.Count.ShouldBe(2);
+        innerHandler.Requests[0].Headers.Authorization.ShouldBe(new AuthenticationHeaderValue("Bearer", "old-token"));
+        innerHandler.Requests[1].Headers.Authorization.ShouldBe(new AuthenticationHeaderValue("Bearer", "new-token"));
+        tokenCache.AccessToken.ShouldBe("new-token");
+        tokenCache.RefreshToken.ShouldBe("new-refresh");
     }
 
     [Fact(DisplayName = "Should silently refresh and retry when the response is Unauthorized")]
@@ -165,10 +231,12 @@ public sealed class BearerTokenHandlerTests
     private static BearerTokenHandler CreateHandler(
         HttpMessageHandler innerHandler,
         IHttpContextAccessor httpContextAccessor,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        CircuitTokenCache? tokenCache = null)
     {
         var handler = new BearerTokenHandler(
             httpContextAccessor,
+            tokenCache ?? new CircuitTokenCache(),
             httpClientFactory,
             new NebaApiConfiguration { BaseUrl = ApiBaseUrl },
             NullLogger<BearerTokenHandler>.Instance)

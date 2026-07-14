@@ -63,13 +63,13 @@ public sealed class PermissionResolverTests
             .ReturnsAsync(role);
         roleManagerMock
             .Setup(m => m.GetClaimsAsync(role))
-            .ReturnsAsync([new Claim(SecurityRoleSeeder.PermissionClaimType, Permissions.Read.Value)]);
+            .ReturnsAsync([new Claim(SecurityRoleSeeder.PermissionClaimType, Permissions.CreateArticle.Value)]);
 
         // Act
         var result = await PermissionResolver.ResolveAsync(roleManagerMock.Object, [Roles.Admin]);
 
         // Assert
-        result.ShouldBe([Permissions.Read]);
+        result.ShouldBe([Permissions.CreateArticle]);
     }
 
     [Fact(DisplayName = "ResolveAsync should ignore claims whose claim type is not the permission claim type")]
@@ -105,19 +105,19 @@ public sealed class PermissionResolverTests
             .ReturnsAsync(adminRole);
         roleManagerMock
             .Setup(m => m.GetClaimsAsync(adminRole))
-            .ReturnsAsync([new Claim(SecurityRoleSeeder.PermissionClaimType, "Read")]);
+            .ReturnsAsync([new Claim(SecurityRoleSeeder.PermissionClaimType, "News.CreateArticle")]);
         roleManagerMock
             .Setup(m => m.FindByNameAsync(memberRoleName))
             .ReturnsAsync(memberRole);
         roleManagerMock
             .Setup(m => m.GetClaimsAsync(memberRole))
-            .ReturnsAsync([new Claim(SecurityRoleSeeder.PermissionClaimType, "Read")]);
+            .ReturnsAsync([new Claim(SecurityRoleSeeder.PermissionClaimType, "News.CreateArticle")]);
 
         // Act
         var result = await PermissionResolver.ResolveAsync(roleManagerMock.Object, [Roles.Admin, memberRoleName]);
 
         // Assert
-        result.ShouldBe([Permissions.Read]);
+        result.ShouldBe([Permissions.CreateArticle]);
     }
 
     [Fact(DisplayName = "ResolveAsync should aggregate distinct permission keys across multiple roles")]
@@ -133,20 +133,20 @@ public sealed class PermissionResolverTests
             .ReturnsAsync(adminRole);
         roleManagerMock
             .Setup(m => m.GetClaimsAsync(adminRole))
-            .ReturnsAsync([new Claim(SecurityRoleSeeder.PermissionClaimType, "Read")]);
+            .ReturnsAsync([new Claim(SecurityRoleSeeder.PermissionClaimType, "News.CreateArticle")]);
         roleManagerMock
             .Setup(m => m.FindByNameAsync(memberRoleName))
             .ReturnsAsync(memberRole);
         roleManagerMock
             .Setup(m => m.GetClaimsAsync(memberRole))
-            .ReturnsAsync([new Claim(SecurityRoleSeeder.PermissionClaimType, "Write")]);
+            .ReturnsAsync([new Claim(SecurityRoleSeeder.PermissionClaimType, "News.EditArticle")]);
 
         // Act
         var result = await PermissionResolver.ResolveAsync(roleManagerMock.Object, [Roles.Admin, memberRoleName]);
 
         // Assert
         result.Count.ShouldBe(2);
-        result.ShouldContain(Permissions.Read);
-        result.ShouldContain(Permissions.Write);
+        result.ShouldContain(Permissions.CreateArticle);
+        result.ShouldContain(Permissions.EditArticle);
     }
 }

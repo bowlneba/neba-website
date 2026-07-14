@@ -218,6 +218,7 @@ Flag when:
 - Feature-specific components placed in generic `Components/` folder
 - Missing loading state handling
 - Components placed in Client project without clear justification (offline, browser APIs, latency-sensitive)
+- Data-entry pages/forms (anything with `EditForm`, file uploads, or similar user input) don't guard against losing unsaved changes on Cancel, in-app navigation, or refresh/close — wrap with `<DirtyFormGuard IsDirty="@_isDirty" />` (`Components/DirtyFormGuard.razor`) and track `_isDirty` via `EditContext.OnFieldChanged` plus explicit `MarkDirty()` calls for anything outside the `EditForm` (file uploads, non-`InputBase` bound fields). See `CreateArticle.razor` for the reference implementation.
 
 ---
 
@@ -318,6 +319,16 @@ Suggest spans for:
 - Business-critical operations (score submission, registration, tournament completion)
 - Operations involving multiple steps
 - Operations where timing breakdown aids debugging
+
+### Entity-Level Auditing
+
+EF-level audit (`Audit.EntityFramework`, configured in `Neba.Api/Auditing/AuditingConfiguration.cs`) uses `UseOptIn()` — an entity type produces **no** audit row on insert/update/delete unless it's explicitly registered via `.Include<T>()`. There is no compiler or runtime error when this is skipped; the entity just silently goes unaudited.
+
+Flag when:
+
+- A PR adds a new aggregate root or entity under `Features/*/Domain/` that should be audited (i.e. it's user-facing content or state, analogous to existing audited types like `Bowler`, `Tournament`, `Sponsor`) but is not added to the `.Include<T>()` chain in `AuditingConfiguration.cs`
+
+Not every new entity needs this — use judgment (e.g. pure value objects or entities owned entirely by an already-audited aggregate don't need their own `Include<T>()`), but any new top-level aggregate root should be checked against the list.
 
 ### Metrics
 
@@ -476,6 +487,33 @@ Suggest E2E tests for:
 - Authentication/authorization boundaries
 - Critical business operations
 - Complex form validation with error recovery
+
+---
+
+## User Help Documentation
+
+Every user-facing command or feature must ship with a help doc at `docs/help/<feature-or-command-name>.md`. See [ADR-0007](../../docs/adr/0007-in-repo-user-help-documentation.md) for the rationale and required structure.
+
+Flag when:
+
+- A new user-facing command (endpoint + UI that an admin or end user directly triggers, e.g. create/update/delete actions) is added without a corresponding new file under `docs/help/`
+- An existing documented command's UI changes (new steps, new fields, different flow) but its `docs/help/*.md` file and screenshots aren't updated to match
+- A help doc is missing prerequisites (required role/permission), numbered steps, or at least one screenshot per distinct UI state
+- Screenshots are added ad hoc instead of via the project's Playwright screenshot-generation flow (see ADR-0007) — inconsistent screenshot sourcing makes them hard to regenerate later
+
+**Do NOT flag** purely internal/background changes (e.g. a background job, an internal refactor, an API-only change with no direct UI trigger) for missing help docs — this requirement applies to user-triggered commands only.
+
+## Policy Documentation
+
+Every authorization policy must have an entry in `docs/policies/README.md`. See [ADR-0008](../../docs/adr/0008-policy-documentation-structure.md) for the rationale and required structure.
+
+Flag when:
+
+- A new policy (a new `AddPolicy(...)` call in `SecurityConfiguration.cs` / `AccountConfiguration.cs`) is added without a corresponding row in `docs/policies/README.md`
+- A policy with real behavioral nuance (OR/AND-of-many permission semantics, exceptions) doesn't have a dedicated `docs/policies/<policy-name>.md` file linked from its README row
+- An existing policy's semantics change (e.g. a permission added to a policy's OR-set) but its `docs/policies/` entry isn't updated to match
+
+**Do NOT flag** the dynamic per-permission `Permission:{value}` policies individually — they're covered collectively by the single README row describing the mechanism, not one row per permission value.
 
 ---
 
@@ -642,7 +680,19 @@ When reviewing, verify:
 - [ ] Logging present with appropriate levels
 - [ ] Spans added for business operations
 - [ ] No sensitive data logged
+- [ ] New auditable aggregate roots added to `.Include<T>()` in `AuditingConfiguration.cs`
 
 ### Blazor
 
 - [ ] Blazor components don't fetch data directly
+- [ ] Data-entry pages/forms use `DirtyFormGuard` to warn before losing unsaved changes
+
+### User Help Documentation
+
+- [ ] New user-facing commands have a corresponding `docs/help/*.md` file ([ADR-0007](../../docs/adr/0007-in-repo-user-help-documentation.md))
+- [ ] Changes to a documented command's UI are reflected in its help doc and screenshots
+
+### Policy Documentation
+
+- [ ] New authorization policies have a row in `docs/policies/README.md` ([ADR-0008](../../docs/adr/0008-policy-documentation-structure.md))
+- [ ] Policies with OR/AND-of-many or otherwise non-trivial semantics have a dedicated `docs/policies/<policy-name>.md` file
