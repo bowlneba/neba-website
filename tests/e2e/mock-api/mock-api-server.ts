@@ -52,8 +52,8 @@ function slugify(title: string): string {
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+/, '')
-    .replace(/-+$/, '');
+    .replace(/^-/, '')
+    .replace(/-$/, '');
 }
 
 const MOCK_BOWLING_CENTERS = {
