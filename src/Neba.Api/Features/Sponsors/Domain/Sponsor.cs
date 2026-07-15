@@ -119,12 +119,19 @@ public sealed class Sponsor
     private const string ReservedSlugNew = "new";
 
     /// <summary>
-    /// Creates a new sponsor. If <paramref name="slug"/> is null or empty, the slug is generated from
-    /// <paramref name="name"/>. Returns a validation error if <paramref name="name"/> is empty, the
-    /// normalized slug has no alphanumeric characters, or the normalized slug is the reserved value
-    /// "new" (reserved for the <c>/sponsors/new</c> create route). <paramref name="id"/> is
-    /// production-optional — it exists so test factories can assign a deterministic ID for stable
-    /// Verify snapshots; production callers always omit it.
+    /// Creates a new sponsor. If <paramref name="slug"/> is null or empty, the slug is generated
+    /// from <paramref name="name"/>. Returns a validation error if <paramref name="name"/> is empty,
+    /// the normalized slug has no alphanumeric characters, or the normalized slug is the reserved
+    /// value "new" (reserved for the <c>/sponsors/new</c> create route). Returns a conflict error if
+    /// <paramref name="tier"/> is <see cref="SponsorTier.TitleSponsor"/> and
+    /// <paramref name="isTitleSponsorshipAvailable"/> is <c>false</c> — only one sponsor may hold the
+    /// Title tier at a time. <paramref name="isTitleSponsorshipAvailable"/> defaults to <c>false</c> as
+    /// a fail-safe: a caller that omits it gets the safe, blocking behavior instead of an unintended
+    /// bypass. It is a plain <c>bool</c> rather than a call to <c>ITitleSponsorPolicy</c> so the
+    /// invariant is exercised with no mocking. This is a fast, user-friendly pre-check only — the
+    /// actual guarantee against two concurrent Title-tier creates is a filtered unique database index
+    /// (see <c>SponsorConfiguration</c>), which the caller must also handle by catching
+    /// <see cref="Microsoft.EntityFrameworkCore.DbUpdateException"/> on save.
     /// </summary>
     [SuppressMessage("Major Code Smell", "S107:Methods should not have too many parameters", Justification = "Aggregate factory method — each parameter is a required or optional field of the always-valid Sponsor invariant (see CLAUDE.md 'Always-Valid Entities'); splitting into a parameter object would just move the same fields into a second type with no behavior of its own.")]
     public static ErrorOr<Sponsor> Create(
@@ -133,6 +140,7 @@ public sealed class Sponsor
         int priority,
         SponsorTier tier,
         SponsorCategory category,
+        bool isTitleSponsorshipAvailable = false,
         string? slug = null,
         StoredFile? logo = null,
         Uri? websiteUrl = null,
@@ -145,8 +153,7 @@ public sealed class Sponsor
         Address? businessAddress = null,
         EmailAddress? businessEmail = null,
         IReadOnlyCollection<PhoneNumber>? phoneNumbers = null,
-        ContactInfo? sponsorContact = null,
-        SponsorId? id = null)
+        ContactInfo? sponsorContact = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -167,9 +174,14 @@ public sealed class Sponsor
             return SponsorErrors.SlugReserved;
         }
 
+        if (tier == SponsorTier.TitleSponsor && !isTitleSponsorshipAvailable)
+        {
+            return SponsorErrors.TitleSponsorshipUnavailable;
+        }
+
         return new Sponsor
         {
-            Id = id ?? SponsorId.New(),
+            Id = SponsorId.New(),
             Name = name,
             Slug = normalizedSlug,
             IsCurrentSponsor = isCurrentSponsor,

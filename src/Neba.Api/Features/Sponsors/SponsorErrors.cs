@@ -27,4 +27,9 @@ internal static class SponsorErrors
             code: "Sponsor.Slug.AlreadyExists",
             description: "A sponsor with this slug already exists.",
             metadata: new Dictionary<string, object> { { "Slug", slug } });
+
+    public static Error TitleSponsorshipUnavailable
+        => Error.Conflict(
+            code: "Sponsor.TitleSponsor.Unavailable",
+            description: "The Title Sponsor tier is already assigned to another sponsor.");
 }

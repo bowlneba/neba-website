@@ -167,8 +167,8 @@ public sealed class SponsorTests
         result.Value.Slug.ShouldBe("custom-slug");
     }
 
-    [Fact(DisplayName = "Create should assign a new ID when ID is not provided")]
-    public void Create_ShouldAssignNewId_WhenIdIsNotProvided()
+    [Fact(DisplayName = "Create should assign a new ID")]
+    public void Create_ShouldAssignNewId()
     {
         // Arrange & Act
         var result = Sponsor.Create(
@@ -183,24 +183,72 @@ public sealed class SponsorTests
         result.Value.Id.ShouldNotBe(SponsorId.Empty);
     }
 
-    [Fact(DisplayName = "Create should assign the provided ID when ID is given")]
-    public void Create_ShouldAssignProvidedId_WhenIdIsGiven()
+    [Fact(DisplayName = "Create should return an error when tier is TitleSponsor and Title sponsorship is unavailable")]
+    public void Create_ShouldReturnError_WhenTierIsTitleSponsorAndTitleSponsorshipIsUnavailable()
     {
-        // Arrange
-        var id = SponsorId.New();
+        // Arrange & Act
+        var result = Sponsor.Create(
+            name: SponsorFactory.ValidName,
+            isCurrentSponsor: SponsorFactory.ValidIsCurrentSponsor,
+            priority: SponsorFactory.ValidPriority,
+            tier: SponsorTier.TitleSponsor,
+            category: SponsorFactory.ValidCategory,
+            isTitleSponsorshipAvailable: false);
 
-        // Act
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(SponsorErrors.TitleSponsorshipUnavailable);
+    }
+
+    [Fact(DisplayName = "Create should return an error when tier is TitleSponsor and isTitleSponsorshipAvailable is omitted")]
+    public void Create_ShouldReturnError_WhenTierIsTitleSponsorAndIsTitleSponsorshipAvailableIsOmitted()
+    {
+        // Arrange & Act
+        var result = Sponsor.Create(
+            name: SponsorFactory.ValidName,
+            isCurrentSponsor: SponsorFactory.ValidIsCurrentSponsor,
+            priority: SponsorFactory.ValidPriority,
+            tier: SponsorTier.TitleSponsor,
+            category: SponsorFactory.ValidCategory);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(SponsorErrors.TitleSponsorshipUnavailable);
+    }
+
+    [Fact(DisplayName = "Create should succeed when tier is TitleSponsor and Title sponsorship is available")]
+    public void Create_ShouldSucceed_WhenTierIsTitleSponsorAndTitleSponsorshipIsAvailable()
+    {
+        // Arrange & Act
+        var result = Sponsor.Create(
+            name: SponsorFactory.ValidName,
+            isCurrentSponsor: SponsorFactory.ValidIsCurrentSponsor,
+            priority: SponsorFactory.ValidPriority,
+            tier: SponsorTier.TitleSponsor,
+            category: SponsorFactory.ValidCategory,
+            isTitleSponsorshipAvailable: true);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Tier.ShouldBe(SponsorTier.TitleSponsor);
+    }
+
+    [Theory(DisplayName = "Create should succeed regardless of isTitleSponsorshipAvailable when tier is not TitleSponsor")]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Create_ShouldSucceed_WhenTierIsNotTitleSponsorRegardlessOfTitleSponsorshipAvailability(bool isTitleSponsorshipAvailable)
+    {
+        // Arrange & Act
         var result = Sponsor.Create(
             name: SponsorFactory.ValidName,
             isCurrentSponsor: SponsorFactory.ValidIsCurrentSponsor,
             priority: SponsorFactory.ValidPriority,
             tier: SponsorFactory.ValidTier,
             category: SponsorFactory.ValidCategory,
-            id: id);
+            isTitleSponsorshipAvailable: isTitleSponsorshipAvailable);
 
         // Assert
         result.IsError.ShouldBeFalse();
-        result.Value.Id.ShouldBe(id);
     }
 
     [Fact(DisplayName = "Create should default phone numbers to an empty collection when not provided")]
