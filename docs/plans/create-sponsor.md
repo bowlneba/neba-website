@@ -8,9 +8,11 @@ Add a "Create Sponsor" feature, structurally mirroring `CreateArticle` (News). G
 - **Admin list data source**: no new API route. The existing `GET /sponsors` (`ListActiveSponsorsEndpoint`) is amended to check the caller's permissions and branch its filter, exactly like `ListArticlesEndpoint`/`ListArticlesQuery` does with `CallerHasArticleManagementPermission` — anonymous/unpermitted callers still get active-only sponsors (today's public-page behavior, unchanged), callers holding a Sponsors-management permission get every sponsor, active and inactive. This replaces the separate `ListSponsorsForAdmin` endpoint from the earlier draft of this plan.
 - **Form/factory scope**: `Sponsor.Create(...)` takes the mandatory fields as required parameters and every other `Sponsor` property as a nullable parameter defaulting to `null`, matching the existing `SponsorFactory.Create(...)` test-factory signature (`tests/Neba.TestFactory/Sponsors/SponsorFactory.cs`) — that signature is the reference for the domain factory's shape. The create UI form captures the full field set (not deferred to a future Edit Sponsor feature).
 - **Slug uniqueness**: enforced with the same check-then-insert + `Error.Conflict` (409) pattern `CreateArticleCommandHandler` uses for `Article.Slug`, since `Sponsor.Slug` already has a DB alternate key (`SponsorConfiguration.cs`) that would otherwise surface as an unhandled `DbUpdateException`.
-- **Single active Title Sponsor**: only one `Sponsor` may have `Tier == SponsorTier.TitleSponsor && IsCurrentSponsor == true` at any time. Unlike the season-award invariants in CLAUDE.md's "Aggregate Invariants Requiring Cross-Aggregate Data" (where a handler queries a fact and hands it to an `Assign*` method), this rule depends on data owned by *other instances of the same aggregate type* — a single `Sponsor` has no visibility into other `Sponsor` rows, so the aggregate cannot see the fact it needs even indirectly through a sibling aggregate. It's enforced in two layers, deliberately redundant:
-  1. **Domain-service pre-check (fast, user-friendly failure)**: `ITitleSponsorPolicy` (`Neba.Api.Features.Sponsors.Domain`) exposes `IsTitleSponsorSlotAvailableAsync(...)` — a domain-layer interface, because "is a title-sponsor slot open" is a business concept, not an infrastructure detail. Its implementation (`Neba.Api.Features.Sponsors.Infrastructure.TitleSponsorPolicy`) queries the sponsors table; the aggregate never depends on a repository/DbContext directly. `Sponsor` gets a dedicated factory, `CreateAsTitleSponsor(...)`, taking a plain `bool titleSponsorSlotAvailable` rather than the policy itself — this keeps the aggregate infrastructure-free and the invariant trivially unit-testable (exercise it with a bool, no mocking). If the flag is `false`, the factory throws `TitleSponsorSlotUnavailableException` — a deliberate, narrow exception to CLAUDE.md's "commands return `ErrorOr<T>`, never throw for business rules," scoped to this one invariant because the *real* guarantee (item 2 below) is enforced by the database, not the aggregate; the exception exists purely so the handler has a signal to translate into the same conflict result as the DB-constraint path, not as this rule's actual enforcement mechanism. `CreateSponsorCommandHandler` calls the policy first, then passes the result into `CreateAsTitleSponsor`, and catches the exception to map it to `Error.Conflict`.
-  2. **Database constraint (the actual guarantee)**: there's a window between the policy check and the save where two concurrent requests can both observe an open slot, so the real enforcement is a filtered unique index in Postgres scoped to `tier = TitleSponsor && current_sponsor`, making it physically impossible to commit two such rows regardless of timing. (Note: the instruction that prompted this described the index as being on the sponsor "category" column — in this codebase's model, "Title Sponsor" is a `SponsorTier` value, not a `SponsorCategory`, so the index targets `Tier`/`IsCurrentSponsor`; flag if a distinct `SponsorCategory` concept was actually intended.) `CreateSponsorCommandHandler` catches the resulting `DbUpdateException` on save and maps it to the identical `Error.Conflict` used by the pre-check, so the caller sees one consistent error no matter which layer caught it.
+- **Single Title Sponsor**: only one `Sponsor` may ever hold `Tier == SponsorTier.TitleSponsor` at a time (see note below on the exact scope). Unlike the season-award invariants in CLAUDE.md's "Aggregate Invariants Requiring Cross-Aggregate Data" (where a handler queries a fact and hands it to an `Assign*` method), this rule depends on data owned by *other instances of the same aggregate type* — a single `Sponsor` has no visibility into other `Sponsor` rows, so the aggregate cannot see the fact it needs even indirectly through a sibling aggregate. It's enforced in two layers, deliberately redundant:
+  1. **Domain-service pre-check (fast, user-friendly failure)**: `ITitleSponsorPolicy` (`Neba.Api.Features.Sponsors.Domain`) exposes `IsTitleSponsorSlotAvailableAsync(...)` — a domain-layer interface, because "is a title-sponsor slot open" is a business concept, not an infrastructure detail. Its implementation (`Neba.Api.Features.Sponsors.Infrastructure.TitleSponsorPolicy`) queries the sponsors table; the aggregate never depends on a repository/DbContext directly. `Sponsor.Create` takes a single `bool isTitleSponsorshipAvailable = false` parameter — defaulted to `false` as a fail-safe, so any caller that omits it gets the safe, blocking behavior rather than an unintended bypass — instead of calling the policy itself, which keeps the aggregate infrastructure-free and the invariant trivially unit-testable (exercise it with a bool, no mocking). `Create` applies one guard clause: if `tier == SponsorTier.TitleSponsor` and `isTitleSponsorshipAvailable` is `false`, it returns a failure `ErrorOr<Sponsor>` (this codebase's "Result pattern" — see note below) rather than throwing; otherwise it constructs and returns the sponsor normally, same as every other validation branch in `Create`. `CreateSponsorCommandHandler` calls the policy first (only when `command.Tier == SponsorTier.TitleSponsor` — skipped entirely for Premier/Standard creates), passes the result into `Create`, and propagates the returned failure directly — there's no exception to catch.
+  2. **Database constraint (the actual guarantee)**: there's a window between the policy check and the save where two concurrent requests can both observe an open slot, so the real enforcement is a filtered unique index in Postgres scoped to `tier = TitleSponsor`, making it physically impossible to commit two such rows regardless of timing. `CreateSponsorCommandHandler` catches the resulting `DbUpdateException` on save and maps it to the identical failure (`SponsorErrors.TitleSponsorshipUnavailable`, an `Error.Conflict`) used by the pre-check, so the caller sees one consistent shape no matter which layer caught it.
+  - **Naming/scope notes carried over from earlier scoping**: (a) "Title Sponsor" is modeled as a `SponsorTier` value in this codebase, not a `SponsorCategory` value — `SponsorCategory` (Manufacturer, ProShop, etc.) is a separate, unrelated field on `Sponsor`. The guard checks `Tier`, not `Category`; flag if a distinct `SponsorCategory.Title` was actually intended as a new enum member. (b) The guard and the DB index are now scoped to `Tier == TitleSponsor` alone — **not** additionally gated on `IsCurrentSponsor` the way the previous version of this plan had it. This narrows the rule from "only one *active* title sponsor" to "only one sponsor may hold the Title tier at all, active or not" — flag if the intent was actually to keep allowing an inactive Title-tier sponsor to coexist with a new active one (that would restore the `IsCurrentSponsor` condition on both the guard and the index, and the policy implementation below).
+  - **"Result pattern" terminology note**: this plan uses `ErrorOr<Sponsor>` throughout (the codebase's established success/failure result type per CLAUDE.md — "Commands return `ErrorOr<T>`, never throw for business rules") as the concrete implementation of "the Result pattern" — there is no separate `Result<T>` type in this codebase to introduce.
 - **Business address input (UI)**: manual entry now (`UsState` dropdown + free-text street/unit/city/postal code), no address-autocomplete integration. The app has zero existing Google Maps/Places dependency anywhere (`DirectionsModal.razor` only builds a deep-link URL, no SDK/API key) — adding Places Autocomplete would be the first such dependency (new API key, billing, CSP change, JS interop). Worth it long-term, though — members will eventually be able to update their own address (a second, higher-volume address-entry form), which is exactly the case that justifies the shared integration cost. Tracked as a GitHub issue rather than scoped into this feature: [`docs/plans/address-autocomplete-issue.md`](./address-autocomplete-issue.md).
 
 ## Open assumptions to confirm at this gate
@@ -99,22 +101,31 @@ public sealed class Sponsor
     private const string ReservedSlugNew = "new";
 
     /// <summary>
-    /// Creates a new sponsor. If <paramref name="slug"/> is null or empty, the slug is generated from
-    /// <paramref name="name"/>. Returns a validation error if <paramref name="name"/> is empty, the
-    /// normalized slug has no alphanumeric characters, or the normalized slug is the reserved value
-    /// "new" (reserved for the <c>/sponsors/new</c> create route). <paramref name="id"/> is
-    /// production-optional — it exists so test factories can assign a deterministic ID for stable
-    /// Verify snapshots; production callers always omit it. Does not enforce the single-active-title-sponsor
-    /// rule — callers creating a <see cref="SponsorTier.TitleSponsor"/> that is also <paramref name="isCurrentSponsor"/>
-    /// must use <see cref="CreateAsTitleSponsor"/> instead.
+    /// Creates a new sponsor. <paramref name="id"/> is caller-supplied (not generated internally) —
+    /// production callers pass <c>SponsorId.New()</c>; test factories pass a deterministic ID for
+    /// stable Verify snapshots. If <paramref name="slug"/> is null or empty, the slug is generated
+    /// from <paramref name="name"/>. Returns a validation error if <paramref name="name"/> is empty,
+    /// the normalized slug has no alphanumeric characters, or the normalized slug is the reserved
+    /// value "new" (reserved for the <c>/sponsors/new</c> create route). Returns a conflict error if
+    /// <paramref name="tier"/> is <see cref="SponsorTier.TitleSponsor"/> and
+    /// <paramref name="isTitleSponsorshipAvailable"/> is <c>false</c> — only one sponsor may hold the
+    /// Title tier at a time. <paramref name="isTitleSponsorshipAvailable"/> defaults to <c>false</c> as
+    /// a fail-safe: a caller that omits it gets the safe, blocking behavior instead of an unintended
+    /// bypass. It is a plain <c>bool</c> rather than a call to <c>ITitleSponsorPolicy</c> so the
+    /// invariant is exercised with no mocking. This is a fast, user-friendly pre-check only — the
+    /// actual guarantee against two concurrent Title-tier creates is a filtered unique database index
+    /// (see <c>SponsorConfiguration</c>), which the caller must also handle by catching
+    /// <see cref="Microsoft.EntityFrameworkCore.DbUpdateException"/> on save.
     /// </summary>
     [SuppressMessage("Major Code Smell", "S107:Methods should not have too many parameters", Justification = "Aggregate factory method — each parameter is a required or optional field of the always-valid Sponsor invariant (see CLAUDE.md 'Always-Valid Entities'); splitting into a parameter object would just move the same fields into a second type with no behavior of its own.")]
     public static ErrorOr<Sponsor> Create(
+        SponsorId id,
         string name,
         bool isCurrentSponsor,
         int priority,
         SponsorTier tier,
         SponsorCategory category,
+        bool isTitleSponsorshipAvailable = false,
         string? slug = null,
         StoredFile? logo = null,
         Uri? websiteUrl = null,
@@ -127,8 +138,7 @@ public sealed class Sponsor
         Address? businessAddress = null,
         EmailAddress? businessEmail = null,
         IReadOnlyCollection<PhoneNumber>? phoneNumbers = null,
-        ContactInfo? sponsorContact = null,
-        SponsorId? id = null)
+        ContactInfo? sponsorContact = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -149,9 +159,14 @@ public sealed class Sponsor
             return SponsorErrors.SlugReserved;
         }
 
+        if (tier == SponsorTier.TitleSponsor && !isTitleSponsorshipAvailable)
+        {
+            return SponsorErrors.TitleSponsorshipUnavailable;
+        }
+
         return new Sponsor
         {
-            Id = id ?? SponsorId.New(),
+            Id = id,
             Name = name,
             Slug = normalizedSlug,
             IsCurrentSponsor = isCurrentSponsor,
@@ -172,82 +187,7 @@ public sealed class Sponsor
             SponsorContact = sponsorContact
         };
     }
-
-    /// <summary>
-    /// Creates a new sponsor that is both the active Title Sponsor (<see cref="SponsorTier.TitleSponsor"/>,
-    /// <see cref="IsCurrentSponsor"/> <c>true</c>). Delegates all other validation to <see cref="Create"/> —
-    /// <paramref name="titleSponsorSlotAvailable"/> is the only thing this factory adds, and it is a plain
-    /// <c>bool</c> rather than a call to <c>ITitleSponsorPolicy</c> so the invariant is exercised without
-    /// mocking a repository. Throws <see cref="TitleSponsorSlotUnavailableException"/> if
-    /// <paramref name="titleSponsorSlotAvailable"/> is <c>false</c> — this is a fast, user-friendly
-    /// pre-check only; the actual guarantee against two concurrent title-sponsor creates is a filtered
-    /// unique database index (see <c>SponsorConfiguration</c>), which the caller must also handle by
-    /// catching <see cref="Microsoft.EntityFrameworkCore.DbUpdateException"/> on save.
-    /// </summary>
-    [SuppressMessage("Major Code Smell", "S107:Methods should not have too many parameters", Justification = "Aggregate factory method — see Create.")]
-    public static ErrorOr<Sponsor> CreateAsTitleSponsor(
-        bool titleSponsorSlotAvailable,
-        string name,
-        int priority,
-        SponsorCategory category,
-        string? slug = null,
-        StoredFile? logo = null,
-        Uri? websiteUrl = null,
-        string? tagPhrase = null,
-        string? description = null,
-        string? liveReadText = null,
-        string? promotionalNotes = null,
-        Uri? facebookUrl = null,
-        Uri? instagramUrl = null,
-        Address? businessAddress = null,
-        EmailAddress? businessEmail = null,
-        IReadOnlyCollection<PhoneNumber>? phoneNumbers = null,
-        ContactInfo? sponsorContact = null,
-        SponsorId? id = null)
-    {
-        if (!titleSponsorSlotAvailable)
-        {
-            throw new TitleSponsorSlotUnavailableException();
-        }
-
-        return Create(
-            name,
-            isCurrentSponsor: true,
-            priority,
-            SponsorTier.TitleSponsor,
-            category,
-            slug,
-            logo,
-            websiteUrl,
-            tagPhrase,
-            description,
-            liveReadText,
-            promotionalNotes,
-            facebookUrl,
-            instagramUrl,
-            businessAddress,
-            businessEmail,
-            phoneNumbers,
-            sponsorContact,
-            id);
-    }
 }
-```
-
-**New — `src/Neba.Api/Features/Sponsors/Domain/TitleSponsorSlotUnavailableException.cs`**:
-
-```csharp
-namespace Neba.Api.Features.Sponsors.Domain;
-
-/// <summary>
-/// Thrown by <see cref="Sponsor.CreateAsTitleSponsor"/> when the active title-sponsor slot is
-/// already occupied. This is a fast pre-check signal only, caught and translated to
-/// <c>SponsorErrors.ActiveTitleSponsorExists</c> by <c>CreateSponsorCommandHandler</c> — the actual
-/// guarantee against a concurrent double-create is the database's filtered unique index, whose
-/// violation is caught separately as a <see cref="Microsoft.EntityFrameworkCore.DbUpdateException"/>
-/// and mapped to the same error.
-/// </summary>
-public sealed class TitleSponsorSlotUnavailableException : Exception;
 ```
 
 **New — `src/Neba.Api/Features/Sponsors/Domain/ITitleSponsorPolicy.cs`**:
@@ -283,15 +223,15 @@ internal sealed class TitleSponsorPolicy(AppDbContext appDbContext)
 {
     public async Task<bool> IsTitleSponsorSlotAvailableAsync(CancellationToken cancellationToken)
     {
-        var activeTitleSponsorExists = await appDbContext.Sponsors
-            .AnyAsync(s => s.IsCurrentSponsor && s.Tier == SponsorTier.TitleSponsor, cancellationToken);
+        var titleSponsorExists = await appDbContext.Sponsors
+            .AnyAsync(s => s.Tier == SponsorTier.TitleSponsor, cancellationToken);
 
-        return !activeTitleSponsorExists;
+        return !titleSponsorExists;
     }
 }
 ```
 
-Register in `InfrastructureConfiguration.cs` (or wherever Sponsors' feature-scoped services are added) as scoped: `services.AddScoped<ITitleSponsorPolicy, TitleSponsorPolicy>();`. This is a narrow, single-purpose repository-shaped dependency — it does not generalize into a full `ISponsorRepository`; every other Sponsor query/command in this plan still goes through `AppDbContext` directly, matching the rest of the codebase's convention. The exception here is deliberate: it's what keeps `Sponsor.CreateAsTitleSponsor` testable with a bare `bool`.
+Register in `InfrastructureConfiguration.cs` (or wherever Sponsors' feature-scoped services are added) as scoped: `services.AddScoped<ITitleSponsorPolicy, TitleSponsorPolicy>();`. This is a narrow, single-purpose repository-shaped dependency — it does not generalize into a full `ISponsorRepository`; every other Sponsor query/command in this plan still goes through `AppDbContext` directly, matching the rest of the codebase's convention. The exception here is deliberate: it's what keeps `Sponsor.Create` testable with a bare `bool`.
 
 **Edit — `src/Neba.Api/Features/Sponsors/SponsorErrors.cs`**:
 
@@ -323,10 +263,10 @@ internal static class SponsorErrors
             description: "A sponsor with this slug already exists.",
             metadata: new Dictionary<string, object> { { "Slug", slug } });
 
-    public static Error ActiveTitleSponsorExists
+    public static Error TitleSponsorshipUnavailable
         => Error.Conflict(
-            code: "Sponsor.TitleSponsor.AlreadyActive",
-            description: "An active title sponsor already exists. Deactivate it before assigning a new one.");
+            code: "Sponsor.TitleSponsor.Unavailable",
+            description: "The Title Sponsor tier is already assigned to another sponsor.");
 }
 ```
 
@@ -473,7 +413,7 @@ internal sealed class CreateSponsorCommandHandler(
 {
     // Name of the filtered unique index enforced in SponsorConfiguration — see the DbUpdateException
     // handling below. Keep in sync with the index name used in the migration.
-    private const string TitleSponsorSlotIndexName = "ix_sponsors_active_title_sponsor";
+    private const string TitleSponsorIndexName = "ix_sponsors_title_sponsor";
 
     public async Task<ErrorOr<CreatedSponsor>> HandleAsync(CreateSponsorCommand command, CancellationToken cancellationToken)
     {
@@ -505,27 +445,33 @@ internal sealed class CreateSponsorCommandHandler(
             return contactResult.Errors;
         }
 
-        var sponsorResult = command.IsCurrentSponsor && command.Tier == SponsorTier.TitleSponsor
-            ? await CreateAsTitleSponsorAsync(command, addressResult.Value, emailResult.Value, phoneNumbersResult.Value, contactResult.Value, cancellationToken)
-            : Sponsor.Create(
-                command.Name,
-                command.IsCurrentSponsor,
-                command.Priority,
-                command.Tier,
-                command.Category,
-                command.Slug,
-                command.Logo,
-                command.WebsiteUrl,
-                command.TagPhrase,
-                command.Description,
-                command.LiveReadText,
-                command.PromotionalNotes,
-                command.FacebookUrl,
-                command.InstagramUrl,
-                addressResult.Value,
-                emailResult.Value,
-                phoneNumbersResult.Value,
-                contactResult.Value);
+        // Fail-safe default: only queried (and only ever true) when the command is itself trying to
+        // create a Title-tier sponsor — every other tier passes Sponsor.Create's default of `false`,
+        // which is irrelevant to the guard clause since it only checks when tier == TitleSponsor.
+        var isTitleSponsorshipAvailable = command.Tier == SponsorTier.TitleSponsor
+            && await titleSponsorPolicy.IsTitleSponsorSlotAvailableAsync(cancellationToken);
+
+        var sponsorResult = Sponsor.Create(
+            SponsorId.New(),
+            command.Name,
+            command.IsCurrentSponsor,
+            command.Priority,
+            command.Tier,
+            command.Category,
+            isTitleSponsorshipAvailable,
+            command.Slug,
+            command.Logo,
+            command.WebsiteUrl,
+            command.TagPhrase,
+            command.Description,
+            command.LiveReadText,
+            command.PromotionalNotes,
+            command.FacebookUrl,
+            command.InstagramUrl,
+            addressResult.Value,
+            emailResult.Value,
+            phoneNumbersResult.Value,
+            contactResult.Value);
 
         if (sponsorResult.IsError)
         {
@@ -547,12 +493,12 @@ internal sealed class CreateSponsorCommandHandler(
         {
             await appDbContext.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (IsTitleSponsorSlotConstraintViolation(ex))
+        catch (DbUpdateException ex) when (IsTitleSponsorConstraintViolation(ex))
         {
-            // The pre-check in CreateAsTitleSponsorAsync said the slot was open, but a concurrent
-            // request committed first — the filtered unique index is the actual guarantee, this is
-            // just translating its violation to the same conflict the pre-check would have returned.
-            return SponsorErrors.ActiveTitleSponsorExists;
+            // The pre-check above said the Title tier was open, but a concurrent request committed
+            // first — the filtered unique index is the actual guarantee, this is just translating its
+            // violation into the same failure Sponsor.Create's guard clause would have returned.
+            return SponsorErrors.TitleSponsorshipUnavailable;
         }
 
         await cache.RemoveByTagAsync("neba:sponsors", token: cancellationToken);
@@ -564,50 +510,13 @@ internal sealed class CreateSponsorCommandHandler(
         };
     }
 
-    private async Task<ErrorOr<Sponsor>> CreateAsTitleSponsorAsync(
-        CreateSponsorCommand command,
-        Address? businessAddress,
-        EmailAddress? businessEmail,
-        IReadOnlyCollection<PhoneNumber> phoneNumbers,
-        ContactInfo? sponsorContact,
-        CancellationToken cancellationToken)
-    {
-        var titleSponsorSlotAvailable = await titleSponsorPolicy.IsTitleSponsorSlotAvailableAsync(cancellationToken);
-
-        try
-        {
-            return Sponsor.CreateAsTitleSponsor(
-                titleSponsorSlotAvailable,
-                command.Name,
-                command.Priority,
-                command.Category,
-                command.Slug,
-                command.Logo,
-                command.WebsiteUrl,
-                command.TagPhrase,
-                command.Description,
-                command.LiveReadText,
-                command.PromotionalNotes,
-                command.FacebookUrl,
-                command.InstagramUrl,
-                businessAddress,
-                businessEmail,
-                phoneNumbers,
-                sponsorContact);
-        }
-        catch (TitleSponsorSlotUnavailableException)
-        {
-            return SponsorErrors.ActiveTitleSponsorExists;
-        }
-    }
-
     // Postgres reports a unique-violation (SqlState 23505) with the offending index's name on
     // PostgresException.ConstraintName. Any other constraint violation (e.g. a slug race slipping past
     // EnsureSlugIsAvailableAsync) is a different, unexpected failure and is left to rethrow/bubble to
     // the global exception handler rather than being misreported as a title-sponsor conflict.
-    private static bool IsTitleSponsorSlotConstraintViolation(DbUpdateException ex)
+    private static bool IsTitleSponsorConstraintViolation(DbUpdateException ex)
         => ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } postgresException
-            && postgresException.ConstraintName == TitleSponsorSlotIndexName;
+            && postgresException.ConstraintName == TitleSponsorIndexName;
 
     private static ErrorOr<Address?> BuildBusinessAddress(CreateSponsorCommand command)
     {
@@ -821,21 +730,21 @@ No `AddPolicy(...)` registration needed — the dynamic `Permission:{value}` pol
 
 ### Infrastructure
 
-No new EF configuration or migration needed for the fields themselves — `SponsorConfiguration.cs` already maps every field `Sponsor.Create`/`Sponsor.CreateAsTitleSponsor` populates. One addition is needed for the single-active-title-sponsor rule's actual guarantee:
+No new EF configuration or migration needed for the fields themselves — `SponsorConfiguration.cs` already maps every field `Sponsor.Create` populates. One addition is needed for the single-title-sponsor rule's actual guarantee:
 
-**Edit — `src/Neba.Api/Database/Configurations/SponsorConfiguration.cs`** — add a filtered unique index scoped to the active-title-sponsor slot, at the end of `Configure(...)`:
+**Edit — `src/Neba.Api/Database/Configurations/SponsorConfiguration.cs`** — add a filtered unique index scoped to the Title tier, at the end of `Configure(...)`:
 
 ```csharp
-// The real guarantee behind Sponsor.CreateAsTitleSponsor's pre-check: at most one row can ever
-// satisfy tier = TitleSponsor && current_sponsor, regardless of concurrent inserts. Name is checked
-// against in CreateSponsorCommandHandler.IsTitleSponsorSlotConstraintViolation — keep them in sync.
+// The real guarantee behind Sponsor.Create's isTitleSponsorshipAvailable pre-check: at most one row
+// can ever satisfy tier = TitleSponsor, regardless of concurrent inserts. Name is checked against in
+// CreateSponsorCommandHandler.IsTitleSponsorConstraintViolation — keep them in sync.
 builder.HasIndex(sponsor => sponsor.Tier)
-    .HasDatabaseName("ix_sponsors_active_title_sponsor")
+    .HasDatabaseName("ix_sponsors_title_sponsor")
     .IsUnique()
-    .HasFilter($"tier = {SponsorTier.TitleSponsor.Value} AND current_sponsor");
+    .HasFilter($"tier = {SponsorTier.TitleSponsor.Value}");
 ```
 
-**New migration** — `dotnet ef migrations add Sponsors_ActiveTitleSponsorUniqueIndex` (or similar name) against `AppDbContext`, adding the filtered unique index above. This is the only schema change this feature needs beyond what already exists in `SponsorConfiguration.cs`.
+**New migration** — `dotnet ef migrations add Sponsors_TitleSponsorUniqueIndex` (or similar name) against `AppDbContext`, adding the filtered unique index above. This is the only schema change this feature needs beyond what already exists in `SponsorConfiguration.cs`.
 
 ### API (`Neba.Api.Features.Sponsors.CreateSponsor/`)
 
@@ -1397,15 +1306,15 @@ public static class CreateSponsorRequestFactory
 ### Tests (`Neba.Api.Tests`)
 
 - `CreateSponsorEndpointTests.cs` — Verify-snapshot happy path, empty/edge cases, `Configure` route+auth test, 409/422 error-path tests — same structure as the `new-endpoint` skill's endpoint-test template and `DeleteArticleEndpointAuthorizationTests` conventions. Cover the `Send.CreatedAtAsync` `LinkGenerator` throw pattern documented in CLAUDE.md's "API Layer Mutation Testing" learning (item 6) for the success path.
-- `CreateSponsorCommandHandlerTests.cs` (unit) — slug-conflict path; `ITitleSponsorPolicy` (`MockBehavior.Strict`) is only invoked when the incoming command is itself `IsCurrentSponsor: true` + `Tier: TitleSponsor` (a Premier/Standard or non-current create must succeed without the mock being called, and a `MockBehavior.Strict` mock with no `.Setup()` on `IsTitleSponsorSlotAvailableAsync` proves that); a case where the policy returns `false` asserts `SponsorErrors.ActiveTitleSponsorExists` is returned (via the caught `TitleSponsorSlotUnavailableException`, not a domain-error return, since `CreateAsTitleSponsor` throws); a case simulating a `DbUpdateException` from `SaveChangesAsync` wrapping a `PostgresException` with `ConstraintName == "ix_sponsors_active_title_sponsor"` and `SqlState == PostgresErrorCodes.UniqueViolation` also asserts `SponsorErrors.ActiveTitleSponsorExists`, distinct from a `DbUpdateException` with a different/no `PostgresException` (which should rethrow, not be swallowed as a title-sponsor conflict); each value-object validation failure path (bad email, bad phone, bad address); contact all-or-nothing rejection path; success path with/without optional fields populated. `MockBehavior.Strict` for `IFusionCache` and `ITitleSponsorPolicy`.
-- `SponsorTests.cs` (domain, new or extend existing) — `Create` validation: name required, slug normalization/reserved/invalid, and the happy path building a fully-populated `Sponsor` (no title-sponsor-slot behavior on `Create` — that's exclusively `CreateAsTitleSponsor`'s concern now). `CreateAsTitleSponsor` (new): `titleSponsorSlotAvailable: false` throws `TitleSponsorSlotUnavailableException` (bare bool, no mocking needed, per the design rationale above), `titleSponsorSlotAvailable: true` delegates to `Create` with `Tier` forced to `TitleSponsor` and `IsCurrentSponsor` forced to `true` regardless of what's passed in, and still surfaces `Create`'s own validation errors (e.g. empty name) when the slot is available.
+- `CreateSponsorCommandHandlerTests.cs` (unit) — slug-conflict path; `ITitleSponsorPolicy` (`MockBehavior.Strict`) is only invoked when the incoming command's `Tier` is `TitleSponsor` (a Premier/Standard create must succeed without the mock being called, and a `MockBehavior.Strict` mock with no `.Setup()` on `IsTitleSponsorSlotAvailableAsync` proves that); a case where the policy returns `false` asserts `SponsorErrors.TitleSponsorshipUnavailable` is returned as a plain `ErrorOr` failure from `Sponsor.Create` (not an exception — there's nothing to catch); a case simulating a `DbUpdateException` from `SaveChangesAsync` wrapping a `PostgresException` with `ConstraintName == "ix_sponsors_title_sponsor"` and `SqlState == PostgresErrorCodes.UniqueViolation` also asserts `SponsorErrors.TitleSponsorshipUnavailable` is returned, distinct from a `DbUpdateException` with a different/no `PostgresException` (which should rethrow, not be swallowed as a title-sponsor conflict); each value-object validation failure path (bad email, bad phone, bad address); contact all-or-nothing rejection path; success path with/without optional fields populated. `MockBehavior.Strict` for `IFusionCache` and `ITitleSponsorPolicy`.
+- `SponsorTests.cs` (domain, new or extend existing) — `Create` validation: name required, slug normalization/reserved/invalid; `tier: TitleSponsor` combined with `isTitleSponsorshipAvailable: false` (the default, omitted) returns `SponsorErrors.TitleSponsorshipUnavailable` — no exception is thrown, this is a plain `ErrorOr<Sponsor>` failure return exercised with a bare `bool`, no mocking; `tier: TitleSponsor` combined with `isTitleSponsorshipAvailable: true` succeeds; any non-`TitleSponsor` tier succeeds regardless of `isTitleSponsorshipAvailable`'s value (proving the guard clause is scoped to `Tier`, not evaluated unconditionally); and the happy path building a fully-populated `Sponsor` via the caller-supplied `id`.
 - `SlugNormalizerTests.cs` (new, domain) — the extracted normalizer's edge cases (previously covered indirectly via `ArticleTests`); keep `ArticleTests`' existing slug-normalization assertions passing unchanged since behavior is identical.
 - `CreateSponsorRequestValidatorTests.cs` — structural validation rules only, including the contact all-or-nothing structural check.
 - `ListActiveSponsorsQueryHandlerTests.cs` (amend existing) — add a case for `CallerHasSponsorManagementPermission = true` returning inactive sponsors too, alongside the existing active-only case.
 - `ListActiveSponsorsEndpointTests.cs` (amend existing) — add a case asserting `CallerHasSponsorManagementPermission` is populated from `User.HasAnyPermission(...)` correctly for both an authenticated management-permission caller and an anonymous/unpermitted caller.
 - `CacheDescriptorsTests.cs` (amend existing, if present) — update any test asserting on `CacheDescriptors.Sponsors.ListActiveSponsors` as a property to call it as a method with both `true`/`false` args, per the `/cache-descriptor` skill's generated-test convention.
-- `TitleSponsorPolicyTests.cs` (new, integration — real `AppDbContext`/Testcontainers, since this queries the database rather than mocking it): `IsTitleSponsorSlotAvailableAsync` returns `true` with no sponsors seeded, `true` when an inactive title sponsor or an active non-title sponsor exists, and `false` only when an active title sponsor exists.
-- `SponsorConfigurationTests.cs` (amend existing) — assert the new filtered unique index exists with the expected name/uniqueness (matching this codebase's existing index-assertion convention for other `IEntityTypeConfiguration<T>` tests), and/or an integration-level test that inserting two active title sponsors within the same `SaveChangesAsync` call throws `DbUpdateException`.
+- `TitleSponsorPolicyTests.cs` (new, integration — real `AppDbContext`/Testcontainers, since this queries the database rather than mocking it): `IsTitleSponsorSlotAvailableAsync` returns `true` with no sponsors seeded, `true` when only a non-title (Premier/Standard) sponsor exists, and `false` when a Title-tier sponsor already exists.
+- `SponsorConfigurationTests.cs` (amend existing) — assert the new filtered unique index exists with the expected name/uniqueness (matching this codebase's existing index-assertion convention for other `IEntityTypeConfiguration<T>` tests), and/or an integration-level test that inserting two Title-tier sponsors within the same `SaveChangesAsync` call throws `DbUpdateException`.
 
 ### Deferred to later (explicitly out of scope for this feature)
 
