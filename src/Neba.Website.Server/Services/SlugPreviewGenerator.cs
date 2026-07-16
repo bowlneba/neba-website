@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace Neba.Website.Server.Services;
@@ -9,6 +10,7 @@ namespace Neba.Website.Server.Services;
 /// </summary>
 internal static class SlugPreviewGenerator
 {
+    [SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase", Justification = "Slugs are conventionally lowercase URL segments, not security-sensitive casing.")]
     public static string Generate(string value)
     {
         var lowered = value.Trim().ToLowerInvariant();
