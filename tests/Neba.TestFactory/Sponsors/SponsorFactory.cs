@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Neba.Api.Contacts.Domain;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Storage.Domain;
@@ -15,6 +17,10 @@ public static class SponsorFactory
     public static readonly SponsorTier ValidTier = SponsorTier.Standard;
     public static readonly SponsorCategory ValidCategory = SponsorCategory.Technology;
 
+    // The `PhoneNumbers = phoneNumbers ?? new List<PhoneNumber>()` fallback below must not become
+    // `?? []` — see Sponsor.PhoneNumbers' comment (src/Neba.Api/Features/Sponsors/Domain/Sponsor.cs)
+    // for why: `[]` resolves to a fixed-size T[] here and breaks EF owned-collection fixup on read.
+    [SuppressMessage("Style", "IDE0305:Simplify collection initialization", Justification = "[] would regress to a fixed-size array — see Sponsor.PhoneNumbers comment.")]
     public static Sponsor Create(
         SponsorId? id = null,
         string? name = null,
@@ -54,7 +60,7 @@ public static class SponsorFactory
                 InstagramUrl = instagramUrl,
                 BusinessAddress = businessAddress,
                 BusinessEmail = businessEmail,
-                PhoneNumbers = phoneNumbers ?? [],
+                PhoneNumbers = phoneNumbers ?? new List<PhoneNumber>(),
                 SponsorContact = sponsorContact
             };
 

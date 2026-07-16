@@ -1,9 +1,12 @@
+using Neba.Api.Contacts.Domain;
 using Neba.Api.Features.Sponsors;
 using Neba.Api.Features.Sponsors.Domain;
+using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Contact;
 using Neba.TestFactory.Sponsors;
 using Neba.TestFactory.Storage;
+using Neba.TestFactory.Tournaments;
 
 namespace Neba.Api.Tests.Features.Sponsors.Domain;
 
@@ -323,5 +326,71 @@ public sealed class SponsorTests
         sponsor.BusinessEmail.ShouldBe(businessEmail);
         sponsor.PhoneNumbers.ShouldBe(phoneNumbers);
         sponsor.SponsorContact.ShouldBe(sponsorContact);
+    }
+
+    // ── EF owned-collection fixup regression ────────────────────────────────
+    // Guards Sponsor.PhoneNumbers/TournamentsSponsored against reverting from `new List<T>()` back
+    // to the `[]` collection-expression form (e.g. via an IDE0305/SonarQube "simplify collection
+    // initialization" suggestion). Target-typed to the IReadOnlyCollection<T> property, `[]` resolves
+    // to a fixed-size T[] at runtime, and EF's owned-collection fixup throws NotSupportedException
+    // when it tries to Add into that array while materializing the aggregate. See CLAUDE.md
+    // "EF Core Navigation Fixup" for the full writeup.
+
+    [Fact(DisplayName = "PhoneNumbers default instance (from Create) supports Add, as EF's owned-collection fixup requires")]
+    public void PhoneNumbers_DefaultInstance_ShouldSupportAdd_ForEfFixup()
+    {
+        // Arrange
+        var result = Sponsor.Create(
+            name: SponsorFactory.ValidName,
+            isCurrentSponsor: SponsorFactory.ValidIsCurrentSponsor,
+            priority: SponsorFactory.ValidPriority,
+            tier: SponsorFactory.ValidTier,
+            category: SponsorFactory.ValidCategory);
+        result.IsError.ShouldBeFalse();
+        var mutablePhoneNumbers = (ICollection<PhoneNumber>)result.Value.PhoneNumbers;
+
+        // Act & Assert — a fixed-size array throws NotSupportedException here instead
+        Should.NotThrow(() => mutablePhoneNumbers.Add(PhoneNumberFactory.Create()));
+    }
+
+    [Fact(DisplayName = "PhoneNumbers property initializer default supports Add, as EF's owned-collection fixup requires")]
+    public void PhoneNumbers_PropertyInitializerDefault_ShouldSupportAdd_ForEfFixup()
+    {
+        // Arrange
+        var sponsor = new Sponsor
+        {
+            Id = SponsorId.New(),
+            Name = SponsorFactory.ValidName,
+            Slug = SponsorFactory.ValidSlug,
+            IsCurrentSponsor = SponsorFactory.ValidIsCurrentSponsor,
+            Priority = SponsorFactory.ValidPriority,
+            Tier = SponsorFactory.ValidTier,
+            Category = SponsorFactory.ValidCategory
+        };
+        var mutablePhoneNumbers = (ICollection<PhoneNumber>)sponsor.PhoneNumbers;
+
+        // Act & Assert — a fixed-size array throws NotSupportedException here instead
+        Should.NotThrow(() => mutablePhoneNumbers.Add(PhoneNumberFactory.Create()));
+    }
+
+    [Fact(DisplayName = "TournamentsSponsored property initializer default supports Add, as EF's owned-collection fixup requires")]
+    public void TournamentsSponsored_PropertyInitializerDefault_ShouldSupportAdd_ForEfFixup()
+    {
+        // Arrange
+        var sponsor = new Sponsor
+        {
+            Id = SponsorId.New(),
+            Name = SponsorFactory.ValidName,
+            Slug = SponsorFactory.ValidSlug,
+            IsCurrentSponsor = SponsorFactory.ValidIsCurrentSponsor,
+            Priority = SponsorFactory.ValidPriority,
+            Tier = SponsorFactory.ValidTier,
+            Category = SponsorFactory.ValidCategory
+        };
+        var mutableTournamentsSponsored = (ICollection<TournamentSponsor>)sponsor.TournamentsSponsored;
+        var tournamentSponsor = TournamentSponsorFactory.Create();
+
+        // Act & Assert — a fixed-size array throws NotSupportedException here instead
+        Should.NotThrow(() => mutableTournamentsSponsored.Add(tournamentSponsor));
     }
 }

@@ -354,16 +354,11 @@ public sealed class CreateSponsorCommandHandlerTests(AppDbContextFixture fixture
         // Act
         var result = await handler.HandleAsync(command, ct);
 
-        // Assert — projected directly rather than materializing the full Sponsor entity, since
-        // Sponsor.PhoneNumbers is `= []` (array-backed) and EF's owned-collection fixup throws
-        // NotSupportedException against a fixed-size array when populating it during a query
-        // (see CLAUDE.md "EF Core Navigation Fixup" note); production code avoids this the same way.
+        // Assert
         result.IsError.ShouldBeFalse();
-        var phoneNumbers = await _dbContext.Sponsors.AsNoTracking()
-            .Where(s => s.Slug == "sponsor-with-phone")
-            .SelectMany(s => s.PhoneNumbers)
-            .ToListAsync(ct);
-        var phoneNumber = phoneNumbers.ShouldHaveSingleItem();
+        var persisted = await _dbContext.Sponsors.AsNoTracking()
+            .SingleAsync(s => s.Slug == "sponsor-with-phone", ct);
+        var phoneNumber = persisted.PhoneNumbers.ShouldHaveSingleItem();
         phoneNumber.Type.ShouldBe(PhoneNumberType.Work);
     }
 
