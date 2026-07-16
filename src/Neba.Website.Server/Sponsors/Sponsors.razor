@@ -1,4 +1,5 @@
 @page "/sponsors"
+@using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Sponsors
 @using Neba.Website.Server.Services
 @using Neba.Website.Server.Sponsors
@@ -245,6 +246,12 @@
     </div>
 
 </div>
+
+<AuthorizeView Policy="@Permissions.CreateSponsor.PolicyName">
+    <Authorized>
+        <FabCreateButton Href="/sponsors/new" Label="Create Sponsor" />
+    </Authorized>
+</AuthorizeView>
 
 @code {
     private List<SponsorSummaryViewModel> _sponsors = [];
