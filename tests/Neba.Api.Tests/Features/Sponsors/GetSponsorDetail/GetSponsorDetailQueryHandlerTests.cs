@@ -25,6 +25,9 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         await _dbContext.DisposeAsync();
     }
 
+    private static GetSponsorDetailQuery QueryFor(string slug, bool callerHasSponsorManagementPermission = false) =>
+        new() { Slug = slug, CallerHasSponsorManagementPermission = callerHasSponsorManagementPermission };
+
     [Fact(DisplayName = "HandleAsync returns SponsorNotFound when no sponsor matches the slug")]
     public async Task HandleAsync_ShouldReturnNotFound_WhenSlugDoesNotExist()
     {
@@ -34,7 +37,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
 
         // Act
         var result = await handler.HandleAsync(
-            new GetSponsorDetailQuery { Slug = "nonexistent-sponsor" },
+            QueryFor("nonexistent-sponsor"),
             TestContext.Current.CancellationToken);
 
         // Assert
@@ -59,8 +62,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act
-        var result = await handler.HandleAsync(
-            new GetSponsorDetailQuery { Slug = "acme-corp" }, ct);
+        var result = await handler.HandleAsync(QueryFor("acme-corp"), ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -88,8 +90,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act
-        var result = await handler.HandleAsync(
-            new GetSponsorDetailQuery { Slug = "logo-sponsor" }, ct);
+        var result = await handler.HandleAsync(QueryFor("logo-sponsor"), ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -109,11 +110,53 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act
-        var result = await handler.HandleAsync(
-            new GetSponsorDetailQuery { Slug = "other-sponsor" }, ct);
+        var result = await handler.HandleAsync(QueryFor("other-sponsor"), ct);
 
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Sponsor.NotFound");
+    }
+
+    [Fact(DisplayName = "HandleAsync returns SponsorNotFound for an inactive sponsor when caller lacks sponsor management permission")]
+    public async Task HandleAsync_ShouldReturnNotFound_WhenSponsorIsInactiveAndCallerLacksManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var sponsor = SponsorFactory.Create(slug: "inactive-sponsor", isCurrentSponsor: false);
+        await _dbContext.Sponsors.AddAsync(sponsor, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(
+            QueryFor("inactive-sponsor", callerHasSponsorManagementPermission: false), ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Sponsor.NotFound");
+    }
+
+    [Fact(DisplayName = "HandleAsync returns sponsor detail for an inactive sponsor when caller has sponsor management permission")]
+    public async Task HandleAsync_ShouldReturnSponsor_WhenSponsorIsInactiveAndCallerHasManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var sponsor = SponsorFactory.Create(name: "Inactive Co", slug: "inactive-sponsor", isCurrentSponsor: false);
+        await _dbContext.Sponsors.AddAsync(sponsor, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(
+            QueryFor("inactive-sponsor", callerHasSponsorManagementPermission: true), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Name.ShouldBe("Inactive Co");
+        result.Value.IsCurrentSponsor.ShouldBeFalse();
     }
 }
