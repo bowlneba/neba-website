@@ -35,22 +35,22 @@
 </div>
 
 @code {
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public TournamentTab ActiveTab { get; set; }
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public bool IsCurrentSeason { get; set; }
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public List<SeasonViewModel> AvailableSeasons { get; set; } = [];
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public SeasonViewModel? ActiveSeason { get; set; }
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public EventCallback<TournamentTab> OnTabChanged { get; set; }
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public EventCallback<int> OnSeasonChanged { get; set; }
 
     private void OnSelectChanged(ChangeEventArgs e)

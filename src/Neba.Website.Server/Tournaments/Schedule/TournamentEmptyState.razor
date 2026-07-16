@@ -22,12 +22,12 @@
 </div>
 
 @code {
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public TournamentTab Tab { get; set; }
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public bool HasActiveFilters { get; set; }
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public EventCallback OnClearFilters { get; set; }
 }

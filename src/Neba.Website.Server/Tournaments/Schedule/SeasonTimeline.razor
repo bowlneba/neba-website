@@ -53,10 +53,10 @@
 </div>
 
 @code {
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public List<SeasonTournamentViewModel> Tournaments { get; set; } = [];
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public string Season { get; set; } = string.Empty;
 
     private bool _isMergedSeason;
@@ -104,8 +104,8 @@ System.Globalization.CultureInfo.CurrentCulture) + "%";
             ? new DateOnly(startYear + 1, 12, 31)
             : new DateOnly(startYear, 12, 31);
 
-        int totalDays = (yearEnd.DayNumber - yearStart.DayNumber) + 1;
-        int elapsed = date.DayNumber - yearStart.DayNumber;
+        var totalDays = (yearEnd.DayNumber - yearStart.DayNumber) + 1;
+        var elapsed = date.DayNumber - yearStart.DayNumber;
 
         return Math.Clamp((double)elapsed / totalDays * 100, 1, 99);
     }

@@ -210,7 +210,7 @@
                      OnCancel="CancelDelete" />
 
 @code {
-    [Parameter, SupplyParameterFromQuery(Name = "page")]
+    [Parameter][SupplyParameterFromQuery(Name = "page")]
     public int? Page { get; set; }
 
     private int PageNumber => Page is > 0 ? Page.Value : 1;

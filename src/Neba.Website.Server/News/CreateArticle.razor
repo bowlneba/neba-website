@@ -227,7 +227,7 @@
     /// Deep-links this page from a tournament-portal context: pre-selects and locks in the tournament
     /// (season/tournament picker hidden) rather than requiring staff to re-find it in the dropdowns.
     /// </summary>
-    [Parameter, SupplyParameterFromQuery(Name = "tournamentId")]
+    [Parameter][SupplyParameterFromQuery(Name = "tournamentId")]
     public string? TournamentId { get; set; }
 
     private string SlugPlaceholder => SlugPreviewGenerator.Generate(_model.Title);

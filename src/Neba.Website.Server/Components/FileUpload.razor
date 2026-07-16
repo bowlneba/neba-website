@@ -86,7 +86,7 @@
     /// talking to — the header image and attachments upload endpoints are different API calls with the
     /// same shape, and the caller wires up whichever one applies.
     /// </summary>
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public Func<Stream, string, string, IProgress<int>, CancellationToken, Task<ErrorOr<UploadedFileResponse>>> OnUploadRequestedAsync { get; set; } = default!;
 
     /// <summary>
@@ -146,7 +146,7 @@
         // selected count (never MaxFiles) — truncation to the remaining slots happens via Take() below.
         var browserFiles = e.GetMultipleFiles(e.FileCount).Take(remainingSlots).ToArray();
 
-        string?[] previewUrls = _jsModule is null
+        var previewUrls = _jsModule is null
             ? new string?[browserFiles.Length]
             : await _jsModule.InvokeAsync<string?[]>("getPreviewUrls", DropZoneId);
 

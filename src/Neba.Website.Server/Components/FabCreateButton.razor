@@ -8,13 +8,13 @@
     /// <summary>
     /// The URL to navigate to when the button is activated (e.g. a "create new" route).
     /// </summary>
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public string Href { get; set; } = default!;
 
     /// <summary>
     /// Accessible label announced to screen readers and shown as a hover tooltip. Should name the
     /// action, e.g. "Create Article".
     /// </summary>
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public string Label { get; set; } = default!;
 }

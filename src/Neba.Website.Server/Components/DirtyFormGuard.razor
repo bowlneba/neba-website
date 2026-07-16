@@ -20,7 +20,7 @@
     /// (field-level via <see cref="EditContext.OnFieldChanged"/>, plus explicit marking for anything
     /// outside the EditForm, e.g. file uploads) and pass the result in here.
     /// </summary>
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public bool IsDirty { get; set; }
 
     [Parameter]
