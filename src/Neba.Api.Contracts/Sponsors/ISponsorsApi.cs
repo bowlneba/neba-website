@@ -1,4 +1,5 @@
 using Neba.Api.Contracts.Sponsors.CreateSponsor;
+using Neba.Api.Contracts.Uploads;
 
 using Refit;
 
@@ -50,4 +51,22 @@ public interface ISponsorsApi
     /// </returns>
     [Post("/sponsors")]
     Task<IApiResponse<SponsorResponse>> CreateSponsorAsync(CreateSponsorRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Uploads a sponsor logo. Requires the Sponsors.CreateSponsor permission.
+    /// </summary>
+    /// <param name="file">
+    /// The logo image file to upload.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token to cancel the operation.
+    /// </param>
+    /// <returns>
+    /// The uploaded file's metadata.
+    /// </returns>
+    [Multipart]
+    [Post("/sponsors/logo")]
+    Task<IApiResponse<UploadedFileResponse>> UploadSponsorLogoAsync(
+        [AliasAs("File")] StreamPart file,
+        CancellationToken cancellationToken = default);
 }

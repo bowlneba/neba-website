@@ -8,10 +8,13 @@ using Neba.Api.Contacts.Domain;
 using Neba.Api.Database;
 using Neba.Api.Features.Sponsors.CreateSponsor;
 using Neba.Api.Features.Sponsors.Domain;
+using Neba.Api.Features.Storage.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Contact;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Sponsors;
+using Neba.TestFactory.Storage;
+using Neba.TestFactory.Uploads;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -55,6 +58,7 @@ public sealed class CreateSponsorCommandHandlerTests(AppDbContextFixture fixture
         int? priority = null,
         SponsorTier? tier = null,
         SponsorCategory? category = null,
+        StoredFile? logo = null,
         Uri? websiteUrl = null,
         string? tagPhrase = null,
         string? description = null,
@@ -82,6 +86,7 @@ public sealed class CreateSponsorCommandHandlerTests(AppDbContextFixture fixture
             Priority = priority ?? SponsorFactory.ValidPriority,
             Tier = tier ?? SponsorFactory.ValidTier,
             Category = category ?? SponsorFactory.ValidCategory,
+            Logo = logo,
             WebsiteUrl = websiteUrl,
             TagPhrase = tagPhrase,
             Description = description,
@@ -542,5 +547,48 @@ public sealed class CreateSponsorCommandHandlerTests(AppDbContextFixture fixture
             _ => Task.FromResult("fresh-list"),
             token: ct);
         listAfterCreate.ShouldBe("cached-list");
+    }
+
+    [Fact(DisplayName = "HandleAsync removes the pending upload record for the logo when command is valid")]
+    public async Task HandleAsync_ShouldRemovePendingUpload_ForLogo_WhenCommandIsValid()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var logo = StoredFileFactory.Create(container: "logo-pending-container", path: "logo-pending.jpg");
+        var pendingUpload = PendingUploadFactory.Create(container: logo.Container, path: logo.Path);
+        await _dbContext.PendingUploads.AddAsync(pendingUpload, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+        var command = ValidCommand(slug: "logo-pending-upload-sponsor", logo: logo);
+
+        // Act
+        await handler.HandleAsync(command, ct);
+
+        // Assert
+        var stillPending = await _dbContext.PendingUploads.AsNoTracking()
+            .AnyAsync(p => p.Container == logo.Container && p.Path == logo.Path, ct);
+        stillPending.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync does not remove unrelated pending upload records")]
+    public async Task HandleAsync_ShouldNotRemoveUnrelatedPendingUploads()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var unrelatedPendingUpload = PendingUploadFactory.Create(container: "unrelated-container", path: "unrelated-file.jpg");
+        await _dbContext.PendingUploads.AddAsync(unrelatedPendingUpload, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+        var command = ValidCommand(slug: "no-matching-pending-upload-sponsor");
+
+        // Act
+        await handler.HandleAsync(command, ct);
+
+        // Assert
+        var stillPending = await _dbContext.PendingUploads.AsNoTracking()
+            .AnyAsync(p => p.Container == "unrelated-container" && p.Path == "unrelated-file.jpg", ct);
+        stillPending.ShouldBeTrue();
     }
 }

@@ -6,6 +6,7 @@ using Neba.Api.Contacts;
 using Neba.Api.Contacts.Domain;
 using Neba.Api.Database;
 using Neba.Api.Features.Sponsors.Domain;
+using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Messaging;
 
 using ZiggyCreatures.Caching.Fusion;
@@ -87,6 +88,9 @@ internal sealed class CreateSponsorCommandHandler(
         }
 
         await appDbContext.Sponsors.AddAsync(sponsor, cancellationToken);
+
+        await RemoveClaimedPendingUploadAsync(sponsor.Logo, cancellationToken);
+
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await cache.RemoveByTagAsync("neba:sponsors", token: cancellationToken);
@@ -198,5 +202,19 @@ internal sealed class CreateSponsorCommandHandler(
         return slugExists
             ? SponsorErrors.SlugAlreadyExists(slug)
             : Result.Success;
+    }
+
+    private async Task RemoveClaimedPendingUploadAsync(StoredFile? logo, CancellationToken cancellationToken)
+    {
+        if (logo is null)
+        {
+            return;
+        }
+
+        var claimed = await appDbContext.PendingUploads
+            .Where(pending => pending.Container == logo.Container && pending.Path == logo.Path)
+            .ToListAsync(cancellationToken);
+
+        appDbContext.PendingUploads.RemoveRange(claimed);
     }
 }
