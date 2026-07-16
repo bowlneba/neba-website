@@ -1,3 +1,5 @@
+using Neba.Api.Contracts.Sponsors.CreateSponsor;
+
 using Refit;
 
 namespace Neba.Api.Contracts.Sponsors;
@@ -33,4 +35,19 @@ public interface ISponsorsApi
     /// </returns>
     [Get("/sponsors/{slug}")]
     Task<IApiResponse<SponsorDetailResponse>> GetSponsorBySlugAsync(string slug, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a sponsor.
+    /// </summary>
+    /// <param name="request">
+    /// The sponsor fields to create.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token to cancel the operation.
+    /// </param>
+    /// <returns>
+    /// The identifier and slug of the newly created sponsor.
+    /// </returns>
+    [Post("/sponsors")]
+    Task<IApiResponse<SponsorResponse>> CreateSponsorAsync(CreateSponsorRequest request, CancellationToken cancellationToken = default);
 }
