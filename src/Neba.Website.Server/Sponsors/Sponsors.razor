@@ -219,9 +219,46 @@
                 </div>
             </section>
         }
+
+        <!-- 5. Inactive Sponsors — visible only to sponsor management permission holders -->
+        <AuthorizeView Policy="@Permissions.CreateSponsor.PolicyName">
+            <Authorized>
+                @if (InactiveSponsors.Any())
+                {
+                    <section aria-labelledby="inactive-sponsors-heading"
+                             class="rounded-xl p-6 md:p-8 bg-[var(--neba-surface-low)] opacity-75">
+                        <div class="flex items-center gap-4 mb-6">
+                            <h3 id="inactive-sponsors-heading"
+                                class="text-xl font-bold text-[var(--neba-gray-800)] whitespace-nowrap">
+                                Inactive Sponsors
+                            </h3>
+                            <hr class="flex-1 border-[var(--neba-border)]" />
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            @foreach (var sponsor in InactiveSponsors)
+                            {
+                                <a href="/sponsors/@sponsor.Slug"
+                                   class="sponsor-tile neba-card flex flex-col items-center text-center p-4 gap-2 relative"
+                                   aria-label="@sponsor.Name (Inactive)">
+                                    <span class="sponsor-tile__inactive-badge">Inactive</span>
+                                    <span class="material-symbols-outlined text-[var(--neba-gray-400)]"
+                                          style="font-size: 2rem;" aria-hidden="true">
+                                        storefront
+                                    </span>
+                                    <div class="text-xs font-medium uppercase tracking-wide text-[var(--neba-gray-500)]">
+                                        @sponsor.Category
+                                    </div>
+                                    <h4 class="font-semibold text-sm text-[var(--neba-text)]">@sponsor.Name</h4>
+                                </a>
+                            }
+                        </div>
+                    </section>
+                }
+            </Authorized>
+        </AuthorizeView>
     }
 
-    <!-- 5. CTA Section — always visible -->
+    <!-- 6. CTA Section — always visible -->
     <div class="sponsors-cta neba-gradient-brand rounded-xl p-8 md:p-12 relative overflow-hidden text-white">
         <!-- Decorative blurred circles -->
         <div class="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none"
@@ -259,17 +296,23 @@
     private string? _errorMessage;
 
     private SponsorSummaryViewModel? TitleSponsor =>
-        _sponsors.FirstOrDefault(s => s.Tier == "Title Sponsor");
+        _sponsors.FirstOrDefault(s => s.Tier == "Title Sponsor" && s.IsCurrentSponsor);
 
     private IEnumerable<SponsorSummaryViewModel> PremierSponsors =>
         _sponsors
-            .Where(s => s.Tier == "Premier")
+            .Where(s => s.Tier == "Premier" && s.IsCurrentSponsor)
             .OrderBy(s => s.Priority)
             .ThenBy(s => s.Name);
 
     private IEnumerable<SponsorSummaryViewModel> AssociationSponsors =>
         _sponsors
-            .Where(s => s.Tier == "Standard")
+            .Where(s => s.Tier == "Standard" && s.IsCurrentSponsor)
+            .OrderBy(s => s.Priority)
+            .ThenBy(s => s.Name);
+
+    private IEnumerable<SponsorSummaryViewModel> InactiveSponsors =>
+        _sponsors
+            .Where(s => !s.IsCurrentSponsor)
             .OrderBy(s => s.Priority)
             .ThenBy(s => s.Name);
 

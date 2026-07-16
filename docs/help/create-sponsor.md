@@ -14,7 +14,7 @@ You need the `Sponsors.CreateSponsor` permission, enforced via the dynamic `Perm
    ![Sponsors list page with the Create Sponsor floating action button visible](images/create-sponsor/sponsors-list-fab.png)
 
 3. On the **Create Sponsor** page, fill in:
-   - **Basic Info** — **Name** (required) and an optional **Slug** (leave blank to auto-generate one from the name); **Tier** (Title Sponsor, Premier, or Standard — only one sponsor can hold Title Sponsor at a time), **Category**, and **Priority** (lower numbers sort first within a tier); a **Current sponsor** checkbox (checked by default).
+   - **Basic Info** — **Name** (required) and an optional **Slug** (leave blank to auto-generate one from the name — as you type the name, the Slug field's placeholder live-previews the slug that will be generated, e.g. "Acme Bowling & Supply Co." → `acme-bowling-supply-co`; type your own value only if you want to override that preview); **Tier** (Title Sponsor, Premier, or Standard — only one sponsor can hold Title Sponsor at a time), **Category**, and **Priority** (lower numbers sort first within a tier); a **Current sponsor** checkbox (checked by default).
    - **Logo** — optional. Drag and drop, or click to browse for, a single image (up to 5 MB) to use as the sponsor's logo.
    - **Links & Content** — optional **Website URL**, **Facebook URL**, and **Instagram URL** (each must be a full address, e.g. `https://example.com`), plus **Tag Phrase**, **Description**, **Live Read Text**, and **Promotional Notes** (internal staff notes).
    - **Business Address** — optional street, unit, city, state, postal code, and business email.

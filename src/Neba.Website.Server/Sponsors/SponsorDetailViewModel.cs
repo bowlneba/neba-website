@@ -125,4 +125,10 @@ public sealed record SponsorDetailViewModel
     public bool HasSocialMedia =>
         FacebookUrl is not null || InstagramUrl is not null;
 
+    /// <summary>
+    /// Indicates whether the sponsor has any contact information at all (address, contact channels, or social media) available for display.
+    /// </summary>
+    public bool HasAnyContactInfo =>
+        HasAddress || HasContactChannels || HasSocialMedia;
+
 }
