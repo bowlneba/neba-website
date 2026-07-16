@@ -202,12 +202,9 @@ else
 
         if (result.IsError)
         {
-            Navigation.NavigateTo("/not-found", replace: true);
-            return;
-        }
-
-        if (!result.Value.IsCurrentSponsor)
-        {
+            // The server already treats an inactive sponsor as not-found for callers without the
+            // Sponsors management permission (see GetSponsorDetailQueryHandler) — an authorized staff
+            // member who just created/manages a non-current sponsor still gets the real response.
             Navigation.NavigateTo("/not-found", replace: true);
             return;
         }

@@ -60,6 +60,13 @@ internal sealed class GetSponsorDetailQueryHandler(AppDbContext appDbContext, IF
             return SponsorErrors.SponsorNotFound(query.Slug);
         }
 
+        if (!row.IsCurrentSponsor && !query.CallerHasSponsorManagementPermission)
+        {
+            // Same "not found" response an anonymous/unpermitted caller gets for a nonexistent slug —
+            // an inactive sponsor is only visible to callers who can manage sponsors.
+            return SponsorErrors.SponsorNotFound(query.Slug);
+        }
+
         return new SponsorDetailDto
         {
             Id = row.Id,

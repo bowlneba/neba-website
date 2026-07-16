@@ -6,8 +6,11 @@ using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts.Contact;
+using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Messaging;
+
+using PermissionsScope = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Features.Sponsors.GetSponsorDetail;
 
@@ -36,7 +39,11 @@ internal sealed class GetSponsorDetailEndpoint(IQueryHandler<GetSponsorDetailQue
 
     public override async Task HandleAsync(GetSponsorDetailRequest req, CancellationToken ct)
     {
-        var result = await _queryHandler.HandleAsync(new GetSponsorDetailQuery { Slug = req.Slug }, ct);
+        var result = await _queryHandler.HandleAsync(new GetSponsorDetailQuery
+        {
+            Slug = req.Slug,
+            CallerHasSponsorManagementPermission = User.HasAnyPermission(PermissionsScope.SponsorManagementPermissions)
+        }, ct);
 
         if (result.IsError)
         {

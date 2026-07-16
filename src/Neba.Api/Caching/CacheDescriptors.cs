@@ -114,13 +114,17 @@ public static class CacheDescriptors
         /// <param name="slug">
         /// The sponsor slug.
         /// </param>
+        /// <param name="callerHasSponsorManagementPermission">
+        /// Whether the caller can see a sponsor that isn't the current/active one — kept separate from
+        /// the public cache entry so a management-scoped response is never served to an anonymous caller.
+        /// </param>
         /// <returns>
         /// A cache descriptor for sponsor detail data.
         /// </returns>
-        public static CacheDescriptor Detail(string slug)
+        public static CacheDescriptor Detail(string slug, bool callerHasSponsorManagementPermission)
             => new()
             {
-                Key = $"neba:sponsors:{slug}:detail",
+                Key = $"neba:sponsors:{slug}:detail:scope:{(callerHasSponsorManagementPermission ? "management" : "public")}",
                 Tags = ["neba", "neba:sponsors", $"neba:sponsors:{slug}"]
             };
     }
