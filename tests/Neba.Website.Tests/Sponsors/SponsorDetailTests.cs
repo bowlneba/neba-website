@@ -78,7 +78,7 @@ public sealed class SponsorDetailTests : IDisposable
             Times.Once);
     }
 
-    // ── Navigation on error/inactive ─────────────────────────────────────────
+    // ── Navigation on error ──────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should navigate to /not-found when API call fails")]
     public void OnInit_ShouldNavigateToNotFound_WhenApiFails()
@@ -94,18 +94,23 @@ public sealed class SponsorDetailTests : IDisposable
         nav.Uri.ShouldEndWith("/not-found");
     }
 
-    [Fact(DisplayName = "Should navigate to /not-found when sponsor is inactive")]
-    public void OnInit_ShouldNavigateToNotFound_WhenSponsorIsInactive()
+    [Fact(DisplayName = "Should render the sponsor normally when the API returns an inactive sponsor")]
+    public void OnInit_ShouldRenderSponsor_WhenApiReturnsInactiveSponsor()
     {
         // Arrange
-        SetupSuccessResponse(SponsorDetailResponseFactory.Create(isCurrentSponsor: false));
+        // The API only returns a successful (200) response for an inactive sponsor to a caller
+        // with the sponsor management permission (GetSponsorDetailQueryHandler) — an unauthorized
+        // caller instead gets a not-found error response. So a success response here must render
+        // normally rather than redirect away.
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create(name: "Inactive Sponsor", isCurrentSponsor: false));
 
         // Act
-        _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "inactive-sponsor"));
+        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "inactive-sponsor"));
 
         // Assert
         var nav = _ctx.Services.GetRequiredService<NavigationManager>();
-        nav.Uri.ShouldEndWith("/not-found");
+        nav.Uri.ShouldNotEndWith("/not-found");
+        cut.Markup.ShouldContain("Inactive Sponsor");
     }
 
     // ── Page title ───────────────────────────────────────────────────────────
