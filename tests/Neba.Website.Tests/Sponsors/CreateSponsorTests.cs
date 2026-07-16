@@ -188,6 +188,21 @@ public sealed class CreateSponsorTests : IDisposable
         capturedRequest.Sponsor.Contact.ShouldBeNull();
     }
 
+    // ── Slug placeholder ─────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should show a normalized slug preview as the slug field placeholder while typing the name")]
+    public async Task SlugPlaceholder_ShouldNormalizeName_WhileTyping()
+    {
+        // Arrange
+        var cut = RenderCreateSponsor();
+
+        // Act
+        await cut.InvokeAsync(() => cut.Find("#name").Change("  Acme Bowling & Supply!! Co.  "));
+
+        // Assert
+        cut.Find("#slug").GetAttribute("placeholder").ShouldBe("acme-bowling-supply-co");
+    }
+
     [Fact(DisplayName = "Should map a non-blank slug override into the submitted request")]
     public async Task Submit_ShouldMapSlug_WhenSlugIsFilledIn()
     {
