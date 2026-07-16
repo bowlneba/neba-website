@@ -1,6 +1,5 @@
 @page "/sponsors/new"
 @using System.ComponentModel.DataAnnotations
-@using System.Text
 @using ErrorOr
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Sponsors
@@ -336,35 +335,7 @@
         _editContext.OnFieldChanged += HandleFieldChanged;
     }
 
-    private string SlugPlaceholder => NormalizeSlug(_model.Name);
-
-    /// <summary>
-    /// Client-side preview mirroring <c>Sponsor.NormalizeSlug</c> (lowercase, alphanumeric runs joined by
-    /// single hyphens, no leading/trailing hyphen). Cosmetic only — the actual slug is always computed
-    /// server-side from whichever value is submitted (this preview, or a staff-typed override).
-    /// </summary>
-    private static string NormalizeSlug(string value)
-    {
-        var lowered = value.Trim().ToLowerInvariant();
-        var builder = new StringBuilder(lowered.Length);
-        var lastWasHyphen = false;
-
-        foreach (var c in lowered)
-        {
-            if (char.IsLetterOrDigit(c))
-            {
-                builder.Append(c);
-                lastWasHyphen = false;
-            }
-            else if (!lastWasHyphen && builder.Length > 0)
-            {
-                builder.Append('-');
-                lastWasHyphen = true;
-            }
-        }
-
-        return builder.ToString().TrimEnd('-');
-    }
+    private string SlugPlaceholder => SlugPreviewGenerator.Generate(_model.Name);
 
     private void MarkDirty() => _isDirty = true;
 

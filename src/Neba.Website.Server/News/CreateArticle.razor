@@ -1,6 +1,5 @@
 @page "/news/new"
 @using System.ComponentModel.DataAnnotations
-@using System.Text
 @using ErrorOr
 @using Neba.Api.Contracts.News
 @using Neba.Api.Contracts.News.CreateArticle
@@ -231,7 +230,7 @@
     [Parameter, SupplyParameterFromQuery(Name = "tournamentId")]
     public string? TournamentId { get; set; }
 
-    private string SlugPlaceholder => NormalizeSlug(_model.Title);
+    private string SlugPlaceholder => SlugPreviewGenerator.Generate(_model.Title);
 
     protected override async Task OnInitializedAsync()
     {
@@ -499,34 +498,6 @@
                 // Circuit already gone — nothing to clean up.
             }
         }
-    }
-
-    /// <summary>
-    /// Client-side preview mirroring <c>Article.NormalizeSlug</c> (lowercase, alphanumeric runs joined by
-    /// single hyphens, no leading/trailing hyphen). Cosmetic only — the actual slug is always computed
-    /// server-side from whichever value is submitted (this preview, or a staff-typed override).
-    /// </summary>
-    private static string NormalizeSlug(string value)
-    {
-        var lowered = value.Trim().ToLowerInvariant();
-        var builder = new StringBuilder(lowered.Length);
-        var lastWasHyphen = false;
-
-        foreach (var c in lowered)
-        {
-            if (char.IsLetterOrDigit(c))
-            {
-                builder.Append(c);
-                lastWasHyphen = false;
-            }
-            else if (!lastWasHyphen && builder.Length > 0)
-            {
-                builder.Append('-');
-                lastWasHyphen = true;
-            }
-        }
-
-        return builder.ToString().TrimEnd('-');
     }
 
     private sealed class CreateArticleFormModel
