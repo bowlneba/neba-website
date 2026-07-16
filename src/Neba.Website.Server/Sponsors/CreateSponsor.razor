@@ -1,5 +1,6 @@
 @page "/sponsors/new"
 @using System.ComponentModel.DataAnnotations
+@using System.Text
 @using ErrorOr
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Sponsors
@@ -53,7 +54,7 @@
 
                             <div>
                                 <label for="slug" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Slug</label>
-                                <InputText id="slug" @bind-Value="_model.Slug" class="neba-input" placeholder="Auto-generated from name" />
+                                <InputText id="slug" @bind-Value="_model.Slug" class="neba-input" placeholder="@SlugPlaceholder" />
                                 <p class="text-sm text-[var(--neba-gray-500)] mt-1">Leave blank to auto-generate from the name.</p>
                                 <ValidationMessage For="@(() => _model.Slug)" class="block text-sm text-red-600 mt-1" />
                             </div>
@@ -333,6 +334,36 @@
     {
         _editContext = new EditContext(_model);
         _editContext.OnFieldChanged += HandleFieldChanged;
+    }
+
+    private string SlugPlaceholder => NormalizeSlug(_model.Name);
+
+    /// <summary>
+    /// Client-side preview mirroring <c>Sponsor.NormalizeSlug</c> (lowercase, alphanumeric runs joined by
+    /// single hyphens, no leading/trailing hyphen). Cosmetic only — the actual slug is always computed
+    /// server-side from whichever value is submitted (this preview, or a staff-typed override).
+    /// </summary>
+    private static string NormalizeSlug(string value)
+    {
+        var lowered = value.Trim().ToLowerInvariant();
+        var builder = new StringBuilder(lowered.Length);
+        var lastWasHyphen = false;
+
+        foreach (var c in lowered)
+        {
+            if (char.IsLetterOrDigit(c))
+            {
+                builder.Append(c);
+                lastWasHyphen = false;
+            }
+            else if (!lastWasHyphen && builder.Length > 0)
+            {
+                builder.Append('-');
+                lastWasHyphen = true;
+            }
+        }
+
+        return builder.ToString().TrimEnd('-');
     }
 
     private void MarkDirty() => _isDirty = true;
