@@ -182,11 +182,11 @@ internal sealed class CreateSponsorCommandHandler(
         return emailResult.IsError
             ? emailResult.Errors
             : new ContactInfo
-        {
-            Name = command.ContactName ?? string.Empty,
-            Phone = phoneResult.Value,
-            Email = emailResult.Value
-        };
+            {
+                Name = command.ContactName ?? string.Empty,
+                Phone = phoneResult.Value,
+                Email = emailResult.Value
+            };
     }
 
     // Check-then-insert: see CreateArticleCommandHandler.EnsureSlugIsAvailableAsync for the same
