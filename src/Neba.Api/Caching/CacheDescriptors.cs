@@ -101,10 +101,10 @@ public static class CacheDescriptors
         /// <summary>
         /// Returns a cache descriptor for the list of active sponsors, with a key and tags that allow for efficient caching and invalidation of sponsor data.
         /// </summary>
-        public static CacheDescriptor ListActiveSponsors
+        public static CacheDescriptor ListActiveSponsors(bool callerHasSponsorManagementPermission)
             => new()
             {
-                Key = "neba:sponsors:active:list",
+                Key = $"neba:sponsors:list:scope:{(callerHasSponsorManagementPermission ? "management" : "public")}",
                 Tags = ["neba", "neba:sponsors"]
             };
 

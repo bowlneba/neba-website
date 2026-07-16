@@ -4,8 +4,11 @@ using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts;
+using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Messaging;
+
+using PermissionsScope = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Features.Sponsors.ListActiveSponsors;
 
@@ -33,7 +36,10 @@ internal sealed class ListActiveSponsorsEndpoint(IQueryHandler<ListActiveSponsor
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        var result = await _queryHandler.HandleAsync(new ListActiveSponsorsQuery(), ct);
+        var result = await _queryHandler.HandleAsync(new ListActiveSponsorsQuery
+        {
+            CallerHasSponsorManagementPermission = User.HasAnyPermission(PermissionsScope.SponsorManagementPermissions)
+        }, ct);
 
         var response = new CollectionResponse<SponsorSummaryResponse>
         {

@@ -7,8 +7,10 @@ internal sealed record ListActiveSponsorsQuery
     : ICachedQuery<IReadOnlyCollection<SponsorSummaryDto>>
 {
     public CacheDescriptor Cache
-        => CacheDescriptors.Sponsors.ListActiveSponsors;
+        => CacheDescriptors.Sponsors.ListActiveSponsors(CallerHasSponsorManagementPermission);
 
     public TimeSpan Expiry
         => TimeSpan.FromDays(30);
+
+    public required bool CallerHasSponsorManagementPermission { get; init; }
 }

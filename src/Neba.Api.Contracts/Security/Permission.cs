@@ -52,6 +52,23 @@ public sealed class Permissions
 
     #endregion
 
+    #region Sponsors
+
+    /// <summary>
+    /// Permission to create a sponsor.
+    /// </summary>
+    public static readonly Permissions CreateSponsor = new("Sponsors.CreateSponsor", "Create Sponsor");
+
+    /// <summary>
+    /// A collection of permissions related to sponsor management.
+    /// </summary>
+    public static readonly IReadOnlyCollection<Permissions> SponsorManagementPermissions =
+    [
+        CreateSponsor,
+    ];
+
+    #endregion
+
     private Permissions(string key, string name)
         : base(name, key)
     { }
