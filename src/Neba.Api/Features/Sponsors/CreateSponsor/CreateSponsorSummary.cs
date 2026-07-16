@@ -23,6 +23,7 @@ internal sealed class CreateSponsorSummary : Summary<CreateSponsorEndpoint>
             });
 #pragma warning restore S1075 // URIs should not be hardcoded
 
+        Response(400, "Name, slug, tier, category, or a contact/URL field failed structural validation (e.g. missing, too long, or not a well-formed URL).");
         Response(401, "No valid bearer token provided.");
         Response(403, "Authenticated user does not have the Sponsors.CreateSponsor permission.");
         Response(409, "Slug already taken, or the Title Sponsor tier is already assigned to another sponsor.");

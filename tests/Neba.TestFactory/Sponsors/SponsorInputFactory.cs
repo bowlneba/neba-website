@@ -53,12 +53,3 @@ public static class SponsorInputFactory
                 Contact = contact
             };
 }
-
-public static class CreateSponsorRequestFactory
-{
-    public static CreateSponsorRequest Create(SponsorInput? sponsor = null)
-        => new()
-        {
-            Sponsor = sponsor ?? SponsorInputFactory.Create()
-        };
-}

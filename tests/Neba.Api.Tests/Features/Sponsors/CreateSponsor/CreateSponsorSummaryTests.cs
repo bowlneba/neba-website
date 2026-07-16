@@ -27,7 +27,7 @@ public sealed class CreateSponsorSummaryTests
         summary.Description.ShouldNotBeNullOrWhiteSpace();
     }
 
-    [Fact(DisplayName = "Constructor should register 201, 401, 403, 409, and 422 responses")]
+    [Fact(DisplayName = "Constructor should register 201, 400, 401, 403, 409, and 422 responses")]
     public void Constructor_ShouldRegisterExpectedResponses()
     {
         // Arrange & Act
@@ -35,6 +35,7 @@ public sealed class CreateSponsorSummaryTests
 
         // Assert
         summary.Responses.ShouldContainKey(201);
+        summary.Responses.ShouldContainKey(400);
         summary.Responses.ShouldContainKey(401);
         summary.Responses.ShouldContainKey(403);
         summary.Responses.ShouldContainKey(409);
