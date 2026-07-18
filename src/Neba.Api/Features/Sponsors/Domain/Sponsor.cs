@@ -214,7 +214,7 @@ public sealed class Sponsor
             SponsorContact = sponsorContact
         };
     }
-    
+
     /// <summary>
     /// Updates the sponsor's properties. Returns a validation error if <paramref name="name"/> is empty
     /// </summary>
