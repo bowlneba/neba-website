@@ -1,7 +1,9 @@
+using Neba.Api.Contacts.Domain;
 using Neba.Api.Database;
 using Neba.Api.Features.Sponsors.GetSponsorDetail;
 using Neba.Api.Storage;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Contact;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Sponsors;
 using Neba.TestFactory.Storage;
@@ -158,5 +160,66 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         result.IsError.ShouldBeFalse();
         result.Value.Name.ShouldBe("Inactive Co");
         result.Value.IsCurrentSponsor.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync populates LiveReadText, PromotionalNotes, and Contact when caller has sponsor management permission")]
+    public async Task HandleAsync_ShouldPopulateAdminOnlyFields_WhenCallerHasManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var contact = ContactInfoFactory.Create(
+            name: "Jane Doe",
+            phone: PhoneNumberFactory.Create(),
+            email: EmailAddressFactory.Create("jane@example.com"));
+        var sponsor = SponsorFactory.Create(
+            slug: "admin-only-fields",
+            liveReadText: "Read this live",
+            promotionalNotes: "Internal notes",
+            sponsorContact: contact);
+        await _dbContext.Sponsors.AddAsync(sponsor, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(
+            QueryFor("admin-only-fields", callerHasSponsorManagementPermission: true), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LiveReadText.ShouldBe("Read this live");
+        result.Value.PromotionalNotes.ShouldBe("Internal notes");
+        result.Value.Contact.ShouldNotBeNull();
+        result.Value.Contact.Name.ShouldBe("Jane Doe");
+        result.Value.Contact.Email.ShouldBe("jane@example.com");
+    }
+
+    [Fact(DisplayName = "HandleAsync suppresses LiveReadText, PromotionalNotes, and Contact when caller lacks sponsor management permission")]
+    public async Task HandleAsync_ShouldSuppressAdminOnlyFields_WhenCallerLacksManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var contact = ContactInfoFactory.Create(name: "Jane Doe");
+        var sponsor = SponsorFactory.Create(
+            slug: "public-view-fields",
+            liveReadText: "Read this live",
+            promotionalNotes: "Internal notes",
+            sponsorContact: contact);
+        await _dbContext.Sponsors.AddAsync(sponsor, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(
+            QueryFor("public-view-fields", callerHasSponsorManagementPermission: false), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LiveReadText.ShouldBeNull();
+        result.Value.PromotionalNotes.ShouldBeNull();
+        result.Value.Contact.ShouldBeNull();
     }
 }

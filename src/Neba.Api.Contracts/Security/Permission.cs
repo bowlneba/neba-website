@@ -60,11 +60,17 @@ public sealed class Permissions
     public static readonly Permissions CreateSponsor = new("Sponsors.CreateSponsor", "Create Sponsor");
 
     /// <summary>
+    /// Permission to edit a sponsor.
+    /// </summary>
+    public static readonly Permissions EditSponsor = new("Sponsors.EditSponsor", "Edit Sponsor");
+
+    /// <summary>
     /// A collection of permissions related to sponsor management.
     /// </summary>
     public static readonly IReadOnlyCollection<Permissions> SponsorManagementPermissions =
     [
         CreateSponsor,
+        EditSponsor,
     ];
 
     #endregion

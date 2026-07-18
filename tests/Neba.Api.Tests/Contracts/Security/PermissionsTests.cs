@@ -80,13 +80,23 @@ public sealed class PermissionsTests
         permissions.ShouldContain(Permissions.CreateSponsor);
     }
 
-    [Fact(DisplayName = "SponsorManagementPermissions should only contain CreateSponsor")]
-    public void SponsorManagementPermissions_ShouldOnlyContainCreateSponsor()
+    [Fact(DisplayName = "SponsorManagementPermissions should contain EditSponsor")]
+    public void SponsorManagementPermissions_ShouldContainEditSponsor()
     {
         // Arrange & Act
         var permissions = Permissions.SponsorManagementPermissions;
 
         // Assert
-        permissions.Count.ShouldBe(1);
+        permissions.ShouldContain(Permissions.EditSponsor);
+    }
+
+    [Fact(DisplayName = "SponsorManagementPermissions should only contain CreateSponsor and EditSponsor")]
+    public void SponsorManagementPermissions_ShouldOnlyContainCreateSponsorAndEditSponsor()
+    {
+        // Arrange & Act
+        var permissions = Permissions.SponsorManagementPermissions;
+
+        // Assert
+        permissions.Count.ShouldBe(2);
     }
 }

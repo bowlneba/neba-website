@@ -1,27 +1,17 @@
-using Neba.Api.Contracts.Contact;
-using Neba.Api.Contracts.OpenApi;
+using Neba.Api.Contracts.Sponsors.CreateSponsor;
 
-namespace Neba.Api.Contracts.Sponsors;
+namespace Neba.Api.Contracts.Sponsors.EditSponsor;
 
 /// <summary>
-/// Represents detailed sponsor information returned by the API, including business contact details and optional social/profile metadata.
+/// The fields required to edit an existing sponsor. Identical to <see cref="SponsorInput"/> minus
+/// <c>Slug</c>, which is immutable after creation.
 /// </summary>
-public sealed record SponsorDetailResponse
+public sealed record EditSponsorInput
 {
-    /// <summary>
-    /// Unique identifier for the sponsor.
-    /// </summary>
-    public required Ulid Id { get; init; }
-
     /// <summary>
     /// Display name of the sponsor.
     /// </summary>
     public required string Name { get; init; }
-
-    /// <summary>
-    /// URL-friendly identifier for the sponsor.
-    /// </summary>
-    public required string Slug { get; init; }
 
     /// <summary>
     /// Indicates whether the sponsor is currently active.
@@ -29,59 +19,57 @@ public sealed record SponsorDetailResponse
     public required bool IsCurrentSponsor { get; init; }
 
     /// <summary>
-    /// Priority ordering value for display.
+    /// Priority of the sponsor.
     /// </summary>
     public required int Priority { get; init; }
 
     /// <summary>
-    /// Sponsorship tier.
+    /// The sponsor tier name (see <c>SponsorTier</c>): "Title Sponsor", "Premier", or "Standard".
     /// </summary>
-    [OpenApiSmartEnum("SponsorTier")]
     public required string Tier { get; init; }
 
     /// <summary>
-    /// Sponsor category.
+    /// The sponsor category name (see <c>SponsorCategory</c>).
     /// </summary>
-    [OpenApiSmartEnum("SponsorCategory")]
     public required string Category { get; init; }
 
     /// <summary>
-    /// Public URL of the sponsor's logo.
+    /// The sponsor's logo image, already uploaded to storage.
     /// </summary>
-    public Uri? LogoUrl { get; init; }
+    public SponsorLogoInput? Logo { get; init; }
 
     /// <summary>
-    /// Public website URL for the sponsor.
+    /// Website URL of the sponsor.
     /// </summary>
     public Uri? WebsiteUrl { get; init; }
 
     /// <summary>
-    /// Optional sponsor tagline.
+    /// Tagline or slogan of the sponsor.
     /// </summary>
     public string? TagPhrase { get; init; }
 
     /// <summary>
-    /// Long-form sponsor description.
+    /// Description of the sponsor.
     /// </summary>
     public string? Description { get; init; }
 
     /// <summary>
-    /// Text to be read live about the sponsor. Only returned to callers with sponsor-management permission.
+    /// Text to be read live about the sponsor.
     /// </summary>
     public string? LiveReadText { get; init; }
 
     /// <summary>
-    /// Internal promotional notes for staff. Only returned to callers with sponsor-management permission.
+    /// Promotional notes for the sponsor.
     /// </summary>
     public string? PromotionalNotes { get; init; }
 
     /// <summary>
-    /// URL to the sponsor's Facebook profile.
+    /// Facebook URL of the sponsor.
     /// </summary>
     public Uri? FacebookUrl { get; init; }
 
     /// <summary>
-    /// URL to the sponsor's Instagram profile.
+    /// Instagram URL of the sponsor.
     /// </summary>
     public Uri? InstagramUrl { get; init; }
 
@@ -101,9 +89,8 @@ public sealed record SponsorDetailResponse
     public string? BusinessCity { get; init; }
 
     /// <summary>
-    /// Region or state for the sponsor's business address.
+    /// The US state postal abbreviation (e.g. "MA" — see <c>UsState</c>).
     /// </summary>
-    [OpenApiSmartEnum("UsState")]
     public string? BusinessState { get; init; }
 
     /// <summary>
@@ -112,23 +99,17 @@ public sealed record SponsorDetailResponse
     public string? BusinessPostalCode { get; init; }
 
     /// <summary>
-    /// Country for the sponsor's business address.
-    /// </summary>
-    [OpenApiSmartEnum("Country")]
-    public string? BusinessCountry { get; init; }
-
-    /// <summary>
     /// Business email address for sponsor inquiries.
     /// </summary>
     public string? BusinessEmailAddress { get; init; }
 
     /// <summary>
-    /// Contact phone numbers associated with the sponsor.
+    /// Phone numbers for the sponsor.
     /// </summary>
-    public required IReadOnlyCollection<PhoneNumberResponse> PhoneNumbers { get; init; }
+    public IReadOnlyCollection<SponsorPhoneNumberInput> PhoneNumbers { get; init; } = [];
 
     /// <summary>
-    /// The sponsor's internal contact person. Only returned to callers with sponsor-management permission.
+    /// Contact person details for the sponsor.
     /// </summary>
-    public SponsorContactResponse? Contact { get; init; }
+    public SponsorContactInput? Contact { get; init; }
 }

@@ -64,6 +64,16 @@ public sealed record SponsorDetailDto
     public string? Description { get; init; }
 
     /// <summary>
+    /// Text to be read live about the sponsor. Only populated for callers with sponsor-management permission.
+    /// </summary>
+    public string? LiveReadText { get; init; }
+
+    /// <summary>
+    /// Internal promotional notes for staff. Only populated for callers with sponsor-management permission.
+    /// </summary>
+    public string? PromotionalNotes { get; init; }
+
+    /// <summary>
     /// Facebook URL of the sponsor. This is the URL to the sponsor's official Facebook page. Providing a Facebook URL allows users to easily connect with the sponsor on social media, where they can follow updates, engage with content, and learn more about the sponsor's involvement with the organization. It can also help increase the sponsor's social media presence and foster a sense of community among users who are interested in the sponsor.
     /// </summary>
     public Uri? FacebookUrl { get; init; }
@@ -87,4 +97,9 @@ public sealed record SponsorDetailDto
     /// Phone numbers of the sponsor. This is a collection of phone numbers that users can use to contact the sponsor. Providing multiple phone numbers allows users to choose the most appropriate number for their needs, such as a general inquiry line, a support line, or a sales line. It can also help ensure that users can successfully reach the sponsor, even if one of the phone numbers is unavailable or busy.
     /// </summary>
     public IReadOnlyCollection<PhoneNumberDto> PhoneNumbers { get; init; } = [];
+
+    /// <summary>
+    /// The sponsor's internal contact person. Only populated for callers with sponsor-management permission.
+    /// </summary>
+    public SponsorContactDto? Contact { get; init; }
 }

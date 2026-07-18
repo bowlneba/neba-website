@@ -20,6 +20,7 @@ public static class SponsorDetailResponseFactory
     public const string ValidBusinessCountry = "US";
     public const string ValidBusinessEmailAddress = "joe@sponsor.com";
 
+#pragma warning disable S107
     public static SponsorDetailResponse Create(
         SponsorId? id = null,
         string? name = null,
@@ -32,6 +33,8 @@ public static class SponsorDetailResponseFactory
         Uri? websiteUrl = null,
         string? tagPhrase = null,
         string? description = null,
+        string? liveReadText = null,
+        string? promotionalNotes = null,
         Uri? facebookUrl = null,
         Uri? instagramUrl = null,
         string? businessStreet = null,
@@ -40,7 +43,8 @@ public static class SponsorDetailResponseFactory
         string? businessPostalCode = null,
         string? businessCountry = null,
         string? businessEmailAddress = null,
-        IReadOnlyCollection<PhoneNumberResponse>? phoneNumbers = null)
+        IReadOnlyCollection<PhoneNumberResponse>? phoneNumbers = null,
+        SponsorContactResponse? contact = null)
             => new()
             {
                 Id = id?.Value ?? Ulid.Parse(ValidId, CultureInfo.InvariantCulture),
@@ -54,6 +58,8 @@ public static class SponsorDetailResponseFactory
                 WebsiteUrl = websiteUrl,
                 TagPhrase = tagPhrase,
                 Description = description,
+                LiveReadText = liveReadText,
+                PromotionalNotes = promotionalNotes,
                 FacebookUrl = facebookUrl,
                 InstagramUrl = instagramUrl,
                 BusinessStreet = businessStreet ?? ValidBusinessStreet,
@@ -63,7 +69,9 @@ public static class SponsorDetailResponseFactory
                 BusinessCountry = businessCountry ?? ValidBusinessCountry,
                 BusinessEmailAddress = businessEmailAddress ?? ValidBusinessEmailAddress,
                 PhoneNumbers = phoneNumbers ?? [PhoneNumberResponseFactory.Create()],
+                Contact = contact,
             };
+#pragma warning restore S107
 
     internal static IReadOnlyCollection<SponsorDetailResponse> Bogus(int count, Faker faker)
     {
@@ -81,6 +89,8 @@ public static class SponsorDetailResponseFactory
             WebsiteUrl = new Uri(faker.Internet.Url()),
             TagPhrase = faker.Company.CatchPhrase(),
             Description = faker.Company.Bs(),
+            LiveReadText = faker.Lorem.Sentences(2),
+            PromotionalNotes = faker.Lorem.Sentences(3),
             FacebookUrl = new Uri(faker.Internet.Url()),
             InstagramUrl = new Uri(faker.Internet.Url()),
             BusinessStreet = faker.Address.StreetAddress(),
@@ -90,6 +100,7 @@ public static class SponsorDetailResponseFactory
             BusinessCountry = faker.Address.CountryCode(),
             BusinessEmailAddress = faker.Internet.Email(),
             PhoneNumbers = PhoneNumberResponseFactory.Bogus(2, faker),
+            Contact = SponsorContactResponseFactory.Bogus(1, faker).Single(),
         })];
     }
 

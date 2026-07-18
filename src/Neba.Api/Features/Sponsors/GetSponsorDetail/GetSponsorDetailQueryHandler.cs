@@ -33,6 +33,8 @@ internal sealed class GetSponsorDetailQueryHandler(AppDbContext appDbContext, IF
                 Category = sponsor.Category.Name,
                 sponsor.TagPhrase,
                 sponsor.Description,
+                sponsor.LiveReadText,
+                sponsor.PromotionalNotes,
                 sponsor.WebsiteUrl,
                 sponsor.FacebookUrl,
                 sponsor.InstagramUrl,
@@ -52,7 +54,16 @@ internal sealed class GetSponsorDetailQueryHandler(AppDbContext appDbContext, IF
                 {
                     Number = phoneNumber.Number,
                     PhoneNumberType = phoneNumber.Type.Name
-                }).ToList()
+                }).ToList(),
+                Contact = sponsor.SponsorContact != null
+                    ? new
+                    {
+                        sponsor.SponsorContact.Name,
+                        PhonePhoneNumberType = sponsor.SponsorContact.Phone.Type.Name,
+                        PhoneNumber = sponsor.SponsorContact.Phone.Number,
+                        Email = sponsor.SponsorContact.Email.Value
+                    }
+                    : null
             }).SingleOrDefaultAsync(cancellationToken);
 
         if (row is null)
@@ -81,12 +92,26 @@ internal sealed class GetSponsorDetailQueryHandler(AppDbContext appDbContext, IF
             Category = row.Category,
             TagPhrase = row.TagPhrase,
             Description = row.Description,
+            LiveReadText = query.CallerHasSponsorManagementPermission ? row.LiveReadText : null,
+            PromotionalNotes = query.CallerHasSponsorManagementPermission ? row.PromotionalNotes : null,
             WebsiteUrl = row.WebsiteUrl,
             FacebookUrl = row.FacebookUrl,
             InstagramUrl = row.InstagramUrl,
             BusinessAddress = row.BusinessAddress,
             BusinessEmailAddress = row.BusinessEmailAddress,
-            PhoneNumbers = row.PhoneNumbers
+            PhoneNumbers = row.PhoneNumbers,
+            Contact = query.CallerHasSponsorManagementPermission && row.Contact is not null
+                ? new SponsorContactDto
+                {
+                    Name = row.Contact.Name,
+                    Phone = new PhoneNumberDto
+                    {
+                        PhoneNumberType = row.Contact.PhonePhoneNumberType,
+                        Number = row.Contact.PhoneNumber
+                    },
+                    Email = row.Contact.Email
+                }
+                : null
         };
     }
 }
