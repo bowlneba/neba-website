@@ -166,35 +166,8 @@ const MOCK_SPONSOR_PRO_SHOP_PLUS = {
   sponsorContactPhoneNumberType: null,
 };
 
-const MOCK_SPONSOR_OLD_SPONSOR = {
-  id: '01JX0000000000000000000002',
-  name: 'Old Sponsor',
-  slug: 'old-sponsor',
-  isCurrentSponsor: false,
-  priority: 99,
-  tier: 'Standard',
-  category: 'Other',
-  logoUrl: null,
-  websiteUrl: null,
-  tagPhrase: null,
-  description: null,
-  promotionalNotes: null,
-  liveReadText: null,
-  facebookUrl: null,
-  instagramUrl: null,
-  businessStreet: null,
-  businessUnit: null,
-  businessCity: null,
-  businessState: null,
-  businessPostalCode: null,
-  businessCountry: null,
-  businessEmailAddress: null,
-  phoneNumbers: [],
-  sponsorContactName: null,
-  sponsorContactEmailAddress: null,
-  sponsorContactPhoneNumber: null,
-  sponsorContactPhoneNumberType: null,
-};
+// 'old-sponsor' deliberately has no mock route: it's inactive, and the real API returns
+// not-found for callers without the Sponsors management permission (see SponsorDetail.razor).
 
 export const PRIMARY_BOWLER_ID = '01JX1111111111111111111111';
 export const SECONDARY_BOWLER_ID = '01JX2222222222222222222222';
@@ -538,7 +511,7 @@ const MOCK_NEWS_PAGE_1 = {
       title: '2025–26 Season Champions Crowned at Tournament of Champions',
       excerpt: 'After a dominant season, the finals came down to two of NEBA\'s most decorated veterans. Find out who took home the title and how the points race shook out heading into next year.',
       headerImageUrl: null,
-      publishDateUtc: '2026-05-15T00:00:00+00:00',
+      publishDateUtc: '2026-05-15T12:00:00+00:00',
     },
     {
       articleId: ARTICLE_ID_JUNE_LANE_PATTERN,
@@ -547,7 +520,7 @@ const MOCK_NEWS_PAGE_1 = {
       title: 'Lane Pattern Announced for June Southside Classic',
       excerpt: 'The June monthly at Southside Bowl will feature the WTBA London sport pattern. Download the PDF and check qualifying details.',
       headerImageUrl: null,
-      publishDateUtc: '2026-05-01T00:00:00+00:00',
+      publishDateUtc: '2026-05-01T12:00:00+00:00',
     },
     {
       articleId: ARTICLE_ID_POINTS_RACE,
@@ -556,7 +529,7 @@ const MOCK_NEWS_PAGE_1 = {
       title: 'Points Race Update: Three Bowlers Separated by Eight Points',
       excerpt: 'With two tournaments left, the Bowler of the Year race is razor-thin. Here\'s the current standings and what each contender needs.',
       headerImageUrl: null,
-      publishDateUtc: '2026-04-18T00:00:00+00:00',
+      publishDateUtc: '2026-04-18T12:00:00+00:00',
     },
   ],
   totalItems: 3,
@@ -571,7 +544,7 @@ const MOCK_ARTICLE_SEASON_CHAMPIONS: object = {
   title: '2025–26 Season Champions Crowned at Tournament of Champions',
   content: '<p>After a dominant regular season, the 2025–26 NEBA Tournament of Champions brought together the top performers from across New England for a single-elimination finale at Baxter Bowl in Springfield.</p><p>The field was deep. Twelve qualifiers entered match play, but it was two bowlers who had been trading the points lead all season who ultimately met in the final: defending champion Marcus Roark and two-time high-average winner Diane Pellerin.</p><p>Pellerin answered with a strike in the 10th to post a 267 and claim her first Tournament of Champions title.</p>',
   headerImageUrl: null,
-  publishDateUtc: '2026-05-15T00:00:00+00:00',
+  publishDateUtc: '2026-05-15T12:00:00+00:00',
   tournamentId: MOCK_TOURNAMENT_ID,
   attachments: [
     { displayName: 'Tournament Results & Bracket', contentType: 'application/pdf', url: 'https://files.bowlneba.com/news/season-champions-2026/bracket.pdf', isInline: false, container: 'news', path: 'season-champions-2026/bracket.pdf', sizeInBytes: 245760 },
@@ -586,7 +559,7 @@ const MOCK_ARTICLE_JUNE_LANE_PATTERN: object = {
   title: 'Lane Pattern Announced for June Southside Classic',
   content: '<p>The June monthly at Southside Bowl will feature the WTBA London sport pattern. Download the PDF below and check qualifying details.</p><p>Registration opens May 20th. Entry fee is $75 per bowler.</p>',
   headerImageUrl: null,
-  publishDateUtc: '2026-05-01T00:00:00+00:00',
+  publishDateUtc: '2026-05-01T12:00:00+00:00',
   tournamentId: null,
   attachments: [
     { displayName: 'Lane Pattern PDF', contentType: 'application/pdf', url: 'https://files.bowlneba.com/news/june-lane-pattern/pattern.pdf', isInline: false, container: 'news', path: 'june-lane-pattern/pattern.pdf', sizeInBytes: 156672 },
@@ -600,7 +573,7 @@ const MOCK_ARTICLE_POINTS_RACE: object = {
   title: 'Points Race Update: Three Bowlers Separated by Eight Points',
   content: '<p>With two tournaments left, the Bowler of the Year race is razor-thin. Here\'s the current standings and what each contender needs to clinch the title heading into the final stretch.</p>',
   headerImageUrl: null,
-  publishDateUtc: '2026-04-18T00:00:00+00:00',
+  publishDateUtc: '2026-04-18T12:00:00+00:00',
   tournamentId: null,
   attachments: [],
 };
@@ -613,7 +586,6 @@ const routes: Record<string, unknown> = {
   '/seasons': MOCK_SEASONS,
   '/sponsors': MOCK_SPONSORS_ACTIVE,
   '/sponsors/pro-shop-plus': MOCK_SPONSOR_PRO_SHOP_PLUS,
-  '/sponsors/old-sponsor': MOCK_SPONSOR_OLD_SPONSOR,
   '/news': MOCK_NEWS_PAGE_1,
   '/news/season-champions-2026': MOCK_ARTICLE_SEASON_CHAMPIONS,
   '/news/june-lane-pattern': MOCK_ARTICLE_JUNE_LANE_PATTERN,
@@ -645,6 +617,10 @@ function resolveGetRoute(pathname: string, searchParams: URLSearchParams): objec
     return tournamentId === MOCK_TOURNAMENT_ID ? MOCK_TOURNAMENT_DETAIL : null;
   }
 
+  if (pathname.startsWith('/sponsors/') && createdSponsors.has(pathname.slice('/sponsors/'.length))) {
+    return createdSponsors.get(pathname.slice('/sponsors/'.length)) ?? null;
+  }
+
   return routes[pathname] ?? null;
 }
 
@@ -654,6 +630,10 @@ interface MockOverride {
 }
 
 const mockOverrides = new Map<string, MockOverride>();
+
+// Sponsors created via POST /sponsors during a test run, keyed by slug, so a subsequent
+// GET /sponsors/{slug} (e.g. after the create form navigates to the detail page) resolves.
+const createdSponsors = new Map<string, object>();
 
 async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
   setCorsHeaders(res);
@@ -680,6 +660,69 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     const slug = parsed.article?.slug || slugify(parsed.article?.title ?? '');
 
     sendJsonResponse(res, { articleId: '01JX0000000000000000000199', slug }, 201);
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/sponsors') {
+    const override = mockOverrides.get(pathname);
+
+    if (override?.status != null && override.status >= 400) {
+      sendJsonResponse(res, { error: 'Mock error' }, override.status);
+      return;
+    }
+
+    const body = await readRequestBody(req);
+    const parsed = JSON.parse(body) as {
+      sponsor?: {
+        name?: string;
+        slug?: string;
+        isCurrentSponsor?: boolean;
+        priority?: number;
+        tier?: string;
+        category?: string;
+        websiteUrl?: string;
+        tagPhrase?: string;
+        description?: string;
+        facebookUrl?: string;
+        instagramUrl?: string;
+        businessStreet?: string;
+        businessUnit?: string;
+        businessCity?: string;
+        businessState?: string;
+        businessPostalCode?: string;
+        businessEmailAddress?: string;
+        phoneNumbers?: { phoneNumberType: string; phoneNumber: string }[];
+      };
+    };
+    const sponsor = parsed.sponsor ?? {};
+    const slug = sponsor.slug || slugify(sponsor.name ?? '');
+    const sponsorId = '01JX0000000000000000000199';
+
+    createdSponsors.set(slug, {
+      id: sponsorId,
+      name: sponsor.name ?? '',
+      slug,
+      isCurrentSponsor: sponsor.isCurrentSponsor ?? true,
+      priority: sponsor.priority ?? 0,
+      tier: sponsor.tier ?? 'Standard',
+      category: sponsor.category ?? 'Other',
+      logoUrl: null,
+      websiteUrl: sponsor.websiteUrl ?? null,
+      tagPhrase: sponsor.tagPhrase ?? null,
+      description: sponsor.description ?? null,
+      facebookUrl: sponsor.facebookUrl ?? null,
+      instagramUrl: sponsor.instagramUrl ?? null,
+      businessStreet: sponsor.businessStreet ?? null,
+      businessUnit: sponsor.businessUnit ?? null,
+      businessCity: sponsor.businessCity ?? null,
+      businessState: sponsor.businessState ?? null,
+      businessPostalCode: sponsor.businessPostalCode ?? null,
+      businessCountry: null,
+      businessEmailAddress: sponsor.businessEmailAddress ?? null,
+      phoneNumbers: sponsor.phoneNumbers ?? [],
+    });
+
+    sendJsonResponse(res, { sponsorId, slug }, 201);
     return;
   }
 
