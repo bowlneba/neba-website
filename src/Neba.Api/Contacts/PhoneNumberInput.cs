@@ -1,4 +1,4 @@
-using Neba.Api.Contacts.Domain;
+using Neba.Api.Contracts.Contact;
 
 namespace Neba.Api.Contacts;
 

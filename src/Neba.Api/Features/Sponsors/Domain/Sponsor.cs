@@ -113,6 +113,7 @@ public sealed class Sponsor
     // materializing a Sponsor with phone numbers. See CLAUDE.md "EF Core Navigation Fixup".
     // Guarded by SponsorTests.PhoneNumbers_DefaultInstance_ShouldSupportAdd_ForEfFixup.
     [SuppressMessage("Style", "IDE0305:Simplify collection initialization", Justification = "See preceding comment — [] would regress to a fixed-size array.")]
+    [SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "See preceding comment — [] would regress to a fixed-size array.")]
     public IReadOnlyCollection<PhoneNumber> PhoneNumbers { get; init; } = new List<PhoneNumber>();
 
     /// <summary>
@@ -122,6 +123,7 @@ public sealed class Sponsor
 
     // Same fixed-size-array hazard as PhoneNumbers above — keep as new List<TournamentSponsor>().
     [SuppressMessage("Style", "IDE0305:Simplify collection initialization", Justification = "See PhoneNumbers comment above — [] would regress to a fixed-size array.")]
+    [SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "See PhoneNumbers comment above — [] would regress to a fixed-size array.")]
     internal IReadOnlyCollection<TournamentSponsor> TournamentsSponsored { get; init; } = new List<TournamentSponsor>();
 
     private const string ReservedSlugNew = "new";
@@ -143,6 +145,7 @@ public sealed class Sponsor
     /// </summary>
     [SuppressMessage("Major Code Smell", "S107:Methods should not have too many parameters", Justification = "Aggregate factory method — each parameter is a required or optional field of the always-valid Sponsor invariant (see CLAUDE.md 'Always-Valid Entities'); splitting into a parameter object would just move the same fields into a second type with no behavior of its own.")]
     [SuppressMessage("Style", "IDE0305:Simplify collection initialization", Justification = "The `phoneNumbers ?? new List<PhoneNumber>()` fallback below must not become `?? []` — see the PhoneNumbers property comment for why.")]
+    [SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "The `phoneNumbers ?? new List<PhoneNumber>()` fallback below must not become `?? []` — see the PhoneNumbers property comment for why.")]
     public static ErrorOr<Sponsor> Create(
         string name,
         bool isCurrentSponsor,

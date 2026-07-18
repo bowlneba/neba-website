@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 
 using ErrorOr;
 
+using Neba.Api.Contracts.Contact;
 using Neba.Api.Geography;
 
 namespace Neba.Api.Contacts.Domain;

@@ -40,6 +40,7 @@ public sealed class BowlingCenter
     // materializing a BowlingCenter with phone numbers. See CLAUDE.md "EF Core Navigation Fixup".
     // Guarded by BowlingCenterTests.PhoneNumbers_DefaultInstance_ShouldSupportAdd_ForEfFixup.
     [SuppressMessage("Style", "IDE0305:Simplify collection initialization", Justification = "See preceding comment — [] would regress to a fixed-size array.")]
+    [SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "See preceding comment — [] would regress to a fixed-size array.")]
     public IReadOnlyCollection<PhoneNumber> PhoneNumbers { get; init; } = new List<PhoneNumber>();
 
     /// <summary>

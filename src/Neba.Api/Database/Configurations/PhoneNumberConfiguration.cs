@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 using Neba.Api.Contacts.Domain;
+using Neba.Api.Contracts.Contact;
 
 namespace Neba.Api.Database.Configurations;
 

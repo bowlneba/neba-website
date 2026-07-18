@@ -11,7 +11,7 @@ public sealed class BowlingCenterTests
 {
     // ── EF owned-collection fixup regression ────────────────────────────────
     // Guards BowlingCenter.PhoneNumbers against reverting from `new List<PhoneNumber>()` back to the
-    // `[]` collection-expression form (e.g. via an IDE0305/SonarQube "simplify collection
+    // `[]` collection-expression form (e.g. via an IDE0305/IDE0028/SonarQube "simplify collection
     // initialization" suggestion). Target-typed to the IReadOnlyCollection<PhoneNumber> property,
     // `[]` resolves to a fixed-size PhoneNumber[] at runtime, and EF's owned-collection fixup throws
     // NotSupportedException when it tries to Add into that array while materializing the aggregate.

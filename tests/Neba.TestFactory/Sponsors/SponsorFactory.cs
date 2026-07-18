@@ -21,6 +21,7 @@ public static class SponsorFactory
     // `?? []` — see Sponsor.PhoneNumbers' comment (src/Neba.Api/Features/Sponsors/Domain/Sponsor.cs)
     // for why: `[]` resolves to a fixed-size T[] here and breaks EF owned-collection fixup on read.
     [SuppressMessage("Style", "IDE0305:Simplify collection initialization", Justification = "[] would regress to a fixed-size array — see Sponsor.PhoneNumbers comment.")]
+    [SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "[] would regress to a fixed-size array — see Sponsor.PhoneNumbers comment.")]
     public static Sponsor Create(
         SponsorId? id = null,
         string? name = null,

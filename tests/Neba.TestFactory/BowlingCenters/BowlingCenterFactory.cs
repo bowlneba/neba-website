@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 using Neba.Api.Contacts.Domain;
+using Neba.Api.Contracts.Contact;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.TestFactory.Contact;
 
@@ -17,6 +18,7 @@ public static class BowlingCenterFactory
     // see BowlingCenter.PhoneNumbers' comment (src/Neba.Api/Features/BowlingCenters/Domain/BowlingCenter.cs)
     // for why: `[]` resolves to a fixed-size T[] here and breaks EF owned-collection fixup on read.
     [SuppressMessage("Style", "IDE0305:Simplify collection initialization", Justification = "[] would regress to a fixed-size array — see BowlingCenter.PhoneNumbers comment.")]
+    [SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "[] would regress to a fixed-size array — see BowlingCenter.PhoneNumbers comment.")]
     public static BowlingCenter Create(
         CertificationNumber? certificationNumber = null,
         string? name = null,

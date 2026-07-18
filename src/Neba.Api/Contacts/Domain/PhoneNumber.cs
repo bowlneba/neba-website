@@ -2,6 +2,8 @@ using System.Text.RegularExpressions;
 
 using ErrorOr;
 
+using Neba.Api.Contracts.Contact;
+
 namespace Neba.Api.Contacts.Domain;
 
 /// <summary>

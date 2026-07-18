@@ -330,7 +330,7 @@ public sealed class SponsorTests
 
     // ── EF owned-collection fixup regression ────────────────────────────────
     // Guards Sponsor.PhoneNumbers/TournamentsSponsored against reverting from `new List<T>()` back
-    // to the `[]` collection-expression form (e.g. via an IDE0305/SonarQube "simplify collection
+    // to the `[]` collection-expression form (e.g. via an IDE0305/IDE0028/SonarQube "simplify collection
     // initialization" suggestion). Target-typed to the IReadOnlyCollection<T> property, `[]` resolves
     // to a fixed-size T[] at runtime, and EF's owned-collection fixup throws NotSupportedException
     // when it tries to Add into that array while materializing the aggregate. See CLAUDE.md
