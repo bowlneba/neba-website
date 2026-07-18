@@ -2,8 +2,6 @@ using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
 
-using Neba.Api.Contacts;
-using Neba.Api.Contacts.Domain;
 using Neba.Api.Database;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Storage.Domain;
@@ -20,28 +18,30 @@ internal sealed class CreateSponsorCommandHandler(
 {
     public async Task<ErrorOr<CreatedSponsor>> HandleAsync(CreateSponsorCommand command, CancellationToken cancellationToken)
     {
-        var addressResult = BuildBusinessAddress(command);
+        var addressResult = SponsorFieldBuilder.BuildBusinessAddress(
+            command.BusinessStreet, command.BusinessUnit, command.BusinessCity, command.BusinessState, command.BusinessPostalCode);
 
         if (addressResult.IsError)
         {
             return addressResult.Errors;
         }
 
-        var emailResult = BuildBusinessEmail(command.BusinessEmailAddress);
+        var emailResult = SponsorFieldBuilder.BuildBusinessEmail(command.BusinessEmailAddress);
 
         if (emailResult.IsError)
         {
             return emailResult.Errors;
         }
 
-        var phoneNumbersResult = BuildPhoneNumbers(command.PhoneNumbers);
+        var phoneNumbersResult = SponsorFieldBuilder.BuildPhoneNumbers(command.PhoneNumbers);
 
         if (phoneNumbersResult.IsError)
         {
             return phoneNumbersResult.Errors;
         }
 
-        var contactResult = BuildSponsorContact(command);
+        var contactResult = SponsorFieldBuilder.BuildSponsorContact(
+            command.ContactName, command.ContactPhoneType, command.ContactPhoneNumber, command.ContactPhoneExtension, command.ContactEmail);
 
         if (contactResult.IsError)
         {
@@ -100,97 +100,6 @@ internal sealed class CreateSponsorCommandHandler(
             Id = sponsor.Id,
             Slug = sponsor.Slug
         };
-    }
-
-    private static ErrorOr<Address?> BuildBusinessAddress(CreateSponsorCommand command)
-    {
-        if (string.IsNullOrWhiteSpace(command.BusinessStreet))
-        {
-            return (Address?)null;
-        }
-
-        ArgumentNullException.ThrowIfNull(command.BusinessState);
-
-        var result = Address.Create(
-            command.BusinessStreet,
-            command.BusinessUnit,
-            command.BusinessCity ?? string.Empty,
-            command.BusinessState,
-            command.BusinessPostalCode ?? string.Empty);
-
-        return result.IsError
-            ? result.Errors
-            : result.Value;
-    }
-
-    private static ErrorOr<EmailAddress?> BuildBusinessEmail(string? businessEmailAddress)
-    {
-        if (string.IsNullOrWhiteSpace(businessEmailAddress))
-        {
-            return (EmailAddress?)null;
-        }
-
-        var result = EmailAddress.Create(businessEmailAddress);
-
-        return result.IsError
-            ? result.Errors
-            : result.Value;
-    }
-
-    private static ErrorOr<IReadOnlyCollection<PhoneNumber>> BuildPhoneNumbers(
-        IReadOnlyCollection<PhoneNumberInput> phoneNumbers)
-    {
-        var built = new List<PhoneNumber>(phoneNumbers.Count);
-
-        foreach (var phoneNumber in phoneNumbers)
-        {
-            var result = PhoneNumber.CreateNorthAmerican(phoneNumber.Type, phoneNumber.Number, phoneNumber.Extension);
-
-            if (result.IsError)
-            {
-                return result.Errors;
-            }
-
-            built.Add(result.Value);
-        }
-
-        return built;
-    }
-
-    // All-or-nothing per scoping decision: if any of Name/Phone/Email is supplied, all three must be.
-    private static ErrorOr<ContactInfo?> BuildSponsorContact(CreateSponsorCommand command)
-    {
-        var anySupplied = !string.IsNullOrWhiteSpace(command.ContactName)
-            || !string.IsNullOrWhiteSpace(command.ContactPhoneNumber)
-            || !string.IsNullOrWhiteSpace(command.ContactEmail);
-
-        if (!anySupplied)
-        {
-            return (ContactInfo?)null;
-        }
-
-        ArgumentNullException.ThrowIfNull(command.ContactPhoneType);
-
-        var phoneResult = PhoneNumber.CreateNorthAmerican(
-            command.ContactPhoneType,
-            command.ContactPhoneNumber ?? string.Empty,
-            command.ContactPhoneExtension);
-
-        if (phoneResult.IsError)
-        {
-            return phoneResult.Errors;
-        }
-
-        var emailResult = EmailAddress.Create(command.ContactEmail ?? string.Empty);
-
-        return emailResult.IsError
-            ? emailResult.Errors
-            : new ContactInfo
-            {
-                Name = command.ContactName ?? string.Empty,
-                Phone = phoneResult.Value,
-                Email = emailResult.Value
-            };
     }
 
     // Check-then-insert: see CreateArticleCommandHandler.EnsureSlugIsAvailableAsync for the same
