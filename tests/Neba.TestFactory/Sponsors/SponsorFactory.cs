@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 using Neba.Api.Contacts.Domain;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Storage.Domain;
@@ -17,13 +15,8 @@ public static class SponsorFactory
     public static readonly SponsorTier ValidTier = SponsorTier.Standard;
     public static readonly SponsorCategory ValidCategory = SponsorCategory.Technology;
 
-    // The `PhoneNumbers = phoneNumbers ?? new List<PhoneNumber>()` fallback below must not become
-    // `?? []` — see Sponsor.PhoneNumbers' comment (src/Neba.Api/Features/Sponsors/Domain/Sponsor.cs)
-    // for why: `[]` resolves to a fixed-size T[] here and breaks EF owned-collection fixup on read.
-    [SuppressMessage("Style", "IDE0305:Simplify collection initialization", Justification = "[] would regress to a fixed-size array — see Sponsor.PhoneNumbers comment.")]
-    [SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "[] would regress to a fixed-size array — see Sponsor.PhoneNumbers comment.")]
+#pragma warning disable S107
     public static Sponsor Create(
-        SponsorId? id = null,
         string? name = null,
         string? slug = null,
         bool? isCurrentSponsor = null,
@@ -42,28 +35,36 @@ public static class SponsorFactory
         EmailAddress? businessEmail = null,
         IReadOnlyCollection<PhoneNumber>? phoneNumbers = null,
         ContactInfo? sponsorContact = null)
-            => new()
-            {
-                Id = id ?? SponsorId.New(),
-                Name = name ?? ValidName,
-                Slug = slug ?? ValidSlug,
-                IsCurrentSponsor = isCurrentSponsor ?? ValidIsCurrentSponsor,
-                Priority = priority ?? ValidPriority,
-                Tier = tier ?? ValidTier,
-                Category = category ?? ValidCategory,
-                Logo = logo,
-                WebsiteUrl = websiteUrl,
-                TagPhrase = tagPhrase,
-                Description = description,
-                LiveReadText = liveReadText,
-                PromotionalNotes = promotionalNotes,
-                FacebookUrl = facebookUrl,
-                InstagramUrl = instagramUrl,
-                BusinessAddress = businessAddress,
-                BusinessEmail = businessEmail,
-                PhoneNumbers = phoneNumbers ?? new List<PhoneNumber>(),
-                SponsorContact = sponsorContact
-            };
+    {
+        var result = Sponsor.Create(
+            name: name ?? ValidName,
+            isCurrentSponsor: isCurrentSponsor ?? ValidIsCurrentSponsor,
+            priority: priority ?? ValidPriority,
+            tier: tier ?? ValidTier,
+            category: category ?? ValidCategory,
+            isTitleSponsorshipAvailable: true,
+            slug: slug ?? ValidSlug,
+            logo: logo,
+            websiteUrl: websiteUrl,
+            tagPhrase: tagPhrase,
+            description: description,
+            liveReadText: liveReadText,
+            promotionalNotes: promotionalNotes,
+            facebookUrl: facebookUrl,
+            instagramUrl: instagramUrl,
+            businessAddress: businessAddress,
+            businessEmail: businessEmail,
+            phoneNumbers: phoneNumbers,
+            sponsorContact: sponsorContact);
+
+        if (result.IsError)
+        {
+            throw new InvalidOperationException($"Failed to create sponsor: {result.Errors[0].Description}");
+        }
+
+        return result.Value;
+    }
+#pragma warning restore S107
 
     internal static IReadOnlyCollection<Sponsor> Bogus(int count, Faker faker)
     {
@@ -75,27 +76,35 @@ public static class SponsorFactory
         var phoneNumberPool = UniquePool.Create(PhoneNumberFactory.Bogus(count * 10, faker), poolSeed);
         var contactInfoPool = UniquePool.CreateNullable(ContactInfoFactory.Bogus(count * 10, faker), poolSeed);
 
-        return [.. Enumerable.Range(0, count).Select(_ => new Sponsor
+        return [.. Enumerable.Range(0, count).Select(_ =>
         {
-            Id = new SponsorId(Ulid.BogusString(faker)),
-            Name = faker.Company.CompanyName(),
-            Slug = faker.Lorem.Slug(),
-            IsCurrentSponsor = faker.Random.Bool(),
-            Priority = faker.Random.Int(1, 10),
-            Tier = faker.PickRandom(SponsorTier.List.ToArray()),
-            Category = faker.PickRandom(SponsorCategory.List.ToArray()),
-            Logo = logoPool.GetNextNullable(),
-            WebsiteUrl = new Uri(faker.Internet.Url()),
-            TagPhrase = faker.Company.CatchPhrase(),
-            Description = faker.Company.Bs(),
-            LiveReadText = faker.Lorem.Sentences(2),
-            PromotionalNotes = faker.Lorem.Sentences(3),
-            FacebookUrl = new Uri(faker.Internet.UrlWithPath("facebook")),
-            InstagramUrl = new Uri(faker.Internet.UrlWithPath("instagram")),
-            BusinessAddress = businessAddressPool.GetNextNullable(),
-            BusinessEmail = businessEmailPool.GetNextNullable(),
-            PhoneNumbers = [.. new[] { phoneNumberPool.GetNext(), phoneNumberPool.GetNext() }.DistinctBy(p => p.Type)],
-            SponsorContact = contactInfoPool.GetNextNullable()
+            var result = Sponsor.Create(
+                name: faker.Company.CompanyName(),
+                isCurrentSponsor: faker.Random.Bool(),
+                priority: faker.Random.Int(1, 10),
+                tier: faker.PickRandom(SponsorTier.List.ToArray()),
+                category: faker.PickRandom(SponsorCategory.List.ToArray()),
+                isTitleSponsorshipAvailable: true,
+                slug: faker.Lorem.Slug(),
+                logo: logoPool.GetNextNullable(),
+                websiteUrl: new Uri(faker.Internet.Url()),
+                tagPhrase: faker.Company.CatchPhrase(),
+                description: faker.Company.Bs(),
+                liveReadText: faker.Lorem.Sentences(2),
+                promotionalNotes: faker.Lorem.Sentences(3),
+                facebookUrl: new Uri(faker.Internet.UrlWithPath("facebook")),
+                instagramUrl: new Uri(faker.Internet.UrlWithPath("instagram")),
+                businessAddress: businessAddressPool.GetNextNullable(),
+                businessEmail: businessEmailPool.GetNextNullable(),
+                phoneNumbers: [.. new[] { phoneNumberPool.GetNext(), phoneNumberPool.GetNext() }.DistinctBy(p => p.Type)],
+                sponsorContact: contactInfoPool.GetNextNullable());
+
+            if (result.IsError)
+            {
+                throw new InvalidOperationException($"Failed to create sponsor: {result.Errors[0].Description}");
+            }
+
+            return result.Value;
         })];
     }
 
