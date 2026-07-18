@@ -42,8 +42,9 @@ internal static class DatabaseConfiguration
                 var audit = sp.GetRequiredService<AuditSaveChangesInterceptor>();
 
                 options
-                    .UseNpgsql(dataSource, npgsqlOptions =>
-                        npgsqlOptions.MigrationsHistoryTable(AppDbContext.MigrationsHistoryTableName, AppDbContext.DefaultSchema))
+                    .UseNpgsql(dataSource, npgsqlOptions => npgsqlOptions
+                        .MigrationsHistoryTable(AppDbContext.MigrationsHistoryTableName, AppDbContext.DefaultSchema)
+                        .EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorCodesToAdd: null))
                     .UseExceptionProcessor()
                     .UseSnakeCaseNamingConvention()
                     .EnableDetailedErrors()

@@ -13,7 +13,7 @@ public sealed record GetSponsorDetailQuery
 {
     /// <inheritdoc />
     public CacheDescriptor Cache
-        => CacheDescriptors.Sponsors.Detail(Slug);
+        => CacheDescriptors.Sponsors.Detail(Slug, CallerHasSponsorManagementPermission);
 
     /// <inheritdoc />
     public TimeSpan Expiry
@@ -23,4 +23,10 @@ public sealed record GetSponsorDetailQuery
     /// The sponsor slug used to identify the sponsor.
     /// </summary>
     public required string Slug { get; init; }
+
+    /// <summary>
+    /// Whether the caller holds a sponsor-management permission — permits viewing a sponsor that
+    /// isn't the current/active one, which is otherwise treated as not found.
+    /// </summary>
+    public required bool CallerHasSponsorManagementPermission { get; init; }
 }

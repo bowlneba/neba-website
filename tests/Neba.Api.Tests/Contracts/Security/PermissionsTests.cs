@@ -69,4 +69,24 @@ public sealed class PermissionsTests
         // Assert
         policyName.ShouldBe("CanManageArticles");
     }
+
+    [Fact(DisplayName = "SponsorManagementPermissions should contain CreateSponsor")]
+    public void SponsorManagementPermissions_ShouldContainCreateSponsor()
+    {
+        // Arrange & Act
+        var permissions = Permissions.SponsorManagementPermissions;
+
+        // Assert
+        permissions.ShouldContain(Permissions.CreateSponsor);
+    }
+
+    [Fact(DisplayName = "SponsorManagementPermissions should only contain CreateSponsor")]
+    public void SponsorManagementPermissions_ShouldOnlyContainCreateSponsor()
+    {
+        // Arrange & Act
+        var permissions = Permissions.SponsorManagementPermissions;
+
+        // Assert
+        permissions.Count.ShouldBe(1);
+    }
 }

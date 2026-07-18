@@ -12,4 +12,24 @@ internal static class SponsorErrors
             {
                 {"slug", slug}
             });
+
+    public static Error NameRequired
+        => Error.Validation("Sponsor.Name.Required", "Name must not be empty.");
+
+    public static Error SlugInvalid
+        => Error.Validation("Sponsor.Slug.Invalid", "Slug must contain at least one alphanumeric character.");
+
+    public static Error SlugReserved
+        => Error.Validation("Sponsor.Slug.Reserved", "Slug 'new' is reserved for the sponsor-creation route.");
+
+    public static Error SlugAlreadyExists(string slug)
+        => Error.Conflict(
+            code: "Sponsor.Slug.AlreadyExists",
+            description: "A sponsor with this slug already exists.",
+            metadata: new Dictionary<string, object> { { "Slug", slug } });
+
+    public static Error TitleSponsorshipUnavailable
+        => Error.Conflict(
+            code: "Sponsor.TitleSponsor.Unavailable",
+            description: "The Title Sponsor tier is already assigned to another sponsor.");
 }

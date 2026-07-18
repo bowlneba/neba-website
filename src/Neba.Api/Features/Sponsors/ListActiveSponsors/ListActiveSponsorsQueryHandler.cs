@@ -15,8 +15,11 @@ internal sealed class ListActiveSponsorsQueryHandler(AppDbContext appDbContext, 
 
     public async Task<IReadOnlyCollection<SponsorSummaryDto>> HandleAsync(ListActiveSponsorsQuery query, CancellationToken cancellationToken)
     {
-        var rows = await _sponsors
-            .Where(sponsor => sponsor.IsCurrentSponsor)
+        var sponsors = query.CallerHasSponsorManagementPermission
+            ? _sponsors
+            : _sponsors.Where(sponsor => sponsor.IsCurrentSponsor);
+
+        var rows = await sponsors
             .Select(sponsor => new
             {
                 sponsor.Name,

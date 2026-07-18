@@ -93,6 +93,16 @@
     color: #ffffff;
 }
 
+.sponsor-detail__badge--status-active {
+    background-color: var(--neba-success);
+    color: #ffffff;
+}
+
+.sponsor-detail__badge--status-inactive {
+    background-color: var(--neba-gray-500);
+    color: #ffffff;
+}
+
 .sponsor-detail__title {
     font-family: var(--neba-font-display);
     font-size: 3rem;
@@ -137,6 +147,10 @@
 @media (min-width: 1024px) {
     .sponsor-detail__body {
         grid-template-columns: 8fr 4fr;
+    }
+
+    .sponsor-detail__body--single-col {
+        grid-template-columns: 1fr;
     }
 }
 

@@ -132,10 +132,10 @@
 </div>
 
 @code {
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public IReadOnlyCollection<BowlerTitleSummaryViewModel> Summaries { get; set; } = default!;
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public EventCallback<BowlerTitleSummaryViewModel> OnBowlerSelected { get; set; }
 
     private readonly HashSet<string> _collapsedTiers = new();

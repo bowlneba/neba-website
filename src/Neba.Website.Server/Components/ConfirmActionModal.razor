@@ -13,19 +13,19 @@
 </NebaModal>
 
 @code {
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public bool IsOpen { get; set; }
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public EventCallback OnConfirm { get; set; }
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public EventCallback OnCancel { get; set; }
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public string Title { get; set; } = string.Empty;
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public string Message { get; set; } = string.Empty;
 
     [Parameter]

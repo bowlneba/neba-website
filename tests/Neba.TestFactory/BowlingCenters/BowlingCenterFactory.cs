@@ -1,6 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 using Neba.Api.Contacts.Domain;
+using Neba.Api.Contracts.Contact;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.TestFactory.Contact;
 
@@ -12,6 +14,11 @@ public static class BowlingCenterFactory
     public const string ValidName = "AMF Testing Lanes";
     public static readonly BowlingCenterStatus ValidStatus = BowlingCenterStatus.Open;
 
+    // The `PhoneNumbers` default below must not become the `[]` collection-expression form —
+    // see BowlingCenter.PhoneNumbers' comment (src/Neba.Api/Features/BowlingCenters/Domain/BowlingCenter.cs)
+    // for why: `[]` resolves to a fixed-size T[] here and breaks EF owned-collection fixup on read.
+    [SuppressMessage("Style", "IDE0305:Simplify collection initialization", Justification = "[] would regress to a fixed-size array — see BowlingCenter.PhoneNumbers comment.")]
+    [SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "[] would regress to a fixed-size array — see BowlingCenter.PhoneNumbers comment.")]
     public static BowlingCenter Create(
         CertificationNumber? certificationNumber = null,
         string? name = null,
@@ -29,7 +36,7 @@ public static class BowlingCenterFactory
             Name = name ?? ValidName,
             Status = status ?? ValidStatus,
             Address = address ?? AddressFactory.CreateUsAddress(coordinates: AddressFactory.ValidCoordinates),
-            PhoneNumbers = phoneNumbers ?? [PhoneNumberFactory.Create(type: PhoneNumberType.Work)],
+            PhoneNumbers = phoneNumbers ?? new List<PhoneNumber> { PhoneNumberFactory.Create(type: PhoneNumberType.Work) },
             EmailAddress = emailAddress,
             Website = website,
             Lanes = lanes ?? LaneConfigurationFactory.Create(),

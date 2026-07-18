@@ -121,7 +121,7 @@
 @code {
     private static readonly CultureInfo CurrencyCulture = CultureInfo.GetCultureInfo("en-US");
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public SeasonTournamentViewModel Tournament { get; set; } = default!;
 
     private string GetCapacityStyle() =>

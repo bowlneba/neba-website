@@ -64,7 +64,7 @@
                     </thead>
                     <tbody>
                         @{ var sorted = GetSortedTitles(); }
-                        @for (int i = 0; i < sorted.Count; i++)
+                        @for (var i = 0; i < sorted.Count; i++)
                         {
                             var title  = sorted[i];
                             var rowNum = sorted.Count - i;
@@ -91,13 +91,13 @@
 </NebaModal>
 
 @code {
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public bool IsOpen { get; set; }
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public EventCallback OnClose { get; set; }
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public IBowlersApi BowlersApi { get; set; } = default!;
 
     [Parameter] public string? BowlerId   { get; set; }

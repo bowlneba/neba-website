@@ -1,6 +1,7 @@
 using System.Globalization;
 
 using Neba.Api.Contacts.Domain;
+using Neba.Api.Contracts.Contact;
 
 namespace Neba.TestFactory.Contact;
 

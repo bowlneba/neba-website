@@ -36,7 +36,7 @@
                                 </span>
                             </td>
                             <td class="col-champs">
-                                @for (int i = 0; i < row.Champions.Count; i++)
+                                @for (var i = 0; i < row.Champions.Count; i++)
                                 {
                                     var champion = row.Champions[i];
                                     var summary  = LookupSummary(champion.BowlerId);
@@ -60,13 +60,13 @@
 }
 
 @code {
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public IReadOnlyCollection<TitlesByYearViewModel> Years { get; set; } = default!;
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public IReadOnlyCollection<BowlerTitleSummaryViewModel> Summaries { get; set; } = default!;
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public EventCallback<BowlerTitleSummaryViewModel> OnBowlerSelected { get; set; }
 
     private HashSet<int> _collapsedYears = new();

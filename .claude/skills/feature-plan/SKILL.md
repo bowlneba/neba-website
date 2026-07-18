@@ -1,0 +1,129 @@
+---
+name: feature-plan
+description: Produce a two-phase (API, then UI) implementation plan for a new feature as a markdown file the user can code from. Reviews the repo for existing related code, asks clarifying questions, then drafts a functional-level plan followed by a code-level plan per phase, pausing for confirmation at each stage. Usage: /feature-plan <feature description>
+---
+
+Turn a feature description into `docs/plans/{feature-name}.md` — a plan detailed enough to code from, built up in confirmed stages rather than dumped in one shot.
+
+## Arguments
+
+- **description** — free-text description of the feature. If missing or too vague to scope (no clear entity/behavior), ask the user before doing anything else.
+
+## Ground rules
+
+- **Always two phases, in order: Phase 1 = API, Phase 2 = UI.** Even if the description sounds UI-only or API-only, still frame the plan this way — note explicitly in Phase 2 if there's genuinely no UI work, rather than skipping the phase heading.
+- **Always four stages, gated on confirmation**, in order:
+  1. Phase 1 functional draft
+  2. Phase 1 code draft
+  3. Phase 2 functional draft
+  4. Phase 2 code draft
+  Do not start a stage until the user has confirmed the previous one. "Confirmed" means an explicit yes/approval — proceeding on silence or an unrelated reply is not a confirmation.
+- **A "functional" draft describes changes at the level of: what files get created/edited, what each does, and why** — no method bodies, no full class listings. Think PR-description depth, not diff depth.
+- **A "code" draft shows the actual code changes** — real class/method signatures, real field names, real routes, close enough to paste into the editor and adjust. It replaces the functional bullets for that phase in the markdown file, it doesn't just append below them.
+- **The plan file's full skeleton — both phase headings, all four stage placeholders — is written on first creation** (Step 3, before any content is drafted), not built up heading-by-heading as stages are confirmed. From then on the file is updated incrementally in place: each stage replaces its own section's placeholder/prior content, so `docs/plans/{feature-name}.md` always reflects the latest confirmed + in-progress state if the session is interrupted, and the reader can see the shape of the whole plan (including not-yet-drafted phases) from the first write onward.
+- This skill produces a plan. It does not write feature code, run `dotnet build`, or create branches — that happens afterward, driven by the user from the finished markdown file.
+
+## Step 1 — Scope and clarify
+
+Read the feature description. Before touching the repo, identify anything genuinely ambiguous: which existing feature/domain it extends vs. a new one, what entities/aggregates are involved, whether it needs new authorization policies, whether it's read-only (query) or mutating (command), and any UI surface implied (new page vs. addition to an existing page).
+
+Do a first-pass skim (not the full targeted review below — just enough to ask informed questions) of:
+- `docs/architecture/backend.md` and `docs/architecture/blazor.md` for relevant existing patterns
+- `src/Neba.Api/Features/` folder names, to see if this feature extends an existing domain or needs a new one
+
+Then use `AskUserQuestion` for anything still unresolved (max 4 questions at a time, mark a recommended default when there is an obvious one from repo conventions). Do not ask questions the repo already answers unambiguously (e.g. don't ask "should commands return ErrorOr<T>?" — CLAUDE.md already says yes). Skip this step entirely if the description is already unambiguous.
+
+## Step 2 — Targeted repository review
+
+Scope the review to what this feature plausibly touches — do not scan the whole repo. Use `Explore` (or direct `grep`/`find`) for:
+
+- The specific `Features/{Domain}/` folder(s) implicated by the feature, if they exist — read the domain model, existing commands/queries, and endpoint group.
+- One or two **similar existing features** as a structural reference (e.g. a feature with a similar CRUD shape, similar authorization pattern, or similar UI list/detail/create flow) — pick by resemblance to what's being built, not by proximity in the folder tree.
+- `src/Neba.Api.Contracts/` for existing response/request shapes that might be reused per the "Lightweight Collection Projections" convention in CLAUDE.md (reuse-and-project-down over a parallel endpoint).
+- `src/Neba.Website.Server/` for existing pages/components in the same area, if Phase 2 is expected to extend an existing page rather than create a new one.
+- `docs/policies/README.md` if the feature implies a new or existing authorization policy.
+
+Keep this focused — a handful of targeted lookups, not an exhaustive audit. The goal is to know what already exists so the plan proposes extending it, not duplicating it.
+
+## Step 3 — Initialize the plan file
+
+Before drafting any content, create `docs/plans/{feature-name}.md` (kebab-case the feature name from the description; create `docs/plans/` if it doesn't exist) with the full skeleton for both phases:
+
+```markdown
+# {Feature Title}
+
+{One- or two-sentence restatement of what the feature does.}
+
+## Phase 1: API
+
+*(Not yet drafted.)*
+
+## Phase 2: UI
+
+*(Not yet drafted.)*
+```
+
+If Step 1/Step 2 surfaced decisions, assumptions, or things the user explicitly ruled in/out while scoping, capture them under a short `## Decisions locked in during scoping` section between the title and `## Phase 1` — this is where cross-phase context that isn't specific to either phase belongs, so it doesn't get lost or duplicated across both phase sections.
+
+## Step 4 — Phase 1 functional draft (API)
+
+Draft, at functional level:
+- New files to create (path + one-line purpose each), following the use-case folder structure (Endpoint + Summary + Validator + Command/Query + Handler) per CLAUDE.md's API Endpoint Checklist.
+- Existing files to edit (path + what changes and why).
+- Domain layer changes, if any — new aggregate/entity/value object, or a new method on an existing aggregate — framed per CLAUDE.md's "Always-Valid Entities and Aggregate Assignment" and "Aggregate Invariants Requiring Cross-Aggregate Data" sections (call out explicitly whether a new invariant needs cross-aggregate data passed in as a parameter).
+- Database schema changes, if any (table/column additions, migration needed).
+- Authorization approach (policy name, new or existing).
+- Test factories needed (new types always need one, per CLAUDE.md).
+- Anything this phase deliberately defers to Phase 2 or out of scope entirely.
+
+If `ddd-clean-architecture`, `dotnet-aspnet-core`, or `dotnet-entity-framework-core` skills are relevant to decisions being made in this draft (e.g. aggregate boundaries, EF Core modeling choices), invoke them to inform the draft rather than guessing at conventions — don't just cite them by name without applying what they say.
+
+Replace the `*(Not yet drafted.)*` placeholder under `## Phase 1: API` (written in Step 3) with this draft, structured as a checklist-style breakdown by layer (Domain / Application / Infrastructure / API / Contracts / Tests), mirroring the "What Changed" layer grouping used in `pull-request-prep`.
+
+Show the same content in chat and ask: **"Does this functional breakdown for Phase 1 look right, or should anything change before I draft the actual code?"**
+
+Do not proceed until confirmed.
+
+## Step 5 — Phase 1 code draft (API)
+
+Once Step 3 is confirmed, expand each item in the Phase 1 section into actual code: real class/record signatures, method bodies where the logic isn't obvious boilerplate, route strings, validator rules, DI registration snippets, and factory method signatures. Use the patterns and templates in the `new-endpoint` command and `ddd-clean-architecture` skill as the baseline shape, adapted to this feature's actual types and rules — don't reproduce their placeholder syntax verbatim.
+
+Replace the Step 3 functional bullets in `docs/plans/{feature-name}.md` under `## Phase 1: API` with this code-level detail (keep the layer-grouped structure, but each item is now a fenced code block instead of a one-line bullet).
+
+Show the update in chat and ask: **"Does the Phase 1 code look right? Once you confirm, I'll move on to Phase 2 (UI)."**
+
+Do not proceed until confirmed.
+
+## Step 6 — Phase 2 functional draft (UI)
+
+Same shape as Step 3, but for the Blazor side:
+- New pages/components to create (path, route if a page, one-line purpose).
+- Existing pages/components to edit.
+- New `I{Domain}Api` Refit method(s) needed (should already exist from Phase 1's Contracts work — reference, don't redesign).
+- State/dirty-tracking needs — call out explicitly if `DirtyFormGuard` applies (per CLAUDE.md's "Dirty Form Guard" learning) for any new data-entry form.
+- `<PageTitle>` requirement and render mode, per CLAUDE.md's "Page Titles" learning.
+- Any FAB / list-page entry point needed, per CLAUDE.md's "List Page Add New Pattern", if this feature adds a creatable list.
+- Playwright/bUnit test needs, using the decision table from `new-endpoint`/`pull-request-prep` (bUnit for internal component logic, Playwright for real browser + HTTP flows).
+- If the feature has no UI surface at all, state that explicitly here rather than fabricating one.
+
+If `dotnet-blazor` skill guidance is relevant to a decision in this draft, apply it rather than guessing.
+
+Replace the `*(Not yet drafted.)*` placeholder under `## Phase 2: UI` (written in Step 3) with this draft (same layer/checklist style, adapted to Blazor: Pages / Components / API Client / Tests).
+
+Show it in chat and ask: **"Does this functional breakdown for Phase 2 look right, or should anything change before I draft the actual code?"**
+
+Do not proceed until confirmed.
+
+## Step 7 — Phase 2 code draft (UI)
+
+Once Step 6 is confirmed, expand each item into actual `.razor`/`.razor.cs` code: markup, `@code` blocks, event handlers, DirtyFormGuard wiring if applicable, and the Refit client call. Replace the Step 6 functional bullets under `## Phase 2: UI` with this code-level detail, same fenced-code-per-item structure as Step 5.
+
+Show the update in chat and report the plan is complete: **"Phase 2 code is in. The full plan is in `docs/plans/{feature-name}.md` — let me know if you want any adjustments, or you're ready to start implementing from it."**
+
+## Rules
+
+- Never skip a confirmation gate, even if the feature seems simple — a "looks good, go ahead" from the user still counts as confirmation, just don't assume it without asking.
+- Never write Phase 2 content before Phase 1 is fully confirmed (both stages), even if the user's description leads with UI details — reorder into the plan's fixed phase order regardless of how the request was phrased.
+- If repo review in Step 2 surfaces an existing, reusable piece (a query, a component, a contract type) that the feature could extend instead of duplicating, propose reusing it in the functional draft rather than silently planning a duplicate — flag the choice to the user if it's not obvious which is better.
+- If the user requests changes at a confirmation gate, update that stage's section in the plan file and re-show it before moving on — don't silently fold unconfirmed changes into the next stage.
+- The plan file is the deliverable of this skill. Don't create additional scratch files for it — everything lives in the one `docs/plans/{feature-name}.md`, updated in place stage by stage.

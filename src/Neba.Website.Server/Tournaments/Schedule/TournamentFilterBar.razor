@@ -24,16 +24,16 @@
 </div>
 
 @code {
-        [Parameter, EditorRequired]
-        public string SearchTerm { get; set; } = string.Empty;
+    [Parameter][EditorRequired]
+    public string SearchTerm { get; set; } = string.Empty;
 
-        [Parameter, EditorRequired]
-        public EventCallback<string> SearchTermChanged { get; set; }
+    [Parameter][EditorRequired]
+    public EventCallback<string> SearchTermChanged { get; set; }
 
         [Parameter]
         public string? TypeFilter { get; set; }
 
-        [Parameter, EditorRequired]
+        [Parameter][EditorRequired]
         public EventCallback<string?> TypeFilterChanged { get; set; }
 
         private string GetSelectedClass(string? value) =>

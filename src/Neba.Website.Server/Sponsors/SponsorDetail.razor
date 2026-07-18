@@ -1,5 +1,6 @@
 @preservewhitespace false
 @page "/sponsors/{Slug}"
+@using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Sponsors
 @using Neba.Website.Server.Services
 @using Neba.Website.Server.Sponsors
@@ -42,6 +43,18 @@ else
                     {
                         <span class="sponsor-detail__badge sponsor-detail__badge--category">@_model.CategoryName</span>
                     }
+                    <AuthorizeView Policy="@Permissions.CreateSponsor.PolicyName">
+                        <Authorized>
+                            @if (_model?.IsCurrentSponsor == true)
+                            {
+                                <span class="sponsor-detail__badge sponsor-detail__badge--status-active">Active</span>
+                            }
+                            else
+                            {
+                                <span class="sponsor-detail__badge sponsor-detail__badge--status-inactive">Inactive</span>
+                            }
+                        </Authorized>
+                    </AuthorizeView>
                 </div>
 
                 <h1 class="sponsor-detail__title">@_model?.Name</h1>
@@ -62,7 +75,7 @@ else
             </div>
         </header>
 
-        <div class="sponsor-detail__body">
+        <div class="sponsor-detail__body @(_model?.HasAnyContactInfo == true ? "" : "sponsor-detail__body--single-col")">
 
             <div class="sponsor-detail__col-main">
 
@@ -82,6 +95,8 @@ else
 
             </div>
 
+            @if (_model?.HasAnyContactInfo == true)
+            {
             <div class="sponsor-detail__col-aside">
 
                 <section class="neba-card sponsor-detail__contact-card">
@@ -167,6 +182,7 @@ else
                 </section>
 
             </div>
+            }
         </div>
 
         <footer class="sponsor-detail__footer">
@@ -202,12 +218,9 @@ else
 
         if (result.IsError)
         {
-            Navigation.NavigateTo("/not-found", replace: true);
-            return;
-        }
-
-        if (!result.Value.IsCurrentSponsor)
-        {
+            // The server already treats an inactive sponsor as not-found for callers without the
+            // Sponsors management permission (see GetSponsorDetailQueryHandler) — an authorized staff
+            // member who just created/manages a non-current sponsor still gets the real response.
             Navigation.NavigateTo("/not-found", replace: true);
             return;
         }

@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Sponsors list page', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
 
@@ -103,5 +105,77 @@ test.describe('Sponsor not found', () => {
     await page.goto('/sponsors/old-sponsor');
     await page.waitForURL('**/not-found');
     await expect(page).toHaveURL(/\/not-found/);
+  });
+});
+
+test.describe('Sponsors list page — create sponsor (unauthenticated)', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test('does not show the Create Sponsor button', async ({ page }) => {
+    await page.goto('/sponsors');
+    await page.waitForSelector('#title-sponsor-name');
+    await expect(page.getByRole('link', { name: 'Create Sponsor' })).toHaveCount(0);
+  });
+
+  test('shows a permission message when navigating directly to the create page', async ({ page }) => {
+    await page.goto('/sponsors/new');
+    await expect(page.locator('.news-empty-text')).toContainText("don't have permission to create sponsors");
+  });
+});
+
+test.describe('Sponsors list page — create sponsor (authenticated)', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test.beforeEach(async ({ page }) => {
+    await page.request.post('/__test/login?permissions=Sponsors.CreateSponsor');
+  });
+
+  test('shows the Create Sponsor button and navigates to the create page', async ({ page }) => {
+    await page.goto('/sponsors');
+    await page.waitForSelector('#title-sponsor-name');
+
+    await expect(page.getByRole('link', { name: 'Create Sponsor' })).toBeVisible();
+    await page.getByRole('link', { name: 'Create Sponsor' }).click();
+
+    await expect(page).toHaveURL(/\/sponsors\/new$/);
+    await page.waitForSelector('#name');
+  });
+
+  test('shows validation errors when submitting an empty form', async ({ page }) => {
+    await page.goto('/sponsors/new');
+    await page.waitForSelector('#name');
+
+    await page.locator('button[type="submit"].neba-btn-primary').click();
+
+    await expect(page.locator('.neba-card')).toContainText('Name is required.');
+    await expect(page).toHaveURL(/\/sponsors\/new$/);
+  });
+
+  test('creates the sponsor and navigates to its detail page', async ({ page }) => {
+    await page.goto('/sponsors/new');
+    await page.waitForSelector('#name');
+
+    await page.locator('#name').fill('New Playwright Sponsor');
+
+    await page.locator('button[type="submit"].neba-btn-primary').click();
+
+    await expect(page.locator('.neba-toast')).toContainText('Sponsor Created');
+    await expect(page).toHaveURL(/\/sponsors\/new-playwright-sponsor$/);
+  });
+
+  test('shows an error alert and stays on the page when creation fails', async ({ page }) => {
+    await page.request.post('http://localhost:5151/__mock/fail?path=/sponsors&status=409');
+
+    await page.goto('/sponsors/new');
+    await page.waitForSelector('#name');
+
+    await page.locator('#name').fill('Conflicting Sponsor');
+
+    await page.locator('button[type="submit"].neba-btn-primary').click();
+
+    await expect(page.locator('.neba-alert-title')).toContainText('Unable to Create Sponsor');
+    await expect(page).toHaveURL(/\/sponsors\/new$/);
+
+    await page.request.post('http://localhost:5151/__mock/reset?path=/sponsors');
   });
 });

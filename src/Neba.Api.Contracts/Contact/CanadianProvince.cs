@@ -1,6 +1,6 @@
 using Ardalis.SmartEnum;
 
-namespace Neba.Api.Contacts.Domain;
+namespace Neba.Api.Contracts.Contact;
 
 /// <summary>
 /// Represents a Canadian province with its name and abbreviation.

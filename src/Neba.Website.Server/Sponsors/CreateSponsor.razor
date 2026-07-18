@@ -1,0 +1,526 @@
+@page "/sponsors/new"
+@using System.ComponentModel.DataAnnotations
+@using ErrorOr
+@using Neba.Api.Contracts.Contact
+@using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Sponsors
+@using Neba.Api.Contracts.Sponsors.CreateSponsor
+@using Neba.Api.Contracts.Uploads
+@using Neba.Website.Server.Notifications
+@using Neba.Website.Server.Services
+@using Refit
+@implements IAsyncDisposable
+@rendermode InteractiveServer
+
+@inject ApiExecutor ApiExecutor
+@inject ISponsorsApi SponsorsApi
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<PageTitle>Create Sponsor - BowlNEBA</PageTitle>
+
+<AuthorizeView Policy="@Permissions.CreateSponsor.PolicyName" Context="authContext">
+    <Authorized>
+        <div class="neba-space-y-6">
+
+            <div class="page-title-bar">
+                <div class="page-title-inner">
+                    <h1>Create Sponsor</h1>
+                    <p>Add a new sponsor to BowlNEBA</p>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <NebaAlert Severity="NotifySeverity.Error" Title="Unable to Create Sponsor" Message="@_errorMessage" Dismissible="true"
+                           OnDismiss="@(() => _errorMessage = null)" />
+            }
+
+            <DirtyFormGuard IsDirty="@_isDirty" />
+
+            <div class="neba-card">
+                <EditForm EditContext="_editContext" FormName="CreateSponsorForm" OnValidSubmit="HandleCreateAsync">
+                    <DataAnnotationsValidator />
+                    <div class="neba-space-y-6">
+
+                        <section class="neba-space-y-4">
+                            <h2 class="create-sponsor-section-title">Basic Info</h2>
+
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Name</label>
+                                <InputText id="name" @bind-Value="_model.Name" class="neba-input" placeholder="Sponsor name" />
+                                <ValidationMessage For="@(() => _model.Name)" class="block text-sm text-red-600 mt-1" />
+                            </div>
+
+                            <div>
+                                <label for="slug" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Slug</label>
+                                <InputText id="slug" @bind-Value="_model.Slug" class="neba-input" placeholder="@SlugPlaceholder" />
+                                <p class="text-sm text-[var(--neba-gray-500)] mt-1">Leave blank to auto-generate from the name.</p>
+                                <ValidationMessage For="@(() => _model.Slug)" class="block text-sm text-red-600 mt-1" />
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="tier" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Tier</label>
+                                    <InputSelect id="tier" @bind-Value="_model.Tier" class="neba-select">
+                                        <option value="Title Sponsor">Title Sponsor</option>
+                                        <option value="Premier">Premier</option>
+                                        <option value="Standard">Standard</option>
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => _model.Tier)" class="block text-sm text-red-600 mt-1" />
+                                </div>
+
+                                <div>
+                                    <label for="category" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Category</label>
+                                    <InputSelect id="category" @bind-Value="_model.Category" class="neba-select">
+                                        @foreach (var category in SponsorCategories)
+                                        {
+                                            <option value="@category">@category</option>
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => _model.Category)" class="block text-sm text-red-600 mt-1" />
+                                </div>
+
+                                <div>
+                                    <label for="priority" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Priority</label>
+                                    <InputNumber id="priority" @bind-Value="_model.Priority" class="neba-input" />
+                                    <ValidationMessage For="@(() => _model.Priority)" class="block text-sm text-red-600 mt-1" />
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <InputCheckbox id="is-current-sponsor" @bind-Value="_model.IsCurrentSponsor" />
+                                <label for="is-current-sponsor" class="text-sm font-medium text-[var(--neba-gray-700)]">Current sponsor</label>
+                            </div>
+                        </section>
+
+                        <section class="neba-space-y-4">
+                            <h2 class="create-sponsor-section-title">Logo</h2>
+                            <FileUpload MaxFiles="1" Accept="image/*" MaxFileSizeBytes="@(5 * 1024 * 1024)" Label="Upload a logo"
+                                        OnUploadRequestedAsync="UploadLogoAsync"
+                                        OnFileUploaded="@(response => { _logo = response; MarkDirty(); })"
+                                        OnFileRemoved="@(_ => { _logo = null; MarkDirty(); })"
+                                        OnBusyChanged="@(busy => _isLogoUploading = busy)" />
+                        </section>
+
+                        <section class="neba-space-y-4">
+                            <h2 class="create-sponsor-section-title">Links &amp; Content</h2>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="website-url" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Website URL</label>
+                                    <InputText id="website-url" @bind-Value="_model.WebsiteUrl" class="neba-input" placeholder="https://example.com" />
+                                    <ValidationMessage For="@(() => _model.WebsiteUrl)" class="block text-sm text-red-600 mt-1" />
+                                </div>
+
+                                <div>
+                                    <label for="facebook-url" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Facebook URL</label>
+                                    <InputText id="facebook-url" @bind-Value="_model.FacebookUrl" class="neba-input" placeholder="https://facebook.com/…" />
+                                    <ValidationMessage For="@(() => _model.FacebookUrl)" class="block text-sm text-red-600 mt-1" />
+                                </div>
+
+                                <div>
+                                    <label for="instagram-url" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Instagram URL</label>
+                                    <InputText id="instagram-url" @bind-Value="_model.InstagramUrl" class="neba-input" placeholder="https://instagram.com/…" />
+                                    <ValidationMessage For="@(() => _model.InstagramUrl)" class="block text-sm text-red-600 mt-1" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="tag-phrase" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Tag Phrase</label>
+                                <InputText id="tag-phrase" @bind-Value="_model.TagPhrase" class="neba-input" placeholder="A short tagline" />
+                            </div>
+
+                            <div>
+                                <label for="description" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Description</label>
+                                <InputTextArea id="description" @bind-Value="_model.Description" class="neba-input" rows="3" placeholder="Public-facing description" />
+                            </div>
+
+                            <div>
+                                <label for="live-read-text" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Live Read Text</label>
+                                <InputTextArea id="live-read-text" @bind-Value="_model.LiveReadText" class="neba-input" rows="2" placeholder="Text to be read live at events" />
+                            </div>
+
+                            <div>
+                                <label for="promotional-notes" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Promotional Notes</label>
+                                <InputTextArea id="promotional-notes" @bind-Value="_model.PromotionalNotes" class="neba-input" rows="2" placeholder="Internal notes for staff" />
+                            </div>
+                        </section>
+
+                        <section class="neba-space-y-4">
+                            <h2 class="create-sponsor-section-title">Business Address</h2>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="business-street" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Street</label>
+                                    <InputText id="business-street" @bind-Value="_model.BusinessStreet" class="neba-input" />
+                                </div>
+                                <div>
+                                    <label for="business-unit" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Unit</label>
+                                    <InputText id="business-unit" @bind-Value="_model.BusinessUnit" class="neba-input" />
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="business-city" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">City</label>
+                                    <InputText id="business-city" @bind-Value="_model.BusinessCity" class="neba-input" />
+                                </div>
+                                <div>
+                                    <label for="business-state" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">State</label>
+                                    <InputSelect id="business-state" @bind-Value="_model.BusinessState" class="neba-select">
+                                        <option value="">Select a state</option>
+                                        @foreach (var state in UsState.List)
+                                        {
+                                            <option value="@state.Value">@state.Name</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div>
+                                    <label for="business-postal-code" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Postal Code</label>
+                                    <InputText id="business-postal-code" @bind-Value="_model.BusinessPostalCode" class="neba-input" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="business-email" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Business Email</label>
+                                <InputText id="business-email" @bind-Value="_model.BusinessEmailAddress" class="neba-input" placeholder="info@example.com" />
+                                <ValidationMessage For="@(() => _model.BusinessEmailAddress)" class="block text-sm text-red-600 mt-1" />
+                            </div>
+                        </section>
+
+                        <section class="neba-space-y-4">
+                            <h2 class="create-sponsor-section-title">Phone Numbers</h2>
+
+                            @if (_phoneNumbers.Count > 0)
+                            {
+                                <ul class="create-sponsor-phone-list">
+                                    @foreach (var phoneNumber in _phoneNumbers)
+                                    {
+                                        <li class="create-sponsor-phone-row">
+                                            <select class="neba-select create-sponsor-phone-type" value="@phoneNumber.PhoneNumberType" @onchange="@(e => { phoneNumber.PhoneNumberType = e.Value?.ToString() ?? "H"; MarkDirty(); })">
+                                                @foreach (var phoneType in PhoneNumberType.List)
+                                                {
+                                                    <option value="@phoneType.Value">@phoneType.Name</option>
+                                                }
+                                            </select>
+                                            <input class="neba-input create-sponsor-phone-number" value="@phoneNumber.PhoneNumber"
+                                                   @oninput="@(e => { phoneNumber.PhoneNumber = e.Value?.ToString() ?? string.Empty; MarkDirty(); })"
+                                                   placeholder="Phone number" />
+                                            <input class="neba-input create-sponsor-phone-extension" value="@phoneNumber.Extension"
+                                                   @oninput="@(e => { phoneNumber.Extension = e.Value?.ToString(); MarkDirty(); })"
+                                                   placeholder="Ext." />
+                                            <button type="button" class="neba-btn neba-btn-danger create-sponsor-phone-remove" @onclick="@(() => RemovePhoneNumber(phoneNumber))">Remove</button>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+
+                            <button type="button" class="neba-btn neba-btn-secondary" @onclick="AddPhoneNumber">Add Phone Number</button>
+                        </section>
+
+                        <section class="neba-space-y-4">
+                            <h2 class="create-sponsor-section-title">Contact Person</h2>
+                            <p class="text-sm text-[var(--neba-gray-500)]">Optional. If any field is filled in, Name, Phone, and Email are all required.</p>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="contact-name" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Name</label>
+                                    <InputText id="contact-name" @bind-Value="_model.ContactName" class="neba-input" />
+                                </div>
+                                <div>
+                                    <label for="contact-email" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Email</label>
+                                    <InputText id="contact-email" @bind-Value="_model.ContactEmail" class="neba-input" placeholder="name@example.com" />
+                                    <ValidationMessage For="@(() => _model.ContactEmail)" class="block text-sm text-red-600 mt-1" />
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="contact-phone-type" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Phone Type</label>
+                                    <InputSelect id="contact-phone-type" @bind-Value="_model.ContactPhoneType" class="neba-select">
+                                        @foreach (var phoneType in PhoneNumberType.List)
+                                        {
+                                            <option value="@phoneType.Value">@phoneType.Name</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div>
+                                    <label for="contact-phone-number" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Phone Number</label>
+                                    <InputText id="contact-phone-number" @bind-Value="_model.ContactPhoneNumber" class="neba-input" />
+                                </div>
+                                <div>
+                                    <label for="contact-phone-extension" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Extension</label>
+                                    <InputText id="contact-phone-extension" @bind-Value="_model.ContactPhoneExtension" class="neba-input" />
+                                </div>
+                            </div>
+                        </section>
+
+                        @if (_isLogoUploading)
+                        {
+                            <p class="text-sm text-[var(--neba-gray-500)]">Uploading logo…</p>
+                        }
+
+                        <div class="flex items-center gap-3">
+                            <button type="submit" class="neba-btn neba-btn-primary" disabled="@(_isSubmitting || _isLogoUploading)">
+                                @(_isSubmitting ? "Creating…" : "Create Sponsor")
+                            </button>
+                            <button type="button" class="neba-btn neba-btn-secondary" @onclick="HandleCancel" disabled="@_isSubmitting">
+                                Cancel
+                            </button>
+                        </div>
+
+                    </div>
+                </EditForm>
+            </div>
+
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="news-empty">
+            <p class="news-empty-text">You don't have permission to create sponsors.</p>
+            <a href="/sponsors" class="neba-btn neba-btn-secondary">Back to Sponsors</a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private static readonly IReadOnlyList<string> SponsorCategories =
+    [
+        "Other",
+        "Manufacturer",
+        "Pro Shop",
+        "Bowling Center",
+        "Financial Services",
+        "Technology",
+        "Media",
+        "Individual"
+    ];
+
+    private readonly CreateSponsorFormModel _model = new();
+    private readonly EditContext _editContext;
+    private readonly List<TrackedPhoneNumber> _phoneNumbers = [];
+
+    private UploadedFileResponse? _logo;
+    private bool _isLogoUploading;
+    private bool _isSubmitting;
+    private bool _isDirty;
+    private string? _errorMessage;
+
+    public CreateSponsor()
+    {
+        _editContext = new EditContext(_model);
+        _editContext.OnFieldChanged += HandleFieldChanged;
+    }
+
+    private string SlugPlaceholder => SlugPreviewGenerator.Generate(_model.Name);
+
+    private void MarkDirty() => _isDirty = true;
+
+    private void HandleFieldChanged(object? sender, FieldChangedEventArgs e) => MarkDirty();
+
+    private void AddPhoneNumber()
+    {
+        _phoneNumbers.Add(new TrackedPhoneNumber());
+        MarkDirty();
+    }
+
+    private void RemovePhoneNumber(TrackedPhoneNumber phoneNumber)
+    {
+        _phoneNumbers.Remove(phoneNumber);
+        MarkDirty();
+    }
+
+    private async Task<ErrorOr<UploadedFileResponse>> UploadLogoAsync(
+        Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
+        => await ApiExecutor.ExecuteAsync(
+            "Sponsors",
+            "UploadSponsorLogo",
+            c => SponsorsApi.UploadSponsorLogoAsync(new StreamPart(stream, fileName, contentType), c),
+            ct);
+
+    private async Task HandleCreateAsync()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        var request = new CreateSponsorRequest { Sponsor = BuildSponsorInput() };
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "Sponsors",
+            "CreateSponsor",
+            ct => SponsorsApi.CreateSponsorAsync(request, ct));
+
+        _isSubmitting = false;
+
+        if (result.IsError)
+        {
+            _errorMessage = result.FirstError.Description;
+            return;
+        }
+
+        _isDirty = false;
+        ToastService.Show("Sponsor Created", "\"" + _model.Name + "\" was successfully created.", NotifySeverity.Success);
+
+        // See CreateArticle.razor's HandleCreateAsync for why the Task.Yield() below is required —
+        // DirtyFormGuard only observes _isDirty once this component's queued re-render actually runs.
+        StateHasChanged();
+        await Task.Yield();
+
+        NavigationManager.NavigateTo($"/sponsors/{result.Value.Slug}");
+    }
+
+    private void HandleCancel()
+    {
+        NavigationManager.NavigateTo("/sponsors");
+    }
+
+    private SponsorInput BuildSponsorInput() => new()
+    {
+        Name = _model.Name,
+        Slug = string.IsNullOrWhiteSpace(_model.Slug) ? null : _model.Slug,
+        IsCurrentSponsor = _model.IsCurrentSponsor,
+        Priority = _model.Priority,
+        Tier = _model.Tier,
+        Category = _model.Category,
+        Logo = BuildLogoInput(),
+        WebsiteUrl = ParseUri(_model.WebsiteUrl),
+        TagPhrase = string.IsNullOrWhiteSpace(_model.TagPhrase) ? null : _model.TagPhrase,
+        Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description,
+        LiveReadText = string.IsNullOrWhiteSpace(_model.LiveReadText) ? null : _model.LiveReadText,
+        PromotionalNotes = string.IsNullOrWhiteSpace(_model.PromotionalNotes) ? null : _model.PromotionalNotes,
+        FacebookUrl = ParseUri(_model.FacebookUrl),
+        InstagramUrl = ParseUri(_model.InstagramUrl),
+        BusinessStreet = string.IsNullOrWhiteSpace(_model.BusinessStreet) ? null : _model.BusinessStreet,
+        BusinessUnit = string.IsNullOrWhiteSpace(_model.BusinessUnit) ? null : _model.BusinessUnit,
+        BusinessCity = string.IsNullOrWhiteSpace(_model.BusinessCity) ? null : _model.BusinessCity,
+        BusinessState = string.IsNullOrWhiteSpace(_model.BusinessState) ? null : _model.BusinessState,
+        BusinessPostalCode = string.IsNullOrWhiteSpace(_model.BusinessPostalCode) ? null : _model.BusinessPostalCode,
+        BusinessEmailAddress = string.IsNullOrWhiteSpace(_model.BusinessEmailAddress) ? null : _model.BusinessEmailAddress,
+        PhoneNumbers = [.. _phoneNumbers
+            .Where(p => !string.IsNullOrWhiteSpace(p.PhoneNumber))
+            .Select(p => new SponsorPhoneNumberInput
+            {
+                PhoneNumberType = p.PhoneNumberType,
+                PhoneNumber = p.PhoneNumber,
+                Extension = string.IsNullOrWhiteSpace(p.Extension) ? null : p.Extension
+            })],
+        Contact = BuildContactInput()
+    };
+
+    private SponsorLogoInput? BuildLogoInput() => _logo is null ? null : new SponsorLogoInput
+    {
+        Container = _logo.Container,
+        Path = _logo.Path,
+        ContentType = _logo.ContentType,
+        SizeInBytes = _logo.SizeInBytes
+    };
+
+    private SponsorContactInput? BuildContactInput()
+    {
+        var hasContact = !string.IsNullOrWhiteSpace(_model.ContactName)
+            || !string.IsNullOrWhiteSpace(_model.ContactPhoneNumber)
+            || !string.IsNullOrWhiteSpace(_model.ContactEmail);
+
+        if (!hasContact)
+        {
+            return null;
+        }
+
+        return new SponsorContactInput
+        {
+            Name = _model.ContactName ?? string.Empty,
+            PhoneNumberType = _model.ContactPhoneType,
+            PhoneNumber = _model.ContactPhoneNumber ?? string.Empty,
+            Extension = string.IsNullOrWhiteSpace(_model.ContactPhoneExtension) ? null : _model.ContactPhoneExtension,
+            Email = _model.ContactEmail ?? string.Empty
+        };
+    }
+
+    private static Uri? ParseUri(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri) ? uri : null;
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _editContext.OnFieldChanged -= HandleFieldChanged;
+        return ValueTask.CompletedTask;
+    }
+
+    private sealed class TrackedPhoneNumber
+    {
+        public string PhoneNumberType { get; set; } = "H";
+
+        public string PhoneNumber { get; set; } = string.Empty;
+
+        public string? Extension { get; set; }
+    }
+
+    private sealed class CreateSponsorFormModel
+    {
+        [Required(ErrorMessage = "Name is required.")]
+        [StringLength(63, ErrorMessage = "Name must be 63 characters or fewer.")]
+        public string Name { get; set; } = string.Empty;
+
+        [StringLength(63, ErrorMessage = "Slug must be 63 characters or fewer.")]
+        public string? Slug { get; set; }
+
+        public bool IsCurrentSponsor { get; set; } = true;
+
+        [Range(0, int.MaxValue, ErrorMessage = "Priority must be zero or greater.")]
+        public int Priority { get; set; }
+
+        [Required(ErrorMessage = "Tier is required.")]
+        public string Tier { get; set; } = "Standard";
+
+        [Required(ErrorMessage = "Category is required.")]
+        public string Category { get; set; } = "Other";
+
+        [Url(ErrorMessage = "Website URL must be a valid, absolute URL.")]
+        public string? WebsiteUrl { get; set; }
+
+        [Url(ErrorMessage = "Facebook URL must be a valid, absolute URL.")]
+        public string? FacebookUrl { get; set; }
+
+        [Url(ErrorMessage = "Instagram URL must be a valid, absolute URL.")]
+        public string? InstagramUrl { get; set; }
+
+        public string? TagPhrase { get; set; }
+
+        public string? Description { get; set; }
+
+        public string? LiveReadText { get; set; }
+
+        public string? PromotionalNotes { get; set; }
+
+        public string? BusinessStreet { get; set; }
+
+        public string? BusinessUnit { get; set; }
+
+        public string? BusinessCity { get; set; }
+
+        public string? BusinessState { get; set; }
+
+        public string? BusinessPostalCode { get; set; }
+
+        [EmailAddress(ErrorMessage = "Business email must be a valid email address.")]
+        public string? BusinessEmailAddress { get; set; }
+
+        public string? ContactName { get; set; }
+
+        public string ContactPhoneType { get; set; } = "H";
+
+        public string? ContactPhoneNumber { get; set; }
+
+        public string? ContactPhoneExtension { get; set; }
+
+        [EmailAddress(ErrorMessage = "Contact email must be a valid email address.")]
+        public string? ContactEmail { get; set; }
+    }
+}

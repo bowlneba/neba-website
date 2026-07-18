@@ -51,7 +51,7 @@
 </div>
 
 @code {
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public ArticleSummaryResponse Article { get; set; } = default!;
 
     /// <summary>
