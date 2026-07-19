@@ -804,6 +804,19 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return;
   }
 
+  if (req.method === 'PUT' && pathname.startsWith('/sponsors/')) {
+    const override = mockOverrides.get(pathname);
+
+    if (override?.status != null && override.status >= 400) {
+      sendJsonResponse(res, { error: 'Mock error' }, override.status);
+      return;
+    }
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   sendJsonResponse(res, { error: 'Not Found' }, 404);
 }
 
