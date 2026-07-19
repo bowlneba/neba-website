@@ -253,7 +253,11 @@ public sealed class EditSponsorTests : IDisposable
         // Arrange
         var sponsor = SponsorDetailResponseFactory.Create(
             slug: "acme-corp",
-            logoUrl: new Uri("https://storage.example.com/sponsors/logo.png"));
+            logoUrl: new Uri("https://storage.example.com/sponsors/logo.png"),
+            logoContainer: "bowlneba-public",
+            logoPath: "sponsors/acme/logo.png",
+            logoContentType: "image/png",
+            logoSizeInBytes: 12345);
         SetupGetSponsorSuccess(sponsor);
 
         EditSponsorRequest? capturedRequest = null;
@@ -269,6 +273,37 @@ public sealed class EditSponsorTests : IDisposable
         await cut.Find("form").SubmitAsync();
         capturedRequest.ShouldNotBeNull();
         capturedRequest.Sponsor.Logo.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "Should resubmit the existing logo unchanged when the logo is not touched")]
+    public async Task Logo_ShouldResubmitExistingLogoUnchanged_WhenNotTouched()
+    {
+        // Arrange
+        var sponsor = SponsorDetailResponseFactory.Create(
+            slug: "acme-corp",
+            logoUrl: new Uri("https://storage.example.com/sponsors/logo.png"),
+            logoContainer: "bowlneba-public",
+            logoPath: "sponsors/acme/logo.png",
+            logoContentType: "image/png",
+            logoSizeInBytes: 12345);
+        SetupGetSponsorSuccess(sponsor);
+
+        EditSponsorRequest? capturedRequest = null;
+        SetupEditSponsorResponse(capture: r => capturedRequest = r);
+
+        var cut = _ctx.Render<EditSponsorPage>(p => p.Add(x => x.Slug, sponsor.Slug));
+        await cut.InvokeAsync(() => cut.Find("#name").Change("Acme Corp Updated"));
+
+        // Act
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        capturedRequest.ShouldNotBeNull();
+        capturedRequest.Sponsor.Logo.ShouldNotBeNull();
+        capturedRequest.Sponsor.Logo.Container.ShouldBe("bowlneba-public");
+        capturedRequest.Sponsor.Logo.Path.ShouldBe("sponsors/acme/logo.png");
+        capturedRequest.Sponsor.Logo.ContentType.ShouldBe("image/png");
+        capturedRequest.Sponsor.Logo.SizeInBytes.ShouldBe(12345);
     }
 
     [Fact(DisplayName = "Should include the replacement logo in the submitted request")]

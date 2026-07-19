@@ -401,9 +401,16 @@
         _model.ContactPhoneNumber = _sponsor.Contact?.Phone.PhoneNumber;
         _model.ContactEmail = _sponsor.Contact?.Email;
 
-        if (_sponsor.LogoUrl is not null)
+        if (_sponsor.LogoContainer is not null && _sponsor.LogoPath is not null)
         {
-            _logo = new LogoRef { Url = _sponsor.LogoUrl };
+            _logo = new LogoRef
+            {
+                Container = _sponsor.LogoContainer,
+                Path = _sponsor.LogoPath,
+                ContentType = _sponsor.LogoContentType ?? "application/octet-stream",
+                SizeInBytes = _sponsor.LogoSizeInBytes ?? 0,
+                Url = _sponsor.LogoUrl
+            };
         }
 
         _phoneNumbers.AddRange(_sponsor.PhoneNumbers.Select(p => new TrackedPhoneNumber

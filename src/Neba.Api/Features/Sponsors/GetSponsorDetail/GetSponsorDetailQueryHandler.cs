@@ -27,6 +27,8 @@ internal sealed class GetSponsorDetailQueryHandler(AppDbContext appDbContext, IF
                 sponsor.Slug,
                 LogoContainer = sponsor.Logo != null ? sponsor.Logo.Container : null,
                 LogoPath = sponsor.Logo != null ? sponsor.Logo.Path : null,
+                LogoContentType = sponsor.Logo != null ? sponsor.Logo.ContentType : null,
+                LogoSizeInBytes = sponsor.Logo != null ? (long?)sponsor.Logo.SizeInBytes : null,
                 sponsor.IsCurrentSponsor,
                 sponsor.Priority,
                 Tier = sponsor.Tier.Name,
@@ -86,6 +88,10 @@ internal sealed class GetSponsorDetailQueryHandler(AppDbContext appDbContext, IF
             LogoUrl = row.LogoContainer is not null && row.LogoPath is not null
                 ? _fileStorageService.GetBlobUri(row.LogoContainer, row.LogoPath)
                 : null,
+            LogoContainer = query.CallerHasSponsorManagementPermission ? row.LogoContainer : null,
+            LogoPath = query.CallerHasSponsorManagementPermission ? row.LogoPath : null,
+            LogoContentType = query.CallerHasSponsorManagementPermission ? row.LogoContentType : null,
+            LogoSizeInBytes = query.CallerHasSponsorManagementPermission ? row.LogoSizeInBytes : null,
             IsCurrentSponsor = row.IsCurrentSponsor,
             Priority = row.Priority,
             Tier = row.Tier,

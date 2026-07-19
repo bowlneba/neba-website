@@ -49,6 +49,31 @@ public sealed record SponsorDetailDto
     public Uri? LogoUrl { get; init; }
 
     /// <summary>
+    /// The Azure Blob Storage container the logo is stored in. Populated only when the caller has
+    /// sponsor management permission (used to resubmit the logo unchanged when editing the sponsor);
+    /// null for anonymous callers or when there is no logo.
+    /// </summary>
+    public string? LogoContainer { get; init; }
+
+    /// <summary>
+    /// The blob path of the logo. Populated only when the caller has sponsor management permission;
+    /// null for anonymous callers or when there is no logo.
+    /// </summary>
+    public string? LogoPath { get; init; }
+
+    /// <summary>
+    /// The MIME content type of the logo. Populated only when the caller has sponsor management
+    /// permission; null for anonymous callers or when there is no logo.
+    /// </summary>
+    public string? LogoContentType { get; init; }
+
+    /// <summary>
+    /// The logo's file size in bytes. Populated only when the caller has sponsor management permission;
+    /// null for anonymous callers or when there is no logo.
+    /// </summary>
+    public long? LogoSizeInBytes { get; init; }
+
+    /// <summary>
     /// Website URL of the sponsor. This is the official website of the sponsor, where users can learn more about the sponsor's products, services, and involvement with the organization. Providing a website URL allows users to easily access additional information about the sponsor and can help drive traffic to the sponsor's site, which can be beneficial for both the sponsor and the organization.
     /// </summary>
     public Uri? WebsiteUrl { get; init; }

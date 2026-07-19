@@ -51,6 +51,27 @@ public sealed record SponsorDetailResponse
     public Uri? LogoUrl { get; init; }
 
     /// <summary>
+    /// The Azure Blob Storage container the logo is stored in. Only returned to callers with
+    /// sponsor-management permission (used to resubmit the logo unchanged when editing the sponsor).
+    /// </summary>
+    public string? LogoContainer { get; init; }
+
+    /// <summary>
+    /// The blob path of the logo. Only returned to callers with sponsor-management permission.
+    /// </summary>
+    public string? LogoPath { get; init; }
+
+    /// <summary>
+    /// The MIME content type of the logo. Only returned to callers with sponsor-management permission.
+    /// </summary>
+    public string? LogoContentType { get; init; }
+
+    /// <summary>
+    /// The logo's file size in bytes. Only returned to callers with sponsor-management permission.
+    /// </summary>
+    public long? LogoSizeInBytes { get; init; }
+
+    /// <summary>
     /// Public website URL for the sponsor.
     /// </summary>
     public Uri? WebsiteUrl { get; init; }

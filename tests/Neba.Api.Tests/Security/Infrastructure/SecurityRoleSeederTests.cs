@@ -44,7 +44,7 @@ public sealed class SecurityRoleSeederTests
 
         if (roleUnderTest != Roles.Webmaster)
         {
-            SetupRoleAlreadySynced(mock, Roles.Webmaster, [Permissions.CreateArticle, Permissions.DeleteArticle]);
+            SetupRoleAlreadySynced(mock, Roles.Webmaster, [Permissions.CreateArticle, Permissions.EditArticle, Permissions.DeleteArticle, Permissions.CreateSponsor, Permissions.EditSponsor]);
         }
 
         if (roleUnderTest != Roles.Member)
@@ -209,10 +209,19 @@ public sealed class SecurityRoleSeederTests
         roleManagerMock.Verify(m => m.RemoveClaimAsync(existingRole, It.IsAny<Claim>()), Times.Never);
     }
 
-    [Fact(DisplayName = "SeedAsync should create the Webmaster role and add exactly the CreateArticle and DeleteArticle permission claims when the role does not exist")]
-    public async Task SeedAsync_ShouldCreateWebmasterRoleAndAddCreateAndDeleteArticleClaims_WhenRoleDoesNotExist()
+    [Fact(DisplayName = "SeedAsync should create the Webmaster role and add exactly the CreateArticle, EditArticle, DeleteArticle, CreateSponsor, and EditSponsor permission claims when the role does not exist")]
+    public async Task SeedAsync_ShouldCreateWebmasterRoleAndAddExpectedClaims_WhenRoleDoesNotExist()
     {
         // Arrange
+        var expectedPermissions = new[]
+        {
+            Permissions.CreateArticle,
+            Permissions.EditArticle,
+            Permissions.DeleteArticle,
+            Permissions.CreateSponsor,
+            Permissions.EditSponsor
+        };
+
         var roleManagerMock = CreateRoleManagerMock();
         SetupOtherRolesAlreadySynced(roleManagerMock, Roles.Webmaster);
 
@@ -225,16 +234,15 @@ public sealed class SecurityRoleSeederTests
         roleManagerMock
             .Setup(m => m.GetClaimsAsync(It.Is<ApplicationRole>(r => r.Name == Roles.Webmaster)))
             .ReturnsAsync([]);
-        roleManagerMock
-            .Setup(m => m.AddClaimAsync(
-                It.Is<ApplicationRole>(r => r.Name == Roles.Webmaster),
-                It.Is<Claim>(c => c.Type == SecurityRoleSeeder.PermissionClaimType && c.Value == Permissions.CreateArticle.Value)))
-            .ReturnsAsync(IdentityResult.Success);
-        roleManagerMock
-            .Setup(m => m.AddClaimAsync(
-                It.Is<ApplicationRole>(r => r.Name == Roles.Webmaster),
-                It.Is<Claim>(c => c.Type == SecurityRoleSeeder.PermissionClaimType && c.Value == Permissions.DeleteArticle.Value)))
-            .ReturnsAsync(IdentityResult.Success);
+
+        foreach (var permission in expectedPermissions)
+        {
+            roleManagerMock
+                .Setup(m => m.AddClaimAsync(
+                    It.Is<ApplicationRole>(r => r.Name == Roles.Webmaster),
+                    It.Is<Claim>(c => c.Type == SecurityRoleSeeder.PermissionClaimType && c.Value == permission.Value)))
+                .ReturnsAsync(IdentityResult.Success);
+        }
 
         // Act
         await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
@@ -245,8 +253,7 @@ public sealed class SecurityRoleSeederTests
             m => m.AddClaimAsync(
                 It.Is<ApplicationRole>(r => r.Name == Roles.Webmaster),
                 It.Is<Claim>(c => c.Type == SecurityRoleSeeder.PermissionClaimType
-                    && c.Value != Permissions.CreateArticle.Value
-                    && c.Value != Permissions.DeleteArticle.Value)),
+                    && !expectedPermissions.Any(p => p.Value == c.Value))),
             Times.Never);
     }
 
