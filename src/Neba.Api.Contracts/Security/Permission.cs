@@ -73,6 +73,11 @@ public sealed class Permissions
         EditSponsor,
     ];
 
+    /// <summary>
+    /// Policy name satisfied when the caller holds any permission in <see cref="SponsorManagementPermissions"/>.
+    /// </summary>
+    public const string CanManageSponsorsPolicyName = "CanManageSponsors";
+
     #endregion
 
     private Permissions(string key, string name)

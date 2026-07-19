@@ -39,6 +39,8 @@ internal static class SponsorMappingExtensions
                 WebsiteUrl = response.WebsiteUrl,
                 Tagline = response.TagPhrase,
                 AboutText = response.Description,
+                LiveReadText = response.LiveReadText,
+                PromotionalNotes = response.PromotionalNotes,
                 FacebookUrl = response.FacebookUrl,
                 InstagramUrl = response.InstagramUrl,
                 BusinessStreet = response.BusinessStreet,
@@ -49,6 +51,7 @@ internal static class SponsorMappingExtensions
                 BusinessCountry = response.BusinessCountry,
                 ContactEmail = response.BusinessEmailAddress,
                 PhoneNumbers = response.PhoneNumbers,
+                Contact = response.Contact,
             };
     }
 }

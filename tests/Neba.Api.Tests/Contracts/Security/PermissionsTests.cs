@@ -99,4 +99,14 @@ public sealed class PermissionsTests
         // Assert
         permissions.Count.ShouldBe(2);
     }
+
+    [Fact(DisplayName = "CanManageSponsorsPolicyName should be CanManageSponsors")]
+    public void CanManageSponsorsPolicyName_ShouldBeCanManageSponsors()
+    {
+        // Arrange & Act
+        const string policyName = Permissions.CanManageSponsorsPolicyName;
+
+        // Assert
+        policyName.ShouldBe("CanManageSponsors");
+    }
 }

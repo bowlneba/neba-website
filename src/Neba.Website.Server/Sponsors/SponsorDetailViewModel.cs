@@ -1,4 +1,5 @@
 using Neba.Api.Contracts.Contact;
+using Neba.Api.Contracts.Sponsors;
 
 namespace Neba.Website.Server.Sponsors;
 
@@ -58,6 +59,16 @@ public sealed record SponsorDetailViewModel
     public string? AboutText { get; init; }
 
     /// <summary>
+    /// Text to be read live about the sponsor. Only populated for callers with sponsor-management permission.
+    /// </summary>
+    public string? LiveReadText { get; init; }
+
+    /// <summary>
+    /// Internal promotional notes for staff. Only populated for callers with sponsor-management permission.
+    /// </summary>
+    public string? PromotionalNotes { get; init; }
+
+    /// <summary>
     /// Optional Facebook profile URL for the sponsor.
     /// </summary>
     public Uri? FacebookUrl { get; init; }
@@ -108,6 +119,11 @@ public sealed record SponsorDetailViewModel
     public required IReadOnlyCollection<PhoneNumberResponse> PhoneNumbers { get; init; }
 
     /// <summary>
+    /// The sponsor's internal contact person. Only populated for callers with sponsor-management permission.
+    /// </summary>
+    public SponsorContactResponse? Contact { get; init; }
+
+    /// <summary>
     /// Indicates whether the sponsor has any business address information available for display.
     /// </summary>
     public bool HasAddress =>
@@ -126,9 +142,11 @@ public sealed record SponsorDetailViewModel
         FacebookUrl is not null || InstagramUrl is not null;
 
     /// <summary>
-    /// Indicates whether the sponsor has any contact information at all (address, contact channels, or social media) available for display.
+    /// Indicates whether the sponsor has any contact information at all (address, contact channels, social media,
+    /// or an internal contact person) available for display. <see cref="Contact"/> is only ever populated for
+    /// authorized callers, so this naturally excludes it from the public view without an extra check.
     /// </summary>
     public bool HasAnyContactInfo =>
-        HasAddress || HasContactChannels || HasSocialMedia;
+        HasAddress || HasContactChannels || HasSocialMedia || Contact is not null;
 
 }
