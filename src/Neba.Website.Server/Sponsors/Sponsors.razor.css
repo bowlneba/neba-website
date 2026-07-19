@@ -1,6 +1,6 @@
-/* Title sponsor logo card — editorial clip */
-.editorial-asymmetry {
-    clip-path: polygon(0 0, 100% 0, 95% 100%, 0% 100%);
+/* Title sponsor logo card — soft glow ring */
+.title-sponsor-logo-panel {
+    box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.12), 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* Premier partner card — top accent border */
