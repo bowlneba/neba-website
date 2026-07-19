@@ -91,7 +91,7 @@ internal sealed class EditSponsorCommandHandler(
             return updateResult.Errors;
         }
 
-        await RemoveClaimedPendingUploadAsync(command.Logo, cancellationToken);
+        await SponsorPendingUploadCleaner.RemoveClaimedAsync(appDbContext, command.Logo, cancellationToken);
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -110,19 +110,5 @@ internal sealed class EditSponsorCommandHandler(
         }
 
         return Result.Updated;
-    }
-
-    private async Task RemoveClaimedPendingUploadAsync(StoredFile? logo, CancellationToken cancellationToken)
-    {
-        if (logo is null)
-        {
-            return;
-        }
-
-        var claimed = await appDbContext.PendingUploads
-            .Where(pending => pending.Container == logo.Container && pending.Path == logo.Path)
-            .ToListAsync(cancellationToken);
-
-        appDbContext.PendingUploads.RemoveRange(claimed);
     }
 }
