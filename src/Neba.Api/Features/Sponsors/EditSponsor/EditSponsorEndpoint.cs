@@ -86,20 +86,8 @@ internal sealed class EditSponsorEndpoint(Messaging.ICommandHandler<EditSponsorC
                 return;
             }
 
-            if (result.FirstError.Type == ErrorType.Conflict)
-            {
-                AddError(result.FirstError.Description);
-                await Send.ErrorsAsync(StatusCodes.Status409Conflict, ct);
-                // Stryker disable once Statement
-                return;
-            }
-
-            foreach (var error in result.Errors)
-            {
-                AddError(error.Description);
-            }
-
-            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+            await SponsorMutationResultSender.SendConflictOrValidationErrorsAsync(
+                result.FirstError, result.Errors, error => AddError(error), Send.ErrorsAsync, ct);
             // Stryker disable once Statement
             return;
         }
