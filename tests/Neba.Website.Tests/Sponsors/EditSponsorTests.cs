@@ -143,6 +143,7 @@ public sealed class EditSponsorTests : IDisposable
         cut.Find("#contact-name").GetAttribute("value").ShouldBe("Jane Staff");
         cut.Find("#contact-email").GetAttribute("value").ShouldBe("jane@acme.example.com");
         cut.Find("#contact-phone-number").GetAttribute("value").ShouldBe("6175559999");
+        cut.Find("#contact-phone-type").GetAttribute("value").ShouldBe("W");
     }
 
     // ── Cancel / dirty guard ─────────────────────────────────────────────────
@@ -324,6 +325,7 @@ public sealed class EditSponsorTests : IDisposable
         // Assert
         cut.FindAll("li.create-sponsor-phone-row").Count.ShouldBe(1);
         cut.Find("input.create-sponsor-phone-number").GetAttribute("value").ShouldBe("6175551234");
+        cut.Find("select.create-sponsor-phone-type").GetAttribute("value").ShouldBe("M");
     }
 
     [Fact(DisplayName = "Should add a phone number row defaulting to the Home type when Add Phone Number is clicked")]

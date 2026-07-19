@@ -272,7 +272,19 @@
                             @foreach (var sponsor in InactiveSponsors)
                             {
                                 <div class="sponsor-tile neba-card flex flex-col items-center text-center p-4 gap-2 relative">
-                                    <span class="sponsor-tile__inactive-badge">Inactive</span>
+                                    <div class="sponsor-tile__inactive-header">
+                                        <span class="sponsor-tile__inactive-badge">Inactive</span>
+                                        <AuthorizeView Policy="@Permissions.EditSponsor.PolicyName" Context="editContext">
+                                            <Authorized Context="editContext">
+                                                <a href="/sponsors/@sponsor.Slug/edit" class="icon-btn sponsor-tile-edit-btn--inactive" aria-label="Edit @sponsor.Name">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z" />
+                                                    </svg>
+                                                </a>
+                                            </Authorized>
+                                        </AuthorizeView>
+                                    </div>
                                     <a href="/sponsors/@sponsor.Slug" class="sponsor-tile-link" aria-label="@sponsor.Name (Inactive)">
                                         <span class="material-symbols-outlined text-[var(--neba-gray-400)]"
                                               style="font-size: 2rem;" aria-hidden="true">
@@ -283,16 +295,6 @@
                                         </div>
                                         <h4 class="font-semibold text-sm text-[var(--neba-text)]">@sponsor.Name</h4>
                                     </a>
-                                    <AuthorizeView Policy="@Permissions.EditSponsor.PolicyName" Context="editContext">
-                                        <Authorized Context="editContext">
-                                            <a href="/sponsors/@sponsor.Slug/edit" class="icon-btn sponsor-tile-edit-btn sponsor-tile-edit-btn--inactive" aria-label="Edit @sponsor.Name">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z" />
-                                                </svg>
-                                            </a>
-                                        </Authorized>
-                                    </AuthorizeView>
                                 </div>
                             }
                         </div>

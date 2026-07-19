@@ -397,7 +397,7 @@
         _model.BusinessPostalCode = _sponsor.BusinessPostalCode;
         _model.BusinessEmailAddress = _sponsor.BusinessEmailAddress;
         _model.ContactName = _sponsor.Contact?.Name;
-        _model.ContactPhoneType = _sponsor.Contact?.Phone.PhoneNumberType ?? "H";
+        _model.ContactPhoneType = _sponsor.Contact is null ? "H" : ToPhoneNumberTypeValue(_sponsor.Contact.Phone.PhoneNumberType);
         _model.ContactPhoneNumber = _sponsor.Contact?.Phone.PhoneNumber;
         _model.ContactEmail = _sponsor.Contact?.Email;
 
@@ -408,10 +408,17 @@
 
         _phoneNumbers.AddRange(_sponsor.PhoneNumbers.Select(p => new TrackedPhoneNumber
         {
-            PhoneNumberType = p.PhoneNumberType,
+            PhoneNumberType = ToPhoneNumberTypeValue(p.PhoneNumberType),
             PhoneNumber = p.PhoneNumber
         }));
     }
+
+    // GetSponsorDetail returns the phone type as its display Name (e.g. "Mobile"), but the <select>
+    // options here (and the EditSponsor request contract) key off the short Value code (e.g. "M") —
+    // without this conversion the pre-populated dropdown never matches an <option> and silently falls
+    // back to its default.
+    private static string ToPhoneNumberTypeValue(string phoneNumberTypeName)
+        => PhoneNumberType.FromName(phoneNumberTypeName).Value;
 
     private void AddPhoneNumber()
     {
