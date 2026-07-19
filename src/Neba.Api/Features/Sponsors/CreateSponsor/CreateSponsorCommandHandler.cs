@@ -18,35 +18,18 @@ internal sealed class CreateSponsorCommandHandler(
 {
     public async Task<ErrorOr<CreatedSponsor>> HandleAsync(CreateSponsorCommand command, CancellationToken cancellationToken)
     {
-        var addressResult = SponsorFieldBuilder.BuildBusinessAddress(
-            command.BusinessStreet, command.BusinessUnit, command.BusinessCity, command.BusinessState, command.BusinessPostalCode);
-
-        if (addressResult.IsError)
-        {
-            return addressResult.Errors;
-        }
-
-        var emailResult = SponsorFieldBuilder.BuildBusinessEmail(command.BusinessEmailAddress);
-
-        if (emailResult.IsError)
-        {
-            return emailResult.Errors;
-        }
-
-        var phoneNumbersResult = SponsorFieldBuilder.BuildPhoneNumbers(command.PhoneNumbers);
-
-        if (phoneNumbersResult.IsError)
-        {
-            return phoneNumbersResult.Errors;
-        }
-
-        var contactResult = SponsorFieldBuilder.BuildSponsorContact(
+        var fieldsResult = SponsorFieldBuilder.BuildAll(
+            command.BusinessStreet, command.BusinessUnit, command.BusinessCity, command.BusinessState, command.BusinessPostalCode,
+            command.BusinessEmailAddress,
+            command.PhoneNumbers,
             command.ContactName, command.ContactPhoneType, command.ContactPhoneNumber, command.ContactPhoneExtension, command.ContactEmail);
 
-        if (contactResult.IsError)
+        if (fieldsResult.IsError)
         {
-            return contactResult.Errors;
+            return fieldsResult.Errors;
         }
+
+        var fields = fieldsResult.Value;
 
         var titleSponsorshipTaken = command.Tier == SponsorTier.TitleSponsor
             && await appDbContext.Sponsors.AnyAsync(sponsor => sponsor.IsCurrentSponsor && sponsor.Tier == SponsorTier.TitleSponsor, cancellationToken);
@@ -67,10 +50,10 @@ internal sealed class CreateSponsorCommandHandler(
             promotionalNotes: command.PromotionalNotes,
             facebookUrl: command.FacebookUrl,
             instagramUrl: command.InstagramUrl,
-            businessAddress: addressResult.Value,
-            businessEmail: emailResult.Value,
-            phoneNumbers: phoneNumbersResult.Value,
-            sponsorContact: contactResult.Value
+            businessAddress: fields.BusinessAddress,
+            businessEmail: fields.BusinessEmail,
+            phoneNumbers: fields.PhoneNumbers,
+            sponsorContact: fields.Contact
         );
 
         if (sponsorResult.IsError)

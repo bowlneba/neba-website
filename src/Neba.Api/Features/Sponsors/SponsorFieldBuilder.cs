@@ -14,6 +14,40 @@ namespace Neba.Api.Features.Sponsors;
 /// </summary>
 internal static class SponsorFieldBuilder
 {
+    public static ErrorOr<SponsorFields> BuildAll(
+        string? businessStreet, string? businessUnit, string? businessCity, UsState? businessState, string? businessPostalCode,
+        string? businessEmailAddress,
+        IReadOnlyCollection<PhoneNumberInput> phoneNumbers,
+        string? contactName, PhoneNumberType? contactPhoneType, string? contactPhoneNumber,
+        string? contactPhoneExtension, string? contactEmail)
+    {
+        var addressResult = BuildBusinessAddress(businessStreet, businessUnit, businessCity, businessState, businessPostalCode);
+        if (addressResult.IsError)
+        {
+            return addressResult.Errors;
+        }
+
+        var emailResult = BuildBusinessEmail(businessEmailAddress);
+        if (emailResult.IsError)
+        {
+            return emailResult.Errors;
+        }
+
+        var phoneNumbersResult = BuildPhoneNumbers(phoneNumbers);
+        if (phoneNumbersResult.IsError)
+        {
+            return phoneNumbersResult.Errors;
+        }
+
+        var contactResult = BuildSponsorContact(contactName, contactPhoneType, contactPhoneNumber, contactPhoneExtension, contactEmail);
+        if (contactResult.IsError)
+        {
+            return contactResult.Errors;
+        }
+
+        return new SponsorFields(addressResult.Value, emailResult.Value, phoneNumbersResult.Value, contactResult.Value);
+    }
+
     public static ErrorOr<Address?> BuildBusinessAddress(
         string? street, string? unit, string? city, UsState? state, string? postalCode)
     {
@@ -86,3 +120,13 @@ internal static class SponsorFieldBuilder
             : new ContactInfo { Name = contactName ?? string.Empty, Phone = phoneResult.Value, Email = emailResult.Value };
     }
 }
+
+/// <summary>
+/// The value objects built by <see cref="SponsorFieldBuilder.BuildAll"/>, ready to pass into
+/// <c>Sponsor.Create</c> or <c>Sponsor.Update</c>.
+/// </summary>
+internal sealed record SponsorFields(
+    Address? BusinessAddress,
+    EmailAddress? BusinessEmail,
+    IReadOnlyCollection<PhoneNumber> PhoneNumbers,
+    ContactInfo? Contact);

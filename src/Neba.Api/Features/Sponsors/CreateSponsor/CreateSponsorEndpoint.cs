@@ -5,11 +5,8 @@ using ErrorOr;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
-using Neba.Api.Contacts;
-using Neba.Api.Contracts.Contact;
 using Neba.Api.Contracts.Sponsors.CreateSponsor;
 using Neba.Api.Features.Sponsors.Domain;
-using Neba.Api.Features.Storage.Domain;
 
 using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
 
@@ -45,6 +42,7 @@ internal sealed class CreateSponsorEndpoint(Messaging.ICommandHandler<CreateSpon
     public override async Task HandleAsync(CreateSponsorRequest req, CancellationToken ct)
     {
         var input = req.Sponsor;
+        var contact = SponsorCommandMapper.MapContact(input.Contact);
 
         var command = new CreateSponsorCommand
         {
@@ -54,15 +52,7 @@ internal sealed class CreateSponsorEndpoint(Messaging.ICommandHandler<CreateSpon
             Priority = input.Priority,
             Tier = SponsorTier.FromName(input.Tier),
             Category = SponsorCategory.FromName(input.Category),
-            Logo = input.Logo is null
-                ? null
-                : new StoredFile
-                {
-                    Container = input.Logo.Container,
-                    Path = input.Logo.Path,
-                    ContentType = input.Logo.ContentType,
-                    SizeInBytes = input.Logo.SizeInBytes
-                },
+            Logo = SponsorCommandMapper.MapLogo(input.Logo),
             WebsiteUrl = input.WebsiteUrl,
             TagPhrase = input.TagPhrase,
             Description = input.Description,
@@ -73,24 +63,15 @@ internal sealed class CreateSponsorEndpoint(Messaging.ICommandHandler<CreateSpon
             BusinessStreet = input.BusinessStreet,
             BusinessUnit = input.BusinessUnit,
             BusinessCity = input.BusinessCity,
-            BusinessState = string.IsNullOrWhiteSpace(input.BusinessState)
-                ? null
-                : UsState.FromValue(input.BusinessState),
+            BusinessState = SponsorCommandMapper.MapBusinessState(input.BusinessState),
             BusinessPostalCode = input.BusinessPostalCode,
             BusinessEmailAddress = input.BusinessEmailAddress,
-            PhoneNumbers = [.. input.PhoneNumbers.Select(p => new PhoneNumberInput
-            {
-                Type = PhoneNumberType.FromValue(p.PhoneNumberType),
-                Number = p.PhoneNumber,
-                Extension = p.Extension
-            })],
-            ContactName = input.Contact?.Name,
-            ContactPhoneType = input.Contact is null
-                ? null
-                : PhoneNumberType.FromValue(input.Contact.PhoneNumberType),
-            ContactPhoneNumber = input.Contact?.PhoneNumber,
-            ContactPhoneExtension = input.Contact?.Extension,
-            ContactEmail = input.Contact?.Email
+            PhoneNumbers = SponsorCommandMapper.MapPhoneNumbers(input.PhoneNumbers),
+            ContactName = contact.Name,
+            ContactPhoneType = contact.PhoneType,
+            ContactPhoneNumber = contact.PhoneNumber,
+            ContactPhoneExtension = contact.PhoneExtension,
+            ContactEmail = contact.Email
         };
 
         var result = await _commandHandler.HandleAsync(command, ct);

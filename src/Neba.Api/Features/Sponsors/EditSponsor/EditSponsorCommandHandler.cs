@@ -28,31 +28,18 @@ internal sealed class EditSponsorCommandHandler(
             return SponsorErrors.SponsorNotFound(command.SponsorId.Value.ToString());
         }
 
-        var addressResult = SponsorFieldBuilder.BuildBusinessAddress(
-            command.BusinessStreet, command.BusinessUnit, command.BusinessCity, command.BusinessState, command.BusinessPostalCode);
-        if (addressResult.IsError)
-        {
-            return addressResult.Errors;
-        }
-
-        var emailResult = SponsorFieldBuilder.BuildBusinessEmail(command.BusinessEmailAddress);
-        if (emailResult.IsError)
-        {
-            return emailResult.Errors;
-        }
-
-        var phoneNumbersResult = SponsorFieldBuilder.BuildPhoneNumbers(command.PhoneNumbers);
-        if (phoneNumbersResult.IsError)
-        {
-            return phoneNumbersResult.Errors;
-        }
-
-        var contactResult = SponsorFieldBuilder.BuildSponsorContact(
+        var fieldsResult = SponsorFieldBuilder.BuildAll(
+            command.BusinessStreet, command.BusinessUnit, command.BusinessCity, command.BusinessState, command.BusinessPostalCode,
+            command.BusinessEmailAddress,
+            command.PhoneNumbers,
             command.ContactName, command.ContactPhoneType, command.ContactPhoneNumber, command.ContactPhoneExtension, command.ContactEmail);
-        if (contactResult.IsError)
+
+        if (fieldsResult.IsError)
         {
-            return contactResult.Errors;
+            return fieldsResult.Errors;
         }
+
+        var fields = fieldsResult.Value;
 
         // Cross-aggregate fact (CLAUDE.md "Aggregate Invariants Requiring Cross-Aggregate Data"):
         // is Title tier held by some OTHER current sponsor? Excludes this sponsor so re-saving its
@@ -81,10 +68,10 @@ internal sealed class EditSponsorCommandHandler(
             command.PromotionalNotes,
             command.FacebookUrl,
             command.InstagramUrl,
-            addressResult.Value,
-            emailResult.Value,
-            phoneNumbersResult.Value,
-            contactResult.Value);
+            fields.BusinessAddress,
+            fields.BusinessEmail,
+            fields.PhoneNumbers,
+            fields.Contact);
 
         if (updateResult.IsError)
         {
