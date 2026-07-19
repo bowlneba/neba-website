@@ -18,7 +18,7 @@ internal static class SecurityRoleSeeder
             Permissions.CreateArticle,
             Permissions.EditArticle,
             Permissions.DeleteArticle,
-            
+
             Permissions.CreateSponsor,
             Permissions.EditSponsor
         ],
