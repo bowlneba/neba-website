@@ -1,7 +1,6 @@
 @page "/sponsors/{Slug}/edit"
 @using System.ComponentModel.DataAnnotations
 @using ErrorOr
-@using Neba.Api.Contracts.Contact
 @using Neba.Api.Contracts.ReferenceData
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Sponsors
@@ -235,9 +234,9 @@
                                         {
                                             <li class="create-sponsor-phone-row">
                                                 <select class="neba-select create-sponsor-phone-type" value="@phoneNumber.PhoneNumberType" @onchange="@(e => { phoneNumber.PhoneNumberType = e.Value?.ToString() ?? "H"; MarkDirty(); })">
-                                                    @foreach (var phoneType in PhoneNumberType.List)
+                                                    @foreach (var phoneType in _phoneNumberTypes)
                                                     {
-                                                        <option value="@phoneType.Value">@phoneType.Name</option>
+                                                        <option value="@phoneType.Code">@phoneType.Name</option>
                                                     }
                                                 </select>
                                                 <input class="neba-input create-sponsor-phone-number" value="@phoneNumber.PhoneNumber"
@@ -275,9 +274,9 @@
                                     <div>
                                         <label for="contact-phone-type" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Phone Type</label>
                                         <InputSelect id="contact-phone-type" @bind-Value="_model.ContactPhoneType" class="neba-select">
-                                            @foreach (var phoneType in PhoneNumberType.List)
+                                            @foreach (var phoneType in _phoneNumberTypes)
                                             {
-                                                <option value="@phoneType.Value">@phoneType.Name</option>
+                                                <option value="@phoneType.Code">@phoneType.Name</option>
                                             }
                                         </InputSelect>
                                     </div>
@@ -348,6 +347,7 @@
     private bool _isLogoUploading;
 
     private IReadOnlyCollection<UsStateResponse> _usStates = [];
+    private IReadOnlyCollection<PhoneNumberTypeResponse> _phoneNumberTypes = [];
 
     public EditSponsor()
     {
@@ -365,6 +365,12 @@
         if (!usStatesResult.IsError)
         {
             _usStates = usStatesResult.Value;
+        }
+
+        var phoneNumberTypesResult = await ReferenceDataService.GetPhoneNumberTypesAsync();
+        if (!phoneNumberTypesResult.IsError)
+        {
+            _phoneNumberTypes = phoneNumberTypesResult.Value;
         }
 
         var result = await ApiExecutor.ExecuteAsync(
@@ -432,11 +438,11 @@
     }
 
     // GetSponsorDetail returns the phone type as its display Name (e.g. "Mobile"), but the <select>
-    // options here (and the EditSponsor request contract) key off the short Value code (e.g. "M") —
+    // options here (and the EditSponsor request contract) key off the short Code (e.g. "M") —
     // without this conversion the pre-populated dropdown never matches an <option> and silently falls
     // back to its default.
-    private static string ToPhoneNumberTypeValue(string phoneNumberTypeName)
-        => PhoneNumberType.FromName(phoneNumberTypeName).Value;
+    private string ToPhoneNumberTypeValue(string phoneNumberTypeName)
+        => _phoneNumberTypes.Single(t => t.Name == phoneNumberTypeName).Code;
 
     private void AddPhoneNumber()
     {

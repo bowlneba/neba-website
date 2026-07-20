@@ -14,6 +14,7 @@ internal sealed class ReferenceDataService(
 {
     // Cached client-side so page visits don't re-fetch static data; the API's own FusionCache layer only saves a network hop, not the round-trip itself.
     private const string UsStatesCacheKey = "neba:website:reference-data:us-states";
+    private const string PhoneNumberTypesCacheKey = "neba:website:reference-data:phone-number-types";
     private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(24);
 
     public async Task<ErrorOr<List<UsStateResponse>>> GetUsStatesAsync(CancellationToken ct = default)
@@ -35,5 +36,26 @@ internal sealed class ReferenceDataService(
         cache.Set(UsStatesCacheKey, states, CacheDuration);
 
         return states;
+    }
+
+    public async Task<ErrorOr<List<PhoneNumberTypeResponse>>> GetPhoneNumberTypesAsync(CancellationToken ct = default)
+    {
+        if (cache.TryGetValue(PhoneNumberTypesCacheKey, out List<PhoneNumberTypeResponse>? cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        var result = await executor.ExecuteAsync(
+            "ReferenceDataApi",
+            nameof(GetPhoneNumberTypesAsync),
+            referenceDataApi.ListPhoneNumberTypesAsync,
+            ct);
+
+        if (result.IsError) return result.Errors;
+
+        var phoneNumberTypes = result.Value.Items.ToList();
+        cache.Set(PhoneNumberTypesCacheKey, phoneNumberTypes, CacheDuration);
+
+        return phoneNumberTypes;
     }
 }

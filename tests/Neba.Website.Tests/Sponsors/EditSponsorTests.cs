@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Neba.Api.Contracts.Contact;
+using Neba.Api.Contacts.Domain;
 using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Contracts.Sponsors.EditSponsor;
@@ -66,6 +66,9 @@ public sealed class EditSponsorTests : IDisposable
         mockReferenceDataService
             .Setup(x => x.GetUsStatesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(UsStateResponseFactory.CreateAll().ToList());
+        mockReferenceDataService
+            .Setup(x => x.GetPhoneNumberTypesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PhoneNumberTypeResponseFactory.CreateAll().ToList());
 
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));

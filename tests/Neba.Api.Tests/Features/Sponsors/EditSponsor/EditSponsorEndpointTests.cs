@@ -130,12 +130,12 @@ public sealed class EditSponsorEndpointTests
 
         capturedCommand.PhoneNumbers.ShouldHaveSingleItem();
         var capturedPhoneNumber = capturedCommand.PhoneNumbers.Single();
-        capturedPhoneNumber.Type.ShouldBe(Neba.Api.Contracts.Contact.PhoneNumberType.FromValue(phoneNumber.PhoneNumberType));
+        capturedPhoneNumber.Type.ShouldBe(Neba.Api.Contacts.Domain.PhoneNumberType.FromValue(phoneNumber.PhoneNumberType));
         capturedPhoneNumber.Number.ShouldBe(phoneNumber.PhoneNumber);
         capturedPhoneNumber.Extension.ShouldBeNull();
 
         capturedCommand.ContactName.ShouldBe(contact.Name);
-        capturedCommand.ContactPhoneType.ShouldBe(Neba.Api.Contracts.Contact.PhoneNumberType.FromValue(contact.PhoneNumberType));
+        capturedCommand.ContactPhoneType.ShouldBe(Neba.Api.Contacts.Domain.PhoneNumberType.FromValue(contact.PhoneNumberType));
         capturedCommand.ContactPhoneNumber.ShouldBe(contact.PhoneNumber);
         capturedCommand.ContactPhoneExtension.ShouldBe(contact.Extension);
         capturedCommand.ContactEmail.ShouldBe(contact.Email);

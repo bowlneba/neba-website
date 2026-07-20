@@ -19,4 +19,16 @@ public interface IReferenceDataApi
     /// </returns>
     [Get("/reference-data/us-states")]
     Task<IApiResponse<CollectionResponse<UsStateResponse>>> ListUsStatesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists all phone number types (e.g. Home, Mobile, Work, Fax).
+    /// </summary>
+    /// <param name="cancellationToken">
+    /// A token to cancel the operation.
+    /// </param>
+    /// <returns>
+    /// A collection of phone number types.
+    /// </returns>
+    [Get("/reference-data/phone-number-types")]
+    Task<IApiResponse<CollectionResponse<PhoneNumberTypeResponse>>> ListPhoneNumberTypesAsync(CancellationToken cancellationToken = default);
 }

@@ -1,7 +1,7 @@
-using Neba.Api.Contracts.Contact;
+using Neba.Api.Contacts.Domain;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Api.Tests.Contracts.Contact;
+namespace Neba.Api.Tests.Contacts.Domain;
 
 [UnitTest]
 [Component("Contact.PhoneNumberType")]

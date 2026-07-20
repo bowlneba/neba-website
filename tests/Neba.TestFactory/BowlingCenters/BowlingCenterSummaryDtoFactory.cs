@@ -1,5 +1,5 @@
 using Neba.Api.Contacts;
-using Neba.Api.Contracts.Contact;
+using Neba.Api.Contacts.Domain;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.BowlingCenters.ListBowlingCenters;
 using Neba.TestFactory.Contact;

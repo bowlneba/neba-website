@@ -94,6 +94,16 @@ public static class CacheDescriptors
                 Key = "neba:reference-data:us-states:list",
                 Tags = ["neba", "neba:reference-data"]
             };
+
+        /// <summary>
+        /// Returns a cache descriptor for the list of phone number types, with a key and tags that allow for efficient caching and invalidation of reference data.
+        /// </summary>
+        public static CacheDescriptor PhoneNumberTypes
+            => new()
+            {
+                Key = "neba:reference-data:phone-number-types:list",
+                Tags = ["neba", "neba:reference-data"]
+            };
     }
 
     /// <summary>

@@ -1,7 +1,6 @@
 @page "/sponsors/new"
 @using System.ComponentModel.DataAnnotations
 @using ErrorOr
-@using Neba.Api.Contracts.Contact
 @using Neba.Api.Contracts.ReferenceData
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Sponsors
@@ -202,9 +201,9 @@
                                     {
                                         <li class="create-sponsor-phone-row">
                                             <select class="neba-select create-sponsor-phone-type" value="@phoneNumber.PhoneNumberType" @onchange="@(e => { phoneNumber.PhoneNumberType = e.Value?.ToString() ?? "H"; MarkDirty(); })">
-                                                @foreach (var phoneType in PhoneNumberType.List)
+                                                @foreach (var phoneType in _phoneNumberTypes)
                                                 {
-                                                    <option value="@phoneType.Value">@phoneType.Name</option>
+                                                    <option value="@phoneType.Code">@phoneType.Name</option>
                                                 }
                                             </select>
                                             <input class="neba-input create-sponsor-phone-number" value="@phoneNumber.PhoneNumber"
@@ -242,9 +241,9 @@
                                 <div>
                                     <label for="contact-phone-type" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Phone Type</label>
                                     <InputSelect id="contact-phone-type" @bind-Value="_model.ContactPhoneType" class="neba-select">
-                                        @foreach (var phoneType in PhoneNumberType.List)
+                                        @foreach (var phoneType in _phoneNumberTypes)
                                         {
-                                            <option value="@phoneType.Value">@phoneType.Name</option>
+                                            <option value="@phoneType.Code">@phoneType.Name</option>
                                         }
                                     </InputSelect>
                                 </div>
@@ -311,6 +310,7 @@
     private string? _errorMessage;
 
     private IReadOnlyCollection<UsStateResponse> _usStates = [];
+    private IReadOnlyCollection<PhoneNumberTypeResponse> _phoneNumberTypes = [];
 
     public CreateSponsor()
     {
@@ -324,6 +324,12 @@
         if (!usStatesResult.IsError)
         {
             _usStates = usStatesResult.Value;
+        }
+
+        var phoneNumberTypesResult = await ReferenceDataService.GetPhoneNumberTypesAsync();
+        if (!phoneNumberTypesResult.IsError)
+        {
+            _phoneNumberTypes = phoneNumberTypesResult.Value;
         }
     }
 

@@ -62,6 +62,9 @@ public sealed class CreateSponsorTests : IDisposable
         mockReferenceDataService
             .Setup(x => x.GetUsStatesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(UsStateResponseFactory.CreateAll().ToList());
+        mockReferenceDataService
+            .Setup(x => x.GetPhoneNumberTypesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PhoneNumberTypeResponseFactory.CreateAll().ToList());
 
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
