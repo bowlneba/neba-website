@@ -32,4 +32,10 @@ internal static class SponsorErrors
         => Error.Conflict(
             code: "Sponsor.TitleSponsor.Unavailable",
             description: "The Title Sponsor tier is already assigned to another sponsor.");
+
+    public static Error BusinessAddressStateRequired
+        => Error.Validation("Sponsor.BusinessAddress.StateRequired", "State is required when a business street address is supplied.");
+
+    public static Error ContactPhoneTypeRequired
+        => Error.Validation("Sponsor.Contact.PhoneTypeRequired", "Contact phone type is required when contact name, phone, or email is supplied.");
 }

@@ -40,12 +40,9 @@ internal static class SponsorFieldBuilder
         }
 
         var contactResult = BuildSponsorContact(contactName, contactPhoneType, contactPhoneNumber, contactPhoneExtension, contactEmail);
-        if (contactResult.IsError)
-        {
-            return contactResult.Errors;
-        }
-
-        return new SponsorFields(addressResult.Value, emailResult.Value, phoneNumbersResult.Value, contactResult.Value);
+        return contactResult.IsError
+            ? contactResult.Errors
+            : new SponsorFields(addressResult.Value, emailResult.Value, phoneNumbersResult.Value, contactResult.Value);
     }
 
     public static ErrorOr<Address?> BuildBusinessAddress(
@@ -56,7 +53,10 @@ internal static class SponsorFieldBuilder
             return (Address?)null;
         }
 
-        ArgumentNullException.ThrowIfNull(state);
+        if (state is null)
+        {
+            return SponsorErrors.BusinessAddressStateRequired;
+        }
 
         var result = Address.Create(street, unit, city ?? string.Empty, state, postalCode ?? string.Empty);
         return result.IsError ? result.Errors : result.Value;
@@ -106,7 +106,10 @@ internal static class SponsorFieldBuilder
             return (ContactInfo?)null;
         }
 
-        ArgumentNullException.ThrowIfNull(contactPhoneType);
+        if (contactPhoneType is null)
+        {
+            return SponsorErrors.ContactPhoneTypeRequired;
+        }
 
         var phoneResult = PhoneNumber.CreateNorthAmerican(contactPhoneType, contactPhoneNumber ?? string.Empty, contactPhoneExtension);
         if (phoneResult.IsError)

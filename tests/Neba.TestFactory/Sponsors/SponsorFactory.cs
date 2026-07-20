@@ -57,12 +57,10 @@ public static class SponsorFactory
             phoneNumbers: phoneNumbers,
             sponsorContact: sponsorContact);
 
-        if (result.IsError)
-        {
-            throw new InvalidOperationException($"Failed to create sponsor: {result.Errors[0].Description}");
-        }
+        return result.IsError 
+            ? throw new InvalidOperationException($"Failed to create sponsor: {result.Errors[0].Description}") 
+            : result.Value;
 
-        return result.Value;
     }
 #pragma warning restore S107
 
@@ -99,12 +97,10 @@ public static class SponsorFactory
                 phoneNumbers: [.. new[] { phoneNumberPool.GetNext(), phoneNumberPool.GetNext() }.DistinctBy(p => p.Type)],
                 sponsorContact: contactInfoPool.GetNextNullable());
 
-            if (result.IsError)
-            {
-                throw new InvalidOperationException($"Failed to create sponsor: {result.Errors[0].Description}");
-            }
+            return result.IsError 
+                ? throw new InvalidOperationException($"Failed to create sponsor: {result.Errors[0].Description}") 
+                : result.Value;
 
-            return result.Value;
         })];
     }
 

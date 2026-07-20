@@ -125,8 +125,8 @@ public sealed class EditSponsorTests : IDisposable
             phone: PhoneNumberResponseFactory.Create(type: PhoneNumberType.Work, number: "6175559999"),
             email: "jane@acme.example.com");
         var sponsor = SponsorDetailResponseFactory.Create(
-            slug: "acme-corp",
             name: "Acme Corp",
+            slug: "acme-corp",
             liveReadText: "Please welcome Acme Corp!",
             promotionalNotes: "Internal note.",
             contact: contact);
@@ -193,8 +193,8 @@ public sealed class EditSponsorTests : IDisposable
         // Arrange
         var sponsor = SponsorDetailResponseFactory.Create(
             id: new SponsorId("01KNPMEYKAR8YHHZ0FSPX91MNN"),
-            slug: "acme-corp",
-            name: "Acme Corp");
+            name: "Acme Corp",
+            slug: "acme-corp");
         SetupGetSponsorSuccess(sponsor);
 
         EditSponsorRequest? capturedRequest = null;

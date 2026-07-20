@@ -29,19 +29,20 @@ public sealed class SponsorFieldBuilderTests
         result.Value.ShouldBeNull();
     }
 
-    [Fact(DisplayName = "BuildBusinessAddress throws when street is provided but state is null")]
-    public void BuildBusinessAddress_ShouldThrow_WhenStreetIsProvidedButStateIsNull()
+    [Fact(DisplayName = "BuildBusinessAddress returns a validation error when street is provided but state is null")]
+    public void BuildBusinessAddress_ShouldReturnValidationError_WhenStreetIsProvidedButStateIsNull()
     {
-        // Arrange
-        static void Act() => SponsorFieldBuilder.BuildBusinessAddress(
+        // Arrange & Act
+        var result = SponsorFieldBuilder.BuildBusinessAddress(
             street: AddressFactory.ValidStreet,
             unit: null,
             city: AddressFactory.ValidCity,
             state: null,
             postalCode: AddressFactory.ValidZipCode);
 
-        // Act & Assert
-        Should.Throw<ArgumentNullException>(Act);
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Sponsor.BusinessAddress.StateRequired");
     }
 
     [Fact(DisplayName = "BuildBusinessAddress returns a validation error when the address is invalid")]
@@ -182,19 +183,20 @@ public sealed class SponsorFieldBuilderTests
         result.Value.ShouldBeNull();
     }
 
-    [Fact(DisplayName = "BuildSponsorContact throws when a contact field is supplied but phone type is null")]
-    public void BuildSponsorContact_ShouldThrow_WhenContactFieldSuppliedButPhoneTypeIsNull()
+    [Fact(DisplayName = "BuildSponsorContact returns a validation error when a contact field is supplied but phone type is null")]
+    public void BuildSponsorContact_ShouldReturnValidationError_WhenContactFieldSuppliedButPhoneTypeIsNull()
     {
-        // Arrange
-        static void Act() => SponsorFieldBuilder.BuildSponsorContact(
+        // Arrange & Act
+        var result = SponsorFieldBuilder.BuildSponsorContact(
             contactName: ContactInfoFactory.ValidName,
             contactPhoneType: null,
             contactPhoneNumber: PhoneNumberFactory.ValidNumber,
             contactPhoneExtension: null,
             contactEmail: EmailAddressFactory.ValidEmail);
 
-        // Act & Assert
-        Should.Throw<ArgumentNullException>(Act);
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Sponsor.Contact.PhoneTypeRequired");
     }
 
     [Fact(DisplayName = "BuildSponsorContact returns a validation error when the phone number is invalid")]

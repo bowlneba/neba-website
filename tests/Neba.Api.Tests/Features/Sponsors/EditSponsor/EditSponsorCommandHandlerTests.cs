@@ -114,7 +114,7 @@ public sealed class EditSponsorCommandHandlerTests(AppDbContextFixture fixture)
 
     private async Task<Sponsor> SeedSponsorAsync(CancellationToken ct, string? slug = null, StoredFile? logo = null, bool? isCurrentSponsor = null, SponsorTier? tier = null)
     {
-        var sponsor = SponsorFactory.Create(slug: slug, logo: logo, isCurrentSponsor: isCurrentSponsor, tier: tier);
+        var sponsor = SponsorFactory.Create(slug: slug, isCurrentSponsor: isCurrentSponsor, tier: tier, logo: logo);
         await _dbContext.Sponsors.AddAsync(sponsor, ct);
         await _dbContext.SaveChangesAsync(ct);
         return sponsor;

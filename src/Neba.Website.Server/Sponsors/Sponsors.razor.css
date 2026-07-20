@@ -106,13 +106,7 @@
     top: 1rem;
     right: 1rem;
     z-index: 2;
-    background-color: rgba(255, 255, 255, 0.15);
-    color: #ffffff;
-}
-
-.title-sponsor-edit-btn:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-    color: #ffffff;
+    background-color: var(--neba-bg-panel, #fff);
 }
 
 /* CTA secondary button — white outline on dark gradient background */
