@@ -1,6 +1,6 @@
 # NEBA Website
 
-Centralized platform for managing the New England Bowlers Association (NEBA). Handles tournament operations, enforces NEBA and USBC rules, and streamlines governance and member management.
+Platform for managing the New England Bowlers Association (NEBA). Handles tournament operations, enforces NEBA and USBC rules, and simplifies governance and member management.
 
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)
 
