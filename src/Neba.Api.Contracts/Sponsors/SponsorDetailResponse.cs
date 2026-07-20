@@ -51,6 +51,27 @@ public sealed record SponsorDetailResponse
     public Uri? LogoUrl { get; init; }
 
     /// <summary>
+    /// The Azure Blob Storage container the logo is stored in. Only returned to callers with
+    /// sponsor-management permission (used to resubmit the logo unchanged when editing the sponsor).
+    /// </summary>
+    public string? LogoContainer { get; init; }
+
+    /// <summary>
+    /// The blob path of the logo. Only returned to callers with sponsor-management permission.
+    /// </summary>
+    public string? LogoPath { get; init; }
+
+    /// <summary>
+    /// The MIME content type of the logo. Only returned to callers with sponsor-management permission.
+    /// </summary>
+    public string? LogoContentType { get; init; }
+
+    /// <summary>
+    /// The logo's file size in bytes. Only returned to callers with sponsor-management permission.
+    /// </summary>
+    public long? LogoSizeInBytes { get; init; }
+
+    /// <summary>
     /// Public website URL for the sponsor.
     /// </summary>
     public Uri? WebsiteUrl { get; init; }
@@ -64,6 +85,16 @@ public sealed record SponsorDetailResponse
     /// Long-form sponsor description.
     /// </summary>
     public string? Description { get; init; }
+
+    /// <summary>
+    /// Text to be read live about the sponsor. Only returned to callers with sponsor-management permission.
+    /// </summary>
+    public string? LiveReadText { get; init; }
+
+    /// <summary>
+    /// Internal promotional notes for staff. Only returned to callers with sponsor-management permission.
+    /// </summary>
+    public string? PromotionalNotes { get; init; }
 
     /// <summary>
     /// URL to the sponsor's Facebook profile.
@@ -116,4 +147,9 @@ public sealed record SponsorDetailResponse
     /// Contact phone numbers associated with the sponsor.
     /// </summary>
     public required IReadOnlyCollection<PhoneNumberResponse> PhoneNumbers { get; init; }
+
+    /// <summary>
+    /// The sponsor's internal contact person. Only returned to callers with sponsor-management permission.
+    /// </summary>
+    public SponsorContactResponse? Contact { get; init; }
 }

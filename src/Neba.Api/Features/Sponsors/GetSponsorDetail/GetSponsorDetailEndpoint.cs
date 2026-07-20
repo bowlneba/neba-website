@@ -64,9 +64,15 @@ internal sealed class GetSponsorDetailEndpoint(IQueryHandler<GetSponsorDetailQue
             Tier = dto.Tier,
             Category = dto.Category,
             LogoUrl = dto.LogoUrl,
+            LogoContainer = dto.LogoContainer,
+            LogoPath = dto.LogoPath,
+            LogoContentType = dto.LogoContentType,
+            LogoSizeInBytes = dto.LogoSizeInBytes,
             WebsiteUrl = dto.WebsiteUrl,
             TagPhrase = dto.TagPhrase,
             Description = dto.Description,
+            LiveReadText = dto.LiveReadText,
+            PromotionalNotes = dto.PromotionalNotes,
             FacebookUrl = dto.FacebookUrl,
             InstagramUrl = dto.InstagramUrl,
             BusinessStreet = dto.BusinessAddress?.Street,
@@ -81,6 +87,18 @@ internal sealed class GetSponsorDetailEndpoint(IQueryHandler<GetSponsorDetailQue
                 PhoneNumberType = p.PhoneNumberType,
                 PhoneNumber = p.Number,
             })],
+            Contact = dto.Contact is null
+                ? null
+                : new SponsorContactResponse
+                {
+                    Name = dto.Contact.Name,
+                    Phone = new PhoneNumberResponse
+                    {
+                        PhoneNumberType = dto.Contact.Phone.PhoneNumberType,
+                        PhoneNumber = dto.Contact.Phone.Number
+                    },
+                    Email = dto.Contact.Email
+                },
         };
 
         // Stryker disable once Statement

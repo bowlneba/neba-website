@@ -1,6 +1,7 @@
 using System.Globalization;
 
 using Neba.Api.Contracts.Contact;
+using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.TestFactory.Contact;
 using Neba.Website.Server.Sponsors;
@@ -30,6 +31,8 @@ public static class SponsorDetailViewModelFactory
         Uri? websiteUrl = null,
         string? tagline = null,
         string? aboutText = null,
+        string? liveReadText = null,
+        string? promotionalNotes = null,
         Uri? facebookUrl = null,
         Uri? instagramUrl = null,
         string? businessStreet = null,
@@ -39,7 +42,8 @@ public static class SponsorDetailViewModelFactory
         string? businessPostalCode = null,
         string? businessCountry = null,
         string? contactEmail = null,
-        IReadOnlyCollection<PhoneNumberResponse>? phoneNumbers = null)
+        IReadOnlyCollection<PhoneNumberResponse>? phoneNumbers = null,
+        SponsorContactResponse? contact = null)
         => new()
         {
             Id = id ?? Ulid.Parse(ValidId, CultureInfo.InvariantCulture),
@@ -52,6 +56,8 @@ public static class SponsorDetailViewModelFactory
             WebsiteUrl = websiteUrl,
             Tagline = tagline,
             AboutText = aboutText ?? ValidAboutText,
+            LiveReadText = liveReadText,
+            PromotionalNotes = promotionalNotes,
             FacebookUrl = facebookUrl,
             InstagramUrl = instagramUrl,
             BusinessStreet = businessStreet ?? ValidBusinessStreet,
@@ -62,6 +68,7 @@ public static class SponsorDetailViewModelFactory
             BusinessCountry = businessCountry,
             ContactEmail = contactEmail ?? ValidContactEmail,
             PhoneNumbers = phoneNumbers ?? [PhoneNumberResponseFactory.Create()],
+            Contact = contact,
         };
 
     internal static IReadOnlyCollection<SponsorDetailViewModel> Bogus(int count, Faker faker)
@@ -79,6 +86,8 @@ public static class SponsorDetailViewModelFactory
             WebsiteUrl = new Uri(faker.Internet.Url()),
             Tagline = faker.Company.CatchPhrase(),
             AboutText = faker.Company.Bs(),
+            LiveReadText = faker.Lorem.Sentences(2),
+            PromotionalNotes = faker.Lorem.Sentences(3),
             FacebookUrl = new Uri(faker.Internet.Url()),
             InstagramUrl = new Uri(faker.Internet.Url()),
             BusinessStreet = faker.Address.StreetAddress(),
@@ -89,6 +98,7 @@ public static class SponsorDetailViewModelFactory
             BusinessCountry = faker.Address.CountryCode(),
             ContactEmail = faker.Internet.Email(),
             PhoneNumbers = PhoneNumberResponseFactory.Bogus(1, faker),
+            Contact = SponsorContactResponseFactory.Bogus(1, faker).Single(),
         })];
     }
 

@@ -1,4 +1,20 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
+
+/**
+ * Focuses the trigger link and presses the given key, retrying the whole
+ * action until the dropdown reports itself open. This replaces a fixed
+ * wait: on a fresh page load the NavMenu JS module may not have finished
+ * wiring up its keydown listener yet, so the first press can be a no-op.
+ * `toPass` re-runs the action + assertion until the observable state
+ * (the `active` class) actually reflects the interaction.
+ */
+async function openDropdown(page: Page, triggerLink: Locator, navItem: Locator, key: string) {
+  await expect(async () => {
+    await triggerLink.focus();
+    await page.keyboard.press(key);
+    await expect(navItem).toHaveClass(/active/);
+  }).toPass();
+}
 
 test.describe('NavMenu Keyboard Accessibility', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
@@ -7,8 +23,6 @@ test.describe('NavMenu Keyboard Accessibility', () => {
     await page.goto('/');
     // Wait for Blazor to initialize and JS module to load
     await page.waitForSelector('.neba-navbar');
-    // Give Blazor time to initialize JS interop
-    await page.waitForTimeout(500);
   });
 
   test.describe('Skip link functionality', () => {
@@ -41,20 +55,10 @@ test.describe('NavMenu Keyboard Accessibility', () => {
 
   test.describe('Dropdown opens with Enter key', () => {
     test('Tab to Tournaments link and press Enter opens dropdown', async ({ page }) => {
+      const navItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]').first();
       const tournamentsLink = page.locator('.neba-nav-item [aria-haspopup="true"]').first();
 
-      // Tab to the Tournaments link
-      await tournamentsLink.focus();
-      await expect(tournamentsLink).toBeFocused();
-
-      await page.keyboard.press('Enter');
-
-      // Allow animation time
-      await page.waitForTimeout(250);
-
-      // Assert: parent .neba-nav-item has class active
-      const navItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]').first();
-      await expect(navItem).toHaveClass(/active/);
+      await openDropdown(page, tournamentsLink, navItem, 'Enter');
 
       // Assert: trigger link has aria-expanded="true"
       await expect(tournamentsLink).toHaveAttribute('aria-expanded', 'true');
@@ -67,17 +71,10 @@ test.describe('NavMenu Keyboard Accessibility', () => {
 
   test.describe('Dropdown opens with Space key', () => {
     test('Tab to Tournaments link and press Space opens dropdown', async ({ page }) => {
+      const navItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]').first();
       const tournamentsLink = page.locator('.neba-nav-item [aria-haspopup="true"]').first();
 
-      await tournamentsLink.focus();
-      await expect(tournamentsLink).toBeFocused();
-
-      await page.keyboard.press('Space');
-
-      await page.waitForTimeout(250);
-
-      const navItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]').first();
-      await expect(navItem).toHaveClass(/active/);
+      await openDropdown(page, tournamentsLink, navItem, 'Space');
 
       await expect(tournamentsLink).toHaveAttribute('aria-expanded', 'true');
 
@@ -88,16 +85,10 @@ test.describe('NavMenu Keyboard Accessibility', () => {
 
   test.describe('Dropdown opens with ArrowDown', () => {
     test('Tab to Tournaments link and press ArrowDown opens dropdown', async ({ page }) => {
+      const navItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]').first();
       const tournamentsLink = page.locator('.neba-nav-item [aria-haspopup="true"]').first();
 
-      await tournamentsLink.focus();
-
-      await page.keyboard.press('ArrowDown');
-
-      await page.waitForTimeout(250);
-
-      const navItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]').first();
-      await expect(navItem).toHaveClass(/active/);
+      await openDropdown(page, tournamentsLink, navItem, 'ArrowDown');
 
       const firstDropdownLink = navItem.locator('.neba-dropdown-link').first();
       await expect(firstDropdownLink).toBeFocused();
@@ -107,10 +98,9 @@ test.describe('NavMenu Keyboard Accessibility', () => {
   test.describe('Arrow key navigation within dropdown', () => {
     test.beforeEach(async ({ page }) => {
       // Open the History dropdown (4 links: Champions, Bowler of the Year, High Average, High Block)
+      const navItem = page.locator('.neba-nav-item[data-action="toggle-dropdown"]').nth(2);
       const historyLink = page.locator('.neba-nav-item [aria-haspopup="true"]').nth(2);
-      await historyLink.focus();
-      await page.keyboard.press('Enter');
-      await page.waitForTimeout(250);
+      await openDropdown(page, historyLink, navItem, 'Enter');
     });
 
     test('ArrowDown moves focus to next item', async ({ page }) => {
@@ -169,19 +159,14 @@ test.describe('NavMenu Keyboard Accessibility', () => {
       const tournamentsLink = navItem.locator('[aria-haspopup="true"]');
 
       // Open dropdown
-      await tournamentsLink.focus();
-      await page.keyboard.press('Enter');
-      await page.waitForTimeout(250);
+      await openDropdown(page, tournamentsLink, navItem, 'Enter');
 
-      // Verify dropdown is open and focus is on dropdown item
-      await expect(navItem).toHaveClass(/active/);
+      // Verify focus is on dropdown item
       const firstDropdownLink = navItem.locator('.neba-dropdown-link').first();
       await expect(firstDropdownLink).toBeFocused();
 
       // Press Escape
       await page.keyboard.press('Escape');
-
-      await page.waitForTimeout(250);
 
       // Assert: dropdown closed (aria-expanded="false")
       await expect(tournamentsLink).toHaveAttribute('aria-expanded', 'false');
@@ -198,16 +183,10 @@ test.describe('NavMenu Keyboard Accessibility', () => {
       const tournamentsLink = navItem.locator('[aria-haspopup="true"]');
 
       // Open dropdown
-      await tournamentsLink.focus();
-      await page.keyboard.press('Enter');
-      await page.waitForTimeout(250);
-
-      await expect(navItem).toHaveClass(/active/);
+      await openDropdown(page, tournamentsLink, navItem, 'Enter');
 
       // Press Tab
       await page.keyboard.press('Tab');
-
-      await page.waitForTimeout(250);
 
       // Assert: dropdown closes
       await expect(navItem).not.toHaveClass(/active/);
@@ -226,17 +205,12 @@ test.describe('NavMenu Keyboard Accessibility', () => {
       await expect(tournamentsLink).toHaveAttribute('aria-expanded', 'false');
 
       // Open dropdown
-      await tournamentsLink.focus();
-      await page.keyboard.press('Enter');
-      await page.waitForTimeout(250);
-
-      // aria-expanded should be "true"
+      await openDropdown(page, tournamentsLink, navItem, 'Enter');
       await expect(tournamentsLink).toHaveAttribute('aria-expanded', 'true');
 
       // Focus back on trigger and close
       await tournamentsLink.focus();
       await page.keyboard.press('Enter');
-      await page.waitForTimeout(250);
 
       // aria-expanded should be "false"
       await expect(tournamentsLink).toHaveAttribute('aria-expanded', 'false');

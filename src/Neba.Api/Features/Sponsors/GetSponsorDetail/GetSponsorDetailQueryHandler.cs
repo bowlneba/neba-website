@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+
 using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
@@ -16,56 +18,67 @@ internal sealed class GetSponsorDetailQueryHandler(AppDbContext appDbContext, IF
     private readonly IQueryable<Sponsor> _sponsors = appDbContext.Sponsors.AsNoTracking();
     private readonly IFileStorageService _fileStorageService = fileStorageService;
 
+    private static readonly Expression<Func<Sponsor, SponsorRow>> ProjectRow = sponsor => new SponsorRow(
+        sponsor.Id,
+        sponsor.Name,
+        sponsor.Slug,
+        sponsor.Logo != null ? sponsor.Logo.Container : null,
+        sponsor.Logo != null ? sponsor.Logo.Path : null,
+        sponsor.Logo != null ? sponsor.Logo.ContentType : null,
+        sponsor.Logo != null ? sponsor.Logo.SizeInBytes : null,
+        sponsor.IsCurrentSponsor,
+        sponsor.Priority,
+        sponsor.Tier.Name,
+        sponsor.Category.Name,
+        sponsor.TagPhrase,
+        sponsor.Description,
+        sponsor.LiveReadText,
+        sponsor.PromotionalNotes,
+        sponsor.WebsiteUrl,
+        sponsor.FacebookUrl,
+        sponsor.InstagramUrl,
+        sponsor.BusinessAddress != null
+            ? new AddressDto
+            {
+                Street = sponsor.BusinessAddress.Street,
+                Unit = sponsor.BusinessAddress.Unit,
+                City = sponsor.BusinessAddress.City,
+                Region = sponsor.BusinessAddress.Region,
+                PostalCode = sponsor.BusinessAddress.PostalCode,
+                Country = sponsor.BusinessAddress.Country
+            }
+            : null,
+        sponsor.BusinessEmail != null ? sponsor.BusinessEmail.Value : null,
+        sponsor.PhoneNumbers.Select(phoneNumber => new PhoneNumberDto
+        {
+            Number = phoneNumber.Number,
+            PhoneNumberType = phoneNumber.Type.Name
+        }).ToList(),
+        sponsor.SponsorContact != null
+            ? new SponsorContactRow(
+                sponsor.SponsorContact.Name,
+                sponsor.SponsorContact.Phone.Type.Name,
+                sponsor.SponsorContact.Phone.Number,
+                sponsor.SponsorContact.Email.Value)
+            : null);
+
     public async Task<ErrorOr<SponsorDetailDto>> HandleAsync(GetSponsorDetailQuery query, CancellationToken cancellationToken)
     {
         var row = await _sponsors
             .Where(sponsor => sponsor.Slug == query.Slug)
-            .Select(sponsor => new
-            {
-                sponsor.Id,
-                sponsor.Name,
-                sponsor.Slug,
-                LogoContainer = sponsor.Logo != null ? sponsor.Logo.Container : null,
-                LogoPath = sponsor.Logo != null ? sponsor.Logo.Path : null,
-                sponsor.IsCurrentSponsor,
-                sponsor.Priority,
-                Tier = sponsor.Tier.Name,
-                Category = sponsor.Category.Name,
-                sponsor.TagPhrase,
-                sponsor.Description,
-                sponsor.WebsiteUrl,
-                sponsor.FacebookUrl,
-                sponsor.InstagramUrl,
-                BusinessAddress = sponsor.BusinessAddress != null
-                    ? new AddressDto
-                    {
-                        Street = sponsor.BusinessAddress.Street,
-                        Unit = sponsor.BusinessAddress.Unit,
-                        City = sponsor.BusinessAddress.City,
-                        Region = sponsor.BusinessAddress.Region,
-                        PostalCode = sponsor.BusinessAddress.PostalCode,
-                        Country = sponsor.BusinessAddress.Country
-                    }
-                    : null,
-                BusinessEmailAddress = sponsor.BusinessEmail != null ? sponsor.BusinessEmail.Value : null,
-                PhoneNumbers = sponsor.PhoneNumbers.Select(phoneNumber => new PhoneNumberDto
-                {
-                    Number = phoneNumber.Number,
-                    PhoneNumberType = phoneNumber.Type.Name
-                }).ToList()
-            }).SingleOrDefaultAsync(cancellationToken);
+            .Select(ProjectRow)
+            .SingleOrDefaultAsync(cancellationToken);
 
-        if (row is null)
-        {
-            return SponsorErrors.SponsorNotFound(query.Slug);
-        }
+        // An inactive sponsor gets the same "not found" response as a nonexistent slug —
+        // visible only to callers who can manage sponsors.
+        return row is null || (!row.IsCurrentSponsor && !query.CallerHasSponsorManagementPermission)
+            ? SponsorErrors.SponsorNotFound(query.Slug)
+            : MapToDto(row, query, _fileStorageService);
+    }
 
-        if (!row.IsCurrentSponsor && !query.CallerHasSponsorManagementPermission)
-        {
-            // Same "not found" response an anonymous/unpermitted caller gets for a nonexistent slug —
-            // an inactive sponsor is only visible to callers who can manage sponsors.
-            return SponsorErrors.SponsorNotFound(query.Slug);
-        }
+    private static SponsorDetailDto MapToDto(SponsorRow row, GetSponsorDetailQuery query, IFileStorageService fileStorageService)
+    {
+        var canManage = query.CallerHasSponsorManagementPermission;
 
         return new SponsorDetailDto
         {
@@ -73,20 +86,64 @@ internal sealed class GetSponsorDetailQueryHandler(AppDbContext appDbContext, IF
             Name = row.Name,
             Slug = row.Slug,
             LogoUrl = row.LogoContainer is not null && row.LogoPath is not null
-                ? _fileStorageService.GetBlobUri(row.LogoContainer, row.LogoPath)
+                ? fileStorageService.GetBlobUri(row.LogoContainer, row.LogoPath)
                 : null,
+            LogoContainer = canManage ? row.LogoContainer : null,
+            LogoPath = canManage ? row.LogoPath : null,
+            LogoContentType = canManage ? row.LogoContentType : null,
+            LogoSizeInBytes = canManage ? row.LogoSizeInBytes : null,
             IsCurrentSponsor = row.IsCurrentSponsor,
             Priority = row.Priority,
             Tier = row.Tier,
             Category = row.Category,
             TagPhrase = row.TagPhrase,
             Description = row.Description,
+            LiveReadText = canManage ? row.LiveReadText : null,
+            PromotionalNotes = canManage ? row.PromotionalNotes : null,
             WebsiteUrl = row.WebsiteUrl,
             FacebookUrl = row.FacebookUrl,
             InstagramUrl = row.InstagramUrl,
             BusinessAddress = row.BusinessAddress,
             BusinessEmailAddress = row.BusinessEmailAddress,
-            PhoneNumbers = row.PhoneNumbers
+            PhoneNumbers = row.PhoneNumbers,
+            Contact = canManage && row.Contact is not null
+                ? new SponsorContactDto
+                {
+                    Name = row.Contact.Name,
+                    Phone = new PhoneNumberDto
+                    {
+                        PhoneNumberType = row.Contact.PhoneNumberType,
+                        Number = row.Contact.PhoneNumber
+                    },
+                    Email = row.Contact.Email
+                }
+                : null
         };
     }
+
+    private sealed record SponsorRow(
+        SponsorId Id,
+        string Name,
+        string Slug,
+        string? LogoContainer,
+        string? LogoPath,
+        string? LogoContentType,
+        long? LogoSizeInBytes,
+        bool IsCurrentSponsor,
+        int Priority,
+        string Tier,
+        string Category,
+        string? TagPhrase,
+        string? Description,
+        string? LiveReadText,
+        string? PromotionalNotes,
+        Uri? WebsiteUrl,
+        Uri? FacebookUrl,
+        Uri? InstagramUrl,
+        AddressDto? BusinessAddress,
+        string? BusinessEmailAddress,
+        List<PhoneNumberDto> PhoneNumbers,
+        SponsorContactRow? Contact);
+
+    private sealed record SponsorContactRow(string Name, string PhoneNumberType, string PhoneNumber, string Email);
 }

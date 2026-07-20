@@ -3313,10 +3313,32 @@ public async Task MigrateOilPatterns()
 		KegelId = new Guid("b8f40013-c6fe-ec11-82e5-000d3a3b9d76")
 	};
 
+	var keeneDoubles2026 = new OilPatterns
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "2024 SYC Louisiana - Long",
+		Length = 45,
+		Volume = 29.65m,
+		LeftRatio = 3.29m,
+		RightRatio = 3.29m,
+		KegelId = new Guid("d3335a93-70a3-ef11-8a6a-6045bd06e510")
+	};
+
+	var keeneSingles2026 = new OilPatterns
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "2025 PBA Shark",
+		Length = 47,
+		Volume = 32.7m,
+		LeftRatio = 2.19m,
+		RightRatio = 2.45m,
+		KegelId = new Guid("daec2269-51d3-ef11-8eea-6045bd057455")
+	};
+
 	OilPatterns.AddRange(
 		janSingles2026, febDoubles2026, febTrios2026, marSingles2026,
 		aprNonChamp2026, aprSenior2026, aprSingles2026, maySingles2026,
-		junSingles2026, junOverUnder2026, julSingles2026);
+		junSingles2026, junOverUnder2026, julSingles2026, keeneDoubles2026, keeneSingles2026);
 
 	TournamentOilPatterns.AddRange(
 		new TournamentOilPatterns 
@@ -3384,9 +3406,21 @@ public async Task MigrateOilPatterns()
 			TournamentId = Tournaments.Single(t => t.EndDate == new DateOnly(2026, 7, 12)).Id,
 			OilPattern = julSingles2026,
 			TournamentRounds = 5
+		},
+		new TournamentOilPatterns
+		{
+			TournamentId = Tournaments.Single(t => t.EndDate == new DateOnly(2026, 8, 1)).Id,
+			OilPattern = keeneDoubles2026,
+			TournamentRounds = 5
+		},
+		new TournamentOilPatterns
+		{
+			TournamentId = Tournaments.Single(t => t.EndDate == new DateOnly(2026, 8, 2)).Id,
+			OilPattern = keeneSingles2026,
+			TournamentRounds = 5
 		}
 	);
-	
+
 	await SaveChangesAsync();
 	
 	"(Tournament) Oil Patterns Migrated".Dump();

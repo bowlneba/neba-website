@@ -1,10 +1,12 @@
 using Bunit;
+using Bunit.TestDoubles;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.TestFactory.Attributes;
@@ -25,6 +27,7 @@ public sealed class SponsorDetailTests : IDisposable
 {
     private readonly BunitContext _ctx;
     private readonly Mock<ISponsorsApi> _mockApi;
+    private readonly BunitAuthorizationContext _authContext;
 
     public SponsorDetailTests()
     {
@@ -36,7 +39,7 @@ public sealed class SponsorDetailTests : IDisposable
 
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
-        _ctx.AddAuthorization();
+        _authContext = _ctx.AddAuthorization();
 
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
@@ -397,6 +400,175 @@ public sealed class SponsorDetailTests : IDisposable
 
         // Assert
         cut.Markup.ShouldNotContain("Social Media");
+    }
+
+    // ── Edit button ──────────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not render Edit Sponsor link when user lacks EditSponsor permission")]
+    public void Render_ShouldNotRenderEditLink_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create());
+
+        // Act
+        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
+
+        // Assert
+        cut.Markup.ShouldNotContain("Edit Sponsor");
+    }
+
+    [Fact(DisplayName = "Should render Edit Sponsor link when user has EditSponsor permission")]
+    public void Render_ShouldRenderEditLink_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.EditSponsor.PolicyName);
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create());
+
+        // Act
+        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "acme-corp"));
+
+        // Assert
+        cut.Markup.ShouldContain("Edit Sponsor");
+        cut.Markup.ShouldContain("/sponsors/acme-corp/edit");
+    }
+
+    // ── Staff-only info ──────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not render Staff-Only Info section when user lacks EditSponsor permission")]
+    public void Render_ShouldNotRenderStaffOnlyInfo_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create(
+            liveReadText: "Read this live!",
+            promotionalNotes: "Internal notes"));
+
+        // Act
+        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
+
+        // Assert
+        cut.Markup.ShouldNotContain("Staff-Only Info");
+        cut.Markup.ShouldNotContain("Read this live!");
+        cut.Markup.ShouldNotContain("Internal notes");
+    }
+
+    [Fact(DisplayName = "Should render Staff-Only Info section when user has EditSponsor permission")]
+    public void Render_ShouldRenderStaffOnlyInfo_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.EditSponsor.PolicyName);
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create(
+            liveReadText: "Read this live!",
+            promotionalNotes: "Internal notes"));
+
+        // Act
+        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
+
+        // Assert
+        cut.Markup.ShouldContain("Staff-Only Info");
+        cut.Markup.ShouldContain("Read this live!");
+        cut.Markup.ShouldContain("Internal notes");
+    }
+
+    [Fact(DisplayName = "Should not render Staff-Only Info section when no LiveReadText or PromotionalNotes provided")]
+    public void Render_ShouldNotRenderStaffOnlyInfo_WhenFieldsAreNull()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.EditSponsor.PolicyName);
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create(liveReadText: null, promotionalNotes: null));
+
+        // Act
+        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
+
+        // Assert
+        cut.Markup.ShouldNotContain("Staff-Only Info");
+    }
+
+    // ── Internal contact ─────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not render Internal Contact section when user lacks EditSponsor permission")]
+    public void Render_ShouldNotRenderInternalContact_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var contact = SponsorContactResponseFactory.Create(name: "Jane Staff");
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create(contact: contact));
+
+        // Act
+        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
+
+        // Assert
+        cut.Markup.ShouldNotContain("Internal Contact");
+        cut.Markup.ShouldNotContain("Jane Staff");
+    }
+
+    [Fact(DisplayName = "Should render Internal Contact section when user has EditSponsor permission")]
+    public void Render_ShouldRenderInternalContact_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.EditSponsor.PolicyName);
+        var contact = SponsorContactResponseFactory.Create(name: "Jane Staff", email: "jane@example.com");
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create(contact: contact));
+
+        // Act
+        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
+
+        // Assert
+        cut.Markup.ShouldContain("Internal Contact");
+        cut.Markup.ShouldContain("Jane Staff");
+        cut.Markup.ShouldContain("mailto:jane@example.com");
+    }
+
+    [Fact(DisplayName = "Should not render Internal Contact section when Contact is null")]
+    public void Render_ShouldNotRenderInternalContact_WhenContactIsNull()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.EditSponsor.PolicyName);
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create(contact: null));
+
+        // Act
+        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
+
+        // Assert
+        cut.Markup.ShouldNotContain("Internal Contact");
+    }
+
+    // ── Active/Inactive badge ────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not render Active/Inactive badge when user lacks CanManageSponsors permission")]
+    public void Render_ShouldNotRenderStatusBadge_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create(isCurrentSponsor: true));
+
+        // Act
+        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
+
+        // Assert
+        cut.FindAll(".sponsor-detail__badge--status-active").ShouldBeEmpty();
+        cut.FindAll(".sponsor-detail__badge--status-inactive").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should render Active badge when user has CanManageSponsors permission and sponsor is current")]
+    public void Render_ShouldRenderActiveBadge_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.CanManageSponsorsPolicyName);
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create(isCurrentSponsor: true));
+
+        // Act
+        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
+
+        // Assert
+        cut.Find(".sponsor-detail__badge--status-active").ShouldNotBeNull();
     }
 
     // ── Footer ───────────────────────────────────────────────────────────────

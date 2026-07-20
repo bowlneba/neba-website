@@ -44,6 +44,38 @@ public sealed class PolicyExtensionsTests
         result.Succeeded.ShouldBeFalse();
     }
 
+    [Fact(DisplayName = "AddNebaPolicies should succeed when caller has a sponsor management permission")]
+    public async Task AddNebaPolicies_ShouldSucceed_WhenCallerHasSponsorManagementPermission()
+    {
+        // Arrange
+        var provider = BuildAuthorizationServiceProvider();
+        var authorizationService = provider.GetRequiredService<IAuthorizationService>();
+        var identity = new ClaimsIdentity([new Claim(Permissions.ClaimType, Permissions.EditSponsor.Value)]);
+        var principal = new ClaimsPrincipal(identity);
+
+        // Act
+        var result = await authorizationService.AuthorizeAsync(principal, Permissions.CanManageSponsorsPolicyName);
+
+        // Assert
+        result.Succeeded.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "AddNebaPolicies should fail when caller has no sponsor management permission")]
+    public async Task AddNebaPolicies_ShouldFail_WhenCallerHasNoSponsorManagementPermission()
+    {
+        // Arrange
+        var provider = BuildAuthorizationServiceProvider();
+        var authorizationService = provider.GetRequiredService<IAuthorizationService>();
+        var identity = new ClaimsIdentity([new Claim(Permissions.ClaimType, "Sponsors.UnrelatedPermission")]);
+        var principal = new ClaimsPrincipal(identity);
+
+        // Act
+        var result = await authorizationService.AuthorizeAsync(principal, Permissions.CanManageSponsorsPolicyName);
+
+        // Assert
+        result.Succeeded.ShouldBeFalse();
+    }
+
     private static ServiceProvider BuildAuthorizationServiceProvider()
     {
         var services = new ServiceCollection();

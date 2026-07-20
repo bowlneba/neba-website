@@ -1,4 +1,5 @@
 using Neba.Api.Contracts.Sponsors.CreateSponsor;
+using Neba.Api.Contracts.Sponsors.EditSponsor;
 using Neba.Api.Contracts.Uploads;
 
 using Refit;
@@ -51,6 +52,21 @@ public interface ISponsorsApi
     /// </returns>
     [Post("/sponsors")]
     Task<IApiResponse<SponsorResponse>> CreateSponsorAsync(CreateSponsorRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Edits an existing sponsor.
+    /// </summary>
+    /// <param name="id">
+    /// The ULID string identifying the sponsor to edit.
+    /// </param>
+    /// <param name="request">
+    /// The sponsor fields to update.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token to cancel the operation.
+    /// </param>
+    [Put("/sponsors/{id}")]
+    Task<IApiResponse> EditSponsorAsync(string id, EditSponsorRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Uploads a sponsor logo. Requires the Sponsors.CreateSponsor permission.

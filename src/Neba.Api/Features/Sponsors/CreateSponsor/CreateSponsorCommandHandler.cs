@@ -2,8 +2,6 @@ using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
 
-using Neba.Api.Contacts;
-using Neba.Api.Contacts.Domain;
 using Neba.Api.Database;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Storage.Domain;
@@ -20,33 +18,18 @@ internal sealed class CreateSponsorCommandHandler(
 {
     public async Task<ErrorOr<CreatedSponsor>> HandleAsync(CreateSponsorCommand command, CancellationToken cancellationToken)
     {
-        var addressResult = BuildBusinessAddress(command);
+        var fieldsResult = SponsorFieldBuilder.BuildAll(
+            command.BusinessStreet, command.BusinessUnit, command.BusinessCity, command.BusinessState, command.BusinessPostalCode,
+            command.BusinessEmailAddress,
+            command.PhoneNumbers,
+            command.ContactName, command.ContactPhoneType, command.ContactPhoneNumber, command.ContactPhoneExtension, command.ContactEmail);
 
-        if (addressResult.IsError)
+        if (fieldsResult.IsError)
         {
-            return addressResult.Errors;
+            return fieldsResult.Errors;
         }
 
-        var emailResult = BuildBusinessEmail(command.BusinessEmailAddress);
-
-        if (emailResult.IsError)
-        {
-            return emailResult.Errors;
-        }
-
-        var phoneNumbersResult = BuildPhoneNumbers(command.PhoneNumbers);
-
-        if (phoneNumbersResult.IsError)
-        {
-            return phoneNumbersResult.Errors;
-        }
-
-        var contactResult = BuildSponsorContact(command);
-
-        if (contactResult.IsError)
-        {
-            return contactResult.Errors;
-        }
+        var fields = fieldsResult.Value;
 
         var titleSponsorshipTaken = command.Tier == SponsorTier.TitleSponsor
             && await appDbContext.Sponsors.AnyAsync(sponsor => sponsor.IsCurrentSponsor && sponsor.Tier == SponsorTier.TitleSponsor, cancellationToken);
@@ -67,10 +50,10 @@ internal sealed class CreateSponsorCommandHandler(
             promotionalNotes: command.PromotionalNotes,
             facebookUrl: command.FacebookUrl,
             instagramUrl: command.InstagramUrl,
-            businessAddress: addressResult.Value,
-            businessEmail: emailResult.Value,
-            phoneNumbers: phoneNumbersResult.Value,
-            sponsorContact: contactResult.Value
+            businessAddress: fields.BusinessAddress,
+            businessEmail: fields.BusinessEmail,
+            phoneNumbers: fields.PhoneNumbers,
+            sponsorContact: fields.Contact
         );
 
         if (sponsorResult.IsError)
@@ -89,7 +72,7 @@ internal sealed class CreateSponsorCommandHandler(
 
         await appDbContext.Sponsors.AddAsync(sponsor, cancellationToken);
 
-        await RemoveClaimedPendingUploadAsync(sponsor.Logo, cancellationToken);
+        await SponsorPendingUploadCleaner.RemoveClaimedAsync(appDbContext, sponsor.Logo, cancellationToken);
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -102,97 +85,6 @@ internal sealed class CreateSponsorCommandHandler(
         };
     }
 
-    private static ErrorOr<Address?> BuildBusinessAddress(CreateSponsorCommand command)
-    {
-        if (string.IsNullOrWhiteSpace(command.BusinessStreet))
-        {
-            return (Address?)null;
-        }
-
-        ArgumentNullException.ThrowIfNull(command.BusinessState);
-
-        var result = Address.Create(
-            command.BusinessStreet,
-            command.BusinessUnit,
-            command.BusinessCity ?? string.Empty,
-            command.BusinessState,
-            command.BusinessPostalCode ?? string.Empty);
-
-        return result.IsError
-            ? result.Errors
-            : result.Value;
-    }
-
-    private static ErrorOr<EmailAddress?> BuildBusinessEmail(string? businessEmailAddress)
-    {
-        if (string.IsNullOrWhiteSpace(businessEmailAddress))
-        {
-            return (EmailAddress?)null;
-        }
-
-        var result = EmailAddress.Create(businessEmailAddress);
-
-        return result.IsError
-            ? result.Errors
-            : result.Value;
-    }
-
-    private static ErrorOr<IReadOnlyCollection<PhoneNumber>> BuildPhoneNumbers(
-        IReadOnlyCollection<PhoneNumberInput> phoneNumbers)
-    {
-        var built = new List<PhoneNumber>(phoneNumbers.Count);
-
-        foreach (var phoneNumber in phoneNumbers)
-        {
-            var result = PhoneNumber.CreateNorthAmerican(phoneNumber.Type, phoneNumber.Number, phoneNumber.Extension);
-
-            if (result.IsError)
-            {
-                return result.Errors;
-            }
-
-            built.Add(result.Value);
-        }
-
-        return built;
-    }
-
-    // All-or-nothing per scoping decision: if any of Name/Phone/Email is supplied, all three must be.
-    private static ErrorOr<ContactInfo?> BuildSponsorContact(CreateSponsorCommand command)
-    {
-        var anySupplied = !string.IsNullOrWhiteSpace(command.ContactName)
-            || !string.IsNullOrWhiteSpace(command.ContactPhoneNumber)
-            || !string.IsNullOrWhiteSpace(command.ContactEmail);
-
-        if (!anySupplied)
-        {
-            return (ContactInfo?)null;
-        }
-
-        ArgumentNullException.ThrowIfNull(command.ContactPhoneType);
-
-        var phoneResult = PhoneNumber.CreateNorthAmerican(
-            command.ContactPhoneType,
-            command.ContactPhoneNumber ?? string.Empty,
-            command.ContactPhoneExtension);
-
-        if (phoneResult.IsError)
-        {
-            return phoneResult.Errors;
-        }
-
-        var emailResult = EmailAddress.Create(command.ContactEmail ?? string.Empty);
-
-        return emailResult.IsError
-            ? emailResult.Errors
-            : new ContactInfo
-            {
-                Name = command.ContactName ?? string.Empty,
-                Phone = phoneResult.Value,
-                Email = emailResult.Value
-            };
-    }
-
     // Check-then-insert: see CreateArticleCommandHandler.EnsureSlugIsAvailableAsync for the same
     // caveat about a theoretical concurrent-insert race — not worth a retry path at current volume.
     private async Task<ErrorOr<Success>> EnsureSlugIsAvailableAsync(string slug, CancellationToken cancellationToken)
@@ -202,19 +94,5 @@ internal sealed class CreateSponsorCommandHandler(
         return slugExists
             ? SponsorErrors.SlugAlreadyExists(slug)
             : Result.Success;
-    }
-
-    private async Task RemoveClaimedPendingUploadAsync(StoredFile? logo, CancellationToken cancellationToken)
-    {
-        if (logo is null)
-        {
-            return;
-        }
-
-        var claimed = await appDbContext.PendingUploads
-            .Where(pending => pending.Container == logo.Container && pending.Path == logo.Path)
-            .ToListAsync(cancellationToken);
-
-        appDbContext.PendingUploads.RemoveRange(claimed);
     }
 }

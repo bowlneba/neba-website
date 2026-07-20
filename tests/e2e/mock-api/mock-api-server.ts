@@ -47,6 +47,19 @@ function sendJsonResponse(res: ServerResponse, data: unknown, statusCode = 200):
   res.end(JSON.stringify(data));
 }
 
+// Sends the mocked error response for a route registered via /__mock/fail and returns
+// true if it did, so the caller can bail out of its own handling.
+function sendMockOverrideErrorIfSet(res: ServerResponse, pathname: string): boolean {
+  const override = mockOverrides.get(pathname);
+
+  if (override?.status != null && override.status >= 400) {
+    sendJsonResponse(res, { error: 'Mock error' }, override.status);
+    return true;
+  }
+
+  return false;
+}
+
 function slugify(title: string): string {
   return title
     .trim()
@@ -648,12 +661,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   const pathname = requestUrl.pathname;
 
   if (req.method === 'POST' && pathname === '/news') {
-    const override = mockOverrides.get(pathname);
-
-    if (override?.status != null && override.status >= 400) {
-      sendJsonResponse(res, { error: 'Mock error' }, override.status);
-      return;
-    }
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
     const body = await readRequestBody(req);
     const parsed = JSON.parse(body) as { article?: { title?: string; slug?: string } };
@@ -664,12 +672,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   }
 
   if (req.method === 'POST' && pathname === '/sponsors') {
-    const override = mockOverrides.get(pathname);
-
-    if (override?.status != null && override.status >= 400) {
-      sendJsonResponse(res, { error: 'Mock error' }, override.status);
-      return;
-    }
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
     const body = await readRequestBody(req);
     const parsed = JSON.parse(body) as {
@@ -759,17 +762,12 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   }
 
   if (req.method === 'GET') {
-    const override = mockOverrides.get(pathname);
-
-    const delayMs = override?.delayMs;
+    const delayMs = mockOverrides.get(pathname)?.delayMs;
     if (delayMs) {
       await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
     }
 
-    if (override?.status != null && override.status >= 400) {
-      sendJsonResponse(res, { error: 'Mock error' }, override.status);
-      return;
-    }
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
     const data = resolveGetRoute(pathname, requestUrl.searchParams);
     if (data !== null) {
@@ -779,25 +777,15 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   }
 
   if (req.method === 'DELETE' && pathname.startsWith('/news/')) {
-    const override = mockOverrides.get(pathname);
-
-    if (override?.status != null && override.status >= 400) {
-      sendJsonResponse(res, { error: 'Mock error' }, override.status);
-      return;
-    }
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
     res.writeHead(204);
     res.end();
     return;
   }
 
-  if (req.method === 'PUT' && pathname.startsWith('/news/')) {
-    const override = mockOverrides.get(pathname);
-
-    if (override?.status != null && override.status >= 400) {
-      sendJsonResponse(res, { error: 'Mock error' }, override.status);
-      return;
-    }
+  if (req.method === 'PUT' && (pathname.startsWith('/news/') || pathname.startsWith('/sponsors/'))) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
     res.writeHead(204);
     res.end();
