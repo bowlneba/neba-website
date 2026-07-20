@@ -16,8 +16,8 @@ internal static class SponsorInputMapping
             return null;
         }
 
-        return Uri.TryCreate(value, UriKind.Absolute, out var uri) 
-            ? uri 
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri)
+            ? uri
             : null;
     }
 
