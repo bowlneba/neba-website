@@ -49,9 +49,11 @@ public sealed class UploadSponsorLogoEndpointTests
         var fileStorageServiceMock = CreateFileStorageServiceMock(blobUri);
 
         var endpoint = Factory.Create<UploadSponsorLogoEndpoint>(stagingServiceMock.Object, fileStorageServiceMock.Object);
+        using var file = CreateFile();
+        using var stream = file.OpenReadStream();
 
         // Act
-        await endpoint.HandleAsync(new UploadSponsorLogoRequest { File = CreateFile() }, ct);
+        await endpoint.HandleAsync(new UploadSponsorLogoRequest { File = file }, ct);
 
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
