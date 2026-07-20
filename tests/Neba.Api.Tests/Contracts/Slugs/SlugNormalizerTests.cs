@@ -1,10 +1,10 @@
-using Neba.Api.Domain;
+using Neba.Api.Contracts.Slugs;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Api.Tests.Domain;
+namespace Neba.Api.Tests.Contracts.Slugs;
 
 [UnitTest]
-[Component("Domain")]
+[Component("Contracts")]
 public sealed class SlugNormalizerTests
 {
     [Theory(DisplayName = "Normalize converts titles into URL-safe slugs")]

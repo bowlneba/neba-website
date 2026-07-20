@@ -3,6 +3,7 @@ using System.Text;
 
 using ErrorOr;
 
+using Neba.Api.Contracts.Slugs;
 using Neba.Api.Domain;
 using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Features.Tournaments.Domain;

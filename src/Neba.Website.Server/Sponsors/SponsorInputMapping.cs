@@ -16,7 +16,9 @@ internal static class SponsorInputMapping
             return null;
         }
 
-        return Uri.TryCreate(value, UriKind.Absolute, out var uri) ? uri : null;
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri) 
+            ? uri 
+            : null;
     }
 
     public static IReadOnlyCollection<SponsorPhoneNumberInput> BuildPhoneNumberInputs(IEnumerable<TrackedPhoneNumber> phoneNumbers) =>

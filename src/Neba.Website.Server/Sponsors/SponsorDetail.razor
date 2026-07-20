@@ -138,7 +138,7 @@ else
 
                 <section class="neba-card sponsor-detail__contact-card">
 
-                    @if (_model?.HasAddress == true)
+                    @if (_model.HasAddress)
                     {
                         <div class="sponsor-detail__contact-section">
                             <h3 class="sponsor-detail__contact-label">Business Location</h3>
@@ -166,7 +166,7 @@ else
                         </div>
                     }
 
-                    @if (_model?.HasContactChannels == true)
+                    @if (_model.HasContactChannels)
                     {
                         <div class="sponsor-detail__contact-section">
                             <h3 class="sponsor-detail__contact-label">Contact Channels</h3>
