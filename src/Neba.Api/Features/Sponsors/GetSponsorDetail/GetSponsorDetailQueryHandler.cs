@@ -71,12 +71,9 @@ internal sealed class GetSponsorDetailQueryHandler(AppDbContext appDbContext, IF
 
         // An inactive sponsor gets the same "not found" response as a nonexistent slug —
         // visible only to callers who can manage sponsors.
-        if (row is null || (!row.IsCurrentSponsor && !query.CallerHasSponsorManagementPermission))
-        {
-            return SponsorErrors.SponsorNotFound(query.Slug);
-        }
-
-        return MapToDto(row, query, _fileStorageService);
+        return row is null || (!row.IsCurrentSponsor && !query.CallerHasSponsorManagementPermission)
+            ? SponsorErrors.SponsorNotFound(query.Slug)
+            : MapToDto(row, query, _fileStorageService);
     }
 
     private static SponsorDetailDto MapToDto(SponsorRow row, GetSponsorDetailQuery query, IFileStorageService fileStorageService)
