@@ -346,15 +346,6 @@ Flag when:
 
 ## Testing
 
-### Architecture Tests
-
-Architecture rules are enforced automatically by `Neba.Architecture.Tests` (ArchUnitNET). These run in CI before unit tests and fail the build on violations — no manual review needed for what they cover.
-
-Flag when:
-
-- A new feature with a domain namespace (e.g., `Neba.Api.Features.NewFeature.Domain`) is added but `BoundedContextNamespaces` in `DomainBoundaryTests.cs` is not updated. This is the **only file that needs updating** when a new feature domain is introduced.
-- A new handler interface type is introduced (beyond `ICommandHandler`, `IQueryHandler`, `IBackgroundJobHandler`) without corresponding naming, visibility, and colocation tests added to `Neba.Architecture.Tests`.
-
 ### Required Coverage
 
 New code should maintain 80%+ coverage (enforced by SonarQube). Flag when:

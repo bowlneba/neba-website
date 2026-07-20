@@ -12,7 +12,8 @@ namespace Neba.Api.Features.Sponsors.UploadSponsorLogo;
 internal sealed class UploadSponsorLogoRequestValidator
     : Validator<UploadSponsorLogoRequest>
 {
-    private const long MaxSizeBytes = 5 * 1024 * 1024; // 5 MB
+    private const long MaxSizeMb = 5;
+    private const long MaxSizeBytes = MaxSizeMb * 1024 * 1024;
 
     private static readonly IReadOnlySet<string> AllowedContentTypes = new HashSet<string>
     {
@@ -38,7 +39,7 @@ internal sealed class UploadSponsorLogoRequestValidator
         RuleFor(request => request.File.Length)
             .Must(length => FileUploadValidationRules.IsWithinSizeLimit(length, MaxSizeBytes))
             .WithErrorCode(FileUploadErrors.FileSizeExceedsLimit.Code)
-            .WithMessage($"Logo must not exceed {MaxSizeBytes / (1024 * 1024)} MB.")
+            .WithMessage($"Logo must not exceed {MaxSizeMb} MB.")
             .When(request => request.File is not null);
     }
 }

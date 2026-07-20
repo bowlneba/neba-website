@@ -163,6 +163,29 @@ test.describe('Sponsors list page — create sponsor (authenticated)', () => {
     await expect(page).toHaveURL(/\/sponsors\/new-playwright-sponsor$/);
   });
 
+  test('uploads a logo and includes it when creating the sponsor', async ({ page }) => {
+    await page.goto('/sponsors/new');
+    await page.waitForSelector('#name');
+
+    await page.locator('#name').fill('Logo Upload Sponsor');
+
+    await page.locator('input.neba-file-upload-input').setInputFiles({
+      name: 'logo.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+        'base64'
+      ),
+    });
+
+    await expect(page.locator('.neba-file-upload-item-status--success')).toBeVisible();
+
+    await page.locator('button[type="submit"].neba-btn-primary').click();
+
+    await expect(page.locator('.neba-toast')).toContainText('Sponsor Created');
+    await expect(page).toHaveURL(/\/sponsors\/logo-upload-sponsor$/);
+  });
+
   test('shows an error alert and stays on the page when creation fails', async ({ page }) => {
     await page.request.post('http://localhost:5151/__mock/fail?path=/sponsors&status=409');
 

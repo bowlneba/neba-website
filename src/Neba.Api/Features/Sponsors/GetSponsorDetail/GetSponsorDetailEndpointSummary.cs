@@ -16,7 +16,7 @@ internal sealed class GetSponsorDetailEndpointSummary
         Summary = "Gets sponsor detail by slug.";
         Description = "Retrieves detailed information for a specific sponsor, including contact details, business address, promotional content, and social media links.";
 
-        Response(200, "The sponsor detail.",
+        Response(200, "The sponsor detail. Fields documented as sponsor-management-only (logo storage details, live read text, promotional notes, contact) are omitted for callers without that permission.",
             contentType: MediaTypeNames.Application.Json,
             example: new SponsorDetailResponse
             {

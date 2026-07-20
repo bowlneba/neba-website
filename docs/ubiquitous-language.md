@@ -1377,7 +1377,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `Id` | ULID | Yes | System-generated unique identifier |
-| `Name` | string | Yes | Display name — company name (e.g., "Storm Products Inc.") or individual name (e.g., "Tony & Suzanne Reynaud") |
+| `Name` | string | Yes | Display name — company name (e.g., "Storm Products Inc.") or individual name (e.g., "Joe & Jane Smith") |
 | `Slug` | string | Yes | URL-friendly unique identifier derived from the sponsor name; used to route to the sponsor's individual page (e.g., `/sponsors/storm`). Must not equal the reserved word `new` (reserved for the `/sponsors/new` create route) |
 | `IsCurrentSponsor` | bool | Yes | Whether the sponsor is actively associated with NEBA for the current season. Manually managed until Sponsorship Agreement tracking is implemented |
 | `Priority` | int | Yes | Display order on the sponsor list. Lower values appear first. Title sponsors are assigned the highest priority (lowest number) |

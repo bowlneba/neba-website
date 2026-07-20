@@ -10,6 +10,8 @@
 @inject ISponsorsApi SponsorsApi
 @inject NavigationManager Navigation
 
+<PageTitle>@(_model?.Name is not null ? _model.Name + " - BowlNEBA" : "Sponsor - BowlNEBA")</PageTitle>
+
 @if (_isLoading)
 {
     <div class="sponsor-detail-loading">
@@ -18,8 +20,6 @@
 }
 else
 {
-    <PageTitle>@_model!.Name - BowlNEBA</PageTitle>
-
     <main class="neba-content-wrapper sponsor-detail">
 
         <header class="sponsor-detail__header">

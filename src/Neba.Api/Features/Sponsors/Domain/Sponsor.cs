@@ -25,7 +25,7 @@ public sealed class Sponsor
 
     /// <summary>
     /// The display name of the sponsor — company name (e.g., "Storm Products Inc.") or individual
-    /// name (e.g., "Tony &amp; Jane Smith").
+    /// name (e.g., "Joe &amp; Jane Smith").
     /// </summary>
     public string Name { get; private set; } = string.Empty;
 

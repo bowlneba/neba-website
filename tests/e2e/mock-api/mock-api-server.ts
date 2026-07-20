@@ -729,6 +729,24 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return;
   }
 
+  if (req.method === 'POST' && pathname === '/sponsors/logo') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    // Body content is discarded — the mock only needs to acknowledge the multipart upload and
+    // hand back a StoredFile pointer, same shape as the real UploadSponsorLogo endpoint.
+    await readRequestBody(req);
+
+    sendJsonResponse(res, {
+      container: 'bowlneba-public',
+      path: 'sponsors/logo/e2e-test-logo.png',
+      fileName: 'e2e-test-logo.png',
+      contentType: 'image/png',
+      sizeInBytes: 4,
+      url: 'http://localhost:5151/mock-storage/sponsors/logo/e2e-test-logo.png',
+    }, 200);
+    return;
+  }
+
   if (req.method === 'POST') {
     if (pathname === '/__mock/fail') {
       const path = requestUrl.searchParams.get('path') ?? '';
