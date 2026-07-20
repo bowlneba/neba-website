@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
+using Moq;
 using Neba.Api.Contracts.Sponsors.UploadSponsorLogo;
 using Neba.Api.Features.Sponsors.UploadSponsorLogo;
 using Neba.Api.Uploads;
@@ -15,12 +16,10 @@ public sealed class UploadSponsorLogoRequestValidatorTests
 
     private static IFormFile CreateFile(string contentType = "image/png", long length = 1024)
     {
-        var stream = new MemoryStream(new byte[length]);
-        return new FormFile(stream, 0, length, "File", "logo.png")
-        {
-            Headers = new HeaderDictionary(),
-            ContentType = contentType
-        };
+        var fileMock = new Mock<IFormFile>();
+        fileMock.SetupGet(x => x.ContentType).Returns(contentType);
+        fileMock.SetupGet(x => x.Length).Returns(length);
+        return fileMock.Object;
     }
 
     [Fact(DisplayName = "Validate should succeed when the file is a valid content type and size")]
