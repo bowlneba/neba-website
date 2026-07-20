@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Api.BackgroundJobs;
 using Neba.Api.Contacts;
+using Neba.Api.Contacts.Domain;
 using Neba.Api.Contracts.Contact;
 using Neba.Api.Database;
 using Neba.Api.Features.Sponsors.Domain;

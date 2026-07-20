@@ -69,6 +69,7 @@ ADRs are numbered sequentially:
 - [ADR-0006](0006-explicit-new-on-stronglytypedid-partial-structs.md): Explicit `New()` on StronglyTypedId Partial Structs
 - [ADR-0007](0007-in-repo-user-help-documentation.md): In-Repo User Help Documentation
 - [ADR-0008](0008-policy-documentation-structure.md): Policy Documentation Structure
+- [ADR-0009](0009-reference-data-feature-area.md): Reference Data as a Dedicated Feature Area
 
 ## Resources
 

@@ -5,6 +5,7 @@ using Neba.Website.Server.Account;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.FeatureManagement;
 using Neba.Website.Server.Maps;
+using Neba.Website.Server.ReferenceData;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Stats;
 using Neba.Website.Server.Tournaments;
@@ -34,6 +35,7 @@ builder.Services.AddSingleton<IStopwatchProvider, StopwatchProvider>();
 builder.Services.AddScoped<Neba.Website.Server.Notifications.ToastService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITournamentApiService, TournamentApiService>();
+builder.Services.AddScoped<IReferenceDataService, ReferenceDataService>();
 
 var app = builder.Build();
 

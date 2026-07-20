@@ -81,6 +81,22 @@ public static class CacheDescriptors
     }
 
     /// <summary>
+    /// Cache descriptors for static/rarely-changing reference (lookup) data.
+    /// </summary>
+    public static class ReferenceData
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of US states, with a key and tags that allow for efficient caching and invalidation of reference data.
+        /// </summary>
+        public static CacheDescriptor UsStates
+            => new()
+            {
+                Key = "neba:reference-data:us-states:list",
+                Tags = ["neba", "neba:reference-data"]
+            };
+    }
+
+    /// <summary>
     /// Cache descriptors for Hall of Fame data.
     /// </summary>
     public static class HallOfFame

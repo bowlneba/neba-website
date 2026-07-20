@@ -18,11 +18,13 @@ using Neba.Api.Contracts.Uploads;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Contact;
+using Neba.TestFactory.ReferenceData;
 using Neba.TestFactory.Sponsors;
 using Neba.TestFactory.Uploads;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Components;
 using Neba.Website.Server.Notifications;
+using Neba.Website.Server.ReferenceData;
 using Neba.Website.Server.Services;
 
 using Refit;
@@ -60,9 +62,15 @@ public sealed class EditSponsorTests : IDisposable
 
         _toastService = new ToastService();
 
+        var mockReferenceDataService = new Mock<IReferenceDataService>(MockBehavior.Strict);
+        mockReferenceDataService
+            .Setup(x => x.GetUsStatesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(UsStateResponseFactory.CreateAll().ToList());
+
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
+        _ctx.Services.AddSingleton(mockReferenceDataService.Object);
     }
 
     public void Dispose()

@@ -1,4 +1,5 @@
 using Neba.Api.Contacts;
+using Neba.Api.Contacts.Domain;
 using Neba.Api.Contracts.Contact;
 using Neba.Api.Features.Sponsors;
 using Neba.TestFactory.Attributes;

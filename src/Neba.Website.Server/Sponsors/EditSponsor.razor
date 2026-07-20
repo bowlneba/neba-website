@@ -2,12 +2,14 @@
 @using System.ComponentModel.DataAnnotations
 @using ErrorOr
 @using Neba.Api.Contracts.Contact
+@using Neba.Api.Contracts.ReferenceData
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Sponsors
 @using Neba.Api.Contracts.Sponsors.CreateSponsor
 @using Neba.Api.Contracts.Sponsors.EditSponsor
 @using Neba.Api.Contracts.Uploads
 @using Neba.Website.Server.Notifications
+@using Neba.Website.Server.ReferenceData
 @using Neba.Website.Server.Services
 @using Refit
 @implements IAsyncDisposable
@@ -15,6 +17,7 @@
 
 @inject ApiExecutor ApiExecutor
 @inject ISponsorsApi SponsorsApi
+@inject IReferenceDataService ReferenceDataService
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 
@@ -203,9 +206,9 @@
                                         <label for="business-state" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">State</label>
                                         <InputSelect id="business-state" @bind-Value="_model.BusinessState" class="neba-select">
                                             <option value="">Select a state</option>
-                                            @foreach (var state in UsState.List)
+                                            @foreach (var state in _usStates)
                                             {
-                                                <option value="@state.Value">@state.Name</option>
+                                                <option value="@state.Code">@state.Name</option>
                                             }
                                         </InputSelect>
                                     </div>
@@ -344,6 +347,8 @@
     private LogoRef? _logo;
     private bool _isLogoUploading;
 
+    private IReadOnlyCollection<UsStateResponse> _usStates = [];
+
     public EditSponsor()
     {
         _editContext = new EditContext(_model);
@@ -356,6 +361,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var usStatesResult = await ReferenceDataService.GetUsStatesAsync();
+        if (!usStatesResult.IsError)
+        {
+            _usStates = usStatesResult.Value;
+        }
+
         var result = await ApiExecutor.ExecuteAsync(
             "Sponsors",
             "GetSponsorDetail",

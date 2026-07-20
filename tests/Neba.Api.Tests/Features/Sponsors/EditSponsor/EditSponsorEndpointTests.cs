@@ -126,7 +126,7 @@ public sealed class EditSponsorEndpointTests
         capturedCommand.Logo.ContentType.ShouldBe(logo.ContentType);
         capturedCommand.Logo.SizeInBytes.ShouldBe(logo.SizeInBytes);
 
-        capturedCommand.BusinessState.ShouldBe(Neba.Api.Contracts.Contact.UsState.FromValue("MA"));
+        capturedCommand.BusinessState.ShouldBe(Neba.Api.Contacts.Domain.UsState.FromValue("MA"));
 
         capturedCommand.PhoneNumbers.ShouldHaveSingleItem();
         var capturedPhoneNumber = capturedCommand.PhoneNumbers.Single();
