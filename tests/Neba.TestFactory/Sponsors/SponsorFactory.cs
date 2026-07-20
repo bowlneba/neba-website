@@ -57,8 +57,8 @@ public static class SponsorFactory
             phoneNumbers: phoneNumbers,
             sponsorContact: sponsorContact);
 
-        return result.IsError 
-            ? throw new InvalidOperationException($"Failed to create sponsor: {result.Errors[0].Description}") 
+        return result.IsError
+            ? throw new InvalidOperationException($"Failed to create sponsor: {result.Errors[0].Description}")
             : result.Value;
 
     }
@@ -97,8 +97,8 @@ public static class SponsorFactory
                 phoneNumbers: [.. new[] { phoneNumberPool.GetNext(), phoneNumberPool.GetNext() }.DistinctBy(p => p.Type)],
                 sponsorContact: contactInfoPool.GetNextNullable());
 
-            return result.IsError 
-                ? throw new InvalidOperationException($"Failed to create sponsor: {result.Errors[0].Description}") 
+            return result.IsError
+                ? throw new InvalidOperationException($"Failed to create sponsor: {result.Errors[0].Description}")
                 : result.Value;
 
         })];
