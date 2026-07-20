@@ -591,10 +591,29 @@ const MOCK_ARTICLE_POINTS_RACE: object = {
   attachments: [],
 };
 
+const MOCK_US_STATES = {
+  items: [
+    { name: 'Massachusetts', code: 'MA' },
+    { name: 'New Hampshire', code: 'NH' },
+    { name: 'Rhode Island', code: 'RI' },
+  ],
+};
+
+const MOCK_PHONE_NUMBER_TYPES = {
+  items: [
+    { name: 'Home', code: 'H' },
+    { name: 'Mobile', code: 'M' },
+    { name: 'Work', code: 'W' },
+    { name: 'Fax', code: 'F' },
+  ],
+};
+
 const routes: Record<string, unknown> = {
   '/health': { status: 'healthy' },
   '/documents/tournament-rules': { html: MOCK_TOURNAMENT_RULES_HTML },
   '/documents/bylaws': { html: MOCK_BYLAWS_HTML },
+  '/reference-data/us-states': MOCK_US_STATES,
+  '/reference-data/phone-number-types': MOCK_PHONE_NUMBER_TYPES,
   '/bowling-centers': MOCK_BOWLING_CENTERS,
   '/seasons': MOCK_SEASONS,
   '/sponsors': MOCK_SPONSORS_ACTIVE,
