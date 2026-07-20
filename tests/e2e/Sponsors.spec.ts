@@ -130,6 +130,13 @@ test.describe('Sponsors list page — create sponsor (authenticated)', () => {
     await page.request.post('/__test/login?permissions=Sponsors.CreateSponsor');
   });
 
+  // A failed assertion earlier in a test can abort it before its own /__mock/reset call runs,
+  // leaving the /sponsors override in place and breaking every later test's GET /sponsors — the
+  // mock server keys overrides by path only, not method. Resetting here runs regardless of outcome.
+  test.afterEach(async ({ page }) => {
+    await page.request.post('http://localhost:5151/__mock/reset?path=/sponsors');
+  });
+
   test('shows the Create Sponsor button and navigates to the create page', async ({ page }) => {
     await page.goto('/sponsors');
     await page.waitForSelector('#title-sponsor-name');
@@ -198,8 +205,6 @@ test.describe('Sponsors list page — create sponsor (authenticated)', () => {
 
     await expect(page.locator('.neba-alert-title')).toContainText('Unable to Create Sponsor');
     await expect(page).toHaveURL(/\/sponsors\/new$/);
-
-    await page.request.post('http://localhost:5151/__mock/reset?path=/sponsors');
   });
 });
 
@@ -223,6 +228,13 @@ test.describe('Sponsor detail page — edit sponsor (authenticated)', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.request.post('/__test/login?permissions=Sponsors.EditSponsor');
+  });
+
+  // A failed assertion earlier in a test can abort it before its own /__mock/reset call runs,
+  // leaving the override in place and breaking later tests that hit the same path. Resetting
+  // here runs regardless of outcome.
+  test.afterEach(async ({ page }) => {
+    await page.request.post('http://localhost:5151/__mock/reset?path=/sponsors/01JX0000000000000000000001');
   });
 
   test('shows the Edit Sponsor button and navigates to the edit page', async ({ page }) => {
