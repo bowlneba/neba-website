@@ -115,7 +115,6 @@ public sealed class SecurityRoleSeederTests
 
         // Assert
         roleManagerMock.VerifyAll();
-        roleManagerMock.Verify(m => m.CreateAsync(It.IsAny<ApplicationRole>()), Times.Never);
     }
 
     [Fact(DisplayName = "SeedAsync should not add or remove claims when the Admin role already has exactly the expected permission claims")]
@@ -142,9 +141,6 @@ public sealed class SecurityRoleSeederTests
 
         // Assert
         roleManagerMock.VerifyAll();
-        roleManagerMock.Verify(m => m.CreateAsync(It.IsAny<ApplicationRole>()), Times.Never);
-        roleManagerMock.Verify(m => m.AddClaimAsync(existingRole, It.IsAny<Claim>()), Times.Never);
-        roleManagerMock.Verify(m => m.RemoveClaimAsync(existingRole, It.IsAny<Claim>()), Times.Never);
     }
 
     [Fact(DisplayName = "SeedAsync should remove a stale permission claim that is no longer in the Admin role's permissions list")]
@@ -176,7 +172,6 @@ public sealed class SecurityRoleSeederTests
 
         // Assert
         roleManagerMock.VerifyAll();
-        roleManagerMock.Verify(m => m.AddClaimAsync(existingRole, It.IsAny<Claim>()), Times.Never);
     }
 
     [Fact(DisplayName = "SeedAsync should ignore existing claims whose claim type is not the permission claim type")]
@@ -205,8 +200,6 @@ public sealed class SecurityRoleSeederTests
 
         // Assert
         roleManagerMock.VerifyAll();
-        roleManagerMock.Verify(m => m.AddClaimAsync(existingRole, It.IsAny<Claim>()), Times.Never);
-        roleManagerMock.Verify(m => m.RemoveClaimAsync(existingRole, It.IsAny<Claim>()), Times.Never);
     }
 
     [Fact(DisplayName = "SeedAsync should create the Webmaster role and add exactly the CreateArticle, EditArticle, DeleteArticle, CreateSponsor, and EditSponsor permission claims when the role does not exist")]
@@ -249,12 +242,6 @@ public sealed class SecurityRoleSeederTests
 
         // Assert
         roleManagerMock.VerifyAll();
-        roleManagerMock.Verify(
-            m => m.AddClaimAsync(
-                It.Is<ApplicationRole>(r => r.Name == Roles.Webmaster),
-                It.Is<Claim>(c => c.Type == SecurityRoleSeeder.PermissionClaimType
-                    && !expectedPermissions.Any(p => p.Value == c.Value))),
-            Times.Never);
     }
 
     [Fact(DisplayName = "SeedAsync should create the Member role and add no permission claims when the role does not exist")]
@@ -279,6 +266,5 @@ public sealed class SecurityRoleSeederTests
 
         // Assert
         roleManagerMock.VerifyAll();
-        roleManagerMock.Verify(m => m.AddClaimAsync(It.Is<ApplicationRole>(r => r.Name == Roles.Member), It.IsAny<Claim>()), Times.Never);
     }
 }

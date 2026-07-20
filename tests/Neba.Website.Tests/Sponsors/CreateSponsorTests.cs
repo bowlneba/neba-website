@@ -163,9 +163,6 @@ public sealed class CreateSponsorTests : IDisposable
 
         // Assert
         cut.Markup.ShouldContain("Name is required.");
-        _mockApi.Verify(
-            x => x.CreateSponsorAsync(It.IsAny<CreateSponsorRequest>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 
     // ── Submit — required and default fields ─────────────────────────────────

@@ -1416,7 +1416,7 @@ The NEBA program that formally recognizes individuals for exceptional competitiv
 
 > **Terminology note**: `SponsorTier.Title Sponsor` is the top level in the overall sponsorship program. It is not automatically the same as a specific tournament's Title Sponsor designation, which is modeled on `TournamentSponsor.TitleSponsor`.
 >
-> **Invariant**: Only one `Sponsor` may hold `Title Sponsor` among current sponsors (`IsCurrentSponsor == true`) at a time. Enforced at creation by `Sponsor.Create` (fast pre-check, returns a conflict error) and backed by a filtered unique database index as the actual guarantee against a concurrent-create race.
+> **Invariant**: Only one `Sponsor` may hold `Title Sponsor` among current sponsors (`IsCurrentSponsor == true`) at a time. Enforced by both `Sponsor.Create` and `Sponsor.Update` (fast pre-check, returns a conflict error) and backed by a filtered unique database index as the actual guarantee against a concurrent-create race.
 
 | Value | Name | Description |
 | --- | --- | --- |

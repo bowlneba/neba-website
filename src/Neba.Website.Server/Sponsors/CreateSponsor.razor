@@ -75,7 +75,7 @@
                                 <div>
                                     <label for="category" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Category</label>
                                     <InputSelect id="category" @bind-Value="_model.Category" class="neba-select">
-                                        @foreach (var category in SponsorCategories)
+                                        @foreach (var category in SponsorCategoryOptions.All)
                                         {
                                             <option value="@category">@category</option>
                                         }
@@ -191,35 +191,7 @@
                             </div>
                         </section>
 
-                        <section class="neba-space-y-4">
-                            <h2 class="create-sponsor-section-title">Phone Numbers</h2>
-
-                            @if (_phoneNumbers.Count > 0)
-                            {
-                                <ul class="create-sponsor-phone-list">
-                                    @foreach (var phoneNumber in _phoneNumbers)
-                                    {
-                                        <li class="create-sponsor-phone-row">
-                                            <select class="neba-select create-sponsor-phone-type" value="@phoneNumber.PhoneNumberType" @onchange="@(e => { phoneNumber.PhoneNumberType = e.Value?.ToString() ?? "H"; MarkDirty(); })">
-                                                @foreach (var phoneType in _phoneNumberTypes)
-                                                {
-                                                    <option value="@phoneType.Code">@phoneType.Name</option>
-                                                }
-                                            </select>
-                                            <input class="neba-input create-sponsor-phone-number" value="@phoneNumber.PhoneNumber"
-                                                   @oninput="@(e => { phoneNumber.PhoneNumber = e.Value?.ToString() ?? string.Empty; MarkDirty(); })"
-                                                   placeholder="Phone number" />
-                                            <input class="neba-input create-sponsor-phone-extension" value="@phoneNumber.Extension"
-                                                   @oninput="@(e => { phoneNumber.Extension = e.Value?.ToString(); MarkDirty(); })"
-                                                   placeholder="Ext." />
-                                            <button type="button" class="neba-btn neba-btn-danger create-sponsor-phone-remove" @onclick="@(() => RemovePhoneNumber(phoneNumber))">Remove</button>
-                                        </li>
-                                    }
-                                </ul>
-                            }
-
-                            <button type="button" class="neba-btn neba-btn-secondary" @onclick="AddPhoneNumber">Add Phone Number</button>
-                        </section>
+                        <SponsorPhoneNumbersEditor PhoneNumbers="_phoneNumbers" PhoneNumberTypes="_phoneNumberTypes" OnChanged="MarkDirty" />
 
                         <section class="neba-space-y-4">
                             <h2 class="create-sponsor-section-title">Contact Person</h2>
@@ -287,18 +259,6 @@
 </AuthorizeView>
 
 @code {
-    private static readonly IReadOnlyList<string> SponsorCategories =
-    [
-        "Other",
-        "Manufacturer",
-        "Pro Shop",
-        "Bowling Center",
-        "Financial Services",
-        "Technology",
-        "Media",
-        "Individual"
-    ];
-
     private readonly CreateSponsorFormModel _model = new();
     private readonly EditContext _editContext;
     private readonly List<TrackedPhoneNumber> _phoneNumbers = [];
@@ -338,18 +298,6 @@
     private void MarkDirty() => _isDirty = true;
 
     private void HandleFieldChanged(object? sender, FieldChangedEventArgs e) => MarkDirty();
-
-    private void AddPhoneNumber()
-    {
-        _phoneNumbers.Add(new TrackedPhoneNumber());
-        MarkDirty();
-    }
-
-    private void RemovePhoneNumber(TrackedPhoneNumber phoneNumber)
-    {
-        _phoneNumbers.Remove(phoneNumber);
-        MarkDirty();
-    }
 
     private async Task<ErrorOr<UploadedFileResponse>> UploadLogoAsync(
         Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
@@ -404,28 +352,22 @@
         Tier = _model.Tier,
         Category = _model.Category,
         Logo = BuildLogoInput(),
-        WebsiteUrl = ParseUri(_model.WebsiteUrl),
+        WebsiteUrl = SponsorInputMapping.ParseUri(_model.WebsiteUrl),
         TagPhrase = string.IsNullOrWhiteSpace(_model.TagPhrase) ? null : _model.TagPhrase,
         Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description,
         LiveReadText = string.IsNullOrWhiteSpace(_model.LiveReadText) ? null : _model.LiveReadText,
         PromotionalNotes = string.IsNullOrWhiteSpace(_model.PromotionalNotes) ? null : _model.PromotionalNotes,
-        FacebookUrl = ParseUri(_model.FacebookUrl),
-        InstagramUrl = ParseUri(_model.InstagramUrl),
+        FacebookUrl = SponsorInputMapping.ParseUri(_model.FacebookUrl),
+        InstagramUrl = SponsorInputMapping.ParseUri(_model.InstagramUrl),
         BusinessStreet = string.IsNullOrWhiteSpace(_model.BusinessStreet) ? null : _model.BusinessStreet,
         BusinessUnit = string.IsNullOrWhiteSpace(_model.BusinessUnit) ? null : _model.BusinessUnit,
         BusinessCity = string.IsNullOrWhiteSpace(_model.BusinessCity) ? null : _model.BusinessCity,
         BusinessState = string.IsNullOrWhiteSpace(_model.BusinessState) ? null : _model.BusinessState,
         BusinessPostalCode = string.IsNullOrWhiteSpace(_model.BusinessPostalCode) ? null : _model.BusinessPostalCode,
         BusinessEmailAddress = string.IsNullOrWhiteSpace(_model.BusinessEmailAddress) ? null : _model.BusinessEmailAddress,
-        PhoneNumbers = [.. _phoneNumbers
-            .Where(p => !string.IsNullOrWhiteSpace(p.PhoneNumber))
-            .Select(p => new SponsorPhoneNumberInput
-            {
-                PhoneNumberType = p.PhoneNumberType,
-                PhoneNumber = p.PhoneNumber,
-                Extension = string.IsNullOrWhiteSpace(p.Extension) ? null : p.Extension
-            })],
-        Contact = BuildContactInput()
+        PhoneNumbers = SponsorInputMapping.BuildPhoneNumberInputs(_phoneNumbers),
+        Contact = SponsorInputMapping.BuildContactInput(
+            _model.ContactName, _model.ContactPhoneType, _model.ContactPhoneNumber, _model.ContactPhoneExtension, _model.ContactEmail)
     };
 
     private SponsorLogoInput? BuildLogoInput() => _logo is null ? null : new SponsorLogoInput
@@ -436,50 +378,10 @@
         SizeInBytes = _logo.SizeInBytes
     };
 
-    private SponsorContactInput? BuildContactInput()
-    {
-        var hasContact = !string.IsNullOrWhiteSpace(_model.ContactName)
-            || !string.IsNullOrWhiteSpace(_model.ContactPhoneNumber)
-            || !string.IsNullOrWhiteSpace(_model.ContactEmail);
-
-        if (!hasContact)
-        {
-            return null;
-        }
-
-        return new SponsorContactInput
-        {
-            Name = _model.ContactName ?? string.Empty,
-            PhoneNumberType = _model.ContactPhoneType,
-            PhoneNumber = _model.ContactPhoneNumber ?? string.Empty,
-            Extension = string.IsNullOrWhiteSpace(_model.ContactPhoneExtension) ? null : _model.ContactPhoneExtension,
-            Email = _model.ContactEmail ?? string.Empty
-        };
-    }
-
-    private static Uri? ParseUri(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        return Uri.TryCreate(value, UriKind.Absolute, out var uri) ? uri : null;
-    }
-
     public ValueTask DisposeAsync()
     {
         _editContext.OnFieldChanged -= HandleFieldChanged;
         return ValueTask.CompletedTask;
-    }
-
-    private sealed class TrackedPhoneNumber
-    {
-        public string PhoneNumberType { get; set; } = "H";
-
-        public string PhoneNumber { get; set; } = string.Empty;
-
-        public string? Extension { get; set; }
     }
 
     private sealed class CreateSponsorFormModel
