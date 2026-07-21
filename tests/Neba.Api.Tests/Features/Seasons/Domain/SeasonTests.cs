@@ -11,6 +11,44 @@ namespace Neba.Api.Tests.Features.Seasons.Domain;
 [Component("Awards.Season")]
 public sealed class SeasonTests
 {
+    // ── Create ─────────────────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Create should return a new incomplete season when inputs are valid")]
+    public void Create_ShouldReturnIncompleteSeason_WhenInputsAreValid()
+    {
+        var result = Season.Create("2027 Season", new DateOnly(2027, 1, 1), new DateOnly(2027, 12, 31));
+
+        result.IsError.ShouldBeFalse();
+        result.Value.Description.ShouldBe("2027 Season");
+        result.Value.StartDate.ShouldBe(new DateOnly(2027, 1, 1));
+        result.Value.EndDate.ShouldBe(new DateOnly(2027, 12, 31));
+        result.Value.Complete.ShouldBeFalse();
+    }
+
+    [Theory(DisplayName = "Create should return an error when description is null, empty, or whitespace")]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Create_ShouldReturnError_WhenDescriptionIsNullOrWhitespace(string? description)
+    {
+        var result = Season.Create(description!, new DateOnly(2027, 1, 1), new DateOnly(2027, 12, 31));
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(SeasonErrors.DescriptionRequired);
+    }
+
+    [Fact(DisplayName = "Create should return an error when end date is before start date")]
+    public void Create_ShouldReturnError_WhenEndDateIsBeforeStartDate()
+    {
+        var startDate = new DateOnly(2027, 12, 31);
+        var endDate = new DateOnly(2027, 1, 1);
+
+        var result = Season.Create("2027 Season", startDate, endDate);
+
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(SeasonErrors.EndDateBeforeStartDate(startDate, endDate));
+    }
+
     // ── AddOpenBowlerOfTheYearWinner ──────────────────────────────────────────
 
     [Fact(DisplayName = "AddOpenBowlerOfTheYearWinner should return an error when season is not complete")]
