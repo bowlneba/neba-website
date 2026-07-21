@@ -351,6 +351,37 @@ public static class CacheDescriptors
                 Key = "neba:tournaments:champions:list",
                 Tags = ["neba", "neba:tournaments", "neba:tournaments:champions"]
             };
+        
+        /// <summary>
+        /// Returns a cache descriptor for the list of active tournament types.
+        /// </summary>
+        public static CacheDescriptor Types
+            => new()
+            {
+                Key = "neba:tournaments:types:list",
+                Tags = ["neba", "neba:tournaments", "neba:tournaments:types"]
+            };
+    }
+
+    /// <summary>
+    /// Cache descriptors for oil patterns.
+    /// </summary>
+    /// <remarks>
+    /// Key format:  neba:{category}:{identifier}[:{qualifier}]
+    /// Tag format:  neba:{category} (all), neba:{category}:{identifier} (specific)
+    /// </remarks>
+    public static class OilPatterns
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of oil patterns, with a key and tags that allow
+        /// for efficient caching and invalidation of oil pattern data.
+        /// </summary>
+        public static CacheDescriptor List
+            => new()
+            {
+                Key = "neba:oil-patterns:list",
+                Tags = ["neba", "neba:oil-patterns"]
+            };
     }
 }
 #pragma warning restore CA1724
