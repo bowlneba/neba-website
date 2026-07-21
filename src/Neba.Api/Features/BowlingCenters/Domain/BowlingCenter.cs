@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Neba.Api.Contacts.Domain;
 using Neba.Api.Domain;
 
@@ -32,7 +34,14 @@ public sealed class BowlingCenter
     /// <summary>
     /// The phone numbers of the bowling center.
     /// </summary>
-    public IReadOnlyCollection<PhoneNumber> PhoneNumbers { get; init; } = [];
+    // Must stay `new List<PhoneNumber>()`, NOT the `[]` collection-expression form: target-typed to
+    // the interface property type, `[]` resolves to a fixed-size T[] at runtime, which throws
+    // NotSupportedException when EF's owned-collection fixup tries to Add into it while
+    // materializing a BowlingCenter with phone numbers. See CLAUDE.md "EF Core Navigation Fixup".
+    // Guarded by BowlingCenterTests.PhoneNumbers_DefaultInstance_ShouldSupportAdd_ForEfFixup.
+    [SuppressMessage("Style", "IDE0305:Simplify collection initialization", Justification = "See preceding comment — [] would regress to a fixed-size array.")]
+    [SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "See preceding comment — [] would regress to a fixed-size array.")]
+    public IReadOnlyCollection<PhoneNumber> PhoneNumbers { get; init; } = new List<PhoneNumber>();
 
     /// <summary>
     /// The email address of the bowling center.

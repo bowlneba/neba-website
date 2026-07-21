@@ -1,16 +1,23 @@
 ﻿{
-  Id: 01J2NKK41C3Y0EMX07V1QYGW31,
-  Name: Hansen - Murray,
-  Slug: tempore-sed-animi,
-  IsCurrentSponsor: false,
-  Priority: 2,
+  Id: 01FTXZ8BTMBSD14BA9643CJSS9,
+  Name: Ferry Group,
+  Slug: labore-eum-sunt,
+  IsCurrentSponsor: true,
+  Priority: 9,
   Tier: Title Sponsor,
-  Category: Manufacturer,
-  WebsiteUrl: https://forrest.org,
-  TagPhrase: Programmable holistic success,
-  Description: whiteboard interactive platforms,
-  FacebookUrl: facebook://omari.name/small-soft-bacon/primary/paradigms,
-  InstagramUrl: instagram://santos.com/transmit/redefine/persevering,
+  Category: Individual,
+  WebsiteUrl: https://herta.com,
+  TagPhrase: Triple-buffered motivating application,
+  Description: target strategic communities,
+  LiveReadText:
+Quis quisquam rem eveniet voluptatem illum consequatur minima aut.
+Quisquam dolor ea sit natus labore nostrum quos.,
+  PromotionalNotes:
+Magni aut nobis.
+Amet ut quia.
+Quas voluptatibus at rerum est impedit in ut esse.,
+  FacebookUrl: facebook://alan.net/ssl/games-movies--movies/money-market-account,
+  InstagramUrl: instagram://barrett.org/users/executive,
   PhoneNumbers: [
     {
       PhoneNumberType: Home,

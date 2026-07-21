@@ -25,6 +25,8 @@ public sealed class ListActiveSponsorsQueryHandlerTests(AppDbContextFixture fixt
         await _dbContext.DisposeAsync();
     }
 
+    private static ListActiveSponsorsQuery DefaultQuery => new() { CallerHasSponsorManagementPermission = false };
+
     [Fact(DisplayName = "HandleAsync returns empty collection when no active sponsors exist")]
     public async Task HandleAsync_ShouldReturnEmpty_WhenNoActiveSponsorsExist()
     {
@@ -34,7 +36,7 @@ public sealed class ListActiveSponsorsQueryHandlerTests(AppDbContextFixture fixt
 
         // Act
         var result = await handler.HandleAsync(
-            new ListActiveSponsorsQuery(),
+            DefaultQuery,
             TestContext.Current.CancellationToken);
 
         // Assert
@@ -54,10 +56,31 @@ public sealed class ListActiveSponsorsQueryHandlerTests(AppDbContextFixture fixt
         var handler = new ListActiveSponsorsQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act
-        var result = await handler.HandleAsync(new ListActiveSponsorsQuery(), ct);
+        var result = await handler.HandleAsync(DefaultQuery, ct);
 
         // Assert
         result.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "HandleAsync includes inactive sponsors when caller has sponsor management permission")]
+    public async Task HandleAsync_ShouldIncludeInactiveSponsors_WhenCallerHasSponsorManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var inactive = SponsorFactory.Create(slug: "inactive-management", isCurrentSponsor: false);
+        await _dbContext.Sponsors.AddAsync(inactive, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new ListActiveSponsorsQueryHandler(_dbContext, fileStorageMock.Object);
+        var query = new ListActiveSponsorsQuery { CallerHasSponsorManagementPermission = true };
+
+        // Act
+        var result = await handler.HandleAsync(query, ct);
+
+        // Assert
+        result.ShouldHaveSingleItem();
+        result.Single().Slug.ShouldBe("inactive-management");
     }
 
     [Fact(DisplayName = "HandleAsync returns active sponsor with correct fields")]
@@ -77,7 +100,7 @@ public sealed class ListActiveSponsorsQueryHandlerTests(AppDbContextFixture fixt
         var handler = new ListActiveSponsorsQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act
-        var result = await handler.HandleAsync(new ListActiveSponsorsQuery(), ct);
+        var result = await handler.HandleAsync(DefaultQuery, ct);
 
         // Assert
         result.ShouldHaveSingleItem();
@@ -106,7 +129,7 @@ public sealed class ListActiveSponsorsQueryHandlerTests(AppDbContextFixture fixt
         var handler = new ListActiveSponsorsQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act
-        var result = await handler.HandleAsync(new ListActiveSponsorsQuery(), ct);
+        var result = await handler.HandleAsync(DefaultQuery, ct);
 
         // Assert
         result.ShouldHaveSingleItem();

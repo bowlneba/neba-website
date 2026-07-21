@@ -35,6 +35,7 @@ public sealed class SponsorsTests : IDisposable
 
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        _ctx.AddAuthorization();
 
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
@@ -473,7 +474,7 @@ public sealed class SponsorsTests : IDisposable
         var cut = _ctx.Render<SponsorsPage>();
 
         // Assert
-        cut.Find(".sponsor-tile").GetAttribute("href").ShouldBe("/sponsors/some-sponsor");
+        cut.Find(".sponsor-tile-link").GetAttribute("href").ShouldBe("/sponsors/some-sponsor");
     }
 
     [Fact(DisplayName = "Should render association sponsors ordered by priority then name")]

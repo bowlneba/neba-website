@@ -8,13 +8,13 @@
 </div>
 
 @code {
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public string TournamentType { get; set; } = string.Empty;
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public string Season { get; set; } = string.Empty;
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public string TournamentName { get; set; } = string.Empty;
 
     [Parameter]

@@ -18,6 +18,9 @@ public static class PolicyExtensions
             builder.AddPolicy(Permissions.CanManageArticlesPolicyName, policy => policy
                 .RequireAssertion(context => context.User.HasAnyPermission(Permissions.ArticleManagementPermissions)));
 
+            builder.AddPolicy(Permissions.CanManageSponsorsPolicyName, policy => policy
+                .RequireAssertion(context => context.User.HasAnyPermission(Permissions.SponsorManagementPermissions)));
+
             return builder;
         }
     }

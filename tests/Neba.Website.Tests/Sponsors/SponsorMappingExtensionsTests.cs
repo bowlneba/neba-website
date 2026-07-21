@@ -55,4 +55,38 @@ public sealed class SponsorMappingExtensionsTests
         viewModel.FacebookUrl.ShouldBeNull();
         viewModel.InstagramUrl.ShouldBeNull();
     }
+
+    [Fact(DisplayName = "Maps LiveReadText, PromotionalNotes, and Contact from detail response to view model")]
+    public void ToViewModel_ShouldMapLiveReadTextPromotionalNotesAndContact_FromDetailResponse()
+    {
+        // Arrange
+        var contact = SponsorContactResponseFactory.Create();
+        var response = SponsorDetailResponseFactory.Create(
+            liveReadText: "Read this live!",
+            promotionalNotes: "Internal notes",
+            contact: contact);
+
+        // Act
+        var viewModel = response.ToViewModel();
+
+        // Assert
+        viewModel.LiveReadText.ShouldBe("Read this live!");
+        viewModel.PromotionalNotes.ShouldBe("Internal notes");
+        viewModel.Contact.ShouldBe(contact);
+    }
+
+    [Fact(DisplayName = "Maps LiveReadText, PromotionalNotes, and Contact as null from detail response when not provided")]
+    public void ToViewModel_ShouldMapLiveReadTextPromotionalNotesAndContactAsNull_WhenNotProvidedOnDetailResponse()
+    {
+        // Arrange
+        var response = SponsorDetailResponseFactory.Create();
+
+        // Act
+        var viewModel = response.ToViewModel();
+
+        // Assert
+        viewModel.LiveReadText.ShouldBeNull();
+        viewModel.PromotionalNotes.ShouldBeNull();
+        viewModel.Contact.ShouldBeNull();
+    }
 }

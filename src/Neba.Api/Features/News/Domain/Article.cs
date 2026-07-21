@@ -3,6 +3,7 @@ using System.Text;
 
 using ErrorOr;
 
+using Neba.Api.Contracts.Slugs;
 using Neba.Api.Domain;
 using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Features.Tournaments.Domain;
@@ -98,7 +99,7 @@ public sealed class Article
             return ArticleErrors.ContentRequired;
         }
 
-        var normalizedSlug = NormalizeSlug(string.IsNullOrEmpty(slug)
+        var normalizedSlug = SlugNormalizer.Normalize(string.IsNullOrEmpty(slug)
             ? title
             : slug);
 
@@ -156,36 +157,6 @@ public sealed class Article
         HeaderImage = headerImage;
 
         return Result.Updated;
-    }
-
-    /// <summary>
-    /// Normalizes a title or a staff-supplied slug override into a URL-safe slug: lowercase,
-    /// alphanumeric runs joined by single hyphens, no leading/trailing hyphen. Only called from
-    /// <see cref="Create"/> — the resulting <see cref="Article.Slug"/> is what the command handler
-    /// checks for uniqueness, so there is a single source of truth for slug normalization.
-    /// </summary>
-    [SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase", Justification = "Slugs are URL-facing and must be lowercase, not normalized for security comparisons.")]
-    private static string NormalizeSlug(string value)
-    {
-        var lowered = value.Trim().ToLowerInvariant();
-        var builder = new StringBuilder(lowered.Length);
-        var lastWasHyphen = false;
-
-        foreach (var c in lowered)
-        {
-            if (char.IsLetterOrDigit(c))
-            {
-                builder.Append(c);
-                lastWasHyphen = false;
-            }
-            else if (!lastWasHyphen && builder.Length > 0)
-            {
-                builder.Append('-');
-                lastWasHyphen = true;
-            }
-        }
-
-        return builder.ToString().TrimEnd('-');
     }
 
     /// <summary>

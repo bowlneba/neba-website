@@ -17,6 +17,9 @@ namespace Neba.Api.Caching;
 /// </remarks>
 public static class CacheDescriptors
 {
+    private const string ManagementScope = "management";
+    private const string PublicScope = "public";
+
     /// <summary>
     /// Cache descriptors for bowler data.
     /// </summary>
@@ -78,6 +81,32 @@ public static class CacheDescriptors
     }
 
     /// <summary>
+    /// Cache descriptors for static/rarely-changing reference (lookup) data.
+    /// </summary>
+    public static class ReferenceData
+    {
+        /// <summary>
+        /// Returns a cache descriptor for the list of US states, with a key and tags that allow for efficient caching and invalidation of reference data.
+        /// </summary>
+        public static CacheDescriptor UsStates
+            => new()
+            {
+                Key = "neba:reference-data:us-states:list",
+                Tags = ["neba", "neba:reference-data"]
+            };
+
+        /// <summary>
+        /// Returns a cache descriptor for the list of phone number types, with a key and tags that allow for efficient caching and invalidation of reference data.
+        /// </summary>
+        public static CacheDescriptor PhoneNumberTypes
+            => new()
+            {
+                Key = "neba:reference-data:phone-number-types:list",
+                Tags = ["neba", "neba:reference-data"]
+            };
+    }
+
+    /// <summary>
     /// Cache descriptors for Hall of Fame data.
     /// </summary>
     public static class HallOfFame
@@ -101,10 +130,10 @@ public static class CacheDescriptors
         /// <summary>
         /// Returns a cache descriptor for the list of active sponsors, with a key and tags that allow for efficient caching and invalidation of sponsor data.
         /// </summary>
-        public static CacheDescriptor ListActiveSponsors
+        public static CacheDescriptor ListActiveSponsors(bool callerHasSponsorManagementPermission)
             => new()
             {
-                Key = "neba:sponsors:active:list",
+                Key = $"neba:sponsors:list:scope:{(callerHasSponsorManagementPermission ? ManagementScope : PublicScope)}",
                 Tags = ["neba", "neba:sponsors"]
             };
 
@@ -114,13 +143,17 @@ public static class CacheDescriptors
         /// <param name="slug">
         /// The sponsor slug.
         /// </param>
+        /// <param name="callerHasSponsorManagementPermission">
+        /// Whether the caller can see a sponsor that isn't the current/active one — kept separate from
+        /// the public cache entry, so a management-scoped response is never served to an anonymous caller.
+        /// </param>
         /// <returns>
         /// A cache descriptor for sponsor detail data.
         /// </returns>
-        public static CacheDescriptor Detail(string slug)
+        public static CacheDescriptor Detail(string slug, bool callerHasSponsorManagementPermission)
             => new()
             {
-                Key = $"neba:sponsors:{slug}:detail",
+                Key = $"neba:sponsors:{slug}:detail:scope:{(callerHasSponsorManagementPermission ? ManagementScope : PublicScope)}",
                 Tags = ["neba", "neba:sponsors", $"neba:sponsors:{slug}"]
             };
     }
@@ -248,7 +281,7 @@ public static class CacheDescriptors
         public static CacheDescriptor ListArticles(int page, int pageSize, bool callerHasArticleManagementPermission)
         => new()
         {
-            Key = $"neba:news:articles:list:page:{page}:size:{pageSize}:scope:{(callerHasArticleManagementPermission ? "management" : "public")}",
+            Key = $"neba:news:articles:list:page:{page}:size:{pageSize}:scope:{(callerHasArticleManagementPermission ? ManagementScope : PublicScope)}",
             Tags = ["neba", "neba:news", "neba:news:articles"]
         };
 
@@ -267,7 +300,7 @@ public static class CacheDescriptors
         public static CacheDescriptor Article(string slug, bool callerHasArticleManagementPermission)
         => new()
         {
-            Key = $"neba:news:{slug}:article:scope:{(callerHasArticleManagementPermission ? "management" : "public")}",
+            Key = $"neba:news:{slug}:article:scope:{(callerHasArticleManagementPermission ? ManagementScope : PublicScope)}",
             Tags = ["neba", "neba:news", $"neba:news:{slug}"]
         };
     }

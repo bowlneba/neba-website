@@ -1,5 +1,8 @@
+using System.Security.Claims;
+
 using FastEndpoints;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Features.Sponsors.ListActiveSponsors;
 using Neba.Api.Messaging;
 using Neba.TestFactory.Attributes;
@@ -71,5 +74,56 @@ public sealed class ListActiveSponsorsEndpointTests
         endpoint.Response.ShouldNotBeNull();
         endpoint.Response.TotalItems.ShouldBe(0);
         endpoint.Response.Items.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "HandleAsync should set CallerHasSponsorManagementPermission true when user has a sponsor management permission")]
+    public async Task HandleAsync_ShouldSetCallerHasSponsorManagementPermissionTrue_WhenUserHasSponsorManagementPermission()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        ListActiveSponsorsQuery? capturedQuery = null;
+
+        var queryHandlerMock = new Mock<IQueryHandler<ListActiveSponsorsQuery, IReadOnlyCollection<SponsorSummaryDto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .Setup(handler => handler.HandleAsync(It.IsAny<ListActiveSponsorsQuery>(), cancellationToken))
+            .Callback<ListActiveSponsorsQuery, CancellationToken>((q, _) => capturedQuery = q)
+            .ReturnsAsync([]);
+
+        var endpoint = Factory.Create<ListActiveSponsorsEndpoint>(queryHandlerMock.Object);
+        endpoint.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(
+        [
+            new Claim(Permissions.ClaimType, Permissions.CreateSponsor.Value),
+        ]));
+
+        // Act
+        await endpoint.HandleAsync(cancellationToken);
+
+        // Assert
+        capturedQuery.ShouldNotBeNull();
+        capturedQuery.CallerHasSponsorManagementPermission.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "HandleAsync should set CallerHasSponsorManagementPermission false when user has no sponsor management permission")]
+    public async Task HandleAsync_ShouldSetCallerHasSponsorManagementPermissionFalse_WhenUserHasNoSponsorManagementPermission()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        ListActiveSponsorsQuery? capturedQuery = null;
+
+        var queryHandlerMock = new Mock<IQueryHandler<ListActiveSponsorsQuery, IReadOnlyCollection<SponsorSummaryDto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .Setup(handler => handler.HandleAsync(It.IsAny<ListActiveSponsorsQuery>(), cancellationToken))
+            .Callback<ListActiveSponsorsQuery, CancellationToken>((q, _) => capturedQuery = q)
+            .ReturnsAsync([]);
+
+        var endpoint = Factory.Create<ListActiveSponsorsEndpoint>(queryHandlerMock.Object);
+        endpoint.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
+
+        // Act
+        await endpoint.HandleAsync(cancellationToken);
+
+        // Assert
+        capturedQuery.ShouldNotBeNull();
+        capturedQuery.CallerHasSponsorManagementPermission.ShouldBeFalse();
     }
 }

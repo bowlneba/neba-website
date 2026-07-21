@@ -1,0 +1,45 @@
+.create-sponsor-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--neba-gray-800, #262626);
+    border-bottom: 1px solid var(--neba-gray-200, #E5E5E5);
+    padding-bottom: 0.5rem;
+}
+
+.create-sponsor-phone-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.create-sponsor-phone-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--neba-gray-200, #E5E5E5);
+    border-radius: var(--neba-radius, 0.375rem);
+    background-color: var(--neba-bg-panel, #fff);
+}
+
+.create-sponsor-phone-type {
+    flex: 0 0 8rem;
+}
+
+.create-sponsor-phone-number {
+    flex: 1;
+    min-width: 0;
+}
+
+.create-sponsor-phone-extension {
+    flex: 0 0 6rem;
+}
+
+.create-sponsor-phone-remove {
+    flex-shrink: 0;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.8rem;
+}

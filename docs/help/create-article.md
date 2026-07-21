@@ -15,7 +15,7 @@ You need the `News.CreateArticle` permission (granted to the `Webmaster` and `Ad
 
 3. On the **Create Article** page, fill in:
    - **Title** — required.
-   - **Slug** — optional. Leave it blank and the URL slug is generated from the title automatically; type your own value only if you want to override that.
+   - **Slug** — optional. Leave it blank and the URL slug is generated from the title automatically — as you type the title, the Slug field's placeholder live-previews the slug that will be generated, e.g. "Season Champions & Records!! 2026" → `season-champions-records-2026`; type your own value only if you want to override that preview.
    - **Content** — required. Uses the rich text editor (bold/italic/lists/links/headings, etc.). You can also drag an image directly into the editor (or use its image button) to embed it inline in the article body — this uploads the image immediately and inserts it at the cursor.
    - **Tournament** — optional. Pick a season, then a tournament within that season, to link the article to it, or leave both as-is to publish with no tournament link. If you opened this page from a tournament's page (a "tournamentId" link), the tournament is already chosen and shown as read-only text instead of the dropdowns.
    - **Header Image** — optional. Drag and drop, or click to browse for, a single image (JPEG/PNG/etc., up to 5 MB) to use as the article's header image.

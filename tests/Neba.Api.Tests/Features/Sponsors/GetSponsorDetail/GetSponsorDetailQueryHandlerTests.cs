@@ -1,7 +1,9 @@
+using Neba.Api.Contacts.Domain;
 using Neba.Api.Database;
 using Neba.Api.Features.Sponsors.GetSponsorDetail;
 using Neba.Api.Storage;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Contact;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Sponsors;
 using Neba.TestFactory.Storage;
@@ -25,6 +27,9 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         await _dbContext.DisposeAsync();
     }
 
+    private static GetSponsorDetailQuery QueryFor(string slug, bool callerHasSponsorManagementPermission = false) =>
+        new() { Slug = slug, CallerHasSponsorManagementPermission = callerHasSponsorManagementPermission };
+
     [Fact(DisplayName = "HandleAsync returns SponsorNotFound when no sponsor matches the slug")]
     public async Task HandleAsync_ShouldReturnNotFound_WhenSlugDoesNotExist()
     {
@@ -34,7 +39,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
 
         // Act
         var result = await handler.HandleAsync(
-            new GetSponsorDetailQuery { Slug = "nonexistent-sponsor" },
+            QueryFor("nonexistent-sponsor"),
             TestContext.Current.CancellationToken);
 
         // Assert
@@ -59,8 +64,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act
-        var result = await handler.HandleAsync(
-            new GetSponsorDetailQuery { Slug = "acme-corp" }, ct);
+        var result = await handler.HandleAsync(QueryFor("acme-corp"), ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -88,8 +92,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act
-        var result = await handler.HandleAsync(
-            new GetSponsorDetailQuery { Slug = "logo-sponsor" }, ct);
+        var result = await handler.HandleAsync(QueryFor("logo-sponsor"), ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -109,11 +112,171 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act
-        var result = await handler.HandleAsync(
-            new GetSponsorDetailQuery { Slug = "other-sponsor" }, ct);
+        var result = await handler.HandleAsync(QueryFor("other-sponsor"), ct);
 
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Sponsor.NotFound");
+    }
+
+    [Fact(DisplayName = "HandleAsync returns SponsorNotFound for an inactive sponsor when caller lacks sponsor management permission")]
+    public async Task HandleAsync_ShouldReturnNotFound_WhenSponsorIsInactiveAndCallerLacksManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var sponsor = SponsorFactory.Create(slug: "inactive-sponsor", isCurrentSponsor: false);
+        await _dbContext.Sponsors.AddAsync(sponsor, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(
+            QueryFor("inactive-sponsor", callerHasSponsorManagementPermission: false), ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Sponsor.NotFound");
+    }
+
+    [Fact(DisplayName = "HandleAsync returns sponsor detail for an inactive sponsor when caller has sponsor management permission")]
+    public async Task HandleAsync_ShouldReturnSponsor_WhenSponsorIsInactiveAndCallerHasManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var sponsor = SponsorFactory.Create(name: "Inactive Co", slug: "inactive-sponsor", isCurrentSponsor: false);
+        await _dbContext.Sponsors.AddAsync(sponsor, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(
+            QueryFor("inactive-sponsor", callerHasSponsorManagementPermission: true), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Name.ShouldBe("Inactive Co");
+        result.Value.IsCurrentSponsor.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync populates LiveReadText, PromotionalNotes, and Contact when caller has sponsor management permission")]
+    public async Task HandleAsync_ShouldPopulateAdminOnlyFields_WhenCallerHasManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var contact = ContactInfoFactory.Create(
+            name: "Jane Doe",
+            phone: PhoneNumberFactory.Create(),
+            email: EmailAddressFactory.Create("jane@example.com"));
+        var sponsor = SponsorFactory.Create(
+            slug: "admin-only-fields",
+            liveReadText: "Read this live",
+            promotionalNotes: "Internal notes",
+            sponsorContact: contact);
+        await _dbContext.Sponsors.AddAsync(sponsor, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(
+            QueryFor("admin-only-fields", callerHasSponsorManagementPermission: true), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LiveReadText.ShouldBe("Read this live");
+        result.Value.PromotionalNotes.ShouldBe("Internal notes");
+        result.Value.Contact.ShouldNotBeNull();
+        result.Value.Contact.Name.ShouldBe("Jane Doe");
+        result.Value.Contact.Email.ShouldBe("jane@example.com");
+    }
+
+    [Fact(DisplayName = "HandleAsync suppresses LiveReadText, PromotionalNotes, and Contact when caller lacks sponsor management permission")]
+    public async Task HandleAsync_ShouldSuppressAdminOnlyFields_WhenCallerLacksManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var contact = ContactInfoFactory.Create(name: "Jane Doe");
+        var sponsor = SponsorFactory.Create(
+            slug: "public-view-fields",
+            liveReadText: "Read this live",
+            promotionalNotes: "Internal notes",
+            sponsorContact: contact);
+        await _dbContext.Sponsors.AddAsync(sponsor, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(
+            QueryFor("public-view-fields", callerHasSponsorManagementPermission: false), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LiveReadText.ShouldBeNull();
+        result.Value.PromotionalNotes.ShouldBeNull();
+        result.Value.Contact.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "HandleAsync populates the logo's storage address when caller has sponsor management permission")]
+    public async Task HandleAsync_ShouldPopulateLogoStorageAddress_WhenCallerHasManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var logo = StoredFileFactory.Create(container: "logos", path: "sponsors/acme-logo.png", contentType: "image/png", sizeInBytes: 12345);
+        var sponsor = SponsorFactory.Create(slug: "logo-address-sponsor", logo: logo);
+        await _dbContext.Sponsors.AddAsync(sponsor, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        fileStorageMock
+            .Setup(s => s.GetBlobUri("logos", "sponsors/acme-logo.png"))
+            .Returns(new Uri("https://storage.example.com/logos/sponsors/acme-logo.png"));
+        var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(
+            QueryFor("logo-address-sponsor", callerHasSponsorManagementPermission: true), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LogoContainer.ShouldBe("logos");
+        result.Value.LogoPath.ShouldBe("sponsors/acme-logo.png");
+        result.Value.LogoContentType.ShouldBe("image/png");
+        result.Value.LogoSizeInBytes.ShouldBe(12345);
+    }
+
+    [Fact(DisplayName = "HandleAsync suppresses the logo's storage address when caller lacks sponsor management permission")]
+    public async Task HandleAsync_ShouldSuppressLogoStorageAddress_WhenCallerLacksManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var logo = StoredFileFactory.Create(container: "logos", path: "sponsors/acme-logo.png");
+        var sponsor = SponsorFactory.Create(slug: "public-logo-sponsor", logo: logo);
+        await _dbContext.Sponsors.AddAsync(sponsor, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        fileStorageMock
+            .Setup(s => s.GetBlobUri("logos", "sponsors/acme-logo.png"))
+            .Returns(new Uri("https://storage.example.com/logos/sponsors/acme-logo.png"));
+        var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(
+            QueryFor("public-logo-sponsor", callerHasSponsorManagementPermission: false), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LogoUrl.ShouldNotBeNull();
+        result.Value.LogoContainer.ShouldBeNull();
+        result.Value.LogoPath.ShouldBeNull();
+        result.Value.LogoContentType.ShouldBeNull();
+        result.Value.LogoSizeInBytes.ShouldBeNull();
     }
 }

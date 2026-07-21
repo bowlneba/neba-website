@@ -94,6 +94,8 @@ dotnet_diagnostic.S2325.severity = none
 dotnet_diagnostic.S1144.severity = none
 # IDE0305: Simplify collection initialization
 dotnet_diagnostic.IDE0305.severity = warning
+# IDE0028: Simplify collection initialization (non-target-typed form of IDE0305)
+dotnet_diagnostic.IDE0028.severity = warning
 
 #### C# Coding Conventions ####
 [*.cs]

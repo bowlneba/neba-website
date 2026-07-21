@@ -207,16 +207,16 @@
     private bool _routeMapInitialized = false;
     private System.Threading.CancellationTokenSource? _searchCts;
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public bool IsOpen { get; set; }
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public EventCallback OnClose { get; set; }
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public DirectionsState State { get; set; } = new();
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public EventCallback<double[]> OnLocationSelected { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

@@ -16,7 +16,11 @@ internal static class SecurityRoleSeeder
         [Roles.Webmaster] =
         [
             Permissions.CreateArticle,
-            Permissions.DeleteArticle
+            Permissions.EditArticle,
+            Permissions.DeleteArticle,
+
+            Permissions.CreateSponsor,
+            Permissions.EditSponsor
         ],
         [Roles.Member] = []
     };

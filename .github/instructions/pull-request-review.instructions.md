@@ -346,15 +346,6 @@ Flag when:
 
 ## Testing
 
-### Architecture Tests
-
-Architecture rules are enforced automatically by `Neba.Architecture.Tests` (ArchUnitNET). These run in CI before unit tests and fail the build on violations — no manual review needed for what they cover.
-
-Flag when:
-
-- A new feature with a domain namespace (e.g., `Neba.Api.Features.NewFeature.Domain`) is added but `BoundedContextNamespaces` in `DomainBoundaryTests.cs` is not updated. This is the **only file that needs updating** when a new feature domain is introduced.
-- A new handler interface type is introduced (beyond `ICommandHandler`, `IQueryHandler`, `IBackgroundJobHandler`) without corresponding naming, visibility, and colocation tests added to `Neba.Architecture.Tests`.
-
 ### Required Coverage
 
 New code should maintain 80%+ coverage (enforced by SonarQube). Flag when:
@@ -479,14 +470,24 @@ public void Method_ShouldThrow_WhenNull()
 
 **Logging in tests**: Never mock `ILogger<T>`. Use `NullLogger<T>.Instance` when you don't need to assert on log output. Use `FakeLogger<T>` from `Microsoft.Extensions.Logging.Testing` (namespace inside the `Microsoft.Extensions.Diagnostics.Testing` NuGet package) when you need to assert on log level, message content, or structured attributes — it's a real `ILogger<T>` implementation, not a mock. Assert via `logger.Collector.GetSnapshot()`, which returns `IReadOnlyList<FakeLogRecord>` with `.Level` and `.Message` on each entry.
 
-### E2E Consideration
+### E2E Coverage for New UI Features
 
-Suggest E2E tests for:
+**Any new routable Blazor page (a new `@page` route, or a new mode of an existing page such as create/edit/delete) must ship with a Playwright E2E spec in `tests/e2e/` exercising it.** This is required, not merely suggested — flag its absence the same way a missing unit test on a handler would be flagged. A docs-screenshot script under `tests/e2e/docs-screenshots/` (used only to generate `docs/help/` images per ADR-0007) does not satisfy this — it is excluded from the normal `npm run test:e2e` run and typically stops short of actually submitting/mutating data.
+
+At minimum, the spec should cover, for the new page/flow:
+
+- The happy path (successful submit/action navigates or updates the UI as expected, e.g. a success toast)
+- Validation failure on required fields (client-side)
+- A server-side failure surfaces the page's error alert/toast and leaves the user on the page (use the mock API server's `/__mock/fail?path=...&status=...` + `/__mock/reset?path=...` pattern — see `News.spec.ts`'s "edit article" describe block for the reference shape)
+- Authorization boundary: unauthenticated/unpermissioned access is blocked (button hidden and/or direct navigation shows the permission message), and authenticated-with-permission access works (`page.request.post('/__test/login?permissions=...')`)
+
+When a new page reuses an existing pattern (e.g. another "edit" form styled like `EditSponsor.razor`/`EditArticle.razor`), the corresponding mock server route (`tests/e2e/mock-api/mock-api-server.ts`) usually needs a matching handler (e.g. a new `PUT`/`POST`/`DELETE` branch) — check it was added alongside the spec, not just the spec in isolation.
+
+Also suggest additional E2E tests (beyond the required minimum above) for:
 
 - Multi-step user flows
-- Authentication/authorization boundaries
-- Critical business operations
 - Complex form validation with error recovery
+- Dirty-form-guard discard/keep-editing behavior on pages with `DirtyFormGuard`
 
 ---
 
@@ -674,6 +675,8 @@ When reviewing, verify:
 - [ ] New code has corresponding tests
 - [ ] API endpoint integration tests cover success, validation failure, and auth failure
 - [ ] New feature domain namespace added to `BoundedContextNamespaces` in `DomainBoundaryTests.cs`
+- [ ] New routable Blazor page/flow has a Playwright E2E spec in `tests/e2e/` (not just a `docs-screenshots/` script) covering happy path, validation failure, server-error handling, and the auth boundary
+- [ ] Mock API server (`tests/e2e/mock-api/mock-api-server.ts`) has a matching route handler for any new endpoint the E2E spec exercises
 
 ### Observability
 

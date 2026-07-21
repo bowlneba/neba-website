@@ -1,5 +1,6 @@
 @preservewhitespace false
 @page "/sponsors/{Slug}"
+@using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Sponsors
 @using Neba.Website.Server.Services
 @using Neba.Website.Server.Sponsors
@@ -9,6 +10,8 @@
 @inject ISponsorsApi SponsorsApi
 @inject NavigationManager Navigation
 
+<PageTitle>@(_model?.Name is not null ? _model.Name + " - BowlNEBA" : "Sponsor - BowlNEBA")</PageTitle>
+
 @if (_isLoading)
 {
     <div class="sponsor-detail-loading">
@@ -17,8 +20,6 @@
 }
 else
 {
-    <PageTitle>@_model!.Name - BowlNEBA</PageTitle>
-
     <main class="neba-content-wrapper sponsor-detail">
 
         <header class="sponsor-detail__header">
@@ -42,6 +43,18 @@ else
                     {
                         <span class="sponsor-detail__badge sponsor-detail__badge--category">@_model.CategoryName</span>
                     }
+                    <AuthorizeView Policy="@Permissions.CanManageSponsorsPolicyName">
+                        <Authorized>
+                            @if (_model?.IsCurrentSponsor == true)
+                            {
+                                <span class="sponsor-detail__badge sponsor-detail__badge--status-active">Active</span>
+                            }
+                            else
+                            {
+                                <span class="sponsor-detail__badge sponsor-detail__badge--status-inactive">Inactive</span>
+                            }
+                        </Authorized>
+                    </AuthorizeView>
                 </div>
 
                 <h1 class="sponsor-detail__title">@_model?.Name</h1>
@@ -51,18 +64,28 @@ else
                     <p class="sponsor-detail__tagline">@_model.Tagline</p>
                 }
 
-                @if (_model?.WebsiteUrl is not null)
-                {
-                    <a href="@_model.WebsiteUrl" target="_blank" rel="noopener noreferrer"
-                       class="neba-btn neba-btn-primary sponsor-detail__website-btn">
-                        Visit Website
-                        <span class="material-symbols-outlined">open_in_new</span>
-                    </a>
-                }
+                <div class="flex flex-wrap gap-3">
+                    @if (_model?.WebsiteUrl is not null)
+                    {
+                        <a href="@_model.WebsiteUrl" target="_blank" rel="noopener noreferrer"
+                           class="neba-btn neba-btn-primary sponsor-detail__website-btn">
+                            Visit Website
+                            <span class="material-symbols-outlined">open_in_new</span>
+                        </a>
+                    }
+                    <AuthorizeView Policy="@Permissions.EditSponsor.PolicyName">
+                        <Authorized>
+                            <a href="/sponsors/@Slug/edit" class="neba-btn neba-btn-secondary">
+                                <span class="material-symbols-outlined">edit</span>
+                                Edit Sponsor
+                            </a>
+                        </Authorized>
+                    </AuthorizeView>
+                </div>
             </div>
         </header>
 
-        <div class="sponsor-detail__body">
+        <div class="sponsor-detail__body @(_model?.HasAnyContactInfo == true ? "" : "sponsor-detail__body--single-col")">
 
             <div class="sponsor-detail__col-main">
 
@@ -79,14 +102,43 @@ else
                     </section>
                 }
 
+                <AuthorizeView Policy="@Permissions.EditSponsor.PolicyName">
+                    <Authorized>
+                        @if (_model?.LiveReadText is not null || _model?.PromotionalNotes is not null)
+                        {
+                            <section class="sponsor-detail__promo">
+                                <div class="sponsor-detail__promo-header">
+                                    <span class="material-symbols-outlined">admin_panel_settings</span>
+                                    <h3 class="sponsor-detail__promo-title">Staff-Only Info</h3>
+                                </div>
+                                @if (_model.LiveReadText is not null)
+                                {
+                                    <div class="sponsor-detail__promo-block">
+                                        <p class="sponsor-detail__promo-label">Live Read Text</p>
+                                        <p class="sponsor-detail__live-read">@_model.LiveReadText</p>
+                                    </div>
+                                }
+                                @if (_model.PromotionalNotes is not null)
+                                {
+                                    <div class="sponsor-detail__promo-block">
+                                        <p class="sponsor-detail__promo-label">Promotional Notes</p>
+                                        <p class="sponsor-detail__live-read">@_model.PromotionalNotes</p>
+                                    </div>
+                                }
+                            </section>
+                        }
+                    </Authorized>
+                </AuthorizeView>
 
             </div>
 
+            @if (_model?.HasAnyContactInfo == true)
+            {
             <div class="sponsor-detail__col-aside">
 
                 <section class="neba-card sponsor-detail__contact-card">
 
-                    @if (_model?.HasAddress == true)
+                    @if (_model.HasAddress)
                     {
                         <div class="sponsor-detail__contact-section">
                             <h3 class="sponsor-detail__contact-label">Business Location</h3>
@@ -114,7 +166,7 @@ else
                         </div>
                     }
 
-                    @if (_model?.HasContactChannels == true)
+                    @if (_model.HasContactChannels)
                     {
                         <div class="sponsor-detail__contact-section">
                             <h3 class="sponsor-detail__contact-label">Contact Channels</h3>
@@ -141,7 +193,7 @@ else
                         </div>
                     }
 
-                    @if (_model?.HasSocialMedia == true)
+                    @if (_model.HasSocialMedia)
                     {
                         <div class="sponsor-detail__contact-section">
                             <h3 class="sponsor-detail__contact-label">Social Media</h3>
@@ -166,7 +218,34 @@ else
 
                 </section>
 
+                <AuthorizeView Policy="@Permissions.EditSponsor.PolicyName">
+                    <Authorized>
+                        @if (_model?.Contact is not null)
+                        {
+                            <section class="neba-card sponsor-detail__internal-contact">
+                                <div class="sponsor-detail__internal-header">
+                                    <span class="material-symbols-outlined">badge</span>
+                                    <h3>Internal Contact</h3>
+                                </div>
+                                <p class="sponsor-detail__internal-name">@_model.Contact.Name</p>
+                                <div class="sponsor-detail__internal-details">
+                                    <div class="sponsor-detail__internal-row">
+                                        <span class="material-symbols-outlined">mail</span>
+                                        <a href="mailto:@_model.Contact.Email" style="color:inherit;">@_model.Contact.Email</a>
+                                    </div>
+                                    <div class="sponsor-detail__internal-row">
+                                        <span class="material-symbols-outlined">call</span>
+                                        <span>@FormatPhoneNumber(_model.Contact.Phone.PhoneNumber)</span>
+                                        <span class="sponsor-detail__internal-phone-type">@_model.Contact.Phone.PhoneNumberType</span>
+                                    </div>
+                                </div>
+                            </section>
+                        }
+                    </Authorized>
+                </AuthorizeView>
+
             </div>
+            }
         </div>
 
         <footer class="sponsor-detail__footer">
@@ -202,12 +281,9 @@ else
 
         if (result.IsError)
         {
-            Navigation.NavigateTo("/not-found", replace: true);
-            return;
-        }
-
-        if (!result.Value.IsCurrentSponsor)
-        {
+            // The server already treats an inactive sponsor as not-found for callers without the
+            // Sponsors management permission (see GetSponsorDetailQueryHandler) — an authorized staff
+            // member who just created/manages a non-current sponsor still gets the real response.
             Navigation.NavigateTo("/not-found", replace: true);
             return;
         }

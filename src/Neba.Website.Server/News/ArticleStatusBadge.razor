@@ -1,10 +1,10 @@
 <span class="article-status-badge article-status-badge--@Modifier">@Label</span>
 
 @code {
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public string PublicationStatus { get; set; } = default!;
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public DateTimeOffset PublishDateUtc { get; set; }
 
     private string Label

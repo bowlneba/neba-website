@@ -56,7 +56,7 @@
     private static readonly System.Globalization.CultureInfo CurrencyCulture =
 System.Globalization.CultureInfo.GetCultureInfo("en-US");
 
-    [Parameter, EditorRequired]
+    [Parameter][EditorRequired]
     public IEnumerable<TournamentResultViewModel> Results { get; set; } = [];
 
     private IEnumerable<ResultRowViewModel> GroupedResults =>
