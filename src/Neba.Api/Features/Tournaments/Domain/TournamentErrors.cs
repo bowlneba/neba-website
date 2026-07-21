@@ -9,6 +9,15 @@ namespace Neba.Api.Features.Tournaments.Domain;
 
 internal static class TournamentErrors
 {
+    public static Error TournamentNotFound(TournamentId id)
+        => Error.NotFound(
+            code: "Tournament.NotFound",
+            description: "Tournament was not found.",
+            metadata: new Dictionary<string, object>
+            {
+                { "TournamentId", id.ToString() }
+            });
+    
     public static Error InvalidTournamentDatesForSeason(DateOnly seasonStartDate, DateOnly seasonEndDate)
     {
         return Error.Validation(
