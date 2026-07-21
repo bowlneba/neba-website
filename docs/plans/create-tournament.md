@@ -226,6 +226,20 @@ public static class OilPatterns
 }
 ```
 
+Unlike `OilPatterns`, `TournamentType` **stays nested under the existing `Tournaments` class** — it's genuinely owned by (and only ever consumed by) the Tournaments feature, not shared reference/catalog data. Add a new member alongside `ListForSeason`/`TournamentDetail`:
+
+```csharp
+/// <summary>
+/// Returns a cache descriptor for the list of active tournament types.
+/// </summary>
+public static CacheDescriptor Types
+    => new()
+    {
+        Key = "neba:tournaments:types:list",
+        Tags = ["neba", "neba:tournaments", "neba:tournaments:types"]
+    };
+```
+
 ### API — new use-case folders under `src/Neba.Api/Features/Tournaments/`
 
 **`CreateTournament/CreateTournamentCommand.cs`**:
@@ -547,6 +561,34 @@ internal sealed class CreateTournamentRequestValidator
 
 **`CreateTournament/CreateTournamentSummary.cs`** — same shape as `CreateSponsorSummary`: `Summary`/`Description` strings naming the permission, `Response(201, ...)` example, `Response(400/401/403/422, ...)` explanations (no 409).
 
+**Routing correction**: oil patterns are reusable reference/catalog data — the same category of thing as `BowlingCenter`/`Season`, both of which get their own top-level route rather than living under whichever feature consumes them first. So `CreateOilPattern`/`ListOilPatterns` get their own top-level route group, not `Group<TournamentsEndpointGroup>()`. The C# files stay physically under `Features/Tournaments/` for this phase (no `Features/OilPatterns/` domain-folder split) — only the HTTP surface and Refit contract move.
+
+**New `OilPatternsEndpointGroup.cs`** (top-level, mirrors `BowlingCentersEndpointGroup`):
+
+```csharp
+using Asp.Versioning;
+
+using FastEndpoints;
+using FastEndpoints.AspVersioning;
+
+namespace Neba.Api.Features.Tournaments;
+
+internal sealed class OilPatternsEndpointGroup
+    : SubGroup<BaseEndpointGroup>
+{
+    public OilPatternsEndpointGroup()
+    {
+        VersionSets.CreateApi("OilPatterns", v => v
+            .HasApiVersion(new ApiVersion(1, 0)));
+
+        Configure("oil-patterns", endpoint => endpoint
+            .Description(description => description
+                .WithTags("OilPatterns")
+                .ProducesProblemDetails(500)));
+    }
+}
+```
+
 **`CreateOilPattern/`** — mirrors `CreateSponsor/` exactly in shape.
 
 `CreateOilPatternCommand.cs`:
@@ -657,7 +699,7 @@ internal sealed class CreateOilPatternCommandHandler(AppDbContext appDbContext, 
 }
 ```
 
-`CreateOilPatternEndpoint.cs` — `POST /tournaments/oil-patterns`, same `CreateTournament` permission (creating a pattern is part of the tournament-creation flow, not a separate permission):
+`CreateOilPatternEndpoint.cs` — `POST /oil-patterns`, same `CreateTournament` permission (creating a pattern is part of the tournament-creation flow, not a separate permission, even though the route itself is top-level):
 
 ```csharp
 using Asp.Versioning;
@@ -667,7 +709,7 @@ using ErrorOr;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
-using Neba.Api.Contracts.Tournaments.CreateOilPattern;
+using Neba.Api.Contracts.OilPatterns.CreateOilPattern;
 
 using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
 
@@ -680,11 +722,11 @@ internal sealed class CreateOilPatternEndpoint(Messaging.ICommandHandler<CreateO
 
     public override void Configure()
     {
-        Post("oil-patterns");
-        Group<TournamentsEndpointGroup>();
+        Post(string.Empty);
+        Group<OilPatternsEndpointGroup>();
 
         Options(options => options
-            .WithVersionSet("Tournaments")
+            .WithVersionSet("OilPatterns")
             .MapToApiVersion(new ApiVersion(1, 0)));
 
         Policies(PermissionCatalog.CreateTournament.PolicyName);
@@ -756,7 +798,7 @@ using FastEndpoints;
 
 using FluentValidation;
 
-using Neba.Api.Contracts.Tournaments.CreateOilPattern;
+using Neba.Api.Contracts.OilPatterns.CreateOilPattern;
 
 namespace Neba.Api.Features.Tournaments.CreateOilPattern;
 
@@ -884,7 +926,7 @@ internal sealed class ListOilPatternsQueryHandler(AppDbContext appDbContext)
 }
 ```
 
-`ListOilPatternsEndpoint.cs` — `GET /tournaments/oil-patterns`, `AllowAnonymous()`:
+`ListOilPatternsEndpoint.cs` — `GET /oil-patterns`, `AllowAnonymous()`:
 
 ```csharp
 using Asp.Versioning;
@@ -893,7 +935,7 @@ using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts;
-using Neba.Api.Contracts.Tournaments.ListOilPatterns;
+using Neba.Api.Contracts.OilPatterns.ListOilPatterns;
 using Neba.Api.Messaging;
 
 namespace Neba.Api.Features.Tournaments.ListOilPatterns;
@@ -905,11 +947,11 @@ internal sealed class ListOilPatternsEndpoint(IQueryHandler<ListOilPatternsQuery
 
     public override void Configure()
     {
-        Get("oil-patterns");
-        Group<TournamentsEndpointGroup>();
+        Get(string.Empty);
+        Group<OilPatternsEndpointGroup>();
 
         Options(options => options
-            .WithVersionSet("Tournaments")
+            .WithVersionSet("OilPatterns")
             .MapToApiVersion(new ApiVersion(1, 0)));
 
         AllowAnonymous();
@@ -946,6 +988,109 @@ internal sealed class ListOilPatternsEndpoint(IQueryHandler<ListOilPatternsQuery
 ```
 
 `ListOilPatternsSummary.cs` — same shape as `ListSeasonsSummary`.
+
+**`ListTournamentTypes/`** — solves the "two spots to update" problem for the tournament-type dropdown: the Blazor form fetches this list instead of hand-maintaining a duplicate of `TournamentType.List`, so adding a new tournament type only ever means editing `TournamentType.cs`. Purely in-memory (no `AppDbContext` — `TournamentType.List` is a compiled `SmartEnum` list, not a database table), but still cached like the other list endpoints per the "we don't add tournament types often" reasoning — consistency of shape over the (negligible) cost saved.
+
+`TournamentTypeSummaryDto.cs`:
+
+```csharp
+namespace Neba.Api.Features.Tournaments.ListTournamentTypes;
+
+public sealed record TournamentTypeSummaryDto
+{
+    public required string Name { get; init; }
+}
+```
+
+`ListTournamentTypesQuery.cs`:
+
+```csharp
+using Neba.Api.Caching;
+using Neba.Api.Messaging;
+
+namespace Neba.Api.Features.Tournaments.ListTournamentTypes;
+
+internal sealed record ListTournamentTypesQuery
+    : ICachedQuery<IReadOnlyCollection<TournamentTypeSummaryDto>>
+{
+    public CacheDescriptor Cache
+        => CacheDescriptors.Tournaments.Types;
+
+    public TimeSpan Expiry
+        => TimeSpan.FromDays(90);
+}
+```
+
+`ListTournamentTypesQueryHandler.cs` — no DB query; projects the domain `SmartEnum` list directly, filtered to active formats only (the same list `CreateTournamentRequestValidator` already checks submitted values against):
+
+```csharp
+using Neba.Api.Features.Tournaments.Domain;
+using Neba.Api.Messaging;
+
+namespace Neba.Api.Features.Tournaments.ListTournamentTypes;
+
+internal sealed class ListTournamentTypesQueryHandler
+    : IQueryHandler<ListTournamentTypesQuery, IReadOnlyCollection<TournamentTypeSummaryDto>>
+{
+    public Task<IReadOnlyCollection<TournamentTypeSummaryDto>> HandleAsync(ListTournamentTypesQuery query, CancellationToken cancellationToken)
+        => Task.FromResult<IReadOnlyCollection<TournamentTypeSummaryDto>>(
+            [.. TournamentType.List
+                .Where(t => t.ActiveFormat)
+                .Select(t => new TournamentTypeSummaryDto { Name = t.Name })]);
+}
+```
+
+`ListTournamentTypesEndpoint.cs` — `GET /tournaments/types`, `AllowAnonymous()`, same shape as `ListOilPatternsEndpoint` but on `TournamentsEndpointGroup` (this data is tournament-owned, not a shared catalog):
+
+```csharp
+using Asp.Versioning;
+
+using FastEndpoints;
+using FastEndpoints.AspVersioning;
+
+using Neba.Api.Contracts;
+using Neba.Api.Contracts.Tournaments.ListTournamentTypes;
+using Neba.Api.Messaging;
+
+namespace Neba.Api.Features.Tournaments.ListTournamentTypes;
+
+internal sealed class ListTournamentTypesEndpoint(IQueryHandler<ListTournamentTypesQuery, IReadOnlyCollection<TournamentTypeSummaryDto>> queryHandler)
+    : EndpointWithoutRequest<CollectionResponse<TournamentTypeSummaryResponse>>
+{
+    private readonly IQueryHandler<ListTournamentTypesQuery, IReadOnlyCollection<TournamentTypeSummaryDto>> _queryHandler = queryHandler;
+
+    public override void Configure()
+    {
+        Get("types");
+        Group<TournamentsEndpointGroup>();
+
+        Options(options => options
+            .WithVersionSet("Tournaments")
+            .MapToApiVersion(new ApiVersion(1, 0)));
+
+        AllowAnonymous();
+
+        Description(description => description
+            .WithName("ListTournamentTypes")
+            .WithTags("Public")
+            .Produces<CollectionResponse<TournamentTypeSummaryResponse>>(StatusCodes.Status200OK));
+    }
+
+    public override async Task HandleAsync(CancellationToken ct)
+    {
+        var result = await _queryHandler.HandleAsync(new ListTournamentTypesQuery(), ct);
+
+        var response = new CollectionResponse<TournamentTypeSummaryResponse>
+        {
+            Items = [.. result.Select(t => new TournamentTypeSummaryResponse { Name = t.Name })]
+        };
+
+        await Send.OkAsync(response, ct);
+    }
+}
+```
+
+`ListTournamentTypesSummary.cs` — same shape as `ListSeasonsSummary`.
 
 **`UploadTournamentLogo/`** — mirrors `Sponsors/UploadSponsorLogo/` file-for-file: `UploadTournamentLogoEndpoint.cs` (`Post("logo")`, `Group<TournamentsEndpointGroup>()`, `Policies(PermissionCatalog.CreateTournament.PolicyName)`, stages via `IUploadStagingService.StageUploadAsync(req.File, "bowlneba-public", "tournaments/logo", null, ct)`), `UploadTournamentLogoRequestValidator.cs` (identical content-type/size rules to `UploadSponsorLogoRequestValidator`), `UploadTournamentLogoSummary.cs`.
 
@@ -992,7 +1137,7 @@ public static readonly Permissions CreateTournament = new("Tournaments.CreateTou
 #endregion
 ```
 
-No `TournamentManagementPermissions` collection / OR-policy yet (matches the Sponsors precedent). All four new mutating endpoints gate on `Permissions.CreateTournament.PolicyName`; `ListOilPatterns` is `AllowAnonymous()`. `docs/policies/README.md` needs no new row — the generic dynamic `Permission:{value}` row already documents this.
+No `TournamentManagementPermissions` collection / OR-policy yet (matches the Sponsors precedent). The three mutating endpoints (`CreateTournament`, `CreateOilPattern`, `UploadTournamentLogo`) gate on `Permissions.CreateTournament.PolicyName`; the two list endpoints (`ListOilPatterns`, `ListTournamentTypes`) are `AllowAnonymous()`. `docs/policies/README.md` needs no new row — the generic dynamic `Permission:{value}` row already documents this.
 
 ### Contracts (`src/Neba.Api.Contracts/Tournaments/`)
 
@@ -1077,10 +1222,12 @@ public sealed record CreatedTournamentResponse
 }
 ```
 
-**`CreateOilPattern/CreateOilPatternRequest.cs`**:
+**Note**: `CreateOilPattern`/`ListOilPatterns` contract types move to their own top-level `src/Neba.Api.Contracts/OilPatterns/` folder — sibling to `Tournaments/`, mirroring `BowlingCenters/`/`Seasons/` — rather than living under `Contracts/Tournaments/`, per the routing correction above.
+
+**`OilPatterns/CreateOilPattern/CreateOilPatternRequest.cs`**:
 
 ```csharp
-namespace Neba.Api.Contracts.Tournaments.CreateOilPattern;
+namespace Neba.Api.Contracts.OilPatterns.CreateOilPattern;
 
 public sealed record CreateOilPatternRequest
 {
@@ -1098,10 +1245,10 @@ public sealed record CreateOilPatternRequest
 }
 ```
 
-**`CreateOilPattern/CreatedOilPatternResponse.cs`**:
+**`OilPatterns/CreateOilPattern/CreatedOilPatternResponse.cs`**:
 
 ```csharp
-namespace Neba.Api.Contracts.Tournaments.CreateOilPattern;
+namespace Neba.Api.Contracts.OilPatterns.CreateOilPattern;
 
 public sealed record CreatedOilPatternResponse
 {
@@ -1117,10 +1264,10 @@ public sealed record CreatedOilPatternResponse
 }
 ```
 
-**`ListOilPatterns/OilPatternSummaryResponse.cs`**:
+**`OilPatterns/ListOilPatterns/OilPatternSummaryResponse.cs`**:
 
 ```csharp
-namespace Neba.Api.Contracts.Tournaments.ListOilPatterns;
+namespace Neba.Api.Contracts.OilPatterns.ListOilPatterns;
 
 public sealed record OilPatternSummaryResponse
 {
@@ -1144,20 +1291,54 @@ public sealed record OilPatternSummaryResponse
 }
 ```
 
-**`ITournamentsApi.cs`** (edit) — add:
+**New `OilPatterns/IOilPatternsApi.cs`** (mirrors `IBowlingCentersApi`/`ISeasonsApi` — its own top-level Refit contract, not bolted onto `ITournamentsApi`):
+
+```csharp
+using Neba.Api.Contracts.OilPatterns.CreateOilPattern;
+using Neba.Api.Contracts.OilPatterns.ListOilPatterns;
+
+using Refit;
+
+namespace Neba.Api.Contracts.OilPatterns;
+
+/// <summary>
+/// Defines the oil patterns API contract.
+/// </summary>
+public interface IOilPatternsApi
+{
+    /// <summary>
+    /// Lists all oil patterns available to choose from when creating a tournament.
+    /// </summary>
+    [Get("/oil-patterns")]
+    Task<IApiResponse<CollectionResponse<OilPatternSummaryResponse>>> ListOilPatternsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a reusable oil pattern.
+    /// </summary>
+    [Post("/oil-patterns")]
+    Task<IApiResponse<CreatedOilPatternResponse>> CreateOilPatternAsync(CreateOilPatternRequest request, CancellationToken cancellationToken = default);
+}
+```
+
+**`ListTournamentTypes/TournamentTypeSummaryResponse.cs`**:
+
+```csharp
+namespace Neba.Api.Contracts.Tournaments.ListTournamentTypes;
+
+public sealed record TournamentTypeSummaryResponse
+{
+    public required string Name { get; init; }
+}
+```
+
+**`ITournamentsApi.cs`** (edit) — add the tournament-specific members (oil pattern methods live on `IOilPatternsApi` instead):
 
 ```csharp
 /// <summary>
-/// Lists all oil patterns available to choose from when creating a tournament.
+/// Lists all active tournament types available when creating a tournament.
 /// </summary>
-[Get("/tournaments/oil-patterns")]
-Task<IApiResponse<CollectionResponse<OilPatternSummaryResponse>>> ListOilPatternsAsync(CancellationToken cancellationToken = default);
-
-/// <summary>
-/// Creates a reusable oil pattern.
-/// </summary>
-[Post("/tournaments/oil-patterns")]
-Task<IApiResponse<CreatedOilPatternResponse>> CreateOilPatternAsync(CreateOilPatternRequest request, CancellationToken cancellationToken = default);
+[Get("/tournaments/types")]
+Task<IApiResponse<CollectionResponse<TournamentTypeSummaryResponse>>> ListTournamentTypesAsync(CancellationToken cancellationToken = default);
 
 /// <summary>
 /// Uploads a tournament logo. Requires the Tournaments.CreateTournament permission.
@@ -1178,15 +1359,15 @@ Task<IApiResponse<CreatedTournamentResponse>> CreateTournamentAsync(CreateTourna
 ### Test Factories (`tests/Neba.TestFactory/Tournaments/`)
 
 - `TournamentFactory`/`OilPatternFactory` (existing) need no changes — both already construct via object initializer with every field represented, independent of the new `Create()` factories.
-- New factories, following the established `Create()`-with-nullable-params-and-const-defaults shape: `CreateTournamentCommandFactory`, `CreateOilPatternCommandFactory`, `OilPatternSummaryDtoFactory`, `CreatedTournamentFactory`, `CreatedOilPatternFactory`, plus Contracts-side equivalents `CreateTournamentRequestFactory`, `TournamentInputFactory`, `CreateOilPatternRequestFactory`, `CreatedTournamentResponseFactory`, `CreatedOilPatternResponseFactory`, `OilPatternSummaryResponseFactory`.
+- New factories, following the established `Create()`-with-nullable-params-and-const-defaults shape: `CreateTournamentCommandFactory`, `CreateOilPatternCommandFactory`, `OilPatternSummaryDtoFactory`, `TournamentTypeSummaryDtoFactory`, `CreatedTournamentFactory`, `CreatedOilPatternFactory`, plus Contracts-side equivalents `CreateTournamentRequestFactory`, `TournamentInputFactory`, `CreateOilPatternRequestFactory`, `CreatedTournamentResponseFactory`, `CreatedOilPatternResponseFactory`, `OilPatternSummaryResponseFactory`, `TournamentTypeSummaryResponseFactory`.
 
 ### Tests
 
 - **Domain**: `Tournament.Create` (valid; missing name; start > end); `OilPattern.Create` (valid; missing name; non-positive length/volume); `OilPattern.LengthCategory`/`RatioCategory` computed-property cases at each threshold boundary; `PatternLengthCategory.FromLength`/`PatternRatioCategory.FromRatio` boundary tests.
-- **Handlers**: `CreateTournamentCommandHandlerTests` — season derived correctly from dates; no matching season; oil pattern id resolves categories; oil pattern not found; bowling center not found; manual categories path; bowling center omitted (null FK) is valid. `CreateOilPatternCommandHandlerTests` — happy path; duplicate Kegel ID conflict. `ListOilPatternsQueryHandlerTests` — basic projection, including a case that proves the category strings are computed post-materialization (e.g. via an in-memory EF provider, since a real SQL provider would fail to translate a naive single-pass `.Select()` — the whole reason for the two-step handler shape above).
-- **Endpoints**: Configure/HandleAsync unit tests for all four new endpoints, following the FastEndpoints unit-test limitations already documented in CLAUDE.md (`ignore-methods`, `LinkGenerator` throw pattern for `Send.CreatedAtAsync` in `CreateTournamentEndpoint`, etc.).
+- **Handlers**: `CreateTournamentCommandHandlerTests` — season derived correctly from dates; no matching season; oil pattern id resolves categories; oil pattern not found; bowling center not found; manual categories path; bowling center omitted (null FK) is valid. `CreateOilPatternCommandHandlerTests` — happy path; duplicate Kegel ID conflict. `ListOilPatternsQueryHandlerTests` — basic projection, including a case that proves the category strings are computed post-materialization (e.g. via an in-memory EF provider, since a real SQL provider would fail to translate a naive single-pass `.Select()` — the whole reason for the two-step handler shape above). `ListTournamentTypesQueryHandlerTests` — returns only `ActiveFormat` types, in the same shape `TournamentType.List` exposes them (no DB/mocking needed at all — a plain call, no `MockBehavior.Strict` setups since there's nothing to mock).
+- **Endpoints**: Configure/HandleAsync unit tests for all five new endpoints, following the FastEndpoints unit-test limitations already documented in CLAUDE.md (`ignore-methods`, `LinkGenerator` throw pattern for `Send.CreatedAtAsync` in `CreateTournamentEndpoint`, etc.).
 - **Validators**: `CreateTournamentRequestValidator` (required fields, date ordering, mutual-exclusivity of oil-pattern-id vs. manual categories); `CreateOilPatternRequestValidator` (required fields, positive numbers).
-- **Cache descriptor**: run `/cache-descriptor` for `ListOilPatternsQuery` once it exists, to generate its `CacheDescriptors.cs` entry's tests per that skill's convention.
+- **Cache descriptor**: run `/cache-descriptor` for `ListOilPatternsQuery` and `ListTournamentTypesQuery` once they exist, to generate their `CacheDescriptors.cs` entries' tests per that skill's convention.
 
 ### Deferred / out of scope for this phase
 
@@ -1210,6 +1391,7 @@ Task<IApiResponse<CreatedTournamentResponse>> CreateTournamentAsync(CreateTourna
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Tournaments
 @using Neba.Api.Contracts.Tournaments.CreateTournament
+@using Neba.Api.Contracts.Tournaments.ListTournamentTypes
 @using Neba.Api.Contracts.Uploads
 @using Neba.Website.Server.Notifications
 @using Neba.Website.Server.Services
@@ -1262,9 +1444,9 @@ Task<IApiResponse<CreatedTournamentResponse>> CreateTournamentAsync(CreateTourna
                                 <div>
                                     <label for="tournament-type" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Tournament Type</label>
                                     <InputSelect id="tournament-type" @bind-Value="_model.TournamentType" class="neba-select">
-                                        @foreach (var type in TournamentTypeOptions.Active)
+                                        @foreach (var type in _tournamentTypes)
                                         {
-                                            <option value="@type">@type</option>
+                                            <option value="@type.Name">@type.Name</option>
                                         }
                                     </InputSelect>
                                     <ValidationMessage For="@(() => _model.TournamentType)" class="block text-sm text-red-600 mt-1" />
@@ -1374,6 +1556,7 @@ Task<IApiResponse<CreatedTournamentResponse>> CreateTournamentAsync(CreateTourna
     private string? _errorMessage;
 
     private IReadOnlyCollection<BowlingCenterSummaryResponse> _bowlingCenters = [];
+    private IReadOnlyCollection<TournamentTypeSummaryResponse> _tournamentTypes = [];
 
     public CreateTournament()
     {
@@ -1383,14 +1566,24 @@ Task<IApiResponse<CreatedTournamentResponse>> CreateTournamentAsync(CreateTourna
 
     protected override async Task OnInitializedAsync()
     {
-        var result = await ApiExecutor.ExecuteAsync(
+        var bowlingCentersResult = await ApiExecutor.ExecuteAsync(
             "BowlingCenters",
             "ListBowlingCenters",
             BowlingCentersApi.ListBowlingCentersAsync);
 
-        if (!result.IsError)
+        if (!bowlingCentersResult.IsError)
         {
-            _bowlingCenters = result.Value.Items;
+            _bowlingCenters = bowlingCentersResult.Value.Items;
+        }
+
+        var tournamentTypesResult = await ApiExecutor.ExecuteAsync(
+            "Tournaments",
+            "ListTournamentTypes",
+            TournamentsApi.ListTournamentTypesAsync);
+
+        if (!tournamentTypesResult.IsError)
+        {
+            _tournamentTypes = tournamentTypesResult.Value.Items;
         }
     }
 
@@ -1522,34 +1715,7 @@ Task<IApiResponse<CreatedTournamentResponse>> CreateTournamentAsync(CreateTourna
 }
 ```
 
-**New `TournamentTypeOptions.cs`** (mirrors `SponsorCategoryOptions.cs` — only the currently-active `TournamentType` names, since inactive formats aren't offered for new tournaments):
-
-```csharp
-namespace Neba.Website.Server.Tournaments;
-
-/// <summary>
-/// The active tournament type options shown in the Create Tournament form dropdown.
-/// </summary>
-internal static class TournamentTypeOptions
-{
-    public static readonly IReadOnlyList<string> Active =
-    [
-        "Singles",
-        "Doubles",
-        "Trios",
-        "Baker",
-        "Non-Champions",
-        "Tournament of Champions",
-        "Invitational",
-        "Masters",
-        "Senior",
-        "Women",
-        "Senior / Women",
-        "Youth",
-        "Over/Under 50 Doubles"
-    ];
-}
-```
+**No `TournamentTypeOptions.cs`** — unlike `SponsorCategoryOptions.cs` (which hand-maintains a duplicate list), the tournament-type dropdown fetches `ITournamentsApi.ListTournamentTypesAsync()` in `CreateTournament.razor.OnInitializedAsync` instead, so a new `TournamentType` only ever requires a domain-layer change (see Phase 1's `ListTournamentTypes`). This deliberately does *not* match the `SponsorCategoryOptions` precedent — that hardcoded list is a pre-existing shortcut in the codebase, not a pattern to extend.
 
 **Existing `Tournaments/Schedule/Tournaments.razor`** (edit) — add `@using Neba.Api.Contracts.Security` to the top if not already present, and insert immediately after the closing `</div>` of `.tournaments-page` (before `@code {`):
 
@@ -1595,13 +1761,13 @@ internal static class OilPatternCategoryOptions
 
 ```razor
 @using ErrorOr
-@using Neba.Api.Contracts.Tournaments
-@using Neba.Api.Contracts.Tournaments.CreateOilPattern
-@using Neba.Api.Contracts.Tournaments.ListOilPatterns
+@using Neba.Api.Contracts.OilPatterns
+@using Neba.Api.Contracts.OilPatterns.CreateOilPattern
+@using Neba.Api.Contracts.OilPatterns.ListOilPatterns
 @using Neba.Website.Server.Services
 
 @inject ApiExecutor ApiExecutor
-@inject ITournamentsApi TournamentsApi
+@inject IOilPatternsApi OilPatternsApi
 
 <div class="neba-space-y-4">
     <div class="neba-segmented-control" role="tablist" aria-label="Oil pattern mode">
@@ -1729,9 +1895,9 @@ internal static class OilPatternCategoryOptions
     protected override async Task OnInitializedAsync()
     {
         var result = await ApiExecutor.ExecuteAsync(
-            "Tournaments",
+            "OilPatterns",
             "ListOilPatterns",
-            TournamentsApi.ListOilPatternsAsync);
+            OilPatternsApi.ListOilPatternsAsync);
 
         if (!result.IsError)
         {
@@ -1777,9 +1943,9 @@ internal static class OilPatternCategoryOptions
         };
 
         var result = await ApiExecutor.ExecuteAsync(
-            "Tournaments",
+            "OilPatterns",
             "CreateOilPattern",
-            ct => TournamentsApi.CreateOilPatternAsync(request, ct));
+            ct => OilPatternsApi.CreateOilPatternAsync(request, ct));
 
         _isCreatingPattern = false;
 
@@ -1825,9 +1991,11 @@ internal static class OilPatternCategoryOptions
 
 - [`docs/plans/mockups/create-tournament/create-tournament.html`](mockups/create-tournament/create-tournament.html) — single mockup (data-capture page, per the mockup-scoping rule: no layout tradeoff worth comparing for a form). Uses the real theme tokens/classes from `neba_theme.css`/`app.css` (page-title-bar gradient, `neba-card`, `neba-segmented-control`, `neba-file-upload-*`, badges) so it reads as this app, not a generic form. Simulates with inline JS: the oil-pattern 3-way mode switch, live category-badge preview when picking an existing pattern (math mirrors the real `FromLength`/`FromRatio` thresholds), the "Create New" pattern flow appending to and auto-selecting in the picker, a real client-side logo thumbnail preview via `FileReader`, and a mock success banner on submit.
 
-### API Client (`src/Neba.Api.Contracts/Tournaments/ITournamentsApi.cs`)
+### API Client
 
-No new contract work here beyond Phase 1 — `CreateTournamentAsync`, `CreateOilPatternAsync`, `ListOilPatternsAsync`, `UploadTournamentLogoAsync` already exist on `ITournamentsApi` from Phase 1. `IBowlingCentersApi.ListBowlingCentersAsync()` already exists too (used for the venue `<select>`, first Blazor consumer of that endpoint).
+No new contract work here beyond Phase 1 — `ITournamentsApi.CreateTournamentAsync`/`UploadTournamentLogoAsync` and `IOilPatternsApi.CreateOilPatternAsync`/`ListOilPatternsAsync` already exist from Phase 1 (the latter two on their own top-level `IOilPatternsApi`, per the `/oil-patterns` routing correction — see Phase 1). `IBowlingCentersApi.ListBowlingCentersAsync()` already exists too (used for the venue `<select>`, first Blazor consumer of that endpoint).
+
+`src/Neba.Website.Server/Services/ApiServicesConfiguration.cs` (edit) — add `services.RegisterApiEndpoint<IOilPatternsApi>();` alongside the existing `RegisterApiEndpoint<ITournamentsApi>()`/`RegisterApiEndpoint<IBowlingCentersApi>()` calls.
 
 ### State / Dirty-Tracking
 
