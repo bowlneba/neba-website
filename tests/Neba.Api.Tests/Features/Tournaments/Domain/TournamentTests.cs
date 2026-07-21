@@ -1,6 +1,9 @@
+using Neba.Api.Features.BowlingCenters.Domain;
+using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.BowlingCenters;
 using Neba.TestFactory.Tournaments;
 
 namespace Neba.Api.Tests.Features.Tournaments.Domain;
@@ -9,6 +12,186 @@ namespace Neba.Api.Tests.Features.Tournaments.Domain;
 [Component("Tournaments")]
 public sealed class TournamentTests
 {
+    [Fact(DisplayName = "Create returns success when all inputs are valid")]
+    public void Create_ShouldReturnSuccess_WhenInputsAreValid()
+    {
+        // Arrange
+        var seasonId = SeasonId.New();
+
+        // Act
+        var result = Tournament.Create(
+            TournamentFactory.ValidName,
+            TournamentFactory.ValidTournamentType,
+            TournamentFactory.ValidStartDate,
+            TournamentFactory.ValidEndDate,
+            seasonId,
+            statsEligible: true,
+            entryFee: 100m);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "Create assigns a new Id and the provided required properties")]
+    public void Create_ShouldAssignIdAndRequiredProperties_WhenInputsAreValid()
+    {
+        // Arrange
+        var seasonId = SeasonId.New();
+
+        // Act
+        var result = Tournament.Create(
+            TournamentFactory.ValidName,
+            TournamentFactory.ValidTournamentType,
+            TournamentFactory.ValidStartDate,
+            TournamentFactory.ValidEndDate,
+            seasonId,
+            statsEligible: true,
+            entryFee: 100m);
+
+        // Assert
+        var tournament = result.Value;
+        tournament.Id.ShouldNotBe(default);
+        tournament.Name.ShouldBe(TournamentFactory.ValidName);
+        tournament.TournamentType.ShouldBe(TournamentFactory.ValidTournamentType);
+        tournament.StartDate.ShouldBe(TournamentFactory.ValidStartDate);
+        tournament.EndDate.ShouldBe(TournamentFactory.ValidEndDate);
+        tournament.SeasonId.ShouldBe(seasonId);
+        tournament.StatsEligible.ShouldBeTrue();
+        tournament.EntryFee.ShouldBe(100m);
+    }
+
+    [Fact(DisplayName = "Create assigns the optional properties when provided")]
+    public void Create_ShouldAssignOptionalProperties_WhenProvided()
+    {
+        // Arrange
+        var bowlingCenterId = CertificationNumberFactory.Create();
+        var externalRegistrationUrl = new Uri("https://example.com/register");
+
+        // Act
+        var result = Tournament.Create(
+            TournamentFactory.ValidName,
+            TournamentFactory.ValidTournamentType,
+            TournamentFactory.ValidStartDate,
+            TournamentFactory.ValidEndDate,
+            SeasonId.New(),
+            statsEligible: true,
+            entryFee: 100m,
+            bowlingCenterId: bowlingCenterId,
+            externalRegistrationUrl: externalRegistrationUrl,
+            patternLengthCategory: PatternLengthCategory.LongPattern,
+            patternRatioCategory: PatternRatioCategory.Recreation);
+
+        // Assert
+        var tournament = result.Value;
+        tournament.BowlingCenterId.ShouldBe(bowlingCenterId);
+        tournament.ExternalRegistrationUrl.ShouldBe(externalRegistrationUrl);
+        tournament.PatternLengthCategory.ShouldBe(PatternLengthCategory.LongPattern);
+        tournament.PatternRatioCategory.ShouldBe(PatternRatioCategory.Recreation);
+    }
+
+    [Theory(DisplayName = "Create returns Tournament.Name.Required when name is null, empty, or whitespace")]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Create_ShouldReturnError_WhenNameIsNullOrWhiteSpace(string? name)
+    {
+        // Act
+        var result = Tournament.Create(
+            name!,
+            TournamentFactory.ValidTournamentType,
+            TournamentFactory.ValidStartDate,
+            TournamentFactory.ValidEndDate,
+            SeasonId.New(),
+            statsEligible: true,
+            entryFee: 100m);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Name.Required");
+    }
+
+    [Fact(DisplayName = "Create returns Tournament.EndDateBeforeStartDate when end date is before start date")]
+    public void Create_ShouldReturnError_WhenEndDateIsBeforeStartDate()
+    {
+        // Arrange
+        var startDate = new DateOnly(2025, 10, 5);
+        var endDate = new DateOnly(2025, 10, 4);
+
+        // Act
+        var result = Tournament.Create(
+            TournamentFactory.ValidName,
+            TournamentFactory.ValidTournamentType,
+            startDate,
+            endDate,
+            SeasonId.New(),
+            statsEligible: true,
+            entryFee: 100m);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.EndDateBeforeStartDate");
+        result.FirstError.Metadata.ShouldNotBeNull();
+        result.FirstError.Metadata["StartDate"].ShouldBe("2025-10-05");
+        result.FirstError.Metadata["EndDate"].ShouldBe("2025-10-04");
+    }
+
+    [Fact(DisplayName = "Create returns success when start date equals end date")]
+    public void Create_ShouldReturnSuccess_WhenStartDateEqualsEndDate()
+    {
+        // Arrange
+        var date = TournamentFactory.ValidStartDate;
+
+        // Act
+        var result = Tournament.Create(
+            TournamentFactory.ValidName,
+            TournamentFactory.ValidTournamentType,
+            date,
+            date,
+            SeasonId.New(),
+            statsEligible: true,
+            entryFee: 100m);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "Create returns Tournament.InvalidEntryFee when entry fee is negative")]
+    public void Create_ShouldReturnError_WhenEntryFeeIsNegative()
+    {
+        // Act
+        var result = Tournament.Create(
+            TournamentFactory.ValidName,
+            TournamentFactory.ValidTournamentType,
+            TournamentFactory.ValidStartDate,
+            TournamentFactory.ValidEndDate,
+            SeasonId.New(),
+            statsEligible: true,
+            entryFee: -1m);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.InvalidEntryFee");
+        result.FirstError.Metadata.ShouldNotBeNull();
+        result.FirstError.Metadata["EntryFee"].ShouldBe(-1m);
+    }
+
+    [Fact(DisplayName = "Create returns success when entry fee is zero")]
+    public void Create_ShouldReturnSuccess_WhenEntryFeeIsZero()
+    {
+        // Act
+        var result = Tournament.Create(
+            TournamentFactory.ValidName,
+            TournamentFactory.ValidTournamentType,
+            TournamentFactory.ValidStartDate,
+            TournamentFactory.ValidEndDate,
+            SeasonId.New(),
+            statsEligible: true,
+            entryFee: 0m);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
     [Fact(DisplayName = "AddSponsor returns success when sponsor is new")]
     public void AddSponsor_ShouldReturnSuccess_WhenSponsorIsNew()
     {

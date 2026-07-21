@@ -113,6 +113,58 @@ public sealed class Tournament
         => _sponsors;
 
     /// <summary>
+    /// Creates a new tournament, validating name, dates, and entry fee.
+    /// </summary>
+    public static ErrorOr<Tournament> Create(
+        string name,
+        TournamentType tournamentType,
+        DateOnly startDate,
+        DateOnly endDate,
+        SeasonId seasonId,
+        bool statsEligible,
+        decimal entryFee,
+        CertificationNumber? bowlingCenterId = null,
+        Uri? externalRegistrationUrl = null,
+        StoredFile? logo = null,
+        PatternLengthCategory? patternLengthCategory = null,
+        PatternRatioCategory? patternRatioCategory = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return TournamentErrors.NameRequired;
+        }
+
+        if (startDate > endDate)
+        {
+            return TournamentErrors.EndDateBeforeStartDate(startDate, endDate);
+        }
+
+        if (entryFee < 0)
+        {
+            return TournamentErrors.InvalidEntryFee(entryFee);
+        }
+
+        var tournament = new Tournament
+        {
+            Id = TournamentId.New(),
+            Name = name,
+            TournamentType = tournamentType,
+            StartDate = startDate,
+            EndDate = endDate,
+            SeasonId = seasonId,
+            StatsEligible = statsEligible,
+            EntryFee = entryFee,
+            BowlingCenterId = bowlingCenterId,
+            ExternalRegistrationUrl = externalRegistrationUrl,
+            Logo = logo,
+            PatternLengthCategory = patternLengthCategory,
+            PatternRatioCategory = patternRatioCategory
+        };
+
+        return tournament;
+    }
+
+    /// <summary>
     /// Adds a sponsor; returns an error if already added or a title sponsor conflict exists.
     /// </summary>
     public ErrorOr<Success> AddSponsor(SponsorId sponsorId, bool titleSponsor, decimal sponsorshipAmount)
