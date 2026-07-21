@@ -80,6 +80,15 @@ public sealed class Permissions
 
     #endregion
 
+    #region Tournaments
+
+    /// <summary>
+    /// Permission to create a tournament.
+    /// </summary>
+    public static readonly Permissions CreateTournament = new("Tournaments.CreateTournament", "Create Tournament");
+
+    #endregion
+
     private Permissions(string key, string name)
         : base(name, key)
     { }

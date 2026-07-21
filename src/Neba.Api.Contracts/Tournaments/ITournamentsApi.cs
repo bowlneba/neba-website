@@ -1,3 +1,4 @@
+using Neba.Api.Contracts.Tournaments.CreateTournament;
 using Neba.Api.Contracts.Tournaments.GetTournament;
 using Neba.Api.Contracts.Tournaments.ListChampions;
 
@@ -16,6 +17,14 @@ public interface ITournamentsApi
     [Get("/tournaments/{tournamentId}")]
     Task<IApiResponse<TournamentDetailResponse>> GetTournamentAsync(
         string tournamentId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a tournament.
+    /// </summary>
+    [Post("/tournaments")]
+    Task<IApiResponse<CreatedTournamentResponse>> CreateTournamentAsync(
+        CreateTournamentRequest request,
         CancellationToken cancellationToken = default);
 
     /// <summary>
