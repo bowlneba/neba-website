@@ -19,7 +19,7 @@ git log <base-branch>...HEAD --oneline
 git diff <base-branch>...HEAD --name-only
 ```
 
-If the diff is very large, group the review by layer (Domain → Application → Infrastructure → API → Contracts → Blazor/Website → Tests).
+If the diff is very large, group the review by slice (Features/{Feature} → Contracts → Blazor/Website → Tests).
 
 ### 2. Load the review guidelines
 
