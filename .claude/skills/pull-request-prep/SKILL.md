@@ -109,6 +109,11 @@ When adding Playwright tests:
 - [ ] Components don't fetch data directly
 - [ ] Pages are thin orchestrators
 
+**README**
+- [ ] `README.md`'s Project Structure reflects any new/removed top-level `Features/{Feature}` folders, projects, or render-mode changes
+- [ ] `README.md`'s Technology Stack reflects any new/removed package that changes what's user-visible (new datastore, new client library, new background job engine, etc.) — not every `Directory.Packages.props` bump, just ones that change the stack story
+- [ ] `README.md`'s Implementation Plan checkboxes reflect features this PR completes or starts (check off finished items, leave partial work unchecked)
+
 ### 4. Present the review
 
 Structure the review as:
@@ -126,6 +131,9 @@ Structure the review as:
 ### 💡 Suggestions
 [List each suggestion. If none: "None."]
 
+### 📄 README Updates
+[List each stale/missing spot in README.md found via the **README** checklist above, with the proposed change. If none: "None — README is current."]
+
 ### ✅ Looks Good
 [Brief note on what was done well or what was verified clean.]
 
@@ -135,7 +143,11 @@ Write this review verbatim to `pr-review.md` at the repo root (overwrite if it a
 
 Ask the user: **"Ready to generate the PR description, or would you like to address any of these first?"**
 
-### 5. Generate the PR description
+### 5. Apply README updates
+
+If step 4 found any README Updates, apply them directly to `README.md` now (unless the user said they'd handle findings themselves) — these are typically small, mechanical (a checkbox, a stack line, a folder in the structure diagram) and don't warrant a separate round-trip. Show a brief summary of what changed. Skip this step entirely if the README Updates list was empty.
+
+### 6. Generate the PR description
 
 After the user confirms (or asks to proceed), infer the PR description format from the changes and the project's PR history. The format used in this project is:
 
@@ -150,15 +162,13 @@ After the user confirms (or asks to proceed), infer the PR description format fr
 
 ## What Changed
 
-[Organized by layer. Only include layers that actually changed. Use sub-bullets for detail.]
+[Organized by slice/area. Only include sections that actually changed. Use sub-bullets for detail.]
 
-### Domain (`Neba.Domain.*`)
-### Application
-### Infrastructure
-### API
+### Features/{Feature} (`Neba.Api.Features.*`)
+[Domain, handlers, endpoints — group by feature if multiple features touched.]
 ### Contracts
 ### Blazor (`Neba.Website.Server`)
-### Architecture Tests
+### Tests
 ### Docs
 
 ## Test Plan
