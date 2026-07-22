@@ -247,6 +247,14 @@ const MOCK_HIGH_BLOCK_AWARDS = {
   totalItems: 2,
 };
 
+const MOCK_TOURNAMENT_TYPES = {
+  items: [{ name: 'Singles' }, { name: 'Doubles' }],
+};
+
+const MOCK_OIL_PATTERNS = {
+  items: [],
+};
+
 export const MOCK_TOURNAMENT_DETAIL = {
   id: MOCK_TOURNAMENT_ID,
   name: 'NEBA Spring Classic',
@@ -615,6 +623,7 @@ const routes: Record<string, unknown> = {
   '/reference-data/us-states': MOCK_US_STATES,
   '/reference-data/phone-number-types': MOCK_PHONE_NUMBER_TYPES,
   '/bowling-centers': MOCK_BOWLING_CENTERS,
+  '/oil-patterns': MOCK_OIL_PATTERNS,
   '/seasons': MOCK_SEASONS,
   '/sponsors': MOCK_SPONSORS_ACTIVE,
   '/sponsors/pro-shop-plus': MOCK_SPONSOR_PRO_SHOP_PLUS,
@@ -641,12 +650,14 @@ function resolveGetRoute(pathname: string, searchParams: URLSearchParams): objec
   }
 
   if (pathname === '/tournaments/champions') return MOCK_TOURNAMENT_CHAMPIONS;
+  if (pathname === '/tournaments/types') return MOCK_TOURNAMENT_TYPES;
   if (pathname === `/bowlers/${PRIMARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_LEADER;
   if (pathname === `/bowlers/${SECONDARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_RIVAL;
 
   if (pathname.startsWith('/tournaments/')) {
     const tournamentId = pathname.slice('/tournaments/'.length);
-    return tournamentId === MOCK_TOURNAMENT_ID ? MOCK_TOURNAMENT_DETAIL : null;
+    if (tournamentId === MOCK_TOURNAMENT_ID) return MOCK_TOURNAMENT_DETAIL;
+    return createdTournaments.get(tournamentId) ?? null;
   }
 
   if (pathname.startsWith('/sponsors/') && createdSponsors.has(pathname.slice('/sponsors/'.length))) {
@@ -666,6 +677,11 @@ const mockOverrides = new Map<string, MockOverride>();
 // Sponsors created via POST /sponsors during a test run, keyed by slug, so a subsequent
 // GET /sponsors/{slug} (e.g. after the create form navigates to the detail page) resolves.
 const createdSponsors = new Map<string, object>();
+
+// Tournaments created via POST /tournaments during a test run, keyed by generated ID, so a
+// subsequent GET /tournaments/{id} (after the create form navigates to the detail page) resolves.
+const createdTournaments = new Map<string, object>();
+let nextCreatedTournamentSuffix = 200;
 
 async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
   setCorsHeaders(res);
@@ -762,6 +778,74 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       contentType: 'image/png',
       sizeInBytes: 4,
       url: 'http://localhost:5151/mock-storage/sponsors/logo/e2e-test-logo.png',
+    }, 200);
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/tournaments') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    const body = await readRequestBody(req);
+    const parsed = JSON.parse(body) as {
+      tournament?: {
+        name?: string;
+        tournamentType?: string;
+        startDate?: string;
+        endDate?: string;
+        statsEligible?: boolean;
+        entryFee?: number;
+        externalRegistrationUrl?: string;
+        logo?: { container: string; path: string; contentType: string; sizeInBytes: number };
+        oilPatternId?: string;
+        patternLengthCategory?: string;
+        patternRatioCategory?: string;
+      };
+    };
+    const tournament = parsed.tournament ?? {};
+    const tournamentId = `01JX000000000000000000${nextCreatedTournamentSuffix++}`;
+
+    createdTournaments.set(tournamentId, {
+      id: tournamentId,
+      name: tournament.name ?? '',
+      season: '2025-2026 Season',
+      startDate: tournament.startDate ?? null,
+      endDate: tournament.endDate ?? null,
+      statsEligible: tournament.statsEligible ?? true,
+      tournamentType: tournament.tournamentType ?? 'Singles',
+      entryFee: tournament.entryFee ?? null,
+      registrationUrl: tournament.externalRegistrationUrl ?? null,
+      addedMoney: null,
+      reservations: null,
+      entryCount: null,
+      patternLengthCategory: tournament.patternLengthCategory ?? null,
+      patternRatioCategory: tournament.patternRatioCategory ?? null,
+      logoUrl: tournament.logo ? `http://localhost:5151/mock-storage/${tournament.logo.path}` : null,
+      bowlingCenter: null,
+      sponsors: [],
+      oilPatterns: [],
+      winners: [],
+      results: [],
+      articles: [],
+    });
+
+    sendJsonResponse(res, { tournamentId }, 201);
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/tournaments/logo') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    // Body content is discarded — the mock only needs to acknowledge the multipart upload and
+    // hand back a StoredFile pointer, same shape as the real UploadTournamentLogo endpoint.
+    await readRequestBody(req);
+
+    sendJsonResponse(res, {
+      container: 'bowlneba-public',
+      path: 'tournaments/logo/e2e-test-logo.png',
+      fileName: 'e2e-test-logo.png',
+      contentType: 'image/png',
+      sizeInBytes: 4,
+      url: 'http://localhost:5151/mock-storage/tournaments/logo/e2e-test-logo.png',
     }, 200);
     return;
   }
