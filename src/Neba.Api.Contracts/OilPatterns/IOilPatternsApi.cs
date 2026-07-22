@@ -1,4 +1,5 @@
 using Neba.Api.Contracts.OilPatterns.CreateOilPattern;
+using Neba.Api.Contracts.OilPatterns.ListOilPatterns;
 
 using Refit;
 
@@ -25,4 +26,16 @@ public interface IOilPatternsApi
     Task<IApiResponse<CreatedOilPatternResponse>> CreateOilPatternAsync(
         [Body] CreateOilPatternRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists all oil patterns.
+    /// </summary>
+    /// <param name="cancellationToken">
+    /// A token to cancel the operation.
+    /// </param>
+    /// <returns>
+    /// A collection of oil pattern summaries.
+    /// </returns>
+    [Get("/oil-patterns")]
+    Task<IApiResponse<CollectionResponse<OilPatternSummaryResponse>>> ListOilPatternsAsync(CancellationToken cancellationToken = default);
 }
