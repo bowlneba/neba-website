@@ -96,7 +96,7 @@ public sealed class OilPattern
         {
             return OilPatternErrors.LengthMustBePositive;
         }
-        
+
         if (volume <= 0)
         {
             return OilPatternErrors.VolumeMustBePositive;

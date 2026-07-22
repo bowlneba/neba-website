@@ -17,7 +17,7 @@ internal static class TournamentErrors
             {
                 { "TournamentId", id.ToString() }
             });
-    
+
     public static Error InvalidTournamentDatesForSeason(DateOnly seasonStartDate, DateOnly seasonEndDate)
     {
         return Error.Validation(
@@ -51,7 +51,7 @@ internal static class TournamentErrors
                 { "TitleSponsorId", titleSponsorId.ToString() }
             });
     }
-    
+
     public static Error NameRequired
         => Error.Validation("Tournament.Name.Required", "Name must not be empty.");
 
@@ -64,7 +64,7 @@ internal static class TournamentErrors
                 { "StartDate", startDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
                 { "EndDate", endDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
             });
-    
+
     public static Error InvalidEntryFee(decimal entryFee)
         => Error.Validation(
             code: "Tournament.InvalidEntryFee",

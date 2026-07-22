@@ -351,7 +351,7 @@ public static class CacheDescriptors
                 Key = "neba:tournaments:champions:list",
                 Tags = ["neba", "neba:tournaments", "neba:tournaments:champions"]
             };
-        
+
         /// <summary>
         /// Returns a cache descriptor for the list of active tournament types.
         /// </summary>

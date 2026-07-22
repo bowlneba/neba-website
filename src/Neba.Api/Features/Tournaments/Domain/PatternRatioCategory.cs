@@ -57,7 +57,7 @@ public sealed class PatternRatioCategory
     /// The maximum ratio, or <see langword="null"/> if not applicable.
     /// </value>
     public decimal? MaximumRatio { get; }
-    
+
     /// <summary>
     /// Gets the <see cref="PatternRatioCategory"/> that best matches the specified ratio.
     /// </summary>
