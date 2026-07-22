@@ -190,6 +190,26 @@ Every data-entry page (any page with an `EditForm`, file uploads, or similar use
 
 Enforced going forward via `.github/instructions/pull-request-review.instructions.md` (Blazor section + Review Checklist).
 
+### Required-Field Indicator — Mark Required, Not Optional
+
+A bare asterisk next to a label is no longer the right pattern: it isn't reliably announced by screen readers, and its meaning ("required"? "important"? a footnote?) isn't self-evident without a legend. Current guidance (WCAG, GOV.UK, USWDS) is to mark the *minority* case in visible text, not a symbol.
+
+**Decision for this app: always mark required fields with the text "(required)"**, never optional fields. This was chosen over "mark optional fields" (the more common guideline when a form is mostly required) because an audit of the app's five real forms showed the opposite is true here — Sponsor forms are ~87% optional (3 of ~23 fields required), so marking optional fields there would tag most of the form instead of the few fields that actually matter. Marking required fields instead stays cheap on every form regardless of its required/optional ratio (3–4 tags at most).
+
+**How it works**: use the shared `Components/FormLabel.razor` component instead of a bare `<label>` — do not hand-roll labels on new form fields.
+
+```razor
+<FormLabel TargetId="name" For="@(() => _model.Name)">Name</FormLabel>
+<InputText id="name" @bind-Value="_model.Name" class="neba-input" placeholder="Sponsor name" />
+```
+
+- `TargetId` renders the label's `for` attribute, same as a plain `<label>`.
+- `For` is an expression identifying the bound model property (same pattern as `ValidationMessage`'s `For`). `FormLabel` reflects on it via `FieldIdentifier.Create(For)` to check for a `[Required]` `DataAnnotation`, and renders "(required)" automatically when present — there is no manual `IsRequired`/`IsOptional` parameter to set, so the label can never drift out of sync with the model's actual validation attribute.
+- Labels for fields that aren't bound to a `[Required]`-annotated model property (file uploads, custom pickers with a plain `<select>`, checkboxes) stay as plain `<label>` — `FormLabel` only applies where there's a real `For` expression to reflect on.
+- **Login/credential-only forms are excluded**, same rationale as the Dirty Form Guard exception above: when every field on a form is required (e.g. `Login.razor`), tagging all of them adds no information, so those forms keep plain `<label>` elements with no indicator at all.
+
+Applied to `CreateSponsor.razor`, `EditSponsor.razor`, `CreateArticle.razor`, `EditArticle.razor`, `CreateTournament.razor`. `Login.razor` intentionally left unmarked (see exclusion above).
+
 ### Lightweight Collection Projections — Naming Convention
 
 When a UI need (e.g. a picker/dropdown) only requires a reduced projection of an existing collection (a few scalar fields instead of the full aggregate graph), check whether an existing query already returns a superset of that data before adding a new query/endpoint. Reuse-and-project-down at the consuming layer is preferred over a parallel lightweight endpoint — e.g. a tournament-linking picker in the news create form reuses `ListTournamentsInSeasonQuery`/`ISeasonsApi.ListTournamentsInSeasonAsync` (already consumed via `ITournamentApiService.GetTournamentsForSeasonAsync` → `SeasonTournamentViewModel`) rather than adding a second, near-duplicate "just Id/Name/StartDate" query — the existing one already returns everything a picker needs, and a second query with the same route shape only invites drift between two sources of truth for the same data.

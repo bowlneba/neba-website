@@ -49,13 +49,13 @@
                     <div class="neba-space-y-4">
 
                         <div>
-                            <label for="title" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Title</label>
+                            <FormLabel TargetId="title" For="@(() => _model.Title)">Title</FormLabel>
                             <InputText id="title" @bind-Value="_model.Title" class="neba-input" placeholder="Article title" />
                             <ValidationMessage For="@(() => _model.Title)" class="block text-sm text-red-600 mt-1" />
                         </div>
 
                         <div>
-                            <label for="slug" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Slug</label>
+                            <FormLabel TargetId="slug" For="@(() => _model.Slug)">Slug</FormLabel>
                             <InputText id="slug" @bind-Value="_model.Slug" class="neba-input" placeholder="@SlugPlaceholder" />
                             <p class="text-sm text-[var(--neba-gray-500)] mt-1">
                                 Leave blank to auto-generate from the title.
@@ -64,7 +64,7 @@
                         </div>
 
                         <div>
-                            <label for="content" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Content</label>
+                            <FormLabel TargetId="content" For="@(() => _model.Content)">Content</FormLabel>
                             <RichTextEditor Value="@_model.Content" ValueChanged="HandleContentChanged" Placeholder="Write the article content…" OnImageSelected="HandleInlineImageSelectedAsync" />
                             <ValidationMessage For="@(() => _model.Content)" class="block text-sm text-red-600 mt-1" />
                         </div>
@@ -145,7 +145,7 @@
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label for="publication-status" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Status</label>
+                                <FormLabel TargetId="publication-status" For="@(() => _model.PublicationStatus)">Status</FormLabel>
                                 <InputSelect id="publication-status" @bind-Value="_model.PublicationStatus" class="neba-select">
                                     <option value="Draft">Draft</option>
                                     <option value="Published">Published</option>
@@ -154,7 +154,7 @@
                             </div>
 
                             <div>
-                                <label for="publish-date" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Publish Date</label>
+                                <FormLabel TargetId="publish-date" For="@(() => _model.PublishDateLocal)">Publish Date</FormLabel>
                                 <InputDate id="publish-date" Type="InputDateType.DateTimeLocal" @bind-Value="_model.PublishDateLocal" class="neba-input" />
                                 <ValidationMessage For="@(() => _model.PublishDateLocal)" class="block text-sm text-red-600 mt-1" />
                             </div>
