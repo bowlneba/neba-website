@@ -1,0 +1,225 @@
+@using ErrorOr
+@using Neba.Api.Contracts.OilPatterns
+@using Neba.Api.Contracts.OilPatterns.CreateOilPattern
+@using Neba.Api.Contracts.OilPatterns.ListOilPatterns
+@using Neba.Website.Server.Services
+
+@inject ApiExecutor ApiExecutor
+@inject IOilPatternsApi OilPatternsApi
+
+<div class="neba-space-y-4">
+    <div class="neba-segmented-control" role="tablist" aria-label="Oil pattern mode">
+        <button type="button" class="neba-segment-button @(_mode == OilPatternMode.None ? "neba-segment-selected" : null)"
+                @onclick="@(() => SetMode(OilPatternMode.None))">No Pattern</button>
+        <button type="button" class="neba-segment-button @(_mode == OilPatternMode.Pick ? "neba-segment-selected" : null)"
+                @onclick="@(() => SetMode(OilPatternMode.Pick))">Pick Existing</button>
+        <button type="button" class="neba-segment-button @(_mode == OilPatternMode.Create ? "neba-segment-selected" : null)"
+                @onclick="@(() => SetMode(OilPatternMode.Create))">Create New</button>
+    </div>
+
+    @if (_mode == OilPatternMode.None)
+    {
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label for="manual-length-category" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Length Category</label>
+                <select id="manual-length-category" class="neba-select" @bind="_manualLengthCategory" @bind:after="EmitSelectionChanged">
+                    <option value="">Not specified</option>
+                    @foreach (var category in OilPatternCategoryOptions.LengthCategories)
+                    {
+                        <option value="@category">@category</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label for="manual-ratio-category" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Ratio Category</label>
+                <select id="manual-ratio-category" class="neba-select" @bind="_manualRatioCategory" @bind:after="EmitSelectionChanged">
+                    <option value="">Not specified</option>
+                    @foreach (var category in OilPatternCategoryOptions.RatioCategories)
+                    {
+                        <option value="@category">@category</option>
+                    }
+                </select>
+            </div>
+        </div>
+    }
+    else if (_mode == OilPatternMode.Pick)
+    {
+        <div>
+            <label for="pattern-select" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Existing Pattern</label>
+            <select id="pattern-select" class="neba-select" @bind="_selectedOilPatternId" @bind:after="EmitSelectionChanged">
+                <option value="">Select a pattern…</option>
+                @foreach (var pattern in _patterns)
+                {
+                    <option value="@pattern.OilPatternId">@pattern.Name — @pattern.Length ft</option>
+                }
+            </select>
+
+            @if (_selectedPattern is not null)
+            {
+                <div class="flex items-center gap-3 mt-3 p-3 rounded" style="background: var(--neba-blue-100); border: 1px solid var(--neba-blue-200);">
+                    <span class="font-semibold text-sm" style="color: var(--neba-blue-brand);">@_selectedPattern.Name</span>
+                    <span class="text-sm text-[var(--neba-gray-600)]">@_selectedPattern.Length ft, ratio @_selectedPattern.LeftRatio.ToString("0.0")/@_selectedPattern.RightRatio.ToString("0.0")</span>
+                    <span class="neba-badge neba-badge-primary">@_selectedPattern.LengthCategory</span>
+                    <span class="neba-badge neba-badge-primary">@_selectedPattern.RatioCategory</span>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="neba-space-y-4 p-4 rounded" style="border: 1px dashed var(--neba-gray-300); background: var(--neba-gray-050);">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="new-pattern-name" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Name</label>
+                    <input id="new-pattern-name" class="neba-input" @bind="_newPattern.Name" placeholder="e.g. Typhoon" />
+                </div>
+                <div>
+                    <label for="new-pattern-kegel" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Kegel ID (optional)</label>
+                    <input id="new-pattern-kegel" class="neba-input" @bind="_newPattern.KegelId" placeholder="Kegel pattern library ID" />
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label for="new-pattern-length" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Length (ft)</label>
+                    <input id="new-pattern-length" type="number" min="1" class="neba-input" @bind="_newPattern.Length" />
+                </div>
+                <div>
+                    <label for="new-pattern-volume" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Volume (mL)</label>
+                    <input id="new-pattern-volume" type="number" min="0" step="0.1" class="neba-input" @bind="_newPattern.Volume" />
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="new-pattern-left" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Left Ratio</label>
+                    <input id="new-pattern-left" type="number" min="0" step="0.1" class="neba-input" @bind="_newPattern.LeftRatio" />
+                </div>
+                <div>
+                    <label for="new-pattern-right" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Right Ratio</label>
+                    <input id="new-pattern-right" type="number" min="0" step="0.1" class="neba-input" @bind="_newPattern.RightRatio" />
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_createErrorMessage))
+            {
+                <p class="text-sm text-red-600">@_createErrorMessage</p>
+            }
+
+            <button type="button" class="neba-btn neba-btn-primary neba-btn-sm" @onclick="AddNewPatternAsync" disabled="@_isCreatingPattern">
+                @(_isCreatingPattern ? "Adding…" : "Add Pattern")
+            </button>
+            <p class="text-sm text-[var(--neba-gray-500)]">Adding a pattern saves it to NEBA's reusable pattern library immediately, then selects it here.</p>
+        </div>
+    }
+</div>
+
+@code {
+    private enum OilPatternMode { None, Pick, Create }
+
+    [Parameter]
+    public EventCallback<OilPatternSelection> SelectionChanged { get; set; }
+
+    private OilPatternMode _mode = OilPatternMode.None;
+    private IReadOnlyCollection<OilPatternSummaryResponse> _patterns = [];
+    private string? _selectedOilPatternId;
+    private string _manualLengthCategory = "";
+    private string _manualRatioCategory = "";
+    private NewOilPatternModel _newPattern = new();
+    private bool _isCreatingPattern;
+    private string? _createErrorMessage;
+
+    private OilPatternSummaryResponse? _selectedPattern
+        => _patterns.FirstOrDefault(p => p.OilPatternId == _selectedOilPatternId);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync(
+            "OilPatterns",
+            "ListOilPatterns",
+            OilPatternsApi.ListOilPatternsAsync);
+
+        if (!result.IsError)
+        {
+            _patterns = result.Value.Items;
+        }
+    }
+
+    private void SetMode(OilPatternMode mode)
+    {
+        _mode = mode;
+        _ = EmitSelectionChanged();
+    }
+
+    private Task EmitSelectionChanged()
+    {
+        var selection = _mode switch
+        {
+            OilPatternMode.Pick => new OilPatternSelection { OilPatternId = _selectedOilPatternId },
+            OilPatternMode.None => new OilPatternSelection
+            {
+                PatternLengthCategory = string.IsNullOrWhiteSpace(_manualLengthCategory) ? null : _manualLengthCategory,
+                PatternRatioCategory = string.IsNullOrWhiteSpace(_manualRatioCategory) ? null : _manualRatioCategory
+            },
+            _ => new OilPatternSelection()
+        };
+
+        return SelectionChanged.InvokeAsync(selection);
+    }
+
+    private async Task AddNewPatternAsync()
+    {
+        _isCreatingPattern = true;
+        _createErrorMessage = null;
+
+        var request = new CreateOilPatternRequest
+        {
+            Name = _newPattern.Name,
+            Length = _newPattern.Length,
+            Volume = _newPattern.Volume,
+            LeftRatio = _newPattern.LeftRatio,
+            RightRatio = _newPattern.RightRatio,
+            KegelId = Guid.TryParse(_newPattern.KegelId, out var kegelId) ? kegelId : null
+        };
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "OilPatterns",
+            "CreateOilPattern",
+            ct => OilPatternsApi.CreateOilPatternAsync(request, ct));
+
+        _isCreatingPattern = false;
+
+        if (result.IsError)
+        {
+            _createErrorMessage = result.FirstError.Description;
+            return;
+        }
+
+        _patterns = [.. _patterns, new OilPatternSummaryResponse
+        {
+            OilPatternId = result.Value.OilPatternId,
+            Name = result.Value.Name,
+            Length = result.Value.Length,
+            Volume = _newPattern.Volume,
+            LeftRatio = _newPattern.LeftRatio,
+            RightRatio = _newPattern.RightRatio,
+            KegelId = request.KegelId,
+            LengthCategory = result.Value.LengthCategory,
+            RatioCategory = result.Value.RatioCategory
+        }];
+
+        _selectedOilPatternId = result.Value.OilPatternId;
+        _newPattern = new NewOilPatternModel();
+        _mode = OilPatternMode.Pick;
+
+        await EmitSelectionChanged();
+    }
+
+    private sealed class NewOilPatternModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public int Length { get; set; } = 40;
+        public decimal Volume { get; set; } = 24;
+        public decimal LeftRatio { get; set; } = 5;
+        public decimal RightRatio { get; set; } = 5;
+        public string? KegelId { get; set; }
+    }
+}
