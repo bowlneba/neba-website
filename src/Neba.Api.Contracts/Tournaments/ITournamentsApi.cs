@@ -1,6 +1,7 @@
 using Neba.Api.Contracts.Tournaments.CreateTournament;
 using Neba.Api.Contracts.Tournaments.GetTournament;
 using Neba.Api.Contracts.Tournaments.ListChampions;
+using Neba.Api.Contracts.Tournaments.ListTournamentTypes;
 
 using Refit;
 
@@ -34,4 +35,12 @@ public interface ITournamentsApi
     /// <returns>A collection of tournament champions.</returns>
     [Get("/tournaments/champions")]
     Task<IApiResponse<CollectionResponse<TournamentChampionResponse>>> ListTournamentChampionsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a list of active tournament types, for use in tournament creation pickers.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A collection of active tournament types.</returns>
+    [Get("/tournaments/types")]
+    Task<IApiResponse<CollectionResponse<TournamentTypeSummaryResponse>>> ListTournamentTypesAsync(CancellationToken cancellationToken = default);
 }
