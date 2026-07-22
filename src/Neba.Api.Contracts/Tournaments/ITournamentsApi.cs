@@ -2,6 +2,7 @@ using Neba.Api.Contracts.Tournaments.CreateTournament;
 using Neba.Api.Contracts.Tournaments.GetTournament;
 using Neba.Api.Contracts.Tournaments.ListChampions;
 using Neba.Api.Contracts.Tournaments.ListTournamentTypes;
+using Neba.Api.Contracts.Uploads;
 
 using Refit;
 
@@ -43,4 +44,22 @@ public interface ITournamentsApi
     /// <returns>A collection of active tournament types.</returns>
     [Get("/tournaments/types")]
     Task<IApiResponse<CollectionResponse<TournamentTypeSummaryResponse>>> ListTournamentTypesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Uploads a tournament logo. Requires the Tournaments.CreateTournament permission.
+    /// </summary>
+    /// <param name="file">
+    /// The logo image file to upload.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token to cancel the operation.
+    /// </param>
+    /// <returns>
+    /// The uploaded file's metadata.
+    /// </returns>
+    [Multipart]
+    [Post("/tournaments/logo")]
+    Task<IApiResponse<UploadedFileResponse>> UploadTournamentLogoAsync(
+        [AliasAs("File")] StreamPart file,
+        CancellationToken cancellationToken = default);
 }
