@@ -13,6 +13,12 @@ internal static class OilPatternErrors
     public static Error VolumeMustBePositive
         => Error.Validation("OilPattern.Volume.MustBePositive", "Volume must be greater than zero.");
 
+    public static Error LeftRatioInvalid
+        => Error.Validation("OilPattern.LeftRatio.Invalid", "Left ratio must not be negative.");
+
+    public static Error RightRatioInvalid
+        => Error.Validation("OilPattern.RightRatio.Invalid", "Right ratio must not be negative.");
+
     public static Error KegelIdAlreadyExists(Guid kegelId)
         => Error.Conflict(
             code: "OilPattern.KegelId.AlreadyExists",

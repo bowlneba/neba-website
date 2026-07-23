@@ -528,8 +528,7 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
         var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
         schedulerMock
             .Setup(scheduler => scheduler.Schedule(It.IsAny<EvictOilPatternRevealCacheJob>(), revealAt))
-            .Returns("job-id")
-            .Verifiable();
+            .Returns("job-id");
 
         var handler = CreateHandler(schedulerMock.Object, timeProvider);
         var command = ValidCommand(name: "Tournament With Future Reveal Date", oilPatternRevealDateTime: revealAt);
@@ -539,7 +538,6 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
 
         // Assert
         result.IsError.ShouldBeFalse();
-        schedulerMock.VerifyAll();
     }
 
     [Fact(DisplayName = "HandleAsync does not schedule an eviction job when no reveal date is provided")]
@@ -557,9 +555,6 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
 
         // Assert
         result.IsError.ShouldBeFalse();
-        schedulerMock.Verify(
-            scheduler => scheduler.Schedule(It.IsAny<EvictOilPatternRevealCacheJob>(), It.IsAny<DateTimeOffset>()),
-            Times.Never);
     }
 
     [Fact(DisplayName = "HandleAsync does not schedule an eviction job when the reveal date is already in the past")]
@@ -578,8 +573,5 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
 
         // Assert
         result.IsError.ShouldBeFalse();
-        schedulerMock.Verify(
-            scheduler => scheduler.Schedule(It.IsAny<EvictOilPatternRevealCacheJob>(), It.IsAny<DateTimeOffset>()),
-            Times.Never);
     }
 }

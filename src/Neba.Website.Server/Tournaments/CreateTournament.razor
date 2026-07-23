@@ -143,7 +143,8 @@
 
                             <OilPatternPicker SelectionChanged="HandleOilPatternSelectionChanged"
                                                Patterns="@_oilPatterns"
-                                               OnCreatePatternRequestedAsync="CreateOilPatternAsync" />
+                                               OnCreatePatternRequestedAsync="CreateOilPatternAsync"
+                                               OnDirty="MarkDirty" />
                         </section>
 
                         <section class="neba-space-y-4">

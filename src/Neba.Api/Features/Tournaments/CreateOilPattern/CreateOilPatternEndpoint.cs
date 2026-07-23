@@ -40,14 +40,16 @@ internal sealed class CreateOilPatternEndpoint(Messaging.ICommandHandler<CreateO
 
     public override async Task HandleAsync(CreateOilPatternRequest req, CancellationToken ct)
     {
+        var input = req.OilPattern;
+
         var command = new CreateOilPatternCommand
         {
-            Name = req.Name,
-            Length = req.Length,
-            Volume = req.Volume,
-            LeftRatio = req.LeftRatio,
-            RightRatio = req.RightRatio,
-            KegelId = req.KegelId
+            Name = input.Name,
+            Length = input.Length,
+            Volume = input.Volume,
+            LeftRatio = input.LeftRatio,
+            RightRatio = input.RightRatio,
+            KegelId = input.KegelId
         };
 
         var result = await _commandHandler.HandleAsync(command, ct);

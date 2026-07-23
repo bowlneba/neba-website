@@ -102,6 +102,16 @@ public sealed class OilPattern
             return OilPatternErrors.VolumeMustBePositive;
         }
 
+        if (leftRatio < 0)
+        {
+            return OilPatternErrors.LeftRatioInvalid;
+        }
+
+        if (rightRatio < 0)
+        {
+            return OilPatternErrors.RightRatioInvalid;
+        }
+
         return new OilPattern
         {
             Id = OilPatternId.New(),

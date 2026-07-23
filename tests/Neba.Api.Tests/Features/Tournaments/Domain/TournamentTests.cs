@@ -93,9 +93,9 @@ public sealed class TournamentTests
 
     #nullable disable
     [Theory(DisplayName = "Create returns Tournament.Name.Required when name is null, empty, or whitespace")]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
+    [InlineData(null, TestDisplayName = "name is null")]
+    [InlineData("", TestDisplayName = "name is empty")]
+    [InlineData("   ", TestDisplayName = "name is whitespace")]
     public void Create_ShouldReturnError_WhenNameIsNullOrWhiteSpace(string name)
     {
         // Act

@@ -19,11 +19,14 @@ public static class CreateOilPatternRequestFactory
         Guid? kegelId = null)
         => new()
         {
-            Name = name ?? ValidName,
-            Length = length ?? ValidLength,
-            Volume = volume ?? ValidVolume,
-            LeftRatio = leftRatio ?? ValidLeftRatio,
-            RightRatio = rightRatio ?? ValidRightRatio,
-            KegelId = kegelId
+            OilPattern = new OilPatternInput
+            {
+                Name = name ?? ValidName,
+                Length = length ?? ValidLength,
+                Volume = volume ?? ValidVolume,
+                LeftRatio = leftRatio ?? ValidLeftRatio,
+                RightRatio = rightRatio ?? ValidRightRatio,
+                KegelId = kegelId
+            }
         };
 }

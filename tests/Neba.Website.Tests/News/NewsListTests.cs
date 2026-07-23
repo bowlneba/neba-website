@@ -530,7 +530,7 @@ public sealed class NewsListTests : IDisposable
         // Arrange
         _authContext.SetAuthorized("test-user");
         _authContext.SetPolicies(Permissions.EditArticle.PolicyName);
-        var articles = ArticleSummaryResponseFactory.Bogus(3, 30);
+        var articles = ArticleSummaryResponseFactory.Bogus(3, 34);
         var hero = articles.First();
         SetupSuccessResponse(articles, totalItems: 3);
 
@@ -599,7 +599,7 @@ public sealed class NewsListTests : IDisposable
         // Arrange
         _authContext.SetAuthorized("test-user");
         _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
-        var articles = ArticleSummaryResponseFactory.Bogus(1, 26);
+        var articles = ArticleSummaryResponseFactory.Bogus(1, 35);
         SetupSuccessResponse(articles, totalItems: 1, pageNumber: 2);
         NavigateToPage(2);
         var cut = _ctx.Render<NewsList>();

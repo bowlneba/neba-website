@@ -43,12 +43,12 @@ public sealed class CreateOilPatternEndpointTests
 
         // Assert
         capturedCommand.ShouldNotBeNull();
-        capturedCommand.Name.ShouldBe(request.Name);
-        capturedCommand.Length.ShouldBe(request.Length);
-        capturedCommand.Volume.ShouldBe(request.Volume);
-        capturedCommand.LeftRatio.ShouldBe(request.LeftRatio);
-        capturedCommand.RightRatio.ShouldBe(request.RightRatio);
-        capturedCommand.KegelId.ShouldBe(request.KegelId);
+        capturedCommand.Name.ShouldBe(request.OilPattern.Name);
+        capturedCommand.Length.ShouldBe(request.OilPattern.Length);
+        capturedCommand.Volume.ShouldBe(request.OilPattern.Volume);
+        capturedCommand.LeftRatio.ShouldBe(request.OilPattern.LeftRatio);
+        capturedCommand.RightRatio.ShouldBe(request.OilPattern.RightRatio);
+        capturedCommand.KegelId.ShouldBe(request.OilPattern.KegelId);
 
         endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
         endpoint.Response.ShouldNotBeNull();
@@ -69,7 +69,7 @@ public sealed class CreateOilPatternEndpointTests
         var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<CreateOilPatternCommand, CreatedOilPattern>>(MockBehavior.Strict);
         commandHandlerMock
             .Setup(h => h.HandleAsync(It.IsAny<CreateOilPatternCommand>(), ct))
-            .ReturnsAsync(OilPatternErrors.KegelIdAlreadyExists(request.KegelId!.Value));
+            .ReturnsAsync(OilPatternErrors.KegelIdAlreadyExists(request.OilPattern.KegelId!.Value));
 
         var endpoint = Factory.Create<CreateOilPatternEndpoint>(commandHandlerMock.Object);
 

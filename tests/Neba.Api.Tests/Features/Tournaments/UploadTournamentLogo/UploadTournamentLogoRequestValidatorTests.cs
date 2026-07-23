@@ -38,10 +38,10 @@ public sealed class UploadTournamentLogoRequestValidatorTests
     }
 
     [Theory(DisplayName = "Validate should succeed for every allowed content type")]
-    [InlineData("image/jpeg")]
-    [InlineData("image/png")]
-    [InlineData("image/webp")]
-    [InlineData("image/gif")]
+    [InlineData("image/jpeg", TestDisplayName = "content type is image/jpeg")]
+    [InlineData("image/png", TestDisplayName = "content type is image/png")]
+    [InlineData("image/webp", TestDisplayName = "content type is image/webp")]
+    [InlineData("image/gif", TestDisplayName = "content type is image/gif")]
     public void Validate_ShouldSucceed_ForEveryAllowedContentType(string contentType)
     {
         // Arrange

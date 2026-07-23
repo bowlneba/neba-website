@@ -29,9 +29,9 @@ public sealed class SeasonTests
 
     #nullable disable
     [Theory(DisplayName = "Create should return an error when description is null, empty, or whitespace")]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
+    [InlineData(null, TestDisplayName = "description is null")]
+    [InlineData("", TestDisplayName = "description is empty")]
+    [InlineData("   ", TestDisplayName = "description is whitespace")]
     public void Create_ShouldReturnError_WhenDescriptionIsNullOrWhitespace(string description)
     {
         // Act

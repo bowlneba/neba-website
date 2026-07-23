@@ -1,10 +1,21 @@
+@using System.ComponentModel.DataAnnotations
 @using ErrorOr
 @using Neba.Api.Contracts.Tournaments.AddTournamentSponsor
 @using Neba.Website.Server.Components
 @using Neba.Website.Server.Notifications
 @using Neba.Website.Server.Sponsors
 
-<NebaModal IsOpen="@IsOpen" OnClose="@OnClose" Title="Add Sponsor" MaxWidth="440px" CompactSize="true">
+<DirtyFormGuard IsDirty="@(IsOpen && _isDirty)" />
+
+<ConfirmActionModal IsOpen="@_isCancelConfirmOpen"
+                     Title="Discard unsaved changes?"
+                     Message="You have unsaved changes. If you close this dialog now, they will be lost."
+                     ConfirmLabel="Discard"
+                     CancelLabel="Keep Editing"
+                     OnConfirm="ConfirmCancelAsync"
+                     OnCancel="@(() => _isCancelConfirmOpen = false)" />
+
+<NebaModal IsOpen="@IsOpen" OnClose="@HandleCancelRequestedAsync" Title="Add Sponsor" MaxWidth="440px" CompactSize="true">
     <ChildContent>
         @if (_errorMessage is not null)
         {
@@ -13,8 +24,8 @@
         }
 
         <div class="form-field">
-            <label for="sponsor-pick">Sponsor <span class="mts-required-hint">(required)</span></label>
-            <select id="sponsor-pick" class="neba-select" @bind="_selectedSponsorId">
+            <FormLabel TargetId="sponsor-pick" For="@(() => _model.SponsorId)">Sponsor</FormLabel>
+            <select id="sponsor-pick" class="neba-select" @bind="_model.SponsorId" @bind:after="MarkDirty">
                 <option value="">Select a sponsor…</option>
                 @foreach (var sponsor in AvailableSponsors)
                 {
@@ -25,16 +36,16 @@
         </div>
 
         <div class="form-field">
-            <label for="sponsor-amount">Sponsorship amount <span class="mts-required-hint">(required)</span></label>
+            <FormLabel TargetId="sponsor-amount" For="@(() => _model.SponsorshipAmount)">Sponsorship amount</FormLabel>
             <div class="mts-currency-input">
                 <span class="mts-currency-input__prefix" aria-hidden="true">$</span>
-                <input id="sponsor-amount" class="neba-input mts-currency-input__field" type="number" min="0" step="0.01" @bind="_sponsorshipAmount" />
+                <input id="sponsor-amount" class="neba-input mts-currency-input__field" type="number" min="0" step="0.01" @bind="_model.SponsorshipAmount" @bind:after="MarkDirty" />
             </div>
         </div>
 
         <div class="form-field">
             <label class="mts-title-sponsor" for="title-sponsor">
-                <input type="checkbox" id="title-sponsor" @bind="_titleSponsor" />
+                <input type="checkbox" id="title-sponsor" @bind="_model.TitleSponsor" @bind:after="MarkDirty" />
                 <span class="mts-title-sponsor__label">Make this the title sponsor</span>
             </label>
             <span class="mts-title-sponsor__hint">Only one tournament sponsor can be the title sponsor at a time.</span>
@@ -42,8 +53,8 @@
     </ChildContent>
     <FooterContent>
         <div class="mts-modal-actions">
-            <button type="button" class="neba-btn neba-btn-secondary" @onclick="OnClose" disabled="@_isSubmitting">Cancel</button>
-            <button type="button" class="neba-btn neba-btn-primary" @onclick="SubmitAsync" disabled="@(_isSubmitting || string.IsNullOrEmpty(_selectedSponsorId))">
+            <button type="button" class="neba-btn neba-btn-secondary" @onclick="HandleCancelRequestedAsync" disabled="@_isSubmitting">Cancel</button>
+            <button type="button" class="neba-btn neba-btn-primary" @onclick="SubmitAsync" disabled="@(_isSubmitting || string.IsNullOrEmpty(_model.SponsorId))">
                 @(_isSubmitting ? "Adding..." : "Add Sponsor")
             </button>
         </div>
@@ -71,15 +82,48 @@
     [Parameter, EditorRequired]
     public Func<AddTournamentSponsorInput, CancellationToken, Task<ErrorOr<Success>>> OnSubmitRequestedAsync { get; set; } = default!;
 
-    private string _selectedSponsorId = string.Empty;
-    private decimal _sponsorshipAmount;
-    private bool _titleSponsor;
+    private AddSponsorFormModel _model = new();
     private bool _isSubmitting;
+    private bool _isDirty;
+    private bool _isCancelConfirmOpen;
     private string? _errorMessage;
+
+    private void MarkDirty()
+        => _isDirty = true;
+
+    private Task HandleCancelRequestedAsync()
+    {
+        if (_isDirty)
+        {
+            _isCancelConfirmOpen = true;
+            return Task.CompletedTask;
+        }
+
+        return CloseAsync();
+    }
+
+    private Task ConfirmCancelAsync()
+    {
+        _isCancelConfirmOpen = false;
+        return CloseAsync();
+    }
+
+    private Task CloseAsync()
+    {
+        ResetForm();
+        return OnClose.InvokeAsync();
+    }
+
+    private void ResetForm()
+    {
+        _model = new AddSponsorFormModel();
+        _isDirty = false;
+        _errorMessage = null;
+    }
 
     private async Task SubmitAsync()
     {
-        var sponsor = AvailableSponsors.SingleOrDefault(s => s.SponsorId == _selectedSponsorId);
+        var sponsor = AvailableSponsors.SingleOrDefault(s => s.SponsorId == _model.SponsorId);
 
         if (sponsor is null)
         {
@@ -92,8 +136,8 @@
         var input = new AddTournamentSponsorInput
         {
             SponsorId = sponsor.SponsorId,
-            TitleSponsor = _titleSponsor,
-            SponsorshipAmount = _sponsorshipAmount
+            TitleSponsor = _model.TitleSponsor,
+            SponsorshipAmount = _model.SponsorshipAmount
         };
 
         var result = await OnSubmitRequestedAsync(input, CancellationToken.None);
@@ -106,10 +150,19 @@
             return;
         }
 
-        _selectedSponsorId = string.Empty;
-        _sponsorshipAmount = 0;
-        _titleSponsor = false;
+        ResetForm();
 
         await OnAdded.InvokeAsync();
+    }
+
+    private sealed class AddSponsorFormModel
+    {
+        [Required]
+        public string SponsorId { get; set; } = string.Empty;
+
+        [Required]
+        public decimal SponsorshipAmount { get; set; }
+
+        public bool TitleSponsor { get; set; }
     }
 }

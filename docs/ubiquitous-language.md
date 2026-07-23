@@ -990,6 +990,18 @@ Titles are the authoritative source for:
 
 ---
 
+### Oil Pattern Reveal Policy
+
+**Definition**: The rule deciding whether a Tournament's full oil pattern details are visible to a given caller: they're visible when the caller holds the tournament management permission, when the tournament has no reveal date set, or once the reveal date has passed. A caller who is merely authenticated, without the management permission, is not enough on its own — full details stay hidden until the reveal date.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
+- Type: `OilPatternRevealPolicy` (static domain service)
+- Reveal date: `Tournament.OilPatternRevealDateTime`
+
+---
+
 ## Side Cuts
 
 ### Side Cut

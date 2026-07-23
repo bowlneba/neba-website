@@ -98,6 +98,7 @@ public sealed class Permissions
     public static readonly IReadOnlyCollection<Permissions> TournamentManagementPermissions =
     [
         CreateTournament,
+        ManageTournamentSponsors,
     ];
 
     /// <summary>
