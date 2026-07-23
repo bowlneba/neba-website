@@ -32,14 +32,14 @@ internal static class SecurityRoleSeeder
             Permissions.CreateTournament,
             Permissions.ManageTournamentSponsors
         ],
-        
+
         [Roles.Journalist] =
         [
             Permissions.CreateArticle,
             Permissions.EditArticle,
             Permissions.DeleteArticle
         ],
-        
+
         [Roles.Member] = []
     };
 
