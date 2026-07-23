@@ -1,16 +1,20 @@
 using Bunit;
+using Bunit.TestDoubles;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
+using Neba.Api.Contracts.Security;
+using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Contracts.Tournaments;
 using Neba.Api.Contracts.Tournaments.GetTournament;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 using Neba.Website.Server.Clock;
+using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Tournaments.Detail;
 
@@ -25,10 +29,14 @@ public sealed class TournamentDetailTests : IDisposable
 {
     private readonly BunitContext _ctx;
     private readonly Mock<ITournamentsApi> _mockApi;
+    private readonly Mock<ISponsorsApi> _mockSponsorsApi;
+    private readonly BunitAuthorizationContext _authContext;
+    private readonly ToastService _toastService;
 
     public TournamentDetailTests()
     {
         _mockApi = new Mock<ITournamentsApi>(MockBehavior.Strict);
+        _mockSponsorsApi = new Mock<ISponsorsApi>(MockBehavior.Strict);
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
         mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
@@ -37,11 +45,22 @@ public sealed class TournamentDetailTests : IDisposable
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
 
+        _authContext = _ctx.AddAuthorization();
+        _authContext.SetNotAuthorized();
+
+        _toastService = new ToastService();
+
         _ctx.Services.AddSingleton(_mockApi.Object);
+        _ctx.Services.AddSingleton(_mockSponsorsApi.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
+        _ctx.Services.AddSingleton(_toastService);
     }
 
-    public void Dispose() => _ctx.Dispose();
+    public void Dispose()
+    {
+        _ctx.Dispose();
+        _toastService.Dispose();
+    }
 
     // ── Loading state ────────────────────────────────────────────────────────
 
@@ -530,6 +549,41 @@ public sealed class TournamentDetailTests : IDisposable
 
         // Assert
         cut.FindAll(".tournament-detail__no-results").ShouldBeEmpty();
+    }
+
+    // ── Manage Sponsors panel ────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not render Manage Sponsors panel when caller lacks permission")]
+    public void Render_ShouldNotRenderManageSponsorsPanel_WhenNotAuthorized()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create());
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldNotContain("Manage Sponsors");
+    }
+
+    [Fact(DisplayName = "Should render Manage Sponsors panel when caller has permission")]
+    public void Render_ShouldRenderManageSponsorsPanel_WhenAuthorized()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentSponsors.PolicyName);
+
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            sponsors: [TournamentDetailSponsorResponseFactory.Create(
+                name: "Acme Corp", titleSponsor: true, sponsorshipAmount: 2500m)]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldContain("Manage Sponsors");
+        cut.Markup.ShouldContain("Title Sponsor");
+        cut.Markup.ShouldContain("$2,500");
     }
 
     // ── Footer ───────────────────────────────────────────────────────────────

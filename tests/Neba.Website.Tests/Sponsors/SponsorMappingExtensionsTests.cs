@@ -30,6 +30,7 @@ public sealed class SponsorMappingExtensionsTests
         // making it impossible to produce a response with those fields null via the factory.
         var response = new SponsorSummaryResponse
         {
+            SponsorId = SponsorSummaryResponseFactory.ValidSponsorId,
             Name = SponsorSummaryResponseFactory.ValidName,
             Slug = SponsorSummaryResponseFactory.ValidSlug,
             LogoUrl = null,

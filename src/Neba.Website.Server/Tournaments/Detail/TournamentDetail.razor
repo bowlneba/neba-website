@@ -1,6 +1,7 @@
 @preservewhitespace false
 @page "/tournaments/{Id}"
 @using ErrorOr
+@using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Tournaments
 @using Neba.Api.Contracts.Tournaments.GetTournament
 @using Neba.Website.Server.Services
@@ -289,6 +290,16 @@ else
                         </section>
                     }
 
+                    <AuthorizeView Policy="@Permissions.ManageTournamentSponsors.PolicyName">
+                        <Authorized>
+                            <section class="tournament-detail__section">
+                                <ManageTournamentSponsors TournamentId="@_model.Id"
+                                                           Sponsors="@_model.Sponsors"
+                                                           OnChanged="ReloadTournamentAsync" />
+                            </section>
+                        </Authorized>
+                    </AuthorizeView>
+
                 </div>
 
                 @if (HasRailContent)
@@ -421,6 +432,19 @@ else
 
     private static string GetCutStyle(string? color) =>
         color is not null ? "border-left-color:" + color : string.Empty;
+
+    private async Task ReloadTournamentAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "GetTournamentDetail",
+            ct => TournamentsApi.GetTournamentAsync(Id, ct));
+
+        if (!result.IsError)
+        {
+            _model = result.Value.ToViewModel();
+        }
+    }
 
     private bool HasRailContent =>
         _model is not null && (_model.IsUpcoming || _model.HasSponsors || _model.EntryCount.HasValue || _model.HasPayout);

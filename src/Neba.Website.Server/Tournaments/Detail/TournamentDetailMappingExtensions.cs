@@ -36,11 +36,14 @@ internal static class TournamentDetailMappingExtensions
     {
         public TournamentDetailSponsorViewModel ToViewModel() => new()
         {
+            SponsorId = response.SponsorId,
             Name = response.Name,
             Slug = response.Slug,
             LogoUrl = response.LogoUrl,
             WebsiteUrl = response.WebsiteUrl,
             TagPhrase = response.TagPhrase,
+            TitleSponsor = response.TitleSponsor,
+            SponsorshipAmount = response.SponsorshipAmount,
         };
     }
 

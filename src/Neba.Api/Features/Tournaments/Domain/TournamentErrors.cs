@@ -95,7 +95,7 @@ internal static class TournamentErrors
             code: "Tournament.BowlingCenterNotFound",
             description: "The specified bowling center was not found.",
             metadata: new Dictionary<string, object> { { "CertificationNumber", id.Value } });
-    
+
     public static Error SponsorNotFound(SponsorId sponsorId)
         => Error.Validation(
             code: "Tournament.SponsorNotFound",

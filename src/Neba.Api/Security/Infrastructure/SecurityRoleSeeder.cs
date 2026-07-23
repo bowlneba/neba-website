@@ -13,7 +13,7 @@ internal static class SecurityRoleSeeder
     private static readonly Dictionary<string, IReadOnlyCollection<Permissions>> RolePermissions = new()
     {
         [Roles.Admin] = Permissions.List,
-        
+
         [Roles.Webmaster] =
         [
             Permissions.CreateArticle,
@@ -22,17 +22,17 @@ internal static class SecurityRoleSeeder
 
             Permissions.CreateSponsor,
             Permissions.EditSponsor,
-            
+
             Permissions.CreateTournament,
             Permissions.ManageTournamentSponsors
         ],
-        
-        [Roles.TournamentDirector] = 
+
+        [Roles.TournamentDirector] =
         [
             Permissions.CreateTournament,
             Permissions.ManageTournamentSponsors
         ],
-        
+
         [Roles.Member] = []
     };
 

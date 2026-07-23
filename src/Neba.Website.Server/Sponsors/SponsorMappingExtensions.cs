@@ -9,6 +9,7 @@ internal static class SponsorMappingExtensions
         public SponsorSummaryViewModel ToViewModel() =>
             new()
             {
+                SponsorId = response.SponsorId,
                 Name = response.Name,
                 Slug = response.Slug,
                 LogoUrl = response.LogoUrl,

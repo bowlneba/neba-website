@@ -46,6 +46,7 @@ internal sealed class ListActiveSponsorsEndpoint(IQueryHandler<ListActiveSponsor
             Items = [.. result
                 .Select(s => new SponsorSummaryResponse
                 {
+                    SponsorId = s.SponsorId.Value.ToString(),
                     Name = s.Name,
                     Slug = s.Slug,
                     LogoUrl = s.LogoUrl,

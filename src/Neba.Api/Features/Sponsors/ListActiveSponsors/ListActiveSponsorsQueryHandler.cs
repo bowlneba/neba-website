@@ -22,6 +22,7 @@ internal sealed class ListActiveSponsorsQueryHandler(AppDbContext appDbContext, 
         var rows = await sponsors
             .Select(sponsor => new
             {
+                sponsor.Id,
                 sponsor.Name,
                 sponsor.Slug,
                 LogoContainer = sponsor.Logo != null ? sponsor.Logo.Container : null,
@@ -40,6 +41,7 @@ internal sealed class ListActiveSponsorsQueryHandler(AppDbContext appDbContext, 
 
         return [.. rows.Select(row => new SponsorSummaryDto
         {
+            SponsorId = row.Id,
             Name = row.Name,
             Slug = row.Slug,
             LogoUrl = row.LogoContainer is not null && row.LogoPath is not null

@@ -5,6 +5,7 @@ namespace Neba.TestFactory.Sponsors;
 
 public static class SponsorSummaryViewModelFactory
 {
+    public const string ValidSponsorId = "01000000000000000000000001";
     public const string ValidName = "Some Sponsor, LLC";
     public const string ValidSlug = "some-sponsor";
     public const string ValidLogoContainer = "sponsor-logos";
@@ -13,6 +14,7 @@ public static class SponsorSummaryViewModelFactory
     public const string ValidDescription = "Some Sponsor, LLC is a leading provider of sponsorship opportunities for events and organizations around the world.";
 
     public static SponsorSummaryViewModel Create(
+        string? sponsorId = null,
         string? name = null,
         string? slug = null,
         Uri? logoUrl = null,
@@ -28,6 +30,7 @@ public static class SponsorSummaryViewModelFactory
     )
         => new()
         {
+            SponsorId = sponsorId ?? ValidSponsorId,
             Name = name ?? ValidName,
             Slug = slug ?? ValidSlug,
             LogoUrl = logoUrl,
@@ -47,6 +50,7 @@ public static class SponsorSummaryViewModelFactory
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new SponsorSummaryViewModel
         {
+            SponsorId = Ulid.BogusString(faker),
             Name = faker.Company.CompanyName(),
             Slug = faker.Lorem.Slug(),
             LogoUrl = new Uri(faker.Image.PicsumUrl()),

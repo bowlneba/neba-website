@@ -189,7 +189,7 @@ public sealed class Tournament
 
         return Result.Success;
     }
-    
+
     /// <summary>
     /// Removes a sponsor; returns an error if the sponsor isn't currently attached.
     /// </summary>
