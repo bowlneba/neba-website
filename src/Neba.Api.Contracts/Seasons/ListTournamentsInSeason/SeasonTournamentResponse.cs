@@ -84,4 +84,10 @@ public sealed record SeasonTournamentResponse
     /// Oil patterns used in this tournament, including which rounds each applies to.
     /// </summary>
     public IReadOnlyCollection<TournamentOilPatternResponse> OilPatterns { get; init; } = [];
+
+    /// <summary>
+    /// Date/time at which full oil pattern details become public; null if there's no restriction
+    /// or the caller isn't authenticated.
+    /// </summary>
+    public DateTimeOffset? OilPatternRevealDateTime { get; init; }
 }

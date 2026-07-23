@@ -96,6 +96,12 @@ public sealed record TournamentDetailResponse
     public IReadOnlyCollection<TournamentDetailOilPatternResponse> OilPatterns { get; init; } = [];
 
     /// <summary>
+    /// Date/time at which full oil pattern details become public; null if there's no restriction
+    /// or the caller isn't authenticated.
+    /// </summary>
+    public DateTimeOffset? OilPatternRevealDateTime { get; init; }
+
+    /// <summary>
     /// Display names of the winning bowler(s); empty for pending or upcoming events.
     /// </summary>
     public IReadOnlyCollection<string> Winners { get; init; } = [];

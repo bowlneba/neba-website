@@ -90,6 +90,12 @@ public sealed record SeasonTournamentDto
     public IReadOnlyCollection<SeasonTournamentOilPatternDto> OilPatterns { get; init; } = [];
 
     /// <summary>
+    /// Date/time at which full oil pattern details become public; null if there's no restriction
+    /// or the caller isn't authenticated (unauthenticated callers don't see that a reveal date exists).
+    /// </summary>
+    public DateTimeOffset? OilPatternRevealDateTime { get; init; }
+
+    /// <summary>
     /// URL to the tournament logo image; null when unavailable.
     /// </summary>
     public Uri? LogoUrl { get; init; }

@@ -71,7 +71,8 @@ internal sealed class CreateTournamentEndpoint(Messaging.ICommandHandler<CreateT
                 : PatternLengthCategory.FromName(input.PatternLengthCategory),
             PatternRatioCategory = string.IsNullOrWhiteSpace(input.PatternRatioCategory)
                 ? null
-                : PatternRatioCategory.FromName(input.PatternRatioCategory)
+                : PatternRatioCategory.FromName(input.PatternRatioCategory),
+            OilPatternRevealDateTime = input.OilPatternRevealDateTime
         };
 
         var result = await _commandHandler.HandleAsync(command, ct);

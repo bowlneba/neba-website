@@ -21,6 +21,9 @@ public static class PolicyExtensions
             builder.AddPolicy(Permissions.CanManageSponsorsPolicyName, policy => policy
                 .RequireAssertion(context => context.User.HasAnyPermission(Permissions.SponsorManagementPermissions)));
 
+            builder.AddPolicy(Permissions.CanManageTournamentsPolicyName, policy => policy
+                .RequireAssertion(context => context.User.HasAnyPermission(Permissions.TournamentManagementPermissions)));
+
             return builder;
         }
     }

@@ -19,6 +19,7 @@ public static class CacheDescriptors
 {
     private const string ManagementScope = "management";
     private const string PublicScope = "public";
+    private const string AuthenticatedScope = "authenticated";
 
     /// <summary>
     /// Cache descriptors for bowler data.
@@ -310,19 +311,38 @@ public static class CacheDescriptors
     /// </summary>
     public static class Tournaments
     {
+        private static string ResolveScope(bool callerIsAuthenticated, bool callerHasTournamentManagementPermission)
+        {
+            if (callerHasTournamentManagementPermission)
+            {
+                return ManagementScope;
+            }
+
+            return callerIsAuthenticated ? AuthenticatedScope : PublicScope;
+        }
+
         /// <summary>
         /// Returns a cache descriptor for the list of tournaments in a given season.
         /// </summary>
         /// <param name="seasonId">
         /// The season identifier.
         /// </param>
+        /// <param name="callerIsAuthenticated">
+        /// Whether the caller is authenticated — an authenticated caller sees the oil pattern reveal
+        /// date/time even before it passes, so this is cached separately from an anonymous response.
+        /// </param>
+        /// <param name="callerHasTournamentManagementPermission">
+        /// Whether the caller holds the tournament management permission — such a caller sees full oil
+        /// pattern details even before the reveal date passes, so this is cached separately from both
+        /// the anonymous and authenticated-but-non-management responses.
+        /// </param>
         /// <returns>
         /// A cache descriptor for the tournaments in the season.
         /// </returns>
-        public static CacheDescriptor ListForSeason(SeasonId seasonId)
+        public static CacheDescriptor ListForSeason(SeasonId seasonId, bool callerIsAuthenticated, bool callerHasTournamentManagementPermission)
             => new()
             {
-                Key = $"neba:tournaments:{seasonId}:list",
+                Key = $"neba:tournaments:{seasonId}:list:scope:{ResolveScope(callerIsAuthenticated, callerHasTournamentManagementPermission)}",
                 Tags = ["neba", "neba:tournaments", $"neba:tournaments:{seasonId}"]
             };
 
@@ -332,13 +352,22 @@ public static class CacheDescriptors
         /// <param name="id">
         /// The tournament identifier.
         /// </param>
+        /// <param name="callerIsAuthenticated">
+        /// Whether the caller is authenticated — an authenticated caller sees the oil pattern reveal
+        /// date/time even before it passes, so this is cached separately from an anonymous response.
+        /// </param>
+        /// <param name="callerHasTournamentManagementPermission">
+        /// Whether the caller holds the tournament management permission — such a caller sees full oil
+        /// pattern details even before the reveal date passes, so this is cached separately from both
+        /// the anonymous and authenticated-but-non-management responses.
+        /// </param>
         /// <returns>
         /// A cache descriptor for the tournament details.
         /// </returns>
-        public static CacheDescriptor TournamentDetail(TournamentId id)
+        public static CacheDescriptor TournamentDetail(TournamentId id, bool callerIsAuthenticated, bool callerHasTournamentManagementPermission)
             => new()
             {
-                Key = $"neba:tournaments:{id}",
+                Key = $"neba:tournaments:{id}:scope:{ResolveScope(callerIsAuthenticated, callerHasTournamentManagementPermission)}",
                 Tags = ["neba", "neba:tournaments", $"neba:tournaments:{id}"]
             };
 

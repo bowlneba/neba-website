@@ -13,7 +13,8 @@ namespace Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 
 internal sealed class ListTournamentsInSeasonQueryHandler(
     AppDbContext appDbContext,
-    IFileStorageService fileStorageService)
+    IFileStorageService fileStorageService,
+    TimeProvider timeProvider)
     : IQueryHandler<ListTournamentsInSeasonQuery, IReadOnlyCollection<SeasonTournamentDto>>
 {
     private readonly IQueryable<Tournament> _tournaments =
@@ -67,6 +68,7 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 PatternRatioCategory = tournament.PatternRatioCategory == null
                     ? null
                     : tournament.PatternRatioCategory.Name,
+                tournament.OilPatternRevealDateTime,
                 tournament.EntryFee,
                 RegistrationUrl = tournament.ExternalRegistrationUrl,
                 TournamentLogoContainer = tournament.Logo != null
@@ -80,6 +82,10 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 {
                     top.OilPattern.Name,
                     top.OilPattern.Length,
+                    top.OilPattern.Volume,
+                    top.OilPattern.LeftRatio,
+                    top.OilPattern.RightRatio,
+                    top.OilPattern.KegelId,
                     top.TournamentRounds
                 }).ToList()
             }).ToListAsync(cancellationToken);
@@ -97,6 +103,8 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 .GroupBy(w => w.TournamentId)
                 .ToDictionary(g => g.Key, g => (IReadOnlyCollection<Name>)[.. g.Select(w => w.Name)]);
 
+        var now = timeProvider.GetUtcNow();
+
         return [.. rows.Select(row =>
         {
             var sponsors = row.Sponsors
@@ -109,6 +117,8 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                         : null
                 })
                 .ToArray();
+
+            var revealed = OilPatternRevealPolicy.IsRevealed(row.OilPatternRevealDateTime, query.CallerHasTournamentManagementPermission, now);
 
             return new SeasonTournamentDto
             {
@@ -127,12 +137,19 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 Reservations = row.Reservations,
                 PatternLengthCategory = row.PatternLengthCategory,
                 PatternRatioCategory = row.PatternRatioCategory,
-                OilPatterns = row.OilPatterns.ConvertAll(pattern => new SeasonTournamentOilPatternDto
-                {
-                    Name = pattern.Name,
-                    Length = pattern.Length,
-                    TournamentRounds = [.. pattern.TournamentRounds.Select(r => r.Name)]
-                }),
+                OilPatternRevealDateTime = query.CallerIsAuthenticated ? row.OilPatternRevealDateTime : null,
+                OilPatterns = revealed
+                    ? row.OilPatterns.ConvertAll(pattern => new SeasonTournamentOilPatternDto
+                    {
+                        Name = pattern.Name,
+                        Length = pattern.Length,
+                        Volume = pattern.Volume,
+                        LeftRatio = pattern.LeftRatio,
+                        RightRatio = pattern.RightRatio,
+                        KegelId = pattern.KegelId,
+                        TournamentRounds = [.. pattern.TournamentRounds.Select(r => r.Name)]
+                    })
+                    : [],
                 LogoUrl = row.TournamentLogoContainer is not null && row.TournamentLogoPath is not null
                     ? _fileStorageService.GetBlobUri(row.TournamentLogoContainer, row.TournamentLogoPath)
                     : null,

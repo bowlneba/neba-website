@@ -67,4 +67,11 @@ public sealed record TournamentInput
     /// <see cref="OilPatternId"/> is null.
     /// </summary>
     public string? PatternRatioCategory { get; init; }
+
+    /// <summary>
+    /// Date/time at which full oil pattern details become visible to callers without the tournament
+    /// management permission; null if there's no reveal restriction. Callers holding the tournament
+    /// management permission always see full details.
+    /// </summary>
+    public DateTimeOffset? OilPatternRevealDateTime { get; init; }
 }

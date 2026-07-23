@@ -2,15 +2,21 @@ using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.BackgroundJobs;
 using Neba.Api.Database;
 using Neba.Api.Features.Tournaments.Domain;
+using Neba.Api.Features.Tournaments.EvictOilPatternRevealCache;
 using Neba.Api.Messaging;
 
 using ZiggyCreatures.Caching.Fusion;
 
 namespace Neba.Api.Features.Tournaments.CreateTournament;
 
-internal sealed class CreateTournamentCommandHandler(AppDbContext appDbContext, IFusionCache cache)
+internal sealed class CreateTournamentCommandHandler(
+    AppDbContext appDbContext,
+    IFusionCache cache,
+    IBackgroundJobScheduler jobScheduler,
+    TimeProvider timeProvider)
     : ICommandHandler<CreateTournamentCommand, TournamentId>
 {
     public async Task<ErrorOr<TournamentId>> HandleAsync(CreateTournamentCommand command, CancellationToken cancellationToken)
@@ -60,7 +66,8 @@ internal sealed class CreateTournamentCommandHandler(AppDbContext appDbContext, 
             externalRegistrationUrl: command.ExternalRegistrationUrl,
             logo: command.Logo,
             patternLengthCategory: patternLengthCategory,
-            patternRatioCategory: patternRatioCategory);
+            patternRatioCategory: patternRatioCategory,
+            oilPatternRevealDateTime: command.OilPatternRevealDateTime);
 
         if (tournamentResult.IsError)
         {
@@ -76,6 +83,13 @@ internal sealed class CreateTournamentCommandHandler(AppDbContext appDbContext, 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await cache.RemoveByTagAsync($"neba:tournaments:{season.Id}", token: cancellationToken);
+
+        if (command.OilPatternRevealDateTime is { } revealAt && revealAt > timeProvider.GetUtcNow())
+        {
+            jobScheduler.Schedule(
+                new EvictOilPatternRevealCacheJob { TournamentId = tournament.Id, SeasonId = season.Id },
+                revealAt);
+        }
 
         return tournament.Id;
     }

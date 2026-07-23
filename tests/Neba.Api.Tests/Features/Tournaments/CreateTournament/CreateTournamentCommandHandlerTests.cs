@@ -2,13 +2,16 @@ using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Time.Testing;
 
+using Neba.Api.BackgroundJobs;
 using Neba.Api.Database;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Features.Tournaments.CreateTournament;
 using Neba.Api.Features.Tournaments.Domain;
+using Neba.Api.Features.Tournaments.EvictOilPatternRevealCache;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.BowlingCenters;
 using Neba.TestFactory.Infrastructure;
@@ -46,10 +49,15 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
         await _serviceProvider.DisposeAsync();
     }
 
-    private CreateTournamentCommandHandler CreateHandler()
+    private static readonly DateTimeOffset Now = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+    private CreateTournamentCommandHandler CreateHandler(
+        IBackgroundJobScheduler? backgroundJobScheduler = null,
+        TimeProvider? timeProvider = null)
     {
         var cache = _serviceProvider.GetRequiredService<IFusionCache>();
-        return new CreateTournamentCommandHandler(_dbContext, cache);
+        var scheduler = backgroundJobScheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object;
+        return new CreateTournamentCommandHandler(_dbContext, cache, scheduler, timeProvider ?? new FakeTimeProvider(Now));
     }
 
     private async Task<Season> SeedSeasonAsync(CancellationToken ct)
@@ -72,7 +80,8 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
         StoredFile? logo = null,
         OilPatternId? oilPatternId = null,
         PatternLengthCategory? patternLengthCategory = null,
-        PatternRatioCategory? patternRatioCategory = null)
+        PatternRatioCategory? patternRatioCategory = null,
+        DateTimeOffset? oilPatternRevealDateTime = null)
         => new()
         {
             Name = name ?? TournamentFactory.ValidName,
@@ -86,7 +95,8 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
             Logo = logo,
             OilPatternId = oilPatternId,
             PatternLengthCategory = patternLengthCategory,
-            PatternRatioCategory = patternRatioCategory
+            PatternRatioCategory = patternRatioCategory,
+            OilPatternRevealDateTime = oilPatternRevealDateTime
         };
 
     [Fact(DisplayName = "HandleAsync returns validation error when no season contains the tournament dates")]
@@ -423,5 +433,71 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
         var stillPending = await _dbContext.PendingUploads.AsNoTracking()
             .AnyAsync(p => p.Container == "unrelated-container" && p.Path == "unrelated-file.jpg", ct);
         stillPending.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "HandleAsync schedules an oil pattern reveal cache eviction job when a future reveal date is provided")]
+    public async Task HandleAsync_ShouldScheduleEvictionJob_WhenOilPatternRevealDateTimeIsInFuture()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedSeasonAsync(ct);
+        var timeProvider = new FakeTimeProvider(Now);
+        var revealAt = Now.AddDays(3);
+        var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        schedulerMock
+            .Setup(scheduler => scheduler.Schedule(It.IsAny<EvictOilPatternRevealCacheJob>(), revealAt))
+            .Returns("job-id")
+            .Verifiable();
+
+        var handler = CreateHandler(schedulerMock.Object, timeProvider);
+        var command = ValidCommand(name: "Tournament With Future Reveal Date", oilPatternRevealDateTime: revealAt);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        schedulerMock.VerifyAll();
+    }
+
+    [Fact(DisplayName = "HandleAsync does not schedule an eviction job when no reveal date is provided")]
+    public async Task HandleAsync_ShouldNotScheduleEvictionJob_WhenOilPatternRevealDateTimeIsNull()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedSeasonAsync(ct);
+        var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        var handler = CreateHandler(schedulerMock.Object);
+        var command = ValidCommand(name: "Tournament Without Reveal Date", oilPatternRevealDateTime: null);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        schedulerMock.Verify(
+            scheduler => scheduler.Schedule(It.IsAny<EvictOilPatternRevealCacheJob>(), It.IsAny<DateTimeOffset>()),
+            Times.Never);
+    }
+
+    [Fact(DisplayName = "HandleAsync does not schedule an eviction job when the reveal date is already in the past")]
+    public async Task HandleAsync_ShouldNotScheduleEvictionJob_WhenOilPatternRevealDateTimeIsInPast()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedSeasonAsync(ct);
+        var timeProvider = new FakeTimeProvider(Now);
+        var schedulerMock = new Mock<IBackgroundJobScheduler>(MockBehavior.Strict);
+        var handler = CreateHandler(schedulerMock.Object, timeProvider);
+        var command = ValidCommand(name: "Tournament With Past Reveal Date", oilPatternRevealDateTime: Now.AddDays(-1));
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        schedulerMock.Verify(
+            scheduler => scheduler.Schedule(It.IsAny<EvictOilPatternRevealCacheJob>(), It.IsAny<DateTimeOffset>()),
+            Times.Never);
     }
 }

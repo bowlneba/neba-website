@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Time.Testing;
+
 using Neba.Api.Database;
 using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Sponsors.Domain;
@@ -35,11 +37,11 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
     {
         // Arrange
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
-        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
         var result = await handler.HandleAsync(
-            new GetTournamentQuery { Id = TournamentId.New() },
+            new GetTournamentQuery { Id = TournamentId.New(), CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true },
             TestContext.Current.CancellationToken);
 
         // Assert
@@ -66,11 +68,11 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.SaveChangesAsync(ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
-        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
         var result = await handler.HandleAsync(
-            new GetTournamentQuery { Id = tournament.Id }, ct);
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -103,11 +105,11 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         fileStorageMock
             .Setup(s => s.GetBlobUri("logos", "tournaments/neba-singles.jpg"))
             .Returns(expectedUri);
-        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
         var result = await handler.HandleAsync(
-            new GetTournamentQuery { Id = tournament.Id }, ct);
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -139,11 +141,11 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.SaveChangesAsync(ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
-        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
         var result = await handler.HandleAsync(
-            new GetTournamentQuery { Id = tournament.Id }, ct);
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -172,11 +174,11 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.SaveChangesAsync(ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
-        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
         var result = await handler.HandleAsync(
-            new GetTournamentQuery { Id = tournament.Id }, ct);
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -200,11 +202,11 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.SaveChangesAsync(ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
-        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
         var result = await handler.HandleAsync(
-            new GetTournamentQuery { Id = tournament.Id }, ct);
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -234,11 +236,11 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.SaveChangesAsync(ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
-        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
         var result = await handler.HandleAsync(
-            new GetTournamentQuery { Id = tournament.Id }, ct);
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -272,14 +274,141 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.SaveChangesAsync(ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
-        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
         var result = await handler.HandleAsync(
-            new GetTournamentQuery { Id = tournament.Id }, ct);
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
 
         // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Sponsors.Select(s => s.Name).ShouldBe(["Mid Title Sponsor", "Alpha Lanes", "Zeta Bowling"]);
+    }
+
+    private async Task<Tournament> SeedTournamentWithOilPatternAsync(DateTimeOffset? oilPatternRevealDateTime, CancellationToken ct)
+    {
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var oilPattern = OilPatternFactory.Create(name: "Dragon", volume: 22.5m, leftRatio: 4.0m, rightRatio: 6.0m);
+        await _dbContext.OilPatterns.AddAsync(oilPattern, ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id, oilPatternRevealDateTime: oilPatternRevealDateTime);
+        tournament.AddOilPattern(oilPattern.Id, TournamentRound.Qualifying);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        return tournament;
+    }
+
+    [Fact(DisplayName = "HandleAsync returns reduced oil pattern info and no reveal date when caller is anonymous and reveal date is in the future")]
+    public async Task HandleAsync_ShouldReturnReducedOilPatternInfoAndNoRevealDate_WhenCallerIsAnonymousAndRevealDateIsInFuture()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var now = DateTimeOffset.UtcNow;
+        var revealAt = now.AddDays(5);
+        var tournament = await SeedTournamentWithOilPatternAsync(revealAt, ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, new FakeTimeProvider(now));
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = false, CallerHasTournamentManagementPermission = false }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.OilPatterns.ShouldBeEmpty();
+        result.Value.OilPatternRevealDateTime.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "HandleAsync returns reduced oil pattern info but the reveal date when caller is authenticated without the management permission and reveal date is in the future")]
+    public async Task HandleAsync_ShouldReturnReducedOilPatternInfoButRevealDate_WhenCallerIsAuthenticatedWithoutManagementPermissionAndRevealDateIsInFuture()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var now = DateTimeOffset.UtcNow;
+        var revealAt = now.AddDays(5);
+        var tournament = await SeedTournamentWithOilPatternAsync(revealAt, ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, new FakeTimeProvider(now));
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = false }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.OilPatterns.ShouldBeEmpty();
+        result.Value.OilPatternRevealDateTime.ShouldBe(revealAt);
+    }
+
+    [Fact(DisplayName = "HandleAsync returns full oil pattern info when caller has the management permission, even before the reveal date")]
+    public async Task HandleAsync_ShouldReturnFullOilPatternInfo_WhenCallerHasManagementPermissionBeforeRevealDate()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var now = DateTimeOffset.UtcNow;
+        var revealAt = now.AddDays(5);
+        var tournament = await SeedTournamentWithOilPatternAsync(revealAt, ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, new FakeTimeProvider(now));
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.OilPatterns.ShouldHaveSingleItem();
+        var pattern = result.Value.OilPatterns.Single();
+        pattern.Volume.ShouldBe(22.5m);
+        pattern.LeftRatio.ShouldBe(4.0m);
+        pattern.RightRatio.ShouldBe(6.0m);
+        result.Value.OilPatternRevealDateTime.ShouldBe(revealAt);
+    }
+
+    [Fact(DisplayName = "HandleAsync returns full oil pattern info when the reveal date has passed, regardless of caller")]
+    public async Task HandleAsync_ShouldReturnFullOilPatternInfo_WhenRevealDateHasPassed()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var now = DateTimeOffset.UtcNow;
+        var tournament = await SeedTournamentWithOilPatternAsync(now.AddDays(-1), ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, new FakeTimeProvider(now));
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = false, CallerHasTournamentManagementPermission = false }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.OilPatterns.ShouldHaveSingleItem();
+        result.Value.OilPatternRevealDateTime.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "HandleAsync returns full oil pattern info when caller is anonymous and no reveal date is set")]
+    public async Task HandleAsync_ShouldReturnFullOilPatternInfo_WhenCallerIsAnonymousAndNoRevealDateIsSet()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var tournament = await SeedTournamentWithOilPatternAsync(null, ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = false, CallerHasTournamentManagementPermission = false }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.OilPatterns.ShouldHaveSingleItem();
+        result.Value.OilPatternRevealDateTime.ShouldBeNull();
     }
 }

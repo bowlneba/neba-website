@@ -11,8 +11,12 @@ internal sealed record GetTournamentQuery
 {
     public required TournamentId Id { get; init; }
 
+    public required bool CallerIsAuthenticated { get; init; }
+
+    public required bool CallerHasTournamentManagementPermission { get; init; }
+
     public CacheDescriptor Cache
-        => CacheDescriptors.Tournaments.TournamentDetail(Id);
+        => CacheDescriptors.Tournaments.TournamentDetail(Id, CallerIsAuthenticated, CallerHasTournamentManagementPermission);
 
     public TimeSpan Expiry
         => TimeSpan.FromDays(5);

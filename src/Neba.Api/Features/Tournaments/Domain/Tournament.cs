@@ -113,6 +113,14 @@ public sealed class Tournament
         => _sponsors;
 
     /// <summary>
+    /// Gets the date/time at which full oil pattern details become visible to callers who lack
+    /// the tournament management permission, or <see langword="null"/> if there is no reveal
+    /// restriction (full details are always visible). Callers holding the tournament management
+    /// permission always see full details regardless of this value.
+    /// </summary>
+    public DateTimeOffset? OilPatternRevealDateTime { get; init; }
+
+    /// <summary>
     /// Creates a new tournament, validating name, dates, and entry fee.
     /// </summary>
     public static ErrorOr<Tournament> Create(
@@ -127,7 +135,8 @@ public sealed class Tournament
         Uri? externalRegistrationUrl = null,
         StoredFile? logo = null,
         PatternLengthCategory? patternLengthCategory = null,
-        PatternRatioCategory? patternRatioCategory = null)
+        PatternRatioCategory? patternRatioCategory = null,
+        DateTimeOffset? oilPatternRevealDateTime = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -158,7 +167,8 @@ public sealed class Tournament
             ExternalRegistrationUrl = externalRegistrationUrl,
             Logo = logo,
             PatternLengthCategory = patternLengthCategory,
-            PatternRatioCategory = patternRatioCategory
+            PatternRatioCategory = patternRatioCategory,
+            OilPatternRevealDateTime = oilPatternRevealDateTime
         };
 
         return tournament;

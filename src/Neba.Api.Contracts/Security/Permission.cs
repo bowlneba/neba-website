@@ -92,6 +92,19 @@ public sealed class Permissions
     /// </summary>
     public static readonly Permissions ManageTournamentSponsors = new("Tournaments.ManageSponsors", "Manage Tournament Sponsors");
 
+    /// <summary>
+    /// A collection of permissions related to tournament management.
+    /// </summary>
+    public static readonly IReadOnlyCollection<Permissions> TournamentManagementPermissions =
+    [
+        CreateTournament,
+    ];
+
+    /// <summary>
+    /// Policy name satisfied when the caller holds any permission in <see cref="TournamentManagementPermissions"/>.
+    /// </summary>
+    public const string CanManageTournamentsPolicyName = "CanManageTournaments";
+
     #endregion
 
     private Permissions(string key, string name)

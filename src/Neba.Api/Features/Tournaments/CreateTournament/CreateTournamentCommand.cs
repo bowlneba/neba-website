@@ -31,4 +31,6 @@ internal sealed record CreateTournamentCommand
     public PatternLengthCategory? PatternLengthCategory { get; init; }
 
     public PatternRatioCategory? PatternRatioCategory { get; init; }
+
+    public DateTimeOffset? OilPatternRevealDateTime { get; init; }
 }

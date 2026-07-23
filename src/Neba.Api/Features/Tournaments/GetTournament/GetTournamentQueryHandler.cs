@@ -14,7 +14,8 @@ namespace Neba.Api.Features.Tournaments.GetTournament;
 
 internal sealed class GetTournamentQueryHandler(
     AppDbContext appDbContext,
-    IFileStorageService fileStorageService)
+    IFileStorageService fileStorageService,
+    TimeProvider timeProvider)
     : IQueryHandler<GetTournamentQuery, ErrorOr<TournamentDetailDto>>
 {
     private readonly IQueryable<Tournament> _tournaments
@@ -70,6 +71,7 @@ internal sealed class GetTournamentQueryHandler(
                 PatternRatioCategory = tournament.PatternRatioCategory == null
                     ? null
                     : tournament.PatternRatioCategory.Name,
+                tournament.OilPatternRevealDateTime,
                 tournament.EntryFee,
                 RegistrationUrl = tournament.ExternalRegistrationUrl,
                 TournamentLogoContainer = tournament.Logo != null
@@ -83,6 +85,9 @@ internal sealed class GetTournamentQueryHandler(
                 {
                     top.OilPattern.Name,
                     top.OilPattern.Length,
+                    top.OilPattern.Volume,
+                    top.OilPattern.LeftRatio,
+                    top.OilPattern.RightRatio,
                     top.TournamentRounds,
                     top.OilPattern.KegelId
                 }).ToList(),
@@ -150,6 +155,9 @@ internal sealed class GetTournamentQueryHandler(
             .ThenBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
+        var revealed = OilPatternRevealPolicy.IsRevealed(
+            row.OilPatternRevealDateTime, query.CallerHasTournamentManagementPermission, timeProvider.GetUtcNow());
+
         return new TournamentDetailDto
         {
             Id = row.Id,
@@ -167,13 +175,19 @@ internal sealed class GetTournamentQueryHandler(
             Reservations = row.Reservations,
             PatternLengthCategory = row.PatternLengthCategory,
             PatternRatioCategory = row.PatternRatioCategory,
-            OilPatterns = row.OilPatterns.ConvertAll(pattern => new TournamentDetailOilPatternDto
-            {
-                Name = pattern.Name,
-                Length = pattern.Length,
-                TournamentRounds = [.. pattern.TournamentRounds.Select(r => r.Name)],
-                KegelId = pattern.KegelId,
-            }),
+            OilPatternRevealDateTime = query.CallerIsAuthenticated ? row.OilPatternRevealDateTime : null,
+            OilPatterns = revealed
+                ? row.OilPatterns.ConvertAll(pattern => new TournamentDetailOilPatternDto
+                {
+                    Name = pattern.Name,
+                    Length = pattern.Length,
+                    Volume = pattern.Volume,
+                    LeftRatio = pattern.LeftRatio,
+                    RightRatio = pattern.RightRatio,
+                    TournamentRounds = [.. pattern.TournamentRounds.Select(r => r.Name)],
+                    KegelId = pattern.KegelId,
+                })
+                : [],
             LogoUrl = row.TournamentLogoContainer is not null && row.TournamentLogoPath is not null
                 ? _fileStorageService.GetBlobUri(row.TournamentLogoContainer, row.TournamentLogoPath)
                 : null,
