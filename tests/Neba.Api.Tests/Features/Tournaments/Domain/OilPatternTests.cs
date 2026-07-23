@@ -8,15 +8,16 @@ namespace Neba.Api.Tests.Features.Tournaments.Domain;
 [Component("Tournaments.OilPattern")]
 public sealed class OilPatternTests
 {
+    #nullable disable
     [Theory(DisplayName = "Create returns OilPattern.Name.Required when name is null, empty, or whitespace")]
     [InlineData(null, TestDisplayName = "name is null")]
     [InlineData("", TestDisplayName = "name is empty")]
     [InlineData("   ", TestDisplayName = "name is whitespace")]
-    public void Create_ShouldReturnError_WhenNameIsNullOrWhiteSpace(string? name)
+    public void Create_ShouldReturnError_WhenNameIsNullOrWhiteSpace(string name)
     {
         // Act
         var result = OilPattern.Create(
-            name!,
+            name,
             OilPatternFactory.ValidLength,
             OilPatternFactory.ValidVolume,
             OilPatternFactory.ValidLeftRatio,
@@ -26,6 +27,7 @@ public sealed class OilPatternTests
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("OilPattern.Name.Required");
     }
+    #nullable enable
 
     [Theory(DisplayName = "Create returns OilPattern.Length.MustBePositive when length is zero or negative")]
     [InlineData(0, TestDisplayName = "length is zero")]

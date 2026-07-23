@@ -1,12 +1,8 @@
-@using Neba.Api.Contracts.Tournaments
+@using ErrorOr
 @using Neba.Api.Contracts.Tournaments.AddTournamentSponsor
 @using Neba.Website.Server.Components
 @using Neba.Website.Server.Notifications
-@using Neba.Website.Server.Services
 @using Neba.Website.Server.Sponsors
-
-@inject ITournamentsApi TournamentsApi
-@inject ApiExecutor ApiExecutor
 
 <NebaModal IsOpen="@IsOpen" OnClose="@OnClose" Title="Add Sponsor" MaxWidth="440px" CompactSize="true">
     <ChildContent>
@@ -59,9 +55,6 @@
     public bool IsOpen { get; set; }
 
     [Parameter, EditorRequired]
-    public required string TournamentId { get; set; }
-
-    [Parameter, EditorRequired]
     public IReadOnlyCollection<SponsorSummaryViewModel> AvailableSponsors { get; set; } = [];
 
     [Parameter, EditorRequired]
@@ -69,6 +62,14 @@
 
     [Parameter, EditorRequired]
     public EventCallback OnClose { get; set; }
+
+    /// <summary>
+    /// Performs the actual "add sponsor" API call. Kept feature-agnostic (same pattern as
+    /// <c>FileUpload.OnUploadRequestedAsync</c>) so this component has no knowledge of the API it's
+    /// talking to — the hosting page wires up the real call.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public Func<AddTournamentSponsorInput, CancellationToken, Task<ErrorOr<Success>>> OnSubmitRequestedAsync { get; set; } = default!;
 
     private string _selectedSponsorId = string.Empty;
     private decimal _sponsorshipAmount;
@@ -88,21 +89,14 @@
         _isSubmitting = true;
         _errorMessage = null;
 
-        var request = new AddTournamentSponsorRequest
+        var input = new AddTournamentSponsorInput
         {
-            Id = TournamentId,
-            Sponsor = new AddTournamentSponsorInput
-            {
-                SponsorId = sponsor.SponsorId,
-                TitleSponsor = _titleSponsor,
-                SponsorshipAmount = _sponsorshipAmount
-            }
+            SponsorId = sponsor.SponsorId,
+            TitleSponsor = _titleSponsor,
+            SponsorshipAmount = _sponsorshipAmount
         };
 
-        var result = await ApiExecutor.ExecuteAsync(
-            "TournamentsApi",
-            "AddTournamentSponsor",
-            ct => TournamentsApi.AddTournamentSponsorAsync(TournamentId, request, ct));
+        var result = await OnSubmitRequestedAsync(input, CancellationToken.None);
 
         _isSubmitting = false;
 

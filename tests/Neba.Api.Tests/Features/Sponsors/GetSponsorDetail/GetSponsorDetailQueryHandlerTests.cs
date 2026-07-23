@@ -36,7 +36,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
     public async Task HandleAsync_ShouldReturnNotFound_WhenSlugDoesNotExist()
     {
         // Arrange
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act
@@ -62,7 +62,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         await _dbContext.Sponsors.AddAsync(sponsor, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act
@@ -110,7 +110,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         await _dbContext.Sponsors.AddAsync(sponsor, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act
@@ -130,7 +130,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         await _dbContext.Sponsors.AddAsync(sponsor, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act
@@ -151,7 +151,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         await _dbContext.Sponsors.AddAsync(sponsor, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act
@@ -181,7 +181,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         await _dbContext.Sponsors.AddAsync(sponsor, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act
@@ -211,7 +211,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         await _dbContext.Sponsors.AddAsync(sponsor, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act
@@ -310,7 +310,7 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         newerTournament.AddSponsor(sponsor.Id, titleSponsor: true, sponsorshipAmount: 500m);
         await _dbContext.SaveChangesAsync(ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
 
         // Act

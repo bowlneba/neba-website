@@ -1,19 +1,14 @@
 using Bunit;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
+using ErrorOr;
 
-using Neba.Api.Contracts.Tournaments;
+using Microsoft.AspNetCore.Components;
+
 using Neba.Api.Contracts.Tournaments.AddTournamentSponsor;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Sponsors;
-using Neba.Website.Server.Clock;
-using Neba.Website.Server.Services;
 using Neba.Website.Server.Sponsors;
 using Neba.Website.Server.Tournaments.Detail;
-
-using Refit;
-using Refit.Testing;
 
 namespace Neba.Website.Tests.Tournaments.Detail;
 
@@ -21,27 +16,31 @@ namespace Neba.Website.Tests.Tournaments.Detail;
 [Component("Website.Tournaments.Detail.AddTournamentSponsorModal")]
 public sealed class AddTournamentSponsorModalTests : IDisposable
 {
-    private const string TournamentId = "01000000000000000000000099";
-
     private readonly BunitContext _ctx;
-    private readonly Mock<ITournamentsApi> _mockApi;
 
     public AddTournamentSponsorModalTests()
     {
-        _mockApi = new Mock<ITournamentsApi>(MockBehavior.Strict);
-
-        var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
-        mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
-        mockStopwatch.Setup(x => x.GetElapsedTime(It.IsAny<long>())).Returns(TimeSpan.Zero);
-
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
-
-        _ctx.Services.AddSingleton(_mockApi.Object);
-        _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
     }
 
     public void Dispose() => _ctx.Dispose();
+
+    private IRenderedComponent<AddTournamentSponsorModal> Render(
+        IReadOnlyCollection<SponsorSummaryViewModel> availableSponsors,
+        Func<AddTournamentSponsorInput, CancellationToken, Task<ErrorOr<Success>>>? onSubmitRequestedAsync = null,
+        Action? onAdded = null)
+        => _ctx.Render<AddTournamentSponsorModal>(p =>
+        {
+            p.Add(x => x.IsOpen, true);
+            p.Add(x => x.AvailableSponsors, availableSponsors);
+            p.Add(x => x.OnSubmitRequestedAsync, onSubmitRequestedAsync ?? ((_, _) => Task.FromResult<ErrorOr<Success>>(Result.Success)));
+
+            if (onAdded is not null)
+            {
+                p.Add(x => x.OnAdded, onAdded);
+            }
+        });
 
     [Fact(DisplayName = "Should disable the Add Sponsor button when no sponsor is selected")]
     public void Render_ShouldDisableSubmit_WhenNoSponsorSelected()
@@ -50,10 +49,7 @@ public sealed class AddTournamentSponsorModalTests : IDisposable
         var sponsor = SponsorSummaryResponseFactory.Create().ToViewModel();
 
         // Act
-        var cut = _ctx.Render<AddTournamentSponsorModal>(p => p
-            .Add(x => x.IsOpen, true)
-            .Add(x => x.TournamentId, TournamentId)
-            .Add(x => x.AvailableSponsors, [sponsor]));
+        var cut = Render([sponsor]);
 
         // Assert
         cut.Find("button.neba-btn-primary").HasAttribute("disabled").ShouldBeTrue();
@@ -65,10 +61,7 @@ public sealed class AddTournamentSponsorModalTests : IDisposable
         // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(sponsorId: "01000000000000000000000001", name: "Kegel").ToViewModel();
 
-        var cut = _ctx.Render<AddTournamentSponsorModal>(p => p
-            .Add(x => x.IsOpen, true)
-            .Add(x => x.TournamentId, TournamentId)
-            .Add(x => x.AvailableSponsors, [sponsor]));
+        var cut = Render([sponsor]);
 
         // Act
         cut.Find("#sponsor-pick").Change("01000000000000000000000001");
@@ -78,30 +71,22 @@ public sealed class AddTournamentSponsorModalTests : IDisposable
     }
 
     [Fact(DisplayName = "Should submit the selected sponsor, amount, and title flag when Add Sponsor is clicked")]
-    public void SubmitAsync_ShouldCallApiWithSelectedFields()
+    public void SubmitAsync_ShouldCallDelegateWithSelectedFields()
     {
         // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(sponsorId: "01000000000000000000000001", name: "Kegel").ToViewModel();
 
-        using var response = new StubApiResponse<object>
-        {
-            IsSuccessStatusCode = true,
-            StatusCode = System.Net.HttpStatusCode.NoContent
-        };
-
-        AddTournamentSponsorRequest? capturedRequest = null;
-        _mockApi
-            .Setup(x => x.AddTournamentSponsorAsync(TournamentId, It.IsAny<AddTournamentSponsorRequest>(), It.IsAny<CancellationToken>()))
-            .Callback<string, AddTournamentSponsorRequest, CancellationToken>((_, req, _) => capturedRequest = req)
-            .ReturnsAsync(response);
-
+        AddTournamentSponsorInput? capturedInput = null;
         var addedCount = 0;
 
-        var cut = _ctx.Render<AddTournamentSponsorModal>(p => p
-            .Add(x => x.IsOpen, true)
-            .Add(x => x.TournamentId, TournamentId)
-            .Add(x => x.AvailableSponsors, [sponsor])
-            .Add(x => x.OnAdded, () => addedCount++));
+        var cut = Render(
+            [sponsor],
+            onSubmitRequestedAsync: (input, _) =>
+            {
+                capturedInput = input;
+                return Task.FromResult<ErrorOr<Success>>(Result.Success);
+            },
+            onAdded: () => addedCount++);
 
         cut.Find("#sponsor-pick").Change("01000000000000000000000001");
         cut.Find("#sponsor-amount").Change("1500");
@@ -112,34 +97,23 @@ public sealed class AddTournamentSponsorModalTests : IDisposable
 
         // Assert
         addedCount.ShouldBe(1);
-        capturedRequest.ShouldNotBeNull();
-        capturedRequest.Sponsor.SponsorId.ShouldBe("01000000000000000000000001");
-        capturedRequest.Sponsor.SponsorshipAmount.ShouldBe(1500m);
-        capturedRequest.Sponsor.TitleSponsor.ShouldBeTrue();
+        capturedInput.ShouldNotBeNull();
+        capturedInput.SponsorId.ShouldBe("01000000000000000000000001");
+        capturedInput.SponsorshipAmount.ShouldBe(1500m);
+        capturedInput.TitleSponsor.ShouldBeTrue();
     }
 
-    [Fact(DisplayName = "Should show an error message and not invoke OnAdded when the API call fails")]
-    public void SubmitAsync_ShouldShowError_WhenApiFails()
+    [Fact(DisplayName = "Should show an error message and not invoke OnAdded when the submit delegate fails")]
+    public void SubmitAsync_ShouldShowError_WhenSubmitFails()
     {
         // Arrange
         var sponsor = SponsorSummaryResponseFactory.Create(sponsorId: "01000000000000000000000001", name: "Kegel").ToViewModel();
-
-        using var response = new StubApiResponse<object>
-        {
-            IsSuccessStatusCode = false,
-            StatusCode = System.Net.HttpStatusCode.Conflict
-        };
-        _mockApi
-            .Setup(x => x.AddTournamentSponsorAsync(TournamentId, It.IsAny<AddTournamentSponsorRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(response);
-
         var addedCount = 0;
 
-        var cut = _ctx.Render<AddTournamentSponsorModal>(p => p
-            .Add(x => x.IsOpen, true)
-            .Add(x => x.TournamentId, TournamentId)
-            .Add(x => x.AvailableSponsors, [sponsor])
-            .Add(x => x.OnAdded, () => addedCount++));
+        var cut = Render(
+            [sponsor],
+            onSubmitRequestedAsync: (_, _) => Task.FromResult<ErrorOr<Success>>(Error.Conflict("Sponsor.Conflict", "Could not add sponsor.")),
+            onAdded: () => addedCount++);
 
         cut.Find("#sponsor-pick").Change("01000000000000000000000001");
 

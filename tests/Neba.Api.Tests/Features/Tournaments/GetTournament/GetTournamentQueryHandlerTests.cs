@@ -36,7 +36,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
     public async Task HandleAsync_ShouldReturnNotFound_WhenTournamentDoesNotExist()
     {
         // Arrange
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
@@ -67,7 +67,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
@@ -140,7 +140,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.Articles.AddRangeAsync([published, draft], ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
@@ -173,7 +173,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.Articles.AddAsync(draft, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
@@ -201,7 +201,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
@@ -235,7 +235,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         tournament.AddSponsor(sponsor.Id, titleSponsor: true, sponsorshipAmount: 1234.56m);
         await _dbContext.SaveChangesAsync(ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
@@ -273,7 +273,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         tournament.AddSponsor(titleSponsor.Id, titleSponsor: true, sponsorshipAmount: 5000m);
         await _dbContext.SaveChangesAsync(ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act
@@ -310,7 +310,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         var revealAt = now.AddDays(5);
         var tournament = await SeedTournamentWithOilPatternAsync(revealAt, ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, new FakeTimeProvider(now));
 
         // Act
@@ -332,7 +332,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         var revealAt = now.AddDays(5);
         var tournament = await SeedTournamentWithOilPatternAsync(revealAt, ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, new FakeTimeProvider(now));
 
         // Act
@@ -354,7 +354,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         var revealAt = now.AddDays(5);
         var tournament = await SeedTournamentWithOilPatternAsync(revealAt, ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, new FakeTimeProvider(now));
 
         // Act
@@ -379,7 +379,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         var now = DateTimeOffset.UtcNow;
         var tournament = await SeedTournamentWithOilPatternAsync(now.AddDays(-1), ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, new FakeTimeProvider(now));
 
         // Act
@@ -399,7 +399,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         var ct = TestContext.Current.CancellationToken;
         var tournament = await SeedTournamentWithOilPatternAsync(null, ct);
 
-        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
 
         // Act

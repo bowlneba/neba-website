@@ -17,7 +17,7 @@ public sealed class UploadTournamentLogoRequestValidatorTests
 
     private static IFormFile CreateFile(string contentType = "image/png", long length = 1024)
     {
-        var fileMock = new Mock<IFormFile>();
+        var fileMock = new Mock<IFormFile>(MockBehavior.Strict);
         fileMock.SetupGet(x => x.ContentType).Returns(contentType);
         fileMock.SetupGet(x => x.Length).Returns(length);
         return fileMock.Object;

@@ -3,6 +3,9 @@
 @using ErrorOr
 @using Neba.Api.Contracts.BowlingCenters
 @using Neba.Api.Contracts.BowlingCenters.ListBowlingCenters
+@using Neba.Api.Contracts.OilPatterns
+@using Neba.Api.Contracts.OilPatterns.CreateOilPattern
+@using Neba.Api.Contracts.OilPatterns.ListOilPatterns
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Tournaments
 @using Neba.Api.Contracts.Tournaments.CreateTournament
@@ -18,6 +21,7 @@
 @inject ApiExecutor ApiExecutor
 @inject ITournamentsApi TournamentsApi
 @inject IBowlingCentersApi BowlingCentersApi
+@inject IOilPatternsApi OilPatternsApi
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 @inject IClientTimeZoneService ClientTimeZoneService
@@ -137,7 +141,9 @@
                                 </p>
                             </div>
 
-                            <OilPatternPicker SelectionChanged="HandleOilPatternSelectionChanged" />
+                            <OilPatternPicker SelectionChanged="HandleOilPatternSelectionChanged"
+                                               Patterns="@_oilPatterns"
+                                               OnCreatePatternRequestedAsync="CreateOilPatternAsync" />
                         </section>
 
                         <section class="neba-space-y-4">
@@ -191,6 +197,7 @@
 
     private IReadOnlyCollection<BowlingCenterSummaryResponse> _bowlingCenters = [];
     private IReadOnlyCollection<TournamentTypeSummaryResponse> _tournamentTypes = [];
+    private IReadOnlyCollection<OilPatternSummaryResponse> _oilPatterns = [];
 
     public CreateTournament()
     {
@@ -219,6 +226,16 @@
         {
             _tournamentTypes = tournamentTypesResult.Value.Items;
         }
+
+        var oilPatternsResult = await ApiExecutor.ExecuteAsync(
+            "OilPatterns",
+            "ListOilPatterns",
+            OilPatternsApi.ListOilPatternsAsync);
+
+        if (!oilPatternsResult.IsError)
+        {
+            _oilPatterns = oilPatternsResult.Value.Items;
+        }
     }
 
     private void MarkDirty() => _isDirty = true;
@@ -236,6 +253,13 @@
         _model.BowlingCenterCertificationNumber = certificationNumber;
         MarkDirty();
     }
+
+    private async Task<ErrorOr<CreatedOilPatternResponse>> CreateOilPatternAsync(CreateOilPatternRequest request, CancellationToken ct)
+        => await ApiExecutor.ExecuteAsync(
+            "OilPatterns",
+            "CreateOilPattern",
+            c => OilPatternsApi.CreateOilPatternAsync(request, c),
+            ct);
 
     private async Task<ErrorOr<UploadedFileResponse>> UploadLogoAsync(
         Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)

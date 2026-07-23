@@ -1,21 +1,18 @@
 using Bunit;
 
+using ErrorOr;
+
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
 
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Sponsors;
-using Neba.Api.Contracts.Tournaments;
+using Neba.Api.Contracts.Tournaments.AddTournamentSponsor;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Sponsors;
 using Neba.TestFactory.Tournaments;
-using Neba.Website.Server.Clock;
 using Neba.Website.Server.Notifications;
-using Neba.Website.Server.Services;
 using Neba.Website.Server.Tournaments.Detail;
-
-using Refit;
-using Refit.Testing;
 
 namespace Neba.Website.Tests.Tournaments.Detail;
 
@@ -23,30 +20,16 @@ namespace Neba.Website.Tests.Tournaments.Detail;
 [Component("Website.Tournaments.Detail.ManageTournamentSponsors")]
 public sealed class ManageTournamentSponsorsTests : IDisposable
 {
-    private const string TournamentId = "01000000000000000000000099";
-
     private readonly BunitContext _ctx;
-    private readonly Mock<ITournamentsApi> _mockTournamentsApi;
-    private readonly Mock<ISponsorsApi> _mockSponsorsApi;
     private readonly ToastService _toastService;
 
     public ManageTournamentSponsorsTests()
     {
-        _mockTournamentsApi = new Mock<ITournamentsApi>(MockBehavior.Strict);
-        _mockSponsorsApi = new Mock<ISponsorsApi>(MockBehavior.Strict);
-
-        var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
-        mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
-        mockStopwatch.Setup(x => x.GetElapsedTime(It.IsAny<long>())).Returns(TimeSpan.Zero);
-
         _toastService = new ToastService();
 
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
 
-        _ctx.Services.AddSingleton(_mockTournamentsApi.Object);
-        _ctx.Services.AddSingleton(_mockSponsorsApi.Object);
-        _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
     }
 
@@ -55,6 +38,29 @@ public sealed class ManageTournamentSponsorsTests : IDisposable
         _ctx.Dispose();
         _toastService.Dispose();
     }
+
+    private static Task<ErrorOr<CollectionResponse<SponsorSummaryResponse>>> ListActiveSponsorsAsync(
+        IReadOnlyCollection<SponsorSummaryResponse> items) =>
+        Task.FromResult<ErrorOr<CollectionResponse<SponsorSummaryResponse>>>(new CollectionResponse<SponsorSummaryResponse> { Items = items });
+
+    private IRenderedComponent<ManageTournamentSponsors> Render(
+        IReadOnlyCollection<TournamentDetailSponsorViewModel> sponsors,
+        Action? onChanged = null,
+        Func<CancellationToken, Task<ErrorOr<CollectionResponse<SponsorSummaryResponse>>>>? onListActiveSponsorsRequestedAsync = null,
+        Func<AddTournamentSponsorInput, CancellationToken, Task<ErrorOr<Success>>>? onAddSponsorRequestedAsync = null,
+        Func<string, CancellationToken, Task<ErrorOr<Success>>>? onRemoveSponsorRequestedAsync = null)
+        => _ctx.Render<ManageTournamentSponsors>(p =>
+        {
+            p.Add(x => x.Sponsors, sponsors);
+            p.Add(x => x.OnListActiveSponsorsRequestedAsync, onListActiveSponsorsRequestedAsync ?? ((_) => ListActiveSponsorsAsync([])));
+            p.Add(x => x.OnAddSponsorRequestedAsync, onAddSponsorRequestedAsync ?? ((_, _) => Task.FromResult<ErrorOr<Success>>(Result.Success)));
+            p.Add(x => x.OnRemoveSponsorRequestedAsync, onRemoveSponsorRequestedAsync ?? ((_, _) => Task.FromResult<ErrorOr<Success>>(Result.Success)));
+
+            if (onChanged is not null)
+            {
+                p.Add(x => x.OnChanged, onChanged);
+            }
+        });
 
     [Fact(DisplayName = "Should show Title Sponsor badge only on the title sponsor")]
     public void Render_ShouldShowTitleSponsorBadge_OnlyOnTitleSponsor()
@@ -66,9 +72,7 @@ public sealed class ManageTournamentSponsorsTests : IDisposable
             sponsorId: "01000000000000000000000002", name: "Storm", titleSponsor: false, sponsorshipAmount: 500m);
 
         // Act
-        var cut = _ctx.Render<ManageTournamentSponsors>(p => p
-            .Add(x => x.TournamentId, TournamentId)
-            .Add(x => x.Sponsors, [titleSponsor, otherSponsor]));
+        var cut = Render([titleSponsor, otherSponsor]);
 
         // Assert
         cut.FindAll(".neba-badge-primary").Count.ShouldBe(1);
@@ -80,9 +84,7 @@ public sealed class ManageTournamentSponsorsTests : IDisposable
     public void Render_ShouldShowEmptyState_WhenNoSponsors()
     {
         // Act
-        var cut = _ctx.Render<ManageTournamentSponsors>(p => p
-            .Add(x => x.TournamentId, TournamentId)
-            .Add(x => x.Sponsors, []));
+        var cut = Render([]);
 
         // Assert
         cut.Markup.ShouldContain("No sponsors attached to this tournament yet.");
@@ -96,19 +98,9 @@ public sealed class ManageTournamentSponsorsTests : IDisposable
         var available = SponsorSummaryResponseFactory.Create(sponsorId: "01000000000000000000000002", name: "Storm");
         var alreadyAttached = SponsorSummaryResponseFactory.Create(sponsorId: "01000000000000000000000001", name: "Kegel");
 
-        using var listResponse = new StubApiResponse<CollectionResponse<SponsorSummaryResponse>>
-        {
-            IsSuccessStatusCode = true,
-            StatusCode = System.Net.HttpStatusCode.OK,
-            Content = new CollectionResponse<SponsorSummaryResponse> { Items = [available, alreadyAttached] }
-        };
-        _mockSponsorsApi
-            .Setup(x => x.ListActiveSponsorsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(listResponse);
-
-        var cut = _ctx.Render<ManageTournamentSponsors>(p => p
-            .Add(x => x.TournamentId, TournamentId)
-            .Add(x => x.Sponsors, [attached]));
+        var cut = Render(
+            [attached],
+            onListActiveSponsorsRequestedAsync: _ => ListActiveSponsorsAsync([available, alreadyAttached]));
 
         // Act
         cut.Find("button.neba-btn-primary").Click();
@@ -125,9 +117,7 @@ public sealed class ManageTournamentSponsorsTests : IDisposable
         // Arrange
         var sponsor = TournamentDetailSponsorViewModelFactory.Create(name: "Kegel");
 
-        var cut = _ctx.Render<ManageTournamentSponsors>(p => p
-            .Add(x => x.TournamentId, TournamentId)
-            .Add(x => x.Sponsors, [sponsor]));
+        var cut = Render([sponsor]);
 
         // Act
         cut.Find(".mts-row__remove").Click();
@@ -137,27 +127,22 @@ public sealed class ManageTournamentSponsorsTests : IDisposable
         cut.Markup.ShouldContain("Remove Kegel as a sponsor of this tournament");
     }
 
-    [Fact(DisplayName = "Should call RemoveTournamentSponsorAsync and notify success when Remove is confirmed")]
-    public void ConfirmRemove_ShouldCallApiAndToastSuccess_WhenConfirmed()
+    [Fact(DisplayName = "Should call the remove delegate and notify success when Remove is confirmed")]
+    public void ConfirmRemove_ShouldCallDelegateAndToastSuccess_WhenConfirmed()
     {
         // Arrange
         var sponsor = TournamentDetailSponsorViewModelFactory.Create(sponsorId: "01000000000000000000000001", name: "Kegel");
-
-        using var removeResponse = new StubApiResponse<object>
-        {
-            IsSuccessStatusCode = true,
-            StatusCode = System.Net.HttpStatusCode.NoContent
-        };
-        _mockTournamentsApi
-            .Setup(x => x.RemoveTournamentSponsorAsync(TournamentId, "01000000000000000000000001", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(removeResponse);
-
         var changedCount = 0;
+        var removeCalledWithSponsorId = string.Empty;
 
-        var cut = _ctx.Render<ManageTournamentSponsors>(p => p
-            .Add(x => x.TournamentId, TournamentId)
-            .Add(x => x.Sponsors, [sponsor])
-            .Add(x => x.OnChanged, () => changedCount++));
+        var cut = Render(
+            [sponsor],
+            onChanged: () => changedCount++,
+            onRemoveSponsorRequestedAsync: (sponsorId, _) =>
+            {
+                removeCalledWithSponsorId = sponsorId;
+                return Task.FromResult<ErrorOr<Success>>(Result.Success);
+            });
 
         cut.Find(".mts-row__remove").Click();
 
@@ -165,6 +150,7 @@ public sealed class ManageTournamentSponsorsTests : IDisposable
         cut.Find("button.confirm-action-modal-confirm").Click();
 
         // Assert
+        removeCalledWithSponsorId.ShouldBe("01000000000000000000000001");
         changedCount.ShouldBe(1);
         _toastService.Current.ShouldNotBeNull();
         _toastService.Current.Severity.ShouldBe(NotifySeverity.Success);
@@ -175,22 +161,12 @@ public sealed class ManageTournamentSponsorsTests : IDisposable
     {
         // Arrange
         var sponsor = TournamentDetailSponsorViewModelFactory.Create(sponsorId: "01000000000000000000000001", name: "Kegel");
-
-        using var removeResponse = new StubApiResponse<object>
-        {
-            IsSuccessStatusCode = false,
-            StatusCode = System.Net.HttpStatusCode.Conflict
-        };
-        _mockTournamentsApi
-            .Setup(x => x.RemoveTournamentSponsorAsync(TournamentId, "01000000000000000000000001", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(removeResponse);
-
         var changedCount = 0;
 
-        var cut = _ctx.Render<ManageTournamentSponsors>(p => p
-            .Add(x => x.TournamentId, TournamentId)
-            .Add(x => x.Sponsors, [sponsor])
-            .Add(x => x.OnChanged, () => changedCount++));
+        var cut = Render(
+            [sponsor],
+            onChanged: () => changedCount++,
+            onRemoveSponsorRequestedAsync: (_, _) => Task.FromResult<ErrorOr<Success>>(Error.Conflict("Sponsor.Conflict", "Could not remove sponsor.")));
 
         cut.Find(".mts-row__remove").Click();
 

@@ -1,8 +1,11 @@
 @preservewhitespace false
 @page "/tournaments/{Id}"
 @using ErrorOr
+@using Neba.Api.Contracts
 @using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Sponsors
 @using Neba.Api.Contracts.Tournaments
+@using Neba.Api.Contracts.Tournaments.AddTournamentSponsor
 @using Neba.Api.Contracts.Tournaments.GetTournament
 @using Neba.Website.Server.Services
 @using Neba.Website.Server.Time
@@ -12,6 +15,7 @@
 
 @inject ApiExecutor ApiExecutor
 @inject ITournamentsApi TournamentsApi
+@inject ISponsorsApi SponsorsApi
 @inject NavigationManager Navigation
 @inject IClientTimeZoneService ClientTimeZoneService
 
@@ -332,9 +336,11 @@ else
                     <AuthorizeView Policy="@Permissions.ManageTournamentSponsors.PolicyName">
                         <Authorized>
                             <section class="tournament-detail__section">
-                                <ManageTournamentSponsors TournamentId="@_model.Id"
-                                                           Sponsors="@_model.Sponsors"
-                                                           OnChanged="ReloadTournamentAsync" />
+                                <ManageTournamentSponsors Sponsors="@_model.Sponsors"
+                                                           OnChanged="ReloadTournamentAsync"
+                                                           OnListActiveSponsorsRequestedAsync="ListActiveSponsorsAsync"
+                                                           OnAddSponsorRequestedAsync="AddTournamentSponsorAsync"
+                                                           OnRemoveSponsorRequestedAsync="RemoveTournamentSponsorAsync" />
                             </section>
                         </Authorized>
                     </AuthorizeView>
@@ -505,6 +511,31 @@ else
             }
         }
     }
+
+    private Task<ErrorOr<CollectionResponse<SponsorSummaryResponse>>> ListActiveSponsorsAsync(CancellationToken ct)
+        => ApiExecutor.ExecuteAsync(
+            "Sponsors",
+            "ListActiveSponsors",
+            c => SponsorsApi.ListActiveSponsorsAsync(c),
+            ct);
+
+    private Task<ErrorOr<Success>> AddTournamentSponsorAsync(AddTournamentSponsorInput input, CancellationToken ct)
+    {
+        var request = new AddTournamentSponsorRequest { Id = Id, Sponsor = input };
+
+        return ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "AddTournamentSponsor",
+            c => TournamentsApi.AddTournamentSponsorAsync(Id, request, c),
+            ct);
+    }
+
+    private Task<ErrorOr<Success>> RemoveTournamentSponsorAsync(string sponsorId, CancellationToken ct)
+        => ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "RemoveTournamentSponsor",
+            c => TournamentsApi.RemoveTournamentSponsorAsync(Id, sponsorId, c),
+            ct);
 
     private bool HasRailContent =>
         _model is not null && (_model.IsUpcoming || _model.HasSponsors || _model.EntryCount.HasValue || _model.HasPayout);

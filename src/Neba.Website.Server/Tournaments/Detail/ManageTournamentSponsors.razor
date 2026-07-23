@@ -1,14 +1,12 @@
 @using System.Globalization
+@using ErrorOr
+@using Neba.Api.Contracts
 @using Neba.Api.Contracts.Sponsors
-@using Neba.Api.Contracts.Tournaments
+@using Neba.Api.Contracts.Tournaments.AddTournamentSponsor
 @using Neba.Website.Server.Components
 @using Neba.Website.Server.Notifications
-@using Neba.Website.Server.Services
 @using Neba.Website.Server.Sponsors
 
-@inject ITournamentsApi TournamentsApi
-@inject ISponsorsApi SponsorsApi
-@inject ApiExecutor ApiExecutor
 @inject ToastService ToastService
 
 <div class="neba-card mts-panel">
@@ -63,10 +61,10 @@
 </div>
 
 <AddTournamentSponsorModal IsOpen="_isAddModalOpen"
-                            TournamentId="@TournamentId"
                             AvailableSponsors="_availableSponsors"
                             OnAdded="HandleAddedAsync"
-                            OnClose="() => _isAddModalOpen = false" />
+                            OnClose="() => _isAddModalOpen = false"
+                            OnSubmitRequestedAsync="OnAddSponsorRequestedAsync" />
 
 <ConfirmActionModal IsOpen="_removeTarget is not null"
                      Title="Remove sponsor?"
@@ -78,13 +76,30 @@
 
 @code {
     [Parameter, EditorRequired]
-    public required string TournamentId { get; set; }
-
-    [Parameter, EditorRequired]
     public required IReadOnlyCollection<TournamentDetailSponsorViewModel> Sponsors { get; set; }
 
     [Parameter, EditorRequired]
     public EventCallback OnChanged { get; set; }
+
+    /// <summary>
+    /// Performs the actual "list active sponsors" API call. Kept feature-agnostic (same pattern as
+    /// <c>FileUpload.OnUploadRequestedAsync</c>) so this component has no knowledge of the API it's
+    /// talking to — the hosting page wires up the real call.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public Func<CancellationToken, Task<ErrorOr<CollectionResponse<SponsorSummaryResponse>>>> OnListActiveSponsorsRequestedAsync { get; set; } = default!;
+
+    /// <summary>
+    /// Performs the actual "add sponsor" API call — passed straight through to <see cref="AddTournamentSponsorModal"/>.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public Func<AddTournamentSponsorInput, CancellationToken, Task<ErrorOr<Success>>> OnAddSponsorRequestedAsync { get; set; } = default!;
+
+    /// <summary>
+    /// Performs the actual "remove sponsor" API call, given the sponsor's id.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public Func<string, CancellationToken, Task<ErrorOr<Success>>> OnRemoveSponsorRequestedAsync { get; set; } = default!;
 
     private bool _isAddModalOpen;
     private bool _isRemoving;
@@ -101,10 +116,7 @@
     {
         _errorMessage = null;
 
-        var result = await ApiExecutor.ExecuteAsync(
-            "Sponsors",
-            "ListActiveSponsors",
-            ct => SponsorsApi.ListActiveSponsorsAsync(ct));
+        var result = await OnListActiveSponsorsRequestedAsync(CancellationToken.None);
 
         if (result.IsError)
         {
@@ -143,10 +155,7 @@
 
         _isRemoving = true;
 
-        var result = await ApiExecutor.ExecuteAsync(
-            "TournamentsApi",
-            "RemoveTournamentSponsor",
-            ct => TournamentsApi.RemoveTournamentSponsorAsync(TournamentId, _removeTarget.SponsorId, ct));
+        var result = await OnRemoveSponsorRequestedAsync(_removeTarget.SponsorId, CancellationToken.None);
 
         _isRemoving = false;
         _removeTarget = null;

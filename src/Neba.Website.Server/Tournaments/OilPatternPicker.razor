@@ -2,10 +2,6 @@
 @using Neba.Api.Contracts.OilPatterns
 @using Neba.Api.Contracts.OilPatterns.CreateOilPattern
 @using Neba.Api.Contracts.OilPatterns.ListOilPatterns
-@using Neba.Website.Server.Services
-
-@inject ApiExecutor ApiExecutor
-@inject IOilPatternsApi OilPatternsApi
 
 <div class="neba-space-y-4">
     <div class="neba-segmented-control" role="tablist" aria-label="Oil pattern mode">
@@ -118,8 +114,23 @@
     [Parameter]
     public EventCallback<OilPatternSelection> SelectionChanged { get; set; }
 
+    /// <summary>
+    /// The available oil patterns to pick from — fetched by the hosting page, not this component.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyCollection<OilPatternSummaryResponse> Patterns { get; set; } = [];
+
+    /// <summary>
+    /// Performs the actual "create new pattern" API call. Kept feature-agnostic (same pattern as
+    /// <c>FileUpload.OnUploadRequestedAsync</c>) so this component has no knowledge of the API it's
+    /// talking to — the hosting page wires up the real call.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public Func<CreateOilPatternRequest, CancellationToken, Task<ErrorOr<CreatedOilPatternResponse>>> OnCreatePatternRequestedAsync { get; set; } = default!;
+
     private OilPatternMode _mode = OilPatternMode.None;
     private IReadOnlyCollection<OilPatternSummaryResponse> _patterns = [];
+    private bool _hasLocalPatternAdditions;
     private string? _selectedOilPatternId;
     private string _manualLengthCategory = "";
     private string _manualRatioCategory = "";
@@ -130,16 +141,17 @@
     private OilPatternSummaryResponse? _selectedPattern
         => _patterns.FirstOrDefault(p => p.OilPatternId == _selectedOilPatternId);
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnParametersSet()
     {
-        var result = await ApiExecutor.ExecuteAsync(
-            "OilPatterns",
-            "ListOilPatterns",
-            OilPatternsApi.ListOilPatternsAsync);
-
-        if (!result.IsError)
+        // Keep syncing from the parameter until the user adds a pattern locally — the hosting page's
+        // list typically starts empty and is only populated once its own async fetch resolves (e.g.
+        // CreateTournament's OnInitializedAsync), so a one-time seed on the very first render would
+        // permanently lock in that empty list and the parameter's later, real value would never be
+        // picked up. Once a local "create new pattern" happens, this component's own list becomes the
+        // source of truth, so a later parent re-render must not clobber the freshly added item.
+        if (!_hasLocalPatternAdditions)
         {
-            _patterns = result.Value.Items;
+            _patterns = Patterns;
         }
     }
 
@@ -180,10 +192,7 @@
             KegelId = Guid.TryParse(_newPattern.KegelId, out var kegelId) ? kegelId : null
         };
 
-        var result = await ApiExecutor.ExecuteAsync(
-            "OilPatterns",
-            "CreateOilPattern",
-            ct => OilPatternsApi.CreateOilPatternAsync(request, ct));
+        var result = await OnCreatePatternRequestedAsync(request, CancellationToken.None);
 
         _isCreatingPattern = false;
 
@@ -209,6 +218,7 @@
         _selectedOilPatternId = result.Value.OilPatternId;
         _newPattern = new NewOilPatternModel();
         _mode = OilPatternMode.Pick;
+        _hasLocalPatternAdditions = true;
 
         await EmitSelectionChanged();
     }
