@@ -77,6 +77,7 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
         DateOnly? endDate = null,
         bool? statsEligible = null,
         decimal? entryFee = null,
+        decimal? nebaAddedMoney = null,
         CertificationNumber? bowlingCenterId = null,
         Uri? externalRegistrationUrl = null,
         StoredFile? logo = null,
@@ -92,6 +93,7 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
             EndDate = endDate ?? TournamentFactory.ValidEndDate,
             StatsEligible = statsEligible ?? true,
             EntryFee = entryFee ?? 100m,
+            NebaAddedMoney = nebaAddedMoney ?? 0m,
             BowlingCenterId = bowlingCenterId,
             ExternalRegistrationUrl = externalRegistrationUrl,
             Logo = logo,
@@ -351,6 +353,25 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
             .SingleAsync(t => t.Name == "My New Tournament", ct);
         persisted.EntryFee.ShouldBe(50m);
         persisted.StatsEligible.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "HandleAsync persists the NEBA added money when command is valid")]
+    public async Task HandleAsync_ShouldPersistNebaAddedMoney_WhenCommandIsValid()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedSeasonAsync(ct);
+        var handler = CreateHandler();
+        var command = ValidCommand(name: "Tournament With NEBA Added Money", nebaAddedMoney: 750m);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var persisted = await _dbContext.Tournaments.AsNoTracking()
+            .SingleAsync(t => t.Name == "Tournament With NEBA Added Money", ct);
+        persisted.NebaAddedMoney.ShouldBe(750m);
     }
 
     [Fact(DisplayName = "HandleAsync returns the created tournament's id when command is valid")]

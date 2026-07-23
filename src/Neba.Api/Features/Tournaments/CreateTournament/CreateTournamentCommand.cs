@@ -20,6 +20,8 @@ internal sealed record CreateTournamentCommand
 
     public required decimal EntryFee { get; init; }
 
+    public required decimal NebaAddedMoney { get; init; }
+
     public CertificationNumber? BowlingCenterId { get; init; }
 
     public Uri? ExternalRegistrationUrl { get; init; }

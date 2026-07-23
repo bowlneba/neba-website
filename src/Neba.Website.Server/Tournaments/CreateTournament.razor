@@ -110,6 +110,12 @@
                                     <InputNumber id="entry-fee" @bind-Value="_model.EntryFee" class="neba-input" />
                                     <ValidationMessage For="@(() => _model.EntryFee)" class="block text-sm text-red-600 mt-1" />
                                 </div>
+
+                                <div>
+                                    <FormLabel TargetId="neba-added-money" For="@(() => _model.NebaAddedMoney)">NEBA Added Money</FormLabel>
+                                    <InputNumber id="neba-added-money" @bind-Value="_model.NebaAddedMoney" class="neba-input" />
+                                    <ValidationMessage For="@(() => _model.NebaAddedMoney)" class="block text-sm text-red-600 mt-1" />
+                                </div>
                             </div>
 
                             <div>
@@ -280,6 +286,7 @@
         EndDate = _model.EndDate!.Value,
         StatsEligible = _model.StatsEligible,
         EntryFee = _model.EntryFee,
+        NebaAddedMoney = _model.NebaAddedMoney,
         BowlingCenterCertificationNumber = string.IsNullOrWhiteSpace(_model.BowlingCenterCertificationNumber)
             ? null
             : _model.BowlingCenterCertificationNumber,
@@ -336,6 +343,9 @@
 
         [Range(0, double.MaxValue, ErrorMessage = "Entry fee must be zero or greater.")]
         public decimal EntryFee { get; set; }
+
+        [Range(0, double.MaxValue, ErrorMessage = "NEBA added money must be zero or greater.")]
+        public decimal NebaAddedMoney { get; set; }
 
         public string? BowlingCenterCertificationNumber { get; set; }
 

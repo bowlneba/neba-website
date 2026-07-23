@@ -32,6 +32,11 @@ internal sealed class CreateTournamentRequestValidator
             .WithErrorCode("CreateTournamentRequest.EntryFeeInvalid")
             .WithMessage("Entry fee must not be negative.");
 
+        RuleFor(r => r.Tournament.NebaAddedMoney)
+            .GreaterThanOrEqualTo(0)
+            .WithErrorCode("CreateTournamentRequest.NebaAddedMoneyInvalid")
+            .WithMessage("NEBA added money must not be negative.");
+
         RuleFor(r => r.Tournament.ExternalRegistrationUrl)
             .Must(uri => uri!.IsAbsoluteUri)
             .WithErrorCode("CreateTournamentRequest.ExternalRegistrationUrlInvalid")

@@ -50,6 +50,7 @@ internal sealed class CreateTournamentEndpoint(Messaging.ICommandHandler<CreateT
             EndDate = input.EndDate,
             StatsEligible = input.StatsEligible,
             EntryFee = input.EntryFee,
+            NebaAddedMoney = input.NebaAddedMoney,
             BowlingCenterId = string.IsNullOrWhiteSpace(input.BowlingCenterCertificationNumber)
                 ? null
                 : new CertificationNumber { Value = input.BowlingCenterCertificationNumber },

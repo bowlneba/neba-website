@@ -62,6 +62,7 @@ internal sealed class CreateTournamentCommandHandler(
             seasonId: season.Id,
             statsEligible: command.StatsEligible,
             entryFee: command.EntryFee,
+            nebaAddedMoney: command.NebaAddedMoney,
             bowlingCenterId: command.BowlingCenterId,
             externalRegistrationUrl: command.ExternalRegistrationUrl,
             logo: command.Logo,

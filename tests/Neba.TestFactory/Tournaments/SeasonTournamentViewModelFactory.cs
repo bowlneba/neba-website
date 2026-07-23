@@ -19,7 +19,9 @@ public static class SeasonTournamentViewModelFactory
         string? season = null,
         DateOnly? startDate = null,
         DateOnly? endDate = null,
-        string? tournamentType = null)
+        string? tournamentType = null,
+        decimal? sponsorMoney = null,
+        decimal? nebaAddedMoney = null)
         => new()
         {
             Id = id ?? ValidId,
@@ -35,6 +37,8 @@ public static class SeasonTournamentViewModelFactory
             Sponsor = "Acme Bowling",
             TournamentLogoUrl = new Uri("https://cdn.bowlneba.com/logos/granite-state-open.png", UriKind.Absolute),
             AddedMoney = 1500m,
+            SponsorMoney = sponsorMoney ?? 1500m,
+            NebaAddedMoney = nebaAddedMoney ?? 0m,
             Entries = 52,
             MaxEntries = 80,
             PatternName = ValidPatternName,
@@ -70,6 +74,8 @@ public static class SeasonTournamentViewModelFactory
                     Sponsor = f.Company.CompanyName(),
                     TournamentLogoUrl = new Uri(f.Internet.UrlWithPath(), UriKind.Absolute),
                     AddedMoney = f.Random.Decimal(0, 5000),
+                    SponsorMoney = f.Random.Decimal(0, 3000),
+                    NebaAddedMoney = f.Random.Decimal(0, 2000),
                     Entries = entries,
                     MaxEntries = maxEntries,
                     PatternName = f.Random.Word(),

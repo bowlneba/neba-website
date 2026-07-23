@@ -74,6 +74,15 @@ internal static class TournamentErrors
                 { "EntryFee", entryFee }
             });
 
+    public static Error InvalidNebaAddedMoney(decimal nebaAddedMoney)
+        => Error.Validation(
+            code: "Tournament.InvalidNebaAddedMoney",
+            description: "NEBA added money must not be negative.",
+            metadata: new Dictionary<string, object>
+            {
+                { "NebaAddedMoney", nebaAddedMoney }
+            });
+
     public static Error NoSeasonForDates(DateOnly startDate, DateOnly endDate)
         => Error.Validation(
             code: "Tournament.NoSeasonForDates",

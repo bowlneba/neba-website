@@ -78,6 +78,10 @@ internal sealed class TournamentConfiguration
             .HasPrecision(5, 2)
             .IsRequired();
 
+        builder.Property(tournament => tournament.NebaAddedMoney)
+            .HasPrecision(9, 2)
+            .IsRequired();
+
         builder.Property(tournament => tournament.ExternalRegistrationUrl)
             .HasColumnName("external_registration_url")
             .HasMaxLength(511);

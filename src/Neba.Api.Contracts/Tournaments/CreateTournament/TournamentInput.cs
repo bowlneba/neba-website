@@ -36,6 +36,12 @@ public sealed record TournamentInput
     public required decimal EntryFee { get; init; }
 
     /// <summary>
+    /// The amount NEBA itself is adding to the tournament's prize fund, in dollars, independent
+    /// of any sponsor contributions.
+    /// </summary>
+    public required decimal NebaAddedMoney { get; init; }
+
+    /// <summary>
     /// The certification number of the bowling center hosting this tournament; null if not yet assigned.
     /// </summary>
     public string? BowlingCenterCertificationNumber { get; init; }

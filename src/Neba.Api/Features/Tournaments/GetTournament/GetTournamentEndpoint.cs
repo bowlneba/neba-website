@@ -83,6 +83,8 @@ internal sealed class GetTournamentEndpoint(
             EntryFee = dto.EntryFee,
             RegistrationUrl = dto.RegistrationUrl,
             AddedMoney = dto.AddedMoney,
+            SponsorMoney = dto.SponsorMoney,
+            NebaAddedMoney = dto.NebaAddedMoney,
             Reservations = dto.Reservations,
             EntryCount = dto.EntryCount,
             PatternLengthCategory = dto.PatternLengthCategory,

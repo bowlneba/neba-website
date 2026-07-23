@@ -94,6 +94,12 @@ public sealed class Tournament
     public decimal EntryFee { get; init; }
 
     /// <summary>
+    /// Gets the amount NEBA itself has contributed to the tournament's prize fund, independent of
+    /// any sponsor contributions.
+    /// </summary>
+    public decimal NebaAddedMoney { get; init; }
+
+    /// <summary>
     /// Gets the URL where teams can register for the tournament, or <see langword="null"/> if registration
     /// </summary>
     public Uri? ExternalRegistrationUrl { get; init; }
@@ -136,7 +142,8 @@ public sealed class Tournament
         StoredFile? logo = null,
         PatternLengthCategory? patternLengthCategory = null,
         PatternRatioCategory? patternRatioCategory = null,
-        DateTimeOffset? oilPatternRevealDateTime = null)
+        DateTimeOffset? oilPatternRevealDateTime = null,
+        decimal nebaAddedMoney = 0)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -153,6 +160,11 @@ public sealed class Tournament
             return TournamentErrors.InvalidEntryFee(entryFee);
         }
 
+        if (nebaAddedMoney < 0)
+        {
+            return TournamentErrors.InvalidNebaAddedMoney(nebaAddedMoney);
+        }
+
         var tournament = new Tournament
         {
             Id = TournamentId.New(),
@@ -163,6 +175,7 @@ public sealed class Tournament
             SeasonId = seasonId,
             StatsEligible = statsEligible,
             EntryFee = entryFee,
+            NebaAddedMoney = nebaAddedMoney,
             BowlingCenterId = bowlingCenterId,
             ExternalRegistrationUrl = externalRegistrationUrl,
             Logo = logo,

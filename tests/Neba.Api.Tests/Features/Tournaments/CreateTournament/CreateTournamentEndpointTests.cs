@@ -50,6 +50,7 @@ public sealed class CreateTournamentEndpointTests
         capturedCommand.EndDate.ShouldBe(input.EndDate);
         capturedCommand.StatsEligible.ShouldBe(input.StatsEligible);
         capturedCommand.EntryFee.ShouldBe(input.EntryFee);
+        capturedCommand.NebaAddedMoney.ShouldBe(input.NebaAddedMoney);
         capturedCommand.BowlingCenterId.ShouldBeNull();
         capturedCommand.ExternalRegistrationUrl.ShouldBeNull();
         capturedCommand.Logo.ShouldBeNull();

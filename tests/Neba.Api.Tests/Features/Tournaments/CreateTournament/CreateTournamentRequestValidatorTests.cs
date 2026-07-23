@@ -114,6 +114,20 @@ public sealed class CreateTournamentRequestValidatorTests
         result.Errors.ShouldContain(e => e.ErrorCode == "CreateTournamentRequest.EntryFeeInvalid");
     }
 
+    [Fact(DisplayName = "Validate should fail with NebaAddedMoneyInvalid when NebaAddedMoney is negative")]
+    public void Validate_ShouldFailWithNebaAddedMoneyInvalid_WhenNebaAddedMoneyIsNegative()
+    {
+        // Arrange
+        var request = new CreateTournamentRequest { Tournament = TournamentInputFactory.Create(nebaAddedMoney: -1m) };
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(e => e.ErrorCode == "CreateTournamentRequest.NebaAddedMoneyInvalid");
+    }
+
     [Fact(DisplayName = "Validate should fail with ExternalRegistrationUrlInvalid when the URL is relative")]
     public void Validate_ShouldFailWithExternalRegistrationUrlInvalid_WhenUrlIsRelative()
     {

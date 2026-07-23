@@ -126,6 +126,15 @@ else
                                         <span class="td-hero__stat-value td-hero__stat-value--gold">
                                             @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
                                         </span>
+                                        @if (_model.HasMultipleMoneySources)
+                                        {
+                                            <span class="td-hero__stat-sub">
+                                                @_model.SponsorMoney!.Value.ToString("C0", CurrencyCulture) sponsor money
+                                            </span>
+                                            <span class="td-hero__stat-sub">
+                                                @_model.NebaAddedMoney.ToString("C0", CurrencyCulture) NEBA added money
+                                            </span>
+                                        }
                                         @if (_model.EntryFee.HasValue)
                                         {
                                             <span class="td-hero__stat-sub">
@@ -348,6 +357,15 @@ else
                                                 @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
                                             </span>
                                             <span class="td-rail-price__label">Added money</span>
+                                            @if (_model.HasMultipleMoneySources)
+                                            {
+                                                <span class="td-rail-price__secondary">
+                                                    @_model.SponsorMoney!.Value.ToString("C0", CurrencyCulture) sponsor money
+                                                </span>
+                                                <span class="td-rail-price__secondary">
+                                                    @_model.NebaAddedMoney.ToString("C0", CurrencyCulture) NEBA added money
+                                                </span>
+                                            }
                                             @if (_model.EntryFee.HasValue)
                                             {
                                                 <span class="td-rail-price__secondary">

@@ -53,9 +53,19 @@ public sealed record TournamentDetailViewModel
     public Uri? RegistrationUrl { get; init; }
 
     /// <summary>
-    /// Sponsor-added prize money in USD; null if none.
+    /// Total added money in USD (sponsor money plus NEBA added money); null if none.
     /// </summary>
     public decimal? AddedMoney { get; init; }
+
+    /// <summary>
+    /// Sponsor-contributed portion of added money in USD; null if none.
+    /// </summary>
+    public decimal? SponsorMoney { get; init; }
+
+    /// <summary>
+    /// Amount NEBA itself contributed to the prize fund in USD, independent of sponsors.
+    /// </summary>
+    public decimal NebaAddedMoney { get; init; }
 
     /// <summary>
     /// Total entries in the tournament; null when unknown.
@@ -148,6 +158,12 @@ public sealed record TournamentDetailViewModel
     /// True when added money is greater than zero.
     /// </summary>
     public bool HasAddedMoney => AddedMoney is > 0;
+
+    /// <summary>
+    /// True when added money comes from more than one source (sponsors and NEBA), so a
+    /// sponsor money / NEBA added money breakdown is worth showing beneath the total.
+    /// </summary>
+    public bool HasMultipleMoneySources => SponsorMoney is > 0 && NebaAddedMoney > 0;
 
     /// <summary>
     /// Sum of all prize money across results.

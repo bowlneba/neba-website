@@ -61,7 +61,8 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                         LogoContainer = s.Logo != null ? s.Logo.Container : null,
                         LogoPath = s.Logo != null ? s.Logo.Path : null
                     }).ToList(),
-                AddedMoney = tournament.Sponsors.Sum(ts => ts.SponsorshipAmount),
+                SponsorMoney = tournament.Sponsors.Sum(ts => ts.SponsorshipAmount),
+                tournament.NebaAddedMoney,
                 PatternLengthCategory = tournament.PatternLengthCategory == null
                     ? null
                     : tournament.PatternLengthCategory.Name,
@@ -133,7 +134,9 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 RegistrationUrl = row.RegistrationUrl,
                 BowlingCenter = row.BowlingCenter,
                 Sponsors = sponsors,
-                AddedMoney = row.AddedMoney,
+                AddedMoney = row.SponsorMoney + row.NebaAddedMoney,
+                SponsorMoney = row.SponsorMoney,
+                NebaAddedMoney = row.NebaAddedMoney,
                 Reservations = row.Reservations,
                 PatternLengthCategory = row.PatternLengthCategory,
                 PatternRatioCategory = row.PatternRatioCategory,

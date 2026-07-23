@@ -740,6 +740,38 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 ---
 
+### Added Money
+
+**Definition**: The total prize money added to a Tournament's payout beyond what bowlers themselves pay in via entry fees. Added Money is the sum of two independently-tracked sources: Sponsor Money (contributed by the tournament's sponsors) and NEBA Added Money (contributed by NEBA itself). Added Money is a read-side total — it is not stored directly; it's computed as Sponsor Money plus NEBA Added Money whenever a tournament is displayed.
+
+**In Code**:
+
+- `AddedMoney` on `TournamentDetailDto`/`SeasonTournamentDto` and their downstream responses/view models — computed as `SponsorMoney + NebaAddedMoney` in `GetTournamentQueryHandler`/`ListTournamentsInSeasonQueryHandler`
+
+---
+
+### Sponsor Money
+
+**Definition**: The portion of a Tournament's Added Money contributed by its sponsors — the sum of `SponsorshipAmount` across all Tournament Sponsor records for that tournament. See `### Tournament Sponsor` below for the per-sponsor amount.
+
+**In Code**:
+
+- Computed as `tournament.Sponsors.Sum(ts => ts.SponsorshipAmount)`; surfaced as `SponsorMoney` on the same DTO/response/view-model chain as Added Money
+
+---
+
+### NEBA Added Money
+
+**Definition**: The portion of a Tournament's Added Money that NEBA itself contributes to the prize fund, independent of any sponsor contributions. Set once at tournament creation, alongside Entry Fee.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
+- Property: `Tournament.NebaAddedMoney` (`decimal`, defaults to `0`)
+- Set via `Tournament.Create(...)`; no update operation exists (matches `EntryFee`)
+
+---
+
 ### Champion
 
 **Definition**: A bowler designated as the winner of a Tournament upon completion of match play. The number of Champions per tournament equals its Team Size — a Singles tournament has one Champion, Doubles has two, Trios has three, and Baker has five. Each bowler on the winning team is individually designated as a Champion.

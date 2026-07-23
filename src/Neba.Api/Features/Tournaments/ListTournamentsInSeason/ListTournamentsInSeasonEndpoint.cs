@@ -60,6 +60,8 @@ internal sealed class ListTournamentsInSeasonEndpoint(
                 EntryFee = t.EntryFee,
                 RegistrationUrl = t.RegistrationUrl,
                 AddedMoney = t.AddedMoney,
+                SponsorMoney = t.SponsorMoney,
+                NebaAddedMoney = t.NebaAddedMoney,
                 Reservations = t.Reservations,
                 PatternLengthCategory = t.PatternLengthCategory,
                 PatternRatioCategory = t.PatternRatioCategory,

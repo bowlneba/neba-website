@@ -70,6 +70,15 @@
                     <span class="tournament-upcoming-card__price-label">@Tournament.DisplayPriceLabel</span>
                     @if (Tournament.HasAddedMoney)
                     {
+                        @if (Tournament.HasMultipleMoneySources)
+                        {
+                            <span class="tournament-upcoming-card__price-sub">
+                                @Tournament.SponsorMoney!.Value.ToString("C0", CurrencyCulture) sponsor money
+                            </span>
+                            <span class="tournament-upcoming-card__price-sub">
+                                @Tournament.NebaAddedMoney.ToString("C0", CurrencyCulture) NEBA added money
+                            </span>
+                        }
                         @if (Tournament.EntryFee.HasValue)
                         {
                             <span class="tournament-upcoming-card__price-sub">

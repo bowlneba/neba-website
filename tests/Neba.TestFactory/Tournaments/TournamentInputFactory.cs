@@ -9,6 +9,7 @@ public static class TournamentInputFactory
     public static readonly DateOnly ValidStartDate = new(2025, 10, 4);
     public static readonly DateOnly ValidEndDate = new(2025, 10, 5);
     public const decimal ValidEntryFee = 100m;
+    public const decimal ValidNebaAddedMoney = 0m;
 
     public static TournamentInput Create(
         string? name = null,
@@ -17,6 +18,7 @@ public static class TournamentInputFactory
         DateOnly? endDate = null,
         bool? statsEligible = null,
         decimal? entryFee = null,
+        decimal? nebaAddedMoney = null,
         string? bowlingCenterCertificationNumber = null,
         Uri? externalRegistrationUrl = null,
         TournamentLogoInput? logo = null,
@@ -31,6 +33,7 @@ public static class TournamentInputFactory
             EndDate = endDate ?? ValidEndDate,
             StatsEligible = statsEligible ?? true,
             EntryFee = entryFee ?? ValidEntryFee,
+            NebaAddedMoney = nebaAddedMoney ?? ValidNebaAddedMoney,
             BowlingCenterCertificationNumber = bowlingCenterCertificationNumber,
             ExternalRegistrationUrl = externalRegistrationUrl,
             Logo = logo,

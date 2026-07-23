@@ -64,7 +64,8 @@ internal sealed class GetTournamentQueryHandler(
                         tournamentSponsor.TitleSponsor,
                         tournamentSponsor.SponsorshipAmount
                     }).ToList(),
-                AddedMoney = tournament.Sponsors.Sum(ts => ts.SponsorshipAmount),
+                SponsorMoney = tournament.Sponsors.Sum(ts => ts.SponsorshipAmount),
+                tournament.NebaAddedMoney,
                 PatternLengthCategory = tournament.PatternLengthCategory == null
                     ? null
                     : tournament.PatternLengthCategory.Name,
@@ -171,7 +172,9 @@ internal sealed class GetTournamentQueryHandler(
             RegistrationUrl = row.RegistrationUrl,
             BowlingCenter = row.BowlingCenter,
             Sponsors = sponsors,
-            AddedMoney = row.AddedMoney,
+            AddedMoney = row.SponsorMoney + row.NebaAddedMoney,
+            SponsorMoney = row.SponsorMoney,
+            NebaAddedMoney = row.NebaAddedMoney,
             Reservations = row.Reservations,
             PatternLengthCategory = row.PatternLengthCategory,
             PatternRatioCategory = row.PatternRatioCategory,

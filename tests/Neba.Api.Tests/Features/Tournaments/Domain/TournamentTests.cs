@@ -194,6 +194,64 @@ public sealed class TournamentTests
         result.IsError.ShouldBeFalse();
     }
 
+    [Fact(DisplayName = "Create returns Tournament.InvalidNebaAddedMoney when NEBA added money is negative")]
+    public void Create_ShouldReturnError_WhenNebaAddedMoneyIsNegative()
+    {
+        // Act
+        var result = Tournament.Create(
+            TournamentFactory.ValidName,
+            TournamentFactory.ValidTournamentType,
+            TournamentFactory.ValidStartDate,
+            TournamentFactory.ValidEndDate,
+            SeasonId.New(),
+            statsEligible: true,
+            entryFee: 100m,
+            nebaAddedMoney: -1m);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.InvalidNebaAddedMoney");
+        result.FirstError.Metadata.ShouldNotBeNull();
+        result.FirstError.Metadata["NebaAddedMoney"].ShouldBe(-1m);
+    }
+
+    [Fact(DisplayName = "Create assigns NEBA added money when provided")]
+    public void Create_ShouldAssignNebaAddedMoney_WhenProvided()
+    {
+        // Act
+        var result = Tournament.Create(
+            TournamentFactory.ValidName,
+            TournamentFactory.ValidTournamentType,
+            TournamentFactory.ValidStartDate,
+            TournamentFactory.ValidEndDate,
+            SeasonId.New(),
+            statsEligible: true,
+            entryFee: 100m,
+            nebaAddedMoney: 500m);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.NebaAddedMoney.ShouldBe(500m);
+    }
+
+    [Fact(DisplayName = "Create defaults NEBA added money to zero when not provided")]
+    public void Create_ShouldDefaultNebaAddedMoneyToZero_WhenNotProvided()
+    {
+        // Act
+        var result = Tournament.Create(
+            TournamentFactory.ValidName,
+            TournamentFactory.ValidTournamentType,
+            TournamentFactory.ValidStartDate,
+            TournamentFactory.ValidEndDate,
+            SeasonId.New(),
+            statsEligible: true,
+            entryFee: 100m);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.NebaAddedMoney.ShouldBe(0m);
+    }
+
     [Fact(DisplayName = "AddSponsor returns success when sponsor is new")]
     public void AddSponsor_ShouldReturnSuccess_WhenSponsorIsNew()
     {
