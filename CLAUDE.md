@@ -417,6 +417,30 @@ Any admin-gated list page (News, and future Sponsors/Bowling Centers/etc. admin 
 
 `Href` is the create-page route; `Label` is both the accessible name and hover tooltip (e.g. "Create Article", "Add Sponsor"). This was chosen over embedding the button in the gradient `page-title-bar` because a solid/glass button there had low, position-dependent contrast against the gradient and competed visually with the hero content below it — the FAB sits outside page content entirely, at a fixed screen position, so it doesn't fight the header for attention and its position/behavior is identical across every list page it's added to.
 
+### Long-List Picker Pattern — `NebaAutocomplete` vs. `InputSelect`
+
+`InputSelect` (a native `<select>`) is fine for a short, fixed list (tournament type, U.S. state) where the whole list fits on screen and scanning it is fast. It stops working once the list grows past roughly 15–20 items — a Bowling Center picker with 80+ centers turns into either scrolling a long native dropdown or typing letters to jump-search it, both of which are slow and don't let the user search by anything other than the first letter of the display text.
+
+**Decision: use the shared `Components/NebaAutocomplete.razor` component for any picker backed by a list that can grow past ~20 items or where the natural search key isn't the start of the display string** (e.g. searching a bowling center by city, not just name). It renders a single text `<input>` that filters an in-memory `Items` collection as the user types (substring match anywhere in the display text, not just prefix), with arrow-key navigation, a "no matches" state, and a clear (×) button for optional selections. First applied to `CreateTournament.razor`'s Bowling Center field, replacing an `InputSelect` over 80+ centers.
+
+**Usage**:
+
+```razor
+<NebaAutocomplete Id="bowling-center" TValue="string" TItem="BowlingCenterSummaryResponse"
+                   Value="@_model.BowlingCenterCertificationNumber"
+                   ValueChanged="HandleBowlingCenterChanged"
+                   Items="@_bowlingCenters"
+                   DisplayText="@(center => center.Name + " — " + center.City + ", " + center.State)"
+                   ItemValue="@(center => center.CertificationNumber)"
+                   Placeholder="Search bowling centers..."
+                   EmptyLabel="Not yet assigned" />
+```
+
+- `TValue`/`TItem` generics mirror the existing `NebaDropdown` design sketch in `reference/components/` (never implemented, kept as a design reference only — this component is the production version, built narrower: free-text filtering rather than that sketch's toggle-to-search combobox).
+- Not an `InputBase<T>` — it's a plain `Value`/`ValueChanged` component like `OilPatternPicker`/`FileUpload`, so the hosting page must call `MarkDirty()` itself from the `ValueChanged` handler (the shared `EditContext.OnFieldChanged` hook only fires for `InputBase` descendants).
+- **Keyboard nav (arrow keys/Enter/Escape) is handled server-side in C#** via `@onkeydown`, unlike `NebaDateInput`'s per-keystroke JS-only handling — the race condition documented under NebaDateInput's Learnings entry is specific to multiple segment elements fighting over focus mid-type; a single text input filtering a list has no such race, so keeping this in C# (consistent with how the rest of the app's server-rendered forms already work) is fine.
+- **Click-outside-to-close still needs JS** (no Blazor-native equivalent) — colocated `NebaAutocomplete.razor.js`, same `initialize(containerId, dotNetHelper)`/`dispose(containerId)` shape as `NebaDateInput.razor.js`, using a capturing `mousedown` listener on `document`.
+
 ### Page Titles (`<PageTitle>`)
 
 Every routable page must have a `<PageTitle>` component. Sub-components (cards, modals, skeletons) do not.

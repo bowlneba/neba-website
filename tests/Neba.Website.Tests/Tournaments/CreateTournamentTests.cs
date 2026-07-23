@@ -269,7 +269,8 @@ public sealed class CreateTournamentTests : IDisposable
 
         var cut = RenderCreateTournament();
         await FillRequiredFieldsAsync(cut);
-        await cut.InvokeAsync(() => cut.Find("#bowling-center").Change("12345"));
+        await cut.InvokeAsync(() => cut.Find("#bowling-center").Input(bowlingCenter.Name));
+        await cut.InvokeAsync(() => cut.Find(".neba-autocomplete-option").Click());
         await cut.InvokeAsync(() => cut.Find("#entry-fee").Change("75"));
         await cut.InvokeAsync(() => cut.Find("#registration-url").Change("https://register.example.com"));
 

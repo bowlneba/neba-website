@@ -93,13 +93,14 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <FormLabel TargetId="bowling-center" For="@(() => _model.BowlingCenterCertificationNumber)">Bowling Center</FormLabel>
-                                    <InputSelect id="bowling-center" @bind-Value="_model.BowlingCenterCertificationNumber" class="neba-select">
-                                        <option value="">Not yet assigned</option>
-                                        @foreach (var center in _bowlingCenters)
-                                        {
-                                            <option value="@center.CertificationNumber">@center.Name — @center.City, @center.State</option>
-                                        }
-                                    </InputSelect>
+                                    <NebaAutocomplete Id="bowling-center" TValue="string" TItem="BowlingCenterSummaryResponse"
+                                                       Value="@_model.BowlingCenterCertificationNumber"
+                                                       ValueChanged="HandleBowlingCenterChanged"
+                                                       Items="@_bowlingCenters"
+                                                       DisplayText="@(center => center.Name + " — " + center.City + ", " + center.State)"
+                                                       ItemValue="@(center => center.CertificationNumber)"
+                                                       Placeholder="Search bowling centers..."
+                                                       EmptyLabel="Not yet assigned" />
                                 </div>
 
                                 <div>
@@ -209,6 +210,12 @@
     private void HandleOilPatternSelectionChanged(OilPatternSelection selection)
     {
         _oilPatternSelection = selection;
+        MarkDirty();
+    }
+
+    private void HandleBowlingCenterChanged(string? certificationNumber)
+    {
+        _model.BowlingCenterCertificationNumber = certificationNumber;
         MarkDirty();
     }
 

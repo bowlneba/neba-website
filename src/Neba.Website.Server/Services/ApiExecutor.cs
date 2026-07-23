@@ -233,10 +233,11 @@ internal sealed class ApiExecutor(
     }
 
     /// <summary>
-    /// Pulls a human-readable message out of a FastEndpoints <c>ErrorResponse</c> body
-    /// (<c>{ "message": ..., "errors": { "field": ["..."] } }</c>), preferring the flattened
-    /// validation/conflict messages over the generic wrapper message. Returns null on anything
-    /// that doesn't parse, so callers can fall back to a generic message instead of showing raw JSON.
+    /// Pulls a human-readable message out of the API's RFC 9457 <c>ProblemDetails</c> body
+    /// (<c>{ "detail": ..., "errors": [{ "name": ..., "reason": "..." }] }</c> - FastEndpoints'
+    /// <c>ErrOpts.UseProblemDetails()</c>), preferring the flattened validation/conflict reasons over the
+    /// generic "detail" text. Returns null on anything that doesn't parse, so callers can fall back to a
+    /// generic message instead of showing raw JSON.
     /// </summary>
     private static string? TryExtractErrorDetail(string? content)
     {
@@ -247,19 +248,19 @@ internal sealed class ApiExecutor(
 
         try
         {
-            var payload = JsonSerializer.Deserialize<FastEndpointsErrorPayload>(content, JsonSerializerOptions.Web);
+            var payload = JsonSerializer.Deserialize<ProblemDetailsPayload>(content, JsonSerializerOptions.Web);
 
-            var messages = payload?.Errors.Values
-                .SelectMany(fieldErrors => fieldErrors)
-                .Where(message => !string.IsNullOrWhiteSpace(message))
+            var reasons = payload?.Errors
+                .Select(error => error.Reason)
+                .Where(reason => !string.IsNullOrWhiteSpace(reason))
                 .ToList();
 
-            if (messages is { Count: > 0 })
+            if (reasons is { Count: > 0 })
             {
-                return string.Join(" ", messages);
+                return string.Join(" ", reasons);
             }
 
-            return string.IsNullOrWhiteSpace(payload?.Message) ? null : payload.Message;
+            return string.IsNullOrWhiteSpace(payload?.Detail) ? null : payload.Detail;
         }
         catch (JsonException)
         {
@@ -267,11 +268,16 @@ internal sealed class ApiExecutor(
         }
     }
 
-    private sealed class FastEndpointsErrorPayload
+    private sealed class ProblemDetailsPayload
     {
-        public string Message { get; init; } = string.Empty;
+        public string Detail { get; init; } = string.Empty;
 
-        public Dictionary<string, List<string>> Errors { get; init; } = [];
+        public List<ProblemDetailsError> Errors { get; init; } = [];
+    }
+
+    private sealed class ProblemDetailsError
+    {
+        public string Reason { get; init; } = string.Empty;
     }
 
     /// <summary>

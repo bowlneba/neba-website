@@ -36,13 +36,13 @@
             </div>
         </div>
 
-        <label class="mts-title-sponsor">
-            <input type="checkbox" id="title-sponsor" @bind="_titleSponsor" />
-            <span class="mts-title-sponsor__body">
+        <div class="form-field">
+            <label class="mts-title-sponsor" for="title-sponsor">
+                <input type="checkbox" id="title-sponsor" @bind="_titleSponsor" />
                 <span class="mts-title-sponsor__label">Make this the title sponsor</span>
-                <span class="mts-title-sponsor__hint">Only one tournament sponsor can be the title sponsor at a time.</span>
-            </span>
-        </label>
+            </label>
+            <span class="mts-title-sponsor__hint">Only one tournament sponsor can be the title sponsor at a time.</span>
+        </div>
     </ChildContent>
     <FooterContent>
         <div class="mts-modal-actions">

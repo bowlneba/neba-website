@@ -199,6 +199,6 @@ public sealed class ManageTournamentSponsorsTests : IDisposable
 
         // Assert
         changedCount.ShouldBe(0);
-        cut.Find(".mts-panel__error").ShouldNotBeNull();
+        cut.Find(".neba-alert").ShouldNotBeNull();
     }
 }
