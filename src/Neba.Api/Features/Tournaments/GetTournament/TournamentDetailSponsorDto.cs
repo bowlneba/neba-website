@@ -1,3 +1,5 @@
+using Neba.Api.Features.Sponsors.Domain;
+
 namespace Neba.Api.Features.Tournaments.GetTournament;
 
 /// <summary>
@@ -32,4 +34,19 @@ public sealed record TournamentDetailSponsorDto
     /// Gets the URI of the logo image; null if no logo is available.
     /// </summary>
     public Uri? LogoUrl { get; init; }
+
+    /// <summary>
+    /// Gets the unique identifier of the sponsor.
+    /// </summary>
+    public required SponsorId SponsorId { get; init; }
+
+    /// <summary>
+    /// Gets whether this sponsor is the tournament's title sponsor.
+    /// </summary>
+    public required bool TitleSponsor { get; init; }
+
+    /// <summary>
+    /// Gets the sponsorship amount, in dollars.
+    /// </summary>
+    public required decimal SponsorshipAmount { get; init; }
 }

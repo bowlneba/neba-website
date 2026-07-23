@@ -87,6 +87,11 @@ public sealed class Permissions
     /// </summary>
     public static readonly Permissions CreateTournament = new("Tournaments.CreateTournament", "Create Tournament");
 
+    /// <summary>
+    /// Permission to add or remove sponsors on a tournament.
+    /// </summary>
+    public static readonly Permissions ManageTournamentSponsors = new("Tournaments.ManageSponsors", "Manage Tournament Sponsors");
+
     #endregion
 
     private Permissions(string key, string name)

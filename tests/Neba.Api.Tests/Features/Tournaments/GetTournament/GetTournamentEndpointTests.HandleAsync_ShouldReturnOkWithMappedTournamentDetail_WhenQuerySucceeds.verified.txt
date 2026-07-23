@@ -20,15 +20,21 @@
   },
   Sponsors: [
     {
-      Name: Bauch and Sons,
-      Slug: kristopher,
-      TagPhrase: Aut placeat eum voluptatem accusantium ab dolor.
+      Name: O'Keefe Inc,
+      Slug: tate,
+      TagPhrase: Et quae quis qui iusto autem.,
+      SponsorId: 01HJZDCH2MKZJE1X8EE42JTZQF,
+      TitleSponsor: true,
+      SponsorshipAmount: 2260.76
     },
     {
-      Name: Deckow LLC,
-      Slug: bernard,
-      LogoUrl: https://kayden.name,
-      TagPhrase: Velit rerum et eos ex et quam molestiae.
+      Name: Blick, Casper and Zboncak,
+      Slug: eleonore,
+      WebsiteUrl: http://ariel.com,
+      TagPhrase: Est et molestiae beatae.,
+      SponsorId: 01G3HSSCS4HXGVQVY4C679A24J,
+      TitleSponsor: false,
+      SponsorshipAmount: 4266.60
     }
   ],
   Winners: [

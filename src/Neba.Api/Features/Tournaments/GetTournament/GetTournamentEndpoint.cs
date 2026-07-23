@@ -92,6 +92,9 @@ internal sealed class GetTournamentEndpoint(
                 Slug = s.Slug,
                 LogoUrl = s.LogoUrl,
                 WebsiteUrl = s.WebsiteUrl,
+                SponsorId = s.SponsorId.Value.ToString(),
+                TitleSponsor = s.TitleSponsor,
+                SponsorshipAmount = s.SponsorshipAmount,
                 TagPhrase = s.TagPhrase,
             })],
             OilPatterns = [.. dto.OilPatterns.Select(op => new TournamentDetailOilPatternResponse

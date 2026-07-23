@@ -1,3 +1,4 @@
+using Neba.Api.Contracts.Tournaments.AddTournamentSponsor;
 using Neba.Api.Contracts.Tournaments.CreateTournament;
 using Neba.Api.Contracts.Tournaments.GetTournament;
 using Neba.Api.Contracts.Tournaments.ListChampions;
@@ -62,4 +63,16 @@ public interface ITournamentsApi
     Task<IApiResponse<UploadedFileResponse>> UploadTournamentLogoAsync(
         [AliasAs("File")] StreamPart file,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds a sponsor to a tournament.
+    /// </summary>
+    [Post("/tournaments/{id}/sponsors")]
+    Task<IApiResponse> AddTournamentSponsorAsync(string id, AddTournamentSponsorRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Removes a sponsor from a tournament.
+    /// </summary>
+    [Delete("/tournaments/{id}/sponsors/{sponsorId}")]
+    Task<IApiResponse> RemoveTournamentSponsorAsync(string id, string sponsorId, CancellationToken cancellationToken = default);
 }

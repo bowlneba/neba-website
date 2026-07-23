@@ -51,15 +51,17 @@ internal sealed class GetTournamentQueryHandler(
                         State = tournament.BowlingCenter.Address.Region
                     },
                 Sponsors = tournament.Sponsors
-                    .Select(tournamentSponsor => tournamentSponsor.Sponsor)
-                    .Select(s => new
+                    .Select(tournamentSponsor => new
                     {
-                        s.Name,
-                        s.Slug,
-                        LogoContainer = s.Logo != null ? s.Logo.Container : null,
-                        LogoPath = s.Logo != null ? s.Logo.Path : null,
-                        s.WebsiteUrl,
-                        s.TagPhrase,
+                        tournamentSponsor.Sponsor.Name,
+                        tournamentSponsor.Sponsor.Slug,
+                        LogoContainer = tournamentSponsor.Sponsor.Logo != null ? tournamentSponsor.Sponsor.Logo.Container : null,
+                        LogoPath = tournamentSponsor.Sponsor.Logo != null ? tournamentSponsor.Sponsor.Logo.Path : null,
+                        tournamentSponsor.Sponsor.WebsiteUrl,
+                        tournamentSponsor.Sponsor.TagPhrase,
+                        tournamentSponsor.SponsorId,
+                        tournamentSponsor.TitleSponsor,
+                        tournamentSponsor.SponsorshipAmount
                     }).ToList(),
                 AddedMoney = tournament.Sponsors.Sum(ts => ts.SponsorshipAmount),
                 PatternLengthCategory = tournament.PatternLengthCategory == null
@@ -140,6 +142,9 @@ internal sealed class GetTournamentQueryHandler(
                     : null,
                 WebsiteUrl = s.WebsiteUrl,
                 TagPhrase = s.TagPhrase,
+                SponsorId = s.SponsorId,
+                TitleSponsor = s.TitleSponsor,
+                SponsorshipAmount = s.SponsorshipAmount,
             })
             .ToArray();
 
