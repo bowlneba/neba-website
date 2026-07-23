@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Manage Sponsors — Tournament Detail Mockup</title>
+<style>
+  :root {
+    --neba-blue-700: #3E4FD9;
+    --neba-blue-600: #5563DD;
+    --neba-blue-500: #6C77E1;
+    --neba-blue-300: #A5AEEB;
+    --neba-blue-200: #BCC3F0;
+    --neba-blue-100: #D4D9F5;
+    --neba-blue-brand: #052767;
+
+    --neba-gray-050: #FAFAFA;
+    --neba-gray-100: #F5F5F5;
+    --neba-gray-200: #E5E5E5;
+    --neba-gray-300: #CCCCCC;
+    --neba-gray-400: #A3A3A3;
+    --neba-gray-500: #737373;
+    --neba-gray-600: #525252;
+    --neba-gray-700: #333333;
+    --neba-gray-800: #1a1a1a;
+
+    --neba-accent-red: #CC080A;
+    --neba-success: #16A34A;
+    --neba-warning: #D97706;
+
+    --neba-font-base: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --neba-font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    --neba-radius: 0.375rem;
+    --neba-radius-lg: 0.5rem;
+    --neba-transition: 150ms ease-in-out;
+
+    --neba-bg: var(--neba-gray-050);
+    --neba-bg-panel: #fff;
+    --neba-text: #1f2937;
+    --neba-border: var(--neba-gray-300);
+    --neba-shadow-card: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1);
+    --neba-shadow-ambient: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.06);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--neba-bg);
+    color: var(--neba-text);
+    font-family: var(--neba-font-base);
+    padding: 2.5rem 1rem 6rem;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+
+  .mock-note {
+    max-width: 760px;
+    margin: 0 auto 1.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--neba-blue-100);
+    border: 1px dashed var(--neba-blue-500);
+    border-radius: var(--neba-radius);
+    font-size: 0.8125rem;
+    color: var(--neba-blue-brand);
+  }
+
+  .td-section-title {
+    font-family: var(--neba-font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin: 0 0 1rem;
+    color: var(--neba-gray-800);
+  }
+
+  .neba-card {
+    background: var(--neba-bg-panel);
+    padding: 1rem;
+    border-radius: var(--neba-radius-lg);
+    box-shadow: var(--neba-shadow-card);
+  }
+
+  .neba-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: var(--neba-radius);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    cursor: pointer;
+    border: 1px solid transparent;
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+    font-size: 0.875rem;
+  }
+  .neba-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); }
+  .neba-btn-sm { padding: 0.25rem 0.75rem; font-size: 0.8125rem; }
+  .neba-btn-primary { background-color: var(--neba-blue-600); color: #fff; }
+  .neba-btn-primary:hover { background-color: var(--neba-blue-500); }
+  .neba-btn-secondary { background-color: var(--neba-gray-300); border-color: var(--neba-gray-400); color: var(--neba-gray-800); }
+  .neba-btn-secondary:hover { background-color: var(--neba-gray-200); }
+  .neba-btn-danger-text {
+    background: none; border: none; color: var(--neba-accent-red);
+    font-size: 0.8125rem; font-weight: 500; cursor: pointer; padding: 0.25rem 0.5rem;
+    border-radius: var(--neba-radius);
+  }
+  .neba-btn-danger-text:hover { background: rgba(204, 8, 10, 0.08); }
+
+  .neba-badge {
+    display: inline-flex; align-items: center; padding: 0.25rem 0.5rem;
+    font-size: 0.6875rem; font-weight: 600; border-radius: var(--neba-radius);
+    line-height: 1; text-transform: uppercase; letter-spacing: 0.02em;
+  }
+  .neba-badge-primary { background-color: var(--neba-blue-700); color: #fff; }
+  .neba-badge-neutral { background-color: var(--neba-gray-300); color: var(--neba-gray-700); }
+
+  .neba-input, .neba-select {
+    width: 100%; padding: 0.5rem 0.75rem; border-radius: var(--neba-radius);
+    border: 1px solid var(--neba-border); background-color: var(--neba-bg-panel);
+    color: var(--neba-text); transition: var(--neba-transition); font-size: 0.9375rem;
+  }
+  .neba-input:focus, .neba-select:focus {
+    outline: none; border-color: var(--neba-blue-500);
+    box-shadow: 0 0 0 3px rgba(62, 79, 217, 0.1), 0 1px 2px 0 rgba(0,0,0,0.05);
+  }
+
+  /* --- Manage Sponsors panel --- */
+  .manage-sponsors-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  .manage-sponsors-header .td-section-title { margin: 0; }
+  .manage-sponsors-list {
+    display: flex; flex-direction: column; gap: 0.75rem;
+  }
+
+  .sponsor-row {
+    display: flex; align-items: center; gap: 0.875rem;
+    padding: 0.75rem;
+    border: 1px solid var(--neba-border);
+    border-radius: var(--neba-radius-lg);
+  }
+  .sponsor-row__logo {
+    width: 44px; height: 44px; border-radius: var(--neba-radius);
+    object-fit: contain; background: var(--neba-gray-100);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6875rem; color: var(--neba-gray-500); font-weight: 600;
+  }
+  .sponsor-row__body { flex: 1; min-width: 0; }
+  .sponsor-row__name-line {
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+  }
+  .sponsor-row__name { font-weight: 600; font-size: 0.9375rem; }
+  .sponsor-row__meta {
+    font-size: 0.8125rem; color: var(--neba-gray-500); margin-top: 0.125rem;
+  }
+  .sponsor-row__amount {
+    font-variant-numeric: tabular-nums; font-weight: 600; color: var(--neba-gray-700);
+  }
+  .sponsor-row__actions { flex-shrink: 0; }
+
+  .manage-sponsors-empty {
+    padding: 1.5rem; text-align: center; color: var(--neba-gray-500);
+    font-size: 0.875rem; border: 1px dashed var(--neba-border); border-radius: var(--neba-radius-lg);
+  }
+
+  .neba-divider { border: none; border-top: 1px solid var(--neba-border); margin: 1.5rem 0; }
+
+  /* --- Modal --- */
+  .neba-modal-overlay {
+    position: fixed; inset: 0; background-color: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center; z-index: 50;
+    padding: 1rem;
+  }
+  .neba-modal-overlay.hidden { display: none; }
+  .neba-modal-content {
+    background-color: var(--neba-bg-panel); border-radius: var(--neba-radius-lg);
+    padding: 1.5rem; width: 100%; max-width: 440px;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+  }
+  .modal-title { font-family: var(--neba-font-display); font-weight: 700; font-size: 1.0625rem; margin: 0 0 1rem; }
+  .form-field { margin-bottom: 1rem; }
+  .form-field label {
+    display: block; font-size: 0.8125rem; font-weight: 600; margin-bottom: 0.375rem; color: var(--neba-gray-700);
+  }
+  .form-field .hint { font-size: 0.75rem; color: var(--neba-gray-500); margin-top: 0.25rem; }
+  .form-checkbox { display: flex; align-items: center; gap: 0.5rem; }
+  .form-checkbox label { margin: 0; font-weight: 500; }
+  .modal-actions {
+    display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.25rem;
+  }
+
+  /* Remove confirm modal */
+  .confirm-modal .modal-title { color: var(--neba-accent-red); }
+</style>
+</head>
+<body>
+
+<div class="mock-note">
+  Mockup only — click "Add Sponsor" or a sponsor's "Remove" link to preview the interaction. This simulates the admin-only <strong>Manage Sponsors</strong> panel proposed for the Tournament Detail page (<code>/tournaments/{id}</code>), visible only to staff holding <code>Tournaments.ManageSponsors</code>.
+</div>
+
+<div class="wrap">
+  <div class="neba-card">
+    <div class="manage-sponsors-header">
+      <h2 class="td-section-title">Manage Sponsors</h2>
+      <button class="neba-btn neba-btn-primary neba-btn-sm" onclick="document.getElementById('add-modal').classList.remove('hidden')">
+        + Add Sponsor
+      </button>
+    </div>
+
+    <div class="manage-sponsors-list" id="sponsor-list">
+      <div class="sponsor-row" data-sponsor="kegel">
+        <div class="sponsor-row__logo">KEGEL</div>
+        <div class="sponsor-row__body">
+          <div class="sponsor-row__name-line">
+            <span class="sponsor-row__name">Kegel</span>
+            <span class="neba-badge neba-badge-primary">Title Sponsor</span>
+          </div>
+          <div class="sponsor-row__meta">
+            <span class="sponsor-row__amount">$2,500</span> added money
+          </div>
+        </div>
+        <div class="sponsor-row__actions">
+          <button class="neba-btn-danger-text" onclick="confirmRemove('Kegel', this)">Remove</button>
+        </div>
+      </div>
+
+      <div class="sponsor-row" data-sponsor="storm">
+        <div class="sponsor-row__logo">STORM</div>
+        <div class="sponsor-row__body">
+          <div class="sponsor-row__name-line">
+            <span class="sponsor-row__name">Storm Bowling</span>
+          </div>
+          <div class="sponsor-row__meta">
+            <span class="sponsor-row__amount">$500</span> added money
+          </div>
+        </div>
+        <div class="sponsor-row__actions">
+          <button class="neba-btn-danger-text" onclick="confirmRemove('Storm Bowling', this)">Remove</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Sponsor Modal -->
+<div class="neba-modal-overlay hidden" id="add-modal">
+  <div class="neba-modal-content">
+    <h3 class="modal-title">Add Sponsor</h3>
+
+    <div class="form-field">
+      <label for="sponsor-pick">Sponsor <span style="font-weight:400;color:var(--neba-gray-500);">(required)</span></label>
+      <select class="neba-select" id="sponsor-pick">
+        <option value="">Select a sponsor…</option>
+        <option>Brunswick Bowling</option>
+        <option>Ebonite International</option>
+        <option>Motiv Bowling</option>
+      </select>
+      <div class="hint">Only active sponsors not already attached to this tournament are listed.</div>
+    </div>
+
+    <div class="form-field">
+      <label for="sponsor-amount">Sponsorship amount <span style="font-weight:400;color:var(--neba-gray-500);">(required)</span></label>
+      <input class="neba-input" id="sponsor-amount" type="text" inputmode="decimal" placeholder="$0.00" value="$0.00">
+    </div>
+
+    <div class="form-field form-checkbox">
+      <input type="checkbox" id="title-sponsor">
+      <label for="title-sponsor">Make this the title sponsor</label>
+    </div>
+    <div class="hint" style="margin-top:-0.5rem;margin-bottom:1rem;">Only one tournament can have a title sponsor at a time.</div>
+
+    <div class="modal-actions">
+      <button class="neba-btn neba-btn-secondary" onclick="document.getElementById('add-modal').classList.add('hidden')">Cancel</button>
+      <button class="neba-btn neba-btn-primary" onclick="document.getElementById('add-modal').classList.add('hidden')">Add Sponsor</button>
+    </div>
+  </div>
+</div>
+
+<!-- Remove Confirm Modal -->
+<div class="neba-modal-overlay hidden confirm-modal" id="remove-modal">
+  <div class="neba-modal-content">
+    <h3 class="modal-title">Remove sponsor?</h3>
+    <p style="font-size:0.9375rem;color:var(--neba-gray-700);" id="remove-modal-text">
+      This removes the sponsorship from this tournament. It doesn't affect the sponsor's own profile.
+    </p>
+    <div class="modal-actions">
+      <button class="neba-btn neba-btn-secondary" onclick="document.getElementById('remove-modal').classList.add('hidden')">Keep Sponsor</button>
+      <button class="neba-btn" style="background-color:var(--neba-accent-red);color:#fff;" onclick="doRemove()">Remove Sponsor</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let pendingRow = null;
+  function confirmRemove(name, btn) {
+    pendingRow = btn.closest('.sponsor-row');
+    document.getElementById('remove-modal-text').textContent =
+      'Remove ' + name + ' as a sponsor of this tournament? This doesn’t affect the sponsor’s own profile.';
+    document.getElementById('remove-modal').classList.remove('hidden');
+  }
+  function doRemove() {
+    if (pendingRow) { pendingRow.remove(); }
+    document.getElementById('remove-modal').classList.add('hidden');
+  }
+</script>
+
+</body>
+</html>
