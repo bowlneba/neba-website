@@ -2013,3 +2013,10 @@ No new contract work here beyond Phase 1 — `ITournamentsApi.CreateTournamentAs
 
 - **bUnit** (`tests/Neba.Website.Tests/Tournaments/`): `CreateTournamentComponentTests` — required-field validation surfaces `ValidationMessage`s; submit is disabled while `_isSubmitting`/`_isLogoUploading`; `HandleCreateAsync` maps form model → `TournamentInput` correctly (mirrors `CreateSponsorComponentTests` if it exists, or `CreateArticle`'s bUnit pattern otherwise). `OilPatternPickerComponentTests` — mode switching hides/shows the right sub-sections; picking an existing pattern surfaces its derived categories read-only; "Create new" calls `CreateOilPatternAsync` and transitions to "Pick existing" with the new pattern selected; manual-categories mode and existing-pattern mode are mutually exclusive in the emitted `OilPatternSelection`.
 - **Playwright** (`tests/e2e/`): one real end-to-end flow — navigate to `/tournaments/new` as an authorized user, fill the form picking an existing oil pattern, submit, assert redirect to the new tournament's detail page and that its lane-condition categories match the picked pattern. A second, shorter Playwright case (or bUnit, if it doesn't need a real HTTP round-trip) covering the "create new pattern inline" sub-flow specifically, since that's the one interaction genuinely novel to this feature (matching the `new-endpoint`/`pull-request-prep` decision table: bUnit for internal component logic, Playwright for real browser + HTTP flows).
+
+## One Last Thing
+
+we need the ability to now show the oil pattern details as of a certain date/time.  this is a nullable field.  if it is null and/or the user
+has tournament management permissions, we need to show the full oil pattern details.  if the date isn't null, and we haven't hit the datetime yet, we only
+show the length and ratio cateories if we have them.  if after the datetime, we show the full info.  this is on all views of the tournament as it isn't public
+knowledge before that date.  we need to add this column to the tournament record as a nullable datetime.
