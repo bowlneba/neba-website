@@ -28,6 +28,7 @@ using Neba.Website.Server.Clock;
 using Neba.Website.Server.Components;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
+using Neba.Website.Server.Time;
 
 using Refit;
 using Refit.Testing;
@@ -44,6 +45,7 @@ public sealed class CreateTournamentTests : IDisposable
     private readonly Mock<ITournamentsApi> _mockTournamentsApi;
     private readonly Mock<IBowlingCentersApi> _mockBowlingCentersApi;
     private readonly Mock<IOilPatternsApi> _mockOilPatternsApi;
+    private readonly Mock<IClientTimeZoneService> _mockClientTimeZoneService;
     private readonly ToastService _toastService;
 
     public CreateTournamentTests()
@@ -51,6 +53,7 @@ public sealed class CreateTournamentTests : IDisposable
         _mockTournamentsApi = new Mock<ITournamentsApi>(MockBehavior.Strict);
         _mockBowlingCentersApi = new Mock<IBowlingCentersApi>(MockBehavior.Strict);
         _mockOilPatternsApi = new Mock<IOilPatternsApi>(MockBehavior.Strict);
+        _mockClientTimeZoneService = new Mock<IClientTimeZoneService>(MockBehavior.Strict);
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
         mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
@@ -74,6 +77,7 @@ public sealed class CreateTournamentTests : IDisposable
         _ctx.Services.AddSingleton(_mockTournamentsApi.Object);
         _ctx.Services.AddSingleton(_mockBowlingCentersApi.Object);
         _ctx.Services.AddSingleton(_mockOilPatternsApi.Object);
+        _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
     }
@@ -217,6 +221,7 @@ public sealed class CreateTournamentTests : IDisposable
         capturedInput.OilPatternId.ShouldBeNull();
         capturedInput.PatternLengthCategory.ShouldBeNull();
         capturedInput.PatternRatioCategory.ShouldBeNull();
+        capturedInput.OilPatternRevealDateTime.ShouldBeNull();
     }
 
     [Fact(DisplayName = "Should map the selected tournament type into the submitted request")]
@@ -321,6 +326,52 @@ public sealed class CreateTournamentTests : IDisposable
         capturedInput.PatternLengthCategory.ShouldBe("Medium");
         capturedInput.PatternRatioCategory.ShouldBe("Challenge");
         capturedInput.OilPatternId.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "Submitting with a reveal date/time converts it to UTC via the client time zone service")]
+    public async Task Submit_ShouldConvertOilPatternRevealDateTimeToUtc_WhenProvided()
+    {
+        // Arrange
+        var enteredLocal = new DateTime(2026, 8, 15, 17, 0, 0, DateTimeKind.Unspecified);
+        var expectedUtc = new DateTimeOffset(2026, 8, 15, 21, 0, 0, TimeSpan.Zero);
+
+        _mockClientTimeZoneService
+            .Setup(s => s.ToUtcAsync(enteredLocal))
+            .ReturnsAsync(expectedUtc)
+            .Verifiable();
+
+        TournamentInput? capturedInput = null;
+        SetupCreateTournamentResponse(capture: r => capturedInput = r.Tournament);
+
+        var cut = RenderCreateTournament();
+        await FillRequiredFieldsAsync(cut);
+        await cut.InvokeAsync(() => cut.Find("#oil-pattern-reveal").Change(enteredLocal.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture)));
+
+        // Act
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        capturedInput.ShouldNotBeNull();
+        capturedInput.OilPatternRevealDateTime.ShouldBe(expectedUtc);
+        _mockClientTimeZoneService.VerifyAll();
+    }
+
+    [Fact(DisplayName = "Submitting with no reveal date/time sends null and does not call the client time zone service")]
+    public async Task Submit_ShouldSendNullOilPatternRevealDateTime_WhenNotProvided()
+    {
+        // Arrange — _mockClientTimeZoneService is Strict with no ToUtcAsync setup, so an unexpected call fails the test.
+        TournamentInput? capturedInput = null;
+        SetupCreateTournamentResponse(capture: r => capturedInput = r.Tournament);
+
+        var cut = RenderCreateTournament();
+        await FillRequiredFieldsAsync(cut);
+
+        // Act
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        capturedInput.ShouldNotBeNull();
+        capturedInput.OilPatternRevealDateTime.ShouldBeNull();
     }
 
     [Fact(DisplayName = "Should map the selected existing oil pattern's ID when picked")]

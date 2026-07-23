@@ -15,6 +15,7 @@ using Neba.Website.Server.Clock;
 using Neba.Website.Server.News;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
+using Neba.Website.Server.Time;
 
 using Refit;
 using Refit.Testing;
@@ -27,13 +28,17 @@ public sealed class NewsListTests : IDisposable
 {
     private readonly BunitContext _ctx;
     private readonly Mock<INewsApi> _mockApi;
+    private readonly Mock<IClientTimeZoneService> _mockClientTimeZoneService;
     private readonly BunitAuthorizationContext _authContext;
     private readonly ToastService _toastService;
-    private readonly BunitJSModuleInterop _browserTimeModule;
 
     public NewsListTests()
     {
         _mockApi = new Mock<INewsApi>(MockBehavior.Strict);
+        _mockClientTimeZoneService = new Mock<IClientTimeZoneService>(MockBehavior.Strict);
+        _mockClientTimeZoneService
+            .Setup(s => s.ToLocalAsync(It.IsAny<DateTimeOffset>()))
+            .ReturnsAsync((DateTimeOffset utc) => utc);
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
         mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
@@ -41,13 +46,13 @@ public sealed class NewsListTests : IDisposable
 
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
-        _browserTimeModule = _ctx.JSInterop.SetupModule("./js/browser-time.js");
         _authContext = _ctx.AddAuthorization();
         _authContext.SetNotAuthorized();
 
         _toastService = new ToastService();
 
         _ctx.Services.AddSingleton(_mockApi.Object);
+        _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
     }
@@ -157,11 +162,11 @@ public sealed class NewsListTests : IDisposable
     [Fact(DisplayName = "Should format hero publish date using the viewer's local timezone offset")]
     public void Render_ShouldFormatHeroPublishDate_UsingViewerLocalTimezoneOffset()
     {
-        // Arrange — Date.getTimezoneOffset() returns +240 for US Eastern (summer); the UTC instant
-        // just after midnight on May 15 falls on May 14 local, so the displayed date must shift back.
-        _browserTimeModule.Setup<int>("getTimezoneOffsetMinutes").SetResult(240);
-        var hero = ArticleSummaryResponseFactory.Create(
-            publishDateUtc: new DateTimeOffset(2026, 5, 15, 2, 0, 0, TimeSpan.Zero));
+        // Arrange — US Eastern is 4 hours behind UTC in summer; the UTC instant just after midnight
+        // on May 15 falls on May 14 local, so the displayed date must shift back.
+        var utc = new DateTimeOffset(2026, 5, 15, 2, 0, 0, TimeSpan.Zero);
+        SetupLocalConversion(utc, utc.AddHours(-4));
+        var hero = ArticleSummaryResponseFactory.Create(publishDateUtc: utc);
         SetupSuccessResponse([hero], totalItems: 1);
 
         // Act
@@ -209,11 +214,12 @@ public sealed class NewsListTests : IDisposable
     public void Render_ShouldFormatGridCardPublishDates_UsingViewerLocalTimezoneOffset()
     {
         // Arrange
-        _browserTimeModule.Setup<int>("getTimezoneOffsetMinutes").SetResult(240);
+        var utc = new DateTimeOffset(2026, 5, 15, 2, 0, 0, TimeSpan.Zero);
+        SetupLocalConversion(utc, utc.AddHours(-4));
         var hero = ArticleSummaryResponseFactory.Create(slug: "hero-article");
         var gridArticle = ArticleSummaryResponseFactory.Create(
             slug: "grid-article",
-            publishDateUtc: new DateTimeOffset(2026, 5, 15, 2, 0, 0, TimeSpan.Zero));
+            publishDateUtc: utc);
         SetupSuccessResponse([hero, gridArticle], totalItems: 2);
 
         // Act
@@ -278,10 +284,11 @@ public sealed class NewsListTests : IDisposable
     public void Render_ShouldFormatGridCardPublishDates_UsingViewerLocalTimezoneOffset_OnPageTwo()
     {
         // Arrange
-        _browserTimeModule.Setup<int>("getTimezoneOffsetMinutes").SetResult(240);
+        var utc = new DateTimeOffset(2026, 5, 15, 2, 0, 0, TimeSpan.Zero);
+        SetupLocalConversion(utc, utc.AddHours(-4));
         var gridArticle = ArticleSummaryResponseFactory.Create(
             slug: "grid-article-page-2",
-            publishDateUtc: new DateTimeOffset(2026, 5, 15, 2, 0, 0, TimeSpan.Zero));
+            publishDateUtc: utc);
         SetupSuccessResponse([gridArticle], totalItems: 11, pageNumber: 2);
         NavigateToPage(2);
 
@@ -671,6 +678,9 @@ public sealed class NewsListTests : IDisposable
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private void SetupLocalConversion(DateTimeOffset utc, DateTimeOffset local)
+        => _mockClientTimeZoneService.Setup(s => s.ToLocalAsync(utc)).ReturnsAsync(local);
 
     private void NavigateToPage(int page)
         => _ctx.Services

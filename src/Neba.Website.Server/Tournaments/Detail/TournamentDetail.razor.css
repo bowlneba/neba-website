@@ -353,6 +353,36 @@
     margin: 0.25rem 0 0;
 }
 
+.td-pattern-card__sub {
+    margin: 0.15rem 0 0;
+    font-size: 0.85rem;
+    color: var(--neba-gray-600);
+}
+
+.td-reveal-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    border-radius: 999px;
+    padding: 0.3rem 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.td-reveal-note .material-symbols-outlined {
+    font-size: 1rem;
+}
+
+.td-reveal-note--pending {
+    color: var(--neba-warning);
+    background: color-mix(in srgb, var(--neba-warning) 12%, transparent);
+}
+
+.td-reveal-note--past {
+    color: var(--neba-success);
+    background: color-mix(in srgb, var(--neba-success) 12%, transparent);
+}
+
 /* ── Results chrome ───────────────────────────────────────────────────────── */
 
 .tournament-detail__cut-section {

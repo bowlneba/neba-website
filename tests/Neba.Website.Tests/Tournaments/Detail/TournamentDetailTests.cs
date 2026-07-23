@@ -16,6 +16,7 @@ using Neba.TestFactory.Tournaments;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
+using Neba.Website.Server.Time;
 using Neba.Website.Server.Tournaments.Detail;
 
 using Refit;
@@ -30,6 +31,7 @@ public sealed class TournamentDetailTests : IDisposable
     private readonly BunitContext _ctx;
     private readonly Mock<ITournamentsApi> _mockApi;
     private readonly Mock<ISponsorsApi> _mockSponsorsApi;
+    private readonly Mock<IClientTimeZoneService> _mockClientTimeZoneService;
     private readonly BunitAuthorizationContext _authContext;
     private readonly ToastService _toastService;
 
@@ -37,6 +39,7 @@ public sealed class TournamentDetailTests : IDisposable
     {
         _mockApi = new Mock<ITournamentsApi>(MockBehavior.Strict);
         _mockSponsorsApi = new Mock<ISponsorsApi>(MockBehavior.Strict);
+        _mockClientTimeZoneService = new Mock<IClientTimeZoneService>(MockBehavior.Strict);
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
         mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
@@ -52,6 +55,7 @@ public sealed class TournamentDetailTests : IDisposable
 
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(_mockSponsorsApi.Object);
+        _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
     }
@@ -414,6 +418,79 @@ public sealed class TournamentDetailTests : IDisposable
 
         // Assert
         cut.Markup.ShouldNotContain("Oil Patterns");
+    }
+
+    [Fact(DisplayName = "Should render pending reveal note and full pattern detail when reveal date is set and full pattern info is present")]
+    public void Render_ShouldShowPendingRevealNoteAndFullPatternDetail_WhenRevealDateSetAndFullPatternInfoPresent()
+    {
+        // Arrange — shape the API returns to a caller holding the tournament management permission pre-reveal.
+        var revealUtc = DateTimeOffset.UtcNow.AddDays(7);
+        var revealLocal = revealUtc.ToOffset(TimeSpan.FromHours(-5));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            oilPatternRevealDateTime: revealUtc,
+            oilPatterns: [TournamentDetailOilPatternResponseFactory.Create()]));
+        _mockClientTimeZoneService.Setup(s => s.ToLocalAsync(revealUtc)).ReturnsAsync(revealLocal).Verifiable();
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldContain("Full details reveal to the public on");
+        cut.Markup.ShouldContain("mL · ratio");
+        _mockClientTimeZoneService.VerifyAll();
+    }
+
+    [Fact(DisplayName = "Should render only the category chip for an anonymous caller before the reveal date")]
+    public void Render_ShouldShowCategoryChipOnly_WhenAnonymousBeforeReveal()
+    {
+        // Arrange — anonymous, pre-reveal shape: no OilPatternRevealDateTime, no OilPatterns, categories present.
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            patternLengthCategory: "Medium",
+            patternRatioCategory: "Even",
+            oilPatterns: []));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldContain("Medium");
+        cut.Markup.ShouldContain("Even");
+        cut.FindAll(".td-pattern-card").ShouldBeEmpty();
+        cut.Markup.ShouldNotContain("td-reveal-note");
+    }
+
+    [Fact(DisplayName = "Should render the revealed note once the reveal date has passed")]
+    public void Render_ShouldShowRevealedNote_WhenRevealDateHasPassed()
+    {
+        // Arrange
+        var revealUtc = DateTimeOffset.UtcNow.AddDays(-1);
+        var revealLocal = revealUtc.ToOffset(TimeSpan.FromHours(-5));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            oilPatternRevealDateTime: revealUtc,
+            oilPatterns: [TournamentDetailOilPatternResponseFactory.Create()]));
+        _mockClientTimeZoneService.Setup(s => s.ToLocalAsync(revealUtc)).ReturnsAsync(revealLocal).Verifiable();
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldContain("Revealed to the public");
+        _mockClientTimeZoneService.VerifyAll();
+    }
+
+    [Fact(DisplayName = "Should not call the client time zone service when no reveal date is set")]
+    public void Render_ShouldNotCallClientTimeZoneService_WhenNoRevealDateIsSet()
+    {
+        // Arrange — Strict mock with no setup: an unexpected call fails the test.
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            oilPatternRevealDateTime: null,
+            oilPatterns: [TournamentDetailOilPatternResponseFactory.Create()]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldNotContain("td-reveal-note");
     }
 
     // ── Sponsors ─────────────────────────────────────────────────────────────

@@ -3,9 +3,11 @@
 @using Neba.Api.Contracts.Documents
 @using Neba.Website.Server.Documents
 @using Neba.Website.Server.Services
+@using Neba.Website.Server.Time
 
 @inject ApiExecutor ApiExecutor
 @inject IDocumentsApi DocumentsApi
+@inject IClientTimeZoneService ClientTimeZoneService
 
 <PageTitle>Bylaws - BowlNEBA</PageTitle>
 
@@ -40,7 +42,7 @@
 
     protected override void OnInitialized()
     {
-        _slideover = new DocumentSlideoverHandler(ApiExecutor, DocumentsApi);
+        _slideover = new DocumentSlideoverHandler(ApiExecutor, DocumentsApi, ClientTimeZoneService);
     }
 
     protected override async Task OnInitializedAsync()
@@ -57,7 +59,9 @@
         else
         {
             _content = new MarkupString(result.Value.Html);
-            _lastUpdated = result.Value.LastUpdated;
+            _lastUpdated = result.Value.LastUpdated is { } utc
+                ? await ClientTimeZoneService.ToLocalAsync(utc)
+                : null;
         }
 
         _isLoading = false;

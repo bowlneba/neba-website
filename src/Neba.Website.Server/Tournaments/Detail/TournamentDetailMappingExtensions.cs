@@ -20,6 +20,8 @@ internal static class TournamentDetailMappingExtensions
             AddedMoney = response.AddedMoney,
             EntryCount = response.EntryCount,
             PatternLengthCategory = response.PatternLengthCategory,
+            PatternRatioCategory = response.PatternRatioCategory,
+            OilPatternRevealDateTime = response.OilPatternRevealDateTime,
             LogoUrl = response.LogoUrl,
             BowlingCenterName = response.BowlingCenter?.Name,
             BowlingCenterCity = response.BowlingCenter?.City,
@@ -53,6 +55,9 @@ internal static class TournamentDetailMappingExtensions
         {
             Name = response.Name,
             Length = response.Length,
+            Volume = response.Volume,
+            LeftRatio = response.LeftRatio,
+            RightRatio = response.RightRatio,
             Rounds = response.Rounds,
             KegelId = response.KegelId,
         };

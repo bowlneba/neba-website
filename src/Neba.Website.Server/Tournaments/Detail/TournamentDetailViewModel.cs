@@ -66,6 +66,18 @@ public sealed record TournamentDetailViewModel
     public string? PatternLengthCategory { get; init; }
 
     /// <summary>
+    /// Pattern ratio category label; null until set.
+    /// </summary>
+    public string? PatternRatioCategory { get; init; }
+
+    /// <summary>
+    /// Date/time at which full oil pattern details become public; null when there's no
+    /// restriction, or when the current viewer isn't authenticated (in which case they simply
+    /// don't know a reveal date exists — only whether details are currently visible).
+    /// </summary>
+    public DateTimeOffset? OilPatternRevealDateTime { get; init; }
+
+    /// <summary>
     /// URL to the tournament logo image; null when unavailable.
     /// </summary>
     public Uri? LogoUrl { get; init; }
@@ -149,6 +161,23 @@ public sealed record TournamentDetailViewModel
     /// True when at least one oil pattern is present.
     /// </summary>
     public bool HasOilPatterns => OilPatterns.Count > 0;
+
+    /// <summary>
+    /// True when a reveal date/time is known (always false for an anonymous viewer, even if one is set).
+    /// </summary>
+    public bool HasOilPatternRevealDateTime => OilPatternRevealDateTime is not null;
+
+    /// <summary>
+    /// True when the reveal date/time is known and still in the future.
+    /// </summary>
+    public bool OilPatternRevealIsPending => OilPatternRevealDateTime is { } revealAt && revealAt > DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// True when there's a category chip to show (length or ratio category known) but no full
+    /// pattern detail — the shape an anonymous, pre-reveal caller's response takes.
+    /// </summary>
+    public bool HasReducedOilPatternInfoOnly =>
+        !HasOilPatterns && (PatternLengthCategory is not null || PatternRatioCategory is not null);
 
     /// <summary>
     /// Published articles associated with this tournament; empty when none exist.

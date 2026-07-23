@@ -6,7 +6,7 @@
 @using Neba.Api.Contracts.Security
 @using Neba.Website.Server.Notifications
 @using Neba.Website.Server.Services
-@implements IAsyncDisposable
+@using Neba.Website.Server.Time
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject ApiExecutor ApiExecutor
@@ -14,7 +14,7 @@
 @inject NavigationManager NavigationManager
 @inject ILogger<NewsDetail> Logger
 @inject ToastService ToastService
-@inject IJSRuntime JsRuntime
+@inject IClientTimeZoneService ClientTimeZoneService
 
 <PageTitle>@(_article?.Title is not null ? _article.Title + " - BowlNEBA" : "News - BowlNEBA")</PageTitle>
 <HeadContent>
@@ -83,7 +83,7 @@ else if (_article is not null)
                 }
 
                 <div class="news-detail-meta-row">
-                    <div class="news-detail-date">@ToLocal(_article.PublishDateUtc).ToString("MMMM d, yyyy")</div>
+                    <div class="news-detail-date">@_localPublishDate.ToString("MMMM d, yyyy")</div>
                     <AuthorizeView Policy="@Permissions.CanManageArticlesPolicyName">
                         <Authorized>
                             <ArticleStatusBadge PublicationStatus="@_article.PublicationStatus" PublishDateUtc="@_article.PublishDateUtc" />
@@ -112,7 +112,7 @@ else if (_article is not null)
                     <div class="sidebar-panel-header">Article Info</div>
                     <div class="sidebar-panel-body">
                         <div class="sidebar-meta-label">Published</div>
-                        <div class="sidebar-meta-value">@ToLocal(_article.PublishDateUtc).ToString("MMMM d, yyyy")</div>
+                        <div class="sidebar-meta-value">@_localPublishDate.ToString("MMMM d, yyyy")</div>
                     </div>
                     @if (_article.TournamentId is not null)
                     {
@@ -217,41 +217,7 @@ else if (_article is not null)
     private bool _isDeleteConfirmOpen;
     private bool _isDeleteBusy;
 
-    private IJSObjectReference? _jsModule;
-    private TimeSpan? _localOffset;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./js/browser-time.js");
-            var timezoneOffsetMinutes = await _jsModule.InvokeAsync<int>("getTimezoneOffsetMinutes");
-            _localOffset = TimeSpan.FromMinutes(-timezoneOffsetMinutes);
-            StateHasChanged();
-        }
-    }
-
-    /// <summary>
-    /// Converts a UTC instant to the viewer's local time for display. Until the browser's offset is
-    /// known (briefly, on first render), falls back to displaying the UTC value unconverted.
-    /// </summary>
-    private DateTimeOffset ToLocal(DateTimeOffset utc)
-        => _localOffset is null ? utc : utc.ToOffset(_localOffset.Value);
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_jsModule is not null)
-        {
-            try
-            {
-                await _jsModule.DisposeAsync();
-            }
-            catch (JSDisconnectedException)
-            {
-                // Circuit already gone — nothing to clean up.
-            }
-        }
-    }
+    private DateTimeOffset _localPublishDate;
 
     private static string GetFileTypeLabel(string contentType) => contentType switch
     {
@@ -291,6 +257,7 @@ else if (_article is not null)
         }
 
         _article = result.Value;
+        _localPublishDate = await ClientTimeZoneService.ToLocalAsync(_article.PublishDateUtc);
     }
 
     private void OpenDeleteConfirm()

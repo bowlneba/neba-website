@@ -5,6 +5,7 @@
 @using Neba.Api.Contracts.Tournaments
 @using Neba.Api.Contracts.Tournaments.GetTournament
 @using Neba.Website.Server.Services
+@using Neba.Website.Server.Time
 @using Neba.Website.Server.Tournaments.Detail
 @using System.Globalization
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
@@ -12,6 +13,7 @@
 @inject ApiExecutor ApiExecutor
 @inject ITournamentsApi TournamentsApi
 @inject NavigationManager Navigation
+@inject IClientTimeZoneService ClientTimeZoneService
 
 @if (_isLoading)
 {
@@ -213,6 +215,17 @@ else
                     {
                         <section class="tournament-detail__section">
                             <h2 class="td-section-title">@(_model.OilPatterns.Count == 1 ? "Oil Pattern" : "Oil Patterns")</h2>
+
+                            @if (_model.HasOilPatternRevealDateTime)
+                            {
+                                <p class="td-reveal-note @(_model.OilPatternRevealIsPending ? "td-reveal-note--pending" : "td-reveal-note--past")">
+                                    <span class="material-symbols-outlined" aria-hidden="true">@(_model.OilPatternRevealIsPending ? "visibility_off" : "visibility")</span>
+                                    @(_model.OilPatternRevealIsPending
+                                        ? "Full details reveal to the public on " + (_oilPatternRevealLocal ?? _model.OilPatternRevealDateTime!.Value).ToString("MMM d, yyyy, h:mm tt", CurrencyCulture)
+                                        : "Revealed to the public")
+                                </p>
+                            }
+
                             <div class="td-pattern-list">
                                 @foreach (var pattern in _model.OilPatterns)
                                 {
@@ -230,12 +243,29 @@ else
                                                     @pattern.Display
                                                 }
                                             </p>
+                                            <p class="td-pattern-card__sub">@pattern.RatioDisplay</p>
                                             @if (_model.OilPatterns.Count > 1 && pattern.Rounds.Count > 0)
                                             {
                                                 <p class="td-pattern-card__rounds">@string.Join(", ", pattern.Rounds)</p>
                                             }
                                         </div>
                                     </div>
+                                }
+                            </div>
+                        </section>
+                    }
+                    else if (_model.HasReducedOilPatternInfoOnly)
+                    {
+                        <section class="tournament-detail__section">
+                            <h2 class="td-section-title">Oil Pattern</h2>
+                            <div class="td-hero__chips">
+                                @if (_model.PatternLengthCategory is not null)
+                                {
+                                    <span class="td-hero__chip">@_model.PatternLengthCategory</span>
+                                }
+                                @if (_model.PatternRatioCategory is not null)
+                                {
+                                    <span class="td-hero__chip">@_model.PatternRatioCategory</span>
                                 }
                             </div>
                         </section>
@@ -402,6 +432,7 @@ else
     private static readonly CultureInfo CurrencyCulture = CultureInfo.GetCultureInfo("en-US");
 
     private TournamentDetailViewModel? _model;
+    private DateTimeOffset? _oilPatternRevealLocal;
     private bool _isLoading = true;
     private bool _hasError;
 
@@ -427,6 +458,12 @@ else
         }
 
         _model = result.Value.ToViewModel();
+
+        if (_model.OilPatternRevealDateTime is { } revealUtc)
+        {
+            _oilPatternRevealLocal = await ClientTimeZoneService.ToLocalAsync(revealUtc);
+        }
+
         _isLoading = false;
     }
 
@@ -443,6 +480,11 @@ else
         if (!result.IsError)
         {
             _model = result.Value.ToViewModel();
+
+            if (_model.OilPatternRevealDateTime is { } revealUtc)
+            {
+                _oilPatternRevealLocal = await ClientTimeZoneService.ToLocalAsync(revealUtc);
+            }
         }
     }
 
