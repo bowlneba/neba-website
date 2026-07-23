@@ -8,6 +8,8 @@ const instances = new Map();
 const SEGMENT_ORDER = ["month", "day", "year", "hour", "minute", "meridiem"];
 const MAX_LENGTHS = { month: 2, day: 2, year: 4, hour: 2, minute: 2, meridiem: 2 };
 const NUMERIC_SEGMENTS = new Set(["month", "day", "year", "hour", "minute"]);
+// year is excluded — a partial year isn't safe to zero-pad into a specific year.
+const PAD_SEGMENTS = new Set(["month", "day", "hour", "minute"]);
 
 export function initialize(containerId, dotNetHelper, initialMonth, initialDay, initialYear, initialHour, initialMinute, initialMeridiem) {
     const container = document.getElementById(containerId);
@@ -41,6 +43,16 @@ export function initialize(containerId, dotNetHelper, initialMonth, initialDay, 
     const setMeridiem = (value) => {
         segments.meridiem.value = value;
         notify();
+    };
+
+    // Without this, a single typed digit (e.g. "9" left un-padded) fails
+    // NotifySegmentsChanged's all-segments-length check and silently resolves to a null value
+    // with no visible error, since the field is optional — see NebaDateInput's matching padIfNeeded.
+    const padIfNeeded = (name) => {
+        const input = segments[name];
+        if (PAD_SEGMENTS.has(name) && input.value.length === 1) {
+            input.value = "0" + input.value;
+        }
     };
 
     const handleKeyDown = (name, e) => {
@@ -83,7 +95,9 @@ export function initialize(containerId, dotNetHelper, initialMonth, initialDay, 
             // Only advance if the current segment already has a digit — otherwise a habitual
             // separator typed right after an auto-advance would skip the next, still-empty segment.
             if (segments[name].value.length > 0 && index < SEGMENT_ORDER.length - 1) {
+                padIfNeeded(name);
                 focusSegment(SEGMENT_ORDER[index + 1]);
+                notify();
             }
             return;
         }
@@ -124,9 +138,14 @@ export function initialize(containerId, dotNetHelper, initialMonth, initialDay, 
     const listeners = SEGMENT_ORDER.map((name) => {
         const keydown = (e) => handleKeyDown(name, e);
         const input = () => handleInput(name);
+        const blur = () => {
+            padIfNeeded(name);
+            notify();
+        };
         segments[name].addEventListener("keydown", keydown);
         segments[name].addEventListener("input", input);
-        return { name, keydown, input };
+        segments[name].addEventListener("blur", blur);
+        return { name, keydown, input, blur };
     });
 
     instances.set(containerId, { segments, listeners });
@@ -152,9 +171,10 @@ export function dispose(containerId) {
         return;
     }
 
-    instance.listeners.forEach(({ name, keydown, input }) => {
+    instance.listeners.forEach(({ name, keydown, input, blur }) => {
         instance.segments[name].removeEventListener("keydown", keydown);
         instance.segments[name].removeEventListener("input", input);
+        instance.segments[name].removeEventListener("blur", blur);
     });
 
     instances.delete(containerId);
