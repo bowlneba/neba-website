@@ -502,11 +502,11 @@ html, body {
   font: inherit;
   padding: 0;
   text-align: center;
-  width: 2ch;
+  width: 2.5ch;
 }
 
 .neba-date-segment-year {
-  width: 4ch;
+  width: 4.5ch;
 }
 
 .neba-date-segment:focus {
