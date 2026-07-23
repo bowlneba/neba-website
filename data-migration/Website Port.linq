@@ -88,6 +88,14 @@ public async Task SecurityMigration()
 		ConcurrencyStamp = "0caadad0-3936-4ffe-8232-06536e17ea3a"
 	};
 
+	var journalistRole = new AspNetRoles
+	{
+		Id = Ulid.NewUlid().ToString(),
+		Name = "Journalist",
+		NormalizedName = "JOURNALIST",
+		ConcurrencyStamp = "687f9366-74e1-4783-b178-0d5e03dfb069"
+	};
+
 	var memberRole = new AspNetRoles
 	{
 		Id = Ulid.NewUlid().ToString(),
@@ -112,13 +120,33 @@ public async Task SecurityMigration()
 	};
 	
 	adminUser.PasswordHash = hasher.HashPassword(adminUser, Util.GetPassword("bowlneba.nebatech.adminpassword"));
+
+	var kippermand = new AspNetUsers
+	{
+		Id = Ulid.NewUlid().ToString(),
+		UserName = "kippermand@gmail.com",
+		NormalizedUserName = "KIPPERMAND@GMAIL.COM",
+		Email = "kippermand@gmail.com",
+		NormalizedEmail = "KIPPERMAND@GMAIL.COM",
+		EmailConfirmed = true,
+		SecurityStamp = Guid.NewGuid().ToString(),
+		ConcurrencyStamp = Guid.NewGuid().ToString()
+	};
 	
-	AspNetUsers.Add(adminUser);
+	kippermand.PasswordHash = hasher.HashPassword(kippermand, Util.GetPassword("bowlneba.kippermand.password"));
+	
+	AspNetUsers.AddRange(adminUser, kippermand);
 
 	AspNetUserRoles.Add(new AspNetUserRoles
 	{
 		UserId = adminUser.Id,
 		RoleId = adminRole.Id
+	});
+
+	AspNetUserRoles.Add(new AspNetUserRoles
+	{
+		UserId = kippermand.Id,
+		RoleId = webmasterRole.Id
 	});
 	
 	await SaveChangesAsync();
