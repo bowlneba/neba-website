@@ -1,15 +1,15 @@
 # Oil Pattern Reveal Date
 
-Adds a nullable `OilPatternRevealDateTime` to tournaments that gates how much oil pattern detail is shown on tournament list/detail views: authenticated users always see full details, unauthenticated (public) users see only length/ratio categories until the reveal date/time passes, after which everyone sees full details.
+Adds a nullable `OilPatternRevealDateTime` to tournaments that gates how much oil pattern detail is shown on tournament list/detail views: callers holding the tournament management permission always see full details; everyone else (authenticated or not) sees only length/ratio categories until the reveal date/time passes, after which everyone sees full details. Authenticated callers without the management permission additionally get to see the reveal date/time itself even before it passes; anonymous callers never see it.
 
 ## Decisions locked in during scoping
 
 - **Field naming**: domain/DTO property `OilPatternRevealDateTime` (`DateTimeOffset?`); database column `oil_pattern_reveal_date_utc` (explicit `.HasColumnName(...)`, not the snake_case default of the property name).
 - **"Full details" vs "reduced info"**: full = pattern `Name`, `KegelId`, `Length`, `Volume`, `LeftRatio`/`RightRatio` (Kegel link, exact numbers); reduced = `PatternLengthCategory`/`PatternRatioCategory` only (categories, no exact numbers or pattern identity). This reduced/full split does not exist in the read model today — `Volume`/`LeftRatio`/`RightRatio` aren't projected into any DTO yet, so this feature also adds them (guarded by the new gating logic).
-- **Who sees full details before the reveal date passes**: any **authenticated** user (not gated by a specific permission) — "a benefit of being a registered user," per the site's model. Anonymous/public visitors see reduced info until the reveal date/time passes; after it passes, everyone (including anonymous) sees full details.
-- **A distinct, narrower "management" permission collection is still being added in this feature** (`TournamentManagementPermissions = [CreateTournament]`, mirroring `ArticleManagementPermissions`/`SponsorManagementPermissions`) for **general tournament-management authorization purposes** (e.g. a future edit-tournament policy) — it is *not* what gates oil-pattern visibility (that's just "is the caller authenticated"), but this feature is the natural point to introduce it since it's touching the same permission-shaping pattern (`GetArticleQueryHandler`'s `CallerHasArticleManagementPermission` style) for the first time in Tournaments. Expected to grow to include `EditTournament` once that endpoint exists.
-- **Reveal date visibility**: the `OilPatternRevealDateTime` value itself (e.g. "Reveals Jul 30, 2026") is shown on the tournament detail page to any **authenticated** user, regardless of whether it's in the past or future — same authenticated-vs-anonymous split as the pattern details themselves.
-- **Cache invalidation**: a one-shot Hangfire job scheduled via `IBackgroundJobScheduler.Schedule(job, revealDateTimeOffset)` at tournament create time (only when `OilPatternRevealDateTime` is set and in the future) evicts the tournament's detail + season-list cache tags at the exact reveal moment. Cache keys are also split by authenticated/anonymous scope (mirroring `CacheDescriptors.News.Article(slug, callerHasManagementPermission)`) so a stale anonymous-scoped entry can't leak reduced info to an authenticated caller or vice versa before the job fires.
+- **Who sees full details before the reveal date passes**: only a caller who holds the tournament management permission (`Permissions.TournamentManagementPermissions` — see below). Being authenticated is **not**, by itself, enough. An authenticated user without that permission before the reveal date sees the same reduced pattern info (categories only) as an anonymous visitor — the one thing being authenticated buys them is visibility of the reveal date/time itself (see below), not the pattern details. Once the reveal date/time passes (or none was set), everyone — anonymous included — sees full details.
+- **A distinct, narrower "management" permission collection is being added in this feature** (`TournamentManagementPermissions = [CreateTournament]`, mirroring `ArticleManagementPermissions`/`SponsorManagementPermissions`) for **general tournament-management authorization purposes** (e.g. a future edit-tournament policy) — and it **is** what gates oil-pattern visibility pre-reveal (not "is the caller authenticated"). This feature is the natural point to introduce it since it's touching the same permission-shaping pattern (`GetArticleQueryHandler`'s `CallerHasArticleManagementPermission` style) for the first time in Tournaments. Expected to grow to include `EditTournament` once that endpoint exists.
+- **Reveal date visibility**: the `OilPatternRevealDateTime` value itself (e.g. "Reveals Jul 30, 2026") is shown on the tournament detail page to any **authenticated** user, regardless of whether it's in the past or future, and regardless of whether they hold the management permission — this is a looser gate than the pattern-details gate above. An authenticated, non-management caller therefore sees the reveal date but not the details it's gating.
+- **Cache invalidation**: a one-shot Hangfire job scheduled via `IBackgroundJobScheduler.Schedule(job, revealDateTimeOffset)` at tournament create time (only when `OilPatternRevealDateTime` is set and in the future) evicts the tournament's detail + season-list cache tags at the exact reveal moment. Cache keys are also split by scope — public / authenticated / management (mirroring `CacheDescriptors.News.Article(slug, callerHasManagementPermission)`, extended to a third tier here since authentication and the management permission now gate different things) — so a stale entry for one scope can't leak reduced or full info to a caller in a different scope before the job fires.
 - **UI placement**: the reveal date/time input lives in `CreateTournament.razor`'s Oil Pattern `<section>`, above/outside `OilPatternPicker`, so it's present regardless of which of the 3 oil-pattern modes (No Pattern / Pick Existing / Create New) is selected.
 - **Time zone**: the reveal date/time is entered and displayed in **the viewer's own browser-local time**, not a fixed NEBA time zone. Example: a staff member on the West Coast enters 5:00 PM on 8/15/26; it's stored as the equivalent UTC instant; a viewer on the East Coast sees it take effect at 8:00 PM their time; if an East Coast staff member later edits that same tournament, the field should redisplay as 8:00 PM (their local time), not 5:00 PM. **You asked that this apply to every datetime field in the application, not just this one** — a repo review turned up 4 places already doing local-time conversion independently (`NewsList.razor`, `NewsDetail.razor`, `CreateArticle.razor`, `EditArticle.razor`, all around `Article.PublishDateUtc`, each reimplementing the same JS-interop-offset logic) and one place displaying a `DateTimeOffset` with **no** conversion at all (`Documents/LastUpdated`, shown across `NebaDocument.razor`/`TournamentRules.razor`/`Bylaws.razor`). Rather than add a 6th ad hoc implementation, this plan extracts one shared `IClientTimeZoneService` (Phase 2) and migrates all of the above onto it — this is a real, if modest, scope increase beyond "just the reveal date field," done because you asked for the behavior consistently, not as scope creep on my part.
 - **Time zone correctness upgrade, not just consolidation**: the existing News implementation caches the browser's raw UTC offset-in-minutes (`browser-time.js`'s `getTimezoneOffsetMinutes()`) at first render and reuses that fixed offset for every conversion afterward. That's wrong for any date whose DST status differs from "right now" — for a near-term article publish date this rarely bites, but a tournament's oil pattern reveal date is often set months ahead and very plausibly straddles a DST boundary (e.g. a winter announcement with a spring reveal). The shared service instead captures the browser's **IANA time zone ID** (`Intl.DateTimeFormat().resolvedOptions().timeZone`) and does the conversion server-side via `TimeZoneInfo`, which is correct for the DST rules in effect at the *specific* date being converted, not just "now."
@@ -24,9 +24,10 @@ Adds a nullable `OilPatternRevealDateTime` to tournaments that gates how much oi
 
 ```csharp
 /// <summary>
-/// Gets the date/time at which full oil pattern details become visible to unauthenticated
-/// visitors, or <see langword="null"/> if there is no reveal restriction (full details are
-/// always visible). Authenticated users always see full details regardless of this value.
+/// Gets the date/time at which full oil pattern details become visible to callers who lack
+/// the tournament management permission, or <see langword="null"/> if there is no reveal
+/// restriction (full details are always visible). Callers holding the tournament management
+/// permission always see full details regardless of this value.
 /// </summary>
 public DateTimeOffset? OilPatternRevealDateTime { get; init; }
 ```
@@ -74,10 +75,12 @@ internal static class OilPatternRevealPolicy
 {
     /// <summary>
     /// Returns <see langword="true"/> when full oil pattern details should be shown: the caller
-    /// is authenticated, there is no reveal date set, or the reveal date has already passed.
+    /// holds the tournament management permission, there is no reveal date set, or the reveal
+    /// date has already passed. Being merely authenticated (without the management permission)
+    /// is not sufficient on its own.
     /// </summary>
-    public static bool IsRevealed(DateTimeOffset? revealDateTime, bool callerIsAuthenticated, DateTimeOffset now) =>
-        callerIsAuthenticated || revealDateTime is null || revealDateTime <= now;
+    public static bool IsRevealed(DateTimeOffset? revealDateTime, bool callerHasTournamentManagementPermission, DateTimeOffset now) =>
+        callerHasTournamentManagementPermission || revealDateTime is null || revealDateTime <= now;
 }
 ```
 
@@ -104,20 +107,27 @@ private const string PublicScope = "public";
 private const string AuthenticatedScope = "authenticated";
 ```
 
+Three distinct views exist now, not two, because the pattern-details gate (management permission) and the reveal-date-visibility gate (authenticated) are separate: a management-permission caller sees full details + reveal date; an authenticated-but-non-management caller sees reduced details + reveal date; an anonymous caller sees reduced details + no reveal date. A helper resolves which scope applies:
+
 ```csharp
+private static string ResolveScope(bool callerIsAuthenticated, bool callerHasTournamentManagementPermission) =>
+    callerHasTournamentManagementPermission ? ManagementScope
+    : callerIsAuthenticated ? AuthenticatedScope
+    : PublicScope;
+
 public static class Tournaments
 {
-    public static CacheDescriptor ListForSeason(SeasonId seasonId, bool callerIsAuthenticated)
+    public static CacheDescriptor ListForSeason(SeasonId seasonId, bool callerIsAuthenticated, bool callerHasTournamentManagementPermission)
         => new()
         {
-            Key = $"neba:tournaments:{seasonId}:list:scope:{(callerIsAuthenticated ? AuthenticatedScope : PublicScope)}",
+            Key = $"neba:tournaments:{seasonId}:list:scope:{ResolveScope(callerIsAuthenticated, callerHasTournamentManagementPermission)}",
             Tags = ["neba", "neba:tournaments", $"neba:tournaments:{seasonId}"]
         };
 
-    public static CacheDescriptor TournamentDetail(TournamentId id, bool callerIsAuthenticated)
+    public static CacheDescriptor TournamentDetail(TournamentId id, bool callerIsAuthenticated, bool callerHasTournamentManagementPermission)
         => new()
         {
-            Key = $"neba:tournaments:{id}:scope:{(callerIsAuthenticated ? AuthenticatedScope : PublicScope)}",
+            Key = $"neba:tournaments:{id}:scope:{ResolveScope(callerIsAuthenticated, callerHasTournamentManagementPermission)}",
             Tags = ["neba", "neba:tournaments", $"neba:tournaments:{id}"]
         };
 
@@ -250,8 +260,10 @@ internal sealed record GetTournamentQuery
 
     public required bool CallerIsAuthenticated { get; init; }
 
+    public required bool CallerHasTournamentManagementPermission { get; init; }
+
     public CacheDescriptor Cache
-        => CacheDescriptors.Tournaments.TournamentDetail(Id, CallerIsAuthenticated);
+        => CacheDescriptors.Tournaments.TournamentDetail(Id, CallerIsAuthenticated, CallerHasTournamentManagementPermission);
 
     public TimeSpan Expiry
         => TimeSpan.FromDays(5);
@@ -298,7 +310,7 @@ internal sealed class GetTournamentQueryHandler(
         // ...historicalWinners / historicalResults / historicalEntryCount / sponsors unchanged...
 
         var revealed = OilPatternRevealPolicy.IsRevealed(
-            row.OilPatternRevealDateTime, query.CallerIsAuthenticated, timeProvider.GetUtcNow());
+            row.OilPatternRevealDateTime, query.CallerHasTournamentManagementPermission, timeProvider.GetUtcNow());
 
         return new TournamentDetailDto
         {
@@ -361,7 +373,8 @@ public override async Task HandleAsync(GetTournamentRequest req, CancellationTok
     var query = new GetTournamentQuery
     {
         Id = new TournamentId(req.TournamentId),
-        CallerIsAuthenticated = User.Identity?.IsAuthenticated == true
+        CallerIsAuthenticated = User.Identity?.IsAuthenticated == true,
+        CallerHasTournamentManagementPermission = User.HasAnyPermission(Permissions.TournamentManagementPermissions)
     };
     var result = await _queryHandler.HandleAsync(query, ct);
 
@@ -403,8 +416,10 @@ internal sealed record ListTournamentsInSeasonQuery
 
     public required bool CallerIsAuthenticated { get; init; }
 
+    public required bool CallerHasTournamentManagementPermission { get; init; }
+
     public CacheDescriptor Cache
-        => CacheDescriptors.Tournaments.ListForSeason(SeasonId, CallerIsAuthenticated);
+        => CacheDescriptors.Tournaments.ListForSeason(SeasonId, CallerIsAuthenticated, CallerHasTournamentManagementPermission);
 
     public TimeSpan Expiry
         => TimeSpan.FromDays(14);
@@ -450,7 +465,7 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
         {
             // ...sponsors mapping unchanged...
 
-            var revealed = OilPatternRevealPolicy.IsRevealed(row.OilPatternRevealDateTime, query.CallerIsAuthenticated, now);
+            var revealed = OilPatternRevealPolicy.IsRevealed(row.OilPatternRevealDateTime, query.CallerHasTournamentManagementPermission, now);
 
             return new SeasonTournamentDto
             {
@@ -494,7 +509,8 @@ public Guid? KegelId { get; init; }
 var query = new ListTournamentsInSeasonQuery
 {
     SeasonId = new SeasonId(req.SeasonId),
-    CallerIsAuthenticated = User.Identity?.IsAuthenticated == true
+    CallerIsAuthenticated = User.Identity?.IsAuthenticated == true,
+    CallerHasTournamentManagementPermission = User.HasAnyPermission(Permissions.TournamentManagementPermissions)
 };
 var result = await _queryHandler.HandleAsync(query, ct);
 
@@ -527,8 +543,9 @@ var response = new CollectionResponse<SeasonTournamentResponse>
 
 ```csharp
 /// <summary>
-/// Date/time at which full oil pattern details become visible to unauthenticated visitors;
-/// null if there's no reveal restriction. Authenticated users always see full details.
+/// Date/time at which full oil pattern details become visible to callers without the tournament
+/// management permission; null if there's no reveal restriction. Callers holding the tournament
+/// management permission always see full details.
 /// </summary>
 public DateTimeOffset? OilPatternRevealDateTime { get; init; }
 ```
@@ -643,52 +660,53 @@ public void IsRevealed_ShouldReturnTrue_WhenRevealDateTimeIsNull()
     var now = DateTimeOffset.UtcNow;
 
     // Act
-    var result = OilPatternRevealPolicy.IsRevealed(null, callerIsAuthenticated: false, now);
+    var result = OilPatternRevealPolicy.IsRevealed(null, callerHasTournamentManagementPermission: false, now);
 
     // Assert
     result.ShouldBeTrue();
 }
 
-[Fact(DisplayName = "IsRevealed returns true when the caller is authenticated, regardless of the reveal date")]
+[Fact(DisplayName = "IsRevealed returns true when the caller holds the tournament management permission, regardless of the reveal date")]
 [UnitTest, Component("Tournaments")]
-public void IsRevealed_ShouldReturnTrue_WhenCallerIsAuthenticated()
+public void IsRevealed_ShouldReturnTrue_WhenCallerHasTournamentManagementPermission()
 {
     // Arrange
     var now = DateTimeOffset.UtcNow;
     var futureRevealDate = now.AddDays(7);
 
     // Act
-    var result = OilPatternRevealPolicy.IsRevealed(futureRevealDate, callerIsAuthenticated: true, now);
+    var result = OilPatternRevealPolicy.IsRevealed(futureRevealDate, callerHasTournamentManagementPermission: true, now);
 
     // Assert
     result.ShouldBeTrue();
 }
 
-[Fact(DisplayName = "IsRevealed returns false when the reveal date is in the future and the caller is anonymous")]
+[Fact(DisplayName = "IsRevealed returns false when the reveal date is in the future and the caller lacks the management permission")]
 [UnitTest, Component("Tournaments")]
-public void IsRevealed_ShouldReturnFalse_WhenRevealDateTimeIsInFutureAndCallerIsAnonymous()
+public void IsRevealed_ShouldReturnFalse_WhenRevealDateTimeIsInFutureAndCallerLacksManagementPermission()
 {
     // Arrange
     var now = DateTimeOffset.UtcNow;
     var futureRevealDate = now.AddDays(7);
 
-    // Act
-    var result = OilPatternRevealPolicy.IsRevealed(futureRevealDate, callerIsAuthenticated: false, now);
+    // Act — covers both the anonymous caller and the authenticated-but-non-management caller; the
+    // policy takes no authentication flag at all, so both shapes reduce to the same boolean input.
+    var result = OilPatternRevealPolicy.IsRevealed(futureRevealDate, callerHasTournamentManagementPermission: false, now);
 
     // Assert
     result.ShouldBeFalse();
 }
 
-[Fact(DisplayName = "IsRevealed returns true when the reveal date has already passed and the caller is anonymous")]
+[Fact(DisplayName = "IsRevealed returns true when the reveal date has already passed and the caller lacks the management permission")]
 [UnitTest, Component("Tournaments")]
-public void IsRevealed_ShouldReturnTrue_WhenRevealDateTimeHasPassedAndCallerIsAnonymous()
+public void IsRevealed_ShouldReturnTrue_WhenRevealDateTimeHasPassedAndCallerLacksManagementPermission()
 {
     // Arrange
     var now = DateTimeOffset.UtcNow;
     var pastRevealDate = now.AddDays(-7);
 
     // Act
-    var result = OilPatternRevealPolicy.IsRevealed(pastRevealDate, callerIsAuthenticated: false, now);
+    var result = OilPatternRevealPolicy.IsRevealed(pastRevealDate, callerHasTournamentManagementPermission: false, now);
 
     // Assert
     result.ShouldBeTrue();
@@ -756,26 +774,49 @@ public async Task HandleAsync_ShouldNotScheduleEvictionJob_WhenOilPatternRevealD
 }
 ```
 
-**`GetTournamentQueryHandlerTests.cs`** (extend existing) — 4 new cases following the existing arrange/seed style:
+**`GetTournamentQueryHandlerTests.cs`** (extend existing) — 5 new cases following the existing arrange/seed style. Note the matrix is now driven by two independent flags (`CallerIsAuthenticated` for reveal-date visibility, `CallerHasTournamentManagementPermission` for pattern-detail visibility), not one:
 
 ```csharp
-[Fact(DisplayName = "HandleAsync returns reduced oil pattern info when caller is anonymous and reveal date is in the future")]
+[Fact(DisplayName = "HandleAsync returns reduced oil pattern info and no reveal date when caller is anonymous and reveal date is in the future")]
 [UnitTest, Component("Tournaments")]
-public async Task HandleAsync_ShouldReturnReducedOilPatternInfo_WhenCallerIsAnonymousAndRevealDateIsInFuture()
+public async Task HandleAsync_ShouldReturnReducedOilPatternInfoAndNoRevealDate_WhenCallerIsAnonymousAndRevealDateIsInFuture()
 {
     // Arrange — seed a tournament with OilPatternRevealDateTime = _timeProvider.GetUtcNow().AddDays(5)
     //           and an attached OilPattern with a known Name/Volume/LeftRatio/RightRatio.
-    // Act — HandleAsync(query with CallerIsAuthenticated = false)
+    // Act — HandleAsync(query with CallerIsAuthenticated = false, CallerHasTournamentManagementPermission = false)
     // Assert — result.Value.OilPatterns is empty; PatternLengthCategory/PatternRatioCategory still populated;
     //          result.Value.OilPatternRevealDateTime is null.
 }
 
-[Fact(DisplayName = "HandleAsync returns full oil pattern info when caller is anonymous and reveal date has passed")]
+[Fact(DisplayName = "HandleAsync returns reduced oil pattern info but the reveal date when caller is authenticated without the management permission and reveal date is in the future")]
 [UnitTest, Component("Tournaments")]
-public async Task HandleAsync_ShouldReturnFullOilPatternInfo_WhenCallerIsAnonymousAndRevealDateHasPassed()
+public async Task HandleAsync_ShouldReturnReducedOilPatternInfoButRevealDate_WhenCallerIsAuthenticatedWithoutManagementPermissionAndRevealDateIsInFuture()
+{
+    // Arrange — same seed as above.
+    // Act — HandleAsync(query with CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = false)
+    // Assert — result.Value.OilPatterns is still empty (no management permission); result.Value.OilPatternRevealDateTime
+    //          equals the seeded value (authenticated callers always see the reveal date itself).
+}
+
+[Fact(DisplayName = "HandleAsync returns full oil pattern info when caller has the management permission, even before the reveal date")]
+[UnitTest, Component("Tournaments")]
+public async Task HandleAsync_ShouldReturnFullOilPatternInfo_WhenCallerHasManagementPermissionBeforeRevealDate()
+{
+    // Arrange — same seed as above.
+    // Act — HandleAsync(query with CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true)
+    // Assert — result.Value.OilPatterns contains the full pattern (Volume/LeftRatio/RightRatio populated);
+    //          result.Value.OilPatternRevealDateTime equals the seeded value.
+}
+
+[Fact(DisplayName = "HandleAsync returns full oil pattern info when the reveal date has passed, regardless of caller")]
+[UnitTest, Component("Tournaments")]
+public async Task HandleAsync_ShouldReturnFullOilPatternInfo_WhenRevealDateHasPassed()
 {
     // Arrange — OilPatternRevealDateTime = _timeProvider.GetUtcNow().AddDays(-1).
-    // Assert — result.Value.OilPatterns contains the pattern with Volume/LeftRatio/RightRatio populated.
+    // Act — HandleAsync(query with CallerIsAuthenticated = false, CallerHasTournamentManagementPermission = false)
+    // Assert — result.Value.OilPatterns contains the full pattern even though the caller is anonymous and has
+    //          no management permission — the reveal date having passed opens it up for everyone.
+    //          result.Value.OilPatternRevealDateTime is still null (anonymous never sees the date value itself).
 }
 
 [Fact(DisplayName = "HandleAsync returns full oil pattern info when caller is anonymous and no reveal date is set")]
@@ -783,20 +824,11 @@ public async Task HandleAsync_ShouldReturnFullOilPatternInfo_WhenCallerIsAnonymo
 public async Task HandleAsync_ShouldReturnFullOilPatternInfo_WhenCallerIsAnonymousAndNoRevealDateIsSet()
 {
     // Arrange — OilPatternRevealDateTime = null.
-    // Assert — full OilPatterns returned.
-}
-
-[Fact(DisplayName = "HandleAsync returns full oil pattern info and the reveal date when caller is authenticated, regardless of reveal date")]
-[UnitTest, Component("Tournaments")]
-public async Task HandleAsync_ShouldReturnFullOilPatternInfoAndRevealDate_WhenCallerIsAuthenticated()
-{
-    // Arrange — OilPatternRevealDateTime = future date.
-    // Act — HandleAsync(query with CallerIsAuthenticated = true)
-    // Assert — full OilPatterns returned; result.Value.OilPatternRevealDateTime equals the seeded value.
+    // Assert — full OilPatterns returned; result.Value.OilPatternRevealDateTime is null.
 }
 ```
 
-**`ListTournamentsInSeasonQueryHandlerTests.cs`** (extend existing) — same 4-case matrix, seeded across a list with a mix of revealed/unrevealed tournaments to confirm the gate runs per-row rather than once for the whole result set.
+**`ListTournamentsInSeasonQueryHandlerTests.cs`** (extend existing) — same 5-case matrix, seeded across a list with a mix of revealed/unrevealed tournaments to confirm the gate runs per-row rather than once for the whole result set.
 
 **`EvictOilPatternRevealCacheJobHandlerTests.cs`** (new, `tests/Neba.Api.Tests/Features/Tournaments/EvictOilPatternRevealCache/`)
 
@@ -822,7 +854,7 @@ public async Task ExecuteAsync_ShouldEvictTournamentAndSeasonListCacheTags()
 }
 ```
 
-**Integration** (`tests/Neba.Api.Tests/Features/Tournaments/CreateTournament/` or wherever the existing create→get round-trip integration test lives, per `CreateTournamentTests.cs` referenced in recent commits) — extend to assert: creating a tournament with a future `OilPatternRevealDateTime` and a picked oil pattern, then calling `GetTournament` unauthenticated returns empty `OilPatterns` with categories populated, and calling it authenticated returns the full pattern including `Volume`/`LeftRatio`/`RightRatio`.
+**Integration** (`tests/Neba.Api.Tests/Features/Tournaments/CreateTournament/` or wherever the existing create→get round-trip integration test lives, per `CreateTournamentTests.cs` referenced in recent commits) — extend to assert: creating a tournament with a future `OilPatternRevealDateTime` and a picked oil pattern, then calling `GetTournament` (1) unauthenticated returns empty `OilPatterns` with categories populated and no reveal date, (2) authenticated without the tournament management permission returns the same empty `OilPatterns` but includes the reveal date, and (3) authenticated with the tournament management permission returns the full pattern including `Volume`/`LeftRatio`/`RightRatio` plus the reveal date.
 
 ## Phase 2: UI
 
@@ -880,7 +912,7 @@ No change — `CreateTournament.razor` and `TournamentDetail.razor` already have
 
 ### Mockups
 
-- [`docs/plans/mockups/oil-pattern-reveal-date/oil-pattern-reveal-date.html`](mockups/oil-pattern-reveal-date/oil-pattern-reveal-date.html) — single mockup covering both changed surfaces (data-capture form field has one obvious layout, so one mockup per the mockup-scoping rule; the two detail-page states are shown via an inline-JS toggle in the same file rather than separate option files, since it's the same layout with different data, not a genuine layout decision to compare): (1) the new reveal date/time field in the Create Tournament Oil Pattern section; (2) the tournament detail page's oil pattern card in 3 states — authenticated/pre-reveal (full detail + pending-reveal note), anonymous/pre-reveal (category chip only, nothing else), and post-reveal (full detail + revealed note, same for any caller). Updated to drop the "sign in" nudge originally sketched in an earlier draft, per your call to show nothing beyond the chip(s) in the reduced view.
+- [`docs/plans/mockups/oil-pattern-reveal-date/oil-pattern-reveal-date.html`](mockups/oil-pattern-reveal-date/oil-pattern-reveal-date.html) — single mockup covering both changed surfaces (data-capture form field has one obvious layout, so one mockup per the mockup-scoping rule; the two detail-page states are shown via an inline-JS toggle in the same file rather than separate option files, since it's the same layout with different data, not a genuine layout decision to compare): (1) the new reveal date/time field in the Create Tournament Oil Pattern section; (2) the tournament detail page's oil pattern card in 4 states — management-permission/pre-reveal (full detail + pending-reveal note), authenticated-non-management/pre-reveal (category chip + pending-reveal note, no pattern detail), anonymous/pre-reveal (category chip only, nothing else), and post-reveal (full detail + revealed note, same for any caller). Updated to drop the "sign in" nudge originally sketched in an earlier draft, per your call to show nothing beyond the chip(s) in the reduced view.
 
 ## Phase 2 code
 
@@ -1225,7 +1257,7 @@ Markup — insert above `<OilPatternPicker>`, inside the existing Oil Pattern `<
         <input id="oil-pattern-reveal" type="datetime-local" class="neba-input" style="max-width: 20rem"
                @bind="_oilPatternRevealLocal" @bind:after="MarkDirty" />
         <p class="text-sm text-[var(--neba-gray-500)]">
-            Full pattern details stay hidden from the public until this date/time, in your local time zone. Leave blank to make the pattern public immediately. Registered users always see full details.
+            Full pattern details stay hidden until this date/time, in your local time zone, from everyone except tournament management. Leave blank to make the pattern public immediately.
         </p>
     </div>
 
@@ -1290,36 +1322,50 @@ private async Task<TournamentInput> BuildTournamentInputAsync() => new()
 **`TournamentDetailTests.cs`** (extend) — the constructor's shared setup gains a `Mock<IClientTimeZoneService>(MockBehavior.Strict)` registered into `_ctx.Services` (same pattern as `CreateTournamentTests`); tests that seed an `OilPatternRevealDateTime` need `mockClientTimeZoneService.Setup(s => s.ToLocalAsync(theUtcValue)).ReturnsAsync(someLocalValue)`, tests that don't set one need no setup at all (Strict mock, `ToLocalAsync` is never called when `OilPatternRevealDateTime` is null). Representative new cases:
 
 ```csharp
-[Fact(DisplayName = "Renders the pending reveal note and full pattern detail for an authenticated caller before the reveal date")]
+[Fact(DisplayName = "Renders the pending reveal note and full pattern detail for a caller with the tournament management permission before the reveal date")]
 [UnitTest, Component("Website.Tournaments.Detail")]
-public void Render_ShouldShowPendingRevealNoteAndFullPatternDetail_WhenAuthenticatedBeforeReveal()
+public void Render_ShouldShowPendingRevealNoteAndFullPatternDetail_WhenCallerHasManagementPermissionBeforeReveal()
 {
     // Arrange — response with OilPatternRevealDateTime = future, OilPatterns containing one full pattern
-    //           (Name/Volume/LeftRatio/RightRatio populated); authorization context authenticated.
+    //           (Name/Volume/LeftRatio/RightRatio populated) — this is the shape the API returns to a caller
+    //           holding the tournament management permission.
     // Act — render TournamentDetail.
     // Assert — markup contains "Full details reveal to the public on" and the pattern's RatioDisplay text.
+}
+
+[Fact(DisplayName = "Renders only the category chip and the reveal date for an authenticated caller without the management permission before the reveal date")]
+[UnitTest, Component("Website.Tournaments.Detail")]
+public void Render_ShouldShowCategoryChipAndRevealDate_WhenAuthenticatedWithoutManagementPermissionBeforeReveal()
+{
+    // Arrange — response shaped as the API returns to an authenticated, non-management caller pre-reveal:
+    //           OilPatternRevealDateTime = future, OilPatterns empty, PatternLengthCategory/PatternRatioCategory populated.
+    // Act — render TournamentDetail.
+    // Assert — markup contains the category chip text and the pending reveal note with the reveal date; does
+    //          not render a "td-pattern-card" (no pattern detail leaks through without the permission).
 }
 
 [Fact(DisplayName = "Renders only the category chip and nothing else for an anonymous caller before the reveal date")]
 [UnitTest, Component("Website.Tournaments.Detail")]
 public void Render_ShouldShowCategoryChipOnly_WhenAnonymousBeforeReveal()
 {
-    // Arrange — response with OilPatternRevealDateTime = null (as the anonymous-shaped API response would send),
+    // Arrange — response with OilPatternRevealDateTime = null (anonymous callers never receive the value),
     //           OilPatterns empty, PatternLengthCategory/PatternRatioCategory populated; authorization context anonymous.
     // Act — render TournamentDetail.
     // Assert — markup contains the category chip text; does not render a "td-pattern-card"; does not render
     //          a reveal note; renders no other call-to-action or explanatory text in that section.
 }
 
-[Fact(DisplayName = "Renders the revealed note and full pattern detail once the reveal date has passed, regardless of authentication")]
+[Fact(DisplayName = "Renders the revealed note and full pattern detail once the reveal date has passed, regardless of caller")]
 [UnitTest, Component("Website.Tournaments.Detail")]
 public void Render_ShouldShowRevealedNoteAndFullPatternDetail_WhenRevealDateHasPassed()
 {
     // Arrange — response shaped as the API would return post-reveal to an anonymous caller: OilPatterns
-    //           fully populated (API only empties OilPatterns pre-reveal-and-anonymous); OilPatternRevealDateTime
-    //           still null here since only authenticated callers receive the value even post-reveal per the
-    //           API's CallerIsAuthenticated gate — this test's real point is that "Revealed to the public" note
-    //           is hidden anonymously post-reveal too, since the anonymous DTO never carries the date at all.
+    //           fully populated (the reveal date having passed opens full details to everyone, including
+    //           anonymous callers and authenticated callers without the management permission);
+    //           OilPatternRevealDateTime still null here since only authenticated callers receive the value
+    //           at all, per the API's CallerIsAuthenticated gate on the date field specifically — this test's
+    //           real point is that the "Revealed to the public" note is hidden anonymously post-reveal too,
+    //           since the anonymous DTO never carries the date value.
     // Assert — full pattern card renders; no reveal note at all (HasOilPatternRevealDateTime is false for this caller).
 }
 
