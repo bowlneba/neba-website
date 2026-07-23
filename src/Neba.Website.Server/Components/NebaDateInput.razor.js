@@ -29,6 +29,15 @@ export function initialize(containerId, dotNetHelper, initialMonth, initialDay, 
         input.select();
     };
 
+    // Month/day accept a single digit while typing (e.g. "7"), but always display
+    // zero-padded once the user leaves the segment, matching the mm/dd placeholders.
+    const padIfNeeded = (name) => {
+        const input = segments[name];
+        if ((name === "month" || name === "day") && input.value.length === 1) {
+            input.value = "0" + input.value;
+        }
+    };
+
     const handleKeyDown = (name, e) => {
         const index = SEGMENT_ORDER.indexOf(name);
 
@@ -37,7 +46,9 @@ export function initialize(containerId, dotNetHelper, initialMonth, initialDay, 
             // Only advance if the current segment already has a digit — otherwise a habitual "/"
             // typed right after an auto-advance (e.g. "08/") would skip the next, still-empty segment.
             if (segments[name].value.length > 0 && index < SEGMENT_ORDER.length - 1) {
+                padIfNeeded(name);
                 focusSegment(SEGMENT_ORDER[index + 1]);
+                notify();
             }
             return;
         }
@@ -74,9 +85,14 @@ export function initialize(containerId, dotNetHelper, initialMonth, initialDay, 
     const listeners = SEGMENT_ORDER.map((name) => {
         const keydown = (e) => handleKeyDown(name, e);
         const input = () => handleInput(name);
+        const blur = () => {
+            padIfNeeded(name);
+            notify();
+        };
         segments[name].addEventListener("keydown", keydown);
         segments[name].addEventListener("input", input);
-        return { name, keydown, input };
+        segments[name].addEventListener("blur", blur);
+        return { name, keydown, input, blur };
     });
 
     instances.set(containerId, { segments, listeners });
@@ -99,9 +115,10 @@ export function dispose(containerId) {
         return;
     }
 
-    instance.listeners.forEach(({ name, keydown, input }) => {
+    instance.listeners.forEach(({ name, keydown, input, blur }) => {
         instance.segments[name].removeEventListener("keydown", keydown);
         instance.segments[name].removeEventListener("input", input);
+        instance.segments[name].removeEventListener("blur", blur);
     });
 
     instances.delete(containerId);

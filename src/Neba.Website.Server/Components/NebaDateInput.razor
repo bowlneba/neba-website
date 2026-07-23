@@ -97,7 +97,7 @@
         _lastKnownDay = day;
         _lastKnownYear = year;
 
-        if (month.Length == 2 && day.Length == 2 && year.Length == 4
+        if (month.Length is 1 or 2 && day.Length is 1 or 2 && year.Length == 4
             && int.TryParse(month, NumberStyles.None, CultureInfo.InvariantCulture, out var monthValue)
             && int.TryParse(day, NumberStyles.None, CultureInfo.InvariantCulture, out var dayValue)
             && int.TryParse(year, NumberStyles.None, CultureInfo.InvariantCulture, out var yearValue)

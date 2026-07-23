@@ -136,6 +136,30 @@ describe('NebaDateInput', () => {
             expect(document.activeElement).toBe(year);
         });
 
+        test('should zero-pad a single digit month when "/" is pressed', () => {
+            makeContainer('date-8b');
+            initialize('date-8b', makeDotNetRef(), '', '', '');
+            const { month } = segments('date-8b');
+
+            month.focus();
+            typeDigits(month, '7');
+            pressKey(month, '/');
+
+            expect(month.value).toBe('07');
+        });
+
+        test('should zero-pad a single digit day when "/" is pressed', () => {
+            makeContainer('date-8c');
+            initialize('date-8c', makeDotNetRef(), '', '', '');
+            const { day } = segments('date-8c');
+
+            day.focus();
+            typeDigits(day, '5');
+            pressKey(day, '/');
+
+            expect(day.value).toBe('05');
+        });
+
         test('should not insert a literal "/" character into the segment value', () => {
             makeContainer('date-9');
             initialize('date-9', makeDotNetRef(), '', '', '');
@@ -146,7 +170,8 @@ describe('NebaDateInput', () => {
             const event = pressKey(month, '/');
 
             expect(event.defaultPrevented).toBe(true);
-            expect(month.value).toBe('9');
+            // "/" also advances (and zero-pads) a single-digit segment — see the padding tests below.
+            expect(month.value).toBe('09');
         });
 
         test('should end-to-end resolve "08/05/2026" typed with slashes to clean segment values', () => {
@@ -228,6 +253,57 @@ describe('NebaDateInput', () => {
         });
     });
 
+    describe('blur padding', () => {
+        test('should zero-pad a single digit month on blur', () => {
+            makeContainer('date-19');
+            initialize('date-19', makeDotNetRef(), '', '', '');
+            const { month } = segments('date-19');
+
+            month.focus();
+            typeDigits(month, '7');
+            month.dispatchEvent(new Event('blur', { bubbles: true }));
+
+            expect(month.value).toBe('07');
+        });
+
+        test('should zero-pad a single digit day on blur', () => {
+            makeContainer('date-20');
+            initialize('date-20', makeDotNetRef(), '', '', '');
+            const { day } = segments('date-20');
+
+            day.focus();
+            typeDigits(day, '5');
+            day.dispatchEvent(new Event('blur', { bubbles: true }));
+
+            expect(day.value).toBe('05');
+        });
+
+        test('should notify .NET with the padded value on blur', () => {
+            makeContainer('date-21');
+            const dotNetRef = makeDotNetRef();
+            initialize('date-21', dotNetRef, '', '', '');
+            const { month } = segments('date-21');
+
+            month.focus();
+            typeDigits(month, '7');
+            month.dispatchEvent(new Event('blur', { bubbles: true }));
+
+            expect(dotNetRef.invokeMethodAsync).toHaveBeenLastCalledWith('NotifySegmentsChanged', '07', '', '');
+        });
+
+        test('should not pad the year segment on blur', () => {
+            makeContainer('date-22');
+            initialize('date-22', makeDotNetRef(), '', '', '');
+            const { year } = segments('date-22');
+
+            year.focus();
+            typeDigits(year, '26');
+            year.dispatchEvent(new Event('blur', { bubbles: true }));
+
+            expect(year.value).toBe('26');
+        });
+    });
+
     describe('.NET notification', () => {
         test('should notify .NET with the composed segment values on every input', () => {
             makeContainer('date-16');
@@ -268,6 +344,18 @@ describe('NebaDateInput', () => {
 
             dispose('date-18');
             typeDigits(month, '08');
+
+            expect(dotNetRef.invokeMethodAsync).not.toHaveBeenCalled();
+        });
+
+        test('should remove the blur listener so further blur no longer notifies .NET', () => {
+            makeContainer('date-18b');
+            const dotNetRef = makeDotNetRef();
+            initialize('date-18b', dotNetRef, '', '', '');
+            const { month } = segments('date-18b');
+
+            dispose('date-18b');
+            month.dispatchEvent(new Event('blur', { bubbles: true }));
 
             expect(dotNetRef.invokeMethodAsync).not.toHaveBeenCalled();
         });
