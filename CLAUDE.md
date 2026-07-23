@@ -172,6 +172,20 @@ Mutation testing (Stryker) is **not currently in the CI pipeline** — removed M
 
 ## Learnings
 
+### Custom Interactive Blazor Server Inputs — Keyboard Handling Must Live in JS, Not C#
+
+When building a custom input component (`InputBase<T>` subclass) that needs synchronous per-keystroke behavior — auto-advance between segments, filtering keys, navigating on a separator character — **do not** drive that behavior with server-side C# event handlers (`@onkeydown`, `ElementReference.FocusAsync()`), even though it works fine in manual testing.
+
+**Why**: Blazor Server round-trips every event over SignalR. A C#-driven `FocusAsync()` call to move focus to the next segment is asynchronous and network-latency-bound. Real (or automated) typing at normal speed can send the next keystroke before the previous round-trip's focus change has been applied client-side, landing digits in the wrong element. This was found building `NebaDateInput.razor` (see below): typing `9/5/2026` with a fast automated Playwright script scattered digits across the wrong segments (`day` got `20`, `year` got `26`) even though the identical logic worked correctly when each keystroke was typed slowly. It reproduces with real typing speed too, not just fast automation — the race is inherent to the round-trip, not a test artifact.
+
+A second, related trap: even without the focus race, letting the browser's default keydown action fire (e.g. inserting a literal `/` character) while a C# `oninput` handler sanitizes it back to the *same string* as the previous render causes Blazor's virtual-DOM diff to skip updating the real DOM — the stray character stays visibly stuck in the input even though the bound C# state is correct. `preventDefault` can't be applied conditionally per-key via Razor's static `@onkeydown:preventDefault` directive (it's fixed per render, not per keystroke), so this can't be patched from the C# side either.
+
+**Fix — do all interactive keyboard handling in a colocated JS module** (`Component.razor.js`, matching the existing `RichTextEditor.razor`/`.razor.js` pattern): attach native `keydown`/`input` listeners directly in JS, handle digit filtering/auto-advance/segment navigation/backspace synchronously with zero network round-trips, and call `preventDefault()` selectively per key inline (trivial in JS, not expressible in Razor). JS reports the final composed value back to .NET via a single `[JSInvokable]` method (e.g. `NotifySegmentsChanged`) — .NET is a passive listener that only computes/validates the resulting value, never drives focus or interaction itself.
+
+**Testing implication**: bUnit renders the component tree but does not execute real browser JS, so bUnit tests for a component built this way cannot simulate typing via `.Change()`/`.Input()` on the DOM — call the `[JSInvokable]` method directly on the component instance instead (`cut.InvokeAsync(() => dateInput.Instance.NotifySegmentsChanged(...))`), same pattern as `RichTextEditorTests.NotifyContentChanged`. The actual keyboard-interaction logic (auto-advance, `/` navigation, filtering) needs to be covered by Jest tests against the `.razor.js` file directly (jsdom does execute real JS), not by bUnit.
+
+Applied in `NebaDateInput.razor`/`.razor.js` (`src/Neba.Website.Server/Components/`), which replaces `InputDate` for `DateOnly?` fields — see `docs/plans/create-tournament.md`'s Components section for the full story (this started as a Safari-only bug report: WebKit's native `<input type="date">` doesn't reliably auto-advance segments when typing, unlike Chromium/Firefox).
+
 ### Dirty Form Guard — Warn Before Losing Unsaved Changes
 
 Every data-entry page (any page with an `EditForm`, file uploads, or similar user input) must warn the user before they lose unsaved changes via Cancel, in-app navigation, or browser refresh/close/address-bar navigation. Use the shared `Components/DirtyFormGuard.razor` component — do not hand-roll this per page.
