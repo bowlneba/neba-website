@@ -130,7 +130,9 @@ public async Task SecurityMigration()
 		NormalizedEmail = "KIPPERMAND@GMAIL.COM",
 		EmailConfirmed = true,
 		SecurityStamp = Guid.NewGuid().ToString(),
-		ConcurrencyStamp = Guid.NewGuid().ToString()
+		ConcurrencyStamp = Guid.NewGuid().ToString(),
+		UsbcId = "337-5730",
+		PhoneNumber = Util.GetPassword("kippermand.phonenumber"),	
 	};
 	
 	kippermand.PasswordHash = hasher.HashPassword(kippermand, Util.GetPassword("bowlneba.kippermand.password"));
