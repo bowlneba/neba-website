@@ -114,8 +114,9 @@ public sealed class ManageTournamentSponsorsTests : IDisposable
         cut.Find("button.neba-btn-primary").Click();
 
         // Assert
-        cut.Markup.ShouldContain("Storm");
-        cut.Markup.ShouldNotContain(">Kegel<");
+        var options = cut.Find("#sponsor-pick").TextContent;
+        options.ShouldContain("Storm");
+        options.ShouldNotContain("Kegel");
     }
 
     [Fact(DisplayName = "Should open confirm dialog naming the sponsor when Remove is clicked")]
