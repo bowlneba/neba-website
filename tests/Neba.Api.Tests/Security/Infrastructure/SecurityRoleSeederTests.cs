@@ -1,6 +1,9 @@
 using System.Security.Claims;
 
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.Contracts.Security;
 using Neba.Api.Security.Domain;
@@ -95,7 +98,7 @@ public sealed class SecurityRoleSeederTests
         }
 
         // Act
-        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object, NullLogger.Instance);
 
         // Assert
         roleManagerMock.VerifyAll();
@@ -126,7 +129,7 @@ public sealed class SecurityRoleSeederTests
         }
 
         // Act
-        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object, NullLogger.Instance);
 
         // Assert
         roleManagerMock.VerifyAll();
@@ -152,7 +155,7 @@ public sealed class SecurityRoleSeederTests
             .ReturnsAsync(existingClaims);
 
         // Act
-        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object, NullLogger.Instance);
 
         // Assert
         roleManagerMock.VerifyAll();
@@ -183,7 +186,7 @@ public sealed class SecurityRoleSeederTests
             .ReturnsAsync(IdentityResult.Success);
 
         // Act
-        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object, NullLogger.Instance);
 
         // Assert
         roleManagerMock.VerifyAll();
@@ -211,7 +214,7 @@ public sealed class SecurityRoleSeederTests
             .ReturnsAsync(existingClaims);
 
         // Act
-        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object, NullLogger.Instance);
 
         // Assert
         roleManagerMock.VerifyAll();
@@ -255,7 +258,7 @@ public sealed class SecurityRoleSeederTests
         }
 
         // Act
-        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object, NullLogger.Instance);
 
         // Assert
         roleManagerMock.VerifyAll();
@@ -299,7 +302,7 @@ public sealed class SecurityRoleSeederTests
         }
 
         // Act
-        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object, NullLogger.Instance);
 
         // Assert
         roleManagerMock.VerifyAll();
@@ -339,7 +342,7 @@ public sealed class SecurityRoleSeederTests
             .ReturnsAsync(IdentityResult.Success);
 
         // Act
-        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object, NullLogger.Instance);
 
         // Assert
         roleManagerMock.VerifyAll();
@@ -378,7 +381,7 @@ public sealed class SecurityRoleSeederTests
         }
 
         // Act
-        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object, NullLogger.Instance);
 
         // Assert
         roleManagerMock.VerifyAll();
@@ -409,7 +412,7 @@ public sealed class SecurityRoleSeederTests
             .ReturnsAsync(IdentityResult.Success);
 
         // Act
-        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object, NullLogger.Instance);
 
         // Assert
         roleManagerMock.VerifyAll();
@@ -449,7 +452,7 @@ public sealed class SecurityRoleSeederTests
         }
 
         // Act
-        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object, NullLogger.Instance);
 
         // Assert
         roleManagerMock.VerifyAll();
@@ -480,7 +483,7 @@ public sealed class SecurityRoleSeederTests
             .ReturnsAsync(IdentityResult.Success);
 
         // Act
-        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object, NullLogger.Instance);
 
         // Assert
         roleManagerMock.VerifyAll();
@@ -504,9 +507,77 @@ public sealed class SecurityRoleSeederTests
             .ReturnsAsync([]);
 
         // Act
-        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object, NullLogger.Instance);
 
         // Assert
         roleManagerMock.VerifyAll();
+    }
+
+    [Fact(DisplayName = "SeedAsync should log and throw instead of continuing when role creation fails")]
+    public async Task SeedAsync_ShouldLogAndThrow_WhenRoleCreationFails()
+    {
+        // Arrange
+        var roleManagerMock = CreateRoleManagerMock();
+        SetupOtherRolesAlreadySynced(roleManagerMock, Roles.Admin);
+
+        var identityError = new IdentityError { Code = "DuplicateRoleName", Description = "Role name 'Admin' is already taken." };
+
+        roleManagerMock
+            .Setup(m => m.FindByNameAsync(Roles.Admin))
+            .ReturnsAsync((ApplicationRole?)null);
+        roleManagerMock
+            .Setup(m => m.CreateAsync(It.Is<ApplicationRole>(r => r.Name == Roles.Admin)))
+            .ReturnsAsync(IdentityResult.Failed(identityError));
+
+        var logger = new FakeLogger();
+
+        // Act
+        var exception = await Should.ThrowAsync<InvalidOperationException>(
+            () => SecurityRoleSeeder.SeedAsync(roleManagerMock.Object, logger));
+
+        // Assert
+        exception.Message.ShouldContain("DuplicateRoleName");
+        exception.Message.ShouldContain(Roles.Admin);
+
+        var logRecord = logger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        logRecord.Level.ShouldBe(LogLevel.Critical);
+        logRecord.Message.ShouldContain(Roles.Admin);
+        logRecord.Message.ShouldContain("DuplicateRoleName");
+    }
+
+    [Fact(DisplayName = "SeedAsync should log and throw instead of continuing when adding a permission claim fails")]
+    public async Task SeedAsync_ShouldLogAndThrow_WhenAddClaimFails()
+    {
+        // Arrange
+        var existingRole = ApplicationRoleFactory.Create(name: Roles.TournamentDirector);
+        var roleManagerMock = CreateRoleManagerMock();
+        SetupOtherRolesAlreadySynced(roleManagerMock, Roles.TournamentDirector);
+
+        var identityError = new IdentityError { Code = "ConcurrencyFailure", Description = "Optimistic concurrency failure." };
+
+        roleManagerMock
+            .Setup(m => m.FindByNameAsync(Roles.TournamentDirector))
+            .ReturnsAsync(existingRole);
+        roleManagerMock
+            .Setup(m => m.GetClaimsAsync(existingRole))
+            .ReturnsAsync([]);
+        roleManagerMock
+            .Setup(m => m.AddClaimAsync(
+                existingRole,
+                It.Is<Claim>(c => c.Type == SecurityRoleSeeder.PermissionClaimType && c.Value == Permissions.CreateTournament.Value)))
+            .ReturnsAsync(IdentityResult.Failed(identityError));
+
+        var logger = new FakeLogger();
+
+        // Act
+        var exception = await Should.ThrowAsync<InvalidOperationException>(
+            () => SecurityRoleSeeder.SeedAsync(roleManagerMock.Object, logger));
+
+        // Assert
+        exception.Message.ShouldContain("ConcurrencyFailure");
+
+        var logRecord = logger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        logRecord.Level.ShouldBe(LogLevel.Critical);
+        logRecord.Message.ShouldContain(Roles.TournamentDirector);
     }
 }
