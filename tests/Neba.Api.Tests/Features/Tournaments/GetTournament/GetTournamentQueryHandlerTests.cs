@@ -1,5 +1,6 @@
 using Neba.Api.Database;
 using Neba.Api.Features.News.Domain;
+using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.GetTournament;
 using Neba.Api.Storage;
@@ -7,6 +8,7 @@ using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.News;
 using Neba.TestFactory.Seasons;
+using Neba.TestFactory.Sponsors;
 using Neba.TestFactory.Tournaments;
 
 namespace Neba.Api.Tests.Features.Tournaments.GetTournament;
@@ -211,5 +213,39 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         pattern.Name.ShouldBe("Dragon");
         pattern.Length.ShouldBe(40);
         pattern.TournamentRounds.ShouldBe(["Qualifying", "Step Ladder"], ignoreOrder: true);
+    }
+
+    [Fact(DisplayName = "HandleAsync maps sponsor ID, title sponsor flag, and sponsorship amount when tournament has a sponsor")]
+    public async Task HandleAsync_ShouldMapSponsorIdTitleSponsorAndSponsorshipAmount_WhenTournamentHasSponsor()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var sponsor = SponsorFactory.Create();
+        await _dbContext.Sponsors.AddAsync(sponsor, ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        tournament.AddSponsor(sponsor.Id, titleSponsor: true, sponsorshipAmount: 1234.56m);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Sponsors.ShouldHaveSingleItem();
+        var mappedSponsor = result.Value.Sponsors.Single();
+        mappedSponsor.SponsorId.ShouldBe(sponsor.Id);
+        mappedSponsor.TitleSponsor.ShouldBeTrue();
+        mappedSponsor.SponsorshipAmount.ShouldBe(1234.56m);
     }
 }
