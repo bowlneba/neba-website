@@ -1,0 +1,114 @@
+@using Neba.Api.Contracts.Tournaments
+@using Neba.Api.Contracts.Tournaments.AddTournamentSponsor
+@using Neba.Website.Server.Components
+@using Neba.Website.Server.Services
+@using Neba.Website.Server.Sponsors
+
+@inject ITournamentsApi TournamentsApi
+@inject ApiExecutor ApiExecutor
+
+<NebaModal IsOpen="@IsOpen" OnClose="@OnClose" Title="Add Sponsor" MaxWidth="440px" CompactSize="true">
+    <ChildContent>
+        <div class="form-field">
+            <label for="sponsor-pick">Sponsor <span class="mts-required-hint">(required)</span></label>
+            <select id="sponsor-pick" class="neba-select" @bind="_selectedSponsorId">
+                <option value="">Select a sponsor…</option>
+                @foreach (var sponsor in AvailableSponsors)
+                {
+                    <option value="@sponsor.SponsorId">@sponsor.Name</option>
+                }
+            </select>
+            <p class="mts-hint">Only active sponsors not already attached to this tournament are listed.</p>
+        </div>
+
+        <div class="form-field">
+            <label for="sponsor-amount">Sponsorship amount <span class="mts-required-hint">(required)</span></label>
+            <input id="sponsor-amount" class="neba-input" type="number" min="0" step="0.01" @bind="_sponsorshipAmount" />
+        </div>
+
+        <div class="form-field mts-checkbox">
+            <input type="checkbox" id="title-sponsor" @bind="_titleSponsor" />
+            <label for="title-sponsor">Make this the title sponsor</label>
+        </div>
+        <p class="mts-hint">Only one tournament sponsor can be the title sponsor at a time.</p>
+
+        @if (_errorMessage is not null)
+        {
+            <p class="mts-panel__error" role="alert">@_errorMessage</p>
+        }
+    </ChildContent>
+    <FooterContent>
+        <div class="mts-modal-actions">
+            <button type="button" class="neba-btn neba-btn-secondary" @onclick="OnClose" disabled="@_isSubmitting">Cancel</button>
+            <button type="button" class="neba-btn neba-btn-primary" @onclick="SubmitAsync" disabled="@(_isSubmitting || string.IsNullOrEmpty(_selectedSponsorId))">
+                @(_isSubmitting ? "Adding..." : "Add Sponsor")
+            </button>
+        </div>
+    </FooterContent>
+</NebaModal>
+
+@code {
+    [Parameter, EditorRequired]
+    public bool IsOpen { get; set; }
+
+    [Parameter, EditorRequired]
+    public required string TournamentId { get; set; }
+
+    [Parameter, EditorRequired]
+    public IReadOnlyCollection<SponsorSummaryViewModel> AvailableSponsors { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public EventCallback OnAdded { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnClose { get; set; }
+
+    private string _selectedSponsorId = string.Empty;
+    private decimal _sponsorshipAmount;
+    private bool _titleSponsor;
+    private bool _isSubmitting;
+    private string? _errorMessage;
+
+    private async Task SubmitAsync()
+    {
+        var sponsor = AvailableSponsors.SingleOrDefault(s => s.SponsorId == _selectedSponsorId);
+
+        if (sponsor is null)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        var request = new AddTournamentSponsorRequest
+        {
+            Id = TournamentId,
+            Sponsor = new AddTournamentSponsorInput
+            {
+                SponsorId = sponsor.SponsorId,
+                TitleSponsor = _titleSponsor,
+                SponsorshipAmount = _sponsorshipAmount
+            }
+        };
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "AddTournamentSponsor",
+            ct => TournamentsApi.AddTournamentSponsorAsync(TournamentId, request, ct));
+
+        _isSubmitting = false;
+
+        if (result.IsError)
+        {
+            _errorMessage = result.FirstError.Description;
+            return;
+        }
+
+        _selectedSponsorId = string.Empty;
+        _sponsorshipAmount = 0;
+        _titleSponsor = false;
+
+        await OnAdded.InvokeAsync();
+    }
+}

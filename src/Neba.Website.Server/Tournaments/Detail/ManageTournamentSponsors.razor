@@ -1,0 +1,162 @@
+@using System.Globalization
+@using Neba.Api.Contracts.Sponsors
+@using Neba.Api.Contracts.Tournaments
+@using Neba.Website.Server.Components
+@using Neba.Website.Server.Notifications
+@using Neba.Website.Server.Services
+@using Neba.Website.Server.Sponsors
+
+@inject ITournamentsApi TournamentsApi
+@inject ISponsorsApi SponsorsApi
+@inject ApiExecutor ApiExecutor
+@inject ToastService ToastService
+
+<div class="neba-card mts-panel">
+    <div class="mts-panel__header">
+        <h2 class="td-section-title">Manage Sponsors</h2>
+        <button type="button" class="neba-btn neba-btn-primary neba-btn-sm" @onclick="OpenAddModalAsync">
+            + Add Sponsor
+        </button>
+    </div>
+
+    @if (_errorMessage is not null)
+    {
+        <p class="mts-panel__error" role="alert">@_errorMessage</p>
+    }
+
+    @if (Sponsors.Count == 0)
+    {
+        <p class="mts-panel__empty">No sponsors attached to this tournament yet.</p>
+    }
+    else
+    {
+        <div class="mts-panel__list">
+            @foreach (var sponsor in Sponsors)
+            {
+                <div class="mts-row">
+                    @if (sponsor.LogoUrl is not null)
+                    {
+                        <img src="@sponsor.LogoUrl" alt="@(sponsor.Name + " logo")" class="mts-row__logo" />
+                    }
+                    else
+                    {
+                        <span class="mts-row__logo mts-row__logo--fallback">@sponsor.Name</span>
+                    }
+                    <div class="mts-row__body">
+                        <div class="mts-row__name-line">
+                            <span class="mts-row__name">@sponsor.Name</span>
+                            @if (sponsor.TitleSponsor)
+                            {
+                                <span class="neba-badge neba-badge-primary">Title Sponsor</span>
+                            }
+                        </div>
+                        <div class="mts-row__meta">
+                            @sponsor.SponsorshipAmount.ToString("C0", CultureInfo.GetCultureInfo("en-US")) added money
+                        </div>
+                    </div>
+                    <button type="button" class="mts-row__remove" @onclick="() => RequestRemove(sponsor)">Remove</button>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<AddTournamentSponsorModal IsOpen="_isAddModalOpen"
+                            TournamentId="@TournamentId"
+                            AvailableSponsors="_availableSponsors"
+                            OnAdded="HandleAddedAsync"
+                            OnClose="() => _isAddModalOpen = false" />
+
+<ConfirmActionModal IsOpen="_removeTarget is not null"
+                     Title="Remove sponsor?"
+                     Message="@RemoveMessage"
+                     ConfirmLabel="Remove Sponsor"
+                     IsBusy="_isRemoving"
+                     OnConfirm="ConfirmRemoveAsync"
+                     OnCancel="() => _removeTarget = null" />
+
+@code {
+    [Parameter, EditorRequired]
+    public required string TournamentId { get; set; }
+
+    [Parameter, EditorRequired]
+    public required IReadOnlyCollection<TournamentDetailSponsorViewModel> Sponsors { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnChanged { get; set; }
+
+    private bool _isAddModalOpen;
+    private bool _isRemoving;
+    private string? _errorMessage;
+    private TournamentDetailSponsorViewModel? _removeTarget;
+    private IReadOnlyCollection<SponsorSummaryViewModel> _availableSponsors = [];
+
+    private string RemoveMessage =>
+        _removeTarget is null
+            ? string.Empty
+            : "Remove " + _removeTarget.Name + " as a sponsor of this tournament? This doesn't affect the sponsor's own profile.";
+
+    private async Task OpenAddModalAsync()
+    {
+        _errorMessage = null;
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "Sponsors",
+            "ListActiveSponsors",
+            ct => SponsorsApi.ListActiveSponsorsAsync(ct));
+
+        if (result.IsError)
+        {
+            _errorMessage = result.FirstError.Description;
+            return;
+        }
+
+        var attachedSponsorIds = Sponsors.Select(s => s.SponsorId).ToHashSet();
+
+        _availableSponsors = [.. result.Value.Items
+            .Where(s => !attachedSponsorIds.Contains(s.SponsorId))
+            .Select(s => s.ToViewModel())];
+
+        _isAddModalOpen = true;
+    }
+
+    private async Task HandleAddedAsync()
+    {
+        _isAddModalOpen = false;
+        await OnChanged.InvokeAsync();
+        ToastService.Show("Sponsor Added", "The sponsor was added to this tournament.", NotifySeverity.Success);
+    }
+
+    private void RequestRemove(TournamentDetailSponsorViewModel sponsor)
+    {
+        _errorMessage = null;
+        _removeTarget = sponsor;
+    }
+
+    private async Task ConfirmRemoveAsync()
+    {
+        if (_removeTarget is null)
+        {
+            return;
+        }
+
+        _isRemoving = true;
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "RemoveTournamentSponsor",
+            ct => TournamentsApi.RemoveTournamentSponsorAsync(TournamentId, _removeTarget.SponsorId, ct));
+
+        _isRemoving = false;
+        _removeTarget = null;
+
+        if (result.IsError)
+        {
+            _errorMessage = result.FirstError.Description;
+            return;
+        }
+
+        await OnChanged.InvokeAsync();
+        ToastService.Show("Sponsor Removed", "The sponsor was removed from this tournament.", NotifySeverity.Success);
+    }
+}
