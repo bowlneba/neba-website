@@ -69,13 +69,13 @@
 
                                 <div>
                                     <FormLabel TargetId="start-date" For="@(() => _model.StartDate)">Start Date</FormLabel>
-                                    <InputDate id="start-date" @bind-Value="_model.StartDate" class="neba-input" />
+                                    <NebaDateInput id="start-date" @bind-Value="_model.StartDate" />
                                     <ValidationMessage For="@(() => _model.StartDate)" class="block text-sm text-red-600 mt-1" />
                                 </div>
 
                                 <div>
                                     <FormLabel TargetId="end-date" For="@(() => _model.EndDate)">End Date</FormLabel>
-                                    <InputDate id="end-date" @bind-Value="_model.EndDate" class="neba-input" />
+                                    <NebaDateInput id="end-date" @bind-Value="_model.EndDate" />
                                     <ValidationMessage For="@(() => _model.EndDate)" class="block text-sm text-red-600 mt-1" />
                                 </div>
                             </div>

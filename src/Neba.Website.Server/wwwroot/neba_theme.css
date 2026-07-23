@@ -476,6 +476,53 @@ html, body {
   background-color: rgba(255, 255, 255, 0.05);
 }
 
+/* Segmented date input (NebaDateInput) */
+.neba-date-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--neba-radius);
+  border: 1px solid var(--neba-border);
+  background-color: var(--neba-bg-panel);
+  color: var(--neba-text);
+  transition: var(--neba-transition);
+}
+
+.neba-date-input:focus-within {
+  border-color: var(--neba-blue-500);
+  box-shadow: 0 0 0 3px rgba(62, 79, 217, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.neba-date-segment {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  text-align: center;
+  width: 2ch;
+}
+
+.neba-date-segment-year {
+  width: 4ch;
+}
+
+.neba-date-segment:focus {
+  outline: none;
+  background-color: rgba(62, 79, 217, 0.08);
+  border-radius: 3px;
+}
+
+.neba-date-segment::placeholder {
+  color: var(--neba-gray-400);
+}
+
+.neba-date-separator {
+  color: var(--neba-gray-400);
+}
+
 /* Links */
 a.neba-link {
   color: var(--neba-blue-700);
