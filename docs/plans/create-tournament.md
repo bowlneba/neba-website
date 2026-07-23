@@ -2019,4 +2019,5 @@ No new contract work here beyond Phase 1 — `ITournamentsApi.CreateTournamentAs
 we need the ability to now show the oil pattern details as of a certain date/time.  this is a nullable field.  if it is null and/or the user
 has tournament management permissions, we need to show the full oil pattern details.  if the date isn't null, and we haven't hit the datetime yet, we only
 show the length and ratio cateories if we have them.  if after the datetime, we show the full info.  this is on all views of the tournament as it isn't public
-knowledge before that date.  we need to add this column to the tournament record as a nullable datetime.
+knowledge before that date.  we need to add this column to the tournament record as a nullable datetime.  we might need to have something around cache clearing so
+that when the oil pattern reveal date has passed, it clears tournament list/detail cache so that it will show the datetime.  i'd like to explore options for this
