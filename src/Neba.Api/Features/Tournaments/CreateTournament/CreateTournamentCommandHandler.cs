@@ -76,6 +76,20 @@ internal sealed class CreateTournamentCommandHandler(
 
         var tournament = tournamentResult.Value;
 
+        if (command.OilPatternId is { } attachedOilPatternId)
+        {
+            // Every tournament currently uses a single oil pattern for the whole event — there's no
+            // per-round pattern selection in the UI yet — so it's hardcoded to Qualifying + Match Play
+            // (bitmask 1 | 4 = 5) rather than asking the caller to specify rounds.
+            var addOilPatternResult = tournament.AddOilPattern(
+                attachedOilPatternId, TournamentRound.Qualifying, TournamentRound.MatchPlay);
+
+            if (addOilPatternResult.IsError)
+            {
+                return addOilPatternResult.Errors;
+            }
+        }
+
         await appDbContext.Tournaments.AddAsync(tournament, cancellationToken);
 
         await TournamentPendingUploadCleaner.RemoveClaimedAsync(appDbContext, tournament.Logo, cancellationToken);

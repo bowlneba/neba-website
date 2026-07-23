@@ -12,6 +12,8 @@ using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Features.Tournaments.CreateTournament;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.EvictOilPatternRevealCache;
+using Neba.Api.Features.Tournaments.GetTournament;
+using Neba.Api.Storage;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.BowlingCenters;
 using Neba.TestFactory.Infrastructure;
@@ -213,6 +215,65 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
             .SingleAsync(t => t.Name == "Tournament With Oil Pattern", ct);
         persisted.PatternLengthCategory.ShouldBe(oilPattern.LengthCategory);
         persisted.PatternRatioCategory.ShouldBe(oilPattern.RatioCategory);
+    }
+
+    [Fact(DisplayName = "HandleAsync attaches the oil pattern to the tournament when provided")]
+    public async Task HandleAsync_ShouldAttachOilPatternToTournament_WhenProvided()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedSeasonAsync(ct);
+        var oilPattern = OilPatternFactory.Create();
+        await _dbContext.OilPatterns.AddAsync(oilPattern, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+        var command = ValidCommand(name: "Tournament With Attached Oil Pattern", oilPatternId: oilPattern.Id);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var persisted = await _dbContext.Tournaments.AsNoTracking()
+            .SingleAsync(t => t.Name == "Tournament With Attached Oil Pattern", ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+        var getResult = await getTournamentHandler.HandleAsync(
+            new GetTournamentQuery { Id = persisted.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true },
+            ct);
+
+        getResult.IsError.ShouldBeFalse();
+        var attachedPattern = getResult.Value.OilPatterns.ShouldHaveSingleItem();
+        attachedPattern.TournamentRounds.ShouldBe(["Qualifying", "Match Play"]);
+    }
+
+    [Fact(DisplayName = "HandleAsync does not attach an oil pattern to the tournament when none is specified")]
+    public async Task HandleAsync_ShouldNotAttachOilPattern_WhenNoneSpecified()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedSeasonAsync(ct);
+        var handler = CreateHandler();
+        var command = ValidCommand(name: "Tournament Without Attached Oil Pattern");
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var persisted = await _dbContext.Tournaments.AsNoTracking()
+            .SingleAsync(t => t.Name == "Tournament Without Attached Oil Pattern", ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+        var getResult = await getTournamentHandler.HandleAsync(
+            new GetTournamentQuery { Id = persisted.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true },
+            ct);
+
+        getResult.IsError.ShouldBeFalse();
+        getResult.Value.OilPatterns.ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "HandleAsync uses the provided pattern categories when no oil pattern is specified")]
