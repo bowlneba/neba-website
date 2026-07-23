@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 
 using AngleSharp.Dom;
@@ -24,6 +25,7 @@ using Neba.TestFactory.OilPatterns;
 using Neba.TestFactory.Tournaments;
 using Neba.TestFactory.Uploads;
 using Neba.Website.Server.Clock;
+using Neba.Website.Server.Components;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 
@@ -161,8 +163,8 @@ public sealed class CreateTournamentTests : IDisposable
     {
         // Arrange
         var cut = RenderCreateTournament();
-        await cut.InvokeAsync(() => cut.Find("#start-date").Change("2025-10-04"));
-        await cut.InvokeAsync(() => cut.Find("#end-date").Change("2025-10-05"));
+        await SetDateInputAsync(cut, "start-date", new DateOnly(2025, 10, 4));
+        await SetDateInputAsync(cut, "end-date", new DateOnly(2025, 10, 5));
 
         // Act
         await cut.Find("form").SubmitAsync();
@@ -446,8 +448,24 @@ public sealed class CreateTournamentTests : IDisposable
     private static async Task FillRequiredFieldsAsync(IRenderedComponent<CreateTournamentPage> cut)
     {
         await cut.InvokeAsync(() => cut.Find("#name").Change("NEBA Fall Classic"));
-        await cut.InvokeAsync(() => cut.Find("#start-date").Change("2025-10-04"));
-        await cut.InvokeAsync(() => cut.Find("#end-date").Change("2025-10-05"));
+        await SetDateInputAsync(cut, "start-date", new DateOnly(2025, 10, 4));
+        await SetDateInputAsync(cut, "end-date", new DateOnly(2025, 10, 5));
+    }
+
+    /// <summary>
+    /// Simulates the JS side of <see cref="NebaDateInput"/> reporting a fully-typed date. All
+    /// keyboard interaction for this component lives in client-side JS (see NebaDateInput.razor.js),
+    /// which bUnit does not execute — so tests drive it the same way RichTextEditorTests drives
+    /// RichTextEditor's JS-originated content changes: call the [JSInvokable] entry point directly.
+    /// </summary>
+    private static async Task SetDateInputAsync(IRenderedComponent<CreateTournamentPage> cut, string id, DateOnly date)
+    {
+        var dateInput = cut.FindComponents<NebaDateInput>().Single(c => c.Markup.Contains($"id=\"{id}\"", StringComparison.Ordinal));
+
+        await cut.InvokeAsync(() => dateInput.Instance.NotifySegmentsChanged(
+            date.Month.ToString("D2", CultureInfo.InvariantCulture),
+            date.Day.ToString("D2", CultureInfo.InvariantCulture),
+            date.Year.ToString("D4", CultureInfo.InvariantCulture)));
     }
 
     private void SetupListBowlingCenters(IReadOnlyCollection<Neba.Api.Contracts.BowlingCenters.ListBowlingCenters.BowlingCenterSummaryResponse>? centers = null)
