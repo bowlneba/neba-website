@@ -1729,6 +1729,13 @@ Task<IApiResponse<CreatedTournamentResponse>> CreateTournamentAsync(CreateTourna
 
 ### Components (`src/Neba.Website.Server/Tournaments/`)
 
+**`NebaDateInput.razor`** (`src/Neba.Website.Server/Components/`, shared, not Tournaments-specific) — replaces `InputDate` for `DateOnly?` fields (`StartDate`, `EndDate`). Reason: Safari's native `<input type="date">` has a WebKit-specific bug where typing digits doesn't reliably auto-advance between month/day/year segments, and typing "/" does nothing to help — confirmed via a live repro against this page (Chromium: fine; Safari: stuck on the month segment). Since there's no app code to patch (it's the browser's own control), the fix is a custom `InputBase<DateOnly?>` component rendering three segmented `mm`/`dd`/`yyyy` text inputs.
+
+- **All interactive keyboard handling lives in client-side JS** (`NebaDateInput.razor.js`), not server-side Blazor event handlers — digit filtering, auto-advance-on-fill, `/`/`-` navigation, and backspace-to-previous-segment all happen synchronously in the browser. This is a deliberate architecture choice, not a style preference: an earlier version drove segment-advance via C# `ElementReference.FocusAsync()` calls, and Blazor Server's network round-trip let fast typing race ahead of the server-driven focus change, landing digits in the wrong segment (a real data-entry bug, reproduced with Playwright typing "9/5/2026" back-to-back without waiting between keystrokes). JS only reports the final composed value back to .NET via `NotifySegmentsChanged`, matching the existing `RichTextEditor.razor`/`.razor.js` pattern (JS owns interaction, .NET is a passive listener).
+- The "/" separator only advances to the next segment if the current segment already has a digit — otherwise a habitual "/" typed right after an auto-advance (e.g. "08/" — the "/" typed out of habit even though "08" already advanced focus to `dd`) would skip the next, still-empty segment. This was the second bug found during implementation (initial version's "/" handler advanced unconditionally, breaking "9/5/2026"-style input).
+- FormLabel's `for="start-date"`/`for="end-date"` association still works: the `id` passed to `<NebaDateInput id="start-date" .../>` is extracted from `AdditionalAttributes` and placed on the month segment specifically (the first focusable element), not the wrapper `div`.
+- Reused as-is (no changes needed) for `CreateTournament.razor`'s Start/End Date. Not used for `CreateArticle.razor`/`EditArticle.razor`'s `PublishDateLocal` — those use `InputDateType.DateTimeLocal` (date + time), a materially different control; left as `InputDate` for now, flagged as a known follow-up if the same Safari bug is reported there.
+
 **New `OilPatternSelection.cs`** — the payload `OilPatternPicker` emits; exactly one of `OilPatternId` or the two category fields is populated, matching the mutual-exclusivity the API validator enforces:
 
 ```csharp
@@ -2000,7 +2007,7 @@ No new contract work here beyond Phase 1 — `ITournamentsApi.CreateTournamentAs
 ### State / Dirty-Tracking
 
 - `DirtyFormGuard IsDirty="@_isDirty"` wraps the page.
-- `_editContext.OnFieldChanged` (wired in the constructor, unwired in `DisposeAsync`) covers every `InputSelect`/`InputText`/`InputNumber`/`InputDate`/`InputCheckbox` bound to `_model` — `Name`, `TournamentType`, dates, `StatsEligible`, `EntryFee`, `BowlingCenterCertificationNumber`, `ExternalRegistrationUrl`.
+- `_editContext.OnFieldChanged` (wired in the constructor, unwired in `DisposeAsync`) covers every `InputSelect`/`InputText`/`InputNumber`/`NebaDateInput`/`InputCheckbox` bound to `_model` — `Name`, `TournamentType`, dates (`NebaDateInput`, not `InputDate` — see Components below), `StatsEligible`, `EntryFee`, `BowlingCenterCertificationNumber`, `ExternalRegistrationUrl`.
 - `OilPatternPicker` isn't wired through the parent `EditContext` at all (its `<select>`/`<input>` elements are plain HTML, not `InputBase` descendants) — `HandleOilPatternSelectionChanged` calls `MarkDirty()` directly whenever `SelectionChanged` fires.
 - `FileUpload`'s `OnFileUploaded`/`OnFileRemoved` callbacks call `MarkDirty()` directly, same as `CreateSponsor.razor`.
 
