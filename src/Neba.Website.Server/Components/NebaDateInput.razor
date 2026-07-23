@@ -24,6 +24,7 @@
     private string _lastKnownMonth = string.Empty;
     private string _lastKnownDay = string.Empty;
     private string _lastKnownYear = string.Empty;
+    private DateOnly? _lastKnownValue;
 
     private string ContainerId { get; } = $"neba-date-{Guid.NewGuid():N}";
 
@@ -46,6 +47,7 @@
             _lastKnownMonth = FormatSegment(Value?.Month, "D2");
             _lastKnownDay = FormatSegment(Value?.Day, "D2");
             _lastKnownYear = FormatSegment(Value?.Year, "D4");
+            _lastKnownValue = Value;
 
             await _jsModule.InvokeVoidAsync(
                 "initialize", ContainerId, _dotNetHelper, _lastKnownMonth, _lastKnownDay, _lastKnownYear);
@@ -58,16 +60,21 @@
             return;
         }
 
-        var month = FormatSegment(Value?.Month, "D2");
-        var day = FormatSegment(Value?.Day, "D2");
-        var year = FormatSegment(Value?.Year, "D4");
-
         // Only push a value the user didn't just type themselves — e.g. an external reset of the
-        // bound model — otherwise this would fight the in-flight edit the JS side just reported.
-        if (month == _lastKnownMonth && day == _lastKnownDay && year == _lastKnownYear)
+        // bound model — otherwise this would fight an in-flight, still-incomplete edit: Value stays
+        // null until all three segments are filled, so comparing against the formatted segments
+        // (rather than the bound Value itself) would treat every render that happens mid-edit —
+        // triggered by anything else on the page, not just this component — as an external reset.
+        if (Value == _lastKnownValue)
         {
             return;
         }
+
+        _lastKnownValue = Value;
+
+        var month = FormatSegment(Value?.Month, "D2");
+        var day = FormatSegment(Value?.Day, "D2");
+        var year = FormatSegment(Value?.Year, "D4");
 
         _lastKnownMonth = month;
         _lastKnownDay = day;
@@ -102,6 +109,8 @@
         {
             CurrentValue = null;
         }
+
+        _lastKnownValue = CurrentValue;
     }
 
     private static bool IsValidDate(int year, int month, int day)

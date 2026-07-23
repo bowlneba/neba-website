@@ -104,6 +104,7 @@ const MOCK_BOWLING_CENTERS = {
 const MOCK_SPONSORS_ACTIVE = {
   items: [
     {
+      sponsorId: '01JX0000000000000000000101',
       name: 'Acme Bowling Supply',
       slug: 'acme-bowling-supply',
       logoUrl: null,
@@ -118,6 +119,7 @@ const MOCK_SPONSORS_ACTIVE = {
       instagramUrl: null,
     },
     {
+      sponsorId: '01JX0000000000000000000001',
       name: 'Pro Shop Plus',
       slug: 'pro-shop-plus',
       logoUrl: null,
@@ -132,6 +134,7 @@ const MOCK_SPONSORS_ACTIVE = {
       instagramUrl: null,
     },
     {
+      sponsorId: '01JX0000000000000000000102',
       name: 'Regional Lanes',
       slug: 'regional-lanes',
       logoUrl: null,

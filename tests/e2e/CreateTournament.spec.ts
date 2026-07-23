@@ -1,6 +1,23 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 test.describe.configure({ mode: 'serial' });
+
+// NebaDateInput renders month/day/year as separate segment inputs (see
+// src/Neba.Website.Server/Components/NebaDateInput.razor) — `id` lands on the month segment only,
+// and the segment's own JS auto-advances focus on keydown, which .fill() never fires. Fill each
+// segment directly so the 'input' event listener (which does run on .fill()) reports the value.
+async function fillDateInput(page: Page, monthInputId: string, isoDate: string): Promise<void> {
+  const [year, month, day] = isoDate.split('-');
+  const monthInput = page.locator(`#${monthInputId}`);
+  const container = monthInput.locator('xpath=..');
+
+  await monthInput.fill(month);
+  await container.locator('[data-segment="day"]').fill(day);
+  await container.locator('[data-segment="year"]').fill(year);
+  await expect(monthInput).toHaveValue(month);
+  await expect(container.locator('[data-segment="day"]')).toHaveValue(day);
+  await expect(container.locator('[data-segment="year"]')).toHaveValue(year);
+}
 
 test.describe('Tournaments page — create tournament (unauthenticated)', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
@@ -59,8 +76,8 @@ test.describe('Tournaments page — create tournament (authenticated)', () => {
     await page.waitForSelector('#name');
 
     await page.locator('#name').fill('New Playwright Tournament');
-    await page.locator('#start-date').fill('2026-10-04');
-    await page.locator('#end-date').fill('2026-10-05');
+    await fillDateInput(page, 'start-date', '2026-10-04');
+    await fillDateInput(page, 'end-date', '2026-10-05');
 
     await page.locator('button[type="submit"].neba-btn-primary').click();
 
@@ -73,8 +90,8 @@ test.describe('Tournaments page — create tournament (authenticated)', () => {
     await page.waitForSelector('#name');
 
     await page.locator('#name').fill('Logo Upload Tournament');
-    await page.locator('#start-date').fill('2026-11-01');
-    await page.locator('#end-date').fill('2026-11-02');
+    await fillDateInput(page, 'start-date', '2026-11-01');
+    await fillDateInput(page, 'end-date', '2026-11-02');
 
     await page.locator('input.neba-file-upload-input').setInputFiles({
       name: 'logo.png',
@@ -100,8 +117,8 @@ test.describe('Tournaments page — create tournament (authenticated)', () => {
     await page.waitForSelector('#name');
 
     await page.locator('#name').fill('Conflicting Tournament');
-    await page.locator('#start-date').fill('2026-12-01');
-    await page.locator('#end-date').fill('2026-12-02');
+    await fillDateInput(page, 'start-date', '2026-12-01');
+    await fillDateInput(page, 'end-date', '2026-12-02');
 
     await page.locator('button[type="submit"].neba-btn-primary').click();
 
