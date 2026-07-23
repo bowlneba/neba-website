@@ -39,7 +39,6 @@ public sealed class TournamentUpcomingCardTests : IDisposable
             Sponsor = null,
             BowlingCenterName = null,
             BowlingCenterCity = null,
-            RegistrationStatus = null,
         };
 
         // Act

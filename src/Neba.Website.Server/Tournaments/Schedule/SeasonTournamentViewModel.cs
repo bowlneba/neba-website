@@ -43,11 +43,6 @@ public sealed record SeasonTournamentViewModel
     public decimal? EntryFee { get; init; }
 
     /// <summary>
-    /// Current registration state; null means registration has not opened yet.
-    /// </summary>
-    public RegistrationStatus? RegistrationStatus { get; init; }
-
-    /// <summary>
     /// External URL for online registration.
     /// </summary>
     public Uri? RegistrationUrl { get; init; }
@@ -149,6 +144,12 @@ public sealed record SeasonTournamentViewModel
     /// True when a registration URL is available.
     /// </summary>
     public bool CanRegister => RegistrationUrl is not null;
+
+    /// <summary>
+    /// Current registration state; null means registration has not opened yet.
+    /// </summary>
+    public RegistrationStatus? RegistrationStatus =>
+        CanRegister ? Neba.Website.Server.Tournaments.Schedule.RegistrationStatus.Open : null;
 
     /// <summary>
     /// True when the event end date is before today.

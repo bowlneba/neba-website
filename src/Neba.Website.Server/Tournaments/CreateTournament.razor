@@ -125,8 +125,7 @@
 
                             <div>
                                 <label for="oil-pattern-reveal" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Reveal Date/Time (optional)</label>
-                                <input id="oil-pattern-reveal" type="datetime-local" class="neba-input" style="max-width: 20rem"
-                                       @bind="_oilPatternRevealLocal" @bind:after="MarkDirty" />
+                                <NebaDateTimeInput id="oil-pattern-reveal" @bind-Value="_oilPatternRevealLocal" />
                                 <p class="text-sm text-[var(--neba-gray-500)]">
                                     Full pattern details stay hidden until this date/time, in your local time zone, from everyone except tournament management. Leave blank to make the pattern public immediately.
                                 </p>

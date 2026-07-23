@@ -1,3 +1,5 @@
+using Neba.Website.Server.Tournaments.Schedule;
+
 namespace Neba.Website.Server.Tournaments.Detail;
 
 /// <summary>
@@ -126,6 +128,11 @@ public sealed record TournamentDetailViewModel
     /// True when a registration URL is available.
     /// </summary>
     public bool HasRegistrationUrl => RegistrationUrl is not null;
+
+    /// <summary>
+    /// Current registration state; null means registration has not opened yet.
+    /// </summary>
+    public RegistrationStatus? RegistrationStatus => HasRegistrationUrl ? Schedule.RegistrationStatus.Open : null;
 
     /// <summary>
     /// True when winner(s) have been recorded.

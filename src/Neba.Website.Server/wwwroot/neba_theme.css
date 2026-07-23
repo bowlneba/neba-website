@@ -523,6 +523,16 @@ html, body {
   color: var(--neba-gray-400);
 }
 
+.neba-date-separator--gap {
+  margin: 0 0.25rem;
+  font-size: 0.8125rem;
+}
+
+.neba-date-segment-meridiem {
+  width: 2.5ch;
+  text-transform: uppercase;
+}
+
 /* Autocomplete (NebaAutocomplete) */
 .neba-autocomplete {
   position: relative;

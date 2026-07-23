@@ -169,7 +169,7 @@ else
                                         Registration opens soon
                                     </button>
                                 }
-                                <TournamentStatusPill Status="@InferredRegistrationStatus" />
+                                <TournamentStatusPill Status="@Model.RegistrationStatus" />
                             </div>
                         }
 
@@ -364,7 +364,7 @@ else
                                         }
                                     </div>
                                 }
-                                <TournamentStatusPill Status="@InferredRegistrationStatus" />
+                                <TournamentStatusPill Status="@Model.RegistrationStatus" />
                             </div>
                         }
 
@@ -498,9 +498,6 @@ else
         _model is null ? string.Empty : string.Join(" / ", _model.Winners);
 
     private TournamentDetailViewModel Model => _model!;
-
-    private RegistrationStatus? InferredRegistrationStatus =>
-        _model!.HasRegistrationUrl ? RegistrationStatus.Open : null;
 
     private static string GetPatternClass(int length)
     {

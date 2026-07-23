@@ -345,7 +345,7 @@ public sealed class CreateTournamentTests : IDisposable
 
         var cut = RenderCreateTournament();
         await FillRequiredFieldsAsync(cut);
-        await cut.InvokeAsync(() => cut.Find("#oil-pattern-reveal").Change(enteredLocal.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture)));
+        await SetDateTimeInputAsync(cut, "oil-pattern-reveal", enteredLocal);
 
         // Act
         await cut.Find("form").SubmitAsync();
@@ -518,6 +518,25 @@ public sealed class CreateTournamentTests : IDisposable
             date.Month.ToString("D2", CultureInfo.InvariantCulture),
             date.Day.ToString("D2", CultureInfo.InvariantCulture),
             date.Year.ToString("D4", CultureInfo.InvariantCulture)));
+    }
+
+    /// <summary>
+    /// Simulates the JS side of <see cref="NebaDateTimeInput"/> reporting a fully-typed date/time,
+    /// the same way <see cref="SetDateInputAsync"/> drives <see cref="NebaDateInput"/>.
+    /// </summary>
+    private static async Task SetDateTimeInputAsync(IRenderedComponent<CreateTournamentPage> cut, string id, DateTime value)
+    {
+        var dateTimeInput = cut.FindComponents<NebaDateTimeInput>().Single(c => c.Markup.Contains($"id=\"{id}\"", StringComparison.Ordinal));
+
+        var hour12 = value.Hour % 12 == 0 ? 12 : value.Hour % 12;
+
+        await cut.InvokeAsync(() => dateTimeInput.Instance.NotifySegmentsChanged(
+            value.Month.ToString("D2", CultureInfo.InvariantCulture),
+            value.Day.ToString("D2", CultureInfo.InvariantCulture),
+            value.Year.ToString("D4", CultureInfo.InvariantCulture),
+            hour12.ToString("D2", CultureInfo.InvariantCulture),
+            value.Minute.ToString("D2", CultureInfo.InvariantCulture),
+            value.Hour < 12 ? "AM" : "PM"));
     }
 
     private void SetupListBowlingCenters(IReadOnlyCollection<Neba.Api.Contracts.BowlingCenters.ListBowlingCenters.BowlingCenterSummaryResponse>? centers = null)
