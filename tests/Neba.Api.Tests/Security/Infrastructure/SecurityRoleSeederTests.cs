@@ -52,6 +52,11 @@ public sealed class SecurityRoleSeederTests
             SetupRoleAlreadySynced(mock, Roles.TournamentDirector, [Permissions.CreateTournament, Permissions.ManageTournamentSponsors]);
         }
 
+        if (roleUnderTest != Roles.Journalist)
+        {
+            SetupRoleAlreadySynced(mock, Roles.Journalist, [Permissions.CreateArticle, Permissions.EditArticle, Permissions.DeleteArticle]);
+        }
+
         if (roleUnderTest != Roles.Member)
         {
             SetupRoleAlreadySynced(mock, Roles.Member, []);
@@ -306,6 +311,77 @@ public sealed class SecurityRoleSeederTests
 
         roleManagerMock
             .Setup(m => m.FindByNameAsync(Roles.TournamentDirector))
+            .ReturnsAsync(existingRole);
+        roleManagerMock
+            .Setup(m => m.GetClaimsAsync(existingRole))
+            .ReturnsAsync(existingClaims);
+        roleManagerMock
+            .Setup(m => m.RemoveClaimAsync(existingRole, staleClaim))
+            .ReturnsAsync(IdentityResult.Success);
+
+        // Act
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+
+        // Assert
+        roleManagerMock.VerifyAll();
+    }
+
+    [Fact(DisplayName = "SeedAsync should create the Journalist role and add exactly the CreateArticle, EditArticle, and DeleteArticle permission claims when the role does not exist")]
+    public async Task SeedAsync_ShouldCreateJournalistRoleAndAddExpectedClaims_WhenRoleDoesNotExist()
+    {
+        // Arrange
+        var expectedPermissions = new[]
+        {
+            Permissions.CreateArticle,
+            Permissions.EditArticle,
+            Permissions.DeleteArticle
+        };
+
+        var roleManagerMock = CreateRoleManagerMock();
+        SetupOtherRolesAlreadySynced(roleManagerMock, Roles.Journalist);
+
+        roleManagerMock
+            .Setup(m => m.FindByNameAsync(Roles.Journalist))
+            .ReturnsAsync((ApplicationRole?)null);
+        roleManagerMock
+            .Setup(m => m.CreateAsync(It.Is<ApplicationRole>(r => r.Name == Roles.Journalist)))
+            .ReturnsAsync(IdentityResult.Success);
+        roleManagerMock
+            .Setup(m => m.GetClaimsAsync(It.Is<ApplicationRole>(r => r.Name == Roles.Journalist)))
+            .ReturnsAsync([]);
+
+        foreach (var permission in expectedPermissions)
+        {
+            roleManagerMock
+                .Setup(m => m.AddClaimAsync(
+                    It.Is<ApplicationRole>(r => r.Name == Roles.Journalist),
+                    It.Is<Claim>(c => c.Type == SecurityRoleSeeder.PermissionClaimType && c.Value == permission.Value)))
+                .ReturnsAsync(IdentityResult.Success);
+        }
+
+        // Act
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+
+        // Assert
+        roleManagerMock.VerifyAll();
+    }
+
+    [Fact(DisplayName = "SeedAsync should remove a stale permission claim that is no longer in the Journalist role's permissions list")]
+    public async Task SeedAsync_ShouldRemoveStalePermissionClaim_WhenClaimIsNotInJournalistPermissionsList()
+    {
+        // Arrange
+        var existingRole = ApplicationRoleFactory.Create(name: Roles.Journalist);
+        var staleClaim = new Claim(SecurityRoleSeeder.PermissionClaimType, Permissions.EditSponsor.Value);
+        var existingClaims = new[] { Permissions.CreateArticle, Permissions.EditArticle, Permissions.DeleteArticle }
+            .Select(p => new Claim(SecurityRoleSeeder.PermissionClaimType, p.Value))
+            .Append(staleClaim)
+            .ToList();
+
+        var roleManagerMock = CreateRoleManagerMock();
+        SetupOtherRolesAlreadySynced(roleManagerMock, Roles.Journalist);
+
+        roleManagerMock
+            .Setup(m => m.FindByNameAsync(Roles.Journalist))
             .ReturnsAsync(existingRole);
         roleManagerMock
             .Setup(m => m.GetClaimsAsync(existingRole))
