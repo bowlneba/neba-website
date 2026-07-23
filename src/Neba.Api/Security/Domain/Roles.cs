@@ -21,6 +21,11 @@ public static class Roles
     public const string TournamentDirector = "Tournament Director";
 
     /// <summary>
+    /// Journalist role with access to news and media features.
+    /// </summary>
+    public const string Journalist = nameof(Journalist);
+
+    /// <summary>
     /// Member role with access to standard user features.
     /// </summary>
     public const string Member = nameof(Member);
