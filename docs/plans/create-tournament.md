@@ -2021,3 +2021,5 @@ has tournament management permissions, we need to show the full oil pattern deta
 show the length and ratio cateories if we have them.  if after the datetime, we show the full info.  this is on all views of the tournament as it isn't public
 knowledge before that date.  we need to add this column to the tournament record as a nullable datetime.  we might need to have something around cache clearing so
 that when the oil pattern reveal date has passed, it clears tournament list/detail cache so that it will show the datetime.  i'd like to explore options for this
+the field on the ui should be in the oil pattern section, and should be there for all 3 views because regardless if we know the pattern at time of creation, we will most likely
+know when we want it revealed
