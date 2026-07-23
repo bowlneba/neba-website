@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Text.Json;
 
 using ErrorOr;
 
@@ -92,13 +93,30 @@ internal sealed class ApiExecutor(
                     duration
                 );
 
-                return response.StatusCode == System.Net.HttpStatusCode.NotFound
-                    ? Error.NotFound(
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return Error.NotFound(
                         $"{apiName}.{operationName}.NotFound",
-                        "The requested resource was not found.")
-                    : Error.Failure(
+                        "The requested resource was not found.");
+                }
+
+                // 4xx: the server has already produced a human-readable reason (validation failure,
+                // conflict, etc.) - surface it instead of a bare status code. 5xx stays generic so we
+                // never leak internal details to the user.
+                var detail = statusCode is >= 400 and < 500 && response.HasResponseError(out var responseError)
+                    ? TryExtractErrorDetail(responseError.Content)
+                    : null;
+
+                if (detail is not null)
+                {
+                    return statusCode == StatusCodes.Status409Conflict
+                        ? Error.Conflict($"{apiName}.{operationName}.Conflict", detail)
+                        : Error.Validation($"{apiName}.{operationName}.Validation", detail);
+                }
+
+                return Error.Failure(
                     $"{apiName}.{operationName}.HttpError",
-                    $"API call failed with status code {statusCode}."
+                    "An unexpected error occurred. Please try again."
                 );
             }
         }
@@ -207,7 +225,53 @@ internal sealed class ApiExecutor(
             ex
         );
 
-        return Error.Failure($"{apiName}.{operationName}.Exception", ex.Message);
+        var detail = ex is ApiException apiException && httpStatusCode is >= 400 and < 500
+            ? TryExtractErrorDetail(apiException.Content)
+            : null;
+
+        return Error.Failure($"{apiName}.{operationName}.Exception", detail ?? ex.Message);
+    }
+
+    /// <summary>
+    /// Pulls a human-readable message out of a FastEndpoints <c>ErrorResponse</c> body
+    /// (<c>{ "message": ..., "errors": { "field": ["..."] } }</c>), preferring the flattened
+    /// validation/conflict messages over the generic wrapper message. Returns null on anything
+    /// that doesn't parse, so callers can fall back to a generic message instead of showing raw JSON.
+    /// </summary>
+    private static string? TryExtractErrorDetail(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return null;
+        }
+
+        try
+        {
+            var payload = JsonSerializer.Deserialize<FastEndpointsErrorPayload>(content, JsonSerializerOptions.Web);
+
+            var messages = payload?.Errors.Values
+                .SelectMany(fieldErrors => fieldErrors)
+                .Where(message => !string.IsNullOrWhiteSpace(message))
+                .ToList();
+
+            if (messages is { Count: > 0 })
+            {
+                return string.Join(" ", messages);
+            }
+
+            return string.IsNullOrWhiteSpace(payload?.Message) ? null : payload.Message;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private sealed class FastEndpointsErrorPayload
+    {
+        public string Message { get; init; } = string.Empty;
+
+        public Dictionary<string, List<string>> Errors { get; init; } = [];
     }
 
     /// <summary>

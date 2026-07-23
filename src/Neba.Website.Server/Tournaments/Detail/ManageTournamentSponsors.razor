@@ -21,7 +21,8 @@
 
     @if (_errorMessage is not null)
     {
-        <p class="mts-panel__error" role="alert">@_errorMessage</p>
+        <NebaAlert Severity="NotifySeverity.Error" Title="Couldn't Update Sponsors" Message="@_errorMessage"
+                   Dismissible="true" OnDismiss="@(() => _errorMessage = null)" />
     }
 
     @if (Sponsors.Count == 0)

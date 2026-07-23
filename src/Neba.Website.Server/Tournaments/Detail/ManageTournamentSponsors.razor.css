@@ -24,15 +24,6 @@
     border-radius: var(--neba-radius-lg);
 }
 
-.mts-panel__error {
-    padding: 0.75rem 1rem;
-    margin-bottom: 1rem;
-    border-radius: var(--neba-radius);
-    background-color: rgba(204, 8, 10, 0.08);
-    color: var(--neba-accent-red);
-    font-size: 0.875rem;
-}
-
 .mts-row {
     display: flex;
     align-items: center;
@@ -124,15 +115,56 @@
     color: var(--neba-gray-500);
 }
 
-::deep .mts-checkbox {
+::deep .mts-currency-input {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
 }
 
-::deep .mts-checkbox label {
-    margin: 0;
-    font-weight: 500;
+::deep .mts-currency-input__prefix {
+    position: absolute;
+    left: 0.75rem;
+    color: var(--neba-gray-500);
+    font-size: 0.9375rem;
+    pointer-events: none;
+}
+
+::deep .mts-currency-input__field {
+    padding-left: 1.75rem;
+}
+
+::deep .mts-title-sponsor {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.75rem 0.875rem;
+    margin-bottom: 1rem;
+    background: var(--neba-blue-100);
+    border: 1px solid var(--neba-blue-200);
+    border-radius: var(--neba-radius-lg);
+    cursor: pointer;
+}
+
+::deep .mts-title-sponsor input[type="checkbox"] {
+    margin-top: 0.1875rem;
+    flex-shrink: 0;
+}
+
+::deep .mts-title-sponsor__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+::deep .mts-title-sponsor__label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--neba-gray-700);
+}
+
+::deep .mts-title-sponsor__hint {
+    font-size: 0.75rem;
+    color: var(--neba-gray-500);
 }
 
 ::deep .mts-modal-actions {
