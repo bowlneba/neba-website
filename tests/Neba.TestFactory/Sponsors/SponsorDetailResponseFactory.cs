@@ -48,7 +48,8 @@ public static class SponsorDetailResponseFactory
         string? businessCountry = null,
         string? businessEmailAddress = null,
         IReadOnlyCollection<PhoneNumberResponse>? phoneNumbers = null,
-        SponsorContactResponse? contact = null)
+        SponsorContactResponse? contact = null,
+        IReadOnlyCollection<SponsorDetailTournamentResponse>? tournamentsSponsored = null)
             => new()
             {
                 Id = id?.Value ?? Ulid.Parse(ValidId, CultureInfo.InvariantCulture),
@@ -78,6 +79,7 @@ public static class SponsorDetailResponseFactory
                 BusinessEmailAddress = businessEmailAddress ?? ValidBusinessEmailAddress,
                 PhoneNumbers = phoneNumbers ?? [PhoneNumberResponseFactory.Create()],
                 Contact = contact,
+                TournamentsSponsored = tournamentsSponsored ?? [],
             };
 #pragma warning restore S107
 
@@ -113,6 +115,7 @@ public static class SponsorDetailResponseFactory
             BusinessEmailAddress = faker.Internet.Email(),
             PhoneNumbers = PhoneNumberResponseFactory.Bogus(2, faker),
             Contact = SponsorContactResponseFactory.Bogus(1, faker).Single(),
+            TournamentsSponsored = SponsorDetailTournamentResponseFactory.Bogus(faker.Random.Int(0, 3), faker),
         })];
     }
 

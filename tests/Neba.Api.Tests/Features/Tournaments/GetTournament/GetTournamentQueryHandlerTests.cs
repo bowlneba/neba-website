@@ -248,4 +248,38 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         mappedSponsor.TitleSponsor.ShouldBeTrue();
         mappedSponsor.SponsorshipAmount.ShouldBe(1234.56m);
     }
+
+    [Fact(DisplayName = "HandleAsync orders sponsors with the title sponsor first, then alphabetically by name")]
+    public async Task HandleAsync_ShouldOrderSponsors_WithTitleSponsorFirstThenAlphabeticalByName()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var zetaSponsor = SponsorFactory.Create(name: "Zeta Bowling", slug: "zeta-bowling");
+        var alphaSponsor = SponsorFactory.Create(name: "Alpha Lanes", slug: "alpha-lanes");
+        var titleSponsor = SponsorFactory.Create(name: "Mid Title Sponsor", slug: "mid-title-sponsor");
+        await _dbContext.Sponsors.AddRangeAsync([zetaSponsor, alphaSponsor, titleSponsor], ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        tournament.AddSponsor(zetaSponsor.Id, titleSponsor: false, sponsorshipAmount: 100m);
+        tournament.AddSponsor(alphaSponsor.Id, titleSponsor: false, sponsorshipAmount: 100m);
+        tournament.AddSponsor(titleSponsor.Id, titleSponsor: true, sponsorshipAmount: 5000m);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Sponsors.Select(s => s.Name).ShouldBe(["Mid Title Sponsor", "Alpha Lanes", "Zeta Bowling"]);
+    }
 }

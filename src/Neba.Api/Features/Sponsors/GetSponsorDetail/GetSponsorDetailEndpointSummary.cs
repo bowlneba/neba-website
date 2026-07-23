@@ -29,6 +29,7 @@ internal sealed class GetSponsorDetailEndpointSummary
                 Category = SponsorCategory.Manufacturer.Name,
                 TagPhrase = "The best in bowling",
                 PhoneNumbers = [],
+                TournamentsSponsored = [],
             });
 
         Response(404, "Sponsor not found.");

@@ -152,4 +152,9 @@ public sealed record SponsorDetailResponse
     /// The sponsor's internal contact person. Only returned to callers with sponsor-management permission.
     /// </summary>
     public SponsorContactResponse? Contact { get; init; }
+
+    /// <summary>
+    /// Tournaments sponsored by this sponsor, most recent first.
+    /// </summary>
+    public required IReadOnlyCollection<SponsorDetailTournamentResponse> TournamentsSponsored { get; init; }
 }

@@ -47,6 +47,11 @@ public sealed class SecurityRoleSeederTests
             SetupRoleAlreadySynced(mock, Roles.Webmaster, [Permissions.CreateArticle, Permissions.EditArticle, Permissions.DeleteArticle, Permissions.CreateSponsor, Permissions.EditSponsor, Permissions.CreateTournament, Permissions.ManageTournamentSponsors]);
         }
 
+        if (roleUnderTest != Roles.Manager)
+        {
+            SetupRoleAlreadySynced(mock, Roles.Manager, [Permissions.CreateArticle, Permissions.EditArticle, Permissions.DeleteArticle, Permissions.CreateSponsor, Permissions.EditSponsor, Permissions.CreateTournament, Permissions.ManageTournamentSponsors]);
+        }
+
         if (roleUnderTest != Roles.TournamentDirector)
         {
             SetupRoleAlreadySynced(mock, Roles.TournamentDirector, [Permissions.CreateTournament, Permissions.ManageTournamentSponsors]);
@@ -248,6 +253,90 @@ public sealed class SecurityRoleSeederTests
                     It.Is<Claim>(c => c.Type == SecurityRoleSeeder.PermissionClaimType && c.Value == permission.Value)))
                 .ReturnsAsync(IdentityResult.Success);
         }
+
+        // Act
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+
+        // Assert
+        roleManagerMock.VerifyAll();
+    }
+
+    [Fact(DisplayName = "SeedAsync should create the Manager role and add exactly the CreateArticle, EditArticle, DeleteArticle, CreateSponsor, EditSponsor, CreateTournament, and ManageTournamentSponsors permission claims when the role does not exist")]
+    public async Task SeedAsync_ShouldCreateManagerRoleAndAddExpectedClaims_WhenRoleDoesNotExist()
+    {
+        // Arrange
+        var expectedPermissions = new[]
+        {
+            Permissions.CreateArticle,
+            Permissions.EditArticle,
+            Permissions.DeleteArticle,
+            Permissions.CreateSponsor,
+            Permissions.EditSponsor,
+            Permissions.CreateTournament,
+            Permissions.ManageTournamentSponsors
+        };
+
+        var roleManagerMock = CreateRoleManagerMock();
+        SetupOtherRolesAlreadySynced(roleManagerMock, Roles.Manager);
+
+        roleManagerMock
+            .Setup(m => m.FindByNameAsync(Roles.Manager))
+            .ReturnsAsync((ApplicationRole?)null);
+        roleManagerMock
+            .Setup(m => m.CreateAsync(It.Is<ApplicationRole>(r => r.Name == Roles.Manager)))
+            .ReturnsAsync(IdentityResult.Success);
+        roleManagerMock
+            .Setup(m => m.GetClaimsAsync(It.Is<ApplicationRole>(r => r.Name == Roles.Manager)))
+            .ReturnsAsync([]);
+
+        foreach (var permission in expectedPermissions)
+        {
+            roleManagerMock
+                .Setup(m => m.AddClaimAsync(
+                    It.Is<ApplicationRole>(r => r.Name == Roles.Manager),
+                    It.Is<Claim>(c => c.Type == SecurityRoleSeeder.PermissionClaimType && c.Value == permission.Value)))
+                .ReturnsAsync(IdentityResult.Success);
+        }
+
+        // Act
+        await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);
+
+        // Assert
+        roleManagerMock.VerifyAll();
+    }
+
+    [Fact(DisplayName = "SeedAsync should remove a stale permission claim that is no longer in the Manager role's permissions list")]
+    public async Task SeedAsync_ShouldRemoveStalePermissionClaim_WhenClaimIsNotInManagerPermissionsList()
+    {
+        // Arrange
+        var existingRole = ApplicationRoleFactory.Create(name: Roles.Manager);
+        var staleClaim = new Claim(SecurityRoleSeeder.PermissionClaimType, "Obsolete");
+        var existingClaims = new[]
+            {
+                Permissions.CreateArticle,
+                Permissions.EditArticle,
+                Permissions.DeleteArticle,
+                Permissions.CreateSponsor,
+                Permissions.EditSponsor,
+                Permissions.CreateTournament,
+                Permissions.ManageTournamentSponsors
+            }
+            .Select(p => new Claim(SecurityRoleSeeder.PermissionClaimType, p.Value))
+            .Append(staleClaim)
+            .ToList();
+
+        var roleManagerMock = CreateRoleManagerMock();
+        SetupOtherRolesAlreadySynced(roleManagerMock, Roles.Manager);
+
+        roleManagerMock
+            .Setup(m => m.FindByNameAsync(Roles.Manager))
+            .ReturnsAsync(existingRole);
+        roleManagerMock
+            .Setup(m => m.GetClaimsAsync(existingRole))
+            .ReturnsAsync(existingClaims);
+        roleManagerMock
+            .Setup(m => m.RemoveClaimAsync(existingRole, staleClaim))
+            .ReturnsAsync(IdentityResult.Success);
 
         // Act
         await SecurityRoleSeeder.SeedAsync(roleManagerMock.Object);

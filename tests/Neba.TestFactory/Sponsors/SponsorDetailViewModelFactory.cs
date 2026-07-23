@@ -43,7 +43,8 @@ public static class SponsorDetailViewModelFactory
         string? businessCountry = null,
         string? contactEmail = null,
         IReadOnlyCollection<PhoneNumberResponse>? phoneNumbers = null,
-        SponsorContactResponse? contact = null)
+        SponsorContactResponse? contact = null,
+        IReadOnlyCollection<SponsorDetailTournamentViewModel>? tournamentsSponsored = null)
         => new()
         {
             Id = id ?? Ulid.Parse(ValidId, CultureInfo.InvariantCulture),
@@ -69,6 +70,7 @@ public static class SponsorDetailViewModelFactory
             ContactEmail = contactEmail ?? ValidContactEmail,
             PhoneNumbers = phoneNumbers ?? [PhoneNumberResponseFactory.Create()],
             Contact = contact,
+            TournamentsSponsored = tournamentsSponsored ?? [],
         };
 
     internal static IReadOnlyCollection<SponsorDetailViewModel> Bogus(int count, Faker faker)
@@ -99,6 +101,7 @@ public static class SponsorDetailViewModelFactory
             ContactEmail = faker.Internet.Email(),
             PhoneNumbers = PhoneNumberResponseFactory.Bogus(1, faker),
             Contact = SponsorContactResponseFactory.Bogus(1, faker).Single(),
+            TournamentsSponsored = SponsorDetailTournamentViewModelFactory.Bogus(faker.Random.Int(0, 3), faker),
         })];
     }
 

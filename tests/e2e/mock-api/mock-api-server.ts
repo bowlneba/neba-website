@@ -180,6 +180,15 @@ const MOCK_SPONSOR_PRO_SHOP_PLUS = {
   sponsorContactEmailAddress: null,
   sponsorContactPhoneNumber: null,
   sponsorContactPhoneNumberType: null,
+  tournamentsSponsored: [
+    {
+      tournamentId: '01JX0000000000000000000010', // MOCK_TOURNAMENT_ID
+      name: 'NEBA Spring Classic',
+      startDate: '2024-09-21',
+      endDate: '2024-09-21',
+      titleSponsor: true,
+    },
+  ],
 };
 
 // 'old-sponsor' deliberately has no mock route: it's inactive, and the real API returns
@@ -275,7 +284,28 @@ export const MOCK_TOURNAMENT_DETAIL = {
   patternRatioCategory: null,
   logoUrl: null,
   bowlingCenter: { name: 'Lucky Strike Lanes', city: 'Boston', state: 'MA' },
-  sponsors: [],
+  sponsors: [
+    {
+      sponsorId: '01JX0000000000000000000001',
+      name: 'Pro Shop Plus',
+      slug: 'pro-shop-plus',
+      logoUrl: null,
+      websiteUrl: null,
+      tagPhrase: null,
+      titleSponsor: true,
+      sponsorshipAmount: 1000,
+    },
+    {
+      sponsorId: '01JX0000000000000000000102',
+      name: 'Regional Lanes',
+      slug: 'regional-lanes',
+      logoUrl: null,
+      websiteUrl: null,
+      tagPhrase: null,
+      titleSponsor: false,
+      sponsorshipAmount: 250,
+    },
+  ],
   oilPatterns: [{ name: 'Scorpion', length: 42, volume: 24.5, leftRatio: 3, rightRatio: 3 }],
   winners: ['Current Leader'],
   results: [],

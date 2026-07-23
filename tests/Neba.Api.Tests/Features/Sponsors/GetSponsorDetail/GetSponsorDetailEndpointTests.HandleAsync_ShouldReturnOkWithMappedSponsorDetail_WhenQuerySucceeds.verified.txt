@@ -23,5 +23,21 @@ Quas voluptatibus at rerum est impedit in ut esse.,
       PhoneNumberType: Home,
       PhoneNumber: 13726933769
     }
+  ],
+  TournamentsSponsored: [
+    {
+      TournamentId: 01J45X6X1K2EBY45A7TYTN967A,
+      Name: Compatible bifurcated implementation,
+      StartDate: Date_1,
+      EndDate: Date_2,
+      TitleSponsor: true
+    },
+    {
+      TournamentId: 01HQFSF25V4D3JH1MYMMCK6JVW,
+      Name: Team-oriented logistical methodology,
+      StartDate: Date_3,
+      EndDate: Date_4,
+      TitleSponsor: false
+    }
   ]
 }

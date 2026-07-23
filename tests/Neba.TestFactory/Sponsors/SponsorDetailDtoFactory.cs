@@ -34,7 +34,8 @@ public static class SponsorDetailDtoFactory
         AddressDto? businessAddress = null,
         string? businessEmail = null,
         IReadOnlyCollection<PhoneNumberDto>? phoneNumbers = null,
-        SponsorContactDto? contact = null)
+        SponsorContactDto? contact = null,
+        IReadOnlyCollection<SponsorDetailTournamentDto>? tournamentsSponsored = null)
             => new()
             {
                 Id = id ?? SponsorId.New(),
@@ -60,6 +61,7 @@ public static class SponsorDetailDtoFactory
                 BusinessEmailAddress = businessEmail,
                 PhoneNumbers = phoneNumbers ?? [],
                 Contact = contact,
+                TournamentsSponsored = tournamentsSponsored ?? [],
             };
 #pragma warning restore S107
 
@@ -100,6 +102,7 @@ public static class SponsorDetailDtoFactory
                 BusinessEmailAddress = businessEmailPool.GetNextNullable()?.Value,
                 PhoneNumbers = [.. new[] { phoneNumberPool.GetNext(), phoneNumberPool.GetNext() }.DistinctBy(p => p.PhoneNumberType)],
                 Contact = contactPool.GetNextNullable(),
+                TournamentsSponsored = SponsorDetailTournamentDtoFactory.Bogus(faker.Random.Int(0, 3), faker),
             };
         })];
     }

@@ -5,8 +5,10 @@ using Neba.Api.Storage;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Contact;
 using Neba.TestFactory.Infrastructure;
+using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Sponsors;
 using Neba.TestFactory.Storage;
+using Neba.TestFactory.Tournaments;
 
 namespace Neba.Api.Tests.Features.Sponsors.GetSponsorDetail;
 
@@ -278,5 +280,49 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
         result.Value.LogoPath.ShouldBeNull();
         result.Value.LogoContentType.ShouldBeNull();
         result.Value.LogoSizeInBytes.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "HandleAsync returns tournaments sponsored ordered by most recent start date first")]
+    public async Task HandleAsync_ShouldReturnTournamentsSponsored_OrderedByMostRecentStartDateFirst()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var sponsor = SponsorFactory.Create(slug: "tournament-sponsor");
+        await _dbContext.Sponsors.AddAsync(sponsor, ct);
+
+        var olderTournament = TournamentFactory.Create(
+            name: "Older Tournament",
+            seasonId: season.Id,
+            startDate: new DateOnly(2025, 1, 10),
+            endDate: new DateOnly(2025, 1, 11));
+        var newerTournament = TournamentFactory.Create(
+            name: "Newer Tournament",
+            seasonId: season.Id,
+            startDate: new DateOnly(2025, 6, 1),
+            endDate: new DateOnly(2025, 6, 2));
+        await _dbContext.Tournaments.AddRangeAsync([olderTournament, newerTournament], ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        olderTournament.AddSponsor(sponsor.Id, titleSponsor: false, sponsorshipAmount: 100m);
+        newerTournament.AddSponsor(sponsor.Id, titleSponsor: true, sponsorshipAmount: 500m);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new GetSponsorDetailQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(QueryFor("tournament-sponsor"), ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.TournamentsSponsored.Select(t => t.Name).ShouldBe(["Newer Tournament", "Older Tournament"]);
+        var newer = result.Value.TournamentsSponsored.First();
+        newer.TournamentId.ShouldBe(newerTournament.Id.Value.ToString());
+        newer.StartDate.ShouldBe(new DateOnly(2025, 6, 1));
+        newer.EndDate.ShouldBe(new DateOnly(2025, 6, 2));
+        newer.TitleSponsor.ShouldBeTrue();
     }
 }

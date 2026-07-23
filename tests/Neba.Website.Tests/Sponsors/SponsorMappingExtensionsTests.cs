@@ -90,4 +90,26 @@ public sealed class SponsorMappingExtensionsTests
         viewModel.PromotionalNotes.ShouldBeNull();
         viewModel.Contact.ShouldBeNull();
     }
+
+    [Fact(DisplayName = "Maps TournamentsSponsored from detail response to view model")]
+    public void ToViewModel_ShouldMapTournamentsSponsored_FromDetailResponse()
+    {
+        // Arrange
+        var tournament = SponsorDetailTournamentResponseFactory.Create(
+            name: "NEBA Championship",
+            titleSponsor: true);
+        var response = SponsorDetailResponseFactory.Create(tournamentsSponsored: [tournament]);
+
+        // Act
+        var viewModel = response.ToViewModel();
+
+        // Assert
+        viewModel.TournamentsSponsored.ShouldHaveSingleItem();
+        var mapped = viewModel.TournamentsSponsored.Single();
+        mapped.TournamentId.ShouldBe(tournament.TournamentId);
+        mapped.Name.ShouldBe(tournament.Name);
+        mapped.StartDate.ShouldBe(tournament.StartDate);
+        mapped.EndDate.ShouldBe(tournament.EndDate);
+        mapped.TitleSponsor.ShouldBeTrue();
+    }
 }

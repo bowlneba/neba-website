@@ -146,6 +146,8 @@ internal sealed class GetTournamentQueryHandler(
                 TitleSponsor = s.TitleSponsor,
                 SponsorshipAmount = s.SponsorshipAmount,
             })
+            .OrderByDescending(s => s.TitleSponsor)
+            .ThenBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
         return new TournamentDetailDto

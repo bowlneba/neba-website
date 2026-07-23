@@ -26,6 +26,22 @@ test.describe('Tournament Detail page', () => {
     await page.locator('.tournament-detail__back-link').click();
     await expect(page).toHaveURL('/tournaments');
   });
+
+  test('displays the title sponsor name in the "Presented by" hero text', async ({ page }) => {
+    await expect(page.locator('.td-hero__sponsor')).toContainText('Pro Shop Plus');
+  });
+
+  test('renders sponsor cards for every tournament sponsor', async ({ page }) => {
+    const cards = page.locator('.td-rail-sponsor-card');
+    await expect(cards).toHaveCount(2);
+    await expect(cards.nth(0)).toContainText('Pro Shop Plus');
+    await expect(cards.nth(1)).toContainText('Regional Lanes');
+  });
+
+  test('clicking a sponsor card navigates to the sponsor detail page', async ({ page }) => {
+    await page.locator('.td-rail-sponsor-card', { hasText: 'Pro Shop Plus' }).click();
+    await expect(page).toHaveURL('/sponsors/pro-shop-plus');
+  });
 });
 
 test.describe('Tournament Detail — not found', () => {
