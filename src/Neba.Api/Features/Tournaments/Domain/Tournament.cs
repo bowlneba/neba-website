@@ -189,6 +189,23 @@ public sealed class Tournament
 
         return Result.Success;
     }
+    
+    /// <summary>
+    /// Removes a sponsor; returns an error if the sponsor isn't currently attached.
+    /// </summary>
+    public ErrorOr<Deleted> RemoveSponsor(SponsorId sponsorId)
+    {
+        var sponsor = _sponsors.SingleOrDefault(tournamentSponsor => tournamentSponsor.SponsorId == sponsorId);
+
+        if (sponsor is null)
+        {
+            return TournamentErrors.SponsorNotAttached(sponsorId);
+        }
+
+        _sponsors.Remove(sponsor);
+
+        return Result.Deleted;
+    }
 
     private readonly List<Article> _articles = [];
 

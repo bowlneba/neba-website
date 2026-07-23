@@ -1,3 +1,5 @@
+using ErrorOr;
+
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Sponsors.Domain;
@@ -317,6 +319,90 @@ public sealed class TournamentTests
 
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("TournamentSponsor.NegativeSponsorshipAmount");
+    }
+
+    [Fact(DisplayName = "RemoveSponsor returns Deleted when sponsor is attached")]
+    public void RemoveSponsor_ShouldReturnDeleted_WhenSponsorIsAttached()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var sponsorId = SponsorId.New();
+        tournament.AddSponsor(sponsorId, titleSponsor: false, sponsorshipAmount: 500m);
+
+        // Act
+        var result = tournament.RemoveSponsor(sponsorId);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.ShouldBe(Result.Deleted);
+    }
+
+    [Fact(DisplayName = "RemoveSponsor removes sponsor from the collection when sponsor is attached")]
+    public void RemoveSponsor_ShouldRemoveSponsorFromCollection_WhenSponsorIsAttached()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var sponsorId = SponsorId.New();
+        tournament.AddSponsor(sponsorId, titleSponsor: false, sponsorshipAmount: 500m);
+
+        // Act
+        tournament.RemoveSponsor(sponsorId);
+
+        // Assert
+        tournament.Sponsors.ShouldNotContain(s => s.SponsorId == sponsorId);
+    }
+
+    [Fact(DisplayName = "RemoveSponsor only removes the specified sponsor, leaving others intact")]
+    public void RemoveSponsor_ShouldOnlyRemoveSpecifiedSponsor_WhenMultipleSponsorsAttached()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var sponsorIdToRemove = SponsorId.New();
+        var sponsorIdToKeep = SponsorId.New();
+        tournament.AddSponsor(sponsorIdToRemove, titleSponsor: false, sponsorshipAmount: 500m);
+        tournament.AddSponsor(sponsorIdToKeep, titleSponsor: false, sponsorshipAmount: 750m);
+
+        // Act
+        tournament.RemoveSponsor(sponsorIdToRemove);
+
+        // Assert
+        tournament.Sponsors.Count.ShouldBe(1);
+        tournament.Sponsors.ShouldContain(s => s.SponsorId == sponsorIdToKeep);
+    }
+
+    [Fact(DisplayName = "RemoveSponsor returns Tournament.SponsorNotAttached when sponsor was never added")]
+    public void RemoveSponsor_ShouldReturnError_WhenSponsorWasNeverAdded()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var sponsorId = SponsorId.New();
+
+        // Act
+        var result = tournament.RemoveSponsor(sponsorId);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.SponsorNotAttached");
+        result.FirstError.Metadata.ShouldNotBeNull();
+        result.FirstError.Metadata.ShouldContainKey("SponsorId");
+        result.FirstError.Metadata["SponsorId"].ShouldBe(sponsorId.ToString());
+    }
+
+    [Fact(DisplayName = "RemoveSponsor returns Tournament.SponsorNotAttached when sponsor was already removed")]
+    public void RemoveSponsor_ShouldReturnError_WhenSponsorWasAlreadyRemoved()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var sponsorId = SponsorId.New();
+        tournament.AddSponsor(sponsorId, titleSponsor: false, sponsorshipAmount: 500m);
+        tournament.RemoveSponsor(sponsorId);
+
+        // Act
+        var result = tournament.RemoveSponsor(sponsorId);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.SponsorNotAttached");
     }
 
     [Fact(DisplayName = "AddOilPattern returns Success when oil pattern is new")]

@@ -95,4 +95,22 @@ internal static class TournamentErrors
             code: "Tournament.BowlingCenterNotFound",
             description: "The specified bowling center was not found.",
             metadata: new Dictionary<string, object> { { "CertificationNumber", id.Value } });
+    
+    public static Error SponsorNotFound(SponsorId sponsorId)
+        => Error.Validation(
+            code: "Tournament.SponsorNotFound",
+            description: "The specified sponsor was not found.",
+            metadata: new Dictionary<string, object>
+            {
+                { "SponsorId", sponsorId.ToString() }
+            });
+
+    public static Error SponsorNotAttached(SponsorId sponsorId)
+        => Error.Conflict(
+            code: "Tournament.SponsorNotAttached",
+            description: "The specified sponsor is not attached to this tournament.",
+            metadata: new Dictionary<string, object>
+            {
+                { "SponsorId", sponsorId.ToString() }
+            });
 }
