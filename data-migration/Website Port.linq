@@ -80,6 +80,14 @@ public async Task SecurityMigration()
 		ConcurrencyStamp = "8313d897-8063-4fed-b54f-3e9ca2083e76"
 	};
 
+	var tournamentDirectorRole = new AspNetRoles
+	{
+		Id = Ulid.NewUlid().ToString(),
+		Name = "Tournament Director",
+		NormalizedName = "TOURNAMENT DIRECTOR",
+		ConcurrencyStamp = "0caadad0-3936-4ffe-8232-06536e17ea3a"
+	};
+
 	var memberRole = new AspNetRoles
 	{
 		Id = Ulid.NewUlid().ToString(),
@@ -88,7 +96,7 @@ public async Task SecurityMigration()
 		ConcurrencyStamp = "04b970f3-a2cf-44b1-bae4-3570ae290d29"
 	};
 	
-	AspNetRoles.AddRange(adminRole, webmasterRole, memberRole);
+	AspNetRoles.AddRange(adminRole, webmasterRole, tournamentDirectorRole, memberRole);
 
 	var hasher = new PasswordHasher<AspNetUsers>();
 	var adminUser = new AspNetUsers

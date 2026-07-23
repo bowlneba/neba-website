@@ -16,6 +16,11 @@ public static class Roles
     public const string Webmaster = nameof(Webmaster);
 
     /// <summary>
+    /// Tournament Director role with access to tournament management features.
+    /// </summary>
+    public const string TournamentDirector = "Tournament Director";
+
+    /// <summary>
     /// Member role with access to standard user features.
     /// </summary>
     public const string Member = nameof(Member);
