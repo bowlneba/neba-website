@@ -413,7 +413,7 @@
 
     private void HandleCancel() => NavigationManager.NavigateTo($"/tournaments/{Id}");
 
-    private async Task<EditTournamentInput> BuildTournamentInputAsync() => new()
+    private async Task<TournamentInput> BuildTournamentInputAsync() => new()
     {
         Name = _model.Name,
         TournamentType = _model.TournamentType,

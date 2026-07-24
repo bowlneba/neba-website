@@ -1,3 +1,5 @@
+using Neba.Api.Contracts.Tournaments.CreateTournament;
+
 namespace Neba.Api.Contracts.Tournaments.EditTournament;
 
 /// <summary>
@@ -11,7 +13,8 @@ public sealed record EditTournamentRequest
     public required string Id { get; init; }
 
     /// <summary>
-    /// The tournament fields to update.
+    /// The tournament fields to update. Every field on a tournament is editable, so this reuses
+    /// <see cref="TournamentInput"/> rather than declaring a separate, identical shape.
     /// </summary>
-    public required EditTournamentInput Tournament { get; init; }
+    public required TournamentInput Tournament { get; init; }
 }

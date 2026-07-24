@@ -1,3 +1,4 @@
+using Neba.Api.Contracts.Tournaments.CreateTournament;
 using Neba.Api.Contracts.Tournaments.EditTournament;
 using Neba.Api.Features.Tournaments.EditTournament;
 using Neba.TestFactory.Attributes;
@@ -11,8 +12,8 @@ public sealed class EditTournamentRequestValidatorTests
 {
     private readonly EditTournamentRequestValidator _validator = new();
 
-    private static EditTournamentRequest ValidRequest(EditTournamentInput? tournament = null)
-        => new() { Id = "01J7ZK8X6ZQJ8V3F8N9T9C9R2E", Tournament = tournament ?? EditTournamentInputFactory.Create() };
+    private static EditTournamentRequest ValidRequest(TournamentInput? tournament = null)
+        => new() { Id = "01J7ZK8X6ZQJ8V3F8N9T9C9R2E", Tournament = tournament ?? TournamentInputFactory.Create() };
 
     [Fact(DisplayName = "Validate should succeed when all fields are valid")]
     public void Validate_ShouldSucceed_WhenAllFieldsAreValid()
@@ -60,7 +61,7 @@ public sealed class EditTournamentRequestValidatorTests
     public void Validate_ShouldFailWithNameRequired_WhenNameIsEmpty()
     {
         // Arrange
-        var request = ValidRequest(EditTournamentInputFactory.Create(name: string.Empty));
+        var request = ValidRequest(TournamentInputFactory.Create(name: string.Empty));
 
         // Act
         var result = _validator.Validate(request);
@@ -74,7 +75,7 @@ public sealed class EditTournamentRequestValidatorTests
     public void Validate_ShouldFailWithNameTooLong_WhenNameExceeds127Characters()
     {
         // Arrange
-        var request = ValidRequest(EditTournamentInputFactory.Create(name: new string('a', 128)));
+        var request = ValidRequest(TournamentInputFactory.Create(name: new string('a', 128)));
 
         // Act
         var result = _validator.Validate(request);
@@ -88,7 +89,7 @@ public sealed class EditTournamentRequestValidatorTests
     public void Validate_ShouldFailWithTournamentTypeRequired_WhenTournamentTypeIsEmpty()
     {
         // Arrange
-        var request = ValidRequest(EditTournamentInputFactory.Create(tournamentType: string.Empty));
+        var request = ValidRequest(TournamentInputFactory.Create(tournamentType: string.Empty));
 
         // Act
         var result = _validator.Validate(request);
@@ -102,7 +103,7 @@ public sealed class EditTournamentRequestValidatorTests
     public void Validate_ShouldFailWithTournamentTypeInvalid_WhenTournamentTypeIsUnknown()
     {
         // Arrange
-        var request = ValidRequest(EditTournamentInputFactory.Create(tournamentType: "NotARealType"));
+        var request = ValidRequest(TournamentInputFactory.Create(tournamentType: "NotARealType"));
 
         // Act
         var result = _validator.Validate(request);
@@ -116,7 +117,7 @@ public sealed class EditTournamentRequestValidatorTests
     public void Validate_ShouldFailWithEndDateBeforeStartDate_WhenEndDatePrecedesStartDate()
     {
         // Arrange
-        var request = ValidRequest(EditTournamentInputFactory.Create(
+        var request = ValidRequest(TournamentInputFactory.Create(
             startDate: new DateOnly(2025, 10, 5),
             endDate: new DateOnly(2025, 10, 4)));
 
@@ -132,7 +133,7 @@ public sealed class EditTournamentRequestValidatorTests
     public void Validate_ShouldFailWithEntryFeeInvalid_WhenEntryFeeIsNegative()
     {
         // Arrange
-        var request = ValidRequest(EditTournamentInputFactory.Create(entryFee: -1m));
+        var request = ValidRequest(TournamentInputFactory.Create(entryFee: -1m));
 
         // Act
         var result = _validator.Validate(request);
@@ -146,7 +147,7 @@ public sealed class EditTournamentRequestValidatorTests
     public void Validate_ShouldFailWithNebaAddedMoneyInvalid_WhenNebaAddedMoneyIsNegative()
     {
         // Arrange
-        var request = ValidRequest(EditTournamentInputFactory.Create(nebaAddedMoney: -1m));
+        var request = ValidRequest(TournamentInputFactory.Create(nebaAddedMoney: -1m));
 
         // Act
         var result = _validator.Validate(request);
@@ -160,7 +161,7 @@ public sealed class EditTournamentRequestValidatorTests
     public void Validate_ShouldFailWithExternalRegistrationUrlInvalid_WhenUrlIsRelative()
     {
         // Arrange
-        var request = ValidRequest(EditTournamentInputFactory.Create(
+        var request = ValidRequest(TournamentInputFactory.Create(
             externalRegistrationUrl: new Uri("/register", UriKind.Relative)));
 
         // Act
@@ -175,7 +176,7 @@ public sealed class EditTournamentRequestValidatorTests
     public void Validate_ShouldSucceed_WhenExternalRegistrationUrlIsNotSupplied()
     {
         // Arrange
-        var request = ValidRequest(EditTournamentInputFactory.Create(externalRegistrationUrl: null));
+        var request = ValidRequest(TournamentInputFactory.Create(externalRegistrationUrl: null));
 
         // Act
         var result = _validator.Validate(request);
@@ -188,7 +189,7 @@ public sealed class EditTournamentRequestValidatorTests
     public void Validate_ShouldFailWithPatternLengthCategoryInvalid_WhenCategoryNameIsUnknown()
     {
         // Arrange
-        var request = ValidRequest(EditTournamentInputFactory.Create(patternLengthCategory: "NotARealCategory"));
+        var request = ValidRequest(TournamentInputFactory.Create(patternLengthCategory: "NotARealCategory"));
 
         // Act
         var result = _validator.Validate(request);
@@ -202,7 +203,7 @@ public sealed class EditTournamentRequestValidatorTests
     public void Validate_ShouldFailWithPatternRatioCategoryInvalid_WhenCategoryNameIsUnknown()
     {
         // Arrange
-        var request = ValidRequest(EditTournamentInputFactory.Create(patternRatioCategory: "NotARealCategory"));
+        var request = ValidRequest(TournamentInputFactory.Create(patternRatioCategory: "NotARealCategory"));
 
         // Act
         var result = _validator.Validate(request);
@@ -216,7 +217,7 @@ public sealed class EditTournamentRequestValidatorTests
     public void Validate_ShouldFailWithOilPatternAndManualCategoriesConflict_WhenBothSupplied()
     {
         // Arrange
-        var request = ValidRequest(EditTournamentInputFactory.Create(
+        var request = ValidRequest(TournamentInputFactory.Create(
             oilPatternId: "01J7ZK8X6ZQJ8V3F8N9T9C9R2E",
             patternLengthCategory: "Long"));
 
@@ -232,7 +233,7 @@ public sealed class EditTournamentRequestValidatorTests
     public void Validate_ShouldSucceed_WhenOnlyOilPatternIsSupplied()
     {
         // Arrange
-        var request = ValidRequest(EditTournamentInputFactory.Create(oilPatternId: "01J7ZK8X6ZQJ8V3F8N9T9C9R2E"));
+        var request = ValidRequest(TournamentInputFactory.Create(oilPatternId: "01J7ZK8X6ZQJ8V3F8N9T9C9R2E"));
 
         // Act
         var result = _validator.Validate(request);

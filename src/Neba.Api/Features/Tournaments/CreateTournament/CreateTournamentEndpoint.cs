@@ -4,8 +4,6 @@ using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts.Tournaments.CreateTournament;
-using Neba.Api.Features.BowlingCenters.Domain;
-using Neba.Api.Features.Storage.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 
 using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
@@ -51,28 +49,12 @@ internal sealed class CreateTournamentEndpoint(Messaging.ICommandHandler<CreateT
             StatsEligible = input.StatsEligible,
             EntryFee = input.EntryFee,
             NebaAddedMoney = input.NebaAddedMoney,
-            BowlingCenterId = string.IsNullOrWhiteSpace(input.BowlingCenterCertificationNumber)
-                ? null
-                : new CertificationNumber { Value = input.BowlingCenterCertificationNumber },
+            BowlingCenterId = TournamentInputMapper.ToBowlingCenterId(input.BowlingCenterCertificationNumber),
             ExternalRegistrationUrl = input.ExternalRegistrationUrl,
-            Logo = input.Logo is null
-                ? null
-                : new StoredFile
-                {
-                    Container = input.Logo.Container,
-                    Path = input.Logo.Path,
-                    ContentType = input.Logo.ContentType,
-                    SizeInBytes = input.Logo.SizeInBytes
-                },
-            OilPatternId = string.IsNullOrWhiteSpace(input.OilPatternId)
-                ? null
-                : new OilPatternId(input.OilPatternId),
-            PatternLengthCategory = string.IsNullOrWhiteSpace(input.PatternLengthCategory)
-                ? null
-                : PatternLengthCategory.FromName(input.PatternLengthCategory),
-            PatternRatioCategory = string.IsNullOrWhiteSpace(input.PatternRatioCategory)
-                ? null
-                : PatternRatioCategory.FromName(input.PatternRatioCategory),
+            Logo = TournamentInputMapper.ToLogo(input.Logo),
+            OilPatternId = TournamentInputMapper.ToOilPatternId(input.OilPatternId),
+            PatternLengthCategory = TournamentInputMapper.ToPatternLengthCategory(input.PatternLengthCategory),
+            PatternRatioCategory = TournamentInputMapper.ToPatternRatioCategory(input.PatternRatioCategory),
             OilPatternRevealDateTime = input.OilPatternRevealDateTime
         };
 

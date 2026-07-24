@@ -22,7 +22,7 @@ public sealed class EditTournamentEndpointTests
     {
         // Arrange
         var tournamentId = TournamentId.New();
-        var input = EditTournamentInputFactory.Create(name: "Updated Tournament");
+        var input = TournamentInputFactory.Create(name: "Updated Tournament");
         var request = new EditTournamentRequest { Id = tournamentId.Value.ToString(), Tournament = input };
         var ct = TestContext.Current.CancellationToken;
 
@@ -70,7 +70,7 @@ public sealed class EditTournamentEndpointTests
             SizeInBytes = 2048
         };
         var oilPatternId = OilPatternId.New();
-        var input = EditTournamentInputFactory.Create(
+        var input = TournamentInputFactory.Create(
             bowlingCenterCertificationNumber: "12345",
             logo: logo,
             oilPatternId: oilPatternId.Value.ToString());
@@ -111,7 +111,7 @@ public sealed class EditTournamentEndpointTests
         var request = new EditTournamentRequest
         {
             Id = TournamentId.New().Value.ToString(),
-            Tournament = EditTournamentInputFactory.Create()
+            Tournament = TournamentInputFactory.Create()
         };
         var ct = TestContext.Current.CancellationToken;
 
@@ -136,14 +136,14 @@ public sealed class EditTournamentEndpointTests
         var request = new EditTournamentRequest
         {
             Id = TournamentId.New().Value.ToString(),
-            Tournament = EditTournamentInputFactory.Create()
+            Tournament = TournamentInputFactory.Create()
         };
         var ct = TestContext.Current.CancellationToken;
 
         var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<EditTournamentCommand, Updated>>(MockBehavior.Strict);
         commandHandlerMock
             .Setup(h => h.HandleAsync(It.IsAny<EditTournamentCommand>(), ct))
-            .ReturnsAsync(TournamentErrors.NoSeasonForDates(EditTournamentInputFactory.ValidStartDate, EditTournamentInputFactory.ValidEndDate));
+            .ReturnsAsync(TournamentErrors.NoSeasonForDates(TournamentInputFactory.ValidStartDate, TournamentInputFactory.ValidEndDate));
 
         var endpoint = Factory.Create<EditTournamentEndpoint>(commandHandlerMock.Object);
 
