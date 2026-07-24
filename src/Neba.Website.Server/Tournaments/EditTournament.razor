@@ -168,6 +168,7 @@
                                                    Patterns="@_oilPatterns"
                                                    OnCreatePatternRequestedAsync="CreateOilPatternAsync"
                                                    OnDirty="MarkDirty"
+                                                   InitialOilPatternId="@_tournament.OilPatterns.FirstOrDefault()?.OilPatternId"
                                                    InitialPatternLengthCategory="@_tournament.PatternLengthCategory"
                                                    InitialPatternRatioCategory="@_tournament.PatternRatioCategory" />
                             </section>

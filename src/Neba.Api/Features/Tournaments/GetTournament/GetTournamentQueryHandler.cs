@@ -91,6 +91,7 @@ internal sealed class GetTournamentQueryHandler(
                 Reservations = 999, // need to replace once actual column exists
                 OilPatterns = tournament.OilPatterns.Select(top => new
                 {
+                    top.OilPatternId,
                     top.OilPattern.Name,
                     top.OilPattern.Length,
                     top.OilPattern.Volume,
@@ -195,6 +196,7 @@ internal sealed class GetTournamentQueryHandler(
             OilPatterns = revealed
                 ? row.OilPatterns.ConvertAll(pattern => new TournamentDetailOilPatternDto
                 {
+                    OilPatternId = pattern.OilPatternId,
                     Name = pattern.Name,
                     Length = pattern.Length,
                     Volume = pattern.Volume,

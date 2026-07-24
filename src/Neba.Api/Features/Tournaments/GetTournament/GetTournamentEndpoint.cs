@@ -115,6 +115,7 @@ internal sealed class GetTournamentEndpoint(
             })],
             OilPatterns = [.. dto.OilPatterns.Select(op => new TournamentDetailOilPatternResponse
             {
+                OilPatternId = op.OilPatternId.Value.ToString(),
                 Name = op.Name,
                 Length = op.Length,
                 Volume = op.Volume,

@@ -41,25 +41,27 @@
   ],
   OilPatterns: [
     {
-      Name: libero Pattern,
-      Length: 34,
-      Volume: 17.510365789062520,
-      LeftRatio: 5.136585656151446,
-      RightRatio: 3.010605345019424,
+      OilPatternId: 01GBP3VHXR2YX9DBG4SMXSK1MY,
+      Name: quaerat Pattern,
+      Length: 40,
+      Volume: 21.404663746433640,
+      LeftRatio: 4.285817681013524,
+      RightRatio: 3.561467810329736,
       Rounds: [
-        Match Play
-      ],
-      KegelId: Guid_1
+        Step Ladder
+      ]
     },
     {
-      Name: ut Pattern,
-      Length: 47,
-      Volume: 24.272937015291740,
-      LeftRatio: 5.25810651912266,
-      RightRatio: 7.686466895829170,
+      OilPatternId: 01K2A68DYZM7M70VRFQB016S0F,
+      Name: necessitatibus Pattern,
+      Length: 38,
+      Volume: 28.526421000029160,
+      LeftRatio: 5.933136897130466,
+      RightRatio: 7.907975646624332,
       Rounds: [
         Qualifying
-      ]
+      ],
+      KegelId: Guid_1
     }
   ],
   Winners: [

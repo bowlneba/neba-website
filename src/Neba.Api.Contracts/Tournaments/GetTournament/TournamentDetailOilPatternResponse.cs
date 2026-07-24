@@ -6,6 +6,11 @@ namespace Neba.Api.Contracts.Tournaments.GetTournament;
 public sealed record TournamentDetailOilPatternResponse
 {
     /// <summary>
+    /// The unique identifier for the oil pattern, as a ULID string.
+    /// </summary>
+    public required string OilPatternId { get; init; }
+
+    /// <summary>
     /// Name of the pattern (e.g., "Kegel Broadway").
     /// </summary>
     public required string Name { get; init; }
