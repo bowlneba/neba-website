@@ -6,6 +6,7 @@ using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.GetTournament;
 using Neba.Api.Storage;
+using Neba.TestFactory;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.News;
@@ -306,7 +307,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var now = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow.TruncateToMicroseconds();
         var revealAt = now.AddDays(5);
         var tournament = await SeedTournamentWithOilPatternAsync(revealAt, ct);
 
@@ -328,7 +329,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var now = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow.TruncateToMicroseconds();
         var revealAt = now.AddDays(5);
         var tournament = await SeedTournamentWithOilPatternAsync(revealAt, ct);
 
@@ -350,7 +351,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var now = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow.TruncateToMicroseconds();
         var revealAt = now.AddDays(5);
         var tournament = await SeedTournamentWithOilPatternAsync(revealAt, ct);
 
@@ -376,7 +377,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var now = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow.TruncateToMicroseconds();
         var tournament = await SeedTournamentWithOilPatternAsync(now.AddDays(-1), ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);

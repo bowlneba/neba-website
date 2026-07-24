@@ -5,6 +5,7 @@ using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 using Neba.Api.Storage;
+using Neba.TestFactory;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
@@ -197,7 +198,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var now = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow.TruncateToMicroseconds();
         var season = await SeedSeasonWithTournamentsAsync(now.AddDays(-1), now.AddDays(5), ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
@@ -222,7 +223,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var now = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow.TruncateToMicroseconds();
         var gatedRevealAt = now.AddDays(5);
         var season = await SeedSeasonWithTournamentsAsync(now.AddDays(-1), gatedRevealAt, ct);
 
@@ -244,7 +245,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var now = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow.TruncateToMicroseconds();
         var gatedRevealAt = now.AddDays(5);
         var season = await SeedSeasonWithTournamentsAsync(now.AddDays(-1), gatedRevealAt, ct);
 
@@ -266,7 +267,7 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var now = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow.TruncateToMicroseconds();
         var season = await SeedSeasonWithTournamentsAsync(now.AddDays(-5), now.AddDays(-1), ct);
 
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);

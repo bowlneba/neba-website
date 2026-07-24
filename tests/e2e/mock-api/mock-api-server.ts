@@ -973,6 +973,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       businessCountry: null,
       businessEmailAddress: sponsor.businessEmailAddress ?? null,
       phoneNumbers: sponsor.phoneNumbers ?? [],
+      tournamentsSponsored: [],
     });
 
     sendJsonResponse(res, { sponsorId, slug }, 201);
@@ -983,12 +984,13 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
     const body = await readRequestBody(req);
-    const parsed = JSON.parse(body) as { name?: string; length?: number };
+    const parsed = JSON.parse(body) as { oilPattern?: { name?: string; length?: number } };
+    const oilPattern = parsed.oilPattern ?? {};
 
     sendJsonResponse(res, {
       oilPatternId: '01JX0000000000000000000299',
-      name: parsed.name ?? '',
-      length: parsed.length ?? 0,
+      name: oilPattern.name ?? '',
+      length: oilPattern.length ?? 0,
       lengthCategory: 'Medium',
       ratioCategory: 'Medium',
     }, 201);
