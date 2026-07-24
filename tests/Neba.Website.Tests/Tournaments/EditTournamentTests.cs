@@ -141,13 +141,13 @@ public sealed class EditTournamentTests : IDisposable
         var tournament = TournamentDetailResponseFactory.Create(
             id: "01JX0000000000000000000200",
             name: "NEBA Fall Classic",
-            tournamentType: Neba.Api.Features.Tournaments.Domain.TournamentType.Doubles,
             startDate: new DateOnly(2025, 10, 4),
             endDate: new DateOnly(2025, 10, 5),
             statsEligible: false,
+            tournamentType: Api.Features.Tournaments.Domain.TournamentType.Doubles,
             entryFee: 65m,
-            nebaAddedMoney: 500m,
             registrationUrl: new Uri("https://register.example.com"),
+            nebaAddedMoney: 500m,
             bowlingCenter: bowlingCenter);
         SetupGetTournamentSuccess(tournament);
 
@@ -575,7 +575,7 @@ public sealed class EditTournamentTests : IDisposable
         {
             IsSuccessStatusCode = false,
             StatusCode = statusCode,
-            Content = (TournamentDetailResponse?)null
+            Content = null
         };
 
         _mockTournamentsApi

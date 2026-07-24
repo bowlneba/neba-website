@@ -4,9 +4,12 @@ using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.BackgroundJobs;
 using Neba.Api.Database;
+using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.EvictOilPatternRevealCache;
 using Neba.Api.Messaging;
+
+using Neba.Api.Features.Storage.Domain;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -44,7 +47,7 @@ internal sealed class EditTournamentCommandHandler(
             return resolveResult.Errors;
         }
 
-        var (season, patternLengthCategory, patternRatioCategory) = resolveResult.Value;
+        (Season season, PatternLengthCategory? patternLengthCategory, PatternRatioCategory? patternRatioCategory) = resolveResult.Value;
 
         var previousSeasonId = tournament.SeasonId;
 
@@ -90,14 +93,28 @@ internal sealed class EditTournamentCommandHandler(
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
-        await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: cancellationToken);
+        await EvictCachesAsync(tournament.Id, previousSeasonId, season.Id, cancellationToken);
+
+        ScheduleBackgroundJobs(command, previousLogo, tournament.Id, season.Id);
+
+        return Result.Updated;
+    }
+
+    private async Task EvictCachesAsync(
+        TournamentId tournamentId, SeasonId previousSeasonId, SeasonId currentSeasonId, CancellationToken cancellationToken)
+    {
+        await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: cancellationToken);
         await cache.RemoveByTagAsync($"neba:tournaments:{previousSeasonId}", token: cancellationToken);
 
-        if (season.Id != previousSeasonId)
+        if (currentSeasonId != previousSeasonId)
         {
-            await cache.RemoveByTagAsync($"neba:tournaments:{season.Id}", token: cancellationToken);
+            await cache.RemoveByTagAsync($"neba:tournaments:{currentSeasonId}", token: cancellationToken);
         }
+    }
 
+    private void ScheduleBackgroundJobs(
+        EditTournamentCommand command, StoredFile? previousLogo, TournamentId tournamentId, SeasonId seasonId)
+    {
         if (previousLogo is not null && previousLogo != command.Logo)
         {
             backgroundJobScheduler.Enqueue(new DeleteTournamentFilesJob
@@ -112,10 +129,8 @@ internal sealed class EditTournamentCommandHandler(
         if (command.OilPatternRevealDateTime is { } revealAt && revealAt > timeProvider.GetUtcNow())
         {
             backgroundJobScheduler.Schedule(
-                new EvictOilPatternRevealCacheJob { TournamentId = tournament.Id, SeasonId = season.Id },
+                new EvictOilPatternRevealCacheJob { TournamentId = tournamentId, SeasonId = seasonId },
                 revealAt);
         }
-
-        return Result.Updated;
     }
 }

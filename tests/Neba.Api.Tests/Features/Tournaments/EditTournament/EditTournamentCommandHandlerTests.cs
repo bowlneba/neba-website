@@ -73,9 +73,9 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
     private async Task<Tournament> SeedTournamentAsync(Season season, CancellationToken ct)
     {
         var tournament = TournamentFactory.Create(
-            seasonId: season.Id,
             startDate: season.StartDate,
-            endDate: season.StartDate);
+            endDate: season.StartDate,
+            seasonId: season.Id);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
         return tournament;
@@ -322,9 +322,9 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
         var previousLogo = StoredFileFactory.Create(container: "tournament-logos", path: "old-logo.png");
         var tournament = TournamentFactory.Create(
-            seasonId: season.Id,
             startDate: season.StartDate,
             endDate: season.StartDate,
+            seasonId: season.Id,
             logo: previousLogo);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
@@ -360,9 +360,9 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
         var logo = StoredFileFactory.Create(container: "tournament-logos", path: "same-logo.png");
         var tournament = TournamentFactory.Create(
-            seasonId: season.Id,
             startDate: season.StartDate,
             endDate: season.StartDate,
+            seasonId: season.Id,
             logo: logo);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);

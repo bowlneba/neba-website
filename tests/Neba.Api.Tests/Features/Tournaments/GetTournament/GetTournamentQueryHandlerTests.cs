@@ -189,7 +189,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         var bowlingCenter = Neba.TestFactory.BowlingCenters.BowlingCenterFactory.Create();
         await _dbContext.BowlingCenters.AddAsync(bowlingCenter, ct);
 
-        var tournament = TournamentFactory.Create(seasonId: season.Id, bowlingCenterId: bowlingCenter.CertificationNumber);
+        var tournament = TournamentFactory.Create(bowlingCenterId: bowlingCenter.CertificationNumber, seasonId: season.Id);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
@@ -217,7 +217,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         var bowlingCenter = Neba.TestFactory.BowlingCenters.BowlingCenterFactory.Create();
         await _dbContext.BowlingCenters.AddAsync(bowlingCenter, ct);
 
-        var tournament = TournamentFactory.Create(seasonId: season.Id, bowlingCenterId: bowlingCenter.CertificationNumber);
+        var tournament = TournamentFactory.Create(bowlingCenterId: bowlingCenter.CertificationNumber, seasonId: season.Id);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
