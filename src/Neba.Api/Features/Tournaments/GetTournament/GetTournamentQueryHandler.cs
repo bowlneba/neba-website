@@ -49,7 +49,8 @@ internal sealed class GetTournamentQueryHandler(
                     {
                         Name = tournament.BowlingCenter.Name,
                         City = tournament.BowlingCenter.Address.City,
-                        State = tournament.BowlingCenter.Address.Region
+                        State = tournament.BowlingCenter.Address.Region,
+                        CertificationNumber = tournament.BowlingCenterId != null ? tournament.BowlingCenterId.Value : null
                     },
                 Sponsors = tournament.Sponsors
                     .Select(tournamentSponsor => new
@@ -80,6 +81,12 @@ internal sealed class GetTournamentQueryHandler(
                     : null,
                 TournamentLogoPath = tournament.Logo != null
                     ? tournament.Logo.Path
+                    : null,
+                TournamentLogoContentType = tournament.Logo != null
+                    ? tournament.Logo.ContentType
+                    : null,
+                TournamentLogoSizeInBytes = tournament.Logo != null
+                    ? (long?)tournament.Logo.SizeInBytes
                     : null,
                 Reservations = 999, // need to replace once actual column exists
                 OilPatterns = tournament.OilPatterns.Select(top => new
@@ -159,6 +166,12 @@ internal sealed class GetTournamentQueryHandler(
         var revealed = OilPatternRevealPolicy.IsRevealed(
             row.OilPatternRevealDateTime, query.CallerHasTournamentManagementPermission, timeProvider.GetUtcNow());
 
+        var bowlingCenter = row.BowlingCenter;
+        if (bowlingCenter is not null && !query.CallerHasTournamentManagementPermission)
+        {
+            bowlingCenter = bowlingCenter with { CertificationNumber = null };
+        }
+
         return new TournamentDetailDto
         {
             Id = row.Id,
@@ -170,7 +183,7 @@ internal sealed class GetTournamentQueryHandler(
             TournamentType = row.TournamentType,
             EntryFee = row.EntryFee,
             RegistrationUrl = row.RegistrationUrl,
-            BowlingCenter = row.BowlingCenter,
+            BowlingCenter = bowlingCenter,
             Sponsors = sponsors,
             AddedMoney = row.SponsorMoney + row.NebaAddedMoney,
             SponsorMoney = row.SponsorMoney,
@@ -194,6 +207,10 @@ internal sealed class GetTournamentQueryHandler(
             LogoUrl = row.TournamentLogoContainer is not null && row.TournamentLogoPath is not null
                 ? _fileStorageService.GetBlobUri(row.TournamentLogoContainer, row.TournamentLogoPath)
                 : null,
+            LogoContainer = query.CallerHasTournamentManagementPermission ? row.TournamentLogoContainer : null,
+            LogoPath = query.CallerHasTournamentManagementPermission ? row.TournamentLogoPath : null,
+            LogoContentType = query.CallerHasTournamentManagementPermission ? row.TournamentLogoContentType : null,
+            LogoSizeInBytes = query.CallerHasTournamentManagementPermission ? row.TournamentLogoSizeInBytes : null,
             Winners = historicalWinners,
             // If Results or EntryCount are empty/null, check future stats tables for 2026+ tournament data
             Results = historicalResults,

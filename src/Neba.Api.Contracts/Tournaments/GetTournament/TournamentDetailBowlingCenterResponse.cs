@@ -19,4 +19,10 @@ public sealed record TournamentDetailBowlingCenterResponse
     /// State where the bowling center is located (two-letter code, e.g., "MA").
     /// </summary>
     public required string State { get; init; }
+
+    /// <summary>
+    /// The bowling center's USBC certification number, for use in editing; only populated when the
+    /// caller holds a tournament management permission.
+    /// </summary>
+    public string? CertificationNumber { get; init; }
 }

@@ -117,6 +117,123 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         result.Value.LogoUrl.ShouldBe(expectedUri);
     }
 
+    [Fact(DisplayName = "HandleAsync includes raw logo fields when caller has the tournament management permission")]
+    public async Task HandleAsync_ShouldIncludeRawLogoFields_WhenCallerHasManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var logo = Neba.TestFactory.Storage.StoredFileFactory.Create(
+            container: "logos", path: "tournaments/neba-singles.jpg", contentType: "image/jpeg", sizeInBytes: 4096);
+        var tournament = TournamentFactory.Create(seasonId: season.Id, logo: logo);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        fileStorageMock.Setup(s => s.GetBlobUri("logos", "tournaments/neba-singles.jpg")).Returns(new Uri("https://storage.example.com/logo.jpg"));
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LogoContainer.ShouldBe("logos");
+        result.Value.LogoPath.ShouldBe("tournaments/neba-singles.jpg");
+        result.Value.LogoContentType.ShouldBe("image/jpeg");
+        result.Value.LogoSizeInBytes.ShouldBe(4096);
+    }
+
+    [Fact(DisplayName = "HandleAsync omits raw logo fields when caller lacks the tournament management permission")]
+    public async Task HandleAsync_ShouldOmitRawLogoFields_WhenCallerLacksManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var logo = Neba.TestFactory.Storage.StoredFileFactory.Create(
+            container: "logos", path: "tournaments/neba-singles.jpg");
+        var tournament = TournamentFactory.Create(seasonId: season.Id, logo: logo);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        fileStorageMock.Setup(s => s.GetBlobUri("logos", "tournaments/neba-singles.jpg")).Returns(new Uri("https://storage.example.com/logo.jpg"));
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = false }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.LogoContainer.ShouldBeNull();
+        result.Value.LogoPath.ShouldBeNull();
+        result.Value.LogoContentType.ShouldBeNull();
+        result.Value.LogoSizeInBytes.ShouldBeNull();
+        result.Value.LogoUrl.ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "HandleAsync includes the bowling center's certification number when caller has the tournament management permission")]
+    public async Task HandleAsync_ShouldIncludeBowlingCenterCertificationNumber_WhenCallerHasManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var bowlingCenter = Neba.TestFactory.BowlingCenters.BowlingCenterFactory.Create();
+        await _dbContext.BowlingCenters.AddAsync(bowlingCenter, ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id, bowlingCenterId: bowlingCenter.CertificationNumber);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.BowlingCenter.ShouldNotBeNull();
+        result.Value.BowlingCenter.CertificationNumber.ShouldBe(bowlingCenter.CertificationNumber.Value);
+    }
+
+    [Fact(DisplayName = "HandleAsync omits the bowling center's certification number when caller lacks the tournament management permission")]
+    public async Task HandleAsync_ShouldOmitBowlingCenterCertificationNumber_WhenCallerLacksManagementPermission()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var bowlingCenter = Neba.TestFactory.BowlingCenters.BowlingCenterFactory.Create();
+        await _dbContext.BowlingCenters.AddAsync(bowlingCenter, ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id, bowlingCenterId: bowlingCenter.CertificationNumber);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = false }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.BowlingCenter.ShouldNotBeNull();
+        result.Value.BowlingCenter.CertificationNumber.ShouldBeNull();
+    }
+
     [Fact(DisplayName = "HandleAsync returns published articles with title and slug when tournament has articles")]
     public async Task HandleAsync_ShouldReturnPublishedArticles_WhenTournamentHasArticles()
     {

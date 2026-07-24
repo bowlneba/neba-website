@@ -91,11 +91,16 @@ internal sealed class GetTournamentEndpoint(
             PatternRatioCategory = dto.PatternRatioCategory,
             OilPatternRevealDateTime = dto.OilPatternRevealDateTime,
             LogoUrl = dto.LogoUrl,
+            LogoContainer = dto.LogoContainer,
+            LogoPath = dto.LogoPath,
+            LogoContentType = dto.LogoContentType,
+            LogoSizeInBytes = dto.LogoSizeInBytes,
             BowlingCenter = dto.BowlingCenter is null ? null : new TournamentDetailBowlingCenterResponse
             {
                 Name = dto.BowlingCenter.Name,
                 City = dto.BowlingCenter.City,
                 State = dto.BowlingCenter.State,
+                CertificationNumber = dto.BowlingCenter.CertificationNumber,
             },
             Sponsors = [.. dto.Sponsors.Select(s => new TournamentDetailSponsorResponse
             {

@@ -110,6 +110,30 @@ public sealed record TournamentDetailDto
     public Uri? LogoUrl { get; init; }
 
     /// <summary>
+    /// Raw storage fields for the tournament logo, for use in editing; only populated when the
+    /// caller holds a tournament management permission.
+    /// </summary>
+    public string? LogoContainer { get; init; }
+
+    /// <summary>
+    /// Raw storage path for the tournament logo, for use in editing; only populated when the
+    /// caller holds a tournament management permission.
+    /// </summary>
+    public string? LogoPath { get; init; }
+
+    /// <summary>
+    /// MIME content type of the tournament logo, for use in editing; only populated when the
+    /// caller holds a tournament management permission.
+    /// </summary>
+    public string? LogoContentType { get; init; }
+
+    /// <summary>
+    /// Size, in bytes, of the tournament logo, for use in editing; only populated when the
+    /// caller holds a tournament management permission.
+    /// </summary>
+    public long? LogoSizeInBytes { get; init; }
+
+    /// <summary>
     /// Names of the winning bowler(s); empty for pending/upcoming events.
     /// </summary>
     public IReadOnlyCollection<Name> Winners { get; init; } = [];

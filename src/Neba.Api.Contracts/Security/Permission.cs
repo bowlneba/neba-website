@@ -93,12 +93,18 @@ public sealed class Permissions
     public static readonly Permissions ManageTournamentSponsors = new("Tournaments.ManageSponsors", "Manage Tournament Sponsors");
 
     /// <summary>
+    /// Permission to edit an existing tournament.
+    /// </summary>
+    public static readonly Permissions EditTournament = new("Tournaments.EditTournament", "Edit Tournament");
+
+    /// <summary>
     /// A collection of permissions related to tournament management.
     /// </summary>
     public static readonly IReadOnlyCollection<Permissions> TournamentManagementPermissions =
     [
         CreateTournament,
         ManageTournamentSponsors,
+        EditTournament,
     ];
 
     /// <summary>
