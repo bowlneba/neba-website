@@ -27,7 +27,7 @@ public sealed class SeasonTests
         result.Value.Complete.ShouldBeFalse();
     }
 
-    #nullable disable
+#nullable disable
     [Theory(DisplayName = "Create should return an error when description is null, empty, or whitespace")]
     [InlineData(null, TestDisplayName = "description is null")]
     [InlineData("", TestDisplayName = "description is empty")]
@@ -41,7 +41,7 @@ public sealed class SeasonTests
         result.IsError.ShouldBeTrue();
         result.FirstError.ShouldBe(SeasonErrors.DescriptionRequired);
     }
-    #nullable enable
+#nullable enable
 
     [Fact(DisplayName = "Create should return an error when end date is before start date")]
     public void Create_ShouldReturnError_WhenEndDateIsBeforeStartDate()

@@ -91,7 +91,7 @@ public sealed class TournamentTests
         tournament.PatternRatioCategory.ShouldBe(PatternRatioCategory.Recreation);
     }
 
-    #nullable disable
+#nullable disable
     [Theory(DisplayName = "Create returns Tournament.Name.Required when name is null, empty, or whitespace")]
     [InlineData(null, TestDisplayName = "name is null")]
     [InlineData("", TestDisplayName = "name is empty")]
@@ -112,7 +112,7 @@ public sealed class TournamentTests
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Tournament.Name.Required");
     }
-    #nullable enable
+#nullable enable
 
     [Fact(DisplayName = "Create returns Tournament.EndDateBeforeStartDate when end date is before start date")]
     public void Create_ShouldReturnError_WhenEndDateIsBeforeStartDate()
