@@ -1215,7 +1215,10 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return;
   }
 
-  if (req.method === 'PUT' && (pathname.startsWith('/news/') || pathname.startsWith('/sponsors/'))) {
+  if (
+    req.method === 'PUT' &&
+    (pathname.startsWith('/news/') || pathname.startsWith('/sponsors/') || pathname.startsWith('/tournaments/'))
+  ) {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
     res.writeHead(204);
