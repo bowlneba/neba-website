@@ -83,7 +83,7 @@ public sealed class HighAverageAwardConfigurationTests
 
         // Assert
         foreignKey.ShouldNotBeNull();
-        foreignKey!.DeleteBehavior.ShouldBe(DeleteBehavior.Cascade);
+        foreignKey.DeleteBehavior.ShouldBe(DeleteBehavior.Cascade);
     }
 
     [Fact(DisplayName = "bowler_id is char(26), not nullable")]
@@ -108,7 +108,7 @@ public sealed class HighAverageAwardConfigurationTests
 
         // Assert
         foreignKey.ShouldNotBeNull();
-        foreignKey!.PrincipalEntityType.ClrType.ShouldBe(typeof(Bowler));
+        foreignKey.PrincipalEntityType.ClrType.ShouldBe(typeof(Bowler));
         foreignKey.PrincipalKey.Properties.Select(p => p.Name).ShouldContain(nameof(Bowler.Id));
     }
 

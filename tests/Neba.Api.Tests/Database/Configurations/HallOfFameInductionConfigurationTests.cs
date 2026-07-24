@@ -86,7 +86,7 @@ public sealed class HallOfFameInductionConfigurationTests
 
         // Assert
         foreignKey.ShouldNotBeNull();
-        foreignKey!.PrincipalEntityType.ClrType.ShouldBe(typeof(Bowler));
+        foreignKey.PrincipalEntityType.ClrType.ShouldBe(typeof(Bowler));
         foreignKey.PrincipalKey.Properties.Select(p => p.Name).ShouldContain(nameof(Bowler.Id));
     }
 

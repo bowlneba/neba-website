@@ -207,7 +207,7 @@ public sealed class GetDocumentQueryHandlerTests
         result.Value.Html.ShouldBe(expectedDocument.Content);
         result.Value.LastUpdated.ShouldBe(modifiedAt);
         capturedMetadata.ShouldNotBeNull("UploadFileAsync should have been called with metadata");
-        capturedMetadata!.ShouldContainKeyAndValue("source_document_id", expectedDocument.Id);
+        capturedMetadata.ShouldContainKeyAndValue("source_document_id", expectedDocument.Id);
         capturedMetadata.ShouldContainKeyAndValue("cached_at", cachedAt.ToString("o"));
         capturedMetadata.ShouldContainKeyAndValue("source_last_modified", modifiedAt.ToString("o"));
     }
@@ -250,7 +250,7 @@ public sealed class GetDocumentQueryHandlerTests
         result.IsError.ShouldBeFalse();
         result.Value.LastUpdated.ShouldBeNull();
         capturedMetadata.ShouldNotBeNull("UploadFileAsync should have been called with metadata");
-        capturedMetadata!.ShouldContainKeyAndValue("source_last_modified", string.Empty);
+        capturedMetadata.ShouldContainKeyAndValue("source_last_modified", string.Empty);
     }
 
     // Mutation 3 (block removal: if document is null { return NotFound }):

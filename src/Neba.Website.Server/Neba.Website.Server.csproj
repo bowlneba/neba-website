@@ -1,7 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   
-  <PropertyGroup>  
+  <PropertyGroup>
     <UserSecretsId>bfc66b1a-f4a8-421a-8bd2-2104aef1a6a0</UserSecretsId>
+    <!-- S8970 is a false positive on Razor-generated code: SonarAnalyzer reports null-forgiving
+         operators in @code blocks as if nullable warnings were disabled, even though this project
+         has Nullable=enable. The diagnostic's syntax tree is a source-generator-produced file with no
+         real path, so neither .editorconfig severity overrides nor #pragma suppression reach it -
+         only a project-level NoWarn does. Only this project (and Neba.Website.Client, which has no
+         @code blocks) contains .razor files, so this is effectively scoped to Razor already. -->
+    <NoWarn>$(NoWarn);S8970</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

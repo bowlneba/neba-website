@@ -135,11 +135,11 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         var storedJson = await userManager.GetAuthenticationTokenAsync(user!, RefreshTokenProvider, RefreshTokenName);
         storedJson.ShouldNotBeNullOrEmpty();
 
-        var stored = JsonSerializer.Deserialize<StoredRefreshToken>(storedJson!);
+        var stored = JsonSerializer.Deserialize<StoredRefreshToken>(storedJson);
         stored.ShouldNotBeNull();
 
         var expectedHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(result.Value.RefreshToken)));
-        stored!.Hash.ShouldBe(expectedHash);
+        stored.Hash.ShouldBe(expectedHash);
     }
 
     [Fact(DisplayName = "HandleAsync returns InvalidCredentials when the email is not registered")]

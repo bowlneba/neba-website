@@ -75,7 +75,7 @@ public sealed class BowlerSeasonStatsConfigurationTests
 
         // Assert
         foreignKey.ShouldNotBeNull();
-        foreignKey!.PrincipalEntityType.ClrType.ShouldBe(typeof(Season));
+        foreignKey.PrincipalEntityType.ClrType.ShouldBe(typeof(Season));
         foreignKey.PrincipalKey.Properties.Select(p => p.Name).ShouldContain(nameof(Season.Id));
         foreignKey.DeleteBehavior.ShouldBe(DeleteBehavior.Restrict);
     }
@@ -102,7 +102,7 @@ public sealed class BowlerSeasonStatsConfigurationTests
 
         // Assert
         foreignKey.ShouldNotBeNull();
-        foreignKey!.PrincipalEntityType.ClrType.ShouldBe(typeof(Bowler));
+        foreignKey.PrincipalEntityType.ClrType.ShouldBe(typeof(Bowler));
         foreignKey.PrincipalKey.Properties.Select(p => p.Name).ShouldContain(nameof(Bowler.Id));
         foreignKey.DeleteBehavior.ShouldBe(DeleteBehavior.Restrict);
     }

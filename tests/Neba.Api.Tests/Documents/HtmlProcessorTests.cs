@@ -137,17 +137,17 @@ public sealed class HtmlProcessorTests
 
         var h1 = doc.DocumentNode.SelectSingleNode("//h1");
         h1.ShouldNotBeNull();
-        h1!.GetAttributeValue("id", "").ShouldBe("article-1");
+        h1.GetAttributeValue("id", "").ShouldBe("article-1");
         h1.GetAttributeValue("data-original-id", "").ShouldBe("h.abc123");
 
         var h2 = doc.DocumentNode.SelectSingleNode("//h2");
         h2.ShouldNotBeNull();
-        h2!.GetAttributeValue("id", "").ShouldBe("section-a");
+        h2.GetAttributeValue("id", "").ShouldBe("section-a");
         h2.GetAttributeValue("data-original-id", "").ShouldBe("h.def456");
 
         var h3 = doc.DocumentNode.SelectSingleNode("//h3");
         h3.ShouldNotBeNull();
-        h3!.GetAttributeValue("id", "").ShouldBe("no-original-id");
+        h3.GetAttributeValue("id", "").ShouldBe("no-original-id");
         h3.GetAttributeValue("data-original-id", "").ShouldBe("");
     }
 
@@ -273,7 +273,7 @@ public sealed class HtmlProcessorTests
 
         var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
         link.ShouldNotBeNull();
-        link!.GetAttributeValue("href", "").ShouldBe("/bylaws#h.abc123");
+        link.GetAttributeValue("href", "").ShouldBe("/bylaws#h.abc123");
     }
 
     [Fact(DisplayName = "Process should preserve anchors without 'heading=' prefix")]
@@ -297,7 +297,7 @@ public sealed class HtmlProcessorTests
 
         var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
         link.ShouldNotBeNull();
-        link!.GetAttributeValue("href", "").ShouldBe("/bylaws#h.xyz789");
+        link.GetAttributeValue("href", "").ShouldBe("/bylaws#h.xyz789");
     }
 
     [Fact(DisplayName = "Process should handle 'heading=' prefix case-insensitively")]
@@ -321,7 +321,7 @@ public sealed class HtmlProcessorTests
 
         var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
         link.ShouldNotBeNull();
-        link!.GetAttributeValue("href", "").ShouldBe("/bylaws#h.abc123");
+        link.GetAttributeValue("href", "").ShouldBe("/bylaws#h.abc123");
     }
 
     [Fact(DisplayName = "Process should not modify non-Google Docs links")]
@@ -373,7 +373,7 @@ public sealed class HtmlProcessorTests
 
         var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
         link.ShouldNotBeNull();
-        link!.GetAttributeValue("href", "").ShouldBe("https://docs.google.com/document/d/1UNKNOWN999/edit");
+        link.GetAttributeValue("href", "").ShouldBe("https://docs.google.com/document/d/1UNKNOWN999/edit");
     }
 
     [Fact(DisplayName = "Process should handle HTML without any links")]
@@ -490,12 +490,12 @@ public sealed class HtmlProcessorTests
         // Google Docs link replaced with anchor preserved (heading= prefix stripped)
         var googleLink = doc.DocumentNode.SelectSingleNode("//a[contains(text(), 'Bylaws')]");
         googleLink.ShouldNotBeNull();
-        googleLink!.GetAttributeValue("href", "").ShouldBe("/bylaws#h.xyz");
+        googleLink.GetAttributeValue("href", "").ShouldBe("/bylaws#h.xyz");
 
         // External link preserved
         var externalLink = doc.DocumentNode.SelectSingleNode("//a[contains(text(), 'external')]");
         externalLink.ShouldNotBeNull();
-        externalLink!.GetAttributeValue("href", "").ShouldBe("https://example.com");
+        externalLink.GetAttributeValue("href", "").ShouldBe("https://example.com");
     }
 
     [Fact(DisplayName = "Process should handle malformed HTML gracefully")]
@@ -646,7 +646,7 @@ public sealed class HtmlProcessorTests
 
         var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
         link.ShouldNotBeNull();
-        link!.GetAttributeValue("href", "").ShouldBe("#annual-meeting");
+        link.GetAttributeValue("href", "").ShouldBe("#annual-meeting");
     }
 
     [Fact(DisplayName = "Process should leave anchor-only links unchanged when no matching heading exists")]
@@ -672,7 +672,7 @@ public sealed class HtmlProcessorTests
         var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
         link.ShouldNotBeNull();
         // Should remain unchanged since no matching heading exists
-        link!.GetAttributeValue("href", "").ShouldBe("#h.nonexistent");
+        link.GetAttributeValue("href", "").ShouldBe("#h.nonexistent");
     }
 
     [Fact(DisplayName = "Process should handle mixed anchor-only and full URL links")]
@@ -894,7 +894,7 @@ public sealed class HtmlProcessorTests
         // Heading ID generated and original preserved
         var h1 = doc.DocumentNode.SelectSingleNode("//h1");
         h1.ShouldNotBeNull();
-        h1!.GetAttributeValue("id", "").ShouldBe("section-1");
+        h1.GetAttributeValue("id", "").ShouldBe("section-1");
         h1.GetAttributeValue("data-original-id", "").ShouldBe("h.abc123");
 
         // Links transformed
@@ -925,7 +925,7 @@ public sealed class HtmlProcessorTests
 
         var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
         link.ShouldNotBeNull();
-        link!.GetAttributeValue("href", "").ShouldBe("/bylaws");
+        link.GetAttributeValue("href", "").ShouldBe("/bylaws");
     }
 
     [Fact(DisplayName = "Process should handle Google redirect URLs with anchors")]
@@ -949,7 +949,7 @@ public sealed class HtmlProcessorTests
 
         var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
         link.ShouldNotBeNull();
-        link!.GetAttributeValue("href", "").ShouldBe("/tournaments/rules#h.xyz789");
+        link.GetAttributeValue("href", "").ShouldBe("/tournaments/rules#h.xyz789");
     }
 
     [Fact(DisplayName = "Process should handle mixed direct and redirect Google Docs URLs")]
@@ -1000,7 +1000,7 @@ public sealed class HtmlProcessorTests
         var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
         link.ShouldNotBeNull();
         // Should remain unchanged since document is not in configuration
-        link!.GetAttributeValue("href", "").ShouldBe("https://www.google.com/url?q=https://docs.google.com/document/d/1UNKNOWN999/edit&sa=D");
+        link.GetAttributeValue("href", "").ShouldBe("https://www.google.com/url?q=https://docs.google.com/document/d/1UNKNOWN999/edit&sa=D");
     }
 
     [Fact(DisplayName = "Process should handle Google Docs URLs with user ID in path")]
