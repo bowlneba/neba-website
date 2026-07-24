@@ -91,6 +91,15 @@ else
 
                     <h1 class="td-hero__title">@_model.Name</h1>
 
+                    <AuthorizeView Policy="@Permissions.EditTournament.PolicyName">
+                        <Authorized>
+                            <a href="/tournaments/@Id/edit" class="neba-btn neba-btn-secondary td-hero__edit-btn">
+                                <span class="material-symbols-outlined">edit</span>
+                                Edit Tournament
+                            </a>
+                        </Authorized>
+                    </AuthorizeView>
+
                     @if (_model.HasSponsors)
                     {
                         <p class="td-hero__sponsor">Presented by <strong>@_model.Sponsors.First().Name</strong></p>

@@ -91,6 +91,14 @@
     margin: 0;
 }
 
+.td-hero__edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: fit-content;
+    margin-top: 0.5rem;
+}
+
 .td-hero__sponsor--available {
     font-style: italic;
     color: rgba(255, 255, 255, 0.55);

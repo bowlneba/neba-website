@@ -73,4 +73,66 @@ as a flag so that work doesn't get missed.
 
 ## Phase 2: UI
 
-*(Not yet drafted.)*
+### Pages
+
+- **New `Tournaments/EditTournament.razor`** (`@page "/tournaments/{Id}/edit"`) — mirrors `CreateTournament.razor`'s form shape field-for-field (Basic Info, Venue & Entry Fee, Oil Pattern, Logo sections), but:
+  - Loads the tournament via `TournamentsApi.GetTournamentAsync(Id, ct)` in `OnInitializedAsync` (same call `TournamentDetail.razor` already makes) and populates the form model from the response's admin-gated raw fields (`BowlingCenter.CertificationNumber`, `LogoContainer`/`LogoPath`/`LogoContentType`/`LogoSizeInBytes`, `PatternLengthCategory`/`PatternRatioCategory`, `OilPatternRevealDateTime`, etc.) — these are only populated for a caller with `Tournaments.EditTournament`/any tournament-management permission, which is guaranteed here since the page itself is gated by that same permission.
+  - Shows a loading skeleton / not-found / load-error state, same three-way branch `EditSponsor.razor` uses (`_isLoading`, `_notFound`, load-error message).
+  - Submits via `TournamentsApi.EditTournamentAsync(Id, request, ct)` (`PUT`, bodyless response through `ApiExecutor`) instead of `CreateTournamentAsync`.
+  - On save, navigates back to `/tournaments/{Id}` (the detail page) instead of a newly-created ID.
+  - Current logo (if any) renders with a "Remove current logo" button above the `FileUpload`, same pattern as `EditSponsor.razor`'s Logo section — `FileUpload` replaces it; clearing removes it entirely (`Logo: null` on submit).
+
+### Components
+
+- **`Tournaments/OilPatternPicker.razor`** (edit, additive) — add two optional parameters, `InitialPatternLengthCategory`/`InitialPatternRatioCategory` (`string?`), seeded into `_manualLengthCategory`/`_manualRatioCategory` the first time the component renders with a non-empty value, using the same one-shot "don't clobber local interaction" guard already used for the `Patterns` parameter (`_hasLocalPatternAdditions`) — call it `_hasBeenSeeded` or reuse a similar flag. This is needed because `Tournament` never persists which `OilPatternId` produced its current categories (see "Decisions locked in during scoping" above), so Edit can only pre-fill the plain category values, not re-select a picked pattern. `CreateTournament.razor` passes nothing for these two new parameters (its default of empty stays exactly as today); `EditTournament.razor` passes the loaded tournament's current category names.
+
+### View Models / Form Model
+
+- No new response/DTO types — `EditTournament.razor` reads directly from `TournamentDetailResponse` (already extended in Phase 1) into a private `EditTournamentFormModel` (same shape as `CreateTournamentFormModel` in `CreateTournament.razor`, plus `[Required]`/`[Range]`/`[Url]` annotations reused as-is).
+
+### Page wiring — `Tournaments/Detail/TournamentDetail.razor`
+
+Add an "Edit Tournament" entry point gated by the new permission, same `AuthorizeView`/`<a>` pattern `SponsorDetail.razor` already uses for `Permissions.EditSponsor`:
+
+```razor
+<AuthorizeView Policy="@Permissions.EditTournament.PolicyName">
+    <Authorized>
+        <a href="/tournaments/@Id/edit" class="neba-btn neba-btn-secondary">
+            <span class="material-symbols-outlined">edit</span>
+            Edit Tournament
+        </a>
+    </Authorized>
+</AuthorizeView>
+```
+
+Placed in the hero content area near the title (not conditioned on `IsUpcoming`/`RegistrationUrl` — unlike the Register CTA, editing should be available regardless of tournament status). Exact placement confirmed in the mockup (Step 7).
+
+### State / Dirty-Tracking
+
+Same as `CreateTournament.razor`: `EditContext` created over the form model in the constructor, `OnFieldChanged` → `MarkDirty()`, `<DirtyFormGuard IsDirty="@_isDirty" />` wraps the form, reset `_isDirty = false` right before the post-save `NavigateTo`. `OilPatternPicker`'s `OnDirty` callback and the logo `FileUpload`'s `OnFileUploaded`/`OnFileRemoved` callbacks call `MarkDirty()` directly, same as Create.
+
+### `<PageTitle>` / Render Mode
+
+`<PageTitle>@("Edit " + (_model?.Name ?? "Tournament") + " - BowlNEBA")</PageTitle>`, same conditional-name pattern `EditSponsor.razor` uses. `@rendermode @(new InteractiveServerRenderMode(prerender: false))` — this page loads async data before rendering the form, same as `EditSponsor.razor`, not `CreateTournament.razor` (which has no data to load and uses plain `@rendermode InteractiveServer`).
+
+### FAB / List-Page Entry Point
+
+Not applicable — this isn't a creatable list page; the entry point is the "Edit Tournament" link on the existing Tournament Detail page (added above), matching how Sponsors' edit flow works.
+
+### API Client
+
+`ITournamentsApi.GetTournamentAsync`/`EditTournamentAsync` (both already exist from Phase 1 / the existing detail endpoint) are injected directly into `EditTournament.razor` — no separate Website-side service wrapper, consistent with `CreateTournament.razor`'s direct `ITournamentsApi` injection.
+
+### Tests
+
+- **bUnit** (`Neba.Website.Tests`) — `EditTournament` component tests: populates form fields from a loaded `TournamentDetailResponse` (including admin-gated fields), submits and calls `EditTournamentAsync` with the expected request shape, handles not-found/load-error states, current-logo remove/replace flow, dirty-guard marks dirty on field change and clears on successful save. `OilPatternPicker` tests: new cases for `InitialPatternLengthCategory`/`InitialPatternRatioCategory` pre-filling the manual selects on first render without clobbering a later parameter update once the user has interacted (mirrors the existing `Patterns`-seeding test, if one exists — add if not).
+- **Playwright** (`tests/e2e/`) — one flow: sign in as a user with `Tournaments.EditTournament`, open a tournament's detail page, click "Edit Tournament," change a field (e.g. name or entry fee), save, and confirm the change reflects on the detail page. A second, short test confirms the "Edit Tournament" link isn't rendered for a user without the permission.
+- No new test factories needed — `TournamentDetailResponseFactory`/`TournamentInputFactory`/`EditTournamentInputFactory` (from Phase 1) already exist; extend `TournamentDetailResponseFactory.Create()` (if it doesn't already) to accept the admin-gated raw fields as nullable params, defaulting per the "Create() must produce a valid instance" convention.
+
+### Mockups
+
+- `docs/plans/mockups/edit-tournament/edit-tournament.html` — single data-capture mockup (no real layout tradeoff to weigh, per the same treatment as `CreateTournament.razor`'s own mockup). Reuses the app's actual theme tokens/classes from `neba_theme.css`/`app.css` (colors, `.neba-card`/`.neba-input`/`.neba-select`/`.neba-btn`/`.neba-segmented-control`/`.neba-badge`, the gradient `page-title-bar`) rather than inventing new styling — this is an admin form inside an existing app, not a new visual identity. Shows:
+  - The same section layout as `CreateTournament.razor` (Basic Info, Venue & Entry Fee, Oil Pattern, Logo), pre-filled with a realistic edited tournament ("NEBA Fall Classic").
+  - A small "Unsaved changes" pill in the title bar that appears once any field changes — a mockup-only stand-in for `DirtyFormGuard`'s real behavior (the actual guard intercepts navigation; it has no persistent visible pill in the real app, so **do not carry this pill into the real implementation** — it's here purely so the mockup can demonstrate the dirty-state concept interactively).
+  - The current logo shown with a thumbnail, filename/size, and a "Remove current logo" text action above the upload dropzone, matching `EditSponsor.razor`'s pattern.
+  - The Oil Pattern section's "No Pattern" mode pre-selected with the tournament's existing categories (Long / Sport) and an inline note explaining why they show as plain values rather than a re-selected pattern (the "no persisted current-pattern FK" gap noted above) — switching to "Pick Existing" or "Create New" via the segmented control is simulated with inline JS to demonstrate the mode-switch interaction.

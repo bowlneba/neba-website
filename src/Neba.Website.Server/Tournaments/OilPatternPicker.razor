@@ -129,6 +129,21 @@
     public IReadOnlyCollection<OilPatternSummaryResponse> Patterns { get; set; } = [];
 
     /// <summary>
+    /// Pre-fills the "No Pattern" mode's manual length category select, for editing a tournament
+    /// that already has a category saved. There's no persisted link back to which <c>OilPattern</c>
+    /// (if any) originally produced the category, so this is the most Edit can pre-fill — see
+    /// docs/plans/edit-tournament.md. Ignored by Create, which never sets this parameter.
+    /// </summary>
+    [Parameter]
+    public string? InitialPatternLengthCategory { get; set; }
+
+    /// <summary>
+    /// Pre-fills the "No Pattern" mode's manual ratio category select. See <see cref="InitialPatternLengthCategory"/>.
+    /// </summary>
+    [Parameter]
+    public string? InitialPatternRatioCategory { get; set; }
+
+    /// <summary>
     /// Performs the actual "create new pattern" API call. Kept feature-agnostic (same pattern as
     /// <c>FileUpload.OnUploadRequestedAsync</c>) so this component has no knowledge of the API it's
     /// talking to — the hosting page wires up the real call.
@@ -146,6 +161,8 @@
     private bool _isCreatingPattern;
     private string? _createErrorMessage;
 
+    private bool _hasBeenSeededWithInitialCategories;
+
     private OilPatternSummaryResponse? _selectedPattern
         => _patterns.FirstOrDefault(p => p.OilPatternId == _selectedOilPatternId);
 
@@ -160,6 +177,24 @@
         if (!_hasLocalPatternAdditions)
         {
             _patterns = Patterns;
+        }
+
+        // One-shot seed, same reasoning as _hasLocalPatternAdditions above but for EditTournament's
+        // already-loaded categories rather than a freshly-created pattern: seed once when the parent's
+        // async load resolves, then never again, so the user's own later edits to these selects aren't
+        // clobbered by an unrelated parent re-render.
+        if (!_hasBeenSeededWithInitialCategories
+            && (!string.IsNullOrWhiteSpace(InitialPatternLengthCategory) || !string.IsNullOrWhiteSpace(InitialPatternRatioCategory)))
+        {
+            _manualLengthCategory = InitialPatternLengthCategory ?? string.Empty;
+            _manualRatioCategory = InitialPatternRatioCategory ?? string.Empty;
+            _hasBeenSeededWithInitialCategories = true;
+
+            // Seeding the selects' display values alone doesn't tell the hosting page anything — it
+            // only finds out via SelectionChanged, so the seeded categories must be emitted here too,
+            // or a submit before the user touches either select would send nulls instead of the
+            // tournament's actual current categories.
+            _ = EmitSelectionChanged();
         }
     }
 
