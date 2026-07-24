@@ -9,6 +9,8 @@ namespace Neba.Api.Features.Tournaments.Domain;
 
 internal static class TournamentErrors
 {
+    private const string DateFormat = "yyyy-MM-dd";
+
     public static Error TournamentNotFound(TournamentId id)
         => Error.NotFound(
             code: "Tournament.NotFound",
@@ -25,8 +27,8 @@ internal static class TournamentErrors
             description: "Tournament dates must fall within the season dates.",
             metadata: new Dictionary<string, object>
             {
-                { "SeasonStartDate", seasonStartDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
-                { "SeasonEndDate", seasonEndDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
+                { "SeasonStartDate", seasonStartDate.ToString(DateFormat, CultureInfo.InvariantCulture) },
+                { "SeasonEndDate", seasonEndDate.ToString(DateFormat, CultureInfo.InvariantCulture) },
             });
     }
 
@@ -61,8 +63,8 @@ internal static class TournamentErrors
             description: "End date must not be before start date.",
             metadata: new Dictionary<string, object>
             {
-                { "StartDate", startDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
-                { "EndDate", endDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
+                { "StartDate", startDate.ToString(DateFormat, CultureInfo.InvariantCulture) },
+                { "EndDate", endDate.ToString(DateFormat, CultureInfo.InvariantCulture) },
             });
 
     public static Error InvalidEntryFee(decimal entryFee)
@@ -89,8 +91,8 @@ internal static class TournamentErrors
             description: "No season is configured that contains these tournament dates.",
             metadata: new Dictionary<string, object>
             {
-                { "StartDate", startDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
-                { "EndDate", endDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
+                { "StartDate", startDate.ToString(DateFormat, CultureInfo.InvariantCulture) },
+                { "EndDate", endDate.ToString(DateFormat, CultureInfo.InvariantCulture) },
             });
 
     public static Error OilPatternNotFound(OilPatternId id)

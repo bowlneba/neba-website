@@ -1,4 +1,3 @@
-using Neba.Api.Contacts.Domain;
 using Neba.Api.Database;
 using Neba.Api.Features.Sponsors.GetSponsorDetail;
 using Neba.Api.Storage;
@@ -295,14 +294,14 @@ public sealed class GetSponsorDetailQueryHandlerTests(AppDbContextFixture fixtur
 
         var olderTournament = TournamentFactory.Create(
             name: "Older Tournament",
-            seasonId: season.Id,
             startDate: new DateOnly(2025, 1, 10),
-            endDate: new DateOnly(2025, 1, 11));
+            endDate: new DateOnly(2025, 1, 11),
+            seasonId: season.Id);
         var newerTournament = TournamentFactory.Create(
             name: "Newer Tournament",
-            seasonId: season.Id,
             startDate: new DateOnly(2025, 6, 1),
-            endDate: new DateOnly(2025, 6, 2));
+            endDate: new DateOnly(2025, 6, 2),
+            seasonId: season.Id);
         await _dbContext.Tournaments.AddRangeAsync([olderTournament, newerTournament], ct);
         await _dbContext.SaveChangesAsync(ct);
 

@@ -210,7 +210,7 @@ describe('NebaDateInput', () => {
         test('should not move focus when backspace is pressed on a non-empty segment', () => {
             makeContainer('date-12');
             initialize('date-12', makeDotNetRef(), '', '', '');
-            const { month, day } = segments('date-12');
+            const {day } = segments('date-12');
 
             day.focus();
             typeDigits(day, '5');

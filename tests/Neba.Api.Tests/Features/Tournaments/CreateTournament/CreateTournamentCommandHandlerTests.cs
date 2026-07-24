@@ -342,7 +342,7 @@ public sealed class CreateTournamentCommandHandlerTests(AppDbContextFixture fixt
         var ct = TestContext.Current.CancellationToken;
         await SeedSeasonAsync(ct);
         var handler = CreateHandler();
-        var command = ValidCommand(name: "My New Tournament", entryFee: 50m, statsEligible: false);
+        var command = ValidCommand(name: "My New Tournament", statsEligible: false, entryFee: 50m);
 
         // Act
         var result = await handler.HandleAsync(command, ct);

@@ -821,35 +821,55 @@ const routes: Record<string, unknown> = {
   '/awards/high-block': MOCK_HIGH_BLOCK_AWARDS,
 };
 
-function resolveGetRoute(pathname: string, searchParams: URLSearchParams): object | null {
-  if (pathname === '/stats') {
-    const requestedYear = Number.parseInt(searchParams.get('year') ?? '2025', 10);
-    const selectedYear = Number.isFinite(requestedYear) ? requestedYear : 2025;
-    return createStatsResponse(selectedYear);
-  }
+function resolveStatsRoute(pathname: string, searchParams: URLSearchParams): object | null {
+  if (pathname !== '/stats') return null;
 
-  if (pathname.startsWith('/seasons/') && pathname.endsWith('/tournaments')) {
-    const seasonId = pathname.slice('/seasons/'.length, -'/tournaments'.length);
-    return seasonId === MOCK_SEASON_ID ? MOCK_SEASON_TOURNAMENTS : null;
-  }
+  const requestedYear = Number.parseInt(searchParams.get('year') ?? '2025', 10);
+  const selectedYear = Number.isFinite(requestedYear) ? requestedYear : 2025;
+  return createStatsResponse(selectedYear);
+}
 
+function resolveSeasonTournamentsRoute(pathname: string): object | null {
+  if (!pathname.startsWith('/seasons/') || !pathname.endsWith('/tournaments')) return null;
+
+  const seasonId = pathname.slice('/seasons/'.length, -'/tournaments'.length);
+  return seasonId === MOCK_SEASON_ID ? MOCK_SEASON_TOURNAMENTS : null;
+}
+
+function resolveStaticGetRoute(pathname: string): object | null {
   if (pathname === '/tournaments/champions') return MOCK_TOURNAMENT_CHAMPIONS;
   if (pathname === '/tournaments/types') return MOCK_TOURNAMENT_TYPES;
   if (pathname === `/bowlers/${PRIMARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_LEADER;
   if (pathname === `/bowlers/${SECONDARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_RIVAL;
+  return null;
+}
 
-  if (pathname.startsWith('/tournaments/')) {
-    const tournamentId = pathname.slice('/tournaments/'.length);
-    if (tournamentId === MOCK_TOURNAMENT_ID) return MOCK_TOURNAMENT_DETAIL;
-    if (EXTRA_TOURNAMENT_DETAILS.has(tournamentId)) return EXTRA_TOURNAMENT_DETAILS.get(tournamentId) ?? null;
-    return createdTournaments.get(tournamentId) ?? null;
-  }
+function resolveTournamentDetailRoute(pathname: string): object | null {
+  if (!pathname.startsWith('/tournaments/')) return null;
 
-  if (pathname.startsWith('/sponsors/') && createdSponsors.has(pathname.slice('/sponsors/'.length))) {
-    return createdSponsors.get(pathname.slice('/sponsors/'.length)) ?? null;
-  }
+  const tournamentId = pathname.slice('/tournaments/'.length);
+  if (tournamentId === MOCK_TOURNAMENT_ID) return MOCK_TOURNAMENT_DETAIL;
+  if (EXTRA_TOURNAMENT_DETAILS.has(tournamentId)) return EXTRA_TOURNAMENT_DETAILS.get(tournamentId) ?? null;
+  return createdTournaments.get(tournamentId) ?? null;
+}
 
-  return routes[pathname] ?? null;
+function resolveSponsorDetailRoute(pathname: string): object | null {
+  if (!pathname.startsWith('/sponsors/')) return null;
+
+  const slug = pathname.slice('/sponsors/'.length);
+  return createdSponsors.get(slug) ?? null;
+}
+
+function resolveGetRoute(pathname: string, searchParams: URLSearchParams): object | null {
+  return (
+    resolveStatsRoute(pathname, searchParams) ??
+    resolveSeasonTournamentsRoute(pathname) ??
+    resolveStaticGetRoute(pathname) ??
+    resolveTournamentDetailRoute(pathname) ??
+    resolveSponsorDetailRoute(pathname) ??
+    (routes[pathname] as object | undefined) ??
+    null
+  );
 }
 
 interface MockOverride {

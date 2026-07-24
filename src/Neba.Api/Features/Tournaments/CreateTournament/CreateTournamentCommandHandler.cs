@@ -62,13 +62,13 @@ internal sealed class CreateTournamentCommandHandler(
             seasonId: season.Id,
             statsEligible: command.StatsEligible,
             entryFee: command.EntryFee,
-            nebaAddedMoney: command.NebaAddedMoney,
             bowlingCenterId: command.BowlingCenterId,
             externalRegistrationUrl: command.ExternalRegistrationUrl,
             logo: command.Logo,
             patternLengthCategory: patternLengthCategory,
             patternRatioCategory: patternRatioCategory,
-            oilPatternRevealDateTime: command.OilPatternRevealDateTime);
+            oilPatternRevealDateTime: command.OilPatternRevealDateTime,
+            nebaAddedMoney: command.NebaAddedMoney);
 
         if (tournamentResult.IsError)
         {

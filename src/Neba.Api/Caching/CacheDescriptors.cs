@@ -311,6 +311,8 @@ public static class CacheDescriptors
     /// </summary>
     public static class Tournaments
     {
+        private const string Tag = "neba:tournaments";
+
         private static string ResolveScope(bool callerIsAuthenticated, bool callerHasTournamentManagementPermission)
         {
             if (callerHasTournamentManagementPermission)
@@ -342,8 +344,8 @@ public static class CacheDescriptors
         public static CacheDescriptor ListForSeason(SeasonId seasonId, bool callerIsAuthenticated, bool callerHasTournamentManagementPermission)
             => new()
             {
-                Key = $"neba:tournaments:{seasonId}:list:scope:{ResolveScope(callerIsAuthenticated, callerHasTournamentManagementPermission)}",
-                Tags = ["neba", "neba:tournaments", $"neba:tournaments:{seasonId}"]
+                Key = $"{Tag}:{seasonId}:list:scope:{ResolveScope(callerIsAuthenticated, callerHasTournamentManagementPermission)}",
+                Tags = ["neba", Tag, $"{Tag}:{seasonId}"]
             };
 
         /// <summary>
@@ -367,8 +369,8 @@ public static class CacheDescriptors
         public static CacheDescriptor TournamentDetail(TournamentId id, bool callerIsAuthenticated, bool callerHasTournamentManagementPermission)
             => new()
             {
-                Key = $"neba:tournaments:{id}:scope:{ResolveScope(callerIsAuthenticated, callerHasTournamentManagementPermission)}",
-                Tags = ["neba", "neba:tournaments", $"neba:tournaments:{id}"]
+                Key = $"{Tag}:{id}:scope:{ResolveScope(callerIsAuthenticated, callerHasTournamentManagementPermission)}",
+                Tags = ["neba", Tag, $"{Tag}:{id}"]
             };
 
         /// <summary>
@@ -377,8 +379,8 @@ public static class CacheDescriptors
         public static CacheDescriptor ListChampions
             => new()
             {
-                Key = "neba:tournaments:champions:list",
-                Tags = ["neba", "neba:tournaments", "neba:tournaments:champions"]
+                Key = $"{Tag}:champions:list",
+                Tags = ["neba", Tag, $"{Tag}:champions"]
             };
 
         /// <summary>
@@ -387,8 +389,8 @@ public static class CacheDescriptors
         public static CacheDescriptor Types
             => new()
             {
-                Key = "neba:tournaments:types:list",
-                Tags = ["neba", "neba:tournaments", "neba:tournaments:types"]
+                Key = $"{Tag}:types:list",
+                Tags = ["neba", Tag, $"{Tag}:types"]
             };
     }
 

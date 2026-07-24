@@ -47,78 +47,9 @@ internal sealed class ApiExecutor(
 
             activity?.SetTag("http.status_code", (int?)response.StatusCode);
 
-            if (response.IsSuccessStatusCode)
-            {
-                if (response.Content is not null)
-                {
-                    ApiMetrics.RecordSuccess(apiName, operationName, duration);
-
-                    activity?.SetStatus(ActivityStatusCode.Ok);
-
-                    return response.Content;
-                }
-                else
-                {
-                    // Handle null content on success status as a deserialization error
-                    const string errorType = "DeserializationFailed";
-                    ApiMetrics.RecordError(apiName, operationName, duration, errorType, (int?)response.StatusCode);
-
-                    activity?.SetTag("error.type", "DeserializationFailed");
-                    activity?.SetTag("error.message", "Response content was null despite success status.");
-                    activity?.SetStatus(ActivityStatusCode.Error, "Deserialization failed: null content on success response.");
-
-                    logger.LogDeserializationFailed(
-                        apiName,
-                        operationName,
-                        (int)response.StatusCode.GetValueOrDefault(),
-                        duration
-                    );
-
-                    return Error.Failure(
-                        $"{apiName}.{operationName}.DeserializationFailed",
-                        "API call succeeded but response content was null, indicating a deserialization failure."
-                    );
-                }
-            }
-            else
-            {
-                var statusCode = (int)response.StatusCode.GetValueOrDefault();
-                var errorType = $"HttpError_{statusCode}";
-                ApiMetrics.RecordError(apiName, operationName, duration, errorType, (int?)response.StatusCode);
-
-                logger.LogApiError(
-                    apiName,
-                    operationName,
-                    statusCode,
-                    duration
-                );
-
-                if (response.StatusCode == HttpStatusCode.NotFound)
-                {
-                    return Error.NotFound(
-                        $"{apiName}.{operationName}.NotFound",
-                        "The requested resource was not found.");
-                }
-
-                // 4xx: the server has already produced a human-readable reason (validation failure,
-                // conflict, etc.) - surface it instead of a bare status code. 5xx stays generic so we
-                // never leak internal details to the user.
-                var detail = statusCode is >= 400 and < 500 && response.HasResponseError(out var responseError)
-                    ? TryExtractErrorDetail(responseError.Content)
-                    : null;
-
-                if (detail is not null)
-                {
-                    return statusCode == StatusCodes.Status409Conflict
-                        ? Error.Conflict($"{apiName}.{operationName}.Conflict", detail)
-                        : Error.Validation($"{apiName}.{operationName}.Validation", detail);
-                }
-
-                return Error.Failure(
-                    $"{apiName}.{operationName}.HttpError",
-                    "An unexpected error occurred. Please try again."
-                );
-            }
+            return response.IsSuccessStatusCode
+                ? HandleSuccessResponse(apiName, operationName, response, activity, duration)
+                : HandleErrorResponse(apiName, operationName, response, duration);
         }
         catch (ApiException ex)
         {
@@ -194,6 +125,87 @@ internal sealed class ApiExecutor(
             operationName,
             async ct => new SuccessApiResponse(await apiCall(ct)),
             cancellationToken);
+
+    private ErrorOr<TResponse> HandleSuccessResponse<TResponse>(
+        string apiName,
+        string operationName,
+        IApiResponse<TResponse> response,
+        Activity? activity,
+        double duration)
+    {
+        if (response.Content is not null)
+        {
+            ApiMetrics.RecordSuccess(apiName, operationName, duration);
+
+            activity?.SetStatus(ActivityStatusCode.Ok);
+
+            return response.Content;
+        }
+
+        // Handle null content on success status as a deserialization error
+        const string errorType = "DeserializationFailed";
+        ApiMetrics.RecordError(apiName, operationName, duration, errorType, (int?)response.StatusCode);
+
+        activity?.SetTag("error.type", "DeserializationFailed");
+        activity?.SetTag("error.message", "Response content was null despite success status.");
+        activity?.SetStatus(ActivityStatusCode.Error, "Deserialization failed: null content on success response.");
+
+        logger.LogDeserializationFailed(
+            apiName,
+            operationName,
+            (int)response.StatusCode.GetValueOrDefault(),
+            duration
+        );
+
+        return Error.Failure(
+            $"{apiName}.{operationName}.DeserializationFailed",
+            "API call succeeded but response content was null, indicating a deserialization failure."
+        );
+    }
+
+    private ErrorOr<TResponse> HandleErrorResponse<TResponse>(
+        string apiName,
+        string operationName,
+        IApiResponse<TResponse> response,
+        double duration)
+    {
+        var statusCode = (int)response.StatusCode.GetValueOrDefault();
+        var errorType = $"HttpError_{statusCode}";
+        ApiMetrics.RecordError(apiName, operationName, duration, errorType, (int?)response.StatusCode);
+
+        logger.LogApiError(
+            apiName,
+            operationName,
+            statusCode,
+            duration
+        );
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return Error.NotFound(
+                $"{apiName}.{operationName}.NotFound",
+                "The requested resource was not found.");
+        }
+
+        // 4xx: the server has already produced a human-readable reason (validation failure,
+        // conflict, etc.) - surface it instead of a bare status code. 5xx stays generic so we
+        // never leak internal details to the user.
+        var detail = statusCode is >= 400 and < 500 && response.HasResponseError(out var responseError)
+            ? TryExtractErrorDetail(responseError.Content)
+            : null;
+
+        if (detail is not null)
+        {
+            return statusCode == StatusCodes.Status409Conflict
+                ? Error.Conflict($"{apiName}.{operationName}.Conflict", detail)
+                : Error.Validation($"{apiName}.{operationName}.Validation", detail);
+        }
+
+        return Error.Failure(
+            $"{apiName}.{operationName}.HttpError",
+            "An unexpected error occurred. Please try again."
+        );
+    }
 
     private ErrorOr<TResponse> HandleException<TResponse>(
         string apiName,

@@ -482,17 +482,15 @@ public sealed class ApiExecutorTests
         var cancellationToken = TestContext.Current.CancellationToken;
 
         using var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://api.example.com/data");
-        using var responseMessage = new HttpResponseMessage((System.Net.HttpStatusCode)422)
-        {
-            Content = new StringContent(
-                "{\"status\":422,\"title\":\"Bad Request\",\"errors\":[{\"name\":\"sponsorshipAmount\",\"reason\":\"" + expectedMessage + "\"}]}")
-        };
+        using var responseMessage = new HttpResponseMessage(System.Net.HttpStatusCode.UnprocessableEntity);
+        responseMessage.Content = new StringContent(
+            "{\"status\":422,\"title\":\"Bad Request\",\"errors\":[{\"name\":\"sponsorshipAmount\",\"reason\":\"" + expectedMessage + "\"}]}");
         var apiException = await ApiException.Create(requestMessage, HttpMethod.Post, responseMessage, new RefitSettings());
 
         var apiResponseMock = new StubApiResponse<string>
         {
             IsSuccessStatusCode = false,
-            StatusCode = (System.Net.HttpStatusCode)422,
+            StatusCode = System.Net.HttpStatusCode.UnprocessableEntity,
             Error = apiException,
             Content = (string?)null
         };
