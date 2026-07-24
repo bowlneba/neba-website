@@ -61,8 +61,8 @@ public sealed class PatternRatioCategory
     /// <summary>
     /// Gets the <see cref="PatternRatioCategory"/> that best matches the specified ratio.
     /// </summary>
-    /// <param name="ratio"></param>
-    /// <returns></returns>
+    /// <param name="ratio">The oil-to-dry ratio.</param>
+    /// <returns>The matching <see cref="PatternRatioCategory"/>.</returns>
     public static PatternRatioCategory FromRatio(decimal ratio)
         => List.First(category =>
             (category.MinimumRatio is null || ratio >= category.MinimumRatio)

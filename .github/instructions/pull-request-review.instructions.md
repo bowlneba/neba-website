@@ -675,7 +675,6 @@ When reviewing, verify:
 - [ ] Tests have `DisplayName` on Facts and Theories
 - [ ] New code has corresponding tests
 - [ ] API endpoint integration tests cover success, validation failure, and auth failure
-- [ ] New feature domain namespace added to `BoundedContextNamespaces` in `DomainBoundaryTests.cs`
 - [ ] New routable Blazor page/flow has a Playwright E2E spec in `tests/e2e/` (not just a `docs-screenshots/` script) covering happy path, validation failure, server-error handling, and the auth boundary
 - [ ] Mock API server (`tests/e2e/mock-api/mock-api-server.ts`) has a matching route handler for any new endpoint the E2E spec exercises
 

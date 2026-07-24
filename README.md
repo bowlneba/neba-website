@@ -183,6 +183,10 @@ ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Usernam
 
 - [x] Authentication/Authorization
 - [ ] Tournament Management
+  - [x] Create Tournament
+  - [x] Oil Patterns
+  - [x] Tournament Sponsors
+  - [ ] Edit Tournament
 - [ ] Bowler Management
 - [x] Content Management
 

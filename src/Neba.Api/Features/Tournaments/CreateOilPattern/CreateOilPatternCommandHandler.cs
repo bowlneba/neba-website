@@ -1,6 +1,6 @@
-using ErrorOr;
+using EntityFramework.Exceptions.Common;
 
-using Microsoft.EntityFrameworkCore;
+using ErrorOr;
 
 using Neba.Api.Database;
 using Neba.Api.Features.Tournaments.Domain;
@@ -15,14 +15,6 @@ internal sealed class CreateOilPatternCommandHandler(AppDbContext appDbContext, 
 {
     public async Task<ErrorOr<CreatedOilPattern>> HandleAsync(CreateOilPatternCommand command, CancellationToken cancellationToken)
     {
-        var kegelIdTaken = command.KegelId is { } kegelId
-                           && await appDbContext.OilPatterns.AnyAsync(p => p.KegelId == kegelId, cancellationToken);
-
-        if (kegelIdTaken)
-        {
-            return OilPatternErrors.KegelIdAlreadyExists(command.KegelId!.Value);
-        }
-
         var oilPatternResult = OilPattern.Create(
             name: command.Name,
             length: command.Length,
@@ -39,7 +31,15 @@ internal sealed class CreateOilPatternCommandHandler(AppDbContext appDbContext, 
         var oilPattern = oilPatternResult.Value;
 
         await appDbContext.OilPatterns.AddAsync(oilPattern, cancellationToken);
-        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await appDbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (UniqueConstraintException ex) when (ex.ConstraintProperties.Contains(nameof(OilPattern.KegelId)))
+        {
+            return OilPatternErrors.KegelIdAlreadyExists(command.KegelId!.Value);
+        }
 
         await cache.RemoveByTagAsync("neba:oil-patterns", token: cancellationToken);
 
