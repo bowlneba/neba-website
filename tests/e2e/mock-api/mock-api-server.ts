@@ -278,8 +278,10 @@ const MOCK_HIGH_BLOCK_AWARDS = {
   totalItems: 2,
 };
 
+// Includes 'Open', matching MOCK_TOURNAMENT_DETAIL.tournamentType — otherwise the edit form's
+// <select> has no matching <option> and silently blanks the pre-filled value.
 const MOCK_TOURNAMENT_TYPES = {
-  items: [{ name: 'Singles' }, { name: 'Doubles' }],
+  items: [{ name: 'Singles' }, { name: 'Doubles' }, { name: 'Open' }],
 };
 
 const MOCK_OIL_PATTERNS = {

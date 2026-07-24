@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+
 const MOCK_TOURNAMENT_ID = '01JX0000000000000000000010';
 
 test.describe('Tournament detail page — edit tournament (unauthenticated)', () => {
@@ -74,12 +76,15 @@ test.describe('Tournament detail page — edit tournament (authenticated)', () =
   });
 
   test('shows an error alert and stays on the page when saving fails', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_ID}/edit`);
+    await page.waitForSelector('#name');
+
+    // Set after the page loads — GET and PUT for this tournament share the same mock path
+    // (keyed by id, not slug), so registering the override before navigating would also fail
+    // the prefill GET.
     await page.request.post(
       `http://localhost:5151/__mock/fail?path=/tournaments/${MOCK_TOURNAMENT_ID}&status=409`
     );
-
-    await page.goto(`/tournaments/${MOCK_TOURNAMENT_ID}/edit`);
-    await page.waitForSelector('#name');
 
     await page.locator('#name').fill('NEBA Spring Classic Updated');
     await page.locator('button[type="submit"].neba-btn-primary').click();
