@@ -31,7 +31,9 @@ public static class TournamentFactory
         decimal? entryFee = null,
         Uri? externalRegistrationUrl = null,
         StoredFile? logo = null,
-        IReadOnlyCollection<TournamentSponsor>? sponsors = null)
+        IReadOnlyCollection<TournamentSponsor>? sponsors = null,
+        DateTimeOffset? oilPatternRevealDateTime = null,
+        decimal? nebaAddedMoney = null)
     {
         var tournament = new Tournament
         {
@@ -47,8 +49,10 @@ public static class TournamentFactory
             LegacyId = legacyId,
             SeasonId = seasonId ?? SeasonId.New(),
             EntryFee = entryFee ?? 100m,
+            NebaAddedMoney = nebaAddedMoney ?? 0m,
             ExternalRegistrationUrl = externalRegistrationUrl,
-            Logo = logo
+            Logo = logo,
+            OilPatternRevealDateTime = oilPatternRevealDateTime
         };
 
         foreach (var tournamentSponsor in sponsors ?? [])
@@ -91,8 +95,10 @@ public static class TournamentFactory
                 LegacyId = faker.Random.Bool() ? faker.Random.Int(1, 9999) : null,
                 SeasonId = seasons.GetNext().Id,
                 EntryFee = faker.Random.Decimal(0, 500),
+                NebaAddedMoney = faker.Random.Decimal(0, 5000),
                 ExternalRegistrationUrl = faker.Random.Bool() ? new Uri(faker.Internet.Url()) : null,
-                Logo = logos.GetNextNullable()
+                Logo = logos.GetNextNullable(),
+                OilPatternRevealDateTime = faker.Random.Bool() ? faker.Date.FutureOffset(1) : null
             };
 
             var sponsorCount = faker.Random.Int(0, 2);

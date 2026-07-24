@@ -83,7 +83,7 @@ public sealed partial record PhoneNumber
 
         string? cleanExtension = string.IsNullOrWhiteSpace(extension)
             ? null
-            : DigitsOnly().Replace(extension!, string.Empty);
+            : DigitsOnly().Replace(extension, string.Empty);
 
         return new PhoneNumber
         {

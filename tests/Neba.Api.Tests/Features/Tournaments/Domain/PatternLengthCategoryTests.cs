@@ -32,4 +32,20 @@ public sealed class PatternLengthCategoryTests
         category.MinimumLength.ShouldBe(expectedMinimum);
         category.MaximumLength.ShouldBe(expectedMaximum);
     }
+
+    [Theory(DisplayName = "FromLength should return the category matching the specified length")]
+    [InlineData(1, "Short", TestDisplayName = "length 1 is Short")]
+    [InlineData(37, "Short", TestDisplayName = "length 37 is Short")]
+    [InlineData(38, "Medium", TestDisplayName = "length 38 is Medium")]
+    [InlineData(42, "Medium", TestDisplayName = "length 42 is Medium")]
+    [InlineData(43, "Long", TestDisplayName = "length 43 is Long")]
+    [InlineData(50, "Long", TestDisplayName = "length 50 is Long")]
+    public void FromLength_ShouldReturnMatchingCategory(int length, string expectedCategoryName)
+    {
+        // Act
+        var category = PatternLengthCategory.FromLength(length);
+
+        // Assert
+        category.Name.ShouldBe(expectedCategoryName);
+    }
 }

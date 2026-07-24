@@ -104,7 +104,7 @@ public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContex
 
         // Assert
         sentMessage.ShouldNotBeNull();
-        sentMessage!.To.ShouldBe(RegisterRequestFactory.ValidEmail);
+        sentMessage.To.ShouldBe(RegisterRequestFactory.ValidEmail);
     }
 
     [Fact(DisplayName = "HandleAsync embeds the generated temporary password in the email body")]
@@ -128,7 +128,7 @@ public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContex
 
         // Assert
         sentMessage.ShouldNotBeNull();
-        sentMessage!.HtmlBody.ShouldNotContain("{tempPassword}");
+        sentMessage.HtmlBody.ShouldNotContain("{tempPassword}");
         var tempPassword = ExtractTempPasswordFromBody(sentMessage.HtmlBody);
         var freshUser = await userManager.FindByEmailAsync(RegisterRequestFactory.ValidEmail);
         var canLogin = await userManager.CheckPasswordAsync(freshUser!, tempPassword);

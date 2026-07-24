@@ -1,16 +1,23 @@
 @preservewhitespace false
 @page "/tournaments/{Id}"
 @using ErrorOr
+@using Neba.Api.Contracts
+@using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Sponsors
 @using Neba.Api.Contracts.Tournaments
+@using Neba.Api.Contracts.Tournaments.AddTournamentSponsor
 @using Neba.Api.Contracts.Tournaments.GetTournament
 @using Neba.Website.Server.Services
+@using Neba.Website.Server.Time
 @using Neba.Website.Server.Tournaments.Detail
 @using System.Globalization
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject ApiExecutor ApiExecutor
 @inject ITournamentsApi TournamentsApi
+@inject ISponsorsApi SponsorsApi
 @inject NavigationManager Navigation
+@inject IClientTimeZoneService ClientTimeZoneService
 
 @if (_isLoading)
 {
@@ -123,6 +130,15 @@ else
                                         <span class="td-hero__stat-value td-hero__stat-value--gold">
                                             @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
                                         </span>
+                                        @if (_model.HasMultipleMoneySources)
+                                        {
+                                            <span class="td-hero__stat-sub">
+                                                @_model.SponsorMoney!.Value.ToString("C0", CurrencyCulture) sponsor money
+                                            </span>
+                                            <span class="td-hero__stat-sub">
+                                                @_model.NebaAddedMoney.ToString("C0", CurrencyCulture) NEBA added money
+                                            </span>
+                                        }
                                         @if (_model.EntryFee.HasValue)
                                         {
                                             <span class="td-hero__stat-sub">
@@ -166,7 +182,7 @@ else
                                         Registration opens soon
                                     </button>
                                 }
-                                <TournamentStatusPill Status="@InferredRegistrationStatus" />
+                                <TournamentStatusPill Status="@Model.RegistrationStatus" />
                             </div>
                         }
 
@@ -212,6 +228,17 @@ else
                     {
                         <section class="tournament-detail__section">
                             <h2 class="td-section-title">@(_model.OilPatterns.Count == 1 ? "Oil Pattern" : "Oil Patterns")</h2>
+
+                            @if (_model.HasOilPatternRevealDateTime)
+                            {
+                                <p class="td-reveal-note @(_model.OilPatternRevealIsPending ? "td-reveal-note--pending" : "td-reveal-note--past")">
+                                    <span class="material-symbols-outlined" aria-hidden="true">@(_model.OilPatternRevealIsPending ? "visibility_off" : "visibility")</span>
+                                    @(_model.OilPatternRevealIsPending
+                                        ? "Full details reveal to the public on " + (_oilPatternRevealLocal ?? _model.OilPatternRevealDateTime!.Value).ToString("MMM d, yyyy, h:mm tt", CurrencyCulture)
+                                        : "Revealed to the public")
+                                </p>
+                            }
+
                             <div class="td-pattern-list">
                                 @foreach (var pattern in _model.OilPatterns)
                                 {
@@ -229,12 +256,29 @@ else
                                                     @pattern.Display
                                                 }
                                             </p>
+                                            <p class="td-pattern-card__sub">@pattern.RatioDisplay</p>
                                             @if (_model.OilPatterns.Count > 1 && pattern.Rounds.Count > 0)
                                             {
                                                 <p class="td-pattern-card__rounds">@string.Join(", ", pattern.Rounds)</p>
                                             }
                                         </div>
                                     </div>
+                                }
+                            </div>
+                        </section>
+                    }
+                    else if (_model.HasReducedOilPatternInfoOnly)
+                    {
+                        <section class="tournament-detail__section">
+                            <h2 class="td-section-title">Oil Pattern</h2>
+                            <div class="td-hero__chips">
+                                @if (_model.PatternLengthCategory is not null)
+                                {
+                                    <span class="td-hero__chip">@_model.PatternLengthCategory</span>
+                                }
+                                @if (_model.PatternRatioCategory is not null)
+                                {
+                                    <span class="td-hero__chip">@_model.PatternRatioCategory</span>
                                 }
                             </div>
                         </section>
@@ -289,6 +333,18 @@ else
                         </section>
                     }
 
+                    <AuthorizeView Policy="@Permissions.ManageTournamentSponsors.PolicyName">
+                        <Authorized>
+                            <section class="tournament-detail__section">
+                                <ManageTournamentSponsors Sponsors="@_model.Sponsors"
+                                                           OnChanged="ReloadTournamentAsync"
+                                                           OnListActiveSponsorsRequestedAsync="ListActiveSponsorsAsync"
+                                                           OnAddSponsorRequestedAsync="AddTournamentSponsorAsync"
+                                                           OnRemoveSponsorRequestedAsync="RemoveTournamentSponsorAsync" />
+                            </section>
+                        </Authorized>
+                    </AuthorizeView>
+
                 </div>
 
                 @if (HasRailContent)
@@ -307,6 +363,15 @@ else
                                                 @_model.AddedMoney!.Value.ToString("C0", CurrencyCulture)
                                             </span>
                                             <span class="td-rail-price__label">Added money</span>
+                                            @if (_model.HasMultipleMoneySources)
+                                            {
+                                                <span class="td-rail-price__secondary">
+                                                    @_model.SponsorMoney!.Value.ToString("C0", CurrencyCulture) sponsor money
+                                                </span>
+                                                <span class="td-rail-price__secondary">
+                                                    @_model.NebaAddedMoney.ToString("C0", CurrencyCulture) NEBA added money
+                                                </span>
+                                            }
                                             @if (_model.EntryFee.HasValue)
                                             {
                                                 <span class="td-rail-price__secondary">
@@ -323,7 +388,7 @@ else
                                         }
                                     </div>
                                 }
-                                <TournamentStatusPill Status="@InferredRegistrationStatus" />
+                                <TournamentStatusPill Status="@Model.RegistrationStatus" />
                             </div>
                         }
 
@@ -391,6 +456,7 @@ else
     private static readonly CultureInfo CurrencyCulture = CultureInfo.GetCultureInfo("en-US");
 
     private TournamentDetailViewModel? _model;
+    private DateTimeOffset? _oilPatternRevealLocal;
     private bool _isLoading = true;
     private bool _hasError;
 
@@ -416,11 +482,60 @@ else
         }
 
         _model = result.Value.ToViewModel();
+
+        if (_model.OilPatternRevealDateTime is { } revealUtc)
+        {
+            _oilPatternRevealLocal = await ClientTimeZoneService.ToLocalAsync(revealUtc);
+        }
+
         _isLoading = false;
     }
 
     private static string GetCutStyle(string? color) =>
         color is not null ? "border-left-color:" + color : string.Empty;
+
+    private async Task ReloadTournamentAsync()
+    {
+        var result = await ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "GetTournamentDetail",
+            ct => TournamentsApi.GetTournamentAsync(Id, ct));
+
+        if (!result.IsError)
+        {
+            _model = result.Value.ToViewModel();
+
+            if (_model.OilPatternRevealDateTime is { } revealUtc)
+            {
+                _oilPatternRevealLocal = await ClientTimeZoneService.ToLocalAsync(revealUtc);
+            }
+        }
+    }
+
+    private Task<ErrorOr<CollectionResponse<SponsorSummaryResponse>>> ListActiveSponsorsAsync(CancellationToken ct)
+        => ApiExecutor.ExecuteAsync(
+            "Sponsors",
+            "ListActiveSponsors",
+            c => SponsorsApi.ListActiveSponsorsAsync(c),
+            ct);
+
+    private Task<ErrorOr<Success>> AddTournamentSponsorAsync(AddTournamentSponsorInput input, CancellationToken ct)
+    {
+        var request = new AddTournamentSponsorRequest { Id = Id, Sponsor = input };
+
+        return ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "AddTournamentSponsor",
+            c => TournamentsApi.AddTournamentSponsorAsync(Id, request, c),
+            ct);
+    }
+
+    private Task<ErrorOr<Success>> RemoveTournamentSponsorAsync(string sponsorId, CancellationToken ct)
+        => ApiExecutor.ExecuteAsync(
+            "TournamentsApi",
+            "RemoveTournamentSponsor",
+            c => TournamentsApi.RemoveTournamentSponsorAsync(Id, sponsorId, c),
+            ct);
 
     private bool HasRailContent =>
         _model is not null && (_model.IsUpcoming || _model.HasSponsors || _model.EntryCount.HasValue || _model.HasPayout);
@@ -432,9 +547,6 @@ else
         _model is null ? string.Empty : string.Join(" / ", _model.Winners);
 
     private TournamentDetailViewModel Model => _model!;
-
-    private RegistrationStatus? InferredRegistrationStatus =>
-        _model!.HasRegistrationUrl ? RegistrationStatus.Open : null;
 
     private static string GetPatternClass(int length)
     {

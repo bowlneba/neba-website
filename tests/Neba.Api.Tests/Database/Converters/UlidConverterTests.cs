@@ -33,7 +33,7 @@ public sealed class UlidConverterTests
 
         // Assert
         result.ShouldBeOfType<Ulid>();
-        ((Ulid)result!).ShouldBe(ulid);
+        ((Ulid)result).ShouldBe(ulid);
     }
 
     [Fact(DisplayName = "Should preserve value when converting to and from string")]

@@ -32,4 +32,21 @@ public sealed class PatternRatioCategoryTests
         category.MinimumRatio.ShouldBe(expectedMinimum is null ? null : (decimal?)expectedMinimum.Value);
         category.MaximumRatio.ShouldBe(expectedMaximum is null ? null : (decimal?)expectedMaximum.Value);
     }
+
+    [Theory(DisplayName = "FromRatio should return the category matching the specified ratio")]
+    [InlineData(0.0, "Sport", TestDisplayName = "ratio 0.0 is Sport")]
+    [InlineData(3.99, "Sport", TestDisplayName = "ratio 3.99 is Sport")]
+    [InlineData(4.0, "Challenge", TestDisplayName = "ratio 4.0 is Challenge")]
+    [InlineData(6.0, "Challenge", TestDisplayName = "ratio 6.0 is Challenge")]
+    [InlineData(8.0, "Challenge", TestDisplayName = "ratio 8.0 is Challenge (boundary belongs to the earlier-declared overlapping category)")]
+    [InlineData(8.01, "Recreation", TestDisplayName = "ratio 8.01 is Recreation")]
+    [InlineData(15.0, "Recreation", TestDisplayName = "ratio 15.0 is Recreation")]
+    public void FromRatio_ShouldReturnMatchingCategory(decimal ratio, string expectedCategoryName)
+    {
+        // Act
+        var category = PatternRatioCategory.FromRatio(ratio);
+
+        // Assert
+        category.Name.ShouldBe(expectedCategoryName);
+    }
 }

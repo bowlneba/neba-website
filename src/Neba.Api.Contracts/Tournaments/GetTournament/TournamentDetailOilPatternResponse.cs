@@ -16,6 +16,21 @@ public sealed record TournamentDetailOilPatternResponse
     public required int Length { get; init; }
 
     /// <summary>
+    /// The oil volume applied, in milliliters.
+    /// </summary>
+    public required decimal Volume { get; init; }
+
+    /// <summary>
+    /// The forward (head) to reverse (tail) oil ratio on the pattern's left side.
+    /// </summary>
+    public required decimal LeftRatio { get; init; }
+
+    /// <summary>
+    /// The forward (head) to reverse (tail) oil ratio on the pattern's right side.
+    /// </summary>
+    public required decimal RightRatio { get; init; }
+
+    /// <summary>
     /// Tournament rounds that use this pattern (e.g., "Qualifying", "Finals").
     /// </summary>
     public IReadOnlyCollection<string> Rounds { get; init; } = [];

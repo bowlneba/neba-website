@@ -99,6 +99,14 @@ internal sealed class GetSponsorDetailEndpoint(IQueryHandler<GetSponsorDetailQue
                     },
                     Email = dto.Contact.Email
                 },
+            TournamentsSponsored = [.. dto.TournamentsSponsored.Select(t => new SponsorDetailTournamentResponse
+            {
+                TournamentId = t.TournamentId,
+                Name = t.Name,
+                StartDate = t.StartDate,
+                EndDate = t.EndDate,
+                TitleSponsor = t.TitleSponsor
+            })],
         };
 
         // Stryker disable once Statement

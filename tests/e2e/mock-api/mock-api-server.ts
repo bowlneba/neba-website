@@ -60,6 +60,25 @@ function sendMockOverrideErrorIfSet(res: ServerResponse, pathname: string): bool
   return false;
 }
 
+interface TournamentSponsorFixture {
+  sponsorId: string;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  websiteUrl: string | null;
+  tagPhrase: string | null;
+  titleSponsor: boolean;
+  sponsorshipAmount: number;
+}
+
+interface SponsorMetaFixture {
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  websiteUrl: string | null;
+  tagPhrase: string | null;
+}
+
 function slugify(title: string): string {
   return title
     .trim()
@@ -104,6 +123,7 @@ const MOCK_BOWLING_CENTERS = {
 const MOCK_SPONSORS_ACTIVE = {
   items: [
     {
+      sponsorId: '01JX0000000000000000000101',
       name: 'Acme Bowling Supply',
       slug: 'acme-bowling-supply',
       logoUrl: null,
@@ -118,6 +138,7 @@ const MOCK_SPONSORS_ACTIVE = {
       instagramUrl: null,
     },
     {
+      sponsorId: '01JX0000000000000000000001',
       name: 'Pro Shop Plus',
       slug: 'pro-shop-plus',
       logoUrl: null,
@@ -132,6 +153,7 @@ const MOCK_SPONSORS_ACTIVE = {
       instagramUrl: null,
     },
     {
+      sponsorId: '01JX0000000000000000000102',
       name: 'Regional Lanes',
       slug: 'regional-lanes',
       logoUrl: null,
@@ -177,6 +199,15 @@ const MOCK_SPONSOR_PRO_SHOP_PLUS = {
   sponsorContactEmailAddress: null,
   sponsorContactPhoneNumber: null,
   sponsorContactPhoneNumberType: null,
+  tournamentsSponsored: [
+    {
+      tournamentId: '01JX0000000000000000000010', // MOCK_TOURNAMENT_ID
+      name: 'NEBA Spring Classic',
+      startDate: '2024-09-21',
+      endDate: '2024-09-21',
+      titleSponsor: true,
+    },
+  ],
 };
 
 // 'old-sponsor' deliberately has no mock route: it's inactive, and the real API returns
@@ -247,6 +278,26 @@ const MOCK_HIGH_BLOCK_AWARDS = {
   totalItems: 2,
 };
 
+const MOCK_TOURNAMENT_TYPES = {
+  items: [{ name: 'Singles' }, { name: 'Doubles' }],
+};
+
+const MOCK_OIL_PATTERNS = {
+  items: [
+    {
+      oilPatternId: '01JX0000000000000000000201',
+      name: 'Typhoon',
+      length: 40,
+      volume: 24,
+      leftRatio: 5,
+      rightRatio: 5,
+      kegelId: null,
+      lengthCategory: 'Medium',
+      ratioCategory: 'Medium',
+    },
+  ],
+};
+
 export const MOCK_TOURNAMENT_DETAIL = {
   id: MOCK_TOURNAMENT_ID,
   name: 'NEBA Spring Classic',
@@ -264,11 +315,152 @@ export const MOCK_TOURNAMENT_DETAIL = {
   patternRatioCategory: null,
   logoUrl: null,
   bowlingCenter: { name: 'Lucky Strike Lanes', city: 'Boston', state: 'MA' },
-  sponsors: [],
+  sponsors: [
+    {
+      sponsorId: '01JX0000000000000000000001',
+      name: 'Pro Shop Plus',
+      slug: 'pro-shop-plus',
+      logoUrl: null,
+      websiteUrl: null,
+      tagPhrase: null,
+      titleSponsor: true,
+      sponsorshipAmount: 1000,
+    },
+    {
+      sponsorId: '01JX0000000000000000000102',
+      name: 'Regional Lanes',
+      slug: 'regional-lanes',
+      logoUrl: null,
+      websiteUrl: null,
+      tagPhrase: null,
+      titleSponsor: false,
+      sponsorshipAmount: 250,
+    },
+  ],
   oilPatterns: [{ name: 'Scorpion', length: 42, volume: 24.5, leftRatio: 3, rightRatio: 3 }],
   winners: ['Current Leader'],
   results: [],
 };
+
+// Fixtures for Oil Pattern Reveal gating E2E coverage (TournamentDetail.spec.ts). Each id
+// simulates a different response shape the real API would return for a given viewer/reveal
+// state — the mock server has no auth of its own, so the three states are modeled as three
+// distinct tournaments rather than one tournament whose response varies by caller.
+export const MOCK_TOURNAMENT_OIL_REVEAL_PENDING_ID = '01JX0000000000000000000030';
+export const MOCK_TOURNAMENT_OIL_REVEALED_ID = '01JX0000000000000000000031';
+export const MOCK_TOURNAMENT_OIL_REVEAL_MGMT_ID = '01JX0000000000000000000032';
+
+// Ordinary viewer, reveal date/time still in the future: API withholds full pattern details and
+// returns only the category chips.
+const MOCK_TOURNAMENT_OIL_REVEAL_PENDING = {
+  id: MOCK_TOURNAMENT_OIL_REVEAL_PENDING_ID,
+  name: 'NEBA Pending Reveal Classic',
+  season: '2025-2026 Season',
+  startDate: '2026-06-01',
+  endDate: '2026-06-01',
+  statsEligible: true,
+  tournamentType: 'Singles',
+  entryFee: 60,
+  registrationUrl: null,
+  addedMoney: null,
+  reservations: null,
+  entryCount: null,
+  patternLengthCategory: 'Medium',
+  patternRatioCategory: null,
+  logoUrl: null,
+  bowlingCenter: { name: 'Lucky Strike Lanes', city: 'Boston', state: 'MA' },
+  sponsors: [],
+  oilPatterns: [],
+  oilPatternRevealDateTime: '2030-01-01T00:00:00+00:00',
+  winners: [],
+  results: [],
+};
+
+// Reveal date/time already passed: full pattern details are public for every viewer.
+const MOCK_TOURNAMENT_OIL_REVEALED = {
+  id: MOCK_TOURNAMENT_OIL_REVEALED_ID,
+  name: 'NEBA Revealed Pattern Classic',
+  season: '2025-2026 Season',
+  startDate: '2026-06-01',
+  endDate: '2026-06-01',
+  statsEligible: true,
+  tournamentType: 'Singles',
+  entryFee: 60,
+  registrationUrl: null,
+  addedMoney: null,
+  reservations: null,
+  entryCount: null,
+  patternLengthCategory: 'Medium',
+  patternRatioCategory: null,
+  logoUrl: null,
+  bowlingCenter: { name: 'Lucky Strike Lanes', city: 'Boston', state: 'MA' },
+  sponsors: [],
+  oilPatterns: [{ name: 'Scorpion', length: 42, volume: 24.5, leftRatio: 3, rightRatio: 3 }],
+  oilPatternRevealDateTime: '2020-01-01T00:00:00+00:00',
+  winners: [],
+  results: [],
+};
+
+// Reveal date/time still in the future, but the caller has tournament-management permission, so
+// the API returns full pattern details early alongside the still-pending reveal date/time.
+const MOCK_TOURNAMENT_OIL_REVEAL_MGMT = {
+  id: MOCK_TOURNAMENT_OIL_REVEAL_MGMT_ID,
+  name: 'NEBA Management Preview Classic',
+  season: '2025-2026 Season',
+  startDate: '2026-06-01',
+  endDate: '2026-06-01',
+  statsEligible: true,
+  tournamentType: 'Singles',
+  entryFee: 60,
+  registrationUrl: null,
+  addedMoney: null,
+  reservations: null,
+  entryCount: null,
+  patternLengthCategory: 'Medium',
+  patternRatioCategory: null,
+  logoUrl: null,
+  bowlingCenter: { name: 'Lucky Strike Lanes', city: 'Boston', state: 'MA' },
+  sponsors: [],
+  oilPatterns: [{ name: 'Scorpion', length: 42, volume: 24.5, leftRatio: 3, rightRatio: 3 }],
+  oilPatternRevealDateTime: '2030-01-01T00:00:00+00:00',
+  winners: [],
+  results: [],
+};
+
+// Dedicated tournament for the "Manage Sponsors" E2E flow (add/remove), kept separate from
+// MOCK_TOURNAMENT_ID so those mutations never leak into the other tournament-detail tests that
+// assert a fixed sponsor count against MOCK_TOURNAMENT_DETAIL.
+export const MOCK_TOURNAMENT_SPONSOR_MGMT_ID = '01JX0000000000000000000040';
+
+const MOCK_TOURNAMENT_SPONSOR_MGMT = {
+  id: MOCK_TOURNAMENT_SPONSOR_MGMT_ID,
+  name: 'NEBA Sponsor Management Classic',
+  season: '2025-2026 Season',
+  startDate: '2026-06-01',
+  endDate: '2026-06-01',
+  statsEligible: true,
+  tournamentType: 'Singles',
+  entryFee: 60,
+  registrationUrl: null,
+  addedMoney: null,
+  reservations: null,
+  entryCount: null,
+  patternLengthCategory: null,
+  patternRatioCategory: null,
+  logoUrl: null,
+  bowlingCenter: { name: 'Lucky Strike Lanes', city: 'Boston', state: 'MA' },
+  sponsors: [] as TournamentSponsorFixture[],
+  oilPatterns: [],
+  winners: [],
+  results: [],
+};
+
+const EXTRA_TOURNAMENT_DETAILS = new Map<string, object>([
+  [MOCK_TOURNAMENT_OIL_REVEAL_PENDING_ID, MOCK_TOURNAMENT_OIL_REVEAL_PENDING],
+  [MOCK_TOURNAMENT_OIL_REVEALED_ID, MOCK_TOURNAMENT_OIL_REVEALED],
+  [MOCK_TOURNAMENT_OIL_REVEAL_MGMT_ID, MOCK_TOURNAMENT_OIL_REVEAL_MGMT],
+  [MOCK_TOURNAMENT_SPONSOR_MGMT_ID, MOCK_TOURNAMENT_SPONSOR_MGMT],
+]);
 
 type SeasonVariants = {
   label: string;
@@ -615,6 +807,7 @@ const routes: Record<string, unknown> = {
   '/reference-data/us-states': MOCK_US_STATES,
   '/reference-data/phone-number-types': MOCK_PHONE_NUMBER_TYPES,
   '/bowling-centers': MOCK_BOWLING_CENTERS,
+  '/oil-patterns': MOCK_OIL_PATTERNS,
   '/seasons': MOCK_SEASONS,
   '/sponsors': MOCK_SPONSORS_ACTIVE,
   '/sponsors/pro-shop-plus': MOCK_SPONSOR_PRO_SHOP_PLUS,
@@ -628,32 +821,55 @@ const routes: Record<string, unknown> = {
   '/awards/high-block': MOCK_HIGH_BLOCK_AWARDS,
 };
 
-function resolveGetRoute(pathname: string, searchParams: URLSearchParams): object | null {
-  if (pathname === '/stats') {
-    const requestedYear = Number.parseInt(searchParams.get('year') ?? '2025', 10);
-    const selectedYear = Number.isFinite(requestedYear) ? requestedYear : 2025;
-    return createStatsResponse(selectedYear);
-  }
+function resolveStatsRoute(pathname: string, searchParams: URLSearchParams): object | null {
+  if (pathname !== '/stats') return null;
 
-  if (pathname.startsWith('/seasons/') && pathname.endsWith('/tournaments')) {
-    const seasonId = pathname.slice('/seasons/'.length, -'/tournaments'.length);
-    return seasonId === MOCK_SEASON_ID ? MOCK_SEASON_TOURNAMENTS : null;
-  }
+  const requestedYear = Number.parseInt(searchParams.get('year') ?? '2025', 10);
+  const selectedYear = Number.isFinite(requestedYear) ? requestedYear : 2025;
+  return createStatsResponse(selectedYear);
+}
 
+function resolveSeasonTournamentsRoute(pathname: string): object | null {
+  if (!pathname.startsWith('/seasons/') || !pathname.endsWith('/tournaments')) return null;
+
+  const seasonId = pathname.slice('/seasons/'.length, -'/tournaments'.length);
+  return seasonId === MOCK_SEASON_ID ? MOCK_SEASON_TOURNAMENTS : null;
+}
+
+function resolveStaticGetRoute(pathname: string): object | null {
   if (pathname === '/tournaments/champions') return MOCK_TOURNAMENT_CHAMPIONS;
+  if (pathname === '/tournaments/types') return MOCK_TOURNAMENT_TYPES;
   if (pathname === `/bowlers/${PRIMARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_LEADER;
   if (pathname === `/bowlers/${SECONDARY_BOWLER_ID}/titles`) return MOCK_BOWLER_TITLES_CURRENT_RIVAL;
+  return null;
+}
 
-  if (pathname.startsWith('/tournaments/')) {
-    const tournamentId = pathname.slice('/tournaments/'.length);
-    return tournamentId === MOCK_TOURNAMENT_ID ? MOCK_TOURNAMENT_DETAIL : null;
-  }
+function resolveTournamentDetailRoute(pathname: string): object | null {
+  if (!pathname.startsWith('/tournaments/')) return null;
 
-  if (pathname.startsWith('/sponsors/') && createdSponsors.has(pathname.slice('/sponsors/'.length))) {
-    return createdSponsors.get(pathname.slice('/sponsors/'.length)) ?? null;
-  }
+  const tournamentId = pathname.slice('/tournaments/'.length);
+  if (tournamentId === MOCK_TOURNAMENT_ID) return MOCK_TOURNAMENT_DETAIL;
+  if (EXTRA_TOURNAMENT_DETAILS.has(tournamentId)) return EXTRA_TOURNAMENT_DETAILS.get(tournamentId) ?? null;
+  return createdTournaments.get(tournamentId) ?? null;
+}
 
-  return routes[pathname] ?? null;
+function resolveSponsorDetailRoute(pathname: string): object | null {
+  if (!pathname.startsWith('/sponsors/')) return null;
+
+  const slug = pathname.slice('/sponsors/'.length);
+  return createdSponsors.get(slug) ?? null;
+}
+
+function resolveGetRoute(pathname: string, searchParams: URLSearchParams): object | null {
+  return (
+    resolveStatsRoute(pathname, searchParams) ??
+    resolveSeasonTournamentsRoute(pathname) ??
+    resolveStaticGetRoute(pathname) ??
+    resolveTournamentDetailRoute(pathname) ??
+    resolveSponsorDetailRoute(pathname) ??
+    (routes[pathname] as object | undefined) ??
+    null
+  );
 }
 
 interface MockOverride {
@@ -666,6 +882,41 @@ const mockOverrides = new Map<string, MockOverride>();
 // Sponsors created via POST /sponsors during a test run, keyed by slug, so a subsequent
 // GET /sponsors/{slug} (e.g. after the create form navigates to the detail page) resolves.
 const createdSponsors = new Map<string, object>();
+
+// Tournaments created via POST /tournaments during a test run, keyed by generated ID, so a
+// subsequent GET /tournaments/{id} (after the create form navigates to the detail page) resolves.
+const createdTournaments = new Map<string, object>();
+let nextCreatedTournamentSuffix = 200;
+
+// Looks up display fields for a sponsor by id, checking the seeded active-sponsors list first,
+// then sponsors created via POST /sponsors during this test run — used by
+// POST /tournaments/{id}/sponsors to fill in the sponsor's name/slug/logo on the tournament's
+// sponsor list, since the request body only carries the sponsor id and amount.
+function findSponsorMetaById(sponsorId: string | undefined): SponsorMetaFixture | undefined {
+  if (!sponsorId) {
+    return undefined;
+  }
+
+  const activeMatch = MOCK_SPONSORS_ACTIVE.items.find((s) => s.sponsorId === sponsorId);
+  if (activeMatch) {
+    return activeMatch;
+  }
+
+  for (const created of createdSponsors.values()) {
+    const candidate = created as { id?: string } & Partial<SponsorMetaFixture>;
+    if (candidate.id === sponsorId) {
+      return {
+        name: candidate.name ?? '',
+        slug: candidate.slug ?? '',
+        logoUrl: candidate.logoUrl ?? null,
+        websiteUrl: candidate.websiteUrl ?? null,
+        tagPhrase: candidate.tagPhrase ?? null,
+      };
+    }
+  }
+
+  return undefined;
+}
 
 async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
   setCorsHeaders(res);
@@ -742,9 +993,27 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       businessCountry: null,
       businessEmailAddress: sponsor.businessEmailAddress ?? null,
       phoneNumbers: sponsor.phoneNumbers ?? [],
+      tournamentsSponsored: [],
     });
 
     sendJsonResponse(res, { sponsorId, slug }, 201);
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/oil-patterns') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    const body = await readRequestBody(req);
+    const parsed = JSON.parse(body) as { oilPattern?: { name?: string; length?: number } };
+    const oilPattern = parsed.oilPattern ?? {};
+
+    sendJsonResponse(res, {
+      oilPatternId: '01JX0000000000000000000299',
+      name: oilPattern.name ?? '',
+      length: oilPattern.length ?? 0,
+      lengthCategory: 'Medium',
+      ratioCategory: 'Medium',
+    }, 201);
     return;
   }
 
@@ -763,6 +1032,131 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       sizeInBytes: 4,
       url: 'http://localhost:5151/mock-storage/sponsors/logo/e2e-test-logo.png',
     }, 200);
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/tournaments') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    const body = await readRequestBody(req);
+    const parsed = JSON.parse(body) as {
+      tournament?: {
+        name?: string;
+        tournamentType?: string;
+        startDate?: string;
+        endDate?: string;
+        statsEligible?: boolean;
+        entryFee?: number;
+        externalRegistrationUrl?: string;
+        logo?: { container: string; path: string; contentType: string; sizeInBytes: number };
+        oilPatternId?: string;
+        patternLengthCategory?: string;
+        patternRatioCategory?: string;
+      };
+    };
+    const tournament = parsed.tournament ?? {};
+    const tournamentId = `01JX000000000000000000${nextCreatedTournamentSuffix++}`;
+
+    createdTournaments.set(tournamentId, {
+      id: tournamentId,
+      name: tournament.name ?? '',
+      season: '2025-2026 Season',
+      startDate: tournament.startDate ?? null,
+      endDate: tournament.endDate ?? null,
+      statsEligible: tournament.statsEligible ?? true,
+      tournamentType: tournament.tournamentType ?? 'Singles',
+      entryFee: tournament.entryFee ?? null,
+      registrationUrl: tournament.externalRegistrationUrl ?? null,
+      addedMoney: null,
+      reservations: null,
+      entryCount: null,
+      patternLengthCategory: tournament.patternLengthCategory ?? null,
+      patternRatioCategory: tournament.patternRatioCategory ?? null,
+      logoUrl: tournament.logo ? `http://localhost:5151/mock-storage/${tournament.logo.path}` : null,
+      bowlingCenter: null,
+      sponsors: [],
+      oilPatterns: [],
+      winners: [],
+      results: [],
+      articles: [],
+    });
+
+    sendJsonResponse(res, { tournamentId }, 201);
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/tournaments/logo') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    // Body content is discarded — the mock only needs to acknowledge the multipart upload and
+    // hand back a StoredFile pointer, same shape as the real UploadTournamentLogo endpoint.
+    await readRequestBody(req);
+
+    sendJsonResponse(res, {
+      container: 'bowlneba-public',
+      path: 'tournaments/logo/e2e-test-logo.png',
+      fileName: 'e2e-test-logo.png',
+      contentType: 'image/png',
+      sizeInBytes: 4,
+      url: 'http://localhost:5151/mock-storage/tournaments/logo/e2e-test-logo.png',
+    }, 200);
+    return;
+  }
+
+  if (req.method === 'POST' && pathname.startsWith('/tournaments/') && pathname.endsWith('/sponsors')) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    const tournamentId = pathname.slice('/tournaments/'.length, -'/sponsors'.length);
+    const tournament = resolveGetRoute(`/tournaments/${tournamentId}`, new URLSearchParams()) as
+      | { sponsors: TournamentSponsorFixture[] }
+      | null;
+
+    if (tournament === null) {
+      sendJsonResponse(res, { error: 'Not Found' }, 404);
+      return;
+    }
+
+    const body = await readRequestBody(req);
+    const parsed = JSON.parse(body) as {
+      sponsor?: { sponsorId?: string; titleSponsor?: boolean; sponsorshipAmount?: number };
+    };
+    const sponsorInput = parsed.sponsor ?? {};
+    const sponsorMeta = findSponsorMetaById(sponsorInput.sponsorId);
+
+    if (sponsorInput.titleSponsor) {
+      tournament.sponsors.forEach((s) => { s.titleSponsor = false; });
+    }
+
+    tournament.sponsors.push({
+      sponsorId: sponsorInput.sponsorId ?? '',
+      name: sponsorMeta?.name ?? 'Unknown Sponsor',
+      slug: sponsorMeta?.slug ?? '',
+      logoUrl: sponsorMeta?.logoUrl ?? null,
+      websiteUrl: sponsorMeta?.websiteUrl ?? null,
+      tagPhrase: sponsorMeta?.tagPhrase ?? null,
+      titleSponsor: sponsorInput.titleSponsor ?? false,
+      sponsorshipAmount: sponsorInput.sponsorshipAmount ?? 0,
+    });
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.method === 'DELETE' && pathname.startsWith('/tournaments/') && pathname.includes('/sponsors/')) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    const [tournamentId, , sponsorId] = pathname.slice('/tournaments/'.length).split('/');
+    const tournament = resolveGetRoute(`/tournaments/${tournamentId}`, new URLSearchParams()) as
+      | { sponsors: TournamentSponsorFixture[] }
+      | null;
+
+    if (tournament !== null) {
+      tournament.sponsors = tournament.sponsors.filter((s) => s.sponsorId !== sponsorId);
+    }
+
+    res.writeHead(204);
+    res.end();
     return;
   }
 

@@ -9,8 +9,12 @@ internal sealed record ListTournamentsInSeasonQuery
 {
     public required SeasonId SeasonId { get; init; }
 
+    public required bool CallerIsAuthenticated { get; init; }
+
+    public required bool CallerHasTournamentManagementPermission { get; init; }
+
     public CacheDescriptor Cache
-        => CacheDescriptors.Tournaments.ListForSeason(SeasonId);
+        => CacheDescriptors.Tournaments.ListForSeason(SeasonId, CallerIsAuthenticated, CallerHasTournamentManagementPermission);
 
     public TimeSpan Expiry
         => TimeSpan.FromDays(14);

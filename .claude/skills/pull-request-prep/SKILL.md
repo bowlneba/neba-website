@@ -19,13 +19,29 @@ git log <base-branch>...HEAD --oneline
 git diff <base-branch>...HEAD --name-only
 ```
 
-If the diff is very large, group the review by layer (Domain → Application → Infrastructure → API → Contracts → Blazor/Website → Tests).
+If the diff is very large, group the review by slice (Features/{Feature} → Contracts → Blazor/Website → Tests).
 
-### 2. Load the review guidelines
+### 2. Check for plans/mockups (main only)
+
+Only when **base-branch is `main`** (or was left as the default): check `docs/plans/` and `docs/plans/mockups/` for anything new or changed on this branch —
+
+```
+git diff <base-branch>...HEAD --name-status -- docs/plans/
+git status --porcelain -- docs/plans/
+```
+
+These are working documents for the feature, not project history — by default they should be deleted before the PR merges to main, so they don't carry forward once the feature ships. For each file or mockup folder found:
+
+- Delete it, **unless** there's a concrete reason to keep it (e.g. the plan doubles as ongoing design reference for a phased/multi-PR feature, or the mockups are linked from a doc that stays). If so, keep it and call out the reason explicitly in the Pre-PR Review output (a new **📐 Plans & Mockups** section — see step 4) rather than deleting silently.
+- If deleted, note it in that same section so the user can see what was removed and why.
+
+Skip this step entirely when base-branch is not `main` (e.g. merging into a long-lived feature/integration branch, where plans may still be useful to the next PR in the chain).
+
+### 3. Load the review guidelines
 
 Read `.github/instructions/pull-request-review.instructions.md` in full before reviewing. Every flag in the review must be traceable to a rule in that file or in CLAUDE.md.
 
-### 3. Review the changes
+### 4. Review the changes
 
 Work through the diff layer by layer. For each issue found, record:
 - **File and line** (link using `[file.cs:42](path/file.cs#L42)`)
@@ -109,7 +125,12 @@ When adding Playwright tests:
 - [ ] Components don't fetch data directly
 - [ ] Pages are thin orchestrators
 
-### 4. Present the review
+**README**
+- [ ] `README.md`'s Project Structure reflects any new/removed top-level `Features/{Feature}` folders, projects, or render-mode changes
+- [ ] `README.md`'s Technology Stack reflects any new/removed package that changes what's user-visible (new datastore, new client library, new background job engine, etc.) — not every `Directory.Packages.props` bump, just ones that change the stack story
+- [ ] `README.md`'s Implementation Plan checkboxes reflect features this PR completes or starts (check off finished items, leave partial work unchecked)
+
+### 5. Present the review
 
 Structure the review as:
 
@@ -126,6 +147,12 @@ Structure the review as:
 ### 💡 Suggestions
 [List each suggestion. If none: "None."]
 
+### 📐 Plans & Mockups
+[Only present when base-branch is `main`. List each file/folder under `docs/plans/` deleted in step 2, and each one kept along with its stated reason. If step 2 found nothing under `docs/plans/`, omit this section entirely.]
+
+### 📄 README Updates
+[List each stale/missing spot in README.md found via the **README** checklist above, with the proposed change. If none: "None — README is current."]
+
 ### ✅ Looks Good
 [Brief note on what was done well or what was verified clean.]
 
@@ -135,7 +162,11 @@ Write this review verbatim to `pr-review.md` at the repo root (overwrite if it a
 
 Ask the user: **"Ready to generate the PR description, or would you like to address any of these first?"**
 
-### 5. Generate the PR description
+### 6. Apply README updates
+
+If step 5 found any README Updates, apply them directly to `README.md` now (unless the user said they'd handle findings themselves) — these are typically small, mechanical (a checkbox, a stack line, a folder in the structure diagram) and don't warrant a separate round-trip. Show a brief summary of what changed. Skip this step entirely if the README Updates list was empty.
+
+### 7. Generate the PR description
 
 After the user confirms (or asks to proceed), infer the PR description format from the changes and the project's PR history. The format used in this project is:
 
@@ -150,15 +181,13 @@ After the user confirms (or asks to proceed), infer the PR description format fr
 
 ## What Changed
 
-[Organized by layer. Only include layers that actually changed. Use sub-bullets for detail.]
+[Organized by slice/area. Only include sections that actually changed. Use sub-bullets for detail.]
 
-### Domain (`Neba.Domain.*`)
-### Application
-### Infrastructure
-### API
+### Features/{Feature} (`Neba.Api.Features.*`)
+[Domain, handlers, endpoints — group by feature if multiple features touched.]
 ### Contracts
 ### Blazor (`Neba.Website.Server`)
-### Architecture Tests
+### Tests
 ### Docs
 
 ## Test Plan

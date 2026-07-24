@@ -18,8 +18,12 @@ internal static class TournamentDetailMappingExtensions
             EntryFee = response.EntryFee,
             RegistrationUrl = response.RegistrationUrl,
             AddedMoney = response.AddedMoney,
+            SponsorMoney = response.SponsorMoney,
+            NebaAddedMoney = response.NebaAddedMoney,
             EntryCount = response.EntryCount,
             PatternLengthCategory = response.PatternLengthCategory,
+            PatternRatioCategory = response.PatternRatioCategory,
+            OilPatternRevealDateTime = response.OilPatternRevealDateTime,
             LogoUrl = response.LogoUrl,
             BowlingCenterName = response.BowlingCenter?.Name,
             BowlingCenterCity = response.BowlingCenter?.City,
@@ -36,11 +40,14 @@ internal static class TournamentDetailMappingExtensions
     {
         public TournamentDetailSponsorViewModel ToViewModel() => new()
         {
+            SponsorId = response.SponsorId,
             Name = response.Name,
             Slug = response.Slug,
             LogoUrl = response.LogoUrl,
             WebsiteUrl = response.WebsiteUrl,
             TagPhrase = response.TagPhrase,
+            TitleSponsor = response.TitleSponsor,
+            SponsorshipAmount = response.SponsorshipAmount,
         };
     }
 
@@ -50,6 +57,9 @@ internal static class TournamentDetailMappingExtensions
         {
             Name = response.Name,
             Length = response.Length,
+            Volume = response.Volume,
+            LeftRatio = response.LeftRatio,
+            RightRatio = response.RightRatio,
             Rounds = response.Rounds,
             KegelId = response.KegelId,
         };

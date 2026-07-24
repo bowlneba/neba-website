@@ -80,6 +80,8 @@ internal sealed class TournamentApiService(
             EntryFee = response.EntryFee,
             RegistrationUrl = response.RegistrationUrl,
             AddedMoney = response.AddedMoney,
+            SponsorMoney = response.SponsorMoney,
+            NebaAddedMoney = response.NebaAddedMoney,
             TournamentLogoUrl = response.LogoUrl,
             BowlingCenterName = response.BowlingCenter?.Name,
             BowlingCenterCity = response.BowlingCenter?.City,

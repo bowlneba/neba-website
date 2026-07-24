@@ -64,9 +64,19 @@ public sealed record TournamentDetailDto
     public IReadOnlyCollection<TournamentDetailSponsorDto> Sponsors { get; init; } = [];
 
     /// <summary>
-    /// Sponsor-added prize money in USD; null if none.
+    /// Total added money in USD (sponsor money plus NEBA added money); null if none.
     /// </summary>
     public decimal? AddedMoney { get; init; }
+
+    /// <summary>
+    /// Sponsor-contributed portion of added money in USD; null if none.
+    /// </summary>
+    public decimal? SponsorMoney { get; init; }
+
+    /// <summary>
+    /// Amount NEBA itself contributed to the prize fund in USD, independent of sponsors.
+    /// </summary>
+    public decimal NebaAddedMoney { get; init; }
 
     /// <summary>
     /// Current reservation count; null until tracking begins.
@@ -87,6 +97,12 @@ public sealed record TournamentDetailDto
     /// Oil pattern details; null until published.
     /// </summary>
     public IReadOnlyCollection<TournamentDetailOilPatternDto> OilPatterns { get; init; } = [];
+
+    /// <summary>
+    /// Date/time at which full oil pattern details become public; null if there's no restriction
+    /// or the caller isn't authenticated (unauthenticated callers don't see that a reveal date exists).
+    /// </summary>
+    public DateTimeOffset? OilPatternRevealDateTime { get; init; }
 
     /// <summary>
     /// URL to the tournament logo image; null when unavailable.

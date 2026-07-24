@@ -124,6 +124,16 @@ public sealed record SponsorDetailViewModel
     public SponsorContactResponse? Contact { get; init; }
 
     /// <summary>
+    /// Tournaments sponsored by this sponsor, most recent first.
+    /// </summary>
+    public required IReadOnlyCollection<SponsorDetailTournamentViewModel> TournamentsSponsored { get; init; }
+
+    /// <summary>
+    /// Indicates whether the sponsor has any tournaments to display.
+    /// </summary>
+    public bool HasTournamentsSponsored => TournamentsSponsored.Count > 0;
+
+    /// <summary>
     /// Indicates whether the sponsor has any business address information available for display.
     /// </summary>
     public bool HasAddress =>

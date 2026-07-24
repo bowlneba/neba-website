@@ -8,6 +8,11 @@ namespace Neba.Api.Contracts.Sponsors;
 public sealed record SponsorSummaryResponse
 {
     /// <summary>
+    /// The ULID string identifying the sponsor.
+    /// </summary>
+    public required string SponsorId { get; init; }
+
+    /// <summary>
     /// Display name of the sponsor.
     /// </summary>
     public required string Name { get; init; }

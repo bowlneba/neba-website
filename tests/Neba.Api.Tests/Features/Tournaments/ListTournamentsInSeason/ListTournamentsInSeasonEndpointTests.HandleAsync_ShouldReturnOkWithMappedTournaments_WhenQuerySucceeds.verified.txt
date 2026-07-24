@@ -9,13 +9,14 @@
       EntryFee: 63.5168915444598050,
       RegistrationUrl: https://raymond.name,
       AddedMoney: 3462.948614481345000,
-      Reservations: 52,
+      SponsorMoney: 1549.241142137553000,
+      NebaAddedMoney: 372.756912546584000,
+      Reservations: 4,
       PatternLengthCategory: Long,
-      PatternRatioCategory: Challenge,
+      PatternRatioCategory: Recreation,
       Winners: [
-        Kathy Cassin,
-        Burley Cassin,
-        Sonny Cassin
+        Wilber Cassin,
+        Kathy Cassin
       ],
       BowlingCenter: {
         Name: Connelly, Cassin and Ledner Lanes,
@@ -32,65 +33,106 @@
           Slug: shaun,
           LogoUrl: http://keenan.name
         }
+      ],
+      OilPatterns: [
+        {
+          Name: libero Pattern,
+          Length: 34,
+          Volume: 17.510365789062520,
+          LeftRatio: 5.136585656151446,
+          RightRatio: 3.010605345019424,
+          KegelId: Guid_1,
+          Rounds: [
+            Match Play
+          ]
+        },
+        {
+          Name: ut Pattern,
+          Length: 47,
+          Volume: 24.272937015291740,
+          LeftRatio: 5.25810651912266,
+          RightRatio: 7.686466895829170,
+          Rounds: [
+            Qualifying
+          ]
+        }
       ]
     },
     {
-      Id: 01HNB7J615E3E9A189DSKPQSZH,
-      Name: Small Rubber Hat Practical Metal Tuna Advanced,
+      Id: 01K6BJYVQ20M4PWSVBWZRGTHPR,
+      Name: Australia models Savings Account,
       StartDate: Date_3,
       EndDate: Date_4,
-      TournamentType: Senior / Women,
-      EntryFee: 60.6414412430680550,
-      RegistrationUrl: http://adolfo.net,
-      AddedMoney: 44.76454576699275000,
-      Reservations: 83,
+      TournamentType: Baker,
+      EntryFee: 157.726211639925050,
+      RegistrationUrl: http://jamaal.com,
+      AddedMoney: 2497.983983484090000,
+      SponsorMoney: 26.85872746019565000,
+      NebaAddedMoney: 1657.675853771006000,
+      Reservations: 1,
       PatternLengthCategory: Long,
       PatternRatioCategory: Challenge,
+      Winners: [
+        Kathy Cassin,
+        Kathy Cassin,
+        Jordy Cassin
+      ],
       BowlingCenter: {
-        Name: Hackett LLC Lanes,
-        City: Abernathymouth,
-        State: SD
+        Name: Murphy, Erdman and Ankunding Lanes,
+        City: East Annette,
+        State: OK
       },
       Sponsors: [
         {
           Name: Lemke, Jacobs and Gulgowski,
           Slug: sydnee
         }
-      ]
-    },
-    {
-      Id: 01F5BJSN62NQNV7FS9H7YG0ME6,
-      Name: support Rue Industrial, Garden & Clothing,
-      StartDate: Date_5,
-      EndDate: Date_5,
-      TournamentType: Invitational,
-      EntryFee: 166.416565988406800,
-      RegistrationUrl: http://briana.biz,
-      AddedMoney: 3831.11519218940000,
-      Reservations: 67,
-      PatternLengthCategory: Short,
-      PatternRatioCategory: Challenge,
-      BowlingCenter: {
-        Name: Hoppe, Cormier and Balistreri Lanes,
-        City: Lake Lisandroland,
-        State: IL
-      },
-      Sponsors: [
-        {
-          Name: White - Schroeder,
-          Slug: branson,
-          LogoUrl: http://cheyenne.org
-        }
       ],
       OilPatterns: [
         {
-          Name: a Pattern,
-          Length: 37,
+          Name: libero Pattern,
+          Length: 34,
+          Volume: 17.510365789062520,
+          LeftRatio: 5.136585656151446,
+          RightRatio: 3.010605345019424,
+          KegelId: Guid_1,
           Rounds: [
-            Qualifying,
-            Cashers,
             Match Play
           ]
+        }
+      ]
+    },
+    {
+      Id: 01HQ2QY4Y7H7YG0ME6KZJE1X8E,
+      Name: XSS synergistic Ergonomic Cotton Gloves,
+      StartDate: Date_5,
+      EndDate: Date_5,
+      TournamentType: Eliminator,
+      EntryFee: 138.749369251890800,
+      RegistrationUrl: https://wyman.net,
+      AddedMoney: 4949.142916570020000,
+      SponsorMoney: 1952.496990539364000,
+      NebaAddedMoney: 48.4340405317182000,
+      Reservations: 34,
+      PatternLengthCategory: Short,
+      PatternRatioCategory: Challenge,
+      LogoUrl: http://crystel.name,
+      Winners: [
+        Kathy Cassin
+      ],
+      BowlingCenter: {
+        Name: Green, O'Connell and Conroy Lanes,
+        City: New Jordyntown,
+        State: MI
+      },
+      Sponsors: [
+        {
+          Name: Larson - Bechtelar,
+          Slug: heidi
+        },
+        {
+          Name: Brakus and Sons,
+          Slug: estell
         }
       ]
     }

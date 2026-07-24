@@ -219,6 +219,7 @@ Flag when:
 - Missing loading state handling
 - Components placed in Client project without clear justification (offline, browser APIs, latency-sensitive)
 - Data-entry pages/forms (anything with `EditForm`, file uploads, or similar user input) don't guard against losing unsaved changes on Cancel, in-app navigation, or refresh/close — wrap with `<DirtyFormGuard IsDirty="@_isDirty" />` (`Components/DirtyFormGuard.razor`) and track `_isDirty` via `EditContext.OnFieldChanged` plus explicit `MarkDirty()` calls for anything outside the `EditForm` (file uploads, non-`InputBase` bound fields). See `CreateArticle.razor` for the reference implementation.
+- A field bound to a `[Required]` model property uses a bare `<label>` instead of `<FormLabel TargetId="..." For="@(() => _model.X)">` (`Components/FormLabel.razor`) — required fields must show a "(required)" tag, not a bare asterisk or no indicator at all. Exception: forms where every field is required (e.g. `Login.razor`) may keep plain `<label>` elements, since marking every field adds no information.
 
 ---
 
@@ -674,7 +675,6 @@ When reviewing, verify:
 - [ ] Tests have `DisplayName` on Facts and Theories
 - [ ] New code has corresponding tests
 - [ ] API endpoint integration tests cover success, validation failure, and auth failure
-- [ ] New feature domain namespace added to `BoundedContextNamespaces` in `DomainBoundaryTests.cs`
 - [ ] New routable Blazor page/flow has a Playwright E2E spec in `tests/e2e/` (not just a `docs-screenshots/` script) covering happy path, validation failure, server-error handling, and the auth boundary
 - [ ] Mock API server (`tests/e2e/mock-api/mock-api-server.ts`) has a matching route handler for any new endpoint the E2E spec exercises
 
@@ -689,6 +689,7 @@ When reviewing, verify:
 
 - [ ] Blazor components don't fetch data directly
 - [ ] Data-entry pages/forms use `DirtyFormGuard` to warn before losing unsaved changes
+- [ ] Fields bound to `[Required]` model properties use `FormLabel` (not a bare `<label>`) so required fields show a "(required)" tag
 
 ### User Help Documentation
 

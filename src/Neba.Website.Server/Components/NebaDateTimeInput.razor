@@ -1,0 +1,203 @@
+@using System.Globalization
+@inherits InputBase<DateTime?>
+@implements IAsyncDisposable
+@inject IJSRuntime JsRuntime
+
+<div id="@ContainerId" class="neba-date-input @CssClass" @attributes="_containerAttributes">
+    <input id="@_elementId" data-segment="month" type="text" inputmode="numeric" maxlength="2" placeholder="mm"
+           class="neba-date-segment" aria-label="Month" />
+    <span class="neba-date-separator" aria-hidden="true">/</span>
+    <input data-segment="day" type="text" inputmode="numeric" maxlength="2" placeholder="dd"
+           class="neba-date-segment" aria-label="Day" />
+    <span class="neba-date-separator" aria-hidden="true">/</span>
+    <input data-segment="year" type="text" inputmode="numeric" maxlength="4" placeholder="yyyy"
+           class="neba-date-segment neba-date-segment-year" aria-label="Year" />
+    <span class="neba-date-separator neba-date-separator--gap" aria-hidden="true">at</span>
+    <input data-segment="hour" type="text" inputmode="numeric" maxlength="2" placeholder="hh"
+           class="neba-date-segment" aria-label="Hour" />
+    <span class="neba-date-separator" aria-hidden="true">:</span>
+    <input data-segment="minute" type="text" inputmode="numeric" maxlength="2" placeholder="mm"
+           class="neba-date-segment" aria-label="Minute" />
+    <input data-segment="meridiem" type="text" maxlength="2" placeholder="AM"
+           class="neba-date-segment neba-date-segment-meridiem" aria-label="AM or PM" />
+</div>
+
+@code {
+    private IJSObjectReference? _jsModule;
+    private DotNetObjectReference<NebaDateTimeInput>? _dotNetHelper;
+
+    private object? _elementId;
+    private IReadOnlyDictionary<string, object>? _containerAttributes;
+
+    private string _lastKnownMonth = string.Empty;
+    private string _lastKnownDay = string.Empty;
+    private string _lastKnownYear = string.Empty;
+    private string _lastKnownHour = string.Empty;
+    private string _lastKnownMinute = string.Empty;
+    private string _lastKnownMeridiem = string.Empty;
+    private DateTime? _lastKnownValue;
+
+    private string ContainerId { get; } = $"neba-datetime-{Guid.NewGuid():N}";
+
+    protected override void OnParametersSet()
+    {
+        _elementId = AdditionalAttributes is not null && AdditionalAttributes.TryGetValue("id", out var id) ? id : null;
+        _containerAttributes = AdditionalAttributes?
+            .Where(kv => kv.Key != "id")
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
+                "import", "./Components/NebaDateTimeInput.razor.js");
+            _dotNetHelper = DotNetObjectReference.Create(this);
+
+            (_lastKnownMonth, _lastKnownDay, _lastKnownYear, _lastKnownHour, _lastKnownMinute, _lastKnownMeridiem) = FormatSegments(Value);
+            _lastKnownValue = Value;
+
+            await _jsModule.InvokeVoidAsync(
+                "initialize", ContainerId, _dotNetHelper,
+                _lastKnownMonth, _lastKnownDay, _lastKnownYear, _lastKnownHour, _lastKnownMinute, _lastKnownMeridiem);
+
+            return;
+        }
+
+        if (_jsModule is null)
+        {
+            return;
+        }
+
+        // Only push a value the user didn't just type themselves — e.g. an external reset of the
+        // bound model — otherwise this would fight an in-flight, still-incomplete edit. Mirrors the
+        // same guard in NebaDateInput; see that component for the full rationale.
+        if (Value == _lastKnownValue)
+        {
+            return;
+        }
+
+        _lastKnownValue = Value;
+        (_lastKnownMonth, _lastKnownDay, _lastKnownYear, _lastKnownHour, _lastKnownMinute, _lastKnownMeridiem) = FormatSegments(Value);
+
+        await _jsModule.InvokeVoidAsync(
+            "setValue", ContainerId,
+            _lastKnownMonth, _lastKnownDay, _lastKnownYear, _lastKnownHour, _lastKnownMinute, _lastKnownMeridiem);
+    }
+
+    private static (string Month, string Day, string Year, string Hour, string Minute, string Meridiem) FormatSegments(DateTime? value)
+    {
+        if (value is not { } dt)
+        {
+            return (string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
+        }
+
+        var hour12 = dt.Hour % 12 == 0 ? 12 : dt.Hour % 12;
+
+        return (
+            dt.Month.ToString("D2", CultureInfo.InvariantCulture),
+            dt.Day.ToString("D2", CultureInfo.InvariantCulture),
+            dt.Year.ToString("D4", CultureInfo.InvariantCulture),
+            hour12.ToString("D2", CultureInfo.InvariantCulture),
+            dt.Minute.ToString("D2", CultureInfo.InvariantCulture),
+            dt.Hour < 12 ? "AM" : "PM");
+    }
+
+    /// <summary>
+    /// Invoked by JS whenever any segment changes. JS owns all keyboard interaction (digit
+    /// filtering, auto-advance, "/"/":" navigation, AM/PM cycling, backspace) synchronously and
+    /// reports the resulting composed value here — see NebaDateInput for why this can't be
+    /// C#-driven in Blazor Server.
+    /// </summary>
+    [JSInvokable]
+    public void NotifySegmentsChanged(string month, string day, string year, string hour, string minute, string meridiem)
+    {
+        _lastKnownMonth = month;
+        _lastKnownDay = day;
+        _lastKnownYear = year;
+        _lastKnownHour = hour;
+        _lastKnownMinute = minute;
+        _lastKnownMeridiem = meridiem;
+
+        if (month.Length == 2 && day.Length == 2 && year.Length == 4 && hour.Length == 2 && minute.Length == 2
+            && meridiem.Length == 2
+            && int.TryParse(month, NumberStyles.None, CultureInfo.InvariantCulture, out var monthValue)
+            && int.TryParse(day, NumberStyles.None, CultureInfo.InvariantCulture, out var dayValue)
+            && int.TryParse(year, NumberStyles.None, CultureInfo.InvariantCulture, out var yearValue)
+            && int.TryParse(hour, NumberStyles.None, CultureInfo.InvariantCulture, out var hourValue)
+            && int.TryParse(minute, NumberStyles.None, CultureInfo.InvariantCulture, out var minuteValue)
+            && IsValidDate(yearValue, monthValue, dayValue)
+            && hourValue is >= 1 and <= 12
+            && minuteValue is >= 0 and <= 59
+            && TryNormalizeHour(hourValue, meridiem, out var hour24))
+        {
+            CurrentValue = new DateTime(yearValue, monthValue, dayValue, hour24, minuteValue, 0, DateTimeKind.Unspecified);
+        }
+        else
+        {
+            CurrentValue = null;
+        }
+
+        _lastKnownValue = CurrentValue;
+    }
+
+    private static bool TryNormalizeHour(int hour12, string meridiem, out int hour24)
+    {
+        switch (meridiem.ToUpperInvariant())
+        {
+            case "AM":
+                hour24 = hour12 == 12 ? 0 : hour12;
+                return true;
+            case "PM":
+                hour24 = hour12 == 12 ? 12 : hour12 + 12;
+                return true;
+            default:
+                hour24 = 0;
+                return false;
+        }
+    }
+
+    private static bool IsValidDate(int year, int month, int day)
+        => month is >= 1 and <= 12 && year is >= 1 and <= 9999 && day >= 1 && day <= DateTime.DaysInMonth(year, month);
+
+    protected override bool TryParseValueFromString(string? value, out DateTime? result, out string validationErrorMessage)
+    {
+        if (DateTime.TryParseExact(value, "MM/dd/yyyy hh:mm tt", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
+        {
+            result = parsed;
+            validationErrorMessage = null!;
+            return true;
+        }
+
+        result = null;
+        validationErrorMessage = "The {0} field must be a valid date and time.";
+        return false;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule is not null)
+        {
+            try
+            {
+                await _jsModule.InvokeVoidAsync("dispose", ContainerId);
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit already gone — nothing to clean up client-side.
+            }
+
+            try
+            {
+                await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit already gone — nothing to clean up client-side.
+            }
+        }
+
+        _dotNetHelper?.Dispose();
+    }
+}

@@ -8,6 +8,7 @@ using Neba.Website.Server.Maps;
 using Neba.Website.Server.ReferenceData;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Stats;
+using Neba.Website.Server.Time;
 using Neba.Website.Server.Tournaments;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,6 +37,7 @@ builder.Services.AddScoped<Neba.Website.Server.Notifications.ToastService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITournamentApiService, TournamentApiService>();
 builder.Services.AddScoped<IReferenceDataService, ReferenceDataService>();
+builder.Services.AddScoped<IClientTimeZoneService, ClientTimeZoneService>();
 
 var app = builder.Build();
 

@@ -107,4 +107,27 @@ public sealed class SponsorDetailViewModelTests
         vm.HasSocialMedia.ShouldBeFalse();
     }
 
+    // ── HasTournamentsSponsored ────────────────────────────────────────────────
+
+    [Fact(DisplayName = "HasTournamentsSponsored should be true when tournaments are provided")]
+    public void HasTournamentsSponsored_ShouldBeTrue_WhenTournamentsAreProvided()
+    {
+        // Arrange
+        var vm = SponsorDetailViewModelFactory.Create(
+            tournamentsSponsored: [SponsorDetailTournamentViewModelFactory.Create()]);
+
+        // Assert
+        vm.HasTournamentsSponsored.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "HasTournamentsSponsored should be false when no tournaments are provided")]
+    public void HasTournamentsSponsored_ShouldBeFalse_WhenNoTournamentsProvided()
+    {
+        // Arrange
+        var vm = SponsorDetailViewModelFactory.Create(tournamentsSponsored: []);
+
+        // Assert
+        vm.HasTournamentsSponsored.ShouldBeFalse();
+    }
+
 }

@@ -1,0 +1,37 @@
+﻿{
+  Items: [
+    {
+      OilPatternId: 01HST8QKNZD4Z8JF9ATMDFBM9N,
+      Name: visionary Awesome Granite Tuna,
+      Length: 37,
+      Volume: 23.70303933913960,
+      LeftRatio: 1.781642501606440,
+      RightRatio: 3.686414894501870,
+      LengthCategory: Short,
+      RatioCategory: Sport
+    },
+    {
+      OilPatternId: 01HCKB2FZGFHYGXAZDP4M4VYEK,
+      Name: Manager Crossing,
+      Length: 47,
+      Volume: 15.012313779449236480,
+      LeftRatio: 3.475199826283010,
+      RightRatio: 1.695326454329920,
+      KegelId: Guid_1,
+      LengthCategory: Long,
+      RatioCategory: Recreation
+    },
+    {
+      OilPatternId: 01JF6SXDJE0WG0VQD3N125EP15,
+      Name: Dam Awesome Plastic Keyboard,
+      Length: 50,
+      Volume: 28.441014659330720,
+      LeftRatio: 1.557919007520155,
+      RightRatio: 1.77197127545810,
+      KegelId: Guid_2,
+      LengthCategory: Short,
+      RatioCategory: Sport
+    }
+  ],
+  TotalItems: 3
+}

@@ -50,6 +50,9 @@ internal sealed class TournamentConfiguration
 
         builder.Property(tournament => tournament.PatternRatioCategory);
 
+        builder.Property(tournament => tournament.OilPatternRevealDateTime)
+            .HasColumnName("oil_pattern_reveal_date_utc");
+
         builder.Property(tournament => tournament.LegacyId)
             .ValueGeneratedNever();
 
@@ -73,6 +76,10 @@ internal sealed class TournamentConfiguration
 
         builder.Property(tournament => tournament.EntryFee)
             .HasPrecision(5, 2)
+            .IsRequired();
+
+        builder.Property(tournament => tournament.NebaAddedMoney)
+            .HasPrecision(9, 2)
             .IsRequired();
 
         builder.Property(tournament => tournament.ExternalRegistrationUrl)

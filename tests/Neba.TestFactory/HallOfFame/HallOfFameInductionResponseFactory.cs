@@ -9,6 +9,9 @@ public static class HallOfFameInductionResponseFactory
     public const int ValidYear = 2024;
     public const string ValidBowlerName = "John Doe";
 
+    // Fixed so seeded Bogus() output stays stable regardless of the day the test runs.
+    private static readonly DateOnly RefDate = new(2026, 1, 1);
+
     public static HallOfFameInductionResponse Create(
         int? year = null,
         string? bowlerName = null,
@@ -30,7 +33,7 @@ public static class HallOfFameInductionResponseFactory
 
         return [.. Enumerable.Range(0, count).Select(_ => new HallOfFameInductionResponse
         {
-            Year = faker.Date.PastDateOnly(50).Year,
+            Year = faker.Date.PastDateOnly(50, refDate: RefDate).Year,
             BowlerName = bowlerNamePool.GetNext().ToFormalName(),
             Categories = [.. faker.PickRandom(HallOfFameCategory.List.Select(c => c.Name), 2)],
             PhotoUri = faker.Random.Bool() ? new Uri(faker.Internet.Url()) : null

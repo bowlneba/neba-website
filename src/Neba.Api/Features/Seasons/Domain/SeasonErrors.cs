@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using ErrorOr;
 
 namespace Neba.Api.Features.Seasons.Domain;
@@ -7,6 +9,20 @@ internal static class SeasonErrors
     public static readonly Error SeasonNotComplete = Error.Conflict(
         code: "Season.NotComplete",
         description: "Season must be marked complete before awards can be assigned.");
+
+    public static readonly Error DescriptionRequired = Error.Validation(
+        code: "Season.Description.Required",
+        description: "Description must not be empty.");
+
+    public static Error EndDateBeforeStartDate(DateOnly startDate, DateOnly endDate)
+        => Error.Validation(
+            code: "Season.EndDateBeforeStartDate",
+            description: "End date must not be before start date.",
+            metadata: new Dictionary<string, object>
+            {
+                { "StartDate", startDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
+                { "EndDate", endDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
+            });
 
     public static readonly Error HighBlockScoreMismatch = Error.Validation(
         code: "Season.HighBlockScoreMismatch",

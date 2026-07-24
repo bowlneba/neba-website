@@ -5,14 +5,14 @@
 @using Neba.Api.Contracts.Security
 @using Neba.Website.Server.Notifications
 @using Neba.Website.Server.Services
-@implements IAsyncDisposable
+@using Neba.Website.Server.Time
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject ApiExecutor ApiExecutor
 @inject INewsApi NewsApi
 @inject ILogger<NewsList> Logger
 @inject ToastService ToastService
-@inject IJSRuntime JsRuntime
+@inject IClientTimeZoneService ClientTimeZoneService
 
 <PageTitle>News - BowlNEBA</PageTitle>
 <HeadContent>
@@ -107,7 +107,7 @@
                         <div class="hero-body">
                             <div class="hero-featured-tag">&#11088; Latest</div>
                             <div class="hero-meta-row">
-                                <div class="hero-date">@ToLocal(hero.PublishDateUtc).ToString("MMMM d, yyyy")</div>
+                                <div class="hero-date">@GetLocalPublishDate(hero).ToString("MMMM d, yyyy")</div>
                                 <AuthorizeView Policy="@Permissions.CanManageArticlesPolicyName">
                                     <Authorized>
                                         <ArticleStatusBadge PublicationStatus="@hero.PublicationStatus" PublishDateUtc="@hero.PublishDateUtc" />
@@ -157,7 +157,7 @@
                     <div class="news-grid">
                         @foreach (var article in _articles.Items.Skip(1))
                         {
-                            <ArticleCard Article="@article" LocalPublishDate="@ToLocal(article.PublishDateUtc)" OnDeleteRequested="RequestDelete" />
+                            <ArticleCard Article="@article" LocalPublishDate="@GetLocalPublishDate(article)" OnDeleteRequested="RequestDelete" />
                         }
                     </div>
                 }
@@ -167,7 +167,7 @@
                 <div class="news-grid">
                     @foreach (var article in _articles.Items)
                     {
-                        <ArticleCard Article="@article" LocalPublishDate="@ToLocal(article.PublishDateUtc)" OnDeleteRequested="RequestDelete" />
+                        <ArticleCard Article="@article" LocalPublishDate="@GetLocalPublishDate(article)" OnDeleteRequested="RequestDelete" />
                     }
                 </div>
             }
@@ -223,41 +223,14 @@
     private bool _isDeleteConfirmOpen;
     private bool _isDeleteBusy;
 
-    private IJSObjectReference? _jsModule;
-    private TimeSpan? _localOffset;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./js/browser-time.js");
-            var timezoneOffsetMinutes = await _jsModule.InvokeAsync<int>("getTimezoneOffsetMinutes");
-            _localOffset = TimeSpan.FromMinutes(-timezoneOffsetMinutes);
-            StateHasChanged();
-        }
-    }
+    private readonly Dictionary<string, DateTimeOffset> _localPublishDates = [];
 
     /// <summary>
-    /// Converts a UTC instant to the viewer's local time for display. Until the browser's offset is
-    /// known (briefly, on first render), falls back to displaying the UTC value unconverted.
+    /// Converted local publish date for an article; falls back to the raw UTC value if the
+    /// conversion hasn't been computed for this article (should not happen in normal use).
     /// </summary>
-    private DateTimeOffset ToLocal(DateTimeOffset utc)
-        => _localOffset is null ? utc : utc.ToOffset(_localOffset.Value);
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_jsModule is not null)
-        {
-            try
-            {
-                await _jsModule.DisposeAsync();
-            }
-            catch (JSDisconnectedException)
-            {
-                // Circuit already gone — nothing to clean up.
-            }
-        }
-    }
+    private DateTimeOffset GetLocalPublishDate(ArticleSummaryResponse article)
+        => _localPublishDates.TryGetValue(article.ArticleId, out var local) ? local : article.PublishDateUtc;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -279,6 +252,12 @@
         }
 
         _articles = result.Value;
+
+        _localPublishDates.Clear();
+        foreach (var article in _articles.Items)
+        {
+            _localPublishDates[article.ArticleId] = await ClientTimeZoneService.ToLocalAsync(article.PublishDateUtc);
+        }
     }
 
     private void RequestDelete(ArticleSummaryResponse article)

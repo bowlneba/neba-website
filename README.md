@@ -26,80 +26,83 @@ Platform for managing the New England Bowlers Association (NEBA). Handles tourna
 
 ## Architecture
 
-This application follows **Clean Architecture** with **Domain-Driven Design (DDD)** tactical patterns and **CQRS**. It is intentionally *not* a modular monolith — complexity isn't justified for current scale (~1k members, 1-2 tournaments/month).
+This application follows **Vertical Slice Architecture (VSA)** with **Domain-Driven Design (DDD)** tactical patterns and **CQRS**. Each feature is a self-contained slice that co-locates its domain types, handlers, and data access in one folder — there are no separate Domain/Application/Infrastructure projects. It is intentionally *not* a modular monolith — that complexity isn't justified for current scale (~1k members, 1-2 tournaments/month, ~10k visits/month).
 
 ### Project Structure
 
 ```text
 src/
-├── Neba.Domain/                 # Entities, aggregates, value objects, domain events, repository interfaces
+├── Neba.Api/                    # All backend logic: Fast Endpoints, domain, handlers, EF Core
+│   ├── Domain/                  # Shared cross-cutting base types (AggregateRoot, IDomainEvent, ...)
+│   ├── Features/
+│   │   ├── Tournaments/
+│   │   │   ├── Domain/                  # Tournament aggregate and domain types
+│   │   │   ├── CreateTournament/        # One folder per use case: Endpoint, Command/Query,
+│   │   │   │   ├── CreateTournamentEndpoint.cs   # Handler, DTO, Validator, Summary
+│   │   │   │   ├── CreateTournamentCommand.cs
+│   │   │   │   ├── CreateTournamentCommandHandler.cs
+│   │   │   │   └── CreateTournamentRequestValidator.cs
+│   │   │   ├── GetTournament/
+│   │   │   ├── ListTournamentsInSeason/
+│   │   │   └── TournamentsEndpointGroup.cs
+│   │   ├── Bowlers/
+│   │   ├── BowlingCenters/
+│   │   ├── Sponsors/
+│   │   ├── HallOfFame/
+│   │   ├── Awards/
+│   │   ├── Seasons/
+│   │   ├── Stats/
+│   │   ├── News/
+│   │   └── Documents/
+│   ├── Database/                # AppDbContext, EF Core entity configurations, migrations
+│   ├── Messaging/                # IQueryHandler<,> / ICommandHandler<,> + handler scanning
+│   ├── Caching/                  # FusionCache setup and decorators
+│   ├── BackgroundJobs/           # Hangfire job definitions
+│   ├── Storage/                  # Azure Blob Storage
+│   └── Security/, Identity/      # Auth, policies, current-user resolution
+│
+├── Neba.Api.Contracts/           # Request/Input/Response records + Refit interfaces (shared with Blazor)
+│   ├── Tournaments/
 │   ├── Bowlers/
 │   ├── BowlingCenters/
-│   ├── Tournaments/
-│   ├── Content/
-│   └── SharedKernel/
+│   └── ...
 │
-├── Neba.Application/            # Commands, queries, handlers, application services
-│   ├── Bowlers/
-│   │   ├── Commands/
-│   │   └── Queries/
-│   ├── BowlingCenters/
-│   ├── Tournaments/
-│   └── Common/
-│       └── Behaviors/
-│
-├── Neba.Infrastructure/         # EF Core DbContext, repository implementations, external services
-│
-├── Neba.Api/                    # Fast Endpoints, validators, API host
-│   ├── Tournaments/
-│   │   ├── CreateTournament/
-│   │   │   ├── CreateTournamentEndpoint.cs
-│   │   │   └── CreateTournamentValidator.cs
-│   │   ├── GetTournament/
-│   │   └── ListTournaments/
-│   ├── Squads/
-│   ├── Bowlers/
-│   └── BowlingCenters/
-│
-├── Neba.Api.Contracts/          # Input records, response records, Refit interfaces (shared with Blazor)
-│   ├── Tournaments/
-│   ├── Squads/
-│   ├── Bowlers/
-│   └── BowlingCenters/
-│
-└── Neba.Website/                # Blazor Web App (Interactive Auto mode)
-    ├── Neba.Website.Server/
-    │   ├── Tournaments/         # Feature folder: pages + feature-specific components
-    │   ├── Bowlers/
-    │   ├── Components/          # Generic, reusable components (no domain knowledge)
-    │   ├── Layout/
-    │   └── Services/
-    └── Neba.Website.Client/     # Components requiring browser execution (starts nearly empty)
+├── Neba.Website.Server/          # Blazor Web App — all pages, all Interactive Server today
+│   ├── Tournaments/               # Feature folder: pages + feature-specific components
+│   ├── Sponsors/
+│   ├── Account/                   # Login/Logout, admin auth
+│   ├── Components/                # Generic, reusable components (no domain knowledge)
+│   ├── Layout/
+│   └── Services/
+├── Neba.Website.Client/          # Blazor WebAssembly project — scaffolded, unused (no components yet need Interactive Auto)
+├── Neba.AppHost/                 # .NET Aspire AppHost
+└── Neba.ServiceDefaults/         # .NET Aspire service defaults
 ```
 
 ### Key Patterns
 
 | Pattern | Implementation |
 | ------- | -------------- |
-| **Clean Architecture** | Domain at center, dependencies point inward |
-| **CQRS** | Command/Query separation with distinct read and write models |
+| **Vertical Slice Architecture** | Each feature co-locates domain, handlers, and data access in `Features/{Feature}/` — no separate layer projects |
+| **CQRS** | Command/Query separation, with handlers injecting `AppDbContext` directly — no repository abstraction |
 | **Aggregate Roots** | Domain entities with consistency boundaries and domain events |
 | **Value Objects** | Immutable domain concepts (Address, MembershipYear) |
-| **Strongly-Typed IDs** | ULID-based (BowlerId) or natural keys (BowlingCenterId from USBC certification) |
-| **Hybrid Identity** | ULID for domain identity, integer shadow property for database FKs ([ADR](docs/architecture/adr-ulid-shadow-keys.md)) |
+| **Strongly-Typed IDs** | ULID-based (`BowlerId`) or natural keys (`BowlingCenterId` from USBC certification) |
+| **Hybrid Identity** | ULID for domain identity, integer shadow property for database FKs ([ADR](docs/adr/0005-shadow-db-pk-for-natural-key-aggregates.md)) |
 | **Result Pattern** | `ErrorOr<T>` for command results instead of exceptions |
-| **Feature Folders** | Organize by domain area, treating folders as if they were modules |
+| **Feature Isolation** | Feature `Domain/` folders never cross-reference each other; cross-feature needs use shared IDs or handler-level orchestration |
 
 ### Layer Responsibilities
 
-| Layer | Responsibility |
+| Location | Responsibility |
 | ------- | -------------- |
-| `Neba.Domain` | Entities, aggregates, value objects, domain events, repository interfaces |
-| `Neba.Application` | Commands, queries, handlers, application services, DTOs |
-| `Neba.Infrastructure` | EF Core DbContext, repository implementations, external service clients |
-| `Neba.Api` | Fast Endpoints, validators, real-time hubs (SSE/WebSocket) |
-| `Neba.Api.Contracts` | Input records, response records, Refit interfaces shared with Blazor |
-| `Neba.Website` | Blazor Web App (Interactive Auto mode) |
+| `Neba.Api/Features/{Feature}/Domain/` | Aggregate, entity, value object, domain event, and error types for that feature |
+| `Neba.Api/Features/{Feature}/{UseCase}/` | Endpoint, Query/Command, Handler, DTO, Validator, Summary for one use case |
+| `Neba.Api/Database/` | `AppDbContext`, EF Core entity configurations, migrations |
+| `Neba.Api/Messaging/` | `IQueryHandler<,>`, `ICommandHandler<,>` and handler registration |
+| `Neba.Api.Contracts` | Input/Response records and Refit interfaces shared between API and Blazor |
+| `Neba.Website.Server` | Blazor Web App — hosts every page today, all rendered Interactive Server |
+| `Neba.Website.Client` | Blazor WebAssembly project, wired up for Interactive Auto but not yet hosting any components — scaffolded so client-rendered components are a drop-in when a use case needs them |
 
 ### Technology Stack
 
@@ -107,12 +110,13 @@ src/
 | ------- | ---------- |
 | **Runtime** | .NET 10 |
 | **Backend** | ASP.NET Core Web API, Fast Endpoints |
-| **Frontend** | Blazor Web App (Interactive Auto), Tailwind CSS |
+| **Frontend** | Blazor Web App (Interactive Server today; WebAssembly project scaffolded for Interactive Auto), Tailwind CSS |
 | **Database** | PostgreSQL |
 | **ORM** | Entity Framework Core with EF Core Identity |
 | **Local Development** | .NET Aspire |
 | **Production** | Azure (App Service, Monitor, Key Vault, Blob Storage, Maps) |
 | **Background Jobs** | Hangfire |
+| **Caching** | FusionCache |
 | **API Documentation** | Scalar |
 | **HTTP Client** | Refit |
 | **Testing** | xUnit, Moq, Shouldly, Bogus, Verify, Testcontainers, Respawn, bUnit, Playwright |
@@ -121,7 +125,8 @@ src/
 
 - [Backend Architecture](docs/architecture/backend.md)
 - [Blazor Architecture](docs/architecture/blazor.md)
-- [ADR: ULID and Shadow Key Pattern](docs/architecture/adr-ulid-shadow-keys.md)
+- [Ubiquitous Language](docs/ubiquitous-language.md)
+- [Architecture Decision Records](docs/adr/README.md)
 
 ### Local EF Core Migrations
 
@@ -176,10 +181,14 @@ ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Usernam
 
 ### Website Administration
 
-- [ ] Authentication/Authorization
+- [x] Authentication/Authorization
 - [ ] Tournament Management
+  - [x] Create Tournament
+  - [x] Oil Patterns
+  - [x] Tournament Sponsors
+  - [ ] Edit Tournament
 - [ ] Bowler Management
-- [ ] Content Management
+- [x] Content Management
 
 ### Platform & Operational
 
@@ -190,11 +199,11 @@ ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Usernam
 - [x] Global Exception Handling
 - [x] OpenTelemetry
 - [x] Rate Limiting & Throttling
-- [ ] API Documentation (Scalar)
+- [x] API Documentation (Scalar)
 
 ### Documentation
 
-- [ ] Ubiquitous Language Definitions
-- [ ] Architecture Decision Records (ADRs)
+- [x] Ubiquitous Language Definitions
+- [x] Architecture Decision Records (ADRs)
 - [ ] API Reference
 - [ ] Administrative Website Manual

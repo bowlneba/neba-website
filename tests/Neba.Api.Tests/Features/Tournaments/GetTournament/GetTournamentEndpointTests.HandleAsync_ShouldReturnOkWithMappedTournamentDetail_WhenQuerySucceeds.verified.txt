@@ -9,10 +9,12 @@
   EntryFee: 63.5168915444598050,
   RegistrationUrl: https://raymond.name,
   AddedMoney: 3462.948614481345000,
-  Reservations: 52,
-  EntryCount: 2,
+  SponsorMoney: 1549.241142137553000,
+  NebaAddedMoney: 372.756912546584000,
+  Reservations: 4,
+  EntryCount: 63,
   PatternLengthCategory: Long,
-  PatternRatioCategory: Challenge,
+  PatternRatioCategory: Recreation,
   BowlingCenter: {
     Name: Connelly, Cassin and Ledner Lanes,
     City: East Modestaport,
@@ -20,70 +22,48 @@
   },
   Sponsors: [
     {
-      Name: Bauch and Sons,
-      Slug: kristopher,
-      TagPhrase: Aut placeat eum voluptatem accusantium ab dolor.
+      Name: O'Keefe Inc,
+      Slug: tate,
+      TagPhrase: Et quae quis qui iusto autem.,
+      SponsorId: 01HJZDCH2MKZJE1X8EE42JTZQF,
+      TitleSponsor: true,
+      SponsorshipAmount: 2260.76
     },
     {
-      Name: Deckow LLC,
-      Slug: bernard,
-      LogoUrl: https://kayden.name,
-      TagPhrase: Velit rerum et eos ex et quam molestiae.
+      Name: Blick, Casper and Zboncak,
+      Slug: eleonore,
+      WebsiteUrl: http://ariel.com,
+      TagPhrase: Est et molestiae beatae.,
+      SponsorId: 01G3HSSCS4HXGVQVY4C679A24J,
+      TitleSponsor: false,
+      SponsorshipAmount: 4266.60
+    }
+  ],
+  OilPatterns: [
+    {
+      Name: libero Pattern,
+      Length: 34,
+      Volume: 17.510365789062520,
+      LeftRatio: 5.136585656151446,
+      RightRatio: 3.010605345019424,
+      Rounds: [
+        Match Play
+      ],
+      KegelId: Guid_1
+    },
+    {
+      Name: ut Pattern,
+      Length: 47,
+      Volume: 24.272937015291740,
+      LeftRatio: 5.25810651912266,
+      RightRatio: 7.686466895829170,
+      Rounds: [
+        Qualifying
+      ]
     }
   ],
   Winners: [
-    Dolores Cassin,
     Kathy Cassin,
     Kathy Cassin
-  ],
-  Results: [
-    {
-      BowlerName: Enrique Wolf,
-      Place: 0,
-      PrizeMoney: 248.561033629142000,
-      Points: 60
-    },
-    {
-      BowlerName: Enrique Wolf,
-      Place: 1,
-      PrizeMoney: 975.172772526356000,
-      Points: 83
-    },
-    {
-      BowlerName: Kariane Wolf,
-      Place: 0,
-      PrizeMoney: 705.866732497638000,
-      Points: 48
-    },
-    {
-      BowlerName: Coty Wolf,
-      Place: 6,
-      PrizeMoney: 916.081168184095000,
-      Points: 61
-    },
-    {
-      BowlerName: Enrique Wolf,
-      Place: 0,
-      PrizeMoney: 667.984944147982000,
-      Points: 32
-    },
-    {
-      BowlerName: Enrique Wolf,
-      Place: 0,
-      PrizeMoney: 951.352595328983000,
-      Points: 27
-    },
-    {
-      BowlerName: Aisha Wolf,
-      Place: 0,
-      PrizeMoney: 766.763728934696000,
-      Points: 67
-    },
-    {
-      BowlerName: Enrique Wolf,
-      Place: 0,
-      PrizeMoney: 745.956161872464000,
-      Points: 78
-    }
   ]
 }

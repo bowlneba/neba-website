@@ -94,6 +94,12 @@ public sealed class Tournament
     public decimal EntryFee { get; init; }
 
     /// <summary>
+    /// Gets the amount NEBA itself has contributed to the tournament's prize fund, independent of
+    /// any sponsor contributions.
+    /// </summary>
+    public decimal NebaAddedMoney { get; init; }
+
+    /// <summary>
     /// Gets the URL where teams can register for the tournament, or <see langword="null"/> if registration
     /// </summary>
     public Uri? ExternalRegistrationUrl { get; init; }
@@ -111,6 +117,75 @@ public sealed class Tournament
     /// </summary>
     public IReadOnlyCollection<TournamentSponsor> Sponsors
         => _sponsors;
+
+    /// <summary>
+    /// Gets the date/time at which full oil pattern details become visible to callers who lack
+    /// the tournament management permission, or <see langword="null"/> if there is no reveal
+    /// restriction (full details are always visible). Callers holding the tournament management
+    /// permission always see full details regardless of this value.
+    /// </summary>
+    public DateTimeOffset? OilPatternRevealDateTime { get; init; }
+
+    /// <summary>
+    /// Creates a new tournament, validating name, dates, and entry fee.
+    /// </summary>
+    public static ErrorOr<Tournament> Create(
+        string name,
+        TournamentType tournamentType,
+        DateOnly startDate,
+        DateOnly endDate,
+        SeasonId seasonId,
+        bool statsEligible,
+        decimal entryFee,
+        CertificationNumber? bowlingCenterId = null,
+        Uri? externalRegistrationUrl = null,
+        StoredFile? logo = null,
+        PatternLengthCategory? patternLengthCategory = null,
+        PatternRatioCategory? patternRatioCategory = null,
+        DateTimeOffset? oilPatternRevealDateTime = null,
+        decimal nebaAddedMoney = 0)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return TournamentErrors.NameRequired;
+        }
+
+        if (startDate > endDate)
+        {
+            return TournamentErrors.EndDateBeforeStartDate(startDate, endDate);
+        }
+
+        if (entryFee < 0)
+        {
+            return TournamentErrors.InvalidEntryFee(entryFee);
+        }
+
+        if (nebaAddedMoney < 0)
+        {
+            return TournamentErrors.InvalidNebaAddedMoney(nebaAddedMoney);
+        }
+
+        var tournament = new Tournament
+        {
+            Id = TournamentId.New(),
+            Name = name,
+            TournamentType = tournamentType,
+            StartDate = startDate,
+            EndDate = endDate,
+            SeasonId = seasonId,
+            StatsEligible = statsEligible,
+            EntryFee = entryFee,
+            NebaAddedMoney = nebaAddedMoney,
+            BowlingCenterId = bowlingCenterId,
+            ExternalRegistrationUrl = externalRegistrationUrl,
+            Logo = logo,
+            PatternLengthCategory = patternLengthCategory,
+            PatternRatioCategory = patternRatioCategory,
+            OilPatternRevealDateTime = oilPatternRevealDateTime
+        };
+
+        return tournament;
+    }
 
     /// <summary>
     /// Adds a sponsor; returns an error if already added or a title sponsor conflict exists.
@@ -136,6 +211,23 @@ public sealed class Tournament
         _sponsors.Add(sponsor.Value);
 
         return Result.Success;
+    }
+
+    /// <summary>
+    /// Removes a sponsor; returns an error if the sponsor isn't currently attached.
+    /// </summary>
+    public ErrorOr<Deleted> RemoveSponsor(SponsorId sponsorId)
+    {
+        var sponsor = _sponsors.SingleOrDefault(tournamentSponsor => tournamentSponsor.SponsorId == sponsorId);
+
+        if (sponsor is null)
+        {
+            return TournamentErrors.SponsorNotAttached(sponsorId);
+        }
+
+        _sponsors.Remove(sponsor);
+
+        return Result.Deleted;
     }
 
     private readonly List<Article> _articles = [];

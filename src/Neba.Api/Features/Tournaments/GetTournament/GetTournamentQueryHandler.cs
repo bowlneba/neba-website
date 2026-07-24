@@ -14,7 +14,8 @@ namespace Neba.Api.Features.Tournaments.GetTournament;
 
 internal sealed class GetTournamentQueryHandler(
     AppDbContext appDbContext,
-    IFileStorageService fileStorageService)
+    IFileStorageService fileStorageService,
+    TimeProvider timeProvider)
     : IQueryHandler<GetTournamentQuery, ErrorOr<TournamentDetailDto>>
 {
     private readonly IQueryable<Tournament> _tournaments
@@ -51,23 +52,27 @@ internal sealed class GetTournamentQueryHandler(
                         State = tournament.BowlingCenter.Address.Region
                     },
                 Sponsors = tournament.Sponsors
-                    .Select(tournamentSponsor => tournamentSponsor.Sponsor)
-                    .Select(s => new
+                    .Select(tournamentSponsor => new
                     {
-                        s.Name,
-                        s.Slug,
-                        LogoContainer = s.Logo != null ? s.Logo.Container : null,
-                        LogoPath = s.Logo != null ? s.Logo.Path : null,
-                        s.WebsiteUrl,
-                        s.TagPhrase,
+                        tournamentSponsor.Sponsor.Name,
+                        tournamentSponsor.Sponsor.Slug,
+                        LogoContainer = tournamentSponsor.Sponsor.Logo != null ? tournamentSponsor.Sponsor.Logo.Container : null,
+                        LogoPath = tournamentSponsor.Sponsor.Logo != null ? tournamentSponsor.Sponsor.Logo.Path : null,
+                        tournamentSponsor.Sponsor.WebsiteUrl,
+                        tournamentSponsor.Sponsor.TagPhrase,
+                        tournamentSponsor.SponsorId,
+                        tournamentSponsor.TitleSponsor,
+                        tournamentSponsor.SponsorshipAmount
                     }).ToList(),
-                AddedMoney = tournament.Sponsors.Sum(ts => ts.SponsorshipAmount),
+                SponsorMoney = tournament.Sponsors.Sum(ts => ts.SponsorshipAmount),
+                tournament.NebaAddedMoney,
                 PatternLengthCategory = tournament.PatternLengthCategory == null
                     ? null
                     : tournament.PatternLengthCategory.Name,
                 PatternRatioCategory = tournament.PatternRatioCategory == null
                     ? null
                     : tournament.PatternRatioCategory.Name,
+                tournament.OilPatternRevealDateTime,
                 tournament.EntryFee,
                 RegistrationUrl = tournament.ExternalRegistrationUrl,
                 TournamentLogoContainer = tournament.Logo != null
@@ -81,6 +86,9 @@ internal sealed class GetTournamentQueryHandler(
                 {
                     top.OilPattern.Name,
                     top.OilPattern.Length,
+                    top.OilPattern.Volume,
+                    top.OilPattern.LeftRatio,
+                    top.OilPattern.RightRatio,
                     top.TournamentRounds,
                     top.OilPattern.KegelId
                 }).ToList(),
@@ -140,8 +148,16 @@ internal sealed class GetTournamentQueryHandler(
                     : null,
                 WebsiteUrl = s.WebsiteUrl,
                 TagPhrase = s.TagPhrase,
+                SponsorId = s.SponsorId,
+                TitleSponsor = s.TitleSponsor,
+                SponsorshipAmount = s.SponsorshipAmount,
             })
+            .OrderByDescending(s => s.TitleSponsor)
+            .ThenBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
             .ToArray();
+
+        var revealed = OilPatternRevealPolicy.IsRevealed(
+            row.OilPatternRevealDateTime, query.CallerHasTournamentManagementPermission, timeProvider.GetUtcNow());
 
         return new TournamentDetailDto
         {
@@ -156,17 +172,25 @@ internal sealed class GetTournamentQueryHandler(
             RegistrationUrl = row.RegistrationUrl,
             BowlingCenter = row.BowlingCenter,
             Sponsors = sponsors,
-            AddedMoney = row.AddedMoney,
+            AddedMoney = row.SponsorMoney + row.NebaAddedMoney,
+            SponsorMoney = row.SponsorMoney,
+            NebaAddedMoney = row.NebaAddedMoney,
             Reservations = row.Reservations,
             PatternLengthCategory = row.PatternLengthCategory,
             PatternRatioCategory = row.PatternRatioCategory,
-            OilPatterns = row.OilPatterns.ConvertAll(pattern => new TournamentDetailOilPatternDto
-            {
-                Name = pattern.Name,
-                Length = pattern.Length,
-                TournamentRounds = [.. pattern.TournamentRounds.Select(r => r.Name)],
-                KegelId = pattern.KegelId,
-            }),
+            OilPatternRevealDateTime = query.CallerIsAuthenticated ? row.OilPatternRevealDateTime : null,
+            OilPatterns = revealed
+                ? row.OilPatterns.ConvertAll(pattern => new TournamentDetailOilPatternDto
+                {
+                    Name = pattern.Name,
+                    Length = pattern.Length,
+                    Volume = pattern.Volume,
+                    LeftRatio = pattern.LeftRatio,
+                    RightRatio = pattern.RightRatio,
+                    TournamentRounds = [.. pattern.TournamentRounds.Select(r => r.Name)],
+                    KegelId = pattern.KegelId,
+                })
+                : [],
             LogoUrl = row.TournamentLogoContainer is not null && row.TournamentLogoPath is not null
                 ? _fileStorageService.GetBlobUri(row.TournamentLogoContainer, row.TournamentLogoPath)
                 : null,

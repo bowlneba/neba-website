@@ -5,6 +5,7 @@ namespace Neba.TestFactory.Sponsors;
 
 public static class SponsorSummaryDtoFactory
 {
+    public static readonly SponsorId ValidSponsorId = new("01000000000000000000000001");
     public const string ValidName = "Some Sponsor, LLC";
     public const string ValidSlug = "some-sponsor";
     public static readonly Uri ValidLogoUrl = new("https://storage.example.com/sponsor-logos/some-sponsor/logo.png");
@@ -12,6 +13,7 @@ public static class SponsorSummaryDtoFactory
     public const string ValidDescription = "Some Sponsor, LLC is a leading provider of sponsorship opportunities for events and organizations around the world.";
 
     public static SponsorSummaryDto Create(
+        SponsorId? sponsorId = null,
         string? name = null,
         string? slug = null,
         Uri? logoUrl = null,
@@ -27,6 +29,7 @@ public static class SponsorSummaryDtoFactory
     )
         => new()
         {
+            SponsorId = sponsorId ?? ValidSponsorId,
             Name = name ?? ValidName,
             Slug = slug ?? ValidSlug,
             LogoUrl = logoUrl ?? ValidLogoUrl,
@@ -46,6 +49,7 @@ public static class SponsorSummaryDtoFactory
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new SponsorSummaryDto
         {
+            SponsorId = new SponsorId(Ulid.BogusString(faker)),
             Name = faker.Company.CompanyName(),
             Slug = faker.Lorem.Slug(),
             LogoUrl = new Uri(faker.Image.PicsumUrl()),

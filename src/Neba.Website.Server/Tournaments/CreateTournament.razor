@@ -1,0 +1,380 @@
+@page "/tournaments/new"
+@using System.ComponentModel.DataAnnotations
+@using ErrorOr
+@using Neba.Api.Contracts.BowlingCenters
+@using Neba.Api.Contracts.BowlingCenters.ListBowlingCenters
+@using Neba.Api.Contracts.OilPatterns
+@using Neba.Api.Contracts.OilPatterns.CreateOilPattern
+@using Neba.Api.Contracts.OilPatterns.ListOilPatterns
+@using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Tournaments
+@using Neba.Api.Contracts.Tournaments.CreateTournament
+@using Neba.Api.Contracts.Tournaments.ListTournamentTypes
+@using Neba.Api.Contracts.Uploads
+@using Neba.Website.Server.Notifications
+@using Neba.Website.Server.Services
+@using Neba.Website.Server.Time
+@using Refit
+@implements IAsyncDisposable
+@rendermode InteractiveServer
+
+@inject ApiExecutor ApiExecutor
+@inject ITournamentsApi TournamentsApi
+@inject IBowlingCentersApi BowlingCentersApi
+@inject IOilPatternsApi OilPatternsApi
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+@inject IClientTimeZoneService ClientTimeZoneService
+
+<PageTitle>Create Tournament - BowlNEBA</PageTitle>
+
+<AuthorizeView Policy="@Permissions.CreateTournament.PolicyName" Context="authContext">
+    <Authorized>
+        <div class="neba-space-y-6">
+
+            <div class="page-title-bar">
+                <div class="page-title-inner">
+                    <h1>Create Tournament</h1>
+                    <p>Add a new tournament to the NEBA schedule</p>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <NebaAlert Severity="NotifySeverity.Error" Title="Unable to Create Tournament" Message="@_errorMessage" Dismissible="true"
+                           OnDismiss="@(() => _errorMessage = null)" />
+            }
+
+            <DirtyFormGuard IsDirty="@_isDirty" />
+
+            <div class="neba-card">
+                <EditForm EditContext="_editContext" FormName="CreateTournamentForm" OnValidSubmit="HandleCreateAsync">
+                    <DataAnnotationsValidator />
+                    <div class="neba-space-y-6">
+
+                        <section class="neba-space-y-4">
+                            <h2 class="create-tournament-section-title">Basic Info</h2>
+
+                            <div>
+                                <FormLabel TargetId="name" For="@(() => _model.Name)">Name</FormLabel>
+                                <InputText id="name" @bind-Value="_model.Name" class="neba-input" placeholder="e.g. NEBA Fall Classic" />
+                                <ValidationMessage For="@(() => _model.Name)" class="block text-sm text-red-600 mt-1" />
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <FormLabel TargetId="tournament-type" For="@(() => _model.TournamentType)">Tournament Type</FormLabel>
+                                    <InputSelect id="tournament-type" @bind-Value="_model.TournamentType" class="neba-select">
+                                        @foreach (var typeName in _tournamentTypes.Select(type => type.Name))
+                                        {
+                                            <option value="@typeName">@typeName</option>
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => _model.TournamentType)" class="block text-sm text-red-600 mt-1" />
+                                </div>
+
+                                <div>
+                                    <FormLabel TargetId="start-date" For="@(() => _model.StartDate)">Start Date</FormLabel>
+                                    <NebaDateInput id="start-date" @bind-Value="_model.StartDate" />
+                                    <ValidationMessage For="@(() => _model.StartDate)" class="block text-sm text-red-600 mt-1" />
+                                </div>
+
+                                <div>
+                                    <FormLabel TargetId="end-date" For="@(() => _model.EndDate)">End Date</FormLabel>
+                                    <NebaDateInput id="end-date" @bind-Value="_model.EndDate" />
+                                    <ValidationMessage For="@(() => _model.EndDate)" class="block text-sm text-red-600 mt-1" />
+                                </div>
+                            </div>
+                            <p class="text-sm text-[var(--neba-gray-500)]">The season is determined automatically from these dates.</p>
+
+                            <div class="flex items-center gap-2">
+                                <InputCheckbox id="stats-eligible" @bind-Value="_model.StatsEligible" />
+                                <label for="stats-eligible" class="text-sm font-medium text-[var(--neba-gray-700)]">Counts toward season stats and awards</label>
+                            </div>
+                        </section>
+
+                        <section class="neba-space-y-4">
+                            <h2 class="create-tournament-section-title">Venue &amp; Entry Fee</h2>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <FormLabel TargetId="bowling-center" For="@(() => _model.BowlingCenterCertificationNumber)">Bowling Center</FormLabel>
+                                    <NebaAutocomplete Id="bowling-center" TValue="string" TItem="BowlingCenterSummaryResponse"
+                                                       Value="@_model.BowlingCenterCertificationNumber"
+                                                       ValueChanged="HandleBowlingCenterChanged"
+                                                       Items="@_bowlingCenters"
+                                                       DisplayText="@(center => center.Name + " — " + center.City + ", " + center.State)"
+                                                       ItemValue="@(center => center.CertificationNumber)"
+                                                       Placeholder="Search bowling centers..."
+                                                       EmptyLabel="Not yet assigned" />
+                                </div>
+
+                                <div>
+                                    <FormLabel TargetId="entry-fee" For="@(() => _model.EntryFee)">Entry Fee</FormLabel>
+                                    <InputNumber id="entry-fee" @bind-Value="_model.EntryFee" class="neba-input" />
+                                    <ValidationMessage For="@(() => _model.EntryFee)" class="block text-sm text-red-600 mt-1" />
+                                </div>
+
+                                <div>
+                                    <FormLabel TargetId="neba-added-money" For="@(() => _model.NebaAddedMoney)">NEBA Added Money</FormLabel>
+                                    <InputNumber id="neba-added-money" @bind-Value="_model.NebaAddedMoney" class="neba-input" />
+                                    <ValidationMessage For="@(() => _model.NebaAddedMoney)" class="block text-sm text-red-600 mt-1" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <FormLabel TargetId="registration-url" For="@(() => _model.ExternalRegistrationUrl)">External Registration URL</FormLabel>
+                                <InputText id="registration-url" @bind-Value="_model.ExternalRegistrationUrl" class="neba-input" placeholder="https://…" />
+                                <ValidationMessage For="@(() => _model.ExternalRegistrationUrl)" class="block text-sm text-red-600 mt-1" />
+                            </div>
+                        </section>
+
+                        <section class="neba-space-y-4">
+                            <h2 class="create-tournament-section-title">Oil Pattern</h2>
+                            <p class="text-sm text-[var(--neba-gray-500)]">Optional. Pick a pattern to auto-fill lane condition, create a new one, or set the condition manually.</p>
+
+                            <div>
+                                <label for="oil-pattern-reveal" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Reveal Date/Time (optional)</label>
+                                <NebaDateTimeInput id="oil-pattern-reveal" @bind-Value="_oilPatternRevealLocal" />
+                                <p class="text-sm text-[var(--neba-gray-500)]">
+                                    Full pattern details stay hidden until this date/time, in your local time zone, from everyone except tournament management. Leave blank to make the pattern public immediately.
+                                </p>
+                            </div>
+
+                            <OilPatternPicker SelectionChanged="HandleOilPatternSelectionChanged"
+                                               Patterns="@_oilPatterns"
+                                               OnCreatePatternRequestedAsync="CreateOilPatternAsync"
+                                               OnDirty="MarkDirty" />
+                        </section>
+
+                        <section class="neba-space-y-4">
+                            <h2 class="create-tournament-section-title">Logo</h2>
+                            <FileUpload MaxFiles="1" Accept="image/*" MaxFileSizeBytes="@(5 * 1024 * 1024)" Label="Upload a logo"
+                                        OnUploadRequestedAsync="UploadLogoAsync"
+                                        OnFileUploaded="@(response => { _logo = response; MarkDirty(); })"
+                                        OnFileRemoved="@(_ => { _logo = null; MarkDirty(); })"
+                                        OnBusyChanged="@(busy => _isLogoUploading = busy)" />
+                        </section>
+
+                        @if (_isLogoUploading)
+                        {
+                            <p class="text-sm text-[var(--neba-gray-500)]">Uploading logo…</p>
+                        }
+
+                        <div class="flex items-center gap-3">
+                            <button type="submit" class="neba-btn neba-btn-primary" disabled="@(_isSubmitting || _isLogoUploading)">
+                                @(_isSubmitting ? "Creating…" : "Create Tournament")
+                            </button>
+                            <button type="button" class="neba-btn neba-btn-secondary" @onclick="HandleCancel" disabled="@_isSubmitting">
+                                Cancel
+                            </button>
+                        </div>
+
+                    </div>
+                </EditForm>
+            </div>
+
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="news-empty">
+            <p class="news-empty-text">You don't have permission to create tournaments.</p>
+            <a href="/tournaments" class="neba-btn neba-btn-secondary">Back to Tournaments</a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private readonly CreateTournamentFormModel _model = new();
+    private readonly EditContext _editContext;
+
+    private UploadedFileResponse? _logo;
+    private OilPatternSelection _oilPatternSelection = new();
+    private DateTime? _oilPatternRevealLocal;
+    private bool _isLogoUploading;
+    private bool _isSubmitting;
+    private bool _isDirty;
+    private string? _errorMessage;
+
+    private IReadOnlyCollection<BowlingCenterSummaryResponse> _bowlingCenters = [];
+    private IReadOnlyCollection<TournamentTypeSummaryResponse> _tournamentTypes = [];
+    private IReadOnlyCollection<OilPatternSummaryResponse> _oilPatterns = [];
+
+    public CreateTournament()
+    {
+        _editContext = new EditContext(_model);
+        _editContext.OnFieldChanged += HandleFieldChanged;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var bowlingCentersResult = await ApiExecutor.ExecuteAsync(
+            "BowlingCenters",
+            "ListBowlingCenters",
+            BowlingCentersApi.ListBowlingCentersAsync);
+
+        if (!bowlingCentersResult.IsError)
+        {
+            _bowlingCenters = bowlingCentersResult.Value.Items;
+        }
+
+        var tournamentTypesResult = await ApiExecutor.ExecuteAsync(
+            "Tournaments",
+            "ListTournamentTypes",
+            TournamentsApi.ListTournamentTypesAsync);
+
+        if (!tournamentTypesResult.IsError)
+        {
+            _tournamentTypes = tournamentTypesResult.Value.Items;
+        }
+
+        var oilPatternsResult = await ApiExecutor.ExecuteAsync(
+            "OilPatterns",
+            "ListOilPatterns",
+            OilPatternsApi.ListOilPatternsAsync);
+
+        if (!oilPatternsResult.IsError)
+        {
+            _oilPatterns = oilPatternsResult.Value.Items;
+        }
+    }
+
+    private void MarkDirty() => _isDirty = true;
+
+    private void HandleFieldChanged(object? sender, FieldChangedEventArgs e) => MarkDirty();
+
+    private void HandleOilPatternSelectionChanged(OilPatternSelection selection)
+    {
+        _oilPatternSelection = selection;
+        MarkDirty();
+    }
+
+    private void HandleBowlingCenterChanged(string? certificationNumber)
+    {
+        _model.BowlingCenterCertificationNumber = certificationNumber;
+        MarkDirty();
+    }
+
+    private async Task<ErrorOr<CreatedOilPatternResponse>> CreateOilPatternAsync(CreateOilPatternRequest request, CancellationToken ct)
+        => await ApiExecutor.ExecuteAsync(
+            "OilPatterns",
+            "CreateOilPattern",
+            c => OilPatternsApi.CreateOilPatternAsync(request, c),
+            ct);
+
+    private async Task<ErrorOr<UploadedFileResponse>> UploadLogoAsync(
+        Stream stream, string fileName, string contentType, IProgress<int> progress, CancellationToken ct)
+        => await ApiExecutor.ExecuteAsync(
+            "Tournaments",
+            "UploadTournamentLogo",
+            c => TournamentsApi.UploadTournamentLogoAsync(new StreamPart(stream, fileName, contentType), c),
+            ct);
+
+    private async Task HandleCreateAsync()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        var request = new CreateTournamentRequest { Tournament = await BuildTournamentInputAsync() };
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "Tournaments",
+            "CreateTournament",
+            ct => TournamentsApi.CreateTournamentAsync(request, ct));
+
+        _isSubmitting = false;
+
+        if (result.IsError)
+        {
+            _errorMessage = result.FirstError.Description;
+            return;
+        }
+
+        _isDirty = false;
+        ToastService.Show("Tournament Created", "\"" + _model.Name + "\" was successfully created.", NotifySeverity.Success);
+
+        // See CreateSponsor.razor's HandleCreateAsync for why the Task.Yield() below is required —
+        // DirtyFormGuard only observes _isDirty once this component's queued re-render actually runs.
+        StateHasChanged();
+        await Task.Yield();
+
+        NavigationManager.NavigateTo($"/tournaments/{result.Value.TournamentId}");
+    }
+
+    private void HandleCancel() => NavigationManager.NavigateTo("/tournaments");
+
+    private async Task<TournamentInput> BuildTournamentInputAsync() => new()
+    {
+        Name = _model.Name,
+        TournamentType = _model.TournamentType,
+        StartDate = _model.StartDate!.Value,
+        EndDate = _model.EndDate!.Value,
+        StatsEligible = _model.StatsEligible,
+        EntryFee = _model.EntryFee,
+        NebaAddedMoney = _model.NebaAddedMoney,
+        BowlingCenterCertificationNumber = string.IsNullOrWhiteSpace(_model.BowlingCenterCertificationNumber)
+            ? null
+            : _model.BowlingCenterCertificationNumber,
+        ExternalRegistrationUrl = ParseUri(_model.ExternalRegistrationUrl),
+        Logo = BuildLogoInput(),
+        OilPatternId = _oilPatternSelection.OilPatternId,
+        PatternLengthCategory = _oilPatternSelection.PatternLengthCategory,
+        PatternRatioCategory = _oilPatternSelection.PatternRatioCategory,
+        OilPatternRevealDateTime = _oilPatternRevealLocal is { } local
+            ? await ClientTimeZoneService.ToUtcAsync(local)
+            : null
+    };
+
+    private static Uri? ParseUri(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri) ? uri : null;
+    }
+
+    private TournamentLogoInput? BuildLogoInput() => _logo is null ? null : new TournamentLogoInput
+    {
+        Container = _logo.Container,
+        Path = _logo.Path,
+        ContentType = _logo.ContentType,
+        SizeInBytes = _logo.SizeInBytes
+    };
+
+    public ValueTask DisposeAsync()
+    {
+        _editContext.OnFieldChanged -= HandleFieldChanged;
+        return ValueTask.CompletedTask;
+    }
+
+    private sealed class CreateTournamentFormModel
+    {
+        [Required(ErrorMessage = "Name is required.")]
+        [StringLength(127, ErrorMessage = "Name must be 127 characters or fewer.")]
+        public string Name { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Tournament type is required.")]
+        public string TournamentType { get; set; } = "Singles";
+
+        [Required(ErrorMessage = "Start date is required.")]
+        public DateOnly? StartDate { get; set; }
+
+        [Required(ErrorMessage = "End date is required.")]
+        public DateOnly? EndDate { get; set; }
+
+        public bool StatsEligible { get; set; } = true;
+
+        [Range(0, double.MaxValue, ErrorMessage = "Entry fee must be zero or greater.")]
+        public decimal EntryFee { get; set; }
+
+        [Range(0, double.MaxValue, ErrorMessage = "NEBA added money must be zero or greater.")]
+        public decimal NebaAddedMoney { get; set; }
+
+        public string? BowlingCenterCertificationNumber { get; set; }
+
+        [Url(ErrorMessage = "External registration URL must be a valid, absolute URL.")]
+        public string? ExternalRegistrationUrl { get; set; }
+    }
+}

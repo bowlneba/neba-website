@@ -1,4 +1,4 @@
-// Shared browser timezone helper for converting UTC values to the viewer's local time.
-export function getTimezoneOffsetMinutes() {
-    return new Date().getTimezoneOffset();
+// Shared browser timezone helper for converting UTC values to/from the viewer's local time.
+export function getTimeZoneId() {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }

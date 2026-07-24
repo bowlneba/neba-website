@@ -24,6 +24,7 @@ internal sealed class ListActiveSponsorsEndpointSummary
                 [
                     new SponsorSummaryResponse
                     {
+                        SponsorId = "01ARZ3NDEKTSV4RRFFQ69G5FAV",
                         Name = "Acme Bowling Supply",
                         Slug = "acme-bowling-supply",
                         LogoUrl = null,

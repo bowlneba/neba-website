@@ -1,3 +1,5 @@
+using ErrorOr;
+
 namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
@@ -66,4 +68,71 @@ public sealed class OilPattern
     /// </summary>
     public IReadOnlyCollection<TournamentOilPattern> Tournaments
         => _tournaments;
+
+    /// <summary>
+    /// Creates a new <see cref="OilPattern"/> instance after validating the supplied name, length, and volume.
+    /// </summary>
+    /// <param name="name">The name of the oil pattern.</param>
+    /// <param name="length">The length of the oil pattern in feet.</param>
+    /// <param name="volume">The volume of oil applied to the pattern in milliliters.</param>
+    /// <param name="leftRatio">The left oil-to-dry ratio.</param>
+    /// <param name="rightRatio">The right oil-to-dry ratio.</param>
+    /// <param name="kegelId">The optional Kegel public pattern library identifier.</param>
+    /// <returns>The created <see cref="OilPattern"/>, or a validation error.</returns>
+    public static ErrorOr<OilPattern> Create(
+        string name,
+        int length,
+        decimal volume,
+        decimal leftRatio,
+        decimal rightRatio,
+        Guid? kegelId = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return OilPatternErrors.NameRequired;
+        }
+
+        if (length <= 0)
+        {
+            return OilPatternErrors.LengthMustBePositive;
+        }
+
+        if (volume <= 0)
+        {
+            return OilPatternErrors.VolumeMustBePositive;
+        }
+
+        if (leftRatio < 0)
+        {
+            return OilPatternErrors.LeftRatioInvalid;
+        }
+
+        if (rightRatio < 0)
+        {
+            return OilPatternErrors.RightRatioInvalid;
+        }
+
+        return new OilPattern
+        {
+            Id = OilPatternId.New(),
+            Name = name,
+            Length = length,
+            Volume = volume,
+            LeftRatio = leftRatio,
+            RightRatio = rightRatio,
+            KegelId = kegelId
+        };
+    }
+
+    /// <summary>
+    /// Gets the length category of the pattern based on its length.
+    /// </summary>
+    public PatternLengthCategory LengthCategory
+        => PatternLengthCategory.FromLength(Length);
+
+    /// <summary>
+    /// Gets the ratio category of the pattern based on the maximum ratio value.
+    /// </summary>
+    public PatternRatioCategory RatioCategory
+        => PatternRatioCategory.FromRatio(Math.Max(LeftRatio, RightRatio));
 }

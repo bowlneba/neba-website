@@ -156,7 +156,7 @@ public sealed class BowlerConfigurationTests
 
         // Assert
         index.ShouldNotBeNull();
-        index!.IsUnique.ShouldBeTrue();
+        index.IsUnique.ShouldBeTrue();
         index.FindAnnotation("Npgsql:NullsDistinct")?.Value.ShouldBe(true);
     }
 
@@ -179,7 +179,7 @@ public sealed class BowlerConfigurationTests
 
         // Assert
         index.ShouldNotBeNull();
-        index!.IsUnique.ShouldBeTrue();
+        index.IsUnique.ShouldBeTrue();
         index.FindAnnotation("Npgsql:NullsDistinct")?.Value.ShouldBe(true);
     }
 }

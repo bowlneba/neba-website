@@ -6,6 +6,7 @@ using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Documents;
 using Neba.Website.Server.Services;
+using Neba.Website.Server.Time;
 
 using Refit;
 using Refit.Testing;
@@ -17,11 +18,13 @@ namespace Neba.Website.Tests.Documents;
 public sealed class DocumentSlideoverHandlerTests
 {
     private readonly Mock<IDocumentsApi> _mockDocumentsApi;
+    private readonly Mock<IClientTimeZoneService> _mockClientTimeZoneService;
     private readonly ApiExecutor _apiExecutor;
 
     public DocumentSlideoverHandlerTests()
     {
         _mockDocumentsApi = new Mock<IDocumentsApi>(MockBehavior.Strict);
+        _mockClientTimeZoneService = new Mock<IClientTimeZoneService>(MockBehavior.Strict);
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
         mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
@@ -93,7 +96,7 @@ public sealed class DocumentSlideoverHandlerTests
 
         // Assert
         handler.Content.ShouldNotBeNull();
-        handler.Content!.Value.Value.ShouldContain("Bylaws Content");
+        handler.Content.Value.Value.ShouldContain("Bylaws Content");
         handler.Title.ShouldBe("Bylaws");
         handler.IsLoading.ShouldBeFalse();
         stateChangedCount.ShouldBe(2); // Once for loading, once for result
@@ -111,7 +114,7 @@ public sealed class DocumentSlideoverHandlerTests
 
         // Assert
         handler.Content.ShouldNotBeNull();
-        handler.Content!.Value.Value.ShouldContain("Failed to load document");
+        handler.Content.Value.Value.ShouldContain("Failed to load document");
         handler.Title.ShouldBe("Tournament Rules");
         handler.IsLoading.ShouldBeFalse();
     }
@@ -158,6 +161,38 @@ public sealed class DocumentSlideoverHandlerTests
         handler.IsLoading.ShouldBeFalse();
     }
 
+    [Fact(DisplayName = "HandleLinkClickedAsync should convert LastUpdated to the viewer's local time when the API call succeeds")]
+    public async Task HandleLinkClickedAsync_ShouldConvertLastUpdatedToLocalTime_WhenApiCallSucceeds()
+    {
+        // Arrange
+        var utc = new DateTimeOffset(2026, 3, 1, 12, 0, 0, TimeSpan.Zero);
+        var local = new DateTimeOffset(2026, 3, 1, 7, 0, 0, TimeSpan.FromHours(-5));
+        SetupSuccessResponse("bylaws", "<p>Content</p>", utc);
+        _mockClientTimeZoneService.Setup(s => s.ToLocalAsync(utc)).ReturnsAsync(local).Verifiable();
+        var handler = CreateHandler();
+
+        // Act
+        await handler.HandleLinkClickedAsync("/bylaws", () => { });
+
+        // Assert
+        handler.LastUpdated.ShouldBe(local);
+        _mockClientTimeZoneService.VerifyAll();
+    }
+
+    [Fact(DisplayName = "HandleLinkClickedAsync should not call the client time zone service when LastUpdated is null")]
+    public async Task HandleLinkClickedAsync_ShouldNotCallClientTimeZoneService_WhenLastUpdatedIsNull()
+    {
+        // Arrange — Strict mock with no setup: an unexpected call fails the test.
+        SetupSuccessResponse("bylaws", "<p>Content</p>");
+        var handler = CreateHandler();
+
+        // Act
+        await handler.HandleLinkClickedAsync("/bylaws", () => { });
+
+        // Assert
+        handler.LastUpdated.ShouldBeNull();
+    }
+
     [Fact(DisplayName = "HandleLinkClickedAsync should trim leading slash from pathname")]
     public async Task HandleLinkClickedAsync_ShouldTrimLeadingSlash_FromPathname()
     {
@@ -175,14 +210,14 @@ public sealed class DocumentSlideoverHandlerTests
     }
 
     private DocumentSlideoverHandler CreateHandler()
-        => new(_apiExecutor, _mockDocumentsApi.Object);
+        => new(_apiExecutor, _mockDocumentsApi.Object, _mockClientTimeZoneService.Object);
 
-    private void SetupSuccessResponse(string documentName, string html)
+    private void SetupSuccessResponse(string documentName, string html, DateTimeOffset? lastUpdated = null)
     {
         using var response = new StubApiResponse<GetDocumentResponse>
         {
             IsSuccessStatusCode = true,
-            Content = new GetDocumentResponse { Html = html },
+            Content = new GetDocumentResponse { Html = html, LastUpdated = lastUpdated },
             StatusCode = System.Net.HttpStatusCode.OK
         };
 

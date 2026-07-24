@@ -1,4 +1,5 @@
 using Bunit;
+using Bunit.TestDoubles;
 
 using ErrorOr;
 
@@ -21,12 +22,16 @@ public sealed class TournamentsPageTests : IDisposable
 {
     private readonly BunitContext _ctx;
     private readonly FakeTournamentDataService _dataService;
+    private readonly BunitAuthorizationContext _authContext;
 
     public TournamentsPageTests()
     {
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         _ctx.Services.AddRouting();
+
+        _authContext = _ctx.AddAuthorization();
+        _authContext.SetNotAuthorized();
 
         _dataService = new FakeTournamentDataService();
         _ctx.Services.AddSingleton<ITournamentApiService>(_dataService);

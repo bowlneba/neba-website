@@ -12,11 +12,12 @@ Turn a feature description into `docs/plans/{feature-name}.md` — a plan detail
 ## Ground rules
 
 - **Always two phases, in order: Phase 1 = API, Phase 2 = UI.** Even if the description sounds UI-only or API-only, still frame the plan this way — note explicitly in Phase 2 if there's genuinely no UI work, rather than skipping the phase heading.
-- **Always four stages, gated on confirmation**, in order:
+- **Always these stages, gated on confirmation**, in order:
   1. Phase 1 functional draft
   2. Phase 1 code draft
   3. Phase 2 functional draft
-  4. Phase 2 code draft
+  4. Phase 2 UI mockups (HTML) — skipped only if Step 6 concluded there is genuinely no UI surface
+  5. Phase 2 code draft
   Do not start a stage until the user has confirmed the previous one. "Confirmed" means an explicit yes/approval — proceeding on silence or an unrelated reply is not a confirmation.
 - **A "functional" draft describes changes at the level of: what files get created/edited, what each does, and why** — no method bodies, no full class listings. Think PR-description depth, not diff depth.
 - **A "code" draft shows the actual code changes** — real class/method signatures, real field names, real routes, close enough to paste into the editor and adjust. It replaces the functional bullets for that phase in the markdown file, it doesn't just append below them.
@@ -114,9 +115,31 @@ Show it in chat and ask: **"Does this functional breakdown for Phase 2 look righ
 
 Do not proceed until confirmed.
 
-## Step 7 — Phase 2 code draft (UI)
+## Step 7 — Phase 2 UI mockups (HTML)
 
-Once Step 6 is confirmed, expand each item into actual `.razor`/`.razor.cs` code: markup, `@code` blocks, event handlers, DirtyFormGuard wiring if applicable, and the Refit client call. Replace the Step 6 functional bullets under `## Phase 2: UI` with this code-level detail, same fenced-code-per-item structure as Step 5.
+Once Step 6 is confirmed, and before writing any Blazor code, produce static HTML mockups of the new/changed pages for the user to review. Skip this step entirely (and say so) only if Step 6 concluded the feature has no real UI surface.
+
+Invoke the `frontend-design` skill first, to calibrate visual direction (typography, color, layout, what reads as templated vs. intentional) before building anything — don't guess at aesthetic choices the skill already has an opinion on.
+
+For each new or substantially-changed page identified in Step 6, decide which kind of page it is:
+
+- **Data capture** (a create/edit form — one obvious input layout, no real layout tradeoff to weigh): produce a **single** HTML mockup.
+- **Data display** (a list/detail/dashboard page where density, hierarchy, and layout genuinely have multiple reasonable answers): produce **2–3 distinct mockup options** (different layouts or visual emphasis) so the user can compare and pick, per `frontend-design`'s guidance on avoiding templated defaults. Don't multiply options for their own sake — only produce more than one when the page's design actually has a meaningful decision to make.
+
+Mockup rules:
+
+- Save each as a plain static HTML file under `docs/plans/mockups/{feature-name}/` (create the directory if needed) — e.g. `docs/plans/mockups/create-tournament/create-tournament.html` for a single data-capture mockup, or `option-1.html`/`option-2.html`/`option-3.html` per page for data-display comparisons. **Do not** use the `Artifact` tool for these — they're local working files reviewed as part of the plan, not something to publish.
+- Use realistic sample data and the feature's actual field names/labels/categories (pulled from the Step 6 draft) — a mockup should read as this feature, not a generic template.
+- For interactions that only make sense at runtime (modals, mode switches, dependent dropdowns, an inline "create new X" flow, tab switching), include lightweight inline `<script>` that simulates the interaction (toggling classes/visibility) — just enough to click through the flow. This is throwaway scripting for review purposes, not a preview of the real implementation.
+- Record each mockup file's path in `docs/plans/{feature-name}.md` under `## Phase 2: UI`, in a `### Mockups` subsection, with a one-line note on what each shows.
+
+Tell the user the mockup file path(s) so they can open and review them (do not attempt to render the HTML inline in chat), and ask: **"Here's the mockup for [page]. Does this look right, or should anything change before I draft the actual code?"**
+
+Do not proceed until confirmed. If the user asks for changes, update the mockup file(s) in place and re-confirm before moving to Step 8 — the same "don't silently fold unconfirmed changes into the next stage" rule that applies to every other gate applies here too.
+
+## Step 8 — Phase 2 code draft (UI)
+
+Once Step 7 is confirmed (or skipped, per Step 7's own condition), expand each item into actual `.razor`/`.razor.cs` code: markup, `@code` blocks, event handlers, DirtyFormGuard wiring if applicable, and the Refit client call. Use the confirmed mockup(s) as the source of truth for markup structure/classes/layout, adapted into Razor. Replace the Step 6 functional bullets under `## Phase 2: UI` with this code-level detail, same fenced-code-per-item structure as Step 5.
 
 Show the update in chat and report the plan is complete: **"Phase 2 code is in. The full plan is in `docs/plans/{feature-name}.md` — let me know if you want any adjustments, or you're ready to start implementing from it."**
 

@@ -5,9 +5,12 @@ using ErrorOr;
 using FastEndpoints;
 using FastEndpoints.AspVersioning;
 
+using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Tournaments.GetTournament;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Messaging;
+
+using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Features.Tournaments.GetTournament;
 
@@ -39,7 +42,12 @@ internal sealed class GetTournamentEndpoint(
 
     public override async Task HandleAsync(GetTournamentRequest req, CancellationToken ct)
     {
-        var query = new GetTournamentQuery { Id = new TournamentId(req.TournamentId) };
+        var query = new GetTournamentQuery
+        {
+            Id = new TournamentId(req.TournamentId),
+            CallerIsAuthenticated = User.Identity?.IsAuthenticated == true,
+            CallerHasTournamentManagementPermission = User.HasAnyPermission(PermissionCatalog.TournamentManagementPermissions)
+        };
         var result = await _queryHandler.HandleAsync(query, ct);
 
         if (result.IsError)
@@ -75,10 +83,13 @@ internal sealed class GetTournamentEndpoint(
             EntryFee = dto.EntryFee,
             RegistrationUrl = dto.RegistrationUrl,
             AddedMoney = dto.AddedMoney,
+            SponsorMoney = dto.SponsorMoney,
+            NebaAddedMoney = dto.NebaAddedMoney,
             Reservations = dto.Reservations,
             EntryCount = dto.EntryCount,
             PatternLengthCategory = dto.PatternLengthCategory,
             PatternRatioCategory = dto.PatternRatioCategory,
+            OilPatternRevealDateTime = dto.OilPatternRevealDateTime,
             LogoUrl = dto.LogoUrl,
             BowlingCenter = dto.BowlingCenter is null ? null : new TournamentDetailBowlingCenterResponse
             {
@@ -92,12 +103,18 @@ internal sealed class GetTournamentEndpoint(
                 Slug = s.Slug,
                 LogoUrl = s.LogoUrl,
                 WebsiteUrl = s.WebsiteUrl,
+                SponsorId = s.SponsorId.Value.ToString(),
+                TitleSponsor = s.TitleSponsor,
+                SponsorshipAmount = s.SponsorshipAmount,
                 TagPhrase = s.TagPhrase,
             })],
             OilPatterns = [.. dto.OilPatterns.Select(op => new TournamentDetailOilPatternResponse
             {
                 Name = op.Name,
                 Length = op.Length,
+                Volume = op.Volume,
+                LeftRatio = op.LeftRatio,
+                RightRatio = op.RightRatio,
                 Rounds = op.TournamentRounds,
                 KegelId = op.KegelId,
             })],

@@ -13,6 +13,7 @@ internal static class SecurityRoleSeeder
     private static readonly Dictionary<string, IReadOnlyCollection<Permissions>> RolePermissions = new()
     {
         [Roles.Admin] = Permissions.List,
+
         [Roles.Webmaster] =
         [
             Permissions.CreateArticle,
@@ -20,21 +21,51 @@ internal static class SecurityRoleSeeder
             Permissions.DeleteArticle,
 
             Permissions.CreateSponsor,
-            Permissions.EditSponsor
+            Permissions.EditSponsor,
+
+            Permissions.CreateTournament,
+            Permissions.ManageTournamentSponsors
         ],
+
+        [Roles.Manager] =
+        [
+            Permissions.CreateArticle,
+            Permissions.EditArticle,
+            Permissions.DeleteArticle,
+
+            Permissions.CreateSponsor,
+            Permissions.EditSponsor,
+
+            Permissions.CreateTournament,
+            Permissions.ManageTournamentSponsors
+        ],
+
+        [Roles.TournamentDirector] =
+        [
+            Permissions.CreateTournament,
+            Permissions.ManageTournamentSponsors
+        ],
+
+        [Roles.Journalist] =
+        [
+            Permissions.CreateArticle,
+            Permissions.EditArticle,
+            Permissions.DeleteArticle
+        ],
+
         [Roles.Member] = []
     };
 
-    public static async Task SeedAsync(RoleManager<ApplicationRole> roleManager)
+    public static async Task SeedAsync(RoleManager<ApplicationRole> roleManager, ILogger logger)
     {
-        foreach (var (roleName, permissions) in RolePermissions)
+        foreach ((string roleName, IReadOnlyCollection<Permissions> permissions) in RolePermissions)
         {
             var role = await roleManager.FindByNameAsync(roleName);
 
             if (role is null)
             {
                 role = new ApplicationRole(roleName);
-                await roleManager.CreateAsync(role);
+                EnsureSucceeded(await roleManager.CreateAsync(role), logger, roleName, $"create role '{roleName}'");
             }
 
             var existingClaims = await roleManager.GetClaimsAsync(role);
@@ -43,9 +74,16 @@ internal static class SecurityRoleSeeder
                 .Select(claim => claim.Value)
                 .ToHashSet();
 
-            foreach (var permission in permissions.Where(p => !existingPermissionKeys.Contains(p.Value)))
+            var permissionsToAdd = permissions
+                .Select(p => p.Value)
+                .Where(value => !existingPermissionKeys.Contains(value))
+                .ToList();
+
+            foreach (var permissionValue in permissionsToAdd)
             {
-                await roleManager.AddClaimAsync(role, new Claim(PermissionClaimType, permission.Value));
+                EnsureSucceeded(
+                    await roleManager.AddClaimAsync(role, new Claim(PermissionClaimType, permissionValue)),
+                    logger, roleName, $"add permission claim '{permissionValue}'");
             }
 
             var permissionsToRemove = existingClaims
@@ -54,8 +92,37 @@ internal static class SecurityRoleSeeder
 
             foreach (var claim in permissionsToRemove)
             {
-                await roleManager.RemoveClaimAsync(role, claim);
+                EnsureSucceeded(
+                    await roleManager.RemoveClaimAsync(role, claim),
+                    logger, roleName, $"remove permission claim '{claim.Value}'");
             }
         }
     }
+
+    /// <summary>
+    /// Role/permission seeding is a startup-critical operation — an unchecked <see cref="IdentityResult"/>
+    /// failure here would silently leave a role without its expected permission claims, with no
+    /// visible symptom other than users in that role lacking access at runtime. Logging and failing
+    /// startup surfaces the problem immediately instead of as a confusing authorization bug later.
+    /// </summary>
+    private static void EnsureSucceeded(IdentityResult result, ILogger logger, string roleName, string operation)
+    {
+        if (result.Succeeded)
+        {
+            return;
+        }
+
+        var errors = string.Join("; ", result.Errors.Select(e => $"{e.Code}: {e.Description}"));
+        logger.LogRoleSeedOperationFailed(roleName, operation, errors);
+        throw new InvalidOperationException($"Security role seeding failed to {operation}. Errors: {errors}");
+    }
+}
+
+internal static partial class SecurityRoleSeederLogMessages
+{
+    [LoggerMessage(
+        Level = LogLevel.Critical,
+        Message = "Security role seeding failed for role '{RoleName}': could not {Operation}. Errors: {Errors}")]
+    public static partial void LogRoleSeedOperationFailed(
+        this ILogger logger, string roleName, string operation, string errors);
 }

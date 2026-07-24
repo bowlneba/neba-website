@@ -1,3 +1,4 @@
+using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Tournaments.GetTournament;
 
 namespace Neba.TestFactory.Tournaments;
@@ -6,13 +7,17 @@ public static class TournamentDetailSponsorDtoFactory
 {
     public const string ValidName = "Test Sponsor";
     public const string ValidSlug = "test-sponsor";
+    public static readonly SponsorId ValidSponsorId = SponsorId.New();
 
     public static TournamentDetailSponsorDto Create(
         string? name = null,
         string? slug = null,
         Uri? websiteUrl = null,
         string? tagPhrase = null,
-        Uri? logoUrl = null)
+        Uri? logoUrl = null,
+        SponsorId? sponsorId = null,
+        bool? titleSponsor = null,
+        decimal? sponsorshipAmount = null)
         => new()
         {
             Name = name ?? ValidName,
@@ -20,6 +25,9 @@ public static class TournamentDetailSponsorDtoFactory
             WebsiteUrl = websiteUrl,
             TagPhrase = tagPhrase,
             LogoUrl = logoUrl,
+            SponsorId = sponsorId ?? ValidSponsorId,
+            TitleSponsor = titleSponsor ?? false,
+            SponsorshipAmount = sponsorshipAmount ?? 500m,
         };
 
     public static IReadOnlyCollection<TournamentDetailSponsorDto> Bogus(int count, int? seed = null)
@@ -32,6 +40,9 @@ public static class TournamentDetailSponsorDtoFactory
                 WebsiteUrl = f.Random.Bool() ? new Uri(f.Internet.Url()) : null,
                 TagPhrase = f.Random.Bool() ? f.Lorem.Sentence() : null,
                 LogoUrl = f.Random.Bool() ? new Uri(f.Internet.Url()) : null,
+                SponsorId = new SponsorId(Ulid.BogusString(f)),
+                TitleSponsor = f.Random.Bool(),
+                SponsorshipAmount = f.Finance.Amount(0, 5000),
             });
 
         if (seed.HasValue)

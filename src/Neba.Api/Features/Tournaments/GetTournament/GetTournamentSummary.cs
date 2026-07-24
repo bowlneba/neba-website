@@ -45,6 +45,9 @@ internal sealed class GetTournamentSummary : Summary<GetTournamentEndpoint>
                     {
                         Name = "Kegel Broadway",
                         Length = 40,
+                        Volume = 22.5m,
+                        LeftRatio = 4.0m,
+                        RightRatio = 6.0m,
                         Rounds = ["Qualifying", "Finals"],
                     },
                 ],
