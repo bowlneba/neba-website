@@ -98,6 +98,11 @@ public sealed class Permissions
     public static readonly Permissions EditTournament = new("Tournaments.EditTournament", "Edit Tournament");
 
     /// <summary>
+    /// Permission to delete an existing tournament.
+    /// </summary>
+    public static readonly Permissions DeleteTournament = new("Tournaments.DeleteTournament", "Delete Tournament");
+
+    /// <summary>
     /// A collection of permissions related to tournament management.
     /// </summary>
     public static readonly IReadOnlyCollection<Permissions> TournamentManagementPermissions =
@@ -105,6 +110,7 @@ public sealed class Permissions
         CreateTournament,
         ManageTournamentSponsors,
         EditTournament,
+        DeleteTournament
     ];
 
     /// <summary>
