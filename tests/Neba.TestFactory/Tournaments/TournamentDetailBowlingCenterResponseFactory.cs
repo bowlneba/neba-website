@@ -11,12 +11,14 @@ public static class TournamentDetailBowlingCenterResponseFactory
     public static TournamentDetailBowlingCenterResponse Create(
         string? name = null,
         string? city = null,
-        string? state = null)
+        string? state = null,
+        string? certificationNumber = null)
         => new()
         {
             Name = name ?? ValidName,
             City = city ?? ValidCity,
             State = state ?? ValidState,
+            CertificationNumber = certificationNumber,
         };
 
     public static IReadOnlyCollection<TournamentDetailBowlingCenterResponse> Bogus(int count, int? seed = null)

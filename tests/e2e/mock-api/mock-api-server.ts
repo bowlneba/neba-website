@@ -278,8 +278,10 @@ const MOCK_HIGH_BLOCK_AWARDS = {
   totalItems: 2,
 };
 
+// Includes 'Open', matching MOCK_TOURNAMENT_DETAIL.tournamentType — otherwise the edit form's
+// <select> has no matching <option> and silently blanks the pre-filled value.
 const MOCK_TOURNAMENT_TYPES = {
-  items: [{ name: 'Singles' }, { name: 'Doubles' }],
+  items: [{ name: 'Singles' }, { name: 'Doubles' }, { name: 'Open' }],
 };
 
 const MOCK_OIL_PATTERNS = {
@@ -337,7 +339,7 @@ export const MOCK_TOURNAMENT_DETAIL = {
       sponsorshipAmount: 250,
     },
   ],
-  oilPatterns: [{ name: 'Scorpion', length: 42, volume: 24.5, leftRatio: 3, rightRatio: 3 }],
+  oilPatterns: [{ oilPatternId: '01JX0000000000000000000040', name: 'Scorpion', length: 42, volume: 24.5, leftRatio: 3, rightRatio: 3 }],
   winners: ['Current Leader'],
   results: [],
 };
@@ -395,7 +397,7 @@ const MOCK_TOURNAMENT_OIL_REVEALED = {
   logoUrl: null,
   bowlingCenter: { name: 'Lucky Strike Lanes', city: 'Boston', state: 'MA' },
   sponsors: [],
-  oilPatterns: [{ name: 'Scorpion', length: 42, volume: 24.5, leftRatio: 3, rightRatio: 3 }],
+  oilPatterns: [{ oilPatternId: '01JX0000000000000000000041', name: 'Scorpion', length: 42, volume: 24.5, leftRatio: 3, rightRatio: 3 }],
   oilPatternRevealDateTime: '2020-01-01T00:00:00+00:00',
   winners: [],
   results: [],
@@ -421,7 +423,7 @@ const MOCK_TOURNAMENT_OIL_REVEAL_MGMT = {
   logoUrl: null,
   bowlingCenter: { name: 'Lucky Strike Lanes', city: 'Boston', state: 'MA' },
   sponsors: [],
-  oilPatterns: [{ name: 'Scorpion', length: 42, volume: 24.5, leftRatio: 3, rightRatio: 3 }],
+  oilPatterns: [{ oilPatternId: '01JX0000000000000000000042', name: 'Scorpion', length: 42, volume: 24.5, leftRatio: 3, rightRatio: 3 }],
   oilPatternRevealDateTime: '2030-01-01T00:00:00+00:00',
   winners: [],
   results: [],
@@ -1215,7 +1217,10 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return;
   }
 
-  if (req.method === 'PUT' && (pathname.startsWith('/news/') || pathname.startsWith('/sponsors/'))) {
+  if (
+    req.method === 'PUT' &&
+    (pathname.startsWith('/news/') || pathname.startsWith('/sponsors/') || pathname.startsWith('/tournaments/'))
+  ) {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 
     res.writeHead(204);

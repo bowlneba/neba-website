@@ -20,4 +20,10 @@ public sealed record TournamentDetailBowlingCenterDto
     /// Gets the name of the state associated with this instance.
     /// </summary>
     public required string State { get; init; }
+
+    /// <summary>
+    /// The bowling center's USBC certification number, for use in editing; only populated when the
+    /// caller holds a tournament management permission.
+    /// </summary>
+    public string? CertificationNumber { get; init; }
 }

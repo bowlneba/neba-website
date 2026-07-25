@@ -21,38 +21,22 @@ internal sealed class CreateTournamentCommandHandler(
 {
     public async Task<ErrorOr<TournamentId>> HandleAsync(CreateTournamentCommand command, CancellationToken cancellationToken)
     {
-        var season = await appDbContext.Seasons
-            .AsNoTracking()
-            .SingleOrDefaultAsync(s => s.StartDate <= command.StartDate && s.EndDate >= command.EndDate, cancellationToken);
+        var resolveResult = await TournamentSeasonAndPatternResolver.ResolveAsync(
+            appDbContext,
+            command.StartDate,
+            command.EndDate,
+            command.BowlingCenterId,
+            command.OilPatternId,
+            command.PatternLengthCategory,
+            command.PatternRatioCategory,
+            cancellationToken);
 
-        if (season is null)
+        if (resolveResult.IsError)
         {
-            return TournamentErrors.NoSeasonForDates(command.StartDate, command.EndDate);
+            return resolveResult.Errors;
         }
 
-        if (command.BowlingCenterId is { } bowlingCenterId
-            && !await appDbContext.BowlingCenters.AnyAsync(bc => bc.CertificationNumber == bowlingCenterId, cancellationToken))
-        {
-            return TournamentErrors.BowlingCenterNotFound(bowlingCenterId);
-        }
-
-        var patternLengthCategory = command.PatternLengthCategory;
-        var patternRatioCategory = command.PatternRatioCategory;
-
-        if (command.OilPatternId is { } oilPatternId)
-        {
-            var oilPattern = await appDbContext.OilPatterns
-                .AsNoTracking()
-                .SingleOrDefaultAsync(p => p.Id == oilPatternId, cancellationToken);
-
-            if (oilPattern is null)
-            {
-                return TournamentErrors.OilPatternNotFound(oilPatternId);
-            }
-
-            patternLengthCategory = oilPattern.LengthCategory;
-            patternRatioCategory = oilPattern.RatioCategory;
-        }
+        var (season, patternLengthCategory, patternRatioCategory) = resolveResult.Value;
 
         var tournamentResult = Tournament.Create(
             name: command.Name,

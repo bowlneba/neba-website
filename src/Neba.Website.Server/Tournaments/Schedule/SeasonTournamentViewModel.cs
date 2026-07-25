@@ -244,4 +244,20 @@ public sealed record SeasonTournamentViewModel
                 : PatternLengthCategory;
         }
     }
+
+    /// <summary>
+    /// Logo to display: the tournament's own logo when set, otherwise a format-specific
+    /// default (e.g. a Doubles tournament falls back to the Doubles artwork, not the bare NEBA logo).
+    /// </summary>
+    public string DisplayLogoSrc => TournamentLogoUrl?.ToString() ?? DefaultLogoSrcFor(TournamentType);
+
+    private static string DefaultLogoSrcFor(string tournamentType) => tournamentType switch
+    {
+        "Doubles" => "/images/neba-doubles.jpg",
+        "Over/Under 50 Doubles" or "Over/Under 40 Doubles" => "/images/neba-overunder.jpg",
+        "Trios" => "/images/neba-trios.jpg",
+        "Baker" => "/images/neba-team.jpg",
+        "Tournament of Champions" or "Invitational" or "Masters" => "/images/neba-major.jpg",
+        _ => "/images/neba-singles.jpg",
+    };
 }

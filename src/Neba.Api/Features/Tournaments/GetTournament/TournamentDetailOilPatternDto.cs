@@ -1,3 +1,5 @@
+using Neba.Api.Features.Tournaments.Domain;
+
 namespace Neba.Api.Features.Tournaments.GetTournament;
 
 /// <summary>
@@ -5,6 +7,11 @@ namespace Neba.Api.Features.Tournaments.GetTournament;
 /// </summary>
 public sealed record TournamentDetailOilPatternDto
 {
+    /// <summary>
+    /// The unique identifier for the oil pattern.
+    /// </summary>
+    public required OilPatternId OilPatternId { get; init; }
+
     /// <summary>
     /// Gets the name associated with the current instance.
     /// </summary>

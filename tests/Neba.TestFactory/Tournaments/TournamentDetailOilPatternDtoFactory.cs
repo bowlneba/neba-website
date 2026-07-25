@@ -12,6 +12,7 @@ public static class TournamentDetailOilPatternDtoFactory
     public const decimal ValidRightRatio = 6.0m;
 
     public static TournamentDetailOilPatternDto Create(
+        OilPatternId? oilPatternId = null,
         string? name = null,
         int? length = null,
         decimal? volume = null,
@@ -21,6 +22,7 @@ public static class TournamentDetailOilPatternDtoFactory
         IReadOnlyCollection<string>? tournamentRounds = null)
         => new()
         {
+            OilPatternId = oilPatternId ?? OilPatternId.New(),
             Name = name ?? ValidName,
             Length = length ?? ValidLength,
             Volume = volume ?? ValidVolume,
@@ -35,6 +37,7 @@ public static class TournamentDetailOilPatternDtoFactory
         var faker = new Faker<TournamentDetailOilPatternDto>()
             .CustomInstantiator(f => new()
             {
+                OilPatternId = new OilPatternId(Ulid.BogusString(f)),
                 Name = f.Lorem.Word() + " Pattern",
                 Length = f.Random.Int(32, 47),
                 Volume = f.Random.Decimal(15, 35),

@@ -129,6 +129,30 @@
     public IReadOnlyCollection<OilPatternSummaryResponse> Patterns { get; set; } = [];
 
     /// <summary>
+    /// Pre-selects "Pick Existing" mode with this oil pattern, for editing a tournament that already
+    /// has a specific pattern assigned. Takes priority over <see cref="InitialPatternLengthCategory"/>/
+    /// <see cref="InitialPatternRatioCategory"/> when both are present — a tournament with an attached
+    /// pattern also has its categories populated (derived from that pattern), but the pattern itself
+    /// is the more specific fact. Ignored by Create, which never sets this parameter.
+    /// </summary>
+    [Parameter]
+    public string? InitialOilPatternId { get; set; }
+
+    /// <summary>
+    /// Pre-fills the "No Pattern" mode's manual length category select, for editing a tournament
+    /// that has a category saved but no specific pattern attached. Ignored when
+    /// <see cref="InitialOilPatternId"/> is set. Ignored by Create, which never sets this parameter.
+    /// </summary>
+    [Parameter]
+    public string? InitialPatternLengthCategory { get; set; }
+
+    /// <summary>
+    /// Pre-fills the "No Pattern" mode's manual ratio category select. See <see cref="InitialPatternLengthCategory"/>.
+    /// </summary>
+    [Parameter]
+    public string? InitialPatternRatioCategory { get; set; }
+
+    /// <summary>
     /// Performs the actual "create new pattern" API call. Kept feature-agnostic (same pattern as
     /// <c>FileUpload.OnUploadRequestedAsync</c>) so this component has no knowledge of the API it's
     /// talking to — the hosting page wires up the real call.
@@ -146,6 +170,8 @@
     private bool _isCreatingPattern;
     private string? _createErrorMessage;
 
+    private bool _hasBeenSeededWithInitialSelection;
+
     private OilPatternSummaryResponse? _selectedPattern
         => _patterns.FirstOrDefault(p => p.OilPatternId == _selectedOilPatternId);
 
@@ -160,6 +186,35 @@
         if (!_hasLocalPatternAdditions)
         {
             _patterns = Patterns;
+        }
+
+        // One-shot seed, same reasoning as _hasLocalPatternAdditions above but for EditTournament's
+        // already-loaded selection rather than a freshly-created pattern: seed once when the parent's
+        // async load resolves, then never again, so the user's own later edits to mode/selects aren't
+        // clobbered by an unrelated parent re-render.
+        if (!_hasBeenSeededWithInitialSelection
+            && (!string.IsNullOrWhiteSpace(InitialOilPatternId)
+                || !string.IsNullOrWhiteSpace(InitialPatternLengthCategory)
+                || !string.IsNullOrWhiteSpace(InitialPatternRatioCategory)))
+        {
+            if (!string.IsNullOrWhiteSpace(InitialOilPatternId))
+            {
+                _selectedOilPatternId = InitialOilPatternId;
+                _mode = OilPatternMode.Pick;
+            }
+            else
+            {
+                _manualLengthCategory = InitialPatternLengthCategory ?? string.Empty;
+                _manualRatioCategory = InitialPatternRatioCategory ?? string.Empty;
+            }
+
+            _hasBeenSeededWithInitialSelection = true;
+
+            // Seeding the mode/selects' display values alone doesn't tell the hosting page anything —
+            // it only finds out via SelectionChanged, so the seeded selection must be emitted here too,
+            // or a submit before the user touches anything would send nulls instead of the
+            // tournament's actual current oil pattern selection.
+            _ = EmitSelectionChanged();
         }
     }
 
