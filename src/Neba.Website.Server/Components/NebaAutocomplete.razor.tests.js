@@ -23,7 +23,7 @@ describe('NebaAutocomplete', () => {
     });
 
     test('notifies .NET when a mousedown lands outside the container', () => {
-        const container = makeContainer('c1');
+        makeContainer('c1');
         const outside = document.createElement('div');
         document.body.appendChild(outside);
         const dotNetRef = makeDotNetRef();

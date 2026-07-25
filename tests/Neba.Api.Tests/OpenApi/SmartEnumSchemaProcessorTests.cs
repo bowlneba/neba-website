@@ -89,13 +89,14 @@ public sealed class SmartEnumSchemaProcessorTests
 
     private static IEnumerable<string> GetSchemaEnumValues(PropertyInfo property, JsonSchemaProperty schemaProperty)
     {
-        if (IsStringCollection(property.PropertyType))
+        if (!IsStringCollection(property.PropertyType))
         {
-            schemaProperty.Item.ShouldNotBeNull($"Array schema item should be present for {property.Name}.");
-            return schemaProperty.Item.Enumeration.OfType<string>();
+            return schemaProperty.Enumeration.OfType<string>();
         }
 
-        return schemaProperty.Enumeration.OfType<string>();
+        schemaProperty.Item.ShouldNotBeNull($"Array schema item should be present for {property.Name}.");
+        return schemaProperty.Item.Enumeration.OfType<string>();
+
     }
 
     private static bool IsStringCollection(Type type)
@@ -132,7 +133,7 @@ public sealed class SmartEnumSchemaProcessorTests
         var listProperty = enumType.GetProperty("List", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
         listProperty.ShouldNotBeNull($"SmartEnum type '{smartEnumTypeName}' should expose a static List property.");
 
-        var values = listProperty.GetValue(null) as System.Collections.IEnumerable;
+        var values = listProperty.GetValue(null) as System.Collections.ReadOnlyCollectionBase;
         values.ShouldNotBeNull($"SmartEnum type '{smartEnumTypeName}' returned null List value.");
 
         return [.. values
