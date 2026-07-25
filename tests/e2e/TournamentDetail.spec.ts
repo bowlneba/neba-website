@@ -175,3 +175,59 @@ test.describe('Tournament Detail — oil pattern reveal gating', () => {
     await expect(page.locator('.td-reveal-note')).toContainText('Full details reveal to the public on');
   });
 });
+
+test.describe('Tournament Detail — delete tournament (unauthenticated)', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test('does not show the delete button', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_ID}`);
+    await page.waitForSelector('.td-hero');
+    await expect(page.locator('.td-hero__delete-btn')).toHaveCount(0);
+  });
+});
+
+test.describe('Tournament Detail — delete tournament (authorized)', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeEach(async ({ page }) => {
+    await page.request.post('/__test/login?permissions=Tournaments.DeleteTournament');
+  });
+
+  test('shows the delete button', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_ID}`);
+    await page.waitForSelector('.td-hero');
+    await expect(page.locator('.td-hero__delete-btn')).toBeVisible();
+  });
+
+  test('navigates back to the tournament schedule after confirming delete', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_ID}`);
+    await page.waitForSelector('.td-hero');
+
+    await page.locator('.td-hero__delete-btn').click();
+    await expect(page.locator('.neba-modal-content')).toContainText('Delete tournament?');
+
+    await page.locator('button.confirm-action-modal-confirm').click();
+
+    await expect(page).toHaveURL(/\/tournaments$/);
+  });
+
+  test('shows a conflict toast and stays on the page when the tournament has historical records', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_ID}`);
+    await page.waitForSelector('.td-hero');
+
+    // Set the failure override only after the initial GET has loaded the page — GET and DELETE
+    // share the same /tournaments/{id} path, so setting it beforehand would break the page load too.
+    await page.request.post(
+      `http://localhost:5151/__mock/fail?path=/tournaments/${MOCK_TOURNAMENT_ID}&status=409`);
+
+    await page.locator('.td-hero__delete-btn').click();
+    await page.locator('button.confirm-action-modal-confirm').click();
+
+    await expect(page.locator('.neba-toast')).toContainText('Delete Failed');
+    await expect(page).toHaveURL(new RegExp(`/tournaments/${MOCK_TOURNAMENT_ID}$`));
+
+    await page.request.post(
+      `http://localhost:5151/__mock/reset?path=/tournaments/${MOCK_TOURNAMENT_ID}`);
+  });
+});

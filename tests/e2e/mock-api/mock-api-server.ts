@@ -1162,6 +1162,14 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return;
   }
 
+  if (req.method === 'DELETE' && pathname.startsWith('/tournaments/') && !pathname.includes('/sponsors/')) {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   if (req.method === 'POST') {
     if (pathname === '/__mock/fail') {
       const path = requestUrl.searchParams.get('path') ?? '';
