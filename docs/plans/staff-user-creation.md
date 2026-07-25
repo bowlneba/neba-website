@@ -91,14 +91,35 @@ feature, since the account isn't being created by its own owner.
 
 ## Related Issues
 
-- **#84** — Upgrade admin password reset to token-based flow. Prerequisite (the shared token-consumption
-  endpoint) is built as part of this feature; #84 itself becomes a small follow-up that repoints the
-  existing admin-reset handler at it.
+- **#84** — Upgrade admin password reset to token-based flow. Folded into this feature (see Delivery
+  Plan below) since it's a direct consumer of the shared token-consumption endpoint built here — no
+  reason to leave it as a separate later effort once that endpoint exists.
 - **#88** — Member self-registration + USBC ID linking. Explicitly deferred; naming reserved above so it
   doesn't collide with this feature's routes/commands when it's eventually built.
 
+## Delivery Plan
+
+Feature branch: `feature/staff-users`. Work is broken into sequential sub-branches, each PR'd back into
+the feature branch (not `main`) — same create/edit/merge pattern used for Tournaments. `feature/staff-users`
+PRs into `main` once all sub-branches have landed. Each sub-branch is small enough to run through
+`/feature-plan` on its own once work on it starts; this document only records the ordering and why.
+
+1. **`set-password-from-token`** — Shared token-consumption endpoint (command/endpoint/validator +
+   tests). No UI. Foundational: nothing downstream is end-to-end testable without it, and it's what #84
+   repoints to.
+2. **`create-user`** — `CreateUserCommand`/endpoint/validator + tests, invite email template. Depends
+   on (1) merged so the invite link points at something real.
+3. **`create-user-ui`** — Blazor `/account/create-user` and `/account/set-password` pages. Depends on
+   (1) and (2); first point the full flow is testable in a browser.
+4. **`admin-reset-upgrade` (#84)** — Repoint the existing admin-triggered password reset handler from
+   emailing a plaintext temporary password to generating a token and calling (1)'s endpoint. Remove the
+   old `GenerateTempPassword` helper and the plaintext-password email template. Depends on (1) only —
+   can land any time after it, but sequenced last here since it's the smallest, lowest-risk change.
+5. **`retire-register`** — Remove the old `RegisterCommandHandler`/`RegisterEndpoint` admin-shortcut and
+   its feature flag, now fully superseded by (2). Cleanup-only, done last.
+
 ## Next Steps
 
-1. Create feature branch.
-2. Functional/code-level implementation planning (endpoint checklist, validators, tests, email template,
-   Blazor pages) — not yet detailed in this document.
+1. Start with sub-branch (1), `set-password-from-token`, off `feature/staff-users`.
+2. Run `/feature-plan` at the start of each sub-branch for its functional/code-level breakdown
+   (endpoint checklist, validators, tests, etc.) — not detailed in this document.
