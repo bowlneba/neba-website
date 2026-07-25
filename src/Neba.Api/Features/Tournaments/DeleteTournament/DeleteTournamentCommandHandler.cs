@@ -55,7 +55,7 @@ internal sealed class DeleteTournamentCommandHandler(
     }
 
     private async Task<bool> HasHistoricalRecordsAsync(
-        Domain.Tournament tournament, CancellationToken cancellationToken)
+        Tournament tournament, CancellationToken cancellationToken)
     {
         var tournamentDbId = appDbContext.Entry(tournament)
             .Property<int>(ShadowIdConfiguration.DefaultPropertyName).CurrentValue;
