@@ -11,7 +11,6 @@
 @using Neba.Api.Contracts.Tournaments.CreateTournament
 @using Neba.Api.Contracts.Tournaments.ListTournamentTypes
 @using Neba.Api.Contracts.Uploads
-@using Neba.Website.Server.Notifications
 @using Neba.Website.Server.Services
 @using Neba.Website.Server.Time
 @using Refit
@@ -374,7 +373,7 @@
 
         public string? BowlingCenterCertificationNumber { get; set; }
 
-        [Url(ErrorMessage = "External registration URL must be a valid, absolute URL.")]
+        [System.ComponentModel.DataAnnotations.Url(ErrorMessage = "External registration URL must be a valid, absolute URL.")]
         public string? ExternalRegistrationUrl { get; set; }
     }
 }

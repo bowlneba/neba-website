@@ -84,7 +84,7 @@ internal static class ApiServicesConfiguration
             where TApi : class
         {
             services
-                .AddRefitClient<TApi>(RefitSettings)
+                .AddRefitGeneratedClient<TApi>(RefitSettings)
                 .ConfigureHttpClient((sp, client) =>
                 {
                     var apiConfig = sp.GetRequiredService<NebaApiConfiguration>();

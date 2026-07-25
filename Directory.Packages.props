@@ -27,7 +27,7 @@
     <PackageVersion Include="Audit.WebApi.Core" Version="32.2.0" />
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.5.0" />
     <PackageVersion Include="Azure.ResourceManager" Version="1.14.0" />
-    <PackageVersion Include="Blazor-ApexCharts" Version="6.1.0" />
+    <PackageVersion Include="Blazor-ApexCharts" Version="7.0.0" />
     <PackageVersion Include="Bogus" Version="35.6.5" />
     <PackageVersion Include="bunit" Version="2.7.2" />
     <PackageVersion Include="Community.Microsoft.Extensions.Caching.PostgreSql" Version="6.0.2" />
@@ -82,9 +82,9 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.17.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.17.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.17.0" />
-    <PackageVersion Include="Refit" Version="13.1.0" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="13.1.0" />
-    <PackageVersion Include="Refit.Testing" Version="13.1.0" />
+    <PackageVersion Include="Refit" Version="14.0.0" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="14.0.0" />
+    <PackageVersion Include="Refit.Testing" Version="14.0.0" />
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.16.16" />
     <PackageVersion Include="Scrutor.AspNetCore" Version="3.3.0" />

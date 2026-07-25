@@ -6,7 +6,6 @@
 @using Neba.Api.Contracts.Sponsors
 @using Neba.Api.Contracts.Sponsors.CreateSponsor
 @using Neba.Api.Contracts.Uploads
-@using Neba.Website.Server.Notifications
 @using Neba.Website.Server.ReferenceData
 @using Neba.Website.Server.Services
 @using Refit
@@ -404,13 +403,13 @@
         [Required(ErrorMessage = "Category is required.")]
         public string Category { get; set; } = "Other";
 
-        [Url(ErrorMessage = "Website URL must be a valid, absolute URL.")]
+        [System.ComponentModel.DataAnnotations.Url(ErrorMessage = "Website URL must be a valid, absolute URL.")]
         public string? WebsiteUrl { get; set; }
 
-        [Url(ErrorMessage = "Facebook URL must be a valid, absolute URL.")]
+        [System.ComponentModel.DataAnnotations.Url(ErrorMessage = "Facebook URL must be a valid, absolute URL.")]
         public string? FacebookUrl { get; set; }
 
-        [Url(ErrorMessage = "Instagram URL must be a valid, absolute URL.")]
+        [System.ComponentModel.DataAnnotations.Url(ErrorMessage = "Instagram URL must be a valid, absolute URL.")]
         public string? InstagramUrl { get; set; }
 
         public string? TagPhrase { get; set; }
