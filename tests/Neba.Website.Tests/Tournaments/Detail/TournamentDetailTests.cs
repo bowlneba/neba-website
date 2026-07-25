@@ -678,6 +678,134 @@ public sealed class TournamentDetailTests : IDisposable
         cut.Find(".tournament-detail__back-link").GetAttribute("href").ShouldBe("/tournaments");
     }
 
+    // ── Delete tournament ────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not show delete button when user lacks DeleteTournament permission")]
+    public void Render_ShouldNotShowDeleteButton_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create());
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldNotContain("td-hero__delete-btn");
+    }
+
+    [Fact(DisplayName = "Should show delete button when user has DeleteTournament permission")]
+    public void Render_ShouldShowDeleteButton_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteTournament.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create());
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Find("button.td-hero__delete-btn").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should open confirm dialog with tournament name when delete button is clicked")]
+    public void Click_ShouldOpenConfirmDialog_WhenDeleteButtonIsClicked()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteTournament.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(name: "NEBA Winter Championship"));
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Act
+        cut.Find("button.td-hero__delete-btn").Click();
+
+        // Assert
+        cut.Markup.ShouldContain("Delete tournament?");
+        cut.Markup.ShouldContain("NEBA Winter Championship");
+    }
+
+    [Fact(DisplayName = "Should close confirm dialog and stay on page when delete is cancelled")]
+    public void CancelDelete_ShouldCloseDialogAndStayOnPage_WhenCancelled()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteTournament.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create());
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__delete-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-cancel").Click();
+
+        // Assert
+        cut.Markup.ShouldNotContain("Delete tournament?");
+        var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
+        navigationManager.Uri.ShouldNotEndWith("/tournaments");
+    }
+
+    [Fact(DisplayName = "Should navigate to /tournaments when delete succeeds")]
+    public void ConfirmDelete_ShouldNavigateToTournaments_WhenDeleteSucceeds()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteTournament.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId));
+
+        using var deleteResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockApi
+            .Setup(x => x.DeleteTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(deleteResponse);
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__delete-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
+        navigationManager.Uri.ShouldEndWith("/tournaments");
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Success);
+    }
+
+    [Fact(DisplayName = "Should show error toast and stay on the page when delete is blocked by historical records")]
+    public void ConfirmDelete_ShouldShowErrorToastAndStayOnPage_WhenDeleteFails()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteTournament.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId, name: "NEBA Winter Championship"));
+
+        using var deleteResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.Conflict
+        };
+        _mockApi
+            .Setup(x => x.DeleteTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(deleteResponse);
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__delete-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        cut.Markup.ShouldNotContain("Delete tournament?");
+        var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
+        navigationManager.Uri.ShouldNotEndWith("/tournaments");
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Error);
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private void SetupSuccessResponse(TournamentDetailResponse tournament)

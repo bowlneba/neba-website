@@ -124,4 +124,13 @@ internal static class TournamentErrors
             {
                 { "SponsorId", sponsorId.ToString() }
             });
+
+    public static Error HasHistoricalRecords(TournamentId id)
+        => Error.Conflict(
+            code: "Tournament.HasHistoricalRecords",
+            description: "This tournament has recorded championship, entry, or result history and cannot be deleted.",
+            metadata: new Dictionary<string, object>
+            {
+                { "TournamentId", id.ToString() }
+            });
 }

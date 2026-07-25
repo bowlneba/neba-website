@@ -82,4 +82,11 @@ public interface ITournamentsApi
     /// </summary>
     [Put("/tournaments/{id}")]
     Task<IApiResponse> EditTournamentAsync(string id, EditTournamentRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes a tournament. Returns 204 whether or not a tournament with the given ID existed. Refuses with 409
+    /// if the tournament has recorded championship, entry, or result history.
+    /// </summary>
+    [Delete("/tournaments/{id}")]
+    Task<IApiResponse> DeleteTournamentAsync(string id, CancellationToken cancellationToken = default);
 }

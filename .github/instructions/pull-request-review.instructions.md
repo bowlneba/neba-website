@@ -292,6 +292,20 @@ Flag when:
 
 ---
 
+## SmartEnum Serialization
+
+**Query/GET responses return the display `Name`; commands (POST/PUT/PATCH) accept the short `Value`/code.** Example: `PhoneNumberType` — a `GetSponsorDetail` response returns `"Home"` (`.Name`); a `CreateSponsor` request accepts `"H"` (`.Value`), rehydrated via `PhoneNumberType.FromValue(...)`. This mirrors how a human reads a response versus how a client references a fixed value back.
+
+**Named exceptions — code both ways, not a bug:**
+
+- **`UsState`, `CanadianProvince`, `Country`** — GET responses and commands both use the short code (`"MA"`, not `"Massachusetts"`). The postal/ISO code is itself a meaningful, widely-recognized identifier, not enum plumbing, so there's no round-trip benefit to expanding it.
+- **`Permissions`** — GET responses (`GetCurrentUserResponse.Permissions`) return `.Value` (e.g. `"News.CreateArticle"`), never `.Name`. This field is a functional authorization key the client compares against a policy constant (`Permissions.CreateArticle.PolicyName`) — it's never displayed as text to a user, so the GET-returns-English rule doesn't apply.
+- **Roles** (when the assign-role flow is built): reference roles by a strongly-typed `RoleId` in commands, not a name string or a SmartEnum code — roles are ASP.NET Identity rows (`ApplicationRole : IdentityRole<Ulid>`), not a fixed domain vocabulary, so an ID reference is the right shape, not a SmartEnum.
+
+**No structural enforcement exists** — there's no global JSON converter or analyzer; each handler must apply this by hand (`.Name` when projecting to a GET DTO, `.FromValue`/`.FromName` when parsing a command). This has already drifted once (a stats DTO emitting `Gender.Value` — caught but not fixed since the field is never actually serialized to a public contract). Flag any new query handler that projects a SmartEnum property via `.Value` into a public response DTO, or any command handler that parses a SmartEnum via `.FromName` instead of `.FromValue`, unless the property falls into one of the exceptions above.
+
+---
+
 ## Observability
 
 ### Logging
@@ -664,6 +678,8 @@ When reviewing, verify:
 
 - [ ] REST conventions followed (plural nouns, no verbs in URLs)
 - [ ] Response envelopes consistent
+- [ ] Query/GET responses project SmartEnum properties via `.Name`, not `.Value` (except `UsState`/`CanadianProvince`/`Country`/`Permissions` — see SmartEnum Serialization)
+- [ ] Command (POST/PUT/PATCH) requests parse SmartEnum properties via `.FromValue`, not `.FromName`
 
 ### Testing
 
