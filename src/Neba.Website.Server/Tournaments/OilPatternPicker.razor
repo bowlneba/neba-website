@@ -1,3 +1,4 @@
+@using System.ComponentModel.DataAnnotations
 @using ErrorOr
 @using Neba.Api.Contracts.OilPatterns.CreateOilPattern
 @using Neba.Api.Contracts.OilPatterns.ListOilPatterns
@@ -65,7 +66,7 @@
         <div class="neba-space-y-4 p-4 rounded" style="border: 1px dashed var(--neba-gray-300); background: var(--neba-gray-050);">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="new-pattern-name" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Name</label>
+                    <FormLabel TargetId="new-pattern-name" For="@(() => _newPattern.Name)">Name</FormLabel>
                     <input id="new-pattern-name" class="neba-input" @bind="_newPattern.Name" @bind:after="NotifyDirty" placeholder="e.g. Typhoon" />
                 </div>
                 <div>
@@ -293,6 +294,7 @@
 
     private sealed class NewOilPatternModel
     {
+        [Required]
         public string Name { get; set; } = string.Empty;
         public int Length { get; set; } = 40;
         public decimal Volume { get; set; } = 24;

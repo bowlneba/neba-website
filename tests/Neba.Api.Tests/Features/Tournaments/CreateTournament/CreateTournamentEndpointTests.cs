@@ -7,6 +7,7 @@ using Neba.Api.Features.Tournaments;
 using Neba.Api.Features.Tournaments.CreateTournament;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.BowlingCenters;
 using Neba.TestFactory.Tournaments;
 
 using NebaMessaging = Neba.Api.Messaging;
@@ -156,6 +157,27 @@ public sealed class CreateTournamentEndpointTests
 
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(422);
+    }
+
+    [Fact(DisplayName = "HandleAsync should return 409 when the command returns a conflict error")]
+    public async Task HandleAsync_ShouldReturn409_WhenCommandReturnsConflictError()
+    {
+        // Arrange
+        var request = new CreateTournamentRequest { Tournament = TournamentInputFactory.Create() };
+        var ct = TestContext.Current.CancellationToken;
+
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<CreateTournamentCommand, TournamentId>>(MockBehavior.Strict);
+        commandHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<CreateTournamentCommand>(), ct))
+            .ReturnsAsync(TournamentErrors.BowlingCenterNotFound(CertificationNumberFactory.Create()));
+
+        var endpoint = Factory.Create<CreateTournamentEndpoint>(commandHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(request, ct);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(409);
     }
 
     [Fact(DisplayName = "Configure should register the CreateTournament permission policy on the tournaments route")]

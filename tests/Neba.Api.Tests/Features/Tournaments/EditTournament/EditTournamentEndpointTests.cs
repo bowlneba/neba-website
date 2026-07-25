@@ -154,6 +154,31 @@ public sealed class EditTournamentEndpointTests
         endpoint.HttpContext.Response.StatusCode.ShouldBe(422);
     }
 
+    [Fact(DisplayName = "HandleAsync should return 409 when the command returns a conflict error")]
+    public async Task HandleAsync_ShouldReturn409_WhenCommandReturnsConflictError()
+    {
+        // Arrange
+        var request = new EditTournamentRequest
+        {
+            Id = TournamentId.New().Value.ToString(),
+            Tournament = TournamentInputFactory.Create()
+        };
+        var ct = TestContext.Current.CancellationToken;
+
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<EditTournamentCommand, Updated>>(MockBehavior.Strict);
+        commandHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<EditTournamentCommand>(), ct))
+            .ReturnsAsync(TournamentErrors.OilPatternNotFound(OilPatternId.New()));
+
+        var endpoint = Factory.Create<EditTournamentEndpoint>(commandHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(request, ct);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(409);
+    }
+
     [Fact(DisplayName = "Configure should register the EditTournament permission policy on the tournaments route")]
     public void Configure_ShouldRegisterEditTournamentPolicy_OnTournamentsRoute()
     {

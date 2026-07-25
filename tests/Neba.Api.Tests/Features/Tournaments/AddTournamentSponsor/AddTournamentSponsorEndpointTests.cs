@@ -104,8 +104,8 @@ public sealed class AddTournamentSponsorEndpointTests
         endpoint.HttpContext.Response.StatusCode.ShouldBe(409);
     }
 
-    [Fact(DisplayName = "HandleAsync should return 422 when the command returns validation errors")]
-    public async Task HandleAsync_ShouldReturn422_WhenCommandReturnsValidationErrors()
+    [Fact(DisplayName = "HandleAsync should return 409 when the command returns a conflict error because the sponsor does not exist")]
+    public async Task HandleAsync_ShouldReturn409_WhenCommandReturnsConflictError_BecauseSponsorDoesNotExist()
     {
         // Arrange
         var request = ValidRequest();
@@ -115,6 +115,27 @@ public sealed class AddTournamentSponsorEndpointTests
         commandHandlerMock
             .Setup(h => h.HandleAsync(It.IsAny<AddTournamentSponsorCommand>(), ct))
             .ReturnsAsync(TournamentErrors.SponsorNotFound(new SponsorId(ValidSponsorId)));
+
+        var endpoint = Factory.Create<AddTournamentSponsorEndpoint>(commandHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(request, ct);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(409);
+    }
+
+    [Fact(DisplayName = "HandleAsync should return 422 when the command returns a validation error")]
+    public async Task HandleAsync_ShouldReturn422_WhenCommandReturnsValidationError()
+    {
+        // Arrange
+        var request = ValidRequest();
+        var ct = TestContext.Current.CancellationToken;
+
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<AddTournamentSponsorCommand, Success>>(MockBehavior.Strict);
+        commandHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<AddTournamentSponsorCommand>(), ct))
+            .ReturnsAsync(TournamentSponsorErrors.NegativeSponsorshipAmount);
 
         var endpoint = Factory.Create<AddTournamentSponsorEndpoint>(commandHandlerMock.Object);
 

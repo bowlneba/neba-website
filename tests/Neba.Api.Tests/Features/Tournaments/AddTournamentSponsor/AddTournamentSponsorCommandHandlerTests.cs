@@ -1,3 +1,5 @@
+using ErrorOr;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -96,8 +98,8 @@ public sealed class AddTournamentSponsorCommandHandlerTests(AppDbContextFixture 
         result.FirstError.Code.ShouldBe("Tournament.NotFound");
     }
 
-    [Fact(DisplayName = "HandleAsync returns a validation error when the sponsor does not exist")]
-    public async Task HandleAsync_ShouldReturnValidationError_WhenSponsorDoesNotExist()
+    [Fact(DisplayName = "HandleAsync returns a conflict error when the sponsor does not exist")]
+    public async Task HandleAsync_ShouldReturnConflictError_WhenSponsorDoesNotExist()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -110,6 +112,7 @@ public sealed class AddTournamentSponsorCommandHandlerTests(AppDbContextFixture 
 
         // Assert
         result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorType.Conflict);
         result.FirstError.Code.ShouldBe("Tournament.SponsorNotFound");
     }
 

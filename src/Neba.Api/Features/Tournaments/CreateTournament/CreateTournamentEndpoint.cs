@@ -33,6 +33,7 @@ internal sealed class CreateTournamentEndpoint(Messaging.ICommandHandler<CreateT
             .ProducesProblemDetails(StatusCodes.Status400BadRequest)
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
             .ProducesProblemDetails(StatusCodes.Status403Forbidden)
+            .ProducesProblemDetails(StatusCodes.Status409Conflict)
             .ProducesProblemDetails(StatusCodes.Status422UnprocessableEntity));
     }
 
@@ -62,12 +63,8 @@ internal sealed class CreateTournamentEndpoint(Messaging.ICommandHandler<CreateT
 
         if (result.IsError)
         {
-            foreach (var error in result.Errors)
-            {
-                AddError(error.Description);
-            }
-
-            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, ct);
+            await TournamentMutationResultSender.SendConflictOrValidationErrorsAsync(
+                result.FirstError, result.Errors, error => AddError(error), Send.ErrorsAsync, ct);
             // Stryker disable once Statement
             return;
         }

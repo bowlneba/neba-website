@@ -151,8 +151,8 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         result.FirstError.Code.ShouldBe("Tournament.NoSeasonForDates");
     }
 
-    [Fact(DisplayName = "HandleAsync returns a validation error when the bowling center is not found")]
-    public async Task HandleAsync_ShouldReturnValidationError_WhenBowlingCenterNotFound()
+    [Fact(DisplayName = "HandleAsync returns a conflict error when the bowling center is not found")]
+    public async Task HandleAsync_ShouldReturnConflictError_WhenBowlingCenterNotFound()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -171,11 +171,12 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
 
         // Assert
         result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorType.Conflict);
         result.FirstError.Code.ShouldBe("Tournament.BowlingCenterNotFound");
     }
 
-    [Fact(DisplayName = "HandleAsync returns a validation error when the oil pattern is not found")]
-    public async Task HandleAsync_ShouldReturnValidationError_WhenOilPatternNotFound()
+    [Fact(DisplayName = "HandleAsync returns a conflict error when the oil pattern is not found")]
+    public async Task HandleAsync_ShouldReturnConflictError_WhenOilPatternNotFound()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -189,6 +190,7 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
 
         // Assert
         result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorType.Conflict);
         result.FirstError.Code.ShouldBe("Tournament.OilPatternNotFound");
     }
 

@@ -466,15 +466,15 @@ else
                     </a>
                 </footer>
 
-            </main>
+    </main>
 
     <ConfirmActionModal IsOpen="@_isDeleteConfirmOpen"
-                         Title="Delete tournament?"
-                         Message="@($"This permanently removes \"{_model!.Name}\", its sponsor links, and oil pattern assignments. This can't be undone.")"
-                         IsBusy="@_isDeleteBusy"
-                         OnConfirm="ConfirmDeleteAsync"
-                         OnCancel="@(() => _isDeleteConfirmOpen = false)" />
-        }
+                        Title="Delete tournament?"
+                        Message="@($"This permanently removes \"{_model!.Name}\", its sponsor links, and oil pattern assignments. This can't be undone.")"
+                        IsBusy="@_isDeleteBusy"
+                        OnConfirm="ConfirmDeleteAsync"
+                        OnCancel="@(() => _isDeleteConfirmOpen = false)" />
+}
 
 @code {
     [Parameter] public string Id { get; set; } = default!;

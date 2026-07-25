@@ -119,6 +119,7 @@ src/
 | **Caching** | FusionCache |
 | **API Documentation** | Scalar |
 | **HTTP Client** | Refit |
+| **Charts** | Blazor-ApexCharts |
 | **Testing** | xUnit, Moq, Shouldly, Bogus, Verify, Testcontainers, Respawn, bUnit, Playwright |
 
 ### Documentation

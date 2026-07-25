@@ -96,19 +96,19 @@ internal static class TournamentErrors
             });
 
     public static Error OilPatternNotFound(OilPatternId id)
-        => Error.Validation(
+        => Error.Conflict(
             code: "Tournament.OilPatternNotFound",
             description: "The specified oil pattern was not found.",
             metadata: new Dictionary<string, object> { { "OilPatternId", id.Value } });
 
     public static Error BowlingCenterNotFound(CertificationNumber id)
-        => Error.Validation(
+        => Error.Conflict(
             code: "Tournament.BowlingCenterNotFound",
             description: "The specified bowling center was not found.",
             metadata: new Dictionary<string, object> { { "CertificationNumber", id.Value } });
 
     public static Error SponsorNotFound(SponsorId sponsorId)
-        => Error.Validation(
+        => Error.Conflict(
             code: "Tournament.SponsorNotFound",
             description: "The specified sponsor was not found.",
             metadata: new Dictionary<string, object>
