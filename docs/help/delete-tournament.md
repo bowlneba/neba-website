@@ -11,7 +11,7 @@ You need the `Tournaments.DeleteTournament` permission, enforced via the dynamic
 1. Go to the tournament's detail page (`/tournaments/{id}`).
 2. Click **Delete Tournament** near the top of the page.
 3. A confirmation dialog titled **"Delete tournament?"** appears, naming the specific tournament and warning that its sponsor links and oil pattern assignments are removed too. Review it — this step exists because deletion is not reversible.
-4. Click **Confirm** to delete, or **Cancel** to back out and leave the tournament untouched.
+4. Click **Delete** to confirm, or **Cancel** to back out and leave the tournament untouched.
 
 ![Tournament detail page with the Delete Tournament button visible](images/delete-tournament/detail-delete-button.png)
 

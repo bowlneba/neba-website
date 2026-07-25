@@ -261,10 +261,10 @@ public sealed class DeleteTournamentCommandHandlerTests(AppDbContextFixture fixt
         var command = new DeleteTournamentCommand { TournamentId = tournament.Id };
 
         // Act
-        await handler.HandleAsync(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
         // Assert — a strict mock with no Enqueue setup would throw if called
-        scheduler.Verify(s => s.Enqueue(It.IsAny<DeleteTournamentFilesJob>()), Times.Never);
+        result.IsError.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "HandleAsync does not enqueue a file deletion job when tournament does not exist")]
@@ -277,10 +277,10 @@ public sealed class DeleteTournamentCommandHandlerTests(AppDbContextFixture fixt
         var command = new DeleteTournamentCommand { TournamentId = TournamentId.New() };
 
         // Act
-        await handler.HandleAsync(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
-        // Assert
-        scheduler.Verify(s => s.Enqueue(It.IsAny<DeleteTournamentFilesJob>()), Times.Never);
+        // Assert — a strict mock with no Enqueue setup would throw if called
+        result.IsError.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "HandleAsync does not enqueue a file deletion job when tournament has historical records")]
@@ -300,10 +300,10 @@ public sealed class DeleteTournamentCommandHandlerTests(AppDbContextFixture fixt
         var command = new DeleteTournamentCommand { TournamentId = tournament.Id };
 
         // Act
-        await handler.HandleAsync(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
-        // Assert
-        scheduler.Verify(s => s.Enqueue(It.IsAny<DeleteTournamentFilesJob>()), Times.Never);
+        // Assert — a strict mock with no Enqueue setup would throw if called
+        result.IsError.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "HandleAsync invalidates the tournament and season cache tags when tournament exists")]
