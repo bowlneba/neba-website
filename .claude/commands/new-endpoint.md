@@ -90,6 +90,8 @@ internal sealed class {Action}{Entity}Summary : Summary<{Action}{Entity}Endpoint
 }
 ```
 
+**SmartEnum mapping** — GET/query responses project SmartEnum properties via `.Name` (the display value, e.g. `"Home"`); commands (POST/PUT/PATCH) parse SmartEnum request properties via `.FromValue` (the short code, e.g. `"H"`), never `.FromName`. Named exceptions that use the code both directions: `UsState`/`CanadianProvince`/`Country` (the postal/ISO code is itself a meaningful identifier) and `Permissions` (a functional authorization key, never displayed as text). See "SmartEnum Serialization" in `pull-request-review.instructions.md` for the full rationale.
+
 **`{Action}{Entity}RequestValidator.cs`** (for endpoints with a request type, structural validation only):
 
 ```csharp
@@ -424,6 +426,7 @@ public sealed class {Entity}PageTests : IDisposable
 - [ ] `[BindFrom("key")]` on every query-param property in request classes
 - [ ] Validator has structural validation only (no DB lookups, no business rules)
 - [ ] Response contract lives in `Neba.Api.Contracts/{Domain}/`
+- [ ] SmartEnum properties in the response are projected via `.Name`, request properties parsed via `.FromValue` (except `UsState`/`CanadianProvince`/`Country`/`Permissions`)
 - [ ] `I{Domain}Api` Refit interface updated with the new method
 - [ ] `{Entity}DtoFactory` exists in `Neba.TestFactory/{Domain}/`
 - [ ] `{Entity}ResponseFactory` exists in `Neba.TestFactory/{Domain}/`
