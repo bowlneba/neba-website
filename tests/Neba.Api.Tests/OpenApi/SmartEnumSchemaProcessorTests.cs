@@ -133,7 +133,7 @@ public sealed class SmartEnumSchemaProcessorTests
         var listProperty = enumType.GetProperty("List", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
         listProperty.ShouldNotBeNull($"SmartEnum type '{smartEnumTypeName}' should expose a static List property.");
 
-        var values = listProperty.GetValue(null) as System.Collections.ReadOnlyCollectionBase;
+        var values = listProperty.GetValue(null) as System.Collections.IEnumerable;
         values.ShouldNotBeNull($"SmartEnum type '{smartEnumTypeName}' returned null List value.");
 
         return [.. values
