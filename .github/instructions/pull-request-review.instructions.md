@@ -219,6 +219,7 @@ Flag when:
 - Missing loading state handling
 - Components placed in Client project without clear justification (offline, browser APIs, latency-sensitive)
 - Data-entry pages/forms (anything with `EditForm`, file uploads, or similar user input) don't guard against losing unsaved changes on Cancel, in-app navigation, or refresh/close — wrap with `<DirtyFormGuard IsDirty="@_isDirty" />` (`Components/DirtyFormGuard.razor`) and track `_isDirty` via `EditContext.OnFieldChanged` plus explicit `MarkDirty()` calls for anything outside the `EditForm` (file uploads, non-`InputBase` bound fields). See `CreateArticle.razor` for the reference implementation.
+- A field bound to a `[Required]` model property uses a bare `<label>` instead of `<FormLabel TargetId="..." For="@(() => _model.X)">` (`Components/FormLabel.razor`) — required fields must show a "(required)" tag, not a bare asterisk or no indicator at all. Exception: forms where every field is required (e.g. `Login.razor`) may keep plain `<label>` elements, since marking every field adds no information.
 
 ---
 
@@ -288,6 +289,21 @@ Flag when:
 - Collections use `List<T>` or `IEnumerable<T>` instead of `IReadOnlyCollection<T>` in public API contracts
 - Error responses don't use Problem Details
 - Pagination uses 0-indexed pages
+
+---
+
+## SmartEnum Serialization
+
+**Query/GET responses return the display `Name`; commands (POST/PUT/PATCH) accept the short `Value`/code.** Example: `PhoneNumberType` — a `GetSponsorDetail` response returns `"Home"` (`.Name`); a `CreateSponsor` request accepts `"H"` (`.Value`), rehydrated via `PhoneNumberType.FromValue(...)`. This mirrors how a human reads a response versus how a client references a fixed value back.
+
+**Named exceptions — code both ways, not a bug:**
+
+- **`UsState`, `CanadianProvince`, `Country`** — GET responses and commands both use the short code (`"MA"`, not `"Massachusetts"`). The postal/ISO code is itself a meaningful, widely-recognized identifier, not enum plumbing, so there's no round-trip benefit to expanding it.
+- **`Permissions`** — GET responses (`GetCurrentUserResponse.Permissions`) return `.Value` (e.g. `"News.CreateArticle"`), never `.Name`. This field is a functional authorization key the client compares against a policy constant (`Permissions.CreateArticle.PolicyName`) — it's never displayed as text to a user, so the GET-returns-English rule doesn't apply.
+- **`TournamentType`, `PatternLengthCategory`, `PatternRatioCategory`** — GET responses and commands both use `.Name`/`.FromName` (e.g. `"Tournament of Champions"`, `"Sport"`), never `.Value`. Unlike `PhoneNumberType`'s `"H"`/`"M"`/`"F"`-style codes, these enums' `Value` is an arbitrary sequential int (`100`, `101`, `102`... / `1`, `2`, `3`) with no meaning outside the enum definition itself — it isn't a stable external identifier, just a plumbing detail. Sending it over the wire instead of the name gains no decoupling (renaming the display string wouldn't touch the int, and vice versa) while making requests/responses harder to read and hand-test. Same reasoning as the `UsState`/`CanadianProvince`/`Country` exception: use whichever field is the legitimate stable identifier, and for these three, that's the name.
+- **Roles** (when the assign-role flow is built): reference roles by a strongly-typed `RoleId` in commands, not a name string or a SmartEnum code — roles are ASP.NET Identity rows (`ApplicationRole : IdentityRole<Ulid>`), not a fixed domain vocabulary, so an ID reference is the right shape, not a SmartEnum.
+
+**No structural enforcement exists** — there's no global JSON converter or analyzer; each handler must apply this by hand (`.Name` when projecting to a GET DTO, `.FromValue`/`.FromName` when parsing a command). This has already drifted once (a stats DTO emitting `Gender.Value` — caught but not fixed since the field is never actually serialized to a public contract). Flag any new query handler that projects a SmartEnum property via `.Value` into a public response DTO, or any command handler that parses a SmartEnum via `.FromName` instead of `.FromValue`, unless the property falls into one of the exceptions above.
 
 ---
 
@@ -663,6 +679,8 @@ When reviewing, verify:
 
 - [ ] REST conventions followed (plural nouns, no verbs in URLs)
 - [ ] Response envelopes consistent
+- [ ] Query/GET responses project SmartEnum properties via `.Name`, not `.Value` (except `UsState`/`CanadianProvince`/`Country`/`Permissions` — see SmartEnum Serialization)
+- [ ] Command (POST/PUT/PATCH) requests parse SmartEnum properties via `.FromValue`, not `.FromName`
 
 ### Testing
 
@@ -674,7 +692,6 @@ When reviewing, verify:
 - [ ] Tests have `DisplayName` on Facts and Theories
 - [ ] New code has corresponding tests
 - [ ] API endpoint integration tests cover success, validation failure, and auth failure
-- [ ] New feature domain namespace added to `BoundedContextNamespaces` in `DomainBoundaryTests.cs`
 - [ ] New routable Blazor page/flow has a Playwright E2E spec in `tests/e2e/` (not just a `docs-screenshots/` script) covering happy path, validation failure, server-error handling, and the auth boundary
 - [ ] Mock API server (`tests/e2e/mock-api/mock-api-server.ts`) has a matching route handler for any new endpoint the E2E spec exercises
 
@@ -689,6 +706,7 @@ When reviewing, verify:
 
 - [ ] Blazor components don't fetch data directly
 - [ ] Data-entry pages/forms use `DirtyFormGuard` to warn before losing unsaved changes
+- [ ] Fields bound to `[Required]` model properties use `FormLabel` (not a bare `<label>`) so required fields show a "(required)" tag
 
 ### User Help Documentation
 

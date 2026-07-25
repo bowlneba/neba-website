@@ -71,6 +71,7 @@ internal static class AuditingConfiguration
                 .Include<Bowler>()
                 .Include<Season>()
                 .Include<Tournament>()
+                .Include<OilPattern>()
                 .Include<HallOfFameInduction>()
                 .Include<HighAverageAward>()
                 .Include<HighBlockAward>()

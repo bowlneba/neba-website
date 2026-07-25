@@ -10,7 +10,7 @@
   },
   {
     BowlerName: Myron Okuneva,
-    InductionYear: 2007,
+    InductionYear: 2006,
     Categories: [
       Friend of NEBA,
       Superior Performance

@@ -39,9 +39,9 @@ public sealed class RefreshTokenStoreTests(SecurityDbContextFixture fixture)
         // Assert
         var storedJson = await RefreshTokenStore.GetStoredJsonAsync(userManager, user);
         storedJson.ShouldNotBeNullOrEmpty();
-        var stored = JsonSerializer.Deserialize<StoredRefreshToken>(storedJson!);
+        var stored = JsonSerializer.Deserialize<StoredRefreshToken>(storedJson);
         stored.ShouldNotBeNull();
-        stored!.IssuedAt.ShouldBe(timeProvider.GetUtcNow());
+        stored.IssuedAt.ShouldBe(timeProvider.GetUtcNow());
     }
 
     [Fact(DisplayName = "RemoveAsync clears the stored token")]

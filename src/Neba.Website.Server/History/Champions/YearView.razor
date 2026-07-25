@@ -1,5 +1,3 @@
-@using Neba.Website.Server.History.Champions
-
 @foreach (var year in Years.OrderByDescending(y => y.Year))
 {
     var eventRows = GetEventRows(year).ToList();

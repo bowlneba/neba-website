@@ -272,6 +272,69 @@ public sealed class SponsorDetailTests : IDisposable
         cut.Markup.ShouldNotContain("About our Partner");
     }
 
+    // ── Tournaments sponsored ────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should render tournaments sponsored section when tournaments are provided")]
+    public void Render_ShouldRenderTournamentsSponsored_WhenProvided()
+    {
+        // Arrange
+        var tournament = SponsorDetailTournamentResponseFactory.Create(
+            name: "NEBA Championship",
+            startDate: new DateOnly(2026, 3, 14),
+            endDate: new DateOnly(2026, 3, 15));
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create(tournamentsSponsored: [tournament]));
+
+        // Act
+        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
+
+        // Assert
+        cut.Markup.ShouldContain("Tournaments Sponsored");
+        cut.Markup.ShouldContain("NEBA Championship");
+        cut.Find(".sponsor-detail__tournament-list__link").GetAttribute("href")
+            .ShouldBe($"/tournaments/{tournament.TournamentId}");
+    }
+
+    [Fact(DisplayName = "Should render Title Sponsor badge for a tournament where the sponsor is the title sponsor")]
+    public void Render_ShouldRenderTitleSponsorBadge_WhenTournamentIsTitleSponsored()
+    {
+        // Arrange
+        var tournament = SponsorDetailTournamentResponseFactory.Create(titleSponsor: true);
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create(tournamentsSponsored: [tournament]));
+
+        // Act
+        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
+
+        // Assert
+        cut.Markup.ShouldContain("Title Sponsor");
+    }
+
+    [Fact(DisplayName = "Should not render Title Sponsor badge for a tournament where the sponsor is not the title sponsor")]
+    public void Render_ShouldNotRenderTitleSponsorBadge_WhenTournamentIsNotTitleSponsored()
+    {
+        // Arrange
+        var tournament = SponsorDetailTournamentResponseFactory.Create(titleSponsor: false);
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create(tournamentsSponsored: [tournament]));
+
+        // Act
+        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
+
+        // Assert
+        cut.FindAll(".sponsor-detail__badge--title-sponsor").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should not render tournaments sponsored section when no tournaments are provided")]
+    public void Render_ShouldNotRenderTournamentsSponsored_WhenEmpty()
+    {
+        // Arrange
+        SetupSuccessResponse(SponsorDetailResponseFactory.Create(tournamentsSponsored: []));
+
+        // Act
+        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
+
+        // Assert
+        cut.Markup.ShouldNotContain("Tournaments Sponsored");
+    }
+
     // ── Contact card ─────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should render business address when address fields are provided")]

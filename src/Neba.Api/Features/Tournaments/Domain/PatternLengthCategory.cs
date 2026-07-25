@@ -54,4 +54,14 @@ public sealed class PatternLengthCategory
     /// The maximum length in feet, or <see langword="null"/> if not applicable.
     /// </value>
     public int? MaximumLength { get; }
+
+    /// <summary>
+    /// Gets the <see cref="PatternLengthCategory"/> that best matches the specified length.
+    /// </summary>
+    /// <param name="length">The oil application length, in feet.</param>
+    /// <returns>The matching <see cref="PatternLengthCategory"/>.</returns>
+    public static PatternLengthCategory FromLength(int length)
+        => List.First(category =>
+            (category.MinimumLength is null || length >= category.MinimumLength)
+            && (category.MaximumLength is null || length <= category.MaximumLength));
 }

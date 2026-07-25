@@ -57,4 +57,14 @@ public sealed class PatternRatioCategory
     /// The maximum ratio, or <see langword="null"/> if not applicable.
     /// </value>
     public decimal? MaximumRatio { get; }
+
+    /// <summary>
+    /// Gets the <see cref="PatternRatioCategory"/> that best matches the specified ratio.
+    /// </summary>
+    /// <param name="ratio">The oil-to-dry ratio.</param>
+    /// <returns>The matching <see cref="PatternRatioCategory"/>.</returns>
+    public static PatternRatioCategory FromRatio(decimal ratio)
+        => List.First(category =>
+            (category.MinimumRatio is null || ratio >= category.MinimumRatio)
+            && (category.MaximumRatio is null || ratio <= category.MaximumRatio));
 }

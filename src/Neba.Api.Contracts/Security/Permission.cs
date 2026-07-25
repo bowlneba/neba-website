@@ -80,6 +80,46 @@ public sealed class Permissions
 
     #endregion
 
+    #region Tournaments
+
+    /// <summary>
+    /// Permission to create a tournament.
+    /// </summary>
+    public static readonly Permissions CreateTournament = new("Tournaments.CreateTournament", "Create Tournament");
+
+    /// <summary>
+    /// Permission to add or remove sponsors on a tournament.
+    /// </summary>
+    public static readonly Permissions ManageTournamentSponsors = new("Tournaments.ManageSponsors", "Manage Tournament Sponsors");
+
+    /// <summary>
+    /// Permission to edit an existing tournament.
+    /// </summary>
+    public static readonly Permissions EditTournament = new("Tournaments.EditTournament", "Edit Tournament");
+
+    /// <summary>
+    /// Permission to delete an existing tournament.
+    /// </summary>
+    public static readonly Permissions DeleteTournament = new("Tournaments.DeleteTournament", "Delete Tournament");
+
+    /// <summary>
+    /// A collection of permissions related to tournament management.
+    /// </summary>
+    public static readonly IReadOnlyCollection<Permissions> TournamentManagementPermissions =
+    [
+        CreateTournament,
+        ManageTournamentSponsors,
+        EditTournament,
+        DeleteTournament
+    ];
+
+    /// <summary>
+    /// Policy name satisfied when the caller holds any permission in <see cref="TournamentManagementPermissions"/>.
+    /// </summary>
+    public const string CanManageTournamentsPolicyName = "CanManageTournaments";
+
+    #endregion
+
     private Permissions(string key, string name)
         : base(name, key)
     { }

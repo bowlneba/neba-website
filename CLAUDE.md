@@ -172,6 +172,20 @@ Mutation testing (Stryker) is **not currently in the CI pipeline** — removed M
 
 ## Learnings
 
+### Custom Interactive Blazor Server Inputs — Keyboard Handling Must Live in JS, Not C#
+
+When building a custom input component (`InputBase<T>` subclass) that needs synchronous per-keystroke behavior — auto-advance between segments, filtering keys, navigating on a separator character — **do not** drive that behavior with server-side C# event handlers (`@onkeydown`, `ElementReference.FocusAsync()`), even though it works fine in manual testing.
+
+**Why**: Blazor Server round-trips every event over SignalR. A C#-driven `FocusAsync()` call to move focus to the next segment is asynchronous and network-latency-bound. Real (or automated) typing at normal speed can send the next keystroke before the previous round-trip's focus change has been applied client-side, landing digits in the wrong element. This was found building `NebaDateInput.razor` (see below): typing `9/5/2026` with a fast automated Playwright script scattered digits across the wrong segments (`day` got `20`, `year` got `26`) even though the identical logic worked correctly when each keystroke was typed slowly. It reproduces with real typing speed too, not just fast automation — the race is inherent to the round-trip, not a test artifact.
+
+A second, related trap: even without the focus race, letting the browser's default keydown action fire (e.g. inserting a literal `/` character) while a C# `oninput` handler sanitizes it back to the *same string* as the previous render causes Blazor's virtual-DOM diff to skip updating the real DOM — the stray character stays visibly stuck in the input even though the bound C# state is correct. `preventDefault` can't be applied conditionally per-key via Razor's static `@onkeydown:preventDefault` directive (it's fixed per render, not per keystroke), so this can't be patched from the C# side either.
+
+**Fix — do all interactive keyboard handling in a colocated JS module** (`Component.razor.js`, matching the existing `RichTextEditor.razor`/`.razor.js` pattern): attach native `keydown`/`input` listeners directly in JS, handle digit filtering/auto-advance/segment navigation/backspace synchronously with zero network round-trips, and call `preventDefault()` selectively per key inline (trivial in JS, not expressible in Razor). JS reports the final composed value back to .NET via a single `[JSInvokable]` method (e.g. `NotifySegmentsChanged`) — .NET is a passive listener that only computes/validates the resulting value, never drives focus or interaction itself.
+
+**Testing implication**: bUnit renders the component tree but does not execute real browser JS, so bUnit tests for a component built this way cannot simulate typing via `.Change()`/`.Input()` on the DOM — call the `[JSInvokable]` method directly on the component instance instead (`cut.InvokeAsync(() => dateInput.Instance.NotifySegmentsChanged(...))`), same pattern as `RichTextEditorTests.NotifyContentChanged`. The actual keyboard-interaction logic (auto-advance, `/` navigation, filtering) needs to be covered by Jest tests against the `.razor.js` file directly (jsdom does execute real JS), not by bUnit.
+
+Applied in `NebaDateInput.razor`/`.razor.js` (`src/Neba.Website.Server/Components/`), which replaces `InputDate` for `DateOnly?` fields — see `docs/plans/create-tournament.md`'s Components section for the full story (this started as a Safari-only bug report: WebKit's native `<input type="date">` doesn't reliably auto-advance segments when typing, unlike Chromium/Firefox).
+
 ### Dirty Form Guard — Warn Before Losing Unsaved Changes
 
 Every data-entry page (any page with an `EditForm`, file uploads, or similar user input) must warn the user before they lose unsaved changes via Cancel, in-app navigation, or browser refresh/close/address-bar navigation. Use the shared `Components/DirtyFormGuard.razor` component — do not hand-roll this per page.
@@ -189,6 +203,26 @@ Every data-entry page (any page with an `EditForm`, file uploads, or similar use
 - Login/credential-only forms are excluded — losing a half-typed password isn't the kind of "lost work" this guards against.
 
 Enforced going forward via `.github/instructions/pull-request-review.instructions.md` (Blazor section + Review Checklist).
+
+### Required-Field Indicator — Mark Required, Not Optional
+
+A bare asterisk next to a label is no longer the right pattern: it isn't reliably announced by screen readers, and its meaning ("required"? "important"? a footnote?) isn't self-evident without a legend. Current guidance (WCAG, GOV.UK, USWDS) is to mark the *minority* case in visible text, not a symbol.
+
+**Decision for this app: always mark required fields with the text "(required)"**, never optional fields. This was chosen over "mark optional fields" (the more common guideline when a form is mostly required) because an audit of the app's five real forms showed the opposite is true here — Sponsor forms are ~87% optional (3 of ~23 fields required), so marking optional fields there would tag most of the form instead of the few fields that actually matter. Marking required fields instead stays cheap on every form regardless of its required/optional ratio (3–4 tags at most).
+
+**How it works**: use the shared `Components/FormLabel.razor` component instead of a bare `<label>` — do not hand-roll labels on new form fields.
+
+```razor
+<FormLabel TargetId="name" For="@(() => _model.Name)">Name</FormLabel>
+<InputText id="name" @bind-Value="_model.Name" class="neba-input" placeholder="Sponsor name" />
+```
+
+- `TargetId` renders the label's `for` attribute, same as a plain `<label>`.
+- `For` is an expression identifying the bound model property (same pattern as `ValidationMessage`'s `For`). `FormLabel` reflects on it via `FieldIdentifier.Create(For)` to check for a `[Required]` `DataAnnotation`, and renders "(required)" automatically when present — there is no manual `IsRequired`/`IsOptional` parameter to set, so the label can never drift out of sync with the model's actual validation attribute.
+- Labels for fields that aren't bound to a `[Required]`-annotated model property (file uploads, custom pickers with a plain `<select>`, checkboxes) stay as plain `<label>` — `FormLabel` only applies where there's a real `For` expression to reflect on.
+- **Login/credential-only forms are excluded**, same rationale as the Dirty Form Guard exception above: when every field on a form is required (e.g. `Login.razor`), tagging all of them adds no information, so those forms keep plain `<label>` elements with no indicator at all.
+
+Applied to `CreateSponsor.razor`, `EditSponsor.razor`, `CreateArticle.razor`, `EditArticle.razor`, `CreateTournament.razor`. `Login.razor` intentionally left unmarked (see exclusion above).
 
 ### Lightweight Collection Projections — Naming Convention
 
@@ -382,6 +416,30 @@ Any admin-gated list page (News, and future Sponsors/Bowling Centers/etc. admin 
 ```
 
 `Href` is the create-page route; `Label` is both the accessible name and hover tooltip (e.g. "Create Article", "Add Sponsor"). This was chosen over embedding the button in the gradient `page-title-bar` because a solid/glass button there had low, position-dependent contrast against the gradient and competed visually with the hero content below it — the FAB sits outside page content entirely, at a fixed screen position, so it doesn't fight the header for attention and its position/behavior is identical across every list page it's added to.
+
+### Long-List Picker Pattern — `NebaAutocomplete` vs. `InputSelect`
+
+`InputSelect` (a native `<select>`) is fine for a short, fixed list (tournament type, U.S. state) where the whole list fits on screen and scanning it is fast. It stops working once the list grows past roughly 15–20 items — a Bowling Center picker with 80+ centers turns into either scrolling a long native dropdown or typing letters to jump-search it, both of which are slow and don't let the user search by anything other than the first letter of the display text.
+
+**Decision: use the shared `Components/NebaAutocomplete.razor` component for any picker backed by a list that can grow past ~20 items or where the natural search key isn't the start of the display string** (e.g. searching a bowling center by city, not just name). It renders a single text `<input>` that filters an in-memory `Items` collection as the user types (substring match anywhere in the display text, not just prefix), with arrow-key navigation, a "no matches" state, and a clear (×) button for optional selections. First applied to `CreateTournament.razor`'s Bowling Center field, replacing an `InputSelect` over 80+ centers.
+
+**Usage**:
+
+```razor
+<NebaAutocomplete Id="bowling-center" TValue="string" TItem="BowlingCenterSummaryResponse"
+                   Value="@_model.BowlingCenterCertificationNumber"
+                   ValueChanged="HandleBowlingCenterChanged"
+                   Items="@_bowlingCenters"
+                   DisplayText="@(center => center.Name + " — " + center.City + ", " + center.State)"
+                   ItemValue="@(center => center.CertificationNumber)"
+                   Placeholder="Search bowling centers..."
+                   EmptyLabel="Not yet assigned" />
+```
+
+- `TValue`/`TItem` generics mirror the existing `NebaDropdown` design sketch in `reference/components/` (never implemented, kept as a design reference only — this component is the production version, built narrower: free-text filtering rather than that sketch's toggle-to-search combobox).
+- Not an `InputBase<T>` — it's a plain `Value`/`ValueChanged` component like `OilPatternPicker`/`FileUpload`, so the hosting page must call `MarkDirty()` itself from the `ValueChanged` handler (the shared `EditContext.OnFieldChanged` hook only fires for `InputBase` descendants).
+- **Keyboard nav (arrow keys/Enter/Escape) is handled server-side in C#** via `@onkeydown`, unlike `NebaDateInput`'s per-keystroke JS-only handling — the race condition documented under NebaDateInput's Learnings entry is specific to multiple segment elements fighting over focus mid-type; a single text input filtering a list has no such race, so keeping this in C# (consistent with how the rest of the app's server-rendered forms already work) is fine.
+- **Click-outside-to-close still needs JS** (no Blazor-native equivalent) — colocated `NebaAutocomplete.razor.js`, same `initialize(containerId, dotNetHelper)`/`dispose(containerId)` shape as `NebaDateInput.razor.js`, using a capturing `mousedown` listener on `document`.
 
 ### Page Titles (`<PageTitle>`)
 

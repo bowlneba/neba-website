@@ -1,3 +1,5 @@
+using Neba.Website.Server.Tournaments.Schedule;
+
 namespace Neba.Website.Server.Tournaments.Detail;
 
 /// <summary>
@@ -51,9 +53,19 @@ public sealed record TournamentDetailViewModel
     public Uri? RegistrationUrl { get; init; }
 
     /// <summary>
-    /// Sponsor-added prize money in USD; null if none.
+    /// Total added money in USD (sponsor money plus NEBA added money); null if none.
     /// </summary>
     public decimal? AddedMoney { get; init; }
+
+    /// <summary>
+    /// Sponsor-contributed portion of added money in USD; null if none.
+    /// </summary>
+    public decimal? SponsorMoney { get; init; }
+
+    /// <summary>
+    /// Amount NEBA itself contributed to the prize fund in USD, independent of sponsors.
+    /// </summary>
+    public decimal NebaAddedMoney { get; init; }
 
     /// <summary>
     /// Total entries in the tournament; null when unknown.
@@ -64,6 +76,18 @@ public sealed record TournamentDetailViewModel
     /// Pattern length bucket label; null until set.
     /// </summary>
     public string? PatternLengthCategory { get; init; }
+
+    /// <summary>
+    /// Pattern ratio category label; null until set.
+    /// </summary>
+    public string? PatternRatioCategory { get; init; }
+
+    /// <summary>
+    /// Date/time at which full oil pattern details become public; null when there's no
+    /// restriction, or when the current viewer isn't authenticated (in which case they simply
+    /// don't know a reveal date exists — only whether details are currently visible).
+    /// </summary>
+    public DateTimeOffset? OilPatternRevealDateTime { get; init; }
 
     /// <summary>
     /// URL to the tournament logo image; null when unavailable.
@@ -116,6 +140,11 @@ public sealed record TournamentDetailViewModel
     public bool HasRegistrationUrl => RegistrationUrl is not null;
 
     /// <summary>
+    /// Current registration state; null means registration has not opened yet.
+    /// </summary>
+    public RegistrationStatus? RegistrationStatus => HasRegistrationUrl ? Schedule.RegistrationStatus.Open : null;
+
+    /// <summary>
     /// True when winner(s) have been recorded.
     /// </summary>
     public bool HasWinners => Winners.Count > 0;
@@ -129,6 +158,12 @@ public sealed record TournamentDetailViewModel
     /// True when added money is greater than zero.
     /// </summary>
     public bool HasAddedMoney => AddedMoney is > 0;
+
+    /// <summary>
+    /// True when added money comes from more than one source (sponsors and NEBA), so a
+    /// sponsor money / NEBA added money breakdown is worth showing beneath the total.
+    /// </summary>
+    public bool HasMultipleMoneySources => SponsorMoney is > 0 && NebaAddedMoney > 0;
 
     /// <summary>
     /// Sum of all prize money across results.
@@ -149,6 +184,23 @@ public sealed record TournamentDetailViewModel
     /// True when at least one oil pattern is present.
     /// </summary>
     public bool HasOilPatterns => OilPatterns.Count > 0;
+
+    /// <summary>
+    /// True when a reveal date/time is known (always false for an anonymous viewer, even if one is set).
+    /// </summary>
+    public bool HasOilPatternRevealDateTime => OilPatternRevealDateTime is not null;
+
+    /// <summary>
+    /// True when the reveal date/time is known and still in the future.
+    /// </summary>
+    public bool OilPatternRevealIsPending => OilPatternRevealDateTime is { } revealAt && revealAt > DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// True when there's a category chip to show (length or ratio category known) but no full
+    /// pattern detail — the shape an anonymous, pre-reveal caller's response takes.
+    /// </summary>
+    public bool HasReducedOilPatternInfoOnly =>
+        !HasOilPatterns && (PatternLengthCategory is not null || PatternRatioCategory is not null);
 
     /// <summary>
     /// Published articles associated with this tournament; empty when none exist.

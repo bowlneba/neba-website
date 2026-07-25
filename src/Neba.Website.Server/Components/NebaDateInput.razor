@@ -1,0 +1,158 @@
+@using System.Globalization
+@inherits InputBase<DateOnly?>
+@implements IAsyncDisposable
+@inject IJSRuntime JsRuntime
+
+<div id="@ContainerId" class="neba-date-input @CssClass" @attributes="_containerAttributes">
+    <input id="@_elementId" data-segment="month" type="text" inputmode="numeric" maxlength="2" placeholder="mm"
+           class="neba-date-segment" aria-label="Month" />
+    <span class="neba-date-separator" aria-hidden="true">/</span>
+    <input data-segment="day" type="text" inputmode="numeric" maxlength="2" placeholder="dd"
+           class="neba-date-segment" aria-label="Day" />
+    <span class="neba-date-separator" aria-hidden="true">/</span>
+    <input data-segment="year" type="text" inputmode="numeric" maxlength="4" placeholder="yyyy"
+           class="neba-date-segment neba-date-segment-year" aria-label="Year" />
+</div>
+
+@code {
+    private IJSObjectReference? _jsModule;
+    private DotNetObjectReference<NebaDateInput>? _dotNetHelper;
+
+    private object? _elementId;
+    private IReadOnlyDictionary<string, object>? _containerAttributes;
+
+    private string _lastKnownMonth = string.Empty;
+    private string _lastKnownDay = string.Empty;
+    private string _lastKnownYear = string.Empty;
+    private DateOnly? _lastKnownValue;
+
+    private string ContainerId { get; } = $"neba-date-{Guid.NewGuid():N}";
+
+    protected override void OnParametersSet()
+    {
+        _elementId = AdditionalAttributes is not null && AdditionalAttributes.TryGetValue("id", out var id) ? id : null;
+        _containerAttributes = AdditionalAttributes?
+            .Where(kv => kv.Key != "id")
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
+                "import", "./Components/NebaDateInput.razor.js");
+            _dotNetHelper = DotNetObjectReference.Create(this);
+
+            _lastKnownMonth = FormatSegment(Value?.Month, "D2");
+            _lastKnownDay = FormatSegment(Value?.Day, "D2");
+            _lastKnownYear = FormatSegment(Value?.Year, "D4");
+            _lastKnownValue = Value;
+
+            await _jsModule.InvokeVoidAsync(
+                "initialize", ContainerId, _dotNetHelper, _lastKnownMonth, _lastKnownDay, _lastKnownYear);
+
+            return;
+        }
+
+        if (_jsModule is null)
+        {
+            return;
+        }
+
+        // Only push a value the user didn't just type themselves — e.g. an external reset of the
+        // bound model — otherwise this would fight an in-flight, still-incomplete edit: Value stays
+        // null until all three segments are filled, so comparing against the formatted segments
+        // (rather than the bound Value itself) would treat every render that happens mid-edit —
+        // triggered by anything else on the page, not just this component — as an external reset.
+        if (Value == _lastKnownValue)
+        {
+            return;
+        }
+
+        _lastKnownValue = Value;
+
+        var month = FormatSegment(Value?.Month, "D2");
+        var day = FormatSegment(Value?.Day, "D2");
+        var year = FormatSegment(Value?.Year, "D4");
+
+        _lastKnownMonth = month;
+        _lastKnownDay = day;
+        _lastKnownYear = year;
+        await _jsModule.InvokeVoidAsync("setValue", ContainerId, month, day, year);
+    }
+
+    private static string FormatSegment(int? component, string format)
+        => component?.ToString(format, CultureInfo.InvariantCulture) ?? string.Empty;
+
+    /// <summary>
+    /// Invoked by JS whenever any segment's digits change. JS owns all keyboard interaction
+    /// (digit filtering, auto-advance, "/" navigation, backspace) synchronously and reports the
+    /// resulting composed value here — this method never drives focus/navigation itself.
+    /// </summary>
+    [JSInvokable]
+    public void NotifySegmentsChanged(string month, string day, string year)
+    {
+        _lastKnownMonth = month;
+        _lastKnownDay = day;
+        _lastKnownYear = year;
+
+        if (month.Length is 1 or 2 && day.Length is 1 or 2 && year.Length == 4
+            && int.TryParse(month, NumberStyles.None, CultureInfo.InvariantCulture, out var monthValue)
+            && int.TryParse(day, NumberStyles.None, CultureInfo.InvariantCulture, out var dayValue)
+            && int.TryParse(year, NumberStyles.None, CultureInfo.InvariantCulture, out var yearValue)
+            && IsValidDate(yearValue, monthValue, dayValue))
+        {
+            CurrentValue = new DateOnly(yearValue, monthValue, dayValue);
+        }
+        else
+        {
+            CurrentValue = null;
+        }
+
+        _lastKnownValue = CurrentValue;
+    }
+
+    private static bool IsValidDate(int year, int month, int day)
+        => month is >= 1 and <= 12 && year is >= 1 and <= 9999 && day >= 1 && day <= DateTime.DaysInMonth(year, month);
+
+    protected override bool TryParseValueFromString(string? value, out DateOnly? result, out string validationErrorMessage)
+    {
+        if (DateOnly.TryParseExact(value, "MM/dd/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
+        {
+            result = parsed;
+            validationErrorMessage = null!;
+            return true;
+        }
+
+        result = null;
+        validationErrorMessage = "The {0} field must be a valid date.";
+        return false;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule is not null)
+        {
+            try
+            {
+                await _jsModule.InvokeVoidAsync("dispose", ContainerId);
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit already gone — nothing to clean up client-side.
+            }
+
+            try
+            {
+                await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit already gone — nothing to clean up client-side.
+            }
+        }
+
+        _dotNetHelper?.Dispose();
+    }
+}

@@ -31,33 +31,42 @@ public static class TournamentFactory
         decimal? entryFee = null,
         Uri? externalRegistrationUrl = null,
         StoredFile? logo = null,
-        IReadOnlyCollection<TournamentSponsor>? sponsors = null)
+        IReadOnlyCollection<TournamentSponsor>? sponsors = null,
+        DateTimeOffset? oilPatternRevealDateTime = null,
+        decimal? nebaAddedMoney = null)
     {
-        var tournament = new Tournament
+        var result = Tournament.Create(
+            name: name ?? ValidName,
+            tournamentType: tournamentType ?? ValidTournamentType,
+            startDate: startDate ?? ValidStartDate,
+            endDate: endDate ?? ValidEndDate,
+            seasonId: seasonId ?? SeasonId.New(),
+            statsEligible: statsEligible ?? true,
+            entryFee: entryFee ?? 100m,
+            bowlingCenterId: bowlingCenterId,
+            externalRegistrationUrl: externalRegistrationUrl,
+            logo: logo,
+            patternLengthCategory: patternLengthCategory,
+            patternRatioCategory: patternRatioCategory,
+            oilPatternRevealDateTime: oilPatternRevealDateTime,
+            nebaAddedMoney: nebaAddedMoney ?? 0m,
+            id: id,
+            legacyId: legacyId);
+
+        if (result.IsError)
         {
-            Id = id ?? TournamentId.New(),
-            Name = name ?? ValidName,
-            TournamentType = tournamentType ?? ValidTournamentType,
-            StartDate = startDate ?? ValidStartDate,
-            EndDate = endDate ?? ValidEndDate,
-            StatsEligible = statsEligible ?? true,
-            BowlingCenterId = bowlingCenterId,
-            PatternRatioCategory = patternRatioCategory,
-            PatternLengthCategory = patternLengthCategory,
-            LegacyId = legacyId,
-            SeasonId = seasonId ?? SeasonId.New(),
-            EntryFee = entryFee ?? 100m,
-            ExternalRegistrationUrl = externalRegistrationUrl,
-            Logo = logo
-        };
+            throw new InvalidOperationException($"Failed to create tournament: {result.Errors[0].Description}");
+        }
+
+        var tournament = result.Value;
 
         foreach (var tournamentSponsor in sponsors ?? [])
         {
-            var result = tournament.AddSponsor(tournamentSponsor.SponsorId, tournamentSponsor.TitleSponsor, tournamentSponsor.SponsorshipAmount);
+            var addResult = tournament.AddSponsor(tournamentSponsor.SponsorId, tournamentSponsor.TitleSponsor, tournamentSponsor.SponsorshipAmount);
 
-            if (result.IsError)
+            if (addResult.IsError)
             {
-                throw new InvalidOperationException($"Failed to add sponsor with ID {tournamentSponsor.SponsorId} to tournament: {result.Errors[0].Description}");
+                throw new InvalidOperationException($"Failed to add sponsor with ID {tournamentSponsor.SponsorId} to tournament: {addResult.Errors[0].Description}");
             }
         }
 
@@ -77,23 +86,30 @@ public static class TournamentFactory
             var startDate = faker.Date.FutureDateOnly(1);
             var endDate = startDate.AddDays(faker.Random.Int(0, 1));
 
-            var tournament = new Tournament
+            var result = Tournament.Create(
+                name: faker.Random.Words(2),
+                tournamentType: faker.PickRandom(TournamentType.List.ToArray()),
+                startDate: startDate,
+                endDate: endDate,
+                seasonId: seasons.GetNext().Id,
+                statsEligible: faker.Random.Bool(),
+                entryFee: faker.Random.Decimal(0, 500),
+                bowlingCenterId: certificationNumberPool.GetNextNullable(),
+                externalRegistrationUrl: faker.Random.Bool() ? new Uri(faker.Internet.Url()) : null,
+                logo: logos.GetNextNullable(),
+                patternLengthCategory: faker.Random.Bool() ? faker.PickRandom(PatternLengthCategory.List.ToArray()) : null,
+                patternRatioCategory: faker.Random.Bool() ? faker.PickRandom(PatternRatioCategory.List.ToArray()) : null,
+                oilPatternRevealDateTime: faker.Random.Bool() ? faker.Date.FutureOffset(1) : null,
+                nebaAddedMoney: faker.Random.Decimal(0, 5000),
+                id: new TournamentId(Ulid.BogusString(faker)),
+                legacyId: faker.Random.Bool() ? faker.Random.Int(1, 9999) : null);
+
+            if (result.IsError)
             {
-                Id = new TournamentId(Ulid.BogusString(faker)),
-                Name = faker.Random.Words(2),
-                TournamentType = faker.PickRandom(TournamentType.List.ToArray()),
-                StartDate = startDate,
-                EndDate = endDate,
-                StatsEligible = faker.Random.Bool(),
-                BowlingCenterId = certificationNumberPool.GetNextNullable(),
-                PatternRatioCategory = faker.Random.Bool() ? faker.PickRandom(PatternRatioCategory.List.ToArray()) : null,
-                PatternLengthCategory = faker.Random.Bool() ? faker.PickRandom(PatternLengthCategory.List.ToArray()) : null,
-                LegacyId = faker.Random.Bool() ? faker.Random.Int(1, 9999) : null,
-                SeasonId = seasons.GetNext().Id,
-                EntryFee = faker.Random.Decimal(0, 500),
-                ExternalRegistrationUrl = faker.Random.Bool() ? new Uri(faker.Internet.Url()) : null,
-                Logo = logos.GetNextNullable()
-            };
+                throw new InvalidOperationException($"Failed to create tournament: {result.Errors[0].Description}");
+            }
+
+            var tournament = result.Value;
 
             var sponsorCount = faker.Random.Int(0, 2);
 
@@ -103,11 +119,11 @@ public static class TournamentFactory
                 var titleSponsor = sponsorCount == 1 && faker.Random.Bool(); // only assign title sponsor status if there's one sponsor
                 var sponsorshipAmount = faker.Random.Decimal(0, 10000);
 
-                var result = tournament.AddSponsor(sponsor.Id, titleSponsor, sponsorshipAmount);
+                var addResult = tournament.AddSponsor(sponsor.Id, titleSponsor, sponsorshipAmount);
 
-                if (result.IsError)
+                if (addResult.IsError)
                 {
-                    throw new InvalidOperationException($"Failed to add sponsor with ID {sponsor.Id} to tournament: {result.Errors[0].Description}");
+                    throw new InvalidOperationException($"Failed to add sponsor with ID {sponsor.Id} to tournament: {addResult.Errors[0].Description}");
                 }
             }
 

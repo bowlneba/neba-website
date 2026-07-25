@@ -115,7 +115,9 @@ internal static class SecurityConfiguration
             await using (var seedScope = app.Services.CreateAsyncScope())
             {
                 var roleManager = seedScope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
-                await SecurityRoleSeeder.SeedAsync(roleManager);
+                var seedLogger = seedScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("Neba.Api.Security.Infrastructure.SecurityRoleSeeder");
+                await SecurityRoleSeeder.SeedAsync(roleManager, seedLogger);
             }
 
             return app;

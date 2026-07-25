@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Neba.Api.Contacts;
 using Neba.Api.Database;
 using Neba.Api.Features.Sponsors.Domain;
+using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Messaging;
 using Neba.Api.Storage;
 
@@ -60,7 +61,13 @@ internal sealed class GetSponsorDetailQueryHandler(AppDbContext appDbContext, IF
                 sponsor.SponsorContact.Phone.Type.Name,
                 sponsor.SponsorContact.Phone.Number,
                 sponsor.SponsorContact.Email.Value)
-            : null);
+            : null,
+        sponsor.TournamentsSponsored.Select(tournamentSponsor => new TournamentRow(
+            tournamentSponsor.Tournament.Id,
+            tournamentSponsor.Tournament.Name,
+            tournamentSponsor.Tournament.StartDate,
+            tournamentSponsor.Tournament.EndDate,
+            tournamentSponsor.TitleSponsor)).ToList());
 
     public async Task<ErrorOr<SponsorDetailDto>> HandleAsync(GetSponsorDetailQuery query, CancellationToken cancellationToken)
     {
@@ -117,7 +124,17 @@ internal sealed class GetSponsorDetailQueryHandler(AppDbContext appDbContext, IF
                     },
                     Email = row.Contact.Email
                 }
-                : null
+                : null,
+            TournamentsSponsored = [.. row.TournamentsSponsored
+                .OrderByDescending(t => t.StartDate)
+                .Select(t => new SponsorDetailTournamentDto
+                {
+                    TournamentId = t.TournamentId.Value.ToString(),
+                    Name = t.Name,
+                    StartDate = t.StartDate,
+                    EndDate = t.EndDate,
+                    TitleSponsor = t.TitleSponsor
+                })]
         };
     }
 
@@ -143,7 +160,10 @@ internal sealed class GetSponsorDetailQueryHandler(AppDbContext appDbContext, IF
         AddressDto? BusinessAddress,
         string? BusinessEmailAddress,
         List<PhoneNumberDto> PhoneNumbers,
-        SponsorContactRow? Contact);
+        SponsorContactRow? Contact,
+        List<TournamentRow> TournamentsSponsored);
 
     private sealed record SponsorContactRow(string Name, string PhoneNumberType, string PhoneNumber, string Email);
+
+    private sealed record TournamentRow(TournamentId TournamentId, string Name, DateOnly StartDate, DateOnly EndDate, bool TitleSponsor);
 }

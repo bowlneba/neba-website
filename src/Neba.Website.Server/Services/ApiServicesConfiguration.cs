@@ -9,6 +9,7 @@ using Neba.Api.Contracts.BowlingCenters;
 using Neba.Api.Contracts.Documents;
 using Neba.Api.Contracts.HallOfFame;
 using Neba.Api.Contracts.News;
+using Neba.Api.Contracts.OilPatterns;
 using Neba.Api.Contracts.ReferenceData;
 using Neba.Api.Contracts.Seasons;
 using Neba.Api.Contracts.Security;
@@ -66,6 +67,7 @@ internal static class ApiServicesConfiguration
             services.RegisterApiEndpoint<INewsApi>();
             services.RegisterApiEndpoint<IBowlingCentersApi>();
             services.RegisterApiEndpoint<IHallOfFameApi>();
+            services.RegisterApiEndpoint<IOilPatternsApi>();
             services.RegisterApiEndpoint<IAwardsApi>();
             services.RegisterApiEndpoint<IReferenceDataApi>();
             services.RegisterApiEndpoint<ISeasonsApi>();
@@ -82,7 +84,7 @@ internal static class ApiServicesConfiguration
             where TApi : class
         {
             services
-                .AddRefitClient<TApi>(RefitSettings)
+                .AddRefitGeneratedClient<TApi>(RefitSettings)
                 .ConfigureHttpClient((sp, client) =>
                 {
                     var apiConfig = sp.GetRequiredService<NebaApiConfiguration>();

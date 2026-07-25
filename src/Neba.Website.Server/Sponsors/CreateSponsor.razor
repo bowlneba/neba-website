@@ -6,7 +6,6 @@
 @using Neba.Api.Contracts.Sponsors
 @using Neba.Api.Contracts.Sponsors.CreateSponsor
 @using Neba.Api.Contracts.Uploads
-@using Neba.Website.Server.Notifications
 @using Neba.Website.Server.ReferenceData
 @using Neba.Website.Server.Services
 @using Refit
@@ -49,13 +48,13 @@
                             <h2 class="create-sponsor-section-title">Basic Info</h2>
 
                             <div>
-                                <label for="name" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Name</label>
+                                <FormLabel TargetId="name" For="@(() => _model.Name)">Name</FormLabel>
                                 <InputText id="name" @bind-Value="_model.Name" class="neba-input" placeholder="Sponsor name" />
                                 <ValidationMessage For="@(() => _model.Name)" class="block text-sm text-red-600 mt-1" />
                             </div>
 
                             <div>
-                                <label for="slug" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Slug</label>
+                                <FormLabel TargetId="slug" For="@(() => _model.Slug)">Slug</FormLabel>
                                 <InputText id="slug" @bind-Value="_model.Slug" class="neba-input" placeholder="@SlugPlaceholder" />
                                 <p class="text-sm text-[var(--neba-gray-500)] mt-1">Leave blank to auto-generate from the name.</p>
                                 <ValidationMessage For="@(() => _model.Slug)" class="block text-sm text-red-600 mt-1" />
@@ -63,7 +62,7 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
-                                    <label for="tier" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Tier</label>
+                                    <FormLabel TargetId="tier" For="@(() => _model.Tier)">Tier</FormLabel>
                                     <InputSelect id="tier" @bind-Value="_model.Tier" class="neba-select">
                                         <option value="Title Sponsor">Title Sponsor</option>
                                         <option value="Premier">Premier</option>
@@ -73,7 +72,7 @@
                                 </div>
 
                                 <div>
-                                    <label for="category" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Category</label>
+                                    <FormLabel TargetId="category" For="@(() => _model.Category)">Category</FormLabel>
                                     <InputSelect id="category" @bind-Value="_model.Category" class="neba-select">
                                         @foreach (var category in SponsorCategoryOptions.All)
                                         {
@@ -84,7 +83,7 @@
                                 </div>
 
                                 <div>
-                                    <label for="priority" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Priority</label>
+                                    <FormLabel TargetId="priority" For="@(() => _model.Priority)">Priority</FormLabel>
                                     <InputNumber id="priority" @bind-Value="_model.Priority" class="neba-input" />
                                     <ValidationMessage For="@(() => _model.Priority)" class="block text-sm text-red-600 mt-1" />
                                 </div>
@@ -110,41 +109,41 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
-                                    <label for="website-url" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Website URL</label>
+                                    <FormLabel TargetId="website-url" For="@(() => _model.WebsiteUrl)">Website URL</FormLabel>
                                     <InputText id="website-url" @bind-Value="_model.WebsiteUrl" class="neba-input" placeholder="https://example.com" />
                                     <ValidationMessage For="@(() => _model.WebsiteUrl)" class="block text-sm text-red-600 mt-1" />
                                 </div>
 
                                 <div>
-                                    <label for="facebook-url" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Facebook URL</label>
+                                    <FormLabel TargetId="facebook-url" For="@(() => _model.FacebookUrl)">Facebook URL</FormLabel>
                                     <InputText id="facebook-url" @bind-Value="_model.FacebookUrl" class="neba-input" placeholder="https://facebook.com/…" />
                                     <ValidationMessage For="@(() => _model.FacebookUrl)" class="block text-sm text-red-600 mt-1" />
                                 </div>
 
                                 <div>
-                                    <label for="instagram-url" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Instagram URL</label>
+                                    <FormLabel TargetId="instagram-url" For="@(() => _model.InstagramUrl)">Instagram URL</FormLabel>
                                     <InputText id="instagram-url" @bind-Value="_model.InstagramUrl" class="neba-input" placeholder="https://instagram.com/…" />
                                     <ValidationMessage For="@(() => _model.InstagramUrl)" class="block text-sm text-red-600 mt-1" />
                                 </div>
                             </div>
 
                             <div>
-                                <label for="tag-phrase" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Tag Phrase</label>
+                                <FormLabel TargetId="tag-phrase" For="@(() => _model.TagPhrase)">Tag Phrase</FormLabel>
                                 <InputText id="tag-phrase" @bind-Value="_model.TagPhrase" class="neba-input" placeholder="A short tagline" />
                             </div>
 
                             <div>
-                                <label for="description" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Description</label>
+                                <FormLabel TargetId="description" For="@(() => _model.Description)">Description</FormLabel>
                                 <InputTextArea id="description" @bind-Value="_model.Description" class="neba-input" rows="3" placeholder="Public-facing description" />
                             </div>
 
                             <div>
-                                <label for="live-read-text" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Live Read Text</label>
+                                <FormLabel TargetId="live-read-text" For="@(() => _model.LiveReadText)">Live Read Text</FormLabel>
                                 <InputTextArea id="live-read-text" @bind-Value="_model.LiveReadText" class="neba-input" rows="2" placeholder="Text to be read live at events" />
                             </div>
 
                             <div>
-                                <label for="promotional-notes" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Promotional Notes</label>
+                                <FormLabel TargetId="promotional-notes" For="@(() => _model.PromotionalNotes)">Promotional Notes</FormLabel>
                                 <InputTextArea id="promotional-notes" @bind-Value="_model.PromotionalNotes" class="neba-input" rows="2" placeholder="Internal notes for staff" />
                             </div>
                         </section>
@@ -154,22 +153,22 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label for="business-street" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Street</label>
+                                    <FormLabel TargetId="business-street" For="@(() => _model.BusinessStreet)">Street</FormLabel>
                                     <InputText id="business-street" @bind-Value="_model.BusinessStreet" class="neba-input" />
                                 </div>
                                 <div>
-                                    <label for="business-unit" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Unit</label>
+                                    <FormLabel TargetId="business-unit" For="@(() => _model.BusinessUnit)">Unit</FormLabel>
                                     <InputText id="business-unit" @bind-Value="_model.BusinessUnit" class="neba-input" />
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
-                                    <label for="business-city" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">City</label>
+                                    <FormLabel TargetId="business-city" For="@(() => _model.BusinessCity)">City</FormLabel>
                                     <InputText id="business-city" @bind-Value="_model.BusinessCity" class="neba-input" />
                                 </div>
                                 <div>
-                                    <label for="business-state" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">State</label>
+                                    <FormLabel TargetId="business-state" For="@(() => _model.BusinessState)">State</FormLabel>
                                     <InputSelect id="business-state" @bind-Value="_model.BusinessState" class="neba-select">
                                         <option value="">Select a state</option>
                                         @foreach (var state in _usStates)
@@ -179,13 +178,13 @@
                                     </InputSelect>
                                 </div>
                                 <div>
-                                    <label for="business-postal-code" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Postal Code</label>
+                                    <FormLabel TargetId="business-postal-code" For="@(() => _model.BusinessPostalCode)">Postal Code</FormLabel>
                                     <InputText id="business-postal-code" @bind-Value="_model.BusinessPostalCode" class="neba-input" />
                                 </div>
                             </div>
 
                             <div>
-                                <label for="business-email" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Business Email</label>
+                                <FormLabel TargetId="business-email" For="@(() => _model.BusinessEmailAddress)">Business Email</FormLabel>
                                 <InputText id="business-email" @bind-Value="_model.BusinessEmailAddress" class="neba-input" placeholder="info@example.com" />
                                 <ValidationMessage For="@(() => _model.BusinessEmailAddress)" class="block text-sm text-red-600 mt-1" />
                             </div>
@@ -199,11 +198,11 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label for="contact-name" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Name</label>
+                                    <FormLabel TargetId="contact-name" For="@(() => _model.ContactName)">Name</FormLabel>
                                     <InputText id="contact-name" @bind-Value="_model.ContactName" class="neba-input" />
                                 </div>
                                 <div>
-                                    <label for="contact-email" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Email</label>
+                                    <FormLabel TargetId="contact-email" For="@(() => _model.ContactEmail)">Email</FormLabel>
                                     <InputText id="contact-email" @bind-Value="_model.ContactEmail" class="neba-input" placeholder="name@example.com" />
                                     <ValidationMessage For="@(() => _model.ContactEmail)" class="block text-sm text-red-600 mt-1" />
                                 </div>
@@ -211,7 +210,7 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
-                                    <label for="contact-phone-type" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Phone Type</label>
+                                    <FormLabel TargetId="contact-phone-type" For="@(() => _model.ContactPhoneType)">Phone Type</FormLabel>
                                     <InputSelect id="contact-phone-type" @bind-Value="_model.ContactPhoneType" class="neba-select">
                                         @foreach (var phoneType in _phoneNumberTypes)
                                         {
@@ -220,11 +219,11 @@
                                     </InputSelect>
                                 </div>
                                 <div>
-                                    <label for="contact-phone-number" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Phone Number</label>
+                                    <FormLabel TargetId="contact-phone-number" For="@(() => _model.ContactPhoneNumber)">Phone Number</FormLabel>
                                     <InputText id="contact-phone-number" @bind-Value="_model.ContactPhoneNumber" class="neba-input" />
                                 </div>
                                 <div>
-                                    <label for="contact-phone-extension" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Extension</label>
+                                    <FormLabel TargetId="contact-phone-extension" For="@(() => _model.ContactPhoneExtension)">Extension</FormLabel>
                                     <InputText id="contact-phone-extension" @bind-Value="_model.ContactPhoneExtension" class="neba-input" />
                                 </div>
                             </div>
@@ -404,13 +403,13 @@
         [Required(ErrorMessage = "Category is required.")]
         public string Category { get; set; } = "Other";
 
-        [Url(ErrorMessage = "Website URL must be a valid, absolute URL.")]
+        [System.ComponentModel.DataAnnotations.Url(ErrorMessage = "Website URL must be a valid, absolute URL.")]
         public string? WebsiteUrl { get; set; }
 
-        [Url(ErrorMessage = "Facebook URL must be a valid, absolute URL.")]
+        [System.ComponentModel.DataAnnotations.Url(ErrorMessage = "Facebook URL must be a valid, absolute URL.")]
         public string? FacebookUrl { get; set; }
 
-        [Url(ErrorMessage = "Instagram URL must be a valid, absolute URL.")]
+        [System.ComponentModel.DataAnnotations.Url(ErrorMessage = "Instagram URL must be a valid, absolute URL.")]
         public string? InstagramUrl { get; set; }
 
         public string? TagPhrase { get; set; }

@@ -6,6 +6,11 @@ namespace Neba.Website.Server.Sponsors;
 public sealed record SponsorSummaryViewModel
 {
     /// <summary>
+    /// The ULID string identifying the sponsor.
+    /// </summary>
+    public required string SponsorId { get; init; }
+
+    /// <summary>
     /// Display name of the sponsor.
     /// </summary>
     public required string Name { get; init; }

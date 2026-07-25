@@ -91,6 +91,22 @@
     margin: 0;
 }
 
+.td-hero__admin-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.td-hero__edit-btn,
+.td-hero__delete-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: fit-content;
+}
+
 .td-hero__sponsor--available {
     font-style: italic;
     color: rgba(255, 255, 255, 0.55);
@@ -351,6 +367,36 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     margin: 0.25rem 0 0;
+}
+
+.td-pattern-card__sub {
+    margin: 0.15rem 0 0;
+    font-size: 0.85rem;
+    color: var(--neba-gray-600);
+}
+
+.td-reveal-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    border-radius: 999px;
+    padding: 0.3rem 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.td-reveal-note .material-symbols-outlined {
+    font-size: 1rem;
+}
+
+.td-reveal-note--pending {
+    color: var(--neba-warning);
+    background: color-mix(in srgb, var(--neba-warning) 12%, transparent);
+}
+
+.td-reveal-note--past {
+    color: var(--neba-success);
+    background: color-mix(in srgb, var(--neba-success) 12%, transparent);
 }
 
 /* ── Results chrome ───────────────────────────────────────────────────────── */

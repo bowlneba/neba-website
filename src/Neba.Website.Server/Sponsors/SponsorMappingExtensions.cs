@@ -9,6 +9,7 @@ internal static class SponsorMappingExtensions
         public SponsorSummaryViewModel ToViewModel() =>
             new()
             {
+                SponsorId = response.SponsorId,
                 Name = response.Name,
                 Slug = response.Slug,
                 LogoUrl = response.LogoUrl,
@@ -52,6 +53,14 @@ internal static class SponsorMappingExtensions
                 ContactEmail = response.BusinessEmailAddress,
                 PhoneNumbers = response.PhoneNumbers,
                 Contact = response.Contact,
+                TournamentsSponsored = [.. response.TournamentsSponsored.Select(t => new SponsorDetailTournamentViewModel
+                {
+                    TournamentId = t.TournamentId,
+                    Name = t.Name,
+                    StartDate = t.StartDate,
+                    EndDate = t.EndDate,
+                    TitleSponsor = t.TitleSponsor
+                })],
             };
     }
 }

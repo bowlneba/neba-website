@@ -47,7 +47,7 @@ public sealed class SmartEnumSchemaProcessorTests
                 .OrderBy(value => value, StringComparer.Ordinal)
                 .ToArray();
 
-            expectedValues.ShouldNotBeEmpty($"Expected SmartEnum values for {property.DeclaringType!.Name}.{property.Name}.");
+            expectedValues.ShouldNotBeEmpty($"Expected SmartEnum values for {property.DeclaringType.Name}.{property.Name}.");
 
             var actualValues = GetSchemaEnumValues(property, schemaProperty)
                 .OrderBy(value => value, StringComparer.Ordinal)
@@ -89,13 +89,14 @@ public sealed class SmartEnumSchemaProcessorTests
 
     private static IEnumerable<string> GetSchemaEnumValues(PropertyInfo property, JsonSchemaProperty schemaProperty)
     {
-        if (IsStringCollection(property.PropertyType))
+        if (!IsStringCollection(property.PropertyType))
         {
-            schemaProperty.Item.ShouldNotBeNull($"Array schema item should be present for {property.Name}.");
-            return schemaProperty.Item!.Enumeration.OfType<string>();
+            return schemaProperty.Enumeration.OfType<string>();
         }
 
-        return schemaProperty.Enumeration.OfType<string>();
+        schemaProperty.Item.ShouldNotBeNull($"Array schema item should be present for {property.Name}.");
+        return schemaProperty.Item.Enumeration.OfType<string>();
+
     }
 
     private static bool IsStringCollection(Type type)
@@ -129,13 +130,13 @@ public sealed class SmartEnumSchemaProcessorTests
 
         enumType.ShouldNotBeNull($"Could not resolve SmartEnum type '{smartEnumTypeName}'.");
 
-        var listProperty = enumType!.GetProperty("List", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+        var listProperty = enumType.GetProperty("List", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
         listProperty.ShouldNotBeNull($"SmartEnum type '{smartEnumTypeName}' should expose a static List property.");
 
-        var values = listProperty!.GetValue(null) as System.Collections.IEnumerable;
+        var values = listProperty.GetValue(null) as System.Collections.IEnumerable;
         values.ShouldNotBeNull($"SmartEnum type '{smartEnumTypeName}' returned null List value.");
 
-        return [.. values!
+        return [.. values
             .Cast<object>()
             .Select(value => value.GetType().GetProperty("Name", BindingFlags.Public | BindingFlags.Instance)?.GetValue(value) as string)
             .Where(name => !string.IsNullOrWhiteSpace(name))
@@ -166,7 +167,7 @@ public sealed class SmartEnumSchemaProcessorTests
         var expectedValues = new[] { "Premier", "Standard", "Title Sponsor" };
 
         // Act
-        Should.NotThrow(() => setEnumeration!.Invoke(null, [schema, expectedValues]));
+        Should.NotThrow(() => setEnumeration.Invoke(null, [schema, expectedValues]));
 
         // Assert — stale value was removed and exact set was applied
         schema.Enumeration.OfType<string>().ShouldBe(expectedValues);
@@ -184,9 +185,9 @@ public sealed class SmartEnumSchemaProcessorTests
         // Assert
         hasProperty.ShouldBeTrue();
         schemaProperty.ShouldNotBeNull();
-        schemaProperty!.Enumeration.ShouldBeEmpty("enum values should be on the array item schema, not the array schema itself");
+        schemaProperty.Enumeration.ShouldBeEmpty("enum values should be on the array item schema, not the array schema itself");
         schemaProperty.Item.ShouldNotBeNull();
-        schemaProperty.Item!.Enumeration.ShouldNotBeEmpty();
+        schemaProperty.Item.Enumeration.ShouldNotBeEmpty();
         schemaProperty.Item.Enumeration.OfType<string>().ShouldContain(SponsorTier.Premier.Name);
     }
 
@@ -214,7 +215,7 @@ public sealed class SmartEnumSchemaProcessorTests
         property.ShouldNotBeNull();
 
         // Act
-        var withoutInheritance = property!.GetCustomAttributes<OpenApiSmartEnumAttribute>(inherit: false).ToArray();
+        var withoutInheritance = property.GetCustomAttributes<OpenApiSmartEnumAttribute>(inherit: false).ToArray();
         var withInheritance = property.GetCustomAttributes<OpenApiSmartEnumAttribute>(inherit: true).ToArray();
 
         // Assert
@@ -236,7 +237,7 @@ public sealed class SmartEnumSchemaProcessorTests
         getJsonPropertyName.ShouldNotBeNull();
 
         // Act
-        var jsonPropertyName = getJsonPropertyName!.Invoke(null, [property!]) as string;
+        var jsonPropertyName = getJsonPropertyName.Invoke(null, [property]) as string;
 
         // Assert
         jsonPropertyName.ShouldBe("tiers");
@@ -275,7 +276,7 @@ public sealed class SmartEnumSchemaProcessorTests
         var expectedEnumValues = new[] { "A", "B" };
 
         // Act
-        Should.NotThrow(() => applyEnumValues!.Invoke(null, [schema, expectedEnumValues]));
+        Should.NotThrow(() => applyEnumValues.Invoke(null, [schema, expectedEnumValues]));
 
         // Assert
         schema.Enumeration.OfType<string>().ShouldBe(expectedEnumValues);

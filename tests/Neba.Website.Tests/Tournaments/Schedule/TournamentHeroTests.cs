@@ -37,7 +37,6 @@ public sealed class TournamentHeroTests : IDisposable
         var tournament = SeasonTournamentViewModelFactory.Create() with
         {
             RegistrationUrl = null,
-            RegistrationStatus = null,
         };
 
         // Act

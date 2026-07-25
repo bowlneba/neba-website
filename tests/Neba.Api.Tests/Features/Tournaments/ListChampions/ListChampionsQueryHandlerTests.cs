@@ -55,6 +55,7 @@ public sealed class ListChampionsQueryHandlerTests(AppDbContextFixture fixture)
         var tournament = TournamentFactory.Create(
             name: "NEBA Singles 2024",
             tournamentType: TournamentType.Singles,
+            startDate: new DateOnly(2024, 10, 4),
             endDate: new DateOnly(2024, 10, 5),
             seasonId: season.Id);
         await _dbContext.Tournaments.AddAsync(tournament, ct);

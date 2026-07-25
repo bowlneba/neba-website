@@ -163,7 +163,7 @@ public sealed class RateLimitingConfigurationTests : IAsyncLifetime
 
         // Assert
         response.Headers.TryGetValues("Retry-After", out var values).ShouldBeTrue();
-        values!.Single().ShouldNotBeNullOrWhiteSpace();
+        values.Single().ShouldNotBeNullOrWhiteSpace();
     }
 
     [Fact(DisplayName = "429 response body is ProblemDetails with status 429")]

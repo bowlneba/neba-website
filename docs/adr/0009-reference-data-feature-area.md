@@ -25,6 +25,22 @@ Static/rarely-changing lookup data (state and province lists, phone number types
 - **`Neba.Website.Server.ReferenceData.IReferenceDataService`** wraps each Refit call with an `IMemoryCache` layer, so a page visit doesn't cost a network round-trip even though the API's own FusionCache already makes that round-trip cheap server-side. This is the first client-side cache in the website project; it establishes the pattern other rarely-changing lookups should follow rather than each inventing its own caching.
 - **`CreateSponsor.razor`/`EditSponsor.razor`** inject `IReferenceDataService` and populate their state and phone-type dropdowns from the `Response` DTOs' `Code`/`Name` instead of a domain `SmartEnum`.
 
+## Scope: not every dropdown is reference data
+
+This ADR governs vocabulary that is either genuinely cross-cutting (shared by more than one feature domain) or that would otherwise force a `Domain → Contracts` dependency if left where it was. It does **not** cover every `SmartEnum`-backed dropdown in the app — most enums (`SponsorTier`, `SponsorCategory`, `TournamentType`, ...) are owned outright by a single feature and never cross a domain boundary the way `UsState` did.
+
+The test for which bucket a lookup belongs in:
+
+- **Used by more than one feature, or reachable only by crossing `Domain → Contracts`?** → `Neba.Api.ReferenceData`, per the Decision above.
+- **Owned by, and only ever consumed by, one feature?** → a `List{Thing}` slice living **inside that feature's own folder** (`Features/{Owner}/List{Thing}/`), not under `ReferenceData`. It uses the identical internal shape (`Query` + `QueryHandler` + `Endpoint` + `Summary` + a `{Thing}SummaryDto`, `ICachedQuery<T>`, `AllowAnonymous()`), and the underlying reason to add it is the same one motivating this ADR — a hand-copied UI dropdown drifting out of sync with the domain enum it's supposed to mirror — but the endpoint's *location* follows ownership, not "is this a lookup list."
+
+Two enums got two different treatments for exactly this reason, in the same feature (`Tournaments`, added when the Create Tournament flow was planned):
+
+- `OilPattern` moved to a **top-level** `Features/OilPatterns`-style route (`/oil-patterns`, its own `IOilPatternsApi`) even though its code still lives under `Features/Tournaments` — because it's genuinely shared reference/catalog data (a pattern created once gets reused across many tournaments and, eventually, likely other consumers), the same shape as `BowlingCenter`/`Season`.
+- `TournamentType` got a `ListTournamentTypes` slice that stayed **nested inside** `Features/Tournaments` (`/tournaments/types`, on the existing `ITournamentsApi`) — it's single-feature-owned vocabulary with no cross-feature reuse and no `Domain → Contracts` violation to fix, so routing it through `ReferenceData` would have been solving a boundary problem that doesn't exist here, just to reuse a caching pattern that's equally available in-feature.
+
+`SponsorTier`/`SponsorCategory` remain hardcoded lists in `Neba.Website.Server.Sponsors` (`SponsorCategoryOptions.cs`, inline `<option>`s) as of this writing — they have the same "two spots to update" problem `ListTournamentTypes` was built to avoid, but haven't been migrated. That's an existing shortcut to clean up opportunistically, not a pattern endorsed by this ADR; don't cite `SponsorCategoryOptions` as precedent for a new hardcoded list when a `List{Thing}` slice is the correct fix.
+
 ## Consequences
 
 ### Positive

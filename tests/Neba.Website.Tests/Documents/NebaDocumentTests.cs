@@ -492,11 +492,11 @@ public sealed class NebaDocumentTests : IDisposable
         var tocButton = cut.Find(".neba-document-toc-mobile-btn");
         var svg = tocButton.QuerySelector("svg");
         svg.ShouldNotBeNull();
-        svg!.GetAttribute("aria-hidden").ShouldBe("true");
+        svg.GetAttribute("aria-hidden").ShouldBe("true");
 
         var span = tocButton.QuerySelector("span");
         span.ShouldNotBeNull();
-        span!.TextContent.ShouldBe("Contents");
+        span.TextContent.ShouldBe("Contents");
     }
 
     [Fact(DisplayName = "Should render TOC sticky container")]

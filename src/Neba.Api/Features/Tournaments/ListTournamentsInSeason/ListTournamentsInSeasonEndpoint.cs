@@ -5,9 +5,12 @@ using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts;
 using Neba.Api.Contracts.Seasons.ListTournamentsInSeason;
+using Neba.Api.Contracts.Security;
 using Neba.Api.Features.Seasons;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Messaging;
+
+using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 
@@ -37,7 +40,12 @@ internal sealed class ListTournamentsInSeasonEndpoint(
 
     public override async Task HandleAsync(ListTournamentsInSeasonRequest req, CancellationToken ct)
     {
-        var query = new ListTournamentsInSeasonQuery { SeasonId = new SeasonId(req.SeasonId) };
+        var query = new ListTournamentsInSeasonQuery
+        {
+            SeasonId = new SeasonId(req.SeasonId),
+            CallerIsAuthenticated = User.Identity?.IsAuthenticated == true,
+            CallerHasTournamentManagementPermission = User.HasAnyPermission(PermissionCatalog.TournamentManagementPermissions)
+        };
         var result = await _queryHandler.HandleAsync(query, ct);
 
         var response = new CollectionResponse<SeasonTournamentResponse>
@@ -52,9 +60,12 @@ internal sealed class ListTournamentsInSeasonEndpoint(
                 EntryFee = t.EntryFee,
                 RegistrationUrl = t.RegistrationUrl,
                 AddedMoney = t.AddedMoney,
+                SponsorMoney = t.SponsorMoney,
+                NebaAddedMoney = t.NebaAddedMoney,
                 Reservations = t.Reservations,
                 PatternLengthCategory = t.PatternLengthCategory,
                 PatternRatioCategory = t.PatternRatioCategory,
+                OilPatternRevealDateTime = t.OilPatternRevealDateTime,
                 LogoUrl = t.LogoUrl,
                 Winners = [.. t.Winners.Select(w => w.ToDisplayName())],
                 BowlingCenter = t.BowlingCenter is null ? null : new TournamentBowlingCenterResponse
@@ -73,6 +84,10 @@ internal sealed class ListTournamentsInSeasonEndpoint(
                 {
                     Name = op.Name,
                     Length = op.Length,
+                    Volume = op.Volume,
+                    LeftRatio = op.LeftRatio,
+                    RightRatio = op.RightRatio,
+                    KegelId = op.KegelId,
                     Rounds = op.TournamentRounds,
                 })],
             })],

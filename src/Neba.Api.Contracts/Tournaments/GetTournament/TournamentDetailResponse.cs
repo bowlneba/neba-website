@@ -51,9 +51,19 @@ public sealed record TournamentDetailResponse
     public Uri? RegistrationUrl { get; init; }
 
     /// <summary>
-    /// Sponsor-added prize money in USD; null if none.
+    /// Total added money in USD (sponsor money plus NEBA added money); null if none.
     /// </summary>
     public decimal? AddedMoney { get; init; }
+
+    /// <summary>
+    /// Sponsor-contributed portion of added money in USD; null if none.
+    /// </summary>
+    public decimal? SponsorMoney { get; init; }
+
+    /// <summary>
+    /// Amount NEBA itself contributed to the prize fund in USD, independent of sponsors.
+    /// </summary>
+    public decimal NebaAddedMoney { get; init; }
 
     /// <summary>
     /// Current reservation count; null until tracking begins.
@@ -81,6 +91,30 @@ public sealed record TournamentDetailResponse
     public Uri? LogoUrl { get; init; }
 
     /// <summary>
+    /// Raw storage fields for the tournament logo, for use in editing; only populated when the
+    /// caller holds a tournament management permission.
+    /// </summary>
+    public string? LogoContainer { get; init; }
+
+    /// <summary>
+    /// Raw storage path for the tournament logo, for use in editing; only populated when the
+    /// caller holds a tournament management permission.
+    /// </summary>
+    public string? LogoPath { get; init; }
+
+    /// <summary>
+    /// MIME content type of the tournament logo, for use in editing; only populated when the
+    /// caller holds a tournament management permission.
+    /// </summary>
+    public string? LogoContentType { get; init; }
+
+    /// <summary>
+    /// Size, in bytes, of the tournament logo, for use in editing; only populated when the
+    /// caller holds a tournament management permission.
+    /// </summary>
+    public long? LogoSizeInBytes { get; init; }
+
+    /// <summary>
     /// Host bowling center; null until confirmed.
     /// </summary>
     public TournamentDetailBowlingCenterResponse? BowlingCenter { get; init; }
@@ -94,6 +128,12 @@ public sealed record TournamentDetailResponse
     /// Oil patterns used in this tournament, including which rounds each applies to.
     /// </summary>
     public IReadOnlyCollection<TournamentDetailOilPatternResponse> OilPatterns { get; init; } = [];
+
+    /// <summary>
+    /// Date/time at which full oil pattern details become public; null if there's no restriction
+    /// or the caller isn't authenticated.
+    /// </summary>
+    public DateTimeOffset? OilPatternRevealDateTime { get; init; }
 
     /// <summary>
     /// Display names of the winning bowler(s); empty for pending or upcoming events.

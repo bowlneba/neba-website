@@ -1,0 +1,39 @@
+@using System.ComponentModel.DataAnnotations
+@using System.Linq.Expressions
+@using System.Reflection
+@typeparam TValue
+
+<label for="@TargetId" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">
+    @ChildContent
+    @if (_isRequired)
+    {
+        <span class="form-label-required-tag">(required)</span>
+    }
+</label>
+
+@code {
+    /// <summary>
+    /// The id of the input this label describes (rendered as the label's `for` attribute).
+    /// </summary>
+    [Parameter, EditorRequired]
+    public string TargetId { get; set; } = default!;
+
+    /// <summary>
+    /// Expression identifying the bound model property, e.g. <c>() =&gt; _model.Name</c>. Used to
+    /// detect a <see cref="RequiredAttribute"/> so the "(required)" tag never drifts from the model.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public Expression<Func<TValue>> For { get; set; } = default!;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool _isRequired;
+
+    protected override void OnParametersSet()
+    {
+        var fieldIdentifier = FieldIdentifier.Create(For);
+        var property = fieldIdentifier.Model.GetType().GetProperty(fieldIdentifier.FieldName);
+        _isRequired = property?.GetCustomAttribute<RequiredAttribute>() is not null;
+    }
+}

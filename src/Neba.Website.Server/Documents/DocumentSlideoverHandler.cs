@@ -2,12 +2,14 @@ using Microsoft.AspNetCore.Components;
 
 using Neba.Api.Contracts.Documents;
 using Neba.Website.Server.Services;
+using Neba.Website.Server.Time;
 
 namespace Neba.Website.Server.Documents;
 
 internal sealed class DocumentSlideoverHandler(
     ApiExecutor apiExecutor,
-    IDocumentsApi documentsApi)
+    IDocumentsApi documentsApi,
+    IClientTimeZoneService clientTimeZoneService)
 {
     public MarkupString? Content { get; private set; }
     public string? Title { get; private set; }
@@ -48,7 +50,9 @@ internal sealed class DocumentSlideoverHandler(
         else
         {
             Content = new MarkupString(result.Value.Html);
-            LastUpdated = result.Value.LastUpdated;
+            LastUpdated = result.Value.LastUpdated is { } utc
+                ? await clientTimeZoneService.ToLocalAsync(utc)
+                : null;
         }
 
         stateHasChanged();

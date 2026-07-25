@@ -3,7 +3,6 @@
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Sponsors
 @using Neba.Website.Server.Services
-@using Neba.Website.Server.Sponsors
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject ApiExecutor ApiExecutor
@@ -99,6 +98,33 @@ else
                         <div class="neba-card sponsor-detail__about-card">
                             <p>@_model.AboutText</p>
                         </div>
+                    </section>
+                }
+
+                @if (_model?.HasTournamentsSponsored == true)
+                {
+                    <section class="sponsor-detail__tournaments">
+                        <div class="sponsor-detail__section-heading">
+                            <span class="sponsor-detail__step-num" aria-hidden="true">02</span>
+                            <h2>Tournaments Sponsored</h2>
+                        </div>
+                        <ul class="sponsor-detail__tournament-list">
+                            @foreach (var tournament in _model.TournamentsSponsored)
+                            {
+                                <li class="sponsor-detail__tournament-list__item">
+                                    <a href="/tournaments/@tournament.TournamentId" class="neba-link sponsor-detail__tournament-list__link">
+                                        @tournament.Name
+                                    </a>
+                                    @if (tournament.TitleSponsor)
+                                    {
+                                        <span class="sponsor-detail__badge sponsor-detail__badge--title-sponsor">Title Sponsor</span>
+                                    }
+                                    <span class="sponsor-detail__tournament-list__dates">
+                                        @FormatTournamentDateRange(tournament.StartDate, tournament.EndDate)
+                                    </span>
+                                </li>
+                            }
+                        </ul>
                     </section>
                 }
 
@@ -271,6 +297,11 @@ else
             ? $"({digits[..3]}) {digits[3..6]}-{digits[6..]}"
             : phoneNumber;
     }
+
+    private static string FormatTournamentDateRange(DateOnly startDate, DateOnly endDate) =>
+        startDate == endDate
+            ? startDate.ToString("MMM d, yyyy")
+            : startDate.ToString("MMM d") + " – " + endDate.ToString("MMM d, yyyy");
 
     protected override async Task OnInitializedAsync()
     {

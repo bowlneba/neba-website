@@ -44,7 +44,7 @@ public sealed partial class UlidTypedIdConverterTests
 
         // Assert
         result.ShouldBeOfType<TestId>();
-        ((TestId)result!).Value.ShouldBe(ulid);
+        ((TestId)result).Value.ShouldBe(ulid);
     }
 
     [Fact(DisplayName = "Should preserve value when converting to and from string")]

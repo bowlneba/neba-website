@@ -140,7 +140,7 @@ internal sealed class SmartEnumSchemaProcessor : ISchemaProcessor
         // Stryker disable all : see BuildEnumNamesByTypeName
         foreach (Assembly loaded in assembly
                      .GetReferencedAssemblies()
-                     .Where(reference => reference.Name?.StartsWith("Neba", StringComparison.Ordinal) == true && visited.Add(reference.FullName!))
+                     .Where(reference => reference.Name?.StartsWith("Neba", StringComparison.Ordinal) == true && visited.Add(reference.FullName))
                      .Select(reference => new { Success = TryLoadAssembly(reference, out Assembly? loaded), Loaded = loaded })
                      .Where(x => x.Success && x.Loaded is not null)
                      .Select(x => x.Loaded!))

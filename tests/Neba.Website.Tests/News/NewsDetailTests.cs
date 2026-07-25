@@ -14,6 +14,7 @@ using Neba.Website.Server.Clock;
 using Neba.Website.Server.News;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
+using Neba.Website.Server.Time;
 
 using Refit;
 using Refit.Testing;
@@ -26,13 +27,17 @@ public sealed class NewsDetailTests : IDisposable
 {
     private readonly BunitContext _ctx;
     private readonly Mock<INewsApi> _mockApi;
+    private readonly Mock<IClientTimeZoneService> _mockClientTimeZoneService;
     private readonly BunitAuthorizationContext _authContext;
     private readonly ToastService _toastService;
-    private readonly BunitJSModuleInterop _browserTimeModule;
 
     public NewsDetailTests()
     {
         _mockApi = new Mock<INewsApi>(MockBehavior.Strict);
+        _mockClientTimeZoneService = new Mock<IClientTimeZoneService>(MockBehavior.Strict);
+        _mockClientTimeZoneService
+            .Setup(s => s.ToLocalAsync(It.IsAny<DateTimeOffset>()))
+            .ReturnsAsync((DateTimeOffset utc) => utc);
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
         mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
@@ -40,13 +45,13 @@ public sealed class NewsDetailTests : IDisposable
 
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
-        _browserTimeModule = _ctx.JSInterop.SetupModule("./js/browser-time.js");
         _authContext = _ctx.AddAuthorization();
         _authContext.SetNotAuthorized();
 
         _toastService = new ToastService();
 
         _ctx.Services.AddSingleton(_mockApi.Object);
+        _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
     }
@@ -166,11 +171,11 @@ public sealed class NewsDetailTests : IDisposable
     [Fact(DisplayName = "Should format publish date using the viewer's local timezone offset")]
     public void Render_ShouldFormatPublishDate_UsingViewerLocalTimezoneOffset()
     {
-        // Arrange — Date.getTimezoneOffset() returns +240 for US Eastern (summer); the UTC instant
-        // just after midnight on May 15 falls on May 14 local, so the displayed date must shift back.
-        _browserTimeModule.Setup<int>("getTimezoneOffsetMinutes").SetResult(240);
-        var article = ArticleDetailResponseFactory.Create(
-            publishDateUtc: new DateTimeOffset(2026, 5, 15, 2, 0, 0, TimeSpan.Zero));
+        // Arrange — US Eastern is 4 hours behind UTC in summer; the UTC instant just after midnight
+        // on May 15 falls on May 14 local, so the displayed date must shift back.
+        var utc = new DateTimeOffset(2026, 5, 15, 2, 0, 0, TimeSpan.Zero);
+        _mockClientTimeZoneService.Setup(s => s.ToLocalAsync(utc)).ReturnsAsync(utc.AddHours(-4));
+        var article = ArticleDetailResponseFactory.Create(publishDateUtc: utc);
         SetupSuccessResponse(article);
 
         // Act

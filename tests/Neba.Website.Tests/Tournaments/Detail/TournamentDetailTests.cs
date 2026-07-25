@@ -1,17 +1,22 @@
 using Bunit;
+using Bunit.TestDoubles;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
+using Neba.Api.Contracts.Security;
+using Neba.Api.Contracts.Sponsors;
 using Neba.Api.Contracts.Tournaments;
 using Neba.Api.Contracts.Tournaments.GetTournament;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 using Neba.Website.Server.Clock;
+using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
+using Neba.Website.Server.Time;
 using Neba.Website.Server.Tournaments.Detail;
 
 using Refit;
@@ -25,10 +30,16 @@ public sealed class TournamentDetailTests : IDisposable
 {
     private readonly BunitContext _ctx;
     private readonly Mock<ITournamentsApi> _mockApi;
+    private readonly Mock<ISponsorsApi> _mockSponsorsApi;
+    private readonly Mock<IClientTimeZoneService> _mockClientTimeZoneService;
+    private readonly BunitAuthorizationContext _authContext;
+    private readonly ToastService _toastService;
 
     public TournamentDetailTests()
     {
         _mockApi = new Mock<ITournamentsApi>(MockBehavior.Strict);
+        _mockSponsorsApi = new Mock<ISponsorsApi>(MockBehavior.Strict);
+        _mockClientTimeZoneService = new Mock<IClientTimeZoneService>(MockBehavior.Strict);
 
         var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
         mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
@@ -37,11 +48,23 @@ public sealed class TournamentDetailTests : IDisposable
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
 
+        _authContext = _ctx.AddAuthorization();
+        _authContext.SetNotAuthorized();
+
+        _toastService = new ToastService();
+
         _ctx.Services.AddSingleton(_mockApi.Object);
+        _ctx.Services.AddSingleton(_mockSponsorsApi.Object);
+        _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
+        _ctx.Services.AddSingleton(_toastService);
     }
 
-    public void Dispose() => _ctx.Dispose();
+    public void Dispose()
+    {
+        _ctx.Dispose();
+        _toastService.Dispose();
+    }
 
     // ── Loading state ────────────────────────────────────────────────────────
 
@@ -397,6 +420,79 @@ public sealed class TournamentDetailTests : IDisposable
         cut.Markup.ShouldNotContain("Oil Patterns");
     }
 
+    [Fact(DisplayName = "Should render pending reveal note and full pattern detail when reveal date is set and full pattern info is present")]
+    public void Render_ShouldShowPendingRevealNoteAndFullPatternDetail_WhenRevealDateSetAndFullPatternInfoPresent()
+    {
+        // Arrange — shape the API returns to a caller holding the tournament management permission pre-reveal.
+        var revealUtc = DateTimeOffset.UtcNow.AddDays(7);
+        var revealLocal = revealUtc.ToOffset(TimeSpan.FromHours(-5));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            oilPatternRevealDateTime: revealUtc,
+            oilPatterns: [TournamentDetailOilPatternResponseFactory.Create()]));
+        _mockClientTimeZoneService.Setup(s => s.ToLocalAsync(revealUtc)).ReturnsAsync(revealLocal).Verifiable();
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldContain("Full details reveal to the public on");
+        cut.Markup.ShouldContain("mL · ratio");
+        _mockClientTimeZoneService.VerifyAll();
+    }
+
+    [Fact(DisplayName = "Should render only the category chip for an anonymous caller before the reveal date")]
+    public void Render_ShouldShowCategoryChipOnly_WhenAnonymousBeforeReveal()
+    {
+        // Arrange — anonymous, pre-reveal shape: no OilPatternRevealDateTime, no OilPatterns, categories present.
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            patternLengthCategory: "Medium",
+            patternRatioCategory: "Even",
+            oilPatterns: []));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldContain("Medium");
+        cut.Markup.ShouldContain("Even");
+        cut.FindAll(".td-pattern-card").ShouldBeEmpty();
+        cut.Markup.ShouldNotContain("td-reveal-note");
+    }
+
+    [Fact(DisplayName = "Should render the revealed note once the reveal date has passed")]
+    public void Render_ShouldShowRevealedNote_WhenRevealDateHasPassed()
+    {
+        // Arrange
+        var revealUtc = DateTimeOffset.UtcNow.AddDays(-1);
+        var revealLocal = revealUtc.ToOffset(TimeSpan.FromHours(-5));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            oilPatternRevealDateTime: revealUtc,
+            oilPatterns: [TournamentDetailOilPatternResponseFactory.Create()]));
+        _mockClientTimeZoneService.Setup(s => s.ToLocalAsync(revealUtc)).ReturnsAsync(revealLocal).Verifiable();
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldContain("Revealed to the public");
+        _mockClientTimeZoneService.VerifyAll();
+    }
+
+    [Fact(DisplayName = "Should not call the client time zone service when no reveal date is set")]
+    public void Render_ShouldNotCallClientTimeZoneService_WhenNoRevealDateIsSet()
+    {
+        // Arrange — Strict mock with no setup: an unexpected call fails the test.
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            oilPatternRevealDateTime: null,
+            oilPatterns: [TournamentDetailOilPatternResponseFactory.Create()]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldNotContain("td-reveal-note");
+    }
+
     // ── Sponsors ─────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should render sponsors section linking to sponsor detail pages")]
@@ -532,6 +628,41 @@ public sealed class TournamentDetailTests : IDisposable
         cut.FindAll(".tournament-detail__no-results").ShouldBeEmpty();
     }
 
+    // ── Manage Sponsors panel ────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not render Manage Sponsors panel when caller lacks permission")]
+    public void Render_ShouldNotRenderManageSponsorsPanel_WhenNotAuthorized()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create());
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldNotContain("Manage Sponsors");
+    }
+
+    [Fact(DisplayName = "Should render Manage Sponsors panel when caller has permission")]
+    public void Render_ShouldRenderManageSponsorsPanel_WhenAuthorized()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ManageTournamentSponsors.PolicyName);
+
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            sponsors: [TournamentDetailSponsorResponseFactory.Create(
+                name: "Acme Corp", titleSponsor: true, sponsorshipAmount: 2500m)]));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldContain("Manage Sponsors");
+        cut.Markup.ShouldContain("Title Sponsor");
+        cut.Markup.ShouldContain("$2,500");
+    }
+
     // ── Footer ───────────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should render back link to tournament schedule")]
@@ -545,6 +676,134 @@ public sealed class TournamentDetailTests : IDisposable
 
         // Assert
         cut.Find(".tournament-detail__back-link").GetAttribute("href").ShouldBe("/tournaments");
+    }
+
+    // ── Delete tournament ────────────────────────────────────────────────────
+
+    [Fact(DisplayName = "Should not show delete button when user lacks DeleteTournament permission")]
+    public void Render_ShouldNotShowDeleteButton_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create());
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Markup.ShouldNotContain("td-hero__delete-btn");
+    }
+
+    [Fact(DisplayName = "Should show delete button when user has DeleteTournament permission")]
+    public void Render_ShouldShowDeleteButton_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteTournament.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create());
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Find("button.td-hero__delete-btn").ShouldNotBeNull();
+    }
+
+    [Fact(DisplayName = "Should open confirm dialog with tournament name when delete button is clicked")]
+    public void Click_ShouldOpenConfirmDialog_WhenDeleteButtonIsClicked()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteTournament.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(name: "NEBA Winter Championship"));
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Act
+        cut.Find("button.td-hero__delete-btn").Click();
+
+        // Assert
+        cut.Markup.ShouldContain("Delete tournament?");
+        cut.Markup.ShouldContain("NEBA Winter Championship");
+    }
+
+    [Fact(DisplayName = "Should close confirm dialog and stay on page when delete is cancelled")]
+    public void CancelDelete_ShouldCloseDialogAndStayOnPage_WhenCancelled()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteTournament.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create());
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__delete-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-cancel").Click();
+
+        // Assert
+        cut.Markup.ShouldNotContain("Delete tournament?");
+        var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
+        navigationManager.Uri.ShouldNotEndWith("/tournaments");
+    }
+
+    [Fact(DisplayName = "Should navigate to /tournaments when delete succeeds")]
+    public void ConfirmDelete_ShouldNavigateToTournaments_WhenDeleteSucceeds()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteTournament.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId));
+
+        using var deleteResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = System.Net.HttpStatusCode.NoContent
+        };
+        _mockApi
+            .Setup(x => x.DeleteTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(deleteResponse);
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__delete-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
+        navigationManager.Uri.ShouldEndWith("/tournaments");
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Success);
+    }
+
+    [Fact(DisplayName = "Should show error toast and stay on the page when delete is blocked by historical records")]
+    public void ConfirmDelete_ShouldShowErrorToastAndStayOnPage_WhenDeleteFails()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteTournament.PolicyName);
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(id: TournamentDetailResponseFactory.ValidId, name: "NEBA Winter Championship"));
+
+        using var deleteResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.Conflict
+        };
+        _mockApi
+            .Setup(x => x.DeleteTournamentAsync(TournamentDetailResponseFactory.ValidId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(deleteResponse);
+
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+        cut.Find("button.td-hero__delete-btn").Click();
+
+        // Act
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Assert
+        cut.Markup.ShouldNotContain("Delete tournament?");
+        var navigationManager = _ctx.Services.GetRequiredService<NavigationManager>();
+        navigationManager.Uri.ShouldNotEndWith("/tournaments");
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Error);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

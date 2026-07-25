@@ -4,22 +4,31 @@ namespace Neba.TestFactory.Tournaments;
 
 public static class TournamentDetailSponsorViewModelFactory
 {
+    public const string ValidSponsorId = "01000000000000000000000001";
     public const string ValidName = "Acme Corp";
     public const string ValidSlug = "acme-corp";
+    public const bool ValidTitleSponsor = false;
+    public const decimal ValidSponsorshipAmount = 500m;
 
     public static TournamentDetailSponsorViewModel Create(
+        string? sponsorId = null,
         string? name = null,
         string? slug = null,
         Uri? logoUrl = null,
         Uri? websiteUrl = null,
-        string? tagPhrase = null)
+        string? tagPhrase = null,
+        bool? titleSponsor = null,
+        decimal? sponsorshipAmount = null)
         => new()
         {
+            SponsorId = sponsorId ?? ValidSponsorId,
             Name = name ?? ValidName,
             Slug = slug ?? ValidSlug,
             LogoUrl = logoUrl,
             WebsiteUrl = websiteUrl,
             TagPhrase = tagPhrase,
+            TitleSponsor = titleSponsor ?? ValidTitleSponsor,
+            SponsorshipAmount = sponsorshipAmount ?? ValidSponsorshipAmount,
         };
 
     public static IReadOnlyCollection<TournamentDetailSponsorViewModel> Bogus(int count, int? seed = null)
@@ -27,11 +36,14 @@ public static class TournamentDetailSponsorViewModelFactory
         var faker = new Faker<TournamentDetailSponsorViewModel>()
             .CustomInstantiator(f => new TournamentDetailSponsorViewModel
             {
+                SponsorId = Ulid.BogusString(f),
                 Name = f.Company.CompanyName(),
                 Slug = f.Lorem.Slug(),
                 LogoUrl = f.Random.Bool() ? new Uri(f.Internet.Avatar()) : null,
                 WebsiteUrl = f.Random.Bool() ? new Uri(f.Internet.Url()) : null,
                 TagPhrase = f.Random.Bool() ? f.Company.CatchPhrase() : null,
+                TitleSponsor = f.Random.Bool(),
+                SponsorshipAmount = f.Random.Decimal(100, 5000),
             });
 
         if (seed.HasValue)

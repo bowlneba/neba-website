@@ -127,4 +127,9 @@ public sealed record SponsorDetailDto
     /// The sponsor's internal contact person. Only populated for callers with sponsor-management permission.
     /// </summary>
     public SponsorContactDto? Contact { get; init; }
+
+    /// <summary>
+    /// Tournaments sponsored by this sponsor, most recent first.
+    /// </summary>
+    public IReadOnlyCollection<SponsorDetailTournamentDto> TournamentsSponsored { get; init; } = [];
 }

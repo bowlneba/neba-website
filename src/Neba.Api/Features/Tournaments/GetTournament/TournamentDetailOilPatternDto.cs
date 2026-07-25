@@ -1,3 +1,5 @@
+using Neba.Api.Features.Tournaments.Domain;
+
 namespace Neba.Api.Features.Tournaments.GetTournament;
 
 /// <summary>
@@ -5,6 +7,11 @@ namespace Neba.Api.Features.Tournaments.GetTournament;
 /// </summary>
 public sealed record TournamentDetailOilPatternDto
 {
+    /// <summary>
+    /// The unique identifier for the oil pattern.
+    /// </summary>
+    public required OilPatternId OilPatternId { get; init; }
+
     /// <summary>
     /// Gets the name associated with the current instance.
     /// </summary>
@@ -14,6 +21,21 @@ public sealed record TournamentDetailOilPatternDto
     /// Gets the length value
     /// </summary>
     public required int Length { get; init; }
+
+    /// <summary>
+    /// The oil volume applied, in milliliters.
+    /// </summary>
+    public required decimal Volume { get; init; }
+
+    /// <summary>
+    /// The forward (head) to reverse (tail) oil ratio on the pattern's left side.
+    /// </summary>
+    public required decimal LeftRatio { get; init; }
+
+    /// <summary>
+    /// The forward (head) to reverse (tail) oil ratio on the pattern's right side.
+    /// </summary>
+    public required decimal RightRatio { get; init; }
 
     /// <summary>
     /// Gets the Kegel pattern ID if this pattern is associated with a Kegel pattern in the Kegel API; null if there is no association. This allows clients to link to the corresponding pattern details in the Kegel system when available, while still supporting patterns that are not in Kegel. Note that not all patterns will have a Kegel association, as some tournaments may use custom or proprietary patterns that are not listed in the Kegel database.

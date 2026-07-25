@@ -26,6 +26,7 @@ using Neba.Website.Server.Components;
 using Neba.Website.Server.News;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
+using Neba.Website.Server.Time;
 using Neba.Website.Server.Tournaments;
 using Neba.Website.Server.Tournaments.Schedule;
 
@@ -42,6 +43,7 @@ public sealed class CreateArticleTests : IDisposable
     private readonly Mock<INewsApi> _mockNewsApi;
     private readonly Mock<ITournamentApiService> _mockTournamentApiService;
     private readonly Mock<ITournamentsApi> _mockTournamentsApi;
+    private readonly Mock<IClientTimeZoneService> _mockClientTimeZoneService;
     private readonly BunitAuthorizationContext _authContext;
     private readonly ToastService _toastService;
 
@@ -50,6 +52,10 @@ public sealed class CreateArticleTests : IDisposable
         _mockNewsApi = new Mock<INewsApi>(MockBehavior.Strict);
         _mockTournamentApiService = new Mock<ITournamentApiService>(MockBehavior.Strict);
         _mockTournamentsApi = new Mock<ITournamentsApi>(MockBehavior.Strict);
+        _mockClientTimeZoneService = new Mock<IClientTimeZoneService>(MockBehavior.Strict);
+        _mockClientTimeZoneService
+            .Setup(s => s.ToUtcAsync(It.IsAny<DateTime>()))
+            .ReturnsAsync((DateTime local) => new DateTimeOffset(DateTime.SpecifyKind(local, DateTimeKind.Utc)));
 
         using var tournamentResponse = new StubApiResponse<TournamentDetailResponse>
         {
@@ -67,7 +73,6 @@ public sealed class CreateArticleTests : IDisposable
 
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
-        _ctx.JSInterop.SetupModule("./js/browser-time.js");
         _ctx.JSInterop.SetupModule("./Components/FileUpload.razor.js")
             .Setup<string?[]>("getPreviewUrls", _ => true).SetResult([]);
         _authContext = _ctx.AddAuthorization();
@@ -79,6 +84,7 @@ public sealed class CreateArticleTests : IDisposable
         _ctx.Services.AddSingleton(_mockNewsApi.Object);
         _ctx.Services.AddSingleton(_mockTournamentApiService.Object);
         _ctx.Services.AddSingleton(_mockTournamentsApi.Object);
+        _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
     }

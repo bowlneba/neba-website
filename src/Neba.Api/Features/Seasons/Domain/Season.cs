@@ -49,6 +49,40 @@ public sealed class Season
     internal IReadOnlyCollection<Tournament> Tournaments
         => _tournaments.AsReadOnly();
 
+    /// <summary>
+    /// Creates a new season with the specified description and date range.
+    /// </summary>
+    /// <param name="description">
+    /// Human-readable label for the season (e.g., "2027 Season").
+    /// </param>
+    /// <param name="startDate">
+    /// The first date of the season. Inclusive.
+    /// </param>
+    /// <param name="endDate">
+    /// The last date of the season. Inclusive.
+    /// </param>
+    public static ErrorOr<Season> Create(string description, DateOnly startDate, DateOnly endDate)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return SeasonErrors.DescriptionRequired;
+        }
+
+        if (startDate > endDate)
+        {
+            return SeasonErrors.EndDateBeforeStartDate(startDate, endDate);
+        }
+
+        return new Season
+        {
+            Id = SeasonId.New(),
+            Description = description,
+            StartDate = startDate,
+            EndDate = endDate,
+            Complete = false
+        };
+    }
+
     private readonly List<BowlerOfTheYearAward> _bowlerOfTheYearAwards = [];
 
     /// <summary>

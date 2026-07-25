@@ -43,8 +43,12 @@ internal sealed class GetTournamentSummary : Summary<GetTournamentEndpoint>
                 [
                     new TournamentDetailOilPatternResponse
                     {
+                        OilPatternId = "01ARZ3NDEKTSV4RRFFQ69G5FAV",
                         Name = "Kegel Broadway",
                         Length = 40,
+                        Volume = 22.5m,
+                        LeftRatio = 4.0m,
+                        RightRatio = 6.0m,
                         Rounds = ["Qualifying", "Finals"],
                     },
                 ],

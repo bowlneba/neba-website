@@ -9,6 +9,7 @@ using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Documents;
 using Neba.Website.Server.Services;
+using Neba.Website.Server.Time;
 using Neba.Website.Tests.TestSupport;
 
 using Refit;
@@ -22,10 +23,12 @@ public sealed class TournamentRulesTests : IDisposable
 {
     private readonly BunitContext _ctx = new();
     private readonly Mock<IDocumentsApi> _mockDocumentsApi;
+    private readonly Mock<IClientTimeZoneService> _mockClientTimeZoneService;
 
     public TournamentRulesTests()
     {
         _mockDocumentsApi = new Mock<IDocumentsApi>(MockBehavior.Strict);
+        _mockClientTimeZoneService = new Mock<IClientTimeZoneService>(MockBehavior.Strict);
 
         _ctx.SetupNebaDocumentModule();
 
@@ -36,6 +39,7 @@ public sealed class TournamentRulesTests : IDisposable
         var apiExecutor = new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance);
 
         _ctx.Services.AddSingleton(_mockDocumentsApi.Object);
+        _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
         _ctx.Services.AddSingleton(apiExecutor);
     }
 

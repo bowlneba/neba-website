@@ -8,10 +8,8 @@
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Tournaments
 @using Neba.Api.Contracts.Uploads
-@using Neba.Website.Server.Notifications
 @using Neba.Website.Server.Services
-@using Neba.Website.Server.Tournaments
-@using Neba.Website.Server.Tournaments.Schedule
+@using Neba.Website.Server.Time
 @using Refit
 @implements IAsyncDisposable
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
@@ -22,7 +20,7 @@
 @inject ITournamentsApi TournamentsApi
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
-@inject IJSRuntime JsRuntime
+@inject IClientTimeZoneService ClientTimeZoneService
 
 <PageTitle>@(_article is not null ? "Edit " + _article.Title + " - BowlNEBA" : "Edit Article - BowlNEBA")</PageTitle>
 
@@ -72,7 +70,7 @@
                         <div class="neba-space-y-4">
 
                             <div>
-                                <label for="title" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Title</label>
+                                <FormLabel TargetId="title" For="@(() => _model.Title)">Title</FormLabel>
                                 <InputText id="title" @bind-Value="_model.Title" class="neba-input" placeholder="Article title" />
                                 <ValidationMessage For="@(() => _model.Title)" class="block text-sm text-red-600 mt-1" />
                             </div>
@@ -86,7 +84,7 @@
                             </div>
 
                             <div>
-                                <label for="content" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Content</label>
+                                <FormLabel TargetId="content" For="@(() => _model.Content)">Content</FormLabel>
                                 <RichTextEditor Value="@_model.Content" ValueChanged="HandleContentChanged" Placeholder="Write the article content…" OnImageSelected="HandleInlineImageSelectedAsync" />
                                 <ValidationMessage For="@(() => _model.Content)" class="block text-sm text-red-600 mt-1" />
                             </div>
@@ -183,7 +181,7 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label for="publication-status" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Status</label>
+                                    <FormLabel TargetId="publication-status" For="@(() => _model.PublicationStatus)">Status</FormLabel>
                                     <InputSelect id="publication-status" @bind-Value="_model.PublicationStatus" class="neba-select">
                                         <option value="Draft">Draft</option>
                                         <option value="Published">Published</option>
@@ -192,7 +190,7 @@
                                 </div>
 
                                 <div>
-                                    <label for="publish-date" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Publish Date</label>
+                                    <FormLabel TargetId="publish-date" For="@(() => _model.PublishDateLocal)">Publish Date</FormLabel>
                                     <InputDate id="publish-date" Type="InputDateType.DateTimeLocal" @bind-Value="_model.PublishDateLocal" class="neba-input" />
                                     <ValidationMessage For="@(() => _model.PublishDateLocal)" class="block text-sm text-red-600 mt-1" />
                                 </div>
@@ -242,7 +240,6 @@
     private readonly EditArticleFormModel _model = new();
     private readonly EditContext _editContext;
 
-    private IJSObjectReference? _jsModule;
     private bool _isLoading = true;
     private bool _notFound;
     private bool _isSubmitting;
@@ -251,7 +248,6 @@
     private string? _errorMessage;
     private ArticleDetailResponse? _article;
     private string _articleId = string.Empty;
-    private DateTimeOffset _publishDateUtc;
 
     public EditArticle()
     {
@@ -298,12 +294,11 @@
 
         _article = result.Value;
         _articleId = _article.ArticleId;
-        _publishDateUtc = _article.PublishDateUtc;
 
         _model.Title = _article.Title;
         _model.Content = _article.Content;
         _model.PublicationStatus = _article.PublicationStatus;
-        _model.PublishDateLocal = _article.PublishDateUtc.UtcDateTime;
+        _model.PublishDateLocal = (await ClientTimeZoneService.ToLocalAsync(_article.PublishDateUtc)).DateTime;
         _model.TournamentId = _article.TournamentId;
 
         if (_article.HeaderImageContainer is not null && _article.HeaderImagePath is not null)
@@ -406,28 +401,12 @@
 
     private void HandleFieldChanged(object? sender, FieldChangedEventArgs e) => MarkDirty();
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
-                "import", "./js/browser-time.js");
-
-            if (_article is not null)
-            {
-                var timezoneOffsetMinutes = await _jsModule.InvokeAsync<int>("getTimezoneOffsetMinutes");
-                _model.PublishDateLocal = _publishDateUtc.ToOffset(TimeSpan.FromMinutes(-timezoneOffsetMinutes)).DateTime;
-                StateHasChanged();
-            }
-        }
-    }
-
     private async Task HandleSaveAsync()
     {
         _isSubmitting = true;
         _errorMessage = null;
 
-        var publishDate = await ToLocalDateTimeOffsetAsync(_model.PublishDateLocal);
+        var publishDate = await ClientTimeZoneService.ToUtcAsync(_model.PublishDateLocal);
 
         var request = new EditArticleRequest
         {
@@ -621,41 +600,10 @@
         public Uri? Url { get; init; }
     }
 
-    /// <summary>
-    /// Attaches the browser's real UTC offset to a wall-clock value from the
-    /// &lt;input type="datetime-local"&gt; element (which carries no timezone info on its own), producing
-    /// a self-describing <see cref="DateTimeOffset"/> the API can convert to UTC itself.
-    /// <c>Date.getTimezoneOffset()</c> returns minutes to ADD to local time to reach UTC (e.g. +300 for
-    /// US Eastern), i.e. the negation of the actual UTC offset.
-    /// </summary>
-    private async Task<DateTimeOffset> ToLocalDateTimeOffsetAsync(DateTime localValue)
-    {
-        var unspecifiedLocalValue = DateTime.SpecifyKind(localValue, DateTimeKind.Unspecified);
-
-        if (_jsModule is null)
-        {
-            return new DateTimeOffset(unspecifiedLocalValue, TimeSpan.Zero);
-        }
-
-        var timezoneOffsetMinutes = await _jsModule.InvokeAsync<int>("getTimezoneOffsetMinutes");
-        return new DateTimeOffset(unspecifiedLocalValue, TimeSpan.FromMinutes(-timezoneOffsetMinutes));
-    }
-
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _editContext.OnFieldChanged -= HandleFieldChanged;
-
-        if (_jsModule is not null)
-        {
-            try
-            {
-                await _jsModule.DisposeAsync();
-            }
-            catch (JSDisconnectedException)
-            {
-                // Circuit already gone — nothing to clean up.
-            }
-        }
+        return ValueTask.CompletedTask;
     }
 
     private sealed class EditArticleFormModel

@@ -43,11 +43,6 @@ public sealed record SeasonTournamentViewModel
     public decimal? EntryFee { get; init; }
 
     /// <summary>
-    /// Current registration state; null means registration has not opened yet.
-    /// </summary>
-    public RegistrationStatus? RegistrationStatus { get; init; }
-
-    /// <summary>
     /// External URL for online registration.
     /// </summary>
     public Uri? RegistrationUrl { get; init; }
@@ -75,9 +70,19 @@ public sealed record SeasonTournamentViewModel
     public Uri? TournamentLogoUrl { get; init; }
 
     /// <summary>
-    /// Total prize money added by the sponsor.
+    /// Total added money in USD (sponsor money plus NEBA added money).
     /// </summary>
     public decimal? AddedMoney { get; init; }
+
+    /// <summary>
+    /// Sponsor-contributed portion of added money in USD; null if none.
+    /// </summary>
+    public decimal? SponsorMoney { get; init; }
+
+    /// <summary>
+    /// Amount NEBA itself contributed to the prize fund in USD, independent of sponsors.
+    /// </summary>
+    public decimal NebaAddedMoney { get; init; }
 
     /// <summary>
     /// Number of entries received so far.
@@ -126,6 +131,12 @@ public sealed record SeasonTournamentViewModel
     public bool HasAddedMoney => AddedMoney is > 0;
 
     /// <summary>
+    /// True when added money comes from more than one source (sponsors and NEBA), so a
+    /// sponsor money / NEBA added money breakdown is worth showing beneath the total.
+    /// </summary>
+    public bool HasMultipleMoneySources => SponsorMoney is > 0 && NebaAddedMoney > 0;
+
+    /// <summary>
     /// True when both entry count and cap are known.
     /// </summary>
     public bool HasCapacityData => Entries.HasValue && MaxEntries.HasValue;
@@ -149,6 +160,12 @@ public sealed record SeasonTournamentViewModel
     /// True when a registration URL is available.
     /// </summary>
     public bool CanRegister => RegistrationUrl is not null;
+
+    /// <summary>
+    /// Current registration state; null means registration has not opened yet.
+    /// </summary>
+    public RegistrationStatus? RegistrationStatus =>
+        CanRegister ? Neba.Website.Server.Tournaments.Schedule.RegistrationStatus.Open : null;
 
     /// <summary>
     /// True when the event end date is before today.
@@ -227,4 +244,20 @@ public sealed record SeasonTournamentViewModel
                 : PatternLengthCategory;
         }
     }
+
+    /// <summary>
+    /// Logo to display: the tournament's own logo when set, otherwise a format-specific
+    /// default (e.g. a Doubles tournament falls back to the Doubles artwork, not the bare NEBA logo).
+    /// </summary>
+    public string DisplayLogoSrc => TournamentLogoUrl?.ToString() ?? DefaultLogoSrcFor(TournamentType);
+
+    private static string DefaultLogoSrcFor(string tournamentType) => tournamentType switch
+    {
+        "Doubles" => "/images/neba-doubles.jpg",
+        "Over/Under 50 Doubles" or "Over/Under 40 Doubles" => "/images/neba-overunder.jpg",
+        "Trios" => "/images/neba-trios.jpg",
+        "Baker" => "/images/neba-team.jpg",
+        "Tournament of Champions" or "Invitational" or "Masters" => "/images/neba-major.jpg",
+        _ => "/images/neba-singles.jpg",
+    };
 }

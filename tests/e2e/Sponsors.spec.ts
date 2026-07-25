@@ -98,6 +98,23 @@ test.describe('Sponsor detail page', () => {
     await page.locator('.sponsor-detail__back-link').click();
     await expect(page).toHaveURL('/sponsors');
   });
+
+  test('renders the tournaments sponsored section with a link to the tournament', async ({ page }) => {
+    const section = page.locator('.sponsor-detail__tournaments');
+    await expect(section).toContainText('Tournaments Sponsored');
+    const link = section.locator('.sponsor-detail__tournament-list__link');
+    await expect(link).toContainText('NEBA Spring Classic');
+    await expect(link).toHaveAttribute('href', '/tournaments/01JX0000000000000000000010');
+  });
+
+  test('renders a Title Sponsor badge for a tournament where the sponsor is the title sponsor', async ({ page }) => {
+    await expect(page.locator('.sponsor-detail__badge--title-sponsor')).toContainText('Title Sponsor');
+  });
+
+  test('clicking a sponsored tournament navigates to the tournament detail page', async ({ page }) => {
+    await page.locator('.sponsor-detail__tournament-list__link').click();
+    await expect(page).toHaveURL('/tournaments/01JX0000000000000000000010');
+  });
 });
 
 test.describe('Sponsor not found', () => {

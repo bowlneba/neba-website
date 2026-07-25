@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
-using System.Globalization;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
@@ -397,7 +396,7 @@ public sealed class ApiExecutorTests
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe($"{apiName}.{operationName}.HttpError");
-        result.FirstError.Description.ShouldContain(statusCode.ToString(CultureInfo.InvariantCulture));
+        result.FirstError.Description.ShouldBe("An unexpected error occurred. Please try again.");
     }
 
     [Fact(DisplayName = "Should return NotFound error for 404 response")]
@@ -429,6 +428,86 @@ public sealed class ApiExecutorTests
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe($"{apiName}.{operationName}.NotFound");
         result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.NotFound);
+    }
+
+    [Fact(DisplayName = "Should surface the FastEndpoints error body message for a 409 conflict response")]
+    public async Task ExecuteAsync_ShouldSurfaceConflictDetail_For409Response()
+    {
+        // Arrange
+        const string apiName = "TestApi";
+        const string operationName = "GetData";
+        const long startTimestamp = 1000;
+        const string expectedMessage = "A title sponsor has already been added to this tournament.";
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        using var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://api.example.com/data");
+        using var responseMessage = new HttpResponseMessage(System.Net.HttpStatusCode.Conflict)
+        {
+            Content = new StringContent(
+                "{\"status\":409,\"title\":\"Conflict\",\"errors\":[{\"name\":\"generalErrors\",\"reason\":\"" + expectedMessage + "\"}]}")
+        };
+        var apiException = await ApiException.Create(requestMessage, HttpMethod.Post, responseMessage, new RefitSettings());
+
+        var apiResponseMock = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.Conflict,
+            Error = apiException,
+            Content = (string?)null
+        };
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(TimeSpan.FromMilliseconds(50));
+
+        // Act
+        var result = await _executor.ExecuteAsync(
+            apiName, operationName,
+            _ => Task.FromResult<IApiResponse<string>>(apiResponseMock),
+            cancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.Conflict);
+        result.FirstError.Description.ShouldBe(expectedMessage);
+    }
+
+    [Fact(DisplayName = "Should surface the FastEndpoints error body message for a 422 validation response")]
+    public async Task ExecuteAsync_ShouldSurfaceValidationDetail_For422Response()
+    {
+        // Arrange
+        const string apiName = "TestApi";
+        const string operationName = "GetData";
+        const long startTimestamp = 1000;
+        const string expectedMessage = "Sponsorship amount must be greater than zero.";
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        using var requestMessage = new HttpRequestMessage(HttpMethod.Post, "https://api.example.com/data");
+        using var responseMessage = new HttpResponseMessage(System.Net.HttpStatusCode.UnprocessableEntity);
+        responseMessage.Content = new StringContent(
+            "{\"status\":422,\"title\":\"Bad Request\",\"errors\":[{\"name\":\"sponsorshipAmount\",\"reason\":\"" + expectedMessage + "\"}]}");
+        var apiException = await ApiException.Create(requestMessage, HttpMethod.Post, responseMessage, new RefitSettings());
+
+        var apiResponseMock = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.UnprocessableEntity,
+            Error = apiException,
+            Content = (string?)null
+        };
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(TimeSpan.FromMilliseconds(50));
+
+        // Act
+        var result = await _executor.ExecuteAsync(
+            apiName, operationName,
+            _ => Task.FromResult<IApiResponse<string>>(apiResponseMock),
+            cancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.Validation);
+        result.FirstError.Description.ShouldBe(expectedMessage);
     }
 
     [Fact(DisplayName = "Should record stopwatch timestamp at start")]

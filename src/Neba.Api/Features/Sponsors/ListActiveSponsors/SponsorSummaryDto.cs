@@ -1,3 +1,5 @@
+using Neba.Api.Features.Sponsors.Domain;
+
 namespace Neba.Api.Features.Sponsors.ListActiveSponsors;
 
 /// <summary>
@@ -5,6 +7,11 @@ namespace Neba.Api.Features.Sponsors.ListActiveSponsors;
 /// </summary>
 public sealed record SponsorSummaryDto
 {
+    /// <summary>
+    /// Unique identifier of the sponsor.
+    /// </summary>
+    public required SponsorId SponsorId { get; init; }
+
     /// <summary>
     /// Display name of the sponsor.
     /// </summary>
