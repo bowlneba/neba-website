@@ -124,7 +124,7 @@ internal static class TournamentErrors
             {
                 { "SponsorId", sponsorId.ToString() }
             });
-    
+
     public static Error HasHistoricalRecords(TournamentId id)
         => Error.Conflict(
             code: "Tournament.HasHistoricalRecords",
