@@ -47,7 +47,12 @@ public sealed class SecurityRoleSeederTests
 
         if (roleUnderTest != Roles.Webmaster)
         {
-            SetupRoleAlreadySynced(mock, Roles.Webmaster, [Permissions.CreateArticle, Permissions.EditArticle, Permissions.DeleteArticle, Permissions.CreateSponsor, Permissions.EditSponsor, Permissions.CreateTournament, Permissions.EditTournament, Permissions.ManageTournamentSponsors, Permissions.DeleteTournament]);
+            SetupRoleAlreadySynced(mock, Roles.Webmaster,
+            [
+                Permissions.CreateUser,
+                Permissions.CreateArticle, Permissions.EditArticle, Permissions.DeleteArticle,
+                Permissions.CreateSponsor, Permissions.EditSponsor,
+                Permissions.CreateTournament, Permissions.EditTournament, Permissions.ManageTournamentSponsors, Permissions.DeleteTournament]);
         }
 
         if (roleUnderTest != Roles.Manager)

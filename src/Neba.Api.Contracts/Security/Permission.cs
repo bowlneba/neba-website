@@ -18,6 +18,15 @@ public sealed class Permissions
     /// </summary>
     public const string ClaimType = "permission";
 
+    #region System
+
+    /// <summary>
+    /// Permission to create a new user in the system.
+    /// </summary>
+    public static readonly Permissions CreateUser = new("System.CreateUser", "Create User");
+
+    #endregion
+
     #region News
 
     /// <summary>

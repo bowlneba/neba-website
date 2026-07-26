@@ -34,4 +34,17 @@ public static class Roles
     /// Member role with access to standard user features.
     /// </summary>
     public const string Member = nameof(Member);
+
+    /// <summary>
+    /// All roles defined in the system.
+    /// </summary>
+    internal static readonly IReadOnlyCollection<string> All =
+    [
+        Admin,
+        Webmaster,
+        Manager,
+        TournamentDirector,
+        Journalist,
+        Member
+    ];
 }
