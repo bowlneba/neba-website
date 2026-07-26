@@ -46,7 +46,7 @@ internal sealed class CreateUserEndpoint(Messaging.ICommandHandler<CreateUserCom
             Roles = req.User.Roles,
             UsbcId = req.User.UsbcId,
             PhoneNumber = req.User.PhoneNumber,
-            Claims = req.User.Claims.Select(c => (c.Type, c.Value)).ToList()
+            Claims = [.. req.User.Claims.Select(c => (c.Type, c.Value))]
         };
 
         var result = await _commandHandler.HandleAsync(command, ct);
