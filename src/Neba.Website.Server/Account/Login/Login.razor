@@ -21,6 +21,13 @@
                 <h1 class="text-xl font-bold text-[var(--neba-gray-900)] font-display">User Login</h1>
             </div>
 
+            @if (PasswordSet == true)
+            {
+                <div class="mb-4">
+                    <NebaAlert Severity="NotifySeverity.Success" Message="Your password has been set — you can now log in." Dismissible="false" />
+                </div>
+            }
+
             @if (_error is not null)
             {
                 <div class="mb-4">
@@ -64,6 +71,9 @@
 
     [SupplyParameterFromQuery(Name = "admin")]
     private bool? PrefillAdmin { get; set; }
+
+    [SupplyParameterFromQuery(Name = "passwordSet")]
+    private bool? PasswordSet { get; set; }
 
     [SupplyParameterFromForm(Name = "_model")]
     private LoginFormModel? Form { get; set; }

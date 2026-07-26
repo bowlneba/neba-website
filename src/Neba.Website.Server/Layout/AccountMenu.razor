@@ -1,4 +1,5 @@
 @using System.Security.Claims
+@using Neba.Api.Contracts.Security
 
 <AuthorizeView>
     <Authorized>
@@ -12,7 +13,14 @@
             <div class="account-dropdown" role="menu">
                 <span class="account-email">@context.User.FindFirst(ClaimTypes.Email)?.Value</span>
                 <div class="account-divider"></div>
+                <AuthorizeView Policy="@Permissions.CreateUser.PolicyName" Context="createUserContext">
+                    <Authorized>
+                        <a class="account-dropdown-link" href="/account/create-user" role="menuitem" data-enhance-nav="false">Create User</a>
+                    </Authorized>
+                </AuthorizeView>
+                <div class="account-divider"></div>
                 <a class="account-dropdown-link" href="/account/logout" role="menuitem" data-enhance-nav="false">Logout</a>
+
             </div>
         </div>
     </Authorized>

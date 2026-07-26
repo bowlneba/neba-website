@@ -24,9 +24,9 @@ internal sealed class InviteUserEmail(string inviteLink)
                                    </tr>
                                  </table>
                                  <hr style="border:none;border-top:1px solid #ececec;margin:28px 0;" />
-                                 <p style="font-size:12px;color:#999;line-height:1.6;margin:0;">
+                                 <p style="font-size:12px;color:#999;line-height:1.6;margin:0;word-break:break-all;overflow-wrap:break-word;">
                                    If the button above does not work, copy and paste this link into your browser:<br />
-                                   <a href="{link}" style="color:#1a3a6e;">{link}</a>
+                                   <a href="{link}" style="color:#1a3a6e;word-break:break-all;overflow-wrap:break-word;">{link}</a>
                                  </p>
                                  """);
     }
