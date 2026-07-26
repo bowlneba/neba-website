@@ -3,6 +3,7 @@ using Neba.Api.Contracts.Security.Login;
 using Neba.Api.Contracts.Security.RefreshToken;
 using Neba.Api.Contracts.Security.Register;
 using Neba.Api.Contracts.Security.ResetPassword;
+using Neba.Api.Contracts.Security.SetPasswordFromToken;
 
 using Refit;
 
@@ -34,4 +35,8 @@ public interface ISecurityApi
     /// <summary>Resets any user's password directly (Admin only). No current password or email token required.</summary>
     [Post("/security/password/reset")]
     Task<IApiResponse> ResetPasswordAsync([Body] ResetPasswordRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Sets a new password using a token (invite/reset), and confirms the user's email. Anonymous.</summary>
+    [Post("/security/password/set-from-token")]
+    Task<IApiResponse> SetPasswordFromTokenAsync([Body] SetPasswordFromTokenRequest request, CancellationToken cancellationToken = default);
 }
