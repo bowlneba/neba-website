@@ -1019,6 +1019,25 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return;
   }
 
+  if (req.method === 'POST' && pathname === '/security/users') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    await readRequestBody(req);
+
+    sendJsonResponse(res, { userId: '01JX0000000000000000000399' }, 201);
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/security/password/set-from-token') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    await readRequestBody(req);
+
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+
   if (req.method === 'POST' && pathname === '/sponsors/logo') {
     if (sendMockOverrideErrorIfSet(res, pathname)) return;
 

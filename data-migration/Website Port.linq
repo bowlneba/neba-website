@@ -144,7 +144,8 @@ public async Task SecurityMigration()
 		ConcurrencyStamp = Guid.NewGuid().ToString(),
 		UsbcId = "337-5730",
 		PhoneNumber = Util.GetPassword("kippermand.phonenumber"),
-		PhoneNumberConfirmed = true
+		PhoneNumberConfirmed = true,
+		LockoutEnabled = true
 	};
 	
 	kippermand.PasswordHash = hasher.HashPassword(kippermand, Util.GetPassword("bowlneba.kippermand.password"));

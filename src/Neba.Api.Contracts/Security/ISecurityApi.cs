@@ -1,3 +1,4 @@
+using Neba.Api.Contracts.Security.CreateUser;
 using Neba.Api.Contracts.Security.GetCurrentUser;
 using Neba.Api.Contracts.Security.Login;
 using Neba.Api.Contracts.Security.RefreshToken;
@@ -39,4 +40,8 @@ public interface ISecurityApi
     /// <summary>Sets a new password using a token (invite/reset), and confirms the user's email. Anonymous.</summary>
     [Post("/security/password/set-from-token")]
     Task<IApiResponse> SetPasswordFromTokenAsync([Body] SetPasswordFromTokenRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Creates a new user account. No password set — an invitation email is sent.</summary>
+    [Post("/security/users")]
+    Task<IApiResponse<CreateUserResponse>> CreateUserAsync([Body] CreateUserRequest request, CancellationToken cancellationToken = default);
 }

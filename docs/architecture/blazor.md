@@ -441,96 +441,41 @@ Test in isolation — mock browser APIs, verify function behavior. E2E tests cov
 
 ## Stylesheets
 
-### Primary Approach: Tailwind Utilities + Component Classes
+There is no Tailwind build in this project. Styling is plain CSS, split across one global stylesheet and per-component/page CSS isolation files.
 
-Use a combination of:
+### The Rule: Shared vs. Single-Use
 
-1. **`@apply` component classes** for repeating visual patterns (buttons, inputs, cards)
-2. **Blazor components** for interactive elements with behavior
-3. **Tailwind utilities** for one-off layouts and spacing
+The only question that decides where a class lives is **does more than one component/page use it?**
 
-### Component Classes with @apply
+| Scenario | Goes in |
+| -------- | ------- |
+| Reusable visual pattern shared across components/pages (buttons, cards, alerts, badges, form controls, navbar, modal chrome, etc.) | `wwwroot/neba_theme.css` |
+| Styling specific to a single component or a single page — even if it looks like a generic name (`.role-grid`, `.strength-seg`) | that component's/page's colocated `ComponentName.razor.css` (CSS isolation) |
 
-Define reusable visual patterns in CSS using `@apply`:
+**Before creating new CSS classes, check `neba_theme.css` for an existing pattern first** — reuse or extend it rather than creating a near-duplicate. If a genuinely new class is needed, decide shared-vs-single-use with the rule above *before* writing it, not afterward. A class only used by one component belongs in that component's `.razor.css` from the start, even during first implementation — don't add it to `neba_theme.css` "for now" and plan to move it later.
 
-```css
-/* app.css */
-@layer components {
-  .btn-primary {
-    @apply px-4 py-2 rounded-md font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50;
-  }
-  
-  .card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200;
-  }
-  
-  .input {
-    @apply block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500;
-  }
-}
-```
+### `neba_theme.css`
 
-**Why `@apply` for primitives**:
-
-- Single source of truth for visual patterns
-- Design changes propagate everywhere
-- Cleaner markup — no repeating long utility strings
-- Works in any context (Blazor, raw HTML, error pages)
-
-### Blazor Components Use the CSS Classes
-
-Blazor components encapsulate behavior and use the CSS classes internally:
+Single global stylesheet at `wwwroot/neba_theme.css`: CSS custom properties (design tokens — colors, spacing, radii) at the top, then component classes (`.neba-btn`, `.neba-card`, `.neba-alert`, etc.) used across the app. Components consume these classes directly in markup:
 
 ```razor
-<!-- Button.razor uses .btn-primary from CSS -->
-<button class="btn-primary" disabled="@IsLoading" @onclick="HandleClick">
-    @if (IsLoading)
-    {
-        <LoadingSpinner Size="Small" />
-    }
+<!-- uses .neba-btn-primary from neba_theme.css -->
+<button class="neba-btn neba-btn-primary" disabled="@IsLoading" @onclick="HandleClick">
     @ChildContent
 </button>
 ```
 
 **The CSS class defines how it looks. The Blazor component defines how it behaves.**
 
-### When to Use Each
+### CSS Isolation (`.razor.css`)
 
-| Scenario | Approach |
-| -------- | -------- |
-| Repeating visual pattern (buttons, inputs, cards, labels) | `@apply` component class |
-| Interactive element with logic (loading states, events) | Blazor component using the CSS class |
-| One-off layout, spacing, positioning | Tailwind utilities in markup |
-| Complex animations, pseudo-elements | CSS isolation (`.razor.css`) |
-
-### Existing Styles
-
-**Before creating new CSS classes or modifying styles, ask if existing styles exist for that pattern.** The project has established CSS classes — review and adjust as appropriate rather than creating duplicates.
-
-### When to Use CSS Isolation (.razor.css)
-
-Use Blazor's CSS isolation only when:
-
-- Complex animations that would be unwieldy as utilities
-- Pseudo-element styling (::before, ::after) that Tailwind doesn't cover
-- Third-party component styling overrides
+Any styling that belongs to exactly one component or page goes in a colocated `ComponentName.razor.css` next to `ComponentName.razor` — Blazor scopes it automatically, so it can never leak into or collide with another component's styles. This is the default home for new, single-use CSS, not a special case reserved for animations/pseudo-elements — see e.g. `Components/PasswordFields.razor.css`, `Account/CreateUser/CreateUser.razor.css`, `Sponsors/CreateSponsor.razor.css`.
 
 ### What to Avoid
 
-- **Repeating long utility strings** — extract to `@apply` component class
-- **Component-level `<link>` tags** — Tailwind's purging keeps the bundle small
-- **Inline `<style>` blocks** — use `.razor.css` if component-specific CSS is needed
-- **Fighting Tailwind** — if writing lots of custom CSS, question whether you're using Tailwind effectively
-
-### Global Styles
-
-```
-wwwroot/
-└── css/
-    └── app.css                  # Tailwind directives, @apply component classes, global overrides
-```
-
-Keep global overrides minimal. Prefer Tailwind's configuration (`tailwind.config.js`) for design tokens.
+- **Adding single-use classes to `neba_theme.css`** — even ones with a component-specific-looking name (e.g. `.create-user-role-grid`). If only one component/page references it, it belongs in that component's `.razor.css`.
+- **Inline `<style>` blocks** — use a colocated `.razor.css` instead.
+- **Duplicating an existing `neba_theme.css` pattern** — check for one first.
 
 ---
 

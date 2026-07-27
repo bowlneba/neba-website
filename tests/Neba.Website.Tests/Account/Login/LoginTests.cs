@@ -165,12 +165,38 @@ public sealed class LoginTests : IDisposable
         nav.Uri.ShouldEndWith("/");
     }
 
-    private IRenderedComponent<Neba.Website.Server.Account.Login.Login> RenderLogin()
+    [Fact(DisplayName = "Should show the password-set confirmation when passwordSet=1 is present")]
+    public void Render_ShouldShowPasswordSetConfirmation_WhenQueryParameterPresent()
+    {
+        // Arrange & Act
+        var cut = RenderLogin(queryString: "?passwordSet=true");
+
+        // Assert
+        cut.Markup.ShouldContain("you can now log in");
+    }
+
+    [Fact(DisplayName = "Should not show the password-set confirmation when passwordSet is absent")]
+    public void Render_ShouldNotShowPasswordSetConfirmation_WhenQueryParameterAbsent()
+    {
+        // Arrange & Act
+        var cut = RenderLogin();
+
+        // Assert
+        cut.Markup.ShouldNotContain("you can now log in");
+    }
+
+    private IRenderedComponent<Neba.Website.Server.Account.Login.Login> RenderLogin(string? queryString = null)
     {
         var httpContext = new DefaultHttpContext
         {
             RequestServices = new ServiceCollection().AddSingleton(_authServiceMock.Object).BuildServiceProvider()
         };
+
+        if (queryString is not null)
+        {
+            var nav = _ctx.Services.GetRequiredService<NavigationManager>();
+            nav.NavigateTo("/account/login" + queryString);
+        }
 
         return _ctx.Render<Neba.Website.Server.Account.Login.Login>(p => p.AddCascadingValue(httpContext));
     }

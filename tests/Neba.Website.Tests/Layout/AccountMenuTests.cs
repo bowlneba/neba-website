@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Bunit;
 using Bunit.TestDoubles;
 
+using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Layout;
 
@@ -56,6 +57,7 @@ public sealed class AccountMenuTests : IDisposable
         // Arrange
         _authContext.SetAuthorized("test-user");
         _authContext.SetClaims(new Claim(ClaimTypes.Email, "bowler@bowlneba.com"));
+        _authContext.SetPolicies();
 
         // Act
         var cut = _ctx.Render<AccountMenu>();
@@ -63,5 +65,34 @@ public sealed class AccountMenuTests : IDisposable
         // Assert
         cut.Find("span.account-email").TextContent.ShouldBe("bowler@bowlneba.com");
         cut.Find("a.account-dropdown-link").GetAttribute("href").ShouldBe("/account/logout");
+    }
+
+    [Fact(DisplayName = "Should show the Create User link when the user holds the CreateUser policy")]
+    public void Render_ShouldShowCreateUserLink_WhenUserHoldsPolicy()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.CreateUser.PolicyName);
+
+        // Act
+        var cut = _ctx.Render<AccountMenu>();
+
+        // Assert
+        cut.FindAll("a.account-dropdown-link")
+            .ShouldContain(a => a.GetAttribute("href") == "/account/create-user" && a.TextContent == "Create User");
+    }
+
+    [Fact(DisplayName = "Should not show the Create User link when the user lacks the CreateUser policy")]
+    public void Render_ShouldNotShowCreateUserLink_WhenUserLacksPolicy()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies();
+
+        // Act
+        var cut = _ctx.Render<AccountMenu>();
+
+        // Assert
+        cut.FindAll("a.account-dropdown-link").ShouldNotContain(a => a.GetAttribute("href") == "/account/create-user");
     }
 }

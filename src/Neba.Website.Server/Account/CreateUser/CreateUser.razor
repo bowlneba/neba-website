@@ -1,0 +1,209 @@
+@page "/account/create-user"
+@using System.ComponentModel.DataAnnotations
+@using ErrorOr
+@using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Security.CreateUser
+@using Neba.Website.Server.Services
+@using Refit
+@implements IAsyncDisposable
+@rendermode InteractiveServer
+
+@inject ApiExecutor ApiExecutor
+@inject ISecurityApi SecurityApi
+
+<PageTitle>Create User - BowlNEBA</PageTitle>
+
+<AuthorizeView Policy="@Permissions.CreateUser.PolicyName" Context="authContext">
+    <Authorized>
+        <div class="neba-space-y-6">
+
+            <div class="page-title-bar">
+                <div class="page-title-inner">
+                    <h1>Create User</h1>
+                    <p>Invite a staff member — webmaster, tournament director, journalist, or manager. They'll set their own password from an emailed link.</p>
+                </div>
+            </div>
+
+            @if (_successMessage is not null)
+            {
+                <NebaAlert Severity="NotifySeverity.Success" Title="Invite Sent" Message="@_successMessage" Dismissible="true"
+                           OnDismiss="@(() => _successMessage = null)" />
+            }
+
+            @if (_errorMessage is not null)
+            {
+                <NebaAlert Severity="NotifySeverity.Error" Title="Unable to Create User" Message="@_errorMessage" Dismissible="true"
+                           OnDismiss="@(() => _errorMessage = null)" />
+            }
+
+            <DirtyFormGuard IsDirty="@_isDirty" />
+
+            <div class="neba-card">
+                <EditForm EditContext="_editContext" FormName="CreateUserForm" OnValidSubmit="HandleCreateAsync">
+                    <DataAnnotationsValidator />
+                    <div class="neba-space-y-6">
+
+                        <section class="neba-space-y-4">
+                            <h2 class="create-sponsor-section-title">Account</h2>
+
+                            <div>
+                                <FormLabel TargetId="email" For="@(() => _model.Email)">Email</FormLabel>
+                                <InputText id="email" @bind-Value="_model.Email" class="neba-input" placeholder="newstaff@bowlneba.com" />
+                                <ValidationMessage For="@(() => _model.Email)" class="block text-sm text-red-600 mt-1" />
+                            </div>
+
+                            <div>
+                                <span class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">
+                                    Roles <span class="form-label-required-tag">(required)</span>
+                                </span>
+                                <div class="create-user-role-grid">
+                                    @foreach (var role in StaffRoleOptions.All)
+                                    {
+                                        <label class="create-user-role-option">
+                                            <input type="checkbox" value="@role" checked="@_model.Roles.Contains(role)" @onchange="@(e => HandleRoleToggled(role, e))" />
+                                            @role
+                                        </label>
+                                    }
+                                </div>
+                                @if (_rolesError is not null)
+                                {
+                                    <p class="block text-sm text-red-600 mt-1">@_rolesError</p>
+                                }
+                            </div>
+                        </section>
+
+                        <section class="neba-space-y-4">
+                            <h2 class="create-sponsor-section-title">Additional Info</h2>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <FormLabel TargetId="usbc-id" For="@(() => _model.UsbcId)">USBC ID</FormLabel>
+                                    <InputText id="usbc-id" @bind-Value="_model.UsbcId" class="neba-input" placeholder="1234-56789" />
+                                </div>
+                                <div>
+                                    <FormLabel TargetId="phone" For="@(() => _model.PhoneNumber)">Phone Number</FormLabel>
+                                    <InputText id="phone" @bind-Value="_model.PhoneNumber" class="neba-input" placeholder="(555) 123-4567" />
+                                </div>
+                            </div>
+                        </section>
+
+                        <div class="flex items-center gap-3">
+                            <button type="submit" class="neba-btn neba-btn-primary" disabled="@_isSubmitting">
+                                @(_isSubmitting ? "Sending Invite…" : "Send Invite")
+                            </button>
+                        </div>
+
+                    </div>
+                </EditForm>
+            </div>
+
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="news-empty">
+            <p class="news-empty-text">You don't have permission to create users.</p>
+            <a href="/" class="neba-btn neba-btn-secondary">Back Home</a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private CreateUserFormModel _model = new();
+    private EditContext _editContext;
+    private bool _isDirty;
+    private bool _isSubmitting;
+    private string? _successMessage;
+    private string? _errorMessage;
+    private string? _rolesError;
+
+    public CreateUser()
+    {
+        _editContext = new EditContext(_model);
+        _editContext.OnFieldChanged += HandleFieldChanged;
+    }
+
+    private void MarkDirty() => _isDirty = true;
+
+    private void HandleFieldChanged(object? sender, FieldChangedEventArgs e) => MarkDirty();
+
+    private void HandleRoleToggled(string role, ChangeEventArgs e)
+    {
+        var isChecked = e.Value is bool value && value;
+
+        if (isChecked)
+        {
+            if (!_model.Roles.Contains(role))
+                _model.Roles.Add(role);
+        }
+        else
+        {
+            _model.Roles.Remove(role);
+        }
+
+        MarkDirty();
+    }
+
+    private async Task HandleCreateAsync()
+    {
+        _rolesError = _model.Roles.Count == 0 ? "Select at least one role." : null;
+
+        if (_rolesError is not null)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        var request = new CreateUserRequest
+        {
+            User = new CreateUserInput
+            {
+                Email = _model.Email,
+                Roles = _model.Roles,
+                UsbcId = string.IsNullOrWhiteSpace(_model.UsbcId) ? null : _model.UsbcId,
+                PhoneNumber = string.IsNullOrWhiteSpace(_model.PhoneNumber) ? null : _model.PhoneNumber
+            }
+        };
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "Security",
+            "CreateUser",
+            ct => SecurityApi.CreateUserAsync(request, ct));
+
+        _isSubmitting = false;
+
+        if (result.IsError)
+        {
+            _errorMessage = result.FirstError.Description;
+            return;
+        }
+
+        _successMessage = "An account was created for \"" + _model.Email + "\" and an invite email is on its way.";
+
+        _editContext.OnFieldChanged -= HandleFieldChanged;
+        _model = new CreateUserFormModel();
+        _editContext = new EditContext(_model);
+        _editContext.OnFieldChanged += HandleFieldChanged;
+        _isDirty = false;
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _editContext.OnFieldChanged -= HandleFieldChanged;
+        return ValueTask.CompletedTask;
+    }
+
+    private sealed class CreateUserFormModel
+    {
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "A valid email address is required.")]
+        public string Email { get; set; } = string.Empty;
+
+        public List<string> Roles { get; } = [];
+
+        public string? UsbcId { get; set; }
+
+        public string? PhoneNumber { get; set; }
+    }
+}
