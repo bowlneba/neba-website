@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.Email;
 using Neba.Api.Security;
@@ -22,6 +24,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
 
     private readonly Mock<IEmailSender> _emailSender = new(MockBehavior.Strict);
     private readonly WebsiteSettings _websiteSettings = new() { BaseUrl = BaseUrl };
+    private readonly FakeLogger<CreateUserCommandHandler> _logger = new();
 
     public async ValueTask InitializeAsync()
         => await fixture.ResetAsync();
@@ -30,7 +33,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         => ValueTask.CompletedTask;
 
     private CreateUserCommandHandler CreateHandler(UserManager<ApplicationUser> userManager)
-        => new(userManager, _emailSender.Object, _websiteSettings);
+        => new(userManager, _emailSender.Object, _websiteSettings, _logger);
 
     private static async Task SeedRolesAsync(RoleManager<ApplicationRole> roleManager, params IReadOnlyCollection<string> roles)
     {
@@ -133,6 +136,41 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         roles.ShouldBe([Roles.Member, Roles.Journalist], ignoreOrder: true);
     }
 
+    [Fact(DisplayName = "HandleAsync logs an error and still succeeds when role assignment fails")]
+    public async Task HandleAsync_ShouldLogErrorAndStillSucceed_WhenRoleAssignmentFails()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+
+        // "MEMBER" normalizes to the same role as "Member" but is a distinct string, so
+        // UserManager.AddToRolesAsync's Distinct() doesn't dedupe it — the second entry fails
+        // with "UserAlreadyInRole" once the first has been assigned, exercising the real
+        // IdentityResult failure path without mocking UserManager.
+        var command = new CreateUserCommand
+        {
+            Email = RegisterRequestFactory.ValidEmail,
+            Roles = [Roles.Member, Roles.Member.ToUpperInvariant()]
+        };
+
+        await SeedRolesAsync(roleManager, Roles.Member);
+        _emailSender
+            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), ct))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await CreateHandler(userManager).HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var logRecord = _logger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        logRecord.Level.ShouldBe(LogLevel.Error);
+        logRecord.Message.ShouldContain("Failed to assign role(s)");
+        logRecord.Message.ShouldContain(result.Value.ToString());
+    }
+
     [Fact(DisplayName = "HandleAsync assigns claims to the user when claims are provided")]
     public async Task HandleAsync_ShouldAssignClaims_WhenClaimsAreProvided()
     {
@@ -182,8 +220,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         _emailSender
             .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), ct))
             .Callback<EmailMessage, CancellationToken>((message, _) => sentMessage = message)
-            .Returns(Task.CompletedTask)
-            .Verifiable();
+            .Returns(Task.CompletedTask);
 
         // Act
         var result = await CreateHandler(userManager).HandleAsync(command, ct);
@@ -193,7 +230,6 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         sentMessage.To.ShouldBe(command.Email);
         sentMessage.Subject.ShouldBe("You've been invited to BowlNEBA");
         sentMessage.HtmlBody.ShouldContain($"{BaseUrl}/account/set-password?userId={result.Value}&amp;token=");
-        _emailSender.VerifyAll();
     }
 
     [Fact(DisplayName = "HandleAsync returns DuplicateEmail conflict when email already exists")]

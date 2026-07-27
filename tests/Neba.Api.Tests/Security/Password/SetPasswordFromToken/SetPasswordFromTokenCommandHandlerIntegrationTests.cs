@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.Security.Domain;
 using Neba.Api.Security.Password.SetPasswordFromToken;
@@ -18,14 +19,16 @@ public sealed class SetPasswordFromTokenCommandHandlerIntegrationTests(SecurityD
 {
     private const string NewPassword = "NewPassword1!";
 
+    private readonly FakeLogger<SetPasswordFromTokenCommandHandler> _logger = new();
+
     public async ValueTask InitializeAsync()
         => await fixture.ResetAsync();
 
     public ValueTask DisposeAsync()
         => ValueTask.CompletedTask;
 
-    private static SetPasswordFromTokenCommandHandler CreateHandler(UserManager<ApplicationUser> userManager)
-        => new(userManager);
+    private SetPasswordFromTokenCommandHandler CreateHandler(UserManager<ApplicationUser> userManager)
+        => new(userManager, _logger);
 
     // RegisterCommandHandler marks EmailConfirmed true; reset it so tests cover the real transition.
     private static async Task<ApplicationUser> SeedUserAsync(UserManager<ApplicationUser> userManager)

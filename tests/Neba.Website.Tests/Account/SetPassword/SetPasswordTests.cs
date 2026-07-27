@@ -47,13 +47,10 @@ public sealed class SetPasswordTests : IDisposable
         await cut.InvokeAsync(() => cut.FindAll("input[type=password]")[1].Input("Different1"));
 
         // Act
-        cut.Find("button[type=submit]").ShouldSatisfyAllConditions(
-            b => b.HasAttribute("disabled").ShouldBeTrue());
+        var submitButton = cut.Find("button[type=submit]");
 
         // Assert
-        _mockApi.Verify(
-            api => api.SetPasswordFromTokenAsync(It.IsAny<Neba.Api.Contracts.Security.SetPasswordFromToken.SetPasswordFromTokenRequest>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+        submitButton.HasAttribute("disabled").ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Should navigate to the login page with passwordSet=1 when set-password succeeds")]

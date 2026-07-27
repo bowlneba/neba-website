@@ -43,13 +43,12 @@ public sealed class CreateUserEndpointTests
 
         var endpoint = Factory.Create<CreateUserEndpoint>(commandHandlerMock.Object);
 
-        // Act — Send.CreatedAtAsync requires LinkGenerator, which Factory.Create does not provide.
-        // The strict mock verifies the command mapping; the LinkGenerator exception confirms the success branch was taken.
-        var exception = await Should.ThrowAsync<InvalidOperationException>(
-            () => endpoint.HandleAsync(request, ct));
+        // Act
+        await endpoint.HandleAsync(request, ct);
 
         // Assert
-        exception.Message.ShouldContain("LinkGenerator");
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(201);
+        endpoint.Response.UserId.ShouldBe(userId.ToString());
     }
 
     [Fact(DisplayName = "HandleAsync should return 409 Conflict when the email is already registered")]

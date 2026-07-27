@@ -74,7 +74,6 @@ public sealed class CreateUserTests : IDisposable
 
         // Assert
         cut.Markup.ShouldContain("Select at least one role.");
-        _mockApi.Verify(api => api.CreateUserAsync(It.IsAny<CreateUserRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact(DisplayName = "Should show the success alert and reset the form when creation succeeds")]

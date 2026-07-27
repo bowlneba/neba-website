@@ -15,7 +15,8 @@ namespace Neba.Api.Security.CreateUser;
 internal sealed class CreateUserCommandHandler(
     UserManager<ApplicationUser> userManager,
     IEmailSender emailSender,
-    WebsiteSettings websiteSettings)
+    WebsiteSettings websiteSettings,
+    ILogger<CreateUserCommandHandler> logger)
         : ICommandHandler<CreateUserCommand, Ulid>
 {
     public async Task<ErrorOr<Ulid>> HandleAsync(CreateUserCommand command, CancellationToken cancellationToken)
@@ -43,12 +44,24 @@ internal sealed class CreateUserCommandHandler(
                     .ToList();
         }
 
-        await userManager.AddToRolesAsync(user, command.Roles);
+        var addToRolesResult = await userManager.AddToRolesAsync(user, command.Roles);
+
+        if (!addToRolesResult.Succeeded)
+        {
+            var errors = string.Join("; ", addToRolesResult.Errors.Select(e => $"{e.Code}: {e.Description}"));
+            logger.LogRoleAssignmentFailed(user.Id, string.Join(", ", command.Roles), errors);
+        }
 
         if (command.Claims.Count > 0)
         {
             var claims = command.Claims.Select(c => new Claim(c.Type, c.Value));
-            await userManager.AddClaimsAsync(user, claims);
+            var addClaimsResult = await userManager.AddClaimsAsync(user, claims);
+
+            if (!addClaimsResult.Succeeded)
+            {
+                var errors = string.Join("; ", addClaimsResult.Errors.Select(e => $"{e.Code}: {e.Description}"));
+                logger.LogClaimAssignmentFailed(user.Id, errors);
+            }
         }
 
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
@@ -63,4 +76,24 @@ internal sealed class CreateUserCommandHandler(
 
         return user.Id;
     }
+}
+
+internal static partial class CreateUserCommandHandlerLogMessages
+{
+    /// <summary>
+    /// The user account is already created and the invite email still goes out even when role
+    /// assignment fails — this is the only signal an admin gets that the requested roles weren't
+    /// actually granted, so it must never be silently swallowed.
+    /// </summary>
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "Failed to assign role(s) '{Roles}' to newly created user {UserId}. Errors: {Errors}")]
+    public static partial void LogRoleAssignmentFailed(
+        this ILogger<CreateUserCommandHandler> logger, Ulid userId, string roles, string errors);
+
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "Failed to assign claim(s) to newly created user {UserId}. Errors: {Errors}")]
+    public static partial void LogClaimAssignmentFailed(
+        this ILogger<CreateUserCommandHandler> logger, Ulid userId, string errors);
 }

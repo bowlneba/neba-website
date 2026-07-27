@@ -29,7 +29,7 @@ internal sealed class CreateUserEndpoint(Messaging.ICommandHandler<CreateUserCom
 
         Description(description => description
             .WithName("CreateUser")
-            .WithTags("Security")
+            .WithTags("Admin")
             .Produces<CreateUserResponse>(StatusCodes.Status201Created)
             .ProducesProblemDetails(StatusCodes.Status400BadRequest)
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
@@ -53,8 +53,11 @@ internal sealed class CreateUserEndpoint(Messaging.ICommandHandler<CreateUserCom
 
         if (result.IsSuccess)
         {
+            // No "get this user" endpoint exists to point a Location header at — GetCurrentUser
+            // resolves the caller's own profile from JWT claims, not the newly created user's, so
+            // CreatedAtAsync would produce a misleading header. Send 201 with the body only.
             // Stryker disable once Statement
-            await Send.CreatedAtAsync("GetCurrentUser", routeValues: null, responseBody: new CreateUserResponse { UserId = result.Value.ToString() }, cancellation: ct);
+            await Send.ResponseAsync(new CreateUserResponse { UserId = result.Value.ToString() }, StatusCodes.Status201Created, ct);
 
             // Stryker disable once Statement
             return;
