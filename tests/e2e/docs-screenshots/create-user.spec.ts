@@ -53,6 +53,8 @@ test.describe('create-user help screenshots', () => {
     await page.goto('/account/set-password?userId=01JXXXXXXXXXXXXXXXXXXXXXXXXX&token=placeholder-token');
     await page.waitForSelector('form');
 
+    await expect(page.locator('form')).toBeVisible();
+
     await page.screenshot({ path: path.join(outDir, 'set-password-form.png') });
   });
 });
