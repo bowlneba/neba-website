@@ -8,6 +8,8 @@ on:
       - "tests/**"
       - ".github/workflows/**"
       - "Directory.Packages.props"
+      - "package.json"
+      - "package-lock.json"
 
 jobs:
   format-check:

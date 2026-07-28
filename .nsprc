@@ -1,0 +1,7 @@
+{
+  "GHSA-mh99-v99m-4gvg": {
+    "active": true,
+    "notes": "brace-expansion OOM DoS (CVE-2026-14257). Fix landed in 5.0.8, but this advisory's vulnerable_version_range (<=5.0.7) also flags our resolved 2.1.3 (glob's minimatch@9 and test-exclude's minimatch@3, the latter forced via package.json overrides). Verified by reading node_modules/glob/node_modules/brace-expansion/index.js: the EXPANSION_MAX_LENGTH/maxLength fix is already present in 2.1.3. Can't override to 5.0.8 there — its CJS entry only exports a named `expand` function, not the callable default minimatch@3/9 require. Revisit if a newer 2.x/matching release or advisory correction is published.",
+    "expiry": "2026-10-28"
+  }
+}
