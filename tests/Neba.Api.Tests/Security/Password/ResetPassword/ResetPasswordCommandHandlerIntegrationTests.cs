@@ -7,7 +7,6 @@ using Neba.Api.Email;
 using Neba.Api.Security;
 using Neba.Api.Security.Domain;
 using Neba.Api.Security.Password.ResetPassword;
-using Neba.Api.Security.Register;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Security;
@@ -37,16 +36,9 @@ public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContex
 
     private static async Task<ApplicationUser> SeedUserAsync(UserManager<ApplicationUser> userManager)
     {
-        var command = new RegisterCommand
-        {
-            Email = RegisterRequestFactory.ValidEmail,
-            Password = RegisterRequestFactory.ValidPassword
-        };
-        await new RegisterCommandHandler(userManager).HandleAsync(command, CancellationToken.None);
-
-        var user = await userManager.FindByEmailAsync(command.Email);
-        user!.EmailConfirmed = true;
-        await userManager.UpdateAsync(user);
+        var user = ApplicationUserFactory.Create(userName: LoginRequestFactory.ValidEmail, email: LoginRequestFactory.ValidEmail);
+        user.EmailConfirmed = true;
+        await userManager.CreateAsync(user, LoginRequestFactory.ValidPassword);
         return user;
     }
 
@@ -111,7 +103,7 @@ public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContex
 
         // Assert
         sentMessage.ShouldNotBeNull();
-        sentMessage.To.ShouldBe(RegisterRequestFactory.ValidEmail);
+        sentMessage.To.ShouldBe(LoginRequestFactory.ValidEmail);
         sentMessage.Subject.ShouldBe("Your BowlNEBA password has been reset");
     }
 
@@ -161,7 +153,7 @@ public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContex
         // Assert
         sentMessage.ShouldNotBeNull();
         var token = ExtractTokenFromLink(sentMessage.HtmlBody);
-        var freshUser = await userManager.FindByEmailAsync(RegisterRequestFactory.ValidEmail);
+        var freshUser = await userManager.FindByEmailAsync(LoginRequestFactory.ValidEmail);
         var resetResult = await userManager.ResetPasswordAsync(freshUser!, token, "SomeNewP@ssw0rd1");
         resetResult.Succeeded.ShouldBeTrue();
     }

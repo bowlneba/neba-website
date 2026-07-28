@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.Security.Domain;
 using Neba.Api.Security.Password.SetPasswordFromToken;
-using Neba.Api.Security.Register;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Security;
@@ -30,19 +29,10 @@ public sealed class SetPasswordFromTokenCommandHandlerIntegrationTests(SecurityD
     private SetPasswordFromTokenCommandHandler CreateHandler(UserManager<ApplicationUser> userManager)
         => new(userManager, _logger);
 
-    // RegisterCommandHandler marks EmailConfirmed true; reset it so tests cover the real transition.
     private static async Task<ApplicationUser> SeedUserAsync(UserManager<ApplicationUser> userManager)
     {
-        var command = new RegisterCommand
-        {
-            Email = RegisterRequestFactory.ValidEmail,
-            Password = RegisterRequestFactory.ValidPassword
-        };
-        await new RegisterCommandHandler(userManager).HandleAsync(command, CancellationToken.None);
-
-        var user = (await userManager.FindByEmailAsync(command.Email))!;
-        user.EmailConfirmed = false;
-        await userManager.UpdateAsync(user);
+        var user = ApplicationUserFactory.Create(userName: LoginRequestFactory.ValidEmail, email: LoginRequestFactory.ValidEmail);
+        await userManager.CreateAsync(user, LoginRequestFactory.ValidPassword);
         return user;
     }
 
@@ -161,7 +151,7 @@ public sealed class SetPasswordFromTokenCommandHandlerIntegrationTests(SecurityD
         await CreateHandler(userManager).HandleAsync(command, ct);
 
         // Assert
-        var freshUser = await userManager.FindByEmailAsync(RegisterRequestFactory.ValidEmail);
+        var freshUser = await userManager.FindByEmailAsync(LoginRequestFactory.ValidEmail);
         var canLoginWithNewPassword = await userManager.CheckPasswordAsync(freshUser!, NewPassword);
         canLoginWithNewPassword.ShouldBeTrue();
     }
@@ -186,8 +176,8 @@ public sealed class SetPasswordFromTokenCommandHandlerIntegrationTests(SecurityD
         await CreateHandler(userManager).HandleAsync(command, ct);
 
         // Assert
-        var freshUser = await userManager.FindByEmailAsync(RegisterRequestFactory.ValidEmail);
-        var oldPasswordStillWorks = await userManager.CheckPasswordAsync(freshUser!, RegisterRequestFactory.ValidPassword);
+        var freshUser = await userManager.FindByEmailAsync(LoginRequestFactory.ValidEmail);
+        var oldPasswordStillWorks = await userManager.CheckPasswordAsync(freshUser!, LoginRequestFactory.ValidPassword);
         oldPasswordStillWorks.ShouldBeFalse();
     }
 
@@ -212,7 +202,7 @@ public sealed class SetPasswordFromTokenCommandHandlerIntegrationTests(SecurityD
         await CreateHandler(userManager).HandleAsync(command, ct);
 
         // Assert
-        var freshUser = await userManager.FindByEmailAsync(RegisterRequestFactory.ValidEmail);
+        var freshUser = await userManager.FindByEmailAsync(LoginRequestFactory.ValidEmail);
         freshUser!.EmailConfirmed.ShouldBeTrue();
     }
 
@@ -235,7 +225,7 @@ public sealed class SetPasswordFromTokenCommandHandlerIntegrationTests(SecurityD
         await CreateHandler(userManager).HandleAsync(command, ct);
 
         // Assert
-        var freshUser = await userManager.FindByEmailAsync(RegisterRequestFactory.ValidEmail);
+        var freshUser = await userManager.FindByEmailAsync(LoginRequestFactory.ValidEmail);
         freshUser!.EmailConfirmed.ShouldBeFalse();
     }
 }

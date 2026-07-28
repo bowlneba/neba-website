@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Api.Security.Domain;
 using Neba.Api.Security.GetCurrentUser;
-using Neba.Api.Security.Register;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Security;
@@ -27,15 +26,10 @@ public sealed class GetCurrentUserQueryHandlerIntegrationTests(SecurityDbContext
 
     private static async Task<ApplicationUser> SeedUserAsync(UserManager<ApplicationUser> userManager)
     {
-        var command = new RegisterCommand
-        {
-            Email = RegisterRequestFactory.ValidEmail,
-            Password = RegisterRequestFactory.ValidPassword
-        };
-        await new RegisterCommandHandler(userManager).HandleAsync(command, CancellationToken.None);
-
-        var user = await userManager.FindByEmailAsync(command.Email);
-        return user!;
+        var user = ApplicationUserFactory.Create(userName: LoginRequestFactory.ValidEmail, email: LoginRequestFactory.ValidEmail);
+        user.EmailConfirmed = true;
+        await userManager.CreateAsync(user, LoginRequestFactory.ValidPassword);
+        return user;
     }
 
     [Fact(DisplayName = "HandleAsync returns UserNotFound when user does not exist")]
@@ -74,7 +68,7 @@ public sealed class GetCurrentUserQueryHandlerIntegrationTests(SecurityDbContext
         // Assert
         result.IsError.ShouldBeFalse();
         result.Value.UserId.ShouldBe(user.Id);
-        result.Value.Email.ShouldBe(RegisterRequestFactory.ValidEmail);
+        result.Value.Email.ShouldBe(LoginRequestFactory.ValidEmail);
     }
 
     [Fact(DisplayName = "HandleAsync returns UserDto with empty Roles when user has no roles")]
@@ -151,7 +145,7 @@ public sealed class GetCurrentUserQueryHandlerIntegrationTests(SecurityDbContext
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var user = ApplicationUserFactory.Create(usbcId: "123-45678");
-        await userManager.CreateAsync(user, RegisterRequestFactory.ValidPassword);
+        await userManager.CreateAsync(user, LoginRequestFactory.ValidPassword);
         var query = new GetCurrentUserQuery { UserId = user.Id };
 
         // Act
