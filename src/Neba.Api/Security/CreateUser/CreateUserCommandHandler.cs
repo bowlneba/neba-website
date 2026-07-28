@@ -17,9 +17,9 @@ internal sealed class CreateUserCommandHandler(
     IEmailSender emailSender,
     WebsiteSettings websiteSettings,
     ILogger<CreateUserCommandHandler> logger)
-        : ICommandHandler<CreateUserCommand, Ulid>
+        : ICommandHandler<CreateUserCommand, CreateUserResult>
 {
-    public async Task<ErrorOr<Ulid>> HandleAsync(CreateUserCommand command, CancellationToken cancellationToken)
+    public async Task<ErrorOr<CreateUserResult>> HandleAsync(CreateUserCommand command, CancellationToken cancellationToken)
     {
         var user = new ApplicationUser
         {
@@ -52,6 +52,13 @@ internal sealed class CreateUserCommandHandler(
             logger.LogRoleAssignmentFailed(user.Id, string.Join(", ", command.Roles), errors);
         }
 
+        var rolesAssigned = addToRolesResult.Succeeded;
+
+        // Validated to only carry Permissions.ClaimType with a known permission value (see
+        // CreateUserRequestValidator), but authorization never reads it back: JWTs only carry
+        // permissions resolved from role membership (PermissionResolver), not from a user's own
+        // stored claims. This lets an admin pre-stage a claim for a future feature without it
+        // granting anything today.
         if (command.Claims.Count > 0)
         {
             var claims = command.Claims.Select(c => new Claim(c.Type, c.Value));
@@ -74,7 +81,7 @@ internal sealed class CreateUserCommandHandler(
             HtmlBody = new InviteUserEmail(inviteLink).ToHtmlBody()
         }, cancellationToken);
 
-        return user.Id;
+        return new CreateUserResult(user.Id, rolesAssigned);
     }
 }
 

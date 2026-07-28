@@ -102,6 +102,32 @@ public sealed class CreateUserTests : IDisposable
         ((IHtmlInputElement)cut.Find("#email")).Value.ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Should show a roles-not-assigned warning when the account is created but role assignment failed")]
+    public async Task Submit_ShouldShowRolesWarning_WhenRoleAssignmentFailed()
+    {
+        // Arrange
+        using var response = new StubApiResponse<CreateUserResponse>
+        {
+            IsSuccessStatusCode = true,
+            Content = CreateUserResponseFactory.Create(rolesAssigned: false)
+        };
+
+        _mockApi
+            .Setup(api => api.CreateUserAsync(It.IsAny<CreateUserRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+
+        var cut = _ctx.Render<CreateUserPage>();
+        await cut.InvokeAsync(() => cut.Find("#email").Change("newstaff@bowlneba.com"));
+        await cut.InvokeAsync(() => cut.Find("input[type=checkbox][value=Webmaster]").Change(true));
+
+        // Act
+        await cut.Find("form").SubmitAsync();
+
+        // Assert
+        cut.Markup.ShouldContain("Invite Sent");
+        cut.Markup.ShouldContain("Roles Not Assigned");
+    }
+
     [Fact(DisplayName = "Should show the error alert and keep the form populated when creation fails")]
     public async Task Submit_ShouldShowErrorAndKeepForm_WhenCreationFails()
     {

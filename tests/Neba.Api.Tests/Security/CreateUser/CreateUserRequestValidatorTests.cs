@@ -1,3 +1,4 @@
+using Neba.Api.Contracts.Security;
 using Neba.Api.Contracts.Security.CreateUser;
 using Neba.Api.Security.CreateUser;
 using Neba.Api.Security.Domain;
@@ -131,5 +132,50 @@ public sealed class CreateUserRequestValidatorTests
         result.Errors.ShouldContain(e =>
             e.ErrorCode == "CreateUserRequest.RoleUnknown"
             && e.ErrorMessage == "One or more roles are not recognized.");
+    }
+
+    [Fact(DisplayName = "Validate should fail with ClaimTypeUnsupported when a claim type other than 'permission' is requested")]
+    public void Validate_ShouldFailWithClaimTypeUnsupported_WhenClaimTypeIsNotPermission()
+    {
+        // Arrange
+        var request = CreateUserRequestFactory.Create(
+            claims: [new ClaimInput { Type = "not-permission", Value = Permissions.CreateUser.Value }]);
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(e => e.ErrorCode == "CreateUserRequest.ClaimTypeUnsupported");
+    }
+
+    [Fact(DisplayName = "Validate should fail with ClaimValueUnknown when a claim value is not a recognized permission")]
+    public void Validate_ShouldFailWithClaimValueUnknown_WhenClaimValueIsNotRecognizedPermission()
+    {
+        // Arrange
+        var request = CreateUserRequestFactory.Create(
+            claims: [new ClaimInput { Type = Permissions.ClaimType, Value = "Not.ARealPermission" }]);
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(e => e.ErrorCode == "CreateUserRequest.ClaimValueUnknown");
+    }
+
+    [Fact(DisplayName = "Validate should succeed when claims carry a known permission value")]
+    public void Validate_ShouldSucceed_WhenClaimsCarryKnownPermissionValue()
+    {
+        // Arrange
+        var request = CreateUserRequestFactory.Create(
+            claims: [new ClaimInput { Type = Permissions.ClaimType, Value = Permissions.CreateUser.Value }]);
+
+        // Act
+        var result = _validator.Validate(request);
+
+        // Assert
+        result.IsValid.ShouldBeTrue();
+        result.Errors.ShouldBeEmpty();
     }
 }

@@ -28,7 +28,7 @@ public sealed class CreateUserEndpointTests
             claims: [claim]);
         var ct = TestContext.Current.CancellationToken;
 
-        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<CreateUserCommand, Ulid>>(MockBehavior.Strict);
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<CreateUserCommand, CreateUserResult>>(MockBehavior.Strict);
         commandHandlerMock
             .Setup(h => h.HandleAsync(
                 It.Is<CreateUserCommand>(c =>
@@ -39,7 +39,7 @@ public sealed class CreateUserEndpointTests
                     && c.Claims.Single().Type == claim.Type
                     && c.Claims.Single().Value == claim.Value),
                 ct))
-            .ReturnsAsync(userId);
+            .ReturnsAsync(new CreateUserResult(userId, RolesAssigned: true));
 
         var endpoint = Factory.Create<CreateUserEndpoint>(commandHandlerMock.Object);
 
@@ -49,6 +49,30 @@ public sealed class CreateUserEndpointTests
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(201);
         endpoint.Response.UserId.ShouldBe(userId.ToString());
+        endpoint.Response.RolesAssigned.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "HandleAsync should surface RolesAssigned=false when role assignment failed")]
+    public async Task HandleAsync_ShouldSurfaceRolesAssignedFalse_WhenRoleAssignmentFailed()
+    {
+        // Arrange
+        var userId = Ulid.NewUlid();
+        var request = CreateUserRequestFactory.Create();
+        var ct = TestContext.Current.CancellationToken;
+
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<CreateUserCommand, CreateUserResult>>(MockBehavior.Strict);
+        commandHandlerMock
+            .Setup(h => h.HandleAsync(It.IsAny<CreateUserCommand>(), ct))
+            .ReturnsAsync(new CreateUserResult(userId, RolesAssigned: false));
+
+        var endpoint = Factory.Create<CreateUserEndpoint>(commandHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(request, ct);
+
+        // Assert
+        endpoint.HttpContext.Response.StatusCode.ShouldBe(201);
+        endpoint.Response.RolesAssigned.ShouldBeFalse();
     }
 
     [Fact(DisplayName = "HandleAsync should return 409 Conflict when the email is already registered")]
@@ -58,7 +82,7 @@ public sealed class CreateUserEndpointTests
         var request = CreateUserRequestFactory.Create();
         var ct = TestContext.Current.CancellationToken;
 
-        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<CreateUserCommand, Ulid>>(MockBehavior.Strict);
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<CreateUserCommand, CreateUserResult>>(MockBehavior.Strict);
         commandHandlerMock
             .Setup(h => h.HandleAsync(It.IsAny<CreateUserCommand>(), ct))
             .ReturnsAsync(CreateUserErrors.DuplicateEmail);
@@ -79,7 +103,7 @@ public sealed class CreateUserEndpointTests
         var request = CreateUserRequestFactory.Create();
         var ct = TestContext.Current.CancellationToken;
 
-        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<CreateUserCommand, Ulid>>(MockBehavior.Strict);
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<CreateUserCommand, CreateUserResult>>(MockBehavior.Strict);
         commandHandlerMock
             .Setup(h => h.HandleAsync(It.IsAny<CreateUserCommand>(), ct))
             .ReturnsAsync(Error.Validation("CreateUser.InvalidEmail", "Email is invalid."));
@@ -97,7 +121,7 @@ public sealed class CreateUserEndpointTests
     public void Configure_ShouldRegisterPermissionProtectedPostRoute_UnderSecurityPath()
     {
         // Arrange
-        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<CreateUserCommand, Ulid>>(MockBehavior.Strict);
+        var commandHandlerMock = new Mock<NebaMessaging.ICommandHandler<CreateUserCommand, CreateUserResult>>(MockBehavior.Strict);
         var endpoint = Factory.Create<CreateUserEndpoint>(commandHandlerMock.Object);
 
         // Assert

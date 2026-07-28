@@ -15,7 +15,7 @@ internal sealed class CreateUserSummary : Summary<CreateUserEndpoint>
 
         Response(201, "The account was created and an invite email was sent.",
             contentType: MediaTypeNames.Application.Json,
-            example: new CreateUserResponse { UserId = "01JXXXXXXXXXXXXXXXXXXXXXXXXX" });
+            example: new CreateUserResponse { UserId = "01JXXXXXXXXXXXXXXXXXXXXXXXXX", RolesAssigned = true });
 
         Response(400, "The request was malformed.");
         Response(401, "The caller is not authenticated.");

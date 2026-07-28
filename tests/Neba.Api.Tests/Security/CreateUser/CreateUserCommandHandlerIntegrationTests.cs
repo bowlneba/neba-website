@@ -70,7 +70,8 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
 
         // Assert
         result.IsError.ShouldBeFalse();
-        result.Value.ShouldNotBe(Ulid.Empty);
+        result.Value.UserId.ShouldNotBe(Ulid.Empty);
+        result.Value.RolesAssigned.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "HandleAsync persists the user with EmailConfirmed=false")]
@@ -165,10 +166,11 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
 
         // Assert
         result.IsError.ShouldBeFalse();
+        result.Value.RolesAssigned.ShouldBeFalse();
         var logRecord = _logger.Collector.GetSnapshot().ShouldHaveSingleItem();
         logRecord.Level.ShouldBe(LogLevel.Error);
         logRecord.Message.ShouldContain("Failed to assign role(s)");
-        logRecord.Message.ShouldContain(result.Value.ToString());
+        logRecord.Message.ShouldContain(result.Value.UserId.ToString());
     }
 
     [Fact(DisplayName = "HandleAsync assigns claims to the user when claims are provided")]
@@ -229,7 +231,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         sentMessage.ShouldNotBeNull();
         sentMessage.To.ShouldBe(command.Email);
         sentMessage.Subject.ShouldBe("You've been invited to BowlNEBA");
-        sentMessage.HtmlBody.ShouldContain($"{BaseUrl}/account/set-password?userId={result.Value}&amp;token=");
+        sentMessage.HtmlBody.ShouldContain($"{BaseUrl}/account/set-password?userId={result.Value.UserId}&amp;token=");
     }
 
     [Fact(DisplayName = "HandleAsync returns DuplicateEmail conflict when email already exists")]

@@ -11,10 +11,10 @@ using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Security.CreateUser;
 
-internal sealed class CreateUserEndpoint(Messaging.ICommandHandler<CreateUserCommand, Ulid> commandHandler)
+internal sealed class CreateUserEndpoint(Messaging.ICommandHandler<CreateUserCommand, CreateUserResult> commandHandler)
     : Endpoint<CreateUserRequest, CreateUserResponse>
 {
-    private readonly Messaging.ICommandHandler<CreateUserCommand, Ulid> _commandHandler = commandHandler;
+    private readonly Messaging.ICommandHandler<CreateUserCommand, CreateUserResult> _commandHandler = commandHandler;
 
     public override void Configure()
     {
@@ -57,7 +57,10 @@ internal sealed class CreateUserEndpoint(Messaging.ICommandHandler<CreateUserCom
             // resolves the caller's own profile from JWT claims, not the newly created user's, so
             // CreatedAtAsync would produce a misleading header. Send 201 with the body only.
             // Stryker disable once Statement
-            await Send.ResponseAsync(new CreateUserResponse { UserId = result.Value.ToString() }, StatusCodes.Status201Created, ct);
+            await Send.ResponseAsync(
+                new CreateUserResponse { UserId = result.Value.UserId.ToString(), RolesAssigned = result.Value.RolesAssigned },
+                StatusCodes.Status201Created,
+                ct);
 
             // Stryker disable once Statement
             return;

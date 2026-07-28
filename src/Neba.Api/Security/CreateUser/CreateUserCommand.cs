@@ -3,7 +3,7 @@ using Neba.Api.Messaging;
 namespace Neba.Api.Security.CreateUser;
 
 internal sealed record CreateUserCommand
-    : ICommand<Ulid>
+    : ICommand<CreateUserResult>
 {
     public required string Email { get; init; }
 

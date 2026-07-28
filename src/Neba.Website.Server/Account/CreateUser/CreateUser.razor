@@ -30,6 +30,12 @@
                            OnDismiss="@(() => _successMessage = null)" />
             }
 
+            @if (_warningMessage is not null)
+            {
+                <NebaAlert Severity="NotifySeverity.Warning" Title="Roles Not Assigned" Message="@_warningMessage" Dismissible="true"
+                           OnDismiss="@(() => _warningMessage = null)" />
+            }
+
             @if (_errorMessage is not null)
             {
                 <NebaAlert Severity="NotifySeverity.Error" Title="Unable to Create User" Message="@_errorMessage" Dismissible="true"
@@ -112,6 +118,7 @@
     private bool _isDirty;
     private bool _isSubmitting;
     private string? _successMessage;
+    private string? _warningMessage;
     private string? _errorMessage;
     private string? _rolesError;
 
@@ -154,6 +161,7 @@
         _isSubmitting = true;
         _errorMessage = null;
         _successMessage = null;
+        _warningMessage = null;
 
         var request = new CreateUserRequest
         {
@@ -180,6 +188,11 @@
         }
 
         _successMessage = "An account was created for \"" + _model.Email + "\" and an invite email is on its way.";
+
+        if (!result.Value.RolesAssigned)
+        {
+            _warningMessage = "The account for \"" + _model.Email + "\" was created, but the requested role(s) could not be assigned. Please verify and reassign roles for this user.";
+        }
 
         _editContext.OnFieldChanged -= HandleFieldChanged;
         _model = new CreateUserFormModel();
