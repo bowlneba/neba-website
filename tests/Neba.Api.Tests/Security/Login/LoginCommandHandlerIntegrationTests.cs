@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Neba.Api.Security;
 using Neba.Api.Security.Domain;
 using Neba.Api.Security.Login;
-using Neba.Api.Security.Register;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Security;
@@ -47,15 +46,10 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
 
     private static async Task<ApplicationUser> SeedUserAsync(UserManager<ApplicationUser> userManager)
     {
-        var command = new RegisterCommand
-        {
-            Email = RegisterRequestFactory.ValidEmail,
-            Password = RegisterRequestFactory.ValidPassword
-        };
-        await new RegisterCommandHandler(userManager).HandleAsync(command, CancellationToken.None);
-
-        var user = await userManager.FindByEmailAsync(command.Email);
-        return user!;
+        var user = ApplicationUserFactory.Create(userName: LoginRequestFactory.ValidEmail, email: LoginRequestFactory.ValidEmail);
+        user.EmailConfirmed = true;
+        await userManager.CreateAsync(user, LoginRequestFactory.ValidPassword);
+        return user;
     }
 
     [Fact(DisplayName = "HandleAsync returns LoginDto with non-empty tokens when credentials are valid")]
@@ -70,8 +64,8 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         await SeedUserAsync(userManager);
         var command = new LoginCommand
         {
-            Email = RegisterRequestFactory.ValidEmail,
-            Password = RegisterRequestFactory.ValidPassword
+            Email = LoginRequestFactory.ValidEmail,
+            Password = LoginRequestFactory.ValidPassword
         };
 
         // Act
@@ -96,8 +90,8 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         var user = await SeedUserAsync(userManager);
         var command = new LoginCommand
         {
-            Email = RegisterRequestFactory.ValidEmail,
-            Password = RegisterRequestFactory.ValidPassword
+            Email = LoginRequestFactory.ValidEmail,
+            Password = LoginRequestFactory.ValidPassword
         };
 
         // Act
@@ -105,7 +99,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
 
         // Assert
         result.IsError.ShouldBeFalse();
-        result.Value.Email.ShouldBe(RegisterRequestFactory.ValidEmail);
+        result.Value.Email.ShouldBe(LoginRequestFactory.ValidEmail);
         result.Value.UserId.ShouldBe(user.Id);
     }
 
@@ -121,8 +115,8 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         await SeedUserAsync(userManager);
         var command = new LoginCommand
         {
-            Email = RegisterRequestFactory.ValidEmail,
-            Password = RegisterRequestFactory.ValidPassword
+            Email = LoginRequestFactory.ValidEmail,
+            Password = LoginRequestFactory.ValidPassword
         };
 
         // Act
@@ -154,7 +148,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         var command = new LoginCommand
         {
             Email = "nobody@bowlneba.com",
-            Password = RegisterRequestFactory.ValidPassword
+            Password = LoginRequestFactory.ValidPassword
         };
 
         // Act
@@ -178,7 +172,7 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         await SeedUserAsync(userManager);
         var command = new LoginCommand
         {
-            Email = RegisterRequestFactory.ValidEmail,
+            Email = LoginRequestFactory.ValidEmail,
             Password = "WrongPassword9"
         };
 

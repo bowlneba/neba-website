@@ -2,7 +2,6 @@ using Neba.Api.Contracts.Security.CreateUser;
 using Neba.Api.Contracts.Security.GetCurrentUser;
 using Neba.Api.Contracts.Security.Login;
 using Neba.Api.Contracts.Security.RefreshToken;
-using Neba.Api.Contracts.Security.Register;
 using Neba.Api.Contracts.Security.ResetPassword;
 using Neba.Api.Contracts.Security.SetPasswordFromToken;
 
@@ -13,10 +12,6 @@ namespace Neba.Api.Contracts.Security;
 /// <summary>Defines the Security API contract for authentication and account management.</summary>
 public interface ISecurityApi
 {
-    /// <summary>Registers a new user account.</summary>
-    [Post("/security/register")]
-    Task<IApiResponse<RegisterResponse>> RegisterAsync([Body] RegisterRequest request, CancellationToken cancellationToken = default);
-
     /// <summary>Authenticates with email and password, returning a JWT and refresh token.</summary>
     [Post("/security/login")]
     Task<IApiResponse<LoginResponse>> LoginAsync([Body] LoginRequest request, CancellationToken cancellationToken = default);

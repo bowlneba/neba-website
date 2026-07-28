@@ -56,7 +56,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var command = new CreateUserCommand
         {
-            Email = RegisterRequestFactory.ValidEmail,
+            Email = LoginRequestFactory.ValidEmail,
             Roles = [Roles.Member]
         };
 
@@ -83,7 +83,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var command = new CreateUserCommand
         {
-            Email = RegisterRequestFactory.ValidEmail,
+            Email = LoginRequestFactory.ValidEmail,
             UsbcId = "12345",
             PhoneNumber = "555-123-4567",
             Roles = [Roles.Member]
@@ -117,7 +117,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var command = new CreateUserCommand
         {
-            Email = RegisterRequestFactory.ValidEmail,
+            Email = LoginRequestFactory.ValidEmail,
             Roles = [Roles.Member, Roles.Journalist]
         };
 
@@ -151,7 +151,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         // IdentityResult failure path without mocking UserManager.
         var command = new CreateUserCommand
         {
-            Email = RegisterRequestFactory.ValidEmail,
+            Email = LoginRequestFactory.ValidEmail,
             Roles = [Roles.Member, Roles.Member.ToUpperInvariant()]
         };
 
@@ -181,7 +181,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var command = new CreateUserCommand
         {
-            Email = RegisterRequestFactory.ValidEmail,
+            Email = LoginRequestFactory.ValidEmail,
             Roles = [Roles.Member],
             Claims = [("permission", "tournaments.manage")]
         };
@@ -211,7 +211,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var command = new CreateUserCommand
         {
-            Email = RegisterRequestFactory.ValidEmail,
+            Email = LoginRequestFactory.ValidEmail,
             Roles = [Roles.Member]
         };
 
@@ -239,7 +239,7 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
         var ct = TestContext.Current.CancellationToken;
         var command = new CreateUserCommand
         {
-            Email = RegisterRequestFactory.ValidEmail,
+            Email = LoginRequestFactory.ValidEmail,
             Roles = [Roles.Member]
         };
 

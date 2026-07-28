@@ -284,7 +284,7 @@ factory needed.)
   password via `CheckPasswordAsync`.
 - Replace `HandleAsync_ShouldInvalidateOriginalPassword_AfterReset` with
   `HandleAsync_ShouldNotChangePassword_UntilSetPasswordTokenIsConsumed`: assert
-  `CheckPasswordAsync(freshUser, RegisterRequestFactory.ValidPassword)` is still **true** immediately
+  `CheckPasswordAsync(freshUser, LoginRequestFactory.ValidPassword)` is still **true** immediately
   after `HandleAsync` — the whole point of the new flow is that the old password remains valid until the
   user actually completes the set-password step (unlike the old temp-password flow, which invalidated it
   immediately). This is a real behavior change worth calling out explicitly, not just a renamed test.

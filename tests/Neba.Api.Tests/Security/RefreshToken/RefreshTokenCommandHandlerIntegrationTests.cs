@@ -13,7 +13,6 @@ using Neba.Api.Security;
 using Neba.Api.Security.Domain;
 using Neba.Api.Security.Login;
 using Neba.Api.Security.RefreshToken;
-using Neba.Api.Security.Register;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Security;
@@ -59,15 +58,10 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
 
     private static async Task<ApplicationUser> SeedUserAsync(UserManager<ApplicationUser> userManager)
     {
-        var command = new RegisterCommand
-        {
-            Email = RegisterRequestFactory.ValidEmail,
-            Password = RegisterRequestFactory.ValidPassword
-        };
-        await new RegisterCommandHandler(userManager).HandleAsync(command, CancellationToken.None);
-
-        var user = await userManager.FindByEmailAsync(command.Email);
-        return user!;
+        var user = ApplicationUserFactory.Create(userName: LoginRequestFactory.ValidEmail, email: LoginRequestFactory.ValidEmail);
+        user.EmailConfirmed = true;
+        await userManager.CreateAsync(user, LoginRequestFactory.ValidPassword);
+        return user;
     }
 
     private static async Task<(ApplicationUser User, string RefreshToken)> SeedLoginAsync(
@@ -87,8 +81,8 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
             .HandleAsync(
                 new LoginCommand
                 {
-                    Email = RegisterRequestFactory.ValidEmail,
-                    Password = RegisterRequestFactory.ValidPassword
+                    Email = LoginRequestFactory.ValidEmail,
+                    Password = LoginRequestFactory.ValidPassword
                 },
                 CancellationToken.None);
         return (user, loginResult.Value.RefreshToken);
@@ -272,7 +266,7 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
 
         // Assert
         result.IsError.ShouldBeFalse();
-        result.Value.Email.ShouldBe(RegisterRequestFactory.ValidEmail);
+        result.Value.Email.ShouldBe(LoginRequestFactory.ValidEmail);
         result.Value.UserId.ShouldBe(user.Id);
     }
 
