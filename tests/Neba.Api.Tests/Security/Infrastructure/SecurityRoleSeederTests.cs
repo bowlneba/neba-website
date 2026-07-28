@@ -49,7 +49,7 @@ public sealed class SecurityRoleSeederTests
         {
             SetupRoleAlreadySynced(mock, Roles.Webmaster,
             [
-                Permissions.CreateUser,
+                Permissions.CreateUser, Permissions.ResetUserPassword,
                 Permissions.CreateArticle, Permissions.EditArticle, Permissions.DeleteArticle,
                 Permissions.CreateSponsor, Permissions.EditSponsor,
                 Permissions.CreateTournament, Permissions.EditTournament, Permissions.ManageTournamentSponsors, Permissions.DeleteTournament]);
