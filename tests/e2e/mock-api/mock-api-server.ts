@@ -1024,7 +1024,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
     await readRequestBody(req);
 
-    sendJsonResponse(res, { userId: '01JX0000000000000000000399' }, 201);
+    sendJsonResponse(res, { userId: '01JX0000000000000000000399', rolesAssigned: true }, 201);
     return;
   }
 
@@ -1033,7 +1033,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
     await readRequestBody(req);
 
-    res.writeHead(200);
+    res.writeHead(204);
     res.end();
     return;
   }
