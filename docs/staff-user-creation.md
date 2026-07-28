@@ -1,4 +1,3 @@
-@ -1,125 +0,0 @@
 # Staff User Creation — Plan
 
 ## Overview
