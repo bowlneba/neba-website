@@ -12,6 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Azure.Security.KeyVault" />
     <PackageReference Include="Blazor-ApexCharts" />
     <PackageReference Include="ErrorOr" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />

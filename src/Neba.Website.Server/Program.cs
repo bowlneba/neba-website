@@ -16,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add service defaults & Aspire client integrations.
 builder
     .AddServiceDefaults()
+    .AddInfrastructure()
     .AddFeatureManagement();
 
 builder.Services.AddApiServices(builder.Configuration);

@@ -84,8 +84,16 @@ if (builder.ExecutionContext.IsPublishMode)
         .WithReference(appInsights)
         .WithReference(keyVault);
 
+    // No Aspire.Hosting.Azure.Maps / Azure.Provisioning.Maps package exists, so the Maps
+    // account is provisioned via a handwritten Bicep template. See maps.bicep and issue #28
+    // for why this stays on subscription-key auth (via Key Vault) instead of managed identity.
+    var maps = builder.AddBicepTemplate("maps", "maps.bicep")
+        .WithParameter("keyVaultName", keyVault.Resource.NameOutputReference);
+
     web
-        .WithReference(appInsights);
+        .WithReference(appInsights)
+        .WithReference(keyVault)
+        .WithEnvironment("AzureMaps__AccountId", maps.GetOutput("mapsAccountUniqueId"));
 }
 else
 {
