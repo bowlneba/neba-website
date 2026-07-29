@@ -37,12 +37,12 @@ public sealed class CreateUserCommandHandlerIntegrationTests(SecurityDbContextFi
 
     private static async Task SeedRolesAsync(RoleManager<ApplicationRole> roleManager, params IReadOnlyCollection<string> roles)
     {
-        foreach (var role in roles)
+        var existingRoles = roleManager.Roles.Select(r => r.Name).ToHashSet();
+        var missingRoles = roles.Where(role => !existingRoles.Contains(role));
+
+        foreach (var role in missingRoles)
         {
-            if (await roleManager.FindByNameAsync(role) is null)
-            {
-                await roleManager.CreateAsync(new ApplicationRole(role));
-            }
+            await roleManager.CreateAsync(new ApplicationRole(role));
         }
     }
 
