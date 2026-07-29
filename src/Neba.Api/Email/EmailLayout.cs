@@ -23,7 +23,7 @@ internal static class EmailLayout
                         </td>
                       </tr>
                       <tr>
-                        <td style="background:#ffffff;padding:44px 52px 36px;">
+                        <td style="background:#ffffff;padding:44px 52px 36px;word-break:break-word;overflow-wrap:break-word;">
                           {innerHtml}
                         </td>
                       </tr>

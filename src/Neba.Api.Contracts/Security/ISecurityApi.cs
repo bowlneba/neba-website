@@ -1,8 +1,9 @@
+using Neba.Api.Contracts.Security.CreateUser;
 using Neba.Api.Contracts.Security.GetCurrentUser;
 using Neba.Api.Contracts.Security.Login;
 using Neba.Api.Contracts.Security.RefreshToken;
-using Neba.Api.Contracts.Security.Register;
 using Neba.Api.Contracts.Security.ResetPassword;
+using Neba.Api.Contracts.Security.SetPasswordFromToken;
 
 using Refit;
 
@@ -11,10 +12,6 @@ namespace Neba.Api.Contracts.Security;
 /// <summary>Defines the Security API contract for authentication and account management.</summary>
 public interface ISecurityApi
 {
-    /// <summary>Registers a new user account.</summary>
-    [Post("/security/register")]
-    Task<IApiResponse<RegisterResponse>> RegisterAsync([Body] RegisterRequest request, CancellationToken cancellationToken = default);
-
     /// <summary>Authenticates with email and password, returning a JWT and refresh token.</summary>
     [Post("/security/login")]
     Task<IApiResponse<LoginResponse>> LoginAsync([Body] LoginRequest request, CancellationToken cancellationToken = default);
@@ -34,4 +31,12 @@ public interface ISecurityApi
     /// <summary>Resets any user's password directly (Admin only). No current password or email token required.</summary>
     [Post("/security/password/reset")]
     Task<IApiResponse> ResetPasswordAsync([Body] ResetPasswordRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Sets a new password using a token (invite/reset), and confirms the user's email. Anonymous.</summary>
+    [Post("/security/password/set-from-token")]
+    Task<IApiResponse> SetPasswordFromTokenAsync([Body] SetPasswordFromTokenRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Creates a new user account. No password set — an invitation email is sent.</summary>
+    [Post("/security/users")]
+    Task<IApiResponse<CreateUserResponse>> CreateUserAsync([Body] CreateUserRequest request, CancellationToken cancellationToken = default);
 }

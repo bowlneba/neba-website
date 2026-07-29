@@ -9,7 +9,7 @@ using FastEndpoints.AspVersioning;
 
 using Neba.Api.Contracts.Security.ResetPassword;
 
-using SecurityRoles = Neba.Api.Security.Domain.Roles;
+using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Security.Password.ResetPassword;
 
@@ -27,7 +27,7 @@ internal sealed class ResetPasswordEndpoint(Messaging.ICommandHandler<ResetPassw
             .WithVersionSet("Security")
             .MapToApiVersion(new ApiVersion(1, 0)));
 
-        Roles(SecurityRoles.Admin);
+        Policies(PermissionCatalog.ResetUserPassword.PolicyName);
 
         Description(description => description
             .WithName("ResetPassword")

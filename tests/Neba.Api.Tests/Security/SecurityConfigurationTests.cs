@@ -39,6 +39,7 @@ public sealed class SecurityConfigurationTests(SecurityDbContextFixture fixture)
             ["JwtSettings:Issuer"] = "https://bowlneba.com",
             ["JwtSettings:Audience"] = "https://bowlneba.com",
             ["JwtSettings:SigningKey"] = new string('a', 32),
+            ["WebsiteSettings:BaseUrl"] = "https://bowlneba.com",
         });
 
         return builder;

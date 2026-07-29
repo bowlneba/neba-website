@@ -25,11 +25,11 @@
     <PackageVersion Include="Audit.NET" Version="32.2.0" />
     <PackageVersion Include="Audit.NET.AzureStorageTables" Version="32.2.0" />
     <PackageVersion Include="Audit.WebApi.Core" Version="32.2.0" />
-    <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.5.0" />
+    <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.6.0" />
     <PackageVersion Include="Azure.ResourceManager" Version="1.14.0" />
     <PackageVersion Include="Blazor-ApexCharts" Version="7.0.0" />
     <PackageVersion Include="Bogus" Version="35.6.5" />
-    <PackageVersion Include="bunit" Version="2.7.2" />
+    <PackageVersion Include="bunit" Version="2.8.6" />
     <PackageVersion Include="Community.Microsoft.Extensions.Caching.PostgreSql" Version="6.0.2" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="13.4.0" />
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />
@@ -40,12 +40,12 @@
     <PackageVersion Include="FastEndpoints.AspVersioning" Version="8.2.0" />
     <PackageVersion Include="FastEndpoints.Swagger" Version="8.2.0" />
     <PackageVersion Include="Google.Apis.Auth" Version="1.75.0" />
-    <PackageVersion Include="Google.Apis.Drive.v3" Version="1.75.0.4210" />
+    <PackageVersion Include="Google.Apis.Drive.v3" Version="1.75.0.4218" />
     <PackageVersion Include="Hangfire.AspNetCore" Version="1.8.24" />
     <PackageVersion Include="Hangfire.InMemory" Version="1.0.0" />
     <PackageVersion Include="Hangfire.PostgreSql" Version="1.21.1" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.12.4" />
-    <PackageVersion Include="HtmlSanitizer" Version="9.1.968-beta" />
+    <PackageVersion Include="HtmlSanitizer" Version="9.1.973" />
     <PackageVersion Include="MailKit" Version="4.17.0" />
     <PackageVersion Include="MessagePack" Version="3.1.8" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
@@ -82,9 +82,9 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.17.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.17.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.17.0" />
-    <PackageVersion Include="Refit" Version="14.0.0" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="14.0.0" />
-    <PackageVersion Include="Refit.Testing" Version="14.0.0" />
+    <PackageVersion Include="Refit" Version="14.0.1" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="14.0.1" />
+    <PackageVersion Include="Refit.Testing" Version="14.0.1" />
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.16.16" />
     <PackageVersion Include="Scrutor.AspNetCore" Version="3.3.0" />

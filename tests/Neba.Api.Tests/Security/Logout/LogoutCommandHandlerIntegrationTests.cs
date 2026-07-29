@@ -5,7 +5,6 @@ using Neba.Api.Security;
 using Neba.Api.Security.Domain;
 using Neba.Api.Security.Login;
 using Neba.Api.Security.Logout;
-using Neba.Api.Security.Register;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Security;
@@ -32,15 +31,10 @@ public sealed class LogoutCommandHandlerIntegrationTests(SecurityDbContextFixtur
 
     private static async Task<ApplicationUser> SeedUserAsync(UserManager<ApplicationUser> userManager)
     {
-        var command = new RegisterCommand
-        {
-            Email = RegisterRequestFactory.ValidEmail,
-            Password = RegisterRequestFactory.ValidPassword
-        };
-        await new RegisterCommandHandler(userManager).HandleAsync(command, CancellationToken.None);
-
-        var user = await userManager.FindByEmailAsync(command.Email);
-        return user!;
+        var user = ApplicationUserFactory.Create(userName: LoginRequestFactory.ValidEmail, email: LoginRequestFactory.ValidEmail);
+        user.EmailConfirmed = true;
+        await userManager.CreateAsync(user, LoginRequestFactory.ValidPassword);
+        return user;
     }
 
     private static async Task<(ApplicationUser User, string RefreshToken)> SeedLoginAsync(
@@ -67,8 +61,8 @@ public sealed class LogoutCommandHandlerIntegrationTests(SecurityDbContextFixtur
             .HandleAsync(
                 new LoginCommand
                 {
-                    Email = RegisterRequestFactory.ValidEmail,
-                    Password = RegisterRequestFactory.ValidPassword
+                    Email = LoginRequestFactory.ValidEmail,
+                    Password = LoginRequestFactory.ValidPassword
                 },
                 CancellationToken.None);
         return (user, loginResult.Value.RefreshToken);

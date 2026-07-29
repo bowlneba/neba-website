@@ -1,10 +1,12 @@
+using System.Net;
+
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Api.Email;
+using Neba.Api.Security;
 using Neba.Api.Security.Domain;
 using Neba.Api.Security.Password.ResetPassword;
-using Neba.Api.Security.Register;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Security;
@@ -17,29 +19,26 @@ namespace Neba.Api.Tests.Security.Password.ResetPassword;
 public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContextFixture fixture)
     : IClassFixture<SecurityDbContextFixture>, IAsyncLifetime
 {
+    private const string BaseUrl = "https://bowlneba.com";
+
+    private readonly WebsiteSettings _websiteSettings = new() { BaseUrl = BaseUrl };
+
     public async ValueTask InitializeAsync()
         => await fixture.ResetAsync();
 
     public ValueTask DisposeAsync()
         => ValueTask.CompletedTask;
 
-    private static ResetPasswordCommandHandler CreateHandler(
+    private ResetPasswordCommandHandler CreateHandler(
         UserManager<ApplicationUser> userManager,
         IEmailSender emailSender)
-        => new(userManager, emailSender);
+        => new(userManager, emailSender, _websiteSettings);
 
     private static async Task<ApplicationUser> SeedUserAsync(UserManager<ApplicationUser> userManager)
     {
-        var command = new RegisterCommand
-        {
-            Email = RegisterRequestFactory.ValidEmail,
-            Password = RegisterRequestFactory.ValidPassword
-        };
-        await new RegisterCommandHandler(userManager).HandleAsync(command, CancellationToken.None);
-
-        var user = await userManager.FindByEmailAsync(command.Email);
-        user!.EmailConfirmed = true;
-        await userManager.UpdateAsync(user);
+        var user = ApplicationUserFactory.Create(userName: LoginRequestFactory.ValidEmail, email: LoginRequestFactory.ValidEmail);
+        user.EmailConfirmed = true;
+        await userManager.CreateAsync(user, LoginRequestFactory.ValidPassword);
         return user;
     }
 
@@ -104,11 +103,12 @@ public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContex
 
         // Assert
         sentMessage.ShouldNotBeNull();
-        sentMessage.To.ShouldBe(RegisterRequestFactory.ValidEmail);
+        sentMessage.To.ShouldBe(LoginRequestFactory.ValidEmail);
+        sentMessage.Subject.ShouldBe("Your BowlNEBA password has been reset");
     }
 
-    [Fact(DisplayName = "HandleAsync embeds the generated temporary password in the email body")]
-    public async Task HandleAsync_ShouldEmbedTempPassword_InEmailBody()
+    [Fact(DisplayName = "HandleAsync embeds a set-password link with the user's ID and a reset token in the email body")]
+    public async Task HandleAsync_ShouldEmbedSetPasswordLink_InEmailBody()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -128,24 +128,22 @@ public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContex
 
         // Assert
         sentMessage.ShouldNotBeNull();
-        sentMessage.HtmlBody.ShouldNotContain("{tempPassword}");
-        var tempPassword = ExtractTempPasswordFromBody(sentMessage.HtmlBody);
-        var freshUser = await userManager.FindByEmailAsync(RegisterRequestFactory.ValidEmail);
-        var canLogin = await userManager.CheckPasswordAsync(freshUser!, tempPassword);
-        canLogin.ShouldBeTrue();
+        sentMessage.HtmlBody.ShouldContain($"{BaseUrl}/account/set-password?userId={user.Id}&amp;token=");
     }
 
-    [Fact(DisplayName = "HandleAsync invalidates the original password after reset")]
-    public async Task HandleAsync_ShouldInvalidateOriginalPassword_AfterReset()
+    [Fact(DisplayName = "HandleAsync generates a token the user can redeem to set a new password")]
+    public async Task HandleAsync_ShouldGenerateRedeemableToken_ForSettingNewPassword()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var user = await SeedUserAsync(userManager);
+        EmailMessage? sentMessage = null;
         var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
         emailSender
             .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
+            .Callback<EmailMessage, CancellationToken>((msg, _) => sentMessage = msg)
             .Returns(Task.CompletedTask);
         var command = new ResetPasswordCommand { UserId = user.Id };
 
@@ -153,17 +151,18 @@ public sealed class ResetPasswordCommandHandlerIntegrationTests(SecurityDbContex
         await CreateHandler(userManager, emailSender.Object).HandleAsync(command, ct);
 
         // Assert
-        var freshUser = await userManager.FindByEmailAsync(RegisterRequestFactory.ValidEmail);
-        var oldPasswordStillWorks = await userManager.CheckPasswordAsync(freshUser!, RegisterRequestFactory.ValidPassword);
-        oldPasswordStillWorks.ShouldBeFalse();
+        sentMessage.ShouldNotBeNull();
+        var token = ExtractTokenFromLink(sentMessage.HtmlBody);
+        var freshUser = await userManager.FindByEmailAsync(LoginRequestFactory.ValidEmail);
+        var resetResult = await userManager.ResetPasswordAsync(freshUser!, token, "SomeNewP@ssw0rd1");
+        resetResult.Succeeded.ShouldBeTrue();
     }
 
-    private static string ExtractTempPasswordFromBody(string htmlBody)
+    private static string ExtractTokenFromLink(string htmlBody)
     {
-        const string open = "monospace;\">";
-        const string close = "</span>";
-        var start = htmlBody.IndexOf(open, StringComparison.Ordinal) + open.Length;
-        var end = htmlBody.IndexOf(close, start, StringComparison.Ordinal);
-        return htmlBody[start..end].Trim();
+        const string marker = "&amp;token=";
+        var start = htmlBody.IndexOf(marker, StringComparison.Ordinal) + marker.Length;
+        var end = htmlBody.IndexOfAny(['"', '<'], start);
+        return WebUtility.UrlDecode(htmlBody[start..end]);
     }
 }

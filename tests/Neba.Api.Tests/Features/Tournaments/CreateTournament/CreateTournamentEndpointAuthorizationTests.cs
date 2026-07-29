@@ -55,6 +55,7 @@ public sealed class CreateTournamentEndpointAuthorizationTests(SecurityDbContext
             ["JwtSettings:Issuer"] = TestAccessTokenFactory.Settings.Issuer,
             ["JwtSettings:Audience"] = TestAccessTokenFactory.Settings.Audience,
             ["JwtSettings:SigningKey"] = TestAccessTokenFactory.Settings.SigningKey,
+            ["WebsiteSettings:BaseUrl"] = "https://bowlneba.com",
         });
 
         // AddSecurity() registers SecurityDbContext against a NpgsqlDataSource, and
