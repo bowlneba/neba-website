@@ -127,7 +127,7 @@ if (builder.ExecutionContext.IsPublishMode)
             KeyVaultBuiltInRole.KeyVaultSecretsOfficer,
             RoleManagementPrincipalType.ServicePrincipal,
             Guid.Parse(deployPrincipalId),
-            "deploy-pipeline");
+            "deploy_pipeline");
         infra.Add(roleAssignment);
     });
 
