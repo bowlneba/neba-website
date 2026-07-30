@@ -1,5 +1,7 @@
 using System.Globalization;
+
 using Aspire.Hosting.Azure;
+
 using Azure.Provisioning.AppContainers;
 using Azure.Provisioning.PostgreSql;
 
