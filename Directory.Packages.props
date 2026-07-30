@@ -74,6 +74,10 @@
          2.x object model (settable IOpenApiMediaType.Example); 3.x made it read-only and breaks the build. -->
     <PackageVersion Include="Microsoft.OpenApi" Version="[2.9.0]" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="[18.0.4]" />
+    <!-- Pinned to match Microsoft.Testing.Platform.MSBuild 1.9.1 (pulled in by Microsoft.NET.Test.Sdk 18.8.1);
+         a newer TrxReport bumps Microsoft.Testing.Platform past what MSBuild's extension hook supports, causing
+         a TypeLoadException on IDataConsumer at test-host startup. -->
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.1" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />

@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Download preview artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ needs.infra-preview.outputs.artifact-name }}
           path: .
