@@ -76,7 +76,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          VAULT_NAME=$(azd env get-value SECRETS_VAULTURI | sed 's|https://||;s|\.vault\.azure\.net.*||')
+          VAULT_NAME=$(azd env get-value KEYVAULT_VAULTURI | sed 's|https://||;s|\.vault\.azure\.net.*||')
 
           az keyvault secret set --vault-name "$VAULT_NAME" \
             --name "GoogleDrive--Credentials--PrivateKey" \
