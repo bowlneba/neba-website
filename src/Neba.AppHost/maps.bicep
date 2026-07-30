@@ -4,6 +4,9 @@ param mapsAccountName string = 'neba-maps'
 @description('Name of the existing Key Vault to write the Maps subscription key into.')
 param keyVaultName string
 
+@description('Unused: Azure Maps accounts are global. Declared because Aspire passes a location parameter to every Bicep module by convention.')
+param location string = resourceGroup().location
+
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
 }
