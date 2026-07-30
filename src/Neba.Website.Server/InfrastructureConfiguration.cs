@@ -31,7 +31,7 @@ internal static class InfrastructureConfiguration
                 return builder;
             }
 
-            builder.Configuration.AddAzureKeyVaultSecrets(keyVaultConnectionString);
+            builder.Configuration.AddAzureKeyVaultSecrets("keyvault");
 
             return builder;
         }
