@@ -81,6 +81,8 @@ var web = builder.AddProject<Projects.Neba_Website_Server>("web")
 
 if (builder.ExecutionContext.IsPublishMode)
 {
+    builder.AddAzureContainerAppEnvironment("env");
+
     var workspace = builder.AddAzureLogAnalyticsWorkspace("logs");
     var appInsights = builder.AddAzureApplicationInsights("appinsights")
         .WithLogAnalyticsWorkspace(workspace);
