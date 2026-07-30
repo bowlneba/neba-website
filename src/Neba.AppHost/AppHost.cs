@@ -3,6 +3,8 @@ using System.Globalization;
 using Aspire.Hosting.Azure;
 
 using Azure.Provisioning.AppContainers;
+using Azure.Provisioning.Authorization;
+using Azure.Provisioning.KeyVault;
 using Azure.Provisioning.PostgreSql;
 
 var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions
@@ -108,6 +110,26 @@ if (builder.ExecutionContext.IsPublishMode)
     });
 
     var keyVault = builder.AddAzureKeyVault("keyvault");
+
+    // The CD pipeline's "Seed Key Vault secrets" step (cd.yml) writes secrets directly into this
+    // vault via `az keyvault secret set`, using the same service principal that runs `azd
+    // provision`/`azd deploy`. That principal only holds subscription-level Contributor/User
+    // Access Administrator, neither of which grants Key Vault data-plane access on an
+    // RBAC-authorized vault - so without an explicit data role here, the seed step fails with
+    // 403 Forbidden.
+    var deployPrincipalId = Environment.GetEnvironmentVariable("AZURE_PRINCIPAL_ID")
+        ?? throw new InvalidOperationException("AZURE_PRINCIPAL_ID environment variable is not set.");
+
+    keyVault.ConfigureInfrastructure(infra =>
+    {
+        var vault = infra.GetProvisionableResources().OfType<KeyVaultService>().Single();
+        var roleAssignment = vault.CreateRoleAssignment(
+            KeyVaultBuiltInRole.KeyVaultSecretsOfficer,
+            RoleManagementPrincipalType.ServicePrincipal,
+            Guid.Parse(deployPrincipalId),
+            "deploy-pipeline");
+        infra.Add(roleAssignment);
+    });
 
     api
         .WithReference(appInsights)
