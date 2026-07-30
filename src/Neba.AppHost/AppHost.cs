@@ -1,3 +1,7 @@
+using System.Globalization;
+using Aspire.Hosting.Azure;
+using Azure.Provisioning.AppContainers;
+
 var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions
 {
     Args = args,
@@ -94,6 +98,38 @@ if (builder.ExecutionContext.IsPublishMode)
         .WithReference(appInsights)
         .WithReference(keyVault)
         .WithEnvironment("AzureMaps__AccountId", maps.GetOutput("mapsAccountUniqueId"));
+
+    // Replica scaling comes from the AZURE_CONTAINERAPP_* repo vars (currently 1/10/50) so
+    // adjusting capacity - e.g. scaling to zero during an off-season "dark" period - is a
+    // config change, not a code change. See .github/workflows/infrastructure_preview.yml and
+    // cd.yml for where these are supplied.
+    var minReplicas = int.Parse(
+        Environment.GetEnvironmentVariable("AZURE_CONTAINERAPP_MIN_REPLICAS")
+            ?? throw new InvalidOperationException("AZURE_CONTAINERAPP_MIN_REPLICAS environment variable is not set."),
+        CultureInfo.InvariantCulture);
+    var maxReplicas = int.Parse(
+        Environment.GetEnvironmentVariable("AZURE_CONTAINERAPP_MAX_REPLICAS")
+            ?? throw new InvalidOperationException("AZURE_CONTAINERAPP_MAX_REPLICAS environment variable is not set."),
+        CultureInfo.InvariantCulture);
+    var concurrentRequests = Environment.GetEnvironmentVariable("AZURE_CONTAINERAPP_CONCURRENT_REQUESTS")
+        ?? throw new InvalidOperationException("AZURE_CONTAINERAPP_CONCURRENT_REQUESTS environment variable is not set.");
+
+    void ConfigureScale(AzureResourceInfrastructure infra, ContainerApp app)
+    {
+        app.Template.Scale.MinReplicas = minReplicas;
+        app.Template.Scale.MaxReplicas = maxReplicas;
+        app.Template.Scale.Rules.Add(new ContainerAppScaleRule
+        {
+            Name = "http-concurrency",
+            Http = new ContainerAppHttpScaleRule
+            {
+                Metadata = { ["concurrentRequests"] = concurrentRequests }
+            }
+        });
+    }
+
+    api.PublishAsAzureContainerApp(ConfigureScale);
+    web.PublishAsAzureContainerApp(ConfigureScale);
 }
 else
 {
