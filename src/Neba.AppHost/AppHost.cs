@@ -1,5 +1,3 @@
-using Azure.Provisioning.AppService;
-
 var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions
 {
     Args = args,
@@ -76,31 +74,6 @@ var web = builder.AddProject<Projects.Neba_Website_Server>("web")
 
 if (builder.ExecutionContext.IsPublishMode)
 {
-    // Hosting model is Azure App Service (Web App for Containers), not Container Apps.
-    // SKU comes from the Production GitHub environment's AZURE_ASP_SKU_NAME/AZURE_ASP_SKU_TIER
-    // vars (currently S1/Standard) so changing the plan tier is a config change, not a code change.
-    // Every publish-mode caller (cd.yml's deploy job and infrastructure_preview.yml) must supply
-    // these - see .github/workflows/infrastructure_preview.yml for why the preview job also needs
-    // Production environment scoping now.
-    var aspSkuName = Environment.GetEnvironmentVariable("AZURE_ASP_SKU_NAME")
-        ?? throw new InvalidOperationException("AZURE_ASP_SKU_NAME environment variable is not set.");
-    var aspSkuTier = Environment.GetEnvironmentVariable("AZURE_ASP_SKU_TIER")
-        ?? throw new InvalidOperationException("AZURE_ASP_SKU_TIER environment variable is not set.");
-
-    builder.AddAzureAppServiceEnvironment("appservice")
-        .ConfigureInfrastructure(infra =>
-        {
-            var plan = infra.GetProvisionableResources().OfType<AppServicePlan>().Single();
-            plan.Sku = new AppServiceSkuDescription
-            {
-                Name = aspSkuName,
-                Tier = aspSkuTier
-            };
-        });
-
-    api.PublishAsAzureAppServiceWebsite((_, _) => { });
-    web.PublishAsAzureAppServiceWebsite((_, _) => { });
-
     var workspace = builder.AddAzureLogAnalyticsWorkspace("logs");
     var appInsights = builder.AddAzureApplicationInsights("appinsights")
         .WithLogAnalyticsWorkspace(workspace);

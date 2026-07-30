@@ -5,4 +5,4 @@ services:
   app:
     language: dotnet
     project: ./src/Neba.AppHost/Neba.AppHost.csproj
-    host: appservice
+    host: containerapp
