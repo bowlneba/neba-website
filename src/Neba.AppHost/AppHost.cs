@@ -1,6 +1,7 @@
 using System.Globalization;
 using Aspire.Hosting.Azure;
 using Azure.Provisioning.AppContainers;
+using Azure.Provisioning.PostgreSql;
 
 var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions
 {
@@ -81,6 +82,26 @@ if (builder.ExecutionContext.IsPublishMode)
     var workspace = builder.AddAzureLogAnalyticsWorkspace("logs");
     var appInsights = builder.AddAzureApplicationInsights("appinsights")
         .WithLogAnalyticsWorkspace(workspace);
+
+    // Postgres compute comes from the AZURE_POSTGRES_SKU_* repo vars (currently
+    // Standard_B2s/Burstable) so switching tiers - e.g. downgrading to Standard_B1ms during a
+    // off-season "dark" period - is a config change, not code change. See
+    // .github/workflows/infrastructure_preview.yml and cd.yml for where these are supplied.
+    var postgresSkuName = Environment.GetEnvironmentVariable("AZURE_POSTGRES_SKU_NAME")
+        ?? throw new InvalidOperationException("AZURE_POSTGRES_SKU_NAME environment variable is not set.");
+    var postgresSkuTier = Enum.Parse<PostgreSqlFlexibleServerSkuTier>(
+        Environment.GetEnvironmentVariable("AZURE_POSTGRES_SKU_TIER")
+            ?? throw new InvalidOperationException("AZURE_POSTGRES_SKU_TIER environment variable is not set."));
+
+    postgres.ConfigureInfrastructure(infra =>
+    {
+        var server = infra.GetProvisionableResources().OfType<PostgreSqlFlexibleServer>().Single();
+        server.Sku = new PostgreSqlFlexibleServerSku
+        {
+            Name = postgresSkuName,
+            Tier = postgresSkuTier
+        };
+    });
 
     var keyVault = builder.AddAzureKeyVault("keyvault");
 
