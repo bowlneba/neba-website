@@ -126,6 +126,16 @@ jobs:
           azd deploy api-migrations --no-prompt
           azd deploy api-security-migrations --no-prompt
 
+      # See "Re-login to Azure" above - by this point the token from that step (before Key
+      # Vault seeding) is several minutes old (Seed Key Vault + Deploy migration jobs), close
+      # to the ~5 min OIDC validity window, and this step's own az CLI calls need a fresh one.
+      - name: Re-login to Azure (pre-migrations)
+        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
+        with:
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+
       # These jobs run Neba.Api's EF Core migrations (Neba.MigrationService, see AppHost.cs)
       # against Postgres using the job's own managed identity - no DB credentials touch this
       # pipeline. Triggered here, before the api/web deploy below, so the schema is up to date
@@ -136,7 +146,14 @@ jobs:
         run: |
           set -euo pipefail
 
-          RESOURCE_GROUP=$(azd env get-value AZURE_CONTAINER_APPS_ENVIRONMENT_ID | sed -n 's|.*/resourceGroups/\([^/]*\)/.*|\1|p')
+          RESOURCE_GROUP=$(az group list --tag "azd-env-name=$AZURE_ENV_NAME" --query "[0].name" -o tsv)
+
+          if [[ -z "$RESOURCE_GROUP" ]]; then
+            echo "Could not resolve resource group for azd environment '$AZURE_ENV_NAME'." >&2
+            exit 1
+          fi
+
+          echo "Resolved resource group: $RESOURCE_GROUP"
 
           run_migration_job() {
             local job_name="$1"
