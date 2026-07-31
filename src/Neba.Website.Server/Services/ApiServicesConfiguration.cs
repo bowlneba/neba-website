@@ -70,6 +70,8 @@ internal static class ApiServicesConfiguration
                 // which can exceed the global default 10s attempt timeout. Give this client more room.
                 options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
                 options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(35);
+                // Circuit breaker sampling duration must be at least double the attempt timeout.
+                options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(60);
             });
             services.RegisterApiEndpoint<INewsApi>();
             services.RegisterApiEndpoint<IBowlingCentersApi>();
