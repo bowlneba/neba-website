@@ -93,15 +93,15 @@ jobs:
           VAULT_NAME=$(azd env get-value KEYVAULT_VAULTURI | sed 's|https://||;s|\.vault\.azure\.net.*||')
 
           az keyvault secret set --vault-name "$VAULT_NAME" \
-            --name "GoogleDrive--Credentials--PrivateKey" \
+            --name "Google--Credentials--PrivateKey" \
             --value "$GOOGLE_PRIVATE_KEY"
 
           az keyvault secret set --vault-name "$VAULT_NAME" \
-            --name "GoogleDrive--Credentials--PrivateKeyId" \
+            --name "Google--Credentials--PrivateKeyId" \
             --value "$GOOGLE_PRIVATE_KEY_ID"
 
           az keyvault secret set --vault-name "$VAULT_NAME" \
-            --name "GoogleDrive--Credentials--ClientEmail" \
+            --name "Google--Credentials--ClientEmail" \
             --value "$GOOGLE_CLIENT_EMAIL"
 
           az keyvault secret set --vault-name "$VAULT_NAME" \
