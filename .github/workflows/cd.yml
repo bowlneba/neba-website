@@ -65,6 +65,16 @@ jobs:
           AZD_AUTH_USE_AZURE_CLI: "true"
         run: azd provision --no-prompt
 
+      # Re-authenticate: azd provision can run long enough (Postgres alone took ~7m in
+      # one run) that the OIDC client assertion from the earlier login step expires
+      # (~5 min validity), causing subsequent az CLI calls to fail with AADSTS700024.
+      - name: Re-login to Azure
+        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
+        with:
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+
       - name: Seed Key Vault secrets
         env:
           AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
@@ -163,6 +173,15 @@ jobs:
 
           run_migration_job "api-migrations"
           run_migration_job "api-security-migrations"
+
+      # See "Re-login to Azure" above - migration jobs can poll for up to 10 minutes,
+      # long enough to expire the OIDC client assertion again.
+      - name: Re-login to Azure (post-migrations)
+        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
+        with:
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
 
       - name: Deploy application
         env:
