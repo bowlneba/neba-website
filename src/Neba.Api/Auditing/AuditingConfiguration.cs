@@ -4,6 +4,8 @@ using Audit.Core;
 using Audit.EntityFramework;
 using Audit.WebApi;
 
+using Azure.Identity;
+
 using Microsoft.AspNetCore.Identity;
 
 using Neba.Api.Database;
@@ -30,6 +32,23 @@ internal static class AuditingConfiguration
         "/debug"
     ];
 
+    extension(IAzureTableConnectionConfigurator config)
+    {
+        /// <summary>
+        /// Configures the Azure Table connection from a value that is either a classic connection string
+        /// (local Azurite emulator) or a bare service endpoint URI (real Azure Storage account, where Aspire's
+        /// "tables" resource authenticates via managed identity/<see cref="DefaultAzureCredential"/> instead of an
+        /// account key). <see cref="IAzureTableConnectionConfigurator.ConnectionString(string)"/> alone cannot parse
+        /// the latter - it expects key=value segments, not a URI.
+        /// </summary>
+        private IAzureTablesEntityConfigurator ConfigureConnection(string? connectionOrEndpoint)
+        {
+            return Uri.TryCreate(connectionOrEndpoint, UriKind.Absolute, out var endpoint)
+                ? config.Endpoint(endpoint, new DefaultAzureCredential())
+                : config.ConnectionString(connectionOrEndpoint);
+        }
+    }
+
     extension(WebApplicationBuilder builder)
     {
         public WebApplicationBuilder AddAuditing()
@@ -43,7 +62,7 @@ internal static class AuditingConfiguration
             builder.Services.AddSingleton<ApiAuditPayloadScrubbingAction>();
 
             var defaultProvider = new AzureTableDataProvider(config => config
-                .ConnectionString(builder.Configuration.GetConnectionString("tables"))
+                .ConfigureConnection(builder.Configuration.GetConnectionString("tables"))
                 .TableName(_ => "EFAuditEvents")
                 // EntityMapper (not EntityBuilder) is required to retain the event payload:
                 // AuditEventTableEntity serializes the full event to JSON in an "AuditEvent"
@@ -52,7 +71,7 @@ internal static class AuditingConfiguration
                 .EntityMapper(ev => new AuditEventTableEntity(ev.EventType ?? "unknown", Ulid.NewUlid().ToString(), ev)));
 
             var securityProvider = new AzureTableDataProvider(config => config
-                .ConnectionString(builder.Configuration.GetConnectionString("tables"))
+                .ConfigureConnection(builder.Configuration.GetConnectionString("tables"))
                 .TableName(_ => "SecurityAuditEvents")
                 .EntityMapper(ev => new AuditEventTableEntity(ev.EventType ?? "unknown", Ulid.NewUlid().ToString(), ev)));
 
