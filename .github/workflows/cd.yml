@@ -136,7 +136,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          RESOURCE_GROUP=$(azd env get-value AZURE_RESOURCE_GROUP)
+          RESOURCE_GROUP=$(azd env get-value AZURE_CONTAINER_APPS_ENVIRONMENT_ID | sed -n 's|.*/resourceGroups/\([^/]*\)/.*|\1|p')
 
           run_migration_job() {
             local job_name="$1"
