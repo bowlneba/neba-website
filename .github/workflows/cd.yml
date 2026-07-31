@@ -122,7 +122,9 @@ jobs:
           AZURE_POSTGRES_SKU_NAME: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
           AZURE_POSTGRES_SKU_TIER: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
           AZD_AUTH_USE_AZURE_CLI: "true"
-        run: azd deploy api-migrations api-security-migrations --no-prompt
+        run: |
+          azd deploy api-migrations --no-prompt
+          azd deploy api-security-migrations --no-prompt
 
       # These jobs run Neba.Api's EF Core migrations (Neba.MigrationService, see AppHost.cs)
       # against Postgres using the job's own managed identity - no DB credentials touch this
@@ -197,4 +199,6 @@ jobs:
           AZURE_POSTGRES_SKU_NAME: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
           AZURE_POSTGRES_SKU_TIER: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
           AZD_AUTH_USE_AZURE_CLI: "true"
-        run: azd deploy api web --no-prompt
+        run: |
+          azd deploy api --no-prompt
+          azd deploy web --no-prompt
