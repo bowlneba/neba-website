@@ -32,17 +32,17 @@ jobs:
       artifact-name: ${{ steps.meta.outputs.artifact-name }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Login to Azure
-        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2
+        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
         with:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           client-id: ${{ vars.AZURE_CLIENT_ID }}
 
       - name: Setup azd
-        uses: Azure/setup-azd@c495e71ba59e44bfaaac10a32c8ee90d191ca4a3 # v2
+        uses: Azure/setup-azd@80591774c092d5d640d43663766a76728d66e07d # v2.3.0
 
       - name: Configure azd authentication
         run: azd config set auth.useAzCliAuth true
