@@ -59,6 +59,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Neba.Api.Tests" />
     <InternalsVisibleTo Include="Neba.TestFactory" />
+    <InternalsVisibleTo Include="Neba.MigrationService" />
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 

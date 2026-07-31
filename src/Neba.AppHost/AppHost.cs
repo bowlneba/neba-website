@@ -26,6 +26,20 @@ var postgres = builder.AddAzurePostgresFlexibleServer("postgres")
 
 var database = postgres.AddDatabase("bowlneba");
 
+// Runs Neba.Api's EF Core migrations against a dedicated DbContext. Each is a one-shot
+// process that exits after applying pending migrations, using the same managed-identity
+// Postgres auth as the api - so no DB credentials are needed here or in CD. See
+// .github/workflows/cd.yml for how these are triggered as Azure Container App Jobs.
+var appMigrations = builder.AddProject<Projects.Neba_MigrationService>("api-migrations")
+    .WithArgs("app")
+    .WithReference(database)
+    .WaitFor(database);
+
+var securityMigrations = builder.AddProject<Projects.Neba_MigrationService>("api-security-migrations")
+    .WithArgs("security")
+    .WithReference(database)
+    .WaitFor(database);
+
 var storage = builder.AddAzureStorage("storage")
     .RunAsEmulator(emulator => emulator
         .WithContainerName("bowlneba-storage")
@@ -43,6 +57,8 @@ var api = builder.AddProject<Projects.Neba_Api>("api")
     .WithHttpHealthCheck("/health")
     .WithReference(database)
     .WaitFor(database)
+    .WaitForCompletion(appMigrations)
+    .WaitForCompletion(securityMigrations)
     .WithReference(blobs)
     .WaitFor(blobs)
     .WithReference(tables)
@@ -177,6 +193,12 @@ if (builder.ExecutionContext.IsPublishMode)
 
     api.PublishAsAzureContainerApp(ConfigureScale);
     web.PublishAsAzureContainerApp(ConfigureScale);
+
+    // Manually-triggered jobs, not started automatically by azd deploy - cd.yml deploys these
+    // two job images first, triggers each with `az containerapp job start`, and waits for them
+    // to finish before deploying api/web, so the schema is migrated before new code takes traffic.
+    appMigrations.PublishAsAzureContainerAppJob();
+    securityMigrations.PublishAsAzureContainerAppJob();
 }
 else
 {

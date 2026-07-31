@@ -8,7 +8,7 @@ jobs:
     name: Infrastructure Preview
     uses: ./.github/workflows/infrastructure_preview.yml
     with:
-      azure_env_name: bowlneba-prod
+      azure_env_name: ${{ vars.AZURE_ENV_NAME }}
       azure_location: ${{ vars.AZURE_LOCATION }}
       artifact_name: cd-azd-preview
     permissions:
@@ -51,7 +51,7 @@ jobs:
 
       - name: Provision infrastructure
         env:
-          AZURE_ENV_NAME: bowlneba-prod
+          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
           AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
@@ -67,7 +67,7 @@ jobs:
 
       - name: Seed Key Vault secrets
         env:
-          AZURE_ENV_NAME: bowlneba-prod
+          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
           GOOGLE_PRIVATE_KEY: ${{ secrets.GOOGLE_PRIVATE_KEY }}
           GOOGLE_PRIVATE_KEY_ID: ${{ secrets.GOOGLE_PRIVATE_KEY_ID }}
           GOOGLE_CLIENT_EMAIL: ${{ secrets.GOOGLE_CLIENT_EMAIL }}
@@ -98,9 +98,9 @@ jobs:
             --name "JwtSettings--SigningKey" \
             --value "$JWT_SIGNING_KEY"
 
-      - name: Deploy application
+      - name: Deploy migration jobs
         env:
-          AZURE_ENV_NAME: bowlneba-prod
+          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
           AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
@@ -112,4 +112,70 @@ jobs:
           AZURE_POSTGRES_SKU_NAME: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
           AZURE_POSTGRES_SKU_TIER: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
           AZD_AUTH_USE_AZURE_CLI: "true"
-        run: azd deploy --no-prompt
+        run: azd deploy api-migrations api-security-migrations --no-prompt
+
+      # These jobs run Neba.Api's EF Core migrations (Neba.MigrationService, see AppHost.cs)
+      # against Postgres using the job's own managed identity - no DB credentials touch this
+      # pipeline. Triggered here, before the api/web deploy below, so the schema is up to date
+      # before new application code takes traffic.
+      - name: Run database migrations
+        env:
+          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+        run: |
+          set -euo pipefail
+
+          RESOURCE_GROUP=$(azd env get-value AZURE_RESOURCE_GROUP)
+
+          run_migration_job() {
+            local job_name="$1"
+
+            echo "Starting job execution: $job_name"
+            local execution_name
+            execution_name=$(az containerapp job start \
+              --name "$job_name" \
+              --resource-group "$RESOURCE_GROUP" \
+              --query "name" -o tsv)
+
+            echo "Waiting for job execution '$execution_name' to complete..."
+            local status="Running"
+            local attempts=0
+            while [[ "$status" == "Running" || "$status" == "Processing" ]]; do
+              if (( attempts >= 60 )); then
+                echo "Timed out waiting for job '$job_name' execution '$execution_name' to complete." >&2
+                exit 1
+              fi
+              sleep 10
+              status=$(az containerapp job execution show \
+                --name "$job_name" \
+                --resource-group "$RESOURCE_GROUP" \
+                --job-execution-name "$execution_name" \
+                --query "properties.status" -o tsv)
+              attempts=$((attempts + 1))
+            done
+
+            if [[ "$status" != "Succeeded" ]]; then
+              echo "Job '$job_name' execution '$execution_name' finished with status '$status'." >&2
+              exit 1
+            fi
+
+            echo "Job '$job_name' completed successfully."
+          }
+
+          run_migration_job "api-migrations"
+          run_migration_job "api-security-migrations"
+
+      - name: Deploy application
+        env:
+          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_PRINCIPAL_ID: ${{ vars.AZURE_PRINCIPAL_ID }}
+          AZURE_CONTAINERAPP_MIN_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
+          AZURE_CONTAINERAPP_MAX_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
+          AZURE_CONTAINERAPP_CONCURRENT_REQUESTS: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
+          AZURE_POSTGRES_SKU_NAME: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
+          AZURE_POSTGRES_SKU_TIER: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
+          AZD_AUTH_USE_AZURE_CLI: "true"
+        run: azd deploy api web --no-prompt

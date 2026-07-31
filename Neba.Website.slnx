@@ -10,6 +10,7 @@
     <Project Path="src/Neba.Api.Contracts/Neba.Api.Contracts.csproj" />
     <Project Path="src/Neba.Api/Neba.Api.csproj" />
     <Project Path="src/Neba.AppHost/Neba.AppHost.csproj" />
+    <Project Path="src/Neba.MigrationService/Neba.MigrationService.csproj" />
     <Project Path="src/Neba.ServiceDefaults/Neba.ServiceDefaults.csproj" />
     <Project Path="src/Neba.Website.Client/Neba.Website.Client.csproj" />
     <Project Path="src/Neba.Website.Server/Neba.Website.Server.csproj" />
