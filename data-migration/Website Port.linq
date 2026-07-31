@@ -43,6 +43,8 @@
   <Namespace>System.Threading.Tasks</Namespace>
 </Query>
 
+public bool _bowlingCenterMigration = false;
+
 async Task Main()
 {
 	await SecurityMigration();
@@ -171,7 +173,11 @@ public async Task SecurityMigration()
 
 public async Task ApplicationMigration()
 {
-	//BowlingCenters.RemoveRange(BowlingCenters);
+	if (_bowlingCenterMigration)
+	{
+		BowlingCenters.RemoveRange(BowlingCenters);
+	}
+	
 	TournamentChampions.RemoveRange(TournamentChampions);
 	TournamentEntries.RemoveRange(TournamentEntries);
 	Bowlers.RemoveRange(Bowlers);
@@ -192,7 +198,11 @@ public async Task ApplicationMigration()
 	ArticleAttachments.RemoveRange(ArticleAttachments);
 	SaveChanges();
 
-	//Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowling_centers RESTART IDENTITY CASCADE;");
+	if (_bowlingCenterMigration)
+	{
+		Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowling_centers RESTART IDENTITY CASCADE;");
+	}
+
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowlers RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.hall_of_fame_inductions RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.bowler_of_the_year_awards RESTART IDENTITY CASCADE;");
@@ -209,7 +219,7 @@ public async Task ApplicationMigration()
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.article_attachments RESTART IDENTITY CASCADE;");
 	SaveChanges();
 
-	//await MigrateBowlingCentersAsync();
+	await MigrateBowlingCentersAsync();
 	var bowlingCenterIds = BowlingCenters.ToList().Select(b => (b.Id, b.CertificationNumber, b.LegacyId, b.WebsiteId)).ToList().AsReadOnly();
 
 	var bowlerIds = await MigrateBowlersAsync();
@@ -1688,6 +1698,11 @@ public async Task MigrateHallOfFameAsync(Dictionary<int, Ulid> bowlerIdBySoftwar
 
 public async Task MigrateBowlingCentersAsync()
 {
+	if (!_bowlingCenterMigration)
+	{
+		return;
+	}
+	
 	var softwareBowlingCentersDataTable = await QuerySoftwareDatabaseAsync("SELECT * FROM BowlingCenters");
 	var websiteBowlingCentersDataTable = await QueryStatsDatabaseAsync("SELECT * FROM Centers WHERE ID not in (2, 19, 28)"); //2: AMF Silver (HOF Silver), 19: TBD Center, 28: Superbowl (Apple Valley)
 
