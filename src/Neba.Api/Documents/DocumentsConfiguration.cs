@@ -57,6 +57,14 @@ internal static class DocumentsConfiguration
                         TriggeredBy = "scheduled"
                     },
                     "0 5 1-7 * 1"); // First Monday at 5:00 AM
+
+                // Pre-warm the blob cache on startup so the first real request doesn't pay
+                // the live Google Drive fetch cost (can exceed the client's resilience timeout).
+                scheduler.Enqueue(new SyncDocumentToStorageJob
+                {
+                    DocumentName = documentName,
+                    TriggeredBy = "startup"
+                });
             }
         }
     }
