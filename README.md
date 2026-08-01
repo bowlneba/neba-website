@@ -75,6 +75,7 @@ src/
 │   ├── Layout/
 │   └── Services/
 ├── Neba.Website.Client/          # Blazor WebAssembly project — scaffolded, unused (no components yet need Interactive Auto)
+├── Neba.MigrationService/        # One-shot EF Core migration runner, deployed as a Container App Job
 ├── Neba.AppHost/                 # .NET Aspire AppHost
 └── Neba.ServiceDefaults/         # .NET Aspire service defaults
 ```
@@ -114,7 +115,7 @@ src/
 | **Database** | PostgreSQL |
 | **ORM** | Entity Framework Core with EF Core Identity |
 | **Local Development** | .NET Aspire |
-| **Production** | Azure (App Service, Monitor, Key Vault, Blob Storage, Maps) |
+| **Production** | Azure (Container Apps, Monitor, Key Vault, Blob Storage, Maps) |
 | **Background Jobs** | Hangfire |
 | **Caching** | FusionCache |
 | **API Documentation** | Scalar |
@@ -208,4 +209,4 @@ ConnectionStrings__bowlneba='Host=localhost;Port=52502;Database=bowlneba;Usernam
 - [x] Ubiquitous Language Definitions
 - [x] Architecture Decision Records (ADRs)
 - [ ] API Reference
-- [ ] Administrative Website Manual
+- [x] Administrative Website Manual
