@@ -52,6 +52,17 @@ public sealed class HelpDocumentServiceTests
         html.ShouldContain("<table>");
     }
 
+    [Fact(DisplayName = "Should render docs with no image references without error")]
+    public void GetRenderedHtml_ShouldRenderDoc_WhenDocHasNoImages()
+    {
+        // Act
+        var html = _sut.GetRenderedHtml("reset-password");
+
+        // Assert
+        html.ShouldNotBeNull();
+        html.ShouldNotContain("/help/images/");
+    }
+
     [Fact(DisplayName = "Should cache the rendered HTML across repeated calls for the same doc")]
     public void GetRenderedHtml_ShouldReturnSameInstance_OnRepeatedCallsForSameDoc()
     {

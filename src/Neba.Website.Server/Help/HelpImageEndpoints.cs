@@ -9,20 +9,20 @@ internal static class HelpImageEndpoints
     extension(WebApplication app)
     {
         public void MapHelpImageEndpoints()
-        {
-            app.MapGet("/help/images/{doc}/{file}", (string doc, string file) =>
-            {
-                var assembly = typeof(HelpImageEndpoints).Assembly;
-                var stream = assembly.GetManifestResourceStream($"Help.Images.{doc}/{file}");
-
-                return stream is null
-                    ? Results.NotFound()
-                    : Results.File(stream, GetContentType(file));
-            }).RequireAuthorization();
-        }
+            => app.MapGet("/help/images/{doc}/{file}", GetImage).RequireAuthorization();
     }
 
-    private static string GetContentType(string fileName) => Path.GetExtension(fileName) switch
+    internal static IResult GetImage(string doc, string file)
+    {
+        var assembly = typeof(HelpImageEndpoints).Assembly;
+        var stream = assembly.GetManifestResourceStream($"Help.Images.{doc}/{file}");
+
+        return stream is null
+            ? Results.NotFound()
+            : Results.File(stream, GetContentType(file));
+    }
+
+    internal static string GetContentType(string fileName) => Path.GetExtension(fileName) switch
     {
         var ext when ext.Equals(".png", StringComparison.OrdinalIgnoreCase) => "image/png",
         var ext when ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase) || ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) => "image/jpeg",
