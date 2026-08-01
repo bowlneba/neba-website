@@ -4,6 +4,7 @@ using Neba.Website.Server;
 using Neba.Website.Server.Account;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.FeatureManagement;
+using Neba.Website.Server.Help;
 using Neba.Website.Server.Maps;
 using Neba.Website.Server.ReferenceData;
 using Neba.Website.Server.Services;
@@ -39,6 +40,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITournamentApiService, TournamentApiService>();
 builder.Services.AddScoped<IReferenceDataService, ReferenceDataService>();
 builder.Services.AddScoped<IClientTimeZoneService, ClientTimeZoneService>();
+builder.Services.AddSingleton<HelpDocumentService>();
 
 var app = builder.Build();
 
@@ -62,6 +64,7 @@ app.UseAntiforgery();
 app.UseOutputCache();
 
 app.MapStaticAssets();
+app.MapHelpImageEndpoints();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()

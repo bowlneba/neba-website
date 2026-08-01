@@ -10,9 +10,12 @@
 <div class="neba-card mts-panel">
     <div class="mts-panel__header">
         <h2 class="td-section-title">Manage Sponsors</h2>
-        <button type="button" class="neba-btn neba-btn-primary neba-btn-sm" @onclick="OpenAddModalAsync">
-            + Add Sponsor
-        </button>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <button type="button" class="neba-btn neba-btn-primary neba-btn-sm" @onclick="OpenAddModalAsync">
+                + Add Sponsor
+            </button>
+            <HelpButton DocName="manage-tournament-sponsors" />
+        </div>
     </div>
 
     @if (_errorMessage is not null)

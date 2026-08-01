@@ -23,6 +23,7 @@ using Neba.TestFactory.Uploads;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Components;
 using Neba.Website.Server.News;
+using Neba.Website.Server.Help;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Time;
@@ -86,6 +87,7 @@ public sealed class EditArticleTests : IDisposable
         _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
+        _ctx.Services.AddSingleton<HelpDocumentService>();
     }
 
     public void Dispose()

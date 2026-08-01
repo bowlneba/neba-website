@@ -23,6 +23,7 @@ using Neba.TestFactory.Sponsors;
 using Neba.TestFactory.Uploads;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Components;
+using Neba.Website.Server.Help;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.ReferenceData;
 using Neba.Website.Server.Services;
@@ -73,6 +74,7 @@ public sealed class EditSponsorTests : IDisposable
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
+        _ctx.Services.AddSingleton<HelpDocumentService>();
         _ctx.Services.AddSingleton(mockReferenceDataService.Object);
     }
 

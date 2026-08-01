@@ -89,7 +89,14 @@ else if (_article is not null)
                         </Authorized>
                     </AuthorizeView>
                 </div>
-                <h1 class="news-detail-title">@_article.Title</h1>
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem;">
+                    <h1 class="news-detail-title">@_article.Title</h1>
+                    <AuthorizeView Policy="@Permissions.DeleteArticle.PolicyName">
+                        <Authorized>
+                            <HelpButton DocName="delete-article" />
+                        </Authorized>
+                    </AuthorizeView>
+                </div>
 
                 <div class="news-detail-body article-body">
                     @((MarkupString)_article.Content)

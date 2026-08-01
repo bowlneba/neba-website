@@ -1,0 +1,54 @@
+@using Neba.Website.Server.Help
+@inject HelpDocumentService HelpDocumentService
+
+<button type="button" class="neba-help-btn @(Light ? "neba-help-btn--light" : null)" @onclick="Open" aria-label="Help">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.6" fill="none" />
+        <path d="M7.3 7.6C7.3 6.1 8.5 5 10 5C11.5 5 12.7 6.1 12.7 7.6C12.7 8.9 11.9 9.5 11.1 10.1C10.4 10.6 10 11 10 11.8" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" />
+        <circle cx="10" cy="14.5" r="1" fill="currentColor" />
+    </svg>
+</button>
+
+<NebaModal IsOpen="@_isOpen" OnClose="@Close" Title="Help" MaxWidth="700px" CssClass="help-modal" AlignTop="true">
+    <ChildContent>
+        <div class="help-doc-content">
+            @if (_html is not null)
+            {
+                @((MarkupString)_html)
+            }
+            else
+            {
+                <p>Help content isn't available for this page yet.</p>
+            }
+        </div>
+    </ChildContent>
+</NebaModal>
+
+@code {
+    private bool _isOpen;
+    private string? _html;
+
+    /// <summary>
+    /// The kebab-case help doc name to render (e.g. "create-sponsor" for docs/help/create-sponsor.md).
+    /// </summary>
+    [Parameter, EditorRequired]
+    public string DocName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Use the light-on-dark styling for placement on a dark background (e.g. the gradient
+    /// <c>page-title-bar</c> header). Defaults to the neutral gray styling for use on light backgrounds.
+    /// </summary>
+    [Parameter]
+    public bool Light { get; set; }
+
+    private void Open()
+    {
+        _html = HelpDocumentService.GetRenderedHtml(DocName);
+        _isOpen = true;
+    }
+
+    private void Close()
+    {
+        _isOpen = false;
+    }
+}

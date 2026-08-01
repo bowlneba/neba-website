@@ -11,6 +11,7 @@ using Neba.Api.Contracts.Tournaments.AddTournamentSponsor;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Sponsors;
 using Neba.TestFactory.Tournaments;
+using Neba.Website.Server.Help;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Tournaments.Detail;
 
@@ -31,6 +32,7 @@ public sealed class ManageTournamentSponsorsTests : IDisposable
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
 
         _ctx.Services.AddSingleton(_toastService);
+        _ctx.Services.AddSingleton<HelpDocumentService>();
     }
 
     public void Dispose()

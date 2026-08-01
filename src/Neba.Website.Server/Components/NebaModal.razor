@@ -5,7 +5,7 @@
 @if (IsOpen)
 {
     <div class="neba-modal-backdrop @CssClass" @onclick="HandleBackdropClick"
-         style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; z-index: 1000 !important;">
+         style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; display: flex !important; align-items: @(AlignTop ? "flex-start" : "center") !important; justify-content: center !important; z-index: 1000 !important;">
         <div class="neba-modal-container @(CompactSize ? "neba-modal-container--compact" : null)" style="@ContainerStyle" @onclick:stopPropagation="true">
             <div class="neba-modal-content @CssClass" role="dialog" aria-modal="true" aria-labelledby="@DialogLabelledBy"
                  aria-label="@DialogAriaLabel" aria-describedby="@_bodyId" tabindex="-1" @onkeydown="HandleKeyDown"
@@ -135,6 +135,15 @@
     /// </summary>
     [Parameter]
     public string? CssClass { get; set; }
+
+    /// <summary>
+    /// Anchors the modal to the top of the viewport instead of vertically centering it. Use for
+    /// modals whose content can be tall enough to collide with a page's sticky header when centered
+    /// (e.g. a scrollable content viewer) — pair with a <see cref="CssClass"/> rule adding top padding
+    /// to clear that header.
+    /// </summary>
+    [Parameter]
+    public bool AlignTop { get; set; }
 
     /// <summary>
     /// Optional custom header content. When provided, replaces the built-in Title h2 element.
