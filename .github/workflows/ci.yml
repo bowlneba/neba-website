@@ -94,10 +94,12 @@ jobs:
         include:
           - test-project: tests/Neba.Website.Tests/Neba.Website.Tests.csproj
             test-name: Website Tests
+            results-dir: TestResults-website
             needs-integration: false
             collect_coverage: true
           - test-project: tests/Neba.Api.Tests/Neba.Api.Tests.csproj
             test-name: API Tests
+            results-dir: TestResults-api
             needs-integration: true
             collect_coverage: true
       fail-fast: false
@@ -137,9 +139,9 @@ jobs:
       - name: Run tests
         run: |
           if [ "${{ matrix.collect_coverage }}" = "true" ]; then
-            dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --coverage --coverage-output-format xml --coverage-output TestResults/coverage.xml --report-trx --report-trx-filename results.trx --results-directory TestResults
+            dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --coverage --coverage-output-format xml --coverage-output coverage.xml --report-trx --report-trx-filename results.trx --results-directory ${{ matrix.results-dir }}
           else
-            dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --report-trx --report-trx-filename results.trx --results-directory TestResults
+            dotnet run --project ${{ matrix.test-project }} --configuration Release --no-build -- --report-trx --report-trx-filename results.trx --results-directory ${{ matrix.results-dir }}
           fi
 
       - name: Upload test results
@@ -147,7 +149,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: test-results-${{ matrix.test-name }}
-          path: "**/TestResults/**/*.trx"
+          path: "${{ matrix.results-dir }}/results.trx"
           retention-days: 30
 
       - name: Upload coverage reports
@@ -155,7 +157,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: coverage-${{ matrix.test-name }}
-          path: "**/TestResults/coverage.xml"
+          path: "${{ matrix.results-dir }}/coverage.xml"
           retention-days: 30
 
   playwright:
