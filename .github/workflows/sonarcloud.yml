@@ -55,7 +55,6 @@ jobs:
         with:
           path: coverage-reports
           pattern: coverage-*
-          merge-multiple: true
 
       - name: Restore dependencies
         run: dotnet restore
