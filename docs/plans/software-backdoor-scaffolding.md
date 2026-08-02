@@ -13,63 +13,311 @@ Initial structure for the `/legacy` backdoor described in `docs/api/software-bac
 
 ### New files
 
-- `src/Neba.Api/Legacy/LegacySettings.cs` — options record bound from config: `ApiKey`, `ConnectionString` (for `neba-fwk`).
-- `src/Neba.Api/Legacy/LegacyApiKeyFilter.cs` — `IEndpointFilter` checking a request header (`X-Api-Key`) against `LegacySettings.ApiKey`; `Results.Unauthorized()` on mismatch/missing.
-- `src/Neba.Api/Legacy/LegacyConfiguration.cs`:
-  - `AddLegacy()` (`WebApplicationBuilder` extension) — binds `LegacySettings`, registers a scoped `IDbConnection` factory (`SqlConnection` against `LegacySettings.ConnectionString`) for Dapper reads.
-  - `MapLegacyGroup()` (`WebApplication`/`IEndpointRouteBuilder` extension) — creates the `/legacy` `RouteGroupBuilder` with `.AddEndpointFilter<LegacyApiKeyFilter>()`, calls `MapLegacyEndpoints()` on it.
-- `src/Neba.Api/Legacy/LegacyEndpoints.cs` — the aggregator from the plan doc; empty body for now, individual actions add their `app.MapXxx()` line in their own PR.
+`src/Neba.Api/Legacy/LegacySettings.cs`:
+
+```csharp
+namespace Neba.Api.Legacy;
+
+/// <summary>
+/// Configuration for the temporary `/legacy` backdoor (see docs/api/software-backdoor-plan.md).
+/// Deleted along with the rest of Legacy/ at Software sunset.
+/// </summary>
+internal sealed record LegacySettings
+{
+    /// <summary>
+    /// Shared secret the Software presents via the <c>X-Api-Key</c> header on every `/legacy` request.
+    /// </summary>
+    public string ApiKey { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Plain ADO.NET connection string to the Software's own database (`neba-fwk`, Azure SQL).
+    /// </summary>
+    public string ConnectionString { get; init; } = string.Empty;
+}
+```
+
+`src/Neba.Api/Legacy/LegacyApiKeyFilter.cs`:
+
+```csharp
+using System.Security.Cryptography;
+using System.Text;
+
+using Microsoft.Extensions.Options;
+
+namespace Neba.Api.Legacy;
+
+/// <summary>
+/// Route-group filter for `/legacy` — checks the <c>X-Api-Key</c> header against the configured
+/// shared secret. Deliberately a filter, not an ASP.NET Core AuthenticationScheme: the app already
+/// has a default JWT bearer scheme (see SecurityConfiguration), and scoping auth to just this group
+/// avoids any interaction with that default.
+/// </summary>
+internal sealed class LegacyApiKeyFilter(IOptions<LegacySettings> settings) : IEndpointFilter
+{
+    private const string ApiKeyHeaderName = "X-Api-Key";
+
+    public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    {
+        var providedKey = context.HttpContext.Request.Headers[ApiKeyHeaderName].ToString();
+
+        if (!IsValidKey(providedKey))
+        {
+            return Results.Unauthorized();
+        }
+
+        return await next(context);
+    }
+
+    private bool IsValidKey(string providedKey)
+    {
+        if (string.IsNullOrEmpty(providedKey))
+        {
+            return false;
+        }
+
+        // Fixed-time comparison: a shared API key is a secret worth comparing safely,
+        // same reasoning as password/token comparisons elsewhere in the app.
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(providedKey),
+            Encoding.UTF8.GetBytes(settings.Value.ApiKey));
+    }
+}
+```
+
+`src/Neba.Api/Legacy/LegacyConfiguration.cs`:
+
+```csharp
+using System.Data;
+
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Options;
+
+namespace Neba.Api.Legacy;
+
+internal static class LegacyConfiguration
+{
+    extension(WebApplicationBuilder builder)
+    {
+        public WebApplicationBuilder AddLegacy()
+        {
+            builder.Services
+                .AddOptions<LegacySettings>()
+                .Bind(builder.Configuration.GetSection("Legacy"))
+                .ValidateOnStart();
+
+            builder.Services.AddScoped<IDbConnection>(sp =>
+                new SqlConnection(sp.GetRequiredService<IOptions<LegacySettings>>().Value.ConnectionString));
+
+            return builder;
+        }
+    }
+
+    extension(IEndpointRouteBuilder app)
+    {
+        public void MapLegacyGroup()
+        {
+            var group = app.MapGroup("/legacy")
+                .AddEndpointFilter<LegacyApiKeyFilter>();
+
+            group.MapLegacyEndpoints();
+        }
+    }
+}
+```
+
+`src/Neba.Api/Legacy/LegacyEndpoints.cs` (the aggregator from the plan doc — empty until the first action lands):
+
+```csharp
+namespace Neba.Api.Legacy;
+
+internal static class LegacyEndpoints
+{
+    public static void MapLegacyEndpoints(this IEndpointRouteBuilder app)
+    {
+        // One line per Legacy/*.cs action file (MapNewBowler, MapUpdateBowler, ...),
+        // added by each action's own follow-up branch.
+    }
+}
+```
 
 ### Composition root
 
-- `Program.cs` — `builder.AddLegacy()` alongside the existing `AddInfrastructure()`/`AddSecurity()` chain; `app.MapLegacyGroup()` after `app.UseFastEndpoints()`.
+`Program.cs` — add the `using` and two calls:
 
-### Packages (`Neba.Api.csproj`)
+```csharp
+using Neba.Api.Legacy;
+```
 
-- `Dapper`
-- `Microsoft.Data.SqlClient`
+```csharp
+// alongside the existing builder chain
+builder.AddLegacy();
+```
+
+```csharp
+// after app.UseFastEndpoints(...), alongside app.UseOpenApiDocumentation() etc.
+app.MapLegacyGroup();
+```
+
+### Packages
+
+`Neba.Api.csproj` — add to the existing `<ItemGroup>` of `PackageReference`s (alphabetical, matching the existing list):
+
+```xml
+<PackageReference Include="Dapper" />
+```
+
+```xml
+<PackageReference Include="Microsoft.Data.SqlClient" />
+```
+
+`Directory.Packages.props` — add to the central version list (alphabetical):
+
+```xml
+<PackageVersion Include="Dapper" Version="2.1.66" />
+```
+
+```xml
+<PackageVersion Include="Microsoft.Data.SqlClient" Version="6.1.4" />
+```
+
+Confirm both versions against NuGet at implementation time — pin whatever the current stable release is rather than trusting these numbers verbatim.
 
 ### Config / secrets
 
-- **App config keys**: `Legacy:ApiKey`, `Legacy:ConnectionString` (bound into `LegacySettings`). Local/dev value via user secrets.
-- **GitHub secrets** (repo-level, consumed by `cd.yml`): `LEGACY_API_KEY`, `LEGACY_DB_CONNECTION_STRING`.
-- **`cd.yml` "Seed Key Vault secrets" step** — add alongside the existing `JWT_SIGNING_KEY`/`GOOGLE_*` secrets:
+`appsettings.json` — add a new top-level section (values empty; real values come from Key Vault/user secrets, same pattern as `EmailSettings:AppPassword`/`JwtSettings:SigningKey`):
 
-  ```yaml
-  # env: block
-  LEGACY_API_KEY: ${{ secrets.LEGACY_API_KEY }}
-  LEGACY_DB_CONNECTION_STRING: ${{ secrets.LEGACY_DB_CONNECTION_STRING }}
-  ```
+```json
+"Legacy": {
+  "ApiKey": "",
+  "ConnectionString": ""
+},
+```
 
-  ```bash
-  # run: block
-  az keyvault secret set --vault-name "$VAULT_NAME" \
-    --name "Legacy--ApiKey" \
-    --value "$LEGACY_API_KEY"
+`appsettings.Development.json` — local dev values (don't commit a real key/connection string; use `dotnet user-secrets set Legacy:ApiKey ...` / `Legacy:ConnectionString` locally instead, same as `JwtSettings:SigningKey`'s dev placeholder does for a non-sensitive dev-only value — a real `neba-fwk` connection string is sensitive even in dev, so leave it out of the checked-in Development file entirely):
 
-  az keyvault secret set --vault-name "$VAULT_NAME" \
-    --name "Legacy--ConnectionString" \
-    --value "$LEGACY_DB_CONNECTION_STRING"
-  ```
+```json
+"Legacy:ApiKey": "dev-only-legacy-key",
+```
 
-- **`LEGACY_DB_CONNECTION_STRING` value — plain ADO.NET string, not the EF6/`System.Data.EntityClient` wrapper.** The Software's own `App.config` entry is EF6's `EntityClient` format, which wraps a *provider connection string* inside `metadata=...` XML:
+GitHub secrets (repo-level, consumed by `cd.yml`): `LEGACY_API_KEY`, `LEGACY_DB_CONNECTION_STRING`.
 
-  ```xml
-  <add name="Entities" connectionString="metadata=res://*/NEBADataModel.csdl|res://*/NEBADataModel.ssdl|res://*/NEBADataModel.msl;provider=System.Data.SqlClient;provider connection string=&quot;data source=bowlneba-eastus.database.windows.net;initial catalog=neba;persist security info=True;user id={0};password={1};MultipleActiveResultSets=True;App=EntityFramework&quot;" providerName="System.Data.EntityClient" />
-  ```
+`.github/workflows/cd.yml` — "Seed Key Vault secrets" step, add to both the `env:` block and the `run:` script, alongside the existing `JWT_SIGNING_KEY`/`GOOGLE_*` entries:
 
-  Dapper talks to `Microsoft.Data.SqlClient` directly — it has no EF metadata layer, so only the inner `provider connection string` value is needed, with `&quot;` unescaped and `{0}`/`{1}` filled with the real credentials. The `LEGACY_DB_CONNECTION_STRING` GitHub secret (and the Key Vault secret it seeds) should hold just:
+```yaml
+# env: block
+LEGACY_API_KEY: ${{ secrets.LEGACY_API_KEY }}
+LEGACY_DB_CONNECTION_STRING: ${{ secrets.LEGACY_DB_CONNECTION_STRING }}
+```
 
-  ```
-  data source=bowlneba-eastus.database.windows.net;initial catalog=neba;persist security info=True;user id={0};password={1};MultipleActiveResultSets=True
-  ```
+```bash
+# run: block
+az keyvault secret set --vault-name "$VAULT_NAME" \
+  --name "Legacy--ApiKey" \
+  --value "$LEGACY_API_KEY"
 
-  (`App=EntityFramework` dropped — that's EF6 identifying itself to SQL Server for diagnostics, meaningless from a non-EF Dapper connection. Fine to leave it in if there's a reason to keep the two systems showing the same `App` name in SQL Server's connection telemetry, but it's not required.)
+az keyvault secret set --vault-name "$VAULT_NAME" \
+  --name "Legacy--ConnectionString" \
+  --value "$LEGACY_DB_CONNECTION_STRING"
+```
+
+**`LEGACY_DB_CONNECTION_STRING` value — plain ADO.NET string, not the EF6/`System.Data.EntityClient` wrapper.** The Software's own `App.config` entry is EF6's `EntityClient` format, which wraps a *provider connection string* inside `metadata=...` XML:
+
+```xml
+<add name="Entities" connectionString="metadata=res://*/NEBADataModel.csdl|res://*/NEBADataModel.ssdl|res://*/NEBADataModel.msl;provider=System.Data.SqlClient;provider connection string=&quot;data source=bowlneba-eastus.database.windows.net;initial catalog=neba;persist security info=True;user id={0};password={1};MultipleActiveResultSets=True;App=EntityFramework&quot;" providerName="System.Data.EntityClient" />
+```
+
+Dapper talks to `Microsoft.Data.SqlClient` directly — it has no EF metadata layer, so only the inner `provider connection string` value is needed, with `&quot;` unescaped and `{0}`/`{1}` filled with the real credentials. The `LEGACY_DB_CONNECTION_STRING` GitHub secret (and the Key Vault secret it seeds) should hold just:
+
+```
+data source=bowlneba-eastus.database.windows.net;initial catalog=neba;persist security info=True;user id={0};password={1};MultipleActiveResultSets=True
+```
+
+(`App=EntityFramework` dropped — that's EF6 identifying itself to SQL Server for diagnostics, meaningless from a non-EF Dapper connection. Fine to leave it in if there's a reason to keep the two systems showing the same `App` name in SQL Server's connection telemetry, but it's not required.)
 
 ### Tests
 
-- `LegacyApiKeyFilterTests` (unit) — constructs the filter directly, asserts 401 on missing/wrong key, passthrough on correct key.
-- No integration test yet — nothing end-to-end to exercise until the first real action (`NewBowler`) lands.
+`tests/Neba.Api.Tests/Legacy/LegacyApiKeyFilterTests.cs`:
+
+```csharp
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Options;
+
+using Neba.Api.Legacy;
+using Neba.TestFactory.Attributes;
+
+namespace Neba.Api.Tests.Legacy;
+
+[UnitTest]
+[Component("Legacy")]
+public sealed class LegacyApiKeyFilterTests
+{
+    private const string ValidApiKey = "test-legacy-api-key";
+    private const string HeaderName = "X-Api-Key";
+
+    [Fact(DisplayName = "Should return Unauthorized when the header is missing")]
+    public async Task InvokeAsync_ShouldReturnUnauthorized_WhenHeaderIsMissing()
+    {
+        // Arrange
+        var filter = CreateFilter();
+        var context = CreateInvocationContext(headerValue: null);
+
+        // Act
+        var result = await filter.InvokeAsync(context, NextReturnsOk);
+
+        // Assert
+        result.ShouldBeOfType<UnauthorizedHttpResult>();
+    }
+
+    [Fact(DisplayName = "Should return Unauthorized when the key does not match")]
+    public async Task InvokeAsync_ShouldReturnUnauthorized_WhenKeyDoesNotMatch()
+    {
+        // Arrange
+        var filter = CreateFilter();
+        var context = CreateInvocationContext("wrong-key");
+
+        // Act
+        var result = await filter.InvokeAsync(context, NextReturnsOk);
+
+        // Assert
+        result.ShouldBeOfType<UnauthorizedHttpResult>();
+    }
+
+    [Fact(DisplayName = "Should call next when the key matches")]
+    public async Task InvokeAsync_ShouldCallNext_WhenKeyMatches()
+    {
+        // Arrange
+        var filter = CreateFilter();
+        var context = CreateInvocationContext(ValidApiKey);
+
+        // Act
+        var result = await filter.InvokeAsync(context, NextReturnsOk);
+
+        // Assert
+        result.ShouldBeOfType<Ok>();
+    }
+
+    private static ValueTask<object?> NextReturnsOk(EndpointFilterInvocationContext _) =>
+        ValueTask.FromResult<object?>(Results.Ok());
+
+    private static LegacyApiKeyFilter CreateFilter() =>
+        new(Options.Create(new LegacySettings { ApiKey = ValidApiKey }));
+
+    private static EndpointFilterInvocationContext CreateInvocationContext(string? headerValue)
+    {
+        var httpContext = new DefaultHttpContext();
+
+        if (headerValue is not null)
+        {
+            httpContext.Request.Headers[HeaderName] = headerValue;
+        }
+
+        return EndpointFilterInvocationContext.Create(httpContext);
+    }
+}
+```
+
+No integration test yet — nothing end-to-end to exercise until the first real action (`NewBowler`) lands.
 
 ### Explicitly out of scope
 
