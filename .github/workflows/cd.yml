@@ -87,6 +87,8 @@ jobs:
           GOOGLE_CLIENT_EMAIL: ${{ secrets.GOOGLE_CLIENT_EMAIL }}
           GOOGLE_PASSWORD: ${{ secrets.GOOGLE_PASSWORD }}
           JWT_SIGNING_KEY: ${{ secrets.JWT_SIGNING_KEY }}
+          LEGACY_API_KEY: ${{ secrets.LEGACY_API_KEY }}
+          LEGACY_DB_CONNECTION_STRING: ${{ secrets.LEGACY_DB_CONNECTION_STRING }}
         run: |
           set -euo pipefail
 
@@ -111,6 +113,14 @@ jobs:
           az keyvault secret set --vault-name "$VAULT_NAME" \
             --name "JwtSettings--SigningKey" \
             --value "$JWT_SIGNING_KEY"
+          
+          az keyvault secret set --vault-name "$VAULT_NAME" \
+          --name "Legacy--ApiKey" \
+          --value "$LEGACY_API_KEY"
+          
+          az keyvault secret set --vault-name "$VAULT_NAME" \
+          --name "Legacy--ConnectionString" \
+          --value "$LEGACY_DB_CONNECTION_STRING"
 
       - name: Deploy migration jobs
         env:
