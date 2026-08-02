@@ -41,7 +41,7 @@ internal static class AuditingConfiguration
         /// account key). <see cref="IAzureTableConnectionConfigurator.ConnectionString(string)"/> alone cannot parse
         /// the latter - it expects key=value segments, not a URI.
         /// </summary>
-        private IAzureTablesEntityConfigurator ConfigureConnection(string? connectionOrEndpoint)
+        internal IAzureTablesEntityConfigurator ConfigureConnection(string? connectionOrEndpoint)
         {
             return Uri.TryCreate(connectionOrEndpoint, UriKind.Absolute, out var endpoint)
                 ? config.Endpoint(endpoint, new DefaultAzureCredential())
