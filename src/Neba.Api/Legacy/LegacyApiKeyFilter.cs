@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -19,10 +20,20 @@ internal sealed class LegacyApiKeyFilter(IOptions<LegacySettings> settings) : IE
     {
         var providedKey = context.HttpContext.Request.Headers[ApiKeyHeaderName].ToString();
 
-        return !IsValidKey(providedKey) 
-            ? Results.Unauthorized() 
-            : await next(context);
+        if (!IsValidKey(providedKey))
+        {
+            return Results.Unauthorized();
+        }
 
+        // Audit trail actor for the Software's sync calls — CurrentUserService.ActorId reads
+        // this same claim, so a validated backdoor request is attributed as LegacyActor.Id
+        // instead of falling through to "anonymous". The enqueued *SyncJob has no HttpContext,
+        // so it separately sets AmbientActorContext with the same id for its own audit events.
+        context.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(
+            [new Claim(ClaimTypes.NameIdentifier, LegacyActor.Id)],
+            authenticationType: "LegacyApiKey"));
+
+        return await next(context);
     }
 
     private bool IsValidKey(string providedKey)

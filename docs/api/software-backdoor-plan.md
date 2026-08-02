@@ -80,6 +80,11 @@ internal sealed class NewBowlerSyncJob(AppDbContext db, IDbConnection legacyConn
 {
     public async Task SyncAsync(int legacyBowlerId, CancellationToken ct)
     {
+        // Hangfire jobs run with no HttpContext, so CurrentUserService.ActorId would otherwise
+        // fall through to "anonymous" for this job's audit events. Setting the ambient actor
+        // here attributes them the same way the triggering /legacy request was (LegacyActor.Id).
+        using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
+
         // Dapper query against neba-fwk, map, Bowler.Create(...) via AppDbContext, SaveChangesAsync.
     }
 }
@@ -125,6 +130,13 @@ Two different data sources are in play inside each `*SyncJob`, and they get diff
 ### Security
 
 All `/legacy` routes sit behind a single shared **API key**, checked via a Minimal API endpoint filter (or route-group filter) on the `/legacy` group — not the website's normal cookie/policy-based auth, since the caller is a machine, not a logged-in user. Key lives in Key Vault like other secrets.
+
+### Audit attribution
+
+The audit system's actor id normally comes from the caller's `ClaimTypes.NameIdentifier` claim (`CurrentUserService.ActorId`), which falls back to `"anonymous"` when there's none — indistinguishable from a real anonymous public request. `/legacy` calls need to be distinguishable, so:
+
+- `LegacyApiKeyFilter` stamps a `NameIdentifier` claim of `LegacyActor.Id` (`"software-sync"`) onto `HttpContext.User` once the API key checks out, so the HTTP-level audit event for the `/legacy` request itself is attributed correctly.
+- The enqueued `*SyncJob` runs on a Hangfire worker thread with no `HttpContext`, so it can't inherit that claim. Each `*SyncJob.SyncAsync` sets the same actor via `AmbientActorContext.SetActor(LegacyActor.Id)` (an `AsyncLocal`-backed ambient value `CurrentUserService.ActorId` checks first, ahead of the claim) so the job's own audit events — including the EF writes it makes via `AppDbContext` — are attributed the same way, not to `"anonymous"`.
 
 ---
 

@@ -8,7 +8,8 @@ internal sealed class CurrentUserService(IHttpContextAccessor httpContextAccesso
     private const string AnonymousActorId = "anonymous";
 
     public string ActorId
-        => httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier)
+        => AmbientActorContext.ActorId
+            ?? httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? AnonymousActorId;
 
     public bool IsAuthenticated
@@ -19,7 +20,8 @@ internal sealed class CurrentUserService(IHttpContextAccessor httpContextAccesso
 internal interface ICurrentUserService
 {
     /// <summary>
-    /// The authenticated user's NameIdentifier claim, or "anonymous" if unauthenticated
+    /// The ambient actor set via <see cref="AmbientActorContext"/> if one is active, otherwise
+    /// the authenticated user's NameIdentifier claim, or "anonymous" if neither is present.
     /// </summary>
     string ActorId { get; }
 

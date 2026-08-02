@@ -1,3 +1,5 @@
+using System.Security.Claims;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Options;
@@ -82,6 +84,20 @@ public sealed class LegacyApiKeyFilterTests
 
         // Assert
         result.ShouldBeOfType<Ok>();
+    }
+
+    [Fact(DisplayName = "InvokeAsync should stamp a NameIdentifier claim with LegacyActor.Id when the key matches")]
+    public async Task InvokeAsync_ShouldStampLegacyActorClaim_WhenKeyMatches()
+    {
+        // Arrange
+        var filter = CreateFilter();
+        var context = CreateInvocationContext(ValidApiKey);
+
+        // Act
+        await filter.InvokeAsync(context, NextReturnsOk);
+
+        // Assert
+        context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier).ShouldBe(LegacyActor.Id);
     }
 
     private static ValueTask<object?> NextReturnsOk(EndpointFilterInvocationContext _) =>

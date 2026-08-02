@@ -56,6 +56,32 @@ public sealed class CurrentUserServiceTests
         actorId.ShouldBe("anonymous");
     }
 
+    [Fact(DisplayName = "ActorId returns the ambient actor when one is set, even if a claim is present")]
+    public void ActorId_WhenAmbientActorSet_ReturnsAmbientActorOverClaim()
+    {
+        // Arrange
+        var service = CreateService(AuthenticatedContext("alice"));
+
+        // Act & Assert
+        using (AmbientActorContext.SetActor("software-sync"))
+        {
+            service.ActorId.ShouldBe("software-sync");
+        }
+    }
+
+    [Fact(DisplayName = "ActorId returns the ambient actor when one is set and HttpContext is null")]
+    public void ActorId_WhenAmbientActorSetAndHttpContextIsNull_ReturnsAmbientActor()
+    {
+        // Arrange
+        var service = CreateService(null);
+
+        // Act & Assert
+        using (AmbientActorContext.SetActor("software-sync"))
+        {
+            service.ActorId.ShouldBe("software-sync");
+        }
+    }
+
     [Fact(DisplayName = "ActorId returns 'anonymous' when NameIdentifier claim is missing")]
     public void ActorId_WhenNoNameIdentifierClaim_ReturnsAnonymous()
     {
