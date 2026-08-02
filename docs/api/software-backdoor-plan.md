@@ -128,6 +128,39 @@ All `/legacy` routes sit behind a single shared **API key**, checked via a Minim
 
 ---
 
+## Testing
+
+Every `Legacy/*.cs` action file has four distinct things that can be wrong, and each gets tested at the layer where it actually lives — don't collapse them into one giant end-to-end test per action, and don't skip a layer because another layer "probably covers it."
+
+### 1. Request validation
+
+Standard FluentValidation unit test against the action's own validator (e.g. `NewBowlerRequestValidator`), same shape as validator tests anywhere else in the codebase — `[UnitTest]`, `[Component("Legacy")]`, one `Theory`/`Fact` per rule.
+
+### 2. Endpoint + auth (integration)
+
+One integration test class per action (`tests/Neba.Api.Tests/Legacy/NewBowlerEndpointTests.cs`, etc.), built on `Microsoft.AspNetCore.Mvc.Testing`'s `WebApplicationFactory<Program>` (the package already referenced for other integration tests in this project) with the real `LegacyApiKeyFilter` in the pipeline. Covers:
+
+- Missing/wrong `X-Api-Key` → `401`. (The filter's own logic — missing key, wrong key, matching key — is already covered once, generically, by `LegacyApiKeyFilterTests`; don't re-assert `CryptographicOperations.FixedTimeEquals` behavior per action, just confirm the group filter is actually wired to this route.)
+- Invalid body (fails the validator) → `400`.
+- Valid request + valid key → `202 Accepted`, and the right job was enqueued with the right argument. Replace the real `IBackgroundJobClient` registration in the test's `WebApplicationFactory` with a `Mock<IBackgroundJobClient>(MockBehavior.Strict)`, `.Verifiable()` on the `Enqueue<TSyncJob>(job => job.SyncAsync(expectedId, It.IsAny<CancellationToken>()))` setup, `VerifyAll()` in the assert.
+
+### 3. Sync job — mapping logic (unit)
+
+The part of a `*SyncJob` that decides *what* to do with a legacy row (map fields, decide create-vs-update via `LegacyId`, call `Bowler.Create(...)`/aggregate methods) is pure logic once it has the row in hand — test it as such. Structure each `*SyncJob` so the Dapper query and the mapping are separably testable: either extract a `private static`/internal pure mapping method taking a plain row DTO (`LegacyBowlerRow` or similar) and returning the domain call's inputs, or test the whole `SyncAsync` against an in-memory/SQLite `AppDbContext` (same `Microsoft.EntityFrameworkCore.Sqlite` package already used elsewhere in this test project) with a **fake `IDbConnection`/query result** standing in for the Dapper read. Either way, this test never touches a real SQL Server — it's asserting "given this legacy row, the website ends up with this aggregate state."
+
+### 4. Sync job — legacy query correctness (integration)
+
+The Dapper query itself (column names, joins, `WHERE` clause matching `neba-fwk`'s actual schema) needs to run against something schema-real, not mocked — an `IDbConnection` can't be usefully mocked for arbitrary SQL text anyway (Dapper's `Query`/`QueryFirstOrDefaultAsync` are extension methods over the raw connection, not an interface seam). Use a `Testcontainers.MsSql` fixture (`Neba.TestFactory.Infrastructure.MsSqlFixture`, same shape as the existing `PostgreSqlFixture`/`AzuriteFixture`), seeded with a handful of known rows shaped like the real `neba-fwk` tables, and assert the Dapper query returns the expected mapped row(s) for a given id (including the "no such id" / "id belongs to a merged/deleted record" edge cases the query needs to handle). Requires adding the `Testcontainers.MsSql` package (new to this codebase — `Testcontainers.PostgreSql`/`Testcontainers.Azurite` are the existing precedent).
+
+### 5. Idempotency (integration)
+
+Because Hangfire's global `AutomaticRetryAttribute` retries automatically and the Software has no dedup on its side, every `*SyncJob` needs an explicit test that running `SyncAsync` twice for the same legacy id is safe: first run creates the website record and stamps its `LegacyId`, second run finds it via `LegacyId` and updates (or no-ops) rather than creating a duplicate. This is the one test per action worth writing as genuinely end-to-end (real Testcontainers-backed `AppDbContext` + the mapping logic together), since the whole point is asserting persisted state after two calls, not just the second call's mapped inputs.
+
+### What NOT to test
+
+- Don't write a test asserting `202 Accepted` is returned *and* separately re-verify the job's internal correctness in the same test — layers 2 and 3/4 above are deliberately independent so a broken mapping doesn't also fail the endpoint test (and vice versa).
+- Don't build FastEndpoints-style `Factory.Create<TEndpoint>()` tests for these routes — that's a FastEndpoints-specific unit-test harness, and `/legacy` routes are plain Minimal API delegates. Use `WebApplicationFactory` as described above.
+
 ## Software Side (WinForms, `nebamgmt-v3`)
 
 ### Where the outbound call is wired in
