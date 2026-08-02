@@ -4,6 +4,7 @@ using Neba.Website.Server;
 using Neba.Website.Server.Account;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.FeatureManagement;
+using Neba.Website.Server.Help;
 using Neba.Website.Server.Maps;
 using Neba.Website.Server.ReferenceData;
 using Neba.Website.Server.Services;
@@ -16,6 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add service defaults & Aspire client integrations.
 builder
     .AddServiceDefaults()
+    .AddInfrastructure()
     .AddFeatureManagement();
 
 builder.Services.AddApiServices(builder.Configuration);
@@ -38,6 +40,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITournamentApiService, TournamentApiService>();
 builder.Services.AddScoped<IReferenceDataService, ReferenceDataService>();
 builder.Services.AddScoped<IClientTimeZoneService, ClientTimeZoneService>();
+builder.Services.AddSingleton<HelpDocumentService>();
 
 var app = builder.Build();
 
@@ -61,6 +64,7 @@ app.UseAntiforgery();
 app.UseOutputCache();
 
 app.MapStaticAssets();
+app.MapHelpImageEndpoints();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()

@@ -1,0 +1,112 @@
+.neba-help-btn {
+    background: transparent;
+    border: none;
+    color: rgb(107 114 128);
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+    transition: color 0.15s ease, background-color 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    vertical-align: middle;
+}
+
+.neba-help-btn:hover {
+    color: rgb(55 65 81);
+    background-color: rgb(243 244 246);
+}
+
+.neba-help-btn--light {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.neba-help-btn--light:hover {
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
+/* Explicit color reset: HelpButton can be placed on dark backgrounds (e.g. the gradient
+   page-title-bar, which sets color: #fff), and this modal content must not inherit that —
+   otherwise the rendered doc text renders white-on-white inside the modal. */
+.help-doc-content {
+    color: var(--neba-gray-700, #333333);
+    font-size: 0.9375rem;
+    line-height: 1.7;
+}
+
+.help-doc-content ::deep h1,
+.help-doc-content ::deep h2,
+.help-doc-content ::deep h3 {
+    color: var(--neba-gray-800, #1a1a1a);
+    font-weight: 700;
+    margin: 1.25em 0 0.5em;
+}
+
+.help-doc-content ::deep h1:first-child,
+.help-doc-content ::deep h2:first-child {
+    margin-top: 0;
+}
+
+.help-doc-content ::deep h1 {
+    font-size: 1.4rem;
+}
+
+.help-doc-content ::deep h2 {
+    font-size: 1.15rem;
+}
+
+.help-doc-content ::deep p,
+.help-doc-content ::deep ul,
+.help-doc-content ::deep ol {
+    margin: 0 0 1em;
+}
+
+.help-doc-content ::deep a {
+    color: var(--neba-blue-700);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+}
+
+.help-doc-content ::deep a:hover {
+    color: var(--neba-blue-500);
+}
+
+.help-doc-content ::deep code {
+    background: var(--neba-gray-050, #FAFAFA);
+    border: 1px solid var(--neba-border, #CCCCCC);
+    border-radius: 0.25rem;
+    padding: 0.1em 0.35em;
+    font-size: 0.85em;
+}
+
+.help-doc-content ::deep img {
+    max-width: 100%;
+    border-radius: var(--radius-lg, 0.5rem);
+    border: 1px solid var(--neba-border, #CCCCCC);
+    margin: 0.5em 0 1em;
+}
+
+.help-doc-content ::deep table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 1em;
+    font-size: 0.875em;
+}
+
+.help-doc-content ::deep th,
+.help-doc-content ::deep td {
+    border: 1px solid var(--neba-border, #CCCCCC);
+    padding: 0.5em 0.75em;
+    text-align: left;
+    vertical-align: top;
+}
+
+.help-doc-content ::deep th {
+    background: var(--neba-gray-050, #FAFAFA);
+    font-weight: 700;
+}

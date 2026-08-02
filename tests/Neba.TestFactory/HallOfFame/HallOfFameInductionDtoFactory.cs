@@ -9,6 +9,9 @@ public static class HallOfFameInductionDtoFactory
 {
     public const int ValidYear = 2025;
 
+    // Fixed so seeded Bogus() output stays stable regardless of the day the test runs.
+    private static readonly DateOnly RefDate = new(2026, 1, 1);
+
     public static HallOfFameInductionDto Create(
         int? year = null,
         Name? bowlerName = null,
@@ -33,7 +36,7 @@ public static class HallOfFameInductionDtoFactory
             var hasPhoto = faker.Random.Bool();
             return new HallOfFameInductionDto
             {
-                Year = faker.Date.PastDateOnly().Year,
+                Year = faker.Date.PastDateOnly(refDate: RefDate).Year,
                 BowlerName = bowlerNames.GetNext(),
                 Categories = [.. faker.PickRandom(HallOfFameCategory.List, faker.Random.Int(1, HallOfFameCategory.List.Count))],
                 PhotoUri = hasPhoto ? new Uri(faker.Internet.Url()) : null

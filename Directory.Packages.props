@@ -11,6 +11,7 @@
     <PackageVersion Include="Aspire.Azure.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.4.6" />
     <PackageVersion Include="Aspire.Azure.Security.KeyVault" Version="13.4.6" />
     <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="13.4.6" />
+    <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="13.4.6" />
     <PackageVersion Include="Aspire.Hosting.Azure.ApplicationInsights" Version="13.4.6" />
     <PackageVersion Include="Aspire.Hosting.Azure.AppService" Version="13.4.6" />
     <PackageVersion Include="Aspire.Hosting.Azure.KeyVault" Version="13.4.6" />
@@ -47,6 +48,7 @@
     <PackageVersion Include="HtmlAgilityPack" Version="1.12.4" />
     <PackageVersion Include="HtmlSanitizer" Version="9.1.973" />
     <PackageVersion Include="MailKit" Version="4.17.0" />
+    <PackageVersion Include="Markdig" Version="1.3.2" />
     <PackageVersion Include="MessagePack" Version="3.1.8" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.10" />
@@ -74,6 +76,10 @@
          2.x object model (settable IOpenApiMediaType.Example); 3.x made it read-only and breaks the build. -->
     <PackageVersion Include="Microsoft.OpenApi" Version="[2.9.0]" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="[18.0.4]" />
+    <!-- Pinned to match Microsoft.Testing.Platform.MSBuild 1.9.1 (pulled in by Microsoft.NET.Test.Sdk 18.8.1);
+         a newer TrxReport bumps Microsoft.Testing.Platform past what MSBuild's extension hook supports, causing
+         a TypeLoadException on IDataConsumer at test-host startup. -->
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.1" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />

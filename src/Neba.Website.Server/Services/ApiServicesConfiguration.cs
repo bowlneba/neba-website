@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 
 using Neba.Api.Contracts.Awards;
@@ -63,7 +64,15 @@ internal static class ApiServicesConfiguration
             services.AddTransient<BearerTokenHandler>();
             services.AddMemoryCache();
 
-            services.RegisterApiEndpoint<IDocumentsApi>();
+            services.RegisterApiEndpoint<IDocumentsApi>(resilience: options =>
+            {
+                // A cold blob cache miss falls through to a live Google Drive fetch (auth + export),
+                // which can exceed the global default 10s attempt timeout. Give this client more room.
+                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(35);
+                // Circuit breaker sampling duration must be at least double the attempt timeout.
+                options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(60);
+            });
             services.RegisterApiEndpoint<INewsApi>();
             services.RegisterApiEndpoint<IBowlingCentersApi>();
             services.RegisterApiEndpoint<IHallOfFameApi>();
@@ -80,10 +89,10 @@ internal static class ApiServicesConfiguration
             return services;
         }
 
-        private void RegisterApiEndpoint<TApi>()
+        private void RegisterApiEndpoint<TApi>(Action<HttpStandardResilienceOptions>? resilience = null)
             where TApi : class
         {
-            services
+            var builder = services
                 .AddRefitGeneratedClient<TApi>(RefitSettings)
                 .ConfigureHttpClient((sp, client) =>
                 {
@@ -91,6 +100,11 @@ internal static class ApiServicesConfiguration
                     client.BaseAddress = apiConfig.BaseUrl;
                 })
                 .AddHttpMessageHandler<BearerTokenHandler>();
+
+            if (resilience is not null)
+            {
+                builder.AddStandardResilienceHandler(resilience);
+            }
         }
     }
 }

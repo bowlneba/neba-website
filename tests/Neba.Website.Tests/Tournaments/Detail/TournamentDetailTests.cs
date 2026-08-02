@@ -14,6 +14,7 @@ using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Tournaments;
 using Neba.Website.Server.Clock;
+using Neba.Website.Server.Help;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Time;
@@ -58,6 +59,7 @@ public sealed class TournamentDetailTests : IDisposable
         _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
+        _ctx.Services.AddSingleton<HelpDocumentService>();
     }
 
     public void Dispose()

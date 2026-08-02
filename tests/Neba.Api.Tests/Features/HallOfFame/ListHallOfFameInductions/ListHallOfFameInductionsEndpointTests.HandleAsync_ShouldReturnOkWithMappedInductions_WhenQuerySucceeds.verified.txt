@@ -1,14 +1,14 @@
 ﻿{
   Items: [
     {
-      Year: 2026,
+      Year: 2025,
       BowlerName: Elbert D'Amore,
       Categories: [
         Friend of NEBA
       ]
     },
     {
-      Year: 2026,
+      Year: 2025,
       BowlerName: Elbert D'Amore,
       Categories: [
         Friend of NEBA,

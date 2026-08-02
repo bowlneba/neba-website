@@ -17,30 +17,30 @@ jobs:
       checks: write
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0  # Disable shallow clone for better SonarCloud analysis
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
 
       - name: Cache SonarCloud packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props') }}
@@ -51,11 +51,10 @@ jobs:
         run: dotnet tool install --global dotnet-sonarscanner
 
       - name: Download coverage artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           path: coverage-reports
           pattern: coverage-*
-          merge-multiple: true
 
       - name: Restore dependencies
         run: dotnet restore
@@ -71,7 +70,7 @@ jobs:
             /d:sonar.token="${SONAR_TOKEN}" \
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.cs.vscoveragexml.reportsPaths="coverage-reports/**/coverage.xml" \
-            /d:sonar.javascript.lcov.reportPaths="coverage/lcov.info" \
+            /d:sonar.javascript.lcov.reportPaths="coverage-reports/coverage-jest/lcov.info" \
             /d:sonar.exclusions="coverage-reports/**,**/wwwroot/**,**/obj/**,**/bin/**,**/Migrations/**,**/*.razor.js,scripts/**" \
             /d:sonar.coverage.exclusions="**/Migrations/**,**/*Tests/**,**/wwwroot/**,**/*.razor.js,**/Program.cs,**/Routes.razor,**/jest.config.js,**/playwright.config.ts,tests/e2e/**,**/*.tests.js,**/*.test.js,**/*.spec.js,scripts/**,**/AppHost.cs,**/Layout/DebugCacheTools.razor" \
             /d:sonar.test.exclusions="**/obj/**,**/bin/**"

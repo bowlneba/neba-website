@@ -46,7 +46,7 @@ public static class InfrastructureConfiguration
                 .AddEmail()
                 .AddRedaction();
 
-            builder.Services.AddCaching(builder.Configuration);
+            builder.Services.AddCaching();
             builder.Services.AddBackgroundJobs(builder.Configuration);
             builder.Services.AddGoogleDrive(builder.Configuration);
 
@@ -65,7 +65,7 @@ public static class InfrastructureConfiguration
                 return builder;
             }
 
-            builder.Configuration.AddAzureKeyVaultSecrets(keyVaultConnectionString);
+            builder.Configuration.AddAzureKeyVaultSecrets("keyvault");
 
             return builder;
         }

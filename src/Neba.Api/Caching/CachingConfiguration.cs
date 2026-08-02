@@ -7,6 +7,8 @@ using Microsoft.Extensions.Caching.Hybrid;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Messaging;
 
+using Npgsql;
+
 using ZiggyCreatures.Caching.Fusion;
 
 namespace Neba.Api.Caching;
@@ -50,11 +52,8 @@ internal static class CachingConfiguration
             return services;
         }
 
-        public void AddCaching(IConfiguration config)
+        public void AddCaching()
         {
-            var connectionString = config.GetConnectionString("bowlneba")
-                ?? throw new InvalidOperationException("Cache connection string not found.");
-
             var cacheJsonOptions = new System.Text.Json.JsonSerializerOptions
             {
                 Converters = { new SmartEnumNameConverter<NameSuffix, string>() }
@@ -67,9 +66,13 @@ internal static class CachingConfiguration
             services.AddHybridCache(options => options
                 .MaximumPayloadBytes = 10 * 1024 * 1024);
 
-            services.AddDistributedPostgreSqlCache(options =>
+            // Reuses the NpgsqlDataSource registered by AddDatabase() (via AddAzureNpgsqlDataSource)
+            // instead of a raw ConnectionStrings:bowlneba value, so this connection gets the same
+            // SSL enforcement and Azure AD token auth as EF Core - a bare connection string built
+            // from configuration alone is missing both and gets rejected by Postgres's pg_hba rules.
+            services.AddDistributedPostgreSqlCache((sp, options) =>
             {
-                options.ConnectionString = connectionString;
+                options.DataSourceFactory = sp.GetRequiredService<NpgsqlDataSource>;
                 options.SchemaName = "cache";
                 options.TableName = "distributed_cache";
                 options.CreateInfrastructure = true;

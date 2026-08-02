@@ -12,8 +12,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Azure.Security.KeyVault" />
     <PackageReference Include="Blazor-ApexCharts" />
     <PackageReference Include="ErrorOr" />
+    <PackageReference Include="HtmlAgilityPack" />
+    <PackageReference Include="HtmlSanitizer" />
+    <PackageReference Include="Markdig" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
     <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />
     <PackageReference Include="Newtonsoft.Json" />
@@ -36,6 +40,17 @@
   <!-- Exclude JavaScript test files from publish -->
   <ItemGroup>
     <Content Remove="**/*.tests.js" />
+  </ItemGroup>
+
+  <!-- Embed docs/help (ADR-0007 user help documentation) into the assembly so it ships with the app.
+       Glob-based: adding a new docs/help/{name}.md or docs/help/images/{name}/{file}.png needs no csproj change. -->
+  <ItemGroup>
+    <EmbeddedResource Include="../../docs/help/*.md">
+      <LogicalName>Help.Docs.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="../../docs/help/images/**/*.png">
+      <LogicalName>Help.Images.%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

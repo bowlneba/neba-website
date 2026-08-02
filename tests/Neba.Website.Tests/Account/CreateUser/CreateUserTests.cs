@@ -10,6 +10,7 @@ using Neba.Api.Contracts.Security.CreateUser;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Security;
 using Neba.Website.Server.Clock;
+using Neba.Website.Server.Help;
 using Neba.Website.Server.Services;
 
 using Refit;
@@ -43,6 +44,7 @@ public sealed class CreateUserTests : IDisposable
 
         _ctx.Services.AddSingleton(_mockApi.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
+        _ctx.Services.AddSingleton<HelpDocumentService>();
     }
 
     public void Dispose() => _ctx.Dispose();

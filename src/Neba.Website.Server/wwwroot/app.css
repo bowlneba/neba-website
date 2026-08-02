@@ -196,6 +196,13 @@ h1:focus {
     max-width: 620px;
 }
 
+.page-title-help {
+    position: absolute;
+    top: 1.75rem;
+    right: 2rem;
+    z-index: 1;
+}
+
 @media (max-width: 640px) {
     .page-title-inner h1 {
         font-size: 1.6rem;
@@ -203,5 +210,26 @@ h1:focus {
 
     .page-title-bar {
         padding: 1.5rem 1.25rem;
+    }
+
+    .page-title-help {
+        top: 1.25rem;
+        right: 1.25rem;
+    }
+}
+
+/* Help modal (NebaModal CssClass="help-modal" AlignTop="true"): anchored to the top of the viewport
+   (see NebaModal's AlignTop) rather than vertically centered, because centering an 80vh-tall modal
+   in the full viewport overlaps/hides under the sticky navbar (.neba-navbar). This adds the
+   top padding to clear that navbar. */
+.neba-modal-backdrop.help-modal {
+    /* !important: NebaModal's own scoped stylesheet sets padding: 1rem with equal (0,2,0)
+       specificity and loads after app.css, so it would otherwise win the cascade tie by source order. */
+    padding-top: 12rem !important;
+}
+
+@media (max-width: 640px) {
+    .neba-modal-backdrop.help-modal {
+        padding-top: 5.5rem !important;
     }
 }

@@ -8,7 +8,7 @@ jobs:
     name: Infrastructure Preview
     uses: ./.github/workflows/infrastructure_preview.yml
     with:
-      azure_env_name: bowlneba-prod
+      azure_env_name: ${{ vars.AZURE_ENV_NAME }}
       azure_location: ${{ vars.AZURE_LOCATION }}
       artifact_name: cd-azd-preview
     permissions:
@@ -25,10 +25,10 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Download preview artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ needs.infra-preview.outputs.artifact-name }}
           path: .
@@ -37,31 +37,51 @@ jobs:
         run: cat azd-preview.txt
 
       - name: Login to Azure
-        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2
+        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
         with:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           client-id: ${{ vars.AZURE_CLIENT_ID }}
 
       - name: Setup azd
-        uses: Azure/setup-azd@c495e71ba59e44bfaaac10a32c8ee90d191ca4a3 # v2
+        uses: Azure/setup-azd@80591774c092d5d640d43663766a76728d66e07d # v2.3.0
 
       - name: Configure azd authentication
         run: azd config set auth.useAzCliAuth true
 
       - name: Provision infrastructure
         env:
-          AZURE_ENV_NAME: bowlneba-prod
+          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
           AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_PRINCIPAL_ID: ${{ vars.AZURE_PRINCIPAL_ID }}
+          AZURE_CONTAINERAPP_MIN_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
+          AZURE_CONTAINERAPP_MAX_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
+          AZURE_CONTAINERAPP_CONCURRENT_REQUESTS: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
+          AZURE_POSTGRES_SKU_NAME: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
+          AZURE_POSTGRES_SKU_TIER: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
+          AZURE_WEB_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
+          AZURE_WEB_CERTIFICATE_NAME: ${{ vars.AZURE_WEB_CERTIFICATE_NAME }}
+          AZURE_API_CUSTOM_DOMAIN: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
+          AZURE_API_CERTIFICATE_NAME: ${{ vars.AZURE_API_CERTIFICATE_NAME }}
           AZD_AUTH_USE_AZURE_CLI: "true"
         run: azd provision --no-prompt
 
+      # Re-authenticate: azd provision can run long enough (Postgres alone took ~7m in
+      # one run) that the OIDC client assertion from the earlier login step expires
+      # (~5 min validity), causing subsequent az CLI calls to fail with AADSTS700024.
+      - name: Re-login to Azure
+        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
+        with:
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+
       - name: Seed Key Vault secrets
         env:
-          AZURE_ENV_NAME: bowlneba-prod
+          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
           GOOGLE_PRIVATE_KEY: ${{ secrets.GOOGLE_PRIVATE_KEY }}
           GOOGLE_PRIVATE_KEY_ID: ${{ secrets.GOOGLE_PRIVATE_KEY_ID }}
           GOOGLE_CLIENT_EMAIL: ${{ secrets.GOOGLE_CLIENT_EMAIL }}
@@ -70,18 +90,18 @@ jobs:
         run: |
           set -euo pipefail
 
-          VAULT_NAME=$(azd env get-value SECRETS_VAULTURI | sed 's|https://||;s|\.vault\.azure\.net.*||')
+          VAULT_NAME=$(azd env get-value KEYVAULT_VAULTURI | sed 's|https://||;s|\.vault\.azure\.net.*||')
 
           az keyvault secret set --vault-name "$VAULT_NAME" \
-            --name "GoogleDrive--Credentials--PrivateKey" \
+            --name "Google--Credentials--PrivateKey" \
             --value "$GOOGLE_PRIVATE_KEY"
 
           az keyvault secret set --vault-name "$VAULT_NAME" \
-            --name "GoogleDrive--Credentials--PrivateKeyId" \
+            --name "Google--Credentials--PrivateKeyId" \
             --value "$GOOGLE_PRIVATE_KEY_ID"
 
           az keyvault secret set --vault-name "$VAULT_NAME" \
-            --name "GoogleDrive--Credentials--ClientEmail" \
+            --name "Google--Credentials--ClientEmail" \
             --value "$GOOGLE_CLIENT_EMAIL"
 
           az keyvault secret set --vault-name "$VAULT_NAME" \
@@ -92,12 +112,122 @@ jobs:
             --name "JwtSettings--SigningKey" \
             --value "$JWT_SIGNING_KEY"
 
-      - name: Deploy application
+      - name: Deploy migration jobs
         env:
-          AZURE_ENV_NAME: bowlneba-prod
+          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
           AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_PRINCIPAL_ID: ${{ vars.AZURE_PRINCIPAL_ID }}
+          AZURE_CONTAINERAPP_MIN_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
+          AZURE_CONTAINERAPP_MAX_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
+          AZURE_CONTAINERAPP_CONCURRENT_REQUESTS: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
+          AZURE_POSTGRES_SKU_NAME: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
+          AZURE_POSTGRES_SKU_TIER: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
+          AZURE_WEB_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
+          AZURE_WEB_CERTIFICATE_NAME: ${{ vars.AZURE_WEB_CERTIFICATE_NAME }}
+          AZURE_API_CUSTOM_DOMAIN: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
+          AZURE_API_CERTIFICATE_NAME: ${{ vars.AZURE_API_CERTIFICATE_NAME }}
           AZD_AUTH_USE_AZURE_CLI: "true"
-        run: azd deploy --no-prompt
+        run: |
+          azd deploy api-migrations --no-prompt
+          azd deploy api-security-migrations --no-prompt
+
+      # See "Re-login to Azure" above - by this point the token from that step (before Key
+      # Vault seeding) is several minutes old (Seed Key Vault + Deploy migration jobs), close
+      # to the ~5 min OIDC validity window, and this step's own az CLI calls need a fresh one.
+      - name: Re-login to Azure (pre-migrations)
+        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
+        with:
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+
+      # These jobs run Neba.Api's EF Core migrations (Neba.MigrationService, see AppHost.cs)
+      # against Postgres using the job's own managed identity - no DB credentials touch this
+      # pipeline. Triggered here, before the api/web deploy below, so the schema is up to date
+      # before new application code takes traffic.
+      - name: Run database migrations
+        env:
+          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+        run: |
+          set -euo pipefail
+
+          RESOURCE_GROUP=$(az group list --tag "azd-env-name=$AZURE_ENV_NAME" --query "[0].name" -o tsv)
+
+          if [[ -z "$RESOURCE_GROUP" ]]; then
+            echo "Could not resolve resource group for azd environment '$AZURE_ENV_NAME'." >&2
+            exit 1
+          fi
+
+          echo "Resolved resource group: $RESOURCE_GROUP"
+
+          run_migration_job() {
+            local job_name="$1"
+
+            echo "Starting job execution: $job_name"
+            local execution_name
+            execution_name=$(az containerapp job start \
+              --name "$job_name" \
+              --resource-group "$RESOURCE_GROUP" \
+              --query "name" -o tsv)
+
+            echo "Waiting for job execution '$execution_name' to complete..."
+            local status="Running"
+            local attempts=0
+            while [[ "$status" == "Running" || "$status" == "Processing" ]]; do
+              if (( attempts >= 60 )); then
+                echo "Timed out waiting for job '$job_name' execution '$execution_name' to complete." >&2
+                exit 1
+              fi
+              sleep 10
+              status=$(az containerapp job execution show \
+                --name "$job_name" \
+                --resource-group "$RESOURCE_GROUP" \
+                --job-execution-name "$execution_name" \
+                --query "properties.status" -o tsv)
+              attempts=$((attempts + 1))
+            done
+
+            if [[ "$status" != "Succeeded" ]]; then
+              echo "Job '$job_name' execution '$execution_name' finished with status '$status'." >&2
+              exit 1
+            fi
+
+            echo "Job '$job_name' completed successfully."
+          }
+
+          run_migration_job "api-migrations"
+          run_migration_job "api-security-migrations"
+
+      # See "Re-login to Azure" above - migration jobs can poll for up to 10 minutes,
+      # long enough to expire the OIDC client assertion again.
+      - name: Re-login to Azure (post-migrations)
+        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
+        with:
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+
+      - name: Deploy application
+        env:
+          AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+          AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_PRINCIPAL_ID: ${{ vars.AZURE_PRINCIPAL_ID }}
+          AZURE_CONTAINERAPP_MIN_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
+          AZURE_CONTAINERAPP_MAX_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
+          AZURE_CONTAINERAPP_CONCURRENT_REQUESTS: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
+          AZURE_POSTGRES_SKU_NAME: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
+          AZURE_POSTGRES_SKU_TIER: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
+          AZURE_WEB_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
+          AZURE_WEB_CERTIFICATE_NAME: ${{ vars.AZURE_WEB_CERTIFICATE_NAME }}
+          AZURE_API_CUSTOM_DOMAIN: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
+          AZURE_API_CERTIFICATE_NAME: ${{ vars.AZURE_API_CERTIFICATE_NAME }}
+          AZD_AUTH_USE_AZURE_CLI: "true"
+        run: |
+          azd deploy api --no-prompt
+          azd deploy web --no-prompt

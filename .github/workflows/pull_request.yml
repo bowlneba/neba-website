@@ -22,10 +22,10 @@ jobs:
       HUSKY: 0
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -57,11 +57,11 @@ jobs:
       apphost_changed: ${{ steps.changes.outputs.apphost }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Detect AppHost changes
         id: changes
-        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3
+        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
         with:
           filters: |
             apphost:
@@ -94,7 +94,7 @@ jobs:
 
     steps:
       - name: Download preview artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ needs.azd-provision-preview.outputs.artifact-name }}
           path: /tmp

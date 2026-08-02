@@ -11,6 +11,7 @@ using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.News;
 using Neba.Website.Server.Clock;
+using Neba.Website.Server.Help;
 using Neba.Website.Server.News;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
@@ -54,6 +55,7 @@ public sealed class NewsDetailTests : IDisposable
         _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
         _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
+        _ctx.Services.AddSingleton<HelpDocumentService>();
     }
 
     public void Dispose()

@@ -576,7 +576,11 @@ public sealed class ApiExecutorTests
         await _executor.ExecuteAsync(apiName, operationName, _ => Task.FromResult<IApiResponse<string>>(responseMock), cancellationToken);
 
         // Assert — activity tags
-        var activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
+        Activity activity;
+        lock (capturedActivities)
+        {
+            activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
+        }
         activity.GetTagItem("code.function").ShouldBe(operationName);
         activity.GetTagItem("code.namespace").ShouldBe(apiName);
         activity.GetTagItem(ApiMetricTagNames.ApiName).ShouldBe(apiName);
@@ -627,7 +631,11 @@ public sealed class ApiExecutorTests
         await _executor.ExecuteAsync(apiName, operationName, _ => Task.FromResult<IApiResponse<string>>(responseMock), cancellationToken);
 
         // Assert — activity tags
-        var activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
+        Activity activity;
+        lock (capturedActivities)
+        {
+            activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
+        }
         activity.GetTagItem("error.type").ShouldBe("DeserializationFailed");
         activity.GetTagItem("error.message").ShouldNotBeNull();
         activity.Status.ShouldBe(ActivityStatusCode.Error);
@@ -703,7 +711,11 @@ public sealed class ApiExecutorTests
         await _executor.ExecuteAsync<string>(apiName, operationName, _ => throw taskCanceledException, cancellationToken);
 
         // Assert — activity status
-        var activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
+        Activity activity;
+        lock (capturedActivities)
+        {
+            activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
+        }
         activity.Status.ShouldBe(ActivityStatusCode.Error);
 
         // Assert — metric
@@ -744,7 +756,11 @@ public sealed class ApiExecutorTests
         await _executor.ExecuteAsync<string>(apiName, operationName, _ => throw apiException, cancellationToken);
 
         // Assert — activity tags
-        var activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
+        Activity activity;
+        lock (capturedActivities)
+        {
+            activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
+        }
         activity.GetTagItem("error.type").ShouldBe(typeof(ApiException).FullName);
         activity.GetTagItem("error.message").ShouldNotBeNull();
         activity.Status.ShouldBe(ActivityStatusCode.Error);
@@ -780,7 +796,11 @@ public sealed class ApiExecutorTests
         await _executor.ExecuteAsync<string>(apiName, operationName, _ => throw httpException, cancellationToken);
 
         // Assert
-        var activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
+        Activity activity;
+        lock (capturedActivities)
+        {
+            activity = capturedActivities.First(a => a.OperationName == $"{apiName}.{operationName}");
+        }
         activity.GetTagItem(ApiMetricTagNames.HttpStatusCode).ShouldBeNull();
     }
 
@@ -1011,7 +1031,13 @@ public sealed class ApiExecutorTests
         {
             ShouldListenTo = source => source.Name == "Neba.Website.Server",
             Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStopped = a => captured.Add(a),
+            ActivityStopped = a =>
+            {
+                lock (captured)
+                {
+                    captured.Add(a);
+                }
+            },
         };
         ActivitySource.AddActivityListener(listener);
         return listener;

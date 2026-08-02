@@ -32,17 +32,17 @@ jobs:
       artifact-name: ${{ steps.meta.outputs.artifact-name }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Login to Azure
-        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2
+        uses: azure/login@93381592711f247e165c389ebb30b596c84cdc48 # v3
         with:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           client-id: ${{ vars.AZURE_CLIENT_ID }}
 
       - name: Setup azd
-        uses: Azure/setup-azd@c495e71ba59e44bfaaac10a32c8ee90d191ca4a3 # v2
+        uses: Azure/setup-azd@80591774c092d5d640d43663766a76728d66e07d # v2.3.0
 
       - name: Configure azd authentication
         run: azd config set auth.useAzCliAuth true
@@ -65,6 +65,16 @@ jobs:
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_PRINCIPAL_ID: ${{ vars.AZURE_PRINCIPAL_ID }}
+          AZURE_CONTAINERAPP_MIN_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MIN_REPLICAS }}
+          AZURE_CONTAINERAPP_MAX_REPLICAS: ${{ vars.AZURE_CONTAINERAPP_MAX_REPLICAS }}
+          AZURE_CONTAINERAPP_CONCURRENT_REQUESTS: ${{ vars.AZURE_CONTAINERAPP_CONCURRENT_REQUESTS }}
+          AZURE_POSTGRES_SKU_NAME: ${{ vars.AZURE_POSTGRES_SKU_NAME }}
+          AZURE_POSTGRES_SKU_TIER: ${{ vars.AZURE_POSTGRES_SKU_TIER }}
+          AZURE_WEB_CUSTOM_DOMAIN: ${{ vars.AZURE_WEB_CUSTOM_DOMAIN }}
+          AZURE_WEB_CERTIFICATE_NAME: ${{ vars.AZURE_WEB_CERTIFICATE_NAME }}
+          AZURE_API_CUSTOM_DOMAIN: ${{ vars.AZURE_API_CUSTOM_DOMAIN }}
+          AZURE_API_CERTIFICATE_NAME: ${{ vars.AZURE_API_CERTIFICATE_NAME }}
           AZD_AUTH_USE_AZURE_CLI: 'true'
         run: |
           set -euo pipefail
@@ -87,7 +97,7 @@ jobs:
         run: echo "artifact-name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Upload preview artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.artifact_name }}
           path: azd-preview.txt
