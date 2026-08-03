@@ -12,7 +12,7 @@ namespace Neba.Api.Legacy;
 /// has a default JWT bearer scheme (see SecurityConfiguration), and scoping auth to just this group
 /// avoids any interaction with that default.
 /// </summary>
-internal sealed class LegacyApiKeyFilter(IOptions<LegacySettings> settings) : IEndpointFilter
+internal sealed class LegacyApiKeyFilter(IOptions<LegacySettings> settings, ILogger<LegacyApiKeyFilter> logger) : IEndpointFilter
 {
     private const string ApiKeyHeaderName = "X-Api-Key";
 
@@ -22,6 +22,7 @@ internal sealed class LegacyApiKeyFilter(IOptions<LegacySettings> settings) : IE
 
         if (!IsValidKey(providedKey))
         {
+            logger.LogLegacyApiKeyRejected(context.HttpContext.Request.Path);
             return Results.Unauthorized();
         }
 
@@ -49,4 +50,12 @@ internal sealed class LegacyApiKeyFilter(IOptions<LegacySettings> settings) : IE
             Encoding.UTF8.GetBytes(providedKey),
             Encoding.UTF8.GetBytes(settings.Value.ApiKey));
     }
+}
+
+internal static partial class LegacyApiKeyFilterLogMessages
+{
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Rejected /legacy request to '{Path}': missing or invalid X-Api-Key header.")]
+    public static partial void LogLegacyApiKeyRejected(this ILogger logger, PathString path);
 }

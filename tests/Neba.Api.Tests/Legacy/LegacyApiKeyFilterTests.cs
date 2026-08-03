@@ -2,6 +2,9 @@ using System.Security.Claims;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
 
 using Neba.Api.Legacy;
@@ -100,15 +103,35 @@ public sealed class LegacyApiKeyFilterTests
         context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier).ShouldBe(LegacyActor.Id);
     }
 
+    [Fact(DisplayName = "InvokeAsync should log a warning when the key is rejected")]
+    public async Task InvokeAsync_ShouldLogWarning_WhenKeyIsRejected()
+    {
+        // Arrange
+        var fakeLogger = new FakeLogger<LegacyApiKeyFilter>();
+        var filter = CreateFilter(fakeLogger);
+        var context = CreateInvocationContext("wrong-key");
+
+        // Act
+        await filter.InvokeAsync(context, NextReturnsOk);
+
+        // Assert
+        var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        record.Level.ShouldBe(LogLevel.Warning);
+        record.Message.ShouldContain("/legacy/bowlers/new");
+    }
+
     private static ValueTask<object?> NextReturnsOk(EndpointFilterInvocationContext _) =>
         ValueTask.FromResult<object?>(Results.Ok());
 
-    private static LegacyApiKeyFilter CreateFilter() =>
-        new(Options.Create(new LegacySettings { ApiKey = ValidApiKey }));
+    private static LegacyApiKeyFilter CreateFilter(ILogger<LegacyApiKeyFilter>? logger = null) =>
+        new(Options.Create(new LegacySettings { ApiKey = ValidApiKey }), logger ?? NullLogger<LegacyApiKeyFilter>.Instance);
 
     private static EndpointFilterInvocationContext CreateInvocationContext(string? headerValue)
     {
-        var httpContext = new DefaultHttpContext();
+        var httpContext = new DefaultHttpContext
+        {
+            Request = { Path = "/legacy/bowlers/new" }
+        };
 
         if (headerValue is not null)
         {

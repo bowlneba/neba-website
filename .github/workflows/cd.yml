@@ -113,14 +113,14 @@ jobs:
           az keyvault secret set --vault-name "$VAULT_NAME" \
             --name "JwtSettings--SigningKey" \
             --value "$JWT_SIGNING_KEY"
-          
+
           az keyvault secret set --vault-name "$VAULT_NAME" \
-          --name "Legacy--ApiKey" \
-          --value "$LEGACY_API_KEY"
-          
+            --name "Legacy--ApiKey" \
+            --value "$LEGACY_API_KEY"
+
           az keyvault secret set --vault-name "$VAULT_NAME" \
-          --name "Legacy--ConnectionString" \
-          --value "$LEGACY_DB_CONNECTION_STRING"
+            --name "Legacy--ConnectionString" \
+            --value "$LEGACY_DB_CONNECTION_STRING"
 
       - name: Deploy migration jobs
         env:
