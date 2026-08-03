@@ -121,6 +121,7 @@ src/
 | **API Documentation** | Scalar |
 | **HTTP Client** | Refit |
 | **Charts** | Blazor-ApexCharts |
+| **Legacy Bridge** | Dapper + Microsoft.Data.SqlClient (temporary `/legacy` sync bridge to the WinForms app's Azure SQL database — see `docs/api/software-backdoor-plan.md`) |
 | **Testing** | xUnit, Moq, Shouldly, Bogus, Verify, Testcontainers, Respawn, bUnit, Playwright |
 
 ### Documentation
