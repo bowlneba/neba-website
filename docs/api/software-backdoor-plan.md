@@ -8,6 +8,10 @@ This is done with a set of temporary endpoints under the `/legacy` route prefix 
 
 This document is the standing set of architectural decisions for the backdoor. Individual endpoints get their own branches/PRs; each should follow this doc rather than re-deciding these questions.
 
+### The Software's repository
+
+`nebamgmt-v3` — `https://github.com/bowlneba/nebamgmt-v3.git`, checked out locally at `/Users/kippermand/Projects/bowlneba/nebamgmt-v3`. When building a `/legacy` endpoint, search this repo for every place the mirrored action can happen (e.g. for a new-bowler endpoint: `AddBowlerBO` and any other path that creates a bowler row) so the matching backdoor call is added at each one, not just the obvious entry point.
+
 ---
 
 ## Payload Shape — Trigger, Not Data
