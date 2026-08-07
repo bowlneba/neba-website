@@ -100,11 +100,11 @@ internal sealed class NewBowlerSyncJob(
             1 => Gender.Female,
             _ => null
         };
-        
+
         var dateOfBirth = row.DateOfBirth.HasValue
             ? DateOnly.FromDateTime(row.DateOfBirth.Value)
             : (DateOnly?)null;
-        
+
         var existing = await db.Set<Bowler>().SingleOrDefaultAsync(b => b.LegacyId == legacyBowlerId, ct);
         if (existing is not null)
         {
@@ -116,8 +116,9 @@ internal sealed class NewBowlerSyncJob(
             // requirement in the Testing section below without introducing "which fields are
             // safe to overwrite from a legacy row" as a question this action has to answer.
             logger.LogLegacyBowlerAlreadySynced(legacyBowlerId, existing.Id);
-             return;
-        }var suffix = MapSuffix(row.Suffix, legacyBowlerId, logger);
+            return;
+        }
+        var suffix = MapSuffix(row.Suffix, legacyBowlerId, logger);
 
         var bowler = Bowler.CreateFromLegacy(
             row.FirstName,
@@ -184,13 +185,13 @@ internal static class LegacyBowlerExtensions
             return name.IsError
                 ? name.Errors
                 : new Bowler
-            {
-                Id = BowlerId.New(),
-                Name = name.Value,
-                LegacyId = legacyId,
-                Gender = gender,
-                DateOfBirth = dateOfBirth
-            };
+                {
+                    Id = BowlerId.New(),
+                    Name = name.Value,
+                    LegacyId = legacyId,
+                    Gender = gender,
+                    DateOfBirth = dateOfBirth
+                };
         }
     }
 }
