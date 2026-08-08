@@ -465,7 +465,7 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture)
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var existing = BowlerFactory.Create(legacyId: 1, name: NameFactory.Create(firstName: "Original", lastName: "Bowler"));
+        var existing = BowlerFactory.Create(name: NameFactory.Create(firstName: "Original", lastName: "Bowler"), legacyId: 1);
         await _dbContext.Set<Bowler>().AddAsync(existing, ct);
         await _dbContext.SaveChangesAsync(ct);
         _dbContext.ChangeTracker.Clear();
