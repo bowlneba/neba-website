@@ -39,7 +39,9 @@
     "picomatch@^2.0.4": "2.3.2",
     "picomatch@^4.0.0": "4.0.4",
     "qs": ">=6.15.2",
-    "js-yaml": ">=3.15.0 <4.0.0",
-    "brace-expansion@^1.1.7": "1.1.17"
+    "js-yaml": ">=3.15.1 <4.0.0",
+    "brace-expansion@^1.1.7": "1.1.18",
+    "brace-expansion@^2.0.2": "2.1.4",
+    "brace-expansion@^5.0.8": "5.0.9"
   }
 }
