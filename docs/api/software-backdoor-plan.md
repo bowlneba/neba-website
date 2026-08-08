@@ -25,6 +25,7 @@ The Software sends a **trigger**, not a full data payload — an id, plus whatev
 - `id` is the Software's own database identifier for the affected record (the `neba-fwk` primary key).
 - The endpoint looks up everything else itself by querying the Software's database.
 - Some actions need more than an id — e.g. a bowler merge needs the duplicate's id too (see `Mappers/Merge` in the Software). That extra field lives in that action's own request DTO, not in a shared generic trigger type.
+- **Field naming**: `id` above is illustrative shorthand for "the Software's identifier for the affected record." The implemented `NewBowler` action names its field `NewBowlerRequest(int BowlerId)`, not `Id` — `BowlerId` reads more clearly at the call site for a resource-specific DTO. Each action's request DTO should name its identifier field after the resource it identifies (`BowlerId`, not a bare `Id`), and the Software-side adapter for that action must match whatever name the DTO actually uses (e.g. `{"bowlerId": ...}` for `NewBowler`, not `{"id": ...}`).
 
 **Why not send the full record?** A full-payload contract means every time the website's data needs grow, the Software's outbound call has to change too — touching code in an application we've explicitly decided not to modify. An id-only trigger keeps the Software's side fixed forever; all future changes (new fields, new derived data, bug fixes) live entirely on the website side.
 
@@ -53,7 +54,11 @@ internal static class NewBowlerEndpoint
 {
     public static void MapNewBowler(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/legacy/bowlers/new", (
+        // Relative to the group prefix — MapNewBowler() is always called from inside the
+        // "/legacy" route group (see LegacyConfiguration.MapLegacyGroup()), which already
+        // supplies that prefix. Mapping the full "/legacy/bowlers/new" path here would double
+        // the segment to "/legacy/legacy/bowlers/new" once wired through the group.
+        app.MapPost("/bowlers/new", (
             NewBowlerRequest request,
             IValidator<NewBowlerRequest> validator,
             IBackgroundJobClient jobs) =>
@@ -154,11 +159,11 @@ Standard FluentValidation unit test against the action's own validator (e.g. `Ne
 
 ### 2. Endpoint + auth (integration)
 
-One integration test class per action (`tests/Neba.Api.Tests/Legacy/NewBowlerEndpointTests.cs`, etc.), built on `Microsoft.AspNetCore.Mvc.Testing`'s `WebApplicationFactory<Program>` (the package already referenced for other integration tests in this project) with the real `LegacyApiKeyFilter` in the pipeline. Covers:
+One integration test class per action (`tests/Neba.Api.Tests/Legacy/{Feature}/{Action}Tests.cs`, etc.), built directly on `Microsoft.AspNetCore.TestHost` (`WebApplication.CreateBuilder()` + `builder.WebHost.UseTestServer()`) — not `Microsoft.AspNetCore.Mvc.Testing`'s `WebApplicationFactory<Program>` — since these are standalone Minimal API delegates with no dependency on the real `Program`, and a bare `TestHost` app avoids standing up the rest of the application's infrastructure just to exercise one route. **Map the route through the real `MapLegacyGroup()` extension (group prefix + `LegacyApiKeyFilter`), not the action's own `Map{Action}()` directly** — mapping the action method alone bypasses both the `/legacy` prefix and the filter, so the test would pass even if the route were unreachable or unsecured as deployed (this exact gap shipped once, in the first `NewBowler` action). Covers:
 
 - Missing/wrong `X-Api-Key` → `401`. (The filter's own logic — missing key, wrong key, matching key — is already covered once, generically, by `LegacyApiKeyFilterTests`; don't re-assert `CryptographicOperations.FixedTimeEquals` behavior per action, just confirm the group filter is actually wired to this route.)
 - Invalid body (fails the validator) → `400`.
-- Valid request + valid key → `202 Accepted`, and the right job was enqueued with the right argument. Replace the real `IBackgroundJobClient` registration in the test's `WebApplicationFactory` with a `Mock<IBackgroundJobClient>(MockBehavior.Strict)`, `.Verifiable()` on the `Enqueue<TSyncJob>(job => job.SyncAsync(expectedId, It.IsAny<CancellationToken>()))` setup, `VerifyAll()` in the assert.
+- Valid request + valid key → `202 Accepted`, and the right job was enqueued with the right argument. Replace the real `IBackgroundJobClient` registration with a `Mock<IBackgroundJobClient>(MockBehavior.Strict)`, `.Verifiable()` on the `Enqueue<TSyncJob>(job => job.SyncAsync(expectedId, It.IsAny<CancellationToken>()))` setup, `VerifyAll()` in the assert.
 
 ### 3. Sync job — mapping logic (unit)
 
@@ -166,7 +171,7 @@ The part of a `*SyncJob` that decides *what* to do with a legacy row (map fields
 
 ### 4. Sync job — legacy query correctness (integration)
 
-The Dapper query itself (column names, joins, `WHERE` clause matching `neba-fwk`'s actual schema) needs to run against something schema-real, not mocked — an `IDbConnection` can't be usefully mocked for arbitrary SQL text anyway (Dapper's `Query`/`QueryFirstOrDefaultAsync` are extension methods over the raw connection, not an interface seam). Use a `Testcontainers.MsSql` fixture (`Neba.TestFactory.Infrastructure.MsSqlFixture`, same shape as the existing `PostgreSqlFixture`/`AzuriteFixture`), seeded with a handful of known rows shaped like the real `neba-fwk` tables, and assert the Dapper query returns the expected mapped row(s) for a given id (including the "no such id" / "id belongs to a merged/deleted record" edge cases the query needs to handle). Requires adding the `Testcontainers.MsSql` package (new to this codebase — `Testcontainers.PostgreSql`/`Testcontainers.Azurite` are the existing precedent).
+The Dapper query itself (column names, joins, `WHERE` clause matching `neba-fwk`'s actual schema) needs to run against something schema-real, not mocked — an `IDbConnection` can't be usefully mocked for arbitrary SQL text anyway (Dapper's `Query`/`QueryFirstOrDefaultAsync` are extension methods over the raw connection, not an interface seam). Reuse the project's existing Postgres Testcontainers fixture (`Neba.TestFactory.Infrastructure.PostgreSqlFixture`/`AppDbContextFixture`) and open a second, plain `NpgsqlConnection` to it, standing in for the real MSSQL `neba-fwk` connection — Dapper works against any real ADO.NET `IDbConnection`, so the vendor doesn't need to match production for this purpose. Scope the legacy table with a per-connection `CREATE TEMP TABLE` (shaped like the real `neba-fwk` table) rather than a permanent schema addition — it's gone as soon as the connection closes, so it needs no cleanup and can't collide with the shared fixture's own schema/Respawn reset. Seed a handful of known rows and assert the Dapper query returns the expected mapped row(s) for a given id (including the "no such id" / "id belongs to a merged/deleted record" edge cases the query needs to handle). Reach for `Testcontainers.MsSql` instead only if a specific test genuinely needs MSSQL type-fidelity that Postgres can't stand in for — this was tried in the other direction first (SQLite was rejected for dynamic-typing mismatches with Dapper's record-constructor mapping) and a same-Postgres temp table was preferred over adding a second, MSSQL-specific container package.
 
 ### 5. Idempotency (integration)
 
@@ -175,7 +180,7 @@ Because Hangfire's global `AutomaticRetryAttribute` retries automatically and th
 ### What NOT to test
 
 - Don't write a test asserting `202 Accepted` is returned *and* separately re-verify the job's internal correctness in the same test — layers 2 and 3/4 above are deliberately independent so a broken mapping doesn't also fail the endpoint test (and vice versa).
-- Don't build FastEndpoints-style `Factory.Create<TEndpoint>()` tests for these routes — that's a FastEndpoints-specific unit-test harness, and `/legacy` routes are plain Minimal API delegates. Use `WebApplicationFactory` as described above.
+- Don't build FastEndpoints-style `Factory.Create<TEndpoint>()` tests for these routes — that's a FastEndpoints-specific unit-test harness, and `/legacy` routes are plain Minimal API delegates. Use `TestHost` as described above.
 
 ## Software Side (WinForms, `nebamgmt-v3`)
 

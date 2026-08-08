@@ -13,9 +13,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
+using Microsoft.Extensions.Options;
 
 using Neba.Api.Database;
 using Neba.Api.Features.Bowlers.Domain;
+using Neba.Api.Legacy;
 using Neba.Api.Legacy.Bowlers;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Bowlers;
@@ -69,6 +71,8 @@ public sealed class NewBowlerRequestValidatorTests
 [Component("Legacy")]
 public sealed class NewBowlerEndpointTests : IAsyncLifetime
 {
+    private const string ValidApiKey = "test-legacy-api-key";
+
     private WebApplication _app = null!;
     private Mock<IBackgroundJobClient> _jobsMock = null!;
 
@@ -80,9 +84,14 @@ public sealed class NewBowlerEndpointTests : IAsyncLifetime
         _jobsMock = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
         builder.Services.AddSingleton(_jobsMock.Object);
         builder.Services.AddScoped<IValidator<NewBowlerRequest>, NewBowlerRequestValidator>();
+        builder.Services.AddSingleton(Options.Create(new LegacySettings { ApiKey = ValidApiKey }));
 
         _app = builder.Build();
-        _app.MapNewBowler();
+
+        // Route through the real /legacy group (LegacyApiKeyFilter + MapLegacyEndpoints), not
+        // MapNewBowler() directly, so this test actually exercises the filter that protects the
+        // route as deployed, and the relative path registered in NewBowler.cs.
+        _app.MapLegacyGroup();
 
         await _app.StartAsync(TestContext.Current.CancellationToken);
     }
@@ -93,11 +102,45 @@ public sealed class NewBowlerEndpointTests : IAsyncLifetime
         await _app.DisposeAsync();
     }
 
+    [Fact(DisplayName = "POST /legacy/bowlers/new returns 401 and does not enqueue a job when the X-Api-Key header is missing")]
+    public async Task Post_ShouldReturn401AndNotEnqueue_WhenApiKeyHeaderIsMissing()
+    {
+        // Arrange
+        using var client = _app.GetTestClient();
+
+        // Act
+        using var response = await client.PostAsJsonAsync(
+            "/legacy/bowlers/new",
+            new NewBowlerRequest(42),
+            TestContext.Current.CancellationToken);
+
+        // Assert - Strict mock: any Create call without a setup would throw, proving no job was enqueued.
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact(DisplayName = "POST /legacy/bowlers/new returns 401 and does not enqueue a job when the X-Api-Key header is wrong")]
+    public async Task Post_ShouldReturn401AndNotEnqueue_WhenApiKeyHeaderIsWrong()
+    {
+        // Arrange
+        using var client = _app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Api-Key", "wrong-key");
+
+        // Act
+        using var response = await client.PostAsJsonAsync(
+            "/legacy/bowlers/new",
+            new NewBowlerRequest(42),
+            TestContext.Current.CancellationToken);
+
+        // Assert - Strict mock: any Create call without a setup would throw, proving no job was enqueued.
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
     [Fact(DisplayName = "POST /legacy/bowlers/new returns 400 and does not enqueue a job when BowlerId is invalid")]
     public async Task Post_ShouldReturn400AndNotEnqueue_WhenBowlerIdIsInvalid()
     {
         // Arrange
         using var client = _app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Api-Key", ValidApiKey);
 
         // Act
         using var response = await client.PostAsJsonAsync(
@@ -110,7 +153,7 @@ public sealed class NewBowlerEndpointTests : IAsyncLifetime
     }
 
     [Fact(DisplayName = "POST /legacy/bowlers/new returns 202 and enqueues a NewBowlerSyncJob with the request's BowlerId")]
-    public async Task Post_ShouldReturn202AndEnqueueSyncJob_WhenBowlerIdIsValid()
+    public async Task Post_ShouldReturn202AndEnqueueSyncJob_WhenApiKeyAndBowlerIdAreValid()
     {
         // Arrange
         Job? capturedJob = null;
@@ -120,6 +163,7 @@ public sealed class NewBowlerEndpointTests : IAsyncLifetime
             .Returns("job-1");
 
         using var client = _app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-Api-Key", ValidApiKey);
 
         // Act
         using var response = await client.PostAsJsonAsync(

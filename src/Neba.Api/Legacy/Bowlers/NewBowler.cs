@@ -22,7 +22,7 @@ internal static class NewBowlerEndpoint
     {
         public void MapNewBowler()
         {
-            app.MapPost("/legacy/bowlers/new", (
+            app.MapPost("/bowlers/new", (
                 NewBowlerRequest request,
                 IValidator<NewBowlerRequest> validator,
                 IBackgroundJobClient jobs) =>
