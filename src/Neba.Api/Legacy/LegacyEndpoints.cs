@@ -9,6 +9,7 @@ internal static class LegacyEndpoints
         public void MapLegacyEndpoints()
         {
             app.MapNewBowler();
+            app.MapUpdateBowler();
         }
     }
 }
