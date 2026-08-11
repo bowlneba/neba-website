@@ -60,7 +60,7 @@ internal static class UpdateBowlerEndpoint
                 {
                     return Results.ValidationProblem(validation.ToDictionary());
                 }
-                
+
                 jobs.Enqueue<UpdateBowlerSyncJob>(job => job.SyncAsync(request.BowlerId, CancellationToken.None));
 
                 return Results.Accepted();
@@ -126,14 +126,14 @@ internal sealed class UpdateBowlerSyncJob(
             1 => Gender.Female,
             _ => null
         };
-        
+
         var dateOfBirth = row.DateOfBirth.HasValue
             ? DateOnly.FromDateTime(row.DateOfBirth.Value)
             : (DateOnly?)null;
 
         var suffix = MapSuffix(row.Suffix, legacyBowlerId, logger);
         var (firstName, nickname) = row.FirstName.ExtractQuotedNickname();
-        
+
         var existing = await db.Set<Bowler>().SingleOrDefaultAsync(bowler => bowler.LegacyId == legacyBowlerId, ct);
 
         if (existing is null)
@@ -162,10 +162,10 @@ internal sealed class UpdateBowlerSyncJob(
 
             await db.Set<Bowler>().AddAsync(created.Value, ct);
             await db.SaveChangesAsync(ct);
-            
+
             return;
         }
-        
+
         var updated = existing.ApplyLegacyUpdate(
             firstName,
             row.LastName,
@@ -184,7 +184,7 @@ internal sealed class UpdateBowlerSyncJob(
 
         await db.SaveChangesAsync(ct);
     }
-    
+
     // Identical to NewBowlerSyncJob.MapSuffix - see that file's comment for the full rationale.
     // Not yet extracted into the shared LegacyNameParsing.cs file since suffix mapping isn't part of
     // the nickname-parsing concern that file owns; if a third action needs it, that's the trigger to
