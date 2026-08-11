@@ -23,7 +23,7 @@ public sealed class Bowler
     /// <summary>
     /// Gets the bowler's full name (value object containing first name, last name, middle name, suffix, and optional nickname).
     /// </summary>
-    public required Name Name { get; set; }
+    public Name Name { get; internal set; } = null!;
 
     /// <summary>
     /// Gets the legacy identifier from the existing NEBA website database (used for data migration; maintained for historical reference).
@@ -43,7 +43,7 @@ public sealed class Bowler
     /// <summary>
     /// Gets the bowler's date of birth (used for age-based side cut criteria; will be populated during data migration from the organization management software).
     /// </summary>
-    public DateOnly? DateOfBirth { get; set; }
+    public DateOnly? DateOfBirth { get; internal set; }
 
     private readonly List<BowlerSeasonStats> _seasonStats = [];
     internal IReadOnlyCollection<BowlerSeasonStats> SeasonStats
