@@ -176,11 +176,12 @@ internal static class LegacyBowlerExtensions
             string lastName,
             string? middleName = null,
             NameSuffix? suffix = null,
+            string? nickname = null,
             int? legacyId = null,
             Gender? gender = null,
             DateOnly? dateOfBirth = null)
         {
-            var name = Name.Create(firstName, lastName, middleName, suffix);
+            var name = Name.Create(firstName, lastName, middleName, suffix, nickname);
 
             return name.IsError
                 ? name.Errors

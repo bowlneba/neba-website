@@ -203,9 +203,24 @@ public sealed class LegacyBowlerExtensionsTests
         result.Value.Name.LastName.ShouldBe("Smith");
         result.Value.Name.MiddleName.ShouldBe("M");
         result.Value.Name.Suffix.ShouldBe(NameSuffix.Jr);
+        result.Value.Name.Nickname.ShouldBeNull();
         result.Value.LegacyId.ShouldBe(123);
         result.Value.Gender.ShouldBe(Gender.Male);
         result.Value.DateOfBirth.ShouldBe(new DateOnly(1990, 1, 1));
+    }
+
+    [Fact(DisplayName = "CreateFromLegacy should return a Bowler with the nickname mapped when a nickname is provided")]
+    public void CreateFromLegacy_ShouldReturnBowlerWithNicknameMapped_WhenNicknameIsProvided()
+    {
+        // Act
+        var result = Bowler.CreateFromLegacy(
+            "William",
+            "Smith",
+            nickname: "Bill");
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Name.Nickname.ShouldBe("Bill");
     }
 
     [Fact(DisplayName = "CreateFromLegacy should return an error when the first name is blank")]
