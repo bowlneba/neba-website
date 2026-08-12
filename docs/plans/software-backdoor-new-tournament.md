@@ -21,7 +21,7 @@ This changes the shape of the sync job: there is no `CreateFromLegacy`/`ApplyLeg
 - **Any step that can't resolve to exactly one candidate — zero or still-multiple — is "cannot be derived," not just the multiple-candidates case the user described.** The user's description focuses on the ambiguous (>1) case, but a zero-candidate outcome (no website tournament has that end date at all, or the exact-type step eliminates every remaining candidate) needs the identical remedy: nothing gets linked automatically, so it's just as much a case for the "log + email" path. Both outcomes are handled by the same fallback in the job, not two separate code paths.
 - **Idempotency: strict no-op, matching `NewBowlerSyncJob`'s stance, not `UpdateBowlerSyncJob`'s.** A repeat call for a legacy tournament id that's already linked (`Tournament.LegacyId == legacyTournamentId` already, found via a lookup before the matching logic runs at all) is a pure no-op — nothing about "which website tournament does this legacy id belong to" can legitimately change between calls, unlike `UpdateBowler` where re-applying edited fields every time is the entire point of the action.
 - **No fallback-to-create.** Unlike `UpdateBowlerSyncJob`'s "no existing record → create one" behavior, there is no equivalent here — a website `Tournament` with no match is exactly the "cannot be derived" / manual-intervention case, never a signal to synthesize a new website tournament from a Software-only source. The website tournament is always expected to already exist; if it doesn't, that is itself the anomaly to escalate, not a race to tolerate.
-- **Legacy → website `TournamentType` mapping is best-effort where the schema doesn't disambiguate outright — flagged, not guessed silently.** See "Open items" below for the two spots (legacy `Champions`, and the `OverUnder` doubles age-threshold) where the mapping can't be verified from source alone.
+- **Legacy → website `TournamentType` mapping** — `Champions` → `TournamentOfChampions` and `OverUnder == true` → `OverUnderFiftyDoubles` (never `OverUnderFortyDoubles`) are both confirmed by the user. See the mapping table below.
 
 ---
 
@@ -60,7 +60,7 @@ Confirmed via `nebamgmt-v3`'s EF6 SSDL/entity classes during this session's rese
 | `FinalsFormat` | `int` (`TeamFinalsFormats` enum) | no |
 | `IsBaker` | `bit` | yes — step 3 exact-type mapping |
 
-**Open item, same caveat every prior plan in this series has carried**: these are EF POCO property names, not independently re-verified against the real `.ssdl`/database this session. `IsBaker`'s exact column mapping inside the EDMX's `EntityTypeMapping` block specifically wasn't captured verbatim during research (it's confirmed to exist on the `Data.TeamTournament` C# class, `Data/NEBA.Data/TeamTournament.cs:27`, but the SSDL column list snippet didn't itemize it) — confirm the literal column name before writing the Dapper query.
+Column names confirmed by the user — no further schema verification needed before writing the Dapper query.
 
 ### Legacy → website `TournamentType` mapping
 
@@ -74,12 +74,14 @@ Confirmed via `nebamgmt-v3`'s EF6 SSDL/entity classes during this session's rese
 | Singles `Masters` | `Masters` | confirmed |
 | Singles `Youth` | `Youth` | confirmed |
 | Singles `SeniorWithWomen` | `SeniorAndWomen` | confirmed |
-| Singles `Champions` | `TournamentOfChampions` | **unverified — see Open items** |
+| Singles `Champions` | `TournamentOfChampions` | confirmed |
 | Team, `TeamSize == 2`, `IsBaker == false`, `OverUnder == false` | `Doubles` | confirmed |
 | Team, `TeamSize == 3`, `IsBaker == false` | `Trios` | confirmed |
-| Team, `IsBaker == true` | `Baker` | confirmed |
-| Team, `TeamSize == 2`, `OverUnder == true` | `OverUnderFiftyDoubles` (not `OverUnderFortyDoubles`) | **unverified — see Open items** |
+| Team, `IsBaker == true` (Software's Baker format uses `TeamSize == 5`, matching the website's own `Baker.TeamSize`) | `Baker` | confirmed |
+| Team, `TeamSize == 2`, `OverUnder == true` | `OverUnderFiftyDoubles` (not `OverUnderFortyDoubles`) | confirmed |
 | Team, any other `TeamSize`/flag combination | *(no mapping — treated as "type unknown," see job logic below)* | n/a |
+
+**`IsBaker` is checked before `TeamSize`, not alongside it** — `MapLegacyTournamentType` (below) returns `TournamentType.Baker` as soon as `row.IsBaker == true`, before the `TeamSize`/`OverUnder` switch ever runs. This is deliberate: Baker is identified by the `IsBaker` flag alone, so the numeric `TeamSize` value never needs to appear in the mapping's `switch` cases at all — it would be redundant with (and could silently drift from) the `IsBaker` check. `TeamSize == 5` is only ever the *observed* value for Baker rows, not a fact the mapping logic depends on.
 
 Website `TournamentType` values with **no legacy source found at all** (`HighRoller`, `OverForty`, `FortyToFortyNine`, `Eliminator`) — these simply never win the step-3 exact-type filter, since no legacy row can ever map to them. Not an error condition; just means a website tournament of one of these types can only ever be matched at step 1 or step 2, never disambiguated further by type. All four are also `ActiveFormat: false` on the website side (no longer offered), consistent with there being no live Software-side path that creates them.
 
@@ -270,7 +272,7 @@ internal sealed class NewTournamentSyncJob(
                 1 => TournamentType.NonChampions,
                 2 => TournamentType.Senior,
                 3 => TournamentType.Women,
-                4 => TournamentType.TournamentOfChampions, // Champions - see Open items
+                4 => TournamentType.TournamentOfChampions, // Champions
                 5 => TournamentType.Invitational,
                 6 => TournamentType.Masters,
                 7 => TournamentType.Youth,
@@ -291,7 +293,7 @@ internal sealed class NewTournamentSyncJob(
 
         return (row.TeamSize.Value, row.OverUnder) switch
         {
-            (2, true) => TournamentType.OverUnderFiftyDoubles, // see Open items - Forty variant unreachable
+            (2, true) => TournamentType.OverUnderFiftyDoubles, // Forty variant confirmed unreachable via this bit
             (2, false or null) => TournamentType.Doubles,
             (3, false or null) => TournamentType.Trios,
             _ => null
@@ -382,6 +384,7 @@ Per the architecture doc's five testing layers, collapsed into one file: `tests/
    - Exactly one website `Tournament` with matching `EndDate` and `LegacyId == null` → linked directly (step 1 alone resolves it), regardless of type — seed a legacy singles row and a website tournament of a *different* type at the same end date to prove step 1 short-circuits before the type checks ever run.
    - Two website tournaments share the `EndDate`, one singles-shaped (`TournamentType.TeamSize == 1`) and one team-shaped — legacy row is a team row → the singles-shaped one is correctly excluded, team-shaped one is linked (step 2 resolves it).
    - Two website tournaments share the `EndDate` and are both team-shaped (e.g. `Doubles` and `Trios`) — legacy row is `TeamSize == 3`, `IsBaker == false` → `Trios` one is linked (step 3 resolves it).
+   - Two website tournaments share the `EndDate`, both team-shaped — one `Doubles`, one `Baker` — legacy row is `TeamSize == 5`, `IsBaker == true` → the `Baker` one is linked (step 3 resolves it via the `IsBaker` flag, not by matching the `TeamSize` number).
    - Two website tournaments share the `EndDate`, same singles-vs-team bucket, and the legacy row's type maps to neither (or maps to `null`, e.g. `TeamSize == 4`) → still ambiguous after all three steps → warning logged, email sent with the right `To`/`Subject`, no `LegacyId` assigned to either candidate.
    - Zero website tournamts share the legacy row's `EndDate` at all → same cannot-derive path (warning + email), not a silent no-op — this is the "0, not just >1" case called out in the Decision Recap.
    - A website tournament already has a *different* non-null `LegacyId` at the same `EndDate` → correctly excluded from candidates by the `LegacyId == null` filter (proves an already-claimed tournament is never re-claimed by a second legacy id).
@@ -456,8 +459,10 @@ Same config keys, same shared static `HttpClient` (5-second timeout), same fire-
 
 ### Open items on the software side
 
-- Same open item every prior plan in this series has carried and never fully closed: do `AddSinglesTournamentBO.Add`/`AddTeamTournamentBO.Add`'s commit points run inside any wider transaction/rollback scope where firing the HTTP call immediately after the local commit could still end up "sent" even if something later in the same user operation rolls back? Given `TournamentRepository.Add` does *two* separate `Commit()` calls (tournament row, then squads), it's also worth confirming the hook fires only after **both** commits succeed, not just the first — placing the hook at the BO level (after `_addTournament.Add(...)` returns) rather than inside `TournamentRepository.Add` itself already achieves this, since `_addTournament.Add(...)` doesn't return until `TournamentRepository.Add` has finished both commits, but this wasn't independently traced line-by-line through `BaseAdd.vb`'s exact return timing this session.
-- The `IsBaker` column's literal name/mapping inside `Tournaments_TeamTournament` wasn't independently confirmed against the EDMX's `EntityTypeMapping` block (see Legacy Schema Reference above) — confirm before finalizing the Dapper query.
+None remaining — the two open items this section previously carried are both resolved:
+
+- **Transaction scope**: confirmed by the user — `AddSinglesTournamentBO.Add`/`AddTeamTournamentBO.Add`'s commit points do not run inside any wider transaction/rollback scope. Firing the hook immediately after the local commit succeeds (as sketched above) is safe as-is.
+- **Column names**: confirmed by the user — the `neba-fwk` column names used throughout this plan (including `Tournaments_TeamTournament.IsBaker`) are correct as written.
 
 ### Prompt for the `nebamgmt-v3` implementation
 
@@ -489,10 +494,7 @@ Everything above, condensed into a standalone prompt — self-contained, so it c
 >
 > **Do not** add a hook anywhere else — every tournament-creation UI path (the singles Add form, and all Doubles/Trios/Baker/general-Team forms) already funnels through one of these two `Add` methods; there is no copy/clone/import path for tournaments to worry about.
 >
-> **Before you start, resolve these open questions** (don't guess silently — ask, or make the decision explicit in a comment/commit message with your reasoning):
->
-> 1. Do `AddSinglesTournamentBO.Add`/`AddTeamTournamentBO.Add` run inside any wider transaction/rollback scope where firing the HTTP call immediately after the local commit could still end up "sent" even if something later in the same user operation rolls back?
-> 2. Confirm the base URL/API key config keys already added for `NotifyNewBowler`/`NotifyBowlerUpdated` are what `NotifyNewTournament` should reuse (they should be — verify, don't assume).
+> Confirmed: `AddSinglesTournamentBO.Add`/`AddTeamTournamentBO.Add` do **not** run inside any wider transaction/rollback scope, so firing the hook immediately after the local commit succeeds (as shown above) is safe as-is — no additional transaction-scope handling needed. Reuse the same base URL/API key config keys already used by `NotifyNewBowler`/`NotifyBowlerUpdated`.
 >
 > Do not change `AddSinglesTournamentBO.Add`'s or `AddTeamTournamentBO.Add`'s public method signatures — the notification is a side effect fired from inside the existing method body, not a new parameter/return value any caller needs to know about.
 
@@ -504,7 +506,7 @@ Everything above, condensed into a standalone prompt — self-contained, so it c
 2. ~~What happens when the matching narrows to zero candidates rather than the user's described "multiple candidates" case.~~ **Decided** — treated identically to the multiple-candidates cannot-derive case: logged and emailed, no link applied.
 3. ~~Whether a repeat call for an already-linked legacy tournament id should re-run the matching logic.~~ **Decided** — strict no-op, checked before any matching logic runs, mirroring `NewBowlerSyncJob`'s create-only idempotency stance rather than `UpdateBowlerSyncJob`'s always-reapply stance.
 4. ~~How `Tournament.LegacyId` should be mutated given it's `init`-only today.~~ **Decided** — widen to `internal set` (a real, permanent aggregate change, not deleted at sunset), matching the same reasoning already applied to `Bowler.Name`/`Gender`/`DateOfBirth`.
-5. **Legacy `SinglesTournamentTypes.Champions` → website `TournamentType.TournamentOfChampions` mapping** — plausible given the naming and that both represent "past title winners only" restrictions, but not independently confirmed against any NEBA rules documentation or a real legacy data sample this session. **Could not confirm this from within this session.** If wrong, the practical effect is limited: this mapping only matters at step 3 (exact-type narrowing), which only runs when steps 1–2 leave multiple same-bucket candidates sharing an end date — a genuinely rare case per the user's own "95% of the time" framing.
-6. **Legacy `Tournaments_TeamTournament.OverUnder == true` → `OverUnderFiftyDoubles` vs. `OverUnderFortyDoubles`** — the legacy schema found has only a single `OverUnder` bit with no accompanying age-threshold column, and the website's `OverUnderFortyDoubles` is marked `ActiveFormat: false` (no longer offered), so defaulting every legacy `OverUnder` team row to `OverUnderFiftyDoubles` is reasonable but **could not be independently confirmed** — if the Software still allows creating a Forty-variant tournament through some path not surfaced by the `OverUnder` bit alone, this mapping would misclassify it. Flagged for confirmation before implementation, not silently assumed correct.
-7. **Real `neba-fwk` column names, including whether `IsBaker` is the actual mapped column name on `Tournaments_TeamTournament`** — not independently re-verified against the actual database/`.ssdl` this session, same caveat every prior plan in this series has carried.
-8. **Whether `AddSinglesTournamentBO.Add`/`AddTeamTournamentBO.Add`'s commit points run inside any wider transaction/rollback scope.** **Could not confirm this from within this session** — flagged explicitly in the implementation prompt above as something the implementer must check, not assume. Also unconfirmed: that `TournamentRepository.Add`'s *two* separate `Commit()` calls (tournament row, then squads) both complete before `_addTournament.Add(...)` returns to the BO layer — placing the hook at the BO layer should already guarantee this by construction, but the exact return-timing wasn't traced line-by-line through `BaseAdd.vb` this session.
+5. ~~Legacy `SinglesTournamentTypes.Champions` → website `TournamentType.TournamentOfChampions` mapping.~~ **Decided** — confirmed correct by the user.
+6. ~~Legacy `Tournaments_TeamTournament.OverUnder == true` → `OverUnderFiftyDoubles` vs. `OverUnderFortyDoubles`.~~ **Decided** — confirmed by the user: `OverUnder` always means the Fifty variant; the Forty variant is unreachable through this flag.
+7. ~~Real `neba-fwk` column names, including whether `IsBaker` is the actual mapped column name on `Tournaments_TeamTournament`.~~ **Decided** — confirmed correct by the user.
+8. ~~Whether `AddSinglesTournamentBO.Add`/`AddTeamTournamentBO.Add`'s commit points run inside any wider transaction/rollback scope.~~ **Decided** — confirmed by the user: no, they do not. Firing the hook immediately after the local commit succeeds is safe as-is.
