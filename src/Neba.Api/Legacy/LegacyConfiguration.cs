@@ -1,7 +1,11 @@
 using System.Data;
 
+using FluentValidation;
+
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
+
+using Neba.Api.Legacy.Bowlers;
 
 namespace Neba.Api.Legacy;
 
@@ -18,6 +22,9 @@ internal static class LegacyConfiguration
 
             builder.Services.AddScoped<IDbConnection>(sp =>
                 new SqlConnection(sp.GetRequiredService<IOptions<LegacySettings>>().Value.ConnectionString));
+
+            builder.Services.AddScoped<IValidator<NewBowlerRequest>, NewBowlerRequestValidator>();
+            builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
 
             return builder;
         }
