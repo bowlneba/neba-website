@@ -84,6 +84,11 @@ public sealed class NewBowlerEndpointTests : IAsyncLifetime
         _jobsMock = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
         builder.Services.AddSingleton(_jobsMock.Object);
         builder.Services.AddScoped<IValidator<NewBowlerRequest>, NewBowlerRequestValidator>();
+        // UpdateBowlerRequest's validator is also required here: MapLegacyGroup() below maps every
+        // endpoint in the /legacy group (not just this one), and ASP.NET Core builds route metadata
+        // for the whole group on the first request to any of its endpoints - an unregistered
+        // IValidator<T> for a sibling endpoint throws at that point, not just when that sibling is called.
+        builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
         builder.Services.AddSingleton(Options.Create(new LegacySettings { ApiKey = ValidApiKey }));
 
         _app = builder.Build();
