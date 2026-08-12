@@ -2096,6 +2096,7 @@ private void ManualLocationUpdates(IReadOnlyCollection<BowlingCenters> bowlingCe
 	
 	var wolcottLanes = bowlingCenters.Single(bc => bc.City == "Wolcott");
 	wolcottLanes.BowlingCenterPhoneNumbers.Single().PhoneNumber = "2038791469";
+	wolcottLanes.Name = "Wolcott Lanes";
 
 	var auburn = bowlingCenters.Single(bc => bc.Name == "Bowlero Worcester");
 	auburn.Latitude = 42.222311;
@@ -2187,6 +2188,11 @@ private void ManualLocationUpdates(IReadOnlyCollection<BowlingCenters> bowlingCe
 	var hallowell = bowlingCenters.Single(bc => bc.Name == "Sparetime Recreation Hallowell");
 	hallowell.Name = "Interstate Bowling Center";
 	hallowell.Street = "215 Whitten Road";
+	
+	var missisquoiLanes = bowlingCenters.Single(c => c.CertificationNumber == "819");
+	missisquoiLanes.Street = "3010 Vt Route 100";
+	missisquoiLanes.Latitude = 44.79356;
+	missisquoiLanes.Longitude = -72.44834;
 }
 
 private async Task<IReadOnlyCollection<BowlingCenters>> ManualBowlingCenterAdditionsAsync(HttpClient httpClient, IDictionary<string, int> bowlingCenterWebsiteIdByPhoneNumber)
@@ -3401,10 +3407,22 @@ public async Task MigrateOilPatterns()
 		KegelId = new Guid("daec2269-51d3-ef11-8eea-6045bd057455")
 	};
 
+	var augSingles2026 = new OilPatterns
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "2026 PBA Jr. Tacket",
+		Length = 44,
+		Volume = 30.75m,
+		LeftRatio = 5m,
+		RightRatio = 5m,
+		KegelId = new Guid("12127b64-f1ef-f011-8407-6045bd096a2f")
+	};
+
 	OilPatterns.AddRange(
 		janSingles2026, febDoubles2026, febTrios2026, marSingles2026,
 		aprNonChamp2026, aprSenior2026, aprSingles2026, maySingles2026,
-		junSingles2026, junOverUnder2026, julSingles2026, keeneDoubles2026, keeneSingles2026);
+		junSingles2026, junOverUnder2026, julSingles2026, keeneDoubles2026, keeneSingles2026,
+		augSingles2026);
 
 	TournamentOilPatterns.AddRange(
 		new TournamentOilPatterns 
@@ -3483,6 +3501,12 @@ public async Task MigrateOilPatterns()
 		{
 			TournamentId = Tournaments.Single(t => t.EndDate == new DateOnly(2026, 8, 2)).Id,
 			OilPattern = keeneSingles2026,
+			TournamentRounds = 5
+		},
+		new TournamentOilPatterns
+		{
+			TournamentId = Tournaments.Single(t => t.EndDate == new DateOnly(2026, 8, 23)).Id,
+			OilPattern = augSingles2026,
 			TournamentRounds = 5
 		}
 	);
@@ -4126,6 +4150,9 @@ static List<(int? websiteId, int? softwareId)> s_manualMatch = new()
 	new(null, 5090),  // Caitlyn Smith
 	new(null, 5093),  // Scott King
 	new(null, 5105),  // Hayden King
+	new(null, 5135),  // Gregory Lovewell
+	new(null, 5131),  // Steph Clark
+	new(null, 5120),  // Laura Clark
 };
 
 #endregion
