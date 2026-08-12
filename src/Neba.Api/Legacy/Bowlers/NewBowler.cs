@@ -176,11 +176,12 @@ internal static class LegacyBowlerExtensions
             string lastName,
             string? middleName = null,
             NameSuffix? suffix = null,
+            string? nickname = null,
             int? legacyId = null,
             Gender? gender = null,
             DateOnly? dateOfBirth = null)
         {
-            var name = Name.Create(firstName, lastName, middleName, suffix);
+            var name = Name.Create(firstName, lastName, middleName, suffix, nickname);
 
             return name.IsError
                 ? name.Errors
@@ -201,12 +202,12 @@ internal static partial class NewBowlerSyncJobLogMessages
     [LoggerMessage(
         Level = LogLevel.Warning,
         Message = "No bowler found in neba-fwk for legacy id {LegacyBowlerId}; skipping sync.")]
-    public static partial void LogLegacyBowlerNotFound(this ILogger logger, int legacyBowlerId);
+    public static partial void LogLegacyBowlerNotFound(this ILogger<NewBowlerSyncJob> logger, int legacyBowlerId);
 
     [LoggerMessage(
         Level = LogLevel.Information,
         Message = "Legacy bowler {LegacyBowlerId} already synced as {BowlerId}; treating as a duplicate call and skipping.")]
-    public static partial void LogLegacyBowlerAlreadySynced(this ILogger logger, int legacyBowlerId, BowlerId bowlerId);
+    public static partial void LogLegacyBowlerAlreadySynced(this ILogger<NewBowlerSyncJob> logger, int legacyBowlerId, BowlerId bowlerId);
 
     [LoggerMessage(
         Level = LogLevel.Warning,
@@ -216,5 +217,5 @@ internal static partial class NewBowlerSyncJobLogMessages
     [LoggerMessage(
         Level = LogLevel.Error,
         Message = "Failed to create bowler from legacy id {LegacyBowlerId}: {Errors}.")]
-    public static partial void LogLegacyBowlerCreateFailed(this ILogger logger, int legacyBowlerId, string errors);
+    public static partial void LogLegacyBowlerCreateFailed(this ILogger<NewBowlerSyncJob> logger, int legacyBowlerId, string errors);
 }

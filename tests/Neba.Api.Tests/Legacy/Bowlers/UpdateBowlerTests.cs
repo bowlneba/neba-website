@@ -27,21 +27,88 @@ using Npgsql;
 
 namespace Neba.Api.Tests.Legacy.Bowlers;
 
-// Mirrors the single-file shape of the production source (Legacy/Bowlers/NewBowler.cs) so the
+// Mirrors the single-file shape of the production source (Legacy/Bowlers/UpdateBowler.cs) so the
 // whole test suite for this backdoor action is removed alongside it at sunset with no leftover
 // test files to hunt down.
 
 [UnitTest]
 [Component("Legacy")]
-public sealed class NewBowlerRequestValidatorTests
+public sealed class BowlerApplyLegacyUpdateTests
 {
-    private readonly NewBowlerRequestValidator _validator = new();
+    [Fact(DisplayName = "ApplyLegacyUpdate should update Name, Gender and DateOfBirth when the name is valid")]
+    public void ApplyLegacyUpdate_ShouldUpdateNameGenderAndDateOfBirth_WhenNameIsValid()
+    {
+        // Arrange
+        var bowler = BowlerFactory.Create(
+            name: NameFactory.Create(firstName: "Original", lastName: "Bowler"),
+            gender: Gender.Male,
+            dateOfBirth: new DateOnly(1980, 1, 1));
+
+        // Act
+        var result = bowler.ApplyLegacyUpdate(
+            "David",
+            "Smith",
+            middleName: "M",
+            suffix: NameSuffix.Jr,
+            nickname: "Dave",
+            gender: Gender.Female,
+            dateOfBirth: new DateOnly(1990, 6, 15));
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        bowler.Name.FirstName.ShouldBe("David");
+        bowler.Name.LastName.ShouldBe("Smith");
+        bowler.Name.MiddleName.ShouldBe("M");
+        bowler.Name.Suffix.ShouldBe(NameSuffix.Jr);
+        bowler.Name.Nickname.ShouldBe("Dave");
+        bowler.Gender.ShouldBe(Gender.Female);
+        bowler.DateOfBirth.ShouldBe(new DateOnly(1990, 6, 15));
+    }
+
+    [Fact(DisplayName = "ApplyLegacyUpdate should set Gender and DateOfBirth to null when not provided")]
+    public void ApplyLegacyUpdate_ShouldSetGenderAndDateOfBirthToNull_WhenNotProvided()
+    {
+        // Arrange
+        var bowler = BowlerFactory.Create(gender: Gender.Male, dateOfBirth: new DateOnly(1980, 1, 1));
+
+        // Act
+        var result = bowler.ApplyLegacyUpdate("David", "Smith");
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        bowler.Gender.ShouldBeNull();
+        bowler.DateOfBirth.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "ApplyLegacyUpdate should return an error and leave the bowler unchanged when the first name is blank")]
+    public void ApplyLegacyUpdate_ShouldReturnErrorAndLeaveBowlerUnchanged_WhenFirstNameIsBlank()
+    {
+        // Arrange
+        var originalName = NameFactory.Create(firstName: "Original", lastName: "Bowler");
+        var bowler = BowlerFactory.Create(name: originalName, gender: Gender.Male, dateOfBirth: new DateOnly(1980, 1, 1));
+
+        // Act
+        var result = bowler.ApplyLegacyUpdate(string.Empty, "Smith");
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        bowler.Name.ShouldBe(originalName);
+        bowler.Gender.ShouldBe(Gender.Male);
+        bowler.DateOfBirth.ShouldBe(new DateOnly(1980, 1, 1));
+    }
+}
+
+[UnitTest]
+[Component("Legacy")]
+public sealed class UpdateBowlerRequestValidatorTests
+{
+    private readonly UpdateBowlerRequestValidator _validator = new();
 
     [Fact(DisplayName = "Validate should succeed when BowlerId is greater than zero")]
     public void Validate_ShouldSucceed_WhenBowlerIdIsGreaterThanZero()
     {
         // Arrange
-        var request = new NewBowlerRequest(1);
+        var request = new UpdateBowlerRequest(1);
 
         // Act
         var result = _validator.Validate(request);
@@ -56,20 +123,20 @@ public sealed class NewBowlerRequestValidatorTests
     public void Validate_ShouldFail_WhenBowlerIdIsNotGreaterThanZero(int bowlerId)
     {
         // Arrange
-        var request = new NewBowlerRequest(bowlerId);
+        var request = new UpdateBowlerRequest(bowlerId);
 
         // Act
         var result = _validator.Validate(request);
 
         // Assert
         result.IsValid.ShouldBeFalse();
-        result.Errors.ShouldContain(e => e.PropertyName == nameof(NewBowlerRequest.BowlerId));
+        result.Errors.ShouldContain(e => e.PropertyName == nameof(UpdateBowlerRequest.BowlerId));
     }
 }
 
 [IntegrationTest]
 [Component("Legacy")]
-public sealed class NewBowlerEndpointTests : IAsyncLifetime
+public sealed class UpdateBowlerEndpointTests : IAsyncLifetime
 {
     private const string ValidApiKey = "test-legacy-api-key";
 
@@ -83,19 +150,19 @@ public sealed class NewBowlerEndpointTests : IAsyncLifetime
 
         _jobsMock = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
         builder.Services.AddSingleton(_jobsMock.Object);
-        builder.Services.AddScoped<IValidator<NewBowlerRequest>, NewBowlerRequestValidator>();
-        // UpdateBowlerRequest's validator is also required here: MapLegacyGroup() below maps every
+        builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
+        // NewBowlerRequest's validator is also required here: MapLegacyGroup() below maps every
         // endpoint in the /legacy group (not just this one), and ASP.NET Core builds route metadata
         // for the whole group on the first request to any of its endpoints - an unregistered
         // IValidator<T> for a sibling endpoint throws at that point, not just when that sibling is called.
-        builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
+        builder.Services.AddScoped<IValidator<NewBowlerRequest>, NewBowlerRequestValidator>();
         builder.Services.AddSingleton(Options.Create(new LegacySettings { ApiKey = ValidApiKey }));
 
         _app = builder.Build();
 
         // Route through the real /legacy group (LegacyApiKeyFilter + MapLegacyEndpoints), not
-        // MapNewBowler() directly, so this test actually exercises the filter that protects the
-        // route as deployed, and the relative path registered in NewBowler.cs.
+        // MapUpdateBowler() directly, so this test actually exercises the filter that protects the
+        // route as deployed, and the relative path registered in UpdateBowler.cs.
         _app.MapLegacyGroup();
 
         await _app.StartAsync(TestContext.Current.CancellationToken);
@@ -107,7 +174,7 @@ public sealed class NewBowlerEndpointTests : IAsyncLifetime
         await _app.DisposeAsync();
     }
 
-    [Fact(DisplayName = "POST /legacy/bowlers/new returns 401 and does not enqueue a job when the X-Api-Key header is missing")]
+    [Fact(DisplayName = "POST /legacy/bowlers/update returns 401 and does not enqueue a job when the X-Api-Key header is missing")]
     public async Task Post_ShouldReturn401AndNotEnqueue_WhenApiKeyHeaderIsMissing()
     {
         // Arrange
@@ -115,15 +182,15 @@ public sealed class NewBowlerEndpointTests : IAsyncLifetime
 
         // Act
         using var response = await client.PostAsJsonAsync(
-            "/legacy/bowlers/new",
-            new NewBowlerRequest(42),
+            "/legacy/bowlers/update",
+            new UpdateBowlerRequest(42),
             TestContext.Current.CancellationToken);
 
         // Assert - Strict mock: any Create call without a setup would throw, proving no job was enqueued.
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
-    [Fact(DisplayName = "POST /legacy/bowlers/new returns 401 and does not enqueue a job when the X-Api-Key header is wrong")]
+    [Fact(DisplayName = "POST /legacy/bowlers/update returns 401 and does not enqueue a job when the X-Api-Key header is wrong")]
     public async Task Post_ShouldReturn401AndNotEnqueue_WhenApiKeyHeaderIsWrong()
     {
         // Arrange
@@ -132,15 +199,15 @@ public sealed class NewBowlerEndpointTests : IAsyncLifetime
 
         // Act
         using var response = await client.PostAsJsonAsync(
-            "/legacy/bowlers/new",
-            new NewBowlerRequest(42),
+            "/legacy/bowlers/update",
+            new UpdateBowlerRequest(42),
             TestContext.Current.CancellationToken);
 
         // Assert - Strict mock: any Create call without a setup would throw, proving no job was enqueued.
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
-    [Fact(DisplayName = "POST /legacy/bowlers/new returns 400 and does not enqueue a job when BowlerId is invalid")]
+    [Fact(DisplayName = "POST /legacy/bowlers/update returns 400 and does not enqueue a job when BowlerId is invalid")]
     public async Task Post_ShouldReturn400AndNotEnqueue_WhenBowlerIdIsInvalid()
     {
         // Arrange
@@ -149,15 +216,15 @@ public sealed class NewBowlerEndpointTests : IAsyncLifetime
 
         // Act
         using var response = await client.PostAsJsonAsync(
-            "/legacy/bowlers/new",
-            new NewBowlerRequest(0),
+            "/legacy/bowlers/update",
+            new UpdateBowlerRequest(0),
             TestContext.Current.CancellationToken);
 
         // Assert - Strict mock: any Create call without a setup would throw, proving no job was enqueued.
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
-    [Fact(DisplayName = "POST /legacy/bowlers/new returns 202 and enqueues a NewBowlerSyncJob with the request's BowlerId")]
+    [Fact(DisplayName = "POST /legacy/bowlers/update returns 202 and enqueues an UpdateBowlerSyncJob with the request's BowlerId")]
     public async Task Post_ShouldReturn202AndEnqueueSyncJob_WhenApiKeyAndBowlerIdAreValid()
     {
         // Arrange
@@ -172,77 +239,23 @@ public sealed class NewBowlerEndpointTests : IAsyncLifetime
 
         // Act
         using var response = await client.PostAsJsonAsync(
-            "/legacy/bowlers/new",
-            new NewBowlerRequest(42),
+            "/legacy/bowlers/update",
+            new UpdateBowlerRequest(42),
             TestContext.Current.CancellationToken);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
         capturedJob.ShouldNotBeNull();
-        capturedJob.Type.ShouldBe(typeof(NewBowlerSyncJob));
-        capturedJob.Method.Name.ShouldBe(nameof(NewBowlerSyncJob.SyncAsync));
+        capturedJob.Type.ShouldBe(typeof(UpdateBowlerSyncJob));
+        capturedJob.Method.Name.ShouldBe(nameof(UpdateBowlerSyncJob.SyncAsync));
         capturedJob.Args[0].ShouldBe(42);
-    }
-}
-
-[UnitTest]
-[Component("Legacy")]
-public sealed class LegacyBowlerExtensionsTests
-{
-    [Fact(DisplayName = "CreateFromLegacy should return a Bowler with the mapped fields when the name is valid")]
-    public void CreateFromLegacy_ShouldReturnBowlerWithMappedFields_WhenNameIsValid()
-    {
-        // Act
-        var result = Bowler.CreateFromLegacy(
-            "David",
-            "Smith",
-            middleName: "M",
-            suffix: NameSuffix.Jr,
-            legacyId: 123,
-            gender: Gender.Male,
-            dateOfBirth: new DateOnly(1990, 1, 1));
-
-        // Assert
-        result.IsError.ShouldBeFalse();
-        result.Value.Name.FirstName.ShouldBe("David");
-        result.Value.Name.LastName.ShouldBe("Smith");
-        result.Value.Name.MiddleName.ShouldBe("M");
-        result.Value.Name.Suffix.ShouldBe(NameSuffix.Jr);
-        result.Value.Name.Nickname.ShouldBeNull();
-        result.Value.LegacyId.ShouldBe(123);
-        result.Value.Gender.ShouldBe(Gender.Male);
-        result.Value.DateOfBirth.ShouldBe(new DateOnly(1990, 1, 1));
-    }
-
-    [Fact(DisplayName = "CreateFromLegacy should return a Bowler with the nickname mapped when a nickname is provided")]
-    public void CreateFromLegacy_ShouldReturnBowlerWithNicknameMapped_WhenNicknameIsProvided()
-    {
-        // Act
-        var result = Bowler.CreateFromLegacy(
-            "William",
-            "Smith",
-            nickname: "Bill");
-
-        // Assert
-        result.IsError.ShouldBeFalse();
-        result.Value.Name.Nickname.ShouldBe("Bill");
-    }
-
-    [Fact(DisplayName = "CreateFromLegacy should return an error when the first name is blank")]
-    public void CreateFromLegacy_ShouldReturnError_WhenFirstNameIsBlank()
-    {
-        // Act
-        var result = Bowler.CreateFromLegacy(string.Empty, "Smith");
-
-        // Assert
-        result.IsError.ShouldBeTrue();
     }
 }
 
 [IntegrationTest]
 [Component("Legacy")]
 [Collection<AppDbContextFixture>]
-public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture)
+public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture)
     : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
@@ -252,23 +265,11 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture)
     {
         await fixture.ResetAsync();
 
-        // Plain Dapper works against any real ADO.NET IDbConnection, so a Postgres connection
-        // (reusing this test project's existing Testcontainers.PostgreSql infra) stands in for the
-        // real MSSQL neba-fwk database here rather than standing up a second, MSSQL-specific
-        // container for one temporary backdoor query. A CREATE TEMP TABLE is scoped to this single
-        // connection - it's gone as soon as the connection closes, so it needs no cleanup and can't
-        // collide with the shared fixture's own schema/Respawn reset.
-        // SQLite was tried first and rejected: its dynamic typing returns Int64/string for every
-        // INTEGER/TEXT column regardless of declared type, and Dapper's record-constructor mapping
-        // requires the reader's column types to exactly match LegacyBowlerRow's (int, DateTime?,
-        // ...) constructor parameters - Postgres's strict typing (int4 -> Int32, timestamp ->
-        // DateTime) actually satisfies that, matching what Microsoft.Data.SqlClient would return
-        // against the real MSSQL schema.
+        // See NewBowlerSyncJobTests for the full rationale on standing in a Postgres connection for
+        // the real MSSQL neba-fwk database via a connection-scoped CREATE TEMP TABLE.
         _legacyConnection = new NpgsqlConnection(fixture.ConnectionString);
         await _legacyConnection.OpenAsync();
 
-        // Unquoted identifiers here so Postgres folds them to lowercase, matching how it resolves
-        // the production query's own unquoted column/table references (SELECT Id, ... FROM Bowlers).
         await using var create = _legacyConnection.CreateCommand();
         create.CommandText = """
             CREATE TEMP TABLE Bowlers (
@@ -315,15 +316,24 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture)
         await insert.ExecuteNonQueryAsync();
     }
 
-    private NewBowlerSyncJob CreateJob(FakeLogger<NewBowlerSyncJob>? logger = null) =>
-        new(_dbContext, _legacyConnection, logger ?? new FakeLogger<NewBowlerSyncJob>());
+    private async Task<Bowler> SeedExistingBowlerAsync(int legacyId, Name? name = null, Gender? gender = null, DateOnly? dateOfBirth = null)
+    {
+        var bowler = BowlerFactory.Create(name: name, legacyId: legacyId, gender: gender, dateOfBirth: dateOfBirth);
+        await _dbContext.Set<Bowler>().AddAsync(bowler, TestContext.Current.CancellationToken);
+        await _dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        _dbContext.ChangeTracker.Clear();
+        return bowler;
+    }
 
-    [Fact(DisplayName = "SyncAsync should not create a bowler and should log a warning when the legacy id is not found")]
-    public async Task SyncAsync_ShouldNotCreateBowlerAndShouldLogWarning_WhenLegacyIdIsNotFound()
+    private UpdateBowlerSyncJob CreateJob(FakeLogger<UpdateBowlerSyncJob>? logger = null) =>
+        new(_dbContext, _legacyConnection, logger ?? new FakeLogger<UpdateBowlerSyncJob>());
+
+    [Fact(DisplayName = "SyncAsync should not persist anything and should log a warning when the legacy id is not found")]
+    public async Task SyncAsync_ShouldNotPersistAnythingAndShouldLogWarning_WhenLegacyIdIsNotFound()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        var fakeLogger = new FakeLogger<NewBowlerSyncJob>();
+        var fakeLogger = new FakeLogger<UpdateBowlerSyncJob>();
         var job = CreateJob(fakeLogger);
 
         // Act
@@ -336,18 +346,24 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture)
         record.Message.ShouldContain("999");
     }
 
-    [Fact(DisplayName = "SyncAsync should persist a bowler mapped from the legacy row when the legacy id is found")]
-    public async Task SyncAsync_ShouldPersistMappedBowler_WhenLegacyIdIsFound()
+    [Fact(DisplayName = "SyncAsync should update the existing bowler's mapped fields when the legacy id already has a website record")]
+    public async Task SyncAsync_ShouldUpdateExistingBowlersMappedFields_WhenLegacyIdAlreadyHasWebsiteRecord()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
+        await SeedExistingBowlerAsync(
+            1,
+            name: NameFactory.Create(firstName: "Original", lastName: "Bowler"),
+            gender: Gender.Male,
+            dateOfBirth: new DateOnly(1980, 1, 1));
+
         await InsertLegacyBowlerAsync(
             1,
             firstName: "David",
             middleInitial: "M",
             lastName: "Smith",
             suffix: "Jr",
-            gender: 0,
+            gender: 1,
             dateOfBirth: new DateTime(1990, 1, 1, 0, 0, 0, DateTimeKind.Utc));
         var job = CreateJob();
 
@@ -355,24 +371,45 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture)
         await job.SyncAsync(1, ct);
 
         // Assert
-        var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
+        var bowlers = await _dbContext.Set<Bowler>().Where(b => b.LegacyId == 1).ToListAsync(ct);
+        bowlers.ShouldHaveSingleItem();
+        var bowler = bowlers[0];
         bowler.Name.FirstName.ShouldBe("David");
         bowler.Name.MiddleName.ShouldBe("M");
         bowler.Name.LastName.ShouldBe("Smith");
         bowler.Name.Suffix.ShouldBe(NameSuffix.Jr);
-        bowler.Gender.ShouldBe(Gender.Male);
+        bowler.Gender.ShouldBe(Gender.Female);
         bowler.DateOfBirth.ShouldBe(new DateOnly(1990, 1, 1));
     }
 
-    [Theory(DisplayName = "SyncAsync should map the legacy Gender column to the right Gender")]
+    [Fact(DisplayName = "SyncAsync should extract a quoted nickname from the legacy first name when updating an existing bowler")]
+    public async Task SyncAsync_ShouldExtractQuotedNickname_WhenUpdatingExistingBowler()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedExistingBowlerAsync(1);
+        await InsertLegacyBowlerAsync(1, firstName: "William \"Bill\"");
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert
+        var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
+        bowler.Name.FirstName.ShouldBe("William");
+        bowler.Name.Nickname.ShouldBe("Bill");
+    }
+
+    [Theory(DisplayName = "SyncAsync should map the legacy Gender column to the right Gender when updating an existing bowler")]
     [InlineData(0, "Male")]
     [InlineData(1, "Female")]
     [InlineData(-1, null)]
     [InlineData(2, null)]
-    public async Task SyncAsync_ShouldMapGender_FromLegacyGenderColumn(int legacyGender, string? expectedGenderName)
+    public async Task SyncAsync_ShouldMapGender_FromLegacyGenderColumn_WhenUpdatingExistingBowler(int legacyGender, string? expectedGenderName)
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
+        await SeedExistingBowlerAsync(1, gender: Gender.Male, dateOfBirth: new DateOnly(1980, 1, 1));
         await InsertLegacyBowlerAsync(1, gender: legacyGender);
         var job = CreateJob();
 
@@ -384,11 +421,12 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture)
         bowler.Gender?.Name.ShouldBe(expectedGenderName);
     }
 
-    [Fact(DisplayName = "SyncAsync should leave DateOfBirth null when the legacy row has no date of birth")]
-    public async Task SyncAsync_ShouldLeaveDateOfBirthNull_WhenLegacyRowHasNoDateOfBirth()
+    [Fact(DisplayName = "SyncAsync should set DateOfBirth to null when the legacy row has no date of birth")]
+    public async Task SyncAsync_ShouldSetDateOfBirthToNull_WhenLegacyRowHasNoDateOfBirth()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
+        await SeedExistingBowlerAsync(1, dateOfBirth: new DateOnly(1980, 1, 1));
         await InsertLegacyBowlerAsync(1, dateOfBirth: null);
         var job = CreateJob();
 
@@ -400,15 +438,16 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture)
         bowler.DateOfBirth.ShouldBeNull();
     }
 
-    [Theory(DisplayName = "SyncAsync should map a recognized legacy suffix regardless of trailing period or case")]
+    [Theory(DisplayName = "SyncAsync should map a recognized legacy suffix regardless of trailing period or case when updating an existing bowler")]
     [InlineData("Jr", "Jr")]
     [InlineData("Jr.", "Jr")]
     [InlineData("JR.", "Jr")]
     [InlineData("II", "II")]
-    public async Task SyncAsync_ShouldMapRecognizedSuffix_RegardlessOfTrailingPeriodOrCase(string legacySuffix, string expectedSuffixName)
+    public async Task SyncAsync_ShouldMapRecognizedSuffix_RegardlessOfTrailingPeriodOrCase_WhenUpdatingExistingBowler(string legacySuffix, string expectedSuffixName)
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
+        await SeedExistingBowlerAsync(1);
         await InsertLegacyBowlerAsync(1, suffix: legacySuffix);
         var job = CreateJob();
 
@@ -421,34 +460,14 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture)
         bowler.Name.Suffix.Name.ShouldBe(expectedSuffixName);
     }
 
-    [Theory(DisplayName = "SyncAsync should leave the suffix null when the legacy suffix is blank")]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public async Task SyncAsync_ShouldLeaveSuffixNull_WhenLegacySuffixIsBlank(string? legacySuffix)
+    [Fact(DisplayName = "SyncAsync should leave the suffix null and log a warning when the legacy suffix is unrecognized during an update")]
+    public async Task SyncAsync_ShouldLeaveSuffixNullAndLogWarning_WhenLegacySuffixIsUnrecognizedDuringUpdate()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
-        await InsertLegacyBowlerAsync(1, suffix: legacySuffix);
-        var fakeLogger = new FakeLogger<NewBowlerSyncJob>();
-        var job = CreateJob(fakeLogger);
-
-        // Act
-        await job.SyncAsync(1, ct);
-
-        // Assert
-        var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
-        bowler.Name.Suffix.ShouldBeNull();
-        fakeLogger.Collector.GetSnapshot().ShouldBeEmpty();
-    }
-
-    [Fact(DisplayName = "SyncAsync should leave the suffix null and log a warning when the legacy suffix is unrecognized")]
-    public async Task SyncAsync_ShouldLeaveSuffixNullAndLogWarning_WhenLegacySuffixIsUnrecognized()
-    {
-        // Arrange
-        var ct = TestContext.Current.CancellationToken;
+        await SeedExistingBowlerAsync(1);
         await InsertLegacyBowlerAsync(1, suffix: "Esq");
-        var fakeLogger = new FakeLogger<NewBowlerSyncJob>();
+        var fakeLogger = new FakeLogger<UpdateBowlerSyncJob>();
         var job = CreateJob(fakeLogger);
 
         // Act
@@ -462,13 +481,64 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture)
         record.Message.ShouldContain("Esq");
     }
 
-    [Fact(DisplayName = "SyncAsync should not create a bowler and should log an error when the mapped name is invalid")]
-    public async Task SyncAsync_ShouldNotCreateBowlerAndShouldLogError_WhenMappedNameIsInvalid()
+    [Fact(DisplayName = "SyncAsync should not persist the update and should log an error when the mapped name is invalid")]
+    public async Task SyncAsync_ShouldNotPersistUpdateAndShouldLogError_WhenMappedNameIsInvalid()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedExistingBowlerAsync(1, name: NameFactory.Create(firstName: "Original", lastName: "Bowler"));
+        await InsertLegacyBowlerAsync(1, firstName: string.Empty);
+        var fakeLogger = new FakeLogger<UpdateBowlerSyncJob>();
+        var job = CreateJob(fakeLogger);
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert
+        var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
+        bowler.Name.FirstName.ShouldBe("Original");
+        var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        record.Level.ShouldBe(LogLevel.Error);
+    }
+
+    [Fact(DisplayName = "SyncAsync should create a bowler and log information when the legacy id has no existing website record")]
+    public async Task SyncAsync_ShouldCreateBowlerAndLogInformation_WhenLegacyIdHasNoExistingWebsiteRecord()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await InsertLegacyBowlerAsync(
+            1,
+            firstName: "David",
+            middleInitial: "M",
+            lastName: "Smith",
+            suffix: "Jr",
+            gender: 0,
+            dateOfBirth: new DateTime(1990, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        var fakeLogger = new FakeLogger<UpdateBowlerSyncJob>();
+        var job = CreateJob(fakeLogger);
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert
+        var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
+        bowler.Name.FirstName.ShouldBe("David");
+        bowler.Name.MiddleName.ShouldBe("M");
+        bowler.Name.LastName.ShouldBe("Smith");
+        bowler.Name.Suffix.ShouldBe(NameSuffix.Jr);
+        bowler.Gender.ShouldBe(Gender.Male);
+        bowler.DateOfBirth.ShouldBe(new DateOnly(1990, 1, 1));
+        var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        record.Level.ShouldBe(LogLevel.Information);
+    }
+
+    [Fact(DisplayName = "SyncAsync should not create a bowler and should log an error when falling back to create with an invalid mapped name")]
+    public async Task SyncAsync_ShouldNotCreateBowlerAndShouldLogError_WhenFallingBackToCreateWithInvalidMappedName()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         await InsertLegacyBowlerAsync(1, firstName: string.Empty);
-        var fakeLogger = new FakeLogger<NewBowlerSyncJob>();
+        var fakeLogger = new FakeLogger<UpdateBowlerSyncJob>();
         var job = CreateJob(fakeLogger);
 
         // Act
@@ -476,32 +546,9 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture)
 
         // Assert
         (await _dbContext.Set<Bowler>().AnyAsync(ct)).ShouldBeFalse();
-        var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
-        record.Level.ShouldBe(LogLevel.Error);
-    }
-
-    [Fact(DisplayName = "SyncAsync should be a no-op and should log information when the legacy id was already synced")]
-    public async Task SyncAsync_ShouldBeNoOpAndLogInformation_WhenLegacyIdWasAlreadySynced()
-    {
-        // Arrange
-        var ct = TestContext.Current.CancellationToken;
-        var existing = BowlerFactory.Create(name: NameFactory.Create(firstName: "Original", lastName: "Bowler"), legacyId: 1);
-        await _dbContext.Set<Bowler>().AddAsync(existing, ct);
-        await _dbContext.SaveChangesAsync(ct);
-        _dbContext.ChangeTracker.Clear();
-
-        await InsertLegacyBowlerAsync(1, firstName: "Changed", lastName: "Name");
-        var fakeLogger = new FakeLogger<NewBowlerSyncJob>();
-        var job = CreateJob(fakeLogger);
-
-        // Act
-        await job.SyncAsync(1, ct);
-
-        // Assert - strictly create-only: a repeat call for the same LegacyId is a no-op, never an update.
-        var bowlers = await _dbContext.Set<Bowler>().Where(b => b.LegacyId == 1).ToListAsync(ct);
-        bowlers.ShouldHaveSingleItem();
-        bowlers[0].Name.FirstName.ShouldBe("Original");
-        var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
-        record.Level.ShouldBe(LogLevel.Information);
+        var records = fakeLogger.Collector.GetSnapshot();
+        records.Count.ShouldBe(2);
+        records.ShouldContain(r => r.Level == LogLevel.Information);
+        records.ShouldContain(r => r.Level == LogLevel.Error);
     }
 }
