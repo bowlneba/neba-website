@@ -6,6 +6,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 
 using Neba.Api.Legacy.Bowlers;
+using Neba.Api.Legacy.Tournaments;
 
 namespace Neba.Api.Legacy;
 
@@ -25,6 +26,7 @@ internal static class LegacyConfiguration
 
             builder.Services.AddScoped<IValidator<NewBowlerRequest>, NewBowlerRequestValidator>();
             builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
+            builder.Services.AddScoped<IValidator<NewTournamentRequest>, NewTournamentRequestValidator>();
 
             return builder;
         }
