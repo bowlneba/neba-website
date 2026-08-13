@@ -189,13 +189,13 @@ internal sealed class NewTournamentSyncJob(
         return !row.TeamSize.HasValue
             ? null
             : (row.TeamSize.Value, row.OverUnder) switch
-        {
-            (2, true) => TournamentType.OverUnderFiftyDoubles, // Forty variant confirmed unreachable via this bit
-            (2, false or null) => TournamentType.Doubles,
-            (3, false or null) => TournamentType.Trios,
-            (5, false or null) => TournamentType.Baker, // No IsBaker column exists; Baker is identified by team size alone
-            _ => null
-        };
+            {
+                (2, true) => TournamentType.OverUnderFiftyDoubles, // Forty variant confirmed unreachable via this bit
+                (2, false or null) => TournamentType.Doubles,
+                (3, false or null) => TournamentType.Trios,
+                (5, false or null) => TournamentType.Baker, // No IsBaker column exists; Baker is identified by team size alone
+                _ => null
+            };
     }
 }
 
