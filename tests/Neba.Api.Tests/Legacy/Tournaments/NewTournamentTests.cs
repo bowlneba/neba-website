@@ -344,7 +344,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
 
     private async Task<Tournament> CreateUnlinkedTournamentAsync(SeasonId seasonId, TournamentType tournamentType, DateOnly endDate, CancellationToken ct)
     {
-        var tournament = TournamentFactory.Create(seasonId: seasonId, tournamentType: tournamentType, startDate: endDate, endDate: endDate);
+        var tournament = TournamentFactory.Create(tournamentType: tournamentType, startDate: endDate, endDate: endDate, seasonId: seasonId);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
         return tournament;
@@ -359,7 +359,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var seasonId = await CreateSeasonAsync(ct);
-        var tournament = TournamentFactory.Create(seasonId: seasonId, legacyId: 1);
+        var tournament = TournamentFactory.Create(legacyId: 1, seasonId: seasonId);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
         _dbContext.ChangeTracker.Clear();

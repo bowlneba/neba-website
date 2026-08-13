@@ -186,12 +186,9 @@ internal sealed class NewTournamentSyncJob(
             };
         }
 
-        if (!row.TeamSize.HasValue)
-        {
-            return null;
-        }
-
-        return (row.TeamSize.Value, row.OverUnder) switch
+        return !row.TeamSize.HasValue
+            ? null
+            : (row.TeamSize.Value, row.OverUnder) switch
         {
             (2, true) => TournamentType.OverUnderFiftyDoubles, // Forty variant confirmed unreachable via this bit
             (2, false or null) => TournamentType.Doubles,
