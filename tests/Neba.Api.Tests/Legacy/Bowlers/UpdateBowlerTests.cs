@@ -19,6 +19,7 @@ using Neba.Api.Database;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Legacy;
 using Neba.Api.Legacy.Bowlers;
+using Neba.Api.Legacy.Tournaments;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.Infrastructure;
@@ -151,11 +152,13 @@ public sealed class UpdateBowlerEndpointTests : IAsyncLifetime
         _jobsMock = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
         builder.Services.AddSingleton(_jobsMock.Object);
         builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
-        // NewBowlerRequest's validator is also required here: MapLegacyGroup() below maps every
-        // endpoint in the /legacy group (not just this one), and ASP.NET Core builds route metadata
-        // for the whole group on the first request to any of its endpoints - an unregistered
-        // IValidator<T> for a sibling endpoint throws at that point, not just when that sibling is called.
+        // NewBowlerRequest's and NewTournamentRequest's validators are also required here:
+        // MapLegacyGroup() below maps every endpoint in the /legacy group (not just this one), and
+        // ASP.NET Core builds route metadata for the whole group on the first request to any of its
+        // endpoints - an unregistered IValidator<T> for a sibling endpoint throws at that point, not
+        // just when that sibling is called.
         builder.Services.AddScoped<IValidator<NewBowlerRequest>, NewBowlerRequestValidator>();
+        builder.Services.AddScoped<IValidator<NewTournamentRequest>, NewTournamentRequestValidator>();
         builder.Services.AddSingleton(Options.Create(new LegacySettings { ApiKey = ValidApiKey }));
 
         _app = builder.Build();

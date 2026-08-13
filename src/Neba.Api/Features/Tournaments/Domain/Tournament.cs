@@ -79,7 +79,7 @@ public sealed class Tournament
     /// Gets the legacy numeric identifier for this tournament, carried over from the previous
     /// system. <see langword="null"/> for tournaments created after the system migration.
     /// </summary>
-    public int? LegacyId { get; init; }
+    public int? LegacyId { get; internal set; }
 
     /// <summary>
     /// Gets the unique identifier of the season in which this tournament takes place.
