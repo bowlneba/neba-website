@@ -216,7 +216,7 @@ internal sealed class NewHallOfFameInductionSyncJob(
     // exactly the bitmask scenario HallOfFameInduction.Categories was designed for. An unmapped value
     // is logged and contributes no category; callers treat an empty result as "skip this row" rather
     // than persisting an induction with zero categories.
-    private static IReadOnlyList<HallOfFameCategory> MapCategory(int legacyCategory, int legacyHallOfFameId, ILogger logger)
+    private static IReadOnlyList<HallOfFameCategory> MapCategory(int legacyCategory, int legacyHallOfFameId, ILogger<NewHallOfFameInductionSyncJob> logger)
     {
         switch (legacyCategory)
         {
@@ -247,7 +247,7 @@ internal static partial class NewHallOfFameInductionSyncJobLogMessages
     [LoggerMessage(
         Level = LogLevel.Warning,
         Message = "Could not map legacy category {LegacyCategory} for Hall of Fame row {LegacyHallOfFameId}; skipping row.")]
-    public static partial void LogLegacyCategoryUnmapped(this ILogger logger, int legacyHallOfFameId, int legacyCategory);
+    public static partial void LogLegacyCategoryUnmapped(this ILogger<NewHallOfFameInductionSyncJob> logger, int legacyHallOfFameId, int legacyCategory);
 
     [LoggerMessage(
         Level = LogLevel.Warning,
