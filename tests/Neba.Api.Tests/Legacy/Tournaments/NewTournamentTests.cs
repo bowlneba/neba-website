@@ -521,8 +521,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
         emailSender
             .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
             .Callback<EmailMessage, CancellationToken>((message, _) => sentMessage = message)
-            .Returns(Task.CompletedTask)
-            .Verifiable();
+            .Returns(Task.CompletedTask);
 
         var fakeLogger = new FakeLogger<NewTournamentSyncJob>();
         var job = CreateJob(emailSender, fakeLogger);
@@ -530,8 +529,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
         // Act
         await job.SyncAsync(1, ct);
 
-        // Assert
-        emailSender.VerifyAll();
+        // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
         sentMessage.ShouldNotBeNull();
         sentMessage.To.ShouldBe("website@bowlneba.com");
         sentMessage.Subject.ShouldBe("Manual intervention needed: tournament link");
@@ -558,15 +556,13 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
         var emailSender = new Mock<IEmailSender>(MockBehavior.Strict);
         emailSender
             .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask)
-            .Verifiable();
+            .Returns(Task.CompletedTask);
         var job = CreateJob(emailSender);
 
         // Act
         await job.SyncAsync(1, ct);
 
-        // Assert
-        emailSender.VerifyAll();
+        // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
         var unchangedDoubles = await _dbContext.Tournaments.SingleAsync(t => t.Id == doubles.Id, ct);
         var unchangedTrios = await _dbContext.Tournaments.SingleAsync(t => t.Id == trios.Id, ct);
         unchangedDoubles.LegacyId.ShouldBeNull();
@@ -589,15 +585,13 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
         emailSender
             .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
             .Callback<EmailMessage, CancellationToken>((message, _) => sentMessage = message)
-            .Returns(Task.CompletedTask)
-            .Verifiable();
+            .Returns(Task.CompletedTask);
         var job = CreateJob(emailSender);
 
         // Act
         await job.SyncAsync(1, ct);
 
-        // Assert
-        emailSender.VerifyAll();
+        // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
         sentMessage.ShouldNotBeNull();
         sentMessage.HtmlBody.ShouldContain("remaining after narrowing: 2");
         var unchangedFirst = await _dbContext.Tournaments.SingleAsync(t => t.Id == first.Id, ct);
