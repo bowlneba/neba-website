@@ -177,15 +177,15 @@ internal sealed class NewTournamentSyncJob(
             new CommandDefinition(
                 """
                 SELECT
-                    s.[Id] AS SquadId,
-                    COALESCE(ss.[TournamentId], ts.[TournamentId]) AS TournamentId,
-                    s.[BowlingDate] AS BowlingDate
+                    s.Id AS SquadId,
+                    COALESCE(ss.TournamentId, ts.TournamentId) AS TournamentId,
+                    s.BowlingDate AS BowlingDate
                 FROM
-                    [dbo].[Squads] s
-                LEFT JOIN Squads_SinglesSquad ss ON ss.[Id] = s.[Id]
-                LEFT JOIN Squads_TeamSquad ts ON ts.[Id] = s.[Id]
+                    Squads s
+                LEFT JOIN Squads_SinglesSquad ss ON ss.Id = s.Id
+                LEFT JOIN Squads_TeamSquad ts ON ts.Id = s.Id
                 WHERE
-                    COALESCE(ss.[TournamentId], ts.[TournamentId]) = @TournamentId
+                    COALESCE(ss.TournamentId, ts.TournamentId) = @TournamentId
                 """,
                 new { TournamentId = legacyTournamentId },
                 cancellationToken: ct)
@@ -216,6 +216,20 @@ internal sealed class NewTournamentSyncJob(
     private static DateTimeOffset ToEasternDateTimeOffset(DateTime easternLocalDateTime)
     {
         var unspecified = DateTime.SpecifyKind(easternLocalDateTime, DateTimeKind.Unspecified);
+
+        // Spring-forward gap: the wall-clock time never existed. Shift forward past the gap
+        // rather than deriving an offset for a moment that isn't real.
+        if (EasternTimeZone.IsInvalidTime(unspecified))
+        {
+            var delta = EasternTimeZone.GetAdjustmentRules()
+                .FirstOrDefault(rule => unspecified >= rule.DateStart && unspecified <= rule.DateEnd)
+                ?.DaylightDelta ?? TimeSpan.FromHours(1);
+
+            unspecified = unspecified.Add(delta);
+        }
+
+        // Ambiguous times (fall-back hour) resolve to standard time (EST) — TimeZoneInfo's
+        // own default resolution for an ambiguous local time.
         return new DateTimeOffset(unspecified, EasternTimeZone.GetUtcOffset(unspecified));
     }
 

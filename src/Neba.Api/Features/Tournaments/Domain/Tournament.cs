@@ -203,7 +203,7 @@ public sealed class Tournament
 
     private ErrorOr<Success> ValidateSquadDateInRange(DateTimeOffset bowlingDateTime)
     {
-        var bowlingDate = DateOnly.FromDateTime(bowlingDateTime.DateTime);
+        var bowlingDate = DateOnly.FromDateTime(bowlingDateTime.UtcDateTime);
 
         return bowlingDate < StartDate || bowlingDate > EndDate
             ? TournamentErrors.SquadDateOutOfRange(bowlingDateTime, StartDate, EndDate)

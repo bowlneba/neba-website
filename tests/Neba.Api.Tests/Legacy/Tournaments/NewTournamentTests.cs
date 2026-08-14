@@ -296,6 +296,33 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
             )
             """;
         await createTeam.ExecuteNonQueryAsync();
+
+        await using var createSquads = _legacyConnection.CreateCommand();
+        createSquads.CommandText = """
+            CREATE TEMP TABLE Squads (
+                Id integer PRIMARY KEY,
+                BowlingDate timestamp NOT NULL
+            )
+            """;
+        await createSquads.ExecuteNonQueryAsync();
+
+        await using var createSinglesSquad = _legacyConnection.CreateCommand();
+        createSinglesSquad.CommandText = """
+            CREATE TEMP TABLE Squads_SinglesSquad (
+                Id integer PRIMARY KEY,
+                TournamentId integer NOT NULL
+            )
+            """;
+        await createSinglesSquad.ExecuteNonQueryAsync();
+
+        await using var createTeamSquad = _legacyConnection.CreateCommand();
+        createTeamSquad.CommandText = """
+            CREATE TEMP TABLE Squads_TeamSquad (
+                Id integer PRIMARY KEY,
+                TournamentId integer NOT NULL
+            )
+            """;
+        await createTeamSquad.ExecuteNonQueryAsync();
     }
 
     public async ValueTask DisposeAsync()
@@ -334,6 +361,21 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
         insertTeam.Parameters.AddWithValue("@TeamSize", teamSize);
         insertTeam.Parameters.AddWithValue("@OverUnder", overUnder.HasValue ? overUnder.Value : DBNull.Value);
         await insertTeam.ExecuteNonQueryAsync();
+    }
+
+    private async Task InsertLegacySinglesSquadAsync(int squadId, int legacyTournamentId, DateTime bowlingDate)
+    {
+        await using var insertSquad = _legacyConnection.CreateCommand();
+        insertSquad.CommandText = "INSERT INTO Squads (Id, BowlingDate) VALUES (@Id, @BowlingDate)";
+        insertSquad.Parameters.AddWithValue("@Id", squadId);
+        insertSquad.Parameters.AddWithValue("@BowlingDate", bowlingDate);
+        await insertSquad.ExecuteNonQueryAsync();
+
+        await using var insertSinglesSquad = _legacyConnection.CreateCommand();
+        insertSinglesSquad.CommandText = "INSERT INTO Squads_SinglesSquad (Id, TournamentId) VALUES (@Id, @TournamentId)";
+        insertSinglesSquad.Parameters.AddWithValue("@Id", squadId);
+        insertSinglesSquad.Parameters.AddWithValue("@TournamentId", legacyTournamentId);
+        await insertSinglesSquad.ExecuteNonQueryAsync();
     }
 
     private async Task<SeasonId> CreateSeasonAsync(CancellationToken ct)
@@ -412,6 +454,97 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
         // Assert
         var linked = await _dbContext.Tournaments.SingleAsync(t => t.Id == tournament.Id, ct);
         linked.LegacyId.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "SyncAsync should sync the tournament's squads when linking for the first time")]
+    public async Task SyncAsync_ShouldSyncSquads_WhenLinkingTournamentForTheFirstTime()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var endDate = new DateOnly(2025, 10, 5);
+        var seasonId = await CreateSeasonAsync(ct);
+        var tournament = await CreateUnlinkedTournamentAsync(seasonId, TournamentType.Singles, endDate, ct);
+        await InsertLegacySinglesTournamentAsync(1, endDate.ToDateTime(TimeOnly.MinValue), singlesTournamentType: 0);
+        // 1:00 PM Eastern on Oct 5 2025 (EDT, -04:00) == 5:00 PM UTC.
+        await InsertLegacySinglesSquadAsync(101, legacyTournamentId: 1, bowlingDate: new DateTime(2025, 10, 5, 13, 0, 0, DateTimeKind.Unspecified));
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert
+        var linked = await _dbContext.Tournaments.Include(t => t.Squads).SingleAsync(t => t.Id == tournament.Id, ct);
+        var squad = linked.Squads.ShouldHaveSingleItem();
+        squad.LegacyId.ShouldBe(101);
+        squad.BowlingDateTimeUtc.ShouldBe(new DateTimeOffset(2025, 10, 5, 17, 0, 0, TimeSpan.Zero));
+    }
+
+    [Fact(DisplayName = "SyncAsync should sync new squads without duplicating already-synced ones when the legacy id was already synced")]
+    public async Task SyncAsync_ShouldSyncNewSquadsWithoutDuplicating_WhenLegacyIdWasAlreadySynced()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var seasonId = await CreateSeasonAsync(ct);
+        var existingSquad = SquadFactory.Create(
+            bowlingDateTime: new DateTimeOffset(2025, 10, 5, 17, 0, 0, TimeSpan.Zero),
+            legacyId: 101);
+        var tournament = TournamentFactory.Create(
+            legacyId: 1,
+            seasonId: seasonId,
+            startDate: new DateOnly(2025, 10, 5),
+            endDate: new DateOnly(2025, 10, 5),
+            squads: [existingSquad]);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.ChangeTracker.Clear();
+
+        // Squad 101 is already synced (should be skipped); squad 102 is new (should be added).
+        // 1:00 PM and 3:00 PM Eastern on Oct 5 2025 (EDT, -04:00) == 5:00 PM and 7:00 PM UTC.
+        await InsertLegacySinglesSquadAsync(101, legacyTournamentId: 1, bowlingDate: new DateTime(2025, 10, 5, 13, 0, 0, DateTimeKind.Unspecified));
+        await InsertLegacySinglesSquadAsync(102, legacyTournamentId: 1, bowlingDate: new DateTime(2025, 10, 5, 15, 0, 0, DateTimeKind.Unspecified));
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert
+        var linked = await _dbContext.Tournaments.Include(t => t.Squads).SingleAsync(t => t.Id == tournament.Id, ct);
+        linked.Squads.Count.ShouldBe(2);
+        linked.Squads.ShouldContain(s => s.LegacyId == 101);
+        linked.Squads.ShouldContain(s => s.LegacyId == 102 && s.BowlingDateTimeUtc == new DateTimeOffset(2025, 10, 5, 19, 0, 0, TimeSpan.Zero));
+    }
+
+    [Fact(DisplayName = "SyncAsync should log a warning and leave the tournament's squads unchanged when a legacy squad's date is outside the tournament's range")]
+    public async Task SyncAsync_ShouldLogWarningAndMakeNoSquadChanges_WhenLegacySquadDateIsOutOfRange()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var seasonId = await CreateSeasonAsync(ct);
+        var tournament = TournamentFactory.Create(
+            legacyId: 1,
+            seasonId: seasonId,
+            startDate: new DateOnly(2025, 10, 5),
+            endDate: new DateOnly(2025, 10, 5));
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.ChangeTracker.Clear();
+
+        // Two days after the tournament's only date - well outside the valid range regardless of offset.
+        await InsertLegacySinglesSquadAsync(201, legacyTournamentId: 1, bowlingDate: new DateTime(2025, 10, 7, 13, 0, 0, DateTimeKind.Unspecified));
+        var fakeLogger = new FakeLogger<NewTournamentSyncJob>();
+        var job = CreateJob(logger: fakeLogger);
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert
+        var linked = await _dbContext.Tournaments.Include(t => t.Squads).SingleAsync(t => t.Id == tournament.Id, ct);
+        linked.Squads.ShouldBeEmpty();
+
+        // The already-linked branch also logs an info entry; the squad sync failure logs its own warning alongside it.
+        var record = fakeLogger.Collector.GetSnapshot().Single(r => r.Level == LogLevel.Warning);
+        record.Message.ShouldContain("201");
+        record.Message.ShouldContain("1");
     }
 
     [Fact(DisplayName = "SyncAsync should narrow candidates to the team tournament when the legacy row is a team tournament")]

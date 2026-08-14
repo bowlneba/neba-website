@@ -789,6 +789,39 @@ public sealed class TournamentTests
         result.FirstError.Code.ShouldBe("Tournament.Squad.DateOutOfRange");
     }
 
+    [Fact(DisplayName = "AddSquad returns success when the UTC date is within range even though the offset's local date is before the start date")]
+    public void AddSquad_ShouldReturnSuccess_WhenUtcDateIsWithinRange_ButOffsetLocalDateIsBeforeStartDate()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        // Oct 3 22:00 -04:00 == Oct 4 02:00 UTC: local date (Oct 3) is before ValidStartDate (Oct 4),
+        // but the UTC date (Oct 4) is on the start date.
+        var bowlingDateTime = new DateTimeOffset(2025, 10, 3, 22, 0, 0, TimeSpan.FromHours(-4));
+
+        // Act
+        var result = tournament.AddSquad(bowlingDateTime, maxEntries: null, legacyId: null);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "AddSquad returns Tournament.Squad.DateOutOfRange when the UTC date is after the end date even though the offset's local date is on the end date")]
+    public void AddSquad_ShouldReturnError_WhenUtcDateIsAfterEndDate_ButOffsetLocalDateIsOnEndDate()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        // Oct 5 21:00 -04:00 == Oct 6 01:00 UTC: local date (Oct 5) is on ValidEndDate (Oct 5),
+        // but the UTC date (Oct 6) is after the end date.
+        var bowlingDateTime = new DateTimeOffset(2025, 10, 5, 21, 0, 0, TimeSpan.FromHours(-4));
+
+        // Act
+        var result = tournament.AddSquad(bowlingDateTime, maxEntries: null, legacyId: null);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Squad.DateOutOfRange");
+    }
+
     [Fact(DisplayName = "AddSquad returns Tournament.Squad.DateTimeAlreadyUsed when another squad already bowls at that date/time")]
     public void AddSquad_ShouldReturnError_WhenDateTimeAlreadyUsed()
     {
