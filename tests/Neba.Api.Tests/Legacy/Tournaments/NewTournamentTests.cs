@@ -489,10 +489,10 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
             bowlingDateTime: new DateTimeOffset(2025, 10, 5, 17, 0, 0, TimeSpan.Zero),
             legacyId: 101);
         var tournament = TournamentFactory.Create(
-            legacyId: 1,
-            seasonId: seasonId,
             startDate: new DateOnly(2025, 10, 5),
             endDate: new DateOnly(2025, 10, 5),
+            legacyId: 1,
+            seasonId: seasonId,
             squads: [existingSquad]);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
@@ -521,10 +521,10 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
         var ct = TestContext.Current.CancellationToken;
         var seasonId = await CreateSeasonAsync(ct);
         var tournament = TournamentFactory.Create(
-            legacyId: 1,
-            seasonId: seasonId,
             startDate: new DateOnly(2025, 10, 5),
-            endDate: new DateOnly(2025, 10, 5));
+            endDate: new DateOnly(2025, 10, 5),
+            legacyId: 1,
+            seasonId: seasonId);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
         _dbContext.ChangeTracker.Clear();

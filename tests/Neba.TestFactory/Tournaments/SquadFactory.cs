@@ -18,12 +18,10 @@ public static class SquadFactory
             maxEntries: maxEntries,
             legacyId: legacyId);
 
-        if (result.IsError)
-        {
-            throw new InvalidOperationException($"Failed to create squad: {result.Errors[0].Description}");
-        }
+        return result.IsError 
+            ? throw new InvalidOperationException($"Failed to create squad: {result.Errors[0].Description}") 
+            : result.Value;
 
-        return result.Value;
     }
 
     internal static IReadOnlyCollection<Squad> Bogus(int count, Faker faker)
@@ -37,12 +35,10 @@ public static class SquadFactory
                 maxEntries: faker.Random.Bool() ? faker.Random.Int(1, 200) : null,
                 legacyId: faker.Random.Bool() ? faker.Random.Int(1, 9999) : null);
 
-            if (result.IsError)
-            {
-                throw new InvalidOperationException($"Failed to create squad: {result.Errors[0].Description}");
-            }
+            return result.IsError 
+                ? throw new InvalidOperationException($"Failed to create squad: {result.Errors[0].Description}") 
+                : result.Value;
 
-            return result.Value;
         })];
     }
 
