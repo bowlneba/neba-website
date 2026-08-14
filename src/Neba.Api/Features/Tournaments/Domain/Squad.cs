@@ -44,7 +44,7 @@ public sealed class Squad
             : squad;
     }
 
-    private ErrorOr<Updated> UpdateDetails(DateTimeOffset bowlingDateTime, int? maxEntries)
+    internal ErrorOr<Updated> UpdateDetails(DateTimeOffset bowlingDateTime, int? maxEntries)
     {
         if (maxEntries is <= 0)
         {

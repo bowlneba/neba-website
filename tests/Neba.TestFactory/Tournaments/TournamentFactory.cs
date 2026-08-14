@@ -32,6 +32,7 @@ public static class TournamentFactory
         Uri? externalRegistrationUrl = null,
         StoredFile? logo = null,
         IReadOnlyCollection<TournamentSponsor>? sponsors = null,
+        IReadOnlyCollection<Squad>? squads = null,
         DateTimeOffset? oilPatternRevealDateTime = null,
         decimal? nebaAddedMoney = null)
     {
@@ -67,6 +68,16 @@ public static class TournamentFactory
             if (addResult.IsError)
             {
                 throw new InvalidOperationException($"Failed to add sponsor with ID {tournamentSponsor.SponsorId} to tournament: {addResult.Errors[0].Description}");
+            }
+        }
+
+        foreach (var squad in squads ?? [])
+        {
+            var addResult = tournament.AddSquad(squad.BowlingDateTime, squad.MaxEntries, squad.LegacyId);
+
+            if (addResult.IsError)
+            {
+                throw new InvalidOperationException($"Failed to add squad to tournament: {addResult.Errors[0].Description}");
             }
         }
 
@@ -124,6 +135,23 @@ public static class TournamentFactory
                 if (addResult.IsError)
                 {
                     throw new InvalidOperationException($"Failed to add sponsor with ID {sponsor.Id} to tournament: {addResult.Errors[0].Description}");
+                }
+            }
+
+            var squadCount = faker.Random.Int(1, 3);
+
+            for (var i = 0; i < squadCount; i++)
+            {
+                // Distinct hours keep each squad's bowling date/time unique within the tournament's date range.
+                var bowlingDateTime = new DateTimeOffset(startDate.Year, startDate.Month, startDate.Day, 9 + (i * 2), faker.Random.Int(0, 59), 0, TimeSpan.Zero);
+                var maxEntries = faker.Random.Bool() ? faker.Random.Int(1, 200) : (int?)null;
+                var squadLegacyId = faker.Random.Bool() ? faker.Random.Int(1, 9999) : (int?)null;
+
+                var addSquadResult = tournament.AddSquad(bowlingDateTime, maxEntries, squadLegacyId);
+
+                if (addSquadResult.IsError)
+                {
+                    throw new InvalidOperationException($"Failed to add squad to tournament: {addSquadResult.Errors[0].Description}");
                 }
             }
 

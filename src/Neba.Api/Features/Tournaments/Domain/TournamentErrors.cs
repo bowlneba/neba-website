@@ -133,4 +133,26 @@ internal static class TournamentErrors
             {
                 { "TournamentId", id.ToString() }
             });
+    
+    public static Error SquadDateOutOfRange(DateTimeOffset bowlingDateTime, DateOnly startDate, DateOnly endDate)
+        => Error.Validation(
+            code: "Tournament.Squad.DateOutOfRange",
+            description: $"Squad bowling date must fall between {startDate:d} and {endDate:d}.",
+            metadata: new Dictionary<string, object>
+            {
+                { "BowlingDateTime", bowlingDateTime },
+                { "StartDate", startDate },
+                { "EndDate", endDate }
+            });
+
+    public static Error SquadBowlingDateTimeAlreadyUsed(DateTimeOffset bowlingDateTime)
+        => Error.Conflict(
+            code: "Tournament.Squad.DateTimeAlreadyUsed",
+            description: "Another squad in this tournament already bowls at that date and time.",
+            metadata: new Dictionary<string, object> { { "BowlingDateTime", bowlingDateTime } });
+
+    public static Error SquadNotFound(SquadId squadId)
+        => Error.NotFound(
+            code: "Tournament.Squad.NotFound",
+            description: $"Squad '{squadId}' was not found on this tournament.");
 }

@@ -126,6 +126,90 @@ public sealed class Tournament
     /// </summary>
     public DateTimeOffset? OilPatternRevealDateTime { get; private set; }
 
+    private readonly List<Squad> _squads = [];
+    
+    /// <summary>
+    /// The squads scheduled for this tournament.
+    /// </summary>
+    public IReadOnlyCollection<Squad> Squads
+        => _squads.AsReadOnly();
+
+    /// <summary>
+    /// Schedules a new squad; returns an error if the date/time falls outside the tournament's
+    /// date range or collides with an existing squad's date/time.
+    /// </summary>
+    public ErrorOr<Success> AddSquad(DateTimeOffset bowlingDateTime, int? maxEntries = null, int? legacyId = null)
+    {
+        var rangeCheck = ValidateSquadDateInRange(bowlingDateTime);
+        if (rangeCheck.IsError)
+        {
+            return rangeCheck.Errors;
+        }
+
+        if (_squads.Any(squad => squad.BowlingDateTime == bowlingDateTime))
+        {
+            return TournamentErrors.SquadBowlingDateTimeAlreadyUsed(bowlingDateTime);
+        }
+
+        var squad = Squad.Create(bowlingDateTime, maxEntries, legacyId);
+        if (squad.IsError)
+        {
+            return squad.Errors;
+        }
+        
+        _squads.Add(squad.Value);
+        
+        return Result.Success;
+    }
+
+    /// <summary>
+    /// Reschedules or edits a squad; returns an error if the squad doesn't exist, the new
+    /// date/time falls outside the tournament's date range, or it collides with another squad.
+    /// </summary>
+    public ErrorOr<Updated> UpdateSquad(SquadId squadId, DateTimeOffset bowlingDateTime, int? maxEntries)
+    {
+        var squad = _squads.SingleOrDefault(s => s.Id == squadId);
+        if (squad is null)
+        {
+            return TournamentErrors.SquadNotFound(squadId);
+        }
+
+        var rangeCheck = ValidateSquadDateInRange(bowlingDateTime);
+        if (rangeCheck.IsError)
+        {
+            return rangeCheck.Errors;
+        }
+
+        return _squads.Any(s => s.Id != squadId && s.BowlingDateTime == bowlingDateTime)
+            ? TournamentErrors.SquadBowlingDateTimeAlreadyUsed(bowlingDateTime)
+            : squad.UpdateDetails(bowlingDateTime, maxEntries);
+    }
+
+    /// <summary>
+    /// Removes a squad; returns an error if it doesn't exist.
+    /// </summary>
+    public ErrorOr<Deleted> RemoveSquad(SquadId squadId)
+    {
+        var squad = _squads.SingleOrDefault(s => s.Id == squadId);
+        if (squad is null)
+        {
+            return TournamentErrors.SquadNotFound(squadId);
+        }
+
+        _squads.Remove(squad);
+
+        return Result.Deleted;
+    }
+
+    private ErrorOr<Success> ValidateSquadDateInRange(DateTimeOffset bowlingDateTime)
+    {
+        var bowlingDate = DateOnly.FromDateTime(bowlingDateTime.DateTime);
+
+        return bowlingDate < StartDate || bowlingDate > EndDate
+            ? TournamentErrors.SquadDateOutOfRange(bowlingDateTime, StartDate, EndDate)
+            : Result.Success;
+    }
+
     /// <summary>
     /// Creates a new tournament, validating name, dates, and entry fee.
     /// </summary>
