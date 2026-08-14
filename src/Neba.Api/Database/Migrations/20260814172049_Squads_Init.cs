@@ -21,7 +21,7 @@ namespace Neba.Api.Database.Migrations
                     id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
                     domain_id = table.Column<string>(type: "character(26)", fixedLength: true, maxLength: 26, nullable: false),
-                    bowling_date_time = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    bowling_date_time_utc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     max_entries = table.Column<int>(type: "integer", nullable: true),
                     legacy_id = table.Column<int>(type: "integer", nullable: true),
                     tournament_id = table.Column<int>(type: "integer", nullable: false)

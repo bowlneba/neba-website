@@ -14,10 +14,10 @@ public sealed class Squad
     public required SquadId Id { get; init; }
 
     /// <summary>
-    /// Gets the date and time this squad bowls. Must fall within the owning tournament's
+    /// Gets the date and time (UTC) this squad bowls. Must fall within the owning tournament's
     /// start and end date (inclusive).
     /// </summary>
-    public DateTimeOffset BowlingDateTime { get; private set; }
+    public DateTimeOffset BowlingDateTimeUtc { get; private set; }
 
     /// <summary>
     /// Gets the maximum number of entries (teams for a Team format, bowlers for Singles) that
@@ -39,8 +39,8 @@ public sealed class Squad
 
         var result = squad.UpdateDetails(bowlingDateTime, maxEntries);
 
-        return result.IsError 
-            ? result.Errors 
+        return result.IsError
+            ? result.Errors
             : squad;
     }
 
@@ -51,7 +51,7 @@ public sealed class Squad
             return SquadErrors.InvalidMaxEntries(maxEntries.Value);
         }
 
-        BowlingDateTime = bowlingDateTime;
+        BowlingDateTimeUtc = bowlingDateTime.ToUniversalTime();
         MaxEntries = maxEntries;
 
         return Result.Updated;

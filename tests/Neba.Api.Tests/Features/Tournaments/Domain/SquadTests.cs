@@ -7,8 +7,8 @@ namespace Neba.Api.Tests.Features.Tournaments.Domain;
 [Component("Tournaments.Squad")]
 public sealed class SquadTests
 {
-    [Fact(DisplayName = "Create returns Squad with correct BowlingDateTime")]
-    public void Create_ShouldReturnSquad_WithCorrectBowlingDateTime()
+    [Fact(DisplayName = "Create returns Squad with correct BowlingDateTimeUtc when input is already UTC")]
+    public void Create_ShouldReturnSquad_WithCorrectBowlingDateTimeUtc_WhenInputIsAlreadyUtc()
     {
         // Arrange
         var bowlingDateTime = new DateTimeOffset(2025, 10, 4, 13, 0, 0, TimeSpan.Zero);
@@ -18,7 +18,22 @@ public sealed class SquadTests
 
         // Assert
         result.IsError.ShouldBeFalse();
-        result.Value.BowlingDateTime.ShouldBe(bowlingDateTime);
+        result.Value.BowlingDateTimeUtc.ShouldBe(bowlingDateTime);
+    }
+
+    [Fact(DisplayName = "Create converts a non-UTC BowlingDateTimeUtc to UTC")]
+    public void Create_ShouldConvertBowlingDateTimeUtcToUtc_WhenInputHasNonZeroOffset()
+    {
+        // Arrange
+        var bowlingDateTime = new DateTimeOffset(2025, 10, 4, 9, 0, 0, TimeSpan.FromHours(-4));
+
+        // Act
+        var result = Squad.Create(bowlingDateTime);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.BowlingDateTimeUtc.Offset.ShouldBe(TimeSpan.Zero);
+        result.Value.BowlingDateTimeUtc.ShouldBe(bowlingDateTime.ToUniversalTime());
     }
 
     [Fact(DisplayName = "Create returns Squad with a new Id")]

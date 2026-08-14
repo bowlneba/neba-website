@@ -754,7 +754,7 @@ public sealed class TournamentTests
         tournament.AddSquad(bowlingDateTime, maxEntries: 32, legacyId: 42);
 
         // Assert
-        var squad = tournament.Squads.Single(s => s.BowlingDateTime == bowlingDateTime);
+        var squad = tournament.Squads.Single(s => s.BowlingDateTimeUtc == bowlingDateTime);
         squad.MaxEntries.ShouldBe(32);
         squad.LegacyId.ShouldBe(42);
     }
@@ -848,8 +848,28 @@ public sealed class TournamentTests
 
         // Assert
         result.IsError.ShouldBeFalse();
-        squad.BowlingDateTime.ShouldBe(newBowlingDateTime);
+        squad.BowlingDateTimeUtc.ShouldBe(newBowlingDateTime);
         squad.MaxEntries.ShouldBe(64);
+    }
+
+    [Fact(DisplayName = "UpdateSquad converts a non-UTC bowling date/time to UTC")]
+    public void UpdateSquad_ShouldConvertBowlingDateTimeToUtc_WhenNewDateTimeHasNonZeroOffset()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.AddSquad(SquadFactory.ValidBowlingDateTime, maxEntries: null, legacyId: null);
+        var squad = tournament.Squads.Single();
+        var nonUtcBowlingDateTime = new DateTimeOffset(
+            TournamentFactory.ValidStartDate.ToDateTime(TimeOnly.MinValue),
+            TimeSpan.FromHours(-4));
+
+        // Act
+        var result = tournament.UpdateSquad(squad.Id, nonUtcBowlingDateTime, maxEntries: null);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        squad.BowlingDateTimeUtc.Offset.ShouldBe(TimeSpan.Zero);
+        squad.BowlingDateTimeUtc.ShouldBe(nonUtcBowlingDateTime.ToUniversalTime());
     }
 
     [Fact(DisplayName = "UpdateSquad returns Tournament.Squad.NotFound when the squad doesn't exist")]
@@ -892,7 +912,7 @@ public sealed class TournamentTests
         var secondBowlingDateTime = firstBowlingDateTime.AddHours(2);
         tournament.AddSquad(firstBowlingDateTime, maxEntries: null, legacyId: null);
         tournament.AddSquad(secondBowlingDateTime, maxEntries: null, legacyId: null);
-        var squadToUpdate = tournament.Squads.Single(s => s.BowlingDateTime == secondBowlingDateTime);
+        var squadToUpdate = tournament.Squads.Single(s => s.BowlingDateTimeUtc == secondBowlingDateTime);
 
         // Act
         var result = tournament.UpdateSquad(squadToUpdate.Id, firstBowlingDateTime, maxEntries: null);

@@ -73,7 +73,7 @@ public static class TournamentFactory
 
         foreach (var squad in squads ?? [])
         {
-            var addResult = tournament.AddSquad(squad.BowlingDateTime, squad.MaxEntries, squad.LegacyId);
+            var addResult = tournament.AddSquad(squad.BowlingDateTimeUtc, squad.MaxEntries, squad.LegacyId);
 
             if (addResult.IsError)
             {
@@ -143,11 +143,11 @@ public static class TournamentFactory
             for (var i = 0; i < squadCount; i++)
             {
                 // Distinct hours keep each squad's bowling date/time unique within the tournament's date range.
-                var bowlingDateTime = new DateTimeOffset(startDate.Year, startDate.Month, startDate.Day, 9 + (i * 2), faker.Random.Int(0, 59), 0, TimeSpan.Zero);
+                var bowlingDateTimeUtc = new DateTimeOffset(startDate.Year, startDate.Month, startDate.Day, 9 + (i * 2), faker.Random.Int(0, 59), 0, TimeSpan.Zero);
                 var maxEntries = faker.Random.Bool() ? faker.Random.Int(1, 200) : (int?)null;
                 var squadLegacyId = faker.Random.Bool() ? faker.Random.Int(1, 9999) : (int?)null;
 
-                var addSquadResult = tournament.AddSquad(bowlingDateTime, maxEntries, squadLegacyId);
+                var addSquadResult = tournament.AddSquad(bowlingDateTimeUtc, maxEntries, squadLegacyId);
 
                 if (addSquadResult.IsError)
                 {

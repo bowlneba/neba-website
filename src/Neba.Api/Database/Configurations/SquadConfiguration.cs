@@ -27,8 +27,8 @@ internal sealed class SquadConfiguration
             .HasForeignKey(TournamentConfiguration.ForeignKeyName)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Property(squad => squad.BowlingDateTime)
-            .HasColumnName("bowling_date_time")
+        builder.Property(squad => squad.BowlingDateTimeUtc)
+            .HasColumnName("bowling_date_time_utc")
             .IsRequired();
 
         builder.Property(squad => squad.MaxEntries)

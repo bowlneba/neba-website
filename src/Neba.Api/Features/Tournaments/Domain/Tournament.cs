@@ -146,7 +146,7 @@ public sealed class Tournament
             return rangeCheck.Errors;
         }
 
-        if (_squads.Any(squad => squad.BowlingDateTime == bowlingDateTime))
+        if (_squads.Any(squad => squad.BowlingDateTimeUtc == bowlingDateTime))
         {
             return TournamentErrors.SquadBowlingDateTimeAlreadyUsed(bowlingDateTime);
         }
@@ -156,9 +156,9 @@ public sealed class Tournament
         {
             return squad.Errors;
         }
-        
+
         _squads.Add(squad.Value);
-        
+
         return Result.Success;
     }
 
@@ -180,7 +180,7 @@ public sealed class Tournament
             return rangeCheck.Errors;
         }
 
-        return _squads.Any(s => s.Id != squadId && s.BowlingDateTime == bowlingDateTime)
+        return _squads.Any(s => s.Id != squadId && s.BowlingDateTimeUtc == bowlingDateTime)
             ? TournamentErrors.SquadBowlingDateTimeAlreadyUsed(bowlingDateTime)
             : squad.UpdateDetails(bowlingDateTime, maxEntries);
     }

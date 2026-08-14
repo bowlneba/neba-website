@@ -1155,9 +1155,9 @@ namespace Neba.Api.Database.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
 
-                    b.Property<DateTimeOffset>("BowlingDateTime")
+                    b.Property<DateTimeOffset>("BowlingDateTimeUtc")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("bowling_date_time");
+                        .HasColumnName("bowling_date_time_utc");
 
                     b.Property<string>("Id")
                         .IsRequired()
