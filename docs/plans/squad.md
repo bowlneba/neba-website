@@ -2,6 +2,12 @@
 
 Adds the concept of a Squad — a scheduled bowling session within a Tournament — as a child entity of the `Tournament` aggregate.
 
+## Status
+
+**Domain, persistence, and ubiquitous-language done.** `Squad`/`SquadId`/`SquadErrors`, the `Tournament.AddSquad`/`UpdateSquad`/`RemoveSquad` methods, `SquadConfiguration` + migration, and the `docs/ubiquitous-language.md` entries below are all in place as written.
+
+**Application and API layers not built.** No `AddSquad`/`EditSquad`/`RemoveSquad` command handlers or endpoints exist yet, and squads aren't surfaced on any DTO. That work is intentionally on hold until tournament management (registration, check-in, scoring) is actually built on the website — the domain model is in place ahead of it, but there's no user-facing way to manage squads yet. The Application + API Layers section below is kept as the plan for that future work, not a to-do for right now.
+
 ## Decisions locked in during scoping
 
 - **Child entity of `Tournament`, not a separate aggregate.** A Squad's only invariants right now (bowling date/time within the tournament's date range, no duplicate date/time within the tournament) are checked against data `Tournament` already owns. Matches the `TournamentSponsor`/`TournamentOilPattern` precedent, and gives Squad its own surrogate ID via the `HighBlockAward` precedent (owned child entity with a real strongly-typed ID, not a composite natural key like `TournamentSponsor`/`TournamentOilPattern` use) — future features (registration, scoring) will need to reference a specific Squad by ID.
@@ -298,7 +304,7 @@ internal sealed class SquadConfiguration
 
 **No DB-level unique index on `(tournament_id, bowling_date_time)`.** The uniqueness rule is enforced by `Tournament.AddSquad`/`UpdateSquad` reading the already-loaded `Squads` collection, same as how `AddSponsor`'s title-sponsor-conflict check has no DB constraint backing it — command handlers always load the full aggregate (`.Include(t => t.Squads)`) before mutating it, so there's no concurrent-writer gap a unique index would be closing that the aggregate check doesn't already close.
 
-## Application + API Layers
+## Application + API Layers (deferred — see Status)
 
 Follows the `AddTournamentSponsor`/`RemoveTournamentSponsor` use-case-folder shape exactly — not detailed line-by-line here since it's mechanical once the domain method exists:
 
@@ -307,7 +313,7 @@ Follows the `AddTournamentSponsor`/`RemoveTournamentSponsor` use-case-folder sha
 - `Features/Tournaments/RemoveSquad/` — `RemoveSquadCommand` (`TournamentId`, `SquadId`), calls `tournament.RemoveSquad(...)`. Endpoint: `DELETE {id}/squads/{squadId}`.
 - No `LegacyId` on `AddSquad`/`EditSquad`'s public request contracts — same as `Tournament.LegacyId`, it's populated only by the legacy-migration path (`internal set`), never by an authenticated end user.
 - Contracts (`Neba.Api.Contracts`) mirror `AddTournamentSponsorRequest`/`RemoveTournamentSponsorRequest` shape: a `SquadInput` (`BowlingDateTime`, `MaxEntries`) wrapped by request records.
-- Squads should be surfaced on `TournamentDetailDto`/`SeasonTournamentDto` (a `SquadDto` list: `Id`, `BowlingDateTime`, `MaxEntries`) the same way `Sponsors`/`OilPatterns` already are — left for the implementation pass to wire into `GetTournamentQueryHandler`/`ListTournamentsInSeasonQueryHandler`.
+- Squads should be surfaced on `TournamentDetailDto`/`SeasonTournamentDto` (a `SquadDto` list: `Id`, `BowlingDateTime`, `MaxEntries`) the same way `Sponsors`/`OilPatterns` already are — left for whenever this layer is actually built (see Status), wiring into `GetTournamentQueryHandler`/`ListTournamentsInSeasonQueryHandler`.
 
 ## Ubiquitous Language
 
@@ -345,7 +351,7 @@ Add to `docs/ubiquitous-language.md`, in the `## Tournaments` section, directly 
 ---
 ```
 
-Also update the existing `**Definition**` line for `### Tournament` (line 733) — it currently says "consisting of one or more qualifying squads," written before Squad existed as a modeled concept. Once this lands, cross-reference it: append "(see `### Squad`)" after "qualifying squads" the same way other UL entries cross-reference related terms.
+The `### Tournament` `**Definition**` line's cross-reference to `### Squad` is also in place.
 
 ## Deferred / not in this plan
 
