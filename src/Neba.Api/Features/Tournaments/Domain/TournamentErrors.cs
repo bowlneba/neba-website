@@ -133,7 +133,7 @@ internal static class TournamentErrors
             {
                 { "TournamentId", id.ToString() }
             });
-    
+
     public static Error SquadDateOutOfRange(DateTimeOffset bowlingDateTime, DateOnly startDate, DateOnly endDate)
         => Error.Validation(
             code: "Tournament.Squad.DateOutOfRange",

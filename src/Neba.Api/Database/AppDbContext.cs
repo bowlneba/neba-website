@@ -152,7 +152,7 @@ internal sealed class AppDbContext(
         configurationBuilder.Properties<Gender>()
             .HaveConversion<SmartEnumConverter<Gender, string>>()
             .HaveMaxLength(1);
-        
+
         configurationBuilder.Properties<SquadId>()
             .HaveConversion<UlidTypedIdConverter<SquadId>>();
     }

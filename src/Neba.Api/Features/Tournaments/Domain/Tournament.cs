@@ -127,7 +127,7 @@ public sealed class Tournament
     public DateTimeOffset? OilPatternRevealDateTime { get; private set; }
 
     private readonly List<Squad> _squads = [];
-    
+
     /// <summary>
     /// The squads scheduled for this tournament.
     /// </summary>
