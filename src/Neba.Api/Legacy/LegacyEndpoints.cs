@@ -1,4 +1,5 @@
 using Neba.Api.Legacy.Bowlers;
+using Neba.Api.Legacy.HallOfFame;
 using Neba.Api.Legacy.Tournaments;
 
 namespace Neba.Api.Legacy;
@@ -13,6 +14,8 @@ internal static class LegacyEndpoints
             app.MapUpdateBowler();
 
             app.MapNewTournament();
+
+            app.MapNewHallOfFameInduction();
         }
     }
 }

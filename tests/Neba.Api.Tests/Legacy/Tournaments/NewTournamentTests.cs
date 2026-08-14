@@ -21,6 +21,7 @@ using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Legacy;
 using Neba.Api.Legacy.Bowlers;
+using Neba.Api.Legacy.HallOfFame;
 using Neba.Api.Legacy.Tournaments;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
@@ -95,6 +96,7 @@ public sealed class NewTournamentEndpointTests : IAsyncLifetime
         // sibling is called.
         builder.Services.AddScoped<IValidator<NewBowlerRequest>, NewBowlerRequestValidator>();
         builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
+        builder.Services.AddScoped<IValidator<NewHallOfFameInductionRequest>, NewHallOfFameInductionRequestValidator>();
         builder.Services.AddSingleton(Options.Create(new LegacySettings { ApiKey = ValidApiKey }));
 
         _app = builder.Build();
