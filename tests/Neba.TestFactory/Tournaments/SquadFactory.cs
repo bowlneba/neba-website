@@ -18,8 +18,8 @@ public static class SquadFactory
             maxEntries: maxEntries,
             legacyId: legacyId);
 
-        return result.IsError 
-            ? throw new InvalidOperationException($"Failed to create squad: {result.Errors[0].Description}") 
+        return result.IsError
+            ? throw new InvalidOperationException($"Failed to create squad: {result.Errors[0].Description}")
             : result.Value;
 
     }
@@ -35,8 +35,8 @@ public static class SquadFactory
                 maxEntries: faker.Random.Bool() ? faker.Random.Int(1, 200) : null,
                 legacyId: faker.Random.Bool() ? faker.Random.Int(1, 9999) : null);
 
-            return result.IsError 
-                ? throw new InvalidOperationException($"Failed to create squad: {result.Errors[0].Description}") 
+            return result.IsError
+                ? throw new InvalidOperationException($"Failed to create squad: {result.Errors[0].Description}")
                 : result.Value;
 
         })];
