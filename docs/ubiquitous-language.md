@@ -730,13 +730,43 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 ### Tournament
 
-**Definition**: A USBC sanctioned scratch bowling competition consisting of one or more qualifying squads followed by a single-elimination match play championship round to determine a winner. Each tournament has a Tournament Type that governs format, team size, and eligibility. Lane conditions are characterized by a Pattern Length Category and Pattern Ratio Category, which may not be known at the time of tournament creation.
+**Definition**: A USBC sanctioned scratch bowling competition consisting of one or more qualifying squads (see `### Squad`) followed by a single-elimination match play championship round to determine a winner. Each tournament has a Tournament Type that governs format, team size, and eligibility. Lane conditions are characterized by a Pattern Length Category and Pattern Ratio Category, which may not be known at the time of tournament creation.
 
 **In Code**:
 
 - Namespace: `Neba.Api.Features.Tournaments.Domain`
 - Type: `Tournament` (aggregate root)
 - Identity type: `TournamentId` (ULID-backed strongly-typed ID)
+
+---
+
+### Squad
+
+**Definition**: A scheduled bowling session within a Tournament. Bowlers (Singles formats) or teams (Team formats) compete in a Squad to establish a score toward advancement. A Tournament has one or more Squads, each bowling at a distinct date and time within the tournament's start and end date (inclusive). Squads run one at a time within a tournament — no two overlap.
+
+**Rules**:
+
+- A Squad's bowling date must fall within its Tournament's Start Date and End Date, inclusive
+- No two Squads within the same Tournament may share the same bowling date and time
+- Squads are assigned exclusively through the Tournament aggregate
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
+- Type: `Squad` (child entity of `Tournament`)
+- Identity type: `SquadId` (ULID-backed strongly-typed ID)
+- Property: `Tournament.Squads` (`IReadOnlyCollection<Squad>`)
+- Operations: `Tournament.AddSquad(...)`, `Tournament.UpdateSquad(...)`, `Tournament.RemoveSquad(SquadId)`
+
+---
+
+### Squad Max Entries
+
+**Definition**: The maximum number of Entries (see `### Eligible Entry` — one Entry is one team in a Team-format Tournament, one bowler in a Singles-format Tournament) permitted to bowl a given Squad. `null` means the Squad has no entry cap.
+
+**In Code**:
+
+- Property: `Squad.MaxEntries` (`int?`)
 
 ---
 
