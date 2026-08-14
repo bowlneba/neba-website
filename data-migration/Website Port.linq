@@ -188,6 +188,7 @@ public async Task ApplicationMigration()
 	Seasons.RemoveRange(Seasons);
 	Sponsors.RemoveRange(Sponsors);
 	BowlerSeasonStats.RemoveRange(BowlerSeasonStats);
+	Squads.RemoveRange(Squads);
 	Tournaments.RemoveRange(Tournaments);
 	SideCutCriterias.RemoveRange(SideCutCriterias);
 	SideCutCriteriaGroups.RemoveRange(SideCutCriteriaGroups);
@@ -210,6 +211,7 @@ public async Task ApplicationMigration()
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.high_block_awards RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.seasons RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.sponsors RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.squads RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.tournaments RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.side_cuts RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.side_cut_criteria_groups RESTART IDENTITY CASCADE;");
@@ -2551,7 +2553,47 @@ public async Task<IReadOnlyCollection<SpreadsheetTournament>> MigrateTournaments
 	
 	"Tournaments Migrated".Dump();
 	
+	var softwareSquadsByTournament = (await GetSquadsFromSoftwareAsync()).GroupBy(s => s.TournamentId);
+
+	foreach (var tournamentSquads in softwareSquadsByTournament)
+	{
+		var tournament = await Tournaments.SingleAsync(t => t.LegacyId == tournamentSquads.Key);
+
+		var squads = tournamentSquads.Select(squad => new Squads
+		{
+			DomainId = Ulid.NewUlid(squad.SquadDateEastern.ToUniversalTime(), RandomNumberGenerator.GetBytes(10)).ToString(),
+			LegacyId = squad.Id,
+			TournamentId = tournament.Id,
+			BowlingDateTimeUtc = squad.SquadDateEastern.ToUtc()			
+		});
+		
+		Squads.AddRange(squads);
+	}
+
 	return spreadsheetTournaments;
+}
+
+public async Task<IReadOnlyCollection<SoftwareSquad>> GetSquadsFromSoftwareAsync()
+{
+	var squadsDataTable = await QuerySoftwareDatabaseAsync("""
+	SELECT                                                                                                                                                                                                                                                                                                                     
+		s.[Id] AS SquadId,                                                                                                                                                                                                                                                                                                     
+		COALESCE(ss.[TournamentId], ts.[TournamentId]) AS TournamentId,                                                                                                                                                                                                                                                        
+		s.[BowlingDate] AS BowlingDate                                                                                                                                                                                                                                                                                     
+	FROM
+		[dbo].[Squads] s                                                                                                                                                                                                                                                                                                      
+	LEFT JOIN 
+		[dbo].[Squads_SinglesSquad] ss ON ss.[Id] = s.[Id]                                                                                                                                                                                                                                                               
+	LEFT JOIN 
+		[dbo].[Squads_TeamSquad] ts ON ts.[Id] = s.[Id];    
+	""");
+
+	return squadsDataTable.AsEnumerable().Select(row => new SoftwareSquad
+	{
+		Id = row.Field<int>("SquadId"),
+		TournamentId = row.Field<int>("TournamentId"),
+		SquadDateEastern = row.Field<DateTime>("BowlingDate")
+	}).ToList();
 }
 
 public async Task MigrateHistoricalTournamentResults(
@@ -2759,6 +2801,7 @@ public sealed class PatternLengthCategory
 
 	public int? MaximumLength { get; }
 }
+
 public sealed class TournamentType
 	: SmartEnum<TournamentType>
 {
@@ -2931,6 +2974,15 @@ public sealed class SoftwareTournament
 	public decimal EntryFee { get; init; }
 	
 	public bool StatsEligible { get; init; }
+}
+
+public sealed class SoftwareSquad
+{
+	public int Id { get; init; }
+	
+	public int TournamentId { get; init; }
+	
+	public DateTime SquadDateEastern { get; init; }
 }
 
 #endregion
@@ -4156,3 +4208,54 @@ static List<(int? websiteId, int? softwareId)> s_manualMatch = new()
 };
 
 #endregion
+
+static class DateTimeExtensions
+{
+	static readonly TimeZoneInfo EasternTimeZone = FindEasternTimeZone();
+
+	/// <summary>
+	/// Interprets the value as Eastern wall-clock time (EST or EDT, resolved by date) and converts it to UTC.
+	/// </summary>
+	/// <param name="truncateSeconds">
+	/// When true (default), seconds and sub-second precision are discarded first, so 4:30:49 becomes 4:30:00.
+	/// </param>
+	public static DateTime ToUtc(this DateTime easternDateTime, bool truncateSeconds = true)
+	{
+		// Ignore whatever Kind the source carried - this value is Eastern wall-clock time by contract.
+		var unspecified = DateTime.SpecifyKind(easternDateTime, DateTimeKind.Unspecified);
+
+		if (truncateSeconds)
+		{
+			// Truncate on the Eastern side so the minute the user sees is the minute that's preserved.
+			unspecified = unspecified.AddTicks(-(unspecified.Ticks % TimeSpan.TicksPerMinute));
+		}
+
+		// Spring-forward gap: the wall-clock time never existed. Shift forward past the gap
+		// rather than throwing, so one bad row can't abort the migration.
+		if (EasternTimeZone.IsInvalidTime(unspecified))
+		{
+			var delta = EasternTimeZone.GetAdjustmentRules()
+				.FirstOrDefault(r => unspecified >= r.DateStart && unspecified <= r.DateEnd)
+				?.DaylightDelta ?? TimeSpan.FromHours(1);
+
+			unspecified = unspecified.Add(delta);
+		}
+
+		// Ambiguous times (fall-back hour) resolve to standard time (EST), which is
+		// TimeZoneInfo's default and the usual convention for logged wall-clock data.
+		return TimeZoneInfo.ConvertTimeToUtc(unspecified, EasternTimeZone);
+	}
+
+	static TimeZoneInfo FindEasternTimeZone()
+	{
+		try
+		{
+			// IANA id: works on macOS/Linux natively and on Windows since .NET 6.
+			return TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
+		}
+		catch (TimeZoneNotFoundException)
+		{
+			return TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+		}
+	}
+}
