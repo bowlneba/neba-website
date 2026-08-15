@@ -728,4 +728,325 @@ public sealed class TournamentTests
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("TournamentOilPattern.NoRoundsSpecified");
     }
+
+    [Fact(DisplayName = "AddSquad returns success when the bowling date/time is within range and unused")]
+    public void AddSquad_ShouldReturnSuccess_WhenDateTimeIsValid()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var bowlingDateTime = TournamentFactory.ValidStartDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+
+        // Act
+        var result = tournament.AddSquad(bowlingDateTime, maxEntries: 32, legacyId: 42);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "AddSquad adds the squad to the collection with the provided details")]
+    public void AddSquad_ShouldAddSquadToCollection_WhenDateTimeIsValid()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var bowlingDateTime = TournamentFactory.ValidStartDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+
+        // Act
+        tournament.AddSquad(bowlingDateTime, maxEntries: 32, legacyId: 42);
+
+        // Assert
+        var squad = tournament.Squads.Single(s => s.BowlingDateTimeUtc == bowlingDateTime);
+        squad.MaxEntries.ShouldBe(32);
+        squad.LegacyId.ShouldBe(42);
+    }
+
+    [Fact(DisplayName = "AddSquad returns Tournament.Squad.DateOutOfRange when the date is before the tournament start date")]
+    public void AddSquad_ShouldReturnError_WhenDateIsBeforeStartDate()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var bowlingDateTime = TournamentFactory.ValidStartDate.AddDays(-1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+
+        // Act
+        var result = tournament.AddSquad(bowlingDateTime, maxEntries: null, legacyId: null);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Squad.DateOutOfRange");
+    }
+
+    [Fact(DisplayName = "AddSquad returns Tournament.Squad.DateOutOfRange when the date is after the tournament end date")]
+    public void AddSquad_ShouldReturnError_WhenDateIsAfterEndDate()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var bowlingDateTime = TournamentFactory.ValidEndDate.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+
+        // Act
+        var result = tournament.AddSquad(bowlingDateTime, maxEntries: null, legacyId: null);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Squad.DateOutOfRange");
+    }
+
+    [Fact(DisplayName = "AddSquad returns success when the UTC date is within range even though the offset's local date is before the start date")]
+    public void AddSquad_ShouldReturnSuccess_WhenUtcDateIsWithinRange_ButOffsetLocalDateIsBeforeStartDate()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        // Oct 3 22:00 -04:00 == Oct 4 02:00 UTC: local date (Oct 3) is before ValidStartDate (Oct 4),
+        // but the UTC date (Oct 4) is on the start date.
+        var bowlingDateTime = new DateTimeOffset(2025, 10, 3, 22, 0, 0, TimeSpan.FromHours(-4));
+
+        // Act
+        var result = tournament.AddSquad(bowlingDateTime, maxEntries: null, legacyId: null);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "AddSquad returns Tournament.Squad.DateOutOfRange when the UTC date is after the end date even though the offset's local date is on the end date")]
+    public void AddSquad_ShouldReturnError_WhenUtcDateIsAfterEndDate_ButOffsetLocalDateIsOnEndDate()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        // Oct 5 21:00 -04:00 == Oct 6 01:00 UTC: local date (Oct 5) is on ValidEndDate (Oct 5),
+        // but the UTC date (Oct 6) is after the end date.
+        var bowlingDateTime = new DateTimeOffset(2025, 10, 5, 21, 0, 0, TimeSpan.FromHours(-4));
+
+        // Act
+        var result = tournament.AddSquad(bowlingDateTime, maxEntries: null, legacyId: null);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Squad.DateOutOfRange");
+    }
+
+    [Fact(DisplayName = "AddSquad returns Tournament.Squad.DateTimeAlreadyUsed when another squad already bowls at that date/time")]
+    public void AddSquad_ShouldReturnError_WhenDateTimeAlreadyUsed()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var bowlingDateTime = SquadFactory.ValidBowlingDateTime;
+        tournament.AddSquad(bowlingDateTime, maxEntries: null, legacyId: null);
+
+        // Act
+        var result = tournament.AddSquad(bowlingDateTime, maxEntries: null, legacyId: null);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Squad.DateTimeAlreadyUsed");
+    }
+
+    [Fact(DisplayName = "AddSquad does not add a colliding squad to the collection")]
+    public void AddSquad_ShouldNotAddSquadToCollection_WhenDateTimeAlreadyUsed()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var bowlingDateTime = SquadFactory.ValidBowlingDateTime;
+        tournament.AddSquad(bowlingDateTime, maxEntries: null, legacyId: null);
+
+        // Act
+        tournament.AddSquad(bowlingDateTime, maxEntries: null, legacyId: null);
+
+        // Assert
+        tournament.Squads.Count.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "AddSquad returns Squad.MaxEntries.Invalid when max entries is not positive")]
+    public void AddSquad_ShouldReturnError_WhenMaxEntriesIsNotPositive()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+
+        // Act
+        var result = tournament.AddSquad(SquadFactory.ValidBowlingDateTime, maxEntries: 0, legacyId: null);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Squad.MaxEntries.Invalid");
+    }
+
+    [Fact(DisplayName = "UpdateSquad returns Updated and reassigns fields when inputs are valid")]
+    public void UpdateSquad_ShouldReturnUpdatedAndReassignFields_WhenInputsAreValid()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.AddSquad(SquadFactory.ValidBowlingDateTime, maxEntries: 16, legacyId: null);
+        var squad = tournament.Squads.Single();
+        var newBowlingDateTime = TournamentFactory.ValidEndDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+
+        // Act
+        var result = tournament.UpdateSquad(squad.Id, newBowlingDateTime, maxEntries: 64);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        squad.BowlingDateTimeUtc.ShouldBe(newBowlingDateTime);
+        squad.MaxEntries.ShouldBe(64);
+    }
+
+    [Fact(DisplayName = "UpdateSquad converts a non-UTC bowling date/time to UTC")]
+    public void UpdateSquad_ShouldConvertBowlingDateTimeToUtc_WhenNewDateTimeHasNonZeroOffset()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.AddSquad(SquadFactory.ValidBowlingDateTime, maxEntries: null, legacyId: null);
+        var squad = tournament.Squads.Single();
+        var nonUtcBowlingDateTime = new DateTimeOffset(
+            TournamentFactory.ValidStartDate.ToDateTime(TimeOnly.MinValue),
+            TimeSpan.FromHours(-4));
+
+        // Act
+        var result = tournament.UpdateSquad(squad.Id, nonUtcBowlingDateTime, maxEntries: null);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        squad.BowlingDateTimeUtc.Offset.ShouldBe(TimeSpan.Zero);
+        squad.BowlingDateTimeUtc.ShouldBe(nonUtcBowlingDateTime.ToUniversalTime());
+    }
+
+    [Fact(DisplayName = "UpdateSquad returns Tournament.Squad.NotFound when the squad doesn't exist")]
+    public void UpdateSquad_ShouldReturnError_WhenSquadNotFound()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+
+        // Act
+        var result = tournament.UpdateSquad(SquadId.New(), SquadFactory.ValidBowlingDateTime, maxEntries: null);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Squad.NotFound");
+    }
+
+    [Fact(DisplayName = "UpdateSquad returns Tournament.Squad.DateOutOfRange when the new date falls outside the tournament's range")]
+    public void UpdateSquad_ShouldReturnError_WhenDateIsOutOfRange()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.AddSquad(SquadFactory.ValidBowlingDateTime, maxEntries: null, legacyId: null);
+        var squad = tournament.Squads.Single();
+        var outOfRangeDateTime = TournamentFactory.ValidEndDate.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+
+        // Act
+        var result = tournament.UpdateSquad(squad.Id, outOfRangeDateTime, maxEntries: null);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Squad.DateOutOfRange");
+    }
+
+    [Fact(DisplayName = "UpdateSquad returns Tournament.Squad.DateTimeAlreadyUsed when another squad already bowls at the new date/time")]
+    public void UpdateSquad_ShouldReturnError_WhenDateTimeCollidesWithAnotherSquad()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        var firstBowlingDateTime = SquadFactory.ValidBowlingDateTime;
+        var secondBowlingDateTime = firstBowlingDateTime.AddHours(2);
+        tournament.AddSquad(firstBowlingDateTime, maxEntries: null, legacyId: null);
+        tournament.AddSquad(secondBowlingDateTime, maxEntries: null, legacyId: null);
+        var squadToUpdate = tournament.Squads.Single(s => s.BowlingDateTimeUtc == secondBowlingDateTime);
+
+        // Act
+        var result = tournament.UpdateSquad(squadToUpdate.Id, firstBowlingDateTime, maxEntries: null);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Squad.DateTimeAlreadyUsed");
+    }
+
+    [Fact(DisplayName = "UpdateSquad returns Updated when the new date/time is unchanged from the squad's own current date/time")]
+    public void UpdateSquad_ShouldReturnUpdated_WhenDateTimeIsUnchangedFromOwnSquad()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.AddSquad(SquadFactory.ValidBowlingDateTime, maxEntries: 16, legacyId: null);
+        var squad = tournament.Squads.Single();
+
+        // Act
+        var result = tournament.UpdateSquad(squad.Id, SquadFactory.ValidBowlingDateTime, maxEntries: 32);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        squad.MaxEntries.ShouldBe(32);
+    }
+
+    [Fact(DisplayName = "UpdateSquad returns Squad.MaxEntries.Invalid when max entries is not positive")]
+    public void UpdateSquad_ShouldReturnError_WhenMaxEntriesIsNotPositive()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.AddSquad(SquadFactory.ValidBowlingDateTime, maxEntries: null, legacyId: null);
+        var squad = tournament.Squads.Single();
+
+        // Act
+        var result = tournament.UpdateSquad(squad.Id, SquadFactory.ValidBowlingDateTime, maxEntries: -1);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Squad.MaxEntries.Invalid");
+    }
+
+    [Fact(DisplayName = "RemoveSquad returns Deleted when the squad exists")]
+    public void RemoveSquad_ShouldReturnDeleted_WhenSquadExists()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.AddSquad(SquadFactory.ValidBowlingDateTime, maxEntries: null, legacyId: null);
+        var squad = tournament.Squads.Single();
+
+        // Act
+        var result = tournament.RemoveSquad(squad.Id);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.ShouldBe(Result.Deleted);
+    }
+
+    [Fact(DisplayName = "RemoveSquad removes the squad from the collection when it exists")]
+    public void RemoveSquad_ShouldRemoveSquadFromCollection_WhenSquadExists()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.AddSquad(SquadFactory.ValidBowlingDateTime, maxEntries: null, legacyId: null);
+        var squad = tournament.Squads.Single();
+
+        // Act
+        tournament.RemoveSquad(squad.Id);
+
+        // Assert
+        tournament.Squads.ShouldNotContain(s => s.Id == squad.Id);
+    }
+
+    [Fact(DisplayName = "RemoveSquad only removes the specified squad, leaving others intact")]
+    public void RemoveSquad_ShouldOnlyRemoveSpecifiedSquad_WhenMultipleSquadsExist()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.AddSquad(SquadFactory.ValidBowlingDateTime, maxEntries: null, legacyId: null);
+        tournament.AddSquad(SquadFactory.ValidBowlingDateTime.AddHours(2), maxEntries: null, legacyId: null);
+        var squadToRemove = tournament.Squads.First();
+        var squadToKeep = tournament.Squads.Last();
+
+        // Act
+        tournament.RemoveSquad(squadToRemove.Id);
+
+        // Assert
+        tournament.Squads.Count.ShouldBe(1);
+        tournament.Squads.ShouldContain(s => s.Id == squadToKeep.Id);
+    }
+
+    [Fact(DisplayName = "RemoveSquad returns Tournament.Squad.NotFound when the squad doesn't exist")]
+    public void RemoveSquad_ShouldReturnError_WhenSquadNotFound()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+
+        // Act
+        var result = tournament.RemoveSquad(SquadId.New());
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Squad.NotFound");
+    }
 }

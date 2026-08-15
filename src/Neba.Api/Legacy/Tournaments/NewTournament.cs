@@ -70,15 +70,20 @@ internal sealed class NewTournamentSyncJob(
     IEmailSender emailSender,
     ILogger<NewTournamentSyncJob> logger)
 {
+    private static readonly TimeZoneInfo EasternTimeZone = FindEasternTimeZone();
+
     public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
     {
         using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
 
-        var alreadyLinked = await db.Set<Tournament>()
-            .AnyAsync(t => t.LegacyId == legacyTournamentId, ct);
-        if (alreadyLinked)
+        var alreadyLinkedTournament = await db.Set<Tournament>()
+            .Include(t => t.Squads)
+            .SingleOrDefaultAsync(t => t.LegacyId == legacyTournamentId, ct);
+        if (alreadyLinkedTournament is not null)
         {
             logger.LogLegacyTournamentAlreadyLinked(legacyTournamentId);
+            await SyncSquadsAsync(alreadyLinkedTournament, legacyTournamentId, ct);
+            await db.SaveChangesAsync(ct);
             return;
         }
 
@@ -114,6 +119,7 @@ internal sealed class NewTournamentSyncJob(
         var endDate = DateOnly.FromDateTime(row.End);
 
         var candidates = await db.Set<Tournament>()
+            .Include(t => t.Squads)
             .Where(t => t.EndDate == endDate && t.LegacyId == null)
             .ToListAsync(ct);
 
@@ -159,7 +165,84 @@ internal sealed class NewTournamentSyncJob(
         }
 
         candidates[0].ApplyLegacyId(legacyTournamentId);
+        await SyncSquadsAsync(candidates[0], legacyTournamentId, ct);
         await db.SaveChangesAsync(ct);
+    }
+
+    private async Task SyncSquadsAsync(Tournament tournament, int legacyTournamentId, CancellationToken ct)
+    {
+        // See NewBowlerSyncJob.SyncAsync for the rationale on suppressing DAP005 here.
+#pragma warning disable DAP005
+        var squadRows = await legacyConnection.QueryAsync<LegacySquadRow>(
+            new CommandDefinition(
+                """
+                SELECT
+                    s.Id AS SquadId,
+                    COALESCE(ss.TournamentId, ts.TournamentId) AS TournamentId,
+                    s.BowlingDate AS BowlingDate
+                FROM
+                    Squads s
+                LEFT JOIN Squads_SinglesSquad ss ON ss.Id = s.Id
+                LEFT JOIN Squads_TeamSquad ts ON ts.Id = s.Id
+                WHERE
+                    COALESCE(ss.TournamentId, ts.TournamentId) = @TournamentId
+                """,
+                new { TournamentId = legacyTournamentId },
+                cancellationToken: ct)
+        );
+#pragma warning restore DAP005
+
+        foreach (var squadRow in squadRows)
+        {
+            if (tournament.Squads.Any(squad => squad.LegacyId == squadRow.SquadId))
+            {
+                continue;
+            }
+
+            var bowlingDateTime = ToEasternDateTimeOffset(squadRow.BowlingDate);
+
+            var result = tournament.AddSquad(bowlingDateTime, maxEntries: null, legacyId: squadRow.SquadId);
+            if (result.IsError)
+            {
+                logger.LogLegacySquadSyncFailed(squadRow.SquadId, legacyTournamentId, result.FirstError.Description);
+            }
+        }
+    }
+
+    // The legacy database stores squad bowling dates/times as naive local wall-clock values in
+    // U.S. Eastern time (EST or EDT depending on the date), with no offset recorded. Deriving the
+    // correct offset per-date (rather than assuming a fixed -05:00/-04:00) is required so the
+    // resulting UTC instant is correct across the DST boundary.
+    private static DateTimeOffset ToEasternDateTimeOffset(DateTime easternLocalDateTime)
+    {
+        var unspecified = DateTime.SpecifyKind(easternLocalDateTime, DateTimeKind.Unspecified);
+
+        // Spring-forward gap: the wall-clock time never existed. Shift forward past the gap
+        // rather than deriving an offset for a moment that isn't real.
+        if (EasternTimeZone.IsInvalidTime(unspecified))
+        {
+            var delta = EasternTimeZone.GetAdjustmentRules()
+                .FirstOrDefault(rule => unspecified >= rule.DateStart && unspecified <= rule.DateEnd)
+                ?.DaylightDelta ?? TimeSpan.FromHours(1);
+
+            unspecified = unspecified.Add(delta);
+        }
+
+        // Ambiguous times (fall-back hour) resolve to standard time (EST) — TimeZoneInfo's
+        // own default resolution for an ambiguous local time.
+        return new DateTimeOffset(unspecified, EasternTimeZone.GetUtcOffset(unspecified));
+    }
+
+    private static TimeZoneInfo FindEasternTimeZone()
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+        }
     }
 
     // Maps the legacy row's singles-type enum or team shape to the website's TournamentType.
@@ -206,6 +289,11 @@ internal sealed record LegacyTournamentRow(
     int? TeamSize,
     bool? OverUnder);
 
+internal sealed record LegacySquadRow(
+    int SquadId,
+    int TournamentId,
+    DateTime BowlingDate);
+
 internal static partial class NewTournamentSyncJobLogMessages
 {
     [LoggerMessage(
@@ -222,6 +310,11 @@ internal static partial class NewTournamentSyncJobLogMessages
         Level = LogLevel.Warning,
         Message = "Could not derive a unique website tournament for legacy id {LegacyTournamentId} ({CandidateCount} candidate(s) remaining after narrowing); manual intervention email sent.")]
     public static partial void LogLegacyTournamentCannotBeDerived(this ILogger<NewTournamentSyncJob> logger, int legacyTournamentId, int candidateCount);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Failed to sync legacy squad {LegacySquadId} for legacy tournament {LegacyTournamentId}: {Reason}")]
+    public static partial void LogLegacySquadSyncFailed(this ILogger<NewTournamentSyncJob> logger, int legacySquadId, int legacyTournamentId, string reason);
 }
 
 internal sealed class TournamentLinkCannotBeDerivedEmail(int legacyTournamentId, DateOnly endDate, int candidateCount)

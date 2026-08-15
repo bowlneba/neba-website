@@ -93,6 +93,7 @@ internal sealed class AppDbContext(
         modelBuilder.ApplyConfiguration(new SideCutCriteriaGroupConfiguration());
         modelBuilder.ApplyConfiguration(new SideCutCriteriaConfiguration());
         modelBuilder.ApplyConfiguration(new ArticleConfiguration());
+        modelBuilder.ApplyConfiguration(new SquadConfiguration());
 
         modelBuilder.ApplyConfiguration(new HistoricalTournamentChampionConfiguration());
         modelBuilder.ApplyConfiguration(new HistoricalTournamentEntryConfiguration());
@@ -151,5 +152,8 @@ internal sealed class AppDbContext(
         configurationBuilder.Properties<Gender>()
             .HaveConversion<SmartEnumConverter<Gender, string>>()
             .HaveMaxLength(1);
+
+        configurationBuilder.Properties<SquadId>()
+            .HaveConversion<UlidTypedIdConverter<SquadId>>();
     }
 }
