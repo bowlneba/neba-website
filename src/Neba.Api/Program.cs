@@ -58,6 +58,7 @@ app.UseFastEndpoints(config =>
 });
 
 app.MapLegacyGroup();
+app.MapLegacyHealth();
 
 app.UseOpenApiDocumentation();
 

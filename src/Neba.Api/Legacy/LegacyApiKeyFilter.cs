@@ -14,13 +14,13 @@ namespace Neba.Api.Legacy;
 /// </summary>
 internal sealed class LegacyApiKeyFilter(IOptions<LegacySettings> settings, ILogger<LegacyApiKeyFilter> logger) : IEndpointFilter
 {
-    private const string ApiKeyHeaderName = "X-Api-Key";
+    internal const string ApiKeyHeaderName = "X-Api-Key";
 
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
         var providedKey = context.HttpContext.Request.Headers[ApiKeyHeaderName].ToString();
 
-        if (!IsValidKey(providedKey))
+        if (!IsValidKey(providedKey, settings.Value.ApiKey))
         {
             logger.LogLegacyApiKeyRejected(context.HttpContext.Request.Path);
             return Results.Unauthorized();
@@ -37,7 +37,11 @@ internal sealed class LegacyApiKeyFilter(IOptions<LegacySettings> settings, ILog
         return await next(context);
     }
 
-    private bool IsValidKey(string providedKey)
+    // Shared with Health.cs, which needs the same fixed-time comparison but must not go through
+    // this filter (a health check needs to distinguish "reachable, wrong key" (403) from
+    // "unreachable", which this filter's 401 can't express) — both files are deleted together
+    // at sunset, so sharing this one comparison avoids the two silently drifting.
+    internal static bool IsValidKey(string providedKey, string configuredKey)
     {
         if (string.IsNullOrEmpty(providedKey))
         {
@@ -48,7 +52,7 @@ internal sealed class LegacyApiKeyFilter(IOptions<LegacySettings> settings, ILog
         // same reasoning as password/token comparisons elsewhere in the app.
         return CryptographicOperations.FixedTimeEquals(
             Encoding.UTF8.GetBytes(providedKey),
-            Encoding.UTF8.GetBytes(settings.Value.ApiKey));
+            Encoding.UTF8.GetBytes(configuredKey));
     }
 }
 
