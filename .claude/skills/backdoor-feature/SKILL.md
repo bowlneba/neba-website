@@ -13,9 +13,9 @@ Read these, in order, before drafting anything:
 
 1. `docs/api/software-backdoor-plan.md` — the standing architecture decisions (payload shape, file organization, Hangfire enqueue-not-wait, security, audit attribution, testing layers, sunset). Every plan this skill produces must be consistent with this doc, not re-litigate it.
 2. `docs/plans/software-backdoor-scaffolding.md` — what already exists (`Legacy/LegacySettings.cs`, `LegacyApiKeyFilter.cs`, `LegacyConfiguration.cs`, `LegacyEndpoints.cs`, `LegacyActor.cs`). Don't re-plan scaffolding that's already built; reference it.
-3. `docs/plans/software-backdoor-new-bowler.md` — the first action planned end-to-end with this process. Treat it as the worked example / template for shape, tone, and level of detail (code sketches, an explicit "Decision Recap," a "Legacy Schema Reference" table, a "Summary of what's still undecided" section, and a closing standalone prompt for the Software-side implementer). New plans should read like siblings of this one, not a different format.
+3. The **already-implemented** actions under `src/Neba.Api/Legacy/` (e.g. `Legacy/Bowlers/NewBowler.cs`, `UpdateBowler.cs`, and any others present) — their own plan docs are deleted post-implementation by convention, so these source files are the living worked examples now. Read at least one end-to-end (route/request/validator/sync job/tests) to ground the shape, tone, and level of detail a new plan should target: code sketches, an explicit "Decision Recap," a "Legacy Schema Reference" table where a legacy entity is involved, a "Summary of what's still undecided" section, and a closing standalone prompt for the Software-side implementer. New plans should read like siblings of these implementations, not a different format. (If a plan doc for a still-unimplemented action happens to exist in `docs/plans/`, prefer that as the freshest template instead.)
 
-If any of these three files don't exist yet, stop and tell the user — this skill assumes the scaffolding phase is already done.
+If `docs/api/software-backdoor-plan.md`, `docs/plans/software-backdoor-scaffolding.md`, or the `src/Neba.Api/Legacy/` folder don't exist yet, stop and tell the user — this skill assumes the scaffolding phase is already done.
 
 ## Workflow
 
