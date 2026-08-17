@@ -188,6 +188,7 @@ public async Task ApplicationMigration()
 	Seasons.RemoveRange(Seasons);
 	Sponsors.RemoveRange(Sponsors);
 	BowlerSeasonStats.RemoveRange(BowlerSeasonStats);
+	SquadScores.RemoveRange(SquadScores);
 	Squads.RemoveRange(Squads);
 	Tournaments.RemoveRange(Tournaments);
 	SideCutCriterias.RemoveRange(SideCutCriterias);
@@ -211,6 +212,7 @@ public async Task ApplicationMigration()
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.high_block_awards RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.seasons RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.sponsors RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.squad_scores RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.squads RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.tournaments RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.side_cuts RESTART IDENTITY CASCADE;");
@@ -271,6 +273,8 @@ public async Task ApplicationMigration()
 	await MigrateHistoricalTournamentResults(tournamentDbIdBySoftwareId, bowlerDbIdBySoftwareId);
 
 	await MigrateOilPatterns();
+	
+	await MigrateSquadScores(bowlerDomainIdBySoftwareId);
 }
 
 // You can define other methods, fields, classes and namespaces here
@@ -3308,6 +3312,92 @@ public sealed class SponsorTier
 	private SponsorTier(string name, int value)
 		: base(name, value)
 	{ }
+}
+
+#endregion
+
+#region Squad Scores
+
+public async Task MigrateSquadScores(Dictionary<int, Ulid> bowlerDomainIdBySoftwareId)
+{
+	var squadDomainIdBySoftwareId = Squads.Where(s => s.LegacyId.HasValue).ToDictionary(s => s.LegacyId!.Value, s => s.DomainId);
+
+	var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+	var folder = "/Users/kippermand/Projects/bowlneba/neba-website/data-migration/qualifying-scores";
+
+	var scoreCount = 0;
+
+	foreach (var file in Directory.EnumerateFiles(folder, "*.json").OrderBy(f => f))
+	{
+		await using var stream = File.OpenRead(file);
+		var import = await JsonSerializer.DeserializeAsync<QualifyingScoresImport>(stream, options);
+
+		if (import is null)
+		{
+			$"------ {Path.GetFileName(file)} deserialized to null, skipping ------".Dump();
+			continue;
+		}
+
+		foreach (var squad in import.Squads)
+		{
+			if (!squadDomainIdBySoftwareId.TryGetValue(squad.SquadId, out var squadDomainId))
+			{
+				$"------ {Path.GetFileName(file)}: no squad found for legacy id {squad.SquadId}, skipping ------".Dump();
+				continue;
+			}
+
+			foreach (var squadScore in squad.SquadScores)
+			{
+				if (!bowlerDomainIdBySoftwareId.TryGetValue(squadScore.BowlerId, out var bowlerDomainId))
+				{
+					$"------ {Path.GetFileName(file)}: no bowler found for software id {squadScore.BowlerId}, skipping ------".Dump();
+					continue;
+				}
+
+				foreach (var game in squadScore.Scores)
+				{
+					SquadScores.Add(new SquadScores
+					{
+						DomainId = Guid.AsDomainId(),
+						SquadId = squadDomainId,
+						BowlerId = bowlerDomainId.ToString(),
+						GameNumber = (short)game.Game,
+						Score = game.Score
+					});
+
+					scoreCount++;
+				}
+			}
+		}
+	}
+
+	await SaveChangesAsync();
+
+	$"Squad Scores Migrated ({scoreCount})".Dump();
+}
+
+public sealed record QualifyingScoresImport
+{
+	public int TournamentId { get; set; }
+	public List<SquadImport> Squads { get; set; } = [];
+}
+
+public sealed record SquadImport
+{
+	public int SquadId { get; set; }
+	public List<SquadScoreImport> SquadScores { get; set; } = [];
+}
+
+public sealed record SquadScoreImport
+{
+	public int BowlerId { get; set; }
+	public List<GameScoreImport> Scores { get; set; } = [];
+}
+
+public sealed record GameScoreImport
+{
+	public int Game { get; set; }
+	public int Score { get; set; }
 }
 
 #endregion
