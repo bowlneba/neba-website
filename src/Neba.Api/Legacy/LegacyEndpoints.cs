@@ -14,6 +14,7 @@ internal static class LegacyEndpoints
             app.MapUpdateBowler();
 
             app.MapNewTournament();
+            app.MapSyncSquadScores();
 
             app.MapNewHallOfFameInduction();
         }
