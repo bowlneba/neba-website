@@ -168,7 +168,7 @@ internal sealed class UnsyncedBowlerScoreSyncEmail(int legacyBowlerId, int legac
 {
     public string ToHtmlBody()
     {
-        var scoreRows = string.Join("", unmappedRows
+        var scoreRows = string.Concat(unmappedRows
             .OrderBy(row => row.Game)
             .Select(row => $"<tr><td>{WebUtility.HtmlEncode(row.Game.ToString(CultureInfo.CurrentCulture))}</td><td>{WebUtility.HtmlEncode(row.Score.ToString(CultureInfo.CurrentCulture))}</td></tr>"));
 
