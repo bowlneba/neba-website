@@ -8,6 +8,7 @@ namespace Neba.Api.Database.Configurations;
 internal sealed class SquadConfiguration
     : IEntityTypeConfiguration<Squad>
 {
+    internal const string ForeignKey = "squad_id";
     public void Configure(EntityTypeBuilder<Squad> builder)
     {
         builder.ToTable("squads", AppDbContext.DefaultSchema);

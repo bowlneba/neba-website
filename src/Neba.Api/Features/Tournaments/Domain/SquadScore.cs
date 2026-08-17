@@ -46,13 +46,13 @@ public sealed class SquadScore
         return validated.IsError
             ? validated.Errors
             : new SquadScore
-        {
-            Id = SquadScoreId.New(),
-            SquadId = squadId,
-            BowlerId = bowlerId,
-            GameNumber = gameNumber,
-            Value = score
-        };
+            {
+                Id = SquadScoreId.New(),
+                SquadId = squadId,
+                BowlerId = bowlerId,
+                GameNumber = gameNumber,
+                Value = score
+            };
     }
 
     internal ErrorOr<Updated> UpdateValue(int score)
