@@ -73,7 +73,7 @@ internal sealed class AppDbContext(
 
     public DbSet<Article> Articles
         => Set<Article>();
-    
+
     public DbSet<SquadScore> SquadScores
         => Set<SquadScore>();
 
@@ -159,7 +159,7 @@ internal sealed class AppDbContext(
 
         configurationBuilder.Properties<SquadId>()
             .HaveConversion<UlidTypedIdConverter<SquadId>>();
-        
+
         configurationBuilder.Properties<SquadScoreId>()
             .HaveConversion<UlidTypedIdConverter<SquadScoreId>>();
     }
