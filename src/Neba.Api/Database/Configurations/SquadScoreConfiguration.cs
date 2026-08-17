@@ -42,10 +42,15 @@ internal sealed class SquadScoreConfiguration : IEntityTypeConfiguration<SquadSc
             .HasColumnName("game_number")
             .IsRequired();
 
-        builder.Property(squadScore => squadScore.Value)
-            .HasColumnName("value")
+        builder.Property(squadScore => squadScore.Score)
+            .HasColumnName("score")
             .IsRequired();
 
-        builder.HasAlternateKey(squadScore => new { squadScore.SquadId, squadScore.BowlerId, squadScore.GameNumber });
+        builder.HasAlternateKey(squadScore => new
+        {
+            squadScore.SquadId,
+            squadScore.BowlerId,
+            squadScore.GameNumber
+        });
     }
 }

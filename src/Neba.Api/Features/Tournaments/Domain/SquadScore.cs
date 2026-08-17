@@ -38,7 +38,7 @@ public sealed class SquadScore
     /// <summary>
     /// Gets the number of pins knocked down, 0-300 inclusive.
     /// </summary>
-    public int Value { get; private set; }
+    public int Score { get; private set; }
 
     internal static ErrorOr<SquadScore> Create(SquadId squadId, BowlerId bowlerId, short gameNumber, int score)
     {
@@ -51,7 +51,7 @@ public sealed class SquadScore
                 SquadId = squadId,
                 BowlerId = bowlerId,
                 GameNumber = gameNumber,
-                Value = score
+                Score = score
             };
     }
 
@@ -63,7 +63,7 @@ public sealed class SquadScore
             return validated.Errors;
         }
 
-        Value = score;
+        Score = score;
         return Result.Updated;
     }
 

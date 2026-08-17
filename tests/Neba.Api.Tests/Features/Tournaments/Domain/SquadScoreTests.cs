@@ -37,7 +37,7 @@ public sealed class SquadScoreTests
         squadScore.SquadId.ShouldBe(ValidSquadId);
         squadScore.BowlerId.ShouldBe(ValidBowlerId);
         squadScore.GameNumber.ShouldBe(ValidGameNumber);
-        squadScore.Value.ShouldBe(ValidScore);
+        squadScore.Score.ShouldBe(ValidScore);
     }
 
     [Theory(DisplayName = "Create returns a SquadScore when the score is at a valid boundary")]
@@ -50,7 +50,7 @@ public sealed class SquadScoreTests
 
         // Assert
         result.IsError.ShouldBeFalse();
-        result.Value.Value.ShouldBe(score);
+        result.Value.Score.ShouldBe(score);
     }
 
     [Theory(DisplayName = "Create returns SquadScore.Value.Invalid when the score is out of range")]
@@ -93,7 +93,7 @@ public sealed class SquadScoreTests
 
         // Assert
         result.IsError.ShouldBeFalse();
-        squadScore.Value.ShouldBe(updatedScore);
+        squadScore.Score.ShouldBe(updatedScore);
     }
 
     [Theory(DisplayName = "UpdateValue returns SquadScore.Value.Invalid when the score is out of range")]
@@ -122,6 +122,6 @@ public sealed class SquadScoreTests
         squadScore.UpdateValue(-1);
 
         // Assert
-        squadScore.Value.ShouldBe(ValidScore);
+        squadScore.Score.ShouldBe(ValidScore);
     }
 }
