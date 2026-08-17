@@ -760,6 +760,22 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 ---
 
+### Squad Score
+
+**Definition**: A single game's score for one bowler in one Squad — the number of pins knocked down, 0 to 300 inclusive. Squad Score is the raw, persisted record; it is never aggregated into a separate stats row — anything derived from it (totals, averages, high game) is computed as a query projection over these rows. Squad Score is designed to cover a future Cashers round as well as today's Qualifying round — Match Play and Step Ladder are a different shape (head-to-head, not squad-scoped) and are out of scope.
+
+**Note**: Squad Score is documented here on its own because it is the only piece of the broader Score Card design (see `docs/plans/scorecard.md`) built so far — via data migration, ahead of any website-driven scoring. Score Card itself (the aggregate that groups a bowler's Squad Scores for a Squad and enforces game-number/duplicate rules) is not yet implemented and is deliberately left out of this document until it is.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
+- Type: `SquadScore`
+- Identity type: `SquadScoreId` (ULID-backed strongly-typed ID)
+- Properties: `SquadId`, `BowlerId`, `GameNumber` (`short`, 1-based), `Score` (`int`, 0-300)
+- Table: `squad_scores`
+
+---
+
 ### Squad Max Entries
 
 **Definition**: The maximum number of Entries (see `### Eligible Entry` — one Entry is one team in a Team-format Tournament, one bowler in a Singles-format Tournament) permitted to bowl a given Squad. `null` means the Squad has no entry cap.

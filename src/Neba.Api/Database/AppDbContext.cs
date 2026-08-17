@@ -74,6 +74,9 @@ internal sealed class AppDbContext(
     public DbSet<Article> Articles
         => Set<Article>();
 
+    public DbSet<SquadScore> SquadScores
+        => Set<SquadScore>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new BowlingCenterConfiguration());
@@ -94,6 +97,7 @@ internal sealed class AppDbContext(
         modelBuilder.ApplyConfiguration(new SideCutCriteriaConfiguration());
         modelBuilder.ApplyConfiguration(new ArticleConfiguration());
         modelBuilder.ApplyConfiguration(new SquadConfiguration());
+        modelBuilder.ApplyConfiguration(new SquadScoreConfiguration());
 
         modelBuilder.ApplyConfiguration(new HistoricalTournamentChampionConfiguration());
         modelBuilder.ApplyConfiguration(new HistoricalTournamentEntryConfiguration());
@@ -155,5 +159,8 @@ internal sealed class AppDbContext(
 
         configurationBuilder.Properties<SquadId>()
             .HaveConversion<UlidTypedIdConverter<SquadId>>();
+
+        configurationBuilder.Properties<SquadScoreId>()
+            .HaveConversion<UlidTypedIdConverter<SquadScoreId>>();
     }
 }

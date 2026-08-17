@@ -110,6 +110,7 @@ public sealed class NewHallOfFameInductionEndpointTests : IAsyncLifetime
         builder.Services.AddScoped<IValidator<NewBowlerRequest>, NewBowlerRequestValidator>();
         builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
         builder.Services.AddScoped<IValidator<NewTournamentRequest>, NewTournamentRequestValidator>();
+        builder.Services.AddScoped<IValidator<SyncSquadScoresRequest>, SyncSquadScoresRequestValidator>();
         builder.Services.AddSingleton(Options.Create(new LegacySettings { ApiKey = ValidApiKey }));
 
         _app = builder.Build();
