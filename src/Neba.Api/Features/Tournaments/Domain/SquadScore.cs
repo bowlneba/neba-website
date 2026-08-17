@@ -5,8 +5,8 @@ using Neba.Api.Features.Bowlers.Domain;
 namespace Neba.Api.Features.Tournaments.Domain;
 
 /// <summary>
-/// One bowler's score for a single game within a Squad. Always constructed and mutated through
-/// the owning ScoreCard — never directly.
+/// One bowler's score for a single game within a Squad. Will be constructed and mutated through
+/// the owning ScoreCard once that aggregate exists; until then, only from within Neba.Api.
 /// </summary>
 public sealed class SquadScore
 {
