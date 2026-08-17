@@ -4,7 +4,14 @@ Adds `ScoreCard`/`SquadScore` — a bowler's game-by-game scores for a single Sq
 
 ## Status
 
-**Design only.** Nothing in this plan has been implemented. This document is the source of truth to build from — domain shape and methods are worked out in detail; persistence and application/API layers are sketched but intentionally left loose until that work is actually picked up, same as `squad.md` did for its own deferred layers.
+**`SquadScore` entity + persistence built; `ScoreCard` aggregate not yet built.** The 2026 qualifying-score data migration only needed `SquadScore` as a directly-persisted row (no in-memory aggregate loaded/saved around it), so that's what got built first: `SquadScoreId`, `SquadScore` (`src/Neba.Api/Features/Tournaments/Domain/`), `SquadScoreConfiguration`, and the `squad_scores` migration. `ScoreCard` — the aggregate that groups a bowler's `SquadScore` rows for a Squad and owns `RecordGame`/`RemoveGame` — is still design-only; nothing in the Domain Layer's `ScoreCard`/`ScoreCardErrors` code blocks below has been implemented, and neither has anything in Application + API Layers. Circle back to this plan when Score Card work actually starts (website-driven scoring, not just the data migration).
+
+Two small deltas from the code blocks below, reflecting what actually got built:
+
+- `SquadScore`'s pin-count property is named `Score`, not `Value` (both the C# property and the `squad_scores.score` column).
+- `SquadScore.Create`/`UpdateValue` stayed `internal` per the Always-Valid Child Entity pattern even though `ScoreCard` doesn't exist yet — the data migration constructs rows through a handler in the same assembly, so nothing external needed public access.
+
+This document remains the source of truth to build from for the rest of the plan — domain shape and methods for `ScoreCard` are worked out in detail; persistence and application/API layers for it are sketched but intentionally left loose until that work is actually picked up, same as `squad.md` did for its own deferred layers.
 
 ## Decisions locked in during scoping
 
@@ -338,7 +345,9 @@ Intentionally not designed in detail yet — see Status. For when this is picked
 
 ## Ubiquitous Language
 
-Add to `docs/ubiquitous-language.md`, in the `## Tournaments` section, directly after the `### Squad Max Entries` entry (before `### Added Money`):
+**Done**: `### Squad Score` has been added to `docs/ubiquitous-language.md`'s `## Tournaments` section (directly after `### Squad Max Entries`), reflecting what's actually built — see Status above. It's written standalone, with no reference to `ScoreCard` as an aggregate, since that type doesn't exist in code yet.
+
+**Deferred**: the `### Score Card` entry below has not been added — add it (and update `### Squad Score`'s "In Code" section to describe it as a child entity of `ScoreCard`, per the original text underneath) once the `ScoreCard` aggregate itself is actually built:
 
 ```markdown
 ### Score Card
@@ -357,19 +366,6 @@ Add to `docs/ubiquitous-language.md`, in the `## Tournaments` section, directly 
 - Type: `ScoreCard` (aggregate root; not itself persisted)
 - Property: `ScoreCard.Games` (`IReadOnlyCollection<SquadScore>`)
 - Operations: `ScoreCard.RecordGame(...)`, `ScoreCard.RemoveGame(short)`
-
----
-
-### Squad Score
-
-**Definition**: A single game's score for one bowler in one Squad — the number of pins knocked down, 0 to 300 inclusive.
-
-**In Code**:
-
-- Namespace: `Neba.Api.Features.Tournaments.Domain`
-- Type: `SquadScore` (child entity of `ScoreCard`)
-- Identity type: `SquadScoreId` (ULID-backed strongly-typed ID)
-- Property: `ScoreCard.Games`
 
 ---
 ```
