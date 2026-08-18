@@ -155,4 +155,9 @@ internal static class TournamentErrors
         => Error.NotFound(
             code: "Tournament.Squad.NotFound",
             description: $"Squad '{squadId}' was not found on this tournament.");
+    
+    public static Error AlreadyComplete
+        => Error.Conflict(
+            code: "Tournament.AlreadyComplete",
+            description: "This tournament is already complete.");
 }

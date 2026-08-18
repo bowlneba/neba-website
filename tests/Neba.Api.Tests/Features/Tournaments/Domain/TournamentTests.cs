@@ -1049,4 +1049,45 @@ public sealed class TournamentTests
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Tournament.Squad.NotFound");
     }
+
+    [Fact(DisplayName = "CompleteTournament returns success when the tournament is not already complete")]
+    public void CompleteTournament_ShouldReturnSuccess_WhenNotAlreadyComplete()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+
+        // Act
+        var result = tournament.CompleteTournament();
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "CompleteTournament marks the tournament complete when not already complete")]
+    public void CompleteTournament_ShouldMarkComplete_WhenNotAlreadyComplete()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+
+        // Act
+        tournament.CompleteTournament();
+
+        // Assert
+        tournament.Complete.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "CompleteTournament returns Tournament.AlreadyComplete when the tournament is already complete")]
+    public void CompleteTournament_ShouldReturnError_WhenAlreadyComplete()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.CompleteTournament();
+
+        // Act
+        var result = tournament.CompleteTournament();
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.AlreadyComplete");
+    }
 }

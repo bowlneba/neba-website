@@ -421,4 +421,28 @@ public sealed class Tournament
 
         return Result.Success;
     }
+    
+    /// <summary>
+    /// Whether this tournament has finished and its results are final.
+    /// </summary>
+    public bool Complete { get; private set; }
+
+    /// <summary>
+    /// Marks the tournament complete, allowing results to be recorded. Returns an error if
+    /// already complete. Carries no other business-rule gate today — the caller (currently the
+    /// legacy backdoor sync; later a UI-driven endpoint) is responsible for deciding a tournament
+    /// is actually done. Aggregate-level invariants for what "may be completed" are deferred until
+    /// that UI-driven endpoint replaces the legacy backdoor as the caller.
+    /// </summary>
+    public ErrorOr<Success> CompleteTournament()
+    {
+        if (Complete)
+        {
+            return TournamentErrors.AlreadyComplete;
+        }
+
+        Complete = true;
+
+        return Result.Success;
+    }
 }
