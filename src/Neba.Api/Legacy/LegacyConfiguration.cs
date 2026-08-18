@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 
 using Neba.Api.Legacy.Bowlers;
 using Neba.Api.Legacy.Tournaments;
+using Neba.Api.Legacy.Tournaments.Complete;
 
 namespace Neba.Api.Legacy;
 
@@ -28,6 +29,7 @@ internal static class LegacyConfiguration
             builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
             builder.Services.AddScoped<IValidator<NewTournamentRequest>, NewTournamentRequestValidator>();
             builder.Services.AddScoped<IValidator<SyncSquadScoresRequest>, SyncSquadScoresRequestValidator>();
+            builder.Services.AddScoped<IValidator<CompleteTournamentRequest>, CompleteTournamentRequestValidator>();
 
             return builder;
         }

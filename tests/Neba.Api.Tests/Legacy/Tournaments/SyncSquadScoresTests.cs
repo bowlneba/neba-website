@@ -24,6 +24,7 @@ using Neba.Api.Legacy;
 using Neba.Api.Legacy.Bowlers;
 using Neba.Api.Legacy.HallOfFame;
 using Neba.Api.Legacy.Tournaments;
+using Neba.Api.Legacy.Tournaments.Complete;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.Infrastructure;
@@ -91,6 +92,7 @@ public sealed class SyncSquadScoresEndpointTests : IAsyncLifetime
         _jobsMock = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
         builder.Services.AddSingleton(_jobsMock.Object);
         builder.Services.AddScoped<IValidator<SyncSquadScoresRequest>, SyncSquadScoresRequestValidator>();
+        builder.Services.AddScoped<IValidator<CompleteTournamentRequest>, CompleteTournamentRequestValidator>();
         // Every sibling validator in the /legacy group is also required here: MapLegacyGroup() below
         // maps every endpoint in the group (not just this one), and ASP.NET Core builds route metadata
         // for the whole group on the first request to any of its endpoints - an unregistered
