@@ -2,6 +2,7 @@ using System.Globalization;
 
 using ErrorOr;
 
+using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.Sponsors.Domain;
 
@@ -160,4 +161,18 @@ internal static class TournamentErrors
         => Error.Conflict(
             code: "Tournament.AlreadyComplete",
             description: "This tournament is already complete.");
+
+    public static Error TournamentNotComplete
+        => Error.Conflict(
+            code: "Tournament.NotComplete",
+            description: "Results may only be recorded for a completed tournament.");
+
+    public static Error ResultAlreadyRecorded(BowlerId bowlerId)
+        => Error.Conflict(
+            code: "Tournament.Result.AlreadyRecorded",
+            description: "A result has already been recorded for this bowler.",
+            metadata: new Dictionary<string, object>
+            {
+                { "BowlerId", bowlerId.ToString() }
+            });
 }
