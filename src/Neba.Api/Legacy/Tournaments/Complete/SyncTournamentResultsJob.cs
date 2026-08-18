@@ -79,7 +79,7 @@ internal sealed class SyncTournamentResultsJob(
         {
             // One row per roster (Teams.Id) - a bowler who partnered with different people
             // across the tournament has one Teams row per pairing, not one per bowler.
-            teamRows = (await legacyConnection.QueryAsync<LegacyTeamRow>(
+            teamRows = [.. (await legacyConnection.QueryAsync<LegacyTeamRow>(
                 """
                 SELECT
                     t.Id AS TeamId,
@@ -89,9 +89,9 @@ internal sealed class SyncTournamentResultsJob(
                 WHERE
                     t.TeamTournamentId = @TournamentId
                 """,
-                new { TournamentId = legacyTournamentId })).ToList();
+                new { TournamentId = legacyTournamentId }))];
 
-            teamMemberRows = (await legacyConnection.QueryAsync<LegacyTeamMemberRow>(
+            teamMemberRows = [.. (await legacyConnection.QueryAsync<LegacyTeamMemberRow>(
                 """
                 SELECT
                     tm.Bowlers_Id AS BowlerId,
@@ -102,11 +102,11 @@ internal sealed class SyncTournamentResultsJob(
                 WHERE
                     t.TeamTournamentId = @TournamentId
                 """,
-                new { TournamentId = legacyTournamentId })).ToList();
+                new { TournamentId = legacyTournamentId }))];
 
             // One row per (roster, squad) - a roster that re-entered the same squad grouping
             // more than once (no partner change) has more than one row here.
-            teamSquadRows = (await legacyConnection.QueryAsync<LegacyTeamSquadRow>(
+            teamSquadRows = [.. (await legacyConnection.QueryAsync<LegacyTeamSquadRow>(
                 """
                 SELECT
                     st.TeamId,
@@ -118,7 +118,7 @@ internal sealed class SyncTournamentResultsJob(
                 WHERE
                     t.TeamTournamentId = @TournamentId
                 """,
-                new { TournamentId = legacyTournamentId })).ToList();
+                new { TournamentId = legacyTournamentId }))];
         }
 #pragma warning restore DAP005
 

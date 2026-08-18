@@ -421,7 +421,7 @@ public sealed class Tournament
 
         return Result.Success;
     }
-    
+
     /// <summary>
     /// Whether this tournament has finished and its results are final.
     /// </summary>
@@ -445,7 +445,7 @@ public sealed class Tournament
 
         return Result.Success;
     }
-    
+
     private readonly List<TournamentResult> _results = [];
 
     /// <summary>
