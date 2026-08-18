@@ -98,6 +98,7 @@ internal sealed class AppDbContext(
         modelBuilder.ApplyConfiguration(new ArticleConfiguration());
         modelBuilder.ApplyConfiguration(new SquadConfiguration());
         modelBuilder.ApplyConfiguration(new SquadScoreConfiguration());
+        modelBuilder.ApplyConfiguration(new TournamentResultConfiguration());
 
         modelBuilder.ApplyConfiguration(new HistoricalTournamentChampionConfiguration());
         modelBuilder.ApplyConfiguration(new HistoricalTournamentEntryConfiguration());
