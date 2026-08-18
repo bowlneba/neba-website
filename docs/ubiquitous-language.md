@@ -732,11 +732,15 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **Definition**: A USBC sanctioned scratch bowling competition consisting of one or more qualifying squads (see `### Squad`) followed by a single-elimination match play championship round to determine a winner. Each tournament has a Tournament Type that governs format, team size, and eligibility. Lane conditions are characterized by a Pattern Length Category and Pattern Ratio Category, which may not be known at the time of tournament creation.
 
+A Tournament is **Complete** once match play has finished and its results are final (see `### Tournament Result`). Completion carries no business-rule gate today — the only caller is the legacy backdoor sync, which simply reports that nebamgmt-v3 has already marked the tournament done. Once a UI-driven completion endpoint replaces that backdoor, real invariants (all squads scored, match play finished, every entrant has a derived result) are expected to move onto `CompleteTournament()`.
+
 **In Code**:
 
 - Namespace: `Neba.Api.Features.Tournaments.Domain`
 - Type: `Tournament` (aggregate root)
 - Identity type: `TournamentId` (ULID-backed strongly-typed ID)
+- Property: `Tournament.Complete` (`bool`, defaults to `false` at `Create`)
+- Operation: `Tournament.CompleteTournament()`
 
 ---
 
@@ -773,6 +777,34 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 - Identity type: `SquadScoreId` (ULID-backed strongly-typed ID)
 - Properties: `SquadId`, `BowlerId`, `GameNumber` (`short`, 1-based), `Score` (`int`, 0-300)
 - Table: `squad_scores`
+
+---
+
+### Tournament Result
+
+**Definition**: One bowler's outcome in a completed Tournament — finishing Place, prize money earned, and points earned toward season standings. Covers 2026-forward tournaments run entirely on this site, as full participants in the domain rather than historical facts; pre-2026 results stay on the existing `HistoricalTournamentResult` (`historical.tournament_results`) table.
+
+A bowler gets a Tournament Result based on a paid, non-refunded Registration for the tournament — full stop. DNF status has no bearing on inclusion or on getting a real, ranked Place: a DNF bowler still bowled games and still gets a ranked Place (typically last), never omitted or treated as a null/placeholder case.
+
+**Rules**:
+
+- `Place` ranks every entrant — never `null`, unlike the legacy historical data. Finalists are placed by match play result; everyone who didn't advance is placed below them by best qualifying score (ties broken by high game, remaining ties sharing the same Place). Not guaranteed unique within a tournament — ties, and doubles/trios partners in team events, share the same Place value.
+- `PrizeMoney` is never negative; zero if none earned.
+- `Points` is never negative. Includes the tournament's base points-for-entering plus any additional points earned by placement (the base-points value and placement-to-points curve are not yet modeled — see `docs/plans/tournament-results.md` Future Work).
+- One Tournament Result per bowler per Tournament — enforced both by the aggregate (`Tournament.AddResult`) and a DB-level alternate key.
+- Tournament Results may only be recorded once the owning Tournament is Complete (see `### Tournament`).
+- No user input creates these records. Two population paths, both machine-driven: the legacy backdoor sync (migration window, tournaments already run in nebamgmt-v3) and, going forward, a background job that derives results from match play when a tournament completes (match play itself is not yet a domain concept — future work).
+- No edit capability exists. A correction scenario, if one arises, is designed around the real case rather than speculatively now.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
+- Type: `TournamentResult` (child entity of `Tournament`)
+- Identity type: `TournamentResultId` (ULID-backed strongly-typed ID)
+- Properties: `BowlerId`, `Place` (`int`), `PrizeMoney` (`decimal`), `Points` (`int`)
+- Property: `Tournament.Results` (`IReadOnlyCollection<TournamentResult>`)
+- Operation: `Tournament.AddResult(BowlerId, place, prizeMoney, points)`
+- Table: `app.tournament_results`
 
 ---
 

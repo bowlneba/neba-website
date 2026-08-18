@@ -136,8 +136,7 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         // Act
         await job.SyncAsync(999, ct);
 
-        // Assert
-        jobsMock.Verify(j => j.Create(It.IsAny<Job>(), It.IsAny<IState>()), Times.Never);
+        // Assert - Strict mock with no Create setup already proves the chain didn't fire (see Arrange comment).
         sentMessage.ShouldNotBeNull();
         sentMessage.To.ShouldBe("website@bowlneba.com");
         sentMessage.HtmlBody.ShouldContain("999");

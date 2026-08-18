@@ -10,9 +10,15 @@ internal sealed class HistoricalTournamentResultConfiguration
 {
     public void Configure(EntityTypeBuilder<HistoricalTournamentResult> builder)
     {
+        // Explicit pk_/ix_ "historical_tournament_results..." names below, mirroring the
+        // "app_" prefix on TournamentResultConfiguration: both entity types map to a table
+        // named "tournament_results" (different schemas — historical vs. app), and EF's naming
+        // convention doesn't scope by schema, so leaving either side unnamed risks one of them
+        // silently getting an auto-suffixed name.
         builder.ToTable("tournament_results", AppDbContext.HistoricalSchema);
 
-        builder.HasKey(tournamentResult => new { tournamentResult.TournamentId, tournamentResult.BowlerId });
+        builder.HasKey(tournamentResult => new { tournamentResult.TournamentId, tournamentResult.BowlerId })
+            .HasName("pk_historical_tournament_results");
 
         builder.Property(tournamentResult => tournamentResult.Place)
             .IsRequired(false);
@@ -29,6 +35,9 @@ internal sealed class HistoricalTournamentResultConfiguration
             .HasForeignKey(tournamentResult => tournamentResult.BowlerId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasIndex(tournamentResult => tournamentResult.BowlerId)
+            .HasDatabaseName("ix_historical_tournament_results_bowler_id");
+
         builder.HasOne(tournamentResult => tournamentResult.Tournament)
             .WithMany()
             .HasForeignKey(tournamentResult => tournamentResult.TournamentId)
@@ -38,5 +47,8 @@ internal sealed class HistoricalTournamentResultConfiguration
             .WithMany()
             .HasForeignKey(tournamentResult => tournamentResult.SideCutId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(tournamentResult => tournamentResult.SideCutId)
+            .HasDatabaseName("ix_historical_tournament_results_side_cut_id");
     }
 }

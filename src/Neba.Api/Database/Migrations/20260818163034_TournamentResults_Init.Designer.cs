@@ -1447,16 +1447,16 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnName("tournament_id");
 
                     b.HasKey("db_id")
-                        .HasName("pk_tournament_results1");
+                        .HasName("pk_app_tournament_results");
 
                     b.HasAlternateKey("Id")
-                        .HasName("ak_tournament_results_domain_id");
+                        .HasName("ak_app_tournament_results_domain_id");
 
                     b.HasAlternateKey("tournament_id", "BowlerId")
-                        .HasName("ak_tournament_results_tournament_id_bowler_id");
+                        .HasName("ak_app_tournament_results_tournament_id_bowler_id");
 
                     b.HasIndex("BowlerId")
-                        .HasDatabaseName("ix_tournament_results_bowler_id1");
+                        .HasDatabaseName("ix_app_tournament_results_bowler_id");
 
                     b.ToTable("tournament_results", "app");
                 });
