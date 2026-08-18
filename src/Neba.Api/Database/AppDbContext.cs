@@ -162,5 +162,8 @@ internal sealed class AppDbContext(
 
         configurationBuilder.Properties<SquadScoreId>()
             .HaveConversion<UlidTypedIdConverter<SquadScoreId>>();
+
+        configurationBuilder.Properties<TournamentResultId>()
+            .HaveConversion<UlidTypedIdConverter<TournamentResultId>>();
     }
 }
