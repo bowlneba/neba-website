@@ -2,6 +2,8 @@ using FluentValidation;
 
 using Hangfire;
 
+using Microsoft.AspNetCore.Mvc;
+
 namespace Neba.Api.Legacy.Tournaments.Complete;
 
 internal static class CompleteTournamentEndpoint
@@ -12,8 +14,8 @@ internal static class CompleteTournamentEndpoint
         {
             app.MapPost("/tournaments/complete", (
                 CompleteTournamentRequest request,
-                IValidator<CompleteTournamentRequest> validator,
-                IBackgroundJobClient jobs) =>
+                [FromServices] IValidator<CompleteTournamentRequest> validator,
+                [FromServices] IBackgroundJobClient jobs) =>
             {
                 var validation = validator.Validate(request);
                 if (!validation.IsValid)

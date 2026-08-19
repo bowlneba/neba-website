@@ -8,6 +8,7 @@ using FluentValidation;
 
 using Hangfire;
 
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
@@ -26,8 +27,8 @@ internal static class NewHallOfFameInductionEndpoint
         {
             app.MapPost("/hall-of-fame/new", (
                 NewHallOfFameInductionRequest request,
-                IValidator<NewHallOfFameInductionRequest> validator,
-                IBackgroundJobClient jobs) =>
+                [FromServices] IValidator<NewHallOfFameInductionRequest> validator,
+                [FromServices] IBackgroundJobClient jobs) =>
             {
                 var validation = validator.Validate(request);
                 if (!validation.IsValid)
