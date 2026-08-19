@@ -77,14 +77,8 @@
     <!-- Hard-pinned to 2.x: Microsoft.AspNetCore.OpenApi's XmlCommentGenerator emits code against the
          2.x object model (settable IOpenApiMediaType.Example); 3.x made it read-only and breaks the build. -->
     <PackageVersion Include="Microsoft.OpenApi" Version="[2.9.0]" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="[18.0.4]" />
-    <!-- Pinned to 1.9.1 to match Microsoft.Testing.Platform.MSBuild 1.9.1 (implicitly injected by the .NET SDK
-         when UseMicrosoftTestingPlatformRunner is set, independent of central package management) and xunit.v3
-         3.2.2's compiled Microsoft.Testing.Platform 1.9.1 dependency. A newer TrxReport bumps Microsoft.Testing.Platform
-         past 1.9.1, which breaks both: MSBuild's extension hook throws TypeLoadException on IDataConsumer at
-         startup, and even after overriding Microsoft.Testing.Platform.MSBuild to match, xunit.v3's runner throws
-         MissingMethodException on IOutputDevice.DisplayAsync — its compiled surface only matches 1.9.1. -->
-    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="[1.9.1]" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.10.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.3.3" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
@@ -115,9 +109,9 @@
     <PackageVersion Include="Verify.XunitV3" Version="31.28.0" />
     <PackageVersion Include="Ulid" Version="1.4.1" />
     <PackageVersion Include="UnitsNet" Version="5.75.1" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageVersion Include="TngTech.ArchUnitNET" Version="0.13.3" />
-    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <PackageVersion Include="xunit.v3" Version="4.0.0" />
     <PackageVersion Include="ZiggyCreatures.FusionCache" Version="2.6.0" />
     <PackageVersion Include="ZiggyCreatures.FusionCache.OpenTelemetry" Version="2.6.0" />
     <PackageVersion Include="ZiggyCreatures.FusionCache.Serialization.SystemTextJson" Version="2.6.0" />
