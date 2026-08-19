@@ -41,7 +41,7 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         var season = SeasonFactory.Create();
         await _dbContext.Seasons.AddAsync(season, ct);
 
-        var tournament = TournamentFactory.Create(seasonId: season.Id, legacyId: legacyTournamentId);
+        var tournament = TournamentFactory.Create(legacyId: legacyTournamentId, seasonId: season.Id);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
         _dbContext.ChangeTracker.Clear();
