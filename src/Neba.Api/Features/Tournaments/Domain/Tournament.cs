@@ -1,7 +1,7 @@
 using ErrorOr;
 
 using Neba.Api.Domain;
-
+using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Seasons.Domain;
@@ -418,6 +418,66 @@ public sealed class Tournament
         }
 
         _oilPatterns.Add(newOilPatternResult.Value);
+
+        return Result.Success;
+    }
+
+    /// <summary>
+    /// Whether this tournament has finished and its results are final.
+    /// </summary>
+    public bool Complete { get; private set; }
+
+    /// <summary>
+    /// Marks the tournament complete, allowing results to be recorded. Returns an error if
+    /// already complete. Carries no other business-rule gate today — the caller (currently the
+    /// legacy backdoor sync; later a UI-driven endpoint) is responsible for deciding a tournament
+    /// is actually done. Aggregate-level invariants for what "may be completed" are deferred until
+    /// that UI-driven endpoint replaces the legacy backdoor as the caller.
+    /// </summary>
+    public ErrorOr<Success> CompleteTournament()
+    {
+        if (Complete)
+        {
+            return TournamentErrors.AlreadyComplete;
+        }
+
+        Complete = true;
+
+        return Result.Success;
+    }
+
+    private readonly List<TournamentResult> _results = [];
+
+    /// <summary>
+    /// Results recorded for this tournament, one per bowler; empty until the tournament is
+    /// complete and results have been recorded.
+    /// </summary>
+    public IReadOnlyCollection<TournamentResult> Results
+        => _results;
+
+    /// <summary>
+    /// Records a bowler's result; returns an error if the tournament isn't complete or the
+    /// bowler already has a result recorded.
+    /// </summary>
+    public ErrorOr<Success> AddResult(BowlerId bowlerId, int place, decimal prizeMoney, int points)
+    {
+        if (!Complete)
+        {
+            return TournamentErrors.TournamentNotComplete;
+        }
+
+        if (_results.Any(result => result.BowlerId == bowlerId))
+        {
+            return TournamentErrors.ResultAlreadyRecorded(bowlerId);
+        }
+
+        var result = TournamentResult.Create(bowlerId, place, prizeMoney, points);
+        if (result.IsError)
+        {
+            return result.Errors;
+        }
+
+        _results.Add(result.Value);
 
         return Result.Success;
     }

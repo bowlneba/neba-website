@@ -8,6 +8,7 @@ using FluentValidation;
 
 using Hangfire;
 
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
@@ -26,8 +27,8 @@ internal static class SyncSquadScoresEndpoint
         {
             app.MapPost("/squads/scores/sync", (
                 SyncSquadScoresRequest request,
-                IValidator<SyncSquadScoresRequest> validator,
-                IBackgroundJobClient jobs) =>
+                [FromServices] IValidator<SyncSquadScoresRequest> validator,
+                [FromServices] IBackgroundJobClient jobs) =>
             {
                 var validation = validator.Validate(request);
                 if (!validation.IsValid)

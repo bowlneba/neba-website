@@ -99,7 +99,8 @@ internal static class AuditingConfiguration
                 .Include<Sponsor>()
                 .Include<Article>()
                 .Include<PendingUpload>()
-                .Include<SquadScore>();
+                .Include<SquadScore>()
+                .Include<TournamentResult>();
 
             Audit.EntityFramework.Configuration.Setup()
                 .ForContext<SecurityDbContext>(auditConfig => auditConfig

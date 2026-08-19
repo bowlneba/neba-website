@@ -168,4 +168,185 @@ public sealed class GetBowlerTitlesQueryHandlerTests(AppDbContextFixture fixture
         result.Value.Titles.ShouldHaveSingleItem();
         result.Value.Titles.Single().TournamentId.ShouldBe(bowlerTournament.Id);
     }
+
+    [Fact(DisplayName = "HandleAsync returns mapped title when bowler has a 1st place tournament result")]
+    public async Task HandleAsync_ShouldReturnMappedTitle_WhenBowlerHasFirstPlaceResult()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+
+        var bowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddAsync(bowler, ct);
+
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var tournament = TournamentFactory.Create(
+            name: "NEBA Doubles",
+            tournamentType: TournamentType.Doubles,
+            startDate: new DateOnly(2026, 3, 7),
+            endDate: new DateOnly(2026, 3, 8),
+            seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        tournament.CompleteTournament();
+        tournament.AddResult(bowler.Id, place: 1, prizeMoney: 500m, points: 50);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = new GetBowlerTitlesQueryHandler(_dbContext);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetBowlerTitlesQuery { BowlerId = bowler.Id }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Titles.ShouldHaveSingleItem();
+        var title = result.Value.Titles.Single();
+        title.TournamentId.ShouldBe(tournament.Id);
+        title.TournamentName.ShouldBe("NEBA Doubles");
+        title.TournamentDate.ShouldBe(new DateOnly(2026, 3, 8));
+        title.TournamentType.ShouldBe(TournamentType.Doubles.Name);
+    }
+
+    [Fact(DisplayName = "HandleAsync excludes tournament results that are not 1st place")]
+    public async Task HandleAsync_ShouldExcludeResult_WhenPlaceIsNotFirst()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+
+        var bowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddAsync(bowler, ct);
+
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        tournament.CompleteTournament();
+        tournament.AddResult(bowler.Id, place: 2, prizeMoney: 250m, points: 30);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = new GetBowlerTitlesQueryHandler(_dbContext);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetBowlerTitlesQuery { BowlerId = bowler.Id }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Titles.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "HandleAsync excludes the canceled 2026 finals tournament even when the bowler placed 1st")]
+    public async Task HandleAsync_ShouldExcludeResult_WhenTournamentIsTheCancelledFinals()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+
+        var bowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddAsync(bowler, ct);
+
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var tournament = TournamentFactory.Create(
+            startDate: new DateOnly(2026, 2, 21),
+            endDate: new DateOnly(2026, 2, 22),
+            seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        tournament.CompleteTournament();
+        tournament.AddResult(bowler.Id, place: 1, prizeMoney: 1000m, points: 100);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = new GetBowlerTitlesQueryHandler(_dbContext);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetBowlerTitlesQuery { BowlerId = bowler.Id }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Titles.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "HandleAsync returns only the requested bowler's 1st place tournament result")]
+    public async Task HandleAsync_ShouldReturnOnlyRequestedBowlersResult_WhenMultipleBowlersPlacedFirst()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+
+        var bowler = BowlerFactory.Create();
+        var otherBowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddRangeAsync([bowler, otherBowler], ct);
+
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var tournament = TournamentFactory.Create(tournamentType: TournamentType.Doubles, seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        tournament.CompleteTournament();
+        tournament.AddResult(bowler.Id, place: 1, prizeMoney: 500m, points: 50);
+        tournament.AddResult(otherBowler.Id, place: 1, prizeMoney: 500m, points: 50);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = new GetBowlerTitlesQueryHandler(_dbContext);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetBowlerTitlesQuery { BowlerId = bowler.Id }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Titles.ShouldHaveSingleItem();
+        result.Value.Titles.Single().TournamentId.ShouldBe(tournament.Id);
+    }
+
+    [Fact(DisplayName = "HandleAsync returns titles from both historical champion records and tournament results")]
+    public async Task HandleAsync_ShouldReturnBothTitles_WhenBowlerHasHistoricalAndRecordedTitles()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+
+        var bowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddAsync(bowler, ct);
+
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var historicalTournament = TournamentFactory.Create(seasonId: season.Id);
+        var recordedTournament = TournamentFactory.Create(seasonId: season.Id);
+        await _dbContext.Tournaments.AddRangeAsync([historicalTournament, recordedTournament], ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        await _dbContext.HistoricalTournamentChampions.AddAsync(new HistoricalTournamentChampion
+        {
+            Bowler = bowler,
+            Tournament = historicalTournament
+        }, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        recordedTournament.CompleteTournament();
+        recordedTournament.AddResult(bowler.Id, place: 1, prizeMoney: 500m, points: 50);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = new GetBowlerTitlesQueryHandler(_dbContext);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetBowlerTitlesQuery { BowlerId = bowler.Id }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Titles.Count.ShouldBe(2);
+        result.Value.Titles.ShouldContain(title => title.TournamentId == historicalTournament.Id);
+        result.Value.Titles.ShouldContain(title => title.TournamentId == recordedTournament.Id);
+    }
 }

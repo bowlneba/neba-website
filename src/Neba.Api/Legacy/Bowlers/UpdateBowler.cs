@@ -8,6 +8,7 @@ using FluentValidation;
 
 using Hangfire;
 
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
@@ -52,8 +53,8 @@ internal static class UpdateBowlerEndpoint
         {
             app.MapPost("/bowlers/update", (
                 UpdateBowlerRequest request,
-                IValidator<UpdateBowlerRequest> validator,
-                IBackgroundJobClient jobs) =>
+                [FromServices] IValidator<UpdateBowlerRequest> validator,
+                [FromServices] IBackgroundJobClient jobs) =>
             {
                 var validation = validator.Validate(request);
                 if (!validation.IsValid)

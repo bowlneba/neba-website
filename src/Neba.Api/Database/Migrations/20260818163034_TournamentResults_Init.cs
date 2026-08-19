@@ -1,44 +1,50 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace Neba.Api.Database.Migrations
 {
     /// <inheritdoc />
-    public partial class Historical_TournamentResults : Migration
+    public partial class TournamentResults_Init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AddColumn<bool>(
+                name: "complete",
+                schema: "app",
+                table: "tournaments",
+                type: "boolean",
+                nullable: false,
+                defaultValue: false);
+
             migrationBuilder.CreateTable(
                 name: "tournament_results",
-                schema: "historical",
+                schema: "app",
                 columns: table => new
                 {
-                    bowler_id = table.Column<int>(type: "integer", nullable: false),
-                    tournament_id = table.Column<int>(type: "integer", nullable: false),
-                    place = table.Column<int>(type: "integer", nullable: true),
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
+                    domain_id = table.Column<string>(type: "character(26)", fixedLength: true, maxLength: 26, nullable: false),
+                    bowler_id = table.Column<string>(type: "character(26)", fixedLength: true, maxLength: 26, nullable: false),
+                    place = table.Column<int>(type: "integer", nullable: false),
                     prize_money = table.Column<decimal>(type: "numeric(6,2)", precision: 6, scale: 2, nullable: false),
                     points = table.Column<int>(type: "integer", nullable: false),
-                    side_cut_id = table.Column<int>(type: "integer", nullable: true)
+                    tournament_id = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_historical_tournament_results", x => new { x.tournament_id, x.bowler_id });
+                    table.PrimaryKey("pk_app_tournament_results", x => x.id);
+                    table.UniqueConstraint("ak_app_tournament_results_domain_id", x => x.domain_id);
+                    table.UniqueConstraint("ak_app_tournament_results_tournament_id_bowler_id", x => new { x.tournament_id, x.bowler_id });
                     table.ForeignKey(
                         name: "fk_tournament_results_bowlers_bowler_id",
                         column: x => x.bowler_id,
                         principalSchema: "app",
                         principalTable: "bowlers",
-                        principalColumn: "id",
+                        principalColumn: "domain_id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "fk_tournament_results_side_cuts_side_cut_id",
-                        column: x => x.side_cut_id,
-                        principalSchema: "app",
-                        principalTable: "side_cuts",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "fk_tournament_results_tournaments_tournament_id",
                         column: x => x.tournament_id,
@@ -49,16 +55,10 @@ namespace Neba.Api.Database.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "ix_historical_tournament_results_bowler_id",
-                schema: "historical",
+                name: "ix_app_tournament_results_bowler_id",
+                schema: "app",
                 table: "tournament_results",
                 column: "bowler_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_historical_tournament_results_side_cut_id",
-                schema: "historical",
-                table: "tournament_results",
-                column: "side_cut_id");
         }
 
         /// <inheritdoc />
@@ -66,7 +66,12 @@ namespace Neba.Api.Database.Migrations
         {
             migrationBuilder.DropTable(
                 name: "tournament_results",
-                schema: "historical");
+                schema: "app");
+
+            migrationBuilder.DropColumn(
+                name: "complete",
+                schema: "app",
+                table: "tournaments");
         }
     }
 }

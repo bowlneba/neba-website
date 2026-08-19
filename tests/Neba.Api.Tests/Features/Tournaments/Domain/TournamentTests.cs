@@ -1,5 +1,6 @@
 using ErrorOr;
 
+using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Sponsors.Domain;
@@ -1048,5 +1049,121 @@ public sealed class TournamentTests
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Tournament.Squad.NotFound");
+    }
+
+    [Fact(DisplayName = "CompleteTournament returns success when the tournament is not already complete")]
+    public void CompleteTournament_ShouldReturnSuccess_WhenNotAlreadyComplete()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+
+        // Act
+        var result = tournament.CompleteTournament();
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "CompleteTournament marks the tournament complete when not already complete")]
+    public void CompleteTournament_ShouldMarkComplete_WhenNotAlreadyComplete()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+
+        // Act
+        tournament.CompleteTournament();
+
+        // Assert
+        tournament.Complete.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "CompleteTournament returns Tournament.AlreadyComplete when the tournament is already complete")]
+    public void CompleteTournament_ShouldReturnError_WhenAlreadyComplete()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.CompleteTournament();
+
+        // Act
+        var result = tournament.CompleteTournament();
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.AlreadyComplete");
+    }
+
+    [Fact(DisplayName = "AddResult returns Tournament.NotComplete when the tournament is not complete")]
+    public void AddResult_ShouldReturnError_WhenTournamentNotComplete()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+
+        // Act
+        var result = tournament.AddResult(BowlerId.New(), place: 1, prizeMoney: 100m, points: 10);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.NotComplete");
+    }
+
+    [Fact(DisplayName = "AddResult returns success when the tournament is complete and the bowler has no result yet")]
+    public void AddResult_ShouldReturnSuccess_WhenTournamentCompleteAndBowlerHasNoResult()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.CompleteTournament();
+
+        // Act
+        var result = tournament.AddResult(BowlerId.New(), place: 1, prizeMoney: 100m, points: 10);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "AddResult adds the result to Results when the tournament is complete")]
+    public void AddResult_ShouldAddResultToResults_WhenTournamentComplete()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.CompleteTournament();
+        var bowlerId = BowlerId.New();
+
+        // Act
+        tournament.AddResult(bowlerId, place: 1, prizeMoney: 100m, points: 10);
+
+        // Assert
+        tournament.Results.ShouldContain(r => r.BowlerId == bowlerId && r.Place == 1 && r.PrizeMoney == 100m && r.Points == 10);
+    }
+
+    [Fact(DisplayName = "AddResult returns Tournament.Result.AlreadyRecorded when the bowler already has a result")]
+    public void AddResult_ShouldReturnError_WhenBowlerAlreadyHasResult()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.CompleteTournament();
+        var bowlerId = BowlerId.New();
+        tournament.AddResult(bowlerId, place: 1, prizeMoney: 100m, points: 10);
+
+        // Act
+        var result = tournament.AddResult(bowlerId, place: 2, prizeMoney: 50m, points: 5);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("Tournament.Result.AlreadyRecorded");
+    }
+
+    [Fact(DisplayName = "AddResult returns TournamentResult.Place.Invalid when the place is not positive")]
+    public void AddResult_ShouldReturnError_WhenPlaceIsNotPositive()
+    {
+        // Arrange
+        var tournament = TournamentFactory.Create();
+        tournament.CompleteTournament();
+
+        // Act
+        var result = tournament.AddResult(BowlerId.New(), place: 0, prizeMoney: 100m, points: 10);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe("TournamentResult.Place.Invalid");
     }
 }

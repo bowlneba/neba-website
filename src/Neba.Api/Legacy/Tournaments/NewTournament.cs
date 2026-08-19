@@ -10,6 +10,7 @@ using FluentValidation;
 
 using Hangfire;
 
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
@@ -27,8 +28,8 @@ internal static class NewTournamentEndpoint
         {
             app.MapPost("/tournaments/new", (
                 NewTournamentRequest request,
-                IValidator<NewTournamentRequest> validator,
-                IBackgroundJobClient jobs) =>
+                [FromServices] IValidator<NewTournamentRequest> validator,
+                [FromServices] IBackgroundJobClient jobs) =>
             {
                 var validation = validator.Validate(request);
                 if (!validation.IsValid)

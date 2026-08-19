@@ -188,6 +188,7 @@ public async Task ApplicationMigration()
 	Seasons.RemoveRange(Seasons);
 	Sponsors.RemoveRange(Sponsors);
 	BowlerSeasonStats.RemoveRange(BowlerSeasonStats);
+	App_TournamentResults.RemoveRange(App_TournamentResults);
 	SquadScores.RemoveRange(SquadScores);
 	Squads.RemoveRange(Squads);
 	Tournaments.RemoveRange(Tournaments);
@@ -221,6 +222,7 @@ public async Task ApplicationMigration()
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.oil_patterns RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.articles RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.article_attachments RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.tournament_results RESTART IDENTITY CASCADE;");
 	SaveChanges();
 
 	await MigrateBowlingCentersAsync();
@@ -275,6 +277,7 @@ public async Task ApplicationMigration()
 	await MigrateOilPatterns();
 	
 	await MigrateSquadScores(bowlerDomainIdBySoftwareId);
+	await MigrateTournamentResultsAsync(tournamentDbIdBySoftwareId, bowlerDomainIdBySoftwareId);
 }
 
 // You can define other methods, fields, classes and namespaces here
@@ -2545,7 +2548,8 @@ public async Task<IReadOnlyCollection<SpreadsheetTournament>> MigrateTournaments
 			PatternRatioCategory = GetPatternRatioCategory(softwareTournament?.OilPatternLeftRatio, softwareTournament?.OilPatternRightRatio)?.Value,
 			SeasonId = spreadsheetTournament.EndDate.Year == 2020 ? seasonDomainIdByEndYear[2021] : seasonDomainIdByEndYear[spreadsheetTournament.EndDate.Year],
 			EntryFee = softwareTournament?.EntryFee ?? 0,
-			StatsEligible = softwareTournament?.StatsEligible ?? false
+			StatsEligible = softwareTournament?.StatsEligible ?? false,
+			Complete = spreadsheetTournament.EndDate < DateOnly.FromDateTime(DateTime.Today)
 		};
 		
 		spreadsheetTournament.DomainId = Ulid.Parse(tournament.DomainId);
@@ -2600,6 +2604,168 @@ public async Task<IReadOnlyCollection<SoftwareSquad>> GetSquadsFromSoftwareAsync
 	}).ToList();
 }
 
+public async Task MigrateTournamentResultsAsync(
+	IDictionary<int, int> tournamentIdBySoftwareId,
+	IDictionary<int, Ulid> bowlerDomainIdBySoftwareId)
+{
+	var resultStatsDataTable = await QuerySoftwareDatabaseAsync("""
+        SELECT
+            s.BowlerId as BowlerId,
+            s.TournamentId as TournamentId,
+            r.Place as Place,
+            r.Payout as Payout,
+            r.Points as Points
+        FROM
+            Stats s
+        INNER JOIN
+            Stats_ResultsStats r
+            ON
+                s.Id = r.Id
+        INNER JOIN
+            Tournaments t
+            ON
+            t.Id = s.TournamentId
+        WHERE
+            Year(t.Start) >= 2026
+    """);
+
+	var resultStats = resultStatsDataTable.AsEnumerable().Select(row => new
+	{
+		BowlerId = row.Field<int>("BowlerId"),
+		TournamentId = row.Field<int>("TournamentId"),
+		Place = row.Field<int?>("Place"),
+		PrizeMoney = row.Field<decimal>("Payout"),
+		Points = row.Field<int>("Points")
+	}).ToList();
+
+	// get qualifying score stat records to fill in place for bowlers who did not make the cut
+	var qualifyingStatsDataTable = await QuerySoftwareDatabaseAsync("""
+        SELECT
+            s.BowlerId as BowlerId,
+            s.TournamentId as TournamentId,
+            q.Score as Score,
+            q.Games as Games,
+            q.HighGame as HighGame
+        FROM
+            Stats s
+        INNER JOIN
+            Stats_QualifyingStats q
+            ON
+                s.Id = q.Id
+        INNER JOIN
+            Tournaments t
+            ON
+            t.Id = s.TournamentId
+        WHERE
+            Year(t.Start) >= 2026
+            AND t.Completed = 1
+        ORDER BY
+            Games DESC, Score DESC, HighGame DESC
+    """);
+
+	var qualifyingStats = qualifyingStatsDataTable.AsEnumerable().Select(row => new
+	{
+		BowlerId = row.Field<int>("BowlerId"),
+		TournamentId = row.Field<int>("TournamentId"),
+		Score = row.Field<int>("Score"),
+		Games = row.Field<int>("Games"),
+		HighGame = row.Field<int>("HighGame")
+	})
+	.OrderByDescending(r => r.Games)
+		.ThenByDescending(r => r.Score)
+		.ThenByDescending(r => r.HighGame)
+	.ToList();
+
+	// a tournament only supports the qualifying-score cut-fill logic below when
+	// every squad in it is a singles squad (no squad rows in Squads_TeamSquad)
+	var tournamentFormatDataTable = await QuerySoftwareDatabaseAsync("""
+        SELECT
+            COALESCE(ss.TournamentId, ts.TournamentId) as TournamentId,
+            CASE WHEN ts.Id IS NULL THEN 1 ELSE 0 END as IsSinglesSquad
+        FROM
+            Squads s
+        LEFT JOIN
+            Squads_SinglesSquad ss
+            ON
+                ss.Id = s.Id
+        LEFT JOIN
+            Squads_TeamSquad ts
+            ON
+                ts.Id = s.Id
+    """);
+
+	var singlesTournamentIds = tournamentFormatDataTable.AsEnumerable().Select(row => new
+	{
+		TournamentId = row.Field<int>("TournamentId"),
+		IsSinglesSquad = row.Field<int>("IsSinglesSquad") == 1
+	})
+	.GroupBy(s => s.TournamentId)
+	.Where(g => g.All(s => s.IsSinglesSquad))
+	.Select(g => g.Key)
+	.ToHashSet();
+
+	var qualifyingStatsByTournament = qualifyingStats
+		.GroupBy(q => q.TournamentId)
+		.ToDictionary(g => g.Key, g => g.ToList());
+
+	var results = new List<App_TournamentResults>();
+
+	foreach (var tournamentGroup in resultStats.GroupBy(s => s.TournamentId))
+	{
+		var tournamentId = tournamentGroup.Key;
+		var isSinglesTournament = singlesTournamentIds.Contains(tournamentId);
+
+		var placeByBowlerId = new Dictionary<int, int>();
+
+		if (isSinglesTournament)
+		{
+			var lastDefinedPlace = tournamentGroup
+				.Where(s => s.Place.HasValue)
+				.Select(s => s.Place!.Value)
+				.DefaultIfEmpty(0)
+				.Max();
+
+			var missingBowlerIds = tournamentGroup
+				.Where(s => !s.Place.HasValue)
+				.Select(s => s.BowlerId)
+				.ToHashSet();
+
+			if (qualifyingStatsByTournament.TryGetValue(tournamentId, out var quals))
+			{
+				var nextPlace = lastDefinedPlace + 1;
+
+				foreach (var q in quals.Where(q => missingBowlerIds.Contains(q.BowlerId)))
+				{
+					placeByBowlerId[q.BowlerId] = nextPlace++;
+				}
+			}
+		}
+
+		foreach (var s in tournamentGroup)
+		{
+			var place = s.Place
+				?? (placeByBowlerId.TryGetValue(s.BowlerId, out var filledPlace) ? filledPlace : -1);
+
+			results.Add(new App_TournamentResults
+			{
+				DomainId = Guid.AsDomainId(),
+				BowlerId = bowlerDomainIdBySoftwareId[s.BowlerId].ToString(),
+				TournamentId = tournamentIdBySoftwareId[s.TournamentId],
+				Place = place,
+				PrizeMoney = s.PrizeMoney,
+				Points = s.Points,
+			});
+		}
+	}
+
+	App_TournamentResults.AddRange(results);
+
+	await SaveChangesAsync();
+
+	"Tournament Results Migrated".Dump();
+}
+
+
 public async Task MigrateHistoricalTournamentResults(
 	IDictionary<int, int> tournamentIdBySoftwareId,
 	IDictionary<int, int> bowlerIdBySoftwareId)
@@ -2636,7 +2802,7 @@ public async Task MigrateHistoricalTournamentResults(
 		SideCutId = row.Field<int?>("SideCut")
 	}).ToList();
 
-	var results = resultStats.Select(s => new TournamentResults
+	var results = resultStats.Select(s => new Historical_TournamentResults
 	{
 		BowlerId = bowlerIdBySoftwareId[s.BowlerId],
 		TournamentId = tournamentIdBySoftwareId[s.TournamentId],
@@ -2646,7 +2812,7 @@ public async Task MigrateHistoricalTournamentResults(
 		SideCutId = s.SideCutId
 	}).ToList();
 	
-	TournamentResults.AddRange(results);
+	Historical_TournamentResults.AddRange(results);
 	
 	await SaveChangesAsync();
 	

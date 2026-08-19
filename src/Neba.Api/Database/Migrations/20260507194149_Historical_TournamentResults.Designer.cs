@@ -1207,13 +1207,13 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnName("side_cut_id");
 
                     b.HasKey("TournamentId", "BowlerId")
-                        .HasName("pk_tournament_results");
+                        .HasName("pk_historical_tournament_results");
 
                     b.HasIndex("BowlerId")
-                        .HasDatabaseName("ix_tournament_results_bowler_id");
+                        .HasDatabaseName("ix_historical_tournament_results_bowler_id");
 
                     b.HasIndex("SideCutId")
-                        .HasDatabaseName("ix_tournament_results_side_cut_id");
+                        .HasDatabaseName("ix_historical_tournament_results_side_cut_id");
 
                     b.ToTable("tournament_results", "historical");
                 });
