@@ -10,6 +10,7 @@ using Neba.Api.Database;
 using Neba.Api.Email;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Legacy.Tournaments.Complete;
+using Neba.Api.Legacy.Tournaments.Stats;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
@@ -55,24 +56,24 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         FakeLogger<CompleteTournamentSyncJob>? logger = null) =>
         new(_dbContext, jobs, (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object, logger ?? new FakeLogger<CompleteTournamentSyncJob>());
 
-    private static (Mock<IBackgroundJobClient> Mock, Func<Job?> CapturedJob) CreateJobsMock()
+    private static (Mock<IBackgroundJobClient> Mock, Func<IReadOnlyList<(Job Job, IState State)>> CapturedJobs) CreateJobsMock()
     {
-        Job? captured = null;
+        var captured = new List<(Job Job, IState State)>();
         var mock = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
         mock.Setup(j => j.Create(It.IsAny<Job>(), It.IsAny<IState>()))
-            .Callback<Job, IState>((job, _) => captured = job)
+            .Callback<Job, IState>((job, state) => captured.Add((job, state)))
             .Returns("job-1");
 
         return (mock, () => captured);
     }
 
-    [Fact(DisplayName = "SyncAsync should complete the tournament, save, and chain SyncTournamentResultsJob when the tournament is found and not yet complete")]
+    [Fact(DisplayName = "SyncAsync should complete the tournament, save, enqueue SyncTournamentResultsJob, and schedule GenerateSeasonStatsJob ten minutes out when the tournament is found and not yet complete")]
     public async Task SyncAsync_ShouldCompleteSaveAndChain_WhenTournamentFoundAndNotComplete()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         await CreateTournamentAsync(legacyTournamentId: 42, ct);
-        var (jobsMock, capturedJob) = CreateJobsMock();
+        var (jobsMock, capturedJobs) = CreateJobsMock();
         var job = CreateJob(jobsMock.Object);
 
         // Act
@@ -82,14 +83,22 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         var tournament = await _dbContext.Tournaments.SingleAsync(t => t.LegacyId == 42, ct);
         tournament.Complete.ShouldBeTrue();
 
-        var chainedJob = capturedJob();
-        chainedJob.ShouldNotBeNull();
-        chainedJob.Type.ShouldBe(typeof(SyncTournamentResultsJob));
-        chainedJob.Method.Name.ShouldBe(nameof(SyncTournamentResultsJob.SyncAsync));
-        chainedJob.Args[0].ShouldBe(42);
+        var chained = capturedJobs();
+        chained.Count.ShouldBe(2);
+
+        var resultsJob = chained.Single(c => c.Job.Type == typeof(SyncTournamentResultsJob));
+        resultsJob.Job.Method.Name.ShouldBe(nameof(SyncTournamentResultsJob.SyncAsync));
+        resultsJob.Job.Args[0].ShouldBe(42);
+        resultsJob.State.ShouldBeOfType<EnqueuedState>();
+
+        var statsJob = chained.Single(c => c.Job.Type == typeof(GenerateSeasonStatsJob));
+        statsJob.Job.Method.Name.ShouldBe(nameof(GenerateSeasonStatsJob.SyncAsync));
+        statsJob.Job.Args[0].ShouldBe(42);
+        var scheduledState = statsJob.State.ShouldBeOfType<ScheduledState>();
+        scheduledState.EnqueueAt.ShouldBeGreaterThan(DateTime.UtcNow.AddMinutes(9));
     }
 
-    [Fact(DisplayName = "SyncAsync should still chain SyncTournamentResultsJob when the tournament was already complete")]
+    [Fact(DisplayName = "SyncAsync should still chain SyncTournamentResultsJob and GenerateSeasonStatsJob when the tournament was already complete")]
     public async Task SyncAsync_ShouldStillChain_WhenTournamentAlreadyComplete()
     {
         // Arrange - idempotent re-fire: AlreadyComplete is informational, not fatal.
@@ -103,7 +112,7 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         await _dbContext.SaveChangesAsync(ct);
         _dbContext.ChangeTracker.Clear();
 
-        var (jobsMock, capturedJob) = CreateJobsMock();
+        var (jobsMock, capturedJobs) = CreateJobsMock();
         var fakeLogger = new FakeLogger<CompleteTournamentSyncJob>();
         var job = CreateJob(jobsMock.Object, logger: fakeLogger);
 
@@ -111,9 +120,9 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         await job.SyncAsync(42, ct);
 
         // Assert
-        var chainedJob = capturedJob();
-        chainedJob.ShouldNotBeNull();
-        chainedJob.Type.ShouldBe(typeof(SyncTournamentResultsJob));
+        var chained = capturedJobs();
+        chained.ShouldContain(c => c.Job.Type == typeof(SyncTournamentResultsJob));
+        chained.ShouldContain(c => c.Job.Type == typeof(GenerateSeasonStatsJob));
         fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Information);
     }
 

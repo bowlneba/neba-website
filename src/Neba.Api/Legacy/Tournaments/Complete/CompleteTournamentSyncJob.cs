@@ -6,6 +6,7 @@ using Neba.Api.Database;
 using Neba.Api.Email;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Identity;
+using Neba.Api.Legacy.Tournaments.Stats;
 
 namespace Neba.Api.Legacy.Tournaments.Complete;
 
@@ -56,8 +57,10 @@ internal sealed class CompleteTournamentSyncJob(
 
         jobs.Enqueue<SyncTournamentResultsJob>(job => job.SyncAsync(legacyTournamentId, CancellationToken.None));
 
-        // A season-stats generator job is expected to be chained from here too, once that job
-        // exists - one more jobs.Enqueue<...>() line, same legacy tournament id, added alongside
-        // the line above.
+        // Scheduled, not enqueued: gives SyncTournamentResultsJob time to finish placing/writing
+        // TournamentResult rows before GenerateSeasonStatsJob reads them. See the plan's "Ordering"
+        // discussion - this is a data-freshness improvement, not a correctness dependency, since
+        // GenerateSeasonStatsJob's delete-and-regenerate is idempotent and self-corrects on retry.
+        jobs.Schedule<GenerateSeasonStatsJob>(job => job.SyncAsync(legacyTournamentId, CancellationToken.None), TimeSpan.FromMinutes(10));
     }
 }
