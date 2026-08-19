@@ -341,9 +341,9 @@ public sealed class ListChampionsQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.Bowlers.AddAsync(bowler, ct);
 
         var tournament = TournamentFactory.Create(
-            seasonId: season.Id,
             startDate: new DateOnly(2026, 2, 21),
-            endDate: new DateOnly(2026, 2, 22));
+            endDate: new DateOnly(2026, 2, 22),
+            seasonId: season.Id);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 

@@ -254,9 +254,9 @@ public sealed class GetBowlerTitlesQueryHandlerTests(AppDbContextFixture fixture
         await _dbContext.Seasons.AddAsync(season, ct);
 
         var tournament = TournamentFactory.Create(
-            seasonId: season.Id,
             startDate: new DateOnly(2026, 2, 21),
-            endDate: new DateOnly(2026, 2, 22));
+            endDate: new DateOnly(2026, 2, 22),
+            seasonId: season.Id);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
@@ -288,7 +288,7 @@ public sealed class GetBowlerTitlesQueryHandlerTests(AppDbContextFixture fixture
         var season = SeasonFactory.Create();
         await _dbContext.Seasons.AddAsync(season, ct);
 
-        var tournament = TournamentFactory.Create(seasonId: season.Id, tournamentType: TournamentType.Doubles);
+        var tournament = TournamentFactory.Create(tournamentType: TournamentType.Doubles, seasonId: season.Id);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
