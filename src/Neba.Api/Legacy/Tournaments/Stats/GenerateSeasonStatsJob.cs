@@ -3,9 +3,9 @@ using System.Data;
 using Dapper;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Hybrid;
 
-using Neba.Api.Caching;
+using ZiggyCreatures.Caching.Fusion;
+
 using Neba.Api.Database;
 using Neba.Api.Email;
 using Neba.Api.Features.Bowlers.Domain;
@@ -25,10 +25,34 @@ namespace Neba.Api.Legacy.Tournaments.Stats;
 internal sealed class GenerateSeasonStatsJob(
     AppDbContext db,
     IDbConnection legacyConnection,
-    HybridCache cache,
+    IFusionCache cache,
     IEmailSender emailSender,
     ILogger<GenerateSeasonStatsJob> logger)
 {
+    // Placeholders are numbered and bound individually (Id0, Id1, ...) rather than relying on
+    // Dapper's automatic "IN @Ids" list expansion - see HallOfFame.cs's NewHallOfFameInductionSyncJob
+    // for the full rationale: Dapper detects when the provider natively supports array parameters
+    // (Npgsql does, the real neba-fwk SQL Server provider does not) and binds the whole collection as
+    // a single native array parameter when it can, making "IN @Ids" provider-dependent - a syntax
+    // error against the Postgres connection this test suite uses as a neba-fwk stand-in.
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2077:Use a parameterized query instead of string formatting.",
+        Justification = "The interpolated segment is only generated placeholder names (@Id0, @Id1, ...), never a data value - every id value itself is bound as a real DynamicParameters entry, not concatenated into the SQL text.")]
+    private static (DynamicParameters Parameters, string Placeholders) BuildInClauseParameters(string parameterPrefix, List<int> values)
+    {
+        var parameters = new DynamicParameters();
+        var placeholders = new string[values.Count];
+        for (var i = 0; i < values.Count; i++)
+        {
+            var name = $"{parameterPrefix}{i}";
+            parameters.Add(name, values[i]);
+            placeholders[i] = "@" + name;
+        }
+
+        return (parameters, string.Join(",", placeholders));
+    }
+
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2077:Use a parameterized query instead of string formatting.",
+        Justification = "The interpolated segments below are only generated placeholder names (@TournamentId0, @BowlerId0, ...) from BuildInClauseParameters, never a data value - every id value itself is bound as a real DynamicParameters entry, not concatenated into the SQL text.")]
     public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
     {
         using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
@@ -82,54 +106,61 @@ internal sealed class GenerateSeasonStatsJob(
             new { SeasonStart = seasonStart, SeasonEndExclusive = seasonEndExclusive })).ToList();
 
         var tournamentIds = seasonTournaments.Select(t => t.TournamentId).ToList();
+        var tournamentIdParameters = BuildInClauseParameters("TournamentId", tournamentIds);
 
-        var qualifyingStats = (await legacyConnection.QueryAsync<LegacyQualifyingStatsRow>(
-            """
-            SELECT
-                s.BowlerId,
-                s.TournamentId,
-                q.SquadId,
-                q.Score,
-                q.Games,
-                q.HighGame
-            FROM
-                Stats s
-            INNER JOIN Stats_QualifyingStats q ON s.Id = q.Id
-            WHERE
-                s.TournamentId IN @TournamentIds
-            """,
-            new { TournamentIds = tournamentIds })).ToList();
+        var qualifyingStats = tournamentIds.Count == 0
+            ? []
+            : (await legacyConnection.QueryAsync<LegacyQualifyingStatsRow>(
+                $"""
+                SELECT
+                    s.BowlerId,
+                    s.TournamentId,
+                    q.SquadId,
+                    q.Score,
+                    q.Games,
+                    q.HighGame
+                FROM
+                    Stats s
+                INNER JOIN Stats_QualifyingStats q ON s.Id = q.Id
+                WHERE
+                    s.TournamentId IN ({tournamentIdParameters.Placeholders})
+                """,
+                tournamentIdParameters.Parameters)).ToList();
 
-        var matchPlayStats = (await legacyConnection.QueryAsync<LegacyMatchPlayStatsRow>(
-            """
-            SELECT
-                s.BowlerId,
-                s.TournamentId,
-                m.Score,
-                m.Games,
-                m.HighGame,
-                m.Winner
-            FROM
-                Stats s
-            INNER JOIN Stats_MatchPlayStats m ON s.Id = m.Id
-            WHERE
-                s.TournamentId IN @TournamentIds
-            """,
-            new { TournamentIds = tournamentIds })).ToList();
+        var matchPlayStats = tournamentIds.Count == 0
+            ? []
+            : (await legacyConnection.QueryAsync<LegacyMatchPlayStatsRow>(
+                $"""
+                SELECT
+                    s.BowlerId,
+                    s.TournamentId,
+                    m.Score,
+                    m.Games,
+                    m.HighGame,
+                    m.Winner
+                FROM
+                    Stats s
+                INNER JOIN Stats_MatchPlayStats m ON s.Id = m.Id
+                WHERE
+                    s.TournamentId IN ({tournamentIdParameters.Placeholders})
+                """,
+                tournamentIdParameters.Parameters)).ToList();
 
-        var sideCutRows = (await legacyConnection.QueryAsync<LegacySideCutRow>(
-            """
-            SELECT
-                s.BowlerId,
-                s.TournamentId,
-                r.SideCut
-            FROM
-                Stats s
-            INNER JOIN Stats_ResultsStats r ON s.Id = r.Id
-            WHERE
-                s.TournamentId IN @TournamentIds
-            """,
-            new { TournamentIds = tournamentIds })).ToList();
+        var sideCutRows = tournamentIds.Count == 0
+            ? []
+            : (await legacyConnection.QueryAsync<LegacySideCutRow>(
+                $"""
+                SELECT
+                    s.BowlerId,
+                    s.TournamentId,
+                    r.SideCut
+                FROM
+                    Stats s
+                INNER JOIN Stats_ResultsStats r ON s.Id = r.Id
+                WHERE
+                    s.TournamentId IN ({tournamentIdParameters.Placeholders})
+                """,
+                tournamentIdParameters.Parameters)).ToList();
 #pragma warning restore DAP005
 
         var bowlerLegacyIdById = await db.Bowlers
@@ -137,7 +168,20 @@ internal sealed class GenerateSeasonStatsJob(
             .ToDictionaryAsync(bowler => bowler.Id, bowler => bowler.LegacyId!.Value, ct);
 
         var results = new List<LegacyBowlerResultRow>();
-        var sideCutByBowlerAndTournament = sideCutRows.ToDictionary(r => (r.BowlerId, r.TournamentId), r => r.SideCut);
+
+        // Stats_ResultsStats is only ever meant to hold one row per (BowlerId, TournamentId), but
+        // that's convention, not a schema constraint - same caveat SyncTournamentResultsJob already
+        // defends against for the Place/Payout/Points read. An anomalous duplicate here would crash
+        // an unguarded ToDictionary, so log and skip it instead of failing the whole season regenerate.
+        var sideCutRowsByKey = sideCutRows.GroupBy(r => (r.BowlerId, r.TournamentId)).ToList();
+        foreach (var anomalyKey in sideCutRowsByKey.Where(g => g.Count() > 1).Select(g => g.Key))
+        {
+            logger.LogLegacyBowlerHasMultipleSideCutRows(anomalyKey.BowlerId, anomalyKey.TournamentId);
+        }
+
+        var sideCutByBowlerAndTournament = sideCutRowsByKey
+            .Where(g => g.Count() == 1)
+            .ToDictionary(g => g.Key, g => g.Single().SideCut);
 
         foreach (var websiteTournament in websiteTournaments)
         {
@@ -165,11 +209,13 @@ internal sealed class GenerateSeasonStatsJob(
             .Distinct()
             .ToList();
 
+        var bowlerIdParameters = BuildInClauseParameters("BowlerId", legacyBowlerIds);
+
 #pragma warning disable DAP005
         var bowlerRows = legacyBowlerIds.Count == 0
             ? []
             : (await legacyConnection.QueryAsync<LegacyBowlerRow>(
-                """
+                $"""
                 SELECT
                     Id AS BowlerId,
                     Gender,
@@ -177,9 +223,9 @@ internal sealed class GenerateSeasonStatsJob(
                 FROM
                     Bowlers
                 WHERE
-                    Id IN @BowlerIds
+                    Id IN ({bowlerIdParameters.Placeholders})
                 """,
-                new { BowlerIds = legacyBowlerIds })).ToList();
+                bowlerIdParameters.Parameters)).ToList();
 
         var newMembershipTypeId = await legacyConnection.QuerySingleAsync<int>(
             """
@@ -189,7 +235,7 @@ internal sealed class GenerateSeasonStatsJob(
         var membershipRows = legacyBowlerIds.Count == 0
             ? []
             : (await legacyConnection.QueryAsync<LegacyMembershipRow>(
-                """
+                $"""
                 SELECT
                     bm.BowlerId,
                     bm.MembershipId,
@@ -197,14 +243,17 @@ internal sealed class GenerateSeasonStatsJob(
                 FROM
                     BowlerMemberships bm
                 WHERE
-                    bm.BowlerId IN @BowlerIds
+                    bm.BowlerId IN ({bowlerIdParameters.Placeholders})
                 """,
-                new { BowlerIds = legacyBowlerIds })).ToList();
+                bowlerIdParameters.Parameters)).ToList();
 
+        var creditParameters = BuildInClauseParameters("BowlerId", legacyBowlerIds);
+        creditParameters.Parameters.Add("SeasonStart", seasonStart);
+        creditParameters.Parameters.Add("SeasonEndExclusive", seasonEndExclusive);
         var creditRows = legacyBowlerIds.Count == 0
             ? []
             : (await legacyConnection.QueryAsync<LegacyCreditRow>(
-                """
+                $"""
                 SELECT
                     bc.BowlerId,
                     c.Amount
@@ -212,15 +261,15 @@ internal sealed class GenerateSeasonStatsJob(
                     Credits c
                 INNER JOIN Credits_BowlerCredit bc ON c.Id = bc.Id
                 WHERE
-                    bc.BowlerId IN @BowlerIds AND bc.Taxable = 1
+                    bc.BowlerId IN ({creditParameters.Placeholders}) AND bc.Taxable = 1
                     AND c.IssuedDate >= @SeasonStart AND c.IssuedDate < @SeasonEndExclusive
                 """,
-                new { BowlerIds = legacyBowlerIds, SeasonStart = seasonStart, SeasonEndExclusive = seasonEndExclusive })).ToList();
+                creditParameters.Parameters)).ToList();
 
         var cupResultRows = legacyBowlerIds.Count == 0
             ? []
             : (await legacyConnection.QueryAsync<LegacyCupResultRow>(
-                """
+                $"""
                 SELECT
                     cr.BowlerId,
                     cr.Payout,
@@ -229,9 +278,9 @@ internal sealed class GenerateSeasonStatsJob(
                     CupResults cr
                 INNER JOIN Cups cu ON cr.CupId = cu.Id
                 WHERE
-                    cr.BowlerId IN @BowlerIds
+                    cr.BowlerId IN ({bowlerIdParameters.Placeholders})
                 """,
-                new { BowlerIds = legacyBowlerIds })).ToList();
+                bowlerIdParameters.Parameters)).ToList();
 #pragma warning restore DAP005
 
         var computedResults = LegacySeasonStatsCalculator.Compute(
@@ -303,8 +352,7 @@ internal sealed class GenerateSeasonStatsJob(
 
         await db.SaveChangesAsync(ct);
 
-        var cacheDescriptor = CacheDescriptors.Stats.BowlerSeasonStats(season.Id);
-        await cache.RemoveByTagAsync(cacheDescriptor.Tags.Last(), ct);
+        await cache.RemoveByTagAsync($"neba:stats:seasons:{season.Id}", token: ct);
 
         if (unmappedLegacyBowlerIds.Count > 0)
         {

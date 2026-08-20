@@ -13,4 +13,9 @@ internal static partial class GenerateSeasonStatsJobLogMessages
         Level = LogLevel.Warning,
         Message = "No website bowler found for legacy bowler {LegacyBowlerId} while generating season stats for season {SeasonId}; skipping.")]
     public static partial void LogLegacyBowlerNotSyncedForStatsGeneration(this ILogger<GenerateSeasonStatsJob> logger, int legacyBowlerId, SeasonId seasonId);
+
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "Legacy bowler {LegacyBowlerId} has more than one Stats_ResultsStats row for legacy tournament {LegacyTournamentId}; skipping SideCut for this pair - this shouldn't happen and needs manual review in the Software.")]
+    public static partial void LogLegacyBowlerHasMultipleSideCutRows(this ILogger<GenerateSeasonStatsJob> logger, int legacyBowlerId, int legacyTournamentId);
 }
