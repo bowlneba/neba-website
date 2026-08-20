@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Time.Testing;
 
 using Neba.Api.Database;
+using Neba.Api.Database.Entities;
 using Neba.Api.Features.News.Domain;
 using Neba.Api.Features.Sponsors.Domain;
 using Neba.Api.Features.Tournaments.Domain;
@@ -8,6 +9,7 @@ using Neba.Api.Features.Tournaments.GetTournament;
 using Neba.Api.Storage;
 using Neba.TestFactory;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.News;
 using Neba.TestFactory.Seasons;
@@ -401,6 +403,140 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         // Assert
         result.IsError.ShouldBeFalse();
         result.Value.Sponsors.Select(s => s.Name).ShouldBe(["Mid Title Sponsor", "Alpha Lanes", "Zeta Bowling"]);
+    }
+
+    [Fact(DisplayName = "HandleAsync merges results and winners from both historical and recorded data for the same tournament")]
+    public async Task HandleAsync_ShouldMergeResultsAndWinners_ForBothHistoricalAndRecordedData()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var historicalBowler = BowlerFactory.Create(name: NameFactory.Create("Alice", "Historical"));
+        var recordedBowler = BowlerFactory.Create(name: NameFactory.Create("Bob", "Recorded"));
+        await _dbContext.Bowlers.AddRangeAsync([historicalBowler, recordedBowler], ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        await _dbContext.HistoricalTournamentResults.AddAsync(new HistoricalTournamentResult
+        {
+            Bowler = historicalBowler,
+            Tournament = tournament,
+            Place = 1,
+            PrizeMoney = 500m,
+            Points = 100,
+        }, ct);
+        await _dbContext.HistoricalTournamentChampions.AddAsync(new HistoricalTournamentChampion
+        {
+            Bowler = historicalBowler,
+            Tournament = tournament
+        }, ct);
+
+        tournament.CompleteTournament();
+        tournament.AddResult(recordedBowler.Id, place: 2, prizeMoney: 250m, points: 50);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Winners.ShouldContain(historicalBowler.Name);
+        result.Value.Results.Select(r => r.BowlerName).ShouldBe([historicalBowler.Name, recordedBowler.Name]);
+        result.Value.Results.Single(r => r.BowlerName == recordedBowler.Name).SideCutName.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "HandleAsync prefers the historical entry count over the recorded result count when both are present")]
+    public async Task HandleAsync_ShouldPreferHistoricalEntryCount_WhenBothHistoricalAndRecordedDataArePresent()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var recordedBowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddAsync(recordedBowler, ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        await _dbContext.HistoricalTournamentEntries.AddAsync(new HistoricalTournamentEntry
+        {
+            Tournament = tournament,
+            Entries = 64,
+        }, ct);
+
+        tournament.CompleteTournament();
+        tournament.AddResult(recordedBowler.Id, place: 1, prizeMoney: 500m, points: 50);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.EntryCount.ShouldBe(64);
+    }
+
+    [Fact(DisplayName = "HandleAsync derives entry count from distinct squad/bowler pairs divided by team size when no historical entry count exists")]
+    public async Task HandleAsync_ShouldDeriveEntryCountFromSquadEntries_WhenNoHistoricalEntryCountExists()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var firstBowler = BowlerFactory.Create();
+        var secondBowler = BowlerFactory.Create();
+        var thirdBowler = BowlerFactory.Create();
+        var fourthBowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddRangeAsync([firstBowler, secondBowler, thirdBowler, fourthBowler], ct);
+
+        var squadStub = SquadFactory.Create();
+        var tournament = TournamentFactory.Create(
+            seasonId: season.Id, tournamentType: TournamentType.Doubles, squads: [squadStub]);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.ChangeTracker.Clear();
+
+        var squad = tournament.Squads.Single();
+
+        // Two games bowled by the same doubles team on the same squad must not double-count that
+        // team's entry - distinct (SquadId, BowlerId) pairs, not raw SquadScore rows, is the count.
+        await _dbContext.SquadScores.AddRangeAsync(
+        [
+            SquadScoreFactory.Create(squadId: squad.Id, bowlerId: firstBowler.Id, gameNumber: 1),
+            SquadScoreFactory.Create(squadId: squad.Id, bowlerId: firstBowler.Id, gameNumber: 2),
+            SquadScoreFactory.Create(squadId: squad.Id, bowlerId: secondBowler.Id, gameNumber: 1),
+            SquadScoreFactory.Create(squadId: squad.Id, bowlerId: secondBowler.Id, gameNumber: 2),
+            SquadScoreFactory.Create(squadId: squad.Id, bowlerId: thirdBowler.Id, gameNumber: 1),
+            SquadScoreFactory.Create(squadId: squad.Id, bowlerId: fourthBowler.Id, gameNumber: 1),
+        ], ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        // 4 distinct (SquadId, BowlerId) pairs / TeamSize (2 for Doubles) = 2 team entries
+        result.Value.EntryCount.ShouldBe(2);
     }
 
     private async Task<Tournament> SeedTournamentWithOilPatternAsync(DateTimeOffset? oilPatternRevealDateTime, CancellationToken ct)
