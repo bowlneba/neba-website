@@ -20,11 +20,11 @@ using Neba.Api.Legacy.Tournaments.Complete;
 using Neba.Api.Legacy.Tournaments.Stats;
 using Neba.TestFactory.Attributes;
 
-namespace Neba.Api.Tests.Legacy.Tournaments.Complete;
+namespace Neba.Api.Tests.Legacy.Tournaments.Stats;
 
 [IntegrationTest]
 [Component("Legacy")]
-public sealed class CompleteTournamentEndpointTests : IAsyncLifetime
+public sealed class UpdateTournamentStatsEndpointTests : IAsyncLifetime
 {
     private const string ValidApiKey = "test-legacy-api-key";
 
@@ -38,7 +38,6 @@ public sealed class CompleteTournamentEndpointTests : IAsyncLifetime
 
         _jobsMock = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
         builder.Services.AddSingleton(_jobsMock.Object);
-        builder.Services.AddScoped<IValidator<CompleteTournamentRequest>, CompleteTournamentRequestValidator>();
         builder.Services.AddScoped<IValidator<UpdateTournamentStatsRequest>, UpdateTournamentStatsRequestValidator>();
         // Every sibling validator in the /legacy group is also required here: MapLegacyGroup() below
         // maps every endpoint in the group (not just this one), and ASP.NET Core builds route metadata
@@ -48,14 +47,15 @@ public sealed class CompleteTournamentEndpointTests : IAsyncLifetime
         builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
         builder.Services.AddScoped<IValidator<NewTournamentRequest>, NewTournamentRequestValidator>();
         builder.Services.AddScoped<IValidator<SyncSquadScoresRequest>, SyncSquadScoresRequestValidator>();
+        builder.Services.AddScoped<IValidator<CompleteTournamentRequest>, CompleteTournamentRequestValidator>();
         builder.Services.AddScoped<IValidator<NewHallOfFameInductionRequest>, NewHallOfFameInductionRequestValidator>();
         builder.Services.AddSingleton(Options.Create(new LegacySettings { ApiKey = ValidApiKey }));
 
         _app = builder.Build();
 
         // Route through the real /legacy group (LegacyApiKeyFilter + MapLegacyEndpoints), not
-        // MapCompleteTournament() directly, so this test actually exercises the filter that protects
-        // the route as deployed, and the relative path registered in CompleteTournamentEndpoint.cs.
+        // MapUpdateTournamentStats() directly, so this test actually exercises the filter that
+        // protects the route as deployed, and the relative path registered in the endpoint file.
         _app.MapLegacyGroup();
 
         await _app.StartAsync(TestContext.Current.CancellationToken);
@@ -67,7 +67,7 @@ public sealed class CompleteTournamentEndpointTests : IAsyncLifetime
         await _app.DisposeAsync();
     }
 
-    [Fact(DisplayName = "POST /legacy/tournaments/complete returns 401 and does not enqueue a job when the X-Api-Key header is missing")]
+    [Fact(DisplayName = "POST /legacy/tournaments/stats/update returns 401 and does not enqueue a job when the X-Api-Key header is missing")]
     public async Task Post_ShouldReturn401AndNotEnqueue_WhenApiKeyHeaderIsMissing()
     {
         // Arrange
@@ -75,15 +75,15 @@ public sealed class CompleteTournamentEndpointTests : IAsyncLifetime
 
         // Act
         using var response = await client.PostAsJsonAsync(
-            "/legacy/tournaments/complete",
-            new CompleteTournamentRequest(42),
+            "/legacy/tournaments/stats/update",
+            new UpdateTournamentStatsRequest(42),
             TestContext.Current.CancellationToken);
 
         // Assert - Strict mock: any Create call without a setup would throw, proving no job was enqueued.
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
-    [Fact(DisplayName = "POST /legacy/tournaments/complete returns 401 and does not enqueue a job when the X-Api-Key header is wrong")]
+    [Fact(DisplayName = "POST /legacy/tournaments/stats/update returns 401 and does not enqueue a job when the X-Api-Key header is wrong")]
     public async Task Post_ShouldReturn401AndNotEnqueue_WhenApiKeyHeaderIsWrong()
     {
         // Arrange
@@ -92,15 +92,15 @@ public sealed class CompleteTournamentEndpointTests : IAsyncLifetime
 
         // Act
         using var response = await client.PostAsJsonAsync(
-            "/legacy/tournaments/complete",
-            new CompleteTournamentRequest(42),
+            "/legacy/tournaments/stats/update",
+            new UpdateTournamentStatsRequest(42),
             TestContext.Current.CancellationToken);
 
         // Assert - Strict mock: any Create call without a setup would throw, proving no job was enqueued.
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
-    [Fact(DisplayName = "POST /legacy/tournaments/complete returns 400 and does not enqueue a job when TournamentId is invalid")]
+    [Fact(DisplayName = "POST /legacy/tournaments/stats/update returns 400 and does not enqueue a job when TournamentId is invalid")]
     public async Task Post_ShouldReturn400AndNotEnqueue_WhenTournamentIdIsInvalid()
     {
         // Arrange
@@ -109,15 +109,15 @@ public sealed class CompleteTournamentEndpointTests : IAsyncLifetime
 
         // Act
         using var response = await client.PostAsJsonAsync(
-            "/legacy/tournaments/complete",
-            new CompleteTournamentRequest(0),
+            "/legacy/tournaments/stats/update",
+            new UpdateTournamentStatsRequest(0),
             TestContext.Current.CancellationToken);
 
         // Assert - Strict mock: any Create call without a setup would throw, proving no job was enqueued.
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
-    [Fact(DisplayName = "POST /legacy/tournaments/complete returns 202 and enqueues a CompleteTournamentSyncJob with the request's TournamentId")]
+    [Fact(DisplayName = "POST /legacy/tournaments/stats/update returns 202 and enqueues a GenerateSeasonStatsJob with the request's TournamentId")]
     public async Task Post_ShouldReturn202AndEnqueueSyncJob_WhenApiKeyAndTournamentIdAreValid()
     {
         // Arrange
@@ -132,15 +132,15 @@ public sealed class CompleteTournamentEndpointTests : IAsyncLifetime
 
         // Act
         using var response = await client.PostAsJsonAsync(
-            "/legacy/tournaments/complete",
-            new CompleteTournamentRequest(42),
+            "/legacy/tournaments/stats/update",
+            new UpdateTournamentStatsRequest(42),
             TestContext.Current.CancellationToken);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
         capturedJob.ShouldNotBeNull();
-        capturedJob.Type.ShouldBe(typeof(CompleteTournamentSyncJob));
-        capturedJob.Method.Name.ShouldBe(nameof(CompleteTournamentSyncJob.SyncAsync));
+        capturedJob.Type.ShouldBe(typeof(GenerateSeasonStatsJob));
+        capturedJob.Method.Name.ShouldBe(nameof(GenerateSeasonStatsJob.SyncAsync));
         capturedJob.Args[0].ShouldBe(42);
     }
 }

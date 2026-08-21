@@ -24,6 +24,7 @@ using Neba.Api.Legacy.Bowlers;
 using Neba.Api.Legacy.HallOfFame;
 using Neba.Api.Legacy.Tournaments;
 using Neba.Api.Legacy.Tournaments.Complete;
+using Neba.Api.Legacy.Tournaments.Stats;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.HallOfFame;
@@ -113,6 +114,7 @@ public sealed class NewHallOfFameInductionEndpointTests : IAsyncLifetime
         builder.Services.AddScoped<IValidator<NewTournamentRequest>, NewTournamentRequestValidator>();
         builder.Services.AddScoped<IValidator<SyncSquadScoresRequest>, SyncSquadScoresRequestValidator>();
         builder.Services.AddScoped<IValidator<CompleteTournamentRequest>, CompleteTournamentRequestValidator>();
+        builder.Services.AddScoped<IValidator<UpdateTournamentStatsRequest>, UpdateTournamentStatsRequestValidator>();
         builder.Services.AddSingleton(Options.Create(new LegacySettings { ApiKey = ValidApiKey }));
 
         _app = builder.Build();
