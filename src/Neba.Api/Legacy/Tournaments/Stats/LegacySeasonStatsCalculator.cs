@@ -45,18 +45,33 @@ internal static class LegacySeasonStatsCalculator
     // ever populated for old data), but the live Dump still computes it this way - preserved as-is.
     private const int SideCutFinalsBonusPoints = 5;
 
+    // Raw source rows for a single season - bundled purely to keep Compute's parameter count within
+    // the analyzer's limit. seasonEndDate/newMembershipTypeId stay as direct Compute parameters since
+    // they're scalar context, not source data.
+    public sealed record LegacySeasonStatsInput(
+        IReadOnlyCollection<LegacySeasonTournamentRow> SeasonTournaments,
+        IReadOnlyCollection<LegacyQualifyingStatsRow> QualifyingStats,
+        IReadOnlyCollection<LegacyMatchPlayStatsRow> MatchPlayStats,
+        IReadOnlyCollection<LegacyBowlerResultRow> Results,
+        IReadOnlyCollection<LegacyBowlerRow> Bowlers,
+        IReadOnlyCollection<LegacyMembershipRow> Memberships,
+        IReadOnlyCollection<LegacyCreditRow> Credits,
+        IReadOnlyCollection<LegacyCupResultRow> CupResults);
+
     public static IReadOnlyCollection<LegacyBowlerSeasonStatsResult> Compute(
         DateOnly seasonEndDate,
         int newMembershipTypeId,
-        IReadOnlyCollection<LegacySeasonTournamentRow> seasonTournaments,
-        IReadOnlyCollection<LegacyQualifyingStatsRow> qualifyingStats,
-        IReadOnlyCollection<LegacyMatchPlayStatsRow> matchPlayStats,
-        IReadOnlyCollection<LegacyBowlerResultRow> results,
-        IReadOnlyCollection<LegacyBowlerRow> bowlers,
-        IReadOnlyCollection<LegacyMembershipRow> memberships,
-        IReadOnlyCollection<LegacyCreditRow> credits,
-        IReadOnlyCollection<LegacyCupResultRow> cupResults)
+        LegacySeasonStatsInput input)
     {
+        var seasonTournaments = input.SeasonTournaments;
+        var qualifyingStats = input.QualifyingStats;
+        var matchPlayStats = input.MatchPlayStats;
+        var results = input.Results;
+        var bowlers = input.Bowlers;
+        var memberships = input.Memberships;
+        var credits = input.Credits;
+        var cupResults = input.CupResults;
+
         var eligibleSeasonTournaments = seasonTournaments.Where(t => t.YearlyStatEligible).ToList();
         var eligibleTournamentIds = eligibleSeasonTournaments.Select(t => t.TournamentId).ToHashSet();
 

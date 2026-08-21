@@ -23,14 +23,15 @@ public sealed class LegacySeasonStatsCalculatorTests
         var computed = LegacySeasonStatsCalculator.Compute(
             SeasonEndDate,
             NewMembershipTypeId,
-            seasonTournaments ?? [],
-            qualifyingStats ?? [],
-            matchPlayStats ?? [],
-            results ?? [],
-            bowlers ?? [],
-            memberships ?? [],
-            credits ?? [],
-            cupResults ?? []);
+            new LegacySeasonStatsCalculator.LegacySeasonStatsInput(
+                seasonTournaments ?? [],
+                qualifyingStats ?? [],
+                matchPlayStats ?? [],
+                results ?? [],
+                bowlers ?? [],
+                memberships ?? [],
+                credits ?? [],
+                cupResults ?? []));
 
         return computed.Single();
     }
@@ -595,7 +596,8 @@ public sealed class LegacySeasonStatsCalculatorTests
 
         // Act
         var computed = LegacySeasonStatsCalculator.Compute(
-            SeasonEndDate, NewMembershipTypeId, seasonTournaments, qualifying, [], [], [], [], [], []);
+            SeasonEndDate, NewMembershipTypeId,
+            new LegacySeasonStatsCalculator.LegacySeasonStatsInput(seasonTournaments, qualifying, [], [], [], [], [], []));
         var result = computed.Single(r => r.BowlerId == 1);
 
         // Assert

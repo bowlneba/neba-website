@@ -100,14 +100,15 @@ internal sealed class GenerateSeasonStatsJob(
         var computedResults = LegacySeasonStatsCalculator.Compute(
             season.EndDate,
             newMembershipTypeId,
-            seasonTournaments,
-            qualifyingStats,
-            matchPlayStats,
-            results,
-            bowlerRows,
-            membershipRows,
-            creditRows,
-            cupResultRows);
+            new LegacySeasonStatsCalculator.LegacySeasonStatsInput(
+                seasonTournaments,
+                qualifyingStats,
+                matchPlayStats,
+                results,
+                bowlerRows,
+                membershipRows,
+                creditRows,
+                cupResultRows));
 
         var bowlerIdByLegacyId = await db.Bowlers
             .Where(bowler => bowler.LegacyId != null && legacyBowlerIds.Contains(bowler.LegacyId.Value))
@@ -313,9 +314,9 @@ internal sealed class GenerateSeasonStatsJob(
             """,
             parameters)).ToList();
 
-        var creditParameters = BuildInClauseParameters("BowlerId", legacyBowlerIds);
-        creditParameters.Parameters.Add("SeasonStart", seasonStart);
-        creditParameters.Parameters.Add("SeasonEndExclusive", seasonEndExclusive);
+        (DynamicParameters dynamicParameters, string s) = BuildInClauseParameters("BowlerId", legacyBowlerIds);
+        dynamicParameters.Add("SeasonStart", seasonStart);
+        dynamicParameters.Add("SeasonEndExclusive", seasonEndExclusive);
         var creditRows = (await legacyConnection.QueryAsync<LegacyCreditRow>(
             $"""
             SELECT
@@ -325,10 +326,10 @@ internal sealed class GenerateSeasonStatsJob(
                 Credits c
             INNER JOIN Credits_BowlerCredit bc ON c.Id = bc.Id
             WHERE
-                bc.BowlerId IN ({creditParameters.Placeholders}) AND bc.Taxable = 1
+                bc.BowlerId IN ({s}) AND bc.Taxable = 1
                 AND c.IssuedDate >= @SeasonStart AND c.IssuedDate < @SeasonEndExclusive
             """,
-            creditParameters.Parameters)).ToList();
+            dynamicParameters)).ToList();
 
         var cupResultRows = (await legacyConnection.QueryAsync<LegacyCupResultRow>(
             $"""
