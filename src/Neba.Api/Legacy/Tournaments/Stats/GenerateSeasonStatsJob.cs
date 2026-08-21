@@ -145,7 +145,7 @@ internal sealed class GenerateSeasonStatsJob(
     // See NewBowlerSyncJob.SyncAsync for the rationale on suppressing DAP005 here.
 #pragma warning disable DAP005
     private async Task<List<LegacySeasonTournamentRow>> FetchSeasonTournamentsAsync(DateTime seasonStart, DateTime seasonEndExclusive)
-        => (await legacyConnection.QueryAsync<LegacySeasonTournamentRow>(
+        => [.. (await legacyConnection.QueryAsync<LegacySeasonTournamentRow>(
             """
             SELECT
                 t.Id AS TournamentId,
@@ -159,7 +159,7 @@ internal sealed class GenerateSeasonStatsJob(
             WHERE
                 t.Start >= @SeasonStart AND t.End < @SeasonEndExclusive
             """,
-            new { SeasonStart = seasonStart, SeasonEndExclusive = seasonEndExclusive })).ToList();
+            new { SeasonStart = seasonStart, SeasonEndExclusive = seasonEndExclusive }))];
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2077:Use a parameterized query instead of string formatting.",
         Justification = "The interpolated segments below are only generated placeholder names (@TournamentId0, ...) from BuildInClauseParameters, never a data value - every id value itself is bound as a real DynamicParameters entry, not concatenated into the SQL text.")]
