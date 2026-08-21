@@ -506,7 +506,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
 
         var squadStub = SquadFactory.Create();
         var tournament = TournamentFactory.Create(
-            seasonId: season.Id, tournamentType: TournamentType.Doubles, squads: [squadStub]);
+tournamentType: TournamentType.Doubles, seasonId: season.Id, squads: [squadStub]);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
         _dbContext.ChangeTracker.Clear();

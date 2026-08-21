@@ -11,7 +11,7 @@ internal sealed class UnmappedBowlerStatsEmail(SeasonId seasonId, IReadOnlyColle
     public string ToHtmlBody()
     {
         var rows = string.Concat(unmappedLegacyBowlerIds
-            .OrderBy(id => id)
+            .Order()
             .Select(id => $"<tr><td>{WebUtility.HtmlEncode(id.ToString(CultureInfo.CurrentCulture))}</td></tr>"));
 
         var body = $"""

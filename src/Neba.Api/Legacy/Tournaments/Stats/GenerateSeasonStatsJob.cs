@@ -51,8 +51,6 @@ internal sealed class GenerateSeasonStatsJob(
         return (parameters, string.Join(",", placeholders));
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2077:Use a parameterized query instead of string formatting.",
-        Justification = "The interpolated segments below are only generated placeholder names (@TournamentId0, @BowlerId0, ...) from BuildInClauseParameters, never a data value - every id value itself is bound as a real DynamicParameters entry, not concatenated into the SQL text.")]
     public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
     {
         using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
@@ -61,15 +59,7 @@ internal sealed class GenerateSeasonStatsJob(
             .SingleOrDefaultAsync(t => t.LegacyId == legacyTournamentId, ct);
         if (tournament is null)
         {
-            logger.LogLegacyTournamentNotSyncedForStatsGeneration(legacyTournamentId);
-
-            await emailSender.SendAsync(new EmailMessage
-            {
-                To = "website@bowlneba.com",
-                Subject = "Manual intervention needed: season stats generation with no linked tournament",
-                HtmlBody = new UnlinkedTournamentStatsEmail(legacyTournamentId).ToHtmlBody()
-            }, ct);
-
+            await NotifyUnlinkedTournamentAsync(legacyTournamentId, ct);
             return;
         }
 
@@ -87,9 +77,75 @@ internal sealed class GenerateSeasonStatsJob(
             .Where(t => t.SeasonId == season.Id && t.LegacyId != null)
             .ToListAsync(ct);
 
-        // See NewBowlerSyncJob.SyncAsync for the rationale on suppressing DAP005 here.
+        var seasonTournaments = await FetchSeasonTournamentsAsync(seasonStart, seasonEndExclusive);
+        var tournamentIds = seasonTournaments.ConvertAll(t => t.TournamentId);
+
+        var (qualifyingStats, matchPlayStats, sideCutRows) = await FetchTournamentStatsAsync(tournamentIds);
+
+        var bowlerLegacyIdById = await db.Bowlers
+            .Where(bowler => bowler.LegacyId != null)
+            .ToDictionaryAsync(bowler => bowler.Id, bowler => bowler.LegacyId!.Value, ct);
+
+        var results = BuildLegacyBowlerResults(websiteTournaments, bowlerLegacyIdById, sideCutRows);
+
+        var legacyBowlerIds = qualifyingStats.Select(q => q.BowlerId)
+            .Concat(matchPlayStats.Select(m => m.BowlerId))
+            .Concat(results.Select(r => r.BowlerId))
+            .Distinct()
+            .ToList();
+
+        var (bowlerRows, newMembershipTypeId, membershipRows, creditRows, cupResultRows) =
+            await FetchBowlerStatsAsync(legacyBowlerIds, seasonStart, seasonEndExclusive);
+
+        var computedResults = LegacySeasonStatsCalculator.Compute(
+            season.EndDate,
+            newMembershipTypeId,
+            seasonTournaments,
+            qualifyingStats,
+            matchPlayStats,
+            results,
+            bowlerRows,
+            membershipRows,
+            creditRows,
+            cupResultRows);
+
+        var bowlerIdByLegacyId = await db.Bowlers
+            .Where(bowler => bowler.LegacyId != null && legacyBowlerIds.Contains(bowler.LegacyId.Value))
+            .ToDictionaryAsync(bowler => bowler.LegacyId!.Value, bowler => bowler.Id, ct);
+
+        var unmappedLegacyBowlerIds = await AddBowlerSeasonStatsAsync(season.Id, computedResults, bowlerIdByLegacyId, ct);
+
+        await db.SaveChangesAsync(ct);
+
+        await cache.RemoveByTagAsync($"neba:stats:seasons:{season.Id}", token: ct);
+
+        if (unmappedLegacyBowlerIds.Count > 0)
+        {
+            await emailSender.SendAsync(new EmailMessage
+            {
+                To = "website@bowlneba.com",
+                Subject = "Manual intervention needed: unsynced bowler(s) in season stats generation",
+                HtmlBody = new UnmappedBowlerStatsEmail(season.Id, unmappedLegacyBowlerIds).ToHtmlBody()
+            }, ct);
+        }
+    }
+
+    private async Task NotifyUnlinkedTournamentAsync(int legacyTournamentId, CancellationToken ct)
+    {
+        logger.LogLegacyTournamentNotSyncedForStatsGeneration(legacyTournamentId);
+
+        await emailSender.SendAsync(new EmailMessage
+        {
+            To = "website@bowlneba.com",
+            Subject = "Manual intervention needed: season stats generation with no linked tournament",
+            HtmlBody = new UnlinkedTournamentStatsEmail(legacyTournamentId).ToHtmlBody()
+        }, ct);
+    }
+
+    // See NewBowlerSyncJob.SyncAsync for the rationale on suppressing DAP005 here.
 #pragma warning disable DAP005
-        var seasonTournaments = (await legacyConnection.QueryAsync<LegacySeasonTournamentRow>(
+    private async Task<List<LegacySeasonTournamentRow>> FetchSeasonTournamentsAsync(DateTime seasonStart, DateTime seasonEndExclusive)
+        => (await legacyConnection.QueryAsync<LegacySeasonTournamentRow>(
             """
             SELECT
                 t.Id AS TournamentId,
@@ -105,74 +161,79 @@ internal sealed class GenerateSeasonStatsJob(
             """,
             new { SeasonStart = seasonStart, SeasonEndExclusive = seasonEndExclusive })).ToList();
 
-        var tournamentIds = seasonTournaments.Select(t => t.TournamentId).ToList();
-        var tournamentIdParameters = BuildInClauseParameters("TournamentId", tournamentIds);
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2077:Use a parameterized query instead of string formatting.",
+        Justification = "The interpolated segments below are only generated placeholder names (@TournamentId0, ...) from BuildInClauseParameters, never a data value - every id value itself is bound as a real DynamicParameters entry, not concatenated into the SQL text.")]
+    private async Task<(List<LegacyQualifyingStatsRow> Qualifying, List<LegacyMatchPlayStatsRow> MatchPlay, List<LegacySideCutRow> SideCuts)>
+        FetchTournamentStatsAsync(List<int> tournamentIds)
+    {
+        if (tournamentIds.Count == 0)
+        {
+            return ([], [], []);
+        }
 
-        var qualifyingStats = tournamentIds.Count == 0
-            ? []
-            : (await legacyConnection.QueryAsync<LegacyQualifyingStatsRow>(
-                $"""
-                SELECT
-                    s.BowlerId,
-                    s.TournamentId,
-                    q.SquadId,
-                    q.Score,
-                    q.Games,
-                    q.HighGame
-                FROM
-                    Stats s
-                INNER JOIN Stats_QualifyingStats q ON s.Id = q.Id
-                WHERE
-                    s.TournamentId IN ({tournamentIdParameters.Placeholders})
-                """,
-                tournamentIdParameters.Parameters)).ToList();
+        var (parameters, placeholders) = BuildInClauseParameters("TournamentId", tournamentIds);
 
-        var matchPlayStats = tournamentIds.Count == 0
-            ? []
-            : (await legacyConnection.QueryAsync<LegacyMatchPlayStatsRow>(
-                $"""
-                SELECT
-                    s.BowlerId,
-                    s.TournamentId,
-                    m.Score,
-                    m.Games,
-                    m.HighGame,
-                    m.Winner
-                FROM
-                    Stats s
-                INNER JOIN Stats_MatchPlayStats m ON s.Id = m.Id
-                WHERE
-                    s.TournamentId IN ({tournamentIdParameters.Placeholders})
-                """,
-                tournamentIdParameters.Parameters)).ToList();
+        var qualifyingStats = (await legacyConnection.QueryAsync<LegacyQualifyingStatsRow>(
+            $"""
+            SELECT
+                s.BowlerId,
+                s.TournamentId,
+                q.SquadId,
+                q.Score,
+                q.Games,
+                q.HighGame
+            FROM
+                Stats s
+            INNER JOIN Stats_QualifyingStats q ON s.Id = q.Id
+            WHERE
+                s.TournamentId IN ({placeholders})
+            """,
+            parameters)).ToList();
 
-        var sideCutRows = tournamentIds.Count == 0
-            ? []
-            : (await legacyConnection.QueryAsync<LegacySideCutRow>(
-                $"""
-                SELECT
-                    s.BowlerId,
-                    s.TournamentId,
-                    r.SideCut
-                FROM
-                    Stats s
-                INNER JOIN Stats_ResultsStats r ON s.Id = r.Id
-                WHERE
-                    s.TournamentId IN ({tournamentIdParameters.Placeholders})
-                """,
-                tournamentIdParameters.Parameters)).ToList();
+        var matchPlayStats = (await legacyConnection.QueryAsync<LegacyMatchPlayStatsRow>(
+            $"""
+            SELECT
+                s.BowlerId,
+                s.TournamentId,
+                m.Score,
+                m.Games,
+                m.HighGame,
+                m.Winner
+            FROM
+                Stats s
+            INNER JOIN Stats_MatchPlayStats m ON s.Id = m.Id
+            WHERE
+                s.TournamentId IN ({placeholders})
+            """,
+            parameters)).ToList();
+
+        var sideCutRows = (await legacyConnection.QueryAsync<LegacySideCutRow>(
+            $"""
+            SELECT
+                s.BowlerId,
+                s.TournamentId,
+                r.SideCut
+            FROM
+                Stats s
+            INNER JOIN Stats_ResultsStats r ON s.Id = r.Id
+            WHERE
+                s.TournamentId IN ({placeholders})
+            """,
+            parameters)).ToList();
+
+        return (qualifyingStats, matchPlayStats, sideCutRows);
+    }
 #pragma warning restore DAP005
 
-        var bowlerLegacyIdById = await db.Bowlers
-            .Where(bowler => bowler.LegacyId != null)
-            .ToDictionaryAsync(bowler => bowler.Id, bowler => bowler.LegacyId!.Value, ct);
-
-        var results = new List<LegacyBowlerResultRow>();
-
-        // Stats_ResultsStats is only ever meant to hold one row per (BowlerId, TournamentId), but
-        // that's convention, not a schema constraint - same caveat SyncTournamentResultsJob already
-        // defends against for the Place/Payout/Points read. An anomalous duplicate here would crash
-        // an unguarded ToDictionary, so log and skip it instead of failing the whole season regenerate.
+    // Stats_ResultsStats is only ever meant to hold one row per (BowlerId, TournamentId), but
+    // that's convention, not a schema constraint - same caveat SyncTournamentResultsJob already
+    // defends against for the Place/Payout/Points read. An anomalous duplicate here would crash
+    // an unguarded ToDictionary, so log and skip it instead of failing the whole season regenerate.
+    private List<LegacyBowlerResultRow> BuildLegacyBowlerResults(
+        List<Tournament> websiteTournaments,
+        Dictionary<BowlerId, int> bowlerLegacyIdById,
+        List<LegacySideCutRow> sideCutRows)
+    {
         var sideCutRowsByKey = sideCutRows.GroupBy(r => (r.BowlerId, r.TournamentId)).ToList();
         foreach (var anomalyKey in sideCutRowsByKey.Where(g => g.Count() > 1).Select(g => g.Key))
         {
@@ -182,6 +243,8 @@ internal sealed class GenerateSeasonStatsJob(
         var sideCutByBowlerAndTournament = sideCutRowsByKey
             .Where(g => g.Count() == 1)
             .ToDictionary(g => g.Key, g => g.Single().SideCut);
+
+        var results = new List<LegacyBowlerResultRow>();
 
         foreach (var websiteTournament in websiteTournaments)
         {
@@ -203,116 +266,108 @@ internal sealed class GenerateSeasonStatsJob(
             }
         }
 
-        var legacyBowlerIds = qualifyingStats.Select(q => q.BowlerId)
-            .Concat(matchPlayStats.Select(m => m.BowlerId))
-            .Concat(results.Select(r => r.BowlerId))
-            .Distinct()
-            .ToList();
-
-        var bowlerIdParameters = BuildInClauseParameters("BowlerId", legacyBowlerIds);
+        return results;
+    }
 
 #pragma warning disable DAP005
-        var bowlerRows = legacyBowlerIds.Count == 0
-            ? []
-            : (await legacyConnection.QueryAsync<LegacyBowlerRow>(
-                $"""
-                SELECT
-                    Id AS BowlerId,
-                    Gender,
-                    DateOfBirth
-                FROM
-                    Bowlers
-                WHERE
-                    Id IN ({bowlerIdParameters.Placeholders})
-                """,
-                bowlerIdParameters.Parameters)).ToList();
-
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2077:Use a parameterized query instead of string formatting.",
+        Justification = "The interpolated segments below are only generated placeholder names (@BowlerId0, ...) from BuildInClauseParameters, never a data value - every id value itself is bound as a real DynamicParameters entry, not concatenated into the SQL text.")]
+    private async Task<(List<LegacyBowlerRow> Bowlers, int NewMembershipTypeId, List<LegacyMembershipRow> Memberships, List<LegacyCreditRow> Credits, List<LegacyCupResultRow> CupResults)>
+        FetchBowlerStatsAsync(List<int> legacyBowlerIds, DateTime seasonStart, DateTime seasonEndExclusive)
+    {
         var newMembershipTypeId = await legacyConnection.QuerySingleAsync<int>(
             """
             SELECT Id FROM Memberships WHERE Name LIKE '%New Member%'
             """);
 
-        var membershipRows = legacyBowlerIds.Count == 0
-            ? []
-            : (await legacyConnection.QueryAsync<LegacyMembershipRow>(
-                $"""
-                SELECT
-                    bm.BowlerId,
-                    bm.MembershipId,
-                    bm.EndDate
-                FROM
-                    BowlerMemberships bm
-                WHERE
-                    bm.BowlerId IN ({bowlerIdParameters.Placeholders})
-                """,
-                bowlerIdParameters.Parameters)).ToList();
+        if (legacyBowlerIds.Count == 0)
+        {
+            return ([], newMembershipTypeId, [], [], []);
+        }
+
+        var (parameters, placeholders) = BuildInClauseParameters("BowlerId", legacyBowlerIds);
+
+        var bowlerRows = (await legacyConnection.QueryAsync<LegacyBowlerRow>(
+            $"""
+            SELECT
+                Id AS BowlerId,
+                Gender,
+                DateOfBirth
+            FROM
+                Bowlers
+            WHERE
+                Id IN ({placeholders})
+            """,
+            parameters)).ToList();
+
+        var membershipRows = (await legacyConnection.QueryAsync<LegacyMembershipRow>(
+            $"""
+            SELECT
+                bm.BowlerId,
+                bm.MembershipId,
+                bm.EndDate
+            FROM
+                BowlerMemberships bm
+            WHERE
+                bm.BowlerId IN ({placeholders})
+            """,
+            parameters)).ToList();
 
         var creditParameters = BuildInClauseParameters("BowlerId", legacyBowlerIds);
         creditParameters.Parameters.Add("SeasonStart", seasonStart);
         creditParameters.Parameters.Add("SeasonEndExclusive", seasonEndExclusive);
-        var creditRows = legacyBowlerIds.Count == 0
-            ? []
-            : (await legacyConnection.QueryAsync<LegacyCreditRow>(
-                $"""
-                SELECT
-                    bc.BowlerId,
-                    c.Amount
-                FROM
-                    Credits c
-                INNER JOIN Credits_BowlerCredit bc ON c.Id = bc.Id
-                WHERE
-                    bc.BowlerId IN ({creditParameters.Placeholders}) AND bc.Taxable = 1
-                    AND c.IssuedDate >= @SeasonStart AND c.IssuedDate < @SeasonEndExclusive
-                """,
-                creditParameters.Parameters)).ToList();
+        var creditRows = (await legacyConnection.QueryAsync<LegacyCreditRow>(
+            $"""
+            SELECT
+                bc.BowlerId,
+                c.Amount
+            FROM
+                Credits c
+            INNER JOIN Credits_BowlerCredit bc ON c.Id = bc.Id
+            WHERE
+                bc.BowlerId IN ({creditParameters.Placeholders}) AND bc.Taxable = 1
+                AND c.IssuedDate >= @SeasonStart AND c.IssuedDate < @SeasonEndExclusive
+            """,
+            creditParameters.Parameters)).ToList();
 
-        var cupResultRows = legacyBowlerIds.Count == 0
-            ? []
-            : (await legacyConnection.QueryAsync<LegacyCupResultRow>(
-                $"""
-                SELECT
-                    cr.BowlerId,
-                    cr.Payout,
-                    cu.End AS CupEnd
-                FROM
-                    CupResults cr
-                INNER JOIN Cups cu ON cr.CupId = cu.Id
-                WHERE
-                    cr.BowlerId IN ({bowlerIdParameters.Placeholders})
-                """,
-                bowlerIdParameters.Parameters)).ToList();
+        var cupResultRows = (await legacyConnection.QueryAsync<LegacyCupResultRow>(
+            $"""
+            SELECT
+                cr.BowlerId,
+                cr.Payout,
+                cu.End AS CupEnd
+            FROM
+                CupResults cr
+            INNER JOIN Cups cu ON cr.CupId = cu.Id
+            WHERE
+                cr.BowlerId IN ({placeholders})
+            """,
+            parameters)).ToList();
+
+        return (bowlerRows, newMembershipTypeId, membershipRows, creditRows, cupResultRows);
+    }
 #pragma warning restore DAP005
 
-        var computedResults = LegacySeasonStatsCalculator.Compute(
-            season.EndDate,
-            newMembershipTypeId,
-            seasonTournaments,
-            qualifyingStats,
-            matchPlayStats,
-            results,
-            bowlerRows,
-            membershipRows,
-            creditRows,
-            cupResultRows);
-
-        var bowlerIdByLegacyId = await db.Bowlers
-            .Where(bowler => bowler.LegacyId != null && legacyBowlerIds.Contains(bowler.LegacyId.Value))
-            .ToDictionaryAsync(bowler => bowler.LegacyId!.Value, bowler => bowler.Id, ct);
-
+    private async Task<List<int>> AddBowlerSeasonStatsAsync(
+        SeasonId seasonId,
+        IReadOnlyCollection<LegacyBowlerSeasonStatsResult> computedResults,
+        Dictionary<int, BowlerId> bowlerIdByLegacyId,
+        CancellationToken ct)
+    {
         var unmappedLegacyBowlerIds = new List<int>();
 
         foreach (var result in computedResults)
         {
             if (!bowlerIdByLegacyId.TryGetValue(result.BowlerId, out var bowlerId))
             {
-                logger.LogLegacyBowlerNotSyncedForStatsGeneration(result.BowlerId, season.Id);
+                logger.LogLegacyBowlerNotSyncedForStatsGeneration(result.BowlerId, seasonId);
                 unmappedLegacyBowlerIds.Add(result.BowlerId);
                 continue;
             }
 
             await db.BowlerSeasonStats.AddAsync(new BowlerSeasonStats
             {
-                SeasonId = season.Id,
+                SeasonId = seasonId,
                 BowlerId = bowlerId,
                 IsMember = result.IsMember,
                 IsRookie = result.IsRookie,
@@ -350,18 +405,6 @@ internal sealed class GenerateSeasonStatsJob(
             }, ct);
         }
 
-        await db.SaveChangesAsync(ct);
-
-        await cache.RemoveByTagAsync($"neba:stats:seasons:{season.Id}", token: ct);
-
-        if (unmappedLegacyBowlerIds.Count > 0)
-        {
-            await emailSender.SendAsync(new EmailMessage
-            {
-                To = "website@bowlneba.com",
-                Subject = "Manual intervention needed: unsynced bowler(s) in season stats generation",
-                HtmlBody = new UnmappedBowlerStatsEmail(season.Id, unmappedLegacyBowlerIds).ToHtmlBody()
-            }, ct);
-        }
+        return unmappedLegacyBowlerIds;
     }
 }
