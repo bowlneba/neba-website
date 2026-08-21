@@ -4,8 +4,6 @@ using Dapper;
 
 using Microsoft.EntityFrameworkCore;
 
-using ZiggyCreatures.Caching.Fusion;
-
 using Neba.Api.Database;
 using Neba.Api.Email;
 using Neba.Api.Features.Bowlers.Domain;
@@ -13,6 +11,8 @@ using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Stats.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Identity;
+
+using ZiggyCreatures.Caching.Fusion;
 
 namespace Neba.Api.Legacy.Tournaments.Stats;
 

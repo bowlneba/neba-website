@@ -250,14 +250,13 @@ internal static class LegacySeasonStatsCalculator
         DateOnly? dateOfBirth,
         int? minimumAgeInclusive = null,
         int? maximumAgeExclusive = null)
-        => baseEligibleTournaments
+        => [.. baseEligibleTournaments
             .Concat(categoryTournaments)
             .DistinctBy(t => t.TournamentId)
             .Where(t => AgeOnDate(dateOfBirth, DateOnly.FromDateTime(t.End)) is { } age
                 && (minimumAgeInclusive is not { } min || age >= min)
                 && (maximumAgeExclusive is not { } max || age < max))
-            .Select(t => t.TournamentId)
-            .ToHashSet();
+            .Select(t => t.TournamentId)];
 
     private static decimal ComputeFieldAverage(
         List<int> eligibleTournamentIdsForBowler,
