@@ -8,6 +8,8 @@ using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Identity;
 using Neba.Api.Legacy.Tournaments.Stats;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Legacy.Tournaments.Complete;
 
 // Thin on purpose: this job's only job is "mark the website tournament complete, then hand off
@@ -19,6 +21,7 @@ namespace Neba.Api.Legacy.Tournaments.Complete;
 internal sealed class CompleteTournamentSyncJob(
     AppDbContext db,
     IBackgroundJobClient jobs,
+    IFusionCache cache,
     IEmailSender emailSender,
     ILogger<CompleteTournamentSyncJob> logger)
 {
@@ -53,6 +56,11 @@ internal sealed class CompleteTournamentSyncJob(
         else
         {
             await db.SaveChangesAsync(ct);
+
+            // Status flip changes both the tournament's own detail and how it renders in the
+            // season's tournament list (e.g. complete/upcoming filtering).
+            await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: ct);
+            await cache.RemoveByTagAsync($"neba:tournaments:{tournament.SeasonId}", token: ct);
         }
 
         jobs.Enqueue<SyncTournamentResultsJob>(job => job.SyncAsync(legacyTournamentId, CancellationToken.None));

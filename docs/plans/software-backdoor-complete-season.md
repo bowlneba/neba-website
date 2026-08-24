@@ -20,6 +20,10 @@ This plan covers the `/legacy` endpoint and its background jobs. It follows `doc
 - **`HighBlock`'s `games` parameter is a fixed constant of `5`**, not read from any stored field — `BowlerSeasonStats.HighBlock` only ever comes from a legacy qualifying entry whose `Games` column was exactly `5` (the Software's own inherited limitation, preserved deliberately by `GenerateSeasonStatsJob` and documented in `docs/plans/software-backdoor-generate-season-stats.md`'s "Where this diverges from the Software's own report" §2). `BowlerSeasonStats` stores the winning score but not the game count that produced it, so `5` is the only value consistent with how `HighBlock` is ever populated.
 - **Idempotency at the job level, not just the aggregate level.** `Season`'s own invariants (`BowlerAlreadyAwardedHighBlock`, `HighAverageMismatch`, etc.) already prevent duplicate/corrupt rows on a naive retry, but relying on them alone means every retry after a successful first run logs an "already awarded" error for every previously-assigned bowler — noisy, and indistinguishable in the logs from a real anomaly. Each award job instead **checks first** whether this season already has any award of its own kind (`season.BowlerOfTheYearAwards.Any(a => a.Category == Category.X)` / `season.HighAverageAwards.Count > 0` / `season.HighBlockAwards.Count > 0`) and short-circuits with an informational log if so — clean, silent idempotency, no reliance on error-as-control-flow.
 - **A season with zero `BowlerSeasonStats` rows at all is an anomaly worth flagging, distinct from a category simply having no eligible candidates.** "No Youth bowlers this season" is normal and just no-ops quietly. "No `BowlerSeasonStats` rows exist for this season at all" almost always means `GenerateSeasonStatsJob` never ran for any tournament in the season (or ran and the season had zero tournaments) — every award job checks for this and logs a warning (see Logging below) rather than silently completing with zero winners across the board.
+- **Cache eviction, per the `backdoor-feature` skill's requirement to check `CacheDescriptors.cs` for every write this action performs.** `CompleteSeasonSyncJob` and all eight award jobs write through `AppDbContext` directly, bypassing the command-handler pipeline that normally calls `IFusionCache.RemoveByTagAsync(...)` after a save — same gap already found and fixed for every other legacy job (see `docs/plans/legacy-jobs-cache-invalidation-review.md`). `CompleteSeasonSyncJob` evicts `neba:seasons` (the tag behind `CacheDescriptors.Seasons.List`) right after its own `SaveChangesAsync`, on the newly-completed branch only — matching `CompleteTournamentSyncJob`'s existing precedent of skipping eviction on the `AlreadyComplete` retry branch, since nothing changed there for the cache to go stale over. Each of the eight award jobs evicts its own category's tag right after its own `SaveChangesAsync`, but **only on the branch that actually adds a winner** — the "already assigned" short-circuit and the "no eligible candidates" no-op both return before any write, so neither should evict:
+  - Six BOTY jobs → `neba:awards:bowler-of-the-year` (`CacheDescriptors.Awards.ListBowlerOfTheYearAwards`'s tag; shared across all six categories since the query returns one combined list, so any of the six jobs writing a winner invalidates the same cached response)
+  - `AssignHighAverageAwardJob` → `neba:awards:high-average` (`CacheDescriptors.Awards.ListHighAverageAwards`)
+  - `AssignHighBlockAwardJob` → `neba:awards:high-block` (`CacheDescriptors.Awards.ListHighBlockAwards`)
 
 ### Where this diverges from the Software
 
@@ -150,6 +154,7 @@ internal sealed class CompleteSeasonSyncJob(
     AppDbContext db,
     IDbConnection legacyConnection,
     IBackgroundJobClient jobs,
+    IFusionCache cache,
     IEmailSender emailSender,
     ILogger<CompleteSeasonSyncJob> logger)
 {
@@ -207,6 +212,8 @@ internal sealed class CompleteSeasonSyncJob(
         else
         {
             await db.SaveChangesAsync(ct);
+
+            await cache.RemoveByTagAsync("neba:seasons", token: ct);
         }
 
         jobs.Schedule<AssignOpenBowlerOfTheYearAwardJob>(job => job.AssignAsync(season.Id, CancellationToken.None), AwardJobDelay);
@@ -287,7 +294,7 @@ All six share the same shape: filter `BowlerSeasonStats` by the category's eligi
 
 ```csharp
 internal sealed class AssignOpenBowlerOfTheYearAwardJob(
-    AppDbContext db, ILogger<AssignOpenBowlerOfTheYearAwardJob> logger)
+    AppDbContext db, IFusionCache cache, ILogger<AssignOpenBowlerOfTheYearAwardJob> logger)
 {
     public async Task AssignAsync(SeasonId seasonId, CancellationToken ct)
     {
@@ -322,6 +329,10 @@ internal sealed class AssignOpenBowlerOfTheYearAwardJob(
         }
 
         await db.SaveChangesAsync(ct);
+
+        // Shared tag: ListBowlerOfTheYearAwardsQuery returns one combined list across all six
+        // categories, so any category's job writing a winner must evict the same tag.
+        await cache.RemoveByTagAsync("neba:awards:bowler-of-the-year", token: ct);
     }
 }
 ```
@@ -330,7 +341,7 @@ internal sealed class AssignOpenBowlerOfTheYearAwardJob(
 
 ```csharp
 internal sealed class AssignRookieBowlerOfTheYearAwardJob(
-    AppDbContext db, ILogger<AssignRookieBowlerOfTheYearAwardJob> logger)
+    AppDbContext db, IFusionCache cache, ILogger<AssignRookieBowlerOfTheYearAwardJob> logger)
 {
     public async Task AssignAsync(SeasonId seasonId, CancellationToken ct)
     {
@@ -370,6 +381,8 @@ internal sealed class AssignRookieBowlerOfTheYearAwardJob(
         }
 
         await db.SaveChangesAsync(ct);
+
+        await cache.RemoveByTagAsync("neba:awards:bowler-of-the-year", token: ct);
     }
 }
 ```
@@ -378,7 +391,7 @@ internal sealed class AssignRookieBowlerOfTheYearAwardJob(
 
 ```csharp
 internal sealed class AssignWomanOfTheYearAwardJob(
-    AppDbContext db, ILogger<AssignWomanOfTheYearAwardJob> logger)
+    AppDbContext db, IFusionCache cache, ILogger<AssignWomanOfTheYearAwardJob> logger)
 {
     public async Task AssignAsync(SeasonId seasonId, CancellationToken ct)
     {
@@ -425,6 +438,8 @@ internal sealed class AssignWomanOfTheYearAwardJob(
         }
 
         await db.SaveChangesAsync(ct);
+
+        await cache.RemoveByTagAsync("neba:awards:bowler-of-the-year", token: ct);
     }
 }
 ```
@@ -434,7 +449,7 @@ internal sealed class AssignWomanOfTheYearAwardJob(
 ```csharp
 // AssignSeniorBowlerOfTheYearAwardJob.cs — representative of all three age-gated jobs
 internal sealed class AssignSeniorBowlerOfTheYearAwardJob(
-    AppDbContext db, ILogger<AssignSeniorBowlerOfTheYearAwardJob> logger)
+    AppDbContext db, IFusionCache cache, ILogger<AssignSeniorBowlerOfTheYearAwardJob> logger)
 {
     public async Task AssignAsync(SeasonId seasonId, CancellationToken ct)
     {
@@ -482,6 +497,8 @@ internal sealed class AssignSeniorBowlerOfTheYearAwardJob(
         }
 
         await db.SaveChangesAsync(ct);
+
+        await cache.RemoveByTagAsync("neba:awards:bowler-of-the-year", token: ct);
     }
 }
 ```
@@ -490,7 +507,7 @@ internal sealed class AssignSeniorBowlerOfTheYearAwardJob(
 
 ```csharp
 internal sealed class AssignHighAverageAwardJob(
-    AppDbContext db, ILogger<AssignHighAverageAwardJob> logger)
+    AppDbContext db, IFusionCache cache, ILogger<AssignHighAverageAwardJob> logger)
 {
     private const decimal MinimumGamesMultiplier = 4.5m;
 
@@ -540,6 +557,8 @@ internal sealed class AssignHighAverageAwardJob(
         }
 
         await db.SaveChangesAsync(ct);
+
+        await cache.RemoveByTagAsync("neba:awards:high-average", token: ct);
     }
 }
 ```
@@ -548,7 +567,7 @@ internal sealed class AssignHighAverageAwardJob(
 
 ```csharp
 internal sealed class AssignHighBlockAwardJob(
-    AppDbContext db, ILogger<AssignHighBlockAwardJob> logger)
+    AppDbContext db, IFusionCache cache, ILogger<AssignHighBlockAwardJob> logger)
 {
     // HighBlock is only ever populated from a legacy qualifying entry whose Games column was
     // exactly 5 (GenerateSeasonStatsJob's inherited Software limitation) — BowlerSeasonStats
@@ -592,6 +611,8 @@ internal sealed class AssignHighBlockAwardJob(
         }
 
         await db.SaveChangesAsync(ct);
+
+        await cache.RemoveByTagAsync("neba:awards:high-block", token: ct);
     }
 }
 ```
@@ -675,6 +696,7 @@ Following `docs/api/software-backdoor-plan.md`'s five layers, under `tests/Neba.
 4. **Award-job ranking logic (unit, in-memory/SQLite `AppDbContext`)** — one test class per job (`AssignOpenBowlerOfTheYearAwardJobTests.cs`, etc.), covering: correct winner selection, tie handling (multiple winners sharing the max), "already assigned" short-circuit, "no eligible candidates" no-op, "zero `BowlerSeasonStats` rows at all" warning path, and (for the age-gated BOTY jobs) the "Bowler has no `DateOfBirth` on file" skip path. `AssignHighAverageAwardJobTests.cs` additionally covers the season-wide `statEligibleTournamentCount` computation and the minimum-games filter.
 5. **`CompleteSeasonSyncJob` — legacy query correctness (integration)** — Postgres Testcontainers + `CREATE TEMP TABLE Season (...)`, per the standard pattern (see `docs/api/software-backdoor-plan.md`'s Testing §4), asserting the Dapper lookup and the date-range match against a seeded website `Season`.
 6. **`CompleteSeasonSyncJob` idempotency (integration)** — run `SyncAsync` twice for the same legacy season id; assert the second run doesn't re-error the job (logs `AlreadyComplete` informationally) and still re-schedules the award jobs.
+7. **Cache eviction (unit, per job)** — each of the nine jobs (`CompleteSeasonSyncJob` plus all eight award jobs) needs its own eviction test, following the pattern established for the existing legacy jobs (`GenerateSeasonStatsJobTests.SyncAsync_ShouldEvictSeasonStatsCacheTag_AfterSaving`, and the equivalent tests added to `UpdateBowlerTests.cs`/`HallOfFameTests.cs`/`NewTournamentTests.cs`/`SyncSquadScoresTests.cs`/`CompleteTournamentSyncJobTests.cs`/`SyncTournamentResultsJobTests.cs`): register a real `IFusionCache` via `services.AddFusionCache()` in the test's `InitializeAsync()`, seed a stale cached value under the tag the job is expected to evict, run `SyncAsync`, then assert `GetOrSetAsync` returns a fresh value instead of the stale one. Cover both the "evicts" branch and the "does not evict" branches explicitly — `CompleteSeasonSyncJob` must NOT evict `neba:seasons` on the `AlreadyComplete` retry path, and each award job must NOT evict on its "already assigned" short-circuit or "no eligible candidates" no-op, since nothing changed on those paths for the cache to go stale over.
 
 ## Software Side (WinForms, `nebamgmt-v3`)
 
@@ -741,3 +763,4 @@ public static void NotifySeasonCompleted(int seasonId) =>
 8. **Real legacy `Season` table/column names are model-only** — confirmed against `NEBADataModel.edmx`'s SSDL, not a live database, same caveat every prior `/legacy` plan carries. Verify at implementation time.
 9. **`WebsiteSyncAdapter`'s exact `Send`/helper signature was not independently re-verified line-by-line** during this planning session — the sketch above assumes it mirrors `NotifyTournamentCompleted` exactly. Flagged as an explicit open item in the Software-side implementation prompt.
 10. **Whether the Software-side hook site sits inside any wider transaction/rollback scope** — not established during planning, flagged in the implementation prompt per the standing pattern from prior plans.
+11. ~~Whether `CompleteSeasonSyncJob` and the eight award jobs need to evict any cache.~~ **Decided**: yes — each writes through `AppDbContext` directly, bypassing the command-handler pipeline that normally evicts cache on save. `CompleteSeasonSyncJob` evicts `neba:seasons`; the six BOTY jobs share `neba:awards:bowler-of-the-year`; `AssignHighAverageAwardJob`/`AssignHighBlockAwardJob` evict `neba:awards:high-average`/`neba:awards:high-block` respectively — all only on the branch that actually writes a new award/season state, never on an "already assigned"/"already complete"/"no eligible candidates" no-op. See `docs/plans/legacy-jobs-cache-invalidation-review.md` for the review that surfaced this gap across all existing legacy jobs, now also fixed in `Legacy/Bowlers/UpdateBowler.cs`, `Legacy/HallOfFame/HallOfFame.cs`, `Legacy/Tournaments/NewTournament.cs`, `Legacy/Tournaments/SyncSquadScores.cs`, and `Legacy/Tournaments/Complete/{CompleteTournamentSyncJob,SyncTournamentResultsJob}.cs`.

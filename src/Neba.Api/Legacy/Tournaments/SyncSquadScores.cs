@@ -17,6 +17,8 @@ using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Identity;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Legacy.Tournaments;
 
 internal static class SyncSquadScoresEndpoint
@@ -59,6 +61,7 @@ internal sealed class SyncSquadScoresRequestValidator
 internal sealed class SyncSquadScoresSyncJob(
     AppDbContext db,
     IDbConnection legacyConnection,
+    IFusionCache cache,
     IEmailSender emailSender,
     ILogger<SyncSquadScoresSyncJob> logger)
 {
@@ -72,6 +75,14 @@ internal sealed class SyncSquadScoresSyncJob(
             logger.LogLegacySquadNotSyncedForScoreSync(legacySquadId);
             return;
         }
+
+        // Squad.Tournament isn't a mapped navigation (SquadConfiguration.HasOne<Tournament>() has no
+        // navigation expression), so it can't be Include()'d - look the owning tournament's id up via
+        // Tournament.Squads (the mapped side of the relationship) instead.
+        var tournamentId = await db.Set<Tournament>()
+            .Where(t => t.Squads.Any(s => s.Id == squad.Id))
+            .Select(t => t.Id)
+            .SingleAsync(ct);
 
         // See NewBowlerSyncJob.SyncAsync for the rationale on suppressing DAP005 here.
 #pragma warning disable DAP005
@@ -130,6 +141,8 @@ internal sealed class SyncSquadScoresSyncJob(
         }
 
         await db.SaveChangesAsync(ct);
+
+        await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: ct);
 
         // Sent after SaveChangesAsync so the rest of the squad's sync isn't held up by email
         // delivery - same ordering NewTournamentSyncJob uses for its own manual-intervention email.

@@ -17,6 +17,8 @@ using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.HallOfFame.Domain;
 using Neba.Api.Identity;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Legacy.HallOfFame;
 
 internal static class NewHallOfFameInductionEndpoint
@@ -98,6 +100,7 @@ internal static class LegacyHallOfFameInductionExtensions
 internal sealed class NewHallOfFameInductionSyncJob(
     AppDbContext db,
     IDbConnection legacyConnection,
+    IFusionCache cache,
     IEmailSender emailSender,
     ILogger<NewHallOfFameInductionSyncJob> logger)
 {
@@ -155,6 +158,12 @@ internal sealed class NewHallOfFameInductionSyncJob(
         }
 
         await db.SaveChangesAsync(ct);
+
+        // Each champion entry in the champions list (ListChampionsQueryHandler) carries a HallOfFame
+        // flag sourced from HallOfFameInductions, so a new/updated induction can change that flag on
+        // an already-cached champions response, not just the inductions list itself.
+        await cache.RemoveByTagAsync("neba:hall-of-fame:inductions", token: ct);
+        await cache.RemoveByTagAsync("neba:tournaments:champions", token: ct);
     }
 
     private async Task SyncRowAsync(LegacyHallOfFameRow row, CancellationToken ct)

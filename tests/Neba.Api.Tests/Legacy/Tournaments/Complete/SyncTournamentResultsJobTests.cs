@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
@@ -15,6 +16,8 @@ using Neba.TestFactory.Tournaments;
 
 using Npgsql;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Tests.Legacy.Tournaments.Complete;
 
 // Exercises SyncTournamentResultsJob end to end against real Dapper queries (a Postgres temp
@@ -30,12 +33,17 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture)
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
     private NpgsqlConnection _legacyConnection = null!;
+    private ServiceProvider _serviceProvider = null!;
     private int _nextStatsId = 1;
     private int _nextSquadTeamsId = 1;
 
     public async ValueTask InitializeAsync()
     {
         await fixture.ResetAsync();
+
+        var services = new ServiceCollection();
+        services.AddFusionCache().WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
+        _serviceProvider = services.BuildServiceProvider();
 
         // Same rationale as SyncSquadScoresSyncJobTests: plain Dapper works against any real
         // IDbConnection, so Postgres stands in for neba-fwk's MSSQL here. A CREATE TEMP TABLE is
@@ -85,6 +93,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture)
     public async ValueTask DisposeAsync()
     {
         await _legacyConnection.DisposeAsync();
+        await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();
     }
@@ -183,7 +192,12 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture)
     }
 
     private SyncTournamentResultsJob CreateJob(Mock<IEmailSender>? emailSender = null, FakeLogger<SyncTournamentResultsJob>? logger = null) =>
-        new(_dbContext, _legacyConnection, (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object, logger ?? new FakeLogger<SyncTournamentResultsJob>());
+        new(
+            _dbContext,
+            _legacyConnection,
+            _serviceProvider.GetRequiredService<IFusionCache>(),
+            (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object,
+            logger ?? new FakeLogger<SyncTournamentResultsJob>());
 
     private async Task<Tournament> ReloadTournamentAsync(int legacyTournamentId, CancellationToken ct) =>
         await _dbContext.Tournaments.Include(t => t.Results).SingleAsync(t => t.LegacyId == legacyTournamentId, ct);
@@ -238,6 +252,35 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture)
         cutResult.Place.ShouldBe(2);
         cutResult.PrizeMoney.ShouldBe(0m);
         cutResult.Points.ShouldBe(50);
+    }
+
+    [Fact(DisplayName = "SyncAsync should evict the tournament and champions cache tags after saving")]
+    public async Task SyncAsync_ShouldEvictTournamentAndChampionsCacheTags_AfterSaving()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var tournament = await CreateTournamentAsync(42, TournamentType.Singles, complete: true, ct);
+        await CreateBowlerAsync(100, ct);
+
+        var placedStatsId = await InsertStatsAsync(100, 42);
+        await InsertResultsStatsAsync(placedStatsId, place: 1, payout: 500m, points: 100);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string tournamentCacheKey = "results-tournament-cache-test";
+        const string championsCacheKey = "results-champions-cache-test";
+        await cache.GetOrSetAsync(tournamentCacheKey, _ => Task.FromResult("stale-cached-value"), tags: [$"neba:tournaments:{tournament.Id}"], token: ct);
+        await cache.GetOrSetAsync(championsCacheKey, _ => Task.FromResult("stale-cached-value"), tags: ["neba:tournaments:champions"], token: ct);
+
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
+        var tournamentValueAfterSync = await cache.GetOrSetAsync(tournamentCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
+        tournamentValueAfterSync.ShouldBe("fresh-value");
+        var championsValueAfterSync = await cache.GetOrSetAsync(championsCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
+        championsValueAfterSync.ShouldBe("fresh-value");
     }
 
     [Fact(DisplayName = "SyncAsync should place a non-advancing team roster together, excluding a forfeited roster")]

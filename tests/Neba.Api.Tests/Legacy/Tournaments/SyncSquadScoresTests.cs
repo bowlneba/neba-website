@@ -34,6 +34,8 @@ using Neba.TestFactory.Tournaments;
 
 using Npgsql;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Tests.Legacy.Tournaments;
 
 // Mirrors the single-file shape of the production source (Legacy/Tournaments/SyncSquadScores.cs) so
@@ -232,10 +234,15 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture)
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
     private NpgsqlConnection _legacyConnection = null!;
+    private ServiceProvider _serviceProvider = null!;
 
     public async ValueTask InitializeAsync()
     {
         await fixture.ResetAsync();
+
+        var services = new ServiceCollection();
+        services.AddFusionCache().WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
+        _serviceProvider = services.BuildServiceProvider();
 
         // Plain Dapper works against any real ADO.NET IDbConnection, so a Postgres connection
         // (reusing this test project's existing Testcontainers.PostgreSql infra) stands in for the
@@ -262,6 +269,7 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture)
     public async ValueTask DisposeAsync()
     {
         await _legacyConnection.DisposeAsync();
+        await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();
     }
@@ -308,7 +316,12 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture)
     }
 
     private SyncSquadScoresSyncJob CreateJob(Mock<IEmailSender>? emailSender = null, FakeLogger<SyncSquadScoresSyncJob>? logger = null) =>
-        new(_dbContext, _legacyConnection, (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object, logger ?? new FakeLogger<SyncSquadScoresSyncJob>());
+        new(
+            _dbContext,
+            _legacyConnection,
+            _serviceProvider.GetRequiredService<IFusionCache>(),
+            (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object,
+            logger ?? new FakeLogger<SyncSquadScoresSyncJob>());
 
     [Fact(DisplayName = "SyncAsync should log a warning and make no changes when the legacy squad is not found")]
     public async Task SyncAsync_ShouldLogWarningAndMakeNoChanges_WhenLegacySquadIsNotFound()
@@ -350,6 +363,34 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture)
         scores[0].Score.ShouldBe(200);
         scores[1].GameNumber.ShouldBe((short)2);
         scores[1].Score.ShouldBe(210);
+    }
+
+    [Fact(DisplayName = "SyncAsync should evict the tournament's cache tag after saving")]
+    public async Task SyncAsync_ShouldEvictTournamentCacheTag_AfterSaving()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var squad = await CreateSquadAsync(legacySquadId: 1, ct);
+        await CreateBowlerAsync(legacyBowlerId: 100, ct);
+        await InsertLegacyScoreAsync(legacyBowlerId: 100, legacySquadId: 1, game: 1, score: 200);
+
+        var tournamentId = await _dbContext.Set<Tournament>()
+            .Where(t => t.Squads.Any(s => s.Id == squad.Id))
+            .Select(t => t.Id)
+            .SingleAsync(ct);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string cacheKey = "squad-scores-tournament-cache-test";
+        await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("stale-cached-value"), tags: [$"neba:tournaments:{tournamentId}"], token: ct);
+
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
+        var valueAfterSync = await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("fresh-value"), token: ct);
+        valueAfterSync.ShouldBe("fresh-value");
     }
 
     [Fact(DisplayName = "SyncAsync should skip an unmapped bowler's rows, sync others, log a warning, and send a manual-intervention email")]

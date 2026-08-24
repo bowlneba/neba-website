@@ -15,6 +15,8 @@ using Neba.Api.Database;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Identity;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Legacy.Bowlers;
 
 internal static class UpdateBowler
@@ -85,6 +87,7 @@ internal sealed class UpdateBowlerRequestValidator
 internal sealed class UpdateBowlerSyncJob(
     AppDbContext db,
     IDbConnection legacyConnection,
+    IFusionCache cache,
     ILogger<UpdateBowlerSyncJob> logger)
 {
     public async Task SyncAsync(int legacyBowlerId, CancellationToken ct)
@@ -164,6 +167,8 @@ internal sealed class UpdateBowlerSyncJob(
             await db.Set<Bowler>().AddAsync(created.Value, ct);
             await db.SaveChangesAsync(ct);
 
+            await cache.RemoveByTagAsync("neba:bowlers", token: ct);
+
             return;
         }
 
@@ -184,6 +189,8 @@ internal sealed class UpdateBowlerSyncJob(
         }
 
         await db.SaveChangesAsync(ct);
+
+        await cache.RemoveByTagAsync("neba:bowlers", token: ct);
     }
 
     // Identical to NewBowlerSyncJob.MapSuffix - see that file's comment for the full rationale.

@@ -32,6 +32,8 @@ using Neba.TestFactory.Tournaments;
 
 using Npgsql;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Tests.Legacy.Tournaments;
 
 // Mirrors the single-file shape of the production source (Legacy/Tournaments/NewTournament.cs) so
@@ -258,10 +260,15 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
     private NpgsqlConnection _legacyConnection = null!;
+    private ServiceProvider _serviceProvider = null!;
 
     public async ValueTask InitializeAsync()
     {
         await fixture.ResetAsync();
+
+        var services = new ServiceCollection();
+        services.AddFusionCache().WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
+        _serviceProvider = services.BuildServiceProvider();
 
         // Plain Dapper works against any real ADO.NET IDbConnection, so a Postgres connection
         // (reusing this test project's existing Testcontainers.PostgreSql infra) stands in for the
@@ -333,6 +340,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
     public async ValueTask DisposeAsync()
     {
         await _legacyConnection.DisposeAsync();
+        await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();
     }
@@ -400,7 +408,12 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
     }
 
     private NewTournamentSyncJob CreateJob(Mock<IEmailSender>? emailSender = null, FakeLogger<NewTournamentSyncJob>? logger = null) =>
-        new(_dbContext, _legacyConnection, (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object, logger ?? new FakeLogger<NewTournamentSyncJob>());
+        new(
+            _dbContext,
+            _legacyConnection,
+            _serviceProvider.GetRequiredService<IFusionCache>(),
+            (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object,
+            logger ?? new FakeLogger<NewTournamentSyncJob>());
 
     [Fact(DisplayName = "SyncAsync should be a no-op and should log information when the legacy id was already synced")]
     public async Task SyncAsync_ShouldBeNoOpAndLogInformation_WhenLegacyIdWasAlreadySynced()
@@ -423,6 +436,31 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
         var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
         record.Level.ShouldBe(LogLevel.Information);
         record.Message.ShouldContain("1");
+    }
+
+    [Fact(DisplayName = "SyncAsync should evict the tournament's own cache tag when the legacy id was already synced")]
+    public async Task SyncAsync_ShouldEvictTournamentCacheTag_WhenLegacyIdWasAlreadySynced()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var seasonId = await CreateSeasonAsync(ct);
+        var tournament = TournamentFactory.Create(legacyId: 1, seasonId: seasonId);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.ChangeTracker.Clear();
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string cacheKey = "already-linked-tournament-cache-test";
+        await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("stale-cached-value"), tags: [$"neba:tournaments:{tournament.Id}"], token: ct);
+
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
+        var valueAfterSync = await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("fresh-value"), token: ct);
+        valueAfterSync.ShouldBe("fresh-value");
     }
 
     [Fact(DisplayName = "SyncAsync should log a warning and make no changes when the legacy tournament is not found")]
@@ -459,6 +497,34 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
         // Assert
         var linked = await _dbContext.Tournaments.SingleAsync(t => t.Id == tournament.Id, ct);
         linked.LegacyId.ShouldBe(1);
+    }
+
+    [Fact(DisplayName = "SyncAsync should evict the season's tournament list and the tournament's own cache tag when linking for the first time")]
+    public async Task SyncAsync_ShouldEvictSeasonListAndTournamentCacheTags_WhenLinkingForTheFirstTime()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var endDate = new DateOnly(2025, 10, 5);
+        var seasonId = await CreateSeasonAsync(ct);
+        var tournament = await CreateUnlinkedTournamentAsync(seasonId, TournamentType.Singles, endDate, ct);
+        await InsertLegacySinglesTournamentAsync(1, endDate.ToDateTime(TimeOnly.MinValue), singlesTournamentType: 0);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string seasonListCacheKey = "tournament-season-list-cache-test";
+        const string tournamentCacheKey = "tournament-detail-cache-test";
+        await cache.GetOrSetAsync(seasonListCacheKey, _ => Task.FromResult("stale-cached-value"), tags: [$"neba:tournaments:{seasonId}"], token: ct);
+        await cache.GetOrSetAsync(tournamentCacheKey, _ => Task.FromResult("stale-cached-value"), tags: [$"neba:tournaments:{tournament.Id}"], token: ct);
+
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
+        var seasonListValueAfterSync = await cache.GetOrSetAsync(seasonListCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
+        seasonListValueAfterSync.ShouldBe("fresh-value");
+        var tournamentValueAfterSync = await cache.GetOrSetAsync(tournamentCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
+        tournamentValueAfterSync.ShouldBe("fresh-value");
     }
 
     [Fact(DisplayName = "SyncAsync should sync the tournament's squads when linking for the first time")]

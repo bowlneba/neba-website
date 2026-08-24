@@ -9,6 +9,8 @@ using Neba.Api.Email;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Identity;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Legacy.Tournaments.Complete;
 
 // Does the actual TournamentResult population (via TournamentPlaceCalculator for any bowler
@@ -17,6 +19,7 @@ namespace Neba.Api.Legacy.Tournaments.Complete;
 internal sealed class SyncTournamentResultsJob(
     AppDbContext db,
     IDbConnection legacyConnection,
+    IFusionCache cache,
     IEmailSender emailSender,
     ILogger<SyncTournamentResultsJob> logger)
 {
@@ -170,6 +173,11 @@ internal sealed class SyncTournamentResultsJob(
         }
 
         await db.SaveChangesAsync(ct);
+
+        // Place == 1 results feed the champions list (ListChampionsQueryHandler) directly, in
+        // addition to the tournament's own detail view.
+        await cache.RemoveByTagAsync($"neba:tournaments:{tournament.Id}", token: ct);
+        await cache.RemoveByTagAsync("neba:tournaments:champions", token: ct);
 
         if (unmappedLegacyBowlerIds.Count > 0)
         {

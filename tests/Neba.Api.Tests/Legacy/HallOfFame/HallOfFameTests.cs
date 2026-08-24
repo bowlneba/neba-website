@@ -32,6 +32,8 @@ using Neba.TestFactory.Infrastructure;
 
 using Npgsql;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Tests.Legacy.HallOfFame;
 
 // Mirrors the single-file shape of the production source (Legacy/HallOfFame/HallOfFameTests.cs) so the
@@ -285,10 +287,15 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
     private NpgsqlConnection _legacyConnection = null!;
+    private ServiceProvider _serviceProvider = null!;
 
     public async ValueTask InitializeAsync()
     {
         await fixture.ResetAsync();
+
+        var services = new ServiceCollection();
+        services.AddFusionCache().WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
+        _serviceProvider = services.BuildServiceProvider();
 
         // Plain Dapper works against any real ADO.NET IDbConnection, so a Postgres connection
         // (reusing this test project's existing Testcontainers.PostgreSql infra) stands in for the
@@ -316,6 +323,7 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
     public async ValueTask DisposeAsync()
     {
         await _legacyConnection.DisposeAsync();
+        await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();
     }
@@ -348,6 +356,7 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         new(
             _dbContext,
             _legacyConnection,
+            _serviceProvider.GetRequiredService<IFusionCache>(),
             (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object,
             logger ?? new FakeLogger<NewHallOfFameInductionSyncJob>());
 
@@ -385,6 +394,32 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         var induction = await _dbContext.HallOfFameInductions.SingleAsync(i => i.BowlerId == bowler.Id, ct);
         induction.Year.ShouldBe(2025);
         induction.Categories.ShouldBe([HallOfFameCategory.SuperiorPerformance]);
+    }
+
+    [Fact(DisplayName = "SyncAsync should evict the inductions and champions cache tags after saving")]
+    public async Task SyncAsync_ShouldEvictInductionsAndChampionsCacheTags_AfterSaving()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await CreateSyncedBowlerAsync(legacyBowlerId: 5, ct);
+        await InsertLegacyHallOfFameRowAsync(1, bowlerId: 5, category: 100, year: 2025);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string inductionsCacheKey = "hall-of-fame-inductions-cache-test";
+        const string championsCacheKey = "champions-cache-test";
+        await cache.GetOrSetAsync(inductionsCacheKey, _ => Task.FromResult("stale-cached-value"), tags: ["neba:hall-of-fame:inductions"], token: ct);
+        await cache.GetOrSetAsync(championsCacheKey, _ => Task.FromResult("stale-cached-value"), tags: ["neba:tournaments:champions"], token: ct);
+
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync([1], ct);
+
+        // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
+        var inductionsValueAfterSync = await cache.GetOrSetAsync(inductionsCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
+        inductionsValueAfterSync.ShouldBe("fresh-value");
+        var championsValueAfterSync = await cache.GetOrSetAsync(championsCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
+        championsValueAfterSync.ShouldBe("fresh-value");
     }
 
     [Theory(DisplayName = "SyncAsync should map the legacy Category column to the right website categories")]

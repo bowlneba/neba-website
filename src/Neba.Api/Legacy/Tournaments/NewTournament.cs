@@ -18,6 +18,8 @@ using Neba.Api.Email;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Identity;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Legacy.Tournaments;
 
 internal static class NewTournamentEndpoint
@@ -68,6 +70,7 @@ internal static class LegacyTournamentLinkExtensions
 internal sealed class NewTournamentSyncJob(
     AppDbContext db,
     IDbConnection legacyConnection,
+    IFusionCache cache,
     IEmailSender emailSender,
     ILogger<NewTournamentSyncJob> logger)
 {
@@ -85,6 +88,7 @@ internal sealed class NewTournamentSyncJob(
             logger.LogLegacyTournamentAlreadyLinked(legacyTournamentId);
             await SyncSquadsAsync(alreadyLinkedTournament, legacyTournamentId, ct);
             await db.SaveChangesAsync(ct);
+            await cache.RemoveByTagAsync($"neba:tournaments:{alreadyLinkedTournament.Id}", token: ct);
             return;
         }
 
@@ -168,6 +172,11 @@ internal sealed class NewTournamentSyncJob(
         candidates[0].ApplyLegacyId(legacyTournamentId);
         await SyncSquadsAsync(candidates[0], legacyTournamentId, ct);
         await db.SaveChangesAsync(ct);
+
+        // A brand-new link changes which tournament shows up in the season's list, not just that
+        // tournament's own detail.
+        await cache.RemoveByTagAsync($"neba:tournaments:{candidates[0].SeasonId}", token: ct);
+        await cache.RemoveByTagAsync($"neba:tournaments:{candidates[0].Id}", token: ct);
     }
 
     private async Task SyncSquadsAsync(Tournament tournament, int legacyTournamentId, CancellationToken ct)
