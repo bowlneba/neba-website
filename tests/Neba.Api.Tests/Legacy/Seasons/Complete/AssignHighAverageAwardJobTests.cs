@@ -61,7 +61,7 @@ public sealed class AssignHighAverageAwardJobTests(AppDbContextFixture fixture)
     {
         for (var i = 0; i < count; i++)
         {
-            await _dbContext.Tournaments.AddAsync(TournamentFactory.Create(seasonId: seasonId, statsEligible: true), ct);
+            await _dbContext.Tournaments.AddAsync(TournamentFactory.Create(statsEligible: true, seasonId: seasonId), ct);
         }
 
         await _dbContext.SaveChangesAsync(ct);
@@ -75,7 +75,7 @@ public sealed class AssignHighAverageAwardJobTests(AppDbContextFixture fixture)
         await _dbContext.Bowlers.AddAsync(bowler, ct);
         await _dbContext.BowlerSeasonStats.AddAsync(
             BowlerSeasonStatsFactory.Create(
-                seasonId: seasonId, bowlerId: bowler.Id, totalGames: totalGames, totalPinfall: totalPinfall, totalTournaments: totalTournaments), ct);
+                seasonId: seasonId, bowlerId: bowler.Id, totalTournaments: totalTournaments, totalGames: totalGames, totalPinfall: totalPinfall), ct);
         await _dbContext.SaveChangesAsync(ct);
         _dbContext.ChangeTracker.Clear();
 
