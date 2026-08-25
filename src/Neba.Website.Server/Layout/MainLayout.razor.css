@@ -110,6 +110,26 @@
     margin: 0;
 }
 
+.footer-powered-by {
+    margin-top: 0.25rem !important;
+}
+
+.footer-powered-by a {
+    color: var(--neba-gray-700);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.footer-powered-by a:hover {
+    color: var(--neba-blue-700);
+}
+
+.footer-powered-by a:focus-visible {
+    outline: 2px solid var(--neba-blue-500);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
 .footer-links {
     display: flex;
     gap: 1.5rem;
