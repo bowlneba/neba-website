@@ -4,7 +4,7 @@ Adds `TournamentResult` — one bowler's place, prize money, and points earned i
 
 ## Status
 
-**Design only — nothing built yet.** This file is the starting point for SME review before any code is written.
+**Domain, persistence, and the query-layer merge are built.** `Tournament.Complete`/`Tournament.CompleteTournament()`, `TournamentResult`/`TournamentResultId`/`TournamentResultErrors`, `Tournament.AddResult`, the `TournamentResultConfiguration` EF mapping, and the `20260818163034_TournamentResults_Init` migration are all implemented, along with the `GetTournamentQueryHandler` merge described in Query Layer below. **Deferred** — see Future Work: match play as a domain concept (and the background job that derives results from it), tournament-level base points and the placement-to-points curve, completion invariants beyond a bare flag flip, and edit capability. The Migration Backdoor sync described below is also built (see `docs/plans/software-backdoor-complete-tournament.md`).
 
 ## Decisions locked in during scoping
 

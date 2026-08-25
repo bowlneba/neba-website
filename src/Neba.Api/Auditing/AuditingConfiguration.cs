@@ -99,6 +99,7 @@ internal static class AuditingConfiguration
                 .Include<Sponsor>()
                 .Include<Article>()
                 .Include<PendingUpload>()
+                .Include<Squad>()
                 .Include<SquadScore>()
                 .Include<TournamentResult>();
 

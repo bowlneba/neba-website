@@ -59,7 +59,8 @@ src/
 │   ├── Caching/                  # FusionCache setup and decorators
 │   ├── BackgroundJobs/           # Hangfire job definitions
 │   ├── Storage/                  # Azure Blob Storage
-│   └── Security/, Identity/      # Auth, policies, current-user resolution
+│   ├── Security/, Identity/      # Auth, policies, current-user resolution
+│   └── Legacy/                   # Temporary /legacy sync bridge from the Software (nebamgmt-v3) — see docs/api/software-backdoor-plan.md
 │
 ├── Neba.Api.Contracts/           # Request/Input/Response records + Refit interfaces (shared with Blazor)
 │   ├── Tournaments/
