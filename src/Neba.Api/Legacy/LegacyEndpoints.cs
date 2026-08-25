@@ -24,6 +24,8 @@ internal static class LegacyEndpoints
             app.MapCompleteSeason();
 
             app.MapNewHallOfFameInduction();
+
+            app.MapPing();
         }
     }
 }

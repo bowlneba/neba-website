@@ -5,6 +5,7 @@ using Audit.AzureStorageTables.Providers;
 using Audit.Hangfire;
 
 using Hangfire;
+using Hangfire.Console;
 using Hangfire.PostgreSql;
 
 using Microsoft.Extensions.Options;
@@ -32,6 +33,8 @@ internal static class BackgroundJobsConfiguration
             });
 
             services.AddHangfireInfrastructure(configuration);
+
+            services.AddSingleton<ILoggerProvider, HangfireConsoleLoggerProvider>();
 
             string[] tags = ["infrastructure", "background-jobs"];
 
@@ -70,6 +73,8 @@ internal static class BackgroundJobsConfiguration
                     .UseRecommendedSerializerSettings()
                     .UseFilter(new AutomaticRetryAttribute { Attempts = settings.AutomaticRetryAttempts })
                     .UseFilter(new HangfireJobExpirationFilterAttribute(settings))
+                    .UseFilter(new HangfireConsoleServerFilter())
+                    .UseConsole()
                     .AddAuditJobExecutionFilter(config => config
                         .EventType("Job:{type}.{method}")
                         .ExcludeArguments()
