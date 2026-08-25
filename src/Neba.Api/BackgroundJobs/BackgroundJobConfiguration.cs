@@ -100,7 +100,16 @@ internal static class BackgroundJobsConfiguration
                         {
                             SchemaName = "hangfire",
                             PrepareSchemaIfNecessary = true,
-                            EnableTransactionScopeEnlistment = true,
+                            // Explicit override of the library default (true). No job in this app relies on
+                            // enlisting Hangfire's own storage writes into an ambient System.Transactions
+                            // scope shared with application code - nothing here ever opens a TransactionScope.
+                            // Leaving it enabled with no consumer is a pure liability: if the Postgres
+                            // connection is lost while an ambient transaction is open (a server restart or
+                            // failover), Npgsql can get stuck in an unrecoverable single-phase-rollback retry
+                            // loop that never gives up, permanently consuming a Hangfire worker. See CLAUDE.md
+                            // Learnings - "Hangfire PostgreSql EnableTransactionScopeEnlistment" for the
+                            // incident this was found from.
+                            EnableTransactionScopeEnlistment = false,
                             DeleteExpiredBatchSize = 1000,
                             QueuePollInterval = TimeSpan.FromSeconds(30),
                             JobExpirationCheckInterval = TimeSpan.FromHours(1),
