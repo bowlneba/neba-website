@@ -29,6 +29,12 @@ internal sealed class PongJob(
     IServer server,
     ILogger<PongJob> logger)
 {
+    // The job's own Succeeded/Failed state is the health signal - Hangfire's Console output can't be
+    // relied on here (its Postgres storage writes go through a System.Transactions.TransactionScope
+    // commit, which needs prepared-transaction support this Postgres instance doesn't have - see
+    // CLAUDE.md's "Hangfire PostgreSql EnableTransactionScopeEnlistment" entry for the related
+    // incident). A non-2xx /health response, or a transport failure reaching it, throws so the job
+    // fails; anything else it means the API answered its own health check successfully.
     public async Task PongAsync(CancellationToken ct)
     {
         using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
@@ -49,10 +55,16 @@ internal sealed class PongJob(
             var body = await response.Content.ReadAsStringAsync(ct);
 
             logger.LogPong((int)response.StatusCode, body);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new InvalidOperationException($"Pong: GET /health returned {(int)response.StatusCode}: {body}");
+            }
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             logger.LogPongFailed(ex.Message);
+            throw;
         }
     }
 

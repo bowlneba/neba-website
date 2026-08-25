@@ -178,8 +178,8 @@ public sealed class PongJobTests
         record.Message.ShouldContain("Healthy");
     }
 
-    [Fact(DisplayName = "PongAsync should log a warning and not throw when the health check request throws HttpRequestException")]
-    public async Task PongAsync_ShouldLogWarningAndNotThrow_WhenHealthCheckThrowsHttpRequestException()
+    [Fact(DisplayName = "PongAsync should log a warning and rethrow when the health check request throws HttpRequestException")]
+    public async Task PongAsync_ShouldLogWarningAndRethrow_WhenHealthCheckThrowsHttpRequestException()
     {
         // Arrange
         var fakeLogger = new FakeLogger<PongJob>();
@@ -187,7 +187,7 @@ public sealed class PongJobTests
         var job = CreateJob(new FakeHttpClientFactory(handler), CreateServer("http://localhost:5000"), fakeLogger);
 
         // Act
-        await Should.NotThrowAsync(() => job.PongAsync(TestContext.Current.CancellationToken));
+        await Should.ThrowAsync<HttpRequestException>(() => job.PongAsync(TestContext.Current.CancellationToken));
 
         // Assert
         var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
@@ -195,8 +195,8 @@ public sealed class PongJobTests
         record.Message.ShouldContain("connection refused");
     }
 
-    [Fact(DisplayName = "PongAsync should log a warning and not throw when the health check request times out")]
-    public async Task PongAsync_ShouldLogWarningAndNotThrow_WhenHealthCheckTimesOut()
+    [Fact(DisplayName = "PongAsync should log a warning and rethrow when the health check request times out")]
+    public async Task PongAsync_ShouldLogWarningAndRethrow_WhenHealthCheckTimesOut()
     {
         // Arrange
         var fakeLogger = new FakeLogger<PongJob>();
@@ -204,12 +204,32 @@ public sealed class PongJobTests
         var job = CreateJob(new FakeHttpClientFactory(handler), CreateServer("http://localhost:5000"), fakeLogger);
 
         // Act
-        await Should.NotThrowAsync(() => job.PongAsync(TestContext.Current.CancellationToken));
+        await Should.ThrowAsync<TaskCanceledException>(() => job.PongAsync(TestContext.Current.CancellationToken));
 
         // Assert
         var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
         record.Level.ShouldBe(LogLevel.Warning);
         record.Message.ShouldContain("timed out");
+    }
+
+    [Fact(DisplayName = "PongAsync should log the status code and body then throw when the health check returns a non-success status code")]
+    public async Task PongAsync_ShouldLogAndThrow_WhenHealthCheckReturnsNonSuccessStatusCode()
+    {
+        // Arrange
+        var fakeLogger = new FakeLogger<PongJob>();
+        using var handler = new StubHttpMessageHandler(HttpStatusCode.ServiceUnavailable, "Unhealthy");
+        var job = CreateJob(new FakeHttpClientFactory(handler), CreateServer("http://localhost:5000"), fakeLogger);
+
+        // Act
+        var exception = await Should.ThrowAsync<InvalidOperationException>(() => job.PongAsync(TestContext.Current.CancellationToken));
+
+        // Assert
+        exception.Message.ShouldContain("503");
+        exception.Message.ShouldContain("Unhealthy");
+        var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        record.Level.ShouldBe(LogLevel.Information);
+        record.Message.ShouldContain("503");
+        record.Message.ShouldContain("Unhealthy");
     }
 
     [Fact(DisplayName = "PongAsync should log a warning and not call the HTTP client when no server address is available")]
