@@ -65,15 +65,17 @@ internal sealed class PongJob(
             return null;
         }
 
+        const string localhost = "localhost";
+
         // Kestrel reports its bound addresses using whatever wildcard host it was configured
         // with (e.g. "http://+:8080" from ASPNETCORE_URLS becomes "http://[::]:8080" in
         // IServerAddressesFeature) - that's a bind address, not something HttpClient can
         // connect to. Swap any wildcard host for "localhost" before using it as a call target.
         var uri = new Uri(address
-            .Replace("+", "localhost", StringComparison.Ordinal)
-            .Replace("*", "localhost", StringComparison.Ordinal)
-            .Replace("[::]", "localhost", StringComparison.Ordinal)
-            .Replace("0.0.0.0", "localhost", StringComparison.Ordinal));
+            .Replace("+", localhost, StringComparison.Ordinal)
+            .Replace("*", localhost, StringComparison.Ordinal)
+            .Replace("[::]", localhost, StringComparison.Ordinal)
+            .Replace("0.0.0.0", localhost, StringComparison.Ordinal));
         return uri;
     }
 }
