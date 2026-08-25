@@ -21,6 +21,6 @@ internal static class BowlerSeasonStatsRanking
         }
 
         var max = list.Max(selector);
-        return list.Where(c => selector(c).CompareTo(max) == 0).ToList();
+        return [.. list.Where(c => selector(c).CompareTo(max) == 0)];
     }
 }
