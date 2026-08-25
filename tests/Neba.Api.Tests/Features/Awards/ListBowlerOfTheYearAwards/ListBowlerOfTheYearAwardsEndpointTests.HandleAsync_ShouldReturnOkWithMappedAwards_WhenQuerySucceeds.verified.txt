@@ -1,17 +1,17 @@
 ﻿{
   Items: [
     {
-      Season: Season 2026,
+      Season: Season 2024,
       BowlerName: Jordan Cummings,
       Category: Super Senior
     },
     {
-      Season: Season 2026,
+      Season: Season 2024,
       BowlerName: Jordan Cummings,
       Category: Youth
     },
     {
-      Season: Season 2021,
+      Season: Season 2020,
       BowlerName: Jordan Cummings,
       Category: Senior
     }
