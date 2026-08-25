@@ -1196,6 +1196,8 @@ Titles are the authoritative source for:
 
 A Season must be marked **Complete** before any awards may be assigned to bowlers. This ensures that in-progress award standings — such as a bowler currently leading Bowler of the Year — do not prematurely influence Hall of Fame point totals.
 
+A Season is **Complete** once `CompleteSeason()` has been called; it may not be reopened. Completion carries no business-rule gate today beyond idempotency (`SeasonErrors.AlreadyComplete` on a repeat call) — the only caller is the legacy backdoor sync, which mirrors nebamgmt-v3 reporting the season done and matches the target website Season by `StartDate`/`EndDate` (Season has no `LegacyId`; see `docs/plans/software-backdoor-complete-season.md`). Same shape as `Tournament.CompleteTournament()` (see `### Tournament`): once a UI-driven completion flow replaces the backdoor as the real trigger, `CompleteSeason()` is where `SeasonCompleted` (below) should actually be raised via `AddDomainEvent(...)`, and any completion invariants beyond idempotency would move onto this method rather than the endpoint or job that calls it.
+
 **Properties**:
 
 | Property | Type | Description |
@@ -1224,7 +1226,7 @@ A Season must be marked **Complete** before any awards may be assigned to bowler
 
 | Event | Trigger |
 | --- | --- |
-| `SeasonCompleted` | Raised when a Season is marked Complete. Downstream consumers (e.g., Hall of Fame point calculations) react to this event |
+| `SeasonCompleted` | Raised when a Season is marked Complete. Downstream consumers (e.g., Hall of Fame point calculations) react to this event. **Not yet raised in code** — `CompleteSeason()` currently only flips `Complete` and returns `ErrorOr<Success>`; no aggregate in the codebase raises domain events yet (`AggregateRoot.AddDomainEvent` exists but is unused everywhere). Add this event at the same time `CompleteSeason()` gains a real, website-driven caller (see the note under Definition above) |
 
 > **Out of Scope (Current)**: Hall of Fame point values associated with each award type, membership type definitions (New Member, Renewal, etc.), and the formal definition of Tournament stat-eligibility are deferred to their respective modeling sessions. No concept of season templates or recurring schedule patterns is modeled at this time.
 
@@ -1233,6 +1235,8 @@ A Season must be marked **Complete** before any awards may be assigned to bowler
 - Namespace: `Neba.Api.Features.Seasons.Domain`
 - Type: `Season` (aggregate root)
 - Identity type: `SeasonId` (ULID-backed strongly-typed ID)
+- Property: `Season.Complete` (`bool`, defaults to `false`)
+- Operation: `Season.CompleteSeason()`
 
 ---
 

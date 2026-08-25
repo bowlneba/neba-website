@@ -21,6 +21,9 @@ public static class BowlerOfTheYearAwardDtoFactory
             Category = category?.Name ?? ValidCategory
         };
 
+    // Fixed reference date keeps seeded output deterministic regardless of when the test runs.
+    private static readonly DateTime BogusDateReference = new(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
     internal static IReadOnlyCollection<BowlerOfTheYearAwardDto> Bogus(int count, Faker faker)
     {
         ArgumentNullException.ThrowIfNull(faker);
@@ -30,7 +33,7 @@ public static class BowlerOfTheYearAwardDtoFactory
 
         return [.. Enumerable.Range(0, count).Select(_ => new BowlerOfTheYearAwardDto
         {
-            Season = $"Season {faker.Date.Past(5).Year}",
+            Season = $"Season {faker.Date.Past(5, BogusDateReference).Year}",
             BowlerName = bowlerNames.GetNext(),
             Category = faker.PickRandom(categories)
         })];

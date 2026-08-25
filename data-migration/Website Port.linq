@@ -4461,6 +4461,7 @@ static List<(int? websiteId, int? softwareId)> s_manualMatch = new()
 	new(null, 5135),  // Gregory Lovewell
 	new(null, 5131),  // Steph Clark
 	new(null, 5120),  // Laura Clark
+	new(435, 5023),   // Qwadaris Lee
 };
 
 #endregion

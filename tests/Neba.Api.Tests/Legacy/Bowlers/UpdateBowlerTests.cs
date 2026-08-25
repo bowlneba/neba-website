@@ -20,6 +20,7 @@ using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Legacy;
 using Neba.Api.Legacy.Bowlers;
 using Neba.Api.Legacy.HallOfFame;
+using Neba.Api.Legacy.Seasons.Complete;
 using Neba.Api.Legacy.Tournaments;
 using Neba.Api.Legacy.Tournaments.Complete;
 using Neba.Api.Legacy.Tournaments.Stats;
@@ -28,6 +29,8 @@ using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.Infrastructure;
 
 using Npgsql;
+
+using ZiggyCreatures.Caching.Fusion;
 
 namespace Neba.Api.Tests.Legacy.Bowlers;
 
@@ -166,6 +169,7 @@ public sealed class UpdateBowlerEndpointTests : IAsyncLifetime
         builder.Services.AddScoped<IValidator<CompleteTournamentRequest>, CompleteTournamentRequestValidator>();
         builder.Services.AddScoped<IValidator<UpdateTournamentStatsRequest>, UpdateTournamentStatsRequestValidator>();
         builder.Services.AddScoped<IValidator<NewHallOfFameInductionRequest>, NewHallOfFameInductionRequestValidator>();
+        builder.Services.AddScoped<IValidator<CompleteSeasonRequest>, CompleteSeasonRequestValidator>();
         builder.Services.AddSingleton(Options.Create(new LegacySettings { ApiKey = ValidApiKey }));
 
         _app = builder.Build();
@@ -270,10 +274,15 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture)
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
     private NpgsqlConnection _legacyConnection = null!;
+    private ServiceProvider _serviceProvider = null!;
 
     public async ValueTask InitializeAsync()
     {
         await fixture.ResetAsync();
+
+        var services = new ServiceCollection();
+        services.AddFusionCache().WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
+        _serviceProvider = services.BuildServiceProvider();
 
         // See NewBowlerSyncJobTests for the full rationale on standing in a Postgres connection for
         // the real MSSQL neba-fwk database via a connection-scoped CREATE TEMP TABLE.
@@ -298,6 +307,7 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture)
     public async ValueTask DisposeAsync()
     {
         await _legacyConnection.DisposeAsync();
+        await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();
     }
@@ -336,7 +346,11 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture)
     }
 
     private UpdateBowlerSyncJob CreateJob(FakeLogger<UpdateBowlerSyncJob>? logger = null) =>
-        new(_dbContext, _legacyConnection, logger ?? new FakeLogger<UpdateBowlerSyncJob>());
+        new(
+            _dbContext,
+            _legacyConnection,
+            _serviceProvider.GetRequiredService<IFusionCache>(),
+            logger ?? new FakeLogger<UpdateBowlerSyncJob>());
 
     [Fact(DisplayName = "SyncAsync should not persist anything and should log a warning when the legacy id is not found")]
     public async Task SyncAsync_ShouldNotPersistAnythingAndShouldLogWarning_WhenLegacyIdIsNotFound()
@@ -540,6 +554,49 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture)
         bowler.DateOfBirth.ShouldBe(new DateOnly(1990, 1, 1));
         var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
         record.Level.ShouldBe(LogLevel.Information);
+    }
+
+    [Fact(DisplayName = "SyncAsync should evict the bowlers cache tag after updating an existing bowler")]
+    public async Task SyncAsync_ShouldEvictBowlersCacheTag_AfterUpdatingExistingBowler()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await SeedExistingBowlerAsync(1);
+        await InsertLegacyBowlerAsync(1, firstName: "David");
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string cacheKey = "bowlers-cache-test";
+        await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("stale-cached-value"), tags: ["neba:bowlers"], token: ct);
+
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
+        var valueAfterSync = await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("fresh-value"), token: ct);
+        valueAfterSync.ShouldBe("fresh-value");
+    }
+
+    [Fact(DisplayName = "SyncAsync should evict the bowlers cache tag when falling back to create")]
+    public async Task SyncAsync_ShouldEvictBowlersCacheTag_WhenFallingBackToCreate()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        await InsertLegacyBowlerAsync(1, firstName: "David");
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string cacheKey = "bowlers-cache-test-create";
+        await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("stale-cached-value"), tags: ["neba:bowlers"], token: ct);
+
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
+        var valueAfterSync = await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("fresh-value"), token: ct);
+        valueAfterSync.ShouldBe("fresh-value");
     }
 
     [Fact(DisplayName = "SyncAsync should not create a bowler and should log an error when falling back to create with an invalid mapped name")]

@@ -3,6 +3,7 @@ using Hangfire.Common;
 using Hangfire.States;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
@@ -16,6 +17,8 @@ using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Tournaments;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Tests.Legacy.Tournaments.Complete;
 
 // This job's whole job is "complete, then chain" - covered separately from the endpoint test
@@ -28,11 +31,20 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
     : IClassFixture<AppDbContextFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
+    private ServiceProvider _serviceProvider = null!;
 
-    public async ValueTask InitializeAsync() => await fixture.ResetAsync();
+    public async ValueTask InitializeAsync()
+    {
+        await fixture.ResetAsync();
+
+        var services = new ServiceCollection();
+        services.AddFusionCache().WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
+        _serviceProvider = services.BuildServiceProvider();
+    }
 
     public async ValueTask DisposeAsync()
     {
+        await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();
     }
@@ -54,7 +66,12 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         IBackgroundJobClient jobs,
         Mock<IEmailSender>? emailSender = null,
         FakeLogger<CompleteTournamentSyncJob>? logger = null) =>
-        new(_dbContext, jobs, (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object, logger ?? new FakeLogger<CompleteTournamentSyncJob>());
+        new(
+            _dbContext,
+            jobs,
+            _serviceProvider.GetRequiredService<IFusionCache>(),
+            (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object,
+            logger ?? new FakeLogger<CompleteTournamentSyncJob>());
 
     private static (Mock<IBackgroundJobClient> Mock, Func<IReadOnlyList<(Job Job, IState State)>> CapturedJobs) CreateJobsMock()
     {
@@ -96,6 +113,32 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         statsJob.Job.Args[0].ShouldBe(42);
         var scheduledState = statsJob.State.ShouldBeOfType<ScheduledState>();
         scheduledState.EnqueueAt.ShouldBeGreaterThan(DateTime.UtcNow.AddMinutes(9));
+    }
+
+    [Fact(DisplayName = "SyncAsync should evict the tournament and season list cache tags when the tournament is completed for the first time")]
+    public async Task SyncAsync_ShouldEvictTournamentAndSeasonListCacheTags_WhenTournamentCompletedForTheFirstTime()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var tournament = await CreateTournamentAsync(legacyTournamentId: 42, ct);
+        var (jobsMock, _) = CreateJobsMock();
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+        const string tournamentCacheKey = "complete-tournament-cache-test";
+        const string seasonListCacheKey = "complete-tournament-season-list-cache-test";
+        await cache.GetOrSetAsync(tournamentCacheKey, _ => Task.FromResult("stale-cached-value"), tags: [$"neba:tournaments:{tournament.Id}"], token: ct);
+        await cache.GetOrSetAsync(seasonListCacheKey, _ => Task.FromResult("stale-cached-value"), tags: [$"neba:tournaments:{tournament.SeasonId}"], token: ct);
+
+        var job = CreateJob(jobsMock.Object);
+
+        // Act
+        await job.SyncAsync(42, ct);
+
+        // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
+        var tournamentValueAfterSync = await cache.GetOrSetAsync(tournamentCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
+        tournamentValueAfterSync.ShouldBe("fresh-value");
+        var seasonListValueAfterSync = await cache.GetOrSetAsync(seasonListCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
+        seasonListValueAfterSync.ShouldBe("fresh-value");
     }
 
     [Fact(DisplayName = "SyncAsync should still chain SyncTournamentResultsJob and GenerateSeasonStatsJob when the tournament was already complete")]

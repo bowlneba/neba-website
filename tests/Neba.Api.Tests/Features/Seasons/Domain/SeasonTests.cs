@@ -58,45 +58,77 @@ public sealed class SeasonTests
         result.FirstError.ShouldBe(SeasonErrors.EndDateBeforeStartDate(startDate, endDate));
     }
 
-    // ── AddOpenBowlerOfTheYearWinner ──────────────────────────────────────────
+    // ── CompleteSeason ────────────────────────────────────────────────────────
 
-    [Fact(DisplayName = "AddOpenBowlerOfTheYearWinner should return an error when season is not complete")]
-    public void AddOpenBowlerOfTheYearWinner_ShouldReturnError_WhenSeasonNotComplete()
+    [Fact(DisplayName = "CompleteSeason should mark the season complete when not already complete")]
+    public void CompleteSeason_ShouldMarkSeasonComplete_WhenNotAlreadyComplete()
     {
         // Arrange
         var season = SeasonFactory.Create(complete: false);
 
         // Act
-        var result = season.AddOpenBowlerOfTheYearWinner(BowlerId.New());
+        var result = season.CompleteSeason();
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.ShouldBe(Result.Success);
+        season.Complete.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "CompleteSeason should return an error and leave the season complete when already complete")]
+    public void CompleteSeason_ShouldReturnError_WhenAlreadyComplete()
+    {
+        // Arrange
+        var season = SeasonFactory.Create(complete: true);
+
+        // Act
+        var result = season.CompleteSeason();
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.ShouldBe(SeasonErrors.AlreadyComplete);
+        season.Complete.ShouldBeTrue();
+    }
+
+    // ── AddBowlerOfTheYearWinner ──────────────────────────────────────────
+
+    [Fact(DisplayName = "AddBowlerOfTheYearWinner should return an error when season is not complete")]
+    public void AddBowlerOfTheYearWinner_ShouldReturnError_WhenSeasonNotComplete()
+    {
+        // Arrange
+        var season = SeasonFactory.Create(complete: false);
+
+        // Act
+        var result = season.AddBowlerOfTheYearWinner(BowlerId.New());
 
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.ShouldBe(SeasonErrors.SeasonNotComplete);
     }
 
-    [Fact(DisplayName = "AddOpenBowlerOfTheYearWinner should return an error when bowler ID is empty")]
-    public void AddOpenBowlerOfTheYearWinner_ShouldReturnError_WhenBowlerIdIsEmpty()
+    [Fact(DisplayName = "AddBowlerOfTheYearWinner should return an error when bowler ID is empty")]
+    public void AddBowlerOfTheYearWinner_ShouldReturnError_WhenBowlerIdIsEmpty()
     {
         // Arrange
         var season = SeasonFactory.Create(complete: true);
 
         // Act
-        var result = season.AddOpenBowlerOfTheYearWinner(BowlerId.Empty);
+        var result = season.AddBowlerOfTheYearWinner(BowlerId.Empty);
 
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.ShouldBe(BowlerOfTheYearAwardErrors.BowlerIdRequired);
     }
 
-    [Fact(DisplayName = "AddOpenBowlerOfTheYearWinner should add award when inputs are valid")]
-    public void AddOpenBowlerOfTheYearWinner_ShouldAddAward_WhenInputsAreValid()
+    [Fact(DisplayName = "AddBowlerOfTheYearWinner should add award when inputs are valid")]
+    public void AddBowlerOfTheYearWinner_ShouldAddAward_WhenInputsAreValid()
     {
         // Arrange
         var season = SeasonFactory.Create(complete: true);
         var bowlerId = BowlerId.New();
 
         // Act
-        var result = season.AddOpenBowlerOfTheYearWinner(bowlerId);
+        var result = season.AddBowlerOfTheYearWinner(bowlerId);
 
         // Assert
         result.IsError.ShouldBeFalse();
@@ -107,18 +139,18 @@ public sealed class SeasonTests
         award.Category.ShouldBe(BowlerOfTheYearCategory.Open);
     }
 
-    [Fact(DisplayName = "AddOpenBowlerOfTheYearWinner should allow multiple bowlers to win the same category")]
-    public void AddOpenBowlerOfTheYearWinner_ShouldAddAward_WhenSameCategoryAwardedToMultipleBowlers()
+    [Fact(DisplayName = "AddBowlerOfTheYearWinner should allow multiple bowlers to win the same category")]
+    public void AddBowlerOfTheYearWinner_ShouldAddAward_WhenSameCategoryAwardedToMultipleBowlers()
     {
         // Arrange
         var season = SeasonFactory.Create(complete: true);
         var bowlerId1 = BowlerId.New();
         var bowlerId2 = BowlerId.New();
 
-        season.AddOpenBowlerOfTheYearWinner(bowlerId1).ShouldBe(Result.Success);
+        season.AddBowlerOfTheYearWinner(bowlerId1).ShouldBe(Result.Success);
 
         // Act
-        var result = season.AddOpenBowlerOfTheYearWinner(bowlerId2);
+        var result = season.AddBowlerOfTheYearWinner(bowlerId2);
 
         // Assert
         result.IsError.ShouldBeFalse();

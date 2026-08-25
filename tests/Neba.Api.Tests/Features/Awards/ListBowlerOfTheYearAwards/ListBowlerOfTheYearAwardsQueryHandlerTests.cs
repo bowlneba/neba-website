@@ -49,7 +49,7 @@ public sealed class ListBowlerOfTheYearAwardsQueryHandlerTests(AppDbContextFixtu
         await _dbContext.Bowlers.AddAsync(bowler, ct);
 
         var season = SeasonFactory.Create(description: "2025 Season", complete: true);
-        season.AddOpenBowlerOfTheYearWinner(bowler.Id);
+        season.AddBowlerOfTheYearWinner(bowler.Id);
         await _dbContext.Seasons.AddAsync(season, ct);
         await _dbContext.SaveChangesAsync(ct);
 
