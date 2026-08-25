@@ -216,7 +216,7 @@ internal sealed class CompleteSeasonSyncJob(
             await cache.RemoveByTagAsync("neba:seasons", token: ct);
         }
 
-        jobs.Schedule<AssignOpenBowlerOfTheYearAwardJob>(job => job.AssignAsync(season.Id, CancellationToken.None), AwardJobDelay);
+        jobs.Schedule<AssignBowlerOfTheYearAwardJob>(job => job.AssignAsync(season.Id, CancellationToken.None), AwardJobDelay);
         jobs.Schedule<AssignWomanOfTheYearAwardJob>(job => job.AssignAsync(season.Id, CancellationToken.None), AwardJobDelay);
         jobs.Schedule<AssignSeniorBowlerOfTheYearAwardJob>(job => job.AssignAsync(season.Id, CancellationToken.None), AwardJobDelay);
         jobs.Schedule<AssignSuperSeniorBowlerOfTheYearAwardJob>(job => job.AssignAsync(season.Id, CancellationToken.None), AwardJobDelay);
@@ -290,11 +290,11 @@ internal static class SeasonAgeCalculator
 
 All six share the same shape: filter `BowlerSeasonStats` by the category's eligibility flag (Open has none — every bowler is a candidate), rank by points via `BowlerSeasonStatsRanking.TopTiedBy`, and call the matching `Season.Add*Winner`. Two need `Bowler.DateOfBirth` (Senior/SuperSenior/Youth need a numeric `age`); one needs `Bowler.Gender` (Woman); Open and Rookie need neither.
 
-`Legacy/Seasons/Complete/AssignOpenBowlerOfTheYearAwardJob.cs`:
+`Legacy/Seasons/Complete/AssignBowlerOfTheYearAwardJob.cs`:
 
 ```csharp
-internal sealed class AssignOpenBowlerOfTheYearAwardJob(
-    AppDbContext db, IFusionCache cache, ILogger<AssignOpenBowlerOfTheYearAwardJob> logger)
+internal sealed class AssignBowlerOfTheYearAwardJob(
+    AppDbContext db, IFusionCache cache, ILogger<AssignBowlerOfTheYearAwardJob> logger)
 {
     public async Task AssignAsync(SeasonId seasonId, CancellationToken ct)
     {
@@ -321,7 +321,7 @@ internal sealed class AssignOpenBowlerOfTheYearAwardJob(
 
         foreach (var winner in winners)
         {
-            var result = season.AddOpenBowlerOfTheYearWinner(winner.BowlerId);
+            var result = season.AddBowlerOfTheYearWinner(winner.BowlerId);
             if (result.IsError)
             {
                 logger.LogAwardAssignmentFailed(seasonId, winner.BowlerId, nameof(BowlerOfTheYearCategory.Open), result.FirstError.Description);
@@ -693,7 +693,7 @@ Following `docs/api/software-backdoor-plan.md`'s five layers, under `tests/Neba.
 1. **Request validation** — `CompleteSeasonRequestValidatorTests.cs`, standard FluentValidation unit test.
 2. **Endpoint + auth (integration)** — `CompleteSeasonEndpointTests.cs`, `TestHost` + real `MapLegacyGroup()`, `Mock<IBackgroundJobClient>(MockBehavior.Strict)` verifying `Enqueue<CompleteSeasonSyncJob>(job => job.SyncAsync(expectedSeasonId, ...))`.
 3. **`Season.CompleteSeason()` and the eight `Add*Winner` calls — pure domain logic (unit)** — these already have (or need, if missing) direct `SeasonTests.cs` unit tests independent of the backdoor: `CompleteSeason` idempotency (`AlreadyComplete` on second call), each `Add*Winner`'s existing invariants. Not new work if `Season.cs`'s existing test coverage already exercises the `Add*Winner` methods — verify and fill gaps only.
-4. **Award-job ranking logic (unit, in-memory/SQLite `AppDbContext`)** — one test class per job (`AssignOpenBowlerOfTheYearAwardJobTests.cs`, etc.), covering: correct winner selection, tie handling (multiple winners sharing the max), "already assigned" short-circuit, "no eligible candidates" no-op, "zero `BowlerSeasonStats` rows at all" warning path, and (for the age-gated BOTY jobs) the "Bowler has no `DateOfBirth` on file" skip path. `AssignHighAverageAwardJobTests.cs` additionally covers the season-wide `statEligibleTournamentCount` computation and the minimum-games filter.
+4. **Award-job ranking logic (unit, in-memory/SQLite `AppDbContext`)** — one test class per job (`AssignBowlerOfTheYearAwardJobTests.cs`, etc.), covering: correct winner selection, tie handling (multiple winners sharing the max), "already assigned" short-circuit, "no eligible candidates" no-op, "zero `BowlerSeasonStats` rows at all" warning path, and (for the age-gated BOTY jobs) the "Bowler has no `DateOfBirth` on file" skip path. `AssignHighAverageAwardJobTests.cs` additionally covers the season-wide `statEligibleTournamentCount` computation and the minimum-games filter.
 5. **`CompleteSeasonSyncJob` — legacy query correctness (integration)** — Postgres Testcontainers + `CREATE TEMP TABLE Season (...)`, per the standard pattern (see `docs/api/software-backdoor-plan.md`'s Testing §4), asserting the Dapper lookup and the date-range match against a seeded website `Season`.
 6. **`CompleteSeasonSyncJob` idempotency (integration)** — run `SyncAsync` twice for the same legacy season id; assert the second run doesn't re-error the job (logs `AlreadyComplete` informationally) and still re-schedules the award jobs.
 7. **Cache eviction (unit, per job)** — each of the nine jobs (`CompleteSeasonSyncJob` plus all eight award jobs) needs its own eviction test, following the pattern established for the existing legacy jobs (`GenerateSeasonStatsJobTests.SyncAsync_ShouldEvictSeasonStatsCacheTag_AfterSaving`, and the equivalent tests added to `UpdateBowlerTests.cs`/`HallOfFameTests.cs`/`NewTournamentTests.cs`/`SyncSquadScoresTests.cs`/`CompleteTournamentSyncJobTests.cs`/`SyncTournamentResultsJobTests.cs`): register a real `IFusionCache` via `services.AddFusionCache()` in the test's `InitializeAsync()`, seed a stale cached value under the tag the job is expected to evict, run `SyncAsync`, then assert `GetOrSetAsync` returns a fresh value instead of the stale one. Cover both the "evicts" branch and the "does not evict" branches explicitly — `CompleteSeasonSyncJob` must NOT evict `neba:seasons` on the `AlreadyComplete` retry path, and each award job must NOT evict on its "already assigned" short-circuit or "no eligible candidates" no-op, since nothing changed on those paths for the cache to go stale over.

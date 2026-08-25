@@ -1,5 +1,6 @@
 using Neba.Api.Legacy.Bowlers;
 using Neba.Api.Legacy.HallOfFame;
+using Neba.Api.Legacy.Seasons.Complete;
 using Neba.Api.Legacy.Tournaments;
 using Neba.Api.Legacy.Tournaments.Complete;
 using Neba.Api.Legacy.Tournaments.Stats;
@@ -19,6 +20,8 @@ internal static class LegacyEndpoints
             app.MapSyncSquadScores();
             app.MapCompleteTournament();
             app.MapUpdateTournamentStats();
+
+            app.MapCompleteSeason();
 
             app.MapNewHallOfFameInduction();
         }

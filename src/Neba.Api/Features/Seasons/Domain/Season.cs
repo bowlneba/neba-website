@@ -43,7 +43,25 @@ public sealed class Season
     /// Whether the season has been closed and awards may be assigned.
     /// Once <see langword="true"/>, a season may not be reopened.
     /// </summary>
-    public bool Complete { get; init; }
+    public bool Complete { get; internal set; }
+
+    // New method, alongside the existing Add*Winner methods
+    /// <summary>
+    /// Marks the season complete, allowing awards to be assigned. Idempotent — completing an
+    /// already-complete season returns <see cref="SeasonErrors.AlreadyComplete"/> rather than
+    /// throwing or silently no-oping, so callers can log it as informational on retry.
+    /// </summary>
+    public ErrorOr<Success> CompleteSeason()
+    {
+        if (Complete)
+        {
+            return SeasonErrors.AlreadyComplete;
+        }
+
+        Complete = true;
+
+        return Result.Success;
+    }
 
     private readonly List<Tournament> _tournaments = [];
     internal IReadOnlyCollection<Tournament> Tournaments
@@ -94,7 +112,7 @@ public sealed class Season
     /// <summary>
     /// Assigns an Open Bowler of the Year award to the specified bowler.
     /// </summary>
-    public ErrorOr<Success> AddOpenBowlerOfTheYearWinner(BowlerId bowlerId)
+    public ErrorOr<Success> AddBowlerOfTheYearWinner(BowlerId bowlerId)
     {
         if (!Complete)
         {

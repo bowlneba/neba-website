@@ -53,4 +53,9 @@ internal static class SeasonErrors
         {
             {"id", id.Value}
         });
+
+    public static readonly Error AlreadyComplete = Error.Conflict(
+        code: "Season.AlreadyComplete",
+        description: "Season has already been marked complete.");
+
 }
