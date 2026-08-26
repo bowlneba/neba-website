@@ -1,12 +1,14 @@
 using Microsoft.Extensions.Time.Testing;
 
 using Neba.Api.Database;
+using Neba.Api.Database.Entities;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Features.Tournaments.ListTournamentsInSeason;
 using Neba.Api.Storage;
 using Neba.TestFactory;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Storage;
@@ -281,6 +283,77 @@ public sealed class ListTournamentsInSeasonQueryHandlerTests(AppDbContextFixture
         var gated = result.Single(t => t.Name == "Gated Tournament");
         gated.OilPatterns.ShouldHaveSingleItem();
         gated.OilPatternRevealDateTime.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "HandleAsync includes winner when tournament has a recorded result with place one")]
+    public async Task HandleAsync_ShouldIncludeWinner_WhenTournamentHasRecordedResultWithPlaceOne()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var bowler = BowlerFactory.Create(name: NameFactory.Create("Bob", "Recorded"));
+        await _dbContext.Bowlers.AddAsync(bowler, ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        tournament.CompleteTournament();
+        tournament.AddResult(bowler.Id, place: 1, prizeMoney: 500m, points: 100);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new ListTournamentsInSeasonQuery { SeasonId = season.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
+
+        // Assert
+        result.ShouldHaveSingleItem();
+        result.Single().Winners.ShouldContain(bowler.Name);
+    }
+
+    [Fact(DisplayName = "HandleAsync merges winners from both historical and recorded data for the same tournament")]
+    public async Task HandleAsync_ShouldMergeWinners_ForBothHistoricalAndRecordedData()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var historicalBowler = BowlerFactory.Create(name: NameFactory.Create("Alice", "Historical"));
+        var recordedBowler = BowlerFactory.Create(name: NameFactory.Create("Bob", "Recorded"));
+        await _dbContext.Bowlers.AddRangeAsync([historicalBowler, recordedBowler], ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        await _dbContext.HistoricalTournamentChampions.AddAsync(new HistoricalTournamentChampion
+        {
+            Bowler = historicalBowler,
+            Tournament = tournament
+        }, ct);
+
+        tournament.CompleteTournament();
+        tournament.AddResult(recordedBowler.Id, place: 1, prizeMoney: 500m, points: 100);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var handler = new ListTournamentsInSeasonQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new ListTournamentsInSeasonQuery { SeasonId = season.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
+
+        // Assert
+        result.ShouldHaveSingleItem();
+        var winners = result.Single().Winners;
+        winners.ShouldContain(historicalBowler.Name);
+        winners.ShouldContain(recordedBowler.Name);
     }
 
     [Fact(DisplayName = "HandleAsync returns full oil pattern info when caller is anonymous and no reveal date is set")]
