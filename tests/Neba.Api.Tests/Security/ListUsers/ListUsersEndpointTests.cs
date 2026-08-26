@@ -1,7 +1,7 @@
 using FastEndpoints;
 
-using Neba.Api.Security.ListUsers;
 using Neba.Api.Messaging;
+using Neba.Api.Security.ListUsers;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Security.ListUsers;
