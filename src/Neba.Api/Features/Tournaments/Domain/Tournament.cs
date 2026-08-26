@@ -62,6 +62,11 @@ public sealed class Tournament
     public bool StatsEligible { get; private set; }
 
     /// <summary>
+    /// Whether this tournament has finished and its results are final.
+    /// </summary>
+    public bool Complete { get; private set; }
+
+    /// <summary>
     /// Gets the oil-to-dry ratio category of the lane condition used in this tournament,
     /// or <see langword="null"/> if the pattern has not yet been designated.
     /// See <see cref="PatternRatioCategory"/> for valid values.
@@ -421,11 +426,6 @@ public sealed class Tournament
 
         return Result.Success;
     }
-
-    /// <summary>
-    /// Whether this tournament has finished and its results are final.
-    /// </summary>
-    public bool Complete { get; private set; }
 
     /// <summary>
     /// Marks the tournament complete, allowing results to be recorded. Returns an error if

@@ -50,7 +50,7 @@ internal sealed class SponsorConfiguration
             .IsRequired();
 
         builder.HasStoredFile(sponsor => sponsor.Logo,
-            containerColumnName: "logo_container_name",
+            containerColumnName: "logo_container",
             filePathColumnName: "logo_file_path",
             contentTypeColumnName: "logo_content_type",
             sizeInBytesColumnName: "logo_size_in_bytes");
