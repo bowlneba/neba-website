@@ -391,6 +391,29 @@ public sealed class DirectionsModalTests : IDisposable
         cut.Markup.ShouldContain("Getting your location...");
     }
 
+    [Fact(DisplayName = "Should show the state's loading message when loading a route")]
+    public void Render_ShouldShowStateLoadingMessage_WhenLoadingRoute()
+    {
+        // Arrange
+        var state = new DirectionsState
+        {
+            Mode = MapMode.DirectionsPreview,
+            IsLoading = true,
+            LoadingMessage = "Getting directions..."
+        };
+
+        // Act
+        var cut = _ctx.Render<DirectionsModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.State, state)
+            .Add(x => x.OnLocationSelected, EventCallback.Factory.Create<double[]>(this, _ => { })));
+
+        // Assert
+        cut.Markup.ShouldContain("Getting directions...");
+        cut.Markup.ShouldNotContain("Getting your location...");
+    }
+
     [Fact(DisplayName = "HandleUseCurrentLocation should invoke OnLocationSelected when geolocation succeeds")]
     public async Task HandleUseCurrentLocation_ShouldInvokeOnLocationSelected_WhenSuccess()
     {
