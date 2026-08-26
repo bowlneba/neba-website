@@ -817,6 +817,9 @@ const MOCK_USERS = {
       roles: ['Journalist'],
     },
   ],
+  totalItems: 2,
+  pageNumber: 1,
+  pageSize: 20,
 };
 
 const routes: Record<string, unknown> = {

@@ -43,7 +43,7 @@ test.describe('News list page', () => {
   });
 
   test('does not show pagination when only one page exists', async ({ page }) => {
-    await expect(page.locator('.news-pagination')).not.toBeVisible();
+    await expect(page.locator('.pagination-nav')).not.toBeVisible();
   });
 });
 

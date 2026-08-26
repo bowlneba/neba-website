@@ -1,0 +1,45 @@
+@if (TotalPages > 1)
+{
+    <nav class="pagination-nav" aria-label="@AriaLabel">
+        @if (PageNumber > 1)
+        {
+            <a href="@PageHref(PageNumber - 1)" class="page-btn" aria-label="Previous page">&#8249;</a>
+        }
+
+        @for (var p = 1; p <= TotalPages; p++)
+        {
+            var pageNum = p;
+            <a href="@PageHref(pageNum)"
+               class="page-btn @(pageNum == PageNumber ? "active" : string.Empty)"
+               aria-label="Page @pageNum"
+               aria-current="@(pageNum == PageNumber ? "page" : null)">
+                @pageNum
+            </a>
+        }
+
+        @if (PageNumber < TotalPages)
+        {
+            <a href="@PageHref(PageNumber + 1)" class="page-btn" aria-label="Next page">&#8250;</a>
+        }
+    </nav>
+}
+
+@code {
+    /// <summary>The current page number (1-indexed).</summary>
+    [Parameter, EditorRequired]
+    public int PageNumber { get; set; }
+
+    /// <summary>The total number of pages available.</summary>
+    [Parameter, EditorRequired]
+    public int TotalPages { get; set; }
+
+    /// <summary>The page's own route, used as the base for each page link's "?page=N" query string (e.g. "/account/users").</summary>
+    [Parameter, EditorRequired]
+    public string BaseHref { get; set; } = string.Empty;
+
+    /// <summary>Accessible label for the pagination nav element.</summary>
+    [Parameter]
+    public string AriaLabel { get; set; } = "Pages";
+
+    private string PageHref(int page) => $"{BaseHref}?page={page}";
+}
