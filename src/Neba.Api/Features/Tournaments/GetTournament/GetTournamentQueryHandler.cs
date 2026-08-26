@@ -26,6 +26,8 @@ internal sealed class GetTournamentQueryHandler(
         = appDbContext.HistoricalTournamentEntries.AsNoTracking();
     private readonly IQueryable<HistoricalTournamentResult> _historicalTournamentResults
         = appDbContext.HistoricalTournamentResults.AsNoTracking();
+    private readonly IQueryable<SquadScore> _squadScores
+        = appDbContext.SquadScores.AsNoTracking();
 
     private readonly IFileStorageService _fileStorageService = fileStorageService;
 
@@ -43,6 +45,8 @@ internal sealed class GetTournamentQueryHandler(
                 tournament.EndDate,
                 tournament.StatsEligible,
                 TournamentType = tournament.TournamentType.Name,
+                TournamentTypeValue = tournament.TournamentType.Value,
+                SquadIds = tournament.Squads.Select(squad => squad.Id).ToList(),
                 BowlingCenter = tournament.BowlingCenter == null
                     ? null
                     : new TournamentDetailBowlingCenterDto
@@ -120,6 +124,25 @@ internal sealed class GetTournamentQueryHandler(
             .Select(tournamentChampion => tournamentChampion.Bowler.Name)
             .ToListAsync(cancellationToken);
 
+        var recordedResults = await _tournaments
+            .Where(tournament => tournament.Id == query.Id)
+            .SelectMany(tournament => tournament.Results)
+            .Select(result => new TournamentResultDto
+            {
+                BowlerName = result.Bowler.Name,
+                Place = result.Place,
+                PrizeMoney = result.PrizeMoney,
+                Points = result.Points,
+                SideCutName = null,
+                SideCutIndicator = null,
+            })
+            .ToListAsync(cancellationToken);
+
+        var recordedWinners = recordedResults
+            .Where(result => result.Place == 1)
+            .Select(result => result.BowlerName)
+            .ToList();
+
         var historicalResults = await _historicalTournamentResults
             .Where(tournamentResult => tournamentResult.TournamentId == row.DbId)
             .Select(tournamentResult => new TournamentResultDto
@@ -135,16 +158,34 @@ internal sealed class GetTournamentQueryHandler(
                     ? tournamentResult.SideCut.Indicator
                     : null,
             })
+            .ToListAsync(cancellationToken);
+
+        var results = historicalResults.Concat(recordedResults)
             .OrderBy(tournamentResult => tournamentResult.Place == null)
                 .ThenBy(tournamentResult => tournamentResult.Place)
                 .ThenBy(tournamentResult => tournamentResult.BowlerName.LastName)
                 .ThenBy(tournamentResult => tournamentResult.BowlerName.FirstName)
-            .ToListAsync(cancellationToken);
+            .ToList();
+
+        var winners = historicalWinners.Concat(recordedWinners).ToList();
 
         var historicalEntryCount = await _historicalTournamentEntries
             .Where(tournamentEntry => tournamentEntry.TournamentId == row.DbId)
             .Select(tournamentEntry => (int?)tournamentEntry.Entries)
             .SingleOrDefaultAsync(cancellationToken);
+
+        var recordedEntryPairCount = await _squadScores
+            .Where(squadScore => row.SquadIds.Contains(squadScore.SquadId))
+            .Select(squadScore => new { squadScore.SquadId, squadScore.BowlerId })
+            .Distinct()
+            .CountAsync(cancellationToken);
+
+        var teamSize = TournamentType.FromValue(row.TournamentTypeValue).TeamSize;
+        var recordedEntryCount = recordedEntryPairCount > 0
+            ? recordedEntryPairCount / teamSize
+            : (int?)null;
+
+        var entryCount = historicalEntryCount ?? recordedEntryCount;
 
         var sponsors = row.Sponsors
             .Select(s => new TournamentDetailSponsorDto
@@ -213,10 +254,9 @@ internal sealed class GetTournamentQueryHandler(
             LogoPath = query.CallerHasTournamentManagementPermission ? row.TournamentLogoPath : null,
             LogoContentType = query.CallerHasTournamentManagementPermission ? row.TournamentLogoContentType : null,
             LogoSizeInBytes = query.CallerHasTournamentManagementPermission ? row.TournamentLogoSizeInBytes : null,
-            Winners = historicalWinners,
-            // If Results or EntryCount are empty/null, check future stats tables for 2026+ tournament data
-            Results = historicalResults,
-            EntryCount = historicalEntryCount,
+            Winners = winners,
+            Results = results,
+            EntryCount = entryCount,
             Articles = row.Articles,
         };
     }

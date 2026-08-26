@@ -59,7 +59,8 @@ src/
 │   ├── Caching/                  # FusionCache setup and decorators
 │   ├── BackgroundJobs/           # Hangfire job definitions
 │   ├── Storage/                  # Azure Blob Storage
-│   └── Security/, Identity/      # Auth, policies, current-user resolution
+│   ├── Security/, Identity/      # Auth, policies, current-user resolution
+│   └── Legacy/                   # Temporary /legacy sync bridge from the Software (nebamgmt-v3) — see docs/api/software-backdoor-plan.md
 │
 ├── Neba.Api.Contracts/           # Request/Input/Response records + Refit interfaces (shared with Blazor)
 │   ├── Tournaments/
@@ -121,6 +122,7 @@ src/
 | **API Documentation** | Scalar |
 | **HTTP Client** | Refit |
 | **Charts** | Blazor-ApexCharts |
+| **Legacy Bridge** | Dapper + Microsoft.Data.SqlClient (temporary `/legacy` sync bridge to the WinForms app's Azure SQL database — see `docs/api/software-backdoor-plan.md`) |
 | **Testing** | xUnit, Moq, Shouldly, Bogus, Verify, Testcontainers, Respawn, bUnit, Playwright |
 
 ### Documentation

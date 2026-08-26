@@ -730,13 +730,91 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 ### Tournament
 
-**Definition**: A USBC sanctioned scratch bowling competition consisting of one or more qualifying squads followed by a single-elimination match play championship round to determine a winner. Each tournament has a Tournament Type that governs format, team size, and eligibility. Lane conditions are characterized by a Pattern Length Category and Pattern Ratio Category, which may not be known at the time of tournament creation.
+**Definition**: A USBC sanctioned scratch bowling competition consisting of one or more qualifying squads (see `### Squad`) followed by a single-elimination match play championship round to determine a winner. Each tournament has a Tournament Type that governs format, team size, and eligibility. Lane conditions are characterized by a Pattern Length Category and Pattern Ratio Category, which may not be known at the time of tournament creation.
+
+A Tournament is **Complete** once match play has finished and its results are final (see `### Tournament Result`). Completion carries no business-rule gate today — the only caller is the legacy backdoor sync, which simply reports that nebamgmt-v3 has already marked the tournament done. Once a UI-driven completion endpoint replaces that backdoor, real invariants (all squads scored, match play finished, every entrant has a derived result) are expected to move onto `CompleteTournament()`.
 
 **In Code**:
 
 - Namespace: `Neba.Api.Features.Tournaments.Domain`
 - Type: `Tournament` (aggregate root)
 - Identity type: `TournamentId` (ULID-backed strongly-typed ID)
+- Property: `Tournament.Complete` (`bool`, defaults to `false` at `Create`)
+- Operation: `Tournament.CompleteTournament()`
+
+---
+
+### Squad
+
+**Definition**: A scheduled bowling session within a Tournament. Bowlers (Singles formats) or teams (Team formats) compete in a Squad to establish a score toward advancement. A Tournament has one or more Squads, each bowling at a distinct date and time within the tournament's start and end date (inclusive). Squads run one at a time within a tournament — no two overlap.
+
+**Rules**:
+
+- A Squad's bowling date must fall within its Tournament's Start Date and End Date, inclusive
+- No two Squads within the same Tournament may share the same bowling date and time
+- Squads are assigned exclusively through the Tournament aggregate
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
+- Type: `Squad` (child entity of `Tournament`)
+- Identity type: `SquadId` (ULID-backed strongly-typed ID)
+- Property: `Tournament.Squads` (`IReadOnlyCollection<Squad>`)
+- Operations: `Tournament.AddSquad(...)`, `Tournament.UpdateSquad(...)`, `Tournament.RemoveSquad(SquadId)`
+
+---
+
+### Squad Score
+
+**Definition**: A single game's score for one bowler in one Squad — the number of pins knocked down, 0 to 300 inclusive. Squad Score is the raw, persisted record; it is never aggregated into a separate stats row — anything derived from it (totals, averages, high game) is computed as a query projection over these rows. Squad Score is designed to cover a future Cashers round as well as today's Qualifying round — Match Play and Step Ladder are a different shape (head-to-head, not squad-scoped) and are out of scope.
+
+**Note**: Squad Score is documented here on its own because it is the only piece of the broader Score Card design (see `docs/plans/scorecard.md`) built so far — via data migration, ahead of any website-driven scoring. Score Card itself (the aggregate that groups a bowler's Squad Scores for a Squad and enforces game-number/duplicate rules) is not yet implemented and is deliberately left out of this document until it is.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
+- Type: `SquadScore`
+- Identity type: `SquadScoreId` (ULID-backed strongly-typed ID)
+- Properties: `SquadId`, `BowlerId`, `GameNumber` (`short`, 1-based), `Score` (`int`, 0-300)
+- Table: `squad_scores`
+
+---
+
+### Tournament Result
+
+**Definition**: One bowler's outcome in a completed Tournament — finishing Place, prize money earned, and points earned toward season standings. Covers 2026-forward tournaments run entirely on this site, as full participants in the domain rather than historical facts; pre-2026 results stay on the existing `HistoricalTournamentResult` (`historical.tournament_results`) table.
+
+A bowler gets a Tournament Result based on a paid, non-refunded Registration for the tournament — full stop. DNF status has no bearing on inclusion or on getting a real, ranked Place: a DNF bowler still bowled games and still gets a ranked Place (typically last), never omitted or treated as a null/placeholder case.
+
+**Rules**:
+
+- `Place` ranks every entrant — never `null`, unlike the legacy historical data. Finalists are placed by match play result; everyone who didn't advance is placed below them by best qualifying score (ties broken by high game, remaining ties sharing the same Place). Not guaranteed unique within a tournament — ties, and doubles/trios partners in team events, share the same Place value.
+- `PrizeMoney` is never negative; zero if none earned.
+- `Points` is never negative. Includes the tournament's base points-for-entering plus any additional points earned by placement (the base-points value and placement-to-points curve are not yet modeled — see `docs/plans/tournament-results.md` Future Work).
+- One Tournament Result per bowler per Tournament — enforced both by the aggregate (`Tournament.AddResult`) and a DB-level alternate key.
+- Tournament Results may only be recorded once the owning Tournament is Complete (see `### Tournament`).
+- No user input creates these records. Two population paths, both machine-driven: the legacy backdoor sync (migration window, tournaments already run in nebamgmt-v3) and, going forward, a background job that derives results from match play when a tournament completes (match play itself is not yet a domain concept — future work).
+- No edit capability exists. A correction scenario, if one arises, is designed around the real case rather than speculatively now.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
+- Type: `TournamentResult` (child entity of `Tournament`)
+- Identity type: `TournamentResultId` (ULID-backed strongly-typed ID)
+- Properties: `BowlerId`, `Place` (`int`), `PrizeMoney` (`decimal`), `Points` (`int`)
+- Property: `Tournament.Results` (`IReadOnlyCollection<TournamentResult>`)
+- Operation: `Tournament.AddResult(BowlerId, place, prizeMoney, points)`
+- Table: `app.tournament_results`
+
+---
+
+### Squad Max Entries
+
+**Definition**: The maximum number of Entries (see `### Eligible Entry` — one Entry is one team in a Team-format Tournament, one bowler in a Singles-format Tournament) permitted to bowl a given Squad. `null` means the Squad has no entry cap.
+
+**In Code**:
+
+- Property: `Squad.MaxEntries` (`int?`)
 
 ---
 
@@ -1118,6 +1196,8 @@ Titles are the authoritative source for:
 
 A Season must be marked **Complete** before any awards may be assigned to bowlers. This ensures that in-progress award standings — such as a bowler currently leading Bowler of the Year — do not prematurely influence Hall of Fame point totals.
 
+A Season is **Complete** once `CompleteSeason()` has been called; it may not be reopened. Completion carries no business-rule gate today beyond idempotency (`SeasonErrors.AlreadyComplete` on a repeat call) — the only caller is the legacy backdoor sync, which mirrors nebamgmt-v3 reporting the season done and matches the target website Season by `StartDate`/`EndDate` (Season has no `LegacyId`; see `docs/plans/software-backdoor-complete-season.md`). Same shape as `Tournament.CompleteTournament()` (see `### Tournament`): once a UI-driven completion flow replaces the backdoor as the real trigger, `CompleteSeason()` is where `SeasonCompleted` (below) should actually be raised via `AddDomainEvent(...)`, and any completion invariants beyond idempotency would move onto this method rather than the endpoint or job that calls it.
+
 **Properties**:
 
 | Property | Type | Description |
@@ -1146,7 +1226,7 @@ A Season must be marked **Complete** before any awards may be assigned to bowler
 
 | Event | Trigger |
 | --- | --- |
-| `SeasonCompleted` | Raised when a Season is marked Complete. Downstream consumers (e.g., Hall of Fame point calculations) react to this event |
+| `SeasonCompleted` | Raised when a Season is marked Complete. Downstream consumers (e.g., Hall of Fame point calculations) react to this event. **Not yet raised in code** — `CompleteSeason()` currently only flips `Complete` and returns `ErrorOr<Success>`; no aggregate in the codebase raises domain events yet (`AggregateRoot.AddDomainEvent` exists but is unused everywhere). Add this event at the same time `CompleteSeason()` gains a real, website-driven caller (see the note under Definition above) |
 
 > **Out of Scope (Current)**: Hall of Fame point values associated with each award type, membership type definitions (New Member, Renewal, etc.), and the formal definition of Tournament stat-eligibility are deferred to their respective modeling sessions. No concept of season templates or recurring schedule patterns is modeled at this time.
 
@@ -1155,6 +1235,8 @@ A Season must be marked **Complete** before any awards may be assigned to bowler
 - Namespace: `Neba.Api.Features.Seasons.Domain`
 - Type: `Season` (aggregate root)
 - Identity type: `SeasonId` (ULID-backed strongly-typed ID)
+- Property: `Season.Complete` (`bool`, defaults to `false`)
+- Operation: `Season.CompleteSeason()`
 
 ---
 

@@ -1,8 +1,9 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+<Project Sdk="Aspire.AppHost.Sdk/13.5.2">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <UserSecretsId>fb1757d7-5c3a-4383-9853-755863fbb858</UserSecretsId>
+    <AspireUseCliBundle>true</AspireUseCliBundle>
   </PropertyGroup>
 
   <ItemGroup>

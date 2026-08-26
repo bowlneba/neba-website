@@ -188,6 +188,9 @@ public async Task ApplicationMigration()
 	Seasons.RemoveRange(Seasons);
 	Sponsors.RemoveRange(Sponsors);
 	BowlerSeasonStats.RemoveRange(BowlerSeasonStats);
+	App_TournamentResults.RemoveRange(App_TournamentResults);
+	SquadScores.RemoveRange(SquadScores);
+	Squads.RemoveRange(Squads);
 	Tournaments.RemoveRange(Tournaments);
 	SideCutCriterias.RemoveRange(SideCutCriterias);
 	SideCutCriteriaGroups.RemoveRange(SideCutCriteriaGroups);
@@ -210,6 +213,8 @@ public async Task ApplicationMigration()
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.high_block_awards RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.seasons RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.sponsors RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.squad_scores RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.squads RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.tournaments RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.side_cuts RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.side_cut_criteria_groups RESTART IDENTITY CASCADE;");
@@ -217,6 +222,7 @@ public async Task ApplicationMigration()
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.oil_patterns RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.articles RESTART IDENTITY CASCADE;");
 	Database.ExecuteSqlRaw("TRUNCATE TABLE app.article_attachments RESTART IDENTITY CASCADE;");
+	Database.ExecuteSqlRaw("TRUNCATE TABLE app.tournament_results RESTART IDENTITY CASCADE;");
 	SaveChanges();
 
 	await MigrateBowlingCentersAsync();
@@ -269,6 +275,9 @@ public async Task ApplicationMigration()
 	await MigrateHistoricalTournamentResults(tournamentDbIdBySoftwareId, bowlerDbIdBySoftwareId);
 
 	await MigrateOilPatterns();
+	
+	await MigrateSquadScores(bowlerDomainIdBySoftwareId);
+	await MigrateTournamentResultsAsync(tournamentDbIdBySoftwareId, bowlerDomainIdBySoftwareId);
 }
 
 // You can define other methods, fields, classes and namespaces here
@@ -2096,6 +2105,7 @@ private void ManualLocationUpdates(IReadOnlyCollection<BowlingCenters> bowlingCe
 	
 	var wolcottLanes = bowlingCenters.Single(bc => bc.City == "Wolcott");
 	wolcottLanes.BowlingCenterPhoneNumbers.Single().PhoneNumber = "2038791469";
+	wolcottLanes.Name = "Wolcott Lanes";
 
 	var auburn = bowlingCenters.Single(bc => bc.Name == "Bowlero Worcester");
 	auburn.Latitude = 42.222311;
@@ -2187,6 +2197,11 @@ private void ManualLocationUpdates(IReadOnlyCollection<BowlingCenters> bowlingCe
 	var hallowell = bowlingCenters.Single(bc => bc.Name == "Sparetime Recreation Hallowell");
 	hallowell.Name = "Interstate Bowling Center";
 	hallowell.Street = "215 Whitten Road";
+	
+	var missisquoiLanes = bowlingCenters.Single(c => c.CertificationNumber == "819");
+	missisquoiLanes.Street = "3010 Vt Route 100";
+	missisquoiLanes.Latitude = 44.79356;
+	missisquoiLanes.Longitude = -72.44834;
 }
 
 private async Task<IReadOnlyCollection<BowlingCenters>> ManualBowlingCenterAdditionsAsync(HttpClient httpClient, IDictionary<string, int> bowlingCenterWebsiteIdByPhoneNumber)
@@ -2533,7 +2548,8 @@ public async Task<IReadOnlyCollection<SpreadsheetTournament>> MigrateTournaments
 			PatternRatioCategory = GetPatternRatioCategory(softwareTournament?.OilPatternLeftRatio, softwareTournament?.OilPatternRightRatio)?.Value,
 			SeasonId = spreadsheetTournament.EndDate.Year == 2020 ? seasonDomainIdByEndYear[2021] : seasonDomainIdByEndYear[spreadsheetTournament.EndDate.Year],
 			EntryFee = softwareTournament?.EntryFee ?? 0,
-			StatsEligible = softwareTournament?.StatsEligible ?? false
+			StatsEligible = softwareTournament?.StatsEligible ?? false,
+			Complete = spreadsheetTournament.EndDate < DateOnly.FromDateTime(DateTime.Today)
 		};
 		
 		spreadsheetTournament.DomainId = Ulid.Parse(tournament.DomainId);
@@ -2545,8 +2561,210 @@ public async Task<IReadOnlyCollection<SpreadsheetTournament>> MigrateTournaments
 	
 	"Tournaments Migrated".Dump();
 	
+	var softwareSquadsByTournament = (await GetSquadsFromSoftwareAsync()).GroupBy(s => s.TournamentId);
+
+	foreach (var tournamentSquads in softwareSquadsByTournament)
+	{
+		var tournament = await Tournaments.SingleAsync(t => t.LegacyId == tournamentSquads.Key);
+
+		var squads = tournamentSquads.Select(squad => new Squads
+		{
+			DomainId = Ulid.NewUlid(squad.SquadDateEastern.ToUniversalTime(), RandomNumberGenerator.GetBytes(10)).ToString(),
+			LegacyId = squad.Id,
+			TournamentId = tournament.Id,
+			BowlingDateTimeUtc = squad.SquadDateEastern.ToUtc()			
+		});
+		
+		Squads.AddRange(squads);
+	}
+
 	return spreadsheetTournaments;
 }
+
+public async Task<IReadOnlyCollection<SoftwareSquad>> GetSquadsFromSoftwareAsync()
+{
+	var squadsDataTable = await QuerySoftwareDatabaseAsync("""
+	SELECT                                                                                                                                                                                                                                                                                                                     
+		s.[Id] AS SquadId,                                                                                                                                                                                                                                                                                                     
+		COALESCE(ss.[TournamentId], ts.[TournamentId]) AS TournamentId,                                                                                                                                                                                                                                                        
+		s.[BowlingDate] AS BowlingDate                                                                                                                                                                                                                                                                                     
+	FROM
+		[dbo].[Squads] s                                                                                                                                                                                                                                                                                                      
+	LEFT JOIN 
+		[dbo].[Squads_SinglesSquad] ss ON ss.[Id] = s.[Id]                                                                                                                                                                                                                                                               
+	LEFT JOIN 
+		[dbo].[Squads_TeamSquad] ts ON ts.[Id] = s.[Id];    
+	""");
+
+	return squadsDataTable.AsEnumerable().Select(row => new SoftwareSquad
+	{
+		Id = row.Field<int>("SquadId"),
+		TournamentId = row.Field<int>("TournamentId"),
+		SquadDateEastern = row.Field<DateTime>("BowlingDate")
+	}).ToList();
+}
+
+public async Task MigrateTournamentResultsAsync(
+	IDictionary<int, int> tournamentIdBySoftwareId,
+	IDictionary<int, Ulid> bowlerDomainIdBySoftwareId)
+{
+	var resultStatsDataTable = await QuerySoftwareDatabaseAsync("""
+        SELECT
+            s.BowlerId as BowlerId,
+            s.TournamentId as TournamentId,
+            r.Place as Place,
+            r.Payout as Payout,
+            r.Points as Points
+        FROM
+            Stats s
+        INNER JOIN
+            Stats_ResultsStats r
+            ON
+                s.Id = r.Id
+        INNER JOIN
+            Tournaments t
+            ON
+            t.Id = s.TournamentId
+        WHERE
+            Year(t.Start) >= 2026
+    """);
+
+	var resultStats = resultStatsDataTable.AsEnumerable().Select(row => new
+	{
+		BowlerId = row.Field<int>("BowlerId"),
+		TournamentId = row.Field<int>("TournamentId"),
+		Place = row.Field<int?>("Place"),
+		PrizeMoney = row.Field<decimal>("Payout"),
+		Points = row.Field<int>("Points")
+	}).ToList();
+
+	// get qualifying score stat records to fill in place for bowlers who did not make the cut
+	var qualifyingStatsDataTable = await QuerySoftwareDatabaseAsync("""
+        SELECT
+            s.BowlerId as BowlerId,
+            s.TournamentId as TournamentId,
+            q.Score as Score,
+            q.Games as Games,
+            q.HighGame as HighGame
+        FROM
+            Stats s
+        INNER JOIN
+            Stats_QualifyingStats q
+            ON
+                s.Id = q.Id
+        INNER JOIN
+            Tournaments t
+            ON
+            t.Id = s.TournamentId
+        WHERE
+            Year(t.Start) >= 2026
+            AND t.Completed = 1
+        ORDER BY
+            Games DESC, Score DESC, HighGame DESC
+    """);
+
+	var qualifyingStats = qualifyingStatsDataTable.AsEnumerable().Select(row => new
+	{
+		BowlerId = row.Field<int>("BowlerId"),
+		TournamentId = row.Field<int>("TournamentId"),
+		Score = row.Field<int>("Score"),
+		Games = row.Field<int>("Games"),
+		HighGame = row.Field<int>("HighGame")
+	})
+	.OrderByDescending(r => r.Games)
+		.ThenByDescending(r => r.Score)
+		.ThenByDescending(r => r.HighGame)
+	.ToList();
+
+	// a tournament only supports the qualifying-score cut-fill logic below when
+	// every squad in it is a singles squad (no squad rows in Squads_TeamSquad)
+	var tournamentFormatDataTable = await QuerySoftwareDatabaseAsync("""
+        SELECT
+            COALESCE(ss.TournamentId, ts.TournamentId) as TournamentId,
+            CASE WHEN ts.Id IS NULL THEN 1 ELSE 0 END as IsSinglesSquad
+        FROM
+            Squads s
+        LEFT JOIN
+            Squads_SinglesSquad ss
+            ON
+                ss.Id = s.Id
+        LEFT JOIN
+            Squads_TeamSquad ts
+            ON
+                ts.Id = s.Id
+    """);
+
+	var singlesTournamentIds = tournamentFormatDataTable.AsEnumerable().Select(row => new
+	{
+		TournamentId = row.Field<int>("TournamentId"),
+		IsSinglesSquad = row.Field<int>("IsSinglesSquad") == 1
+	})
+	.GroupBy(s => s.TournamentId)
+	.Where(g => g.All(s => s.IsSinglesSquad))
+	.Select(g => g.Key)
+	.ToHashSet();
+
+	var qualifyingStatsByTournament = qualifyingStats
+		.GroupBy(q => q.TournamentId)
+		.ToDictionary(g => g.Key, g => g.ToList());
+
+	var results = new List<App_TournamentResults>();
+
+	foreach (var tournamentGroup in resultStats.GroupBy(s => s.TournamentId))
+	{
+		var tournamentId = tournamentGroup.Key;
+		var isSinglesTournament = singlesTournamentIds.Contains(tournamentId);
+
+		var placeByBowlerId = new Dictionary<int, int>();
+
+		if (isSinglesTournament)
+		{
+			var lastDefinedPlace = tournamentGroup
+				.Where(s => s.Place.HasValue)
+				.Select(s => s.Place!.Value)
+				.DefaultIfEmpty(0)
+				.Max();
+
+			var missingBowlerIds = tournamentGroup
+				.Where(s => !s.Place.HasValue)
+				.Select(s => s.BowlerId)
+				.ToHashSet();
+
+			if (qualifyingStatsByTournament.TryGetValue(tournamentId, out var quals))
+			{
+				var nextPlace = lastDefinedPlace + 1;
+
+				foreach (var q in quals.Where(q => missingBowlerIds.Contains(q.BowlerId)))
+				{
+					placeByBowlerId[q.BowlerId] = nextPlace++;
+				}
+			}
+		}
+
+		foreach (var s in tournamentGroup)
+		{
+			var place = s.Place
+				?? (placeByBowlerId.TryGetValue(s.BowlerId, out var filledPlace) ? filledPlace : -1);
+
+			results.Add(new App_TournamentResults
+			{
+				DomainId = Guid.AsDomainId(),
+				BowlerId = bowlerDomainIdBySoftwareId[s.BowlerId].ToString(),
+				TournamentId = tournamentIdBySoftwareId[s.TournamentId],
+				Place = place,
+				PrizeMoney = s.PrizeMoney,
+				Points = s.Points,
+			});
+		}
+	}
+
+	App_TournamentResults.AddRange(results);
+
+	await SaveChangesAsync();
+
+	"Tournament Results Migrated".Dump();
+}
+
 
 public async Task MigrateHistoricalTournamentResults(
 	IDictionary<int, int> tournamentIdBySoftwareId,
@@ -2584,7 +2802,7 @@ public async Task MigrateHistoricalTournamentResults(
 		SideCutId = row.Field<int?>("SideCut")
 	}).ToList();
 
-	var results = resultStats.Select(s => new TournamentResults
+	var results = resultStats.Select(s => new Historical_TournamentResults
 	{
 		BowlerId = bowlerIdBySoftwareId[s.BowlerId],
 		TournamentId = tournamentIdBySoftwareId[s.TournamentId],
@@ -2594,7 +2812,7 @@ public async Task MigrateHistoricalTournamentResults(
 		SideCutId = s.SideCutId
 	}).ToList();
 	
-	TournamentResults.AddRange(results);
+	Historical_TournamentResults.AddRange(results);
 	
 	await SaveChangesAsync();
 	
@@ -2753,6 +2971,7 @@ public sealed class PatternLengthCategory
 
 	public int? MaximumLength { get; }
 }
+
 public sealed class TournamentType
 	: SmartEnum<TournamentType>
 {
@@ -2925,6 +3144,15 @@ public sealed class SoftwareTournament
 	public decimal EntryFee { get; init; }
 	
 	public bool StatsEligible { get; init; }
+}
+
+public sealed class SoftwareSquad
+{
+	public int Id { get; init; }
+	
+	public int TournamentId { get; init; }
+	
+	public DateTime SquadDateEastern { get; init; }
 }
 
 #endregion
@@ -3254,6 +3482,92 @@ public sealed class SponsorTier
 
 #endregion
 
+#region Squad Scores
+
+public async Task MigrateSquadScores(Dictionary<int, Ulid> bowlerDomainIdBySoftwareId)
+{
+	var squadDomainIdBySoftwareId = Squads.Where(s => s.LegacyId.HasValue).ToDictionary(s => s.LegacyId!.Value, s => s.DomainId);
+
+	var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+	var folder = "/Users/kippermand/Projects/bowlneba/neba-website/data-migration/qualifying-scores";
+
+	var scoreCount = 0;
+
+	foreach (var file in Directory.EnumerateFiles(folder, "*.json").OrderBy(f => f))
+	{
+		await using var stream = File.OpenRead(file);
+		var import = await JsonSerializer.DeserializeAsync<QualifyingScoresImport>(stream, options);
+
+		if (import is null)
+		{
+			$"------ {Path.GetFileName(file)} deserialized to null, skipping ------".Dump();
+			continue;
+		}
+
+		foreach (var squad in import.Squads)
+		{
+			if (!squadDomainIdBySoftwareId.TryGetValue(squad.SquadId, out var squadDomainId))
+			{
+				$"------ {Path.GetFileName(file)}: no squad found for legacy id {squad.SquadId}, skipping ------".Dump();
+				continue;
+			}
+
+			foreach (var squadScore in squad.SquadScores)
+			{
+				if (!bowlerDomainIdBySoftwareId.TryGetValue(squadScore.BowlerId, out var bowlerDomainId))
+				{
+					$"------ {Path.GetFileName(file)}: no bowler found for software id {squadScore.BowlerId}, skipping ------".Dump();
+					continue;
+				}
+
+				foreach (var game in squadScore.Scores)
+				{
+					SquadScores.Add(new SquadScores
+					{
+						DomainId = Guid.AsDomainId(),
+						SquadId = squadDomainId,
+						BowlerId = bowlerDomainId.ToString(),
+						GameNumber = (short)game.Game,
+						Score = game.Score
+					});
+
+					scoreCount++;
+				}
+			}
+		}
+	}
+
+	await SaveChangesAsync();
+
+	$"Squad Scores Migrated ({scoreCount})".Dump();
+}
+
+public sealed record QualifyingScoresImport
+{
+	public int TournamentId { get; set; }
+	public List<SquadImport> Squads { get; set; } = [];
+}
+
+public sealed record SquadImport
+{
+	public int SquadId { get; set; }
+	public List<SquadScoreImport> SquadScores { get; set; } = [];
+}
+
+public sealed record SquadScoreImport
+{
+	public int BowlerId { get; set; }
+	public List<GameScoreImport> Scores { get; set; } = [];
+}
+
+public sealed record GameScoreImport
+{
+	public int Game { get; set; }
+	public int Score { get; set; }
+}
+
+#endregion
+
 #region Oil Patterns
 
 public async Task MigrateOilPatterns()
@@ -3401,10 +3715,22 @@ public async Task MigrateOilPatterns()
 		KegelId = new Guid("daec2269-51d3-ef11-8eea-6045bd057455")
 	};
 
+	var augSingles2026 = new OilPatterns
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "2026 PBA Jr. Tacket",
+		Length = 44,
+		Volume = 30.75m,
+		LeftRatio = 5m,
+		RightRatio = 5m,
+		KegelId = new Guid("12127b64-f1ef-f011-8407-6045bd096a2f")
+	};
+
 	OilPatterns.AddRange(
 		janSingles2026, febDoubles2026, febTrios2026, marSingles2026,
 		aprNonChamp2026, aprSenior2026, aprSingles2026, maySingles2026,
-		junSingles2026, junOverUnder2026, julSingles2026, keeneDoubles2026, keeneSingles2026);
+		junSingles2026, junOverUnder2026, julSingles2026, keeneDoubles2026, keeneSingles2026,
+		augSingles2026);
 
 	TournamentOilPatterns.AddRange(
 		new TournamentOilPatterns 
@@ -3483,6 +3809,12 @@ public async Task MigrateOilPatterns()
 		{
 			TournamentId = Tournaments.Single(t => t.EndDate == new DateOnly(2026, 8, 2)).Id,
 			OilPattern = keeneSingles2026,
+			TournamentRounds = 5
+		},
+		new TournamentOilPatterns
+		{
+			TournamentId = Tournaments.Single(t => t.EndDate == new DateOnly(2026, 8, 23)).Id,
+			OilPattern = augSingles2026,
 			TournamentRounds = 5
 		}
 	);
@@ -4126,6 +4458,61 @@ static List<(int? websiteId, int? softwareId)> s_manualMatch = new()
 	new(null, 5090),  // Caitlyn Smith
 	new(null, 5093),  // Scott King
 	new(null, 5105),  // Hayden King
+	new(null, 5135),  // Gregory Lovewell
+	new(null, 5131),  // Steph Clark
+	new(null, 5120),  // Laura Clark
+	new(435, 5023),   // Qwadaris Lee
 };
 
 #endregion
+
+static class DateTimeExtensions
+{
+	static readonly TimeZoneInfo EasternTimeZone = FindEasternTimeZone();
+
+	/// <summary>
+	/// Interprets the value as Eastern wall-clock time (EST or EDT, resolved by date) and converts it to UTC.
+	/// </summary>
+	/// <param name="truncateSeconds">
+	/// When true (default), seconds and sub-second precision are discarded first, so 4:30:49 becomes 4:30:00.
+	/// </param>
+	public static DateTime ToUtc(this DateTime easternDateTime, bool truncateSeconds = true)
+	{
+		// Ignore whatever Kind the source carried - this value is Eastern wall-clock time by contract.
+		var unspecified = DateTime.SpecifyKind(easternDateTime, DateTimeKind.Unspecified);
+
+		if (truncateSeconds)
+		{
+			// Truncate on the Eastern side so the minute the user sees is the minute that's preserved.
+			unspecified = unspecified.AddTicks(-(unspecified.Ticks % TimeSpan.TicksPerMinute));
+		}
+
+		// Spring-forward gap: the wall-clock time never existed. Shift forward past the gap
+		// rather than throwing, so one bad row can't abort the migration.
+		if (EasternTimeZone.IsInvalidTime(unspecified))
+		{
+			var delta = EasternTimeZone.GetAdjustmentRules()
+				.FirstOrDefault(r => unspecified >= r.DateStart && unspecified <= r.DateEnd)
+				?.DaylightDelta ?? TimeSpan.FromHours(1);
+
+			unspecified = unspecified.Add(delta);
+		}
+
+		// Ambiguous times (fall-back hour) resolve to standard time (EST), which is
+		// TimeZoneInfo's default and the usual convention for logged wall-clock data.
+		return TimeZoneInfo.ConvertTimeToUtc(unspecified, EasternTimeZone);
+	}
+
+	static TimeZoneInfo FindEasternTimeZone()
+	{
+		try
+		{
+			// IANA id: works on macOS/Linux natively and on Windows since .NET 6.
+			return TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
+		}
+		catch (TimeZoneNotFoundException)
+		{
+			return TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+		}
+	}
+}

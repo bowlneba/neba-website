@@ -24,7 +24,7 @@ namespace Neba.Api.Database.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_tournament_results", x => new { x.tournament_id, x.bowler_id });
+                    table.PrimaryKey("pk_historical_tournament_results", x => new { x.tournament_id, x.bowler_id });
                     table.ForeignKey(
                         name: "fk_tournament_results_bowlers_bowler_id",
                         column: x => x.bowler_id,
@@ -49,13 +49,13 @@ namespace Neba.Api.Database.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "ix_tournament_results_bowler_id",
+                name: "ix_historical_tournament_results_bowler_id",
                 schema: "historical",
                 table: "tournament_results",
                 column: "bowler_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_tournament_results_side_cut_id",
+                name: "ix_historical_tournament_results_side_cut_id",
                 schema: "historical",
                 table: "tournament_results",
                 column: "side_cut_id");

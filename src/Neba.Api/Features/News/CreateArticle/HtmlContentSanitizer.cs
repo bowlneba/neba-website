@@ -106,13 +106,13 @@ internal static partial class HtmlContentSanitizer
         var wrapperNode = wrapper.DocumentNode.SelectSingleNode("//span");
 
         var referenceNode = textNode;
-        foreach (var child in wrapperNode.ChildNodes.ToList())
+        foreach (var child in wrapperNode?.ChildNodes.ToList() ?? [])
         {
-            textNode.ParentNode.InsertAfter(child, referenceNode);
+            textNode.ParentNode?.InsertAfter(child, referenceNode);
             referenceNode = child;
         }
 
-        textNode.ParentNode.RemoveChild(textNode);
+        textNode.ParentNode?.RemoveChild(textNode);
     }
 
     /// <summary>

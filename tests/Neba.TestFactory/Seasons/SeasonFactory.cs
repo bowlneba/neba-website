@@ -80,7 +80,7 @@ public static class SeasonFactory
 
             if (category == BowlerOfTheYearCategory.Open)
             {
-                season.AddOpenBowlerOfTheYearWinner(bowlerId);
+                season.AddBowlerOfTheYearWinner(bowlerId);
             }
             else if (category == BowlerOfTheYearCategory.Woman)
             {

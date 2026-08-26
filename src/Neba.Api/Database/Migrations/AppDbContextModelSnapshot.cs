@@ -18,7 +18,7 @@ namespace Neba.Api.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -86,13 +86,13 @@ namespace Neba.Api.Database.Migrations
                         .HasColumnName("side_cut_id");
 
                     b.HasKey("TournamentId", "BowlerId")
-                        .HasName("pk_tournament_results");
+                        .HasName("pk_historical_tournament_results");
 
                     b.HasIndex("BowlerId")
-                        .HasDatabaseName("ix_tournament_results_bowler_id");
+                        .HasDatabaseName("ix_historical_tournament_results_bowler_id");
 
                     b.HasIndex("SideCutId")
-                        .HasDatabaseName("ix_tournament_results_side_cut_id");
+                        .HasDatabaseName("ix_historical_tournament_results_side_cut_id");
 
                     b.ToTable("tournament_results", "historical");
                 });
@@ -1146,6 +1146,109 @@ namespace Neba.Api.Database.Migrations
                     b.ToTable("side_cut_criteria_groups", "app");
                 });
 
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.Squad", b =>
+                {
+                    b.Property<int>("db_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
+
+                    b.Property<DateTimeOffset>("BowlingDateTimeUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("bowling_date_time_utc");
+
+                    b.Property<string>("Id")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("domain_id")
+                        .IsFixedLength();
+
+                    b.Property<int?>("LegacyId")
+                        .HasColumnType("integer")
+                        .HasColumnName("legacy_id");
+
+                    b.Property<int?>("MaxEntries")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_entries");
+
+                    b.Property<int>("tournament_id")
+                        .HasColumnType("integer")
+                        .HasColumnName("tournament_id");
+
+                    b.HasKey("db_id")
+                        .HasName("pk_squads");
+
+                    b.HasAlternateKey("Id")
+                        .HasName("ak_squads_domain_id");
+
+                    b.HasIndex("LegacyId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_squads_legacy_id");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("LegacyId"), true);
+
+                    b.HasIndex("tournament_id")
+                        .HasDatabaseName("ix_squads_tournament_id");
+
+                    b.ToTable("squads", "app");
+                });
+
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.SquadScore", b =>
+                {
+                    b.Property<int>("db_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
+
+                    b.Property<string>("BowlerId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("bowler_id")
+                        .IsFixedLength();
+
+                    b.Property<short>("GameNumber")
+                        .HasColumnType("smallint")
+                        .HasColumnName("game_number");
+
+                    b.Property<string>("Id")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("domain_id")
+                        .IsFixedLength();
+
+                    b.Property<int>("Score")
+                        .HasColumnType("integer")
+                        .HasColumnName("score");
+
+                    b.Property<string>("SquadId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("squad_id")
+                        .IsFixedLength();
+
+                    b.HasKey("db_id")
+                        .HasName("pk_squad_scores");
+
+                    b.HasAlternateKey("Id")
+                        .HasName("ak_squad_scores_domain_id");
+
+                    b.HasAlternateKey("SquadId", "BowlerId", "GameNumber")
+                        .HasName("ak_squad_scores_squad_id_bowler_id_game_number");
+
+                    b.HasIndex("BowlerId")
+                        .HasDatabaseName("ix_squad_scores_bowler_id");
+
+                    b.ToTable("squad_scores", "app");
+                });
+
             modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.Tournament", b =>
                 {
                     b.Property<int>("db_id")
@@ -1159,6 +1262,10 @@ namespace Neba.Api.Database.Migrations
                         .HasMaxLength(6)
                         .HasColumnType("character varying(6)")
                         .HasColumnName("bowling_center_id");
+
+                    b.Property<bool>("Complete")
+                        .HasColumnType("boolean")
+                        .HasColumnName("complete");
 
                     b.Property<DateOnly>("EndDate")
                         .HasColumnType("date")
@@ -1294,6 +1401,61 @@ namespace Neba.Api.Database.Migrations
                         .HasDatabaseName("ix_tournament_oil_patterns_oil_pattern_id");
 
                     b.ToTable("tournament_oil_patterns", "app");
+                });
+
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.TournamentResult", b =>
+                {
+                    b.Property<int>("db_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("db_id"));
+
+                    b.Property<string>("BowlerId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("bowler_id")
+                        .IsFixedLength();
+
+                    b.Property<string>("Id")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character(26)")
+                        .HasColumnName("domain_id")
+                        .IsFixedLength();
+
+                    b.Property<int>("Place")
+                        .HasColumnType("integer")
+                        .HasColumnName("place");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("integer")
+                        .HasColumnName("points");
+
+                    b.Property<decimal>("PrizeMoney")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("prize_money");
+
+                    b.Property<int>("tournament_id")
+                        .HasColumnType("integer")
+                        .HasColumnName("tournament_id");
+
+                    b.HasKey("db_id")
+                        .HasName("pk_app_tournament_results");
+
+                    b.HasAlternateKey("Id")
+                        .HasName("ak_app_tournament_results_domain_id");
+
+                    b.HasAlternateKey("tournament_id", "BowlerId")
+                        .HasName("ak_app_tournament_results_tournament_id_bowler_id");
+
+                    b.HasIndex("BowlerId")
+                        .HasDatabaseName("ix_app_tournament_results_bowler_id");
+
+                    b.ToTable("tournament_results", "app");
                 });
 
             modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.TournamentSponsor", b =>
@@ -1910,6 +2072,39 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("SideCut");
                 });
 
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.Squad", b =>
+                {
+                    b.HasOne("Neba.Api.Features.Tournaments.Domain.Tournament", null)
+                        .WithMany("Squads")
+                        .HasForeignKey("tournament_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_squads_tournaments_tournament_id");
+                });
+
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.SquadScore", b =>
+                {
+                    b.HasOne("Neba.Api.Features.Bowlers.Domain.Bowler", "Bowler")
+                        .WithMany()
+                        .HasForeignKey("BowlerId")
+                        .HasPrincipalKey("Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_squad_scores_bowlers_bowler_id");
+
+                    b.HasOne("Neba.Api.Features.Tournaments.Domain.Squad", "Squad")
+                        .WithMany()
+                        .HasForeignKey("SquadId")
+                        .HasPrincipalKey("Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_squad_scores_squads_squad_id");
+
+                    b.Navigation("Bowler");
+
+                    b.Navigation("Squad");
+                });
+
             modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.Tournament", b =>
                 {
                     b.HasOne("Neba.Api.Features.BowlingCenters.Domain.BowlingCenter", "BowlingCenter")
@@ -1952,6 +2147,26 @@ namespace Neba.Api.Database.Migrations
                     b.Navigation("OilPattern");
 
                     b.Navigation("Tournament");
+                });
+
+            modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.TournamentResult", b =>
+                {
+                    b.HasOne("Neba.Api.Features.Bowlers.Domain.Bowler", "Bowler")
+                        .WithMany()
+                        .HasForeignKey("BowlerId")
+                        .HasPrincipalKey("Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_tournament_results_bowlers_bowler_id");
+
+                    b.HasOne("Neba.Api.Features.Tournaments.Domain.Tournament", null)
+                        .WithMany("Results")
+                        .HasForeignKey("tournament_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_tournament_results_tournaments_tournament_id");
+
+                    b.Navigation("Bowler");
                 });
 
             modelBuilder.Entity("Neba.Api.Features.Tournaments.Domain.TournamentSponsor", b =>
@@ -2020,7 +2235,11 @@ namespace Neba.Api.Database.Migrations
 
                     b.Navigation("OilPatterns");
 
+                    b.Navigation("Results");
+
                     b.Navigation("Sponsors");
+
+                    b.Navigation("Squads");
                 });
 #pragma warning restore 612, 618
         }

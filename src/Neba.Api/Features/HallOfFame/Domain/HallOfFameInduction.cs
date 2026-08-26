@@ -48,7 +48,7 @@ public sealed class HallOfFameInduction
     /// <summary>
     /// The categories associated with this induction.
     /// </summary>
-    public IReadOnlyCollection<HallOfFameCategory> Categories { get; init; } = [];
+    public IReadOnlyCollection<HallOfFameCategory> Categories { get; internal set; } = [];
 
     /// <summary>
     /// An optional photo associated with the induction, such as a picture of the bowler receiving the award or a commemorative image. This is represented as a <see cref="StoredFile"/> value object, which contains information about the file's storage location, content type, and other relevant metadata. This allows for flexible handling of associated media while keeping the core induction data focused on the essential attributes of the Hall of Fame entry.

@@ -246,7 +246,7 @@ public sealed class HtmlProcessorTests
         var doc = new HtmlDocument();
         doc.LoadHtml(result);
 
-        var links = doc.DocumentNode.SelectNodes("//a[@href]");
+        var links = doc.DocumentNode.SelectNodes("//a[@href]")!;
         links.Count.ShouldBe(2);
         links[0].GetAttributeValue("href", "").ShouldBe("/bylaws");
         links[1].GetAttributeValue("href", "").ShouldBe("/tournaments/rules");
@@ -345,7 +345,7 @@ public sealed class HtmlProcessorTests
         var doc = new HtmlDocument();
         doc.LoadHtml(result);
 
-        var links = doc.DocumentNode.SelectNodes("//a[@href]");
+        var links = doc.DocumentNode.SelectNodes("//a[@href]")!;
         links.Count.ShouldBe(3);
         links[0].GetAttributeValue("href", "").ShouldBe("https://example.com");
         links[1].GetAttributeValue("href", "").ShouldBe("/internal/page");
@@ -591,7 +591,7 @@ public sealed class HtmlProcessorTests
         var doc = new HtmlDocument();
         doc.LoadHtml(result);
 
-        var links = doc.DocumentNode.SelectNodes("//a[@href]");
+        var links = doc.DocumentNode.SelectNodes("//a[@href]")!;
         links.Count.ShouldBe(3);
         links.ShouldAllBe(link => link.GetAttributeValue("href", "") == "/bylaws");
     }
@@ -618,7 +618,7 @@ public sealed class HtmlProcessorTests
         var doc = new HtmlDocument();
         doc.LoadHtml(result);
 
-        var links = doc.DocumentNode.SelectNodes("//a[@href]");
+        var links = doc.DocumentNode.SelectNodes("//a[@href]")!;
         links.Count.ShouldBe(2);
         links[0].GetAttributeValue("href", "").ShouldBe("#section-1");
         links[1].GetAttributeValue("href", "").ShouldBe("#section-2");
@@ -696,7 +696,7 @@ public sealed class HtmlProcessorTests
         var doc = new HtmlDocument();
         doc.LoadHtml(result);
 
-        var links = doc.DocumentNode.SelectNodes("//a[@href]");
+        var links = doc.DocumentNode.SelectNodes("//a[@href]")!;
         links.Count.ShouldBe(2);
         links[0].GetAttributeValue("href", "").ShouldBe("#article-1");
         links[1].GetAttributeValue("href", "").ShouldBe("/bylaws#h.abc123");
@@ -898,7 +898,7 @@ public sealed class HtmlProcessorTests
         h1.GetAttributeValue("data-original-id", "").ShouldBe("h.abc123");
 
         // Links transformed
-        var links = doc.DocumentNode.SelectNodes("//a[@href]");
+        var links = doc.DocumentNode.SelectNodes("//a[@href]")!;
         links.Count.ShouldBe(2);
         links[0].GetAttributeValue("href", "").ShouldBe("#section-1");
         links[1].GetAttributeValue("href", "").ShouldBe("/bylaws");
@@ -972,7 +972,7 @@ public sealed class HtmlProcessorTests
         var doc = new HtmlDocument();
         doc.LoadHtml(result);
 
-        var links = doc.DocumentNode.SelectNodes("//a[@href]");
+        var links = doc.DocumentNode.SelectNodes("//a[@href]")!;
         links.Count.ShouldBe(2);
         links[0].GetAttributeValue("href", "").ShouldBe("/bylaws");
         links[1].GetAttributeValue("href", "").ShouldBe("/tournaments/rules");
@@ -1023,7 +1023,7 @@ public sealed class HtmlProcessorTests
         var doc = new HtmlDocument();
         doc.LoadHtml(result);
 
-        var links = doc.DocumentNode.SelectNodes("//a[@href]");
+        var links = doc.DocumentNode.SelectNodes("//a[@href]")!;
         links.Count.ShouldBe(2);
         links[0].GetAttributeValue("href", "").ShouldBe("/bylaws");
         links[1].GetAttributeValue("href", "").ShouldBe("/tournaments/rules");

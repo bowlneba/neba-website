@@ -24,6 +24,7 @@
     <PackageReference Include="Audit.NET.AzureStorageTables" />
     <PackageReference Include="Audit.WebApi.Core" />
     <PackageReference Include="Community.Microsoft.Extensions.Caching.PostgreSql" />
+    <PackageReference Include="Dapper" />
     <PackageReference Include="EFCore.NamingConventions" />
     <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" />
     <PackageReference Include="ErrorOr" />
@@ -33,6 +34,7 @@
     <PackageReference Include="Google.Apis.Auth" />
     <PackageReference Include="Google.Apis.Drive.v3" />
     <PackageReference Include="Hangfire.AspNetCore" />
+    <PackageReference Include="Hangfire.Console" />
     <PackageReference Include="Hangfire.PostgreSql" />
     <PackageReference Include="HtmlAgilityPack" />
     <PackageReference Include="HtmlSanitizer" />
@@ -40,6 +42,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.Data.SqlClient" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
     <PackageReference Include="Microsoft.Extensions.Compliance.Redaction" />

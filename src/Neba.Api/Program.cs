@@ -6,6 +6,7 @@ using FastEndpoints;
 using Neba.Api;
 using Neba.Api.ErrorHandling;
 using Neba.Api.FeatureManagement;
+using Neba.Api.Legacy;
 using Neba.Api.OpenApi;
 using Neba.Api.Security;
 using Neba.Api.Versioning;
@@ -33,7 +34,8 @@ builder.Services
 builder
     .AddInfrastructure()
     .AddSecurity()
-    .AddFeatureManagement();
+    .AddFeatureManagement()
+    .AddLegacy();
 
 var app = builder.Build();
 
@@ -54,6 +56,9 @@ app.UseFastEndpoints(config =>
 
     config.Errors.ConfigureErrorHandling();
 });
+
+app.MapLegacyGroup();
+app.MapLegacyHealth();
 
 app.UseOpenApiDocumentation();
 
