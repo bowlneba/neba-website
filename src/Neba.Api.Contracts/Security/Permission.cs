@@ -30,6 +30,11 @@ public sealed class Permissions
     /// </summary>
     public static readonly Permissions ResetUserPassword = new("System.ResetUserPassword", "Reset User Password");
 
+    /// <summary>
+    /// Permission to list user accounts in the system.
+    /// </summary>
+    public static readonly Permissions GetUsers = new("System.GetUsers", "Get Users");
+
     #endregion
 
     #region News

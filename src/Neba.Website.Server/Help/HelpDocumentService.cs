@@ -61,7 +61,12 @@ internal sealed class HelpDocumentService
     /// ADR-0007's <c>docs/help/images/&lt;feature&gt;/</c> convention) to the <c>/help/images/{doc}/{file}</c>
     /// endpoint that serves the matching embedded resource. Already-absolute sources are left untouched.
     /// </summary>
-    private static string RewriteImageSources(string html, string docName)
+    /// <remarks>
+    /// Internal (rather than private) so the no-`&lt;img&gt;`-tags branch can be unit tested directly —
+    /// every real doc under <c>docs/help/</c> currently has at least one screenshot, so this edge case
+    /// has no natural fixture in the checked-in corpus to test against via <see cref="GetRenderedHtml"/>.
+    /// </remarks>
+    internal static string RewriteImageSources(string html, string docName)
     {
         var doc = new HtmlDocument();
         doc.LoadHtml(html);

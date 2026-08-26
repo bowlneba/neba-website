@@ -3,6 +3,7 @@ using FastEndpoints;
 using Neba.Api.Messaging;
 using Neba.Api.Security.ListUsers;
 using Neba.TestFactory.Attributes;
+using Neba.TestFactory.Security;
 
 namespace Neba.Api.Tests.Security.ListUsers;
 
@@ -18,13 +19,7 @@ public sealed class ListUsersEndpointTests
         var userId = Ulid.NewUlid();
         var pagedResult = new PagedResult<UserSummaryDto>(
         [
-            new()
-            {
-                UserId = userId,
-                Email = "webmaster@bowlneba.com",
-                EmailConfirmed = true,
-                Roles = ["Webmaster"]
-            }
+            UserSummaryDtoFactory.Create(userId: userId)
         ], 1);
 
         var queryHandlerMock = new Mock<IQueryHandler<ListUsersQuery, PagedResult<UserSummaryDto>>>(MockBehavior.Strict);
@@ -43,9 +38,9 @@ public sealed class ListUsersEndpointTests
         endpoint.Response.Items.ShouldHaveSingleItem();
         var response = endpoint.Response.Items.Single();
         response.UserId.ShouldBe(userId.ToString());
-        response.Email.ShouldBe("webmaster@bowlneba.com");
+        response.Email.ShouldBe(UserSummaryDtoFactory.ValidEmail);
         response.EmailConfirmed.ShouldBeTrue();
-        response.Roles.ShouldBe(["Webmaster"]);
+        response.Roles.ShouldBe([UserSummaryDtoFactory.ValidRole]);
         endpoint.Response.TotalItems.ShouldBe(1);
         endpoint.Response.PageNumber.ShouldBe(1);
         endpoint.Response.PageSize.ShouldBe(20);

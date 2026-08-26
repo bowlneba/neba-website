@@ -2,25 +2,29 @@
 
 Lets an admin force a password reset for an existing staff account — the user gets an emailed link and sets a brand-new password themselves. No temporary or admin-visible password is ever generated.
 
-## API only — no UI yet
-
-This action is currently only reachable by calling the API directly (e.g. via Swagger or a REST client) — there is no page in the app for it yet. This doc covers the endpoint's behavior and permissions now so it's ready to expand with UI steps and screenshots once a page is built.
-
 ## Prerequisites
 
-You need the `System.ResetUserPassword` permission, enforced via the dynamic `Permission:System.ResetUserPassword` policy — see the `Permission:{value}` row in [`docs/policies/README.md`](../policies/README.md).
+You need the `System.ResetUserPassword` permission, enforced via the dynamic `Permission:System.ResetUserPassword` policy — see the `Permission:{value}` row in [`docs/policies/README.md`](../policies/README.md). If you don't have it, the **Reset Password** button doesn't appear next to any row on the [Users](list-users.md) page — you'll still see the list if you separately hold `System.GetUsers`, just without that action.
 
-## What it does
+## Steps
 
-`POST /security/password/reset` with a `{ "userId": "<ulid>" }` body:
+1. Open the [Users](list-users.md) page (account menu → **Users**) and find the account in the table.
+2. Click **Reset Password** in that row.
 
-1. Looks up the user by id. If no such user exists, the request fails (404) — nothing is sent.
-2. Generates a one-time password-reset token and emails the user a **Set Your Password** link (subject: "Your BowlNEBA password has been reset").
-3. The user's existing password stays valid until they actually complete the link — this call alone does not lock them out.
+   ![Users table with the Reset Password confirmation dialog open](images/reset-password/confirm-dialog.png)
 
-This is the same set-password mechanism used for [inviting a new user](create-user.md#setting-the-password-invite-flow): the link opens `/account/set-password` with the user's id and token embedded in the URL, requires no login to use, and is one-time — using it (or letting it expire) invalidates it for further use.
+3. Confirm — the dialog reads *"Send "\{email}" a link to set a new password? Their current password will stop working immediately."* Click **Reset Password** to send it, or **Cancel** to back out without doing anything.
 
-## Response
+## What happens after you confirm
+
+- **Success**: a "Password Reset Sent" toast confirms the email was sent (*"A password-set link was emailed to "\{email}"."*).
+- **Failure**: a "Reset Password Failed" toast explains what went wrong (see Troubleshooting below) — no email was sent.
+
+This is the same set-password mechanism used for [inviting a new user](create-user.md#setting-the-password-invite-flow): the link opens `/account/set-password` with the user's id and token embedded in the URL, requires no login to use, and is one-time — using it (or letting it expire) invalidates it for further use. The user's existing password stays valid until they actually complete the link — sending the reset alone does not lock them out.
+
+## API
+
+`POST /security/password/reset` with a `{ "userId": "<ulid>" }` body — this is what the button above calls. Direct API access (e.g. via Swagger or a REST client) works the same way if you need to script it.
 
 - **204 No Content** — the reset email was sent.
 - **404 Not Found** — no user exists with the given id.
@@ -30,11 +34,12 @@ This is the same set-password mechanism used for [inviting a new user](create-us
 
 | What you see | What it means |
 | --- | --- |
-| 401/403 | You don't hold `System.ResetUserPassword` — ask an admin to grant it if you believe you should have it. |
-| 404 | The `userId` doesn't match any existing account. Double-check the id. |
-| The user says the link doesn't work | Reset links are one-time and expire — if the user waited too long or the link was already used (e.g. requested twice), call the endpoint again to send a fresh one. |
+| No "Reset Password" button next to a row | You don't hold `System.ResetUserPassword` — ask an admin to grant it if you believe you should have it. |
+| "Reset Password Failed" toast | The server rejected the request; the toast message describes the specific problem (e.g. the account no longer exists). |
+| The user says the link doesn't work | Reset links are one-time and expire — if the user waited too long or the link was already used (e.g. requested twice), send a fresh one. |
 
 ## Related
 
+- [View Users](list-users.md) — where this action is triggered from.
 - [Create a User](create-user.md) — the invite flow shares the same set-password link mechanism.
 - [`docs/policies/README.md`](../policies/README.md) — the `Permission:{value}` policy this action requires and how it's evaluated.

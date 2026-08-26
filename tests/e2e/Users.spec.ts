@@ -11,11 +11,45 @@ test.describe('Users page (unauthenticated)', () => {
   });
 });
 
-test.describe('Users page (authenticated)', () => {
+test.describe('Users page (GetUsers only, no ResetUserPassword)', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test.beforeEach(async ({ page }) => {
+    await page.request.post('/__test/login?permissions=System.GetUsers');
+  });
+
+  test('shows the user list but hides the Reset Password button', async ({ page }) => {
+    await page.goto('/account/users');
+    await page.waitForSelector('.neba-table');
+
+    await expect(page.locator('.neba-table')).toContainText('webmaster@bowlneba.com');
+    await expect(page.getByRole('button', { name: 'Reset Password' })).toHaveCount(0);
+  });
+});
+
+test.describe('Users page (ResetUserPassword only, no GetUsers)', () => {
   test.use({ viewport: { width: 1200, height: 800 } });
 
   test.beforeEach(async ({ page }) => {
     await page.request.post('/__test/login?permissions=System.ResetUserPassword');
+  });
+
+  test('shows a permission message and hides the Users menu item', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('.account-menu');
+    await page.getByRole('button', { name: 'Account menu' }).hover();
+    await expect(page.getByRole('menuitem', { name: 'Users' })).toHaveCount(0);
+
+    await page.goto('/account/users');
+    await expect(page.locator('.news-empty-text')).toContainText("don't have permission to view users");
+  });
+});
+
+test.describe('Users page (authenticated)', () => {
+  test.use({ viewport: { width: 1200, height: 800 } });
+
+  test.beforeEach(async ({ page }) => {
+    await page.request.post('/__test/login?permissions=System.GetUsers,System.ResetUserPassword');
   });
 
   // A failed assertion earlier in a test can abort it before its own /__mock/reset call runs,

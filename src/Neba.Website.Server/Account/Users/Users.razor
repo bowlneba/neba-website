@@ -12,7 +12,7 @@
 
 <PageTitle>Users - BowlNEBA</PageTitle>
 
-<AuthorizeView Policy="@Permissions.ResetUserPassword.PolicyName" Context="authContext">
+<AuthorizeView Policy="@Permissions.GetUsers.PolicyName" Context="authContext">
     <Authorized>
         <div class="neba-space-y-6">
 
@@ -20,6 +20,9 @@
                 <div class="page-title-inner">
                     <h1>Users</h1>
                     <p>View staff accounts and reset a user's password.</p>
+                </div>
+                <div class="page-title-help">
+                    <HelpButton DocName="list-users" Light="true" />
                 </div>
             </div>
 
@@ -62,10 +65,14 @@
                                         <td>@string.Join(", ", user.Roles)</td>
                                         <td>@(user.EmailConfirmed ? "Active" : "Invite Pending")</td>
                                         <td class="text-right">
-                                            <button type="button" class="neba-btn neba-btn-secondary"
-                                                    @onclick="@(() => RequestReset(user))">
-                                                Reset Password
-                                            </button>
+                                            <AuthorizeView Policy="@Permissions.ResetUserPassword.PolicyName" Context="resetContext">
+                                                <Authorized>
+                                                    <button type="button" class="neba-btn neba-btn-secondary"
+                                                            @onclick="@(() => RequestReset(user))">
+                                                        Reset Password
+                                                    </button>
+                                                </Authorized>
+                                            </AuthorizeView>
                                         </td>
                                     </tr>
                                 }

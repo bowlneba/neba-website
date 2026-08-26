@@ -25,7 +25,7 @@ internal sealed class ListUsersEndpoint(IQueryHandler<ListUsersQuery, PagedResul
             .WithVersionSet("Security")
             .MapToApiVersion(new ApiVersion(1, 0)));
 
-        Policies(PermissionCatalog.ResetUserPassword.PolicyName);
+        Policies(PermissionCatalog.GetUsers.PolicyName);
 
         Description(description => description
             .WithName("ListUsers")
