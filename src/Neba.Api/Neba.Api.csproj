@@ -18,6 +18,7 @@
     <PackageReference Include="Aspire.Azure.Security.KeyVault" />
     <PackageReference Include="Aspire.Azure.Storage.Blobs" />
     <PackageReference Include="AspNetCore.HealthChecks.Hangfire" />
+    <PackageReference Include="AspNetCore.HealthChecks.SqlServer" />
     <PackageReference Include="Audit.EntityFramework.Core" />
     <PackageReference Include="Audit.Hangfire" />
     <PackageReference Include="Audit.NET" />
