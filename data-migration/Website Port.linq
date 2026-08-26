@@ -2078,7 +2078,7 @@ private void ManualLocationUpdates(IReadOnlyCollection<BowlingCenters> bowlingCe
 	eastProvidence.Latitude = 41.85705;
 	eastProvidence.Longitude = -71.35454;
 
-	var tbowl = bowlingCenters.Single(bc => bc.Name == "Bowlero Wallingford");
+	var tbowl = bowlingCenters.Single(bc => bc.Name == "Wallingford Bowl");
 	tbowl.Latitude = 41.488968;
 	tbowl.Longitude = -72.8089833;
 
@@ -2162,11 +2162,12 @@ private void ManualLocationUpdates(IReadOnlyCollection<BowlingCenters> bowlingCe
 	rutland.Latitude = 43.5982589;
 	rutland.Longitude = -72.9725074;
 
-	var stMarks = bowlingCenters.Single(bc => bc.Name == "St Marks Bowling Lanes");
-	stMarks.Street = "1271 North Ave";
-	stMarks.PostalCode = "05408";
-	stMarks.Latitude = 44.5103739;
-	stMarks.Longitude = -73.2519529;
+	//No longer certified?
+	//var stMarks = bowlingCenters.Single(bc => bc.Name == "St Marks Bowling Lanes");
+	//stMarks.Street = "1271 North Ave";
+	//stMarks.PostalCode = "05408";
+	//stMarks.Latitude = 44.5103739;
+	//stMarks.Longitude = -73.2519529;
 
 	var valleyBowl = bowlingCenters.Single(bc => bc.Name == "Valley Bowl");
 	valleyBowl.Street = "12 Prince St";
@@ -2194,7 +2195,7 @@ private void ManualLocationUpdates(IReadOnlyCollection<BowlingCenters> bowlingCe
 	meadowLanes.Latitude = 44.6161222;
 	meadowLanes.Longitude = -70.1783445;
 
-	var hallowell = bowlingCenters.Single(bc => bc.Name == "Sparetime Recreation Hallowell");
+	var hallowell = bowlingCenters.Single(bc => bc.Name == "Sparetime Recreation Augusta");
 	hallowell.Name = "Interstate Bowling Center";
 	hallowell.Street = "215 Whitten Road";
 	
