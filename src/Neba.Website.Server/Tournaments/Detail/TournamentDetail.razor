@@ -216,17 +216,7 @@ else
                     </div>
 
                     <div class="td-hero__tile">
-                        @if (_model.LogoUrl is not null)
-                        {
-                            <img src="@_model.LogoUrl" alt="@(_model.Name + " logo")" class="td-hero__logo-img" />
-                        }
-                        else
-                        {
-                            <TournamentLogoTile TournamentType="@_model.TournamentType" Season="@SeasonLabel"
-                                                TournamentName="@_model.Name"
-                                                Variant="@(_model.IsUpcoming ? LogoTileVariant.Default : LogoTileVariant.Muted)"
-                                                CssClass="td-hero__tile-inner" />
-                        }
+                        <img src="@_model.DisplayLogoSrc" alt="@(_model.Name + " logo")" class="td-hero__logo-img" />
                     </div>
 
                 </div>
@@ -597,9 +587,6 @@ else
 
     private bool HasRailContent =>
         _model is not null && (_model.IsUpcoming || _model.HasSponsors || _model.EntryCount.HasValue || _model.HasPayout);
-
-    private string SeasonLabel =>
-        _model!.SeasonDescription.Replace(" Season", string.Empty, StringComparison.OrdinalIgnoreCase);
 
     private string WinnersText =>
         _model is null ? string.Empty : string.Join(" / ", _model.Winners);

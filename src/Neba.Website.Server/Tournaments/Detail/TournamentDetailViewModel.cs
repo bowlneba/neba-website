@@ -95,6 +95,11 @@ public sealed record TournamentDetailViewModel
     public Uri? LogoUrl { get; init; }
 
     /// <summary>
+    /// Logo to display: the tournament's own logo when set, otherwise a format-specific default.
+    /// </summary>
+    public string DisplayLogoSrc => LogoUrl?.ToString() ?? SeasonTournamentViewModel.DefaultLogoSrcFor(TournamentType);
+
+    /// <summary>
     /// Name of the host bowling center.
     /// </summary>
     public string? BowlingCenterName { get; init; }
