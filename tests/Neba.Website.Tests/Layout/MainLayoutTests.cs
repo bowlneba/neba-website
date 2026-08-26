@@ -2,6 +2,7 @@ using Bunit;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
 using Neba.TestFactory.Attributes;
@@ -31,6 +32,8 @@ public sealed class MainLayoutTests : IDisposable
 
         _ctx.Services.AddSingleton(mockWebHostEnvironment.Object);
         _ctx.Services.AddScoped<ToastService>();
+        _ctx.Services.AddScoped<CircuitTokenCache>();
+        _ctx.Services.AddSingleton(new Mock<IHttpContextAccessor>(MockBehavior.Strict).Object);
         _ctx.Services.AddHttpClient();
         _ctx.Services.AddSingleton(new NebaApiConfiguration
         {
