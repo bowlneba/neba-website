@@ -1,5 +1,6 @@
 using Neba.Api.Contracts.Security.CreateUser;
 using Neba.Api.Contracts.Security.GetCurrentUser;
+using Neba.Api.Contracts.Security.ListUsers;
 using Neba.Api.Contracts.Security.Login;
 using Neba.Api.Contracts.Security.RefreshToken;
 using Neba.Api.Contracts.Security.ResetPassword;
@@ -39,4 +40,8 @@ public interface ISecurityApi
     /// <summary>Creates a new user account. No password set — an invitation email is sent.</summary>
     [Post("/security/users")]
     Task<IApiResponse<CreateUserResponse>> CreateUserAsync([Body] CreateUserRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists all user accounts, including email confirmation status and assigned roles.</summary>
+    [Get("/security/users")]
+    Task<IApiResponse<CollectionResponse<UserSummaryResponse>>> ListUsersAsync(CancellationToken cancellationToken = default);
 }
