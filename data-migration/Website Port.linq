@@ -43,7 +43,7 @@
   <Namespace>System.Threading.Tasks</Namespace>
 </Query>
 
-public bool _bowlingCenterMigration = false;
+public bool _bowlingCenterMigration = true;
 
 async Task Main()
 {
