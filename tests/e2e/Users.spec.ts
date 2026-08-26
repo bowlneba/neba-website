@@ -49,6 +49,38 @@ test.describe('Users page (authenticated)', () => {
     await expect(rows.nth(1)).toContainText('Invite Pending');
   });
 
+  test('filters the user list by email', async ({ page }) => {
+    await page.goto('/account/users');
+    await page.waitForSelector('.neba-table');
+
+    await page.getByPlaceholder('Filter by email or role…').fill('invited');
+
+    const rows = page.locator('.neba-table tbody tr');
+    await expect(rows).toHaveCount(1);
+    await expect(rows.nth(0)).toContainText('invited.staff@bowlneba.com');
+  });
+
+  test('filters the user list by role', async ({ page }) => {
+    await page.goto('/account/users');
+    await page.waitForSelector('.neba-table');
+
+    await page.getByPlaceholder('Filter by email or role…').fill('journalist');
+
+    const rows = page.locator('.neba-table tbody tr');
+    await expect(rows).toHaveCount(1);
+    await expect(rows.nth(0)).toContainText('invited.staff@bowlneba.com');
+  });
+
+  test('shows a no-matches message when the filter matches nothing', async ({ page }) => {
+    await page.goto('/account/users');
+    await page.waitForSelector('.neba-table');
+
+    await page.getByPlaceholder('Filter by email or role…').fill('nobody-matches-this');
+
+    await expect(page.locator('.neba-table tbody tr')).toHaveCount(1);
+    await expect(page.locator('.neba-table tbody')).toContainText('No users match "nobody-matches-this"');
+  });
+
   test('resets a user password after confirming', async ({ page }) => {
     await page.goto('/account/users');
     await page.waitForSelector('.neba-table');

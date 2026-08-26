@@ -5,6 +5,7 @@ using Neba.Api.Security.Domain;
 using Neba.Api.Security.ListUsers;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
+using Neba.TestFactory.Security;
 
 namespace Neba.Api.Tests.Security.ListUsers;
 
@@ -14,24 +15,27 @@ namespace Neba.Api.Tests.Security.ListUsers;
 public sealed class ListUsersQueryHandlerTests(SecurityDbContextFixture fixture)
     : IClassFixture<SecurityDbContextFixture>, IAsyncLifetime
 {
+    private const int DefaultPageSize = 20;
+
     public async ValueTask InitializeAsync()
         => await fixture.ResetAsync();
 
     public ValueTask DisposeAsync()
         => ValueTask.CompletedTask;
 
-    [Fact(DisplayName = "HandleAsync returns empty collection when no users exist")]
-    public async Task HandleAsync_ShouldReturnEmpty_WhenNoUsersExist()
+    [Fact(DisplayName = "HandleAsync returns empty page when no users exist")]
+    public async Task HandleAsync_ShouldReturnEmptyPage_WhenNoUsersExist()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var handler = new ListUsersQueryHandler(fixture.CreateDbContext());
 
         // Act
-        var result = await handler.HandleAsync(new ListUsersQuery(), ct);
+        var result = await handler.HandleAsync(new ListUsersQuery { Page = 1, PageSize = DefaultPageSize }, ct);
 
         // Assert
-        result.ShouldBeEmpty();
+        result.Items.ShouldBeEmpty();
+        result.TotalItems.ShouldBe(0);
     }
 
     [Fact(DisplayName = "HandleAsync returns each user's email, confirmation status, and roles")]
@@ -45,24 +49,18 @@ public sealed class ListUsersQueryHandlerTests(SecurityDbContextFixture fixture)
 
         await roleManager.CreateAsync(new ApplicationRole(Roles.Webmaster));
 
-        var user = new ApplicationUser
-        {
-            Id = Ulid.NewUlid(),
-            UserName = "webmaster@bowlneba.com",
-            Email = "webmaster@bowlneba.com",
-            EmailConfirmed = true
-        };
+        var user = ApplicationUserFactory.Create(email: "webmaster@bowlneba.com", userName: "webmaster@bowlneba.com", emailConfirmed: true);
         await userManager.CreateAsync(user);
         await userManager.AddToRoleAsync(user, Roles.Webmaster);
 
         var handler = new ListUsersQueryHandler(fixture.CreateDbContext());
 
         // Act
-        var result = await handler.HandleAsync(new ListUsersQuery(), ct);
+        var result = await handler.HandleAsync(new ListUsersQuery { Page = 1, PageSize = DefaultPageSize }, ct);
 
         // Assert
-        result.ShouldHaveSingleItem();
-        var dto = result.Single();
+        result.TotalItems.ShouldBe(1);
+        var dto = result.Items.ShouldHaveSingleItem();
         dto.UserId.ShouldBe(user.Id);
         dto.Email.ShouldBe("webmaster@bowlneba.com");
         dto.EmailConfirmed.ShouldBeTrue();
@@ -77,26 +75,16 @@ public sealed class ListUsersQueryHandlerTests(SecurityDbContextFixture fixture)
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-        await userManager.CreateAsync(new ApplicationUser
-        {
-            Id = Ulid.NewUlid(),
-            UserName = "zed@bowlneba.com",
-            Email = "zed@bowlneba.com"
-        });
-        await userManager.CreateAsync(new ApplicationUser
-        {
-            Id = Ulid.NewUlid(),
-            UserName = "amy@bowlneba.com",
-            Email = "amy@bowlneba.com"
-        });
+        await userManager.CreateAsync(ApplicationUserFactory.Create(email: "zed@bowlneba.com", userName: "zed@bowlneba.com"));
+        await userManager.CreateAsync(ApplicationUserFactory.Create(email: "amy@bowlneba.com", userName: "amy@bowlneba.com"));
 
         var handler = new ListUsersQueryHandler(fixture.CreateDbContext());
 
         // Act
-        var result = await handler.HandleAsync(new ListUsersQuery(), ct);
+        var result = await handler.HandleAsync(new ListUsersQuery { Page = 1, PageSize = DefaultPageSize }, ct);
 
         // Assert
-        result.Select(u => u.Email).ShouldBe(["amy@bowlneba.com", "zed@bowlneba.com"]);
+        result.Items.Select(u => u.Email).ShouldBe(["amy@bowlneba.com", "zed@bowlneba.com"]);
     }
 
     [Fact(DisplayName = "HandleAsync returns an empty roles collection for a user with no role assignments")]
@@ -107,19 +95,38 @@ public sealed class ListUsersQueryHandlerTests(SecurityDbContextFixture fixture)
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-        await userManager.CreateAsync(new ApplicationUser
-        {
-            Id = Ulid.NewUlid(),
-            UserName = "unassigned@bowlneba.com",
-            Email = "unassigned@bowlneba.com"
-        });
+        await userManager.CreateAsync(ApplicationUserFactory.Create(email: "unassigned@bowlneba.com", userName: "unassigned@bowlneba.com"));
 
         var handler = new ListUsersQueryHandler(fixture.CreateDbContext());
 
         // Act
-        var result = await handler.HandleAsync(new ListUsersQuery(), ct);
+        var result = await handler.HandleAsync(new ListUsersQuery { Page = 1, PageSize = DefaultPageSize }, ct);
 
         // Assert
-        result.ShouldHaveSingleItem().Roles.ShouldBeEmpty();
+        result.Items.ShouldHaveSingleItem().Roles.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "HandleAsync returns only the requested page of users, with the correct total")]
+    public async Task HandleAsync_ShouldReturnOnlyRequestedPage_WithCorrectTotalItems()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        foreach (var email in new[] { "a@bowlneba.com", "b@bowlneba.com", "c@bowlneba.com" })
+        {
+            await userManager.CreateAsync(ApplicationUserFactory.Create(email: email, userName: email));
+        }
+
+        var handler = new ListUsersQueryHandler(fixture.CreateDbContext());
+
+        // Act
+        var result = await handler.HandleAsync(new ListUsersQuery { Page = 2, PageSize = 2 }, ct);
+
+        // Assert
+        result.TotalItems.ShouldBe(3);
+        var dto = result.Items.ShouldHaveSingleItem();
+        dto.Email.ShouldBe("c@bowlneba.com");
     }
 }

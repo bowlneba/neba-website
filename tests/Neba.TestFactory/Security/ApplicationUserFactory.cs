@@ -11,13 +11,15 @@ public static class ApplicationUserFactory
         Ulid? id = null,
         string? userName = null,
         string? email = null,
-        string? usbcId = null)
+        string? usbcId = null,
+        bool emailConfirmed = false)
         => new()
         {
             Id = id ?? Ulid.NewUlid(),
             UserName = userName ?? ValidUserName,
             Email = email ?? ValidEmail,
-            UsbcId = usbcId
+            UsbcId = usbcId,
+            EmailConfirmed = emailConfirmed
         };
 
     internal static IReadOnlyCollection<ApplicationUser> Bogus(int count, Faker faker)

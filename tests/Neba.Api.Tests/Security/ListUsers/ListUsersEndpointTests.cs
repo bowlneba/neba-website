@@ -10,14 +10,14 @@ namespace Neba.Api.Tests.Security.ListUsers;
 [Component("Security")]
 public sealed class ListUsersEndpointTests
 {
-    [Fact(DisplayName = "HandleAsync should return OK with mapped users when query succeeds")]
-    public async Task HandleAsync_ShouldReturnOkWithMappedUsers_WhenQuerySucceeds()
+    [Fact(DisplayName = "HandleAsync should return OK with mapped users and pagination when query succeeds")]
+    public async Task HandleAsync_ShouldReturnOkWithMappedUsersAndPagination_WhenQuerySucceeds()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
         var userId = Ulid.NewUlid();
-        var dtos = new List<UserSummaryDto>
-        {
+        var pagedResult = new PagedResult<UserSummaryDto>(
+        [
             new()
             {
                 UserId = userId,
@@ -25,17 +25,17 @@ public sealed class ListUsersEndpointTests
                 EmailConfirmed = true,
                 Roles = ["Webmaster"]
             }
-        };
+        ], 1);
 
-        var queryHandlerMock = new Mock<IQueryHandler<ListUsersQuery, IReadOnlyCollection<UserSummaryDto>>>(MockBehavior.Strict);
+        var queryHandlerMock = new Mock<IQueryHandler<ListUsersQuery, PagedResult<UserSummaryDto>>>(MockBehavior.Strict);
         queryHandlerMock
             .Setup(handler => handler.HandleAsync(It.IsAny<ListUsersQuery>(), ct))
-            .ReturnsAsync(dtos);
+            .ReturnsAsync(pagedResult);
 
         var endpoint = Factory.Create<ListUsersEndpoint>(queryHandlerMock.Object);
 
         // Act
-        await endpoint.HandleAsync(ct);
+        await endpoint.HandleAsync(new ListUsersRequest { Page = 1, PageSize = 20 }, ct);
 
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
@@ -46,6 +46,9 @@ public sealed class ListUsersEndpointTests
         response.Email.ShouldBe("webmaster@bowlneba.com");
         response.EmailConfirmed.ShouldBeTrue();
         response.Roles.ShouldBe(["Webmaster"]);
+        endpoint.Response.TotalItems.ShouldBe(1);
+        endpoint.Response.PageNumber.ShouldBe(1);
+        endpoint.Response.PageSize.ShouldBe(20);
     }
 
     [Fact(DisplayName = "HandleAsync should return OK with empty collection when no users exist")]
@@ -54,27 +57,54 @@ public sealed class ListUsersEndpointTests
         // Arrange
         var ct = TestContext.Current.CancellationToken;
 
-        var queryHandlerMock = new Mock<IQueryHandler<ListUsersQuery, IReadOnlyCollection<UserSummaryDto>>>(MockBehavior.Strict);
+        var queryHandlerMock = new Mock<IQueryHandler<ListUsersQuery, PagedResult<UserSummaryDto>>>(MockBehavior.Strict);
         queryHandlerMock
             .Setup(handler => handler.HandleAsync(It.IsAny<ListUsersQuery>(), ct))
-            .ReturnsAsync([]);
+            .ReturnsAsync(new PagedResult<UserSummaryDto>([], 0));
 
         var endpoint = Factory.Create<ListUsersEndpoint>(queryHandlerMock.Object);
 
         // Act
-        await endpoint.HandleAsync(ct);
+        await endpoint.HandleAsync(new ListUsersRequest { Page = 1, PageSize = 20 }, ct);
 
         // Assert
         endpoint.HttpContext.Response.StatusCode.ShouldBe(200);
         endpoint.Response.ShouldNotBeNull();
         endpoint.Response.Items.ShouldBeEmpty();
+        endpoint.Response.TotalItems.ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "HandleAsync should pass page and pageSize from request to query")]
+    public async Task HandleAsync_ShouldPassPageAndPageSize_FromRequestToQuery()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        ListUsersQuery? capturedQuery = null;
+
+        var queryHandlerMock = new Mock<IQueryHandler<ListUsersQuery, PagedResult<UserSummaryDto>>>(MockBehavior.Strict);
+        queryHandlerMock
+            .Setup(handler => handler.HandleAsync(It.IsAny<ListUsersQuery>(), ct))
+            .Callback<ListUsersQuery, CancellationToken>((q, _) => capturedQuery = q)
+            .ReturnsAsync(new PagedResult<UserSummaryDto>([], 0));
+
+        var endpoint = Factory.Create<ListUsersEndpoint>(queryHandlerMock.Object);
+
+        // Act
+        await endpoint.HandleAsync(new ListUsersRequest { Page = 2, PageSize = 5 }, ct);
+
+        // Assert
+        capturedQuery.ShouldNotBeNull();
+        capturedQuery.Page.ShouldBe(2);
+        capturedQuery.PageSize.ShouldBe(5);
+        endpoint.Response.PageNumber.ShouldBe(2);
+        endpoint.Response.PageSize.ShouldBe(5);
     }
 
     [Fact(DisplayName = "Configure should register authenticated GET route containing 'users'")]
     public void Configure_ShouldRegisterAuthenticatedGetRoute_ContainingUsers()
     {
         // Arrange
-        var queryHandlerMock = new Mock<IQueryHandler<ListUsersQuery, IReadOnlyCollection<UserSummaryDto>>>(MockBehavior.Strict);
+        var queryHandlerMock = new Mock<IQueryHandler<ListUsersQuery, PagedResult<UserSummaryDto>>>(MockBehavior.Strict);
         var endpoint = Factory.Create<ListUsersEndpoint>(queryHandlerMock.Object);
 
         // Assert

@@ -11,12 +11,12 @@ internal sealed class ListUsersSummary : Summary<ListUsersEndpoint>
 {
     public ListUsersSummary()
     {
-        Summary = "Lists all user accounts.";
-        Description = "Retrieves a summary of every user account, including email confirmation status and assigned roles. Requires the System.ResetUserPassword permission.";
+        Summary = "Lists user accounts.";
+        Description = "Retrieves a paginated list of user accounts ordered by email, including email confirmation status and assigned roles. Requires the System.ResetUserPassword permission.";
 
-        Response(200, "The list of users.",
+        Response(200, "The paginated list of users.",
             contentType: MediaTypeNames.Application.Json,
-            example: new CollectionResponse<UserSummaryResponse>
+            example: new PaginationResponse<UserSummaryResponse>
             {
                 Items =
                 [
@@ -27,9 +27,13 @@ internal sealed class ListUsersSummary : Summary<ListUsersEndpoint>
                         EmailConfirmed = true,
                         Roles = ["Webmaster"]
                     }
-                ]
+                ],
+                TotalItems = 1,
+                PageNumber = 1,
+                PageSize = 20
             });
 
+        Response<Microsoft.AspNetCore.Http.HttpValidationProblemDetails>(400, "The page or pageSize parameter is invalid.");
         Response(401, "No valid bearer token provided.");
         Response(403, "Authenticated user does not have the System.ResetUserPassword permission.");
     }

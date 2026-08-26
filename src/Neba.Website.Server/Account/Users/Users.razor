@@ -1,5 +1,7 @@
 @page "/account/users"
+@using Neba.Api.Contracts
 @using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Security.ListUsers
 @using Neba.Api.Contracts.Security.ResetPassword
 @using Neba.Website.Server.Services
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
@@ -38,33 +40,70 @@
             }
             else
             {
-                <div class="neba-card overflow-x-auto">
-                    <table class="neba-table">
-                        <thead>
-                            <tr>
-                                <th>Email</th>
-                                <th>Roles</th>
-                                <th>Status</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var user in _users)
-                            {
+                <div class="neba-space-y-4">
+                    <input type="search" class="neba-input users-filter" placeholder="Filter by email or role…"
+                           @bind="_filterQuery" @bind:event="oninput" @bind:after="ApplyFilter" />
+
+                    <div class="neba-card overflow-x-auto">
+                        <table class="neba-table">
+                            <thead>
                                 <tr>
-                                    <td>@user.Email</td>
-                                    <td>@string.Join(", ", user.Roles)</td>
-                                    <td>@(user.EmailConfirmed ? "Active" : "Invite Pending")</td>
-                                    <td class="text-right">
-                                        <button type="button" class="neba-btn neba-btn-secondary"
-                                                @onclick="@(() => RequestReset(user))">
-                                            Reset Password
-                                        </button>
-                                    </td>
+                                    <th>Email</th>
+                                    <th>Roles</th>
+                                    <th>Status</th>
+                                    <th></th>
                                 </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var user in _filteredUsers)
+                                {
+                                    <tr>
+                                        <td>@user.Email</td>
+                                        <td>@string.Join(", ", user.Roles)</td>
+                                        <td>@(user.EmailConfirmed ? "Active" : "Invite Pending")</td>
+                                        <td class="text-right">
+                                            <button type="button" class="neba-btn neba-btn-secondary"
+                                                    @onclick="@(() => RequestReset(user))">
+                                                Reset Password
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                                @if (_filteredUsers.Count == 0)
+                                {
+                                    <tr>
+                                        <td colspan="4">No users match "@_filterQuery".</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (TotalPages > 1)
+                    {
+                        <nav class="users-pagination" aria-label="User pages">
+                            @if (_usersResult is not null && _usersResult.HasPreviousPage)
+                            {
+                                <a href="/account/users?page=@(PageNumber - 1)" class="page-btn" aria-label="Previous page">&#8249;</a>
                             }
-                        </tbody>
-                    </table>
+
+                            @for (var p = 1; p <= TotalPages; p++)
+                            {
+                                var pageNum = p;
+                                <a href="/account/users?page=@pageNum"
+                                   class="page-btn @(pageNum == PageNumber ? "active" : string.Empty)"
+                                   aria-label="Page @pageNum"
+                                   aria-current="@(pageNum == PageNumber ? "page" : null)">
+                                    @pageNum
+                                </a>
+                            }
+
+                            @if (_usersResult is not null && _usersResult.HasNextPage)
+                            {
+                                <a href="/account/users?page=@(PageNumber + 1)" class="page-btn" aria-label="Next page">&#8250;</a>
+                            }
+                        </nav>
+                    }
                 </div>
             }
 
@@ -88,7 +127,18 @@
 </AuthorizeView>
 
 @code {
+    private const int PageSize = 20;
+
+    [Parameter][SupplyParameterFromQuery(Name = "page")]
+    public int? Page { get; set; }
+
+    private int PageNumber => Page is > 0 ? Page.Value : 1;
+    private int TotalPages => _usersResult?.TotalPages ?? 0;
+
+    private PaginationResponse<UserSummaryResponse>? _usersResult;
     private List<UserSummaryViewModel> _users = [];
+    private List<UserSummaryViewModel> _filteredUsers = [];
+    private string _filterQuery = string.Empty;
     private bool _isLoading = true;
     private string? _errorMessage;
     private UserSummaryViewModel? _userPendingReset;
@@ -99,16 +149,18 @@
             ? string.Empty
             : $"Send \"{_userPendingReset.Email}\" a link to set a new password? Their current password will stop working immediately.";
 
-    protected override async Task OnInitializedAsync() => await LoadUsersAsync();
+    protected override async Task OnParametersSetAsync() => await LoadUsersAsync();
 
     private async Task LoadUsersAsync()
     {
         _isLoading = true;
+        _errorMessage = null;
+        _filterQuery = string.Empty;
 
         var result = await ApiExecutor.ExecuteAsync(
             "Security",
             "ListUsers",
-            ct => SecurityApi.ListUsersAsync(ct));
+            ct => SecurityApi.ListUsersAsync(PageNumber, PageSize, ct));
 
         _isLoading = false;
 
@@ -118,7 +170,20 @@
             return;
         }
 
+        _usersResult = result.Value;
         _users = [.. result.Value.Items.Select(u => new UserSummaryViewModel(u.UserId, u.Email, u.EmailConfirmed, u.Roles))];
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        var query = _filterQuery.Trim();
+
+        _filteredUsers = query.Length == 0
+            ? [.. _users]
+            : [.. _users.Where(user =>
+                user.Email.Contains(query, StringComparison.OrdinalIgnoreCase)
+                || user.Roles.Any(role => role.Contains(query, StringComparison.OrdinalIgnoreCase)))];
     }
 
     private void RequestReset(UserSummaryViewModel user) => _userPendingReset = user;

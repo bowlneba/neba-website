@@ -11,10 +11,10 @@ using PermissionCatalog = Neba.Api.Contracts.Security.Permissions;
 
 namespace Neba.Api.Security.ListUsers;
 
-internal sealed class ListUsersEndpoint(IQueryHandler<ListUsersQuery, IReadOnlyCollection<UserSummaryDto>> queryHandler)
-    : EndpointWithoutRequest<CollectionResponse<UserSummaryResponse>>
+internal sealed class ListUsersEndpoint(IQueryHandler<ListUsersQuery, PagedResult<UserSummaryDto>> queryHandler)
+    : Endpoint<ListUsersRequest, PaginationResponse<UserSummaryResponse>>
 {
-    private readonly IQueryHandler<ListUsersQuery, IReadOnlyCollection<UserSummaryDto>> _queryHandler = queryHandler;
+    private readonly IQueryHandler<ListUsersQuery, PagedResult<UserSummaryDto>> _queryHandler = queryHandler;
 
     public override void Configure()
     {
@@ -30,26 +30,37 @@ internal sealed class ListUsersEndpoint(IQueryHandler<ListUsersQuery, IReadOnlyC
         Description(description => description
             .WithName("ListUsers")
             .WithTags("Admin")
-            .Produces<CollectionResponse<UserSummaryResponse>>(StatusCodes.Status200OK)
+            .Produces<PaginationResponse<UserSummaryResponse>>(StatusCodes.Status200OK)
+            .ProducesProblemDetails(StatusCodes.Status400BadRequest)
             .ProducesProblemDetails(StatusCodes.Status401Unauthorized)
             .ProducesProblemDetails(StatusCodes.Status403Forbidden));
     }
 
-    public override async Task HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(ListUsersRequest req, CancellationToken ct)
     {
-        var result = await _queryHandler.HandleAsync(new ListUsersQuery(), ct);
-
-        var response = new CollectionResponse<UserSummaryResponse>
+        var query = new ListUsersQuery
         {
-            Items = [.. result.Select(user => new UserSummaryResponse
+            Page = req.Page,
+            PageSize = req.PageSize
+        };
+
+        var result = await _queryHandler.HandleAsync(query, ct);
+
+        var response = new PaginationResponse<UserSummaryResponse>
+        {
+            Items = [.. result.Items.Select(user => new UserSummaryResponse
             {
                 UserId = user.UserId.ToString(),
                 Email = user.Email,
                 EmailConfirmed = user.EmailConfirmed,
                 Roles = user.Roles
-            })]
+            })],
+            TotalItems = result.TotalItems,
+            PageNumber = req.Page,
+            PageSize = req.PageSize
         };
 
+        // Stryker disable once Statement
         await Send.OkAsync(response, ct);
     }
 }

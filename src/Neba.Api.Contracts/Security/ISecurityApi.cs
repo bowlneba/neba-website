@@ -41,7 +41,10 @@ public interface ISecurityApi
     [Post("/security/users")]
     Task<IApiResponse<CreateUserResponse>> CreateUserAsync([Body] CreateUserRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>Lists all user accounts, including email confirmation status and assigned roles.</summary>
+    /// <summary>Lists user accounts, including email confirmation status and assigned roles.</summary>
     [Get("/security/users")]
-    Task<IApiResponse<CollectionResponse<UserSummaryResponse>>> ListUsersAsync(CancellationToken cancellationToken = default);
+    Task<IApiResponse<PaginationResponse<UserSummaryResponse>>> ListUsersAsync(
+        int page = 1,
+        int pageSize = 20,
+        CancellationToken cancellationToken = default);
 }
