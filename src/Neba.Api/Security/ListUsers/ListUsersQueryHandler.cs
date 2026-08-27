@@ -24,7 +24,7 @@ internal sealed class ListUsersQueryHandler(SecurityDbContext securityDbContext)
                 user.EmailConfirmed,
                 Roles = securityDbContext.UserRoles
                     .Where(userRole => userRole.UserId == user.Id)
-                    .Join(securityDbContext.Roles, userRole => userRole.RoleId, role => role.Id, (userRole, role) => role.Name!)
+                    .Join(securityDbContext.Roles, userRole => userRole.RoleId, role => role.Id, (_, role) => role.Name!)
                     .ToList()
             })
             .ToListAsync(cancellationToken);

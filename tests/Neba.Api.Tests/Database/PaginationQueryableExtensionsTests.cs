@@ -35,7 +35,7 @@ public sealed class PaginationQueryableExtensionsTests(SecurityDbContextFixture 
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         foreach (var email in emails)
         {
-            await userManager.CreateAsync(ApplicationUserFactory.Create(email: email, userName: email));
+            await userManager.CreateAsync(ApplicationUserFactory.Create(userName: email, email: email));
         }
     }
 

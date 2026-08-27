@@ -49,7 +49,7 @@ public sealed class ListUsersQueryHandlerTests(SecurityDbContextFixture fixture)
 
         await roleManager.CreateAsync(new ApplicationRole(Roles.Webmaster));
 
-        var user = ApplicationUserFactory.Create(email: "webmaster@bowlneba.com", userName: "webmaster@bowlneba.com", emailConfirmed: true);
+        var user = ApplicationUserFactory.Create(userName: "webmaster@bowlneba.com", email: "webmaster@bowlneba.com", emailConfirmed: true);
         await userManager.CreateAsync(user);
         await userManager.AddToRoleAsync(user, Roles.Webmaster);
 
@@ -75,8 +75,8 @@ public sealed class ListUsersQueryHandlerTests(SecurityDbContextFixture fixture)
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-        await userManager.CreateAsync(ApplicationUserFactory.Create(email: "zed@bowlneba.com", userName: "zed@bowlneba.com"));
-        await userManager.CreateAsync(ApplicationUserFactory.Create(email: "amy@bowlneba.com", userName: "amy@bowlneba.com"));
+        await userManager.CreateAsync(ApplicationUserFactory.Create(userName: "zed@bowlneba.com", email: "zed@bowlneba.com"));
+        await userManager.CreateAsync(ApplicationUserFactory.Create(userName: "amy@bowlneba.com", email: "amy@bowlneba.com"));
 
         var handler = new ListUsersQueryHandler(fixture.CreateDbContext());
 
@@ -95,7 +95,7 @@ public sealed class ListUsersQueryHandlerTests(SecurityDbContextFixture fixture)
         using var scope = fixture.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-        await userManager.CreateAsync(ApplicationUserFactory.Create(email: "unassigned@bowlneba.com", userName: "unassigned@bowlneba.com"));
+        await userManager.CreateAsync(ApplicationUserFactory.Create(userName: "unassigned@bowlneba.com", email: "unassigned@bowlneba.com"));
 
         var handler = new ListUsersQueryHandler(fixture.CreateDbContext());
 
@@ -116,7 +116,7 @@ public sealed class ListUsersQueryHandlerTests(SecurityDbContextFixture fixture)
 
         foreach (var email in new[] { "a@bowlneba.com", "b@bowlneba.com", "c@bowlneba.com" })
         {
-            await userManager.CreateAsync(ApplicationUserFactory.Create(email: email, userName: email));
+            await userManager.CreateAsync(ApplicationUserFactory.Create(userName: email, email: email));
         }
 
         var handler = new ListUsersQueryHandler(fixture.CreateDbContext());
