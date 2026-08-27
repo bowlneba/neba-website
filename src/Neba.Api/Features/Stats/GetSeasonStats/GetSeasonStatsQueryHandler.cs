@@ -118,9 +118,8 @@ internal sealed class GetSeasonStatsQueryHandler(
                 LastUpdatedUtc = stat.LastUpdatedUtc
             }).ToListAsync(cancellationToken);
 
-        var bowlerOfTheYearProgressions = await _historicalTournamentResults
+        var historicalProgressionResults = _historicalTournamentResults
             .Where(result => result.Tournament.SeasonId == seasonId)
-            .OrderBy(result => result.Tournament.StartDate)
             .Select(result => new BoyProgressionResultDto
             {
                 BowlerId = result.Bowler.Id,
@@ -139,8 +138,49 @@ internal sealed class GetSeasonStatsQueryHandler(
                 SideCutId = result.SideCutId,
                 SideCutName = result.SideCut != null
                     ? result.SideCut.Name
-                    : null
-            }).ToListAsync(cancellationToken);
+                    : null,
+                IsRookie = false // attached from bowlerStats below
+            });
+
+        var currentProgressionResults = _tournaments
+            .Where(tournament => tournament.SeasonId == seasonId)
+            .SelectMany(tournament => tournament.Results, (tournament, result) => new BoyProgressionResultDto
+            {
+                BowlerId = result.BowlerId,
+                BowlerName = result.Bowler.Name,
+                BowlerDateOfBirth = result.Bowler.DateOfBirth,
+                BowlerGender = result.Bowler.Gender == null
+                    ? null
+                    : result.Bowler.Gender.Value,
+                TournamentId = tournament.Id,
+                TournamentName = tournament.Name,
+                TournamentDate = tournament.StartDate,
+                TournamentEndDate = tournament.EndDate,
+                StatsEligible = tournament.StatsEligible,
+                TournamentType = tournament.TournamentType.Value,
+                Points = result.Points,
+                SideCutId = null,
+                SideCutName = null,
+                IsRookie = false // attached from bowlerStats below
+            });
+
+        // EF can't translate a set operation over a query with a client-evaluated collection
+        // navigation projection (SelectMany over Tournament.Results), so each side is materialized
+        // separately and unioned client-side rather than via a provider-level Concat/UNION ALL.
+        // A season's result count is small, so this isn't a performance concern.
+        var historicalResults = await historicalProgressionResults.ToListAsync(cancellationToken);
+        var currentResults = await currentProgressionResults.ToListAsync(cancellationToken);
+
+        var rawProgressionResults = historicalResults
+            .Concat(currentResults)
+            .OrderBy(result => result.TournamentDate)
+            .ToList();
+
+        var isRookieByBowlerId = bowlerStats.ToDictionary(stat => stat.BowlerId, stat => stat.IsRookie);
+
+        var bowlerOfTheYearProgressions = rawProgressionResults
+            .Select(result => result with { IsRookie = isRookieByBowlerId.GetValueOrDefault(result.BowlerId) })
+            .ToList();
 
         var bowlerOfTheYearRaces = _bowlerOfTheYearRaceCalculator.CalculateAllProgressions(bowlerOfTheYearProgressions);
 

@@ -4,7 +4,7 @@ using Neba.Api.Features.Tournaments.Domain;
 namespace Neba.Api.Features.Stats.GetSeasonStats;
 
 /// <summary>
-/// One row per <c>HistoricalTournamentResult</c>. Used exclusively to compute BOY point progressions.
+/// One row per <c>HistoricalTournamentResult</c> or <c>TournamentResult</c>. Used exclusively to compute BOY point progressions.
 /// </summary>
 public sealed record BoyProgressionResultDto
 {
@@ -72,4 +72,9 @@ public sealed record BoyProgressionResultDto
     /// The side cut's display name, used to derive which BOY race it targets. <c>null</c> for main-cut results.
     /// </summary>
     public required string? SideCutName { get; init; }
+
+    /// <summary>
+    /// Whether the bowler was designated a rookie for the season this result belongs to, used for Rookie race eligibility.
+    /// </summary>
+    public required bool IsRookie { get; init; }
 }

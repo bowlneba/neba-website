@@ -31,7 +31,8 @@ public static class BoyProgressionResultDtoFactory
         int? tournamentType = null,
         int? points = null,
         int? sideCutId = null,
-        string? sideCutName = null)
+        string? sideCutName = null,
+        bool? isRookie = null)
         => new()
         {
             BowlerId = bowlerId ?? BowlerId.New(),
@@ -47,6 +48,7 @@ public static class BoyProgressionResultDtoFactory
             Points = points ?? ValidPoints,
             SideCutId = sideCutId ?? ValidSideCutId,
             SideCutName = sideCutName,
+            IsRookie = isRookie ?? false,
         };
 
     internal static IReadOnlyCollection<BoyProgressionResultDto> Bogus(int count, Faker faker)
@@ -67,6 +69,7 @@ public static class BoyProgressionResultDtoFactory
             Points = faker.Random.Int(5, 300),
             SideCutId = faker.Random.Bool() ? faker.Random.Int(1, 10) : null,
             SideCutName = faker.Random.Bool() ? faker.PickRandom("Senior", "Super Senior", "Women") : null,
+            IsRookie = faker.Random.Bool(),
         })];
     }
 
