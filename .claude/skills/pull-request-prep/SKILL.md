@@ -85,6 +85,11 @@ Work through the diff layer by layer. For each issue found, record:
 - [ ] Refit interface updated
 
 **Testing**
+- [ ] **Every new or meaningfully-changed source file has a corresponding test file in the diff.** Do this check explicitly, don't infer it from the presence of *other* tests in the diff:
+  1. From the step 1 file list, build the set of new/changed non-test source files that carry logic — `.cs` files under `src/` with a handler, endpoint, domain type, or non-trivial method body; `.razor` files with an `@code` block containing more than a trivial parameter passthrough.
+  2. For each, check whether the diff also touches a matching test file (`tests/Neba.Api.Tests/**/{Name}Tests.cs`, `tests/Neba.Website.Tests/**/{Name}Tests.cs`, or an e2e spec covering it per the Playwright table below).
+  3. A `.razor` **page** (has `@page`) or any component with event handlers, conditional rendering, or API calls is not covered by "some other file in this PR has tests" — it needs its own test file. A pure layout/presentational component with no `@code` logic is exempt.
+  4. Flag any source file with no matching test file as a 🚫 **Blocker** — name the file and state plainly that it has zero test coverage, don't downgrade this to a suggestion.
 - [ ] New entities/value objects/DTOs/responses have factory classes in `Neba.TestFactory` (SmartEnums, strongly-typed IDs, and input objects are exempt)
 - [ ] Tests use factories, not manual instantiation
 - [ ] Tests have `[UnitTest]` or `[IntegrationTest]` trait
