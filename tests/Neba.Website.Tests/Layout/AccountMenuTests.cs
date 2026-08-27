@@ -3,9 +3,14 @@ using System.Security.Claims;
 using Bunit;
 using Bunit.TestDoubles;
 
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+
 using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Layout;
+using Neba.Website.Server.Notifications;
+using Neba.Website.Server.Services;
 
 namespace Neba.Website.Tests.Layout;
 
@@ -20,6 +25,9 @@ public sealed class AccountMenuTests : IDisposable
     {
         _ctx = new BunitContext();
         _authContext = _ctx.AddAuthorization();
+        _ctx.Services.AddScoped<CircuitTokenCache>();
+        _ctx.Services.AddScoped<ToastService>();
+        _ctx.Services.AddSingleton(new Mock<IHttpContextAccessor>(MockBehavior.Strict).Object);
     }
 
     public void Dispose() => _ctx.Dispose();

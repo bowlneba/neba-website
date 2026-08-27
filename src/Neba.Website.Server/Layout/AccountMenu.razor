@@ -27,6 +27,11 @@
                         <a class="account-dropdown-link" href="/account/create-user" role="menuitem" data-enhance-nav="false">Create User</a>
                     </Authorized>
                 </AuthorizeView>
+                <AuthorizeView Policy="@Permissions.GetUsers.PolicyName" Context="usersContext">
+                    <Authorized>
+                        <a class="account-dropdown-link" href="/account/users" role="menuitem" data-enhance-nav="false">Users</a>
+                    </Authorized>
+                </AuthorizeView>
                 @if (IsDebugBuild)
                 {
                     <div class="account-divider"></div>

@@ -54,5 +54,6 @@ On success, the token is consumed (it can't be reused), the account's email is m
 
 ## Related
 
+- [View Users](list-users.md) — see every account you've created, including its status.
 - [Reset a User's Password](reset-password.md) — forces a fresh set-password link for an existing user, using the same mechanism.
 - [`docs/policies/README.md`](../policies/README.md) — the `Permission:{value}` policy this action requires and how it's evaluated.

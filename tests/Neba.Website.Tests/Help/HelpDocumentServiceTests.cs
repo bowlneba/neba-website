@@ -52,15 +52,17 @@ public sealed class HelpDocumentServiceTests
         html.ShouldContain("<table>");
     }
 
-    [Fact(DisplayName = "Should render docs with no image references without error")]
-    public void GetRenderedHtml_ShouldRenderDoc_WhenDocHasNoImages()
+    [Fact(DisplayName = "Should leave HTML with no image tags unchanged without error")]
+    public void RewriteImageSources_ShouldReturnHtmlUnchanged_WhenNoImageTagsPresent()
     {
+        // Arrange
+        const string html = "<h1>No Images Here</h1><p>Just text.</p>";
+
         // Act
-        var html = _sut.GetRenderedHtml("reset-password");
+        var rewritten = HelpDocumentService.RewriteImageSources(html, "no-images-doc");
 
         // Assert
-        html.ShouldNotBeNull();
-        html.ShouldNotContain("/help/images/");
+        rewritten.ShouldNotContain("/help/images/");
     }
 
     [Fact(DisplayName = "Should cache the rendered HTML across repeated calls for the same doc")]

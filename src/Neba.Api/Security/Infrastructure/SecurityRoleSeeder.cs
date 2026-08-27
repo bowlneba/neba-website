@@ -18,6 +18,7 @@ internal static class SecurityRoleSeeder
         [
             Permissions.CreateUser,
             Permissions.ResetUserPassword,
+            Permissions.GetUsers,
 
             Permissions.CreateArticle,
             Permissions.EditArticle,

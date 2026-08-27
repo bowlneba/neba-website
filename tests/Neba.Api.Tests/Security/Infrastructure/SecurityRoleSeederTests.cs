@@ -49,7 +49,7 @@ public sealed class SecurityRoleSeederTests
         {
             SetupRoleAlreadySynced(mock, Roles.Webmaster,
             [
-                Permissions.CreateUser, Permissions.ResetUserPassword,
+                Permissions.CreateUser, Permissions.ResetUserPassword, Permissions.GetUsers,
                 Permissions.CreateArticle, Permissions.EditArticle, Permissions.DeleteArticle,
                 Permissions.CreateSponsor, Permissions.EditSponsor,
                 Permissions.CreateTournament, Permissions.EditTournament, Permissions.ManageTournamentSponsors, Permissions.DeleteTournament]);
@@ -225,7 +225,7 @@ public sealed class SecurityRoleSeederTests
         roleManagerMock.VerifyAll();
     }
 
-    [Fact(DisplayName = "SeedAsync should create the Webmaster role and add exactly the CreateArticle, EditArticle, DeleteArticle, CreateSponsor, EditSponsor, CreateTournament, EditTournament, ManageTournamentSponsors, DeleteTournament, CreateUser, and ResetUserPassword permission claims when the role does not exist")]
+    [Fact(DisplayName = "SeedAsync should create the Webmaster role and add exactly the CreateArticle, EditArticle, DeleteArticle, CreateSponsor, EditSponsor, CreateTournament, EditTournament, ManageTournamentSponsors, DeleteTournament, CreateUser, ResetUserPassword, and GetUsers permission claims when the role does not exist")]
     public async Task SeedAsync_ShouldCreateWebmasterRoleAndAddExpectedClaims_WhenRoleDoesNotExist()
     {
         // Arrange
@@ -241,7 +241,8 @@ public sealed class SecurityRoleSeederTests
             Permissions.ManageTournamentSponsors,
             Permissions.DeleteTournament,
             Permissions.CreateUser,
-            Permissions.ResetUserPassword
+            Permissions.ResetUserPassword,
+            Permissions.GetUsers
         };
 
         var roleManagerMock = CreateRoleManagerMock();

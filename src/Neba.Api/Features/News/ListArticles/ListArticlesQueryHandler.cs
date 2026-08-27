@@ -47,8 +47,7 @@ internal sealed partial class ListArticlesQueryHandler(
                 article.PublishDateUtc,
             })
             .OrderByDescending(article => article.PublishDateUtc)
-            .Skip((query.Page - 1) * query.PageSize)
-            .Take(query.PageSize)
+            .ApplyPagination(query)
             .ToListAsync(cancellationToken);
 
         var items = rows

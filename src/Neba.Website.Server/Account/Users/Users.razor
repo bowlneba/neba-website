@@ -1,0 +1,204 @@
+@page "/account/users"
+@using Neba.Api.Contracts
+@using Neba.Api.Contracts.Security
+@using Neba.Api.Contracts.Security.ListUsers
+@using Neba.Api.Contracts.Security.ResetPassword
+@using Neba.Website.Server.Services
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject ApiExecutor ApiExecutor
+@inject ISecurityApi SecurityApi
+@inject ToastService ToastService
+
+<PageTitle>Users - BowlNEBA</PageTitle>
+
+<AuthorizeView Policy="@Permissions.GetUsers.PolicyName" Context="authContext">
+    <Authorized>
+        <div class="neba-space-y-6">
+
+            <div class="page-title-bar">
+                <div class="page-title-inner">
+                    <h1>Users</h1>
+                    <p>View staff accounts and reset a user's password.</p>
+                </div>
+                <div class="page-title-help">
+                    <HelpButton DocName="list-users" Light="true" />
+                </div>
+            </div>
+
+            @if (_errorMessage is not null)
+            {
+                <NebaAlert Severity="NotifySeverity.Error" Title="Error Loading Users" Message="@_errorMessage" Dismissible="true"
+                           OnDismiss="@(() => _errorMessage = null)" />
+            }
+
+            @if (_isLoading)
+            {
+                <div aria-busy="true" aria-label="Loading users" class="neba-card neba-space-y-4">
+                    @for (var i = 0; i < 5; i++)
+                    {
+                        <div class="neba-skeleton h-6 w-full"></div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="neba-space-y-4">
+                    <input type="search" class="neba-input users-filter" placeholder="Filter by email or role…"
+                           @bind="_filterQuery" @bind:event="oninput" @bind:after="ApplyFilter" />
+
+                    <div class="neba-card overflow-x-auto">
+                        <table class="neba-table">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Roles</th>
+                                    <th>Status</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var user in _filteredUsers)
+                                {
+                                    <tr>
+                                        <td>@user.Email</td>
+                                        <td>@string.Join(", ", user.Roles)</td>
+                                        <td>@(user.EmailConfirmed ? "Active" : "Invite Pending")</td>
+                                        <td class="text-right">
+                                            <AuthorizeView Policy="@Permissions.ResetUserPassword.PolicyName" Context="resetContext">
+                                                <Authorized>
+                                                    <button type="button" class="neba-btn neba-btn-secondary"
+                                                            @onclick="@(() => RequestReset(user))">
+                                                        Reset Password
+                                                    </button>
+                                                </Authorized>
+                                            </AuthorizeView>
+                                        </td>
+                                    </tr>
+                                }
+                                @if (_filteredUsers.Count == 0)
+                                {
+                                    <tr>
+                                        <td colspan="4">No users match "@_filterQuery".</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <Pagination PageNumber="@PageNumber" TotalPages="@TotalPages" BaseHref="/account/users" AriaLabel="User pages" />
+                </div>
+            }
+
+        </div>
+
+        <ConfirmActionModal IsOpen="@(_userPendingReset is not null)"
+                             Title="Reset Password"
+                             Message="@ResetConfirmMessage"
+                             ConfirmLabel="@(_isResetting ? "Sending..." : "Reset Password")"
+                             CancelLabel="Cancel"
+                             IsBusy="@_isResetting"
+                             OnConfirm="ConfirmResetAsync"
+                             OnCancel="CancelReset" />
+    </Authorized>
+    <NotAuthorized>
+        <div class="news-empty">
+            <p class="news-empty-text">You don't have permission to view users.</p>
+            <a href="/" class="neba-btn neba-btn-secondary">Back Home</a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private const int PageSize = 20;
+
+    [Parameter][SupplyParameterFromQuery(Name = "page")]
+    public int? Page { get; set; }
+
+    private int PageNumber => Page is > 0 ? Page.Value : 1;
+    private int TotalPages => _usersResult?.TotalPages ?? 0;
+
+    private PaginationResponse<UserSummaryResponse>? _usersResult;
+    private List<UserSummaryViewModel> _users = [];
+    private List<UserSummaryViewModel> _filteredUsers = [];
+    private string _filterQuery = string.Empty;
+    private bool _isLoading = true;
+    private string? _errorMessage;
+    private UserSummaryViewModel? _userPendingReset;
+    private bool _isResetting;
+
+    private string ResetConfirmMessage =>
+        _userPendingReset is null
+            ? string.Empty
+            : $"Send \"{_userPendingReset.Email}\" a link to set a new password? Their current password will stop working immediately.";
+
+    protected override async Task OnParametersSetAsync() => await LoadUsersAsync();
+
+    private async Task LoadUsersAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _filterQuery = string.Empty;
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "Security",
+            "ListUsers",
+            ct => SecurityApi.ListUsersAsync(PageNumber, PageSize, ct));
+
+        _isLoading = false;
+
+        if (result.IsError)
+        {
+            _errorMessage = result.FirstError.Description;
+            return;
+        }
+
+        _usersResult = result.Value;
+        _users = [.. result.Value.Items.Select(u => new UserSummaryViewModel(u.UserId, u.Email, u.EmailConfirmed, u.Roles))];
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        var query = _filterQuery.Trim();
+
+        _filteredUsers = query.Length == 0
+            ? [.. _users]
+            : [.. _users.Where(user =>
+                user.Email.Contains(query, StringComparison.OrdinalIgnoreCase)
+                || user.Roles.Any(role => role.Contains(query, StringComparison.OrdinalIgnoreCase)))];
+    }
+
+    private void RequestReset(UserSummaryViewModel user) => _userPendingReset = user;
+
+    private void CancelReset() => _userPendingReset = null;
+
+    private async Task ConfirmResetAsync()
+    {
+        if (_userPendingReset is null)
+        {
+            return;
+        }
+
+        _isResetting = true;
+        var user = _userPendingReset;
+
+        var result = await ApiExecutor.ExecuteAsync(
+            "Security",
+            "ResetPassword",
+            ct => SecurityApi.ResetPasswordAsync(new ResetPasswordRequest { UserId = user.UserId }, ct));
+
+        _isResetting = false;
+        _userPendingReset = null;
+
+        if (result.IsError)
+        {
+            ToastService.Show("Reset Password Failed", result.FirstError.Description, NotifySeverity.Error);
+            return;
+        }
+
+        ToastService.Show("Password Reset Sent", $"A password-set link was emailed to \"{user.Email}\".", NotifySeverity.Success);
+    }
+
+    private sealed record UserSummaryViewModel(string UserId, string Email, bool EmailConfirmed, IReadOnlyCollection<string> Roles);
+}
