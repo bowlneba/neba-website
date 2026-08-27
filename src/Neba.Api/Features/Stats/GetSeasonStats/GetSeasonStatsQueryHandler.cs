@@ -1,7 +1,6 @@
 using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Hybrid;
 
 using Neba.Api.Caching;
 using Neba.Api.Database;
@@ -11,13 +10,15 @@ using Neba.Api.Features.Stats.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Messaging;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Features.Stats.GetSeasonStats;
 
 internal sealed class GetSeasonStatsQueryHandler(
     AppDbContext appDbContext,
     ISeasonStatsCalculator seasonStatsCalculator,
     IBowlerOfTheYearRaceCalculator bowlerOfTheYearRaceCalculator,
-    HybridCache cache)
+    IFusionCache cache)
         : IQueryHandler<GetSeasonStatsQuery, ErrorOr<SeasonStatsDto>>
 {
     private readonly IQueryable<Tournament> _tournaments
@@ -29,7 +30,7 @@ internal sealed class GetSeasonStatsQueryHandler(
 
     private readonly ISeasonStatsCalculator _seasonStatsCalculator = seasonStatsCalculator;
     private readonly IBowlerOfTheYearRaceCalculator _bowlerOfTheYearRaceCalculator = bowlerOfTheYearRaceCalculator;
-    private readonly HybridCache _cache = cache;
+    private readonly IFusionCache _cache = cache;
 
     public async Task<ErrorOr<SeasonStatsDto>> HandleAsync(GetSeasonStatsQuery query, CancellationToken cancellationToken)
     {
@@ -59,11 +60,11 @@ internal sealed class GetSeasonStatsQueryHandler(
 
         var descriptor = CacheDescriptors.Stats.BowlerSeasonStats(season.Id);
 
-        return await _cache.GetOrCreateAsync(
+        return await _cache.GetOrSetAsync<SeasonStatsDto>(
              descriptor.Key,
-             async cancel => await ComputeSeasonStatsAsync(season.Id, seasonsWithStats, cancel),
+             async (_, cancel) => await ComputeSeasonStatsAsync(season.Id, seasonsWithStats, cancel),
              tags: descriptor.Tags,
-             cancellationToken: cancellationToken);
+             token: cancellationToken);
     }
 
     private async Task<SeasonStatsDto> ComputeSeasonStatsAsync(

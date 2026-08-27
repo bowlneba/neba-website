@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Api.Database;
@@ -11,6 +11,8 @@ using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Stats;
 using Neba.TestFactory.Tournaments;
+
+using ZiggyCreatures.Caching.Fusion;
 
 namespace Neba.Api.Tests.Features.Stats.GetSeasonStats;
 
@@ -27,7 +29,8 @@ public sealed class GetSeasonStatsQueryHandlerTests(AppDbContextFixture fixture)
     {
         await fixture.ResetAsync();
         var services = new ServiceCollection();
-        services.AddHybridCache();
+        services.AddFusionCache()
+            .WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
         _serviceProvider = services.BuildServiceProvider();
     }
 
@@ -40,7 +43,7 @@ public sealed class GetSeasonStatsQueryHandlerTests(AppDbContextFixture fixture)
 
     private GetSeasonStatsQueryHandler CreateHandler()
     {
-        var cache = _serviceProvider.GetRequiredService<HybridCache>();
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
         return new GetSeasonStatsQueryHandler(
             _dbContext,
             new SeasonStatsCalculator(),
@@ -307,5 +310,43 @@ public sealed class GetSeasonStatsQueryHandlerTests(AppDbContextFixture fixture)
         var openSeries = result.Value.BowlerOfTheYearRaces[BowlerOfTheYearCategory.Open.Value];
         openSeries.ShouldHaveSingleItem();
         openSeries.Single().Results.Single().CumulativePoints.ShouldBe(100);
+    }
+
+    [Fact(DisplayName = "HandleAsync serves a fresh result after the season's stats cache tag is removed")]
+    public async Task HandleAsync_ShouldServeFreshResult_AfterSeasonStatsCacheTagRemoved()
+    {
+        // Arrange - this proves GenerateSeasonStatsJob's RemoveByTagAsync("neba:stats:seasons:{seasonId}")
+        // call actually reaches the cache entry this handler serves from, not a separate cache stack.
+        var ct = TestContext.Current.CancellationToken;
+        var bowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddAsync(bowler, ct);
+
+        var season = SeasonFactory.Create(
+            startDate: new DateOnly(2025, 1, 1),
+            endDate: new DateOnly(2025, 12, 31));
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var stats = BowlerSeasonStatsFactory.Create(seasonId: season.Id, bowlerId: bowler.Id, bowlerOfTheYearPoints: 100);
+        await _dbContext.BowlerSeasonStats.AddAsync(stats, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+        var firstResult = await handler.HandleAsync(new GetSeasonStatsQuery { SeasonYear = 2025 }, ct);
+        firstResult.IsError.ShouldBeFalse();
+        firstResult.Value.BowlerStats.Single().BowlerOfTheYearPoints.ShouldBe(100);
+
+        await _dbContext.BowlerSeasonStats
+            .Where(s => s.SeasonId == season.Id && s.BowlerId == bowler.Id)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.BowlerOfTheYearPoints, 999), ct);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+
+        // Act
+        await cache.RemoveByTagAsync($"neba:stats:seasons:{season.Id}", token: ct);
+        var secondResult = await handler.HandleAsync(new GetSeasonStatsQuery { SeasonYear = 2025 }, ct);
+
+        // Assert
+        secondResult.IsError.ShouldBeFalse();
+        secondResult.Value.BowlerStats.Single().BowlerOfTheYearPoints.ShouldBe(999);
     }
 }
