@@ -15,7 +15,7 @@ internal sealed class BowlerOfTheYearRaceCalculator
             [BowlerOfTheYearCategory.SuperSenior.Value] = ComputeRaceProgression(results, BowlerOfTheYearCategory.SuperSenior),
             [BowlerOfTheYearCategory.Woman.Value] = ComputeRaceProgression(results, BowlerOfTheYearCategory.Woman),
             [BowlerOfTheYearCategory.Youth.Value] = ComputeRaceProgression(results, BowlerOfTheYearCategory.Youth),
-            [BowlerOfTheYearCategory.Rookie.Value] = [],  // Deferred: requires membership data
+            [BowlerOfTheYearCategory.Rookie.Value] = ComputeRaceProgression(results, BowlerOfTheYearCategory.Rookie),
         };
 
     private static IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto> ComputeRaceProgression(
@@ -117,6 +117,11 @@ internal sealed class BowlerOfTheYearRaceCalculator
         if (category == BowlerOfTheYearCategory.Open)
         {
             return true;
+        }
+
+        if (category == BowlerOfTheYearCategory.Rookie)
+        {
+            return result.IsRookie;
         }
 
         if (category == BowlerOfTheYearCategory.Woman)

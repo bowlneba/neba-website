@@ -112,13 +112,81 @@ public sealed class BowlerOfTheYearRaceCalculatorTests
         openSeries.ShouldNotContain(s => s.BowlerId == ineligibleBowlerId);
     }
 
-    // ─── Rookie ───────────────────────────────────────────────────────────────
+    // ─── Rookie race — bowler eligibility ────────────────────────────────────
 
-    [Fact(DisplayName = "CalculateAllProgressions should always return empty series for Rookie category")]
-    public void CalculateAllProgressions_ShouldAlwaysReturnEmptySeries_ForRookieCategory()
+    [Fact(DisplayName = "Rookie race should include only rookie bowlers and exclude non-rookies")]
+    public void RookieRace_ShouldIncludeOnlyRookieBowlers_AndExcludeNonRookies()
     {
         // Arrange
-        var results = BoyProgressionResultDtoFactory.Bogus(count: 10, seed: 77);
+        var rookieBowlerId = BowlerId.New();
+        var nonRookieBowlerId = BowlerId.New();
+        var tournament = TournamentId.New();
+
+        var results = new[]
+        {
+            BoyProgressionResultDtoFactory.Create(
+                bowlerId: rookieBowlerId, tournamentId: tournament,
+                tournamentDate: new DateOnly(2025, 1, 1), tournamentEndDate: new DateOnly(2025, 1, 2),
+                statsEligible: true, points: 100, isRookie: true),
+            BoyProgressionResultDtoFactory.Create(
+                bowlerId: nonRookieBowlerId, tournamentId: tournament,
+                tournamentDate: new DateOnly(2025, 1, 1), tournamentEndDate: new DateOnly(2025, 1, 2),
+                statsEligible: true, points: 200, isRookie: false),
+        };
+
+        // Act
+        var progressions = _calculator.CalculateAllProgressions(results);
+
+        // Assert
+        var rookieSeries = progressions[BowlerOfTheYearCategory.Rookie.Value];
+        rookieSeries.Count.ShouldBe(1);
+        rookieSeries.ShouldContain(s => s.BowlerId == rookieBowlerId);
+        rookieSeries.ShouldNotContain(s => s.BowlerId == nonRookieBowlerId);
+    }
+
+    [Fact(DisplayName = "Rookie race should accumulate cumulative points across tournaments")]
+    public void RookieRace_ShouldAccumulateCumulativePoints_AcrossTournaments()
+    {
+        // Arrange
+        var bowlerId = BowlerId.New();
+        var t1 = TournamentId.New();
+        var t2 = TournamentId.New();
+
+        var results = new[]
+        {
+            BoyProgressionResultDtoFactory.Create(
+                bowlerId: bowlerId, tournamentId: t1,
+                tournamentDate: new DateOnly(2025, 1, 1), tournamentEndDate: new DateOnly(2025, 1, 2),
+                statsEligible: true, points: 100, isRookie: true),
+            BoyProgressionResultDtoFactory.Create(
+                bowlerId: bowlerId, tournamentId: t2,
+                tournamentDate: new DateOnly(2025, 2, 1), tournamentEndDate: new DateOnly(2025, 2, 2),
+                statsEligible: true, points: 150, isRookie: true),
+        };
+
+        // Act
+        var progressions = _calculator.CalculateAllProgressions(results);
+
+        // Assert
+        var rookieSeries = progressions[BowlerOfTheYearCategory.Rookie.Value];
+        rookieSeries.Count.ShouldBe(1);
+        var series = rookieSeries.Single();
+        series.Results.Last().CumulativePoints.ShouldBe(250);
+    }
+
+    [Fact(DisplayName = "Rookie race should exclude rookie's results from a non-stats-eligible tournament")]
+    public void RookieRace_ShouldExcludeResults_FromNonStatsEligibleTournament()
+    {
+        // Arrange
+        var rookieBowlerId = BowlerId.New();
+
+        var results = new[]
+        {
+            BoyProgressionResultDtoFactory.Create(
+                bowlerId: rookieBowlerId,
+                tournamentDate: new DateOnly(2025, 1, 1), tournamentEndDate: new DateOnly(2025, 1, 2),
+                statsEligible: false, points: 100, isRookie: true),
+        };
 
         // Act
         var progressions = _calculator.CalculateAllProgressions(results);
