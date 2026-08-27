@@ -26,4 +26,26 @@ public sealed class TournamentDetailViewModelTests
         nebaOnly.HasMultipleMoneySources.ShouldBeFalse();
         neither.HasMultipleMoneySources.ShouldBeFalse();
     }
+
+    [Fact(DisplayName = "Should use the tournament's own logo URL when set")]
+    public void DisplayLogoSrc_ShouldUseLogoUrl_WhenSet()
+    {
+        // Arrange
+        var model = TournamentDetailViewModelFactory.Create(
+            logoUrl: new Uri("https://cdn.example.com/tournament-logo.png"),
+            tournamentType: "Doubles");
+
+        // Assert
+        model.DisplayLogoSrc.ShouldBe("https://cdn.example.com/tournament-logo.png");
+    }
+
+    [Fact(DisplayName = "Should fall back to the format-specific default logo when no logo URL is set")]
+    public void DisplayLogoSrc_ShouldUseFormatDefault_WhenLogoUrlIsNull()
+    {
+        // Arrange
+        var model = TournamentDetailViewModelFactory.Create(logoUrl: null, tournamentType: "Doubles");
+
+        // Assert
+        model.DisplayLogoSrc.ShouldBe("/images/neba-doubles.jpg");
+    }
 }
