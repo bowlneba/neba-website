@@ -56,6 +56,7 @@ test.describe('Users page (authenticated)', () => {
   // leaving an override in place and breaking a later test — resetting here runs regardless of outcome.
   test.afterEach(async ({ page }) => {
     await page.request.post('http://localhost:5151/__mock/reset?path=/security/password/reset');
+    await page.request.post('http://localhost:5151/__mock/reset?path=/security/users');
   });
 
   test('shows the Users menu item and navigates to the users page', async ({ page }) => {
@@ -68,6 +69,17 @@ test.describe('Users page (authenticated)', () => {
 
     await expect(page).toHaveURL(/\/account\/users$/);
     await expect(page.locator('.neba-table')).toContainText('webmaster@bowlneba.com');
+  });
+
+  test('shows an error alert and stays on the page when loading the user list fails', async ({ page }) => {
+    await page.request.post('http://localhost:5151/__mock/fail?path=/security/users&status=500');
+
+    await page.goto('/account/users');
+    await page.waitForSelector('.neba-alert');
+
+    await expect(page.locator('.neba-alert')).toContainText('Error Loading Users');
+    await expect(page).toHaveURL(/\/account\/users$/);
+    await expect(page.locator('.neba-table tbody')).not.toContainText('webmaster@bowlneba.com');
   });
 
   test('lists users with their roles and status', async ({ page }) => {
