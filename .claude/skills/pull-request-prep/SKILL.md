@@ -130,6 +130,14 @@ When adding Playwright tests:
 - [ ] Components don't fetch data directly
 - [ ] Pages are thin orchestrators
 
+**Follow-up review recommendations**
+
+`code-review`, `security-review`, and `performance-review` are separate slash commands — this skill doesn't run them, it recommends whether to. Decide each independently; a PR can warrant more than one, or none.
+
+- **Code review** — recommend `/code-review` (pick an effort level: `medium` for a routine single-feature PR, `high`/`xhigh` for a large diff spanning multiple layers or a critical/high-stakes feature per `feature-plan`'s criticality determination) whenever the diff includes non-trivial logic — new/changed handlers, domain code, or components. Skip the recommendation only for diffs that are entirely docs/README/config, pure test additions with no production code change, or trivial copy/label fixes — the fixed checklist above already covers those well enough that an open-ended pass adds little.
+- **Security review** — recommend `/security-review` when the diff includes any of: new or changed authentication/authorization logic (policies, roles, claims); a new or changed endpoint accepting user input; secrets/connection-string/config handling; a new external integration or third-party API call; file upload/download handling; new or changed PII/sensitive-data handling; a new or upgraded dependency. Don't recommend it for pure UI styling, test-only changes, docs-only changes, or an internal refactor that touches none of the above surfaces.
+- **Performance review** — recommend `/performance-review` when the diff includes any of: a new or changed EF Core query, especially over a collection, join, or list endpoint; a new or changed cached query (`ICachedQuery`/`IFusionCache` usage added, removed, or its key/invalidation logic touched); a new background job (Hangfire) or a loop making repeated external calls; a new Blazor component rendering a collection, or new per-keystroke/high-frequency interactive behavior; any change to a known hot path (an endpoint or page called on every page load, or by every user). Don't recommend it for pure copy/label changes, test-only changes, docs/config-only changes, or a bounded single-entity create/edit form with no list rendering.
+
 **README**
 - [ ] `README.md`'s Project Structure reflects any new/removed top-level `Features/{Feature}` folders, projects, or render-mode changes
 - [ ] `README.md`'s Technology Stack reflects any new/removed package that changes what's user-visible (new datastore, new client library, new background job engine, etc.) — not every `Directory.Packages.props` bump, just ones that change the stack story
@@ -157,6 +165,9 @@ Structure the review as:
 
 ### 📄 README Updates
 [List each stale/missing spot in README.md found via the **README** checklist above, with the proposed change. If none: "None — README is current."]
+
+### 🔍 Recommended Follow-up Reviews
+[For each of Code Review, Security Review, and Performance Review: state **Recommended** or **Not recommended**, then one to two sentences of reasoning tied to the matching bullet in the **Follow-up review recommendations** checklist above — name the specific file(s)/pattern(s) that triggered (or didn't trigger) the call. For each recommended one, name the exact command to run (e.g. `/code-review high`, `/security-review`, `/performance-review`).]
 
 ### ✅ Looks Good
 [Brief note on what was done well or what was verified clean.]
