@@ -58,19 +58,22 @@ internal static class InfrastructureConfiguration
 
             builder.AddAzureBlobServiceClient("blob");
 
-            // BlobServiceClient was just registered above; resolve it from a short-lived provider
-            // since AddDataProtection() needs a concrete BlobClient at configuration time, before
-            // the real service provider is built.
-            using var tempProvider = builder.Services.BuildServiceProvider();
-            var blobServiceClient = tempProvider.GetRequiredService<BlobServiceClient>();
-
-            var containerClient = blobServiceClient.GetBlobContainerClient(DataProtectionContainerName);
-            containerClient.CreateIfNotExists();
-
+            // Resolves BlobServiceClient (registered above) lazily from the real service provider
+            // on first use, rather than building a temporary one — doing that previously disposed
+            // the Azure client library's own registration cache, which is shared with (and
+            // poisoned) every service provider built afterward, crashing the app on startup with
+            // "Cannot access a disposed object: 'ClientRegistration'".
             builder.Services
                 .AddDataProtection()
                 .SetApplicationName(DataProtectionApplicationName)
-                .PersistKeysToAzureBlobStorage(containerClient.GetBlobClient(DataProtectionKeysBlobName));
+                .PersistKeysToAzureBlobStorage(sp =>
+                {
+                    var containerClient = sp.GetRequiredService<BlobServiceClient>()
+                        .GetBlobContainerClient(DataProtectionContainerName);
+                    containerClient.CreateIfNotExists();
+
+                    return containerClient.GetBlobClient(DataProtectionKeysBlobName);
+                });
 
             return builder;
         }
