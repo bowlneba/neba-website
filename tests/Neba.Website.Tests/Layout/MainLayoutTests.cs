@@ -33,7 +33,11 @@ public sealed class MainLayoutTests : IDisposable
         _ctx.Services.AddSingleton(mockWebHostEnvironment.Object);
         _ctx.Services.AddScoped<ToastService>();
         _ctx.Services.AddScoped<CircuitTokenCache>();
-        _ctx.Services.AddSingleton(new Mock<IHttpContextAccessor>(MockBehavior.Strict).Object);
+
+        var httpContextAccessorMock = new Mock<IHttpContextAccessor>(MockBehavior.Strict);
+        httpContextAccessorMock.SetupGet(m => m.HttpContext).Returns((HttpContext?)null);
+        _ctx.Services.AddSingleton(httpContextAccessorMock.Object);
+
         _ctx.Services.AddHttpClient();
         _ctx.Services.AddSingleton(new NebaApiConfiguration
         {

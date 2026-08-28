@@ -9,6 +9,7 @@
 @inject CircuitTokenCache TokenCache
 @inject IJSRuntime JsRuntime
 @inject ToastService ToastService
+@inject NebaApiConfiguration ApiConfiguration
 
 <AuthorizeView>
     <Authorized>
@@ -32,6 +33,14 @@
                         <a class="account-dropdown-link" href="/account/users" role="menuitem" data-enhance-nav="false">Users</a>
                     </Authorized>
                 </AuthorizeView>
+                @if (_backgroundJobsDashboardUrl is not null)
+                {
+                    <AuthorizeView Policy="@Permissions.ViewBackgroundJobsDashboard.PolicyName" Context="backgroundJobsContext">
+                        <Authorized>
+                            <a class="account-dropdown-link" href="@_backgroundJobsDashboardUrl" target="_blank" rel="noopener" role="menuitem" data-enhance-nav="false">Background Jobs</a>
+                        </Authorized>
+                    </AuthorizeView>
+                }
                 @if (IsDebugBuild)
                 {
                     <div class="account-divider"></div>
@@ -47,6 +56,7 @@
 
 @code {
     private IJSObjectReference? _module;
+    private string? _backgroundJobsDashboardUrl;
 
     private static bool IsDebugBuild
     {
@@ -60,15 +70,37 @@
         }
     }
 
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await GetAccessTokenAsync();
+
+        // The Hangfire dashboard is a plain browser navigation (new tab), not a Refit API call,
+        // so it can't rely on BearerTokenHandler to attach a token — the token is passed via
+        // query string instead (see SecurityConfiguration's OnMessageReceived, scoped to this one
+        // path). Only shown when a token is actually available; if the shared cookie-auth SSO is
+        // also wired up (see AccountConfiguration/SecurityConfiguration), the browser sends that
+        // too on the same navigation, so this link still works even if the token is stale/missing.
+        if (!string.IsNullOrEmpty(token))
+        {
+            _backgroundJobsDashboardUrl = new Uri(ApiConfiguration.BaseUrl, "background-jobs")
+                + "?access_token=" + Uri.EscapeDataString(token);
+        }
+    }
+
+    private async Task<string?> GetAccessTokenAsync()
+    {
+        var httpContext = HttpContextAccessor.HttpContext;
+        return httpContext is not null
+            ? await httpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.AccessTokenName)
+            : TokenCache.AccessToken;
+    }
+
     private async Task CopyTokenAsync()
     {
         if (!IsDebugBuild)
             return;
 
-        var httpContext = HttpContextAccessor.HttpContext;
-        var token = httpContext is not null
-            ? await httpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.AccessTokenName)
-            : TokenCache.AccessToken;
+        var token = await GetAccessTokenAsync();
 
         if (token is null)
         {

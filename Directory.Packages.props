@@ -27,6 +27,7 @@
     <PackageVersion Include="Audit.NET" Version="32.3.1" />
     <PackageVersion Include="Audit.NET.AzureStorageTables" Version="32.3.1" />
     <PackageVersion Include="Audit.WebApi.Core" Version="32.3.1" />
+    <PackageVersion Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="1.5.4" />
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.6.0" />
     <PackageVersion Include="Azure.ResourceManager" Version="1.14.0" />
     <PackageVersion Include="Blazor-ApexCharts" Version="7.0.0" />

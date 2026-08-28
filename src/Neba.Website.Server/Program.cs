@@ -25,7 +25,7 @@ builder.Services.AddMaps(builder.Configuration);
 builder.Services.AddApexCharts();
 builder.Services.AddScoped<IStatsApiService, StatsApiService>();
 
-builder.Services.AddAccountServices(builder.Configuration);
+builder.Services.AddAccountServices(builder.Configuration, builder.Environment);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

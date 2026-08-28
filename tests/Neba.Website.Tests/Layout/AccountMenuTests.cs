@@ -27,7 +27,11 @@ public sealed class AccountMenuTests : IDisposable
         _authContext = _ctx.AddAuthorization();
         _ctx.Services.AddScoped<CircuitTokenCache>();
         _ctx.Services.AddScoped<ToastService>();
-        _ctx.Services.AddSingleton(new Mock<IHttpContextAccessor>(MockBehavior.Strict).Object);
+        _ctx.Services.AddSingleton(new NebaApiConfiguration { BaseUrl = new Uri("https://api.bowlneba.com") });
+
+        var httpContextAccessorMock = new Mock<IHttpContextAccessor>(MockBehavior.Strict);
+        httpContextAccessorMock.SetupGet(m => m.HttpContext).Returns((HttpContext?)null);
+        _ctx.Services.AddSingleton(httpContextAccessorMock.Object);
     }
 
     public void Dispose() => _ctx.Dispose();
@@ -102,5 +106,52 @@ public sealed class AccountMenuTests : IDisposable
 
         // Assert
         cut.FindAll("a.account-dropdown-link").ShouldNotContain(a => a.GetAttribute("href") == "/account/create-user");
+    }
+
+    [Fact(DisplayName = "Should show the Background Jobs link with the access token in the query string when the user holds the permission")]
+    public void Render_ShouldShowBackgroundJobsLink_WhenUserHoldsPolicyAndTokenIsAvailable()
+    {
+        // Arrange
+        _ctx.Services.GetRequiredService<CircuitTokenCache>().AccessToken = "test-token";
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ViewBackgroundJobsDashboard.PolicyName);
+
+        // Act
+        var cut = _ctx.Render<AccountMenu>();
+
+        // Assert
+        var link = cut.FindAll("a.account-dropdown-link")
+            .Where(a => a.TextContent == "Background Jobs")
+            .ShouldHaveSingleItem();
+        link.GetAttribute("href").ShouldBe("https://api.bowlneba.com/background-jobs?access_token=test-token");
+    }
+
+    [Fact(DisplayName = "Should not show the Background Jobs link when the user lacks the permission")]
+    public void Render_ShouldNotShowBackgroundJobsLink_WhenUserLacksPolicy()
+    {
+        // Arrange
+        _ctx.Services.GetRequiredService<CircuitTokenCache>().AccessToken = "test-token";
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies();
+
+        // Act
+        var cut = _ctx.Render<AccountMenu>();
+
+        // Assert
+        cut.FindAll("a.account-dropdown-link").ShouldNotContain(a => a.TextContent == "Background Jobs");
+    }
+
+    [Fact(DisplayName = "Should not show the Background Jobs link when no access token is available")]
+    public void Render_ShouldNotShowBackgroundJobsLink_WhenNoTokenIsAvailable()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ViewBackgroundJobsDashboard.PolicyName);
+
+        // Act
+        var cut = _ctx.Render<AccountMenu>();
+
+        // Assert
+        cut.FindAll("a.account-dropdown-link").ShouldNotContain(a => a.TextContent == "Background Jobs");
     }
 }

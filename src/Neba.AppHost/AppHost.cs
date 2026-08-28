@@ -94,6 +94,12 @@ var web = builder.AddProject<Projects.Neba_Website_Server>("web")
     .WithHttpHealthCheck("/health")
     .WithReference(api)
     .WaitFor(api)
+    // Shares the same blob storage account as the api, so both apps can persist Data Protection
+    // keys to the same container and decrypt each other's cookie-auth tickets (see
+    // AccountConfiguration.cs / SecurityConfiguration.cs) - lets a signed-in Webmaster navigate
+    // straight to the api's /background-jobs Hangfire dashboard without a separate token.
+    .WithReference(blobs)
+    .WaitFor(blobs)
     .WithBrowserLogs();
 #pragma warning restore ASPIREBROWSERLOGS001
 

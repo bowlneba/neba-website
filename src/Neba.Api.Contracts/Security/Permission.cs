@@ -139,6 +139,15 @@ public sealed class Permissions
 
     #endregion
 
+    #region Background Jobs
+
+    /// <summary>
+    /// Permission to view and manage the background jobs dashboard.
+    /// </summary>
+    public static readonly Permissions ViewBackgroundJobsDashboard = new("BackgroundJobs.ViewDashboard", "View Background Jobs Dashboard");
+
+    #endregion
+
     private Permissions(string key, string name)
         : base(name, key)
     { }
