@@ -33,7 +33,7 @@ internal sealed class ListUsersSummary : Summary<ListUsersEndpoint>
                 PageSize = 20
             });
 
-        Response<Microsoft.AspNetCore.Http.HttpValidationProblemDetails>(400, "The page or pageSize parameter is invalid.");
+        Response<HttpValidationProblemDetails>(400, "The page or pageSize parameter is invalid.");
         Response(401, "No valid bearer token provided.");
         Response(403, "Authenticated user does not have the System.GetUsers permission.");
     }
