@@ -999,8 +999,10 @@ public sealed class HtmlProcessorTests
 
         var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
         link.ShouldNotBeNull();
-        // Should remain unchanged since document is not in configuration
-        link.GetAttributeValue("href", "").ShouldBe("https://www.google.com/url?q=https://docs.google.com/document/d/1UNKNOWN999/edit&sa=D");
+        // Should remain unchanged (aside from sanitization re-encoding "&" as "&amp;", which
+        // HtmlAgilityPack's GetAttributeValue does not decode) since document is not in configuration
+        HtmlEntity.DeEntitize(link.GetAttributeValue("href", ""))
+            .ShouldBe("https://www.google.com/url?q=https://docs.google.com/document/d/1UNKNOWN999/edit&sa=D");
     }
 
     [Fact(DisplayName = "Process should handle Google Docs URLs with user ID in path")]
@@ -1027,5 +1029,63 @@ public sealed class HtmlProcessorTests
         links.Count.ShouldBe(2);
         links[0].GetAttributeValue("href", "").ShouldBe("/bylaws");
         links[1].GetAttributeValue("href", "").ShouldBe("/tournaments/rules");
+    }
+
+    [Fact(DisplayName = "Process should remove script tags")]
+    public void Process_ShouldRemoveScriptTags()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <body><p>Hello</p><script>alert('xss')</script></body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        result.ShouldNotContain("<script", Case.Insensitive);
+        result.ShouldNotContain("alert");
+    }
+
+    [Fact(DisplayName = "Process should remove event handler attributes")]
+    public void Process_ShouldRemoveEventHandlerAttributes()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <body><img src="x.png" onerror="alert('xss')" /></body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        result.ShouldNotContain("onerror", Case.Insensitive);
+        result.ShouldNotContain("alert");
+    }
+
+    [Fact(DisplayName = "Process should preserve the injected list-style tag when body content is sanitized")]
+    public void Process_ShouldPreserveListStyleTag_WhenBodyContentIsSanitized()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <head>
+            <style>.lst-kix_abc123-0{list-style-type:lower-alpha}</style>
+            </head>
+            <body><p onclick="alert('xss')">Item</p></body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        result.ShouldContain("<style>.lst-kix_abc123-0{list-style-type:lower-alpha}</style>");
+        result.ShouldNotContain("onclick", Case.Insensitive);
+        result.ShouldNotContain("alert");
     }
 }
