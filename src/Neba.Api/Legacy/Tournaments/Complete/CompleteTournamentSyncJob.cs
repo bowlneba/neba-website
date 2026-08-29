@@ -2,7 +2,10 @@ using Hangfire;
 
 using Microsoft.EntityFrameworkCore;
 
+using System.Globalization;
+
 using Neba.Api.Database;
+using Neba.Api.Discord;
 using Neba.Api.Email;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Identity;
@@ -23,6 +26,7 @@ internal sealed class CompleteTournamentSyncJob(
     IBackgroundJobClient jobs,
     IFusionCache cache,
     IEmailSender emailSender,
+    IDiscordNotifier discordNotifier,
     ILogger<CompleteTournamentSyncJob> logger)
 {
     public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
@@ -41,6 +45,18 @@ internal sealed class CompleteTournamentSyncJob(
                 Subject = "Manual intervention needed: tournament completion with no linked tournament",
                 HtmlBody = new UnlinkedTournamentCompletionEmail(legacyTournamentId).ToHtmlBody()
             }, ct);
+
+            var alert = new DiscordAlert(
+                DiscordAlertSeverity.Critical,
+                "Tournament completion could not be matched",
+                "The legacy tournament completion event referenced a legacy tournament id with no linked website tournament.",
+                new Dictionary<string, string>
+                {
+                    ["LegacyTournamentId"] = legacyTournamentId.ToString(CultureInfo.InvariantCulture),
+                    ["EmailSent"] = nameof(UnlinkedTournamentCompletionEmail)
+                });
+
+            await discordNotifier.NotifyAsync(alert, ct);
 
             return;
         }

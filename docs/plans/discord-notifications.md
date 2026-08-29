@@ -23,8 +23,12 @@ Two deviations from the sketch below, kept because they turned out better in pra
   `const int`s, and the embed payload is built from `DiscordEmbed`/`DiscordEmbedField` records
   instead of anonymous types — both ideas borrowed from `Discord.Net`'s `Color`/`EmbedBuilder`
   shape without taking the dependency (see Open Questions in the original design discussion).
+- `DiscordAlert`'s actual property names are `Body` and `Metadata`, not `Description`/`Fields` as
+  sketched below — the constructor call shape (positional args) is unaffected, but any code
+  referencing the properties by name (tests included) needs `alert.Body`/`alert.Metadata`.
 
-Phase 2 (candidate events) not started.
+**Phase 2 in progress.** Candidates #1–#5 implemented (see per-candidate notes below for
+deviations from the original sketch). #6/#7 remaining.
 
 ## Goals / Non-Goals
 
