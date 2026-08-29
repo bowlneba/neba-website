@@ -27,8 +27,8 @@ Two deviations from the sketch below, kept because they turned out better in pra
   sketched below — the constructor call shape (positional args) is unaffected, but any code
   referencing the properties by name (tests included) needs `alert.Body`/`alert.Metadata`.
 
-**Phase 2 in progress.** Candidates #1–#5 implemented (see per-candidate notes below for
-deviations from the original sketch). #6/#7 remaining.
+**Phase 2 in progress.** Candidates #1–#6 implemented (see per-candidate notes below for
+deviations from the original sketch). #7 remaining.
 
 ## Goals / Non-Goals
 

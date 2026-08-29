@@ -1,10 +1,12 @@
 using System.Data;
+using System.Globalization;
 
 using Dapper;
 
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
+using Neba.Api.Discord;
 using Neba.Api.Email;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Identity;
@@ -21,6 +23,7 @@ internal sealed class SyncTournamentResultsJob(
     IDbConnection legacyConnection,
     IFusionCache cache,
     IEmailSender emailSender,
+    IDiscordNotifier discordNotifier,
     ILogger<SyncTournamentResultsJob> logger)
 {
     public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
@@ -133,6 +136,21 @@ internal sealed class SyncTournamentResultsJob(
         foreach (var legacyBowlerId in anomalousLegacyBowlerIds)
         {
             logger.LogLegacyBowlerHasMultipleResultRows(legacyBowlerId, legacyTournamentId);
+
+            var rowCount = resultRowsByBowlerId.Single(g => g.Key == legacyBowlerId).Count();
+
+            var alert = new DiscordAlert(
+                DiscordAlertSeverity.Warning,
+                "Duplicate legacy result rows",
+                "A bowler has more than one result row for this tournament in the legacy database.",
+                new Dictionary<string, string>
+                {
+                    ["LegacyBowlerId"] = legacyBowlerId.ToString(CultureInfo.InvariantCulture),
+                    ["LegacyTournamentId"] = legacyTournamentId.ToString(CultureInfo.InvariantCulture),
+                    ["RowCount"] = rowCount.ToString(CultureInfo.InvariantCulture)
+                });
+
+            await discordNotifier.NotifyAsync(alert, ct);
         }
 
         var singleResultRows = resultRowsByBowlerId.Where(g => g.Count() == 1).Select(g => g.Single()).ToList();
