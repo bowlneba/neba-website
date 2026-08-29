@@ -30,8 +30,8 @@ public sealed class DiscordNotifierTests
         var timeProvider = new FakeTimeProvider(Now);
         using var httpClient = CreateHttpClient(handler);
         var notifier = CreateNotifier(httpClient, timeProvider: timeProvider);
-        var alert = new DiscordAlert("Deploy Failed", DiscordAlertSeverity.Critical, "The deploy pipeline failed.",
-            new Dictionary<string, object> { ["Environment"] = "Production" });
+        var alert = new DiscordAlert(DiscordAlertSeverity.Critical, "Deploy Failed", "The deploy pipeline failed.",
+            new Dictionary<string, string> { ["Environment"] = "Production" });
 
         // Act
         await notifier.NotifyAsync(alert, TestContext.Current.CancellationToken);
@@ -57,7 +57,7 @@ public sealed class DiscordNotifierTests
         using var handler = new CapturingHttpMessageHandler(HttpStatusCode.NoContent);
         using var httpClient = CreateHttpClient(handler);
         var notifier = CreateNotifier(httpClient);
-        var alert = new DiscordAlert("Info Alert", DiscordAlertSeverity.Info, "Just letting you know.");
+        var alert = new DiscordAlert(DiscordAlertSeverity.Info, "Info Alert", "Just letting you know.");
 
         // Act
         await notifier.NotifyAsync(alert, TestContext.Current.CancellationToken);
@@ -77,7 +77,7 @@ public sealed class DiscordNotifierTests
         using var handler = new CapturingHttpMessageHandler(HttpStatusCode.NoContent);
         using var httpClient = CreateHttpClient(handler);
         var notifier = CreateNotifier(httpClient, fakeLogger);
-        var alert = new DiscordAlert("Info Alert", DiscordAlertSeverity.Info, "Just letting you know.");
+        var alert = new DiscordAlert(DiscordAlertSeverity.Info, "Info Alert", "Just letting you know.");
 
         // Act
         await notifier.NotifyAsync(alert, TestContext.Current.CancellationToken);
@@ -94,7 +94,7 @@ public sealed class DiscordNotifierTests
         using var handler = new CapturingHttpMessageHandler(HttpStatusCode.TooManyRequests);
         using var httpClient = CreateHttpClient(handler);
         var notifier = CreateNotifier(httpClient, fakeLogger);
-        var alert = new DiscordAlert("Deploy Failed", DiscordAlertSeverity.Critical, "The deploy pipeline failed.");
+        var alert = new DiscordAlert(DiscordAlertSeverity.Critical, "Deploy Failed", "The deploy pipeline failed.");
 
         // Act
         await notifier.NotifyAsync(alert, TestContext.Current.CancellationToken);
@@ -114,7 +114,7 @@ public sealed class DiscordNotifierTests
         using var handler = new ThrowingHttpMessageHandler(new HttpRequestException("connection refused"));
         using var httpClient = CreateHttpClient(handler);
         var notifier = CreateNotifier(httpClient, fakeLogger);
-        var alert = new DiscordAlert("Deploy Failed", DiscordAlertSeverity.Critical, "The deploy pipeline failed.");
+        var alert = new DiscordAlert(DiscordAlertSeverity.Critical, "Deploy Failed", "The deploy pipeline failed.");
 
         // Act
         await notifier.NotifyAsync(alert, TestContext.Current.CancellationToken);
@@ -133,7 +133,7 @@ public sealed class DiscordNotifierTests
         using var handler = new ThrowingHttpMessageHandler(new OperationCanceledException());
         using var httpClient = CreateHttpClient(handler);
         var notifier = CreateNotifier(httpClient, fakeLogger);
-        var alert = new DiscordAlert("Deploy Failed", DiscordAlertSeverity.Critical, "The deploy pipeline failed.");
+        var alert = new DiscordAlert(DiscordAlertSeverity.Critical, "Deploy Failed", "The deploy pipeline failed.");
 
         // Act
         await Should.ThrowAsync<OperationCanceledException>(() => notifier.NotifyAsync(alert, TestContext.Current.CancellationToken));

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.Compliance;
+using Neba.Api.Discord;
 using Neba.Api.Email;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Email;
@@ -19,6 +20,7 @@ public sealed class GoogleWorkspaceEmailSenderTests : IClassFixture<MailpitFixtu
 {
     private readonly MailpitFixture _fixture;
     private readonly FakeLogger<GoogleWorkspaceEmailSender> _logger;
+    private readonly Mock<IDiscordNotifier> _discordNotifier;
     private readonly GoogleWorkspaceEmailSender _sut;
 
     public GoogleWorkspaceEmailSenderTests(MailpitFixture fixture)
@@ -26,7 +28,8 @@ public sealed class GoogleWorkspaceEmailSenderTests : IClassFixture<MailpitFixtu
         ArgumentNullException.ThrowIfNull(fixture);
         _fixture = fixture;
         _logger = new FakeLogger<GoogleWorkspaceEmailSender>();
-        _sut = new GoogleWorkspaceEmailSender(BuildSettings(), _logger);
+        _discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        _sut = new GoogleWorkspaceEmailSender(BuildSettings(), _discordNotifier.Object, _logger);
     }
 
     private EmailSettings BuildSettings(
@@ -42,6 +45,22 @@ public sealed class GoogleWorkspaceEmailSenderTests : IClassFixture<MailpitFixtu
             FromName = "BowlNEBA",
             ReplyToAddress = replyToAddress,
             ReplyToName = replyToName,
+            TlsMode = SecureSocketOptions.None,
+        };
+
+    // A closed local port fails fast with "connection refused" rather than timing out,
+    // giving SmtpClient.ConnectAsync a reliable, quick exception to drive the failure path.
+    private static EmailSettings BuildUnreachableSettings()
+        => new()
+        {
+            Host = "127.0.0.1",
+            Port = 1,
+            UserName = "test",
+            AppPassword = "test",
+            FromAddress = "noreply@bowlneba.com",
+            FromName = "BowlNEBA",
+            ReplyToAddress = "support@bowlneba.com",
+            ReplyToName = "BowlNEBA Support",
             TlsMode = SecureSocketOptions.None,
         };
 
@@ -111,6 +130,7 @@ public sealed class GoogleWorkspaceEmailSenderTests : IClassFixture<MailpitFixtu
         await _fixture.DeleteAllMessagesAsync();
         var sut = new GoogleWorkspaceEmailSender(
             BuildSettings(replyToAddress: string.Empty, replyToName: string.Empty),
+            _discordNotifier.Object,
             _logger);
         var message = EmailMessageFactory.Create(replyTo: null);
 
@@ -142,7 +162,7 @@ public sealed class GoogleWorkspaceEmailSenderTests : IClassFixture<MailpitFixtu
 
         var redactingLogger = provider.GetRequiredService<ILogger<GoogleWorkspaceEmailSender>>();
         var collector = provider.GetFakeLogCollector();
-        var sut = new GoogleWorkspaceEmailSender(BuildSettings(), redactingLogger);
+        var sut = new GoogleWorkspaceEmailSender(BuildSettings(), _discordNotifier.Object, redactingLogger);
 
         var message = EmailMessageFactory.Create(
             to: "log-target@example.com",
@@ -168,5 +188,63 @@ public sealed class GoogleWorkspaceEmailSenderTests : IClassFixture<MailpitFixtu
         toAddressTag.ShouldMatch(@"^l\*+$");
         toAddressTag.ShouldNotContain("log-target@example.com");
         toAddressTag.ShouldNotContain("@example.com");
+    }
+
+    [Fact(DisplayName = "SendAsync should not throw when SMTP delivery fails")]
+    public async Task SendAsync_ShouldNotThrow_WhenSmtpDeliveryFails()
+    {
+        // Arrange
+        _discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        var sut = new GoogleWorkspaceEmailSender(BuildUnreachableSettings(), _discordNotifier.Object, _logger);
+        var message = EmailMessageFactory.Create();
+
+        // Act & Assert
+        await Should.NotThrowAsync(() => sut.SendAsync(message, CancellationToken.None));
+    }
+
+    [Fact(DisplayName = "SendAsync should post a critical Discord alert with recipient and subject when SMTP delivery fails")]
+    public async Task SendAsync_ShouldPostCriticalDiscordAlert_WhenSmtpDeliveryFails()
+    {
+        // Arrange
+        DiscordAlert? capturedAlert = null;
+        _discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => capturedAlert = alert)
+            .Returns(Task.CompletedTask)
+            .Verifiable();
+        var sut = new GoogleWorkspaceEmailSender(BuildUnreachableSettings(), _discordNotifier.Object, _logger);
+        var message = EmailMessageFactory.Create(to: "recipient@example.com", subject: "Welcome to NEBA");
+
+        // Act
+        await sut.SendAsync(message, CancellationToken.None);
+
+        // Assert
+        _discordNotifier.VerifyAll();
+        capturedAlert.ShouldNotBeNull();
+        capturedAlert.Severity.ShouldBe(DiscordAlertSeverity.Critical);
+        capturedAlert.Title.ShouldBe("Email delivery failed");
+        capturedAlert.Body.ShouldNotBeNullOrWhiteSpace();
+        capturedAlert.Metadata.ShouldNotBeNull();
+        capturedAlert.Metadata["Recipient"].ShouldBe("recipient@example.com");
+        capturedAlert.Metadata["Subject"].ShouldBe("Welcome to NEBA");
+    }
+
+    [Fact(DisplayName = "SendAsync should not log email sent when SMTP delivery fails")]
+    public async Task SendAsync_ShouldNotLogEmailSent_WhenSmtpDeliveryFails()
+    {
+        // Arrange
+        _discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        var sut = new GoogleWorkspaceEmailSender(BuildUnreachableSettings(), _discordNotifier.Object, _logger);
+        var message = EmailMessageFactory.Create();
+
+        // Act
+        await sut.SendAsync(message, CancellationToken.None);
+
+        // Assert
+        _logger.Collector.GetSnapshot().ShouldBeEmpty();
     }
 }

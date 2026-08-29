@@ -2,7 +2,7 @@ using Ardalis.SmartEnum;
 
 namespace Neba.Api.Discord;
 
-internal sealed record DiscordAlert(string Title, DiscordAlertSeverity Severity, string Body, IReadOnlyDictionary<string, object>? Metadata = null);
+internal sealed record DiscordAlert(DiscordAlertSeverity Severity, string Title, string Body, IReadOnlyDictionary<string, string>? Metadata = null);
 
 internal sealed class DiscordAlertSeverity
     : SmartEnum<DiscordAlertSeverity>
