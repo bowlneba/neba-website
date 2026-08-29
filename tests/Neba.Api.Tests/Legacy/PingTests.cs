@@ -16,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
 
+using Neba.Api.Discord;
 using Neba.Api.Legacy;
 using Neba.Api.Legacy.Bowlers;
 using Neba.Api.Legacy.HallOfFame;
@@ -136,8 +137,9 @@ public sealed class PongJobTests
     private static PongJob CreateJob(
         IHttpClientFactory httpClientFactory,
         IServer server,
-        FakeLogger<PongJob>? logger = null) =>
-        new(httpClientFactory, server, logger ?? new FakeLogger<PongJob>());
+        FakeLogger<PongJob>? logger = null,
+        IDiscordNotifier? discordNotifier = null) =>
+        new(httpClientFactory, server, discordNotifier ?? new Mock<IDiscordNotifier>(MockBehavior.Strict).Object, logger ?? new FakeLogger<PongJob>());
 
     private static IServer CreateServer(params string[] addresses)
     {
@@ -178,13 +180,19 @@ public sealed class PongJobTests
         record.Message.ShouldContain("Healthy");
     }
 
-    [Fact(DisplayName = "PongAsync should log a warning and rethrow when the health check request throws HttpRequestException")]
-    public async Task PongAsync_ShouldLogWarningAndRethrow_WhenHealthCheckThrowsHttpRequestException()
+    [Fact(DisplayName = "PongAsync should log a warning, alert Discord, and rethrow when the health check request throws HttpRequestException")]
+    public async Task PongAsync_ShouldLogWarningAlertDiscordAndRethrow_WhenHealthCheckThrowsHttpRequestException()
     {
         // Arrange
         var fakeLogger = new FakeLogger<PongJob>();
+        var discordNotifierMock = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        DiscordAlert? capturedAlert = null;
+        discordNotifierMock
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => capturedAlert = alert)
+            .Returns(Task.CompletedTask);
         using var handler = new ThrowingHttpMessageHandler(new HttpRequestException("connection refused"));
-        var job = CreateJob(new FakeHttpClientFactory(handler), CreateServer("http://localhost:5000"), fakeLogger);
+        var job = CreateJob(new FakeHttpClientFactory(handler), CreateServer("http://localhost:5000"), fakeLogger, discordNotifierMock.Object);
 
         // Act
         await Should.ThrowAsync<HttpRequestException>(() => job.PongAsync(TestContext.Current.CancellationToken));
@@ -193,15 +201,25 @@ public sealed class PongJobTests
         var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
         record.Level.ShouldBe(LogLevel.Warning);
         record.Message.ShouldContain("connection refused");
+        capturedAlert.ShouldNotBeNull();
+        capturedAlert.Severity.ShouldBe(DiscordAlertSeverity.Critical);
+        capturedAlert.Body.ShouldContain("connection refused");
+        discordNotifierMock.VerifyAll();
     }
 
-    [Fact(DisplayName = "PongAsync should log a warning and rethrow when the health check request times out")]
-    public async Task PongAsync_ShouldLogWarningAndRethrow_WhenHealthCheckTimesOut()
+    [Fact(DisplayName = "PongAsync should log a warning, alert Discord, and rethrow when the health check request times out")]
+    public async Task PongAsync_ShouldLogWarningAlertDiscordAndRethrow_WhenHealthCheckTimesOut()
     {
         // Arrange
         var fakeLogger = new FakeLogger<PongJob>();
+        var discordNotifierMock = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        DiscordAlert? capturedAlert = null;
+        discordNotifierMock
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => capturedAlert = alert)
+            .Returns(Task.CompletedTask);
         using var handler = new ThrowingHttpMessageHandler(new TaskCanceledException("timed out"));
-        var job = CreateJob(new FakeHttpClientFactory(handler), CreateServer("http://localhost:5000"), fakeLogger);
+        var job = CreateJob(new FakeHttpClientFactory(handler), CreateServer("http://localhost:5000"), fakeLogger, discordNotifierMock.Object);
 
         // Act
         await Should.ThrowAsync<TaskCanceledException>(() => job.PongAsync(TestContext.Current.CancellationToken));
@@ -210,6 +228,10 @@ public sealed class PongJobTests
         var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
         record.Level.ShouldBe(LogLevel.Warning);
         record.Message.ShouldContain("timed out");
+        capturedAlert.ShouldNotBeNull();
+        capturedAlert.Severity.ShouldBe(DiscordAlertSeverity.Critical);
+        capturedAlert.Body.ShouldContain("timed out");
+        discordNotifierMock.VerifyAll();
     }
 
     [Fact(DisplayName = "PongAsync should log the status code and body then throw when the health check returns a non-success status code")]

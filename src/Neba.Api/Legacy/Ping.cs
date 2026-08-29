@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Mvc;
 
+using Neba.Api.Discord;
 using Neba.Api.Identity;
 
 namespace Neba.Api.Legacy;
@@ -27,6 +28,7 @@ internal static class PingEndpoint
 internal sealed class PongJob(
     IHttpClientFactory httpClientFactory,
     IServer server,
+    IDiscordNotifier discordNotifier,
     ILogger<PongJob> logger)
 {
     // The job's own Succeeded/Failed state is the health signal - Hangfire's Console output can't be
@@ -64,6 +66,15 @@ internal sealed class PongJob(
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             logger.LogPongFailed(ex.Message);
+
+            var alert = new DiscordAlert(
+                DiscordAlertSeverity.Critical,
+                "Legacy bridge ping failed",
+                ex.Message
+            );
+
+            await discordNotifier.NotifyAsync(alert, ct);
+            
             throw;
         }
     }
