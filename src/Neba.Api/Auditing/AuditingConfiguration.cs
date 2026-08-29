@@ -9,6 +9,7 @@ using Azure.Identity;
 using Microsoft.AspNetCore.Identity;
 
 using Neba.Api.Database;
+using Neba.Api.Discord;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.BowlingCenters.Domain;
 using Neba.Api.Features.HallOfFame.Domain;
@@ -126,7 +127,8 @@ internal static class AuditingConfiguration
             Audit.Core.Configuration.AddCustomAction(ActionType.OnEventSaving, apiScrubbingAction.OnEventSaving);
 
             var providerLogger = app.Services.GetRequiredService<ILogger<ResilientAuditDataProvider>>();
-            Audit.Core.Configuration.DataProvider = new ResilientAuditDataProvider(Audit.Core.Configuration.DataProvider, providerLogger);
+            var discordNotifier = app.Services.GetRequiredService<IDiscordNotifier>();
+            Audit.Core.Configuration.DataProvider = new ResilientAuditDataProvider(Audit.Core.Configuration.DataProvider, discordNotifier, providerLogger);
 
             app.Use(async (context, next) =>
             {

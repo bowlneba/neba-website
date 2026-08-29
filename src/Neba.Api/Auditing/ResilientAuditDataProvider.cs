@@ -1,5 +1,7 @@
 using Audit.Core;
 
+using Neba.Api.Discord;
+
 namespace Neba.Api.Auditing;
 
 #pragma warning disable CA1031 // Do not catch general exception types — audit failures must never fail the audited operation
@@ -9,7 +11,10 @@ namespace Neba.Api.Auditing;
 /// warning instead of failing the caller's SaveChanges/request pipeline (guideline #7 — audit
 /// failures must never fail the operation being audited).
 /// </summary>
-internal sealed class ResilientAuditDataProvider(IAuditDataProvider inner, ILogger<ResilientAuditDataProvider> logger)
+internal sealed class ResilientAuditDataProvider(
+        IAuditDataProvider inner,
+        IDiscordNotifier discordNotifier,
+        ILogger<ResilientAuditDataProvider> logger)
     : AuditDataProvider
 {
     public override object? InsertEvent(AuditEvent auditEvent)
@@ -34,6 +39,20 @@ internal sealed class ResilientAuditDataProvider(IAuditDataProvider inner, ILogg
         catch (Exception exception)
         {
             logger.LogAuditEventInsertFailed(exception);
+
+            var alert = new DiscordAlert(
+                DiscordAlertSeverity.Warning,
+                "Audit event insertion failed",
+                exception.Message,
+                new Dictionary<string, string>
+                {
+                    ["EventType"] = auditEvent.GetType().FullName ?? "<unknown>",
+                    ["ExceptionType"] = exception.GetType().FullName ?? "<unknown>",
+                    ["StackTrace"] = exception.StackTrace ?? "<no stack trace>"
+                });
+
+            await discordNotifier.NotifyAsync(alert, cancellationToken);
+
             return null;
         }
     }
