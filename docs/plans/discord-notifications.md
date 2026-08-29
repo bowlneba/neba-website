@@ -272,8 +272,10 @@ with the Discord wiring added and whether it needs a `CA1031` suppression.
 everywhere else either reuses an existing, already-suppressed catch (#2), isn't a catch at all
 (#3 receives an already-caught exception; #5/#6 are plain conditionals/loops; #7 reads
 `context.Exception`, which Hangfire already caught). For #1 and #4, catching broadly and treating
-every exception identically (post to Discord, then rethrow) is the right call, not a shortcut —
-it matches the existing precedent in this codebase (`ResilientAuditDataProvider`,
+every exception identically (post to Discord) is the right call, not a shortcut — whether the
+catch also rethrows is a separate, per-call-site decision (#1 swallows; #4 rethrows — see each for
+why) — but the broad catch itself matches the existing precedent in this codebase
+(`ResilientAuditDataProvider`,
 `DeleteSponsorFilesJobHandler`, `DeleteArticleFilesJobHandler`, `DeleteTournamentFilesJobHandler`)
 of catching `Exception` with a `[SuppressMessage("Design", "CA1031:...", Justification = "...")]`
 on the method, each with a one-line reason. Use the method-level attribute form, not a file-level
@@ -294,19 +296,21 @@ currently no fallback and no second signal. Wiring Discord here means the alerti
 a backup that doesn't share a failure mode with email.
 
 **Post**: `Critical` — "Email delivery failed" with the intended recipient, subject, and the
-underlying exception message. This one **can't** just swallow-and-log the way other candidates
-do, because the whole point is surfacing what would otherwise be lost — so it should fire even
-though the SMTP failure itself will already be logged.
+underlying exception message. This one **can't** just log-only the way other candidates do,
+because the whole point is surfacing what would otherwise be lost — so it should fire even though
+the SMTP failure itself will already be logged.
 
 **Method**: `SendAsync` has no try/catch today, so this is a genuinely new broad catch —
 `[SuppressMessage("Design", "CA1031:Do not catch general exception types", ...)]` needed, same
-convention as `DeleteSponsorFilesJobHandler`/`DeleteArticleFilesJobHandler`. Critically, the catch
-must **rethrow** after notifying: today an SMTP failure propagates unhandled and fails the calling
-Hangfire job, which is the only reason a human currently finds out (via the job's Failed state).
-Swallowing it here — even with the Discord post — would make the job report Success while the
-email silently never went out, which is a net loss of visibility if the Discord post itself also
-fails (webhook down, network blip). Discord is meant to be a second channel, not a replacement for
-the first.
+convention as `DeleteSponsorFilesJobHandler`/`DeleteArticleFilesJobHandler`. **Deliberate decision:
+the catch does not rethrow.** An SMTP failure is swallowed after the Discord post, same
+philosophy as every other candidate here (`ResilientAuditDataProvider`, `GlobalExceptionHandler`,
+etc.) — a failed email send should not fail the calling legacy-sync job over what is, from that
+job's point of view, a side effect (notifying a human), not its core unit of work. Discord is the
+primary signal for this failure now, not a backup to job-failure visibility; the earlier draft of
+this plan argued for rethrowing so the job's Failed state stayed a secondary signal too, but that
+was reconsidered — this call site should behave like the rest of the app's alerting paths, not be
+the one exception that still throws.
 
 ```csharp
 internal sealed class GoogleWorkspaceEmailSender(
@@ -318,7 +322,7 @@ internal sealed class GoogleWorkspaceEmailSender(
     private readonly EmailSettings _settings = emailSettings;
 
     [SuppressMessage("Design", "CA1031:Do not catch general exception types",
-        Justification = "SMTP failures must post to Discord before the job still fails visibly; every failure mode gets identical treatment.")]
+        Justification = "SMTP failures must post to Discord instead of failing the caller's job; every failure mode gets identical treatment.")]
     public async Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
     {
         using var mimeMessage = new MimeMessage();
@@ -337,30 +341,23 @@ internal sealed class GoogleWorkspaceEmailSender(
         }
         catch (Exception exception)
         {
-            await discordNotifier.NotifyAsync(
-                new DiscordAlert(
-                    DiscordAlertSeverity.Critical,
-                    "Email delivery failed",
-                    exception.Message,
-                    new Dictionary<string, string>
-                    {
-                        ["Recipient"] = message.To,
-                        ["Subject"] = message.Subject
-                    }),
-                cancellationToken);
+            var alert = new DiscordAlert(
+                DiscordAlertSeverity.Critical,
+                "Email delivery failed",
+                exception.Message,
+                new Dictionary<string, string>
+                {
+                    ["Recipient"] = message.To,
+                    ["Subject"] = message.Subject
+                });
 
-            throw;
+            await discordNotifier.NotifyAsync(alert, cancellationToken);
         }
     }
 }
 ```
 
-> **Note (found while writing this plan)**: the working tree already has an uncommitted, partial
-> version of this change (`git diff -- src/Neba.Api/Email/GoogleWorkspaceEmailSender.cs`) with two
-> bugs to fix when this is picked up: a bare `[SuppressMessage]` with no `category`/`checkId`
-> arguments (won't compile — `SuppressMessageAttribute` requires both), and the catch block does
-> not rethrow, which is the exact "job reports Success while the email silently vanishes" hazard
-> described above.
+Implemented as-is (commit "Report SMTP failures to Discord").
 
 ### 2. `ResilientAuditDataProvider` swallowed failures — `src/Neba.Api/Auditing/ResilientAuditDataProvider.cs`
 
