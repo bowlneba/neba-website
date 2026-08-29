@@ -27,8 +27,11 @@ Two deviations from the sketch below, kept because they turned out better in pra
   sketched below — the constructor call shape (positional args) is unaffected, but any code
   referencing the properties by name (tests included) needs `alert.Body`/`alert.Metadata`.
 
-**Phase 2 in progress.** Candidates #1–#6 implemented (see per-candidate notes below for
-deviations from the original sketch). #7 remaining.
+**Phase 2 implemented.** All seven candidates wired. Legacy routes' own unhandled exceptions are
+covered by #3 (`GlobalExceptionHandler`) — checked each legacy endpoint handler
+(`Neba.Api/Legacy/**`) for a local catch that would swallow an exception before it reaches the
+global handler; only one exists (`NewTournament.cs`'s `FindEasternTimeZone`, a Windows/IANA
+timezone-id fallback, not error-swallowing), so no dedicated legacy-route wiring was needed.
 
 ## Goals / Non-Goals
 
