@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Diagnostics;
 
+using Neba.Api.Discord;
+
 namespace Neba.Api.ErrorHandling;
 
-internal sealed partial class GlobalExceptionHandler(IProblemDetailsService problemDetailsService,
-    ILogger<GlobalExceptionHandler> logger)
+internal sealed class GlobalExceptionHandler(IProblemDetailsService problemDetailsService,
+        IDiscordNotifier discordNotifier,
+        ILogger<GlobalExceptionHandler> logger)
     : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(
@@ -12,6 +15,19 @@ internal sealed partial class GlobalExceptionHandler(IProblemDetailsService prob
         CancellationToken cancellationToken)
     {
         logger.LogException(exception);
+
+        var alert = new DiscordAlert(
+            DiscordAlertSeverity.Critical,
+            "Unhandled exception occurred",
+            exception.Message,
+            new Dictionary<string, string>
+            {
+                ["ExceptionType"] = exception.GetType().FullName ?? "<unknown>",
+                ["RequestPath"] = httpContext.Request.Path,
+                ["StackTrace"] = exception.StackTrace ?? "<no stack trace>"
+            });
+
+        await discordNotifier.NotifyAsync(alert, cancellationToken);
 
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
 

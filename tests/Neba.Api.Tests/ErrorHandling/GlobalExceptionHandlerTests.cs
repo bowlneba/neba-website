@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Testing;
 
+using Neba.Api.Discord;
 using Neba.Api.ErrorHandling;
 using Neba.TestFactory.Attributes;
 
@@ -14,6 +15,16 @@ namespace Neba.Api.Tests.ErrorHandling;
 [Component("Api.ErrorHandling")]
 public sealed class GlobalExceptionHandlerTests
 {
+    private readonly Mock<IDiscordNotifier> _discordNotifier;
+
+    public GlobalExceptionHandlerTests()
+    {
+        _discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        _discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+    }
+
     [Fact(DisplayName = "Should return 500 status code when exception occurs")]
     public async Task TryHandleAsync_ShouldReturn500StatusCode_WhenExceptionOccurs()
     {
@@ -33,6 +44,7 @@ public sealed class GlobalExceptionHandlerTests
 
         var handler = new GlobalExceptionHandler(
             problemDetailsServiceMock.Object,
+            _discordNotifier.Object,
             NullLogger<GlobalExceptionHandler>.Instance);
 
         // Act
@@ -66,6 +78,7 @@ public sealed class GlobalExceptionHandlerTests
 
         var handler = new GlobalExceptionHandler(
             problemDetailsServiceMock.Object,
+            _discordNotifier.Object,
             NullLogger<GlobalExceptionHandler>.Instance);
 
         // Act
@@ -95,6 +108,7 @@ public sealed class GlobalExceptionHandlerTests
 
         var handler = new GlobalExceptionHandler(
             problemDetailsServiceMock.Object,
+            _discordNotifier.Object,
             NullLogger<GlobalExceptionHandler>.Instance);
 
         // Act
@@ -119,6 +133,7 @@ public sealed class GlobalExceptionHandlerTests
 
         var handler = new GlobalExceptionHandler(
             problemDetailsServiceMock.Object,
+            _discordNotifier.Object,
             NullLogger<GlobalExceptionHandler>.Instance);
 
         // Act
@@ -150,6 +165,7 @@ public sealed class GlobalExceptionHandlerTests
 
         var handler = new GlobalExceptionHandler(
             problemDetailsServiceMock.Object,
+            _discordNotifier.Object,
             NullLogger<GlobalExceptionHandler>.Instance);
 
         // Act
@@ -177,6 +193,7 @@ public sealed class GlobalExceptionHandlerTests
 
         var handler = new GlobalExceptionHandler(
             problemDetailsServiceMock.Object,
+            _discordNotifier.Object,
             NullLogger<GlobalExceptionHandler>.Instance);
 
         // Act
@@ -199,7 +216,7 @@ public sealed class GlobalExceptionHandlerTests
             .Setup(s => s.TryWriteAsync(It.IsAny<ProblemDetailsContext>()))
             .ReturnsAsync(true);
 
-        var handler = new GlobalExceptionHandler(problemDetailsServiceMock.Object, logger);
+        var handler = new GlobalExceptionHandler(problemDetailsServiceMock.Object, _discordNotifier.Object, logger);
 
         // Act
         await handler.TryHandleAsync(httpContext, exception, CancellationToken.None);
@@ -208,5 +225,77 @@ public sealed class GlobalExceptionHandlerTests
         var logs = logger.Collector.GetSnapshot();
         logs.ShouldHaveSingleItem();
         logs[0].Level.ShouldBe(LogLevel.Error);
+    }
+
+    [Fact(DisplayName = "Should post critical Discord alert with exception details when exception occurs")]
+    public async Task TryHandleAsync_ShouldPostCriticalDiscordAlert_WhenExceptionOccurs()
+    {
+        // Arrange
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Path = "/test-path";
+        var exception = new InvalidOperationException("Test exception");
+        var cancellationToken = CancellationToken.None;
+
+        DiscordAlert? capturedAlert = null;
+        _discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), cancellationToken))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => capturedAlert = alert)
+            .Returns(Task.CompletedTask);
+
+        var problemDetailsServiceMock = new Mock<IProblemDetailsService>(MockBehavior.Strict);
+        problemDetailsServiceMock
+            .Setup(s => s.TryWriteAsync(It.IsAny<ProblemDetailsContext>()))
+            .ReturnsAsync(true);
+
+        var handler = new GlobalExceptionHandler(
+            problemDetailsServiceMock.Object,
+            _discordNotifier.Object,
+            NullLogger<GlobalExceptionHandler>.Instance);
+
+        // Act
+        await handler.TryHandleAsync(httpContext, exception, cancellationToken);
+
+        // Assert
+        capturedAlert.ShouldNotBeNull();
+        capturedAlert.Severity.ShouldBe(DiscordAlertSeverity.Critical);
+        capturedAlert.Title.ShouldBe("Unhandled exception occurred");
+        capturedAlert.Body.ShouldBe(exception.Message);
+        capturedAlert.Metadata.ShouldNotBeNull();
+        capturedAlert.Metadata["ExceptionType"].ShouldBe(exception.GetType().FullName);
+        capturedAlert.Metadata["RequestPath"].ShouldBe("/test-path");
+        capturedAlert.Metadata["StackTrace"].ShouldBe("<no stack trace>");
+        _discordNotifier.Verify(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), cancellationToken), Times.Once);
+    }
+
+    [Fact(DisplayName = "Should notify Discord before writing problem details")]
+    public async Task TryHandleAsync_ShouldNotifyDiscord_BeforeWritingProblemDetails()
+    {
+        // Arrange
+        var httpContext = new DefaultHttpContext();
+        var exception = new Exception("Test");
+        var discordNotified = false;
+        var discordNotifiedWhenWriteCalled = false;
+
+        _discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback(() => discordNotified = true)
+            .Returns(Task.CompletedTask);
+
+        var problemDetailsServiceMock = new Mock<IProblemDetailsService>(MockBehavior.Strict);
+        problemDetailsServiceMock
+            .Setup(s => s.TryWriteAsync(It.IsAny<ProblemDetailsContext>()))
+            .Callback(() => discordNotifiedWhenWriteCalled = discordNotified)
+            .ReturnsAsync(true);
+
+        var handler = new GlobalExceptionHandler(
+            problemDetailsServiceMock.Object,
+            _discordNotifier.Object,
+            NullLogger<GlobalExceptionHandler>.Instance);
+
+        // Act
+        await handler.TryHandleAsync(httpContext, exception, CancellationToken.None);
+
+        // Assert
+        discordNotifiedWhenWriteCalled.ShouldBeTrue();
     }
 }
