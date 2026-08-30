@@ -53,17 +53,25 @@ public sealed class DiscordJobFailureFilterTests
     }
 
     [Fact(DisplayName = "OnStateElection should post a Discord alert when the candidate state is Failed")]
-    public void OnStateElection_ShouldPostDiscordAlert_WhenCandidateStateIsFailed()
+    public async Task OnStateElection_ShouldPostDiscordAlert_WhenCandidateStateIsFailed()
     {
         // Arrange
         var exception = new InvalidOperationException("Boom");
         var context = CreateElectStateContext(new FailedState(exception));
 
+        // OnStateElection posts fire-and-forget (see its own doc comment - it must not block the
+        // Hangfire worker thread), so the test needs to wait for the background Task rather than
+        // asserting immediately after the synchronous call returns.
+        var notified = new TaskCompletionSource();
         var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
         DiscordAlert? postedAlert = null;
         discordNotifier
             .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
-            .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
+            .Callback<DiscordAlert, CancellationToken>((alert, _) =>
+            {
+                postedAlert = alert;
+                notified.SetResult();
+            })
             .Returns(Task.CompletedTask)
             .Verifiable();
 
@@ -71,6 +79,7 @@ public sealed class DiscordJobFailureFilterTests
 
         // Act
         filter.OnStateElection(context);
+        await notified.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         // Assert
         postedAlert.ShouldNotBeNull();

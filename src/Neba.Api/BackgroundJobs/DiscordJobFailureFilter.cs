@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 using Hangfire;
@@ -38,8 +37,6 @@ internal sealed class SkipDiscordJobFailureAlertAttribute : Attribute;
 /// </remarks>
 internal sealed class DiscordJobFailureFilter(IDiscordNotifier discordNotifier) : IElectStateFilter
 {
-    [SuppressMessage("Usage", "VSTHRD002:Synchronously waiting on tasks or awaiters may cause deadlocks",
-        Justification = "IElectStateFilter.OnStateElection is a synchronous Hangfire callback with no async overload; runs on a Hangfire worker thread with no captured SynchronizationContext, and IDiscordNotifier.NotifyAsync is guaranteed never to throw and bounded by its own short HTTP timeouts, so this cannot deadlock or hang.")]
     public void OnStateElection(ElectStateContext context)
     {
         if (context.CandidateState is not FailedState failedState)
@@ -63,6 +60,11 @@ internal sealed class DiscordJobFailureFilter(IDiscordNotifier discordNotifier) 
                 ["JobName"] = context.BackgroundJob.Job.Method.Name
             });
 
-        discordNotifier.NotifyAsync(alert, CancellationToken.None).GetAwaiter().GetResult();
+        // Fire-and-forget rather than blocking this Hangfire worker thread on the Discord HTTP
+        // call: OnStateElection has no async overload, and with a low worker count (dev runs 1)
+        // blocking here for the duration of DiscordNotifier's own timeout/retry policy would stall
+        // every other job in the process. NotifyAsync already swallows every non-cancellation
+        // failure internally, so there's nothing here to observe or retry.
+        _ = Task.Run(() => discordNotifier.NotifyAsync(alert, CancellationToken.None));
     }
 }
