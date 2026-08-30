@@ -1,8 +1,8 @@
+using System.Globalization;
+
 using Hangfire;
 
 using Microsoft.EntityFrameworkCore;
-
-using System.Globalization;
 
 using Neba.Api.Database;
 using Neba.Api.Discord;
