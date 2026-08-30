@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Hangfire;
 
 using Microsoft.AspNetCore.Hosting.Server;
@@ -37,6 +39,8 @@ internal sealed class PongJob(
     // CLAUDE.md's "Hangfire PostgreSql EnableTransactionScopeEnlistment" entry for the related
     // incident). A non-2xx /health response, or a transport failure reaching it, throws so the job
     // fails; anything else it means the API answered its own health check successfully.
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types",
+        Justification = "Any failure reaching /health means the legacy bridge is down; every cause gets the same Discord alert before the job still fails visibly.")]
     public async Task PongAsync(CancellationToken ct)
     {
         using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
@@ -63,7 +67,7 @@ internal sealed class PongJob(
                 throw new InvalidOperationException($"Pong: GET /health returned {(int)response.StatusCode}: {body}");
             }
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        catch (Exception ex)
         {
             logger.LogPongFailed(ex.Message);
 

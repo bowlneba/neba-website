@@ -234,13 +234,19 @@ public sealed class PongJobTests
         discordNotifierMock.VerifyAll();
     }
 
-    [Fact(DisplayName = "PongAsync should log the status code and body then throw when the health check returns a non-success status code")]
-    public async Task PongAsync_ShouldLogAndThrow_WhenHealthCheckReturnsNonSuccessStatusCode()
+    [Fact(DisplayName = "PongAsync should log the status code and body, alert Discord, and throw when the health check returns a non-success status code")]
+    public async Task PongAsync_ShouldLogAlertDiscordAndThrow_WhenHealthCheckReturnsNonSuccessStatusCode()
     {
         // Arrange
         var fakeLogger = new FakeLogger<PongJob>();
         using var handler = new StubHttpMessageHandler(HttpStatusCode.ServiceUnavailable, "Unhealthy");
-        var job = CreateJob(new FakeHttpClientFactory(handler), CreateServer("http://localhost:5000"), fakeLogger);
+        var discordNotifierMock = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        DiscordAlert? capturedAlert = null;
+        discordNotifierMock
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => capturedAlert = alert)
+            .Returns(Task.CompletedTask);
+        var job = CreateJob(new FakeHttpClientFactory(handler), CreateServer("http://localhost:5000"), fakeLogger, discordNotifierMock.Object);
 
         // Act
         var exception = await Should.ThrowAsync<InvalidOperationException>(() => job.PongAsync(TestContext.Current.CancellationToken));
@@ -248,10 +254,16 @@ public sealed class PongJobTests
         // Assert
         exception.Message.ShouldContain("503");
         exception.Message.ShouldContain("Unhealthy");
-        var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
-        record.Level.ShouldBe(LogLevel.Information);
-        record.Message.ShouldContain("503");
-        record.Message.ShouldContain("Unhealthy");
+        var records = fakeLogger.Collector.GetSnapshot();
+        records.Count.ShouldBe(2);
+        records[0].Level.ShouldBe(LogLevel.Information);
+        records[0].Message.ShouldContain("503");
+        records[0].Message.ShouldContain("Unhealthy");
+        records[1].Level.ShouldBe(LogLevel.Warning);
+        capturedAlert.ShouldNotBeNull();
+        capturedAlert.Severity.ShouldBe(DiscordAlertSeverity.Critical);
+        capturedAlert.Body.ShouldContain("503");
+        discordNotifierMock.VerifyAll();
     }
 
     [Fact(DisplayName = "PongAsync should log a warning and not call the HTTP client when no server address is available")]
