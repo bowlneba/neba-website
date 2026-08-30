@@ -10,6 +10,8 @@ using Hangfire.PostgreSql;
 
 using Microsoft.Extensions.Options;
 
+using Neba.Api.Discord;
+
 using Npgsql;
 
 namespace Neba.Api.BackgroundJobs;
@@ -74,6 +76,7 @@ internal static class BackgroundJobsConfiguration
                     .UseFilter(new AutomaticRetryAttribute { Attempts = settings.AutomaticRetryAttempts })
                     .UseFilter(new HangfireJobExpirationFilterAttribute(settings))
                     .UseFilter(new HangfireConsoleServerFilter())
+                    .UseFilter(new DiscordJobFailureFilter(serviceProvider.GetRequiredService<IDiscordNotifier>()))
                     .UseConsole()
                     .AddAuditJobExecutionFilter(config => config
                         .EventType("Job:{type}.{method}")

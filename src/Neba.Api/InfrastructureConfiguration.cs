@@ -5,6 +5,7 @@ using Neba.Api.Caching;
 using Neba.Api.Clock;
 using Neba.Api.Compliance;
 using Neba.Api.Database;
+using Neba.Api.Discord;
 using Neba.Api.Documents;
 using Neba.Api.Email;
 using Neba.Api.Features.Seasons;
@@ -44,6 +45,7 @@ public static class InfrastructureConfiguration
                 .AddKeyVault()
                 .AddStorage()
                 .AddEmail()
+                .AddDiscord()
                 .AddRedaction();
 
             builder.Services.AddCaching();

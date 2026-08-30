@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 
 using Neba.Api.Auditing;
 using Neba.Api.Compliance;
+using Neba.Api.Discord;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Auditing;
@@ -40,6 +41,11 @@ public sealed class ApiAuditMiddlewareIntegrationTests : IAsyncLifetime
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddSingleton<AuditEnrichmentAction>();
         builder.Services.AddSingleton<ApiAuditPayloadScrubbingAction>();
+        // UseApiAuditMiddleware() resolves IDiscordNotifier to wrap the audit data provider in a
+        // ResilientAuditDataProvider - this test's minimal container has no real Discord wiring
+        // (AddDiscord() isn't called here), so a strict stub with no setups stands in. Never invoked
+        // by these tests: none of them drive an audit storage failure.
+        builder.Services.AddSingleton(new Mock<IDiscordNotifier>(MockBehavior.Strict).Object);
         builder.Services.AddFastEndpoints(o => o.Filter = type => type.DeclaringType == typeof(ApiAuditMiddlewareIntegrationTests));
 
         _app = builder.Build();

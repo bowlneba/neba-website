@@ -143,7 +143,7 @@ public sealed class SecurityConfigurationTests(SecurityDbContextFixture fixture)
         identityOptions.Lockout.DefaultLockoutTimeSpan.ShouldBe(TimeSpan.FromMinutes(5));
     }
 
-    [Fact(DisplayName = "AddSecurity should configure JWT bearer as the default authentication and challenge scheme with matching token validation parameters")]
+    [Fact(DisplayName = "AddSecurity should configure the combined JWT-or-cookie scheme as the default authenticate scheme, JWT bearer as the default challenge scheme, with matching token validation parameters")]
     public void AddSecurity_ShouldConfigureJwtBearerAuthentication()
     {
         // Arrange
@@ -158,7 +158,9 @@ public sealed class SecurityConfigurationTests(SecurityDbContextFixture fixture)
             .Get(JwtBearerDefaults.AuthenticationScheme);
 
         // Assert
-        authenticationOptions.DefaultAuthenticateScheme.ShouldBe(JwtBearerDefaults.AuthenticationScheme);
+        // "JwtOrCookie" mirrors SecurityConfiguration's private CombinedAuthenticationScheme constant —
+        // lets Hangfire's dashboard filter authenticate via either a bearer token or the website's auth cookie.
+        authenticationOptions.DefaultAuthenticateScheme.ShouldBe("JwtOrCookie");
         authenticationOptions.DefaultChallengeScheme.ShouldBe(JwtBearerDefaults.AuthenticationScheme);
         jwtBearerOptions.TokenValidationParameters.ValidIssuer.ShouldBe("https://bowlneba.com");
         jwtBearerOptions.TokenValidationParameters.ValidAudience.ShouldBe("https://bowlneba.com");

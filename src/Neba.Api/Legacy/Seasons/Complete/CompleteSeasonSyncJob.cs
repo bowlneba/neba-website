@@ -1,4 +1,5 @@
 using System.Data;
+using System.Globalization;
 
 using Dapper;
 
@@ -7,6 +8,7 @@ using Hangfire;
 using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
+using Neba.Api.Discord;
 using Neba.Api.Email;
 using Neba.Api.Identity;
 
@@ -25,6 +27,7 @@ internal sealed class CompleteSeasonSyncJob(
     IBackgroundJobClient jobs,
     IFusionCache cache,
     IEmailSender emailSender,
+    IDiscordNotifier discordNotifier,
     ILogger<CompleteSeasonSyncJob> logger)
 {
     private static readonly TimeSpan AwardJobDelay = TimeSpan.FromHours(1);
@@ -53,6 +56,19 @@ internal sealed class CompleteSeasonSyncJob(
                 Subject = "Manual intervention needed: season completion for unknown legacy season",
                 HtmlBody = new UnknownLegacySeasonEmail(legacySeasonId).ToHtmlBody()
             }, ct);
+
+            var unknownSeasonAlert = new DiscordAlert(
+                DiscordAlertSeverity.Critical,
+                "Season completion could not be matched",
+                "The legacy season completion event referenced a legacy season id that does not exist.",
+                new Dictionary<string, string>
+                {
+                    ["LegacySeasonId"] = legacySeasonId.ToString(CultureInfo.InvariantCulture),
+                    ["EmailSent"] = nameof(UnknownLegacySeasonEmail)
+                });
+
+            await discordNotifier.NotifyAsync(unknownSeasonAlert, ct);
+
             return;
         }
 
@@ -71,6 +87,21 @@ internal sealed class CompleteSeasonSyncJob(
                 Subject = "Manual intervention needed: season completion with no matching website season",
                 HtmlBody = new UnmatchedSeasonEmail(legacySeasonId, startDate, endDate).ToHtmlBody()
             }, ct);
+
+            var unmatchedSeasonAlert = new DiscordAlert(
+                DiscordAlertSeverity.Critical,
+                "Season completion could not be matched",
+                "The legacy season's date range does not match any website season.",
+                new Dictionary<string, string>
+                {
+                    ["LegacySeasonId"] = legacySeasonId.ToString(CultureInfo.InvariantCulture),
+                    ["StartDate"] = startDate.ToString("O", CultureInfo.InvariantCulture),
+                    ["EndDate"] = endDate.ToString("O", CultureInfo.InvariantCulture),
+                    ["EmailSent"] = nameof(UnmatchedSeasonEmail)
+                });
+
+            await discordNotifier.NotifyAsync(unmatchedSeasonAlert, ct);
+
             return;
         }
 

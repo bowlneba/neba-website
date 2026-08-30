@@ -153,9 +153,19 @@ if (builder.ExecutionContext.IsPublishMode)
         infra.Add(roleAssignment);
     });
 
+    // RSA key that wraps (encrypts) the shared Data Protection key ring both apps persist to
+    // Blob Storage - see StorageConfiguration.AddSharedDataProtection /
+    // InfrastructureConfiguration.AddSharedDataProtection. No typed Aspire/Azure.Provisioning
+    // resource exists for Key Vault keys (only secrets), so - same as maps.bicep below - this
+    // is a handwritten Bicep template.
+    var dataProtectionKey = builder.AddBicepTemplate("dataprotectionkey", "dataprotectionkey.bicep")
+        .WithParameter("keyVaultName", keyVault.Resource.NameOutputReference);
+
     api
         .WithReference(appInsights)
-        .WithReference(keyVault);
+        .WithReference(keyVault)
+        .WithRoleAssignments(keyVault, KeyVaultBuiltInRole.KeyVaultSecretsUser, KeyVaultBuiltInRole.KeyVaultCryptoUser)
+        .WithEnvironment("DataProtection__KeyVaultKeyUri", dataProtectionKey.GetOutput("keyUri"));
 
     // No Aspire.Hosting.Azure.Maps / Azure.Provisioning.Maps package exists, so the Maps
     // account is provisioned via a handwritten Bicep template. See maps.bicep and issue #28
@@ -166,7 +176,9 @@ if (builder.ExecutionContext.IsPublishMode)
     web
         .WithReference(appInsights)
         .WithReference(keyVault)
-        .WithEnvironment("AzureMaps__AccountId", maps.GetOutput("mapsAccountUniqueId"));
+        .WithRoleAssignments(keyVault, KeyVaultBuiltInRole.KeyVaultSecretsUser, KeyVaultBuiltInRole.KeyVaultCryptoUser)
+        .WithEnvironment("AzureMaps__AccountId", maps.GetOutput("mapsAccountUniqueId"))
+        .WithEnvironment("DataProtection__KeyVaultKeyUri", dataProtectionKey.GetOutput("keyUri"));
 
     // Replica scaling comes from the AZURE_CONTAINERAPP_* repo vars (currently 1/10/50) so
     // adjusting capacity - e.g. scaling to zero during an off-season "dark" period - is a
