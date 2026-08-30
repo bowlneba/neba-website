@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 
 using Hangfire;
 using Hangfire.States;
@@ -6,6 +7,16 @@ using Hangfire.States;
 using Neba.Api.Discord;
 
 namespace Neba.Api.BackgroundJobs;
+
+/// <summary>
+/// Marks a background job method (or its declaring type) as already posting its own Discord alert
+/// on failure, so <see cref="DiscordJobFailureFilter"/> skips it rather than posting a second,
+/// uncorrelated alert for the same failure. See <see cref="Legacy.PongJob.PongAsync"/> for the
+/// motivating case: it posts an alert with richer context (the failing health-check response) on
+/// every failed attempt, not just the final exhausted-retries one this filter reacts to.
+/// </summary>
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
+internal sealed class SkipDiscordJobFailureAlertAttribute : Attribute;
 
 /// <summary>
 /// Posts a Discord alert when a job's state election settles on <see cref="FailedState"/> - a
@@ -32,6 +43,13 @@ internal sealed class DiscordJobFailureFilter(IDiscordNotifier discordNotifier) 
     public void OnStateElection(ElectStateContext context)
     {
         if (context.CandidateState is not FailedState failedState)
+        {
+            return;
+        }
+
+        var method = context.BackgroundJob.Job.Method;
+        if (method.GetCustomAttribute<SkipDiscordJobFailureAlertAttribute>() is not null
+            || method.DeclaringType?.GetCustomAttribute<SkipDiscordJobFailureAlertAttribute>() is not null)
         {
             return;
         }

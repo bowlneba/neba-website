@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Mvc;
 
+using Neba.Api.BackgroundJobs;
 using Neba.Api.Discord;
 using Neba.Api.Identity;
 
@@ -41,6 +42,7 @@ internal sealed class PongJob(
     // fails; anything else it means the API answered its own health check successfully.
     [SuppressMessage("Design", "CA1031:Do not catch general exception types",
         Justification = "Any failure reaching /health means the legacy bridge is down; every cause gets the same Discord alert before the job still fails visibly.")]
+    [SkipDiscordJobFailureAlert] // Posts its own alert below on every failed attempt; see the attribute's doc comment.
     public async Task PongAsync(CancellationToken ct)
     {
         using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
