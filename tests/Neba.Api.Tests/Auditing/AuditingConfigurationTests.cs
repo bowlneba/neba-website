@@ -49,4 +49,42 @@ public sealed class AuditingConfigurationTests
         result.ShouldBeSameAs(entityConfigurator.Object);
         connectionConfigurator.VerifyAll();
     }
+
+    [Theory(DisplayName = "ToPartitionKey should replace characters Azure Table Storage rejects in PartitionKey")]
+    [InlineData("Api:POST:/legacy/ping", "Api:POST:_legacy_ping")]
+    [InlineData(@"Api:POST:\legacy\ping", "Api:POST:_legacy_ping")]
+    [InlineData("Api:POST:/legacy#ping?x", "Api:POST:_legacy_ping_x")]
+    public void ToPartitionKey_ShouldReplaceInvalidCharacters_WhenEventTypeContainsThem(string eventType, string expected)
+    {
+        // Act
+        var result = AuditingConfiguration.ToPartitionKey(eventType);
+
+        // Assert
+        result.ShouldBe(expected);
+    }
+
+    [Fact(DisplayName = "ToPartitionKey should return the event type unchanged when it contains no invalid characters")]
+    public void ToPartitionKey_ShouldReturnUnchanged_WhenEventTypeContainsNoInvalidCharacters()
+    {
+        // Arrange
+        const string eventType = "EF:AppDbContext";
+
+        // Act
+        var result = AuditingConfiguration.ToPartitionKey(eventType);
+
+        // Assert
+        result.ShouldBe(eventType);
+    }
+
+    [Theory(DisplayName = "ToPartitionKey should return \"unknown\" when the event type is null or empty")]
+    [InlineData(null)]
+    [InlineData("")]
+    public void ToPartitionKey_ShouldReturnUnknown_WhenEventTypeIsNullOrEmpty(string? eventType)
+    {
+        // Act
+        var result = AuditingConfiguration.ToPartitionKey(eventType);
+
+        // Assert
+        result.ShouldBe("unknown");
+    }
 }

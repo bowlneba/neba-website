@@ -33,6 +33,17 @@ internal static class AuditingConfiguration
         "/debug"
     ];
 
+    // Azure Table Storage rejects '/', '\', '#', and '?' in PartitionKey/RowKey. API audit
+    // events' EventType is "Api:{Method}:{Path}" (e.g. "Api:POST:/legacy/ping"), which always
+    // contains '/' - inserting it as-is fails with a 400 InvalidInput on every non-GET request,
+    // against real Azure Table Storage and the local Azurite emulator alike. Only the storage
+    // key needs sanitizing; the unsanitized EventType is kept everywhere else (logs, Discord
+    // alerts, the "AuditEvent" JSON column) for readability.
+    internal static string ToPartitionKey(string? eventType) =>
+        string.IsNullOrEmpty(eventType)
+            ? "unknown"
+            : eventType.Replace('/', '_').Replace('\\', '_').Replace('#', '_').Replace('?', '_');
+
     extension(IAzureTableConnectionConfigurator config)
     {
         /// <summary>
@@ -69,12 +80,12 @@ internal static class AuditingConfiguration
                 // AuditEventTableEntity serializes the full event to JSON in an "AuditEvent"
                 // column. EntityBuilder without a .Columns(...) call produces a TableEntity
                 // with no properties at all, silently discarding the payload.
-                .EntityMapper(ev => new AuditEventTableEntity(ev.EventType ?? "unknown", Ulid.NewUlid().ToString(), ev)));
+                .EntityMapper(ev => new AuditEventTableEntity(ToPartitionKey(ev.EventType), Ulid.NewUlid().ToString(), ev)));
 
             var securityProvider = new AzureTableDataProvider(config => config
                 .ConfigureConnection(builder.Configuration.GetConnectionString("tables"))
                 .TableName(_ => "SecurityAuditEvents")
-                .EntityMapper(ev => new AuditEventTableEntity(ev.EventType ?? "unknown", Ulid.NewUlid().ToString(), ev)));
+                .EntityMapper(ev => new AuditEventTableEntity(ToPartitionKey(ev.EventType), Ulid.NewUlid().ToString(), ev)));
 
             Audit.Core.Configuration.Setup()
                 .Use(new SecurityAuditDataProviderRouter(securityProvider, defaultProvider))

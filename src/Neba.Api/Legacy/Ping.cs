@@ -68,6 +68,13 @@ internal sealed class PongJob(
             {
                 throw new InvalidOperationException($"Pong: GET /health returned {(int)response.StatusCode}: {body}");
             }
+
+            // Posts on every successful ping, not just the first - this endpoint exists to give a
+            // visible, on-demand signal that the Discord bridge is connected, so a success here
+            // should always be confirmed the same way a failure would be alerted.
+            await discordNotifier.NotifyAsync(
+                new DiscordAlert(DiscordAlertSeverity.Info, "Legacy bridge ping succeeded", "Pong: GET /health returned 200."),
+                ct);
         }
         catch (Exception ex)
         {

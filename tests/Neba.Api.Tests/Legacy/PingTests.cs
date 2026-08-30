@@ -139,7 +139,18 @@ public sealed class PongJobTests
         IServer server,
         FakeLogger<PongJob>? logger = null,
         IDiscordNotifier? discordNotifier = null) =>
-        new(httpClientFactory, server, discordNotifier ?? new Mock<IDiscordNotifier>(MockBehavior.Strict).Object, logger ?? new FakeLogger<PongJob>());
+        new(httpClientFactory, server, discordNotifier ?? CreateAcceptAnyDiscordNotifier(), logger ?? new FakeLogger<PongJob>());
+
+    // A successful ping now posts a success alert same as a failed one posts a failure alert, so
+    // tests that aren't specifically asserting on Discord content (log-content tests, the address
+    // normalization theory, the no-server-address tests) need a notifier that accepts the call
+    // rather than a bare Strict mock with no setups, which would throw on the unexpected success post.
+    private static IDiscordNotifier CreateAcceptAnyDiscordNotifier()
+    {
+        var mock = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        mock.Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        return mock.Object;
+    }
 
     private static IServer CreateServer(params string[] addresses)
     {
@@ -178,6 +189,28 @@ public sealed class PongJobTests
         record.Level.ShouldBe(LogLevel.Information);
         record.Message.ShouldContain("200");
         record.Message.ShouldContain("Healthy");
+    }
+
+    [Fact(DisplayName = "PongAsync should post an informational Discord alert when the health check succeeds")]
+    public async Task PongAsync_ShouldPostInformationalDiscordAlert_WhenHealthCheckSucceeds()
+    {
+        // Arrange
+        using var handler = new StubHttpMessageHandler(HttpStatusCode.OK, "Healthy");
+        var discordNotifierMock = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        DiscordAlert? capturedAlert = null;
+        discordNotifierMock
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => capturedAlert = alert)
+            .Returns(Task.CompletedTask);
+        var job = CreateJob(new FakeHttpClientFactory(handler), CreateServer("http://localhost:5000"), discordNotifier: discordNotifierMock.Object);
+
+        // Act
+        await job.PongAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        capturedAlert.ShouldNotBeNull();
+        capturedAlert.Severity.ShouldBe(DiscordAlertSeverity.Info);
+        discordNotifierMock.VerifyAll();
     }
 
     [Fact(DisplayName = "PongAsync should log a warning, alert Discord, and rethrow when the health check request throws HttpRequestException")]
