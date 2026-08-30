@@ -73,8 +73,11 @@ internal sealed class PongJob(
                 ex.Message
             );
 
-            await discordNotifier.NotifyAsync(alert, ct);
-            
+            // CancellationToken.None, not ct - ct is what just failed (a timeout is one of the
+            // two failure modes this alert reports), so posting under it would race the alert
+            // against the same cancellation that triggered it.
+            await discordNotifier.NotifyAsync(alert, CancellationToken.None);
+
             throw;
         }
     }
