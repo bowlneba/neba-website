@@ -1,23 +1,24 @@
-using System.Collections.Concurrent;
-
 using Microsoft.AspNetCore.Diagnostics;
 
 using Neba.Api.Discord;
+
+using ZiggyCreatures.Caching.Fusion;
 
 namespace Neba.Api.ErrorHandling;
 
 internal sealed class GlobalExceptionHandler(IProblemDetailsService problemDetailsService,
         IDiscordNotifier discordNotifier,
-        TimeProvider timeProvider,
+        IFusionCache cache,
         ILogger<GlobalExceptionHandler> logger)
     : IExceptionHandler
 {
     // Every unhandled exception in the API funnels through here, so a single misbehaving endpoint
     // under client retry could otherwise flood the channel. Debounce per exception-type/path combo
-    // rather than per-alert: registered as a singleton (AddExceptionHandler<T>()), so this instance
-    // is shared across every request.
+    // rather than per-alert, via IFusionCache rather than a hand-rolled dictionary: entries expire
+    // on their own (routes with a ULID segment can't grow the debounce state forever), and
+    // GetOrSetAsync's cache-stampede protection makes the check-and-set atomic (no race between two
+    // concurrent requests both reading a stale "not yet alerted" state right as the window expires).
     private static readonly TimeSpan DebounceWindow = TimeSpan.FromMinutes(5);
-    private readonly ConcurrentDictionary<(string ExceptionType, string RequestPath), DateTimeOffset> _lastAlertedAt = new();
 
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
@@ -29,7 +30,7 @@ internal sealed class GlobalExceptionHandler(IProblemDetailsService problemDetai
         var exceptionType = exception.GetType().FullName ?? "<unknown>";
         var requestPath = httpContext.Request.Path.ToString();
 
-        if (ShouldAlert(exceptionType, requestPath))
+        if (await ShouldAlertAsync(exceptionType, requestPath))
         {
             // Stack trace deliberately omitted. It can echo interpolated argument values (a raw
             // SQL parameter, a validation message embedding user input) into an external channel
@@ -68,19 +69,29 @@ internal sealed class GlobalExceptionHandler(IProblemDetailsService problemDetai
         });
     }
 
-    private bool ShouldAlert(string exceptionType, string requestPath)
+    private async ValueTask<bool> ShouldAlertAsync(string exceptionType, string requestPath)
     {
-        var now = timeProvider.GetUtcNow();
-        var key = (exceptionType, requestPath);
+        var key = $"exception-alert:{exceptionType}:{requestPath}";
 
-        var lastAlertedAt = _lastAlertedAt.GetOrAdd(key, DateTimeOffset.MinValue);
-        if (now - lastAlertedAt < DebounceWindow)
-        {
-            return false;
-        }
+        // The factory only runs on a genuine cache miss (no entry, or the previous one expired),
+        // and FusionCache guarantees at most one factory execution per key even under concurrent
+        // callers - so this closure flips to true at most once per debounce window, regardless of
+        // how many requests hit ShouldAlertAsync for the same key at the same moment.
+        var isFirstAlertInWindow = false;
 
-        _lastAlertedAt[key] = now;
-        return true;
+        var options = cache.DefaultEntryOptions.Duplicate();
+        options.Duration = DebounceWindow;
+
+        await cache.GetOrSetAsync<bool>(
+            key,
+            (_, _) =>
+            {
+                isFirstAlertInWindow = true;
+                return Task.FromResult(true);
+            },
+            options: options);
+
+        return isFirstAlertInWindow;
     }
 }
 
