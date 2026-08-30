@@ -1,3 +1,4 @@
+using Azure.Identity;
 using Azure.Storage.Blobs;
 
 using Microsoft.AspNetCore.DataProtection;
@@ -18,6 +19,7 @@ internal static class StorageConfiguration
     internal const string DataProtectionApplicationName = "Neba";
     private const string DataProtectionContainerName = "dataprotection-keys";
     private const string DataProtectionKeysBlobName = "keys.xml";
+    private const string DataProtectionKeyVaultKeyUriConfigKey = "DataProtection:KeyVaultKeyUri";
 
     extension(WebApplicationBuilder builder)
     {
@@ -40,7 +42,7 @@ internal static class StorageConfiguration
             // doing that previously disposed the Azure client library's own registration cache,
             // which is shared with (and poisoned) every service provider built afterward, crashing
             // the app on startup with "Cannot access a disposed object: 'ClientRegistration'".
-            builder.Services
+            var dataProtectionBuilder = builder.Services
                 .AddDataProtection()
                 .SetApplicationName(DataProtectionApplicationName)
                 .PersistKeysToAzureBlobStorage(sp =>
@@ -51,6 +53,17 @@ internal static class StorageConfiguration
 
                     return containerClient.GetBlobClient(DataProtectionKeysBlobName);
                 });
+
+            // Encrypts the key ring at rest instead of persisting it as plaintext XML - without
+            // this, anyone who can read the blob (an over-broad role grant, a leaked SAS token, a
+            // compromised storage account key) could mint valid auth cookies for any identity.
+            // No Key Vault key is provisioned for local dev (see AppHost.cs), so this is a no-op
+            // there and the key ring stays unencrypted against the local storage emulator.
+            var keyVaultKeyUri = builder.Configuration[DataProtectionKeyVaultKeyUriConfigKey];
+            if (!string.IsNullOrWhiteSpace(keyVaultKeyUri))
+            {
+                dataProtectionBuilder.ProtectKeysWithAzureKeyVault(new Uri(keyVaultKeyUri), new DefaultAzureCredential());
+            }
         }
     }
 

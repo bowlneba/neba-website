@@ -15,6 +15,7 @@
     <PackageReference Include="Aspire.Azure.Security.KeyVault" />
     <PackageReference Include="Aspire.Azure.Storage.Blobs" />
     <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" />
+    <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Keys" />
     <PackageReference Include="Blazor-ApexCharts" />
     <PackageReference Include="ErrorOr" />
     <PackageReference Include="HtmlAgilityPack" />
