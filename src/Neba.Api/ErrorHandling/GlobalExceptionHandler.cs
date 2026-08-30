@@ -46,7 +46,12 @@ internal sealed class GlobalExceptionHandler(IProblemDetailsService problemDetai
                     ["RequestPath"] = requestPath
                 });
 
-            await discordNotifier.NotifyAsync(alert, cancellationToken);
+            // CancellationToken.None, not the ambient token: DiscordNotifier.NotifyAsync only
+            // swallows non-cancellation exceptions, so a caller-canceled token here would let
+            // OperationCanceledException propagate out of this handler before the 500
+            // ProblemDetails response below is ever written — the exact outcome this handler
+            // exists to prevent.
+            await discordNotifier.NotifyAsync(alert, CancellationToken.None);
         }
 
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;

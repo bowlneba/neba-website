@@ -308,6 +308,35 @@ public sealed class GlobalExceptionHandlerTests
         discordNotifiedWhenWriteCalled.ShouldBeTrue();
     }
 
+    [Fact(DisplayName = "Should still write the 500 response when the ambient cancellation token is already canceled")]
+    public async Task TryHandleAsync_ShouldStillWrite500Response_WhenAmbientTokenIsCanceled()
+    {
+        // Arrange
+        var httpContext = new DefaultHttpContext();
+        var exception = new InvalidOperationException("Test exception");
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        var problemDetailsServiceMock = new Mock<IProblemDetailsService>(MockBehavior.Strict);
+        problemDetailsServiceMock
+            .Setup(s => s.TryWriteAsync(It.IsAny<ProblemDetailsContext>()))
+            .ReturnsAsync(true);
+
+        var handler = new GlobalExceptionHandler(
+            problemDetailsServiceMock.Object,
+            _discordNotifier.Object,
+            TimeProvider.System,
+            NullLogger<GlobalExceptionHandler>.Instance);
+
+        // Act
+        var result = await handler.TryHandleAsync(httpContext, exception, cts.Token);
+
+        // Assert
+        result.ShouldBeTrue();
+        httpContext.Response.StatusCode.ShouldBe(StatusCodes.Status500InternalServerError);
+        _discordNotifier.Verify(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None), Times.Once);
+    }
+
     [Fact(DisplayName = "Should not repost the same exception type and path within the debounce window")]
     public async Task TryHandleAsync_ShouldNotRepostDiscordAlert_WhenSameExceptionAndPathWithinDebounceWindow()
     {
