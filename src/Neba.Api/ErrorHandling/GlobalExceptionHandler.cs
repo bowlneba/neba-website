@@ -16,6 +16,10 @@ internal sealed class GlobalExceptionHandler(IProblemDetailsService problemDetai
     {
         logger.LogException(exception);
 
+        // Stack trace deliberately omitted. It can echo interpolated argument values (a raw SQL
+        // parameter, a validation message embedding user input) into an external channel that has
+        // none of the app's PII redaction. The exception type, path, and message are enough to
+        // triage from Discord. The full trace is still one click away in Application Insights.
         var alert = new DiscordAlert(
             DiscordAlertSeverity.Critical,
             "Unhandled exception occurred",
@@ -23,8 +27,7 @@ internal sealed class GlobalExceptionHandler(IProblemDetailsService problemDetai
             new Dictionary<string, string>
             {
                 ["ExceptionType"] = exception.GetType().FullName ?? "<unknown>",
-                ["RequestPath"] = httpContext.Request.Path,
-                ["StackTrace"] = exception.StackTrace ?? "<no stack trace>"
+                ["RequestPath"] = httpContext.Request.Path
             });
 
         await discordNotifier.NotifyAsync(alert, cancellationToken);

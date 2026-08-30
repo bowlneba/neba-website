@@ -33,6 +33,14 @@ covered by #3 (`GlobalExceptionHandler`) — checked each legacy endpoint handle
 global handler; only one exists (`NewTournament.cs`'s `FindEasternTimeZone`, a Windows/IANA
 timezone-id fallback, not error-swallowing), so no dedicated legacy-route wiring was needed.
 
+**PII decision**: `#api-logs` is not treated as a PII-redacted channel the way `ILogger` output
+is (there's no `[PrivateData]`/`[PersonalData]` equivalent for a Discord embed). Rather than build
+that machinery for two call sites, the exception `StackTrace` is left out of every alert (#2, #3)
+— a trace is the part most likely to echo an interpolated argument value (a raw SQL parameter, a
+validation message embedding user input) verbatim. `exception.Message`, the exception type, and
+identifiers like request path/legacy ids are still posted; that's enough to triage from Discord,
+and the full trace remains one click away in Application Insights for anyone who needs it.
+
 ## Goals / Non-Goals
 
 - **Goal**: a human sees, within minutes, that something needs attention — a stuck legacy sync,

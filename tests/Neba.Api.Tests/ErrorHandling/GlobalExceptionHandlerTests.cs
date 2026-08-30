@@ -263,7 +263,7 @@ public sealed class GlobalExceptionHandlerTests
         capturedAlert.Metadata.ShouldNotBeNull();
         capturedAlert.Metadata["ExceptionType"].ShouldBe(exception.GetType().FullName);
         capturedAlert.Metadata["RequestPath"].ShouldBe("/test-path");
-        capturedAlert.Metadata["StackTrace"].ShouldBe("<no stack trace>");
+        capturedAlert.Metadata.ShouldNotContainKey("StackTrace");
         _discordNotifier.Verify(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), cancellationToken), Times.Once);
     }
 

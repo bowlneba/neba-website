@@ -40,6 +40,10 @@ internal sealed class ResilientAuditDataProvider(
         {
             logger.LogAuditEventInsertFailed(exception);
 
+            // Stack trace deliberately omitted, same reasoning as GlobalExceptionHandler. Discord
+            // has none of the app's PII redaction and a trace can echo argument values. The
+            // exception type and message are enough to triage from here. The full trace is still
+            // available in Application Insights.
             var alert = new DiscordAlert(
                 DiscordAlertSeverity.Warning,
                 "Audit event insertion failed",
@@ -47,8 +51,7 @@ internal sealed class ResilientAuditDataProvider(
                 new Dictionary<string, string>
                 {
                     ["EventType"] = auditEvent.GetType().FullName ?? "<unknown>",
-                    ["ExceptionType"] = exception.GetType().FullName ?? "<unknown>",
-                    ["StackTrace"] = exception.StackTrace ?? "<no stack trace>"
+                    ["ExceptionType"] = exception.GetType().FullName ?? "<unknown>"
                 });
 
             await discordNotifier.NotifyAsync(alert, cancellationToken);
