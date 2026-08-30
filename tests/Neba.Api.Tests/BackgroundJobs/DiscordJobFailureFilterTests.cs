@@ -1,6 +1,6 @@
 using Hangfire;
 using Hangfire.Common;
-using Hangfire.Server;
+using Hangfire.States;
 using Hangfire.Storage;
 
 using Neba.Api.BackgroundJobs;
@@ -13,7 +13,7 @@ namespace Neba.Api.Tests.BackgroundJobs;
 [Component("Infrastructure.BackgroundJobs")]
 public sealed class DiscordJobFailureFilterTests
 {
-    // Stand-in job type/method for building a Hangfire Job/PerformContext in tests. Nested (rather
+    // Stand-in job type/method for building a Hangfire Job/BackgroundJob in tests. Nested (rather
     // than a method on the test class itself) so xUnit doesn't flag it as an undecorated test method,
     // and public because Hangfire's Job constructor refuses non-public methods.
     private static class SampleJob
@@ -24,29 +24,26 @@ public sealed class DiscordJobFailureFilterTests
         }
     }
 
-    private static PerformedContext CreatePerformedContext(Exception? exception, bool exceptionHandled = false)
+    private static ElectStateContext CreateElectStateContext(IState candidateState)
     {
         var storage = new Mock<JobStorage>(MockBehavior.Strict).Object;
         var connection = new Mock<IStorageConnection>(MockBehavior.Strict).Object;
-        var cancellationToken = new Mock<IJobCancellationToken>(MockBehavior.Strict).Object;
+        var transaction = new Mock<IWriteOnlyTransaction>(MockBehavior.Strict).Object;
 
         var job = new Job(typeof(SampleJob), typeof(SampleJob).GetMethod(nameof(SampleJob.SampleJobMethod))!);
         var backgroundJob = new BackgroundJob("1", job, DateTime.UtcNow);
 
-        var performContext = new PerformContext(storage, connection, backgroundJob, cancellationToken);
+        var applyContext = new ApplyStateContext(storage, connection, transaction, backgroundJob, candidateState, oldStateName: ProcessingState.StateName);
 
-        return new PerformedContext(performContext, null, canceled: false, exception)
-        {
-            ExceptionHandled = exceptionHandled
-        };
+        return new ElectStateContext(applyContext);
     }
 
-    [Fact(DisplayName = "OnPerformed should post a Discord alert when the job failed with an unhandled exception")]
-    public void OnPerformed_ShouldPostDiscordAlert_WhenJobFailedWithUnhandledException()
+    [Fact(DisplayName = "OnStateElection should post a Discord alert when the candidate state is Failed")]
+    public void OnStateElection_ShouldPostDiscordAlert_WhenCandidateStateIsFailed()
     {
         // Arrange
         var exception = new InvalidOperationException("Boom");
-        var context = CreatePerformedContext(exception);
+        var context = CreateElectStateContext(new FailedState(exception));
 
         var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
         DiscordAlert? postedAlert = null;
@@ -59,7 +56,7 @@ public sealed class DiscordJobFailureFilterTests
         var filter = new DiscordJobFailureFilter(discordNotifier.Object);
 
         // Act
-        filter.OnPerformed(context);
+        filter.OnStateElection(context);
 
         // Assert
         postedAlert.ShouldNotBeNull();
@@ -71,47 +68,36 @@ public sealed class DiscordJobFailureFilterTests
         discordNotifier.VerifyAll();
     }
 
-    [Fact(DisplayName = "OnPerformed should not post a Discord alert when the job succeeded")]
-    public void OnPerformed_ShouldNotPostDiscordAlert_WhenJobSucceeded()
+    [Fact(DisplayName = "OnStateElection should not post a Discord alert when the candidate state is Succeeded")]
+    public void OnStateElection_ShouldNotPostDiscordAlert_WhenCandidateStateIsSucceeded()
     {
         // Arrange
-        var context = CreatePerformedContext(exception: null);
+        var context = CreateElectStateContext(new SucceededState(result: null, latency: 0, performanceDuration: 0));
         var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
         var filter = new DiscordJobFailureFilter(discordNotifier.Object);
 
         // Act
-        filter.OnPerformed(context);
+        filter.OnStateElection(context);
 
         // Assert
         discordNotifier.Verify(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()), Times.Never());
     }
 
-    [Fact(DisplayName = "OnPerformed should not post a Discord alert when the exception was already handled by another filter")]
-    public void OnPerformed_ShouldNotPostDiscordAlert_WhenExceptionAlreadyHandled()
+    [Fact(DisplayName = "OnStateElection should not post a Discord alert when AutomaticRetryAttribute has already rewritten the candidate state to Scheduled for a retry")]
+    public void OnStateElection_ShouldNotPostDiscordAlert_WhenCandidateStateIsScheduledForRetry()
     {
         // Arrange
-        var exception = new InvalidOperationException("Boom");
-        var context = CreatePerformedContext(exception, exceptionHandled: true);
+        // Simulates this filter running after AutomaticRetryAttribute has already elected a retry
+        // in place of the original FailedState candidate - the scenario this filter exists to
+        // distinguish from a genuinely exhausted-retries failure.
+        var context = CreateElectStateContext(new ScheduledState(TimeSpan.FromMinutes(1)));
         var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
         var filter = new DiscordJobFailureFilter(discordNotifier.Object);
 
         // Act
-        filter.OnPerformed(context);
+        filter.OnStateElection(context);
 
         // Assert
         discordNotifier.Verify(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()), Times.Never());
-    }
-
-    [Fact(DisplayName = "OnPerforming should not throw")]
-    public void OnPerforming_ShouldNotThrow()
-    {
-        // Arrange
-        var context = CreatePerformedContext(exception: null);
-        var performingContext = new PerformingContext(context);
-        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
-        var filter = new DiscordJobFailureFilter(discordNotifier.Object);
-
-        // Act & Assert
-        Should.NotThrow(() => filter.OnPerforming(performingContext));
     }
 }
