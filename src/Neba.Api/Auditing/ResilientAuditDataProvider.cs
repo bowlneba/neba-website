@@ -50,7 +50,11 @@ internal sealed class ResilientAuditDataProvider(
         {
             logger.LogAuditEventInsertFailed(exception);
 
-            await discordNotifier.NotifyAsync(BuildAlert("Audit event insertion failed", auditEvent, exception), cancellationToken);
+            // CancellationToken.None, not the ambient token: DiscordNotifier.NotifyAsync only
+            // swallows non-cancellation exceptions, so a caller-canceled token here would let
+            // OperationCanceledException propagate out of this catch block, violating this
+            // class's own contract that audit failures must never fail the audited operation.
+            await discordNotifier.NotifyAsync(BuildAlert("Audit event insertion failed", auditEvent, exception), CancellationToken.None);
 
             return null;
         }
@@ -83,7 +87,8 @@ internal sealed class ResilientAuditDataProvider(
         {
             logger.LogAuditEventReplaceFailed(exception);
 
-            await discordNotifier.NotifyAsync(BuildAlert("Audit event replacement failed", auditEvent, exception), cancellationToken);
+            // CancellationToken.None — see InsertEventAsync's identical comment.
+            await discordNotifier.NotifyAsync(BuildAlert("Audit event replacement failed", auditEvent, exception), CancellationToken.None);
         }
     }
 

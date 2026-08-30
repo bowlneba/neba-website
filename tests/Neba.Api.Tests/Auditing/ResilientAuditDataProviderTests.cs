@@ -94,7 +94,7 @@ public sealed class ResilientAuditDataProviderTests
         var logger = new FakeLogger<ResilientAuditDataProvider>();
         var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
         discordNotifier
-            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), TestContext.Current.CancellationToken))
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
             .Returns(Task.CompletedTask)
             .Verifiable();
         var sut = new ResilientAuditDataProvider(inner.Object, discordNotifier.Object, logger);
@@ -118,7 +118,7 @@ public sealed class ResilientAuditDataProviderTests
         DiscordAlert? capturedAlert = null;
         var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
         discordNotifier
-            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), TestContext.Current.CancellationToken))
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
             .Callback<DiscordAlert, CancellationToken>((alert, _) => capturedAlert = alert)
             .Returns(Task.CompletedTask);
         var sut = new ResilientAuditDataProvider(
@@ -213,7 +213,7 @@ public sealed class ResilientAuditDataProviderTests
         var logger = new FakeLogger<ResilientAuditDataProvider>();
         var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
         discordNotifier
-            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), TestContext.Current.CancellationToken))
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
             .Returns(Task.CompletedTask)
             .Verifiable();
         var sut = new ResilientAuditDataProvider(inner.Object, discordNotifier.Object, logger);
@@ -223,6 +223,32 @@ public sealed class ResilientAuditDataProviderTests
 
         // Assert
         logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
+        discordNotifier.VerifyAll();
+    }
+
+    [Fact(DisplayName = "InsertEventAsync notifies Discord with CancellationToken.None even when the ambient token is already canceled")]
+    public async Task InsertEventAsync_WhenAmbientTokenIsCanceled_StillNotifiesDiscordWithoutThrowing()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+        var inner = new Mock<IAuditDataProvider>(MockBehavior.Strict);
+        inner.Setup(p => p.InsertEventAsync(Event, cts.Token)).ThrowsAsync(new InvalidOperationException("storage outage"));
+        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
+            .Returns(Task.CompletedTask)
+            .Verifiable();
+        var sut = new ResilientAuditDataProvider(
+            inner.Object,
+            discordNotifier.Object,
+            new FakeLogger<ResilientAuditDataProvider>());
+
+        // Act
+        var result = await sut.InsertEventAsync(Event, cts.Token);
+
+        // Assert
+        result.ShouldBeNull();
         discordNotifier.VerifyAll();
     }
 }
