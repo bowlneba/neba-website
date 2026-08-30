@@ -51,6 +51,8 @@ internal sealed class GoogleWorkspaceEmailSender(
         }
         catch (Exception ex)
         {
+            logger.LogEmailSendFailed(ex, message.To, message.Subject);
+
             var alert = new DiscordAlert(
                 DiscordAlertSeverity.Critical,
                 "Email delivery failed",
@@ -70,4 +72,7 @@ internal static partial class GoogleWorkspaceEmailSenderLogMessages
 {
     [LoggerMessage(Level = LogLevel.Information, Message = "Email sent to {ToAddress}: {Subject}")]
     public static partial void LogEmailSent(this ILogger<GoogleWorkspaceEmailSender> logger, [PersonalData] string toAddress, string subject);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to send email to {ToAddress}: {Subject}")]
+    public static partial void LogEmailSendFailed(this ILogger<GoogleWorkspaceEmailSender> logger, Exception exception, [PersonalData] string toAddress, string subject);
 }

@@ -245,6 +245,25 @@ public sealed class GoogleWorkspaceEmailSenderTests : IClassFixture<MailpitFixtu
         await sut.SendAsync(message, CancellationToken.None);
 
         // Assert
-        _logger.Collector.GetSnapshot().ShouldBeEmpty();
+        _logger.Collector.GetSnapshot().ShouldNotContain(log => log.Message.Contains("Email sent", StringComparison.Ordinal));
+    }
+
+    [Fact(DisplayName = "SendAsync should log a warning with the exception when SMTP delivery fails")]
+    public async Task SendAsync_ShouldLogWarningWithException_WhenSmtpDeliveryFails()
+    {
+        // Arrange
+        _discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        var sut = new GoogleWorkspaceEmailSender(BuildUnreachableSettings(), _discordNotifier.Object, _logger);
+        var message = EmailMessageFactory.Create();
+
+        // Act
+        await sut.SendAsync(message, CancellationToken.None);
+
+        // Assert
+        var log = _logger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        log.Level.ShouldBe(LogLevel.Warning);
+        log.Exception.ShouldNotBeNull();
     }
 }
