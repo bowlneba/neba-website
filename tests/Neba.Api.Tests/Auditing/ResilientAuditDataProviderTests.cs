@@ -38,14 +38,19 @@ public sealed class ResilientAuditDataProviderTests
         inner.VerifyAll();
     }
 
-    [Fact(DisplayName = "InsertEvent returns null and logs a warning when the inner provider throws, without notifying Discord")]
-    public void InsertEvent_WhenInnerProviderThrows_ReturnsNullAndLogsWarningWithoutNotifyingDiscord()
+    [Fact(DisplayName = "InsertEvent returns null, logs a warning, and notifies Discord when the inner provider throws")]
+    public void InsertEvent_WhenInnerProviderThrows_ReturnsNullLogsWarningAndNotifiesDiscord()
     {
         // Arrange
         var inner = new Mock<IAuditDataProvider>(MockBehavior.Strict);
         inner.Setup(p => p.InsertEvent(Event)).Throws(new InvalidOperationException("storage outage"));
         var logger = new FakeLogger<ResilientAuditDataProvider>();
-        var sut = new ResilientAuditDataProvider(inner.Object, CreateUnusedDiscordNotifier().Object, logger);
+        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
+            .Returns(Task.CompletedTask)
+            .Verifiable();
+        var sut = new ResilientAuditDataProvider(inner.Object, discordNotifier.Object, logger);
 
         // Act
         var result = sut.InsertEvent(Event);
@@ -53,6 +58,7 @@ public sealed class ResilientAuditDataProviderTests
         // Assert
         result.ShouldBeNull();
         logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
+        discordNotifier.VerifyAll();
     }
 
     // ── InsertEventAsync ─────────────────────────────────────────────────────
@@ -153,20 +159,26 @@ public sealed class ResilientAuditDataProviderTests
         inner.VerifyAll();
     }
 
-    [Fact(DisplayName = "ReplaceEvent logs a warning instead of throwing when the inner provider throws")]
-    public void ReplaceEvent_WhenInnerProviderThrows_LogsWarningInsteadOfThrowing()
+    [Fact(DisplayName = "ReplaceEvent logs a warning and notifies Discord instead of throwing when the inner provider throws")]
+    public void ReplaceEvent_WhenInnerProviderThrows_LogsWarningAndNotifiesDiscordInsteadOfThrowing()
     {
         // Arrange
         var inner = new Mock<IAuditDataProvider>(MockBehavior.Strict);
         inner.Setup(p => p.ReplaceEvent("event-id", Event)).Throws(new InvalidOperationException("storage outage"));
         var logger = new FakeLogger<ResilientAuditDataProvider>();
-        var sut = new ResilientAuditDataProvider(inner.Object, CreateUnusedDiscordNotifier().Object, logger);
+        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
+            .Returns(Task.CompletedTask)
+            .Verifiable();
+        var sut = new ResilientAuditDataProvider(inner.Object, discordNotifier.Object, logger);
 
         // Act
         sut.ReplaceEvent("event-id", Event);
 
         // Assert
         logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
+        discordNotifier.VerifyAll();
     }
 
     // ── ReplaceEventAsync ────────────────────────────────────────────────────
@@ -191,20 +203,26 @@ public sealed class ResilientAuditDataProviderTests
         inner.VerifyAll();
     }
 
-    [Fact(DisplayName = "ReplaceEventAsync logs a warning instead of throwing when the inner provider throws")]
-    public async Task ReplaceEventAsync_WhenInnerProviderThrows_LogsWarningInsteadOfThrowing()
+    [Fact(DisplayName = "ReplaceEventAsync logs a warning and notifies Discord instead of throwing when the inner provider throws")]
+    public async Task ReplaceEventAsync_WhenInnerProviderThrows_LogsWarningAndNotifiesDiscordInsteadOfThrowing()
     {
         // Arrange
         var inner = new Mock<IAuditDataProvider>(MockBehavior.Strict);
         inner.Setup(p => p.ReplaceEventAsync("event-id", Event, TestContext.Current.CancellationToken))
             .ThrowsAsync(new InvalidOperationException("storage outage"));
         var logger = new FakeLogger<ResilientAuditDataProvider>();
-        var sut = new ResilientAuditDataProvider(inner.Object, CreateUnusedDiscordNotifier().Object, logger);
+        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), TestContext.Current.CancellationToken))
+            .Returns(Task.CompletedTask)
+            .Verifiable();
+        var sut = new ResilientAuditDataProvider(inner.Object, discordNotifier.Object, logger);
 
         // Act
         await sut.ReplaceEventAsync("event-id", Event, TestContext.Current.CancellationToken);
 
         // Assert
         logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
+        discordNotifier.VerifyAll();
     }
 }

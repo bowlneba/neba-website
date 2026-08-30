@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Audit.Core;
 
 using Neba.Api.Discord;
@@ -17,6 +19,8 @@ internal sealed class ResilientAuditDataProvider(
         ILogger<ResilientAuditDataProvider> logger)
     : AuditDataProvider
 {
+    [SuppressMessage("Usage", "VSTHRD002:Synchronously waiting on tasks or awaiters may cause deadlocks",
+        Justification = "AuditDataProvider.InsertEvent is a synchronous Audit.NET callback with no async overload available to the caller; ASP.NET Core has no captured SynchronizationContext, and IDiscordNotifier.NotifyAsync is guaranteed never to throw and bounded by its own short HTTP timeouts, so this cannot deadlock or hang.")]
     public override object? InsertEvent(AuditEvent auditEvent)
     {
         try
@@ -26,6 +30,12 @@ internal sealed class ResilientAuditDataProvider(
         catch (Exception exception)
         {
             logger.LogAuditEventInsertFailed(exception);
+
+            // No ambient cancellation token on this sync override, so the alert can't be tied to
+            // the caller's cancellation the way InsertEventAsync's is.
+            discordNotifier.NotifyAsync(BuildAlert("Audit event insertion failed", auditEvent, exception), CancellationToken.None)
+                .GetAwaiter().GetResult();
+
             return null;
         }
     }
@@ -40,26 +50,14 @@ internal sealed class ResilientAuditDataProvider(
         {
             logger.LogAuditEventInsertFailed(exception);
 
-            // Stack trace deliberately omitted, same reasoning as GlobalExceptionHandler. Discord
-            // has none of the app's PII redaction and a trace can echo argument values. The
-            // exception type and message are enough to triage from here. The full trace is still
-            // available in Application Insights.
-            var alert = new DiscordAlert(
-                DiscordAlertSeverity.Warning,
-                "Audit event insertion failed",
-                exception.Message,
-                new Dictionary<string, string>
-                {
-                    ["EventType"] = auditEvent.GetType().FullName ?? "<unknown>",
-                    ["ExceptionType"] = exception.GetType().FullName ?? "<unknown>"
-                });
-
-            await discordNotifier.NotifyAsync(alert, cancellationToken);
+            await discordNotifier.NotifyAsync(BuildAlert("Audit event insertion failed", auditEvent, exception), cancellationToken);
 
             return null;
         }
     }
 
+    [SuppressMessage("Usage", "VSTHRD002:Synchronously waiting on tasks or awaiters may cause deadlocks",
+        Justification = "AuditDataProvider.ReplaceEvent is a synchronous Audit.NET callback with no async overload available to the caller; ASP.NET Core has no captured SynchronizationContext, and IDiscordNotifier.NotifyAsync is guaranteed never to throw and bounded by its own short HTTP timeouts, so this cannot deadlock or hang.")]
     public override void ReplaceEvent(object eventId, AuditEvent auditEvent)
     {
         try
@@ -69,6 +67,9 @@ internal sealed class ResilientAuditDataProvider(
         catch (Exception exception)
         {
             logger.LogAuditEventReplaceFailed(exception);
+
+            discordNotifier.NotifyAsync(BuildAlert("Audit event replacement failed", auditEvent, exception), CancellationToken.None)
+                .GetAwaiter().GetResult();
         }
     }
 
@@ -81,8 +82,25 @@ internal sealed class ResilientAuditDataProvider(
         catch (Exception exception)
         {
             logger.LogAuditEventReplaceFailed(exception);
+
+            await discordNotifier.NotifyAsync(BuildAlert("Audit event replacement failed", auditEvent, exception), cancellationToken);
         }
     }
+
+    // Stack trace deliberately omitted, same reasoning as GlobalExceptionHandler. Discord has none
+    // of the app's PII redaction and a trace can echo argument values. The exception type and
+    // message are enough to triage from here. The full trace is still available in Application
+    // Insights.
+    private static DiscordAlert BuildAlert(string title, AuditEvent auditEvent, Exception exception) =>
+        new(
+            DiscordAlertSeverity.Warning,
+            title,
+            exception.Message,
+            new Dictionary<string, string>
+            {
+                ["EventType"] = auditEvent.GetType().FullName ?? "<unknown>",
+                ["ExceptionType"] = exception.GetType().FullName ?? "<unknown>"
+            });
 }
 
 internal static partial class ResilientAuditDataProviderLogMessages
