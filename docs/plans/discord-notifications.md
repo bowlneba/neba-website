@@ -425,10 +425,13 @@ logged and turned into a generic 500. It's the single highest-leverage wire in t
 site covers "something broke that nobody wrote a specific handler for," which is exactly the
 category most likely to be a real bug rather than an expected failure mode.
 
-**Post**: `Critical` — exception type, message, and the request path. Consider a lightweight
-debounce (e.g. don't re-post the same exception type/path combo more than once per N minutes) so
-a single misbehaving endpoint under retry doesn't flood the channel — this is the one candidate
-with real flood risk, since it's tied to request volume rather than a scheduled/legacy event.
+**Post**: `Critical` — exception type, message, and the request path. Implemented with a lightweight
+debounce: a per-instance `ConcurrentDictionary<(ExceptionType, RequestPath), DateTimeOffset>`
+keyed on the same fields as the alert, skipping the post (but still logging and returning the 500
+as normal) if the same combo already alerted within the last 5 minutes. `GlobalExceptionHandler`
+is registered as a singleton (`AddExceptionHandler<T>()`), so the dictionary is shared across every
+request — this is the one candidate with real flood risk, since it's tied to request volume rather
+than a scheduled/legacy event.
 
 **Method**: `TryHandleAsync` doesn't introduce a new catch block — `exception` arrives already
 caught by the ASP.NET Core exception-handling middleware, which is the whole point of

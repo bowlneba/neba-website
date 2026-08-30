@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Testing;
+using Microsoft.Extensions.Time.Testing;
 
 using Neba.Api.Discord;
 using Neba.Api.ErrorHandling;
@@ -45,6 +46,7 @@ public sealed class GlobalExceptionHandlerTests
         var handler = new GlobalExceptionHandler(
             problemDetailsServiceMock.Object,
             _discordNotifier.Object,
+            TimeProvider.System,
             NullLogger<GlobalExceptionHandler>.Instance);
 
         // Act
@@ -79,6 +81,7 @@ public sealed class GlobalExceptionHandlerTests
         var handler = new GlobalExceptionHandler(
             problemDetailsServiceMock.Object,
             _discordNotifier.Object,
+            TimeProvider.System,
             NullLogger<GlobalExceptionHandler>.Instance);
 
         // Act
@@ -109,6 +112,7 @@ public sealed class GlobalExceptionHandlerTests
         var handler = new GlobalExceptionHandler(
             problemDetailsServiceMock.Object,
             _discordNotifier.Object,
+            TimeProvider.System,
             NullLogger<GlobalExceptionHandler>.Instance);
 
         // Act
@@ -134,6 +138,7 @@ public sealed class GlobalExceptionHandlerTests
         var handler = new GlobalExceptionHandler(
             problemDetailsServiceMock.Object,
             _discordNotifier.Object,
+            TimeProvider.System,
             NullLogger<GlobalExceptionHandler>.Instance);
 
         // Act
@@ -166,6 +171,7 @@ public sealed class GlobalExceptionHandlerTests
         var handler = new GlobalExceptionHandler(
             problemDetailsServiceMock.Object,
             _discordNotifier.Object,
+            TimeProvider.System,
             NullLogger<GlobalExceptionHandler>.Instance);
 
         // Act
@@ -194,6 +200,7 @@ public sealed class GlobalExceptionHandlerTests
         var handler = new GlobalExceptionHandler(
             problemDetailsServiceMock.Object,
             _discordNotifier.Object,
+            TimeProvider.System,
             NullLogger<GlobalExceptionHandler>.Instance);
 
         // Act
@@ -216,7 +223,7 @@ public sealed class GlobalExceptionHandlerTests
             .Setup(s => s.TryWriteAsync(It.IsAny<ProblemDetailsContext>()))
             .ReturnsAsync(true);
 
-        var handler = new GlobalExceptionHandler(problemDetailsServiceMock.Object, _discordNotifier.Object, logger);
+        var handler = new GlobalExceptionHandler(problemDetailsServiceMock.Object, _discordNotifier.Object, TimeProvider.System, logger);
 
         // Act
         await handler.TryHandleAsync(httpContext, exception, CancellationToken.None);
@@ -250,6 +257,7 @@ public sealed class GlobalExceptionHandlerTests
         var handler = new GlobalExceptionHandler(
             problemDetailsServiceMock.Object,
             _discordNotifier.Object,
+            TimeProvider.System,
             NullLogger<GlobalExceptionHandler>.Instance);
 
         // Act
@@ -290,6 +298,7 @@ public sealed class GlobalExceptionHandlerTests
         var handler = new GlobalExceptionHandler(
             problemDetailsServiceMock.Object,
             _discordNotifier.Object,
+            TimeProvider.System,
             NullLogger<GlobalExceptionHandler>.Instance);
 
         // Act
@@ -297,5 +306,94 @@ public sealed class GlobalExceptionHandlerTests
 
         // Assert
         discordNotifiedWhenWriteCalled.ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "Should not repost the same exception type and path within the debounce window")]
+    public async Task TryHandleAsync_ShouldNotRepostDiscordAlert_WhenSameExceptionAndPathWithinDebounceWindow()
+    {
+        // Arrange
+        var timeProvider = new FakeTimeProvider();
+        var problemDetailsServiceMock = new Mock<IProblemDetailsService>(MockBehavior.Strict);
+        problemDetailsServiceMock
+            .Setup(s => s.TryWriteAsync(It.IsAny<ProblemDetailsContext>()))
+            .ReturnsAsync(true);
+
+        var handler = new GlobalExceptionHandler(
+            problemDetailsServiceMock.Object,
+            _discordNotifier.Object,
+            timeProvider,
+            NullLogger<GlobalExceptionHandler>.Instance);
+
+        var firstContext = new DefaultHttpContext();
+        firstContext.Request.Path = "/test-path";
+        var secondContext = new DefaultHttpContext();
+        secondContext.Request.Path = "/test-path";
+
+        // Act
+        await handler.TryHandleAsync(firstContext, new InvalidOperationException("First"), CancellationToken.None);
+        timeProvider.Advance(TimeSpan.FromMinutes(4));
+        await handler.TryHandleAsync(secondContext, new InvalidOperationException("Second"), CancellationToken.None);
+
+        // Assert
+        _discordNotifier.Verify(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact(DisplayName = "Should repost the same exception type and path once the debounce window elapses")]
+    public async Task TryHandleAsync_ShouldRepostDiscordAlert_WhenSameExceptionAndPathAfterDebounceWindowElapses()
+    {
+        // Arrange
+        var timeProvider = new FakeTimeProvider();
+        var problemDetailsServiceMock = new Mock<IProblemDetailsService>(MockBehavior.Strict);
+        problemDetailsServiceMock
+            .Setup(s => s.TryWriteAsync(It.IsAny<ProblemDetailsContext>()))
+            .ReturnsAsync(true);
+
+        var handler = new GlobalExceptionHandler(
+            problemDetailsServiceMock.Object,
+            _discordNotifier.Object,
+            timeProvider,
+            NullLogger<GlobalExceptionHandler>.Instance);
+
+        var firstContext = new DefaultHttpContext();
+        firstContext.Request.Path = "/test-path";
+        var secondContext = new DefaultHttpContext();
+        secondContext.Request.Path = "/test-path";
+
+        // Act
+        await handler.TryHandleAsync(firstContext, new InvalidOperationException("First"), CancellationToken.None);
+        timeProvider.Advance(TimeSpan.FromMinutes(5) + TimeSpan.FromSeconds(1));
+        await handler.TryHandleAsync(secondContext, new InvalidOperationException("Second"), CancellationToken.None);
+
+        // Assert
+        _discordNotifier.Verify(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact(DisplayName = "Should post a Discord alert for a different request path even within the debounce window")]
+    public async Task TryHandleAsync_ShouldPostDiscordAlert_WhenDifferentRequestPathWithinDebounceWindow()
+    {
+        // Arrange
+        var timeProvider = new FakeTimeProvider();
+        var problemDetailsServiceMock = new Mock<IProblemDetailsService>(MockBehavior.Strict);
+        problemDetailsServiceMock
+            .Setup(s => s.TryWriteAsync(It.IsAny<ProblemDetailsContext>()))
+            .ReturnsAsync(true);
+
+        var handler = new GlobalExceptionHandler(
+            problemDetailsServiceMock.Object,
+            _discordNotifier.Object,
+            timeProvider,
+            NullLogger<GlobalExceptionHandler>.Instance);
+
+        var firstContext = new DefaultHttpContext();
+        firstContext.Request.Path = "/first-path";
+        var secondContext = new DefaultHttpContext();
+        secondContext.Request.Path = "/second-path";
+
+        // Act
+        await handler.TryHandleAsync(firstContext, new InvalidOperationException("First"), CancellationToken.None);
+        await handler.TryHandleAsync(secondContext, new InvalidOperationException("Second"), CancellationToken.None);
+
+        // Assert
+        _discordNotifier.Verify(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 }
