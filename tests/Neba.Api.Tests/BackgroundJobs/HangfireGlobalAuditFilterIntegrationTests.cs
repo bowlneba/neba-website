@@ -61,9 +61,9 @@ public sealed class HangfireGlobalAuditFilterIntegrationTests(AppDbContextFixtur
         services.AddSingleton(new NpgsqlDataSourceBuilder(appDbContextFixture.ConnectionString).Build());
         // DiscordJobFailureFilter is resolved from this container when AddHangfireInfrastructure's
         // AddHangfire callback runs - this test's minimal container has no real Discord wiring
-        // (AddDiscord() isn't called here), so a loose stub stands in. Never invoked by this test:
-        // none of its jobs fail.
-        services.AddSingleton(new Mock<IDiscordNotifier>().Object);
+        // (AddDiscord() isn't called here), so a stub stands in. Strict with no setups: never
+        // invoked by this test, since none of its jobs fail.
+        services.AddSingleton(new Mock<IDiscordNotifier>(MockBehavior.Strict).Object);
         services.AddBackgroundJobs(configuration);
 
         _serviceProvider = services.BuildServiceProvider();
