@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Mvc;
 
 using Neba.Api.BackgroundJobs;
+using Neba.Api.Compliance;
 using Neba.Api.Discord;
 using Neba.Api.Identity;
 
@@ -89,7 +90,7 @@ internal sealed class PongJob(
             var alert = new DiscordAlert(
                 DiscordAlertSeverity.Critical,
                 "Legacy bridge ping failed",
-                ex.Message
+                DiscordMessageRedactor.Redact(ex.Message)
             );
 
             // CancellationToken.None, not ct - ct is what just failed (a timeout is one of the
