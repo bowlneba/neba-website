@@ -10,6 +10,7 @@
 @inject IJSRuntime JsRuntime
 @inject ToastService ToastService
 @inject NebaApiConfiguration ApiConfiguration
+@inject IWebHostEnvironment HostEnvironment
 
 <AuthorizeView>
     <Authorized>
@@ -72,14 +73,22 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var token = await GetAccessTokenAsync();
+        // The Hangfire dashboard is a plain browser navigation (new tab), not a Refit API call, so
+        // it can't rely on BearerTokenHandler to attach a token. In production, AccountConfiguration
+        // sets the shared auth cookie's Domain to the parent domain both apps sit under
+        // (.bowlneba.com), so the browser already sends it on this same-site navigation — the
+        // query-string token isn't needed there, and a bearer token in a URL is a known leak
+        // vector (server logs, browser history). It's still needed outside production: each app
+        // runs on its own Aspire-assigned localhost port with no shared parent domain, so the
+        // cookie's Domain isn't set and can't cross ports (see SecurityConfiguration's
+        // OnMessageReceived for the query-string fallback this feeds).
+        if (HostEnvironment.IsProduction())
+        {
+            _backgroundJobsDashboardUrl = new Uri(ApiConfiguration.BaseUrl, "background-jobs").ToString();
+            return;
+        }
 
-        // The Hangfire dashboard is a plain browser navigation (new tab), not a Refit API call,
-        // so it can't rely on BearerTokenHandler to attach a token — the token is passed via
-        // query string instead (see SecurityConfiguration's OnMessageReceived, scoped to this one
-        // path). Only shown when a token is actually available; if the shared cookie-auth SSO is
-        // also wired up (see AccountConfiguration/SecurityConfiguration), the browser sends that
-        // too on the same navigation, so this link still works even if the token is stale/missing.
+        var token = await GetAccessTokenAsync();
         if (!string.IsNullOrEmpty(token))
         {
             _backgroundJobsDashboardUrl = new Uri(ApiConfiguration.BaseUrl, "background-jobs")
