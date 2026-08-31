@@ -267,6 +267,27 @@ public sealed class PongJobTests
         discordNotifierMock.VerifyAll();
     }
 
+    [Fact(DisplayName = "PongAsync should not log, alert Discord, or wrap the exception when the caller's own token is canceled")]
+    public async Task PongAsync_ShouldNotLogOrAlertDiscord_WhenCallersOwnTokenIsCanceled()
+    {
+        // Arrange - normal host shutdown / Hangfire job abortion: the *caller's* ct is canceled,
+        // as opposed to a client-side HttpClient.Timeout expiry (a genuine /health failure, see the
+        // sibling "times out" test above), so this must propagate uncaught rather than being
+        // treated as a failed health check.
+        var fakeLogger = new FakeLogger<PongJob>();
+        var discordNotifierMock = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        using var cts = new CancellationTokenSource();
+        using var handler = new ThrowingHttpMessageHandler(new OperationCanceledException("host shutting down", cts.Token));
+        var job = CreateJob(new FakeHttpClientFactory(handler), CreateServer("http://localhost:5000"), fakeLogger, discordNotifierMock.Object);
+        await cts.CancelAsync();
+
+        // Act
+        await Should.ThrowAsync<OperationCanceledException>(() => job.PongAsync(cts.Token));
+
+        // Assert - Strict mock with no setup: any NotifyAsync call would throw, proving no alert was posted.
+        fakeLogger.Collector.GetSnapshot().ShouldBeEmpty();
+    }
+
     [Fact(DisplayName = "PongAsync should log the status code and body, alert Discord, and throw when the health check returns a non-success status code")]
     public async Task PongAsync_ShouldLogAlertDiscordAndThrow_WhenHealthCheckReturnsNonSuccessStatusCode()
     {

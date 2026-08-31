@@ -76,7 +76,13 @@ internal sealed class PongJob(
                 new DiscordAlert(DiscordAlertSeverity.Info, "Legacy bridge ping succeeded", "Pong: GET /health returned 200."),
                 ct);
         }
-        catch (Exception ex)
+        // Excludes OperationCanceledException triggered by the caller's own ct (normal host
+        // shutdown / Hangfire job abortion) - those aren't a /health failure and shouldn't fire a
+        // false Critical Discord alert, matching DiscordNotifier.NotifyAsync's identical guard. A
+        // client-side HttpClient.Timeout expiry also throws an OperationCanceledException, but via
+        // its own internal token, not ct - ct.IsCancellationRequested is false in that case, so a
+        // real timeout is still caught, logged, and alerted below.
+        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
         {
             logger.LogPongFailed(ex.Message);
 
