@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
 using Neba.Api.Database;
+using Neba.Api.Discord;
 using Neba.Api.Email;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Tournaments.Domain;
@@ -191,12 +192,16 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture)
         return bowler;
     }
 
-    private SyncTournamentResultsJob CreateJob(Mock<IEmailSender>? emailSender = null, FakeLogger<SyncTournamentResultsJob>? logger = null) =>
+    private SyncTournamentResultsJob CreateJob(
+        Mock<IEmailSender>? emailSender = null,
+        Mock<IDiscordNotifier>? discordNotifier = null,
+        FakeLogger<SyncTournamentResultsJob>? logger = null) =>
         new(
             _dbContext,
             _legacyConnection,
             _serviceProvider.GetRequiredService<IFusionCache>(),
             (emailSender ?? new Mock<IEmailSender>(MockBehavior.Strict)).Object,
+            (discordNotifier ?? new Mock<IDiscordNotifier>(MockBehavior.Strict)).Object,
             logger ?? new FakeLogger<SyncTournamentResultsJob>());
 
     private async Task<Tournament> ReloadTournamentAsync(int legacyTournamentId, CancellationToken ct) =>
@@ -412,7 +417,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture)
             .Returns(Task.CompletedTask);
 
         var fakeLogger = new FakeLogger<SyncTournamentResultsJob>();
-        var job = CreateJob(emailSender, fakeLogger);
+        var job = CreateJob(emailSender, logger: fakeLogger);
 
         // Act
         await job.SyncAsync(42, ct);
@@ -447,7 +452,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture)
         fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Warning && r.Message.Contains("100", StringComparison.Ordinal));
     }
 
-    [Fact(DisplayName = "SyncAsync should log an error and skip a bowler with more than one Stats_ResultsStats row, without throwing")]
+    [Fact(DisplayName = "SyncAsync should log an error, post a Discord alert, and skip a bowler with more than one Stats_ResultsStats row, without throwing")]
     public async Task SyncAsync_ShouldLogErrorAndSkip_WhenBowlerHasMultipleResultRows()
     {
         // Arrange - data anomaly: two Stats rows for the same bowler, each with its own ResultsStats row.
@@ -461,7 +466,15 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture)
         await InsertResultsStatsAsync(secondStatsId, place: 2, payout: 300m, points: 90);
 
         var fakeLogger = new FakeLogger<SyncTournamentResultsJob>();
-        var job = CreateJob(logger: fakeLogger);
+
+        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        DiscordAlert? postedAlert = null;
+        discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
+            .Returns(Task.CompletedTask);
+
+        var job = CreateJob(discordNotifier: discordNotifier, logger: fakeLogger);
 
         // Act & Assert
         await Should.NotThrowAsync(() => job.SyncAsync(42, ct));
@@ -469,6 +482,14 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture)
         var tournament = await ReloadTournamentAsync(42, ct);
         tournament.Results.ShouldBeEmpty();
         fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Error && r.Message.Contains("100", StringComparison.Ordinal));
+
+        // The captured alert's content below already proves NotifyAsync was called.
+        postedAlert.ShouldNotBeNull();
+        postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Warning);
+        postedAlert.Metadata.ShouldNotBeNull();
+        postedAlert.Metadata["LegacyBowlerId"].ShouldBe("100");
+        postedAlert.Metadata["LegacyTournamentId"].ShouldBe("42");
+        postedAlert.Metadata["RowCount"].ShouldBe("2");
     }
 
     [Fact(DisplayName = "SyncAsync should query only the rows for the requested legacy tournament id")]

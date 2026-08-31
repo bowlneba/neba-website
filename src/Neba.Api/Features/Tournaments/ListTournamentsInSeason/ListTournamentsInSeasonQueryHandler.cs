@@ -91,7 +91,6 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 }).ToList()
             }).ToListAsync(cancellationToken);
 
-        // We will need to do a separate query to get the champions from tournaments that we have full stats (2026+)
         var dbIds = rows.ConvertAll(r => r.DbId);
 
         var historicalWinners = await _historicalTournamentChampions
@@ -99,8 +98,19 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
             .Select(tc => new { tc.TournamentId, tc.Bowler.Name })
             .ToListAsync(cancellationToken);
 
-        Dictionary<int, IReadOnlyCollection<Name>> historicalWinnersByTournamentDbId =
-            historicalWinners
+        var recordedWinners = await _tournaments
+            .Where(tournament => dbIds.Contains(EF.Property<int>(tournament, ShadowIdConfiguration.DefaultPropertyName)))
+            .SelectMany(tournament => tournament.Results
+                .Where(result => result.Place == 1)
+                .Select(result => new
+                {
+                    TournamentId = EF.Property<int>(tournament, ShadowIdConfiguration.DefaultPropertyName),
+                    result.Bowler.Name
+                }))
+            .ToListAsync(cancellationToken);
+
+        Dictionary<int, IReadOnlyCollection<Name>> winnersByTournamentDbId =
+            historicalWinners.Concat(recordedWinners)
                 .GroupBy(w => w.TournamentId)
                 .ToDictionary(g => g.Key, g => (IReadOnlyCollection<Name>)[.. g.Select(w => w.Name)]);
 
@@ -156,7 +166,7 @@ internal sealed class ListTournamentsInSeasonQueryHandler(
                 LogoUrl = row.TournamentLogoContainer is not null && row.TournamentLogoPath is not null
                     ? _fileStorageService.GetBlobUri(row.TournamentLogoContainer, row.TournamentLogoPath)
                     : null,
-                Winners = historicalWinnersByTournamentDbId.GetValueOrDefault(row.DbId, []),
+                Winners = winnersByTournamentDbId.GetValueOrDefault(row.DbId, []),
             };
         })];
     }

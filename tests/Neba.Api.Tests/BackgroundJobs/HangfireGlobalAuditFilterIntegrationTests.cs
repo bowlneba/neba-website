@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Neba.Api.BackgroundJobs;
+using Neba.Api.Discord;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 
@@ -58,6 +59,11 @@ public sealed class HangfireGlobalAuditFilterIntegrationTests(AppDbContextFixtur
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton(new NpgsqlDataSourceBuilder(appDbContextFixture.ConnectionString).Build());
+        // DiscordJobFailureFilter is resolved from this container when AddHangfireInfrastructure's
+        // AddHangfire callback runs - this test's minimal container has no real Discord wiring
+        // (AddDiscord() isn't called here), so a stub stands in. Strict with no setups: never
+        // invoked by this test, since none of its jobs fail.
+        services.AddSingleton(new Mock<IDiscordNotifier>(MockBehavior.Strict).Object);
         services.AddBackgroundJobs(configuration);
 
         _serviceProvider = services.BuildServiceProvider();

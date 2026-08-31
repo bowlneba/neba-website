@@ -30,6 +30,11 @@ public sealed class Permissions
     /// </summary>
     public static readonly Permissions ResetUserPassword = new("System.ResetUserPassword", "Reset User Password");
 
+    /// <summary>
+    /// Permission to list user accounts in the system.
+    /// </summary>
+    public static readonly Permissions GetUsers = new("System.GetUsers", "Get Users");
+
     #endregion
 
     #region News
@@ -131,6 +136,15 @@ public sealed class Permissions
     /// Policy name satisfied when the caller holds any permission in <see cref="TournamentManagementPermissions"/>.
     /// </summary>
     public const string CanManageTournamentsPolicyName = "CanManageTournaments";
+
+    #endregion
+
+    #region Background Jobs
+
+    /// <summary>
+    /// Permission to view and manage the background jobs dashboard.
+    /// </summary>
+    public static readonly Permissions ViewBackgroundJobsDashboard = new("BackgroundJobs.ViewDashboard", "View Background Jobs Dashboard");
 
     #endregion
 

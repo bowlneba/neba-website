@@ -46,6 +46,15 @@ jobs:
       - name: Setup azd
         uses: Azure/setup-azd@80591774c092d5d640d43663766a76728d66e07d # v2.3.0
 
+      - name: Install Aspire CLI
+        run: |
+          set -euo pipefail
+          curl -sSL --fail --proto '=https' --tlsv1.2 https://aspire.dev/install.sh -o install-aspire.sh
+          [ -s install-aspire.sh ]
+          bash install-aspire.sh --version 13.5.3
+          rm -f install-aspire.sh
+          echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
+
       - name: Configure azd authentication
         run: azd config set auth.useAzCliAuth true
 
@@ -89,6 +98,7 @@ jobs:
           JWT_SIGNING_KEY: ${{ secrets.JWT_SIGNING_KEY }}
           LEGACY_API_KEY: ${{ secrets.LEGACY_API_KEY }}
           LEGACY_DB_CONNECTION_STRING: ${{ secrets.LEGACY_DB_CONNECTION_STRING }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           set -euo pipefail
 
@@ -121,6 +131,10 @@ jobs:
           az keyvault secret set --vault-name "$VAULT_NAME" \
             --name "Legacy--ConnectionString" \
             --value "$LEGACY_DB_CONNECTION_STRING"
+
+          az keyvault secret set --vault-name "$VAULT_NAME" \
+            --name "Discord--WebhookUrl" \
+            --value "$DISCORD_WEBHOOK_URL"
 
       - name: Deploy migration jobs
         env:

@@ -10,5 +10,6 @@ updates:
     schedule:
       interval: "weekly"
     ignore:
-      # Pinned to avoid MTP v2 incompatibility with current xunit.v3 stack.
-      - dependency-name: "Microsoft.Testing.Extensions.CodeCoverage"
+      # v33 becomes a paid version; stay on the 32.x free line.
+      - dependency-name: "Verify.XunitV3"
+        versions: [">=33.0.0"]

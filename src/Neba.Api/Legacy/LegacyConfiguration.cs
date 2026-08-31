@@ -27,6 +27,18 @@ internal static class LegacyConfiguration
             builder.Services.AddScoped<IDbConnection>(sp =>
                 new SqlConnection(sp.GetRequiredService<IOptions<LegacySettings>>().Value.ConnectionString));
 
+            // Locally the Legacy connection string is typically unset (no access to the Software's
+            // database outside production) - only register the check when one is actually configured.
+            var legacyConnectionString = builder.Configuration.GetSection("Legacy")["ConnectionString"];
+            if (!string.IsNullOrWhiteSpace(legacyConnectionString))
+            {
+                builder.Services.AddHealthChecks()
+                    .AddSqlServer(
+                        sp => sp.GetRequiredService<IOptions<LegacySettings>>().Value.ConnectionString,
+                        name: "Software (nebamgmt-v3)",
+                        tags: ["infrastructure", "legacy"]);
+            }
+
             builder.Services.AddScoped<IValidator<NewBowlerRequest>, NewBowlerRequestValidator>();
             builder.Services.AddScoped<IValidator<UpdateBowlerRequest>, UpdateBowlerRequestValidator>();
             builder.Services.AddScoped<IValidator<NewTournamentRequest>, NewTournamentRequestValidator>();

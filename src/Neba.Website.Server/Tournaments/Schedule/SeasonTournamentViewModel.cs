@@ -251,7 +251,10 @@ public sealed record SeasonTournamentViewModel
     /// </summary>
     public string DisplayLogoSrc => TournamentLogoUrl?.ToString() ?? DefaultLogoSrcFor(TournamentType);
 
-    private static string DefaultLogoSrcFor(string tournamentType) => tournamentType switch
+    /// <summary>
+    /// Format-specific default logo path used when a tournament has no logo of its own.
+    /// </summary>
+    internal static string DefaultLogoSrcFor(string tournamentType) => tournamentType switch
     {
         "Doubles" => "/images/neba-doubles.jpg",
         "Over/Under 50 Doubles" or "Over/Under 40 Doubles" => "/images/neba-overunder.jpg",

@@ -29,6 +29,16 @@ public sealed class DirectionsStateTests
         state.IsLoading.ShouldBeFalse();
     }
 
+    [Fact(DisplayName = "Default state LoadingMessage describes getting the user's location")]
+    public void DefaultState_ShouldHaveGettingLocationLoadingMessage()
+    {
+        // Arrange
+        var state = new DirectionsState();
+
+        // Assert
+        state.LoadingMessage.ShouldBe("Getting your location...");
+    }
+
     [Fact(DisplayName = "Default state all nullable properties are null")]
     public void DefaultState_ShouldHaveNullNullableProperties()
     {
@@ -59,6 +69,7 @@ public sealed class DirectionsStateTests
             DestinationLocation = [-71.5, 42.5],
             Route = new RouteData { DistanceMeters = 1000, TravelTimeSeconds = 600 },
             IsLoading = true,
+            LoadingMessage = "Getting directions...",
             ErrorMessage = "Something went wrong"
         };
 
@@ -74,6 +85,7 @@ public sealed class DirectionsStateTests
         state.DestinationLocation.ShouldBeNull();
         state.Route.ShouldBeNull();
         state.IsLoading.ShouldBeFalse();
+        state.LoadingMessage.ShouldBe("Getting your location...");
         state.ErrorMessage.ShouldBeNull();
     }
 

@@ -497,6 +497,34 @@ public sealed class TournamentDetailTests : IDisposable
 
     // ── Sponsors ─────────────────────────────────────────────────────────────
 
+    [Fact(DisplayName = "Should render the tournament's own logo image when a logo URL is present")]
+    public void Render_ShouldRenderHeroLogoImage_WhenLogoUrlPresent()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+            logoUrl: new Uri("https://cdn.example.com/tournament-logo.png")));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Find(".td-hero__logo-img").GetAttribute("src").ShouldBe("https://cdn.example.com/tournament-logo.png");
+    }
+
+    [Fact(DisplayName = "Should render the format-specific default logo image when no logo URL is present")]
+    public void Render_ShouldRenderHeroDefaultLogoImage_WhenNoLogoUrl()
+    {
+        // Arrange
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(
+tournamentType: TournamentType.Doubles, logoUrl: null));
+
+        // Act
+        var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
+
+        // Assert
+        cut.Find(".td-hero__logo-img").GetAttribute("src").ShouldBe("/images/neba-doubles.jpg");
+    }
+
     [Fact(DisplayName = "Should render sponsors section linking to sponsor detail pages")]
     public void Render_ShouldRenderSponsors_WithDetailLinks()
     {

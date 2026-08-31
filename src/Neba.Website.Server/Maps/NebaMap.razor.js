@@ -640,8 +640,11 @@ export async function showRoute(origin, destination) {
             headers['x-ms-client-id'] = authConfig.accountId;
         }
 
+        // Azure Maps' synchronous Route Directions API can take close to 60s to compute
+        // on long-distance routes before it returns its own 408 timeout, so this must
+        // stay comfortably under that ceiling without cutting off legitimate far routes.
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const timeoutId = setTimeout(() => controller.abort(), 55000);
 
         let response;
         try {

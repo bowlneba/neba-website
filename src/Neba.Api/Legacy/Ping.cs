@@ -1,9 +1,14 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Hangfire;
 
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Mvc;
 
+using Neba.Api.BackgroundJobs;
+using Neba.Api.Compliance;
+using Neba.Api.Discord;
 using Neba.Api.Identity;
 
 namespace Neba.Api.Legacy;
@@ -27,6 +32,7 @@ internal static class PingEndpoint
 internal sealed class PongJob(
     IHttpClientFactory httpClientFactory,
     IServer server,
+    IDiscordNotifier discordNotifier,
     ILogger<PongJob> logger)
 {
     // The job's own Succeeded/Failed state is the health signal - Hangfire's Console output can't be
@@ -35,6 +41,9 @@ internal sealed class PongJob(
     // CLAUDE.md's "Hangfire PostgreSql EnableTransactionScopeEnlistment" entry for the related
     // incident). A non-2xx /health response, or a transport failure reaching it, throws so the job
     // fails; anything else it means the API answered its own health check successfully.
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types",
+        Justification = "Any failure reaching /health means the legacy bridge is down; every cause gets the same Discord alert before the job still fails visibly.")]
+    [SkipDiscordJobFailureAlert] // Posts its own alert below on every failed attempt; see the attribute's doc comment.
     public async Task PongAsync(CancellationToken ct)
     {
         using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
@@ -60,10 +69,35 @@ internal sealed class PongJob(
             {
                 throw new InvalidOperationException($"Pong: GET /health returned {(int)response.StatusCode}: {body}");
             }
+
+            // Posts on every successful ping, not just the first - this endpoint exists to give a
+            // visible, on-demand signal that the Discord bridge is connected, so a success here
+            // should always be confirmed the same way a failure would be alerted.
+            await discordNotifier.NotifyAsync(
+                new DiscordAlert(DiscordAlertSeverity.Info, "Legacy bridge ping succeeded", "Pong: GET /health returned 200."),
+                ct);
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        // Excludes OperationCanceledException triggered by the caller's own ct (normal host
+        // shutdown / Hangfire job abortion) - those aren't a /health failure and shouldn't fire a
+        // false Critical Discord alert, matching DiscordNotifier.NotifyAsync's identical guard. A
+        // client-side HttpClient.Timeout expiry also throws an OperationCanceledException, but via
+        // its own internal token, not ct - ct.IsCancellationRequested is false in that case, so a
+        // real timeout is still caught, logged, and alerted below.
+        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
         {
             logger.LogPongFailed(ex.Message);
+
+            var alert = new DiscordAlert(
+                DiscordAlertSeverity.Critical,
+                "Legacy bridge ping failed",
+                DiscordMessageRedactor.Redact(ex.Message)
+            );
+
+            // CancellationToken.None, not ct - ct is what just failed (a timeout is one of the
+            // two failure modes this alert reports), so posting under it would race the alert
+            // against the same cancellation that triggered it.
+            await discordNotifier.NotifyAsync(alert, CancellationToken.None);
+
             throw;
         }
     }

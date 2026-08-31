@@ -1,13 +1,18 @@
-using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 using Neba.Api.Database;
+using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Stats.GetSeasonStats;
+using Neba.Api.Features.Tournaments.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Stats;
+using Neba.TestFactory.Tournaments;
+
+using ZiggyCreatures.Caching.Fusion;
 
 namespace Neba.Api.Tests.Features.Stats.GetSeasonStats;
 
@@ -24,7 +29,8 @@ public sealed class GetSeasonStatsQueryHandlerTests(AppDbContextFixture fixture)
     {
         await fixture.ResetAsync();
         var services = new ServiceCollection();
-        services.AddHybridCache();
+        services.AddFusionCache()
+            .WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
         _serviceProvider = services.BuildServiceProvider();
     }
 
@@ -37,7 +43,7 @@ public sealed class GetSeasonStatsQueryHandlerTests(AppDbContextFixture fixture)
 
     private GetSeasonStatsQueryHandler CreateHandler()
     {
-        var cache = _serviceProvider.GetRequiredService<HybridCache>();
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
         return new GetSeasonStatsQueryHandler(
             _dbContext,
             new SeasonStatsCalculator(),
@@ -178,5 +184,169 @@ public sealed class GetSeasonStatsQueryHandlerTests(AppDbContextFixture fixture)
         // Assert
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe("Stats.SeasonHasNoStats");
+    }
+
+    [Fact(DisplayName = "HandleAsync includes BOY progression from TournamentResult when no HistoricalTournamentResult rows exist")]
+    public async Task HandleAsync_ShouldIncludeBoyProgression_FromTournamentResultOnly()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var bowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddAsync(bowler, ct);
+
+        var season = SeasonFactory.Create(
+            startDate: new DateOnly(2026, 1, 1),
+            endDate: new DateOnly(2026, 12, 31));
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var tournament = TournamentFactory.Create(statsEligible: true, seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        tournament.CompleteTournament();
+        tournament.AddResult(bowler.Id, place: 1, prizeMoney: 500m, points: 100);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var stats = BowlerSeasonStatsFactory.Create(seasonId: season.Id, bowlerId: bowler.Id);
+        await _dbContext.BowlerSeasonStats.AddAsync(stats, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(new GetSeasonStatsQuery { SeasonYear = 2026 }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var openSeries = result.Value.BowlerOfTheYearRaces[BowlerOfTheYearCategory.Open.Value];
+        openSeries.ShouldHaveSingleItem();
+        var series = openSeries.Single();
+        series.BowlerId.ShouldBe(bowler.Id);
+        series.Results.Single().CumulativePoints.ShouldBe(100);
+    }
+
+    [Fact(DisplayName = "HandleAsync unions HistoricalTournamentResult and TournamentResult rows for the same bowler in chronological order")]
+    public async Task HandleAsync_ShouldUnionHistoricalAndCurrentResults_ForSameBowlerInChronologicalOrder()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var bowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddAsync(bowler, ct);
+
+        var season = SeasonFactory.Create(
+            startDate: new DateOnly(2026, 1, 1),
+            endDate: new DateOnly(2026, 12, 31));
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var historicalTournament = TournamentFactory.Create(
+            startDate: new DateOnly(2026, 1, 5), endDate: new DateOnly(2026, 1, 6),
+statsEligible: true, seasonId: season.Id);
+        var currentTournament = TournamentFactory.Create(
+            startDate: new DateOnly(2026, 2, 5), endDate: new DateOnly(2026, 2, 6),
+statsEligible: true, seasonId: season.Id);
+        await _dbContext.Tournaments.AddRangeAsync([historicalTournament, currentTournament], ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var historicalResult = HistoricalTournamentResultFactory.Create(
+            bowler: bowler, tournament: historicalTournament, points: 100);
+        await _dbContext.HistoricalTournamentResults.AddAsync(historicalResult, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        currentTournament.CompleteTournament();
+        currentTournament.AddResult(bowler.Id, place: 1, prizeMoney: 500m, points: 150);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var stats = BowlerSeasonStatsFactory.Create(seasonId: season.Id, bowlerId: bowler.Id);
+        await _dbContext.BowlerSeasonStats.AddAsync(stats, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(new GetSeasonStatsQuery { SeasonYear = 2026 }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var openSeries = result.Value.BowlerOfTheYearRaces[BowlerOfTheYearCategory.Open.Value];
+        openSeries.ShouldHaveSingleItem();
+        var series = openSeries.Single();
+        series.Results.Count.ShouldBe(2);
+        series.Results.First().CumulativePoints.ShouldBe(100);
+        series.Results.Last().CumulativePoints.ShouldBe(250);
+    }
+
+    [Fact(DisplayName = "HandleAsync still includes BOY progression from HistoricalTournamentResult alone")]
+    public async Task HandleAsync_ShouldIncludeBoyProgression_FromHistoricalTournamentResultOnly()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var bowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddAsync(bowler, ct);
+
+        var season = SeasonFactory.Create(
+            startDate: new DateOnly(2024, 1, 1),
+            endDate: new DateOnly(2024, 12, 31));
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var tournament = TournamentFactory.Create(statsEligible: true, seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var historicalResult = HistoricalTournamentResultFactory.Create(
+            bowler: bowler, tournament: tournament, points: 100);
+        await _dbContext.HistoricalTournamentResults.AddAsync(historicalResult, ct);
+
+        var stats = BowlerSeasonStatsFactory.Create(seasonId: season.Id, bowlerId: bowler.Id);
+        await _dbContext.BowlerSeasonStats.AddAsync(stats, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(new GetSeasonStatsQuery { SeasonYear = 2024 }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var openSeries = result.Value.BowlerOfTheYearRaces[BowlerOfTheYearCategory.Open.Value];
+        openSeries.ShouldHaveSingleItem();
+        openSeries.Single().Results.Single().CumulativePoints.ShouldBe(100);
+    }
+
+    [Fact(DisplayName = "HandleAsync serves a fresh result after the season's stats cache tag is removed")]
+    public async Task HandleAsync_ShouldServeFreshResult_AfterSeasonStatsCacheTagRemoved()
+    {
+        // Arrange - this proves GenerateSeasonStatsJob's RemoveByTagAsync("neba:stats:seasons:{seasonId}")
+        // call actually reaches the cache entry this handler serves from, not a separate cache stack.
+        var ct = TestContext.Current.CancellationToken;
+        var bowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddAsync(bowler, ct);
+
+        var season = SeasonFactory.Create(
+            startDate: new DateOnly(2025, 1, 1),
+            endDate: new DateOnly(2025, 12, 31));
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var stats = BowlerSeasonStatsFactory.Create(seasonId: season.Id, bowlerId: bowler.Id, bowlerOfTheYearPoints: 100);
+        await _dbContext.BowlerSeasonStats.AddAsync(stats, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+        var firstResult = await handler.HandleAsync(new GetSeasonStatsQuery { SeasonYear = 2025 }, ct);
+        firstResult.IsError.ShouldBeFalse();
+        firstResult.Value.BowlerStats.Single().BowlerOfTheYearPoints.ShouldBe(100);
+
+        await _dbContext.BowlerSeasonStats
+            .Where(s => s.SeasonId == season.Id && s.BowlerId == bowler.Id)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.BowlerOfTheYearPoints, 999), ct);
+
+        var cache = _serviceProvider.GetRequiredService<IFusionCache>();
+
+        // Act
+        await cache.RemoveByTagAsync($"neba:stats:seasons:{season.Id}", token: ct);
+        var secondResult = await handler.HandleAsync(new GetSeasonStatsQuery { SeasonYear = 2025 }, ct);
+
+        // Assert
+        secondResult.IsError.ShouldBeFalse();
+        secondResult.Value.BowlerStats.Single().BowlerOfTheYearPoints.ShouldBe(999);
     }
 }

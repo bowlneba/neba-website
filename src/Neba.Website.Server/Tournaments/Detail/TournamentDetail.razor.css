@@ -237,12 +237,6 @@
     display: flex;
 }
 
-.td-hero__tile-inner,
-.td-hero__tile ::deep .tournament-logo-tile {
-    flex: 1;
-    min-height: 300px;
-}
-
 .td-hero__logo-img {
     width: 100%;
     height: 100%;
@@ -607,8 +601,7 @@
         min-height: 180px;
     }
 
-    .td-hero__tile-inner,
-    .td-hero__tile ::deep .tournament-logo-tile {
+    .td-hero__logo-img {
         min-height: 180px;
     }
 

@@ -1,7 +1,6 @@
 using ErrorOr;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Hybrid;
 
 using Neba.Api.Caching;
 using Neba.Api.Database;
@@ -11,13 +10,15 @@ using Neba.Api.Features.Stats.Domain;
 using Neba.Api.Features.Tournaments.Domain;
 using Neba.Api.Messaging;
 
+using ZiggyCreatures.Caching.Fusion;
+
 namespace Neba.Api.Features.Stats.GetSeasonStats;
 
 internal sealed class GetSeasonStatsQueryHandler(
     AppDbContext appDbContext,
     ISeasonStatsCalculator seasonStatsCalculator,
     IBowlerOfTheYearRaceCalculator bowlerOfTheYearRaceCalculator,
-    HybridCache cache)
+    IFusionCache cache)
         : IQueryHandler<GetSeasonStatsQuery, ErrorOr<SeasonStatsDto>>
 {
     private readonly IQueryable<Tournament> _tournaments
@@ -29,7 +30,7 @@ internal sealed class GetSeasonStatsQueryHandler(
 
     private readonly ISeasonStatsCalculator _seasonStatsCalculator = seasonStatsCalculator;
     private readonly IBowlerOfTheYearRaceCalculator _bowlerOfTheYearRaceCalculator = bowlerOfTheYearRaceCalculator;
-    private readonly HybridCache _cache = cache;
+    private readonly IFusionCache _cache = cache;
 
     public async Task<ErrorOr<SeasonStatsDto>> HandleAsync(GetSeasonStatsQuery query, CancellationToken cancellationToken)
     {
@@ -59,11 +60,11 @@ internal sealed class GetSeasonStatsQueryHandler(
 
         var descriptor = CacheDescriptors.Stats.BowlerSeasonStats(season.Id);
 
-        return await _cache.GetOrCreateAsync(
+        return await _cache.GetOrSetAsync<SeasonStatsDto>(
              descriptor.Key,
-             async cancel => await ComputeSeasonStatsAsync(season.Id, seasonsWithStats, cancel),
+             async (_, cancel) => await ComputeSeasonStatsAsync(season.Id, seasonsWithStats, cancel),
              tags: descriptor.Tags,
-             cancellationToken: cancellationToken);
+             token: cancellationToken);
     }
 
     private async Task<SeasonStatsDto> ComputeSeasonStatsAsync(
@@ -118,9 +119,8 @@ internal sealed class GetSeasonStatsQueryHandler(
                 LastUpdatedUtc = stat.LastUpdatedUtc
             }).ToListAsync(cancellationToken);
 
-        var bowlerOfTheYearProgressions = await _historicalTournamentResults
+        var historicalProgressionResults = _historicalTournamentResults
             .Where(result => result.Tournament.SeasonId == seasonId)
-            .OrderBy(result => result.Tournament.StartDate)
             .Select(result => new BoyProgressionResultDto
             {
                 BowlerId = result.Bowler.Id,
@@ -139,8 +139,49 @@ internal sealed class GetSeasonStatsQueryHandler(
                 SideCutId = result.SideCutId,
                 SideCutName = result.SideCut != null
                     ? result.SideCut.Name
-                    : null
-            }).ToListAsync(cancellationToken);
+                    : null,
+                IsRookie = false // attached from bowlerStats below
+            });
+
+        var currentProgressionResults = _tournaments
+            .Where(tournament => tournament.SeasonId == seasonId)
+            .SelectMany(tournament => tournament.Results, (tournament, result) => new BoyProgressionResultDto
+            {
+                BowlerId = result.BowlerId,
+                BowlerName = result.Bowler.Name,
+                BowlerDateOfBirth = result.Bowler.DateOfBirth,
+                BowlerGender = result.Bowler.Gender == null
+                    ? null
+                    : result.Bowler.Gender.Value,
+                TournamentId = tournament.Id,
+                TournamentName = tournament.Name,
+                TournamentDate = tournament.StartDate,
+                TournamentEndDate = tournament.EndDate,
+                StatsEligible = tournament.StatsEligible,
+                TournamentType = tournament.TournamentType.Value,
+                Points = result.Points,
+                SideCutId = null,
+                SideCutName = null,
+                IsRookie = false // attached from bowlerStats below
+            });
+
+        // EF can't translate a set operation over a query with a client-evaluated collection
+        // navigation projection (SelectMany over Tournament.Results), so each side is materialized
+        // separately and unioned client-side rather than via a provider-level Concat/UNION ALL.
+        // A season's result count is small, so this isn't a performance concern.
+        var historicalResults = await historicalProgressionResults.ToListAsync(cancellationToken);
+        var currentResults = await currentProgressionResults.ToListAsync(cancellationToken);
+
+        var rawProgressionResults = historicalResults
+            .Concat(currentResults)
+            .OrderBy(result => result.TournamentDate)
+            .ToList();
+
+        var isRookieByBowlerId = bowlerStats.ToDictionary(stat => stat.BowlerId, stat => stat.IsRookie);
+
+        var bowlerOfTheYearProgressions = rawProgressionResults
+            .ConvertAll(result => result with { IsRookie = isRookieByBowlerId.GetValueOrDefault(result.BowlerId) })
+;
 
         var bowlerOfTheYearRaces = _bowlerOfTheYearRaceCalculator.CalculateAllProgressions(bowlerOfTheYearProgressions);
 

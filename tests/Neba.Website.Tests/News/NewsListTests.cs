@@ -314,7 +314,7 @@ public sealed class NewsListTests : IDisposable
         var cut = _ctx.Render<NewsList>();
 
         // Assert
-        cut.Markup.ShouldContain("news-pagination");
+        cut.Markup.ShouldContain("pagination-nav");
     }
 
     [Fact(DisplayName = "Should not show pagination when only one page of articles exists")]
@@ -328,7 +328,7 @@ public sealed class NewsListTests : IDisposable
         var cut = _ctx.Render<NewsList>();
 
         // Assert
-        cut.Markup.ShouldNotContain("news-pagination");
+        cut.Markup.ShouldNotContain("pagination-nav");
     }
 
     [Fact(DisplayName = "Should mark current page button as active in pagination")]

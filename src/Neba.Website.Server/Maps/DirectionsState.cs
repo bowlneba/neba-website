@@ -47,6 +47,11 @@ public sealed class DirectionsState
     public bool IsLoading { get; set; }
 
     /// <summary>
+    /// The message to show while <see cref="IsLoading"/> is true, describing the current step.
+    /// </summary>
+    public string LoadingMessage { get; set; } = "Getting your location...";
+
+    /// <summary>
     /// Any error message to display to the user.
     /// </summary>
     public string? ErrorMessage { get; set; }
@@ -64,6 +69,7 @@ public sealed class DirectionsState
         DestinationLocation = null;
         Route = null;
         IsLoading = false;
+        LoadingMessage = "Getting your location...";
         ErrorMessage = null;
     }
 }

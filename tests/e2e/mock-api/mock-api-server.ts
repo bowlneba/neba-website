@@ -802,8 +802,29 @@ const MOCK_PHONE_NUMBER_TYPES = {
   ],
 };
 
+const MOCK_USERS = {
+  items: [
+    {
+      userId: '01JX0000000000000000000499',
+      email: 'webmaster@bowlneba.com',
+      emailConfirmed: true,
+      roles: ['Webmaster'],
+    },
+    {
+      userId: '01JX0000000000000000000500',
+      email: 'invited.staff@bowlneba.com',
+      emailConfirmed: false,
+      roles: ['Journalist'],
+    },
+  ],
+  totalItems: 2,
+  pageNumber: 1,
+  pageSize: 20,
+};
+
 const routes: Record<string, unknown> = {
   '/health': { status: 'healthy' },
+  '/security/users': MOCK_USERS,
   '/documents/tournament-rules': { html: MOCK_TOURNAMENT_RULES_HTML },
   '/documents/bylaws': { html: MOCK_BYLAWS_HTML },
   '/reference-data/us-states': MOCK_US_STATES,
@@ -1025,6 +1046,16 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     await readRequestBody(req);
 
     sendJsonResponse(res, { userId: '01JX0000000000000000000399', rolesAssigned: true }, 201);
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/security/password/reset') {
+    if (sendMockOverrideErrorIfSet(res, pathname)) return;
+
+    await readRequestBody(req);
+
+    res.writeHead(204);
+    res.end();
     return;
   }
 

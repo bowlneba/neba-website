@@ -772,7 +772,7 @@ namespace Neba.Api.Database.Migrations
                                 .IsRequired()
                                 .HasMaxLength(63)
                                 .HasColumnType("character varying(63)")
-                                .HasColumnName("logo_container_name");
+                                .HasColumnName("logo_container");
 
                             b1.Property<string>("ContentType")
                                 .IsRequired()

@@ -1,5 +1,7 @@
 using System.Text.RegularExpressions;
 
+using Ganss.Xss;
+
 using HtmlAgilityPack;
 
 namespace Neba.Api.Documents;
@@ -7,6 +9,24 @@ namespace Neba.Api.Documents;
 internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
 {
     private readonly GoogleSettings _settings = googleDriveSettings;
+
+    // Stryker disable once all : third-party allowlist sanitizer; its default configuration is
+    // the tested surface, not a mutable rule set authored here. "id" and "class" are added on top
+    // of the defaults (unlike Neba.Api.Features.News.CreateArticle.HtmlContentSanitizer, used for
+    // untrusted user-submitted rich text) because this processor's own output relies on both:
+    // "id" for the heading anchors generated below, and "class" for Google Docs' .lst-kix_* list
+    // numbering styles extracted by ExtractGoogleDocsListStyles.
+    private static readonly HtmlSanitizer Sanitizer = CreateSanitizer();
+
+    // Stryker disable once all : trivial factory around third-party defaults, see above.
+    private static HtmlSanitizer CreateSanitizer()
+    {
+        var sanitizer = new HtmlSanitizer();
+        sanitizer.AllowedSchemes.Add("mailto");
+        sanitizer.AllowedAttributes.Add("id");
+        sanitizer.AllowedAttributes.Add("class");
+        return sanitizer;
+    }
 
     public string Process(string rawHtml)
     {
@@ -20,19 +40,81 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
             return rawHtml; // Return original if no body found
         }
 
+        // Capture Google Docs' own heading IDs (e.g. "h.xk7tre4v41xy") before sanitization
+        // strips them, so anchor links using the original fragment can still be resolved below.
+        var originalHeadingIds = CaptureOriginalHeadingIds(bodyNode);
+
+        // Sanitize the untrusted Google Docs body content before any further processing. Google
+        // Docs export HTML is only as trustworthy as whoever has edit access to the source
+        // document, so it goes through the same allowlist sanitizer as article content and help
+        // docs. Sanitizing first — rather than after our own transformations below — means every
+        // attribute we add afterward (generated anchor IDs, rewritten internal links) is trusted
+        // output and never gets stripped by the sanitizer's allowlist.
+        var sanitizedDoc = new HtmlDocument();
+        sanitizedDoc.LoadHtml(Sanitizer.Sanitize(bodyNode.InnerHtml));
+        var sanitizedRoot = sanitizedDoc.DocumentNode;
+
+        // Sanitization strips the "id" attribute (not on the sanitizer's allowlist), so restore
+        // Google Docs' original heading IDs captured above, matching headings positionally —
+        // sanitization doesn't reorder or drop heading elements.
+        RestoreOriginalHeadingIds(sanitizedRoot, originalHeadingIds);
+
         // Generate anchor Ids from headings
-        GenerateAnchorIds(bodyNode);
+        GenerateAnchorIds(sanitizedRoot);
 
         // Replace Google Docs links with internal routes
-        ReplaceGoogleDocsLinks(bodyNode);
+        ReplaceGoogleDocsLinks(sanitizedRoot);
 
         // Extract and preserve Google Docs list styles
         var listStyles = ExtractGoogleDocsListStyles(doc.DocumentNode);
 
         // Return body content with list styles prepended
         return string.IsNullOrEmpty(listStyles)
-            ? bodyNode.InnerHtml
-            : $"<style>{listStyles}</style>{bodyNode.InnerHtml}";
+            ? sanitizedRoot.InnerHtml
+            : $"<style>{listStyles}</style>{sanitizedRoot.InnerHtml}";
+    }
+
+    /// <summary>
+    /// Captures each heading's original "id" attribute, in document order, before sanitization
+    /// strips it.
+    /// </summary>
+    private static List<string> CaptureOriginalHeadingIds(HtmlNode node)
+    {
+        var headings = node.SelectNodes("//h1|//h2|//h3|//h4|//h5|//h6");
+        return headings is null
+            ? []
+            : [.. headings.Select(heading => heading.GetAttributeValue("id", string.Empty))];
+    }
+
+    /// <summary>
+    /// Re-applies each heading's original ID (captured pre-sanitization) as "data-original-id",
+    /// matching headings by position. <see cref="GenerateAnchorIds"/> only fills in
+    /// "data-original-id" from a heading's current "id" attribute, which sanitization already
+    /// removed, so this restores it directly instead.
+    /// </summary>
+    /// <remarks>
+    /// Positional matching assumes sanitization neither drops nor reorders heading elements
+    /// relative to <paramref name="originalIds"/> - true today given the sanitizer's default
+    /// allowlist includes h1-h6, but silently wrong if that ever changes. Guarded by a count check
+    /// below: a mismatch means the mapping can no longer be trusted, so it's skipped entirely
+    /// (falling back to <see cref="GenerateAnchorIds"/>'s generated IDs) rather than risking
+    /// misattributing one heading's original anchor to a different heading.
+    /// </remarks>
+    private static void RestoreOriginalHeadingIds(HtmlNode node, List<string> originalIds)
+    {
+        var headings = node.SelectNodes("//h1|//h2|//h3|//h4|//h5|//h6");
+        if (headings is null || headings.Count != originalIds.Count)
+        {
+            return;
+        }
+
+        for (var i = 0; i < headings.Count; i++)
+        {
+            if (!string.IsNullOrEmpty(originalIds[i]))
+            {
+                headings[i].SetAttributeValue("data-original-id", originalIds[i]);
+            }
+        }
     }
 
     /// <summary>
@@ -60,7 +142,10 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
                 heading.SetAttributeValue("data-original-id", originalId);
             }
 
-            var anchorId = GenerateAnchorId(heading.InnerText);
+            // Decode entities first — sanitization re-serializes text content, so "&" (and other
+            // special characters) in the original heading text now appear entity-encoded (e.g.
+            // "&amp;") in the raw InnerText, which HtmlAgilityPack does not decode automatically.
+            var anchorId = GenerateAnchorId(HtmlEntity.DeEntitize(heading.InnerText));
             heading.SetAttributeValue("id", anchorId);
         }
     }
@@ -313,7 +398,13 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
     /// <remarks>
     /// Matches CSS rules like: .lst-kix_abc123-0{list-style-type:lower-alpha}
     /// Captures the complete rule including selector, braces, and properties.
+    /// Excludes '&lt;', '&gt;', '"', and '\'' from the selector/value character classes (on top of
+    /// the pre-existing '{'/'}' exclusion) so a crafted class name can't break out of the
+    /// &lt;style&gt; tag this output is spliced into — this text is extracted from the
+    /// document's &lt;head&gt;, which sits outside the body content <see cref="Process"/> runs
+    /// through <see cref="Sanitizer"/>, so this regex is the only thing standing between it and
+    /// live markup.
     /// </remarks>
-    [GeneratedRegex(@"\.lst-kix_[^{]+\{[^}]*list-style-type:[^}]+\}")]
+    [GeneratedRegex(@"\.lst-kix_[^{<>""']+\{[^}<>""']*list-style-type:[^}<>""']+\}")]
     private static partial Regex GoogleDocsListStyleRegex();
 }

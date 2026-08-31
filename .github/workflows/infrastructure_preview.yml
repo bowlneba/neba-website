@@ -44,6 +44,15 @@ jobs:
       - name: Setup azd
         uses: Azure/setup-azd@80591774c092d5d640d43663766a76728d66e07d # v2.3.0
 
+      - name: Install Aspire CLI
+        run: |
+          set -euo pipefail
+          curl -sSL --fail --proto '=https' --tlsv1.2 https://aspire.dev/install.sh -o install-aspire.sh
+          [ -s install-aspire.sh ]
+          bash install-aspire.sh --version 13.5.3
+          rm -f install-aspire.sh
+          echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
+
       - name: Configure azd authentication
         run: azd config set auth.useAzCliAuth true
 

@@ -1098,6 +1098,27 @@ describe('NebaMap', () => {
       await expect(showRoute([-71, 42], [-70, 43])).rejects.toThrow('timed out');
     });
 
+    test('does not abort the fetch before 55 seconds, and aborts at 55 seconds', async () => {
+      await createInitializedMap();
+      jest.useFakeTimers();
+      let capturedSignal;
+      globalThis.fetch = jest.fn((_url, options) => {
+        capturedSignal = options.signal;
+        return new Promise(() => {}); // never resolves - only the abort timeout matters here
+      });
+
+      const routePromise = showRoute([-71, 42], [-70, 43]);
+      await Promise.resolve(); // let the fetch() call run so capturedSignal is set
+
+      jest.advanceTimersByTime(54999);
+      expect(capturedSignal.aborted).toBe(false);
+
+      jest.advanceTimersByTime(1);
+      expect(capturedSignal.aborted).toBe(true);
+
+      routePromise.catch(() => {}); // fetch never resolves; avoid an unhandled rejection warning
+    });
+
     test('falls through to instructionGroups when the instructions array is empty', async () => {
       await createInitializedMap();
       globalThis.fetch = jest.fn().mockResolvedValue({

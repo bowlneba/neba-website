@@ -18,6 +18,7 @@ internal static class SecurityRoleSeeder
         [
             Permissions.CreateUser,
             Permissions.ResetUserPassword,
+            Permissions.GetUsers,
 
             Permissions.CreateArticle,
             Permissions.EditArticle,
@@ -29,7 +30,9 @@ internal static class SecurityRoleSeeder
             Permissions.CreateTournament,
             Permissions.EditTournament,
             Permissions.ManageTournamentSponsors,
-            Permissions.DeleteTournament
+            Permissions.DeleteTournament,
+
+            Permissions.ViewBackgroundJobsDashboard
         ],
 
         [Roles.Manager] =

@@ -999,8 +999,10 @@ public sealed class HtmlProcessorTests
 
         var link = doc.DocumentNode.SelectSingleNode("//a[@href]");
         link.ShouldNotBeNull();
-        // Should remain unchanged since document is not in configuration
-        link.GetAttributeValue("href", "").ShouldBe("https://www.google.com/url?q=https://docs.google.com/document/d/1UNKNOWN999/edit&sa=D");
+        // Should remain unchanged (aside from sanitization re-encoding "&" as "&amp;", which
+        // HtmlAgilityPack's GetAttributeValue does not decode) since document is not in configuration
+        HtmlEntity.DeEntitize(link.GetAttributeValue("href", ""))
+            .ShouldBe("https://www.google.com/url?q=https://docs.google.com/document/d/1UNKNOWN999/edit&sa=D");
     }
 
     [Fact(DisplayName = "Process should handle Google Docs URLs with user ID in path")]
@@ -1027,5 +1029,116 @@ public sealed class HtmlProcessorTests
         links.Count.ShouldBe(2);
         links[0].GetAttributeValue("href", "").ShouldBe("/bylaws");
         links[1].GetAttributeValue("href", "").ShouldBe("/tournaments/rules");
+    }
+
+    [Fact(DisplayName = "Process should remove script tags")]
+    public void Process_ShouldRemoveScriptTags()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <body><p>Hello</p><script>alert('xss')</script></body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        result.ShouldNotContain("<script", Case.Insensitive);
+        result.ShouldNotContain("alert");
+    }
+
+    [Fact(DisplayName = "Process should remove event handler attributes")]
+    public void Process_ShouldRemoveEventHandlerAttributes()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <body><img src="x.png" onerror="alert('xss')" /></body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        result.ShouldNotContain("onerror", Case.Insensitive);
+        result.ShouldNotContain("alert");
+    }
+
+    [Fact(DisplayName = "Process should preserve the injected list-style tag when body content is sanitized")]
+    public void Process_ShouldPreserveListStyleTag_WhenBodyContentIsSanitized()
+    {
+        // Arrange
+        const string rawHtml = """
+            <html>
+            <head>
+            <style>.lst-kix_abc123-0{list-style-type:lower-alpha}</style>
+            </head>
+            <body><p onclick="alert('xss')">Item</p></body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        result.ShouldContain("<style>.lst-kix_abc123-0{list-style-type:lower-alpha}</style>");
+        result.ShouldNotContain("onclick", Case.Insensitive);
+        result.ShouldNotContain("alert");
+    }
+
+    [Fact(DisplayName = "Process should not splice unescaped markup embedded in a list-style selector into the output")]
+    public void Process_ShouldNotExtractListStyleRule_WhenSelectorEmbedsUnescapedMarkup()
+    {
+        // Arrange
+        // "<style>" is an HTML5 raw-text element: the parser only treats a literal "</style"
+        // sequence as a close tag, so any other markup - including this <img onerror> - survives
+        // as literal InnerText content on the *unsanitized* head node ExtractGoogleDocsListStyles
+        // reads from (it runs against doc.DocumentNode, not the sanitized body). The pre-fix regex
+        // only excluded '{'/'}' from the selector/value character classes, so this payload
+        // satisfied it and was spliced verbatim into the generated <style> tag.
+        const string rawHtml = """
+            <html>
+            <head>
+            <style>.lst-kix_a<img src=x onerror=alert(1)>{list-style-type:disc}</style>
+            </head>
+            <body><p>Item</p></body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        result.ShouldNotContain("<img", Case.Insensitive);
+        result.ShouldNotContain("onerror", Case.Insensitive);
+    }
+
+    [Fact(DisplayName = "Process should not misattribute an original heading ID when sanitization drops a heading entirely")]
+    public void Process_ShouldNotMisattributeOriginalHeadingId_WhenSanitizationDropsAHeading()
+    {
+        // Arrange
+        // <iframe> isn't on the sanitizer's allowlist, and its whole subtree - including this
+        // nested h1 - is removed rather than unwrapped, so only one of the two original headings
+        // survives sanitization. The surviving h2 carries no "id" of its own (so GenerateAnchorIds
+        // has no surviving id to independently re-derive data-original-id from), and
+        // RestoreOriginalHeadingIds matches by position - so without its count guard, the
+        // dropped h1's "first" would incorrectly be restored onto the surviving h2 instead.
+        const string rawHtml = """
+            <html>
+            <body>
+            <iframe src="x"><h1 id="first">Dropped</h1></iframe>
+            <h2>Survives</h2>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        result.ShouldNotContain("data-original-id");
     }
 }
