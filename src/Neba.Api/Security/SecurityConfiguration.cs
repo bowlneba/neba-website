@@ -103,7 +103,6 @@ internal static class SecurityConfiguration
                     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
                 })
                 .AddPolicyScheme(CombinedAuthenticationScheme, "JWT or Cookie", options =>
-                {
                     // Every normal API call carries either an Authorization header or the
                     // query-string fallback above; a plain browser navigation to the dashboard
                     // with neither present falls back to the website's auth cookie, if any.
@@ -111,8 +110,7 @@ internal static class SecurityConfiguration
                         context.Request.Headers.ContainsKey("Authorization")
                             || context.Request.Query.ContainsKey(AccessTokenQueryParameterName)
                                 ? JwtBearerDefaults.AuthenticationScheme
-                                : CookieAuthenticationDefaults.AuthenticationScheme;
-                })
+                                : CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
                     // Same scheme name, cookie name, and Data Protection application name
                     // (StorageConfiguration.DataProtectionApplicationName) as Neba.Website.Server's
