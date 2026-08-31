@@ -13,7 +13,7 @@ namespace Neba.Api.Features.Tournaments;
 /// </summary>
 internal sealed class TournamentInputValidator : AbstractValidator<TournamentInput>
 {
-    public TournamentInputValidator(string errorCodePrefix = "TournamentInput")
+    public TournamentInputValidator(string errorCodePrefix)
     {
         RuleFor(t => t.Name)
             .NotEmpty().WithErrorCode($"{errorCodePrefix}.NameRequired").WithMessage("Name is required.")
