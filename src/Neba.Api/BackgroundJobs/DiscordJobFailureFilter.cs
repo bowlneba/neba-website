@@ -3,6 +3,7 @@ using System.Reflection;
 using Hangfire;
 using Hangfire.States;
 
+using Neba.Api.Compliance;
 using Neba.Api.Discord;
 
 namespace Neba.Api.BackgroundJobs;
@@ -51,10 +52,12 @@ internal sealed class DiscordJobFailureFilter(IDiscordNotifier discordNotifier) 
             return;
         }
 
+        // DiscordMessageRedactor masks any embedded email address in the exception message, same
+        // reasoning as GlobalExceptionHandler/ResilientAuditDataProvider's identical comment.
         var alert = new DiscordAlert(
             DiscordAlertSeverity.Warning,
             "Recurring job failed",
-            failedState.Exception.Message,
+            DiscordMessageRedactor.Redact(failedState.Exception.Message),
             new Dictionary<string, string>
             {
                 ["JobName"] = context.BackgroundJob.Job.Method.Name

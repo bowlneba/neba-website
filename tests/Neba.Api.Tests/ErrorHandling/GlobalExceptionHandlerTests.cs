@@ -309,6 +309,39 @@ public sealed class GlobalExceptionHandlerTests
         _discordNotifier.Verify(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), cancellationToken), Times.Once);
     }
 
+    [Fact(DisplayName = "Should mask an email address embedded in the exception message before posting to Discord")]
+    public async Task TryHandleAsync_ShouldMaskEmbeddedEmailAddress_InDiscordAlertBody()
+    {
+        // Arrange
+        var httpContext = new DefaultHttpContext();
+        var exception = new InvalidOperationException("Bowler with email jdoe@example.com already exists");
+
+        DiscordAlert? capturedAlert = null;
+        _discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => capturedAlert = alert)
+            .Returns(Task.CompletedTask);
+
+        var problemDetailsServiceMock = new Mock<IProblemDetailsService>(MockBehavior.Strict);
+        problemDetailsServiceMock
+            .Setup(s => s.TryWriteAsync(It.IsAny<ProblemDetailsContext>()))
+            .ReturnsAsync(true);
+
+        var handler = new GlobalExceptionHandler(
+            problemDetailsServiceMock.Object,
+            _discordNotifier.Object,
+            CreateAlwaysAlertingCache(),
+            NullLogger<GlobalExceptionHandler>.Instance);
+
+        // Act
+        await handler.TryHandleAsync(httpContext, exception, CancellationToken.None);
+
+        // Assert
+        capturedAlert.ShouldNotBeNull();
+        capturedAlert.Body.ShouldNotContain("jdoe@example.com");
+        capturedAlert.Body.ShouldBe("Bowler with email j*************** already exists");
+    }
+
     [Fact(DisplayName = "Should notify Discord before writing problem details")]
     public async Task TryHandleAsync_ShouldNotifyDiscord_BeforeWritingProblemDetails()
     {

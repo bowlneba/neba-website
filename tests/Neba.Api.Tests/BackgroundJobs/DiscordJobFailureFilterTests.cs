@@ -91,6 +91,37 @@ public sealed class DiscordJobFailureFilterTests
         discordNotifier.VerifyAll();
     }
 
+    [Fact(DisplayName = "OnStateElection should mask an email address embedded in the exception message before posting to Discord")]
+    public async Task OnStateElection_ShouldMaskEmbeddedEmailAddress_InDiscordAlertBody()
+    {
+        // Arrange
+        var exception = new InvalidOperationException("Failed to sync bowler jdoe@example.com");
+        var context = CreateElectStateContext(new FailedState(exception));
+
+        var notified = new TaskCompletionSource();
+        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        DiscordAlert? postedAlert = null;
+        discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) =>
+            {
+                postedAlert = alert;
+                notified.SetResult();
+            })
+            .Returns(Task.CompletedTask);
+
+        var filter = new DiscordJobFailureFilter(discordNotifier.Object);
+
+        // Act
+        filter.OnStateElection(context);
+        await notified.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Assert
+        postedAlert.ShouldNotBeNull();
+        postedAlert.Body.ShouldNotContain("jdoe@example.com");
+        postedAlert.Body.ShouldBe("Failed to sync bowler j***************");
+    }
+
     [Fact(DisplayName = "OnStateElection should not post a Discord alert when the candidate state is Succeeded")]
     public void OnStateElection_ShouldNotPostDiscordAlert_WhenCandidateStateIsSucceeded()
     {

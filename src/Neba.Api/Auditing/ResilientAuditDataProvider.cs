@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using Audit.Core;
 
+using Neba.Api.Compliance;
 using Neba.Api.Discord;
 
 namespace Neba.Api.Auditing;
@@ -95,12 +96,13 @@ internal sealed class ResilientAuditDataProvider(
     // Stack trace deliberately omitted, same reasoning as GlobalExceptionHandler. Discord has none
     // of the app's PII redaction and a trace can echo argument values. The exception type and
     // message are enough to triage from here. The full trace is still available in Application
-    // Insights.
+    // Insights. DiscordMessageRedactor masks any embedded email address in the message itself,
+    // same reasoning as GlobalExceptionHandler.
     private static DiscordAlert BuildAlert(string title, AuditEvent auditEvent, Exception exception) =>
         new(
             DiscordAlertSeverity.Warning,
             title,
-            exception.Message,
+            DiscordMessageRedactor.Redact(exception.Message),
             new Dictionary<string, string>
             {
                 ["EventType"] = auditEvent.GetType().FullName ?? "<unknown>",

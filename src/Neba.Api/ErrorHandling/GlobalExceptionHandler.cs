@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 
+using Neba.Api.Compliance;
 using Neba.Api.Discord;
 
 using ZiggyCreatures.Caching.Fusion;
@@ -36,11 +37,13 @@ internal sealed class GlobalExceptionHandler(IProblemDetailsService problemDetai
             // SQL parameter, a validation message embedding user input) into an external channel
             // that has none of the app's PII redaction. The exception type, path, and message are
             // enough to triage from Discord. The full trace is still one click away in Application
-            // Insights.
+            // Insights. The message itself still isn't safe as-is — DiscordMessageRedactor masks
+            // any embedded email address, the one PII shape a validation/constraint message
+            // reliably quotes.
             var alert = new DiscordAlert(
                 DiscordAlertSeverity.Critical,
                 "Unhandled exception occurred",
-                exception.Message,
+                DiscordMessageRedactor.Redact(exception.Message),
                 new Dictionary<string, string>
                 {
                     ["ExceptionType"] = exceptionType,

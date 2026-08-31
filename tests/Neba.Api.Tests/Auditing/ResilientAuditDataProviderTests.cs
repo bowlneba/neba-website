@@ -139,6 +139,33 @@ public sealed class ResilientAuditDataProviderTests
         capturedAlert.Metadata["ExceptionType"].ShouldBe(exception.GetType().FullName);
     }
 
+    [Fact(DisplayName = "InsertEventAsync masks an email address embedded in the exception message before posting to Discord")]
+    public async Task InsertEventAsync_WhenExceptionMessageEmbedsEmailAddress_MasksItInDiscordAlertBody()
+    {
+        // Arrange
+        var exception = new InvalidOperationException("Duplicate audit entry for bowler jdoe@example.com");
+        var inner = new Mock<IAuditDataProvider>(MockBehavior.Strict);
+        inner.Setup(p => p.InsertEventAsync(Event, TestContext.Current.CancellationToken)).ThrowsAsync(exception);
+        DiscordAlert? capturedAlert = null;
+        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) => capturedAlert = alert)
+            .Returns(Task.CompletedTask);
+        var sut = new ResilientAuditDataProvider(
+            inner.Object,
+            discordNotifier.Object,
+            new FakeLogger<ResilientAuditDataProvider>());
+
+        // Act
+        await sut.InsertEventAsync(Event, TestContext.Current.CancellationToken);
+
+        // Assert
+        capturedAlert.ShouldNotBeNull();
+        capturedAlert.Body.ShouldNotContain("jdoe@example.com");
+        capturedAlert.Body.ShouldBe("Duplicate audit entry for bowler j***************");
+    }
+
     // ── ReplaceEvent ─────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "ReplaceEvent delegates to the inner provider when it succeeds")]

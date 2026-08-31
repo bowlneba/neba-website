@@ -1088,4 +1088,31 @@ public sealed class HtmlProcessorTests
         result.ShouldNotContain("onclick", Case.Insensitive);
         result.ShouldNotContain("alert");
     }
+
+    [Fact(DisplayName = "Process should not splice unescaped markup embedded in a list-style selector into the output")]
+    public void Process_ShouldNotExtractListStyleRule_WhenSelectorEmbedsUnescapedMarkup()
+    {
+        // Arrange
+        // "<style>" is an HTML5 raw-text element: the parser only treats a literal "</style"
+        // sequence as a close tag, so any other markup - including this <img onerror> - survives
+        // as literal InnerText content on the *unsanitized* head node ExtractGoogleDocsListStyles
+        // reads from (it runs against doc.DocumentNode, not the sanitized body). The pre-fix regex
+        // only excluded '{'/'}' from the selector/value character classes, so this payload
+        // satisfied it and was spliced verbatim into the generated <style> tag.
+        const string rawHtml = """
+            <html>
+            <head>
+            <style>.lst-kix_a<img src=x onerror=alert(1)>{list-style-type:disc}</style>
+            </head>
+            <body><p>Item</p></body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        result.ShouldNotContain("<img", Case.Insensitive);
+        result.ShouldNotContain("onerror", Case.Insensitive);
+    }
 }

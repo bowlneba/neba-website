@@ -390,7 +390,13 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
     /// <remarks>
     /// Matches CSS rules like: .lst-kix_abc123-0{list-style-type:lower-alpha}
     /// Captures the complete rule including selector, braces, and properties.
+    /// Excludes '&lt;', '&gt;', '"', and '\'' from the selector/value character classes (on top of
+    /// the pre-existing '{'/'}' exclusion) so a crafted class name can't break out of the
+    /// &lt;style&gt; tag this output is spliced into — this text is extracted from the
+    /// document's &lt;head&gt;, which sits outside the body content <see cref="Process"/> runs
+    /// through <see cref="Sanitizer"/>, so this regex is the only thing standing between it and
+    /// live markup.
     /// </remarks>
-    [GeneratedRegex(@"\.lst-kix_[^{]+\{[^}]*list-style-type:[^}]+\}")]
+    [GeneratedRegex(@"\.lst-kix_[^{<>""']+\{[^}<>""']*list-style-type:[^}<>""']+\}")]
     private static partial Regex GoogleDocsListStyleRegex();
 }
