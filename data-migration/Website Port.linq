@@ -3727,11 +3727,22 @@ public async Task MigrateOilPatterns()
 		KegelId = new Guid("12127b64-f1ef-f011-8407-6045bd096a2f")
 	};
 
+	var septSingles2026 = new OilPatterns
+	{
+		DomainId = Guid.AsDomainId(),
+		Name = "2024 PBA Steelsmith",
+		Length = 42,
+		Volume = 28.6m,
+		LeftRatio = 4.62m,
+		RightRatio = 4.62m,
+		KegelId = new Guid("5c3fd290-b876-ef11-a670-000d3a348d5d")
+	};
+
 	OilPatterns.AddRange(
 		janSingles2026, febDoubles2026, febTrios2026, marSingles2026,
 		aprNonChamp2026, aprSenior2026, aprSingles2026, maySingles2026,
 		junSingles2026, junOverUnder2026, julSingles2026, keeneDoubles2026, keeneSingles2026,
-		augSingles2026);
+		augSingles2026, septSingles2026);
 
 	TournamentOilPatterns.AddRange(
 		new TournamentOilPatterns 
@@ -3816,6 +3827,12 @@ public async Task MigrateOilPatterns()
 		{
 			TournamentId = Tournaments.Single(t => t.EndDate == new DateOnly(2026, 8, 23)).Id,
 			OilPattern = augSingles2026,
+			TournamentRounds = 5
+		},
+		new TournamentOilPatterns
+		{
+			TournamentId = Tournaments.Single(t => t.EndDate == new DateOnly(2026, 9, 13)).Id,
+			OilPattern = septSingles2026,
 			TournamentRounds = 5
 		}
 	);
