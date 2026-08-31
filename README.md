@@ -123,7 +123,7 @@ src/
 | **HTTP Client** | Refit |
 | **Charts** | Blazor-ApexCharts |
 | **Legacy Bridge** | Dapper + Microsoft.Data.SqlClient (temporary `/legacy` sync bridge to the WinForms app's Azure SQL database — see `docs/api/software-backdoor-plan.md`) |
-| **Alerting** | Discord webhook (`#api-logs`) for high-severity, otherwise-invisible failures — see `docs/plans/discord-notifications.md` |
+| **Alerting** | Discord webhook (`#api-logs`) for high-severity, otherwise-invisible failures — see [Alerting](docs/architecture/backend.md#alerting) |
 | **Testing** | xUnit, Moq, Shouldly, Bogus, Verify, Testcontainers, Respawn, bUnit, Playwright |
 
 ### Documentation

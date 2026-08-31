@@ -2370,6 +2370,36 @@ When implementing a feature, ask:
 
 ---
 
+## Alerting
+
+Best-effort Discord webhook notifications (`#api-logs`) for high-severity, otherwise-invisible failures — the push counterpart to Observability above: an alert that finds you, rather than telemetry you have to go looking for.
+
+### Design
+
+- `IDiscordNotifier.NotifyAsync(DiscordAlert, CancellationToken)` posts a single embed to a configured webhook URL (`Discord:WebhookUrl` → `DiscordSettings`). `DiscordConfiguration.AddDiscord()` wires an `HttpClient` with a standard resilience handler (5s per-attempt timeout, 10s total timeout, 2 retries).
+- `DiscordNotifier` never throws — every non-cancellation exception (connectivity failure, non-2xx response) is logged and swallowed, so a Discord outage can never break the operation the alert is reporting.
+- `DiscordAlert(Severity, Title, Body, Metadata?)` — `DiscordAlertSeverity` (`Info`/`Warning`/`Critical`) maps to an embed color (blue/yellow/red).
+- Free-text alert bodies (typically an exception message) aren't PII-redacted the way `ILogger` output is (`EnableRedaction()` only wraps the logging pipeline) — `DiscordMessageRedactor` masks any embedded email address before it reaches Discord.
+- Dispatched fire-and-forget (`Task.Run`) wherever the calling code path must stay fast regardless of a Discord outage (`DiscordJobFailureFilter`, `ResilientAuditDataProvider`) — safe because of `NotifyAsync`'s swallow-everything contract above.
+
+### Alert Sources
+
+| Source | Trigger | Severity |
+| --------- | --------- | --------- |
+| `GlobalExceptionHandler` | Any unhandled exception reaching the API, debounced 5 minutes per exception-type/path combo via `IFusionCache` | Critical |
+| `ResilientAuditDataProvider` | Audit data provider (Azure Table Storage) insert/replace failure | Warning |
+| `DiscordJobFailureFilter` | Any Hangfire job whose retries are exhausted (`IElectStateFilter`, a safety net for jobs with no other failure signal) — opt out per-method/type with `[SkipDiscordJobFailureAlert]` when the job posts its own richer alert | Warning |
+| `GoogleWorkspaceEmailSender` | SMTP delivery failure | Critical |
+| `Legacy.PongJob` | `/legacy/ping` health check — posts on every attempt, success or failure, as the operator's on-demand signal that the legacy bridge is connected (`[SkipDiscordJobFailureAlert]`, since it already alerts every failed attempt itself) | Info (success) / Critical (failure) |
+| `CompleteSeasonSyncJob`, `CompleteTournamentSyncJob` | Legacy sync completes with no matching legacy/website season — needs manual intervention | Critical |
+| `SyncTournamentResultsJob` | A bowler has more than one `Stats_ResultsStats` row for a tournament — data anomaly, row skipped | Warning |
+
+### Testing
+
+`IDiscordNotifier` is mocked (`MockBehavior.Strict`) in unit tests; alert content is asserted against a captured `DiscordAlert`, not a live webhook call.
+
+---
+
 ## Application Auditing
 
 Implemented via [Audit.NET](https://github.com/thepirat000/Audit.NET). Full design history and future-enhancement plans: `docs/plans/auditing.md`.
