@@ -54,13 +54,16 @@ internal sealed class DiscordJobFailureFilter(IDiscordNotifier discordNotifier) 
 
         // DiscordMessageRedactor masks any embedded email address in the exception message, same
         // reasoning as GlobalExceptionHandler/ResilientAuditDataProvider's identical comment.
+        // JobName includes the declaring type, not just the bare method name - several jobs share
+        // a method name (e.g. "SyncAsync"), which would otherwise make the alert ambiguous about
+        // which job actually failed.
         var alert = new DiscordAlert(
             DiscordAlertSeverity.Warning,
             "Recurring job failed",
             DiscordMessageRedactor.Redact(failedState.Exception.Message),
             new Dictionary<string, string>
             {
-                ["JobName"] = context.BackgroundJob.Job.Method.Name
+                ["JobName"] = $"{method.DeclaringType?.Name}.{method.Name}"
             });
 
         // Fire-and-forget rather than blocking this Hangfire worker thread on the Discord HTTP

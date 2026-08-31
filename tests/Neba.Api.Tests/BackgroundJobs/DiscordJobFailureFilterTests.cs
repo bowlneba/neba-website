@@ -37,6 +37,16 @@ public sealed class DiscordJobFailureFilterTests
         }
     }
 
+    // A third stand-in job type sharing SampleJob's method name - several real jobs share a
+    // "SyncAsync" method name, which is the scenario JobName's declaring-type prefix disambiguates.
+    private static class AnotherSampleJob
+    {
+        public static void SampleJobMethod()
+        {
+            // Stand-in job method; never actually invoked in these tests.
+        }
+    }
+
     private static ElectStateContext CreateElectStateContext(IState candidateState, MethodInfo? method = null)
     {
         var storage = new Mock<JobStorage>(MockBehavior.Strict).Object;
@@ -86,7 +96,39 @@ public sealed class DiscordJobFailureFilterTests
         postedAlert.Title.ShouldBe("Recurring job failed");
         postedAlert.Body.ShouldBe("Boom");
         postedAlert.Metadata.ShouldNotBeNull();
-        postedAlert.Metadata["JobName"].ShouldBe(nameof(SampleJob.SampleJobMethod));
+        postedAlert.Metadata["JobName"].ShouldBe($"{nameof(SampleJob)}.{nameof(SampleJob.SampleJobMethod)}");
+    }
+
+    [Fact(DisplayName = "OnStateElection should prefix JobName with the declaring type to disambiguate jobs sharing a method name")]
+    public async Task OnStateElection_ShouldPrefixJobNameWithDeclaringType_WhenTwoJobsShareAMethodName()
+    {
+        // Arrange
+        var method = typeof(AnotherSampleJob).GetMethod(nameof(AnotherSampleJob.SampleJobMethod))!;
+        var context = CreateElectStateContext(new FailedState(new InvalidOperationException("Boom")), method);
+
+        var notified = new TaskCompletionSource();
+        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        DiscordAlert? postedAlert = null;
+        discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) =>
+            {
+                postedAlert = alert;
+                notified.SetResult();
+            })
+            .Returns(Task.CompletedTask);
+
+        var filter = new DiscordJobFailureFilter(discordNotifier.Object);
+
+        // Act
+        filter.OnStateElection(context);
+        await notified.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Assert - same bare method name as SampleJob.SampleJobMethod, but a different JobName.
+        postedAlert.ShouldNotBeNull();
+        postedAlert.Metadata.ShouldNotBeNull();
+        postedAlert.Metadata["JobName"].ShouldBe($"{nameof(AnotherSampleJob)}.{nameof(AnotherSampleJob.SampleJobMethod)}");
+        postedAlert.Metadata["JobName"].ShouldNotBe($"{nameof(SampleJob)}.{nameof(SampleJob.SampleJobMethod)}");
     }
 
     [Fact(DisplayName = "OnStateElection should mask an email address embedded in the exception message before posting to Discord")]
