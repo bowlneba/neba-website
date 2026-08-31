@@ -16,14 +16,9 @@ namespace Neba.Api.Compliance;
 internal static partial class DiscordMessageRedactor
 {
     public static string Redact(string text)
-    {
-        if (string.IsNullOrEmpty(text))
-        {
-            return text;
-        }
-
-        return EmailRegex().Replace(text, match => Mask(match.Value));
-    }
+        => string.IsNullOrEmpty(text)
+            ? text
+            : EmailRegex().Replace(text, match => Mask(match.Value));
 
     private static string Mask(string value)
         => value.Length <= 1

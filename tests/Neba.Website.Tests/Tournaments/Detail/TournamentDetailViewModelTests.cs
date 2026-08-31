@@ -32,8 +32,8 @@ public sealed class TournamentDetailViewModelTests
     {
         // Arrange
         var model = TournamentDetailViewModelFactory.Create(
-            logoUrl: new Uri("https://cdn.example.com/tournament-logo.png"),
-            tournamentType: "Doubles");
+            tournamentType: "Doubles",
+            logoUrl: new Uri("https://cdn.example.com/tournament-logo.png"));
 
         // Assert
         model.DisplayLogoSrc.ShouldBe("https://cdn.example.com/tournament-logo.png");
@@ -43,7 +43,7 @@ public sealed class TournamentDetailViewModelTests
     public void DisplayLogoSrc_ShouldUseFormatDefault_WhenLogoUrlIsNull()
     {
         // Arrange
-        var model = TournamentDetailViewModelFactory.Create(logoUrl: null, tournamentType: "Doubles");
+        var model = TournamentDetailViewModelFactory.Create(tournamentType: "Doubles", logoUrl: null);
 
         // Assert
         model.DisplayLogoSrc.ShouldBe("/images/neba-doubles.jpg");

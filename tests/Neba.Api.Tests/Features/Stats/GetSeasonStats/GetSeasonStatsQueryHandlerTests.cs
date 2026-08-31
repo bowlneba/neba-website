@@ -199,7 +199,7 @@ public sealed class GetSeasonStatsQueryHandlerTests(AppDbContextFixture fixture)
             endDate: new DateOnly(2026, 12, 31));
         await _dbContext.Seasons.AddAsync(season, ct);
 
-        var tournament = TournamentFactory.Create(seasonId: season.Id, statsEligible: true);
+        var tournament = TournamentFactory.Create(statsEligible: true, seasonId: season.Id);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 
@@ -239,11 +239,11 @@ public sealed class GetSeasonStatsQueryHandlerTests(AppDbContextFixture fixture)
         await _dbContext.Seasons.AddAsync(season, ct);
 
         var historicalTournament = TournamentFactory.Create(
-            seasonId: season.Id, statsEligible: true,
-            startDate: new DateOnly(2026, 1, 5), endDate: new DateOnly(2026, 1, 6));
+            startDate: new DateOnly(2026, 1, 5), endDate: new DateOnly(2026, 1, 6),
+statsEligible: true, seasonId: season.Id);
         var currentTournament = TournamentFactory.Create(
-            seasonId: season.Id, statsEligible: true,
-            startDate: new DateOnly(2026, 2, 5), endDate: new DateOnly(2026, 2, 6));
+            startDate: new DateOnly(2026, 2, 5), endDate: new DateOnly(2026, 2, 6),
+statsEligible: true, seasonId: season.Id);
         await _dbContext.Tournaments.AddRangeAsync([historicalTournament, currentTournament], ct);
         await _dbContext.SaveChangesAsync(ct);
 
@@ -288,7 +288,7 @@ public sealed class GetSeasonStatsQueryHandlerTests(AppDbContextFixture fixture)
             endDate: new DateOnly(2024, 12, 31));
         await _dbContext.Seasons.AddAsync(season, ct);
 
-        var tournament = TournamentFactory.Create(seasonId: season.Id, statsEligible: true);
+        var tournament = TournamentFactory.Create(statsEligible: true, seasonId: season.Id);
         await _dbContext.Tournaments.AddAsync(tournament, ct);
         await _dbContext.SaveChangesAsync(ct);
 

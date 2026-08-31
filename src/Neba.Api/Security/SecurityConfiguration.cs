@@ -114,14 +114,12 @@ internal static class SecurityConfiguration
                                 : CookieAuthenticationDefaults.AuthenticationScheme;
                 })
                 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
-                {
                     // Same scheme name, cookie name, and Data Protection application name
                     // (StorageConfiguration.DataProtectionApplicationName) as Neba.Website.Server's
                     // AddAccountServices, so a ticket the website encrypts can be decrypted here —
                     // this scheme is never challenged directly (see ForwardDefaultSelector above),
                     // it only ever reads a cookie the website already issued.
-                    options.Cookie.Name = SharedAuthCookieName;
-                })
+                    options.Cookie.Name = SharedAuthCookieName)
                 .AddJwtBearer(options =>
                 {
                     options.TokenValidationParameters = new TokenValidationParameters

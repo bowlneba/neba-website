@@ -180,8 +180,8 @@ internal sealed class GetSeasonStatsQueryHandler(
         var isRookieByBowlerId = bowlerStats.ToDictionary(stat => stat.BowlerId, stat => stat.IsRookie);
 
         var bowlerOfTheYearProgressions = rawProgressionResults
-            .Select(result => result with { IsRookie = isRookieByBowlerId.GetValueOrDefault(result.BowlerId) })
-            .ToList();
+            .ConvertAll(result => result with { IsRookie = isRookieByBowlerId.GetValueOrDefault(result.BowlerId) })
+;
 
         var bowlerOfTheYearRaces = _bowlerOfTheYearRaceCalculator.CalculateAllProgressions(bowlerOfTheYearProgressions);
 

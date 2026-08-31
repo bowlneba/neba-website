@@ -516,7 +516,7 @@ public sealed class TournamentDetailTests : IDisposable
     {
         // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
-            logoUrl: null, tournamentType: TournamentType.Doubles));
+tournamentType: TournamentType.Doubles, logoUrl: null));
 
         // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
