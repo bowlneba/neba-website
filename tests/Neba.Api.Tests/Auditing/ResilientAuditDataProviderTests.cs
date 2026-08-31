@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Audit.Core;
 
 using Microsoft.Extensions.Logging;
@@ -14,8 +16,27 @@ namespace Neba.Api.Tests.Auditing;
 public sealed class ResilientAuditDataProviderTests
 {
     private static readonly AuditEvent Event = new() { EventType = "Test" };
+    private static readonly TimeSpan NotifyWaitTimeout = TimeSpan.FromSeconds(5);
 
     private static Mock<IDiscordNotifier> CreateUnusedDiscordNotifier() => new(MockBehavior.Strict);
+
+    // Discord notification is fire-and-forget (see ResilientAuditDataProvider.NotifyDiscordFireAndForget's
+    // own doc comment - it must not block the audited operation on Discord's own timeout/retry
+    // policy), so tests asserting on the notification need to wait for the background Task rather
+    // than asserting immediately after the SUT call returns.
+    private static Mock<IDiscordNotifier> CreateAwaitableDiscordNotifier(TaskCompletionSource notified, Action<DiscordAlert>? onNotified = null)
+    {
+        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) =>
+            {
+                onNotified?.Invoke(alert);
+                notified.SetResult();
+            })
+            .Returns(Task.CompletedTask);
+        return discordNotifier;
+    }
 
     // ── InsertEvent ──────────────────────────────────────────────────────────
 
@@ -39,26 +60,27 @@ public sealed class ResilientAuditDataProviderTests
     }
 
     [Fact(DisplayName = "InsertEvent returns null, logs a warning, and notifies Discord when the inner provider throws")]
-    public void InsertEvent_WhenInnerProviderThrows_ReturnsNullLogsWarningAndNotifiesDiscord()
+    [SuppressMessage("Reliability", "CA1849:Call async methods when in an async method", Justification = "InsertEvent is the sync overload under test here, not a blocking call on an async one; the method is async only to await the fire-and-forget Discord notification below it.")]
+    [SuppressMessage("VisualStudio.Threading.Analyzers", "VSTHRD103:Call async methods when in an async method", Justification = "Same as the CA1849 suppression above.")]
+    public async Task InsertEvent_WhenInnerProviderThrows_ReturnsNullLogsWarningAndNotifiesDiscord()
     {
         // Arrange
         var inner = new Mock<IAuditDataProvider>(MockBehavior.Strict);
         inner.Setup(p => p.InsertEvent(Event)).Throws(new InvalidOperationException("storage outage"));
         var logger = new FakeLogger<ResilientAuditDataProvider>();
-        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
-        discordNotifier
-            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
-            .Returns(Task.CompletedTask)
-            .Verifiable();
+        var notified = new TaskCompletionSource();
+        var discordNotifier = CreateAwaitableDiscordNotifier(notified);
         var sut = new ResilientAuditDataProvider(inner.Object, discordNotifier.Object, logger);
 
         // Act
+#pragma warning disable S6966 // InsertEvent is the sync overload under test here, not a blocking call on an async one.
         var result = sut.InsertEvent(Event);
+#pragma warning restore S6966
+        await notified.Task.WaitAsync(NotifyWaitTimeout, TestContext.Current.CancellationToken);
 
         // Assert
         result.ShouldBeNull();
         logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
-        discordNotifier.VerifyAll();
     }
 
     // ── InsertEventAsync ─────────────────────────────────────────────────────
@@ -91,20 +113,17 @@ public sealed class ResilientAuditDataProviderTests
         inner.Setup(p => p.InsertEventAsync(Event, TestContext.Current.CancellationToken))
             .ThrowsAsync(new InvalidOperationException("storage outage"));
         var logger = new FakeLogger<ResilientAuditDataProvider>();
-        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
-        discordNotifier
-            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
-            .Returns(Task.CompletedTask)
-            .Verifiable();
+        var notified = new TaskCompletionSource();
+        var discordNotifier = CreateAwaitableDiscordNotifier(notified);
         var sut = new ResilientAuditDataProvider(inner.Object, discordNotifier.Object, logger);
 
         // Act
         var result = await sut.InsertEventAsync(Event, TestContext.Current.CancellationToken);
+        await notified.Task.WaitAsync(NotifyWaitTimeout, TestContext.Current.CancellationToken);
 
         // Assert
         result.ShouldBeNull();
         logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
-        discordNotifier.VerifyAll();
     }
 
     [Fact(DisplayName = "InsertEventAsync notifies Discord with a warning alert describing the failure when the inner provider throws")]
@@ -115,11 +134,8 @@ public sealed class ResilientAuditDataProviderTests
         var inner = new Mock<IAuditDataProvider>(MockBehavior.Strict);
         inner.Setup(p => p.InsertEventAsync(Event, TestContext.Current.CancellationToken)).ThrowsAsync(exception);
         DiscordAlert? capturedAlert = null;
-        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
-        discordNotifier
-            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
-            .Callback<DiscordAlert, CancellationToken>((alert, _) => capturedAlert = alert)
-            .Returns(Task.CompletedTask);
+        var notified = new TaskCompletionSource();
+        var discordNotifier = CreateAwaitableDiscordNotifier(notified, alert => capturedAlert = alert);
         var sut = new ResilientAuditDataProvider(
             inner.Object,
             discordNotifier.Object,
@@ -127,6 +143,7 @@ public sealed class ResilientAuditDataProviderTests
 
         // Act
         await sut.InsertEventAsync(Event, TestContext.Current.CancellationToken);
+        await notified.Task.WaitAsync(NotifyWaitTimeout, TestContext.Current.CancellationToken);
 
         // Assert
         capturedAlert.ShouldNotBeNull();
@@ -146,11 +163,8 @@ public sealed class ResilientAuditDataProviderTests
         var inner = new Mock<IAuditDataProvider>(MockBehavior.Strict);
         inner.Setup(p => p.InsertEventAsync(Event, TestContext.Current.CancellationToken)).ThrowsAsync(exception);
         DiscordAlert? capturedAlert = null;
-        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
-        discordNotifier
-            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
-            .Callback<DiscordAlert, CancellationToken>((alert, _) => capturedAlert = alert)
-            .Returns(Task.CompletedTask);
+        var notified = new TaskCompletionSource();
+        var discordNotifier = CreateAwaitableDiscordNotifier(notified, alert => capturedAlert = alert);
         var sut = new ResilientAuditDataProvider(
             inner.Object,
             discordNotifier.Object,
@@ -158,6 +172,7 @@ public sealed class ResilientAuditDataProviderTests
 
         // Act
         await sut.InsertEventAsync(Event, TestContext.Current.CancellationToken);
+        await notified.Task.WaitAsync(NotifyWaitTimeout, TestContext.Current.CancellationToken);
 
         // Assert
         capturedAlert.ShouldNotBeNull();
@@ -186,25 +201,26 @@ public sealed class ResilientAuditDataProviderTests
     }
 
     [Fact(DisplayName = "ReplaceEvent logs a warning and notifies Discord instead of throwing when the inner provider throws")]
-    public void ReplaceEvent_WhenInnerProviderThrows_LogsWarningAndNotifiesDiscordInsteadOfThrowing()
+    [SuppressMessage("Reliability", "CA1849:Call async methods when in an async method", Justification = "ReplaceEvent is the sync overload under test here, not a blocking call on an async one; the method is async only to await the fire-and-forget Discord notification below it.")]
+    [SuppressMessage("VisualStudio.Threading.Analyzers", "VSTHRD103:Call async methods when in an async method", Justification = "Same as the CA1849 suppression above.")]
+    public async Task ReplaceEvent_WhenInnerProviderThrows_LogsWarningAndNotifiesDiscordInsteadOfThrowing()
     {
         // Arrange
         var inner = new Mock<IAuditDataProvider>(MockBehavior.Strict);
         inner.Setup(p => p.ReplaceEvent("event-id", Event)).Throws(new InvalidOperationException("storage outage"));
         var logger = new FakeLogger<ResilientAuditDataProvider>();
-        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
-        discordNotifier
-            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
-            .Returns(Task.CompletedTask)
-            .Verifiable();
+        var notified = new TaskCompletionSource();
+        var discordNotifier = CreateAwaitableDiscordNotifier(notified);
         var sut = new ResilientAuditDataProvider(inner.Object, discordNotifier.Object, logger);
 
         // Act
+#pragma warning disable S6966 // ReplaceEvent is the sync overload under test here, not a blocking call on an async one.
         sut.ReplaceEvent("event-id", Event);
+#pragma warning restore S6966
+        await notified.Task.WaitAsync(NotifyWaitTimeout, TestContext.Current.CancellationToken);
 
         // Assert
         logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
-        discordNotifier.VerifyAll();
     }
 
     // ── ReplaceEventAsync ────────────────────────────────────────────────────
@@ -237,19 +253,16 @@ public sealed class ResilientAuditDataProviderTests
         inner.Setup(p => p.ReplaceEventAsync("event-id", Event, TestContext.Current.CancellationToken))
             .ThrowsAsync(new InvalidOperationException("storage outage"));
         var logger = new FakeLogger<ResilientAuditDataProvider>();
-        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
-        discordNotifier
-            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
-            .Returns(Task.CompletedTask)
-            .Verifiable();
+        var notified = new TaskCompletionSource();
+        var discordNotifier = CreateAwaitableDiscordNotifier(notified);
         var sut = new ResilientAuditDataProvider(inner.Object, discordNotifier.Object, logger);
 
         // Act
         await sut.ReplaceEventAsync("event-id", Event, TestContext.Current.CancellationToken);
+        await notified.Task.WaitAsync(NotifyWaitTimeout, TestContext.Current.CancellationToken);
 
         // Assert
         logger.Collector.GetSnapshot().ShouldHaveSingleItem().Level.ShouldBe(LogLevel.Warning);
-        discordNotifier.VerifyAll();
     }
 
     [Fact(DisplayName = "InsertEventAsync notifies Discord with CancellationToken.None even when the ambient token is already canceled")]
@@ -260,11 +273,8 @@ public sealed class ResilientAuditDataProviderTests
         await cts.CancelAsync();
         var inner = new Mock<IAuditDataProvider>(MockBehavior.Strict);
         inner.Setup(p => p.InsertEventAsync(Event, cts.Token)).ThrowsAsync(new InvalidOperationException("storage outage"));
-        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
-        discordNotifier
-            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
-            .Returns(Task.CompletedTask)
-            .Verifiable();
+        var notified = new TaskCompletionSource();
+        var discordNotifier = CreateAwaitableDiscordNotifier(notified);
         var sut = new ResilientAuditDataProvider(
             inner.Object,
             discordNotifier.Object,
@@ -272,9 +282,9 @@ public sealed class ResilientAuditDataProviderTests
 
         // Act
         var result = await sut.InsertEventAsync(Event, cts.Token);
+        await notified.Task.WaitAsync(NotifyWaitTimeout, TestContext.Current.CancellationToken);
 
         // Assert
         result.ShouldBeNull();
-        discordNotifier.VerifyAll();
     }
 }
