@@ -92,15 +92,23 @@ internal sealed partial class HtmlProcessor(GoogleSettings googleDriveSettings)
     /// "data-original-id" from a heading's current "id" attribute, which sanitization already
     /// removed, so this restores it directly instead.
     /// </summary>
+    /// <remarks>
+    /// Positional matching assumes sanitization neither drops nor reorders heading elements
+    /// relative to <paramref name="originalIds"/> - true today given the sanitizer's default
+    /// allowlist includes h1-h6, but silently wrong if that ever changes. Guarded by a count check
+    /// below: a mismatch means the mapping can no longer be trusted, so it's skipped entirely
+    /// (falling back to <see cref="GenerateAnchorIds"/>'s generated IDs) rather than risking
+    /// misattributing one heading's original anchor to a different heading.
+    /// </remarks>
     private static void RestoreOriginalHeadingIds(HtmlNode node, List<string> originalIds)
     {
         var headings = node.SelectNodes("//h1|//h2|//h3|//h4|//h5|//h6");
-        if (headings is null)
+        if (headings is null || headings.Count != originalIds.Count)
         {
             return;
         }
 
-        for (var i = 0; i < headings.Count && i < originalIds.Count; i++)
+        for (var i = 0; i < headings.Count; i++)
         {
             if (!string.IsNullOrEmpty(originalIds[i]))
             {

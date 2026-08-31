@@ -1115,4 +1115,30 @@ public sealed class HtmlProcessorTests
         result.ShouldNotContain("<img", Case.Insensitive);
         result.ShouldNotContain("onerror", Case.Insensitive);
     }
+
+    [Fact(DisplayName = "Process should not misattribute an original heading ID when sanitization drops a heading entirely")]
+    public void Process_ShouldNotMisattributeOriginalHeadingId_WhenSanitizationDropsAHeading()
+    {
+        // Arrange
+        // <iframe> isn't on the sanitizer's allowlist, and its whole subtree - including this
+        // nested h1 - is removed rather than unwrapped, so only one of the two original headings
+        // survives sanitization. The surviving h2 carries no "id" of its own (so GenerateAnchorIds
+        // has no surviving id to independently re-derive data-original-id from), and
+        // RestoreOriginalHeadingIds matches by position - so without its count guard, the
+        // dropped h1's "first" would incorrectly be restored onto the surviving h2 instead.
+        const string rawHtml = """
+            <html>
+            <body>
+            <iframe src="x"><h1 id="first">Dropped</h1></iframe>
+            <h2>Survives</h2>
+            </body>
+            </html>
+            """;
+
+        // Act
+        var result = _processor.Process(rawHtml);
+
+        // Assert
+        result.ShouldNotContain("data-original-id");
+    }
 }
