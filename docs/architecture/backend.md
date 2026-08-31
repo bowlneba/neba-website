@@ -2402,14 +2402,14 @@ Best-effort Discord webhook notifications (`#api-logs`) for high-severity, other
 
 ## Application Auditing
 
-Implemented via [Audit.NET](https://github.com/thepirat000/Audit.NET). Full design history and future-enhancement plans: `docs/plans/auditing.md`.
+Implemented via [Audit.NET](https://github.com/thepirat000/Audit.NET). Full design history and future-enhancement plans: [docs/plans/auditing.md](../plans/auditing.md).
 
 ### Guidelines
 
 1. Audit compliance-relevant mutations, not every request — EF Core changes to domain aggregates, identity/security events, non-GET API commands, and background job outcomes. Read-only operations (GETs, queries) are never audited.
 2. Every audit event carries an actor (`ICurrentUserService.ActorId`, `"anonymous"` if unauthenticated) and a correlation ID (current `Activity.TraceId`, falling back to `HttpContext.TraceIdentifier`).
 3. Audit failures must never fail the operation being audited — writes go through `ResilientAuditDataProvider`, which logs and swallows data-provider exceptions rather than propagating them.
-4. Storage is Azure Table Storage, one table per audit source, append-only in production (write-only RBAC, no delete) — see the Phase 4 deployment checklist item in `docs/plans/auditing.md`.
+4. Storage is Azure Table Storage, one table per audit source, append-only in production (write-only RBAC, no delete) — see the Phase 4 deployment checklist item in [docs/plans/auditing.md](../plans/auditing.md).
 5. PII in audit payloads is scrubbed with the same Compliance taxonomy used for log redaction (`[PublicData]`/`[PersonalData]`/`[PrivateData]`, extended to `AttributeTargets.Property`) via `AuditPayloadScrubber` — no separate `[AuditIgnore]` convention.
 6. Security/identity audit events are isolated to their own table (`SecurityAuditEvents`), independent of application-data events, so they can have distinct RBAC/retention.
 7. Background job audit records outcome only (job id, type/method, success/failure, timing) — never serialized job arguments or results (`ExcludeArguments()`).
@@ -2429,7 +2429,7 @@ Configuration lives in `src/Neba.Api/Auditing/AuditingConfiguration.cs` (`AddAud
 
 ### Future Enhancements
 
-Not yet implemented — see `docs/plans/auditing.md` for brief implementation plans:
+Not yet implemented — see [docs/plans/auditing.md](../plans/auditing.md) for brief implementation plans:
 
 - **SignalR** — audit hub method invocations that mutate state, via an `IHubFilter`, once any SignalR hub is introduced.
 - **Outbound HTTP clients** (e.g. Challonge bracket API) — audit outbound mutating calls via a `DelegatingHandler`, once any outbound third-party HTTP integration is introduced.
