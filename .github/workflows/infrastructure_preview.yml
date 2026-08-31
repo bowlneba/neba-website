@@ -46,7 +46,11 @@ jobs:
 
       - name: Install Aspire CLI
         run: |
-          curl -sSL https://aspire.dev/install.sh | bash
+          set -euo pipefail
+          curl -sSL --fail --proto '=https' --tlsv1.2 https://aspire.dev/install.sh -o install-aspire.sh
+          [ -s install-aspire.sh ]
+          bash install-aspire.sh --version 13.4.0-preview.1.26277.9
+          rm -f install-aspire.sh
           echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
 
       - name: Configure azd authentication
