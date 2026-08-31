@@ -105,7 +105,7 @@ internal sealed class ResilientAuditDataProvider(
             DiscordMessageRedactor.Redact(exception.Message),
             new Dictionary<string, string>
             {
-                ["EventType"] = auditEvent.GetType().FullName ?? "<unknown>",
+                ["EventType"] = auditEvent.EventType ?? "<unknown>",
                 ["ExceptionType"] = exception.GetType().FullName ?? "<unknown>"
             });
 }

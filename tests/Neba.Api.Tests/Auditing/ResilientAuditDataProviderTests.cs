@@ -135,7 +135,7 @@ public sealed class ResilientAuditDataProviderTests
         capturedAlert.Title.ShouldBe("Audit event insertion failed");
         capturedAlert.Body.ShouldBe(exception.Message);
         capturedAlert.Metadata.ShouldNotBeNull();
-        capturedAlert.Metadata["EventType"].ShouldBe(Event.GetType().FullName);
+        capturedAlert.Metadata["EventType"].ShouldBe(Event.EventType);
         capturedAlert.Metadata["ExceptionType"].ShouldBe(exception.GetType().FullName);
     }
 
