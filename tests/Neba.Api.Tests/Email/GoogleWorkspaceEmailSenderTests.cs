@@ -212,16 +212,14 @@ public sealed class GoogleWorkspaceEmailSenderTests : IClassFixture<MailpitFixtu
         _discordNotifier
             .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
             .Callback<DiscordAlert, CancellationToken>((alert, _) => capturedAlert = alert)
-            .Returns(Task.CompletedTask)
-            .Verifiable();
+            .Returns(Task.CompletedTask);
         var sut = new GoogleWorkspaceEmailSender(BuildUnreachableSettings(), _discordNotifier.Object, _logger);
         var message = EmailMessageFactory.Create(to: "recipient@example.com", subject: "Welcome to NEBA");
 
         // Act
         await sut.SendAsync(message, CancellationToken.None);
 
-        // Assert
-        _discordNotifier.VerifyAll();
+        // Assert - the captured alert's content below already proves NotifyAsync was called.
         capturedAlert.ShouldNotBeNull();
         capturedAlert.Severity.ShouldBe(DiscordAlertSeverity.Critical);
         capturedAlert.Title.ShouldBe("Email delivery failed");

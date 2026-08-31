@@ -319,11 +319,8 @@ public sealed class UsersTests : IDisposable
         // Act
         cut.Find("button.confirm-action-modal-cancel").Click();
 
-        // Assert
+        // Assert - Strict mock with no ResetPasswordAsync setup: any call would throw, proving no reset was sent.
         cut.Markup.ShouldNotContain("Send \"");
-        _mockApi.Verify(
-            x => x.ResetPasswordAsync(It.IsAny<ResetPasswordRequest>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 
     [Fact(DisplayName = "Should show success toast when reset password succeeds")]

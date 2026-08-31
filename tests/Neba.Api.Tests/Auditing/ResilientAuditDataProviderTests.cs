@@ -24,7 +24,7 @@ public sealed class ResilientAuditDataProviderTests
     {
         // Arrange
         var inner = new Mock<IAuditDataProvider>(MockBehavior.Strict);
-        inner.Setup(p => p.InsertEvent(Event)).Returns("event-id").Verifiable();
+        inner.Setup(p => p.InsertEvent(Event)).Returns("event-id");
         var sut = new ResilientAuditDataProvider(
             inner.Object,
             CreateUnusedDiscordNotifier().Object,
@@ -33,9 +33,9 @@ public sealed class ResilientAuditDataProviderTests
         // Act
         var result = sut.InsertEvent(Event);
 
-        // Assert
+        // Assert - the returned event id could only come from the mocked call above, so this
+        // already proves the inner provider was invoked; no separate Verify needed.
         result.ShouldBe("event-id");
-        inner.VerifyAll();
     }
 
     [Fact(DisplayName = "InsertEvent returns null, logs a warning, and notifies Discord when the inner provider throws")]
@@ -69,8 +69,7 @@ public sealed class ResilientAuditDataProviderTests
         // Arrange
         var inner = new Mock<IAuditDataProvider>(MockBehavior.Strict);
         inner.Setup(p => p.InsertEventAsync(Event, TestContext.Current.CancellationToken))
-            .ReturnsAsync("event-id")
-            .Verifiable();
+            .ReturnsAsync("event-id");
         var sut = new ResilientAuditDataProvider(
             inner.Object,
             CreateUnusedDiscordNotifier().Object,
@@ -79,9 +78,9 @@ public sealed class ResilientAuditDataProviderTests
         // Act
         var result = await sut.InsertEventAsync(Event, TestContext.Current.CancellationToken);
 
-        // Assert
+        // Assert - the returned event id could only come from the mocked call above, so this
+        // already proves the inner provider was invoked; no separate Verify needed.
         result.ShouldBe("event-id");
-        inner.VerifyAll();
     }
 
     [Fact(DisplayName = "InsertEventAsync returns null and logs a warning when the inner provider throws")]

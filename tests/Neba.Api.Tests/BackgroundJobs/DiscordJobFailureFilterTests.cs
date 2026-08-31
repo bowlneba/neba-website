@@ -72,8 +72,7 @@ public sealed class DiscordJobFailureFilterTests
                 postedAlert = alert;
                 notified.SetResult();
             })
-            .Returns(Task.CompletedTask)
-            .Verifiable();
+            .Returns(Task.CompletedTask);
 
         var filter = new DiscordJobFailureFilter(discordNotifier.Object);
 
@@ -88,7 +87,6 @@ public sealed class DiscordJobFailureFilterTests
         postedAlert.Body.ShouldBe("Boom");
         postedAlert.Metadata.ShouldNotBeNull();
         postedAlert.Metadata["JobName"].ShouldBe(nameof(SampleJob.SampleJobMethod));
-        discordNotifier.VerifyAll();
     }
 
     [Fact(DisplayName = "OnStateElection should mask an email address embedded in the exception message before posting to Discord")]
@@ -133,7 +131,9 @@ public sealed class DiscordJobFailureFilterTests
         // Act
         filter.OnStateElection(context);
 
-        // Assert
+        // Assert - OnStateElection dispatches its alert via a discarded fire-and-forget Task.Run
+        // (see its own doc comment), so a Strict mock with no setup wouldn't reliably fail this
+        // test synchronously if it were called - explicit Verify is the only real assertion here.
         discordNotifier.Verify(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()), Times.Never());
     }
 
@@ -151,7 +151,9 @@ public sealed class DiscordJobFailureFilterTests
         // Act
         filter.OnStateElection(context);
 
-        // Assert
+        // Assert - OnStateElection dispatches its alert via a discarded fire-and-forget Task.Run
+        // (see its own doc comment), so a Strict mock with no setup wouldn't reliably fail this
+        // test synchronously if it were called - explicit Verify is the only real assertion here.
         discordNotifier.Verify(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()), Times.Never());
     }
 
@@ -167,7 +169,9 @@ public sealed class DiscordJobFailureFilterTests
         // Act
         filter.OnStateElection(context);
 
-        // Assert
+        // Assert - OnStateElection dispatches its alert via a discarded fire-and-forget Task.Run
+        // (see its own doc comment), so a Strict mock with no setup wouldn't reliably fail this
+        // test synchronously if it were called - explicit Verify is the only real assertion here.
         discordNotifier.Verify(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()), Times.Never());
     }
 }

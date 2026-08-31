@@ -191,8 +191,7 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         discordNotifier
             .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
             .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
-            .Returns(Task.CompletedTask)
-            .Verifiable();
+            .Returns(Task.CompletedTask);
 
         var job = CreateJob(jobsMock.Object, emailSender, discordNotifier);
 
@@ -204,10 +203,10 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         sentMessage.To.ShouldBe("website@bowlneba.com");
         sentMessage.HtmlBody.ShouldContain("999");
 
+        // The captured alert's content below already proves NotifyAsync was called.
         postedAlert.ShouldNotBeNull();
         postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Critical);
         postedAlert.Metadata.ShouldNotBeNull();
         postedAlert.Metadata["LegacyTournamentId"].ShouldBe("999");
-        discordNotifier.VerifyAll();
     }
 }

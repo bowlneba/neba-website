@@ -251,8 +251,7 @@ public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture)
         discordNotifier
             .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
             .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
-            .Returns(Task.CompletedTask)
-            .Verifiable();
+            .Returns(Task.CompletedTask);
 
         var job = CreateJob(jobsMock.Object, emailSender, discordNotifier);
 
@@ -264,11 +263,11 @@ public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture)
         sentMessage.To.ShouldBe("website@bowlneba.com");
         sentMessage.HtmlBody.ShouldContain("999");
 
+        // The captured alert's content below already proves NotifyAsync was called.
         postedAlert.ShouldNotBeNull();
         postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Critical);
         postedAlert.Metadata.ShouldNotBeNull();
         postedAlert.Metadata["LegacySeasonId"].ShouldBe("999");
-        discordNotifier.VerifyAll();
     }
 
     [Fact(DisplayName = "SyncAsync should not schedule any award job and should send a manual-intervention email and Discord alert when no website season matches the legacy date range")]
@@ -293,8 +292,7 @@ public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture)
         discordNotifier
             .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
             .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
-            .Returns(Task.CompletedTask)
-            .Verifiable();
+            .Returns(Task.CompletedTask);
 
         var job = CreateJob(jobsMock.Object, emailSender, discordNotifier);
 
@@ -305,10 +303,10 @@ public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture)
         sentMessage.ShouldNotBeNull();
         sentMessage.HtmlBody.ShouldContain("42");
 
+        // The captured alert's content below already proves NotifyAsync was called.
         postedAlert.ShouldNotBeNull();
         postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Critical);
         postedAlert.Metadata.ShouldNotBeNull();
         postedAlert.Metadata["LegacySeasonId"].ShouldBe("42");
-        discordNotifier.VerifyAll();
     }
 }

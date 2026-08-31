@@ -472,8 +472,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture)
         discordNotifier
             .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
             .Callback<DiscordAlert, CancellationToken>((alert, _) => postedAlert = alert)
-            .Returns(Task.CompletedTask)
-            .Verifiable();
+            .Returns(Task.CompletedTask);
 
         var job = CreateJob(discordNotifier: discordNotifier, logger: fakeLogger);
 
@@ -484,13 +483,13 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture)
         tournament.Results.ShouldBeEmpty();
         fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Error && r.Message.Contains("100", StringComparison.Ordinal));
 
+        // The captured alert's content below already proves NotifyAsync was called.
         postedAlert.ShouldNotBeNull();
         postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Warning);
         postedAlert.Metadata.ShouldNotBeNull();
         postedAlert.Metadata["LegacyBowlerId"].ShouldBe("100");
         postedAlert.Metadata["LegacyTournamentId"].ShouldBe("42");
         postedAlert.Metadata["RowCount"].ShouldBe("2");
-        discordNotifier.VerifyAll();
     }
 
     [Fact(DisplayName = "SyncAsync should query only the rows for the requested legacy tournament id")]
