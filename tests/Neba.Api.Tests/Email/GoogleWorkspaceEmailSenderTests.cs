@@ -227,7 +227,8 @@ public sealed class GoogleWorkspaceEmailSenderTests : IClassFixture<MailpitFixtu
         capturedAlert.Title.ShouldBe("Email delivery failed");
         capturedAlert.Body.ShouldNotBeNullOrWhiteSpace();
         capturedAlert.Metadata.ShouldNotBeNull();
-        capturedAlert.Metadata["Recipient"].ShouldBe("recipient@example.com");
+        capturedAlert.Metadata["Recipient"].ShouldNotContain("recipient@example.com");
+        capturedAlert.Metadata["Recipient"].ShouldBe("r********************");
         capturedAlert.Metadata["Subject"].ShouldBe("Welcome to NEBA");
     }
 

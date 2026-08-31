@@ -53,13 +53,17 @@ internal sealed class GoogleWorkspaceEmailSender(
         {
             logger.LogEmailSendFailed(ex, message.To, message.Subject);
 
+            // Recipient masked via DiscordMessageRedactor, same reasoning as GlobalExceptionHandler
+            // /ResilientAuditDataProvider/DiscordJobFailureFilter's identical comment - Discord has
+            // none of the app's PII redaction, and this is the exact value the paired log call
+            // above already masks as [PersonalData].
             var alert = new DiscordAlert(
                 DiscordAlertSeverity.Critical,
                 "Email delivery failed",
-                ex.Message,
+                DiscordMessageRedactor.Redact(ex.Message),
                 new Dictionary<string, string>
                 {
-                    ["Recipient"] = message.To,
+                    ["Recipient"] = DiscordMessageRedactor.Redact(message.To),
                     ["Subject"] = message.Subject
                 });
 
