@@ -1,4 +1,6 @@
 @page "/account/users"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Neba.Api.Contracts
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Security.ListUsers
@@ -9,6 +11,8 @@
 @inject ApiExecutor ApiExecutor
 @inject ISecurityApi SecurityApi
 @inject ToastService ToastService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IAuthorizationService AuthorizationService
 
 <PageTitle>Users - BowlNEBA</PageTitle>
 
@@ -132,7 +136,21 @@
             ? string.Empty
             : $"Send \"{_userPendingReset.Email}\" a link to set a new password? Their current password will stop working immediately.";
 
-    protected override async Task OnParametersSetAsync() => await LoadUsersAsync();
+    protected override async Task OnParametersSetAsync()
+    {
+        // AuthorizeView below only gates rendered markup, not this lifecycle method, so an
+        // authenticated-but-unpermissioned viewer would otherwise still trigger this API call on
+        // every render - the server endpoint enforces the policy too (so nothing would leak), but
+        // the call itself is unnecessary. Mirrors the AuthorizeView's own Policy above.
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var authResult = await AuthorizationService.AuthorizeAsync(authState.User, Permissions.GetUsers.PolicyName);
+        if (!authResult.Succeeded)
+        {
+            return;
+        }
+
+        await LoadUsersAsync();
+    }
 
     private async Task LoadUsersAsync()
     {

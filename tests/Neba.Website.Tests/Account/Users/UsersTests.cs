@@ -75,6 +75,20 @@ public sealed class UsersTests : IDisposable
         cut.Markup.ShouldContain("You don't have permission to view users.");
     }
 
+    [Fact(DisplayName = "Should not call ListUsersAsync when user lacks GetUsers permission")]
+    public void OnParametersSet_ShouldNotCallListUsersAsync_WhenUserLacksPermission()
+    {
+        // Arrange - AuthorizeView only gates rendered markup, not OnParametersSetAsync, so this
+        // guards against the lifecycle method firing the API call regardless of authorization.
+        _authContext.SetPolicies();
+
+        // Act
+        _ctx.Render<UsersPage>();
+
+        // Assert
+        _mockApi.Verify(x => x.ListUsersAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     // ── Loading state ────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should show loading skeleton while API is pending")]
