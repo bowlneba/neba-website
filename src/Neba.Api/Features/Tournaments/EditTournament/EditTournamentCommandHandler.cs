@@ -24,6 +24,7 @@ internal sealed class EditTournamentCommandHandler(
     public async Task<ErrorOr<Updated>> HandleAsync(EditTournamentCommand command, CancellationToken cancellationToken)
     {
         var tournament = await appDbContext.Tournaments
+            .Include(t => t.OilPatterns)
             .SingleOrDefaultAsync(t => t.Id == command.TournamentId, cancellationToken);
 
         if (tournament is null)

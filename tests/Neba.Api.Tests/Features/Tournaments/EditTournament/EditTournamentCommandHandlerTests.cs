@@ -444,6 +444,45 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         attachedPattern.TournamentRounds.ShouldBe(["Qualifying", "Match Play"]);
     }
 
+    [Fact(DisplayName = "HandleAsync does not duplicate the oil pattern association when re-edited with the same oil pattern already attached")]
+    public async Task HandleAsync_ShouldNotDuplicateOilPatternAssociation_WhenOilPatternAlreadyAttached()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+        var oilPattern = OilPatternFactory.Create();
+        await _dbContext.OilPatterns.AddAsync(oilPattern, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var firstHandler = CreateHandler();
+        var firstCommand = ValidCommand(tournament.Id, startDate: season.StartDate, endDate: season.StartDate, oilPatternId: oilPattern.Id);
+        var firstResult = await firstHandler.HandleAsync(firstCommand, ct);
+        firstResult.IsError.ShouldBeFalse();
+
+        // Act
+        // Re-edit the tournament (e.g. only setting the reveal date) while resubmitting the same, already-attached oil pattern.
+        var secondHandler = CreateHandler();
+        var revealAt = Now.AddDays(3);
+        var secondCommand = ValidCommand(
+            tournament.Id,
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            oilPatternId: oilPattern.Id,
+            oilPatternRevealDateTime: revealAt);
+        var secondResult = await secondHandler.HandleAsync(secondCommand, ct);
+
+        // Assert
+        secondResult.IsError.ShouldBeFalse();
+        var persisted = await _dbContext.Tournaments
+            .Include(t => t.OilPatterns)
+            .AsNoTracking()
+            .SingleAsync(t => t.Id == tournament.Id, ct);
+        var attachedPattern = persisted.OilPatterns.ShouldHaveSingleItem();
+        attachedPattern.OilPatternId.ShouldBe(oilPattern.Id);
+        attachedPattern.TournamentRounds.ShouldBe([TournamentRound.Qualifying, TournamentRound.MatchPlay]);
+    }
+
     [Fact(DisplayName = "HandleAsync schedules an oil pattern reveal cache eviction job when a future reveal date is provided")]
     public async Task HandleAsync_ShouldScheduleEvictionJob_WhenOilPatternRevealDateTimeIsInFuture()
     {
