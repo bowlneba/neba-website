@@ -228,8 +228,8 @@ public sealed class SeasonStatsTests : IDisposable
         await cut.Find("[aria-label^='Show all'][aria-label*='High Average']").ClickAsync(new());
 
         // Assert
-        cut.Find(".stats-modal-backdrop").ShouldNotBeNull();
-        cut.Find(".stats-modal-title").TextContent.ShouldContain("High Average");
+        cut.Find(".neba-modal-backdrop").ShouldNotBeNull();
+        cut.Find(".neba-modal-title").TextContent.ShouldContain("High Average");
     }
 
     [Fact(DisplayName = "Should close modal when the close button is clicked")]
@@ -246,10 +246,10 @@ public sealed class SeasonStatsTests : IDisposable
         await cut.Find("[aria-label^='Show all'][aria-label*='High Average']").ClickAsync(new());
 
         // Act
-        await cut.Find(".stats-modal-close").ClickAsync(new());
+        await cut.Find(".neba-modal-close").ClickAsync(new());
 
         // Assert
-        cut.FindAll(".stats-modal-backdrop").ShouldBeEmpty();
+        cut.FindAll(".neba-modal-backdrop").ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Should open points progression modal when the widget is clicked")]
@@ -263,8 +263,8 @@ public sealed class SeasonStatsTests : IDisposable
         await cut.Find("[aria-label='Open Bowler of the Year points progression chart']").ClickAsync(new());
 
         // Assert
-        cut.Find(".stats-modal-backdrop").ShouldNotBeNull();
-        cut.Find(".stats-modal-title").TextContent.ShouldContain("Points Race");
+        cut.Find(".neba-modal-backdrop").ShouldNotBeNull();
+        cut.Find(".neba-modal-title").TextContent.ShouldContain("Points Race");
     }
 
     [Fact(DisplayName = "Should filter datalist options by search text when oninput fires")]

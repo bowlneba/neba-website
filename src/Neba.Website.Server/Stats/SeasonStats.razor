@@ -719,21 +719,11 @@
                                                                 </div>
 
                                                                 <!-- ── Standings modal ───────────────────────────────────── -->
-                                                                @if (_modalOpen)
-                                                                {
-                                                                    <div class="stats-modal-backdrop" @onclick="CloseModal" role="dialog" aria-modal="true"
-                                                                         aria-label="@_modalTitle">
-                                                                        <div class="@ModalClass" @onclick:stopPropagation>
-                                                                            <div class="stats-modal-header">
-                                                                                <h2 class="stats-modal-title">@_modalTitle</h2>
-                                                                                <button class="stats-modal-close" @onclick="CloseModal" aria-label="Close">&#x2715;</button>
-                                                                            </div>
-                                                                            <div class="stats-modal-body stats-table-wrapper">
-                                                                                @_modalContent
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        }
+                                                                <NebaModal IsOpen="@_modalOpen" OnClose="CloseModal" Title="@_modalTitle" MaxWidth="@ModalMaxWidth">
+                                                                    <div class="stats-modal-body stats-table-wrapper">
+                                                                        @_modalContent
+                                                                    </div>
+                                                                </NebaModal>
 
 @code {
     [SupplyParameterFromQuery(Name = "season")]
@@ -995,7 +985,7 @@ BoyStandingsSections()
         _modalWide = false;
     }
 
-    private string ModalClass => _modalWide ? "stats-modal stats-modal-wide" : "stats-modal";
+    private string ModalMaxWidth => _modalWide ? "1120px" : "720px";
 
     private RenderFragment RenderBoyStandingsTable(IReadOnlyCollection<BowlerOfTheYearStandingRowViewModel> rows) => @<table class="stats-table">
         <thead>

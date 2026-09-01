@@ -244,21 +244,9 @@
 
     }
 
-    @if (_modalOpen)
-    {
-        <div class="indiv-modal-backdrop" @onclick="CloseModal" role="dialog" aria-modal="true"
-             aria-label="@_modalTitle">
-            <div class="indiv-modal" @onclick:stopPropagation>
-                <div class="indiv-modal-header">
-                    <h2 class="indiv-modal-title">@_modalTitle</h2>
-                    <button class="indiv-modal-close" @onclick="CloseModal" aria-label="Close">&#x2715;</button>
-                </div>
-                <div class="indiv-modal-body">
-                    @_modalContent
-                </div>
-            </div>
-        </div>
-    }
+    <NebaModal IsOpen="@_modalOpen" OnClose="CloseModal" Title="@_modalTitle" MaxWidth="1120px">
+        @_modalContent
+    </NebaModal>
 </div>
 
 @code {

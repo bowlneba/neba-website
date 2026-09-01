@@ -1,6 +1,14 @@
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
 import { initialize, scrollToHash, openSlideover, closeSlideover, initializeSlideoverContent, dispose } from './NebaDocument.razor.js';
 
+/**
+ * Makes an element appear "visible" to isFocusable by overriding getClientRects
+ * to return a non-empty list (jsdom always returns empty by default).
+ */
+function makeVisible(el) {
+  el.getClientRects = () => [{}]; // .length === 1
+}
+
 describe('NebaDocument', () => {
   let mockDotNetReference;
 
@@ -220,6 +228,90 @@ describe('NebaDocument', () => {
       // Assert
       expect(modal.classList.contains('active')).toBe(true);
       expect(document.body.style.overflow).toBe('hidden');
+    });
+
+    test('should move focus into the modal and trap it when opened', () => {
+      // Arrange
+      document.body.innerHTML = `
+        <div id="content">
+          <h1>Heading 1</h1>
+        </div>
+        <ul id="toc-list"></ul>
+        <ul id="toc-mobile-list"></ul>
+        <button id="toc-mobile-button"></button>
+        <div id="toc-modal" tabindex="-1">
+          <button id="toc-modal-close"></button>
+        </div>
+        <div id="toc-modal-overlay"></div>
+      `;
+
+      const config = {
+        contentId: 'content',
+        tocListId: 'toc-list',
+        tocMobileListId: 'toc-mobile-list',
+        tocMobileButtonId: 'toc-mobile-button',
+        tocModalId: 'toc-modal',
+        tocModalOverlayId: 'toc-modal-overlay',
+        tocModalCloseId: 'toc-modal-close'
+      };
+
+      initialize(mockDotNetReference, config);
+      const mobileButton = document.getElementById('toc-mobile-button');
+      const modal = document.getElementById('toc-modal');
+      const closeButton = document.getElementById('toc-modal-close');
+      makeVisible(closeButton);
+
+      // Act
+      mobileButton.click();
+
+      // Assert — focus moved into the dialog, and Tab from its only focusable child wraps back to it.
+      expect(document.activeElement).toBe(modal);
+      closeButton.focus();
+      const tabEvent = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+      modal.dispatchEvent(tabEvent);
+      expect(tabEvent.defaultPrevented).toBe(true);
+      expect(document.activeElement).toBe(closeButton);
+    });
+
+    test('should release the focus trap when the modal closes', () => {
+      // Arrange
+      document.body.innerHTML = `
+        <div id="content">
+          <h1>Heading 1</h1>
+        </div>
+        <ul id="toc-list"></ul>
+        <ul id="toc-mobile-list"></ul>
+        <button id="toc-mobile-button"></button>
+        <div id="toc-modal" tabindex="-1">
+          <button id="toc-modal-close"></button>
+        </div>
+        <div id="toc-modal-overlay"></div>
+      `;
+
+      const config = {
+        contentId: 'content',
+        tocListId: 'toc-list',
+        tocMobileListId: 'toc-mobile-list',
+        tocMobileButtonId: 'toc-mobile-button',
+        tocModalId: 'toc-modal',
+        tocModalOverlayId: 'toc-modal-overlay',
+        tocModalCloseId: 'toc-modal-close'
+      };
+
+      initialize(mockDotNetReference, config);
+      const modal = document.getElementById('toc-modal');
+      const closeButton = document.getElementById('toc-modal-close');
+      makeVisible(closeButton);
+      document.getElementById('toc-mobile-button').click();
+
+      // Act
+      document.getElementById('toc-modal-close').click();
+
+      // Assert — after close, Tab is no longer intercepted by the (now released) trap.
+      closeButton.focus();
+      const tabEvent = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+      modal.dispatchEvent(tabEvent);
+      expect(tabEvent.defaultPrevented).toBe(false);
     });
 
     test('should close modal on overlay click', () => {
@@ -628,6 +720,21 @@ describe('NebaDocument', () => {
       // Act & Assert - should not throw
       expect(() => openSlideover('nonexistent')).not.toThrow();
     });
+
+    test('should move focus into the slideover panel', () => {
+      // Arrange
+      document.body.innerHTML = `
+        <div id="slideover" tabindex="-1">
+          <button id="slideover-close"></button>
+        </div>
+      `;
+
+      // Act
+      openSlideover('slideover');
+
+      // Assert
+      expect(document.activeElement).toBe(document.getElementById('slideover'));
+    });
   });
 
   describe('closeSlideover', () => {
@@ -650,6 +757,27 @@ describe('NebaDocument', () => {
     test('should handle missing slideover element gracefully', () => {
       // Act & Assert - should not throw
       expect(() => closeSlideover('nonexistent')).not.toThrow();
+    });
+
+    test('should release the focus trap so Tab is no longer intercepted', () => {
+      // Arrange
+      document.body.innerHTML = `
+        <div id="slideover" tabindex="-1">
+          <button id="slideover-close"></button>
+        </div>
+      `;
+      openSlideover('slideover');
+      const slideover = document.getElementById('slideover');
+      const closeButton = document.getElementById('slideover-close');
+
+      // Act
+      closeSlideover('slideover');
+
+      // Assert
+      closeButton.focus();
+      const tabEvent = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+      slideover.dispatchEvent(tabEvent);
+      expect(tabEvent.defaultPrevented).toBe(false);
     });
   });
 

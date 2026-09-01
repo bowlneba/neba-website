@@ -8,11 +8,11 @@ Scope: full site — every `.razor`/`.razor.js`/`.razor.css` file under `src/Neb
 | # | Finding | Severity | Status |
 |---|---|---|---|
 | 1 | Form validation errors never announced or associated | High | Fixed |
-| 2 | `NebaDocument` mobile TOC and slideover panel skip focus trap | High | Open |
+| 2 | `NebaDocument` mobile TOC and slideover panel skip focus trap | High | Fixed |
 | 3 | Two unlabeled `<select>` elements share one unassociated label | High | Open |
 | 4 | Low-contrast gray text used for real stat values | High | Open |
 | 5 | Surface tokens unset in dark mode — near-invisible autocomplete hover text | High | Open |
-| 6 | Hand-rolled Stats modals skip focus trap / Escape handling | High | Open |
+| 6 | Hand-rolled Stats modals skip focus trap / Escape handling | High | Fixed |
 | 7 | Clickable bowling-center card is a mouse-only trap | Medium | Open |
 | 8 | Ambiguous, undisambiguated action buttons in repeated list rows | Medium | Open |
 | 9 | `<th>` missing `scope` in six components | Medium | Open |
