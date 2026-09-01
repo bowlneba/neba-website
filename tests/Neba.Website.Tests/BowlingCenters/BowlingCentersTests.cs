@@ -1,5 +1,6 @@
 using Bunit;
 
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -331,6 +332,51 @@ public sealed class BowlingCentersTests : IDisposable
         // Act
         var cut = _ctx.Render<BowlingCentersPage>();
         await cut.InvokeAsync(() => cut.Find(".neba-card").Click());
+
+        // Assert
+        cut.Markup.ShouldContain("Focus Bowl");
+    }
+
+    [Fact(DisplayName = "Should mark the centers list as a live region so screen readers announce filter changes")]
+    public void Render_ShouldMarkCentersListAriaLivePolite()
+    {
+        // Arrange
+        var center = BowlingCenterSummaryResponseFactory.Create(name: "Focus Bowl");
+        SetupSuccessResponse([center]);
+
+        // Act
+        var cut = _ctx.Render<BowlingCentersPage>();
+
+        // Assert
+        cut.Find("#centers-scroll-container").GetAttribute("aria-live").ShouldBe("polite");
+    }
+
+    [Fact(DisplayName = "Should mark the center card as a keyboard-focusable button")]
+    public void Render_ShouldMarkCenterCardAsKeyboardFocusableButton()
+    {
+        // Arrange
+        var center = BowlingCenterSummaryResponseFactory.Create(name: "Focus Bowl");
+        SetupSuccessResponse([center]);
+
+        // Act
+        var cut = _ctx.Render<BowlingCentersPage>();
+
+        // Assert
+        var card = cut.Find(".neba-card");
+        card.GetAttribute("role").ShouldBe("button");
+        card.GetAttribute("tabindex").ShouldBe("0");
+    }
+
+    [Fact(DisplayName = "Should focus map location when center card is activated with the keyboard")]
+    public async Task HandleCenterCardClick_ShouldFocusMapLocation_WhenCardActivatedWithEnterKey()
+    {
+        // Arrange
+        var center = BowlingCenterSummaryResponseFactory.Create(name: "Focus Bowl");
+        SetupSuccessResponse([center]);
+
+        // Act
+        var cut = _ctx.Render<BowlingCentersPage>();
+        await cut.Find(".neba-card").TriggerEventAsync("onkeydown", new KeyboardEventArgs { Key = "Enter" });
 
         // Assert
         cut.Markup.ShouldContain("Focus Bowl");

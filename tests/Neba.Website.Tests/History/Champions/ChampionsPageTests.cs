@@ -170,6 +170,25 @@ public sealed class ChampionsPageTests : IDisposable
         cut.Markup.ShouldContain("hero-stat__num");
     }
 
+    [Fact(DisplayName = "Should mark the loaded views as a live region so screen readers announce view changes")]
+    public void Render_ShouldMarkLoadedContentAriaLivePolite_WhenLoaded()
+    {
+        // Arrange
+        var summary = BowlerTitleSummaryViewModelFactory.Create(titleCount: 3, hallOfFame: true);
+        IReadOnlyCollection<BowlerTitleSummaryViewModel> summaries = [summary];
+        IReadOnlyCollection<TitlesByYearViewModel> years = [];
+
+        var result = Task.FromResult<ErrorOr<(IReadOnlyCollection<BowlerTitleSummaryViewModel>, IReadOnlyCollection<TitlesByYearViewModel>)>>(
+            (summaries, years));
+        RegisterService(new FakeChampionsService(result));
+
+        // Act
+        var cut = _ctx.Render<ChampionsPage>();
+
+        // Assert
+        cut.Find("[aria-live='polite']").ShouldNotBeNull();
+    }
+
     [Fact(DisplayName = "Should enable toolbar buttons when data loads successfully")]
     public void Render_ShouldEnableToolbarButtons_WhenLoaded()
     {

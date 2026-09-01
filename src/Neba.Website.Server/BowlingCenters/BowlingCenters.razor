@@ -93,7 +93,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[600px]">
                 <!-- Left Side: Centers List -->
                 <div class="flex flex-col">
-                    <div id="centers-scroll-container" class="overflow-y-auto pr-2 space-y-4" style="max-height: 600px;">
+                    <div id="centers-scroll-container" class="overflow-y-auto pr-2 space-y-4" style="max-height: 600px;" aria-live="polite">
                         @if (_displayedCenters.Count == 0)
                         {
                             <div class="neba-card text-center py-8">
@@ -109,7 +109,9 @@
                             @foreach (var center in _displayedCenters)
                             {
                                 <div class="neba-card hover:shadow-lg hover:border-[var(--neba-blue-500)] transition-all cursor-pointer"
-                                     @onclick="@(() => HandleCenterCardClick(center))">
+                                     role="button" tabindex="0"
+                                     @onclick="@(() => HandleCenterCardClick(center))"
+                                     @onkeydown="@(async e => { if (e.Key is "Enter" or " ") await HandleCenterCardClick(center); })">
                                     <div class="mb-3">
                                         <h3 class="text-lg font-bold text-[var(--neba-blue-700)]">@center.Name</h3>
                                         <p class="text-xs text-[var(--neba-gray-500)] mt-0.5">USBC Cert #@center.CertificationNumber</p>

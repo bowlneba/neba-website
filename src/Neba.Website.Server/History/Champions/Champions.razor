@@ -84,16 +84,18 @@
     }
     else
     {
-        <div class="@(_activeView == ChampionsView.Titles ? "view is-active" : "view")">
-            <TitleCountView @ref="_titleCountView"
-                            Summaries="@_summaries"
-                            OnBowlerSelected="@OpenModal" />
-        </div>
-        <div class="@(_activeView == ChampionsView.Year ? "view is-active" : "view")">
-            <YearView @ref="_yearView"
-                      Years="@_years"
-                      Summaries="@_summaries"
-                      OnBowlerSelected="@OpenModal" />
+        <div aria-live="polite">
+            <div class="@(_activeView == ChampionsView.Titles ? "view is-active" : "view")">
+                <TitleCountView @ref="_titleCountView"
+                                Summaries="@_summaries"
+                                OnBowlerSelected="@OpenModal" />
+            </div>
+            <div class="@(_activeView == ChampionsView.Year ? "view is-active" : "view")">
+                <YearView @ref="_yearView"
+                          Years="@_years"
+                          Summaries="@_summaries"
+                          OnBowlerSelected="@OpenModal" />
+            </div>
         </div>
     }
 </div>

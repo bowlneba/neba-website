@@ -13,16 +13,16 @@ Scope: full site — every `.razor`/`.razor.js`/`.razor.css` file under `src/Neb
 | 4 | Low-contrast gray text used for real stat values | High | Fixed |
 | 5 | Surface tokens unset in dark mode — near-invisible autocomplete hover text | High | Fixed |
 | 6 | Hand-rolled Stats modals skip focus trap / Escape handling | High | Fixed |
-| 7 | Clickable bowling-center card is a mouse-only trap | Medium | Open |
+| 7 | Clickable bowling-center card is a mouse-only trap | Medium | Fixed |
 | 8 | Ambiguous, undisambiguated action buttons in repeated list rows | Medium | Fixed |
-| 9 | `<th>` missing `scope` in six components | Medium | Open |
-| 10 | `role="img"` wraps focusable, individually-labeled children | Medium | Open |
+| 9 | `<th>` missing `scope` in six components | Medium | Fixed |
+| 10 | `role="img"` wraps focusable, individually-labeled children | Medium | Fixed |
 | 11 | `AccountMenu` uses ARIA menu roles without menu keyboard behavior | Medium | Open |
 | 12 | Muted gray text fails contrast in dark mode | Medium | Fixed |
-| 13 | Invalid ARIA role (`role="note"`) | Low | Open |
-| 14 | Home page skips a heading level | Low | Open |
+| 13 | Invalid ARIA role (`role="note"`) | Low | Fixed |
+| 14 | Home page skips a heading level | Low | Fixed |
 | 15 | Weak focus indicator on timeline dots | Low | Open |
-| 16 | Inconsistent `aria-live` on async-loaded list regions | Low | Open |
+| 16 | Inconsistent `aria-live` on async-loaded list regions | Low | Fixed |
 | 17 | Secondary button keeps light styling in dark mode | Low | Open |
 
 ## Findings
