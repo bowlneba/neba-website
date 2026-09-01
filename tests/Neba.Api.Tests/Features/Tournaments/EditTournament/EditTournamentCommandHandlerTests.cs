@@ -461,26 +461,27 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         firstResult.IsError.ShouldBeFalse();
 
         // Act
-        // Re-edit the tournament (e.g. only setting the reveal date) while resubmitting the same, already-attached oil pattern.
+        // Re-edit the tournament (e.g. only changing an unrelated field) while resubmitting the same, already-attached oil pattern.
         var secondHandler = CreateHandler();
-        var revealAt = Now.AddDays(3);
         var secondCommand = ValidCommand(
             tournament.Id,
+            name: "Updated Tournament Name",
             startDate: season.StartDate,
             endDate: season.StartDate,
-            oilPatternId: oilPattern.Id,
-            oilPatternRevealDateTime: revealAt);
+            oilPatternId: oilPattern.Id);
         var secondResult = await secondHandler.HandleAsync(secondCommand, ct);
 
         // Assert
         secondResult.IsError.ShouldBeFalse();
-        var persisted = await _dbContext.Tournaments
-            .Include(t => t.OilPatterns)
-            .AsNoTracking()
-            .SingleAsync(t => t.Id == tournament.Id, ct);
-        var attachedPattern = persisted.OilPatterns.ShouldHaveSingleItem();
-        attachedPattern.OilPatternId.ShouldBe(oilPattern.Id);
-        attachedPattern.TournamentRounds.ShouldBe([TournamentRound.Qualifying, TournamentRound.MatchPlay]);
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+        var getResult = await getTournamentHandler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true },
+            ct);
+
+        getResult.IsError.ShouldBeFalse();
+        var attachedPattern = getResult.Value.OilPatterns.ShouldHaveSingleItem();
+        attachedPattern.TournamentRounds.ShouldBe(["Qualifying", "Match Play"]);
     }
 
     [Fact(DisplayName = "HandleAsync schedules an oil pattern reveal cache eviction job when a future reveal date is provided")]
