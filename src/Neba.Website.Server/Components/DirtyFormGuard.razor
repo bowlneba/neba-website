@@ -37,9 +37,15 @@
 
     private void HandleBeforeInternalNavigation(LocationChangingContext context)
     {
+        // Don't reset _allowNextNavigation back to false here: once the user has confirmed
+        // leaving, NavigateTo can re-invoke this handler more than once for the same confirmed
+        // navigation (observed on the tournament edit page), and resetting the flag on the first
+        // invocation let the second one see IsDirty still true (it's only cleared by a page's own
+        // "save succeeded" path, not by discarding) and re-show the same prompt a second time.
+        // This component's own instance is disposed once real navigation completes, so leaving the
+        // flag set has no effect beyond this confirmed episode.
         if (_allowNextNavigation)
         {
-            _allowNextNavigation = false;
             return;
         }
 

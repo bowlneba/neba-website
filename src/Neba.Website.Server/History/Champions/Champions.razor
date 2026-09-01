@@ -3,6 +3,7 @@
 
 @inject ITournamentApiService TournamentApiService
 @inject IBowlersApi BowlersApi
+@inject IJSRuntime JSInterop
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
@@ -84,7 +85,7 @@
     }
     else
     {
-        <div aria-live="polite">
+        <div id="champions-view-container" aria-live="polite">
             <div class="@(_activeView == ChampionsView.Titles ? "view is-active" : "view")">
                 <TitleCountView @ref="_titleCountView"
                                 Summaries="@_summaries"
@@ -127,6 +128,7 @@
 
     private TitleCountView? _titleCountView;
     private YearView?       _yearView;
+    private bool            _spaceKeyGuardAttached;
 
     private enum ChampionsView { Titles, Year }
 
@@ -151,6 +153,18 @@
 
         _summaries = result.Value.Summaries;
         _years     = result.Value.Years;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_spaceKeyGuardAttached || _busy)
+        {
+            return;
+        }
+
+        var module = await JSInterop.InvokeAsync<IJSObjectReference>("import", "./Components/RoleButtonSpaceGuard.js");
+        await module.InvokeVoidAsync("guardSpaceKey", "champions-view-container");
+        _spaceKeyGuardAttached = true;
     }
 
     private void ExpandAll()

@@ -266,7 +266,7 @@ public sealed class IndividualStatsTests : IDisposable
         // Assert
         var fieldVal = cut.Find(".indiv-vs-field-value");
         fieldVal.TextContent.ShouldBe("-4.10");
-        (fieldVal.ClassName ?? string.Empty).ShouldContain("text-gray-600");
+        (fieldVal.ClassName ?? string.Empty).ShouldContain("text-[var(--neba-text-muted)]");
     }
 
     [Fact(DisplayName = "Should show one progression card per BOY progression entry")]

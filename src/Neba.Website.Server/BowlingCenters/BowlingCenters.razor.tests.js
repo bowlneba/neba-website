@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
-import { scrollToTop } from './BowlingCenters.razor.js';
+import { scrollToTop, initSpaceKeyGuard } from './BowlingCenters.razor.js';
 
 describe('BowlingCenters', () => {
   beforeEach(() => {
@@ -54,6 +54,31 @@ describe('BowlingCenters', () => {
 
       // Assert
       expect(container.scrollTop).toBe(0);
+    });
+  });
+
+  describe('initSpaceKeyGuard', () => {
+    test('should prevent the default Space action on a role="button" center card', () => {
+      // Arrange
+      const container = document.createElement('div');
+      container.id = 'centers-scroll-container';
+      const card = document.createElement('div');
+      card.setAttribute('role', 'button');
+      container.appendChild(card);
+      document.body.appendChild(container);
+      initSpaceKeyGuard();
+
+      // Act
+      const event = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+      card.dispatchEvent(event);
+
+      // Assert
+      expect(event.defaultPrevented).toBe(true);
+    });
+
+    test('should handle when the scroll container does not exist', () => {
+      // Act - should not throw error
+      expect(() => initSpaceKeyGuard()).not.toThrow();
     });
   });
 });

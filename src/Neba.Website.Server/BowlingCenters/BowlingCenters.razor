@@ -267,6 +267,7 @@
         if (firstRender)
         {
             _jsModule = await JSInterop.InvokeAsync<IJSObjectReference>("import", "./BowlingCenters/BowlingCenters.razor.js");
+            await _jsModule.InvokeVoidAsync("initSpaceKeyGuard");
         }
     }
 
