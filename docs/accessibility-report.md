@@ -10,15 +10,15 @@ Scope: full site — every `.razor`/`.razor.js`/`.razor.css` file under `src/Neb
 | 1 | Form validation errors never announced or associated | High | Fixed |
 | 2 | `NebaDocument` mobile TOC and slideover panel skip focus trap | High | Fixed |
 | 3 | Two unlabeled `<select>` elements share one unassociated label | High | Fixed |
-| 4 | Low-contrast gray text used for real stat values | High | Open |
-| 5 | Surface tokens unset in dark mode — near-invisible autocomplete hover text | High | Open |
+| 4 | Low-contrast gray text used for real stat values | High | Fixed |
+| 5 | Surface tokens unset in dark mode — near-invisible autocomplete hover text | High | Fixed |
 | 6 | Hand-rolled Stats modals skip focus trap / Escape handling | High | Fixed |
 | 7 | Clickable bowling-center card is a mouse-only trap | Medium | Open |
 | 8 | Ambiguous, undisambiguated action buttons in repeated list rows | Medium | Fixed |
 | 9 | `<th>` missing `scope` in six components | Medium | Open |
 | 10 | `role="img"` wraps focusable, individually-labeled children | Medium | Open |
 | 11 | `AccountMenu` uses ARIA menu roles without menu keyboard behavior | Medium | Open |
-| 12 | Muted gray text fails contrast in dark mode | Medium | Open |
+| 12 | Muted gray text fails contrast in dark mode | Medium | Fixed |
 | 13 | Invalid ARIA role (`role="note"`) | Low | Open |
 | 14 | Home page skips a heading level | Low | Open |
 | 15 | Weak focus indicator on timeline dots | Low | Open |
