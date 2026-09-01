@@ -54,7 +54,7 @@
                             @sponsor.SponsorshipAmount.ToString("C0", CultureInfo.GetCultureInfo("en-US")) added money
                         </div>
                     </div>
-                    <button type="button" class="mts-row__remove" @onclick="() => RequestRemove(sponsor)">Remove</button>
+                    <button type="button" class="mts-row__remove" aria-label="@("Remove " + sponsor.Name)" @onclick="() => RequestRemove(sponsor)">Remove</button>
                 </div>
             }
         </div>

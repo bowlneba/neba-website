@@ -492,6 +492,30 @@ public sealed class EditArticleTests : IDisposable
         cut.FindAll(".neba-modal-backdrop").ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Should give each attachment row's Download, Open, and Remove actions an accessible name naming the file")]
+    public void Render_ShouldGiveAttachmentActionsAccessibleNamesNamingFile()
+    {
+        // Arrange
+        var attachment = ArticleAttachmentResponseFactory.Create(
+            displayName: "Schedule",
+            url: new Uri("https://storage.example.com/news-files/schedule.pdf"),
+            isInline: false,
+            container: "news-files",
+            path: "schedule.pdf",
+            sizeInBytes: 4096);
+        var article = ArticleDetailResponseFactory.Create(attachments: [attachment]);
+        SetupGetArticleSuccess(article);
+
+        // Act
+        var cut = _ctx.Render<EditArticle>(p => p.Add(x => x.Slug, article.Slug));
+
+        // Assert
+        var row = cut.Find("li.edit-article-attachment-row");
+        row.QuerySelector("a.neba-btn-secondary[download]")!.GetAttribute("aria-label").ShouldBe("Download Schedule");
+        row.QuerySelector("a[target='_blank']")!.GetAttribute("aria-label").ShouldBe("Open Schedule");
+        row.QuerySelector("button.neba-btn-danger")!.GetAttribute("aria-label").ShouldBe("Remove Schedule");
+    }
+
     [Fact(DisplayName = "Should prompt for confirmation before removing an inline attachment")]
     public void RemoveAttachment_ShouldPromptForConfirmation_WhenAttachmentIsInline()
     {

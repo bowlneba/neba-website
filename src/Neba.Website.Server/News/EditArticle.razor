@@ -109,7 +109,7 @@
                                 {
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <select class="neba-select" value="@_selectedSeasonId" @onchange="HandleSeasonChangedAsync">
+                                            <select class="neba-select" aria-label="Season" value="@_selectedSeasonId" @onchange="HandleSeasonChangedAsync">
                                                 @foreach (var season in _seasons)
                                                 {
                                                     <option value="@season.Id">@season.Description</option>
@@ -117,7 +117,7 @@
                                             </select>
                                         </div>
                                         <div>
-                                            <select class="neba-select" value="@_model.TournamentId" @onchange="HandleTournamentChanged">
+                                            <select class="neba-select" aria-label="Tournament" value="@_model.TournamentId" @onchange="HandleTournamentChanged">
                                                 <option value="">No tournament</option>
                                                 @foreach (var tournament in _tournaments)
                                                 {
@@ -172,10 +172,10 @@
                                                 }
                                                 @if (attachment.Url is not null)
                                                 {
-                                                    <a href="@attachment.Url" download="@attachment.DisplayName" class="neba-btn neba-btn-secondary edit-article-attachment-action">Download</a>
-                                                    <a href="@attachment.Url" target="_blank" rel="noopener noreferrer" class="neba-btn neba-btn-secondary edit-article-attachment-action">Open</a>
+                                                    <a href="@attachment.Url" download="@attachment.DisplayName" class="neba-btn neba-btn-secondary edit-article-attachment-action" aria-label="@("Download " + attachment.DisplayName)">Download</a>
+                                                    <a href="@attachment.Url" target="_blank" rel="noopener noreferrer" class="neba-btn neba-btn-secondary edit-article-attachment-action" aria-label="@("Open " + attachment.DisplayName)">Open</a>
                                                 }
-                                                <button type="button" class="neba-btn neba-btn-danger edit-article-attachment-action" @onclick="@(() => RequestRemoveAttachment(attachment))">Remove</button>
+                                                <button type="button" class="neba-btn neba-btn-danger edit-article-attachment-action" aria-label="@("Remove " + attachment.DisplayName)" @onclick="@(() => RequestRemoveAttachment(attachment))">Remove</button>
                                             </li>
                                         }
                                     </ul>

@@ -113,6 +113,19 @@ public sealed class ManageTournamentSponsorsTests : IDisposable
         options.ShouldNotContain("Kegel");
     }
 
+    [Fact(DisplayName = "Should give each row's Remove button an accessible name naming its sponsor")]
+    public void Render_ShouldGiveRemoveButtonAccessibleNameNamingSponsor()
+    {
+        // Arrange
+        var sponsor = TournamentDetailSponsorViewModelFactory.Create(name: "Kegel");
+
+        // Act
+        var cut = Render([sponsor]);
+
+        // Assert
+        cut.Find(".mts-row__remove").GetAttribute("aria-label").ShouldBe("Remove Kegel");
+    }
+
     [Fact(DisplayName = "Should open confirm dialog naming the sponsor when Remove is clicked")]
     public void RequestRemove_ShouldOpenConfirmDialog_NamingSponsor()
     {
