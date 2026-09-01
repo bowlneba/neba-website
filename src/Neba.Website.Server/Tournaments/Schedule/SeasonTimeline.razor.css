@@ -100,6 +100,10 @@
     z-index: 5;
 }
 
+.season-timeline__dot:focus-visible {
+    box-shadow: 0 0 0 2px var(--neba-bg), 0 0 0 4px var(--neba-blue-600);
+}
+
 .season-timeline__dot--upcoming {
     background: var(--neba-blue-600);
 }

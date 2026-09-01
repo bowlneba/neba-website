@@ -190,6 +190,16 @@ html, body {
   background-color: var(--neba-gray-200);
 }
 
+.dark .neba-btn-secondary {
+  background-color: var(--neba-surface-high);
+  border-color: var(--neba-border);
+  color: var(--neba-text);
+}
+
+.dark .neba-btn-secondary:hover:not(:disabled) {
+  background-color: var(--neba-surface-highest);
+}
+
 
 
 /* Danger button */

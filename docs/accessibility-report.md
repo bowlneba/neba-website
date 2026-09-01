@@ -17,13 +17,13 @@ Scope: full site — every `.razor`/`.razor.js`/`.razor.css` file under `src/Neb
 | 8 | Ambiguous, undisambiguated action buttons in repeated list rows | Medium | Fixed |
 | 9 | `<th>` missing `scope` in six components | Medium | Fixed |
 | 10 | `role="img"` wraps focusable, individually-labeled children | Medium | Fixed |
-| 11 | `AccountMenu` uses ARIA menu roles without menu keyboard behavior | Medium | Open |
+| 11 | `AccountMenu` uses ARIA menu roles without menu keyboard behavior | Medium | Fixed |
 | 12 | Muted gray text fails contrast in dark mode | Medium | Fixed |
 | 13 | Invalid ARIA role (`role="note"`) | Low | Fixed |
 | 14 | Home page skips a heading level | Low | Fixed |
-| 15 | Weak focus indicator on timeline dots | Low | Open |
+| 15 | Weak focus indicator on timeline dots | Low | Fixed |
 | 16 | Inconsistent `aria-live` on async-loaded list regions | Low | Fixed |
-| 17 | Secondary button keeps light styling in dark mode | Low | Open |
+| 17 | Secondary button keeps light styling in dark mode | Low | Fixed |
 
 ## Findings
 

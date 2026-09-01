@@ -76,6 +76,22 @@ public sealed class AccountMenuTests : IDisposable
         cut.Find("button.account-trigger").ShouldNotBeNull();
     }
 
+    [Fact(DisplayName = "Should not use ARIA menu roles that promise keyboard menu behavior it doesn't implement")]
+    public void Render_ShouldNotUseAriaMenuRoles()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies();
+
+        // Act
+        var cut = _ctx.Render<AccountMenu>();
+
+        // Assert
+        cut.FindAll("[role='menu']").ShouldBeEmpty();
+        cut.FindAll("[role='menuitem']").ShouldBeEmpty();
+        cut.Find("button.account-trigger").GetAttribute("aria-label").ShouldBe("Account menu");
+    }
+
     [Fact(DisplayName = "Should display the user's email and a logout link when authorized")]
     public void Render_ShouldDisplayEmailAndLogoutLink_WhenUserIsAuthorized()
     {
