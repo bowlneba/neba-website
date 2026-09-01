@@ -38,7 +38,7 @@ test.describe('Users page (ResetUserPassword only, no GetUsers)', () => {
     await page.goto('/');
     await page.waitForSelector('.account-menu');
     await page.getByRole('button', { name: 'Account menu' }).hover();
-    await expect(page.getByRole('menuitem', { name: 'Users' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Users' })).toHaveCount(0);
 
     await page.goto('/account/users');
     await expect(page.locator('.news-empty-text')).toContainText("don't have permission to view users");
@@ -64,8 +64,8 @@ test.describe('Users page (authenticated)', () => {
     await page.waitForSelector('.account-menu');
 
     await page.getByRole('button', { name: 'Account menu' }).hover();
-    await expect(page.getByRole('menuitem', { name: 'Users' })).toBeVisible();
-    await page.getByRole('menuitem', { name: 'Users' }).click();
+    await expect(page.getByRole('link', { name: 'Users' })).toBeVisible();
+    await page.getByRole('link', { name: 'Users' }).click();
 
     await expect(page).toHaveURL(/\/account\/users$/);
     await expect(page.locator('.neba-table')).toContainText('webmaster@bowlneba.com');

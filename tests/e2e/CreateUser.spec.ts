@@ -36,8 +36,8 @@ test.describe('Create User page (authenticated)', () => {
     await page.waitForSelector('.account-menu');
 
     await page.getByRole('button', { name: 'Account menu' }).hover();
-    await expect(page.getByRole('menuitem', { name: 'Create User' })).toBeVisible();
-    await page.getByRole('menuitem', { name: 'Create User' }).click();
+    await expect(page.getByRole('link', { name: 'Create User' })).toBeVisible();
+    await page.getByRole('link', { name: 'Create User' }).click();
 
     await expect(page).toHaveURL(/\/account\/create-user$/);
     await page.waitForSelector('#email');

@@ -43,22 +43,22 @@ test.describe('Individual stats — points race modal', () => {
 
   test('clicking a points race card opens the modal', async ({ page }) => {
     await page.locator('.indiv-points-race-card').first().click();
-    await expect(page.locator('.indiv-modal')).toBeVisible();
+    await expect(page.locator('.neba-modal-content')).toBeVisible();
   });
 
   test('modal closes via close button', async ({ page }) => {
     await page.locator('.indiv-points-race-card').first().click();
-    await expect(page.locator('.indiv-modal')).toBeVisible();
+    await expect(page.locator('.neba-modal-content')).toBeVisible();
 
-    await page.locator('.indiv-modal-close').click();
-    await expect(page.locator('.indiv-modal')).not.toBeVisible();
+    await page.locator('.neba-modal-close').click();
+    await expect(page.locator('.neba-modal-content')).not.toBeVisible();
   });
 
   test('modal closes via backdrop click', async ({ page }) => {
     await page.locator('.indiv-points-race-card').first().click();
-    await expect(page.locator('.indiv-modal')).toBeVisible();
+    await expect(page.locator('.neba-modal-content')).toBeVisible();
 
-    await page.locator('.indiv-modal-backdrop').click({ position: { x: 10, y: 10 } });
-    await expect(page.locator('.indiv-modal')).not.toBeVisible();
+    await page.locator('.neba-modal-backdrop').click({ position: { x: 10, y: 10 } });
+    await expect(page.locator('.neba-modal-content')).not.toBeVisible();
   });
 });

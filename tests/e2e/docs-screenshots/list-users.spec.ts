@@ -38,12 +38,12 @@ test.describe('list-users help screenshots', () => {
     await page.waitForSelector('.account-menu');
 
     await page.getByRole('button', { name: 'Account menu' }).hover();
-    await expect(page.getByRole('menuitem', { name: 'Users' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Users' })).toBeVisible();
     await waitForDropdownAnimation(page);
 
     await page.screenshot({ path: path.join(outDir, 'account-menu.png') });
 
-    await page.getByRole('menuitem', { name: 'Users' }).click();
+    await page.getByRole('link', { name: 'Users' }).click();
     await page.waitForSelector('.neba-table');
 
     await page.screenshot({ path: path.join(outDir, 'users-table.png'), fullPage: true });

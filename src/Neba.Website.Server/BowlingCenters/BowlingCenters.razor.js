@@ -1,7 +1,7 @@
 // BowlingCenters - Component-scoped JavaScript module
 // Handles list scrolling functionality
 
-import { guardSpaceKey } from '../Components/RoleButtonSpaceGuard.js';
+import { guardSpaceKey } from '../js/RoleButtonSpaceGuard.js';
 
 /**
  * Scrolls the centers list container to the top

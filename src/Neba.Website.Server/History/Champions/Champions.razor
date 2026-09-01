@@ -162,7 +162,7 @@
             return;
         }
 
-        var module = await JSInterop.InvokeAsync<IJSObjectReference>("import", "./Components/RoleButtonSpaceGuard.js");
+        var module = await JSInterop.InvokeAsync<IJSObjectReference>("import", "./js/RoleButtonSpaceGuard.js");
         await module.InvokeVoidAsync("guardSpaceKey", "champions-view-container");
         _spaceKeyGuardAttached = true;
     }
