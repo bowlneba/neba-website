@@ -5,13 +5,13 @@
 
 <div id="@ContainerId" class="neba-date-input @CssClass" @attributes="_containerAttributes">
     <input id="@_elementId" data-segment="month" type="text" inputmode="numeric" maxlength="2" placeholder="mm"
-           class="neba-date-segment" aria-label="Month" />
+           class="neba-date-segment" aria-label="Month" aria-describedby="@_ariaDescribedBy" />
     <span class="neba-date-separator" aria-hidden="true">/</span>
     <input data-segment="day" type="text" inputmode="numeric" maxlength="2" placeholder="dd"
-           class="neba-date-segment" aria-label="Day" />
+           class="neba-date-segment" aria-label="Day" aria-describedby="@_ariaDescribedBy" />
     <span class="neba-date-separator" aria-hidden="true">/</span>
     <input data-segment="year" type="text" inputmode="numeric" maxlength="4" placeholder="yyyy"
-           class="neba-date-segment neba-date-segment-year" aria-label="Year" />
+           class="neba-date-segment neba-date-segment-year" aria-label="Year" aria-describedby="@_ariaDescribedBy" />
 </div>
 
 @code {
@@ -19,6 +19,7 @@
     private DotNetObjectReference<NebaDateInput>? _dotNetHelper;
 
     private object? _elementId;
+    private object? _ariaDescribedBy;
     private IReadOnlyDictionary<string, object>? _containerAttributes;
 
     private string _lastKnownMonth = string.Empty;
@@ -31,8 +32,9 @@
     protected override void OnParametersSet()
     {
         _elementId = AdditionalAttributes is not null && AdditionalAttributes.TryGetValue("id", out var id) ? id : null;
+        _ariaDescribedBy = AdditionalAttributes is not null && AdditionalAttributes.TryGetValue("aria-describedby", out var describedBy) ? describedBy : null;
         _containerAttributes = AdditionalAttributes?
-            .Where(kv => kv.Key != "id")
+            .Where(kv => kv.Key != "id" && kv.Key != "aria-describedby")
             .ToDictionary(kv => kv.Key, kv => kv.Value);
     }
 

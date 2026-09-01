@@ -82,32 +82,32 @@
 
                                 <div>
                                     <FormLabel TargetId="name" For="@(() => _model.Name)">Name</FormLabel>
-                                    <InputText id="name" @bind-Value="_model.Name" class="neba-input" placeholder="e.g. NEBA Fall Classic" />
-                                    <ValidationMessage For="@(() => _model.Name)" class="block text-sm text-red-600 mt-1" />
+                                    <InputText id="name" @bind-Value="_model.Name" class="neba-input" placeholder="e.g. NEBA Fall Classic" aria-describedby="name-error" />
+                                    <NebaValidationMessage For="@(() => _model.Name)" Id="name-error" Class="block text-sm text-red-600 mt-1" />
                                 </div>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div>
                                         <FormLabel TargetId="tournament-type" For="@(() => _model.TournamentType)">Tournament Type</FormLabel>
-                                        <InputSelect id="tournament-type" @bind-Value="_model.TournamentType" class="neba-select">
+                                        <InputSelect id="tournament-type" @bind-Value="_model.TournamentType" class="neba-select" aria-describedby="tournament-type-error">
                                             @foreach (var typeName in _tournamentTypes.Select(type => type.Name))
                                             {
                                                 <option value="@typeName">@typeName</option>
                                             }
                                         </InputSelect>
-                                        <ValidationMessage For="@(() => _model.TournamentType)" class="block text-sm text-red-600 mt-1" />
+                                        <NebaValidationMessage For="@(() => _model.TournamentType)" Id="tournament-type-error" Class="block text-sm text-red-600 mt-1" />
                                     </div>
 
                                     <div>
                                         <FormLabel TargetId="start-date" For="@(() => _model.StartDate)">Start Date</FormLabel>
-                                        <NebaDateInput id="start-date" @bind-Value="_model.StartDate" />
-                                        <ValidationMessage For="@(() => _model.StartDate)" class="block text-sm text-red-600 mt-1" />
+                                        <NebaDateInput id="start-date" @bind-Value="_model.StartDate" aria-describedby="start-date-error" />
+                                        <NebaValidationMessage For="@(() => _model.StartDate)" Id="start-date-error" Class="block text-sm text-red-600 mt-1" />
                                     </div>
 
                                     <div>
                                         <FormLabel TargetId="end-date" For="@(() => _model.EndDate)">End Date</FormLabel>
-                                        <NebaDateInput id="end-date" @bind-Value="_model.EndDate" />
-                                        <ValidationMessage For="@(() => _model.EndDate)" class="block text-sm text-red-600 mt-1" />
+                                        <NebaDateInput id="end-date" @bind-Value="_model.EndDate" aria-describedby="end-date-error" />
+                                        <NebaValidationMessage For="@(() => _model.EndDate)" Id="end-date-error" Class="block text-sm text-red-600 mt-1" />
                                     </div>
                                 </div>
                                 <p class="text-sm text-[var(--neba-gray-500)]">The season is determined automatically from these dates.</p>
@@ -136,21 +136,21 @@
 
                                     <div>
                                         <FormLabel TargetId="entry-fee" For="@(() => _model.EntryFee)">Entry Fee</FormLabel>
-                                        <InputNumber id="entry-fee" @bind-Value="_model.EntryFee" class="neba-input" />
-                                        <ValidationMessage For="@(() => _model.EntryFee)" class="block text-sm text-red-600 mt-1" />
+                                        <InputNumber id="entry-fee" @bind-Value="_model.EntryFee" class="neba-input" aria-describedby="entry-fee-error" />
+                                        <NebaValidationMessage For="@(() => _model.EntryFee)" Id="entry-fee-error" Class="block text-sm text-red-600 mt-1" />
                                     </div>
 
                                     <div>
                                         <FormLabel TargetId="neba-added-money" For="@(() => _model.NebaAddedMoney)">NEBA Added Money</FormLabel>
-                                        <InputNumber id="neba-added-money" @bind-Value="_model.NebaAddedMoney" class="neba-input" />
-                                        <ValidationMessage For="@(() => _model.NebaAddedMoney)" class="block text-sm text-red-600 mt-1" />
+                                        <InputNumber id="neba-added-money" @bind-Value="_model.NebaAddedMoney" class="neba-input" aria-describedby="neba-added-money-error" />
+                                        <NebaValidationMessage For="@(() => _model.NebaAddedMoney)" Id="neba-added-money-error" Class="block text-sm text-red-600 mt-1" />
                                     </div>
                                 </div>
 
                                 <div>
                                     <FormLabel TargetId="registration-url" For="@(() => _model.ExternalRegistrationUrl)">External Registration URL</FormLabel>
-                                    <InputText id="registration-url" @bind-Value="_model.ExternalRegistrationUrl" class="neba-input" placeholder="https://…" />
-                                    <ValidationMessage For="@(() => _model.ExternalRegistrationUrl)" class="block text-sm text-red-600 mt-1" />
+                                    <InputText id="registration-url" @bind-Value="_model.ExternalRegistrationUrl" class="neba-input" placeholder="https://…" aria-describedby="registration-url-error" />
+                                    <NebaValidationMessage For="@(() => _model.ExternalRegistrationUrl)" Id="registration-url-error" Class="block text-sm text-red-600 mt-1" />
                                 </div>
                             </section>
 

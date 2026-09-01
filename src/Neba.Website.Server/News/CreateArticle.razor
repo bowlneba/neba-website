@@ -51,23 +51,23 @@
 
                         <div>
                             <FormLabel TargetId="title" For="@(() => _model.Title)">Title</FormLabel>
-                            <InputText id="title" @bind-Value="_model.Title" class="neba-input" placeholder="Article title" />
-                            <ValidationMessage For="@(() => _model.Title)" class="block text-sm text-red-600 mt-1" />
+                            <InputText id="title" @bind-Value="_model.Title" class="neba-input" placeholder="Article title" aria-describedby="title-error" />
+                            <NebaValidationMessage For="@(() => _model.Title)" Id="title-error" Class="block text-sm text-red-600 mt-1" />
                         </div>
 
                         <div>
                             <FormLabel TargetId="slug" For="@(() => _model.Slug)">Slug</FormLabel>
-                            <InputText id="slug" @bind-Value="_model.Slug" class="neba-input" placeholder="@SlugPlaceholder" />
+                            <InputText id="slug" @bind-Value="_model.Slug" class="neba-input" placeholder="@SlugPlaceholder" aria-describedby="slug-error" />
                             <p class="text-sm text-[var(--neba-gray-500)] mt-1">
                                 Leave blank to auto-generate from the title.
                             </p>
-                            <ValidationMessage For="@(() => _model.Slug)" class="block text-sm text-red-600 mt-1" />
+                            <NebaValidationMessage For="@(() => _model.Slug)" Id="slug-error" Class="block text-sm text-red-600 mt-1" />
                         </div>
 
                         <div>
                             <FormLabel TargetId="content" For="@(() => _model.Content)">Content</FormLabel>
                             <RichTextEditor Value="@_model.Content" ValueChanged="HandleContentChanged" Placeholder="Write the article content…" OnImageSelected="HandleInlineImageSelectedAsync" />
-                            <ValidationMessage For="@(() => _model.Content)" class="block text-sm text-red-600 mt-1" />
+                            <NebaValidationMessage For="@(() => _model.Content)" Id="content-error" Class="block text-sm text-red-600 mt-1" />
                         </div>
 
                         <div>
@@ -147,17 +147,17 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <FormLabel TargetId="publication-status" For="@(() => _model.PublicationStatus)">Status</FormLabel>
-                                <InputSelect id="publication-status" @bind-Value="_model.PublicationStatus" class="neba-select">
+                                <InputSelect id="publication-status" @bind-Value="_model.PublicationStatus" class="neba-select" aria-describedby="publication-status-error">
                                     <option value="Draft">Draft</option>
                                     <option value="Published">Published</option>
                                 </InputSelect>
-                                <ValidationMessage For="@(() => _model.PublicationStatus)" class="block text-sm text-red-600 mt-1" />
+                                <NebaValidationMessage For="@(() => _model.PublicationStatus)" Id="publication-status-error" Class="block text-sm text-red-600 mt-1" />
                             </div>
 
                             <div>
                                 <FormLabel TargetId="publish-date" For="@(() => _model.PublishDateLocal)">Publish Date</FormLabel>
-                                <InputDate id="publish-date" Type="InputDateType.DateTimeLocal" @bind-Value="_model.PublishDateLocal" class="neba-input" />
-                                <ValidationMessage For="@(() => _model.PublishDateLocal)" class="block text-sm text-red-600 mt-1" />
+                                <InputDate id="publish-date" Type="InputDateType.DateTimeLocal" @bind-Value="_model.PublishDateLocal" class="neba-input" aria-describedby="publish-date-error" />
+                                <NebaValidationMessage For="@(() => _model.PublishDateLocal)" Id="publish-date-error" Class="block text-sm text-red-600 mt-1" />
                             </div>
                         </div>
 
