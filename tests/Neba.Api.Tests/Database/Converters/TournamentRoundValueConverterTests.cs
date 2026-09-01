@@ -60,6 +60,24 @@ public sealed class TournamentRoundValueConverterTests
         result.ShouldContain(TournamentRound.MatchPlay);
     }
 
+    [Fact(DisplayName = "Should return a List instance when converting from provider, matching the backing field's concrete type")]
+    public void ConvertFromProvider_ShouldReturnListInstance_ForEfFieldMaterialization()
+    {
+        // Arrange
+        // TournamentOilPattern._tournamentRounds is a List<TournamentRound>; EF's field-based materialization
+        // casts the converter's output directly to that concrete type, so returning any other IReadOnlyCollection
+        // implementation (e.g. ReadOnlyCollection<T> via .AsReadOnly()) throws InvalidCastException when EF
+        // materializes the entity directly (e.g. via Include), even though projection-based reads are unaffected.
+        var providerValue = TournamentRound.Qualifying.Value;
+        var converter = new TournamentRoundValueConverter();
+
+        // Act
+        var result = converter.ConvertFromProvider(providerValue);
+
+        // Assert
+        result.ShouldBeOfType<List<TournamentRound>>();
+    }
+
     [Fact(DisplayName = "Should preserve rounds when converting to and from provider")]
     public void RoundTrip_ShouldPreserveRounds_WhenConvertingToAndFromProvider()
     {

@@ -55,11 +55,12 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
 
     private EditTournamentCommandHandler CreateHandler(
         IBackgroundJobScheduler? backgroundJobScheduler = null,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        AppDbContext? dbContext = null)
     {
         var cache = _serviceProvider.GetRequiredService<IFusionCache>();
         var scheduler = backgroundJobScheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object;
-        return new EditTournamentCommandHandler(_dbContext, cache, scheduler, timeProvider ?? new FakeTimeProvider(Now));
+        return new EditTournamentCommandHandler(dbContext ?? _dbContext, cache, scheduler, timeProvider ?? new FakeTimeProvider(Now));
     }
 
     private async Task<Season> SeedSeasonAsync(DateOnly startDate, DateOnly endDate, CancellationToken ct)
@@ -462,7 +463,11 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
 
         // Act
         // Re-edit the tournament (e.g. only changing an unrelated field) while resubmitting the same, already-attached oil pattern.
-        var secondHandler = CreateHandler();
+        // Uses a fresh DbContext, matching production's per-request lifecycle — reusing _dbContext would let the
+        // change tracker's identity map mask the value-converter bug this test guards against (see
+        // TournamentRoundValueConverterTests.ConvertFromProvider_ShouldReturnListInstance_ForEfFieldMaterialization).
+        await using var secondDbContext = fixture.CreateDbContext();
+        var secondHandler = CreateHandler(dbContext: secondDbContext);
         var secondCommand = ValidCommand(
             tournament.Id,
             name: "Updated Tournament Name",
