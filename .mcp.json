@@ -17,6 +17,19 @@
     "rider": {
       "url": "http://127.0.0.1:64482/stream",
       "type": "http"
+    },
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@bytebase/dbhub",
+        "--dsn",
+        "postgres://claude_ro:${POSTGRES_RO_PASSWORD}@localhost:19630/bowlneba?sslmode=disable"
+      ]
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
     }
   }
 }
