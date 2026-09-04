@@ -452,6 +452,37 @@ public sealed class CreateArticleTests : IDisposable
         cut.FindAll(".neba-modal-backdrop").ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Should give each attachment row's Download, Open, and Remove actions an accessible name naming the file")]
+    public async Task Render_ShouldGiveAttachmentActionsAccessibleNamesNamingFile_WhenAttachmentUploaded()
+    {
+        // Arrange
+        var upload = UploadedFileResponseFactory.Create(fileName: "roster.pdf");
+        using var attachmentResponse = new StubApiResponse<UploadedFileResponse>
+        {
+            IsSuccessStatusCode = true,
+            StatusCode = HttpStatusCode.OK,
+            Content = upload
+        };
+
+        _mockNewsApi
+            .Setup(x => x.UploadArticleAttachmentAsync(It.IsAny<StreamPart>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(attachmentResponse);
+
+        var cut = RenderCreateArticle();
+        var attachmentUploader = cut.FindComponents<FileUpload>()[1].FindComponent<InputFile>();
+
+        // Act
+        await cut.InvokeAsync(() => attachmentUploader.UploadFiles(
+            InputFileContent.CreateFromBinary([1], "roster.pdf", contentType: "application/pdf")));
+        await cut.WaitForAssertionAsync(() => cut.FindAll("ul.create-article-attachment-list li").Count.ShouldBe(1));
+
+        // Assert
+        var row = cut.Find("li.create-article-attachment-row");
+        row.QuerySelector("a.neba-btn-secondary[download]")!.GetAttribute("aria-label").ShouldBe("Download roster.pdf");
+        row.QuerySelector("a[target='_blank']")!.GetAttribute("aria-label").ShouldBe("Open roster.pdf");
+        row.QuerySelector("button.neba-btn-danger")!.GetAttribute("aria-label").ShouldBe("Remove roster.pdf");
+    }
+
     [Fact(DisplayName = "Should prompt for confirmation and remove the attachment when confirmed for an inline image")]
     public async Task RemoveAttachment_ShouldPromptAndRemoveOnConfirm_WhenAttachmentIsInline()
     {

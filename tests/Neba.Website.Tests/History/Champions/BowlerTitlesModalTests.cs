@@ -145,6 +145,23 @@ public sealed class BowlerTitlesModalTests : IDisposable
         cut.Markup.ShouldNotContain("neba-hof.jpg");
     }
 
+    [Fact(DisplayName = "Should give every table header a col scope")]
+    public void Render_ShouldGiveEveryTableHeaderColScope()
+    {
+        // Arrange
+        SetupSuccessResponse("b1", "Joe", []);
+
+        // Act
+        var cut = _ctx.Render<BowlerTitlesModal>(p => p
+            .Add(m => m.IsOpen, true)
+            .Add(m => m.OnClose, EventCallback.Empty)
+            .Add(m => m.BowlersApi, _mockBowlersApi.Object)
+            .Add(m => m.BowlerId, "b1"));
+
+        // Assert
+        cut.FindAll("th").ShouldAllBe(th => th.GetAttribute("scope") == "col");
+    }
+
     [Fact(DisplayName = "Should show tournament hyperlink with correct href")]
     public void Render_ShouldShowTournamentHyperlink_WithCorrectHref()
     {

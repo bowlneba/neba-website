@@ -51,23 +51,23 @@
 
                         <div>
                             <FormLabel TargetId="title" For="@(() => _model.Title)">Title</FormLabel>
-                            <InputText id="title" @bind-Value="_model.Title" class="neba-input" placeholder="Article title" />
-                            <ValidationMessage For="@(() => _model.Title)" class="block text-sm text-red-600 mt-1" />
+                            <InputText id="title" @bind-Value="_model.Title" class="neba-input" placeholder="Article title" aria-describedby="title-error" />
+                            <NebaValidationMessage For="@(() => _model.Title)" Id="title-error" Class="block text-sm text-red-600 mt-1" />
                         </div>
 
                         <div>
                             <FormLabel TargetId="slug" For="@(() => _model.Slug)">Slug</FormLabel>
-                            <InputText id="slug" @bind-Value="_model.Slug" class="neba-input" placeholder="@SlugPlaceholder" />
+                            <InputText id="slug" @bind-Value="_model.Slug" class="neba-input" placeholder="@SlugPlaceholder" aria-describedby="slug-error" />
                             <p class="text-sm text-[var(--neba-gray-500)] mt-1">
                                 Leave blank to auto-generate from the title.
                             </p>
-                            <ValidationMessage For="@(() => _model.Slug)" class="block text-sm text-red-600 mt-1" />
+                            <NebaValidationMessage For="@(() => _model.Slug)" Id="slug-error" Class="block text-sm text-red-600 mt-1" />
                         </div>
 
                         <div>
                             <FormLabel TargetId="content" For="@(() => _model.Content)">Content</FormLabel>
                             <RichTextEditor Value="@_model.Content" ValueChanged="HandleContentChanged" Placeholder="Write the article content…" OnImageSelected="HandleInlineImageSelectedAsync" />
-                            <ValidationMessage For="@(() => _model.Content)" class="block text-sm text-red-600 mt-1" />
+                            <NebaValidationMessage For="@(() => _model.Content)" Id="content-error" Class="block text-sm text-red-600 mt-1" />
                         </div>
 
                         <div>
@@ -84,7 +84,7 @@
                             {
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <select class="neba-select" value="@_selectedSeasonId" @onchange="HandleSeasonChangedAsync">
+                                        <select class="neba-select" aria-label="Season" value="@_selectedSeasonId" @onchange="HandleSeasonChangedAsync">
                                             @foreach (var season in _seasons)
                                             {
                                                 <option value="@season.Id">@season.Description</option>
@@ -92,7 +92,7 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <select class="neba-select" value="@_model.TournamentId" @onchange="HandleTournamentChanged">
+                                        <select class="neba-select" aria-label="Tournament" value="@_model.TournamentId" @onchange="HandleTournamentChanged">
                                             <option value="">No tournament</option>
                                             @foreach (var tournament in _tournaments)
                                             {
@@ -135,9 +135,9 @@
                                             {
                                                 <span class="create-article-attachment-badge" title="Used in article body">Inline</span>
                                             }
-                                            <a href="@attachment.Upload.Url" download="@attachment.DisplayName" class="neba-btn neba-btn-secondary create-article-attachment-action">Download</a>
-                                            <a href="@attachment.Upload.Url" target="_blank" rel="noopener noreferrer" class="neba-btn neba-btn-secondary create-article-attachment-action">Open</a>
-                                            <button type="button" class="neba-btn neba-btn-danger create-article-attachment-action" @onclick="@(() => RequestRemoveAttachment(attachment))">Remove</button>
+                                            <a href="@attachment.Upload.Url" download="@attachment.DisplayName" class="neba-btn neba-btn-secondary create-article-attachment-action" aria-label="@("Download " + attachment.DisplayName)">Download</a>
+                                            <a href="@attachment.Upload.Url" target="_blank" rel="noopener noreferrer" class="neba-btn neba-btn-secondary create-article-attachment-action" aria-label="@("Open " + attachment.DisplayName)">Open</a>
+                                            <button type="button" class="neba-btn neba-btn-danger create-article-attachment-action" aria-label="@("Remove " + attachment.DisplayName)" @onclick="@(() => RequestRemoveAttachment(attachment))">Remove</button>
                                         </li>
                                     }
                                 </ul>
@@ -147,17 +147,17 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <FormLabel TargetId="publication-status" For="@(() => _model.PublicationStatus)">Status</FormLabel>
-                                <InputSelect id="publication-status" @bind-Value="_model.PublicationStatus" class="neba-select">
+                                <InputSelect id="publication-status" @bind-Value="_model.PublicationStatus" class="neba-select" aria-describedby="publication-status-error">
                                     <option value="Draft">Draft</option>
                                     <option value="Published">Published</option>
                                 </InputSelect>
-                                <ValidationMessage For="@(() => _model.PublicationStatus)" class="block text-sm text-red-600 mt-1" />
+                                <NebaValidationMessage For="@(() => _model.PublicationStatus)" Id="publication-status-error" Class="block text-sm text-red-600 mt-1" />
                             </div>
 
                             <div>
                                 <FormLabel TargetId="publish-date" For="@(() => _model.PublishDateLocal)">Publish Date</FormLabel>
-                                <InputDate id="publish-date" Type="InputDateType.DateTimeLocal" @bind-Value="_model.PublishDateLocal" class="neba-input" />
-                                <ValidationMessage For="@(() => _model.PublishDateLocal)" class="block text-sm text-red-600 mt-1" />
+                                <InputDate id="publish-date" Type="InputDateType.DateTimeLocal" @bind-Value="_model.PublishDateLocal" class="neba-input" aria-describedby="publish-date-error" />
+                                <NebaValidationMessage For="@(() => _model.PublishDateLocal)" Id="publish-date-error" Class="block text-sm text-red-600 mt-1" />
                             </div>
                         </div>
 

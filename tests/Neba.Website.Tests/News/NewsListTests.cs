@@ -212,6 +212,20 @@ public sealed class NewsListTests : IDisposable
         }
     }
 
+    [Fact(DisplayName = "Should mark the article grid as a live region so screen readers announce page changes")]
+    public void Render_ShouldMarkArticleGridAriaLivePolite()
+    {
+        // Arrange
+        var articles = ArticleSummaryResponseFactory.Bogus(4, 8);
+        SetupSuccessResponse(articles, totalItems: 4);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.Find(".news-grid").GetAttribute("aria-live").ShouldBe("polite");
+    }
+
     [Fact(DisplayName = "Should format grid card publish dates using the viewer's local timezone offset")]
     public void Render_ShouldFormatGridCardPublishDates_UsingViewerLocalTimezoneOffset()
     {

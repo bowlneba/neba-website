@@ -23,4 +23,14 @@ public sealed class MergedSeasonNoteTests : IDisposable
         cut.Markup.ShouldContain("Combined Season");
         cut.Markup.ShouldContain("merged into a single combined schedule");
     }
+
+    [Fact(DisplayName = "Should use a valid ARIA role instead of the invalid 'note' role")]
+    public void Render_ShouldUseValidAriaRole()
+    {
+        // Act
+        var cut = _ctx.Render<MergedSeasonNote>();
+
+        // Assert
+        cut.Find(".neba-alert").GetAttribute("role").ShouldBe("status");
+    }
 }

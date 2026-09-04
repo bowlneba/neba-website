@@ -55,11 +55,12 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
 
     private EditTournamentCommandHandler CreateHandler(
         IBackgroundJobScheduler? backgroundJobScheduler = null,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        AppDbContext? dbContext = null)
     {
         var cache = _serviceProvider.GetRequiredService<IFusionCache>();
         var scheduler = backgroundJobScheduler ?? new Mock<IBackgroundJobScheduler>(MockBehavior.Strict).Object;
-        return new EditTournamentCommandHandler(_dbContext, cache, scheduler, timeProvider ?? new FakeTimeProvider(Now));
+        return new EditTournamentCommandHandler(dbContext ?? _dbContext, cache, scheduler, timeProvider ?? new FakeTimeProvider(Now));
     }
 
     private async Task<Season> SeedSeasonAsync(DateOnly startDate, DateOnly endDate, CancellationToken ct)
@@ -433,6 +434,50 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         persisted.PatternLengthCategory.ShouldBe(oilPattern.LengthCategory);
         persisted.PatternRatioCategory.ShouldBe(oilPattern.RatioCategory);
 
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+        var getResult = await getTournamentHandler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true },
+            ct);
+
+        getResult.IsError.ShouldBeFalse();
+        var attachedPattern = getResult.Value.OilPatterns.ShouldHaveSingleItem();
+        attachedPattern.TournamentRounds.ShouldBe(["Qualifying", "Match Play"]);
+    }
+
+    [Fact(DisplayName = "HandleAsync does not duplicate the oil pattern association when re-edited with the same oil pattern already attached")]
+    public async Task HandleAsync_ShouldNotDuplicateOilPatternAssociation_WhenOilPatternAlreadyAttached()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+        var oilPattern = OilPatternFactory.Create();
+        await _dbContext.OilPatterns.AddAsync(oilPattern, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var firstHandler = CreateHandler();
+        var firstCommand = ValidCommand(tournament.Id, startDate: season.StartDate, endDate: season.StartDate, oilPatternId: oilPattern.Id);
+        var firstResult = await firstHandler.HandleAsync(firstCommand, ct);
+        firstResult.IsError.ShouldBeFalse();
+
+        // Act
+        // Re-edit the tournament (e.g. only changing an unrelated field) while resubmitting the same, already-attached oil pattern.
+        // Uses a fresh DbContext, matching production's per-request lifecycle — reusing _dbContext would let the
+        // change tracker's identity map mask the value-converter bug this test guards against (see
+        // TournamentRoundValueConverterTests.ConvertFromProvider_ShouldReturnListInstance_ForEfFieldMaterialization).
+        await using var secondDbContext = fixture.CreateDbContext();
+        var secondHandler = CreateHandler(dbContext: secondDbContext);
+        var secondCommand = ValidCommand(
+            tournament.Id,
+            name: "Updated Tournament Name",
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            oilPatternId: oilPattern.Id);
+        var secondResult = await secondHandler.HandleAsync(secondCommand, ct);
+
+        // Assert
+        secondResult.IsError.ShouldBeFalse();
         var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
         var getTournamentHandler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
         var getResult = await getTournamentHandler.HandleAsync(

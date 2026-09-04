@@ -41,6 +41,19 @@ public sealed class YearViewTests : IDisposable
         cut.Markup.ShouldContain("2023");
     }
 
+    [Fact(DisplayName = "Should give every table header a col scope")]
+    public void Render_ShouldGiveEveryTableHeaderColScope()
+    {
+        // Arrange
+        var year1 = TitlesByYearViewModelFactory.Create(year: 2024, titles: [BowlerTitleViewModelFactory.Create()]);
+
+        // Act
+        var cut = Render([year1], []);
+
+        // Assert
+        cut.FindAll("th").ShouldAllBe(th => th.GetAttribute("scope") == "col");
+    }
+
     [Fact(DisplayName = "Should show month abbreviation for each tournament row")]
     public void Render_ShouldShowMonthAbbreviation_ForEachTournamentRow()
     {

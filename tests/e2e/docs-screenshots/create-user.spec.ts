@@ -38,12 +38,12 @@ test.describe('create-user help screenshots', () => {
     await page.waitForSelector('.account-menu');
 
     await page.getByRole('button', { name: 'Account menu' }).hover();
-    await expect(page.getByRole('menuitem', { name: 'Create User' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Create User' })).toBeVisible();
     await waitForDropdownAnimation(page);
 
     await page.screenshot({ path: path.join(outDir, 'account-menu.png') });
 
-    await page.getByRole('menuitem', { name: 'Create User' }).click();
+    await page.getByRole('link', { name: 'Create User' }).click();
     await page.waitForSelector('#email');
 
     await page.screenshot({ path: path.join(outDir, 'create-form.png'), fullPage: true });

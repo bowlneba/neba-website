@@ -83,6 +83,20 @@ public sealed class HighBlockTests : IDisposable
         cut.Markup.ShouldContain("Jane Smith");
     }
 
+    [Fact(DisplayName = "Should give every table header a col scope")]
+    public void Render_ShouldGiveEveryTableHeaderColScope()
+    {
+        // Arrange
+        var award = HighBlockAwardResponseFactory.Create();
+        SetupSuccessResponse([award]);
+
+        // Act
+        var cut = _ctx.Render<HighBlockPage>();
+
+        // Assert
+        cut.FindAll("th").ShouldAllBe(th => th.GetAttribute("scope") == "col");
+    }
+
     [Fact(DisplayName = "Should show score when API call succeeds")]
     public void Render_ShouldShowScore_WhenApiSucceeds()
     {

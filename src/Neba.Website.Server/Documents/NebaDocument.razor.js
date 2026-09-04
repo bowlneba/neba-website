@@ -4,6 +4,8 @@
  * internal link interception via Blazor callback.
  */
 
+import { enableFocusTrap, disableFocusTrap, focusElement } from '../Components/NebaModal.razor.js';
+
 let dotNetReference = null;
 let isInitialized = false;
 let abortController = null;
@@ -88,11 +90,14 @@ function setupMobileModal(tocMobileButton, tocModal, tocModalOverlay, tocModalCl
     const closeModal = () => {
         tocModal.classList.remove('active');
         document.body.style.overflow = '';
+        disableFocusTrap();
     };
 
     tocMobileButton.addEventListener('click', () => {
         tocModal.classList.add('active');
         document.body.style.overflow = 'hidden';
+        focusElement(tocModal);
+        enableFocusTrap(tocModal);
     }, { signal });
 
     tocModalClose.addEventListener('click', closeModal, { signal });
@@ -305,6 +310,7 @@ function setupInternalLinkNavigation(content, headings, slideoverId, slideoverOv
         const closeSlideover = () => {
             slideover.classList.remove('active');
             document.body.style.overflow = '';
+            disableFocusTrap();
         };
 
         slideoverClose.addEventListener('click', closeSlideover, { signal });
@@ -354,6 +360,8 @@ function setupInternalLinkNavigation(content, headings, slideoverId, slideoverOv
                     const pathname = linkUrl.pathname.replace(/^\//, '');
                     slideover.classList.add('active');
                     document.body.style.overflow = 'hidden';
+                    focusElement(slideover);
+                    enableFocusTrap(slideover);
                     dotNetReference.invokeMethodAsync('OnInternalLinkClicked', pathname);
                 }
             } catch {
@@ -544,6 +552,8 @@ export function openSlideover(slideoverId) {
     if (slideover) {
         slideover.classList.add('active');
         document.body.style.overflow = 'hidden';
+        focusElement(slideover);
+        enableFocusTrap(slideover);
     }
 }
 
@@ -556,6 +566,7 @@ export function closeSlideover(slideoverId) {
     if (slideover) {
         slideover.classList.remove('active');
         document.body.style.overflow = '';
+        disableFocusTrap();
     }
 }
 
@@ -626,6 +637,7 @@ export function dispose() {
         abortController = null;
     }
 
+    disableFocusTrap();
     dotNetReference = null;
     isInitialized = false;
 }

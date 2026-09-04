@@ -156,7 +156,7 @@
 
                 @if (_articles.Items.Count > 1)
                 {
-                    <div class="news-grid">
+                    <div class="news-grid" aria-live="polite">
                         @foreach (var article in _articles.Items.Skip(1))
                         {
                             <ArticleCard Article="@article" LocalPublishDate="@GetLocalPublishDate(article)" OnDeleteRequested="RequestDelete" />
@@ -166,7 +166,7 @@
             }
             else
             {
-                <div class="news-grid">
+                <div class="news-grid" aria-live="polite">
                     @foreach (var article in _articles.Items)
                     {
                         <ArticleCard Article="@article" LocalPublishDate="@GetLocalPublishDate(article)" OnDeleteRequested="RequestDelete" />

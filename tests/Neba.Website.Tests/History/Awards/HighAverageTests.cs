@@ -83,6 +83,20 @@ public sealed class HighAverageTests : IDisposable
         cut.Markup.ShouldContain("Jane Smith");
     }
 
+    [Fact(DisplayName = "Should give every table header a col scope")]
+    public void Render_ShouldGiveEveryTableHeaderColScope()
+    {
+        // Arrange
+        var award = HighAverageAwardResponseFactory.Create();
+        SetupSuccessResponse([award]);
+
+        // Act
+        var cut = _ctx.Render<HighAveragePage>();
+
+        // Assert
+        cut.FindAll("th").ShouldAllBe(th => th.GetAttribute("scope") == "col");
+    }
+
     [Fact(DisplayName = "Should show formatted average when API call succeeds")]
     public void Render_ShouldShowFormattedAverage_WhenApiSucceeds()
     {

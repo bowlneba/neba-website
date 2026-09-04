@@ -52,43 +52,43 @@
 
                             <div>
                                 <FormLabel TargetId="name" For="@(() => _model.Name)">Name</FormLabel>
-                                <InputText id="name" @bind-Value="_model.Name" class="neba-input" placeholder="Sponsor name" />
-                                <ValidationMessage For="@(() => _model.Name)" class="block text-sm text-red-600 mt-1" />
+                                <InputText id="name" @bind-Value="_model.Name" class="neba-input" placeholder="Sponsor name" aria-describedby="name-error" />
+                                <NebaValidationMessage For="@(() => _model.Name)" Id="name-error" Class="block text-sm text-red-600 mt-1" />
                             </div>
 
                             <div>
                                 <FormLabel TargetId="slug" For="@(() => _model.Slug)">Slug</FormLabel>
-                                <InputText id="slug" @bind-Value="_model.Slug" class="neba-input" placeholder="@SlugPlaceholder" />
+                                <InputText id="slug" @bind-Value="_model.Slug" class="neba-input" placeholder="@SlugPlaceholder" aria-describedby="slug-error" />
                                 <p class="text-sm text-[var(--neba-gray-500)] mt-1">Leave blank to auto-generate from the name.</p>
-                                <ValidationMessage For="@(() => _model.Slug)" class="block text-sm text-red-600 mt-1" />
+                                <NebaValidationMessage For="@(() => _model.Slug)" Id="slug-error" Class="block text-sm text-red-600 mt-1" />
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
                                     <FormLabel TargetId="tier" For="@(() => _model.Tier)">Tier</FormLabel>
-                                    <InputSelect id="tier" @bind-Value="_model.Tier" class="neba-select">
+                                    <InputSelect id="tier" @bind-Value="_model.Tier" class="neba-select" aria-describedby="tier-error">
                                         <option value="Title Sponsor">Title Sponsor</option>
                                         <option value="Premier">Premier</option>
                                         <option value="Standard">Standard</option>
                                     </InputSelect>
-                                    <ValidationMessage For="@(() => _model.Tier)" class="block text-sm text-red-600 mt-1" />
+                                    <NebaValidationMessage For="@(() => _model.Tier)" Id="tier-error" Class="block text-sm text-red-600 mt-1" />
                                 </div>
 
                                 <div>
                                     <FormLabel TargetId="category" For="@(() => _model.Category)">Category</FormLabel>
-                                    <InputSelect id="category" @bind-Value="_model.Category" class="neba-select">
+                                    <InputSelect id="category" @bind-Value="_model.Category" class="neba-select" aria-describedby="category-error">
                                         @foreach (var category in SponsorCategoryOptions.All)
                                         {
                                             <option value="@category">@category</option>
                                         }
                                     </InputSelect>
-                                    <ValidationMessage For="@(() => _model.Category)" class="block text-sm text-red-600 mt-1" />
+                                    <NebaValidationMessage For="@(() => _model.Category)" Id="category-error" Class="block text-sm text-red-600 mt-1" />
                                 </div>
 
                                 <div>
                                     <FormLabel TargetId="priority" For="@(() => _model.Priority)">Priority</FormLabel>
-                                    <InputNumber id="priority" @bind-Value="_model.Priority" class="neba-input" />
-                                    <ValidationMessage For="@(() => _model.Priority)" class="block text-sm text-red-600 mt-1" />
+                                    <InputNumber id="priority" @bind-Value="_model.Priority" class="neba-input" aria-describedby="priority-error" />
+                                    <NebaValidationMessage For="@(() => _model.Priority)" Id="priority-error" Class="block text-sm text-red-600 mt-1" />
                                 </div>
                             </div>
 
@@ -113,20 +113,20 @@
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
                                     <FormLabel TargetId="website-url" For="@(() => _model.WebsiteUrl)">Website URL</FormLabel>
-                                    <InputText id="website-url" @bind-Value="_model.WebsiteUrl" class="neba-input" placeholder="https://example.com" />
-                                    <ValidationMessage For="@(() => _model.WebsiteUrl)" class="block text-sm text-red-600 mt-1" />
+                                    <InputText id="website-url" @bind-Value="_model.WebsiteUrl" class="neba-input" placeholder="https://example.com" aria-describedby="website-url-error" />
+                                    <NebaValidationMessage For="@(() => _model.WebsiteUrl)" Id="website-url-error" Class="block text-sm text-red-600 mt-1" />
                                 </div>
 
                                 <div>
                                     <FormLabel TargetId="facebook-url" For="@(() => _model.FacebookUrl)">Facebook URL</FormLabel>
-                                    <InputText id="facebook-url" @bind-Value="_model.FacebookUrl" class="neba-input" placeholder="https://facebook.com/…" />
-                                    <ValidationMessage For="@(() => _model.FacebookUrl)" class="block text-sm text-red-600 mt-1" />
+                                    <InputText id="facebook-url" @bind-Value="_model.FacebookUrl" class="neba-input" placeholder="https://facebook.com/…" aria-describedby="facebook-url-error" />
+                                    <NebaValidationMessage For="@(() => _model.FacebookUrl)" Id="facebook-url-error" Class="block text-sm text-red-600 mt-1" />
                                 </div>
 
                                 <div>
                                     <FormLabel TargetId="instagram-url" For="@(() => _model.InstagramUrl)">Instagram URL</FormLabel>
-                                    <InputText id="instagram-url" @bind-Value="_model.InstagramUrl" class="neba-input" placeholder="https://instagram.com/…" />
-                                    <ValidationMessage For="@(() => _model.InstagramUrl)" class="block text-sm text-red-600 mt-1" />
+                                    <InputText id="instagram-url" @bind-Value="_model.InstagramUrl" class="neba-input" placeholder="https://instagram.com/…" aria-describedby="instagram-url-error" />
+                                    <NebaValidationMessage For="@(() => _model.InstagramUrl)" Id="instagram-url-error" Class="block text-sm text-red-600 mt-1" />
                                 </div>
                             </div>
 
@@ -188,8 +188,8 @@
 
                             <div>
                                 <FormLabel TargetId="business-email" For="@(() => _model.BusinessEmailAddress)">Business Email</FormLabel>
-                                <InputText id="business-email" @bind-Value="_model.BusinessEmailAddress" class="neba-input" placeholder="info@example.com" />
-                                <ValidationMessage For="@(() => _model.BusinessEmailAddress)" class="block text-sm text-red-600 mt-1" />
+                                <InputText id="business-email" @bind-Value="_model.BusinessEmailAddress" class="neba-input" placeholder="info@example.com" aria-describedby="business-email-error" />
+                                <NebaValidationMessage For="@(() => _model.BusinessEmailAddress)" Id="business-email-error" Class="block text-sm text-red-600 mt-1" />
                             </div>
                         </section>
 
@@ -206,8 +206,8 @@
                                 </div>
                                 <div>
                                     <FormLabel TargetId="contact-email" For="@(() => _model.ContactEmail)">Email</FormLabel>
-                                    <InputText id="contact-email" @bind-Value="_model.ContactEmail" class="neba-input" placeholder="name@example.com" />
-                                    <ValidationMessage For="@(() => _model.ContactEmail)" class="block text-sm text-red-600 mt-1" />
+                                    <InputText id="contact-email" @bind-Value="_model.ContactEmail" class="neba-input" placeholder="name@example.com" aria-describedby="contact-email-error" />
+                                    <NebaValidationMessage For="@(() => _model.ContactEmail)" Id="contact-email-error" Class="block text-sm text-red-600 mt-1" />
                                 </div>
                             </div>
 

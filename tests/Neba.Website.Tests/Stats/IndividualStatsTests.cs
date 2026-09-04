@@ -252,7 +252,7 @@ public sealed class IndividualStatsTests : IDisposable
         (fieldVal.ClassName ?? string.Empty).ShouldContain("neba-success");
     }
 
-    [Fact(DisplayName = "Should show negative field average with its sign and gray color class")]
+    [Fact(DisplayName = "Should show negative field average with its sign and an AA-contrast gray color class")]
     public void Render_ShouldShowNegativeFieldAverage_WithNegativeSignAndGrayClass()
     {
         // Arrange
@@ -266,7 +266,7 @@ public sealed class IndividualStatsTests : IDisposable
         // Assert
         var fieldVal = cut.Find(".indiv-vs-field-value");
         fieldVal.TextContent.ShouldBe("-4.10");
-        (fieldVal.ClassName ?? string.Empty).ShouldContain("text-gray-400");
+        (fieldVal.ClassName ?? string.Empty).ShouldContain("text-[var(--neba-text-muted)]");
     }
 
     [Fact(DisplayName = "Should show one progression card per BOY progression entry")]
@@ -287,6 +287,48 @@ public sealed class IndividualStatsTests : IDisposable
 
         // Assert
         cut.FindAll(".indiv-points-race-card").Count.ShouldBe(2);
+    }
+
+    [Fact(DisplayName = "Should open the progression modal with the accessible dialog behavior of NebaModal when a card is clicked")]
+    public async Task ProgressionCard_ShouldOpenNebaModal_WhenClicked()
+    {
+        // Arrange
+        var progressions = new[]
+        {
+            new IndividualBoyProgressionViewModel { RaceLabel = "Bowler of the Year", BowlerSeries = PointsRaceSeriesViewModelFactory.Create(), LeaderSeries = null },
+        };
+        var model = IndividualStatsPageViewModelFactory.Create(boyProgressions: progressions);
+        _statsApi.EnqueueIndividualResult(model);
+        var cut = _ctx.Render<IndividualStatsPage>(p => p
+            .Add(x => x.BowlerId, BowlerId));
+
+        // Act
+        await cut.Find(".indiv-points-race-card").ClickAsync(new());
+
+        // Assert
+        cut.Find(".neba-modal-backdrop").ShouldNotBeNull();
+        cut.Find(".neba-modal-title").TextContent.ShouldContain("Bowler of the Year Points Progression");
+    }
+
+    [Fact(DisplayName = "Should close the progression modal when the close button is clicked")]
+    public async Task ProgressionCard_ShouldCloseModal_WhenCloseButtonClicked()
+    {
+        // Arrange
+        var progressions = new[]
+        {
+            new IndividualBoyProgressionViewModel { RaceLabel = "Bowler of the Year", BowlerSeries = PointsRaceSeriesViewModelFactory.Create(), LeaderSeries = null },
+        };
+        var model = IndividualStatsPageViewModelFactory.Create(boyProgressions: progressions);
+        _statsApi.EnqueueIndividualResult(model);
+        var cut = _ctx.Render<IndividualStatsPage>(p => p
+            .Add(x => x.BowlerId, BowlerId));
+        await cut.Find(".indiv-points-race-card").ClickAsync(new());
+
+        // Act
+        await cut.Find(".neba-modal-close").ClickAsync(new());
+
+        // Assert
+        cut.FindAll(".neba-modal-backdrop").ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Should not show any progression cards when BoyProgressions is empty")]

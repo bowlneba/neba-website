@@ -41,14 +41,14 @@
                     <div>
                         <label for="email" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Email</label>
                         <InputText id="email" @bind-Value="_model.Email" type="email" autocomplete="email"
-                                   class="neba-input w-full" placeholder="user@bowlneba.com" />
-                        <ValidationMessage For="@(() => _model.Email)" class="block text-sm text-red-600 mt-1" />
+                                   class="neba-input w-full" placeholder="user@bowlneba.com" aria-describedby="email-error" />
+                        <NebaValidationMessage For="@(() => _model.Email)" Id="email-error" Class="block text-sm text-red-600 mt-1" />
                     </div>
                     <div>
                         <label for="password" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Password</label>
                         <InputText id="password" @bind-Value="_model.Password" type="password" autocomplete="current-password"
-                                   class="neba-input w-full" />
-                        <ValidationMessage For="@(() => _model.Password)" class="block text-sm text-red-600 mt-1" />
+                                   class="neba-input w-full" aria-describedby="password-error" />
+                        <NebaValidationMessage For="@(() => _model.Password)" Id="password-error" Class="block text-sm text-red-600 mt-1" />
                     </div>
                     <button type="submit" class="neba-btn neba-btn-primary w-full justify-center" disabled="@_isSubmitting">
                         @(_isSubmitting ? "Logging in…" : "Log in")

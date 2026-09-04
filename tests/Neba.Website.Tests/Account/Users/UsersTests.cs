@@ -136,6 +136,19 @@ public sealed class UsersTests : IDisposable
         cut.Markup.ShouldContain("No users match");
     }
 
+    [Fact(DisplayName = "Should give every table header a col scope")]
+    public void Render_ShouldGiveEveryTableHeaderColScope()
+    {
+        // Arrange
+        SetupSuccessResponse([], totalItems: 0);
+
+        // Act
+        var cut = _ctx.Render<UsersPage>();
+
+        // Assert
+        cut.FindAll("th").ShouldAllBe(th => th.GetAttribute("scope") == "col");
+    }
+
     // ── Table rows ───────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should show a row for each user with email, roles, and status")]

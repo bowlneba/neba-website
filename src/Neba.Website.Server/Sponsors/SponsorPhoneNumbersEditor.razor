@@ -21,7 +21,8 @@
                     <input class="neba-input create-sponsor-phone-extension" value="@phoneNumber.Extension"
                            @oninput="@(e => HandleExtensionChangedAsync(phoneNumber, e))"
                            placeholder="Ext." />
-                    <button type="button" class="neba-btn neba-btn-danger create-sponsor-phone-remove" @onclick="@(() => RemoveAsync(phoneNumber))">Remove</button>
+                    <button type="button" class="neba-btn neba-btn-danger create-sponsor-phone-remove"
+                            aria-label="@RemoveLabel(phoneNumber)" @onclick="@(() => RemoveAsync(phoneNumber))">Remove</button>
                 </li>
             }
         </ul>
@@ -51,6 +52,11 @@
         PhoneNumbers.Remove(phoneNumber);
         return OnChanged.InvokeAsync();
     }
+
+    private static string RemoveLabel(TrackedPhoneNumber phoneNumber)
+        => string.IsNullOrWhiteSpace(phoneNumber.PhoneNumber)
+            ? "Remove phone number"
+            : "Remove phone number " + phoneNumber.PhoneNumber;
 
     private Task HandleTypeChangedAsync(TrackedPhoneNumber phoneNumber, ChangeEventArgs e)
     {

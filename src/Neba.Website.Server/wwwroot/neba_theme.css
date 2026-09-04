@@ -78,6 +78,9 @@
   --neba-surface-high:               var(--neba-gray-100);       /* #f5f5f5 */
   --neba-surface-highest:            var(--neba-gray-200);       /* #e5e5e5 */
 
+  /* Muted text (light mode) */
+  --neba-text-muted:                 var(--neba-gray-500);       /* #737373 */
+
   /* Accent / status */
   --neba-color-error:                var(--neba-accent-red);
   --neba-color-alert:                var(--neba-warning);
@@ -92,6 +95,15 @@
   --neba-bg-panel: #161B22;
   --neba-text: #E6EEF7;
   --neba-border: #30363D;
+
+  /* Surface tiers (dark mode) */
+  --neba-surface:                    var(--neba-bg-panel);       /* #161B22 */
+  --neba-surface-low:                #10151C;
+  --neba-surface-high:               #1F2630;
+  --neba-surface-highest:            #2A323D;
+
+  /* Muted text (dark mode) — clears 4.5:1 against --neba-bg, unlike --neba-gray-500 */
+  --neba-text-muted:                 #9AA4AF;
 }
 
 /* Global overrides */
@@ -176,6 +188,16 @@ html, body {
 
 .neba-btn-secondary:hover:not(:disabled) {
   background-color: var(--neba-gray-200);
+}
+
+.dark .neba-btn-secondary {
+  background-color: var(--neba-surface-high);
+  border-color: var(--neba-border);
+  color: var(--neba-text);
+}
+
+.dark .neba-btn-secondary:hover:not(:disabled) {
+  background-color: var(--neba-surface-highest);
 }
 
 
@@ -560,7 +582,7 @@ html, body {
   border: none;
   border-radius: 999px;
   background: transparent;
-  color: var(--neba-gray-500);
+  color: var(--neba-text-muted);
   font-size: 1.125rem;
   line-height: 1;
   cursor: pointer;
@@ -608,7 +630,7 @@ html, body {
 
 .neba-autocomplete-empty {
   padding: 0.5rem 0.75rem;
-  color: var(--neba-gray-500);
+  color: var(--neba-text-muted);
   font-size: 0.875rem;
 }
 

@@ -74,6 +74,19 @@ public sealed class AboutPageTests : IDisposable
         cut.Markup.ShouldContain("Error Loading Sponsors");
     }
 
+    [Fact(DisplayName = "Should give every qualifying structure table header a col scope")]
+    public void Render_ShouldGiveEveryTableHeaderColScope()
+    {
+        // Arrange
+        SetupSuccessResponse([]);
+
+        // Act
+        var cut = _ctx.Render<AboutPage>();
+
+        // Assert
+        cut.FindAll("th").ShouldAllBe(th => th.GetAttribute("scope") == "col");
+    }
+
     // ── Title sponsor ────────────────────────────────────────────────────────
 
     [Fact(DisplayName = "Should show title sponsor name when title sponsor exists")]

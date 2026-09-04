@@ -57,8 +57,8 @@
 
                             <div>
                                 <FormLabel TargetId="email" For="@(() => _model.Email)">Email</FormLabel>
-                                <InputText id="email" @bind-Value="_model.Email" class="neba-input" placeholder="newstaff@bowlneba.com" />
-                                <ValidationMessage For="@(() => _model.Email)" class="block text-sm text-red-600 mt-1" />
+                                <InputText id="email" @bind-Value="_model.Email" class="neba-input" placeholder="newstaff@bowlneba.com" aria-describedby="email-error" />
+                                <NebaValidationMessage For="@(() => _model.Email)" Id="email-error" Class="block text-sm text-red-600 mt-1" />
                             </div>
 
                             <div>

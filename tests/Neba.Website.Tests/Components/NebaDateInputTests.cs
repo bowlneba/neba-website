@@ -50,6 +50,19 @@ public sealed class NebaDateInputTests : IDisposable
         cut.Find("input[data-segment='month']").GetAttribute("id").ShouldBe("start-date");
     }
 
+    [Fact(DisplayName = "Should assign aria-describedby to every segment input, not the container, when provided")]
+    public void Render_ShouldAssignAriaDescribedByToEverySegment_WhenAriaDescribedByAttributeProvided()
+    {
+        // Act
+        var cut = RenderInput(p => p.AddUnmatched("aria-describedby", "start-date-error"));
+
+        // Assert
+        cut.Find("input[data-segment='month']").GetAttribute("aria-describedby").ShouldBe("start-date-error");
+        cut.Find("input[data-segment='day']").GetAttribute("aria-describedby").ShouldBe("start-date-error");
+        cut.Find("input[data-segment='year']").GetAttribute("aria-describedby").ShouldBe("start-date-error");
+        cut.Find(".neba-date-input").GetAttribute("aria-describedby").ShouldBeNull();
+    }
+
     [Fact(DisplayName = "Should call the JS initialize function with the formatted initial segments")]
     public void OnAfterRender_ShouldCallInitialize_WithFormattedInitialValue()
     {

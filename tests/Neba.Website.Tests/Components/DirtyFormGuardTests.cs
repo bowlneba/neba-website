@@ -69,6 +69,23 @@ public sealed class DirtyFormGuardTests : IDisposable
         cut.FindAll(".neba-modal-backdrop").ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Should not re-show the prompt when the confirmed navigation's check fires again for the same target")]
+    public void Confirm_ShouldNotReShowPrompt_WhenLocationChangingCheckFiresTwiceForConfirmedNavigation()
+    {
+        // Arrange
+        var cut = _ctx.Render<DirtyFormGuard>(p => p.Add(x => x.IsDirty, true));
+        var nav = _ctx.Services.GetRequiredService<NavigationManager>();
+        nav.NavigateTo("/news");
+        cut.Find("button.confirm-action-modal-confirm").Click();
+
+        // Act - simulate the router re-invoking the location-changing check a second time for the
+        // same already-confirmed navigation (the scenario that caused a duplicate prompt)
+        nav.NavigateTo("/news");
+
+        // Assert
+        cut.FindAll(".neba-modal-backdrop").ShouldBeEmpty();
+    }
+
     [Fact(DisplayName = "Should stay on the page and close the prompt when the user cancels leaving")]
     public void Cancel_ShouldStayOnPageAndClosePrompt_WhenUserCancelsLeaving()
     {

@@ -366,6 +366,21 @@ public sealed class CreateSponsorTests : IDisposable
         cut.FindAll("li.create-sponsor-phone-row").ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Should give the Remove button an accessible name naming the phone number once entered")]
+    public async Task Input_ShouldUpdateRemoveButtonAccessibleName_WithEnteredPhoneNumber()
+    {
+        // Arrange
+        var cut = RenderCreateSponsor();
+        await FindButtonByText(cut, "Add Phone Number").ClickAsync(new());
+        cut.Find("button.create-sponsor-phone-remove").GetAttribute("aria-label").ShouldBe("Remove phone number");
+
+        // Act
+        await cut.InvokeAsync(() => cut.Find("input.create-sponsor-phone-number").Input("6175551234"));
+
+        // Assert
+        cut.Find("button.create-sponsor-phone-remove").GetAttribute("aria-label").ShouldBe("Remove phone number 6175551234");
+    }
+
     [Fact(DisplayName = "Should exclude a phone number row with no phone number from the submitted request")]
     public async Task Submit_ShouldExcludeEmptyPhoneNumberRow_WhenPhoneNumberFieldLeftBlank()
     {

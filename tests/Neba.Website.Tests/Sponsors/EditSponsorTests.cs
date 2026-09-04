@@ -408,6 +408,23 @@ public sealed class EditSponsorTests : IDisposable
         cut.FindAll("li.create-sponsor-phone-row").ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "Should give the Remove button an accessible name naming the phone number once entered")]
+    public async Task Input_ShouldUpdateRemoveButtonAccessibleName_WithEnteredPhoneNumber()
+    {
+        // Arrange
+        var sponsor = SponsorDetailResponseFactory.Create(phoneNumbers: []);
+        SetupGetSponsorSuccess(sponsor);
+        var cut = _ctx.Render<EditSponsorPage>(p => p.Add(x => x.Slug, sponsor.Slug));
+        await FindButtonByText(cut, "Add Phone Number").ClickAsync(new());
+        cut.Find("button.create-sponsor-phone-remove").GetAttribute("aria-label").ShouldBe("Remove phone number");
+
+        // Act
+        await cut.InvokeAsync(() => cut.Find("input.create-sponsor-phone-number").Input("6175551234"));
+
+        // Assert
+        cut.Find("button.create-sponsor-phone-remove").GetAttribute("aria-label").ShouldBe("Remove phone number 6175551234");
+    }
+
     // ── Contact person all-or-nothing validation (surfaced from API 422) ────
 
     [Fact(DisplayName = "Should show the API's validation error when the contact person is left incomplete")]

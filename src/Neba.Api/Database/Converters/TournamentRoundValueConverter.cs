@@ -10,6 +10,6 @@ internal sealed class TournamentRoundValueConverter
     public TournamentRoundValueConverter()
         : base(
             categories => categories.Aggregate(0, (value, category) => value | category.Value),
-            value => TournamentRound.FromValue(value).ToArray().AsReadOnly())
+            value => TournamentRound.FromValue(value).ToList())
     { }
 }

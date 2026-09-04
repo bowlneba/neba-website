@@ -31,6 +31,21 @@ public sealed class SeasonTimelineTests : IDisposable
         cut.FindAll(".season-timeline__dot").Count.ShouldBe(3);
     }
 
+    [Fact(DisplayName = "Should use role group instead of role img so per-dot semantics are not suppressed")]
+    public void Render_ShouldUseRoleGroup_NotRoleImg()
+    {
+        // Arrange
+        var tournaments = SeasonTournamentViewModelFactory.Bogus(1, seed: 2102).ToList();
+
+        // Act
+        var cut = _ctx.Render<SeasonTimeline>(parameters => parameters
+            .Add(p => p.Season, DateTime.Today.Year.ToString(System.Globalization.CultureInfo.InvariantCulture))
+            .Add(p => p.Tournaments, tournaments));
+
+        // Assert
+        cut.Find(".season-timeline").GetAttribute("role").ShouldBe("group");
+    }
+
     [Fact(DisplayName = "Should show tooltip on dot hover and hide on mouse out")]
     public void Tooltip_ShouldShowAndHide_WhenDotHoveredThenMouseOut()
     {

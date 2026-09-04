@@ -1,0 +1,22 @@
+@typeparam TValue
+@using System.Linq.Expressions
+
+<ValidationMessage For="@For" id="@Id" role="alert" class="@Class" />
+
+@code {
+    /// <summary>
+    /// Expression identifying the bound model property, e.g. <c>() =&gt; _model.Name</c>.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public Expression<Func<TValue>> For { get; set; } = default!;
+
+    /// <summary>
+    /// Id for this message, matched by the input's <c>aria-describedby</c> so the error is
+    /// announced and associated with the field it belongs to.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public string Id { get; set; } = default!;
+
+    [Parameter]
+    public string? Class { get; set; }
+}

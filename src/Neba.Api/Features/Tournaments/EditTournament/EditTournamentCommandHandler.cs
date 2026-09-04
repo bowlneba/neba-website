@@ -24,6 +24,7 @@ internal sealed class EditTournamentCommandHandler(
     public async Task<ErrorOr<Updated>> HandleAsync(EditTournamentCommand command, CancellationToken cancellationToken)
     {
         var tournament = await appDbContext.Tournaments
+            .Include(t => t.OilPatterns)
             .SingleOrDefaultAsync(t => t.Id == command.TournamentId, cancellationToken);
 
         if (tournament is null)
@@ -75,10 +76,13 @@ internal sealed class EditTournamentCommandHandler(
             return updateResult.Errors;
         }
 
-        if (command.OilPatternId is { } attachedOilPatternId)
+        if (command.OilPatternId is { } attachedOilPatternId
+            && tournament.OilPatterns.All(oilPattern => oilPattern.OilPatternId != attachedOilPatternId))
         {
             // Same hardcoded rounds Create uses — every tournament currently uses a single oil pattern
             // for the whole event, so there's no per-round pattern selection in the UI yet.
+            // Skipped when already attached: re-editing a tournament resubmits the same oil pattern on
+            // every save, and AddOilPattern would otherwise error on the rounds already being associated.
             var addOilPatternResult = tournament.AddOilPattern(
                 attachedOilPatternId, TournamentRound.Qualifying, TournamentRound.MatchPlay);
 
