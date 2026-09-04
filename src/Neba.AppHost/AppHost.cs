@@ -129,6 +129,16 @@ if (builder.ExecutionContext.IsPublishMode)
             Name = postgresSkuName,
             Tier = postgresSkuTier
         };
+
+        // Storage isn't part of the seasonal on/off toggle above, so it's pinned here rather
+        // than pulled from a repo var - it can't be scaled down once set, so there's no "dark
+        // period" value to switch to/from. 32 GiB / P6 (240 IOPS) / no autogrow.
+        server.Storage = new PostgreSqlFlexibleServerStorage
+        {
+            StorageSizeInGB = 32,
+            Tier = PostgreSqlManagedDiskPerformanceTier.P6,
+            AutoGrow = StorageAutoGrow.Disabled
+        };
     });
 
     var keyVault = builder.AddAzureKeyVault("keyvault");
