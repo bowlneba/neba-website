@@ -10,6 +10,7 @@ using Hangfire.PostgreSql;
 
 using Microsoft.Extensions.Options;
 
+using Neba.Api.Auditing;
 using Neba.Api.Discord;
 
 using Npgsql;
@@ -92,7 +93,11 @@ internal static class BackgroundJobsConfiguration
                             context.BackgroundJob.Job.Method.GetCustomAttribute<AuditJobExecutionFilterAttribute>() is null
                             && context.BackgroundJob.Job.Method.DeclaringType?.GetCustomAttribute<AuditJobExecutionFilterAttribute>() is null)
                         .DataProvider(new AzureTableDataProvider(azureConfig => azureConfig
-                            .ConnectionString(configuration.GetConnectionString("tables"))
+                            // ConfigureConnection (not ConnectionString) - the "tables" connection
+                            // string resolves to a bare storage endpoint URI in production (auth via
+                            // managed identity), not a Key=Value connection string. See the matching
+                            // extension and comment in AuditingConfiguration.cs.
+                            .ConfigureConnection(configuration.GetConnectionString("tables"))
                             .TableName(_ => "JobAuditEvents")
                             // EntityMapper (not EntityBuilder) is required to retain the event payload -
                             // see the matching comment in AuditingConfiguration.cs.
