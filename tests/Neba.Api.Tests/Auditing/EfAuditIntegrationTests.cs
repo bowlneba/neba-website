@@ -1,9 +1,9 @@
 using Audit.Core;
-using Audit.EntityFramework;
 
 using Azure.Data.Tables;
 
 using Neba.Api.Database;
+using Neba.Api.Database.Interceptors;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Bowlers;
@@ -22,7 +22,7 @@ public sealed class EfAuditIntegrationTests(AppDbContextFixture appDbContextFixt
 {
     private const string TableName = "EFAuditEvents";
 
-    private readonly AuditSaveChangesInterceptor _auditInterceptor = new();
+    private readonly PooledAuditSaveChangesInterceptor _auditInterceptor = new();
 
     private TableClient _tableClient = null!;
 
@@ -81,6 +81,29 @@ public sealed class EfAuditIntegrationTests(AppDbContextFixture appDbContextFixt
         // Assert
         var eventCount = await CountEventsAsync();
         eventCount.ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "Two DbContext instances sharing one interceptor should each write their own EF audit event")]
+    public async Task SaveChanges_ShouldWriteAuditEventPerSave_WhenTwoDbContextsShareOneInterceptor()
+    {
+        // Arrange - AddDbContextPool builds one shared DbContextOptions, so in production a single
+        // PooledAuditSaveChangesInterceptor instance is attached to every pooled AppDbContext. This
+        // reproduces that by having two independent DbContext instances share the same interceptor
+        // and save concurrently.
+        await using var firstDbContext = appDbContextFixture.CreateDbContext(_auditInterceptor);
+        await using var secondDbContext = appDbContextFixture.CreateDbContext(_auditInterceptor);
+
+        await firstDbContext.Bowlers.AddAsync(BowlerFactory.Create(), TestContext.Current.CancellationToken);
+        await secondDbContext.Bowlers.AddAsync(BowlerFactory.Create(), TestContext.Current.CancellationToken);
+
+        // Act
+        var firstSave = firstDbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var secondSave = secondDbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await Task.WhenAll(firstSave, secondSave);
+
+        // Assert
+        var eventCount = await CountEventsAsync();
+        eventCount.ShouldBe(2);
     }
 
     private async Task<int> CountEventsAsync()

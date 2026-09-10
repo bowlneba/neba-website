@@ -9,6 +9,7 @@ using Azure.Identity;
 using Microsoft.AspNetCore.Identity;
 
 using Neba.Api.Database;
+using Neba.Api.Database.Interceptors;
 using Neba.Api.Discord;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.BowlingCenters.Domain;
@@ -69,7 +70,10 @@ internal static class AuditingConfiguration
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-            builder.Services.AddSingleton<AuditSaveChangesInterceptor>();
+            // PooledAuditSaveChangesInterceptor, not Audit.EntityFramework's own
+            // AuditSaveChangesInterceptor - see its file comment for why: that type's
+            // per-save state isn't safe to share across a pooled DbContext (AddDbContextPool).
+            builder.Services.AddSingleton<PooledAuditSaveChangesInterceptor>();
             builder.Services.AddSingleton<AuditEnrichmentAction>();
             builder.Services.AddSingleton<ApiAuditPayloadScrubbingAction>();
 
