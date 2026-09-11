@@ -1,7 +1,7 @@
 ﻿{
   Items: [
     {
-      Season: Season 2025,
+      Season: Season 2024,
       BowlerName: Juana Weimann,
       Score: 1319
     },
