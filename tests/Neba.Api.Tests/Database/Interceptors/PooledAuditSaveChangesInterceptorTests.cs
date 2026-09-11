@@ -1,6 +1,5 @@
 using Audit.Core;
 using Audit.Core.Providers;
-using Audit.EntityFramework;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -25,8 +24,6 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
 
     private sealed class TestDbContext(DbContextOptions options) : DbContext(options)
     {
-        public DbSet<TestEntity> Entities => Set<TestEntity>();
-
         protected override void OnModelCreating(ModelBuilder modelBuilder) =>
             modelBuilder.Entity<TestEntity>().HasKey(e => e.Id);
     }
@@ -45,7 +42,7 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
                 .IncludeEntityObjects(false));
     }
 
-    public void Dispose() => Audit.Core.Configuration.ResetCustomActions();
+    public void Dispose() => Configuration.ResetCustomActions();
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -70,7 +67,7 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
             new EventId(1),
             LogLevel.None,
             "test");
-        return new DbContextEventData(eventDef.Object, (_, _) => string.Empty, context!);
+        return new DbContextEventData(eventDef.Object, (_, _) => string.Empty, context);
     }
 
     private static SaveChangesCompletedEventData CreateCompletedEventData(DbContext? context, int entitiesSavedCount = 0)
