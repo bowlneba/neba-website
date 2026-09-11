@@ -83,7 +83,7 @@
         // OnMessageReceived for the query-string fallback this feeds).
         if (HostEnvironment.IsProduction())
         {
-            _backgroundJobsDashboardUrl = new Uri(ApiConfiguration.BaseUrl, "background-jobs").ToString();
+            _backgroundJobsDashboardUrl = new Uri(new Uri(NebaApiConfiguration.PublicBaseUrl), "background-jobs").ToString();
             return;
         }
 
