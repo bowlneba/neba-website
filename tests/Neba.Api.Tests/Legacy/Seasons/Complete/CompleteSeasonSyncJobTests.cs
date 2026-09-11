@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Hangfire;
 using Hangfire.Common;
 using Hangfire.States;
@@ -16,8 +18,6 @@ using Neba.Api.Legacy.Seasons.Complete;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
-
-using System.Diagnostics.CodeAnalysis;
 
 using ZiggyCreatures.Caching.Fusion;
 
