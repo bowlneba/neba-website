@@ -337,7 +337,7 @@
                         </div>
                         <div class="flex justify-center md:justify-end">
                             <div class="bg-white rounded-lg p-4 shadow-lg" style="transform: rotate(-2deg);">
-                                <img src="@(_titleSponsor.LogoUrl?.ToString() ?? "/images/neba-logo.png")"
+                                <img src="@(_titleSponsor.LogoUrl?.AbsoluteUri ?? "/images/neba-logo.png")"
                                      alt="@_titleSponsor.Name logo"
                                      class="max-h-32 object-contain" />
                             </div>
@@ -360,7 +360,7 @@
                                class="neba-card sponsor-card-premier block"
                                aria-label="Learn more about @sponsor.Name">
                                 <div class="h-20 flex items-center justify-center mb-3">
-                                    <img src="@(sponsor.LogoUrl?.ToString() ?? "/images/neba-logo.png")"
+                                    <img src="@(sponsor.LogoUrl?.AbsoluteUri ?? "/images/neba-logo.png")"
                                          alt="@sponsor.Name logo"
                                          class="max-h-16 object-contain" />
                                 </div>

@@ -182,7 +182,7 @@
                                     <div class="edit-tournament-current-file">
                                         @if (_logo.Url is not null)
                                         {
-                                            <img src="@_logo.Url" alt="" class="edit-tournament-logo-preview" />
+                                            <img src="@_logo.Url?.AbsoluteUri" alt="" class="edit-tournament-logo-preview" />
                                         }
                                         <button type="button" class="neba-btn neba-btn-secondary" @onclick="RemoveLogo">Remove current logo</button>
                                     </div>
