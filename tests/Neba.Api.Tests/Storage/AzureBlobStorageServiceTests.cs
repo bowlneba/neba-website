@@ -205,22 +205,33 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
     {
         // Arrange - the exact, fixed container name AzureBlobStorageService gates its public-access
         // branch on (see its PublicContainerName constant); intentionally not UniqueContainer(), since
-        // the whole point is to exercise the name-matched branch.
+        // the whole point is to exercise the name-matched branch. This container is shared with the
+        // other bowlneba-public tests below - safe only because [Collection<AzuriteFixture>] serializes
+        // every test against this fixture. The uploaded blob is deleted afterward so no test artifact
+        // is left behind for a future bowlneba-public test to trip over.
         const string container = "bowlneba-public";
+        const string path = "public-file.txt";
 
-        // Act
-        await _sut.UploadFileAsync(
-            container,
-            "public-file.txt",
-            FileContentFactory.ValidContent,
-            FileContentFactory.ValidContentType,
-            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
-            CancellationToken.None);
+        try
+        {
+            // Act
+            await _sut.UploadFileAsync(
+                container,
+                path,
+                FileContentFactory.ValidContent,
+                FileContentFactory.ValidContentType,
+                new Dictionary<string, string>(FileContentFactory.ValidMetadata),
+                CancellationToken.None);
 
-        // Assert
-        var containerClient = _blobServiceClient.GetBlobContainerClient(container);
-        var properties = await containerClient.GetPropertiesAsync(cancellationToken: TestContext.Current.CancellationToken);
-        properties.Value.PublicAccess.ShouldBe(PublicAccessType.Blob);
+            // Assert
+            var containerClient = _blobServiceClient.GetBlobContainerClient(container);
+            var properties = await containerClient.GetPropertiesAsync(cancellationToken: TestContext.Current.CancellationToken);
+            properties.Value.PublicAccess.ShouldBe(PublicAccessType.Blob);
+        }
+        finally
+        {
+            await _sut.DeleteAsync(container, path, TestContext.Current.CancellationToken);
+        }
     }
 
     [Fact(DisplayName = "UploadFileAsync should upgrade an already-existing bowlneba-public container to anonymous blob access")]
@@ -228,7 +239,9 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
     {
         // Arrange - simulate the real-world case: bowlneba-public already exists with the SDK's
         // default (private) access, as it would if it were created before public-access gating
-        // existed. CreateIfNotExistsAsync alone would silently no-op on this container.
+        // existed. CreateIfNotExistsAsync alone would silently no-op on this container. Shares the
+        // fixed bowlneba-public container name with the sibling test above - see its comment for why
+        // that's safe - and restores the container to None afterward so it doesn't leak state.
         const string container = "bowlneba-public";
         var containerClient = _blobServiceClient.GetBlobContainerClient(container);
         await containerClient.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: TestContext.Current.CancellationToken);
