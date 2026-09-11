@@ -47,15 +47,25 @@ public sealed class DiscordJobFailureFilterTests
         }
     }
 
-    private static ElectStateContext CreateElectStateContext(IState candidateState, MethodInfo? method = null)
+    private static ElectStateContext CreateElectStateContext(IState candidateState, MethodInfo? method = null, string jobId = "1", bool jobIsNull = false)
     {
         var storage = new Mock<JobStorage>(MockBehavior.Strict).Object;
         var connection = new Mock<IStorageConnection>(MockBehavior.Strict).Object;
         var transaction = new Mock<IWriteOnlyTransaction>(MockBehavior.Strict).Object;
 
-        method ??= typeof(SampleJob).GetMethod(nameof(SampleJob.SampleJobMethod))!;
-        var job = new Job(method.DeclaringType!, method);
-        var backgroundJob = new BackgroundJob("1", job, DateTime.UtcNow);
+        Job? job = null;
+        if (!jobIsNull)
+        {
+            method ??= typeof(SampleJob).GetMethod(nameof(SampleJob.SampleJobMethod))!;
+            job = new Job(method.DeclaringType!, method);
+        }
+
+        // Job is null when Hangfire could not deserialize the job invocation itself (see
+        // DiscordJobFailureFilter.OnStateElection's own comment) - there's no public API to make a
+        // real deserialization failure happen from a test, so jobIsNull constructs that case directly.
+#nullable disable
+        var backgroundJob = new BackgroundJob(jobId, job, DateTime.UtcNow);
+#nullable enable
 
         var applyContext = new ApplyStateContext(storage, connection, transaction, backgroundJob, candidateState, oldStateName: ProcessingState.StateName);
 
@@ -103,20 +113,8 @@ public sealed class DiscordJobFailureFilterTests
     public async Task OnStateElection_ShouldUseJobIdForJobName_WhenJobIsNull()
     {
         // Arrange
-        var storage = new Mock<JobStorage>(MockBehavior.Strict).Object;
-        var connection = new Mock<IStorageConnection>(MockBehavior.Strict).Object;
-        var transaction = new Mock<IWriteOnlyTransaction>(MockBehavior.Strict).Object;
-
-        // Job is null when Hangfire could not deserialize the job invocation itself (see
-        // DiscordJobFailureFilter.OnStateElection's own comment) - built directly here since there's
-        // no public API to make a real deserialization failure happen from a test.
-#nullable disable
-        var backgroundJob = new BackgroundJob("42", null, DateTime.UtcNow);
-#nullable enable
-        var applyContext = new ApplyStateContext(
-            storage, connection, transaction, backgroundJob,
-            new FailedState(new InvalidOperationException("Boom")), oldStateName: ProcessingState.StateName);
-        var context = new ElectStateContext(applyContext);
+        var exception = new InvalidOperationException("Boom");
+        var context = CreateElectStateContext(new FailedState(exception), jobId: "42", jobIsNull: true);
 
         var notified = new TaskCompletionSource();
         var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
@@ -138,6 +136,9 @@ public sealed class DiscordJobFailureFilterTests
 
         // Assert
         postedAlert.ShouldNotBeNull();
+        postedAlert.Severity.ShouldBe(DiscordAlertSeverity.Warning);
+        postedAlert.Title.ShouldBe("Recurring job failed");
+        postedAlert.Body.ShouldBe("Boom");
         postedAlert.Metadata.ShouldNotBeNull();
         postedAlert.Metadata["JobName"].ShouldBe("42");
     }
