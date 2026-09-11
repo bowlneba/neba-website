@@ -99,6 +99,49 @@ public sealed class DiscordJobFailureFilterTests
         postedAlert.Metadata["JobName"].ShouldBe($"{nameof(SampleJob)}.{nameof(SampleJob.SampleJobMethod)}");
     }
 
+    [Fact(DisplayName = "OnStateElection should fall back to the job id for JobName when the job could not be deserialized")]
+    public async Task OnStateElection_ShouldUseJobIdForJobName_WhenJobIsNull()
+    {
+        // Arrange
+        var storage = new Mock<JobStorage>(MockBehavior.Strict).Object;
+        var connection = new Mock<IStorageConnection>(MockBehavior.Strict).Object;
+        var transaction = new Mock<IWriteOnlyTransaction>(MockBehavior.Strict).Object;
+
+        // Job is null when Hangfire could not deserialize the job invocation itself (see
+        // DiscordJobFailureFilter.OnStateElection's own comment) - built directly here since there's
+        // no public API to make a real deserialization failure happen from a test.
+#nullable disable
+        var backgroundJob = new BackgroundJob("42", null, DateTime.UtcNow);
+#nullable enable
+        var applyContext = new ApplyStateContext(
+            storage, connection, transaction, backgroundJob,
+            new FailedState(new InvalidOperationException("Boom")), oldStateName: ProcessingState.StateName);
+        var context = new ElectStateContext(applyContext);
+
+        var notified = new TaskCompletionSource();
+        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        DiscordAlert? postedAlert = null;
+        discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), It.IsAny<CancellationToken>()))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) =>
+            {
+                postedAlert = alert;
+                notified.SetResult();
+            })
+            .Returns(Task.CompletedTask);
+
+        var filter = new DiscordJobFailureFilter(discordNotifier.Object);
+
+        // Act
+        filter.OnStateElection(context);
+        await notified.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        // Assert
+        postedAlert.ShouldNotBeNull();
+        postedAlert.Metadata.ShouldNotBeNull();
+        postedAlert.Metadata["JobName"].ShouldBe("42");
+    }
+
     [Fact(DisplayName = "OnStateElection should prefix JobName with the declaring type to disambiguate jobs sharing a method name")]
     public async Task OnStateElection_ShouldPrefixJobNameWithDeclaringType_WhenTwoJobsShareAMethodName()
     {
