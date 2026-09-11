@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,28 +16,29 @@ using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Tournaments;
 
-using Npgsql;
-
 using ZiggyCreatures.Caching.Fusion;
 
 namespace Neba.Api.Tests.Legacy.Tournaments.Complete;
 
-// Exercises SyncTournamentResultsJob end to end against real Dapper queries (a Postgres temp
+// Exercises SyncTournamentResultsJob end to end against real Dapper queries (a real SQL Server
 // schema standing in for neba-fwk's Stats/Stats_ResultsStats/Stats_QualifyingStats/Teams/
-// TeamMember/SquadTeams tables) and a real AppDbContext - this is what proves the raw SQL joins
-// return the rows TournamentPlaceCalculator (covered in isolation elsewhere) expects, and covers
-// the idempotency contract this backdoor action requires.
+// TeamMember/SquadTeams tables, matching neba-fwk's actual engine) and a real AppDbContext - this
+// is what proves the raw SQL joins return the rows TournamentPlaceCalculator (covered in isolation
+// elsewhere) expects, and covers the idempotency contract this backdoor action requires.
 [IntegrationTest]
 [Component("Legacy")]
-[Collection<AppDbContextFixture>]
-public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture)
-    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
+[Collection(nameof(LegacyDatabasesTestScope))]
+public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, LegacySqlServerFixture legacyFixture)
+    : IClassFixture<AppDbContextFixture>, IClassFixture<LegacySqlServerFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
-    private NpgsqlConnection _legacyConnection = null!;
+    private LegacySqlServerDatabase _legacyDatabase = null!;
     private ServiceProvider _serviceProvider = null!;
     private int _nextStatsId = 1;
     private int _nextSquadTeamsId = 1;
+
+    // Ownership (and disposal) of the connection belongs to _legacyDatabase.
+    private SqlConnection _legacyConnection => _legacyDatabase.Connection;
 
     public async ValueTask InitializeAsync()
     {
@@ -46,46 +48,45 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture)
         services.AddFusionCache().WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
         _serviceProvider = services.BuildServiceProvider();
 
-        // Same rationale as SyncSquadScoresSyncJobTests: plain Dapper works against any real
-        // IDbConnection, so Postgres stands in for neba-fwk's MSSQL here. A CREATE TEMP TABLE is
-        // scoped to this single connection and needs no cleanup.
-        _legacyConnection = new NpgsqlConnection(fixture.ConnectionString);
-        await _legacyConnection.OpenAsync();
+        // Same rationale as SyncSquadScoresSyncJobTests: real SQL Server (Testcontainers.MsSql),
+        // matching neba-fwk's actual engine. Each test gets its own throwaway database on the
+        // shared container (see LegacySqlServerFixture).
+        _legacyDatabase = await legacyFixture.CreateDatabaseAsync();
 
         await using var createStats = _legacyConnection.CreateCommand();
         createStats.CommandText = """
-            CREATE TEMP TABLE Stats (
-                Id integer PRIMARY KEY,
-                BowlerId integer NOT NULL,
-                TournamentId integer NOT NULL
+            CREATE TABLE Stats (
+                Id int PRIMARY KEY,
+                BowlerId int NOT NULL,
+                TournamentId int NOT NULL
             );
-            CREATE TEMP TABLE Stats_ResultsStats (
-                Id integer PRIMARY KEY,
-                Place integer NULL,
+            CREATE TABLE Stats_ResultsStats (
+                Id int PRIMARY KEY,
+                Place int NULL,
                 Payout numeric NOT NULL,
-                Points integer NOT NULL
+                Points int NOT NULL
             );
-            CREATE TEMP TABLE Stats_QualifyingStats (
-                Id integer PRIMARY KEY,
-                SquadId integer NOT NULL,
-                Score integer NOT NULL,
-                Games integer NOT NULL,
-                HighGame integer NOT NULL
+            CREATE TABLE Stats_QualifyingStats (
+                Id int PRIMARY KEY,
+                SquadId int NOT NULL,
+                Score int NOT NULL,
+                Games int NOT NULL,
+                HighGame int NOT NULL
             );
-            CREATE TEMP TABLE Teams (
-                Id integer PRIMARY KEY,
-                TeamTournamentId integer NOT NULL,
-                Forfeit boolean NOT NULL
+            CREATE TABLE Teams (
+                Id int PRIMARY KEY,
+                TeamTournamentId int NOT NULL,
+                Forfeit bit NOT NULL
             );
-            CREATE TEMP TABLE TeamMember (
-                Teams_Id integer NOT NULL,
-                Bowlers_Id integer NOT NULL
+            CREATE TABLE TeamMember (
+                Teams_Id int NOT NULL,
+                Bowlers_Id int NOT NULL
             );
-            CREATE TEMP TABLE SquadTeams (
-                Id integer PRIMARY KEY,
-                TeamSquadId integer NOT NULL,
-                TeamId integer NOT NULL,
-                HighGame integer NOT NULL
+            CREATE TABLE SquadTeams (
+                Id int PRIMARY KEY,
+                TeamSquadId int NOT NULL,
+                TeamId int NOT NULL,
+                HighGame int NOT NULL
             );
             """;
         await createStats.ExecuteNonQueryAsync();
@@ -93,7 +94,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture)
 
     public async ValueTask DisposeAsync()
     {
-        await _legacyConnection.DisposeAsync();
+        await _legacyDatabase.DisposeAsync();
         await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();

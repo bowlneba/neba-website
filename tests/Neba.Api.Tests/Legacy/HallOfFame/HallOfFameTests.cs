@@ -9,6 +9,7 @@ using Hangfire.States;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -30,8 +31,6 @@ using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.HallOfFame;
 using Neba.TestFactory.Infrastructure;
-
-using Npgsql;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -283,13 +282,16 @@ public sealed class HallOfFameBowlerNotFoundEmailTests
 
 [IntegrationTest]
 [Component("Legacy")]
-[Collection<AppDbContextFixture>]
-public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixture)
-    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
+[Collection(nameof(LegacyDatabasesTestScope))]
+public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixture, LegacySqlServerFixture legacyFixture)
+    : IClassFixture<AppDbContextFixture>, IClassFixture<LegacySqlServerFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
-    private NpgsqlConnection _legacyConnection = null!;
+    private LegacySqlServerDatabase _legacyDatabase = null!;
     private ServiceProvider _serviceProvider = null!;
+
+    // Ownership (and disposal) of the connection belongs to _legacyDatabase.
+    private SqlConnection _legacyConnection => _legacyDatabase.Connection;
 
     public async ValueTask InitializeAsync()
     {
@@ -299,24 +301,21 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         services.AddFusionCache().WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
         _serviceProvider = services.BuildServiceProvider();
 
-        // Plain Dapper works against any real ADO.NET IDbConnection, so a Postgres connection
-        // (reusing this test project's existing Testcontainers.PostgreSql infra) stands in for the
-        // real MSSQL neba-fwk database here rather than standing up a second, MSSQL-specific
-        // container for one temporary backdoor query. A CREATE TEMP TABLE is scoped to this single
-        // connection - it's gone as soon as the connection closes, so it needs no cleanup and can't
-        // collide with the shared fixture's own schema/Respawn reset.
-        _legacyConnection = new NpgsqlConnection(fixture.ConnectionString);
-        await _legacyConnection.OpenAsync();
+        // Real SQL Server (Testcontainers.MsSql), matching neba-fwk's actual engine. Each test gets
+        // its own throwaway database on the shared container (see LegacySqlServerFixture) - this
+        // also means the "IN (@Id0, @Id1, ...)" scalar-parameter workaround in
+        // NewHallOfFameInductionSyncJob.SyncAsync (needed because Microsoft.Data.SqlClient, unlike
+        // Npgsql, has no native array parameter support) is now exercised against the real provider
+        // it was written to accommodate, not just against Postgres by coincidence.
+        _legacyDatabase = await legacyFixture.CreateDatabaseAsync();
 
-        // Unquoted identifiers here so Postgres folds them to lowercase, matching how it resolves
-        // the production query's own unquoted column/table references.
         await using var create = _legacyConnection.CreateCommand();
         create.CommandText = """
-            CREATE TEMP TABLE HallOfFame (
-                Id integer PRIMARY KEY,
-                BowlerId integer NOT NULL,
-                Category integer NOT NULL,
-                Year integer NOT NULL
+            CREATE TABLE HallOfFame (
+                Id int PRIMARY KEY,
+                BowlerId int NOT NULL,
+                Category int NOT NULL,
+                Year int NOT NULL
             )
             """;
         await create.ExecuteNonQueryAsync();
@@ -324,7 +323,7 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
 
     public async ValueTask DisposeAsync()
     {
-        await _legacyConnection.DisposeAsync();
+        await _legacyDatabase.DisposeAsync();
         await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();

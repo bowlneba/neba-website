@@ -9,6 +9,7 @@ using Hangfire.States;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -32,8 +33,6 @@ using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Tournaments;
-
-using Npgsql;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -230,13 +229,16 @@ public sealed class UnsyncedBowlerScoreSyncEmailTests
 
 [IntegrationTest]
 [Component("Legacy")]
-[Collection<AppDbContextFixture>]
-public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture)
-    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
+[Collection(nameof(LegacyDatabasesTestScope))]
+public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, LegacySqlServerFixture legacyFixture)
+    : IClassFixture<AppDbContextFixture>, IClassFixture<LegacySqlServerFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
-    private NpgsqlConnection _legacyConnection = null!;
+    private LegacySqlServerDatabase _legacyDatabase = null!;
     private ServiceProvider _serviceProvider = null!;
+
+    // Ownership (and disposal) of the connection belongs to _legacyDatabase.
+    private SqlConnection _legacyConnection => _legacyDatabase.Connection;
 
     public async ValueTask InitializeAsync()
     {
@@ -246,23 +248,18 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture)
         services.AddFusionCache().WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
         _serviceProvider = services.BuildServiceProvider();
 
-        // Plain Dapper works against any real ADO.NET IDbConnection, so a Postgres connection
-        // (reusing this test project's existing Testcontainers.PostgreSql infra) stands in for the
-        // real MSSQL neba-fwk database here rather than standing up a second, MSSQL-specific
-        // container for one temporary backdoor query. A CREATE TEMP TABLE is scoped to this single
-        // connection - it's gone as soon as the connection closes, so it needs no cleanup and can't
-        // collide with the shared fixture's own schema/Respawn reset.
-        _legacyConnection = new NpgsqlConnection(fixture.ConnectionString);
-        await _legacyConnection.OpenAsync();
+        // Real SQL Server (Testcontainers.MsSql), matching neba-fwk's actual engine. Each test gets
+        // its own throwaway database on the shared container (see LegacySqlServerFixture).
+        _legacyDatabase = await legacyFixture.CreateDatabaseAsync();
 
         await using var createQualifyingScores = _legacyConnection.CreateCommand();
         createQualifyingScores.CommandText = """
-            CREATE TEMP TABLE QualifyingScores (
-                Id integer PRIMARY KEY,
-                BowlerId integer NOT NULL,
-                SquadId integer NOT NULL,
-                Game integer NOT NULL,
-                Score integer NOT NULL
+            CREATE TABLE QualifyingScores (
+                Id int PRIMARY KEY,
+                BowlerId int NOT NULL,
+                SquadId int NOT NULL,
+                Game int NOT NULL,
+                Score int NOT NULL
             )
             """;
         await createQualifyingScores.ExecuteNonQueryAsync();
@@ -270,7 +267,7 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture)
 
     public async ValueTask DisposeAsync()
     {
-        await _legacyConnection.DisposeAsync();
+        await _legacyDatabase.DisposeAsync();
         await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();
