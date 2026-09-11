@@ -96,16 +96,32 @@ public sealed class LegacySqlServerFixture : IAsyncLifetime
         };
 
         var connection = new SqlConnection(builder.ConnectionString);
-        await connection.OpenAsync();
 
-        await createSchemaAsync(connection);
-
-        var respawner = await Respawner.CreateAsync(connection, new RespawnerOptions
+        try
         {
-            DbAdapter = DbAdapter.SqlServer
-        });
+            await connection.OpenAsync();
 
-        return new LegacySqlServerDatabase(masterConnectionString, databaseName, connection, respawner);
+            await createSchemaAsync(connection);
+
+            var respawner = await Respawner.CreateAsync(connection, new RespawnerOptions
+            {
+                DbAdapter = DbAdapter.SqlServer
+            });
+
+            return new LegacySqlServerDatabase(masterConnectionString, databaseName, connection, respawner);
+        }
+        catch
+        {
+            await connection.DisposeAsync();
+
+            await using var master = new SqlConnection(masterConnectionString);
+            await master.OpenAsync();
+            await using var drop = master.CreateCommand();
+            drop.CommandText = LegacySqlServerDatabase.BuildDropDatabaseCommand(databaseName);
+            await drop.ExecuteNonQueryAsync();
+
+            throw;
+        }
     }
 
     [SuppressMessage("Security", "DAP241:Data values should not be interpolated into SQL string",
@@ -143,7 +159,7 @@ public sealed class LegacySqlServerDatabase(
         Justification = "Not a data value - a generated (Guid-based, non-user-supplied) database identifier. DDL statements like DROP DATABASE can't parameterize identifiers.")]
     [SuppressMessage("Security", "CA2100:Review SQL queries for security vulnerabilities",
         Justification = "Not a data value - a generated (Guid-based, non-user-supplied) database identifier. DDL statements like DROP DATABASE can't parameterize identifiers.")]
-    private static string BuildDropDatabaseCommand(string databaseName)
+    internal static string BuildDropDatabaseCommand(string databaseName)
         => $"""
             ALTER DATABASE [{databaseName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
             DROP DATABASE [{databaseName}];
