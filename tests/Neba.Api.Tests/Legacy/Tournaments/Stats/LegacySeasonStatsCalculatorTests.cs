@@ -41,7 +41,7 @@ public sealed class LegacySeasonStatsCalculatorTests
     {
         // Arrange
         var qualifying = new[] { new LegacyQualifyingStatsRow(1, 100, 1, 200, 1, 200) };
-        var memberships = new[] { new LegacyMembershipRow(1, 1, SeasonEndDate) };
+        var memberships = new[] { new LegacyMembershipRow(1, 1, SeasonEndDate.ToDateTime(TimeOnly.MinValue)) };
 
         // Act
         var result = ComputeSingle(qualifyingStats: qualifying, memberships: memberships);
@@ -57,8 +57,8 @@ public sealed class LegacySeasonStatsCalculatorTests
         var qualifying = new[] { new LegacyQualifyingStatsRow(1, 100, 1, 200, 1, 200) };
         var memberships = new[]
         {
-            new LegacyMembershipRow(1, 1, SeasonEndDate.AddYears(-1)),
-            new LegacyMembershipRow(1, NewMembershipTypeId, SeasonEndDate)
+            new LegacyMembershipRow(1, 1, SeasonEndDate.AddYears(-1).ToDateTime(TimeOnly.MinValue)),
+            new LegacyMembershipRow(1, NewMembershipTypeId, SeasonEndDate.ToDateTime(TimeOnly.MinValue))
         };
 
         // Act
@@ -74,7 +74,7 @@ public sealed class LegacySeasonStatsCalculatorTests
     {
         // Arrange
         var qualifying = new[] { new LegacyQualifyingStatsRow(1, 100, 1, 200, 1, 200) };
-        var memberships = new[] { new LegacyMembershipRow(1, NewMembershipTypeId, SeasonEndDate.AddYears(-1)) };
+        var memberships = new[] { new LegacyMembershipRow(1, NewMembershipTypeId, SeasonEndDate.AddYears(-1).ToDateTime(TimeOnly.MinValue)) };
 
         // Act
         var result = ComputeSingle(qualifyingStats: qualifying, memberships: memberships);
@@ -94,7 +94,7 @@ public sealed class LegacySeasonStatsCalculatorTests
         // mutually exclusive - assert both independently rather than assuming otherwise.
         var dateOfBirth = new DateOnly(year, month, day);
         var qualifying = new[] { new LegacyQualifyingStatsRow(1, 100, 1, 200, 1, 200) };
-        var bowlers = new[] { new LegacyBowlerRow(1, 0, dateOfBirth) };
+        var bowlers = new[] { new LegacyBowlerRow(1, 0, dateOfBirth.ToDateTime(TimeOnly.MinValue)) };
 
         // Act
         var result = ComputeSingle(qualifyingStats: qualifying, bowlers: bowlers);
@@ -126,7 +126,7 @@ public sealed class LegacySeasonStatsCalculatorTests
         // tournament earns zero YouthOfTheYearPoints, so IsYouth must be false despite being under 18.
         var dateOfBirth = new DateOnly(2010, 1, 1);
         var qualifying = new[] { new LegacyQualifyingStatsRow(1, 100, 1, 200, 1, 200) };
-        var bowlers = new[] { new LegacyBowlerRow(1, 0, dateOfBirth) };
+        var bowlers = new[] { new LegacyBowlerRow(1, 0, dateOfBirth.ToDateTime(TimeOnly.MinValue)) };
 
         // Act
         var result = ComputeSingle(qualifyingStats: qualifying, bowlers: bowlers);
@@ -382,7 +382,7 @@ public sealed class LegacySeasonStatsCalculatorTests
             new LegacyBowlerResultRow(1, 100, 3, 50m, 40, null),
             new LegacyBowlerResultRow(1, 101, 2, 100m, 60, null)
         };
-        var bowlers = new[] { new LegacyBowlerRow(1, 0, dateOfBirth) };
+        var bowlers = new[] { new LegacyBowlerRow(1, 0, dateOfBirth.ToDateTime(TimeOnly.MinValue)) };
 
         // Act
         var result = ComputeSingle(seasonTournaments: seasonTournaments, qualifyingStats: qualifying, results: results, bowlers: bowlers);
@@ -414,7 +414,7 @@ public sealed class LegacySeasonStatsCalculatorTests
             new LegacyBowlerResultRow(1, 101, 5, 0m, 25, 2), // SuperSenior side cut - excluded, but bonused
             new LegacyBowlerResultRow(1, 102, 6, 0m, 20, 3) // Woman side cut - fully excluded
         };
-        var bowlers = new[] { new LegacyBowlerRow(1, 0, dateOfBirth) };
+        var bowlers = new[] { new LegacyBowlerRow(1, 0, dateOfBirth.ToDateTime(TimeOnly.MinValue)) };
 
         // Act
         var result = ComputeSingle(seasonTournaments: seasonTournaments, qualifyingStats: qualifying, results: results, bowlers: bowlers);
@@ -443,7 +443,7 @@ public sealed class LegacySeasonStatsCalculatorTests
             new LegacyBowlerResultRow(1, 100, 3, 50m, 40, null),
             new LegacyBowlerResultRow(1, 101, 6, 0m, 20, 3) // Woman side cut - excluded from SuperSenior too
         };
-        var bowlers = new[] { new LegacyBowlerRow(1, 0, dateOfBirth) };
+        var bowlers = new[] { new LegacyBowlerRow(1, 0, dateOfBirth.ToDateTime(TimeOnly.MinValue)) };
 
         // Act
         var result = ComputeSingle(seasonTournaments: seasonTournaments, qualifyingStats: qualifying, results: results, bowlers: bowlers);
@@ -464,7 +464,7 @@ public sealed class LegacySeasonStatsCalculatorTests
         };
         var qualifying = new[] { new LegacyQualifyingStatsRow(1, 100, 1, 200, 1, 200) };
         var results = new[] { new LegacyBowlerResultRow(1, 100, 2, 75m, 35, null) };
-        var bowlers = new[] { new LegacyBowlerRow(1, 0, dateOfBirth) };
+        var bowlers = new[] { new LegacyBowlerRow(1, 0, dateOfBirth.ToDateTime(TimeOnly.MinValue)) };
 
         // Act
         var result = ComputeSingle(seasonTournaments: seasonTournaments, qualifyingStats: qualifying, results: results, bowlers: bowlers);
@@ -541,7 +541,7 @@ public sealed class LegacySeasonStatsCalculatorTests
             new LegacyBowlerResultRow(1, 100, 2, 50m, 45, null),
             new LegacyBowlerResultRow(1, 101, 3, 25m, 30, null)
         };
-        var bowlers = new[] { new LegacyBowlerRow(1, 0, dateOfBirth) };
+        var bowlers = new[] { new LegacyBowlerRow(1, 0, dateOfBirth.ToDateTime(TimeOnly.MinValue)) };
 
         // Act
         var result = ComputeSingle(seasonTournaments: seasonTournaments, qualifyingStats: qualifying, results: results, bowlers: bowlers);
