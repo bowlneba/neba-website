@@ -227,6 +227,7 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
             var containerClient = _blobServiceClient.GetBlobContainerClient(container);
             var properties = await containerClient.GetPropertiesAsync(cancellationToken: TestContext.Current.CancellationToken);
             properties.Value.PublicAccess.ShouldBe(PublicAccessType.Blob);
+            _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Information && l.Message.Contains("uploaded"));
         }
         finally
         {
@@ -260,6 +261,7 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
             // Assert
             var properties = await containerClient.GetPropertiesAsync(cancellationToken: TestContext.Current.CancellationToken);
             properties.Value.PublicAccess.ShouldBe(PublicAccessType.Blob);
+            _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Information && l.Message.Contains("uploaded"));
         }
         finally
         {
@@ -286,6 +288,7 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
         var containerClient = _blobServiceClient.GetBlobContainerClient(container);
         var properties = await containerClient.GetPropertiesAsync(cancellationToken: TestContext.Current.CancellationToken);
         properties.Value.PublicAccess.ShouldBe(PublicAccessType.None);
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Information && l.Message.Contains("uploaded"));
     }
 
     [Fact(DisplayName = "GetBlobUri should return URI containing container and path")]
