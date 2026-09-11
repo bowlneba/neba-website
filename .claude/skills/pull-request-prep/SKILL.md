@@ -21,7 +21,14 @@ git diff <base-branch>...HEAD --name-only
 
 If the diff is very large, group the review by slice (Features/{Feature} → Contracts → Blazor/Website → Tests).
 
-### 2. Check for plans/mockups (main only)
+### 2. Run npm audit
+
+Run `npm audit` at the repo root. This check always runs, regardless of whether `package.json`/`package-lock.json` changed on this branch — a failing JS test can be caused by an advisory that landed upstream since the lockfile was last touched, not just by a diff on this branch.
+
+- If `npm audit` reports no vulnerabilities, note that in the **✅ Looks Good** section (step 6) and move on.
+- If it reports vulnerabilities, record each one (package, severity, advisory) for the **🚫 Blockers** or **⚠️ Should Fix** section (step 6) — severity `high`/`critical` is a 🚫 Blocker, `moderate`/`low` is ⚠️ Should Fix. State whether `npm audit fix` resolves it without a breaking major-version bump; if it does, apply the fix and note that it was applied. If a fix requires `--force` (a breaking upgrade), do not apply it — flag it instead and let the user decide, since `feedback_npm_lockfile_linux_ci.md`'s constraint (lockfile changes must be regenerated on Linux, not macOS) applies to any `npm install`/`npm audit fix` run here too.
+
+### 3. Check for plans/mockups (main only)
 
 Only when **base-branch is `main`** (or was left as the default): check `docs/plans/` and `docs/plans/mockups/` for anything new or changed on this branch —
 
@@ -32,16 +39,16 @@ git status --porcelain -- docs/plans/
 
 These are working documents for the feature, not project history — by default they should be deleted before the PR merges to main, so they don't carry forward once the feature ships. For each file or mockup folder found:
 
-- Delete it, **unless** there's a concrete reason to keep it (e.g. the plan doubles as ongoing design reference for a phased/multi-PR feature, or the mockups are linked from a doc that stays). If so, keep it and call out the reason explicitly in the Pre-PR Review output (a new **📐 Plans & Mockups** section — see step 4) rather than deleting silently.
+- Delete it, **unless** there's a concrete reason to keep it (e.g. the plan doubles as ongoing design reference for a phased/multi-PR feature, or the mockups are linked from a doc that stays). If so, keep it and call out the reason explicitly in the Pre-PR Review output (a new **📐 Plans & Mockups** section — see step 6) rather than deleting silently.
 - If deleted, note it in that same section so the user can see what was removed and why.
 
 Skip this step entirely when base-branch is not `main` (e.g. merging into a long-lived feature/integration branch, where plans may still be useful to the next PR in the chain).
 
-### 3. Load the review guidelines
+### 4. Load the review guidelines
 
 Read `.github/instructions/pull-request-review.instructions.md` in full before reviewing. Every flag in the review must be traceable to a rule in that file or in CLAUDE.md.
 
-### 4. Review the changes
+### 5. Review the changes
 
 Work through the diff layer by layer. For each issue found, record:
 - **File and line** (link using `[file.cs:42](path/file.cs#L42)`)
@@ -143,7 +150,7 @@ When adding Playwright tests:
 - [ ] `README.md`'s Technology Stack reflects any new/removed package that changes what's user-visible (new datastore, new client library, new background job engine, etc.) — not every `Directory.Packages.props` bump, just ones that change the stack story
 - [ ] `README.md`'s Implementation Plan checkboxes reflect features this PR completes or starts (check off finished items, leave partial work unchecked)
 
-### 5. Present the review
+### 6. Present the review
 
 Structure the review as:
 
@@ -161,7 +168,7 @@ Structure the review as:
 [List each suggestion. If none: "None."]
 
 ### 📐 Plans & Mockups
-[Only present when base-branch is `main`. List each file/folder under `docs/plans/` deleted in step 2, and each one kept along with its stated reason. If step 2 found nothing under `docs/plans/`, omit this section entirely.]
+[Only present when base-branch is `main`. List each file/folder under `docs/plans/` deleted in step 3, and each one kept along with its stated reason. If step 3 found nothing under `docs/plans/`, omit this section entirely.]
 
 ### 📄 README Updates
 [List each stale/missing spot in README.md found via the **README** checklist above, with the proposed change. If none: "None — README is current."]
@@ -178,11 +185,11 @@ Write this review verbatim to `pr-review.md` at the repo root (overwrite if it a
 
 Ask the user: **"Ready to generate the PR description, or would you like to address any of these first?"**
 
-### 6. Apply README updates
+### 7. Apply README updates
 
-If step 5 found any README Updates, apply them directly to `README.md` now (unless the user said they'd handle findings themselves) — these are typically small, mechanical (a checkbox, a stack line, a folder in the structure diagram) and don't warrant a separate round-trip. Show a brief summary of what changed. Skip this step entirely if the README Updates list was empty.
+If step 6 found any README Updates, apply them directly to `README.md` now (unless the user said they'd handle findings themselves) — these are typically small, mechanical (a checkbox, a stack line, a folder in the structure diagram) and don't warrant a separate round-trip. Show a brief summary of what changed. Skip this step entirely if the README Updates list was empty.
 
-### 7. Generate the PR description
+### 8. Generate the PR description
 
 After the user confirms (or asks to proceed), infer the PR description format from the changes and the project's PR history. The format used in this project is:
 
