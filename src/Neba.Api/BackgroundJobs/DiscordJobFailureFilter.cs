@@ -45,9 +45,13 @@ internal sealed class DiscordJobFailureFilter(IDiscordNotifier discordNotifier) 
             return;
         }
 
-        var method = context.BackgroundJob.Job.Method;
-        if (method.GetCustomAttribute<SkipDiscordJobFailureAlertAttribute>() is not null
-            || method.DeclaringType?.GetCustomAttribute<SkipDiscordJobFailureAlertAttribute>() is not null)
+        // Job is null when Hangfire could not deserialize the job invocation itself (e.g. the
+        // declaring type/method was removed or its arguments no longer deserialize) - the job
+        // still lands in FailedState, but there's no MethodInfo to inspect here.
+        var method = context.BackgroundJob.Job?.Method;
+        if (method is not null
+            && (method.GetCustomAttribute<SkipDiscordJobFailureAlertAttribute>() is not null
+                || method.DeclaringType?.GetCustomAttribute<SkipDiscordJobFailureAlertAttribute>() is not null))
         {
             return;
         }
@@ -63,7 +67,9 @@ internal sealed class DiscordJobFailureFilter(IDiscordNotifier discordNotifier) 
             DiscordMessageRedactor.Redact(failedState.Exception.Message),
             new Dictionary<string, string>
             {
-                ["JobName"] = $"{method.DeclaringType?.Name}.{method.Name}"
+                ["JobName"] = method is not null
+                    ? $"{method.DeclaringType?.Name}.{method.Name}"
+                    : context.BackgroundJob.Id
             });
 
         // Fire-and-forget rather than blocking this Hangfire worker thread on the Discord HTTP
