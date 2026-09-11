@@ -27,6 +27,8 @@ This is the opening issue description, written the way a QA reporter or end user
 
 Pull the actual symptom from the conversation — what was the user looking at, what action triggered it, what did they expect vs. see. If the conversation doesn't clearly establish concrete repro steps, ask the user to confirm/fill them in rather than inventing plausible-sounding ones.
 
+**Scope this to the originally reported issue only, even when resolving it turned up other bugs.** Investigating and fixing one reported bug often surfaces related-but-distinct bugs along the way (same class of defect in other files, something only found once new test coverage existed, etc.). `issue.md` always stays bound to what was actually reported — never expand it to cover everything that got fixed in the session. The broader story (everything found and fixed during the investigation) belongs in the closing comment (Step 3), not here.
+
 Structure:
 
 ```md
@@ -55,6 +57,8 @@ Frame everything around the feature or screen the user actually interacts with (
 ## Step 3 — Write the closing comment (`docs/bug-reports/<slug>/closing-comment.md`)
 
 This file *is* the literal text that gets pasted as the GitHub issue's closing comment — write it as a complete, self-contained explanation for someone reading the issue later, not as a chat recap. This is the one place implementation detail belongs.
+
+Unlike `issue.md`, this document covers the full scope of what was actually done to resolve the report — including other bugs of the same or a related kind that were found and fixed along the way (e.g. the same defect pattern discovered in other files, or an unrelated bug that new test coverage happened to surface). Note clearly which parts address the original report and which are additional fixes found during the investigation, so a reader isn't confused about why the diff is bigger than the reported symptom.
 
 Structure:
 

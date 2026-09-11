@@ -98,7 +98,7 @@ internal sealed class NewTournamentSyncJob(
             """
             SELECT
                 t.Id,
-                t.End,
+                t.[End],
                 s.TournamentType AS SinglesTournamentType,
                 tm.TeamSize AS TeamSize,
                 tm.OverUnder AS OverUnder

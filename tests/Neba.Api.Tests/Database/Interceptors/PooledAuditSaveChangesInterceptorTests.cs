@@ -58,12 +58,18 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
     private static void TrackChange(TestDbContext context) =>
         context.Entry(new TestEntity()).State = EntityState.Added;
 
+    private static Mock<ILoggingOptions> CreateLoggingOptionsMock()
+    {
+        var loggingOptions = new Mock<ILoggingOptions>(MockBehavior.Strict);
+        loggingOptions.Setup(o => o.WarningsConfiguration).Returns(new WarningsConfiguration());
+        return loggingOptions;
+    }
+
     private static DbContextEventData CreateSavingEventData(DbContext? context)
     {
-        var loggingOptions = new Mock<ILoggingOptions>(MockBehavior.Loose);
         var eventDef = new Mock<EventDefinitionBase>(
-            MockBehavior.Loose,
-            loggingOptions.Object,
+            MockBehavior.Strict,
+            CreateLoggingOptionsMock().Object,
             new EventId(1),
             LogLevel.None,
             "test");
@@ -72,10 +78,9 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
 
     private static SaveChangesCompletedEventData CreateCompletedEventData(DbContext? context, int entitiesSavedCount = 0)
     {
-        var loggingOptions = new Mock<ILoggingOptions>(MockBehavior.Loose);
         var eventDef = new Mock<EventDefinitionBase>(
-            MockBehavior.Loose,
-            loggingOptions.Object,
+            MockBehavior.Strict,
+            CreateLoggingOptionsMock().Object,
             new EventId(1),
             LogLevel.None,
             "test");
@@ -84,10 +89,9 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
 
     private static DbContextErrorEventData CreateErrorEventData(DbContext? context, Exception exception)
     {
-        var loggingOptions = new Mock<ILoggingOptions>(MockBehavior.Loose);
         var eventDef = new Mock<EventDefinitionBase>(
-            MockBehavior.Loose,
-            loggingOptions.Object,
+            MockBehavior.Strict,
+            CreateLoggingOptionsMock().Object,
             new EventId(1),
             LogLevel.None,
             "test");
@@ -99,46 +103,69 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
     [Fact(DisplayName = "SavingChanges returns the result unchanged when context is null")]
     public void SavingChanges_WhenContextIsNull_ReturnsResultUnchanged()
     {
+        // Arrange
         var interceptor = new PooledAuditSaveChangesInterceptor();
         var result = InterceptionResult<int>.SuppressWithResult(7);
 
-        interceptor.SavingChanges(CreateSavingEventData(null), result).ShouldBe(result);
+        // Act
+        var actual = interceptor.SavingChanges(CreateSavingEventData(null), result);
+
+        // Assert
+        actual.ShouldBe(result);
         _dataProvider.GetAllEvents().ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "SavingChangesAsync returns the result unchanged when context is null")]
     public async Task SavingChangesAsync_WhenContextIsNull_ReturnsResultUnchanged()
     {
+        // Arrange
         var interceptor = new PooledAuditSaveChangesInterceptor();
         var result = InterceptionResult<int>.SuppressWithResult(7);
 
-        (await interceptor.SavingChangesAsync(CreateSavingEventData(null), result, TestContext.Current.CancellationToken)).ShouldBe(result);
+        // Act
+        var actual = await interceptor.SavingChangesAsync(CreateSavingEventData(null), result, TestContext.Current.CancellationToken);
+
+        // Assert
+        actual.ShouldBe(result);
         _dataProvider.GetAllEvents().ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "SavedChanges returns the result unchanged when context is null")]
     public void SavedChanges_WhenContextIsNull_ReturnsResultUnchanged()
     {
+        // Arrange
         var interceptor = new PooledAuditSaveChangesInterceptor();
 
-        interceptor.SavedChanges(CreateCompletedEventData(null), 3).ShouldBe(3);
+        // Act
+        var actual = interceptor.SavedChanges(CreateCompletedEventData(null), 3);
+
+        // Assert
+        actual.ShouldBe(3);
         _dataProvider.GetAllEvents().ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "SavedChangesAsync returns the result unchanged when context is null")]
     public async Task SavedChangesAsync_WhenContextIsNull_ReturnsResultUnchanged()
     {
+        // Arrange
         var interceptor = new PooledAuditSaveChangesInterceptor();
 
-        (await interceptor.SavedChangesAsync(CreateCompletedEventData(null), 3, TestContext.Current.CancellationToken)).ShouldBe(3);
+        // Act
+        var actual = await interceptor.SavedChangesAsync(CreateCompletedEventData(null), 3, TestContext.Current.CancellationToken);
+
+        // Assert
+        actual.ShouldBe(3);
         _dataProvider.GetAllEvents().ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "SaveChangesFailed does nothing when context is null")]
     public void SaveChangesFailed_WhenContextIsNull_DoesNothing()
     {
+        // Arrange
         var interceptor = new PooledAuditSaveChangesInterceptor();
 
+        // Act
+        // Assert
         Should.NotThrow(() => interceptor.SaveChangesFailed(CreateErrorEventData(null, new InvalidOperationException())));
         _dataProvider.GetAllEvents().ShouldBeEmpty();
     }
@@ -146,8 +173,11 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
     [Fact(DisplayName = "SaveChangesFailedAsync does nothing when context is null")]
     public async Task SaveChangesFailedAsync_WhenContextIsNull_DoesNothing()
     {
+        // Arrange
         var interceptor = new PooledAuditSaveChangesInterceptor();
 
+        // Act
+        // Assert
         await Should.NotThrowAsync(() => interceptor.SaveChangesFailedAsync(
             CreateErrorEventData(null, new InvalidOperationException()), TestContext.Current.CancellationToken));
         _dataProvider.GetAllEvents().ShouldBeEmpty();
@@ -158,29 +188,42 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
     [Fact(DisplayName = "SavedChanges returns the result unchanged when no scope was registered")]
     public void SavedChanges_WhenNoScopeRegistered_ReturnsResultUnchanged()
     {
+        // Arrange
         var interceptor = new PooledAuditSaveChangesInterceptor();
         using var context = CreateContext();
 
-        interceptor.SavedChanges(CreateCompletedEventData(context), 5).ShouldBe(5);
+        // Act
+        var actual = interceptor.SavedChanges(CreateCompletedEventData(context), 5);
+
+        // Assert
+        actual.ShouldBe(5);
         _dataProvider.GetAllEvents().ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "SavedChangesAsync returns the result unchanged when no scope was registered")]
     public async Task SavedChangesAsync_WhenNoScopeRegistered_ReturnsResultUnchanged()
     {
+        // Arrange
         var interceptor = new PooledAuditSaveChangesInterceptor();
         await using var context = CreateContext();
 
-        (await interceptor.SavedChangesAsync(CreateCompletedEventData(context), 5, TestContext.Current.CancellationToken)).ShouldBe(5);
+        // Act
+        var actual = await interceptor.SavedChangesAsync(CreateCompletedEventData(context), 5, TestContext.Current.CancellationToken);
+
+        // Assert
+        actual.ShouldBe(5);
         _dataProvider.GetAllEvents().ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "SaveChangesFailed does nothing when no scope was registered")]
     public void SaveChangesFailed_WhenNoScopeRegistered_DoesNothing()
     {
+        // Arrange
         var interceptor = new PooledAuditSaveChangesInterceptor();
         using var context = CreateContext();
 
+        // Act
+        // Assert
         Should.NotThrow(() => interceptor.SaveChangesFailed(CreateErrorEventData(context, new InvalidOperationException())));
         _dataProvider.GetAllEvents().ShouldBeEmpty();
     }
@@ -188,9 +231,12 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
     [Fact(DisplayName = "SaveChangesFailedAsync does nothing when no scope was registered")]
     public async Task SaveChangesFailedAsync_WhenNoScopeRegistered_DoesNothing()
     {
+        // Arrange
         var interceptor = new PooledAuditSaveChangesInterceptor();
         await using var context = CreateContext();
 
+        // Act
+        // Assert
         await Should.NotThrowAsync(() => interceptor.SaveChangesFailedAsync(
             CreateErrorEventData(context, new InvalidOperationException()), TestContext.Current.CancellationToken));
         _dataProvider.GetAllEvents().ShouldBeEmpty();
@@ -201,13 +247,16 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
     [Fact(DisplayName = "SavingChanges then SavedChanges records one audit event and removes the scope (sync)")]
     public void SavingChanges_ThenSavedChanges_RecordsAuditEventAndRemovesScope()
     {
+        // Arrange
         var interceptor = new PooledAuditSaveChangesInterceptor();
         using var context = CreateContext();
         TrackChange(context);
 
+        // Act
         interceptor.SavingChanges(CreateSavingEventData(context), default);
         interceptor.SavedChanges(CreateCompletedEventData(context), 1);
 
+        // Assert
         _dataProvider.GetAllEvents().ShouldHaveSingleItem();
 
         // Scope was removed after the first SavedChanges call, so a second call is a no-op.
@@ -218,13 +267,16 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
     [Fact(DisplayName = "SavingChangesAsync then SavedChangesAsync records one audit event and removes the scope (async)")]
     public async Task SavingChangesAsync_ThenSavedChangesAsync_RecordsAuditEventAndRemovesScope()
     {
+        // Arrange
         var interceptor = new PooledAuditSaveChangesInterceptor();
         await using var context = CreateContext();
         TrackChange(context);
 
+        // Act
         await interceptor.SavingChangesAsync(CreateSavingEventData(context), default, TestContext.Current.CancellationToken);
         await interceptor.SavedChangesAsync(CreateCompletedEventData(context), 1, TestContext.Current.CancellationToken);
 
+        // Assert
         _dataProvider.GetAllEvents().ShouldHaveSingleItem();
 
         // Scope was removed after the first SavedChangesAsync call, so a second call is a no-op.
@@ -237,14 +289,17 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
     [Fact(DisplayName = "SavingChanges then SaveChangesFailed records the audit event with the exception and removes the scope (sync)")]
     public void SavingChanges_ThenSaveChangesFailed_RecordsAuditEventAndRemovesScope()
     {
+        // Arrange
         var interceptor = new PooledAuditSaveChangesInterceptor();
         using var context = CreateContext();
         TrackChange(context);
         var exception = new InvalidOperationException("save failed");
 
+        // Act
         interceptor.SavingChanges(CreateSavingEventData(context), default);
         interceptor.SaveChangesFailed(CreateErrorEventData(context, exception));
 
+        // Assert
         _dataProvider.GetAllEvents().ShouldHaveSingleItem();
 
         // Scope was removed after the first SaveChangesFailed call, so a second call is a no-op.
@@ -255,14 +310,17 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
     [Fact(DisplayName = "SavingChangesAsync then SaveChangesFailedAsync records the audit event with the exception and removes the scope (async)")]
     public async Task SavingChangesAsync_ThenSaveChangesFailedAsync_RecordsAuditEventAndRemovesScope()
     {
+        // Arrange
         var interceptor = new PooledAuditSaveChangesInterceptor();
         await using var context = CreateContext();
         TrackChange(context);
         var exception = new InvalidOperationException("save failed");
 
+        // Act
         await interceptor.SavingChangesAsync(CreateSavingEventData(context), default, TestContext.Current.CancellationToken);
         await interceptor.SaveChangesFailedAsync(CreateErrorEventData(context, exception), TestContext.Current.CancellationToken);
 
+        // Assert
         _dataProvider.GetAllEvents().ShouldHaveSingleItem();
 
         // Scope was removed after the first SaveChangesFailedAsync call, so a second call is a no-op.

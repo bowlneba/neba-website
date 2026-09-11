@@ -116,7 +116,7 @@ internal static class LegacySeasonStatsCalculator
             var excludedTournamentId = excludedTournamentIdByBowlerId.GetValueOrDefault(bowlerId);
 
             var bowler = bowlerById.GetValueOrDefault(bowlerId);
-            var dateOfBirth = bowler?.DateOfBirth;
+            var dateOfBirth = bowler?.DateOfBirth is { } bowlerDateOfBirth ? DateOnly.FromDateTime(bowlerDateOfBirth) : (DateOnly?)null;
 
             // Participation ("entered a tournament") is any of the three stat types, matching the
             // live Dump's bowler.Stats.Select(TournamentId) (which spans all stat subtypes, not
@@ -226,7 +226,7 @@ internal static class LegacySeasonStatsCalculator
     private static (bool IsMember, bool IsRookie) ComputeMembershipStatus(
         List<LegacyMembershipRow> bowlerMemberships, DateOnly seasonEndDate, int newMembershipTypeId)
     {
-        var isMember = bowlerMemberships.Any(m => m.EndDate == seasonEndDate);
+        var isMember = bowlerMemberships.Any(m => DateOnly.FromDateTime(m.EndDate) == seasonEndDate);
         var isRookie = isMember
             && bowlerMemberships
                 .OrderByDescending(m => m.EndDate)

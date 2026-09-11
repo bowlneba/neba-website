@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Json;
 
@@ -9,6 +10,7 @@ using Hangfire.States;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -27,8 +29,6 @@ using Neba.Api.Legacy.Tournaments.Stats;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.Infrastructure;
-
-using Npgsql;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -268,13 +268,21 @@ public sealed class UpdateBowlerEndpointTests : IAsyncLifetime
 
 [IntegrationTest]
 [Component("Legacy")]
-[Collection<AppDbContextFixture>]
-public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture)
-    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
+[Collection(nameof(LegacyDatabasesTestScope))]
+public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, LegacySqlServerFixture legacyFixture)
+    : IClassFixture<AppDbContextFixture>, IClassFixture<LegacySqlServerFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
-    private NpgsqlConnection _legacyConnection = null!;
+
+    // Owned by LegacySqlServerFixture, not this class - it's one persistent database reused across
+    // this class's tests and disposed once by the fixture at the end of the run, not per test.
+    [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed",
+        Justification = "Ownership stays with LegacySqlServerFixture, which disposes it once for the whole run.")]
+    private LegacySqlServerDatabase _legacyDatabase = null!;
     private ServiceProvider _serviceProvider = null!;
+
+    // Ownership (and disposal) of the connection belongs to LegacySqlServerFixture via _legacyDatabase.
+    private SqlConnection _legacyConnection => _legacyDatabase.Connection;
 
     public async ValueTask InitializeAsync()
     {
@@ -284,21 +292,24 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture)
         services.AddFusionCache().WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
         _serviceProvider = services.BuildServiceProvider();
 
-        // See NewBowlerSyncJobTests for the full rationale on standing in a Postgres connection for
-        // the real MSSQL neba-fwk database via a connection-scoped CREATE TEMP TABLE.
-        _legacyConnection = new NpgsqlConnection(fixture.ConnectionString);
-        await _legacyConnection.OpenAsync();
+        // See NewBowlerSyncJobTests for the full rationale on running against a real SQL Server
+        // database (LegacySqlServerFixture) for the real MSSQL neba-fwk database.
+        _legacyDatabase = await legacyFixture.GetOrCreateDatabaseAsync(nameof(UpdateBowlerSyncJobTests), CreateSchemaAsync);
+        await _legacyDatabase.ResetAsync();
+    }
 
-        await using var create = _legacyConnection.CreateCommand();
+    private static async Task CreateSchemaAsync(SqlConnection connection)
+    {
+        await using var create = connection.CreateCommand();
         create.CommandText = """
-            CREATE TEMP TABLE Bowlers (
-                Id integer PRIMARY KEY,
-                FirstName text NOT NULL,
-                MiddleInitial text NULL,
-                LastName text NOT NULL,
-                Suffix text NULL,
-                Gender integer NOT NULL,
-                DateOfBirth timestamp NULL
+            CREATE TABLE Bowlers (
+                Id int PRIMARY KEY,
+                FirstName nvarchar(100) NOT NULL,
+                MiddleInitial nvarchar(10) NULL,
+                LastName nvarchar(100) NOT NULL,
+                Suffix nvarchar(10) NULL,
+                Gender int NOT NULL,
+                DateOfBirth datetime NULL
             )
             """;
         await create.ExecuteNonQueryAsync();
@@ -306,7 +317,6 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture)
 
     public async ValueTask DisposeAsync()
     {
-        await _legacyConnection.DisposeAsync();
         await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();

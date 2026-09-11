@@ -38,12 +38,12 @@ internal sealed class CompleteSeasonSyncJob(
 
         // See NewBowlerSyncJob.SyncAsync for the rationale on suppressing DAP005 here.
 #pragma warning disable DAP005
-        // Aliased and unquoted, matching GenerateSeasonStatsJob's FetchSeasonTournamentsAsync
-        // precedent for the same End-column-name-is-a-keyword issue: Postgres folds unquoted
-        // identifiers to lowercase (matching this test suite's quoted "end" stand-in table), and
-        // qualifying with the table alias avoids SQL Server's END keyword ambiguity without brackets.
+        // [End] must be bracket-quoted - table-alias-qualifying it (s.End) is NOT enough to avoid
+        // SQL Server's END keyword ambiguity; only brackets do. (Postgres tolerates an unbracketed
+        // qualified reference, which is why this was previously missed by the Postgres-backed
+        // integration test standing in for the real SQL Server legacy database.)
         var legacySeason = await legacyConnection.QuerySingleOrDefaultAsync<LegacySeasonRow>(
-            "SELECT s.Start, s.End FROM Season s WHERE s.Id = @SeasonId",
+            "SELECT s.Start, s.[End] FROM Season s WHERE s.Id = @SeasonId",
             new { SeasonId = legacySeasonId });
 #pragma warning restore DAP005
 

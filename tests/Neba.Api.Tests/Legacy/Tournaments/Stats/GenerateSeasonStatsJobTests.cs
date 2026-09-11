@@ -1,3 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
+
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,29 +18,36 @@ using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Tournaments;
 
-using Npgsql;
-
 using ZiggyCreatures.Caching.Fusion;
 
 namespace Neba.Api.Tests.Legacy.Tournaments.Stats;
 
-// Exercises GenerateSeasonStatsJob end to end against real Dapper queries (a Postgres temp schema
-// standing in for neba-fwk's Tournaments/Stats/Bowlers/Memberships/Credits/Cups tables) and a real
-// AppDbContext - proves the raw SQL joins return the rows LegacySeasonStatsCalculator (covered in
-// isolation elsewhere) expects, and covers the delete-then-regenerate idempotency contract this
-// backdoor action requires. Mirrors SyncTournamentResultsJobTests's shape.
+// Exercises GenerateSeasonStatsJob end to end against real Dapper queries (a real SQL Server schema
+// standing in for neba-fwk's Tournaments/Stats/Bowlers/Memberships/Credits/Cups tables, matching
+// neba-fwk's actual engine) and a real AppDbContext - proves the raw SQL joins return the rows
+// LegacySeasonStatsCalculator (covered in isolation elsewhere) expects, and covers the
+// delete-then-regenerate idempotency contract this backdoor action requires. Mirrors
+// SyncTournamentResultsJobTests's shape.
 [IntegrationTest]
 [Component("Legacy")]
-[Collection<AppDbContextFixture>]
-public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture)
-    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
+[Collection(nameof(LegacyDatabasesTestScope))]
+public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, LegacySqlServerFixture legacyFixture)
+    : IClassFixture<AppDbContextFixture>, IClassFixture<LegacySqlServerFixture>, IAsyncLifetime
 {
     private const int NewMemberMembershipTypeId = 1;
 
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
-    private NpgsqlConnection _legacyConnection = null!;
+
+    // Owned by LegacySqlServerFixture, not this class - it's one persistent database reused across
+    // this class's tests and disposed once by the fixture at the end of the run, not per test.
+    [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed",
+        Justification = "Ownership stays with LegacySqlServerFixture, which disposes it once for the whole run.")]
+    private LegacySqlServerDatabase _legacyDatabase = null!;
     private ServiceProvider _serviceProvider = null!;
     private int _nextStatsId = 1;
+
+    // Ownership (and disposal) of the connection belongs to LegacySqlServerFixture via _legacyDatabase.
+    private SqlConnection _legacyConnection => _legacyDatabase.Connection;
 
     public async ValueTask InitializeAsync()
     {
@@ -47,86 +57,14 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture)
         services.AddFusionCache().WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
         _serviceProvider = services.BuildServiceProvider();
 
-        // Same rationale as SyncTournamentResultsJobTests: plain Dapper works against any real
-        // IDbConnection, so Postgres stands in for neba-fwk's MSSQL here.
-        _legacyConnection = new NpgsqlConnection(fixture.ConnectionString);
-        await _legacyConnection.OpenAsync();
+        // One database for this test class, created once on the shared container (see
+        // LegacySqlServerFixture) and reused across its tests; Respawn resets the data before each.
+        _legacyDatabase = await legacyFixture.GetOrCreateDatabaseAsync(nameof(GenerateSeasonStatsJobTests), CreateSchemaAsync);
+        await _legacyDatabase.ResetAsync();
 
-        await using var create = _legacyConnection.CreateCommand();
-        create.CommandText = """
-            CREATE TEMP TABLE Tournaments (
-                Id integer PRIMARY KEY,
-                Start timestamp NOT NULL,
-                "end" timestamp NOT NULL,
-                YearlyStatEligible boolean NOT NULL
-            );
-            CREATE TEMP TABLE Tournaments_SinglesTournament (
-                Id integer PRIMARY KEY,
-                TournamentType integer NOT NULL
-            );
-            CREATE TEMP TABLE Stats (
-                Id integer PRIMARY KEY,
-                BowlerId integer NOT NULL,
-                TournamentId integer NOT NULL
-            );
-            CREATE TEMP TABLE Stats_QualifyingStats (
-                Id integer PRIMARY KEY,
-                SquadId integer NOT NULL,
-                Score integer NOT NULL,
-                Games integer NOT NULL,
-                HighGame integer NOT NULL
-            );
-            CREATE TEMP TABLE Stats_MatchPlayStats (
-                Id integer PRIMARY KEY,
-                Score integer NOT NULL,
-                Games integer NOT NULL,
-                HighGame integer NOT NULL,
-                Winner boolean NOT NULL
-            );
-            CREATE TEMP TABLE Stats_ResultsStats (
-                Id integer PRIMARY KEY,
-                SideCut integer NULL
-            );
-            CREATE TEMP TABLE Bowlers (
-                Id integer PRIMARY KEY,
-                Gender integer NULL,
-                DateOfBirth date NULL
-            );
-            CREATE TEMP TABLE Memberships (
-                Id integer PRIMARY KEY,
-                Name varchar(30) NOT NULL
-            );
-            CREATE TEMP TABLE BowlerMemberships (
-                Id integer PRIMARY KEY,
-                BowlerId integer NOT NULL,
-                MembershipId integer NOT NULL,
-                EndDate date NOT NULL
-            );
-            CREATE TEMP TABLE Credits (
-                Id integer PRIMARY KEY,
-                Amount numeric NOT NULL,
-                IssuedDate timestamp NOT NULL
-            );
-            CREATE TEMP TABLE Credits_BowlerCredit (
-                Id integer PRIMARY KEY,
-                BowlerId integer NOT NULL,
-                Taxable smallint NOT NULL
-            );
-            CREATE TEMP TABLE Cups (
-                Id integer PRIMARY KEY,
-                "end" timestamp NOT NULL
-            );
-            CREATE TEMP TABLE CupResults (
-                Id integer PRIMARY KEY,
-                CupId integer NOT NULL,
-                BowlerId integer NOT NULL,
-                Payout numeric NOT NULL
-            );
-            """;
-        await create.ExecuteNonQueryAsync();
-
-        // Every SyncAsync call unconditionally looks up the "New Member" membership type -
-        // every test needs at least this one row present.
+        // Every SyncAsync call unconditionally looks up the "New Member" membership type - every
+        // test needs at least this one row present, and Respawn just wiped it along with everything
+        // else, so it's reinserted here rather than as part of the (one-time) schema setup.
         await using var insertMembershipType = _legacyConnection.CreateCommand();
         insertMembershipType.CommandText = "INSERT INTO Memberships (Id, Name) VALUES (@Id, @Name)";
         insertMembershipType.Parameters.AddWithValue("@Id", NewMemberMembershipTypeId);
@@ -134,9 +72,84 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture)
         await insertMembershipType.ExecuteNonQueryAsync();
     }
 
+    private static async Task CreateSchemaAsync(SqlConnection connection)
+    {
+        await using var create = connection.CreateCommand();
+        create.CommandText = """
+            CREATE TABLE Tournaments (
+                Id int PRIMARY KEY,
+                Start datetime NOT NULL,
+                [End] datetime NOT NULL,
+                YearlyStatEligible bit NOT NULL
+            );
+            CREATE TABLE Tournaments_SinglesTournament (
+                Id int PRIMARY KEY,
+                TournamentType int NOT NULL
+            );
+            CREATE TABLE Stats (
+                Id int PRIMARY KEY,
+                BowlerId int NOT NULL,
+                TournamentId int NOT NULL
+            );
+            CREATE TABLE Stats_QualifyingStats (
+                Id int PRIMARY KEY,
+                SquadId int NOT NULL,
+                Score int NOT NULL,
+                Games int NOT NULL,
+                HighGame int NOT NULL
+            );
+            CREATE TABLE Stats_MatchPlayStats (
+                Id int PRIMARY KEY,
+                Score int NOT NULL,
+                Games int NOT NULL,
+                HighGame int NOT NULL,
+                Winner bit NOT NULL
+            );
+            CREATE TABLE Stats_ResultsStats (
+                Id int PRIMARY KEY,
+                SideCut int NULL
+            );
+            CREATE TABLE Bowlers (
+                Id int PRIMARY KEY,
+                Gender int NULL,
+                DateOfBirth date NULL
+            );
+            CREATE TABLE Memberships (
+                Id int PRIMARY KEY,
+                Name varchar(30) NOT NULL
+            );
+            CREATE TABLE BowlerMemberships (
+                Id int PRIMARY KEY,
+                BowlerId int NOT NULL,
+                MembershipId int NOT NULL,
+                EndDate date NOT NULL
+            );
+            CREATE TABLE Credits (
+                Id int PRIMARY KEY,
+                Amount numeric NOT NULL,
+                IssuedDate datetime NOT NULL
+            );
+            CREATE TABLE Credits_BowlerCredit (
+                Id int PRIMARY KEY,
+                BowlerId int NOT NULL,
+                Taxable smallint NOT NULL
+            );
+            CREATE TABLE Cups (
+                Id int PRIMARY KEY,
+                [End] datetime NOT NULL
+            );
+            CREATE TABLE CupResults (
+                Id int PRIMARY KEY,
+                CupId int NOT NULL,
+                BowlerId int NOT NULL,
+                Payout numeric NOT NULL
+            );
+            """;
+        await create.ExecuteNonQueryAsync();
+    }
+
     public async ValueTask DisposeAsync()
     {
-        await _legacyConnection.DisposeAsync();
         await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();
@@ -178,7 +191,7 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture)
     private async Task InsertLegacyTournamentAsync(int legacyTournamentId, DateTime start, DateTime end, bool yearlyStatEligible)
     {
         await using var insert = _legacyConnection.CreateCommand();
-        insert.CommandText = """INSERT INTO Tournaments (Id, Start, "end", YearlyStatEligible) VALUES (@Id, @Start, @End, @Eligible)""";
+        insert.CommandText = "INSERT INTO Tournaments (Id, Start, [End], YearlyStatEligible) VALUES (@Id, @Start, @End, @Eligible)";
         insert.Parameters.AddWithValue("@Id", legacyTournamentId);
         insert.Parameters.AddWithValue("@Start", start);
         insert.Parameters.AddWithValue("@End", end);
