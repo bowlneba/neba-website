@@ -180,6 +180,11 @@ internal sealed class AzureBlobStorageService
             var publicAccessType = container == PublicContainerName ? PublicAccessType.Blob : PublicAccessType.None;
             await containerClient.CreateIfNotExistsAsync(publicAccessType, cancellationToken: cancellationToken);
 
+            // CreateIfNotExistsAsync only applies publicAccessType at creation time - it no-ops on a
+            // container that already exists (e.g. one created before this access-type gating existed).
+            // SetAccessPolicyAsync enforces the invariant unconditionally on every upload.
+            await containerClient.SetAccessPolicyAsync(publicAccessType, cancellationToken: cancellationToken);
+
             var blobClient = containerClient.GetBlobClient(path);
 
             await blobClient.UploadAsync(

@@ -223,6 +223,37 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
         properties.Value.PublicAccess.ShouldBe(PublicAccessType.Blob);
     }
 
+    [Fact(DisplayName = "UploadFileAsync should upgrade an already-existing bowlneba-public container to anonymous blob access")]
+    public async Task UploadFileAsync_ShouldUpgradeExistingContainer_WhenContainerIsBowlnebaPublicButNotYetPublic()
+    {
+        // Arrange - simulate the real-world case: bowlneba-public already exists with the SDK's
+        // default (private) access, as it would if it were created before public-access gating
+        // existed. CreateIfNotExistsAsync alone would silently no-op on this container.
+        const string container = "bowlneba-public";
+        var containerClient = _blobServiceClient.GetBlobContainerClient(container);
+        await containerClient.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: TestContext.Current.CancellationToken);
+
+        try
+        {
+            // Act
+            await _sut.UploadFileAsync(
+                container,
+                "public-file-existing.txt",
+                FileContentFactory.ValidContent,
+                FileContentFactory.ValidContentType,
+                new Dictionary<string, string>(FileContentFactory.ValidMetadata),
+                CancellationToken.None);
+
+            // Assert
+            var properties = await containerClient.GetPropertiesAsync(cancellationToken: TestContext.Current.CancellationToken);
+            properties.Value.PublicAccess.ShouldBe(PublicAccessType.Blob);
+        }
+        finally
+        {
+            await containerClient.SetAccessPolicyAsync(PublicAccessType.None, cancellationToken: TestContext.Current.CancellationToken);
+        }
+    }
+
     [Fact(DisplayName = "UploadFileAsync should not grant anonymous access to containers other than bowlneba-public")]
     public async Task UploadFileAsync_ShouldNotGrantAnonymousAccess_WhenContainerIsNotBowlnebaPublic()
     {
