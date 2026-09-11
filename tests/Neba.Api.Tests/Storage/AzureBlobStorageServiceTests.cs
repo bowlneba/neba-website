@@ -1,3 +1,6 @@
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
@@ -16,14 +19,16 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
 {
     private readonly AzureBlobStorageService _sut;
     private readonly FakeLogger<AzureBlobStorageService> _logger;
+    private readonly BlobServiceClient _blobServiceClient;
 
     public AzureBlobStorageServiceTests(AzuriteFixture fixture)
     {
         ArgumentNullException.ThrowIfNull(fixture);
 
         _logger = new FakeLogger<AzureBlobStorageService>();
+        _blobServiceClient = fixture.BlobServiceClient;
         _sut = new AzureBlobStorageService(
-            fixture.BlobServiceClient,
+            _blobServiceClient,
             new StopwatchProvider(),
             _logger);
     }
@@ -193,6 +198,50 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
         result.ShouldNotBeNull();
         result.Content.ShouldBe(content);
         result.ContentType.ShouldBe("text/plain");
+    }
+
+    [Fact(DisplayName = "UploadFileAsync should grant anonymous blob-level read access when the container is bowlneba-public")]
+    public async Task UploadFileAsync_ShouldGrantAnonymousBlobAccess_WhenContainerIsBowlnebaPublic()
+    {
+        // Arrange - the exact, fixed container name AzureBlobStorageService gates its public-access
+        // branch on (see its PublicContainerName constant); intentionally not UniqueContainer(), since
+        // the whole point is to exercise the name-matched branch.
+        const string container = "bowlneba-public";
+
+        // Act
+        await _sut.UploadFileAsync(
+            container,
+            "public-file.txt",
+            FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType,
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
+            CancellationToken.None);
+
+        // Assert
+        var containerClient = _blobServiceClient.GetBlobContainerClient(container);
+        var properties = await containerClient.GetPropertiesAsync(cancellationToken: TestContext.Current.CancellationToken);
+        properties.Value.PublicAccess.ShouldBe(PublicAccessType.Blob);
+    }
+
+    [Fact(DisplayName = "UploadFileAsync should not grant anonymous access to containers other than bowlneba-public")]
+    public async Task UploadFileAsync_ShouldNotGrantAnonymousAccess_WhenContainerIsNotBowlnebaPublic()
+    {
+        // Arrange
+        var container = UniqueContainer();
+
+        // Act
+        await _sut.UploadFileAsync(
+            container,
+            "private-file.txt",
+            FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType,
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
+            CancellationToken.None);
+
+        // Assert
+        var containerClient = _blobServiceClient.GetBlobContainerClient(container);
+        var properties = await containerClient.GetPropertiesAsync(cancellationToken: TestContext.Current.CancellationToken);
+        properties.Value.PublicAccess.ShouldBe(PublicAccessType.None);
     }
 
     [Fact(DisplayName = "GetBlobUri should return URI containing container and path")]
