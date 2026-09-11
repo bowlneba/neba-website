@@ -58,12 +58,18 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
     private static void TrackChange(TestDbContext context) =>
         context.Entry(new TestEntity()).State = EntityState.Added;
 
+    private static Mock<ILoggingOptions> CreateLoggingOptionsMock()
+    {
+        var loggingOptions = new Mock<ILoggingOptions>(MockBehavior.Strict);
+        loggingOptions.Setup(o => o.WarningsConfiguration).Returns(new WarningsConfiguration());
+        return loggingOptions;
+    }
+
     private static DbContextEventData CreateSavingEventData(DbContext? context)
     {
-        var loggingOptions = new Mock<ILoggingOptions>(MockBehavior.Loose);
         var eventDef = new Mock<EventDefinitionBase>(
-            MockBehavior.Loose,
-            loggingOptions.Object,
+            MockBehavior.Strict,
+            CreateLoggingOptionsMock().Object,
             new EventId(1),
             LogLevel.None,
             "test");
@@ -72,10 +78,9 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
 
     private static SaveChangesCompletedEventData CreateCompletedEventData(DbContext? context, int entitiesSavedCount = 0)
     {
-        var loggingOptions = new Mock<ILoggingOptions>(MockBehavior.Loose);
         var eventDef = new Mock<EventDefinitionBase>(
-            MockBehavior.Loose,
-            loggingOptions.Object,
+            MockBehavior.Strict,
+            CreateLoggingOptionsMock().Object,
             new EventId(1),
             LogLevel.None,
             "test");
@@ -84,10 +89,9 @@ public sealed class PooledAuditSaveChangesInterceptorTests : IDisposable
 
     private static DbContextErrorEventData CreateErrorEventData(DbContext? context, Exception exception)
     {
-        var loggingOptions = new Mock<ILoggingOptions>(MockBehavior.Loose);
         var eventDef = new Mock<EventDefinitionBase>(
-            MockBehavior.Loose,
-            loggingOptions.Object,
+            MockBehavior.Strict,
+            CreateLoggingOptionsMock().Object,
             new EventId(1),
             LogLevel.None,
             "test");
