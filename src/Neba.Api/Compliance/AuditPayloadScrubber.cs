@@ -105,7 +105,8 @@ internal static class AuditPayloadScrubber
             || underlyingType == typeof(DateTime)
             || underlyingType == typeof(DateTimeOffset)
             || underlyingType == typeof(Guid)
-            || underlyingType == typeof(TimeSpan);
+            || underlyingType == typeof(TimeSpan)
+            || underlyingType == typeof(Ulid);
     }
 
     private static string Mask(string value)
