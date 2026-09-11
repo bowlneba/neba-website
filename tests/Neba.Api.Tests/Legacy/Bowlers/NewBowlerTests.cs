@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Json;
 
@@ -257,20 +258,30 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture, LegacySql
     : IClassFixture<AppDbContextFixture>, IClassFixture<LegacySqlServerFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
+
+    // Owned by LegacySqlServerFixture, not this class - it's one persistent database reused across
+    // this class's tests and disposed once by the fixture at the end of the run, not per test.
+    [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed",
+        Justification = "Ownership stays with LegacySqlServerFixture, which disposes it once for the whole run.")]
     private LegacySqlServerDatabase _legacyDatabase = null!;
 
-    // Ownership (and disposal) of the connection belongs to _legacyDatabase.
+    // Ownership (and disposal) of the connection belongs to LegacySqlServerFixture via _legacyDatabase.
     private SqlConnection _legacyConnection => _legacyDatabase.Connection;
 
     public async ValueTask InitializeAsync()
     {
         await fixture.ResetAsync();
 
-        // Real SQL Server (Testcontainers.MsSql), matching neba-fwk's actual engine. Each test gets
-        // its own throwaway database on the shared container (see LegacySqlServerFixture).
-        _legacyDatabase = await legacyFixture.CreateDatabaseAsync();
+        // Real SQL Server (Testcontainers.MsSql), matching neba-fwk's actual engine. One database
+        // for this test class, created once on the shared container (see LegacySqlServerFixture)
+        // and reused across its tests; Respawn resets the data before each test.
+        _legacyDatabase = await legacyFixture.GetOrCreateDatabaseAsync(nameof(NewBowlerSyncJobTests), CreateSchemaAsync);
+        await _legacyDatabase.ResetAsync();
+    }
 
-        await using var create = _legacyConnection.CreateCommand();
+    private static async Task CreateSchemaAsync(SqlConnection connection)
+    {
+        await using var create = connection.CreateCommand();
         create.CommandText = """
             CREATE TABLE Bowlers (
                 Id int PRIMARY KEY,
@@ -287,7 +298,6 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture, LegacySql
 
     public async ValueTask DisposeAsync()
     {
-        await _legacyDatabase.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();
     }

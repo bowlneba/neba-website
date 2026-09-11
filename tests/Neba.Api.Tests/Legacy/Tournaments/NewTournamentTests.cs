@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Json;
 
@@ -260,10 +261,15 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
     : IClassFixture<AppDbContextFixture>, IClassFixture<LegacySqlServerFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
+
+    // Owned by LegacySqlServerFixture, not this class - it's one persistent database reused across
+    // this class's tests and disposed once by the fixture at the end of the run, not per test.
+    [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed",
+        Justification = "Ownership stays with LegacySqlServerFixture, which disposes it once for the whole run.")]
     private LegacySqlServerDatabase _legacyDatabase = null!;
     private ServiceProvider _serviceProvider = null!;
 
-    // Ownership (and disposal) of the connection belongs to _legacyDatabase.
+    // Ownership (and disposal) of the connection belongs to LegacySqlServerFixture via _legacyDatabase.
     private SqlConnection _legacyConnection => _legacyDatabase.Connection;
 
     public async ValueTask InitializeAsync()
@@ -275,70 +281,49 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         _serviceProvider = services.BuildServiceProvider();
 
         // Real SQL Server (Testcontainers.MsSql), matching neba-fwk's actual engine - not a Postgres
-        // stand-in. Each test gets its own throwaway database on the shared container (see
-        // LegacySqlServerFixture) - production's SQL text references real, unprefixed table names,
-        // so per-connection temp tables aren't an option and per-test isolation happens one level up.
-        _legacyDatabase = await legacyFixture.CreateDatabaseAsync();
+        // stand-in. One database for this test class, created once on the shared container (see
+        // LegacySqlServerFixture) and reused across its tests - production's SQL text references
+        // real, unprefixed table names, so per-connection temp tables aren't an option; Respawn
+        // resets the data before each test instead.
+        _legacyDatabase = await legacyFixture.GetOrCreateDatabaseAsync(nameof(NewTournamentSyncJobTests), CreateSchemaAsync);
+        await _legacyDatabase.ResetAsync();
+    }
 
-        await using var createTournaments = _legacyConnection.CreateCommand();
-        createTournaments.CommandText = """
+    private static async Task CreateSchemaAsync(SqlConnection connection)
+    {
+        await using var create = connection.CreateCommand();
+        create.CommandText = """
             CREATE TABLE Tournaments (
                 Id int PRIMARY KEY,
                 [End] datetime NOT NULL
-            )
-            """;
-        await createTournaments.ExecuteNonQueryAsync();
-
-        await using var createSingles = _legacyConnection.CreateCommand();
-        createSingles.CommandText = """
+            );
             CREATE TABLE Tournaments_SinglesTournament (
                 Id int PRIMARY KEY,
                 TournamentType int NOT NULL
-            )
-            """;
-        await createSingles.ExecuteNonQueryAsync();
-
-        await using var createTeam = _legacyConnection.CreateCommand();
-        createTeam.CommandText = """
+            );
             CREATE TABLE Tournaments_TeamTournament (
                 Id int PRIMARY KEY,
                 TeamSize int NOT NULL,
                 OverUnder bit NULL
-            )
-            """;
-        await createTeam.ExecuteNonQueryAsync();
-
-        await using var createSquads = _legacyConnection.CreateCommand();
-        createSquads.CommandText = """
+            );
             CREATE TABLE Squads (
                 Id int PRIMARY KEY,
                 BowlingDate datetime NOT NULL
-            )
-            """;
-        await createSquads.ExecuteNonQueryAsync();
-
-        await using var createSinglesSquad = _legacyConnection.CreateCommand();
-        createSinglesSquad.CommandText = """
+            );
             CREATE TABLE Squads_SinglesSquad (
                 Id int PRIMARY KEY,
                 TournamentId int NOT NULL
-            )
-            """;
-        await createSinglesSquad.ExecuteNonQueryAsync();
-
-        await using var createTeamSquad = _legacyConnection.CreateCommand();
-        createTeamSquad.CommandText = """
+            );
             CREATE TABLE Squads_TeamSquad (
                 Id int PRIMARY KEY,
                 TournamentId int NOT NULL
-            )
+            );
             """;
-        await createTeamSquad.ExecuteNonQueryAsync();
+        await create.ExecuteNonQueryAsync();
     }
 
     public async ValueTask DisposeAsync()
     {
-        await _legacyDatabase.DisposeAsync();
         await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();

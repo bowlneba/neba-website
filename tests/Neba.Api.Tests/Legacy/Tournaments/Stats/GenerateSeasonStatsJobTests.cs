@@ -16,6 +16,8 @@ using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Tournaments;
 
+using System.Diagnostics.CodeAnalysis;
+
 using ZiggyCreatures.Caching.Fusion;
 
 namespace Neba.Api.Tests.Legacy.Tournaments.Stats;
@@ -35,11 +37,16 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
     private const int NewMemberMembershipTypeId = 1;
 
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
+
+    // Owned by LegacySqlServerFixture, not this class - it's one persistent database reused across
+    // this class's tests and disposed once by the fixture at the end of the run, not per test.
+    [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed",
+        Justification = "Ownership stays with LegacySqlServerFixture, which disposes it once for the whole run.")]
     private LegacySqlServerDatabase _legacyDatabase = null!;
     private ServiceProvider _serviceProvider = null!;
     private int _nextStatsId = 1;
 
-    // Ownership (and disposal) of the connection belongs to _legacyDatabase.
+    // Ownership (and disposal) of the connection belongs to LegacySqlServerFixture via _legacyDatabase.
     private SqlConnection _legacyConnection => _legacyDatabase.Connection;
 
     public async ValueTask InitializeAsync()
@@ -50,9 +57,24 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         services.AddFusionCache().WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
         _serviceProvider = services.BuildServiceProvider();
 
-        _legacyDatabase = await legacyFixture.CreateDatabaseAsync();
+        // One database for this test class, created once on the shared container (see
+        // LegacySqlServerFixture) and reused across its tests; Respawn resets the data before each.
+        _legacyDatabase = await legacyFixture.GetOrCreateDatabaseAsync(nameof(GenerateSeasonStatsJobTests), CreateSchemaAsync);
+        await _legacyDatabase.ResetAsync();
 
-        await using var create = _legacyConnection.CreateCommand();
+        // Every SyncAsync call unconditionally looks up the "New Member" membership type - every
+        // test needs at least this one row present, and Respawn just wiped it along with everything
+        // else, so it's reinserted here rather than as part of the (one-time) schema setup.
+        await using var insertMembershipType = _legacyConnection.CreateCommand();
+        insertMembershipType.CommandText = "INSERT INTO Memberships (Id, Name) VALUES (@Id, @Name)";
+        insertMembershipType.Parameters.AddWithValue("@Id", NewMemberMembershipTypeId);
+        insertMembershipType.Parameters.AddWithValue("@Name", "New Member");
+        await insertMembershipType.ExecuteNonQueryAsync();
+    }
+
+    private static async Task CreateSchemaAsync(SqlConnection connection)
+    {
+        await using var create = connection.CreateCommand();
         create.CommandText = """
             CREATE TABLE Tournaments (
                 Id int PRIMARY KEY,
@@ -124,19 +146,10 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
             );
             """;
         await create.ExecuteNonQueryAsync();
-
-        // Every SyncAsync call unconditionally looks up the "New Member" membership type -
-        // every test needs at least this one row present.
-        await using var insertMembershipType = _legacyConnection.CreateCommand();
-        insertMembershipType.CommandText = "INSERT INTO Memberships (Id, Name) VALUES (@Id, @Name)";
-        insertMembershipType.Parameters.AddWithValue("@Id", NewMemberMembershipTypeId);
-        insertMembershipType.Parameters.AddWithValue("@Name", "New Member");
-        await insertMembershipType.ExecuteNonQueryAsync();
     }
 
     public async ValueTask DisposeAsync()
     {
-        await _legacyDatabase.DisposeAsync();
         await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();

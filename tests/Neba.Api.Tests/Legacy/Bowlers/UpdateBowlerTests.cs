@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Json;
 
@@ -272,10 +273,15 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
     : IClassFixture<AppDbContextFixture>, IClassFixture<LegacySqlServerFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
+
+    // Owned by LegacySqlServerFixture, not this class - it's one persistent database reused across
+    // this class's tests and disposed once by the fixture at the end of the run, not per test.
+    [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed",
+        Justification = "Ownership stays with LegacySqlServerFixture, which disposes it once for the whole run.")]
     private LegacySqlServerDatabase _legacyDatabase = null!;
     private ServiceProvider _serviceProvider = null!;
 
-    // Ownership (and disposal) of the connection belongs to _legacyDatabase.
+    // Ownership (and disposal) of the connection belongs to LegacySqlServerFixture via _legacyDatabase.
     private SqlConnection _legacyConnection => _legacyDatabase.Connection;
 
     public async ValueTask InitializeAsync()
@@ -288,9 +294,13 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
 
         // See NewBowlerSyncJobTests for the full rationale on running against a real SQL Server
         // database (LegacySqlServerFixture) for the real MSSQL neba-fwk database.
-        _legacyDatabase = await legacyFixture.CreateDatabaseAsync();
+        _legacyDatabase = await legacyFixture.GetOrCreateDatabaseAsync(nameof(UpdateBowlerSyncJobTests), CreateSchemaAsync);
+        await _legacyDatabase.ResetAsync();
+    }
 
-        await using var create = _legacyConnection.CreateCommand();
+    private static async Task CreateSchemaAsync(SqlConnection connection)
+    {
+        await using var create = connection.CreateCommand();
         create.CommandText = """
             CREATE TABLE Bowlers (
                 Id int PRIMARY KEY,
@@ -307,7 +317,6 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
 
     public async ValueTask DisposeAsync()
     {
-        await _legacyDatabase.DisposeAsync();
         await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();

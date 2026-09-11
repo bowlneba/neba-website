@@ -16,6 +16,8 @@ using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Tournaments;
 
+using System.Diagnostics.CodeAnalysis;
+
 using ZiggyCreatures.Caching.Fusion;
 
 namespace Neba.Api.Tests.Legacy.Tournaments.Complete;
@@ -32,12 +34,17 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
     : IClassFixture<AppDbContextFixture>, IClassFixture<LegacySqlServerFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
+
+    // Owned by LegacySqlServerFixture, not this class - it's one persistent database reused across
+    // this class's tests and disposed once by the fixture at the end of the run, not per test.
+    [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed",
+        Justification = "Ownership stays with LegacySqlServerFixture, which disposes it once for the whole run.")]
     private LegacySqlServerDatabase _legacyDatabase = null!;
     private ServiceProvider _serviceProvider = null!;
     private int _nextStatsId = 1;
     private int _nextSquadTeamsId = 1;
 
-    // Ownership (and disposal) of the connection belongs to _legacyDatabase.
+    // Ownership (and disposal) of the connection belongs to LegacySqlServerFixture via _legacyDatabase.
     private SqlConnection _legacyConnection => _legacyDatabase.Connection;
 
     public async ValueTask InitializeAsync()
@@ -49,11 +56,16 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         _serviceProvider = services.BuildServiceProvider();
 
         // Same rationale as SyncSquadScoresSyncJobTests: real SQL Server (Testcontainers.MsSql),
-        // matching neba-fwk's actual engine. Each test gets its own throwaway database on the
-        // shared container (see LegacySqlServerFixture).
-        _legacyDatabase = await legacyFixture.CreateDatabaseAsync();
+        // matching neba-fwk's actual engine. One database for this test class, created once on the
+        // shared container (see LegacySqlServerFixture) and reused across its tests; Respawn resets
+        // the data before each test.
+        _legacyDatabase = await legacyFixture.GetOrCreateDatabaseAsync(nameof(SyncTournamentResultsJobTests), CreateSchemaAsync);
+        await _legacyDatabase.ResetAsync();
+    }
 
-        await using var createStats = _legacyConnection.CreateCommand();
+    private static async Task CreateSchemaAsync(SqlConnection connection)
+    {
+        await using var createStats = connection.CreateCommand();
         createStats.CommandText = """
             CREATE TABLE Stats (
                 Id int PRIMARY KEY,
@@ -94,7 +106,6 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
 
     public async ValueTask DisposeAsync()
     {
-        await _legacyDatabase.DisposeAsync();
         await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();
