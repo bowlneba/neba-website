@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 
 using Neba.Api.Auditing;
 using Neba.Api.Database;
+using Neba.Api.Database.Interceptors;
 using Neba.Api.Security.Domain;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
@@ -20,7 +21,7 @@ namespace Neba.Api.Tests.Auditing;
 public sealed class SecurityDbContextAuditIntegrationTests(SecurityDbContextFixture securityDbContextFixture)
     : IClassFixture<SecurityDbContextFixture>, IAsyncLifetime
 {
-    private readonly AuditSaveChangesInterceptor _auditInterceptor = new();
+    private readonly PooledAuditSaveChangesInterceptor _auditInterceptor = new();
 
     private InMemoryDataProvider _securityProvider = null!;
     private InMemoryDataProvider _defaultProvider = null!;

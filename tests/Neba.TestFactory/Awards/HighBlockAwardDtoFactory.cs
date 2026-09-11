@@ -9,6 +9,8 @@ public static class HighBlockAwardDtoFactory
     public const string ValidSeason = "2025 Season";
     public const int ValidScore = 1350;
 
+    private static readonly DateTime RefDate = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
     public static HighBlockAwardDto Create(
         string? season = null,
         Name? bowlerName = null,
@@ -28,7 +30,7 @@ public static class HighBlockAwardDtoFactory
 
         return [.. Enumerable.Range(0, count).Select(_ => new HighBlockAwardDto
         {
-            Season = $"Season {faker.Date.Past(5).Year}",
+            Season = $"Season {faker.Date.Past(5, RefDate).Year}",
             BowlerName = bowlerNames.GetNext(),
             Score = faker.Random.Int(1250, 1400)
         })];
