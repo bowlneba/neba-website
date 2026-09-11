@@ -33,13 +33,34 @@ public sealed class LegacySqlServerFixture : IAsyncLifetime
 
     public async ValueTask DisposeAsync()
     {
+        List<Exception>? exceptions = null;
+
         foreach (var databaseTask in _databases.Values)
         {
-            var database = await databaseTask;
-            await database.DisposeAsync();
+            try
+            {
+                var database = await databaseTask;
+                await database.DisposeAsync();
+            }
+            catch (Exception ex)
+            {
+                (exceptions ??= []).Add(ex);
+            }
         }
 
-        await _container.DisposeAsync();
+        try
+        {
+            await _container.DisposeAsync();
+        }
+        catch (Exception ex)
+        {
+            (exceptions ??= []).Add(ex);
+        }
+
+        if (exceptions is { Count: > 0 })
+        {
+            throw new AggregateException(exceptions);
+        }
     }
 
     // `name` scopes the persistent database to one test class (pass nameof(YourTestClass)) so
