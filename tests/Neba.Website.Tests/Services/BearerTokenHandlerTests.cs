@@ -87,6 +87,74 @@ public sealed class BearerTokenHandlerTests
         innerHandler.Requests[0].Headers.Authorization.ShouldBe(new AuthenticationHeaderValue("Bearer", "circuit-token"));
     }
 
+    [Fact(DisplayName = "Should proactively refresh an expired cached access token before sending, without waiting for a 401")]
+    public async Task SendAsync_ShouldProactivelyRefresh_WhenCachedAccessTokenIsExpired()
+    {
+        // Arrange
+        using var innerHandler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+
+        using var refreshHandler = new RecordingHandler(_ =>
+        {
+            var json = JsonSerializer.Serialize(new
+            {
+                accessToken = "new-token",
+                refreshToken = "new-refresh",
+                expiresAt = DateTimeOffset.UtcNow.AddMinutes(15),
+                userId = "user-123",
+                email = "admin@bowlneba.com",
+            }, JsonOptions);
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            };
+        });
+
+        var httpContextAccessorMock = new Mock<IHttpContextAccessor>(MockBehavior.Strict);
+        httpContextAccessorMock.SetupGet(a => a.HttpContext).Returns((HttpContext?)null);
+        var factoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
+        factoryMock.Setup(f => f.CreateClient(string.Empty)).Returns(() => new HttpClient(refreshHandler));
+
+        var expiredToken = BuildJwt(DateTimeOffset.UtcNow.AddMinutes(-1));
+        var tokenCache = new CircuitTokenCache { AccessToken = expiredToken, RefreshToken = "refresh-abc", UserId = "user-123" };
+        using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, tokenCache);
+        using var client = new HttpClient(sut, disposeHandler: false);
+
+        // Act
+        using var response = await client.GetAsync(new Uri("https://downstream.example.com/resource"), TestContext.Current.CancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        refreshHandler.Requests.ShouldHaveSingleItem();
+        innerHandler.Requests.ShouldHaveSingleItem();
+        innerHandler.Requests[0].Headers.Authorization.ShouldBe(new AuthenticationHeaderValue("Bearer", "new-token"));
+        tokenCache.AccessToken.ShouldBe("new-token");
+    }
+
+    [Fact(DisplayName = "Should not attempt a refresh when the cached access token is not expired")]
+    public async Task SendAsync_ShouldNotRefresh_WhenCachedAccessTokenIsStillValid()
+    {
+        // Arrange
+        using var innerHandler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var httpContextAccessorMock = new Mock<IHttpContextAccessor>(MockBehavior.Strict);
+        httpContextAccessorMock.SetupGet(a => a.HttpContext).Returns((HttpContext?)null);
+        // Strict with no setups - throws if a refresh is attempted.
+        var factoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
+
+        var validToken = BuildJwt(DateTimeOffset.UtcNow.AddMinutes(10));
+        var tokenCache = new CircuitTokenCache { AccessToken = validToken, RefreshToken = "refresh-abc", UserId = "user-123" };
+        using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, tokenCache);
+        using var client = new HttpClient(sut, disposeHandler: false);
+
+        // Act
+        using var response = await client.GetAsync(new Uri("https://downstream.example.com/resource"), TestContext.Current.CancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        innerHandler.Requests.ShouldHaveSingleItem();
+        innerHandler.Requests[0].Headers.Authorization.ShouldBe(new AuthenticationHeaderValue("Bearer", validToken));
+    }
+
     [Fact(DisplayName = "Should silently refresh and retry using the cached refresh token when there is no HttpContext")]
     public async Task SendAsync_ShouldRefreshAndRetryUsingCache_WhenNoHttpContextAndRefreshSucceeds()
     {
@@ -116,7 +184,8 @@ public sealed class BearerTokenHandlerTests
         var factoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
         factoryMock.Setup(f => f.CreateClient(string.Empty)).Returns(() => new HttpClient(refreshHandler));
 
-        var tokenCache = new CircuitTokenCache { AccessToken = "old-token", RefreshToken = "refresh-abc", UserId = "user-123" };
+        var oldToken = BuildJwt(DateTimeOffset.UtcNow.AddMinutes(10));
+        var tokenCache = new CircuitTokenCache { AccessToken = oldToken, RefreshToken = "refresh-abc", UserId = "user-123" };
         using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, tokenCache);
         using var client = new HttpClient(sut, disposeHandler: false);
 
@@ -126,7 +195,7 @@ public sealed class BearerTokenHandlerTests
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         innerHandler.Requests.Count.ShouldBe(2);
-        innerHandler.Requests[0].Headers.Authorization.ShouldBe(new AuthenticationHeaderValue("Bearer", "old-token"));
+        innerHandler.Requests[0].Headers.Authorization.ShouldBe(new AuthenticationHeaderValue("Bearer", oldToken));
         innerHandler.Requests[1].Headers.Authorization.ShouldBe(new AuthenticationHeaderValue("Bearer", "new-token"));
         tokenCache.AccessToken.ShouldBe("new-token");
         tokenCache.RefreshToken.ShouldBe("new-refresh");
@@ -162,7 +231,8 @@ public sealed class BearerTokenHandlerTests
             .Returns(Task.CompletedTask)
             .Verifiable();
 
-        var httpContext = BuildHttpContext(accessToken: "old-token", refreshToken: "refresh-abc", userId: "user-123", authServiceMock: authServiceMock);
+        var oldToken = BuildJwt(DateTimeOffset.UtcNow.AddMinutes(10));
+        var httpContext = BuildHttpContext(accessToken: oldToken, refreshToken: "refresh-abc", userId: "user-123", authServiceMock: authServiceMock);
 
         var httpContextAccessorMock = CreateAccessor(httpContext);
         var factoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
@@ -177,7 +247,7 @@ public sealed class BearerTokenHandlerTests
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         innerHandler.Requests.Count.ShouldBe(2);
-        innerHandler.Requests[0].Headers.Authorization.ShouldBe(new AuthenticationHeaderValue("Bearer", "old-token"));
+        innerHandler.Requests[0].Headers.Authorization.ShouldBe(new AuthenticationHeaderValue("Bearer", oldToken));
         innerHandler.Requests[1].Headers.Authorization.ShouldBe(new AuthenticationHeaderValue("Bearer", "new-token"));
         refreshHandler.Requests.ShouldHaveSingleItem();
         refreshHandler.Requests[0].RequestUri.ShouldBe(new Uri(ApiBaseUrl, "/security/refresh"));
@@ -211,7 +281,7 @@ public sealed class BearerTokenHandlerTests
         using var innerHandler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.Unauthorized));
         using var refreshHandler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.Unauthorized));
 
-        var httpContext = BuildHttpContext(accessToken: "old-token", refreshToken: "refresh-abc", userId: "user-123");
+        var httpContext = BuildHttpContext(accessToken: BuildJwt(DateTimeOffset.UtcNow.AddMinutes(10)), refreshToken: "refresh-abc", userId: "user-123");
         var httpContextAccessorMock = CreateAccessor(httpContext);
         var factoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
         factoryMock.Setup(f => f.CreateClient(string.Empty)).Returns(() => new HttpClient(refreshHandler));
@@ -270,7 +340,7 @@ public sealed class BearerTokenHandlerTests
             .Setup(s => s.SignInAsync(It.IsAny<HttpContext>(), CookieAuthenticationDefaults.AuthenticationScheme, It.IsAny<ClaimsPrincipal>(), It.IsAny<AuthenticationProperties>()))
             .Returns(Task.CompletedTask);
 
-        var httpContext = BuildHttpContext(accessToken: "old-token", refreshToken: "refresh-abc", userId: "user-123", authServiceMock: authServiceMock);
+        var httpContext = BuildHttpContext(accessToken: BuildJwt(DateTimeOffset.UtcNow.AddMinutes(10)), refreshToken: "refresh-abc", userId: "user-123", authServiceMock: authServiceMock);
         var httpContextAccessorMock = CreateAccessor(httpContext);
         var factoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
         factoryMock.Setup(f => f.CreateClient(string.Empty)).Returns(() => new HttpClient(refreshHandler));
@@ -295,6 +365,21 @@ public sealed class BearerTokenHandlerTests
         capturedBodies.Count.ShouldBe(2);
         capturedBodies[1].ShouldBe(expectedBytes);
     }
+
+    /// <summary>
+    /// Builds an unsigned JWT-shaped string carrying only an "exp" claim - enough for
+    /// <c>BearerTokenHandler</c>'s expiry check, which never validates the signature (that already
+    /// happens server-side); it only reads the payload to decide whether to refresh proactively.
+    /// </summary>
+    private static string BuildJwt(DateTimeOffset expiresAt)
+    {
+        var header = Base64UrlEncode("{\"alg\":\"none\",\"typ\":\"JWT\"}"u8.ToArray());
+        var payload = Base64UrlEncode(Encoding.UTF8.GetBytes($"{{\"exp\":{expiresAt.ToUnixTimeSeconds()}}}"));
+        return $"{header}.{payload}.";
+    }
+
+    private static string Base64UrlEncode(byte[] bytes)
+        => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
     private static BearerTokenHandler CreateHandler(
         HttpMessageHandler innerHandler,

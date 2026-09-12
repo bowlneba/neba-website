@@ -242,6 +242,33 @@ public sealed class EditTournamentCommandHandlerTests(AppDbContextFixture fixtur
         persisted.NebaAddedMoney.ShouldBe(500m);
     }
 
+    [Fact(DisplayName = "HandleAsync persists a newly assigned bowling center when command is valid")]
+    public async Task HandleAsync_ShouldPersistBowlingCenter_WhenAssigningExistingCenter()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = await SeedSeasonAsync(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31), ct);
+        var tournament = await SeedTournamentAsync(season, ct);
+        var bowlingCenter = BowlingCenterFactory.Create();
+        await _dbContext.BowlingCenters.AddAsync(bowlingCenter, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+        var command = ValidCommand(
+            tournament.Id,
+            startDate: season.StartDate,
+            endDate: season.StartDate,
+            bowlingCenterId: bowlingCenter.CertificationNumber);
+
+        // Act
+        var result = await handler.HandleAsync(command, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        var persisted = await _dbContext.Tournaments.AsNoTracking().SingleAsync(t => t.Id == tournament.Id, ct);
+        persisted.BowlingCenterId.ShouldBe(bowlingCenter.CertificationNumber);
+    }
+
     [Fact(DisplayName = "HandleAsync re-derives the season when the submitted dates fall in a different season")]
     public async Task HandleAsync_ShouldRederiveSeason_WhenDatesFallInDifferentSeason()
     {

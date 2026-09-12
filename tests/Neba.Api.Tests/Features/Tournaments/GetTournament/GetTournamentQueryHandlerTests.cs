@@ -208,8 +208,8 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         result.Value.BowlingCenter.CertificationNumber.ShouldBe(bowlingCenter.CertificationNumber.Value);
     }
 
-    [Fact(DisplayName = "HandleAsync omits the bowling center's certification number when caller lacks the tournament management permission")]
-    public async Task HandleAsync_ShouldOmitBowlingCenterCertificationNumber_WhenCallerLacksManagementPermission()
+    [Fact(DisplayName = "HandleAsync includes the bowling center's certification number even when caller lacks the tournament management permission, since it is not sensitive data")]
+    public async Task HandleAsync_ShouldIncludeBowlingCenterCertificationNumber_WhenCallerLacksManagementPermission()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -233,7 +233,7 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         // Assert
         result.IsError.ShouldBeFalse();
         result.Value.BowlingCenter.ShouldNotBeNull();
-        result.Value.BowlingCenter.CertificationNumber.ShouldBeNull();
+        result.Value.BowlingCenter.CertificationNumber.ShouldBe(bowlingCenter.CertificationNumber.Value);
     }
 
     [Fact(DisplayName = "HandleAsync returns published articles with title and slug when tournament has articles")]
