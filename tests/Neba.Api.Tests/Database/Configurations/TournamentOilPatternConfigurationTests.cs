@@ -28,8 +28,11 @@ public sealed class TournamentOilPatternConfigurationTests
     [Fact(DisplayName = "maps to tournament_oil_patterns table in app schema")]
     public void Configure_ShouldMapToTournamentOilPatternsTable()
     {
-        // Act & Assert
-        _tournamentOilPatternType.GetTableName().ShouldBe("tournament_oil_patterns");
+        // Act
+        var tableName = _tournamentOilPatternType.GetTableName();
+
+        // Assert
+        tableName.ShouldBe("tournament_oil_patterns");
         _tournamentOilPatternType.GetSchema().ShouldBe(AppDbContext.DefaultSchema);
     }
 
@@ -68,10 +71,14 @@ public sealed class TournamentOilPatternConfigurationTests
         IReadOnlyCollection<TournamentRound> second = [TournamentRound.Qualifying, TournamentRound.MatchPlay];
         IReadOnlyCollection<TournamentRound> different = [TournamentRound.Cashers];
 
-        // Act & Assert
+        // Act
+        var sameElementsEqual = comparer.Equals(first, second);
+        var differentElementsEqual = comparer.Equals(first, different);
+
+        // Assert
         comparer.ShouldNotBeNull();
-        comparer.Equals(first, second).ShouldBeTrue();
-        comparer.Equals(first, different).ShouldBeFalse();
+        sameElementsEqual.ShouldBeTrue();
+        differentElementsEqual.ShouldBeFalse();
         comparer.GetHashCode(first).ShouldBe(comparer.GetHashCode(second));
     }
 

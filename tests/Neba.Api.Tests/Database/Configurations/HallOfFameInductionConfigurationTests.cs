@@ -32,8 +32,11 @@ public sealed class HallOfFameInductionConfigurationTests
     [Fact(DisplayName = "maps to hall_of_fame_inductions table in app schema")]
     public void Configure_ShouldMapToHallOfFameInductionsTable()
     {
-        // Act & Assert
-        _inductionType.GetTableName().ShouldBe("hall_of_fame_inductions");
+        // Act
+        var tableName = _inductionType.GetTableName();
+
+        // Assert
+        tableName.ShouldBe("hall_of_fame_inductions");
         _inductionType.GetSchema().ShouldBe(AppDbContext.DefaultSchema);
     }
 
@@ -135,10 +138,14 @@ public sealed class HallOfFameInductionConfigurationTests
         IReadOnlyCollection<HallOfFameCategory> second = [HallOfFameCategory.SuperiorPerformance, HallOfFameCategory.FriendOfNeba];
         IReadOnlyCollection<HallOfFameCategory> different = [HallOfFameCategory.MeritoriousService];
 
-        // Act & Assert
+        // Act
+        var sameElementsEqual = comparer.Equals(first, second);
+        var differentElementsEqual = comparer.Equals(first, different);
+
+        // Assert
         comparer.ShouldNotBeNull();
-        comparer.Equals(first, second).ShouldBeTrue();
-        comparer.Equals(first, different).ShouldBeFalse();
+        sameElementsEqual.ShouldBeTrue();
+        differentElementsEqual.ShouldBeFalse();
         comparer.GetHashCode(first).ShouldBe(comparer.GetHashCode(second));
     }
 
