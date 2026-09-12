@@ -92,10 +92,17 @@ internal static class RateLimitingConfiguration
 
                 options.AddPolicy(PublicPolicy, context =>
                 {
-                    if (context.User.Identity?.IsAuthenticated == true)
-                    {
-                        var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+                    var userId = context.User.Identity?.IsAuthenticated == true
+                        ? context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                        : null;
 
+                    // A missing NameIdentifier claim on an authenticated principal shouldn't happen
+                    // in practice (every issued token carries it), but falling back to "unknown"
+                    // would pool every such caller into one shared bucket instead of limiting them
+                    // individually. Fall through to the anonymous per-IP partition instead, which
+                    // still isolates callers from each other even without a user id to key on.
+                    if (userId is not null)
+                    {
                         return RateLimitPartition.GetFixedWindowLimiter($"user:{userId}",
                             _ => new FixedWindowRateLimiterOptions
                             {
