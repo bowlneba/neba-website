@@ -58,6 +58,7 @@ internal sealed class ApiExecutor(
             if (response.IsSuccessStatusCode && response.Content is null && response.RequestMessage?.Method == HttpMethod.Get)
             {
                 logger.LogRetryingNullContentResponse(apiName, operationName);
+                ApiMetrics.RecordNullContentRetry(apiName, operationName);
                 response = await apiCall(cancellationToken);
             }
 

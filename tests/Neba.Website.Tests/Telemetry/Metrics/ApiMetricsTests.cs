@@ -220,6 +220,25 @@ public sealed class ApiMetricsTests : IDisposable
         _doubleMeasurements[0].Value.ShouldBe(largeDuration);
     }
 
+    [Fact(DisplayName = "Should record a null-content retry with apiName and operationName tags")]
+    public void RecordNullContentRetry_ShouldRecordRetry_WithCorrectTags()
+    {
+        // Arrange
+        const string apiName = "WeatherApi";
+        const string operationName = "GetForecasts";
+        _longMeasurements.Clear();
+        _doubleMeasurements.Clear();
+
+        // Act
+        ApiMetrics.RecordNullContentRetry(apiName, operationName);
+
+        // Assert
+        _longMeasurements.ShouldHaveSingleItem();
+        _longMeasurements[0].Value.ShouldBe(1L);
+        _longMeasurements[0].Tags.ToArray().ShouldContain(tag => tag.Key == ApiMetricTagNames.ApiName && (string)tag.Value! == apiName);
+        _longMeasurements[0].Tags.ToArray().ShouldContain(tag => tag.Key == ApiMetricTagNames.OperationName && (string)tag.Value! == operationName);
+    }
+
     [Theory(DisplayName = "Should record errors with various HTTP status codes")]
     [InlineData(400, TestDisplayName = "400 Bad Request")]
     [InlineData(401, TestDisplayName = "401 Unauthorized")]

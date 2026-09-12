@@ -26,6 +26,12 @@ internal static class ApiMetrics
             description: "Records the duration of API calls from Neba.Website.Server"
         );
 
+    private static readonly Counter<long> ApiNullContentRetries =
+        Meter.CreateCounter<long>(
+            "neba.website.api.null_content_retries",
+            description: "Counts GET calls retried after a success status returned a null/empty body"
+        );
+
     public static void RecordApiCall(string apiName, string operationName)
     {
         var tags = new TagList
@@ -79,5 +85,16 @@ internal static class ApiMetrics
         };
 
         ApiDuration.Record(durationMs, durationTags);
+    }
+
+    public static void RecordNullContentRetry(string apiName, string operationName)
+    {
+        var tags = new TagList
+        {
+            { ApiMetricTagNames.ApiName, apiName },
+            { ApiMetricTagNames.OperationName, operationName }
+        };
+
+        ApiNullContentRetries.Add(1, tags);
     }
 }
