@@ -188,6 +188,14 @@ internal sealed class UpdateBowlerSyncJob(
             return;
         }
 
+        // Name is an owned type table-split into the bowlers row. Reassigning it replaces the
+        // owned entity's tracked instance, so EF only marks the owned "Name" entry as
+        // Added/Deleted - Bowler's own entry stays Unchanged when only the name changes (the
+        // common case). Audit.EntityFramework's opt-in Include<T>() list then audits the Name
+        // change in isolation, with no LegacyId/WebsiteId/Id to tie it back to a bowler. Forcing
+        // Bowler's own entry to Modified puts it in the same audit event's Entries array.
+        db.Entry(existing).State = EntityState.Modified;
+
         await db.SaveChangesAsync(ct);
 
         await cache.RemoveByTagAsync("neba:bowlers", token: ct);
