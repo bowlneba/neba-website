@@ -159,17 +159,20 @@ public sealed class ApiExecutorTests
         var duration = TimeSpan.FromMilliseconds(50);
         var cancellationToken = TestContext.Current.CancellationToken;
 
+        var getRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://api.example.com/data");
         var nullContentResponse = new StubApiResponse<string>
         {
             IsSuccessStatusCode = true,
             Content = (string?)null,
-            StatusCode = System.Net.HttpStatusCode.OK
+            StatusCode = System.Net.HttpStatusCode.OK,
+            RequestMessage = getRequestMessage
         };
         var successResponse = new StubApiResponse<string>
         {
             IsSuccessStatusCode = true,
             Content = expectedData,
-            StatusCode = System.Net.HttpStatusCode.OK
+            StatusCode = System.Net.HttpStatusCode.OK,
+            RequestMessage = getRequestMessage
         };
 
         var callCount = 0;
@@ -206,11 +209,13 @@ public sealed class ApiExecutorTests
         var duration = TimeSpan.FromMilliseconds(50);
         var cancellationToken = TestContext.Current.CancellationToken;
 
+        var getRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://api.example.com/data");
         var nullContentResponse = new StubApiResponse<string>
         {
             IsSuccessStatusCode = true,
             Content = (string?)null,
-            StatusCode = System.Net.HttpStatusCode.OK
+            StatusCode = System.Net.HttpStatusCode.OK,
+            RequestMessage = getRequestMessage
         };
 
         var callCount = 0;
@@ -234,6 +239,50 @@ public sealed class ApiExecutorTests
         callCount.ShouldBe(2);
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe($"{apiName}.{operationName}.DeserializationFailed");
+    }
+
+    [Fact(DisplayName = "Should not retry and should fail immediately when a non-GET call returns a success status with null content")]
+    public async Task ExecuteAsync_ShouldNotRetryAndShouldFailImmediately_WhenNonGetCallHasNullContent()
+    {
+        // Arrange
+        const string apiName = "TestApi";
+        const string operationName = "CreateData";
+        const long startTimestamp = 1000;
+        var duration = TimeSpan.FromMilliseconds(50);
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var postRequestMessage = new HttpRequestMessage(HttpMethod.Post, "https://api.example.com/data");
+        var nullContentResponse = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = true,
+            Content = (string?)null,
+            StatusCode = System.Net.HttpStatusCode.OK,
+            RequestMessage = postRequestMessage
+        };
+
+        var callCount = 0;
+        var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(_ =>
+        {
+            callCount++;
+            return Task.FromResult<IApiResponse<string>>(nullContentResponse);
+        });
+
+        _stopwatchProviderMock
+            .Setup(s => s.GetTimestamp())
+            .Returns(startTimestamp);
+        _stopwatchProviderMock
+            .Setup(s => s.GetElapsedTime(startTimestamp))
+            .Returns(duration);
+
+        // Act
+        var result = await _executor.ExecuteAsync(apiName, operationName, apiCall, cancellationToken);
+
+        // Assert - a POST that already succeeded server-side must not be re-sent just because the
+        // response body was truncated; retrying could create a duplicate resource.
+        callCount.ShouldBe(1);
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe($"{apiName}.{operationName}.DeserializationFailed");
+        _logger.Collector.GetSnapshot().ShouldNotContain(l => l.Level == LogLevel.Warning);
     }
 
     [Fact(DisplayName = "Should handle ApiException gracefully")]

@@ -50,7 +50,12 @@ internal sealed class ApiExecutor(
             // already arrived. Polly's standard resilience handler can't catch this (it only
             // inspects status codes/exceptions, before Refit ever attempts to deserialize), so
             // retry once here rather than surfacing a one-off truncated response to the user.
-            if (response.IsSuccessStatusCode && response.Content is null)
+            //
+            // Scoped to GET only: a POST/PUT/PATCH/DELETE can have already succeeded server-side
+            // (e.g. a resource was created) before the response body was truncated. Retrying a
+            // non-idempotent call risks re-submitting it and creating a duplicate - safer to
+            // surface the deserialization failure to the caller than to risk a double write.
+            if (response.IsSuccessStatusCode && response.Content is null && response.RequestMessage?.Method == HttpMethod.Get)
             {
                 logger.LogRetryingNullContentResponse(apiName, operationName);
                 response = await apiCall(cancellationToken);
