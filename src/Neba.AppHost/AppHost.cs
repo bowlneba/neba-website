@@ -6,6 +6,7 @@ using Azure.Provisioning.AppContainers;
 using Azure.Provisioning.Authorization;
 using Azure.Provisioning.KeyVault;
 using Azure.Provisioning.PostgreSql;
+using Azure.Provisioning.Storage;
 
 var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions
 {
@@ -63,6 +64,13 @@ var api = builder.AddProject<Projects.Neba_Api>("api")
     .WaitFor(blobs)
     .WithReference(tables)
     .WaitFor(tables)
+    // Aspire's default role for a referenced blob resource is Storage Blob Data Contributor,
+    // which covers blob CRUD but not Set Container ACL (the call AzureBlobStorageService
+    // makes to set a container's public access level) - that needs
+    // containers/setacl/action, which only Storage Blob Data Owner grants. Table Data
+    // Contributor is included explicitly because WithRoleAssignments replaces every default
+    // role Aspire would otherwise assign to "storage" for this project, not just the blob one.
+    .WithRoleAssignments(storage, StorageBuiltInRole.StorageBlobDataOwner, StorageBuiltInRole.StorageTableDataContributor)
     .WithUrlForEndpoint("http", callback =>
     {
         callback.DisplayText = "Scalar API";
@@ -161,6 +169,19 @@ if (builder.ExecutionContext.IsPublishMode)
             Guid.Parse(deployPrincipalId),
             "deploy_pipeline");
         infra.Add(roleAssignment);
+    });
+
+    // Aspire's default Storage Account bicep sets AllowBlobPublicAccess to false. That's an
+    // account-level gate: even though bowlneba-public is created with PublicAccessType.Blob
+    // (AzureBlobStorageService), the account itself refuses anonymous reads until this is
+    // true, causing "Public access is not permitted on this storage account" (409
+    // PublicAccessNotPermitted) on every request for a public blob (e.g. tournament logos).
+    // Individual container-level access is still governed by AzureBlobStorageService - this
+    // only lifts the account-level block that would otherwise override it.
+    storage.ConfigureInfrastructure(infra =>
+    {
+        var account = infra.GetProvisionableResources().OfType<StorageAccount>().Single();
+        account.AllowBlobPublicAccess = true;
     });
 
     // RSA key that wraps (encrypts) the shared Data Protection key ring both apps persist to
