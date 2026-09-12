@@ -148,6 +148,94 @@ public sealed class ApiExecutorTests
         _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Error);
     }
 
+    [Fact(DisplayName = "Should retry once and return success when the first response has null content but the retry succeeds")]
+    public async Task ExecuteAsync_ShouldRetryOnceAndSucceed_WhenFirstResponseHasNullContentButRetrySucceeds()
+    {
+        // Arrange
+        const string apiName = "TestApi";
+        const string operationName = "GetData";
+        const string expectedData = "test data";
+        const long startTimestamp = 1000;
+        var duration = TimeSpan.FromMilliseconds(50);
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var nullContentResponse = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = true,
+            Content = (string?)null,
+            StatusCode = System.Net.HttpStatusCode.OK
+        };
+        var successResponse = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = true,
+            Content = expectedData,
+            StatusCode = System.Net.HttpStatusCode.OK
+        };
+
+        var callCount = 0;
+        var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(_ =>
+        {
+            callCount++;
+            return Task.FromResult<IApiResponse<string>>(callCount == 1 ? nullContentResponse : successResponse);
+        });
+
+        _stopwatchProviderMock
+            .Setup(s => s.GetTimestamp())
+            .Returns(startTimestamp);
+        _stopwatchProviderMock
+            .Setup(s => s.GetElapsedTime(startTimestamp))
+            .Returns(duration);
+
+        // Act
+        var result = await _executor.ExecuteAsync(apiName, operationName, apiCall, cancellationToken);
+
+        // Assert
+        callCount.ShouldBe(2);
+        result.IsError.ShouldBeFalse();
+        result.Value.ShouldBe(expectedData);
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Warning);
+    }
+
+    [Fact(DisplayName = "Should retry once and still fail when both responses have null content")]
+    public async Task ExecuteAsync_ShouldRetryOnceAndFail_WhenBothResponsesHaveNullContent()
+    {
+        // Arrange
+        const string apiName = "TestApi";
+        const string operationName = "GetData";
+        const long startTimestamp = 1000;
+        var duration = TimeSpan.FromMilliseconds(50);
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        var nullContentResponse = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = true,
+            Content = (string?)null,
+            StatusCode = System.Net.HttpStatusCode.OK
+        };
+
+        var callCount = 0;
+        var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(_ =>
+        {
+            callCount++;
+            return Task.FromResult<IApiResponse<string>>(nullContentResponse);
+        });
+
+        _stopwatchProviderMock
+            .Setup(s => s.GetTimestamp())
+            .Returns(startTimestamp);
+        _stopwatchProviderMock
+            .Setup(s => s.GetElapsedTime(startTimestamp))
+            .Returns(duration);
+
+        // Act
+        var result = await _executor.ExecuteAsync(apiName, operationName, apiCall, cancellationToken);
+
+        // Assert
+        callCount.ShouldBe(2);
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe($"{apiName}.{operationName}.DeserializationFailed");
+    }
+
     [Fact(DisplayName = "Should handle ApiException gracefully")]
     public async Task ExecuteAsync_ShouldHandleApiException_AndReturnFailure()
     {

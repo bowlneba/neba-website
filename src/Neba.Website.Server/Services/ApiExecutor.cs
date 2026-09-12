@@ -43,6 +43,19 @@ internal sealed class ApiExecutor(
         try
         {
             var response = await apiCall(cancellationToken);
+
+            // A success status with a null/empty body is a transient failure mode, not a real
+            // deserialization bug - observed correlated with IHttpClientFactory rotating out a
+            // pooled connection mid-response, truncating the body while the status line had
+            // already arrived. Polly's standard resilience handler can't catch this (it only
+            // inspects status codes/exceptions, before Refit ever attempts to deserialize), so
+            // retry once here rather than surfacing a one-off truncated response to the user.
+            if (response.IsSuccessStatusCode && response.Content is null)
+            {
+                logger.LogRetryingNullContentResponse(apiName, operationName);
+                response = await apiCall(cancellationToken);
+            }
+
             var duration = stopwatchProvider.GetElapsedTime(startTimestamp).TotalMilliseconds;
 
             activity?.SetTag("http.status_code", (int?)response.StatusCode);
@@ -334,6 +347,11 @@ internal static partial class ApiExecutorLogMessages
         Level = LogLevel.Error,
         Message = "API deserialization failed: {ApiName}.{OperationName} returned status {StatusCode} with null content (Duration: {DurationMs}ms)")]
     public static partial void LogDeserializationFailed(this ILogger<ApiExecutor> logger, string apiName, string operationName, int statusCode, double durationMs);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "API call {ApiName}.{OperationName} returned a success status with a null body; retrying once before treating it as a failure")]
+    public static partial void LogRetryingNullContentResponse(this ILogger<ApiExecutor> logger, string apiName, string operationName);
 
     [LoggerMessage(
         Level = LogLevel.Warning,
