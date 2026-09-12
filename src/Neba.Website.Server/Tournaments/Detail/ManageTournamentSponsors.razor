@@ -36,7 +36,7 @@
                 <div class="mts-row">
                     @if (sponsor.LogoUrl is not null)
                     {
-                        <img src="@sponsor.LogoUrl?.AbsoluteUri" alt="@(sponsor.Name + " logo")" class="mts-row__logo" />
+                        <img src="@sponsor.LogoUrl.AbsoluteUri" alt="@(sponsor.Name + " logo")" class="mts-row__logo" />
                     }
                     else
                     {

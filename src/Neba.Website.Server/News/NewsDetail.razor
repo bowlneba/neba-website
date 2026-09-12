@@ -77,7 +77,7 @@ else if (_article is not null)
                 @if (_article.HeaderImageUrl is not null)
                 {
                     <div class="news-detail-image-card" aria-hidden="true">
-                        <img src="@_article.HeaderImageUrl?.AbsoluteUri" alt="" class="news-detail-image" loading="eager" />
+                        <img src="@_article.HeaderImageUrl.AbsoluteUri" alt="" class="news-detail-image" loading="eager" />
                     </div>
                 }
 

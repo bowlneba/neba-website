@@ -412,7 +412,7 @@ else
                                         <a href="/sponsors/@sponsor.Slug" class="neba-card td-rail-sponsor-card">
                                             @if (sponsor.LogoUrl is not null)
                                             {
-                                                <img src="@sponsor.LogoUrl?.AbsoluteUri" alt="@(sponsor.Name + " logo")"
+                                                <img src="@sponsor.LogoUrl.AbsoluteUri" alt="@(sponsor.Name + " logo")"
                                                      class="td-rail-sponsor-card__logo" />
                                             }
                                             else
