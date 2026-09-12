@@ -241,7 +241,7 @@ public sealed class BearerTokenHandlerTests
         // This mirrors how the real network stack (SocketsHttpHandler) drains request content.
         using var innerHandler = new CapturingHandler(async request =>
         {
-            using var buffer = new MemoryStream();
+            await using var buffer = new MemoryStream();
             if (request.Content is not null)
                 await request.Content.CopyToAsync(buffer, TestContext.Current.CancellationToken);
             capturedBodies.Add(buffer.ToArray());
