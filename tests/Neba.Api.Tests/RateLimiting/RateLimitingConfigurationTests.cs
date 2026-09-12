@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Claims;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -61,6 +62,52 @@ public sealed class RateLimitingConfigurationValidationTests
         // Assert
         act.ShouldThrow<InvalidOperationException>()
             .Message.ShouldContain("WindowSeconds");
+    }
+
+    [Fact(DisplayName = "AddRateLimiting throws when AuthenticatedPermitLimit is zero or negative")]
+    public void AddRateLimiting_ShouldThrow_WhenAuthenticatedPermitLimitIsNotPositive()
+    {
+        // Arrange
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["RateLimiting:PermitLimit"] = "10",
+                ["RateLimiting:WindowSeconds"] = "60",
+                ["RateLimiting:AuthenticatedPermitLimit"] = "0",
+                ["RateLimiting:AuthenticatedWindowSeconds"] = "60",
+            })
+            .Build();
+        var services = new ServiceCollection();
+
+        // Act
+        var act = () => services.AddRateLimiting(config);
+
+        // Assert
+        act.ShouldThrow<InvalidOperationException>()
+            .Message.ShouldContain("AuthenticatedPermitLimit");
+    }
+
+    [Fact(DisplayName = "AddRateLimiting throws when AuthenticatedWindowSeconds is zero or negative")]
+    public void AddRateLimiting_ShouldThrow_WhenAuthenticatedWindowSecondsIsNotPositive()
+    {
+        // Arrange
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["RateLimiting:PermitLimit"] = "10",
+                ["RateLimiting:WindowSeconds"] = "60",
+                ["RateLimiting:AuthenticatedPermitLimit"] = "10",
+                ["RateLimiting:AuthenticatedWindowSeconds"] = "0",
+            })
+            .Build();
+        var services = new ServiceCollection();
+
+        // Act
+        var act = () => services.AddRateLimiting(config);
+
+        // Assert
+        act.ShouldThrow<InvalidOperationException>()
+            .Message.ShouldContain("AuthenticatedWindowSeconds");
     }
 
     [Fact(DisplayName = "AddRateLimiting configures ForwardedHeaders with XForwardedFor and RFC 1918 networks")]
@@ -182,5 +229,124 @@ public sealed class RateLimitingConfigurationTests : IAsyncLifetime
         problem.ShouldNotBeNull();
         problem.Status.ShouldBe(StatusCodes.Status429TooManyRequests);
         problem.Title.ShouldBe("Too Many Requests");
+    }
+}
+
+[IntegrationTest]
+[Component("Api.RateLimiting")]
+public sealed class RateLimitingConfigurationAuthenticatedPartitionTests : IAsyncLifetime
+{
+    private const string AuthenticateHeaderName = "X-Test-Authenticate-As";
+
+    private WebApplication? _app;
+    private HttpClient _client = null!;
+
+    public async ValueTask InitializeAsync()
+    {
+        // Anonymous stays tightly limited (1/window); authenticated gets a much higher ceiling
+        // (10/window) and is partitioned per-user rather than sharing the anonymous IP bucket.
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["RateLimiting:PermitLimit"] = "1",
+                ["RateLimiting:WindowSeconds"] = "60",
+                ["RateLimiting:AuthenticatedPermitLimit"] = "10",
+                ["RateLimiting:AuthenticatedWindowSeconds"] = "60",
+            })
+            .Build();
+
+        var builder = WebApplication.CreateSlimBuilder();
+        builder.WebHost.UseSetting(WebHostDefaults.ServerUrlsKey, "http://127.0.0.1:0");
+        builder.Services.AddRateLimiting(config);
+
+        _app = builder.Build();
+
+        // Stands in for the real JWT/cookie authentication middleware, which must run before the
+        // rate limiter so its partition selector can read context.User (see Program.cs).
+        _app.Use(async (context, next) =>
+        {
+            var userId = context.Request.Headers[AuthenticateHeaderName].FirstOrDefault();
+            if (!string.IsNullOrEmpty(userId))
+            {
+                context.User = new ClaimsPrincipal(
+                    new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId)], "Test"));
+            }
+
+            await next(context);
+        });
+
+        _app.UseRateLimiter();
+        _app.MapGet("/probe", () => Results.Ok())
+            .RequireRateLimiting(RateLimitingConfiguration.PublicPolicy);
+
+        await _app.StartAsync();
+
+        var addresses = _app.Services
+            .GetRequiredService<IServer>()
+            .Features.Get<IServerAddressesFeature>()!
+            .Addresses;
+
+        _client = new HttpClient { BaseAddress = new Uri(addresses.First()) };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _client.Dispose();
+        if (_app is not null)
+            await _app.DisposeAsync();
+    }
+
+    [Fact(DisplayName = "Authenticated caller keeps succeeding past the anonymous permit limit")]
+    public async Task RateLimit_ShouldNotReject_WhenAuthenticatedCallerExceedsAnonymousLimit()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var request1 = new HttpRequestMessage(HttpMethod.Get, "/probe");
+        request1.Headers.Add(AuthenticateHeaderName, "user-1");
+        using var request2 = new HttpRequestMessage(HttpMethod.Get, "/probe");
+        request2.Headers.Add(AuthenticateHeaderName, "user-1");
+
+        // Act
+        var first = await _client.SendAsync(request1, ct);
+        var second = await _client.SendAsync(request2, ct);
+
+        // Assert - anonymous permit limit is 1, so a second request from the same identity only
+        // succeeds because it's on the higher authenticated ceiling, not the anonymous one.
+        first.StatusCode.ShouldNotBe(HttpStatusCode.TooManyRequests);
+        second.StatusCode.ShouldNotBe(HttpStatusCode.TooManyRequests);
+    }
+
+    [Fact(DisplayName = "Different authenticated users are partitioned independently")]
+    public async Task RateLimit_ShouldPartitionIndependently_ForDifferentAuthenticatedUsers()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var requestUser1 = new HttpRequestMessage(HttpMethod.Get, "/probe");
+        requestUser1.Headers.Add(AuthenticateHeaderName, "user-1");
+        using var requestUser2 = new HttpRequestMessage(HttpMethod.Get, "/probe");
+        requestUser2.Headers.Add(AuthenticateHeaderName, "user-2");
+
+        // Act
+        var responseUser1 = await _client.SendAsync(requestUser1, ct);
+        var responseUser2 = await _client.SendAsync(requestUser2, ct);
+
+        // Assert
+        responseUser1.StatusCode.ShouldNotBe(HttpStatusCode.TooManyRequests);
+        responseUser2.StatusCode.ShouldNotBe(HttpStatusCode.TooManyRequests);
+    }
+
+    [Fact(DisplayName = "Unauthenticated caller still hits the tighter anonymous limit")]
+    public async Task RateLimit_ShouldStillReject_WhenAnonymousCallerExceedsAnonymousLimit()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+
+        // Act
+        var first = await _client.GetAsync(new Uri("/probe", UriKind.Relative), ct);
+        var second = await _client.GetAsync(new Uri("/probe", UriKind.Relative), ct);
+
+        // Assert
+        first.StatusCode.ShouldNotBe(HttpStatusCode.TooManyRequests);
+        second.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
     }
 }
