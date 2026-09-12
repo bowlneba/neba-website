@@ -651,7 +651,7 @@ const MOCK_TOURNAMENT_CHAMPIONS = {
       tournamentDate: '2024-04-20',
       tournamentType: 'Singles',
       champions: [
-        { bowlerId: PRIMARY_BOWLER_ID, bowlerName: 'Current Leader', hallOfFame: true },
+        { bowlerId: PRIMARY_BOWLER_ID, bowlerName: 'Current Leader', bowlerLastName: 'Leader', bowlerFirstName: 'Current', hallOfFame: true },
       ],
     },
     {
@@ -660,8 +660,8 @@ const MOCK_TOURNAMENT_CHAMPIONS = {
       tournamentDate: '2024-10-15',
       tournamentType: 'Doubles',
       champions: [
-        { bowlerId: PRIMARY_BOWLER_ID, bowlerName: 'Current Leader', hallOfFame: true },
-        { bowlerId: SECONDARY_BOWLER_ID, bowlerName: 'Current Rival', hallOfFame: false },
+        { bowlerId: PRIMARY_BOWLER_ID, bowlerName: 'Current Leader', bowlerLastName: 'Leader', bowlerFirstName: 'Current', hallOfFame: true },
+        { bowlerId: SECONDARY_BOWLER_ID, bowlerName: 'Current Rival', bowlerLastName: 'Rival', bowlerFirstName: 'Current', hallOfFame: false },
       ],
     },
     {
@@ -670,7 +670,7 @@ const MOCK_TOURNAMENT_CHAMPIONS = {
       tournamentDate: '2023-01-21',
       tournamentType: 'Singles',
       champions: [
-        { bowlerId: SECONDARY_BOWLER_ID, bowlerName: 'Current Rival', hallOfFame: false },
+        { bowlerId: SECONDARY_BOWLER_ID, bowlerName: 'Current Rival', bowlerLastName: 'Rival', bowlerFirstName: 'Current', hallOfFame: false },
       ],
     },
   ],
