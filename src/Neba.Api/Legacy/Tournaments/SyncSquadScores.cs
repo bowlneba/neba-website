@@ -16,7 +16,6 @@ using Neba.Api.Database;
 using Neba.Api.Email;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Tournaments.Domain;
-using Neba.Api.Identity;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -70,8 +69,7 @@ internal sealed class SyncSquadScoresSyncJob(
 {
     public async Task SyncAsync(int legacySquadId, string correlationId, CancellationToken ct)
     {
-        using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
-        using var __ = AmbientCorrelationContext.SetCorrelationId(correlationId);
+        using var _ = LegacyActor.EnterAmbientContext(correlationId);
 
         var squad = await db.Set<Squad>().SingleOrDefaultAsync(s => s.LegacyId == legacySquadId, ct);
         if (squad is null)

@@ -14,7 +14,6 @@ using Microsoft.EntityFrameworkCore;
 using Neba.Api.Auditing;
 using Neba.Api.Database;
 using Neba.Api.Features.Bowlers.Domain;
-using Neba.Api.Identity;
 
 namespace Neba.Api.Legacy.Bowlers;
 
@@ -64,8 +63,7 @@ internal sealed class NewBowlerSyncJob(
 {
     public async Task SyncAsync(int legacyBowlerId, string correlationId, CancellationToken ct)
     {
-        using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
-        using var __ = AmbientCorrelationContext.SetCorrelationId(correlationId);
+        using var _ = LegacyActor.EnterAmbientContext(correlationId);
 
         // Dapper.AOT is not enabled project-wide (this is the codebase's first Dapper usage) - the
         // interceptor-based source generator DAP005 nudges toward opting in, but plain Dapper reflection

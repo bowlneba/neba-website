@@ -10,7 +10,7 @@ public sealed class AmbientActorContextTests
     [Fact(DisplayName = "ActorId returns null when no actor has been set")]
     public void ActorId_WhenNoActorSet_ReturnsNull()
     {
-        // Arrange & Act
+        // Act
         var actorId = AmbientActorContext.ActorId;
 
         // Assert
@@ -20,7 +20,7 @@ public sealed class AmbientActorContextTests
     [Fact(DisplayName = "SetActor makes ActorId return the given value until disposed")]
     public void SetActor_MakesActorIdReturnGivenValue_UntilDisposed()
     {
-        // Arrange & Act
+        // Act
         using (AmbientActorContext.SetActor("software-sync"))
         {
             // Assert

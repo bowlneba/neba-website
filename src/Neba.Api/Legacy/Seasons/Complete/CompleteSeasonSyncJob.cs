@@ -7,11 +7,9 @@ using Hangfire;
 
 using Microsoft.EntityFrameworkCore;
 
-using Neba.Api.Auditing;
 using Neba.Api.Database;
 using Neba.Api.Discord;
 using Neba.Api.Email;
-using Neba.Api.Identity;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -35,8 +33,7 @@ internal sealed class CompleteSeasonSyncJob(
 
     public async Task SyncAsync(int legacySeasonId, string correlationId, CancellationToken ct)
     {
-        using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
-        using var __ = AmbientCorrelationContext.SetCorrelationId(correlationId);
+        using var _ = LegacyActor.EnterAmbientContext(correlationId);
 
         // See NewBowlerSyncJob.SyncAsync for the rationale on suppressing DAP005 here.
 #pragma warning disable DAP005

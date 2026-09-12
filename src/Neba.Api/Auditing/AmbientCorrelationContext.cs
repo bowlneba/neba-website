@@ -1,3 +1,5 @@
+using Neba.Api.Ambient;
+
 namespace Neba.Api.Auditing;
 
 /// <summary>
@@ -12,9 +14,9 @@ namespace Neba.Api.Auditing;
 /// </summary>
 internal static class AmbientCorrelationContext
 {
-    private static readonly AsyncLocal<string?> Current = new();
+    private static readonly AmbientValue<string> Ambient = new();
 
-    public static string? CorrelationId => Current.Value;
+    public static string? CorrelationId => Ambient.Current;
 
     /// <summary>
     /// Captures the correlation id for the currently executing request or activity, to be passed
@@ -29,15 +31,5 @@ internal static class AmbientCorrelationContext
     /// Sets the ambient correlation id for the remainder of the current async call chain. Dispose
     /// the returned scope when it no longer applies (e.g. at the end of a background job).
     /// </summary>
-    public static IDisposable SetCorrelationId(string correlationId)
-    {
-        var previous = Current.Value;
-        Current.Value = correlationId;
-        return new CorrelationScope(previous);
-    }
-
-    private sealed class CorrelationScope(string? previous) : IDisposable
-    {
-        public void Dispose() => Current.Value = previous;
-    }
+    public static IDisposable SetCorrelationId(string correlationId) => Ambient.Set(correlationId);
 }

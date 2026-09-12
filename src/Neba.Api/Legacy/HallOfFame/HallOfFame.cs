@@ -16,7 +16,6 @@ using Neba.Api.Database;
 using Neba.Api.Email;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.HallOfFame.Domain;
-using Neba.Api.Identity;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -111,8 +110,7 @@ internal sealed class NewHallOfFameInductionSyncJob(
         Justification = "The interpolated segment is only generated placeholder names (@Id0, @Id1, ...), never a data value - every id value itself is bound as a real DynamicParameters entry, not concatenated into the SQL text.")]
     public async Task SyncAsync(IReadOnlyCollection<int> legacyHallOfFameIds, string correlationId, CancellationToken ct)
     {
-        using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
-        using var __ = AmbientCorrelationContext.SetCorrelationId(correlationId);
+        using var _ = LegacyActor.EnterAmbientContext(correlationId);
 
         // Placeholders are numbered and bound individually (Id0, Id1, ...) rather than relying on
         // Dapper's automatic "IN @Ids" list expansion: Dapper detects when the underlying provider

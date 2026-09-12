@@ -14,7 +14,7 @@ public sealed class AmbientCorrelationContextTests
     [Fact(DisplayName = "CorrelationId returns null when no correlation id has been set")]
     public void CorrelationId_WhenNoneSet_ReturnsNull()
     {
-        // Arrange & Act
+        // Act
         var correlationId = AmbientCorrelationContext.CorrelationId;
 
         // Assert
@@ -24,7 +24,7 @@ public sealed class AmbientCorrelationContextTests
     [Fact(DisplayName = "SetCorrelationId makes CorrelationId return the given value until disposed")]
     public void SetCorrelationId_MakesCorrelationIdReturnGivenValue_UntilDisposed()
     {
-        // Arrange & Act
+        // Act
         using (AmbientCorrelationContext.SetCorrelationId("correlation-1"))
         {
             // Assert
@@ -71,7 +71,7 @@ public sealed class AmbientCorrelationContextTests
     [Fact(DisplayName = "Capture returns a generated id when there is no active Activity or HttpContext")]
     public void Capture_ShouldReturnGeneratedId_WhenNoActivityOrHttpContext()
     {
-        // Arrange & Act
+        // Act
         var correlationId = AmbientCorrelationContext.Capture(null);
 
         // Assert
