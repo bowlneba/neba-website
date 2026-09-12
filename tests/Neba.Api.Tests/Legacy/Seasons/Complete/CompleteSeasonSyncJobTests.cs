@@ -1,7 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Hangfire;
 using Hangfire.Common;
 using Hangfire.States;
 
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -16,8 +19,6 @@ using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
 
-using Npgsql;
-
 using ZiggyCreatures.Caching.Fusion;
 
 namespace Neba.Api.Tests.Legacy.Seasons.Complete;
@@ -25,17 +26,25 @@ namespace Neba.Api.Tests.Legacy.Seasons.Complete;
 // This job's whole job is "resolve by date-range match, complete, then schedule the eight award
 // jobs an hour out" - covered separately from the endpoint test (which only proves this job gets
 // enqueued) and from the award jobs themselves (which do the actual ranking/assignment work once
-// scheduled here). Mirrors CompleteTournamentSyncJobTests's shape; the legacy Season lookup uses
-// Postgres as a stand-in for neba-fwk's MSSQL, same as GenerateSeasonStatsJobTests.
+// scheduled here). Mirrors CompleteTournamentSyncJobTests's shape; the legacy Season lookup runs
+// against a real SQL Server instance (LegacySqlServerFixture), matching neba-fwk's actual engine.
 [IntegrationTest]
 [Component("Legacy")]
-[Collection<AppDbContextFixture>]
-public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture)
-    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
+[Collection(nameof(LegacyDatabasesTestScope))]
+public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture, LegacySqlServerFixture legacyFixture)
+    : IClassFixture<AppDbContextFixture>, IClassFixture<LegacySqlServerFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
-    private NpgsqlConnection _legacyConnection = null!;
+
+    // Owned by LegacySqlServerFixture, not this class - it's one persistent database reused across
+    // this class's tests and disposed once by the fixture at the end of the run, not per test.
+    [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed",
+        Justification = "Ownership stays with LegacySqlServerFixture, which disposes it once for the whole run.")]
+    private LegacySqlServerDatabase _legacyDatabase = null!;
     private ServiceProvider _serviceProvider = null!;
+
+    // Ownership (and disposal) of the connection belongs to LegacySqlServerFixture via _legacyDatabase.
+    private SqlConnection _legacyConnection => _legacyDatabase.Connection;
 
     public async ValueTask InitializeAsync()
     {
@@ -45,15 +54,18 @@ public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture)
         services.AddFusionCache().WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
         _serviceProvider = services.BuildServiceProvider();
 
-        _legacyConnection = new NpgsqlConnection(fixture.ConnectionString);
-        await _legacyConnection.OpenAsync();
+        _legacyDatabase = await legacyFixture.GetOrCreateDatabaseAsync(nameof(CompleteSeasonSyncJobTests), CreateSchemaAsync);
+        await _legacyDatabase.ResetAsync();
+    }
 
-        await using var create = _legacyConnection.CreateCommand();
+    private static async Task CreateSchemaAsync(SqlConnection connection)
+    {
+        await using var create = connection.CreateCommand();
         create.CommandText = """
-            CREATE TEMP TABLE Season (
-                Id integer PRIMARY KEY,
-                Start timestamp NOT NULL,
-                "end" timestamp NOT NULL
+            CREATE TABLE Season (
+                Id int PRIMARY KEY,
+                Start datetime NOT NULL,
+                [End] datetime NOT NULL
             );
             """;
         await create.ExecuteNonQueryAsync();
@@ -61,7 +73,6 @@ public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture)
 
     public async ValueTask DisposeAsync()
     {
-        await _legacyConnection.DisposeAsync();
         await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();
@@ -70,7 +81,7 @@ public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture)
     private async Task InsertLegacySeasonAsync(int legacySeasonId, DateTime start, DateTime end)
     {
         await using var insert = _legacyConnection.CreateCommand();
-        insert.CommandText = """INSERT INTO Season (Id, Start, "end") VALUES (@Id, @Start, @End)""";
+        insert.CommandText = "INSERT INTO Season (Id, Start, [End]) VALUES (@Id, @Start, @End)";
         insert.Parameters.AddWithValue("@Id", legacySeasonId);
         insert.Parameters.AddWithValue("@Start", start);
         insert.Parameters.AddWithValue("@End", end);

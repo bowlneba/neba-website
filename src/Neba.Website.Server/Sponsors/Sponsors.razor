@@ -140,7 +140,7 @@
                         </div>
                         <div class="flex justify-center md:justify-end">
                             <div class="title-sponsor-logo-panel bg-white rounded-lg p-6">
-                                <img src="@(TitleSponsor.LogoUrl?.ToString() ?? "/images/neba-logo.png")"
+                                <img src="@(TitleSponsor.LogoUrl?.AbsoluteUri ?? "/images/neba-logo.png")"
                                      alt="@TitleSponsor.Name logo"
                                      class="max-h-48 object-contain" />
                             </div>
@@ -179,7 +179,7 @@
                                class="sponsor-card-premier-link block"
                                aria-label="Learn more about @sponsor.Name">
                                 <div class="h-24 flex items-center justify-center mb-4">
-                                    <img src="@(sponsor.LogoUrl?.ToString() ?? "/images/neba-logo.png")"
+                                    <img src="@(sponsor.LogoUrl?.AbsoluteUri ?? "/images/neba-logo.png")"
                                          alt="@sponsor.Name logo"
                                          class="max-h-20 object-contain" />
                                 </div>

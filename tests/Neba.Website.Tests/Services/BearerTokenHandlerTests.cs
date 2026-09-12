@@ -228,6 +228,74 @@ public sealed class BearerTokenHandlerTests
         refreshHandler.Requests.ShouldHaveSingleItem();
     }
 
+    [Fact(DisplayName = "Should retry with the original body intact when the request content is a single-read stream")]
+    public async Task SendAsync_ShouldRetryWithOriginalBody_WhenContentIsSingleReadStream()
+    {
+        // Arrange
+        var responses = new Queue<HttpStatusCode>([HttpStatusCode.Unauthorized, HttpStatusCode.OK]);
+        var capturedBodies = new List<byte[]>();
+
+        // Reads via CopyToAsync rather than ReadAsByteArrayAsync, since ReadAsByteArrayAsync
+        // internally buffers/caches the content on first read — which would silently paper over
+        // the bug under test (a single-read stream only surviving one real serialization pass).
+        // This mirrors how the real network stack (SocketsHttpHandler) drains request content.
+        using var innerHandler = new CapturingHandler(async request =>
+        {
+            await using var buffer = new MemoryStream();
+            if (request.Content is not null)
+                await request.Content.CopyToAsync(buffer, TestContext.Current.CancellationToken);
+            capturedBodies.Add(buffer.ToArray());
+            return new HttpResponseMessage(responses.Dequeue());
+        });
+
+        using var refreshHandler = new RecordingHandler(_ =>
+        {
+            var json = JsonSerializer.Serialize(new
+            {
+                accessToken = "new-token",
+                refreshToken = "new-refresh",
+                expiresAt = DateTimeOffset.UtcNow.AddMinutes(15),
+                userId = "user-123",
+                email = "admin@bowlneba.com",
+            }, JsonOptions);
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            };
+        });
+
+        var authServiceMock = new Mock<IAuthenticationService>(MockBehavior.Strict);
+        authServiceMock
+            .Setup(s => s.SignInAsync(It.IsAny<HttpContext>(), CookieAuthenticationDefaults.AuthenticationScheme, It.IsAny<ClaimsPrincipal>(), It.IsAny<AuthenticationProperties>()))
+            .Returns(Task.CompletedTask);
+
+        var httpContext = BuildHttpContext(accessToken: "old-token", refreshToken: "refresh-abc", userId: "user-123", authServiceMock: authServiceMock);
+        var httpContextAccessorMock = CreateAccessor(httpContext);
+        var factoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
+        factoryMock.Setup(f => f.CreateClient(string.Empty)).Returns(() => new HttpClient(refreshHandler));
+
+        using var sut = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object);
+        using var client = new HttpClient(sut, disposeHandler: false);
+
+        var expectedBytes = "file-bytes"u8.ToArray();
+
+        // Simulates IBrowserFile.OpenReadStream(): forward-only, single-read, non-seekable —
+        // reading it a second time (as the pre-fix CloneRequestAsync retry did) yields nothing.
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri("https://downstream.example.com/upload"))
+        {
+            Content = new StreamContent(new SingleReadStream(expectedBytes))
+        };
+
+        // Act
+        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        capturedBodies.Count.ShouldBe(2);
+        capturedBodies[1].ShouldBe(expectedBytes);
+    }
+
     private static BearerTokenHandler CreateHandler(
         HttpMessageHandler innerHandler,
         IHttpContextAccessor httpContextAccessor,
@@ -296,5 +364,50 @@ public sealed class BearerTokenHandlerTests
             Requests.Add(request);
             return Task.FromResult(responder(request));
         }
+    }
+
+    private sealed class CapturingHandler(Func<HttpRequestMessage, Task<HttpResponseMessage>> responder) : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            => await responder(request);
+    }
+
+    /// <summary>
+    /// A forward-only, non-seekable stream that throws if read from again once fully consumed,
+    /// mirroring the one-shot semantics of a Blazor <c>IBrowserFile.OpenReadStream()</c>.
+    /// </summary>
+    private sealed class SingleReadStream(byte[] data) : Stream
+    {
+        private readonly MemoryStream _inner = new(data);
+        private bool _consumed;
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => _inner.Length;
+
+        public override long Position
+        {
+            get => _inner.Position;
+            set => throw new NotSupportedException();
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            if (_inner.Position >= _inner.Length)
+            {
+                if (_consumed)
+                    throw new InvalidOperationException("Stream already fully consumed and cannot be read again.");
+
+                _consumed = true;
+            }
+
+            return _inner.Read(buffer, offset, count);
+        }
+
+        public override void Flush() => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 }

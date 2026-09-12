@@ -151,14 +151,14 @@ internal sealed class GenerateSeasonStatsJob(
             SELECT
                 t.Id AS TournamentId,
                 t.Start,
-                t.End,
+                t.[End],
                 t.YearlyStatEligible,
                 st.TournamentType AS SinglesTournamentType
             FROM
                 Tournaments t
             LEFT JOIN Tournaments_SinglesTournament st ON st.Id = t.Id
             WHERE
-                t.Start >= @SeasonStart AND t.End < @SeasonEndExclusive
+                t.Start >= @SeasonStart AND t.[End] < @SeasonEndExclusive
             """,
             new { SeasonStart = seasonStart, SeasonEndExclusive = seasonEndExclusive }))];
 
@@ -336,7 +336,7 @@ internal sealed class GenerateSeasonStatsJob(
             SELECT
                 cr.BowlerId,
                 cr.Payout,
-                cu.End AS CupEnd
+                cu.[End] AS CupEnd
             FROM
                 CupResults cr
             INNER JOIN Cups cu ON cr.CupId = cu.Id

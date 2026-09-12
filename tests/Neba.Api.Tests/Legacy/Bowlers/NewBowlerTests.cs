@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Json;
 
@@ -9,6 +10,7 @@ using Hangfire.States;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -27,8 +29,6 @@ using Neba.Api.Legacy.Tournaments.Stats;
 using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Bowlers;
 using Neba.TestFactory.Infrastructure;
-
-using Npgsql;
 
 namespace Neba.Api.Tests.Legacy.Bowlers;
 
@@ -253,44 +253,44 @@ public sealed class LegacyBowlerExtensionsTests
 
 [IntegrationTest]
 [Component("Legacy")]
-[Collection<AppDbContextFixture>]
-public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture)
-    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
+[Collection(nameof(LegacyDatabasesTestScope))]
+public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture, LegacySqlServerFixture legacyFixture)
+    : IClassFixture<AppDbContextFixture>, IClassFixture<LegacySqlServerFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
-    private NpgsqlConnection _legacyConnection = null!;
+
+    // Owned by LegacySqlServerFixture, not this class - it's one persistent database reused across
+    // this class's tests and disposed once by the fixture at the end of the run, not per test.
+    [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed",
+        Justification = "Ownership stays with LegacySqlServerFixture, which disposes it once for the whole run.")]
+    private LegacySqlServerDatabase _legacyDatabase = null!;
+
+    // Ownership (and disposal) of the connection belongs to LegacySqlServerFixture via _legacyDatabase.
+    private SqlConnection _legacyConnection => _legacyDatabase.Connection;
 
     public async ValueTask InitializeAsync()
     {
         await fixture.ResetAsync();
 
-        // Plain Dapper works against any real ADO.NET IDbConnection, so a Postgres connection
-        // (reusing this test project's existing Testcontainers.PostgreSql infra) stands in for the
-        // real MSSQL neba-fwk database here rather than standing up a second, MSSQL-specific
-        // container for one temporary backdoor query. A CREATE TEMP TABLE is scoped to this single
-        // connection - it's gone as soon as the connection closes, so it needs no cleanup and can't
-        // collide with the shared fixture's own schema/Respawn reset.
-        // SQLite was tried first and rejected: its dynamic typing returns Int64/string for every
-        // INTEGER/TEXT column regardless of declared type, and Dapper's record-constructor mapping
-        // requires the reader's column types to exactly match LegacyBowlerRow's (int, DateTime?,
-        // ...) constructor parameters - Postgres's strict typing (int4 -> Int32, timestamp ->
-        // DateTime) actually satisfies that, matching what Microsoft.Data.SqlClient would return
-        // against the real MSSQL schema.
-        _legacyConnection = new NpgsqlConnection(fixture.ConnectionString);
-        await _legacyConnection.OpenAsync();
+        // Real SQL Server (Testcontainers.MsSql), matching neba-fwk's actual engine. One database
+        // for this test class, created once on the shared container (see LegacySqlServerFixture)
+        // and reused across its tests; Respawn resets the data before each test.
+        _legacyDatabase = await legacyFixture.GetOrCreateDatabaseAsync(nameof(NewBowlerSyncJobTests), CreateSchemaAsync);
+        await _legacyDatabase.ResetAsync();
+    }
 
-        // Unquoted identifiers here so Postgres folds them to lowercase, matching how it resolves
-        // the production query's own unquoted column/table references (SELECT Id, ... FROM Bowlers).
-        await using var create = _legacyConnection.CreateCommand();
+    private static async Task CreateSchemaAsync(SqlConnection connection)
+    {
+        await using var create = connection.CreateCommand();
         create.CommandText = """
-            CREATE TEMP TABLE Bowlers (
-                Id integer PRIMARY KEY,
-                FirstName text NOT NULL,
-                MiddleInitial text NULL,
-                LastName text NOT NULL,
-                Suffix text NULL,
-                Gender integer NOT NULL,
-                DateOfBirth timestamp NULL
+            CREATE TABLE Bowlers (
+                Id int PRIMARY KEY,
+                FirstName nvarchar(100) NOT NULL,
+                MiddleInitial nvarchar(10) NULL,
+                LastName nvarchar(100) NOT NULL,
+                Suffix nvarchar(10) NULL,
+                Gender int NOT NULL,
+                DateOfBirth datetime NULL
             )
             """;
         await create.ExecuteNonQueryAsync();
@@ -298,7 +298,6 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture)
 
     public async ValueTask DisposeAsync()
     {
-        await _legacyConnection.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();
     }

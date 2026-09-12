@@ -47,6 +47,16 @@ internal sealed class BearerTokenHandler(
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
 
+        // Buffer the body before the first send so a 401 retry can replay it below via
+        // CloneRequestAsync. Without this, content backed by a single-read stream (e.g. a
+        // multipart file upload wrapping IBrowserFile.OpenReadStream()) is already fully drained
+        // by this first send, and the retry would throw ("stream was already consumed") or send
+        // an empty/corrupt body.
+        if (request.Content is not null)
+        {
+            await request.Content.LoadIntoBufferAsync(cancellationToken);
+        }
+
         var response = await base.SendAsync(request, cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.Unauthorized)

@@ -25,7 +25,7 @@ else
             <div class="sponsor-detail__logo-wrap">
                 @if (_model?.LogoUrl is not null)
                 {
-                    <img src="@_model.LogoUrl" alt="@_model.Name logo" class="sponsor-detail__logo-img" />
+                    <img src="@_model.LogoUrl.AbsoluteUri" alt="@_model.Name logo" class="sponsor-detail__logo-img" />
                 }
                 else
                 {

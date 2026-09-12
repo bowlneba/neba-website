@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Json;
 
@@ -9,6 +10,7 @@ using Hangfire.States;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -30,8 +32,6 @@ using Neba.TestFactory.Attributes;
 using Neba.TestFactory.Infrastructure;
 using Neba.TestFactory.Seasons;
 using Neba.TestFactory.Tournaments;
-
-using Npgsql;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -256,13 +256,21 @@ public sealed class TournamentLinkCannotBeDerivedEmailTests
 
 [IntegrationTest]
 [Component("Legacy")]
-[Collection<AppDbContextFixture>]
-public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
-    : IClassFixture<AppDbContextFixture>, IAsyncLifetime
+[Collection(nameof(LegacyDatabasesTestScope))]
+public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, LegacySqlServerFixture legacyFixture)
+    : IClassFixture<AppDbContextFixture>, IClassFixture<LegacySqlServerFixture>, IAsyncLifetime
 {
     private readonly AppDbContext _dbContext = fixture.CreateDbContext();
-    private NpgsqlConnection _legacyConnection = null!;
+
+    // Owned by LegacySqlServerFixture, not this class - it's one persistent database reused across
+    // this class's tests and disposed once by the fixture at the end of the run, not per test.
+    [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed",
+        Justification = "Ownership stays with LegacySqlServerFixture, which disposes it once for the whole run.")]
+    private LegacySqlServerDatabase _legacyDatabase = null!;
     private ServiceProvider _serviceProvider = null!;
+
+    // Ownership (and disposal) of the connection belongs to LegacySqlServerFixture via _legacyDatabase.
+    private SqlConnection _legacyConnection => _legacyDatabase.Connection;
 
     public async ValueTask InitializeAsync()
     {
@@ -272,76 +280,50 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
         services.AddFusionCache().WithDefaultEntryOptions(options => options.Duration = TimeSpan.FromHours(1));
         _serviceProvider = services.BuildServiceProvider();
 
-        // Plain Dapper works against any real ADO.NET IDbConnection, so a Postgres connection
-        // (reusing this test project's existing Testcontainers.PostgreSql infra) stands in for the
-        // real MSSQL neba-fwk database here rather than standing up a second, MSSQL-specific
-        // container for one temporary backdoor query. CREATE TEMP TABLEs are scoped to this single
-        // connection - they're gone as soon as the connection closes, so they need no cleanup and
-        // can't collide with the shared fixture's own schema/Respawn reset.
-        _legacyConnection = new NpgsqlConnection(fixture.ConnectionString);
-        await _legacyConnection.OpenAsync();
+        // Real SQL Server (Testcontainers.MsSql), matching neba-fwk's actual engine - not a Postgres
+        // stand-in. One database for this test class, created once on the shared container (see
+        // LegacySqlServerFixture) and reused across its tests - production's SQL text references
+        // real, unprefixed table names, so per-connection temp tables aren't an option; Respawn
+        // resets the data before each test instead.
+        _legacyDatabase = await legacyFixture.GetOrCreateDatabaseAsync(nameof(NewTournamentSyncJobTests), CreateSchemaAsync);
+        await _legacyDatabase.ResetAsync();
+    }
 
-        // Unquoted identifiers here so Postgres folds them to lowercase, matching how it resolves
-        // the production query's own unquoted column/table references.
-        await using var createTournaments = _legacyConnection.CreateCommand();
-        createTournaments.CommandText = """
-            CREATE TEMP TABLE Tournaments (
-                Id integer PRIMARY KEY,
-                "end" timestamp NOT NULL
-            )
+    private static async Task CreateSchemaAsync(SqlConnection connection)
+    {
+        await using var create = connection.CreateCommand();
+        create.CommandText = """
+            CREATE TABLE Tournaments (
+                Id int PRIMARY KEY,
+                [End] datetime NOT NULL
+            );
+            CREATE TABLE Tournaments_SinglesTournament (
+                Id int PRIMARY KEY,
+                TournamentType int NOT NULL
+            );
+            CREATE TABLE Tournaments_TeamTournament (
+                Id int PRIMARY KEY,
+                TeamSize int NOT NULL,
+                OverUnder bit NULL
+            );
+            CREATE TABLE Squads (
+                Id int PRIMARY KEY,
+                BowlingDate datetime NOT NULL
+            );
+            CREATE TABLE Squads_SinglesSquad (
+                Id int PRIMARY KEY,
+                TournamentId int NOT NULL
+            );
+            CREATE TABLE Squads_TeamSquad (
+                Id int PRIMARY KEY,
+                TournamentId int NOT NULL
+            );
             """;
-        await createTournaments.ExecuteNonQueryAsync();
-
-        await using var createSingles = _legacyConnection.CreateCommand();
-        createSingles.CommandText = """
-            CREATE TEMP TABLE Tournaments_SinglesTournament (
-                Id integer PRIMARY KEY,
-                TournamentType integer NOT NULL
-            )
-            """;
-        await createSingles.ExecuteNonQueryAsync();
-
-        await using var createTeam = _legacyConnection.CreateCommand();
-        createTeam.CommandText = """
-            CREATE TEMP TABLE Tournaments_TeamTournament (
-                Id integer PRIMARY KEY,
-                TeamSize integer NOT NULL,
-                OverUnder boolean NULL
-            )
-            """;
-        await createTeam.ExecuteNonQueryAsync();
-
-        await using var createSquads = _legacyConnection.CreateCommand();
-        createSquads.CommandText = """
-            CREATE TEMP TABLE Squads (
-                Id integer PRIMARY KEY,
-                BowlingDate timestamp NOT NULL
-            )
-            """;
-        await createSquads.ExecuteNonQueryAsync();
-
-        await using var createSinglesSquad = _legacyConnection.CreateCommand();
-        createSinglesSquad.CommandText = """
-            CREATE TEMP TABLE Squads_SinglesSquad (
-                Id integer PRIMARY KEY,
-                TournamentId integer NOT NULL
-            )
-            """;
-        await createSinglesSquad.ExecuteNonQueryAsync();
-
-        await using var createTeamSquad = _legacyConnection.CreateCommand();
-        createTeamSquad.CommandText = """
-            CREATE TEMP TABLE Squads_TeamSquad (
-                Id integer PRIMARY KEY,
-                TournamentId integer NOT NULL
-            )
-            """;
-        await createTeamSquad.ExecuteNonQueryAsync();
+        await create.ExecuteNonQueryAsync();
     }
 
     public async ValueTask DisposeAsync()
     {
-        await _legacyConnection.DisposeAsync();
         await _serviceProvider.DisposeAsync();
         await fixture.ResetAsync();
         await _dbContext.DisposeAsync();
@@ -350,7 +332,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
     private async Task InsertLegacySinglesTournamentAsync(int id, DateTime end, int singlesTournamentType)
     {
         await using var insertTournament = _legacyConnection.CreateCommand();
-        insertTournament.CommandText = """INSERT INTO Tournaments (Id, "end") VALUES (@Id, @End)""";
+        insertTournament.CommandText = "INSERT INTO Tournaments (Id, [End]) VALUES (@Id, @End)";
         insertTournament.Parameters.AddWithValue("@Id", id);
         insertTournament.Parameters.AddWithValue("@End", end);
         await insertTournament.ExecuteNonQueryAsync();
@@ -365,7 +347,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture)
     private async Task InsertLegacyTeamTournamentAsync(int id, DateTime end, int teamSize, bool? overUnder)
     {
         await using var insertTournament = _legacyConnection.CreateCommand();
-        insertTournament.CommandText = """INSERT INTO Tournaments (Id, "end") VALUES (@Id, @End)""";
+        insertTournament.CommandText = "INSERT INTO Tournaments (Id, [End]) VALUES (@Id, @End)";
         insertTournament.Parameters.AddWithValue("@Id", id);
         insertTournament.Parameters.AddWithValue("@End", end);
         await insertTournament.ExecuteNonQueryAsync();

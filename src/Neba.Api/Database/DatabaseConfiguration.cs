@@ -1,5 +1,3 @@
-using Audit.EntityFramework;
-
 using EntityFramework.Exceptions.PostgreSQL;
 
 using Microsoft.EntityFrameworkCore;
@@ -39,7 +37,7 @@ internal static class DatabaseConfiguration
                 var slowQuery = sp.GetRequiredService<SlowQueryInterceptor>();
                 var queryTag = sp.GetRequiredService<QueryTagEnrichmentInterceptor>();
                 var domainEvents = sp.GetRequiredService<DomainEventDispatcherInterceptor>();
-                var audit = sp.GetRequiredService<AuditSaveChangesInterceptor>();
+                var audit = sp.GetRequiredService<PooledAuditSaveChangesInterceptor>();
 
                 options
                     .UseNpgsql(dataSource, npgsqlOptions => npgsqlOptions

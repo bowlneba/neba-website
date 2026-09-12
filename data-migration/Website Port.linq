@@ -2169,11 +2169,11 @@ private void ManualLocationUpdates(IReadOnlyCollection<BowlingCenters> bowlingCe
 	//stMarks.Latitude = 44.5103739;
 	//stMarks.Longitude = -73.2519529;
 
-	var valleyBowl = bowlingCenters.Single(bc => bc.Name == "Valley Bowl");
-	valleyBowl.Street = "12 Prince St";
-	valleyBowl.Unit = "Ste 5";
-	valleyBowl.Latitude = 43.92591;
-	valleyBowl.Longitude = -72.6662649;
+	//var valleyBowl = bowlingCenters.Single(bc => bc.Name == "Valley Bowl");
+	//valleyBowl.Street = "12 Prince St";
+	//valleyBowl.Unit = "Ste 5";
+	//valleyBowl.Latitude = 43.92591;
+	//valleyBowl.Longitude = -72.6662649;
 
 	var funspot = bowlingCenters.Single(bc => bc.Name == "Funspot Bowling Center");
 	funspot.Street = "579 Endicott St N";
@@ -2195,8 +2195,7 @@ private void ManualLocationUpdates(IReadOnlyCollection<BowlingCenters> bowlingCe
 	meadowLanes.Latitude = 44.6161222;
 	meadowLanes.Longitude = -70.1783445;
 
-	var hallowell = bowlingCenters.Single(bc => bc.Name == "Sparetime Recreation Augusta");
-	hallowell.Name = "Interstate Bowling Center";
+	var hallowell = bowlingCenters.Single(bc => bc.Name == "Interstate Bowling Center");
 	hallowell.Street = "215 Whitten Road";
 	
 	var missisquoiLanes = bowlingCenters.Single(c => c.CertificationNumber == "819");
