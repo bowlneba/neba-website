@@ -36,6 +36,15 @@ internal sealed class BearerTokenHandler(
     // before expiry rather than racing it - avoids sending a token that expires mid-flight.
     private static readonly TimeSpan ExpiryBuffer = TimeSpan.FromSeconds(30);
 
+    // HttpClientFactory reuses a handler instance across many outgoing calls (default ~2 minute
+    // handler lifetime), and a single Blazor request/circuit turn commonly fires several downstream
+    // API calls with the same unchanged token. Caching just the last decode avoids re-parsing the
+    // same JWT payload on every one of those calls; a wrong cache hit under concurrent access from a
+    // different token just falls through to a fresh decode, so no locking is needed.
+    private TokenExpiryCacheEntry? _lastExpiryCheck;
+
+    private sealed record TokenExpiryCacheEntry(string Token, bool IsExpiredOrExpiringSoon);
+
     /// <inheritdoc />
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
@@ -156,7 +165,20 @@ internal sealed class BearerTokenHandler(
     /// Treats a token that can't be parsed as expired, so it falls through to a refresh attempt
     /// rather than being sent as-is.
     /// </summary>
-    private static bool IsExpiredOrExpiringSoon(string jwt)
+    private bool IsExpiredOrExpiringSoon(string jwt)
+    {
+        var cached = _lastExpiryCheck;
+        if (cached is not null && cached.Token == jwt)
+        {
+            return cached.IsExpiredOrExpiringSoon;
+        }
+
+        var result = ComputeIsExpiredOrExpiringSoon(jwt);
+        _lastExpiryCheck = new TokenExpiryCacheEntry(jwt, result);
+        return result;
+    }
+
+    private static bool ComputeIsExpiredOrExpiringSoon(string jwt)
     {
         var parts = jwt.Split('.');
 
