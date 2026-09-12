@@ -866,6 +866,8 @@ Champions are assigned exclusively through the Tournament aggregate.
 - Property: `Tournament.Champions` (`IReadOnlyCollection<Bowler>` — EF Core navigation; domain identity is `BowlerId`)
 - Operation: `Tournament.AddChampion(BowlerId)`
 
+`ChampionResponse` (`Neba.Api.Contracts.Tournaments.ListChampions`) exposes `BowlerLastName` and `BowlerFirstName` separately from `BowlerName`, so clients can sort or group champions by last name — for example, breaking ties in a title-count leaderboard — without parsing the formatted display name.
+
 ---
 
 ### Title

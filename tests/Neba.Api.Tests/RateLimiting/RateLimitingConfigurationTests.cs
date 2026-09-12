@@ -237,6 +237,7 @@ public sealed class RateLimitingConfigurationTests : IAsyncLifetime
 public sealed class RateLimitingConfigurationAuthenticatedPartitionTests : IAsyncLifetime
 {
     private const string AuthenticateHeaderName = "X-Test-Authenticate-As";
+    private const string AuthenticateNoClaimHeaderName = "X-Test-Authenticate-NoNameIdentifier";
 
     private WebApplication? _app;
     private HttpClient _client = null!;
@@ -270,6 +271,13 @@ public sealed class RateLimitingConfigurationAuthenticatedPartitionTests : IAsyn
             {
                 context.User = new ClaimsPrincipal(
                     new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId)], "Test"));
+            }
+            else if (context.Request.Headers.ContainsKey(AuthenticateNoClaimHeaderName))
+            {
+                // Authenticated (has an identity marked IsAuthenticated) but missing the
+                // NameIdentifier claim the partition selector reads - exercises the fallback
+                // to the anonymous per-IP partition in RateLimitingConfiguration.
+                context.User = new ClaimsPrincipal(new ClaimsIdentity("Test"));
             }
 
             await next(context);
@@ -333,6 +341,27 @@ public sealed class RateLimitingConfigurationAuthenticatedPartitionTests : IAsyn
         // Assert
         responseUser1.StatusCode.ShouldNotBe(HttpStatusCode.TooManyRequests);
         responseUser2.StatusCode.ShouldNotBe(HttpStatusCode.TooManyRequests);
+    }
+
+    [Fact(DisplayName = "Authenticated caller with no NameIdentifier claim falls back to the anonymous per-IP limit")]
+    public async Task RateLimit_ShouldFallBackToAnonymousLimit_WhenAuthenticatedCallerHasNoNameIdentifierClaim()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var request1 = new HttpRequestMessage(HttpMethod.Get, "/probe");
+        request1.Headers.Add(AuthenticateNoClaimHeaderName, "true");
+        using var request2 = new HttpRequestMessage(HttpMethod.Get, "/probe");
+        request2.Headers.Add(AuthenticateNoClaimHeaderName, "true");
+
+        // Act
+        var first = await _client.SendAsync(request1, ct);
+        var second = await _client.SendAsync(request2, ct);
+
+        // Assert - anonymous permit limit is 1; a caller lacking the NameIdentifier claim never
+        // reaches the higher authenticated ceiling, so the second request is rejected just like
+        // a genuinely anonymous caller.
+        first.StatusCode.ShouldNotBe(HttpStatusCode.TooManyRequests);
+        second.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
     }
 
     [Fact(DisplayName = "Unauthenticated caller still hits the tighter anonymous limit")]
