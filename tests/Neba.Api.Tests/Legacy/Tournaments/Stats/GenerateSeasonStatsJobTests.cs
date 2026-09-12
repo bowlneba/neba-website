@@ -250,7 +250,7 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob(emailSender, fakeLogger);
 
         // Act
-        await job.SyncAsync(999, ct);
+        await job.SyncAsync(999, "test-correlation-id", ct);
 
         // Assert
         fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Warning && r.Message.Contains("999", StringComparison.Ordinal));
@@ -280,7 +280,7 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert
         var row = await _dbContext.BowlerSeasonStats.SingleAsync(s => s.SeasonId == season.Id && s.BowlerId == bowler.Id, ct);
@@ -313,9 +313,9 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
         _dbContext.ChangeTracker.Clear();
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert - exactly one row survives per (season, bowler), not a duplicate from the second run.
         var rows = await _dbContext.BowlerSeasonStats.Where(s => s.SeasonId == season.Id).ToListAsync(ct);
@@ -355,7 +355,7 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         _dbContext.ChangeTracker.Clear();
 
         var job = CreateJob();
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
         _dbContext.ChangeTracker.Clear();
 
         // Act - simulate a correction: the second bowler is unlinked from the legacy system. This
@@ -371,7 +371,7 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
             .Returns(Task.CompletedTask);
         var secondRunJob = CreateJob(emailSender);
 
-        await secondRunJob.SyncAsync(42, ct);
+        await secondRunJob.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert
         var rows = await _dbContext.BowlerSeasonStats.Where(s => s.SeasonId == season.Id).ToListAsync(ct);
@@ -409,7 +409,7 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
         var valueAfterSync = await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("fresh-value"), token: ct);
@@ -440,7 +440,7 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob(emailSender, fakeLogger);
 
         // Act
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert
         fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Warning && r.Message.Contains("999", StringComparison.Ordinal));
@@ -474,7 +474,7 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob(logger: fakeLogger);
 
         // Act & Assert
-        await Should.NotThrowAsync(() => job.SyncAsync(42, ct));
+        await Should.NotThrowAsync(() => job.SyncAsync(42, "test-correlation-id", ct));
 
         fakeLogger.Collector.GetSnapshot().ShouldContain(r => r.Level == LogLevel.Error && r.Message.Contains("100", StringComparison.Ordinal));
     }
@@ -508,7 +508,7 @@ public sealed class GenerateSeasonStatsJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert
         var rows = await _dbContext.BowlerSeasonStats.Where(s => s.SeasonId == season.Id).ToListAsync(ct);

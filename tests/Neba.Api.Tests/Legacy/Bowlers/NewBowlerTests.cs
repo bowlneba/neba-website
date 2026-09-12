@@ -194,6 +194,7 @@ public sealed class NewBowlerEndpointTests : IAsyncLifetime
         capturedJob.Type.ShouldBe(typeof(NewBowlerSyncJob));
         capturedJob.Method.Name.ShouldBe(nameof(NewBowlerSyncJob.SyncAsync));
         capturedJob.Args[0].ShouldBe(42);
+        capturedJob.Args[1].ShouldBeOfType<string>().ShouldNotBeNullOrWhiteSpace();
     }
 }
 
@@ -338,7 +339,7 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture, LegacySql
         var job = CreateJob(fakeLogger);
 
         // Act
-        await job.SyncAsync(999, ct);
+        await job.SyncAsync(999, "test-correlation-id", ct);
 
         // Assert
         (await _dbContext.Set<Bowler>().AnyAsync(ct)).ShouldBeFalse();
@@ -363,7 +364,7 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture, LegacySql
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, ct);
+        await job.SyncAsync(1, "test-correlation-id", ct);
 
         // Assert
         var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
@@ -388,7 +389,7 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture, LegacySql
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, ct);
+        await job.SyncAsync(1, "test-correlation-id", ct);
 
         // Assert
         var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
@@ -404,7 +405,7 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture, LegacySql
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, ct);
+        await job.SyncAsync(1, "test-correlation-id", ct);
 
         // Assert
         var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
@@ -424,7 +425,7 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture, LegacySql
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, ct);
+        await job.SyncAsync(1, "test-correlation-id", ct);
 
         // Assert
         var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
@@ -445,7 +446,7 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture, LegacySql
         var job = CreateJob(fakeLogger);
 
         // Act
-        await job.SyncAsync(1, ct);
+        await job.SyncAsync(1, "test-correlation-id", ct);
 
         // Assert
         var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
@@ -463,7 +464,7 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture, LegacySql
         var job = CreateJob(fakeLogger);
 
         // Act
-        await job.SyncAsync(1, ct);
+        await job.SyncAsync(1, "test-correlation-id", ct);
 
         // Assert
         var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
@@ -483,7 +484,7 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture, LegacySql
         var job = CreateJob(fakeLogger);
 
         // Act
-        await job.SyncAsync(1, ct);
+        await job.SyncAsync(1, "test-correlation-id", ct);
 
         // Assert
         (await _dbContext.Set<Bowler>().AnyAsync(ct)).ShouldBeFalse();
@@ -506,7 +507,7 @@ public sealed class NewBowlerSyncJobTests(AppDbContextFixture fixture, LegacySql
         var job = CreateJob(fakeLogger);
 
         // Act
-        await job.SyncAsync(1, ct);
+        await job.SyncAsync(1, "test-correlation-id", ct);
 
         // Assert - strictly create-only: a repeat call for the same LegacyId is a no-op, never an update.
         var bowlers = await _dbContext.Set<Bowler>().Where(b => b.LegacyId == 1).ToListAsync(ct);

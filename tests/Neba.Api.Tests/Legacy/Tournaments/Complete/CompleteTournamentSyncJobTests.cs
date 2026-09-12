@@ -97,7 +97,7 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         var job = CreateJob(jobsMock.Object);
 
         // Act
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert
         var tournament = await _dbContext.Tournaments.SingleAsync(t => t.LegacyId == 42, ct);
@@ -135,7 +135,7 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         var job = CreateJob(jobsMock.Object);
 
         // Act
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
         var tournamentValueAfterSync = await cache.GetOrSetAsync(tournamentCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
@@ -163,7 +163,7 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         var job = CreateJob(jobsMock.Object, logger: fakeLogger);
 
         // Act
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert
         var chained = capturedJobs();
@@ -196,7 +196,7 @@ public sealed class CompleteTournamentSyncJobTests(AppDbContextFixture fixture)
         var job = CreateJob(jobsMock.Object, emailSender, discordNotifier);
 
         // Act
-        await job.SyncAsync(999, ct);
+        await job.SyncAsync(999, "test-correlation-id", ct);
 
         // Assert - Strict mock with no Create setup already proves the chain didn't fire (see Arrange comment).
         sentMessage.ShouldNotBeNull();

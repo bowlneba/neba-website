@@ -4,6 +4,7 @@ using Dapper;
 
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.Auditing;
 using Neba.Api.Database;
 using Neba.Api.Email;
 using Neba.Api.Features.Bowlers.Domain;
@@ -51,9 +52,10 @@ internal sealed class GenerateSeasonStatsJob(
         return (parameters, string.Join(",", placeholders));
     }
 
-    public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
+    public async Task SyncAsync(int legacyTournamentId, string correlationId, CancellationToken ct)
     {
         using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
+        using var __ = AmbientCorrelationContext.SetCorrelationId(correlationId);
 
         var tournament = await db.Set<Tournament>()
             .SingleOrDefaultAsync(t => t.LegacyId == legacyTournamentId, ct);

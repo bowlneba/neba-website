@@ -11,6 +11,7 @@ using Hangfire;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.Auditing;
 using Neba.Api.Database;
 using Neba.Api.Email;
 using Neba.Api.Features.Bowlers.Domain;
@@ -29,6 +30,7 @@ internal static class SyncSquadScoresEndpoint
         {
             app.MapPost("/squads/scores/sync", (
                 SyncSquadScoresRequest request,
+                HttpContext httpContext,
                 [FromServices] IValidator<SyncSquadScoresRequest> validator,
                 [FromServices] IBackgroundJobClient jobs) =>
             {
@@ -38,7 +40,8 @@ internal static class SyncSquadScoresEndpoint
                     return Results.ValidationProblem(validation.ToDictionary());
                 }
 
-                jobs.Enqueue<SyncSquadScoresSyncJob>(job => job.SyncAsync(request.SquadId, CancellationToken.None));
+                var correlationId = AmbientCorrelationContext.Capture(httpContext);
+                jobs.Enqueue<SyncSquadScoresSyncJob>(job => job.SyncAsync(request.SquadId, correlationId, CancellationToken.None));
 
                 return Results.Accepted();
             });
@@ -65,9 +68,10 @@ internal sealed class SyncSquadScoresSyncJob(
     IEmailSender emailSender,
     ILogger<SyncSquadScoresSyncJob> logger)
 {
-    public async Task SyncAsync(int legacySquadId, CancellationToken ct)
+    public async Task SyncAsync(int legacySquadId, string correlationId, CancellationToken ct)
     {
         using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
+        using var __ = AmbientCorrelationContext.SetCorrelationId(correlationId);
 
         var squad = await db.Set<Squad>().SingleOrDefaultAsync(s => s.LegacyId == legacySquadId, ct);
         if (squad is null)

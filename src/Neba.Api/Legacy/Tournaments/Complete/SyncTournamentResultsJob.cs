@@ -5,6 +5,7 @@ using Dapper;
 
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.Auditing;
 using Neba.Api.Database;
 using Neba.Api.Discord;
 using Neba.Api.Email;
@@ -26,9 +27,10 @@ internal sealed class SyncTournamentResultsJob(
     IDiscordNotifier discordNotifier,
     ILogger<SyncTournamentResultsJob> logger)
 {
-    public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
+    public async Task SyncAsync(int legacyTournamentId, string correlationId, CancellationToken ct)
     {
         using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
+        using var __ = AmbientCorrelationContext.SetCorrelationId(correlationId);
 
         var tournament = await db.Set<Tournament>()
             .Include(t => t.Results)

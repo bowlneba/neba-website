@@ -4,6 +4,7 @@ using Hangfire;
 
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.Auditing;
 using Neba.Api.Database;
 using Neba.Api.Discord;
 using Neba.Api.Email;
@@ -29,9 +30,10 @@ internal sealed class CompleteTournamentSyncJob(
     IDiscordNotifier discordNotifier,
     ILogger<CompleteTournamentSyncJob> logger)
 {
-    public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
+    public async Task SyncAsync(int legacyTournamentId, string correlationId, CancellationToken ct)
     {
         using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
+        using var __ = AmbientCorrelationContext.SetCorrelationId(correlationId);
 
         var tournament = await db.Set<Tournament>()
             .SingleOrDefaultAsync(t => t.LegacyId == legacyTournamentId, ct);
@@ -79,12 +81,12 @@ internal sealed class CompleteTournamentSyncJob(
             await cache.RemoveByTagAsync($"neba:tournaments:{tournament.SeasonId}", token: ct);
         }
 
-        jobs.Enqueue<SyncTournamentResultsJob>(job => job.SyncAsync(legacyTournamentId, CancellationToken.None));
+        jobs.Enqueue<SyncTournamentResultsJob>(job => job.SyncAsync(legacyTournamentId, correlationId, CancellationToken.None));
 
         // Scheduled, not enqueued: gives SyncTournamentResultsJob time to finish placing/writing
         // TournamentResult rows before GenerateSeasonStatsJob reads them. See the plan's "Ordering"
         // discussion - this is a data-freshness improvement, not a correctness dependency, since
         // GenerateSeasonStatsJob's delete-and-regenerate is idempotent and self-corrects on retry.
-        jobs.Schedule<GenerateSeasonStatsJob>(job => job.SyncAsync(legacyTournamentId, CancellationToken.None), TimeSpan.FromMinutes(10));
+        jobs.Schedule<GenerateSeasonStatsJob>(job => job.SyncAsync(legacyTournamentId, correlationId, CancellationToken.None), TimeSpan.FromMinutes(10));
     }
 }

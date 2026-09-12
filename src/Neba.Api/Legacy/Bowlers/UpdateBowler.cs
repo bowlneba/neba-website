@@ -11,6 +11,7 @@ using Hangfire;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.Auditing;
 using Neba.Api.Database;
 using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Identity;
@@ -55,6 +56,7 @@ internal static class UpdateBowlerEndpoint
         {
             app.MapPost("/bowlers/update", (
                 UpdateBowlerRequest request,
+                HttpContext httpContext,
                 [FromServices] IValidator<UpdateBowlerRequest> validator,
                 [FromServices] IBackgroundJobClient jobs) =>
             {
@@ -64,7 +66,8 @@ internal static class UpdateBowlerEndpoint
                     return Results.ValidationProblem(validation.ToDictionary());
                 }
 
-                jobs.Enqueue<UpdateBowlerSyncJob>(job => job.SyncAsync(request.BowlerId, CancellationToken.None));
+                var correlationId = AmbientCorrelationContext.Capture(httpContext);
+                jobs.Enqueue<UpdateBowlerSyncJob>(job => job.SyncAsync(request.BowlerId, correlationId, CancellationToken.None));
 
                 return Results.Accepted();
             });
@@ -90,9 +93,10 @@ internal sealed class UpdateBowlerSyncJob(
     IFusionCache cache,
     ILogger<UpdateBowlerSyncJob> logger)
 {
-    public async Task SyncAsync(int legacyBowlerId, CancellationToken ct)
+    public async Task SyncAsync(int legacyBowlerId, string correlationId, CancellationToken ct)
     {
         using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
+        using var __ = AmbientCorrelationContext.SetCorrelationId(correlationId);
 
         // See NewBowlerSyncJob.SyncAsync for the rationale on suppressing DAP005 here.
 #pragma warning disable DAP005

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.Auditing;
 using Neba.Api.Database;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Identity;
@@ -13,9 +14,10 @@ internal sealed class AssignHighAverageAwardJob(
 {
     private const decimal MinimumGamesMultiplier = 4.5m;
 
-    public async Task AssignAsync(SeasonId seasonId, CancellationToken ct)
+    public async Task AssignAsync(SeasonId seasonId, string correlationId, CancellationToken ct)
     {
         using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
+        using var __ = AmbientCorrelationContext.SetCorrelationId(correlationId);
 
         var season = await db.Seasons
             .Include(s => s.HighAverageAwards)

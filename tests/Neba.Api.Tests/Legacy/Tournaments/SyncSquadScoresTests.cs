@@ -201,6 +201,7 @@ public sealed class SyncSquadScoresEndpointTests : IAsyncLifetime
         capturedJob.Type.ShouldBe(typeof(SyncSquadScoresSyncJob));
         capturedJob.Method.Name.ShouldBe(nameof(SyncSquadScoresSyncJob.SyncAsync));
         capturedJob.Args[0].ShouldBe(42);
+        capturedJob.Args[1].ShouldBeOfType<string>().ShouldNotBeNullOrWhiteSpace();
     }
 }
 
@@ -341,7 +342,7 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob(logger: fakeLogger);
 
         // Act
-        await job.SyncAsync(999, ct);
+        await job.SyncAsync(999, "test-correlation-id", ct);
 
         // Assert - Strict email mock: any SendAsync call without a setup would throw.
         var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
@@ -362,7 +363,7 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, ct);
+        await job.SyncAsync(1, "test-correlation-id", ct);
 
         // Assert
         var scores = await _dbContext.SquadScores.Where(s => s.SquadId == squad.Id).OrderBy(s => s.GameNumber).ToListAsync(ct);
@@ -395,7 +396,7 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, ct);
+        await job.SyncAsync(1, "test-correlation-id", ct);
 
         // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
         var valueAfterSync = await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("fresh-value"), token: ct);
@@ -423,7 +424,7 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob(emailSender, fakeLogger);
 
         // Act
-        await job.SyncAsync(1, ct);
+        await job.SyncAsync(1, "test-correlation-id", ct);
 
         // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
         var scores = await _dbContext.SquadScores.Where(s => s.SquadId == squad.Id).ToListAsync(ct);
@@ -456,7 +457,7 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob(emailSender);
 
         // Act
-        await job.SyncAsync(1, ct);
+        await job.SyncAsync(1, "test-correlation-id", ct);
 
         // Assert - Strict mock: the Setup above is the verification that SendAsync was called twice.
         sentMessages.Count.ShouldBe(2);
@@ -475,7 +476,7 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob();
 
         // Act & Assert
-        await Should.NotThrowAsync(() => job.SyncAsync(1, ct));
+        await Should.NotThrowAsync(() => job.SyncAsync(1, "test-correlation-id", ct));
     }
 
     [Fact(DisplayName = "SyncAsync should remove existing squad_scores rows for bowlers/games no longer present in the legacy result set")]
@@ -495,7 +496,7 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, ct);
+        await job.SyncAsync(1, "test-correlation-id", ct);
 
         // Assert - full replace: the stale row for the bowler no longer in the legacy payload is gone.
         var scores = await _dbContext.SquadScores.Where(s => s.SquadId == squad.Id).ToListAsync(ct);
@@ -515,7 +516,7 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob(logger: fakeLogger);
 
         // Act
-        await Should.NotThrowAsync(() => job.SyncAsync(1, ct));
+        await Should.NotThrowAsync(() => job.SyncAsync(1, "test-correlation-id", ct));
 
         // Assert
         (await _dbContext.SquadScores.Where(s => s.SquadId == squad.Id).ToListAsync(ct)).ShouldBeEmpty();
@@ -535,7 +536,7 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, ct);
+        await job.SyncAsync(1, "test-correlation-id", ct);
 
         // Assert
         var squadOneScores = await _dbContext.SquadScores.Where(s => s.SquadId == squad.Id).ToListAsync(ct);
@@ -556,9 +557,9 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, ct);
+        await job.SyncAsync(1, "test-correlation-id", ct);
         _dbContext.ChangeTracker.Clear();
-        await job.SyncAsync(1, ct);
+        await job.SyncAsync(1, "test-correlation-id", ct);
 
         // Assert
         var scores = await _dbContext.SquadScores.Where(s => s.SquadId == squad.Id).OrderBy(s => s.GameNumber).ToListAsync(ct);

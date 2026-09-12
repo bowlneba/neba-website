@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.Auditing;
 using Neba.Api.Database;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Identity;
@@ -11,9 +12,10 @@ namespace Neba.Api.Legacy.Seasons.Complete;
 internal sealed class AssignBowlerOfTheYearAwardJob(
     AppDbContext db, IFusionCache cache, ILogger<AssignBowlerOfTheYearAwardJob> logger)
 {
-    public async Task AssignAsync(SeasonId seasonId, CancellationToken ct)
+    public async Task AssignAsync(SeasonId seasonId, string correlationId, CancellationToken ct)
     {
         using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
+        using var __ = AmbientCorrelationContext.SetCorrelationId(correlationId);
 
         var season = await db.Seasons
             .Include(s => s.BowlerOfTheYearAwards)

@@ -144,5 +144,6 @@ public sealed class CompleteTournamentEndpointTests : IAsyncLifetime
         capturedJob.Type.ShouldBe(typeof(CompleteTournamentSyncJob));
         capturedJob.Method.Name.ShouldBe(nameof(CompleteTournamentSyncJob.SyncAsync));
         capturedJob.Args[0].ShouldBe(42);
+        capturedJob.Args[1].ShouldBeOfType<string>().ShouldNotBeNullOrWhiteSpace();
     }
 }

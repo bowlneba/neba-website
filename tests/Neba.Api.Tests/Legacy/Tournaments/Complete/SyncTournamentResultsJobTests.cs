@@ -228,7 +228,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         var job = CreateJob(logger: fakeLogger);
 
         // Act - Strict email mock: any SendAsync call without a setup would throw.
-        await job.SyncAsync(999, ct);
+        await job.SyncAsync(999, "test-correlation-id", ct);
 
         // Assert
         var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
@@ -256,7 +256,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert
         var tournament = await ReloadTournamentAsync(42, ct);
@@ -291,7 +291,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
         var tournamentValueAfterSync = await cache.GetOrSetAsync(tournamentCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
@@ -339,7 +339,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert
         var tournament = await ReloadTournamentAsync(42, ct);
@@ -401,7 +401,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert - roster {A,B}'s squad-2 composite (1350) outranks roster {C,D}'s (200)
         var tournament = await ReloadTournamentAsync(42, ct);
@@ -432,7 +432,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         var job = CreateJob(emailSender, logger: fakeLogger);
 
         // Act
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
         sentMessage.ShouldNotBeNull();
@@ -456,7 +456,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         var job = CreateJob(logger: fakeLogger);
 
         // Act
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert
         var tournament = await ReloadTournamentAsync(42, ct);
@@ -489,7 +489,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         var job = CreateJob(discordNotifier: discordNotifier, logger: fakeLogger);
 
         // Act & Assert
-        await Should.NotThrowAsync(() => job.SyncAsync(42, ct));
+        await Should.NotThrowAsync(() => job.SyncAsync(42, "test-correlation-id", ct));
 
         var tournament = await ReloadTournamentAsync(42, ct);
         tournament.Results.ShouldBeEmpty();
@@ -523,7 +523,7 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert
         var tournament = await ReloadTournamentAsync(42, ct);
@@ -549,9 +549,9 @@ public sealed class SyncTournamentResultsJobTests(AppDbContextFixture fixture, L
         var job = CreateJob(logger: fakeLogger);
 
         // Act
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
         _dbContext.ChangeTracker.Clear();
-        await job.SyncAsync(42, ct);
+        await job.SyncAsync(42, "test-correlation-id", ct);
 
         // Assert
         var tournament = await ReloadTournamentAsync(42, ct);

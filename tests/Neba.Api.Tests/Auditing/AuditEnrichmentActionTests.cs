@@ -6,7 +6,7 @@ using Audit.EntityFramework;
 using Microsoft.AspNetCore.Http;
 
 using Neba.Api.Auditing;
-using Neba.Api.Compliance;
+using Neba.Api.Contracts.Compliance;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Auditing;
@@ -76,6 +76,25 @@ public sealed class AuditEnrichmentActionTests
 
         // Assert
         auditEvent.CustomFields["CorrelationId"].ShouldBe("none");
+    }
+
+    [Fact(DisplayName = "Enrich prefers the ambient correlation id over the HttpContext's TraceIdentifier")]
+    public void Enrich_ShouldPreferAmbientCorrelationId_OverTraceIdentifier()
+    {
+        // Arrange - simulates a Hangfire background job's EF audit event, where AmbientCorrelationContext
+        // carries the correlation id forward from the request that originally enqueued the job, after that
+        // request's own HttpContext/Activity are gone.
+        using var _ = AmbientCorrelationContext.SetCorrelationId("correlation-from-request");
+        var httpContext = new DefaultHttpContext { TraceIdentifier = "trace-1" };
+        var accessor = new HttpContextAccessor { HttpContext = httpContext };
+        var sut = new AuditEnrichmentAction(accessor);
+        var auditEvent = new AuditEvent { CustomFields = [] };
+
+        // Act
+        sut.Enrich(auditEvent);
+
+        // Assert
+        auditEvent.CustomFields["CorrelationId"].ShouldBe("correlation-from-request");
     }
 
     [Fact(DisplayName = "Enrich does not attempt entity scrubbing for non-EF audit events")]

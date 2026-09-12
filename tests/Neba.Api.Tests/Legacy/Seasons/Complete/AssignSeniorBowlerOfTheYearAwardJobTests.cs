@@ -83,7 +83,7 @@ public sealed class AssignSeniorBowlerOfTheYearAwardJobTests(AppDbContextFixture
         var job = CreateJob();
 
         // Act
-        await job.AssignAsync(season.Id, ct);
+        await job.AssignAsync(season.Id, "test-correlation-id", ct);
 
         // Assert
         var reloaded = await _dbContext.Seasons.Include(s => s.BowlerOfTheYearAwards).SingleAsync(s => s.Id == season.Id, ct);
@@ -105,7 +105,7 @@ public sealed class AssignSeniorBowlerOfTheYearAwardJobTests(AppDbContextFixture
         var job = CreateJob(fakeLogger);
 
         // Act
-        await job.AssignAsync(season.Id, ct);
+        await job.AssignAsync(season.Id, "test-correlation-id", ct);
 
         // Assert
         var reloaded = await _dbContext.Seasons.Include(s => s.BowlerOfTheYearAwards).SingleAsync(s => s.Id == season.Id, ct);
@@ -129,7 +129,7 @@ public sealed class AssignSeniorBowlerOfTheYearAwardJobTests(AppDbContextFixture
         var job = CreateJob(fakeLogger);
 
         // Act
-        await job.AssignAsync(season.Id, ct);
+        await job.AssignAsync(season.Id, "test-correlation-id", ct);
 
         // Assert
         var reloaded = await _dbContext.Seasons.Include(s => s.BowlerOfTheYearAwards).SingleAsync(s => s.Id == season.Id, ct);
@@ -148,7 +148,7 @@ public sealed class AssignSeniorBowlerOfTheYearAwardJobTests(AppDbContextFixture
         var job = CreateJob(fakeLogger);
 
         // Act
-        await job.AssignAsync(season.Id, ct);
+        await job.AssignAsync(season.Id, "test-correlation-id", ct);
 
         // Assert
         var reloaded = await _dbContext.Seasons.Include(s => s.BowlerOfTheYearAwards).SingleAsync(s => s.Id == season.Id, ct);
@@ -171,7 +171,7 @@ public sealed class AssignSeniorBowlerOfTheYearAwardJobTests(AppDbContextFixture
         var job = CreateJob();
 
         // Act
-        await job.AssignAsync(season.Id, ct);
+        await job.AssignAsync(season.Id, "test-correlation-id", ct);
 
         // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
         var valueAfterAssign = await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("fresh-value"), token: ct);
@@ -192,7 +192,7 @@ public sealed class AssignSeniorBowlerOfTheYearAwardJobTests(AppDbContextFixture
         var job = CreateJob();
 
         // Act
-        await job.AssignAsync(season.Id, ct);
+        await job.AssignAsync(season.Id, "test-correlation-id", ct);
 
         // Assert - nothing changed on the no-op branch, so the stale entry survives.
         var valueAfterAssign = await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("fresh-value"), token: ct);

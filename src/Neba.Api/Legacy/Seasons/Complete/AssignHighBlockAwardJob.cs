@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using Neba.Api.Auditing;
 using Neba.Api.Database;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Identity;
@@ -17,9 +18,10 @@ internal sealed class AssignHighBlockAwardJob(
     // how HighBlock is ever produced. See the plan's Decision Recap.
     private const int HighBlockGames = 5;
 
-    public async Task AssignAsync(SeasonId seasonId, CancellationToken ct)
+    public async Task AssignAsync(SeasonId seasonId, string correlationId, CancellationToken ct)
     {
         using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
+        using var __ = AmbientCorrelationContext.SetCorrelationId(correlationId);
 
         var season = await db.Seasons
             .Include(s => s.HighBlockAwards)

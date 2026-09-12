@@ -23,7 +23,8 @@ internal sealed class AuditEnrichmentAction(IHttpContextAccessor httpContextAcce
 
         auditEvent.CustomFields["ActorId"] = currentUser.ActorId;
         auditEvent.CustomFields["CorrelationId"] =
-            Activity.Current?.TraceId.ToString()
+            AmbientCorrelationContext.CorrelationId
+            ?? Activity.Current?.TraceId.ToString()
             ?? httpContextAccessor.HttpContext?.TraceIdentifier
             ?? "none";
 

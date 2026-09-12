@@ -212,6 +212,7 @@ public sealed class NewHallOfFameInductionEndpointTests : IAsyncLifetime
         capturedJob.Type.ShouldBe(typeof(NewHallOfFameInductionSyncJob));
         capturedJob.Method.Name.ShouldBe(nameof(NewHallOfFameInductionSyncJob.SyncAsync));
         capturedJob.Args[0].ShouldBe((IReadOnlyCollection<int>)[101, 102]);
+        capturedJob.Args[1].ShouldBeOfType<string>().ShouldNotBeNullOrWhiteSpace();
     }
 }
 
@@ -380,7 +381,7 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         var job = CreateJob(logger: fakeLogger);
 
         // Act
-        await job.SyncAsync([999], ct);
+        await job.SyncAsync([999], "test-correlation-id", ct);
 
         // Assert - Strict email mock: any SendAsync call without a setup would throw.
         (await _dbContext.HallOfFameInductions.AnyAsync(ct)).ShouldBeFalse();
@@ -399,7 +400,7 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync([1], ct);
+        await job.SyncAsync([1], "test-correlation-id", ct);
 
         // Assert
         var induction = await _dbContext.HallOfFameInductions.SingleAsync(i => i.BowlerId == bowler.Id, ct);
@@ -424,7 +425,7 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync([1], ct);
+        await job.SyncAsync([1], "test-correlation-id", ct);
 
         // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
         var inductionsValueAfterSync = await cache.GetOrSetAsync(inductionsCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
@@ -446,7 +447,7 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync([1], ct);
+        await job.SyncAsync([1], "test-correlation-id", ct);
 
         // Assert
         var induction = await _dbContext.HallOfFameInductions.SingleAsync(i => i.BowlerId == bowler.Id, ct);
@@ -463,7 +464,7 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync([1], ct);
+        await job.SyncAsync([1], "test-correlation-id", ct);
 
         // Assert
         var induction = await _dbContext.HallOfFameInductions.SingleAsync(i => i.BowlerId == bowler.Id, ct);
@@ -483,7 +484,7 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         var job = CreateJob(logger: fakeLogger);
 
         // Act
-        await job.SyncAsync([1], ct);
+        await job.SyncAsync([1], "test-correlation-id", ct);
 
         // Assert
         (await _dbContext.HallOfFameInductions.AnyAsync(ct)).ShouldBeFalse();
@@ -510,7 +511,7 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         var job = CreateJob(emailSender, fakeLogger);
 
         // Act
-        await job.SyncAsync([1], ct);
+        await job.SyncAsync([1], "test-correlation-id", ct);
 
         // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
         (await _dbContext.HallOfFameInductions.AnyAsync(ct)).ShouldBeFalse();
@@ -534,7 +535,7 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync([1, 2], ct);
+        await job.SyncAsync([1, 2], "test-correlation-id", ct);
 
         // Assert
         var inductions = await _dbContext.HallOfFameInductions.Where(i => i.BowlerId == bowler.Id).ToListAsync(ct);
@@ -552,14 +553,14 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         var bowler = await CreateSyncedBowlerAsync(legacyBowlerId: 5, ct);
         await InsertLegacyHallOfFameRowAsync(1, bowlerId: 5, category: 100, year: 2025);
         var firstJob = CreateJob();
-        await firstJob.SyncAsync([1], ct);
+        await firstJob.SyncAsync([1], "test-correlation-id", ct);
         _dbContext.ChangeTracker.Clear();
 
         await InsertLegacyHallOfFameRowAsync(2, bowlerId: 5, category: 200, year: 2025);
         var secondJob = CreateJob();
 
         // Act
-        await secondJob.SyncAsync([2], ct);
+        await secondJob.SyncAsync([2], "test-correlation-id", ct);
 
         // Assert
         var inductions = await _dbContext.HallOfFameInductions.Where(i => i.BowlerId == bowler.Id).ToListAsync(ct);
@@ -577,14 +578,14 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         var bowler = await CreateSyncedBowlerAsync(legacyBowlerId: 5, ct);
         await InsertLegacyHallOfFameRowAsync(1, bowlerId: 5, category: 100, year: 2025);
         var firstJob = CreateJob();
-        await firstJob.SyncAsync([1], ct);
+        await firstJob.SyncAsync([1], "test-correlation-id", ct);
         _dbContext.ChangeTracker.Clear();
 
         var fakeLogger = new FakeLogger<NewHallOfFameInductionSyncJob>();
         var secondJob = CreateJob(logger: fakeLogger);
 
         // Act
-        await secondJob.SyncAsync([1], ct);
+        await secondJob.SyncAsync([1], "test-correlation-id", ct);
 
         // Assert - strictly merge-additive: a repeat call for the same legacy row's category is a no-op.
         var inductions = await _dbContext.HallOfFameInductions.Where(i => i.BowlerId == bowler.Id).ToListAsync(ct);
@@ -611,7 +612,7 @@ public sealed class NewHallOfFameInductionSyncJobTests(AppDbContextFixture fixtu
         var job = CreateJob(emailSender);
 
         // Act
-        await job.SyncAsync([1, 2], ct);
+        await job.SyncAsync([1, 2], "test-correlation-id", ct);
 
         // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
         var induction = await _dbContext.HallOfFameInductions.SingleAsync(i => i.BowlerId == bowler.Id, ct);

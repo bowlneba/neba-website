@@ -144,5 +144,6 @@ public sealed class UpdateTournamentStatsEndpointTests : IAsyncLifetime
         capturedJob.Type.ShouldBe(typeof(GenerateSeasonStatsJob));
         capturedJob.Method.Name.ShouldBe(nameof(GenerateSeasonStatsJob.SyncAsync));
         capturedJob.Args[0].ShouldBe(42);
+        capturedJob.Args[1].ShouldBeOfType<string>().ShouldNotBeNullOrWhiteSpace();
     }
 }
