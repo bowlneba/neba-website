@@ -135,8 +135,8 @@
                                             {
                                                 <span class="create-article-attachment-badge" title="Used in article body">Inline</span>
                                             }
-                                            <a href="@attachment.Upload.Url" download="@attachment.DisplayName" class="neba-btn neba-btn-secondary create-article-attachment-action" aria-label="@("Download " + attachment.DisplayName)">Download</a>
-                                            <a href="@attachment.Upload.Url" target="_blank" rel="noopener noreferrer" class="neba-btn neba-btn-secondary create-article-attachment-action" aria-label="@("Open " + attachment.DisplayName)">Open</a>
+                                            <a href="@attachment.Upload.Url.AbsoluteUri" download="@attachment.DisplayName" class="neba-btn neba-btn-secondary create-article-attachment-action" aria-label="@("Download " + attachment.DisplayName)">Download</a>
+                                            <a href="@attachment.Upload.Url.AbsoluteUri" target="_blank" rel="noopener noreferrer" class="neba-btn neba-btn-secondary create-article-attachment-action" aria-label="@("Open " + attachment.DisplayName)">Open</a>
                                             <button type="button" class="neba-btn neba-btn-danger create-article-attachment-action" aria-label="@("Remove " + attachment.DisplayName)" @onclick="@(() => RequestRemoveAttachment(attachment))">Remove</button>
                                         </li>
                                     }
@@ -442,7 +442,7 @@
         MarkDirty();
         StateHasChanged();
 
-        return result.Value.Url.ToString();
+        return result.Value.Url.AbsoluteUri;
     }
 
     private sealed class TrackedAttachment

@@ -136,7 +136,7 @@
                                     <div class="edit-article-current-file">
                                         @if (_headerImage.Url is not null)
                                         {
-                                            <img src="@_headerImage.Url" alt="" class="edit-article-header-preview" />
+                                            <img src="@_headerImage.Url?.AbsoluteUri" alt="" class="edit-article-header-preview" />
                                         }
                                         <button type="button" class="neba-btn neba-btn-secondary" @onclick="RemoveHeaderImage">Remove current image</button>
                                     </div>
@@ -172,8 +172,8 @@
                                                 }
                                                 @if (attachment.Url is not null)
                                                 {
-                                                    <a href="@attachment.Url" download="@attachment.DisplayName" class="neba-btn neba-btn-secondary edit-article-attachment-action" aria-label="@("Download " + attachment.DisplayName)">Download</a>
-                                                    <a href="@attachment.Url" target="_blank" rel="noopener noreferrer" class="neba-btn neba-btn-secondary edit-article-attachment-action" aria-label="@("Open " + attachment.DisplayName)">Open</a>
+                                                    <a href="@attachment.Url?.AbsoluteUri" download="@attachment.DisplayName" class="neba-btn neba-btn-secondary edit-article-attachment-action" aria-label="@("Download " + attachment.DisplayName)">Download</a>
+                                                    <a href="@attachment.Url?.AbsoluteUri" target="_blank" rel="noopener noreferrer" class="neba-btn neba-btn-secondary edit-article-attachment-action" aria-label="@("Open " + attachment.DisplayName)">Open</a>
                                                 }
                                                 <button type="button" class="neba-btn neba-btn-danger edit-article-attachment-action" aria-label="@("Remove " + attachment.DisplayName)" @onclick="@(() => RequestRemoveAttachment(attachment))">Remove</button>
                                             </li>
@@ -570,7 +570,7 @@
         MarkDirty();
         StateHasChanged();
 
-        return result.Value.Url.ToString();
+        return result.Value.Url.AbsoluteUri;
     }
 
     private sealed class HeaderImageRef

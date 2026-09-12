@@ -22,7 +22,7 @@
         <meta name="description" content="@_article.Title — NEBA news article." />
         <meta property="og:title" content="@_article.Title - NEBA" />
         <meta property="og:description" content="@_article.Title — NEBA news article." />
-        <meta property="og:image" content="@(_article.HeaderImageUrl?.ToString() ?? "https://www.bowlneba.com/images/neba-logo.png")" />
+        <meta property="og:image" content="@(_article.HeaderImageUrl?.AbsoluteUri ?? "https://www.bowlneba.com/images/neba-logo.png")" />
         <meta property="og:url" content="https://www.bowlneba.com/news/@Slug" />
         <meta property="og:type" content="article" />
         <meta name="twitter:card" content="summary_large_image" />
@@ -77,7 +77,7 @@ else if (_article is not null)
                 @if (_article.HeaderImageUrl is not null)
                 {
                     <div class="news-detail-image-card" aria-hidden="true">
-                        <img src="@_article.HeaderImageUrl" alt="" class="news-detail-image" loading="eager" />
+                        <img src="@_article.HeaderImageUrl?.AbsoluteUri" alt="" class="news-detail-image" loading="eager" />
                     </div>
                 }
 
@@ -178,7 +178,7 @@ else if (_article is not null)
                                 @if (attachment.Url is not null)
                                 {
                                     <a class="sidebar-file-row"
-                                       href="@attachment.Url.ToString()"
+                                       href="@attachment.Url.AbsoluteUri"
                                        target="_blank"
                                        rel="noopener noreferrer"
                                        aria-label="Open @attachment.DisplayName">

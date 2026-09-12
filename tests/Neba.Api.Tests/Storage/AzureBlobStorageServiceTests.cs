@@ -1,3 +1,6 @@
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
@@ -16,14 +19,16 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
 {
     private readonly AzureBlobStorageService _sut;
     private readonly FakeLogger<AzureBlobStorageService> _logger;
+    private readonly BlobServiceClient _blobServiceClient;
 
     public AzureBlobStorageServiceTests(AzuriteFixture fixture)
     {
         ArgumentNullException.ThrowIfNull(fixture);
 
         _logger = new FakeLogger<AzureBlobStorageService>();
+        _blobServiceClient = fixture.BlobServiceClient;
         _sut = new AzureBlobStorageService(
-            fixture.BlobServiceClient,
+            _blobServiceClient,
             new StopwatchProvider(),
             _logger);
     }
@@ -193,6 +198,97 @@ public sealed class AzureBlobStorageServiceTests : IClassFixture<AzuriteFixture>
         result.ShouldNotBeNull();
         result.Content.ShouldBe(content);
         result.ContentType.ShouldBe("text/plain");
+    }
+
+    [Fact(DisplayName = "UploadFileAsync should grant anonymous blob-level read access when the container is bowlneba-public")]
+    public async Task UploadFileAsync_ShouldGrantAnonymousBlobAccess_WhenContainerIsBowlnebaPublic()
+    {
+        // Arrange - the exact, fixed container name AzureBlobStorageService gates its public-access
+        // branch on (see its PublicContainerName constant); intentionally not UniqueContainer(), since
+        // the whole point is to exercise the name-matched branch. This container is shared with the
+        // other bowlneba-public tests below - safe only because [Collection<AzuriteFixture>] serializes
+        // every test against this fixture. The uploaded blob is deleted afterward so no test artifact
+        // is left behind for a future bowlneba-public test to trip over.
+        const string container = "bowlneba-public";
+        const string path = "public-file.txt";
+
+        try
+        {
+            // Act
+            await _sut.UploadFileAsync(
+                container,
+                path,
+                FileContentFactory.ValidContent,
+                FileContentFactory.ValidContentType,
+                new Dictionary<string, string>(FileContentFactory.ValidMetadata),
+                CancellationToken.None);
+
+            // Assert
+            var containerClient = _blobServiceClient.GetBlobContainerClient(container);
+            var properties = await containerClient.GetPropertiesAsync(cancellationToken: TestContext.Current.CancellationToken);
+            properties.Value.PublicAccess.ShouldBe(PublicAccessType.Blob);
+            _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Information && l.Message.Contains("uploaded"));
+        }
+        finally
+        {
+            await _sut.DeleteAsync(container, path, TestContext.Current.CancellationToken);
+        }
+    }
+
+    [Fact(DisplayName = "UploadFileAsync should upgrade an already-existing bowlneba-public container to anonymous blob access")]
+    public async Task UploadFileAsync_ShouldUpgradeExistingContainer_WhenContainerIsBowlnebaPublicButNotYetPublic()
+    {
+        // Arrange - simulate the real-world case: bowlneba-public already exists with the SDK's
+        // default (private) access, as it would if it were created before public-access gating
+        // existed. CreateIfNotExistsAsync alone would silently no-op on this container. Shares the
+        // fixed bowlneba-public container name with the sibling test above - see its comment for why
+        // that's safe - and restores the container to None afterward so it doesn't leak state.
+        const string container = "bowlneba-public";
+        var containerClient = _blobServiceClient.GetBlobContainerClient(container);
+        await containerClient.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: TestContext.Current.CancellationToken);
+
+        try
+        {
+            // Act
+            await _sut.UploadFileAsync(
+                container,
+                "public-file-existing.txt",
+                FileContentFactory.ValidContent,
+                FileContentFactory.ValidContentType,
+                new Dictionary<string, string>(FileContentFactory.ValidMetadata),
+                CancellationToken.None);
+
+            // Assert
+            var properties = await containerClient.GetPropertiesAsync(cancellationToken: TestContext.Current.CancellationToken);
+            properties.Value.PublicAccess.ShouldBe(PublicAccessType.Blob);
+            _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Information && l.Message.Contains("uploaded"));
+        }
+        finally
+        {
+            await containerClient.SetAccessPolicyAsync(PublicAccessType.None, cancellationToken: TestContext.Current.CancellationToken);
+        }
+    }
+
+    [Fact(DisplayName = "UploadFileAsync should not grant anonymous access to containers other than bowlneba-public")]
+    public async Task UploadFileAsync_ShouldNotGrantAnonymousAccess_WhenContainerIsNotBowlnebaPublic()
+    {
+        // Arrange
+        var container = UniqueContainer();
+
+        // Act
+        await _sut.UploadFileAsync(
+            container,
+            "private-file.txt",
+            FileContentFactory.ValidContent,
+            FileContentFactory.ValidContentType,
+            new Dictionary<string, string>(FileContentFactory.ValidMetadata),
+            CancellationToken.None);
+
+        // Assert
+        var containerClient = _blobServiceClient.GetBlobContainerClient(container);
+        var properties = await containerClient.GetPropertiesAsync(cancellationToken: TestContext.Current.CancellationToken);
+        properties.Value.PublicAccess.ShouldBe(PublicAccessType.None);
+        _logger.Collector.GetSnapshot().ShouldContain(l => l.Level == LogLevel.Information && l.Message.Contains("uploaded"));
     }
 
     [Fact(DisplayName = "GetBlobUri should return URI containing container and path")]

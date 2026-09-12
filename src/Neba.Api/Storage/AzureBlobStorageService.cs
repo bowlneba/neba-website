@@ -17,6 +17,12 @@ internal sealed class AzureBlobStorageService
     private const string StoragePathTag = "storage.path";
     private const string StorageDurationMsTag = "storage.duration_ms";
 
+    // Container naming already encodes public/private intent app-wide (e.g. "bowlneba-public"
+    // vs "bowlneba-private") - anonymous blob-level read must be granted explicitly here since
+    // CreateIfNotExistsAsync defaults to PublicAccessType.None, otherwise GetBlobUri returns a
+    // URL that 404s for anonymous browser requests regardless of the container's name.
+    private const string PublicContainerName = "bowlneba-public";
+
     private static readonly ActivitySource ActivitySource = new(StorageMetricsNamespace);
 
     private readonly BlobServiceClient _blobServiceClient;
@@ -171,7 +177,13 @@ internal sealed class AzureBlobStorageService
             _logger.LogUploadingFile(container, path, content.Length, contentType);
 
             var containerClient = _blobServiceClient.GetBlobContainerClient(container);
-            await containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
+            var publicAccessType = container == PublicContainerName ? PublicAccessType.Blob : PublicAccessType.None;
+            await containerClient.CreateIfNotExistsAsync(publicAccessType, cancellationToken: cancellationToken);
+
+            // CreateIfNotExistsAsync only applies publicAccessType at creation time - it no-ops on a
+            // container that already exists (e.g. one created before this access-type gating existed).
+            // SetAccessPolicyAsync enforces the invariant unconditionally on every upload.
+            await containerClient.SetAccessPolicyAsync(publicAccessType, cancellationToken: cancellationToken);
 
             var blobClient = containerClient.GetBlobClient(path);
 

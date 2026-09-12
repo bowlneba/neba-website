@@ -191,6 +191,23 @@ public sealed class AuditPayloadScrubberTests
         secondResult[nameof(TestPayload.PublicName)].ShouldBe("Second");
     }
 
+    [Fact(DisplayName = "Scrub should pass through Ulid-valued properties unchanged without decoding their timestamp")]
+    public void Scrub_ShouldPassThroughValue_WhenPropertyIsUlid()
+    {
+        // Arrange
+        // Ulid's maximum representable timestamp (48 bits, "7ZZZ...") is later than
+        // DateTimeOffset's maximum year 9999 - decoding it via Ulid.Time throws
+        // ArgumentOutOfRangeException. Scrub must never touch that property.
+        var maxTimestampUlid = Ulid.Parse("7ZZZZZZZZZZZZZZZZZZZZZZZZZ", System.Globalization.CultureInfo.InvariantCulture);
+        var source = new TestPayload { UlidValue = maxTimestampUlid };
+
+        // Act
+        var result = AuditPayloadScrubber.Scrub(source);
+
+        // Assert
+        result[nameof(TestPayload.UlidValue)].ShouldBe(maxTimestampUlid);
+    }
+
     [Fact(DisplayName = "Scrub should omit ApplicationUser's private identity properties")]
     public void Scrub_ShouldOmitPrivateProperties_WhenSourceIsApplicationUser()
     {
@@ -246,6 +263,8 @@ public sealed class AuditPayloadScrubberTests
 
         [PersonalData]
         public int PersonalAge { get; set; }
+
+        public Ulid UlidValue { get; set; }
     }
 
     private sealed class OuterPayload
