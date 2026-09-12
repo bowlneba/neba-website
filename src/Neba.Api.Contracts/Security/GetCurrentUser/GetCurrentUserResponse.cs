@@ -1,3 +1,5 @@
+using Neba.Api.Contracts.Compliance;
+
 namespace Neba.Api.Contracts.Security.GetCurrentUser;
 
 /// <summary>
@@ -13,6 +15,7 @@ public sealed record GetCurrentUserResponse
     /// <summary>
     /// Gets the email address of the user.
     /// </summary>
+    [PersonalData]
     public required string Email { get; init; }
 
     /// <summary>

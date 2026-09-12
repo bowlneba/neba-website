@@ -1,3 +1,5 @@
+using Neba.Api.Contracts.Compliance;
+
 namespace Neba.Api.Contracts.Security.RefreshToken;
 
 /// <summary>
@@ -8,11 +10,13 @@ public sealed record RefreshTokenResponse
     /// <summary>
     /// Gets the new access token issued after a successful refresh operation.
     /// </summary>
+    [PrivateData]
     public required string AccessToken { get; init; }
 
     /// <summary>
     /// Gets the new refresh token issued after a successful refresh operation.
     /// </summary>
+    [PrivateData]
     public required string RefreshToken { get; init; }
 
     /// <summary>
@@ -28,5 +32,6 @@ public sealed record RefreshTokenResponse
     /// <summary>
     /// Gets the email address of the user associated with the refreshed tokens.
     /// </summary>
+    [PersonalData]
     public required string Email { get; init; }
 }

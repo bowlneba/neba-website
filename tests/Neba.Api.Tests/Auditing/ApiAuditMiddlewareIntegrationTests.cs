@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Neba.Api.Auditing;
-using Neba.Api.Compliance;
+using Neba.Api.Contracts.Compliance;
 using Neba.Api.Discord;
 using Neba.TestFactory.Attributes;
 

@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Reflection;
 
+using Neba.Api.Contracts.Compliance;
+
 namespace Neba.Api.Compliance;
 
 /// <summary>

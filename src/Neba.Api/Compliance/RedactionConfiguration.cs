@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Compliance.Classification;
 using Microsoft.Extensions.Compliance.Redaction;
 
+using Neba.Api.Contracts.Compliance;
+
 namespace Neba.Api.Compliance;
 
 internal static class RedactionConfiguration

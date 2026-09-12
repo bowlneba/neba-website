@@ -1,3 +1,5 @@
+using Neba.Api.Contracts.Compliance;
+
 namespace Neba.Api.Contracts.Security.Login;
 
 /// <summary>
@@ -8,11 +10,13 @@ public sealed record LoginResponse
     /// <summary>
     /// Gets the access token issued to the user upon successful authentication.
     /// </summary>
+    [PrivateData]
     public required string AccessToken { get; init; }
 
     /// <summary>
     /// Gets the refresh token issued to the user, which can be used to obtain a new access token when the current one expires.
     /// </summary>
+    [PrivateData]
     public required string RefreshToken { get; init; }
 
     /// <summary>
@@ -28,5 +32,6 @@ public sealed record LoginResponse
     /// <summary>
     /// Gets the email address of the user who has successfully logged in.
     /// </summary>
+    [PersonalData]
     public required string Email { get; init; }
 }
