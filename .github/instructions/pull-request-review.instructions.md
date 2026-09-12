@@ -591,6 +591,7 @@ Flag when:
 See detailed criteria in **API Layer** section above. Additionally flag when:
 
 - Contract types contain logic beyond simple computed properties
+- A `required` property is added, renamed, or removed on a type deserialized by the Blazor client (any Refit response used by `src/Neba.Website.Server`) without a matching update to `tests/e2e/mock-api/mock-api-server.ts`. A missing `required` field fails System.Text.Json deserialization on the Blazor server at runtime — the Playwright failure that results looks like ordinary flakiness (a timeout waiting for an element that never renders), not an obvious schema mismatch, so it's easy to miss in review. A Husky pre-push task (`contract-mock-check`) warns when `src/Neba.Api.Contracts/**` changes without a corresponding `mock-api-server.ts` change, but it only checks that the file changed, not that the right fields were added — still confirm the mock's fields actually match.
 
 ---
 
@@ -694,6 +695,7 @@ When reviewing, verify:
 - [ ] API endpoint integration tests cover success, validation failure, and auth failure
 - [ ] New routable Blazor page/flow has a Playwright E2E spec in `tests/e2e/` (not just a `docs-screenshots/` script) covering happy path, validation failure, server-error handling, and the auth boundary
 - [ ] Mock API server (`tests/e2e/mock-api/mock-api-server.ts`) has a matching route handler for any new endpoint the E2E spec exercises
+- [ ] Any `required` property added/renamed/removed on a `Neba.Api.Contracts` type consumed by the Blazor client has its mock JSON in `tests/e2e/mock-api/mock-api-server.ts` updated to match
 
 ### Observability
 
