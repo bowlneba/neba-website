@@ -104,6 +104,7 @@ internal static class AuditingConfiguration
                     .IncludeEntityObjects(true))
                 .UseOptIn()
                 .Include<Bowler>()
+                .Include<Name>()
                 .Include<Season>()
                 .Include<Tournament>()
                 .Include<OilPattern>()
