@@ -104,6 +104,10 @@ internal static class AuditingConfiguration
                     .IncludeEntityObjects(true))
                 .UseOptIn()
                 .Include<Bowler>()
+                // Name is an owned type (Bowler.Name, OwnsOne) - EF Core models it as its own entity
+                // type even though it shares Bowler's table, and UseOptIn() opts in per entity type.
+                // Without this, a change to just the name (with no other Bowler property touched)
+                // produces no audit row at all.
                 .Include<Name>()
                 .Include<Season>()
                 .Include<Tournament>()
