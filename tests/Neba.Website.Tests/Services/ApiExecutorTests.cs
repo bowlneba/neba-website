@@ -85,7 +85,7 @@ public sealed class ApiExecutorTests
         {
             IsSuccessStatusCode = false,
             StatusCode = System.Net.HttpStatusCode.BadRequest,
-            Content = (string?)null
+            Content = null
         };
 
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
@@ -122,7 +122,7 @@ public sealed class ApiExecutorTests
         var apiResponseMock = new StubApiResponse<string>
         {
             IsSuccessStatusCode = true,
-            Content = (string?)null,
+            Content = null,
             StatusCode = System.Net.HttpStatusCode.OK
         };
 
@@ -163,7 +163,7 @@ public sealed class ApiExecutorTests
         var nullContentResponse = new StubApiResponse<string>
         {
             IsSuccessStatusCode = true,
-            Content = (string?)null,
+            Content = null,
             StatusCode = System.Net.HttpStatusCode.OK,
             RequestMessage = getRequestMessage
         };
@@ -213,7 +213,7 @@ public sealed class ApiExecutorTests
         var nullContentResponse = new StubApiResponse<string>
         {
             IsSuccessStatusCode = true,
-            Content = (string?)null,
+            Content = null,
             StatusCode = System.Net.HttpStatusCode.OK,
             RequestMessage = getRequestMessage
         };
@@ -255,7 +255,7 @@ public sealed class ApiExecutorTests
         var nullContentResponse = new StubApiResponse<string>
         {
             IsSuccessStatusCode = true,
-            Content = (string?)null,
+            Content = null,
             StatusCode = System.Net.HttpStatusCode.OK,
             RequestMessage = postRequestMessage
         };
@@ -513,7 +513,7 @@ public sealed class ApiExecutorTests
         {
             IsSuccessStatusCode = false,
             StatusCode = httpStatusCode,
-            Content = (string?)null
+            Content = null
         };
 
         var apiCall = new Func<CancellationToken, Task<IApiResponse<string>>>(
@@ -549,7 +549,7 @@ public sealed class ApiExecutorTests
         {
             IsSuccessStatusCode = false,
             StatusCode = System.Net.HttpStatusCode.NotFound,
-            Content = (string?)null
+            Content = null
         };
 
         _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
@@ -590,7 +590,7 @@ public sealed class ApiExecutorTests
             IsSuccessStatusCode = false,
             StatusCode = System.Net.HttpStatusCode.Conflict,
             Error = apiException,
-            Content = (string?)null
+            Content = null
         };
 
         _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
@@ -629,7 +629,7 @@ public sealed class ApiExecutorTests
             IsSuccessStatusCode = false,
             StatusCode = System.Net.HttpStatusCode.UnprocessableEntity,
             Error = apiException,
-            Content = (string?)null
+            Content = null
         };
 
         _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
@@ -757,7 +757,7 @@ public sealed class ApiExecutorTests
         var responseMock = new StubApiResponse<string>
         {
             IsSuccessStatusCode = true,
-            Content = (string?)null,
+            Content = null,
             StatusCode = System.Net.HttpStatusCode.OK
         };
 
@@ -803,7 +803,7 @@ public sealed class ApiExecutorTests
         {
             IsSuccessStatusCode = false,
             StatusCode = System.Net.HttpStatusCode.BadRequest,
-            Content = (string?)null
+            Content = null
         };
 
         _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
