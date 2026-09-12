@@ -28,9 +28,9 @@ internal sealed class CompleteTournamentSyncJob(
     IDiscordNotifier discordNotifier,
     ILogger<CompleteTournamentSyncJob> logger)
 {
-    public async Task SyncAsync(int legacyTournamentId, string correlationId, CancellationToken ct)
+    public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
     {
-        using var _ = LegacyActor.EnterAmbientContext(correlationId);
+        using var _ = LegacyActor.EnterActorScope();
 
         var tournament = await db.Set<Tournament>()
             .SingleOrDefaultAsync(t => t.LegacyId == legacyTournamentId, ct);
@@ -78,12 +78,12 @@ internal sealed class CompleteTournamentSyncJob(
             await cache.RemoveByTagAsync($"neba:tournaments:{tournament.SeasonId}", token: ct);
         }
 
-        jobs.Enqueue<SyncTournamentResultsJob>(job => job.SyncAsync(legacyTournamentId, correlationId, CancellationToken.None));
+        jobs.Enqueue<SyncTournamentResultsJob>(job => job.SyncAsync(legacyTournamentId, CancellationToken.None));
 
         // Scheduled, not enqueued: gives SyncTournamentResultsJob time to finish placing/writing
         // TournamentResult rows before GenerateSeasonStatsJob reads them. See the plan's "Ordering"
         // discussion - this is a data-freshness improvement, not a correctness dependency, since
         // GenerateSeasonStatsJob's delete-and-regenerate is idempotent and self-corrects on retry.
-        jobs.Schedule<GenerateSeasonStatsJob>(job => job.SyncAsync(legacyTournamentId, correlationId, CancellationToken.None), TimeSpan.FromMinutes(10));
+        jobs.Schedule<GenerateSeasonStatsJob>(job => job.SyncAsync(legacyTournamentId, CancellationToken.None), TimeSpan.FromMinutes(10));
     }
 }

@@ -12,9 +12,9 @@ internal sealed class AssignHighAverageAwardJob(
 {
     private const decimal MinimumGamesMultiplier = 4.5m;
 
-    public async Task AssignAsync(SeasonId seasonId, string correlationId, CancellationToken ct)
+    public async Task AssignAsync(SeasonId seasonId, CancellationToken ct)
     {
-        using var _ = LegacyActor.EnterAmbientContext(correlationId);
+        using var _ = LegacyActor.EnterActorScope();
 
         var season = await db.Seasons
             .Include(s => s.HighAverageAwards)

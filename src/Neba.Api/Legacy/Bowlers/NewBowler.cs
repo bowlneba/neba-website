@@ -11,7 +11,6 @@ using Hangfire;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-using Neba.Api.Auditing;
 using Neba.Api.Database;
 using Neba.Api.Features.Bowlers.Domain;
 
@@ -25,7 +24,6 @@ internal static class NewBowlerEndpoint
         {
             app.MapPost("/bowlers/new", (
                 NewBowlerRequest request,
-                HttpContext httpContext,
                 [FromServices] IValidator<NewBowlerRequest> validator,
                 [FromServices] IBackgroundJobClient jobs) =>
             {
@@ -35,8 +33,7 @@ internal static class NewBowlerEndpoint
                     return Results.ValidationProblem(validation.ToDictionary());
                 }
 
-                var correlationId = AmbientCorrelationContext.Capture(httpContext);
-                jobs.Enqueue<NewBowlerSyncJob>(job => job.SyncAsync(request.BowlerId, correlationId, CancellationToken.None));
+                jobs.Enqueue<NewBowlerSyncJob>(job => job.SyncAsync(request.BowlerId, CancellationToken.None));
 
                 return Results.Accepted();
             });
@@ -61,9 +58,9 @@ internal sealed class NewBowlerSyncJob(
     IDbConnection legacyConnection,
     ILogger<NewBowlerSyncJob> logger)
 {
-    public async Task SyncAsync(int legacyBowlerId, string correlationId, CancellationToken ct)
+    public async Task SyncAsync(int legacyBowlerId, CancellationToken ct)
     {
-        using var _ = LegacyActor.EnterAmbientContext(correlationId);
+        using var _ = LegacyActor.EnterActorScope();
 
         // Dapper.AOT is not enabled project-wide (this is the codebase's first Dapper usage) - the
         // interceptor-based source generator DAP005 nudges toward opting in, but plain Dapper reflection

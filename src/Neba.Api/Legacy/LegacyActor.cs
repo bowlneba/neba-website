@@ -1,4 +1,3 @@
-using Neba.Api.Auditing;
 using Neba.Api.Identity;
 
 namespace Neba.Api.Legacy;
@@ -14,23 +13,10 @@ internal static class LegacyActor
     public const string Id = "software-sync";
 
     /// <summary>
-    /// Sets both the ambient actor (as <see cref="Id"/>) and the ambient correlation id for the
-    /// remainder of a <c>*SyncJob</c>'s/award job's async call chain, in one call. Dispose the
-    /// returned scope at the end of the job.
+    /// Sets the ambient actor (as <see cref="Id"/>) for the remainder of a <c>*SyncJob</c>'s/award
+    /// job's async call chain. Dispose the returned scope at the end of the job. The correlation
+    /// id is set automatically for every job by <see cref="Neba.Api.BackgroundJobs.CorrelationIdJobFilter"/>
+    /// and doesn't need a matching call here.
     /// </summary>
-    public static IDisposable EnterAmbientContext(string correlationId)
-    {
-        var actorScope = AmbientActorContext.SetActor(Id);
-        var correlationScope = AmbientCorrelationContext.SetCorrelationId(correlationId);
-        return new CombinedScope(actorScope, correlationScope);
-    }
-
-    private sealed class CombinedScope(IDisposable actorScope, IDisposable correlationScope) : IDisposable
-    {
-        public void Dispose()
-        {
-            correlationScope.Dispose();
-            actorScope.Dispose();
-        }
-    }
+    public static IDisposable EnterActorScope() => AmbientActorContext.SetActor(Id);
 }

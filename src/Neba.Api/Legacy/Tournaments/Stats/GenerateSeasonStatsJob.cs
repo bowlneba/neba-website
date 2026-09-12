@@ -50,9 +50,9 @@ internal sealed class GenerateSeasonStatsJob(
         return (parameters, string.Join(",", placeholders));
     }
 
-    public async Task SyncAsync(int legacyTournamentId, string correlationId, CancellationToken ct)
+    public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
     {
-        using var _ = LegacyActor.EnterAmbientContext(correlationId);
+        using var _ = LegacyActor.EnterActorScope();
 
         var tournament = await db.Set<Tournament>()
             .SingleOrDefaultAsync(t => t.LegacyId == legacyTournamentId, ct);

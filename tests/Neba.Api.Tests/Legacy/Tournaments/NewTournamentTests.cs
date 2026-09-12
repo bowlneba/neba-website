@@ -199,7 +199,6 @@ public sealed class NewTournamentEndpointTests : IAsyncLifetime
         capturedJob.Type.ShouldBe(typeof(NewTournamentSyncJob));
         capturedJob.Method.Name.ShouldBe(nameof(NewTournamentSyncJob.SyncAsync));
         capturedJob.Args[0].ShouldBe(42);
-        capturedJob.Args[1].ShouldBeOfType<string>().ShouldNotBeNullOrWhiteSpace();
     }
 }
 
@@ -415,7 +414,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         var job = CreateJob(logger: fakeLogger);
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert - Strict email mock: any SendAsync call without a setup would throw.
         var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
@@ -441,7 +440,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
         var valueAfterSync = await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("fresh-value"), token: ct);
@@ -457,7 +456,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         var job = CreateJob(logger: fakeLogger);
 
         // Act
-        await job.SyncAsync(999, "test-correlation-id", ct);
+        await job.SyncAsync(999, ct);
 
         // Assert - Strict email mock: any SendAsync call without a setup would throw.
         var record = fakeLogger.Collector.GetSnapshot().ShouldHaveSingleItem();
@@ -477,7 +476,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         var linked = await _dbContext.Tournaments.SingleAsync(t => t.Id == tournament.Id, ct);
@@ -503,7 +502,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
         var seasonListValueAfterSync = await cache.GetOrSetAsync(seasonListCacheKey, _ => Task.FromResult("fresh-value"), token: ct);
@@ -526,7 +525,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         var linked = await _dbContext.Tournaments.Include(t => t.Squads).SingleAsync(t => t.Id == tournament.Id, ct);
@@ -561,7 +560,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         var linked = await _dbContext.Tournaments.Include(t => t.Squads).SingleAsync(t => t.Id == tournament.Id, ct);
@@ -591,7 +590,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         var job = CreateJob(logger: fakeLogger);
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         var linked = await _dbContext.Tournaments.Include(t => t.Squads).SingleAsync(t => t.Id == tournament.Id, ct);
@@ -616,7 +615,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         var linked = await _dbContext.Tournaments.SingleAsync(t => t.Id == doubles.Id, ct);
@@ -646,7 +645,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         var expectedTournamentType = TournamentType.FromName(expectedTournamentTypeName);
@@ -691,7 +690,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         var expectedTournamentType = TournamentType.FromName(expectedTournamentTypeName);
@@ -718,7 +717,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         var job = CreateJob(emailSender, fakeLogger);
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
         sentMessage.ShouldNotBeNull();
@@ -751,7 +750,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         var job = CreateJob(emailSender);
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
         var unchangedDoubles = await _dbContext.Tournaments.SingleAsync(t => t.Id == doubles.Id, ct);
@@ -780,7 +779,7 @@ public sealed class NewTournamentSyncJobTests(AppDbContextFixture fixture, Legac
         var job = CreateJob(emailSender);
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert - Strict mock: the Setup above is the verification that SendAsync was called.
         sentMessage.ShouldNotBeNull();

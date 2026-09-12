@@ -16,9 +16,9 @@ internal sealed class AssignHighBlockAwardJob(
     // how HighBlock is ever produced. See the plan's Decision Recap.
     private const int HighBlockGames = 5;
 
-    public async Task AssignAsync(SeasonId seasonId, string correlationId, CancellationToken ct)
+    public async Task AssignAsync(SeasonId seasonId, CancellationToken ct)
     {
-        using var _ = LegacyActor.EnterAmbientContext(correlationId);
+        using var _ = LegacyActor.EnterActorScope();
 
         var season = await db.Seasons
             .Include(s => s.HighBlockAwards)

@@ -11,7 +11,6 @@ using Hangfire;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-using Neba.Api.Auditing;
 using Neba.Api.Database;
 using Neba.Api.Email;
 using Neba.Api.Features.Bowlers.Domain;
@@ -29,7 +28,6 @@ internal static class NewHallOfFameInductionEndpoint
         {
             app.MapPost("/hall-of-fame/new", (
                 NewHallOfFameInductionRequest request,
-                HttpContext httpContext,
                 [FromServices] IValidator<NewHallOfFameInductionRequest> validator,
                 [FromServices] IBackgroundJobClient jobs) =>
             {
@@ -39,8 +37,7 @@ internal static class NewHallOfFameInductionEndpoint
                     return Results.ValidationProblem(validation.ToDictionary());
                 }
 
-                var correlationId = AmbientCorrelationContext.Capture(httpContext);
-                jobs.Enqueue<NewHallOfFameInductionSyncJob>(job => job.SyncAsync(request.HallOfFameIds, correlationId, CancellationToken.None));
+                jobs.Enqueue<NewHallOfFameInductionSyncJob>(job => job.SyncAsync(request.HallOfFameIds, CancellationToken.None));
 
                 return Results.Accepted();
             });
@@ -108,9 +105,9 @@ internal sealed class NewHallOfFameInductionSyncJob(
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2077:Use a parameterized query instead of string formatting.",
         Justification = "The interpolated segment is only generated placeholder names (@Id0, @Id1, ...), never a data value - every id value itself is bound as a real DynamicParameters entry, not concatenated into the SQL text.")]
-    public async Task SyncAsync(IReadOnlyCollection<int> legacyHallOfFameIds, string correlationId, CancellationToken ct)
+    public async Task SyncAsync(IReadOnlyCollection<int> legacyHallOfFameIds, CancellationToken ct)
     {
-        using var _ = LegacyActor.EnterAmbientContext(correlationId);
+        using var _ = LegacyActor.EnterActorScope();
 
         // Placeholders are numbered and bound individually (Id0, Id1, ...) rather than relying on
         // Dapper's automatic "IN @Ids" list expansion: Dapper detects when the underlying provider

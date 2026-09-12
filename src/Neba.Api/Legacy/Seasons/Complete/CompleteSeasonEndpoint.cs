@@ -4,8 +4,6 @@ using Hangfire;
 
 using Microsoft.AspNetCore.Mvc;
 
-using Neba.Api.Auditing;
-
 namespace Neba.Api.Legacy.Seasons.Complete;
 
 internal static class CompleteSeasonEndpoint
@@ -16,7 +14,6 @@ internal static class CompleteSeasonEndpoint
         {
             app.MapPost("/seasons/complete", (
                 CompleteSeasonRequest request,
-                HttpContext httpContext,
                 [FromServices] IValidator<CompleteSeasonRequest> validator,
                 [FromServices] IBackgroundJobClient jobs) =>
             {
@@ -26,8 +23,7 @@ internal static class CompleteSeasonEndpoint
                     return Results.ValidationProblem(validation.ToDictionary());
                 }
 
-                var correlationId = AmbientCorrelationContext.Capture(httpContext);
-                jobs.Enqueue<CompleteSeasonSyncJob>(job => job.SyncAsync(request.SeasonId, correlationId, CancellationToken.None));
+                jobs.Enqueue<CompleteSeasonSyncJob>(job => job.SyncAsync(request.SeasonId, CancellationToken.None));
 
                 return Results.Accepted();
             });

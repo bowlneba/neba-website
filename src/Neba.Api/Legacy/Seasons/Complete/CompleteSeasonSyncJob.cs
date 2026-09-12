@@ -31,9 +31,9 @@ internal sealed class CompleteSeasonSyncJob(
 {
     private static readonly TimeSpan AwardJobDelay = TimeSpan.FromHours(1);
 
-    public async Task SyncAsync(int legacySeasonId, string correlationId, CancellationToken ct)
+    public async Task SyncAsync(int legacySeasonId, CancellationToken ct)
     {
-        using var _ = LegacyActor.EnterAmbientContext(correlationId);
+        using var _ = LegacyActor.EnterActorScope();
 
         // See NewBowlerSyncJob.SyncAsync for the rationale on suppressing DAP005 here.
 #pragma warning disable DAP005
@@ -119,13 +119,13 @@ internal sealed class CompleteSeasonSyncJob(
             await cache.RemoveByTagAsync("neba:seasons", token: ct);
         }
 
-        jobs.Schedule<AssignBowlerOfTheYearAwardJob>(job => job.AssignAsync(season.Id, correlationId, CancellationToken.None), AwardJobDelay);
-        jobs.Schedule<AssignWomanOfTheYearAwardJob>(job => job.AssignAsync(season.Id, correlationId, CancellationToken.None), AwardJobDelay);
-        jobs.Schedule<AssignSeniorBowlerOfTheYearAwardJob>(job => job.AssignAsync(season.Id, correlationId, CancellationToken.None), AwardJobDelay);
-        jobs.Schedule<AssignSuperSeniorBowlerOfTheYearAwardJob>(job => job.AssignAsync(season.Id, correlationId, CancellationToken.None), AwardJobDelay);
-        jobs.Schedule<AssignRookieBowlerOfTheYearAwardJob>(job => job.AssignAsync(season.Id, correlationId, CancellationToken.None), AwardJobDelay);
-        jobs.Schedule<AssignYouthBowlerOfTheYearAwardJob>(job => job.AssignAsync(season.Id, correlationId, CancellationToken.None), AwardJobDelay);
-        jobs.Schedule<AssignHighAverageAwardJob>(job => job.AssignAsync(season.Id, correlationId, CancellationToken.None), AwardJobDelay);
-        jobs.Schedule<AssignHighBlockAwardJob>(job => job.AssignAsync(season.Id, correlationId, CancellationToken.None), AwardJobDelay);
+        jobs.Schedule<AssignBowlerOfTheYearAwardJob>(job => job.AssignAsync(season.Id, CancellationToken.None), AwardJobDelay);
+        jobs.Schedule<AssignWomanOfTheYearAwardJob>(job => job.AssignAsync(season.Id, CancellationToken.None), AwardJobDelay);
+        jobs.Schedule<AssignSeniorBowlerOfTheYearAwardJob>(job => job.AssignAsync(season.Id, CancellationToken.None), AwardJobDelay);
+        jobs.Schedule<AssignSuperSeniorBowlerOfTheYearAwardJob>(job => job.AssignAsync(season.Id, CancellationToken.None), AwardJobDelay);
+        jobs.Schedule<AssignRookieBowlerOfTheYearAwardJob>(job => job.AssignAsync(season.Id, CancellationToken.None), AwardJobDelay);
+        jobs.Schedule<AssignYouthBowlerOfTheYearAwardJob>(job => job.AssignAsync(season.Id, CancellationToken.None), AwardJobDelay);
+        jobs.Schedule<AssignHighAverageAwardJob>(job => job.AssignAsync(season.Id, CancellationToken.None), AwardJobDelay);
+        jobs.Schedule<AssignHighBlockAwardJob>(job => job.AssignAsync(season.Id, CancellationToken.None), AwardJobDelay);
     }
 }

@@ -144,6 +144,5 @@ public sealed class CompleteSeasonEndpointTests : IAsyncLifetime
         capturedJob.Type.ShouldBe(typeof(CompleteSeasonSyncJob));
         capturedJob.Method.Name.ShouldBe(nameof(CompleteSeasonSyncJob.SyncAsync));
         capturedJob.Args[0].ShouldBe(42);
-        capturedJob.Args[1].ShouldBeOfType<string>().ShouldNotBeNullOrWhiteSpace();
     }
 }

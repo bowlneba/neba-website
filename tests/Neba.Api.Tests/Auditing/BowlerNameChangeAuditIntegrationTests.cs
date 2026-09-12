@@ -167,7 +167,7 @@ public sealed class BowlerNameChangeAuditIntegrationTests(
             new FakeLogger<UpdateBowlerSyncJob>());
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         var updateEvent = await FindEventWithBowlerUpdateAsync();

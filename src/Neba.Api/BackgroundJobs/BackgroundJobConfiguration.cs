@@ -78,6 +78,7 @@ internal static class BackgroundJobsConfiguration
                     .UseFilter(new HangfireJobExpirationFilterAttribute(settings))
                     .UseFilter(new HangfireConsoleServerFilter())
                     .UseFilter(new DiscordJobFailureFilter(serviceProvider.GetRequiredService<IDiscordNotifier>()))
+                    .UseFilter(new CorrelationIdJobFilter())
                     .UseConsole()
                     .AddAuditJobExecutionFilter(config => config
                         .EventType("Job:{type}.{method}")

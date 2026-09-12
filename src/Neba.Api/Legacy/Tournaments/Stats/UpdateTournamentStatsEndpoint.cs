@@ -4,8 +4,6 @@ using Hangfire;
 
 using Microsoft.AspNetCore.Mvc;
 
-using Neba.Api.Auditing;
-
 namespace Neba.Api.Legacy.Tournaments.Stats;
 
 internal static class UpdateTournamentStatsEndpoint
@@ -16,7 +14,6 @@ internal static class UpdateTournamentStatsEndpoint
         {
             app.MapPost("/tournaments/stats/update", (
                 UpdateTournamentStatsRequest request,
-                HttpContext httpContext,
                 [FromServices] IValidator<UpdateTournamentStatsRequest> validator,
                 [FromServices] IBackgroundJobClient jobs) =>
             {
@@ -26,8 +23,7 @@ internal static class UpdateTournamentStatsEndpoint
                     return Results.ValidationProblem(validation.ToDictionary());
                 }
 
-                var correlationId = AmbientCorrelationContext.Capture(httpContext);
-                jobs.Enqueue<GenerateSeasonStatsJob>(job => job.SyncAsync(request.TournamentId, correlationId, CancellationToken.None));
+                jobs.Enqueue<GenerateSeasonStatsJob>(job => job.SyncAsync(request.TournamentId, CancellationToken.None));
 
                 return Results.Accepted();
             });

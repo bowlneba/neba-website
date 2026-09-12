@@ -149,7 +149,7 @@ public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture, Lega
         var job = CreateJob(jobsMock.Object);
 
         // Act
-        await job.SyncAsync(42, "test-correlation-id", ct);
+        await job.SyncAsync(42, ct);
 
         // Assert
         var updated = await _dbContext.Seasons.SingleAsync(s => s.Id == season.Id, ct);
@@ -187,7 +187,7 @@ public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture, Lega
         var job = CreateJob(jobsMock.Object);
 
         // Act
-        await job.SyncAsync(42, "test-correlation-id", ct);
+        await job.SyncAsync(42, ct);
 
         // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
         var valueAfterSync = await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("fresh-value"), token: ct);
@@ -213,7 +213,7 @@ public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture, Lega
         var job = CreateJob(jobsMock.Object);
 
         // Act
-        await job.SyncAsync(42, "test-correlation-id", ct);
+        await job.SyncAsync(42, ct);
 
         // Assert - nothing changed on the AlreadyComplete branch, so the stale entry survives.
         var valueAfterSync = await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("fresh-value"), token: ct);
@@ -235,7 +235,7 @@ public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture, Lega
         var job = CreateJob(jobsMock.Object, logger: fakeLogger);
 
         // Act
-        await job.SyncAsync(42, "test-correlation-id", ct);
+        await job.SyncAsync(42, ct);
 
         // Assert
         var chained = capturedJobs();
@@ -267,7 +267,7 @@ public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture, Lega
         var job = CreateJob(jobsMock.Object, emailSender, discordNotifier);
 
         // Act
-        await job.SyncAsync(999, "test-correlation-id", ct);
+        await job.SyncAsync(999, ct);
 
         // Assert - Strict mock with no Create setup already proves nothing was scheduled (see Arrange comment).
         sentMessage.ShouldNotBeNull();
@@ -308,7 +308,7 @@ public sealed class CompleteSeasonSyncJobTests(AppDbContextFixture fixture, Lega
         var job = CreateJob(jobsMock.Object, emailSender, discordNotifier);
 
         // Act
-        await job.SyncAsync(42, "test-correlation-id", ct);
+        await job.SyncAsync(42, ct);
 
         // Assert - Strict mock with no Create setup already proves nothing was scheduled (see Arrange comment).
         sentMessage.ShouldNotBeNull();

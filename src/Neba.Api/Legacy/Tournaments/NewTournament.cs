@@ -13,7 +13,6 @@ using Hangfire;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-using Neba.Api.Auditing;
 using Neba.Api.Database;
 using Neba.Api.Email;
 using Neba.Api.Features.Tournaments.Domain;
@@ -30,7 +29,6 @@ internal static class NewTournamentEndpoint
         {
             app.MapPost("/tournaments/new", (
                 NewTournamentRequest request,
-                HttpContext httpContext,
                 [FromServices] IValidator<NewTournamentRequest> validator,
                 [FromServices] IBackgroundJobClient jobs) =>
             {
@@ -40,8 +38,7 @@ internal static class NewTournamentEndpoint
                     return Results.ValidationProblem(validation.ToDictionary());
                 }
 
-                var correlationId = AmbientCorrelationContext.Capture(httpContext);
-                jobs.Enqueue<NewTournamentSyncJob>(job => job.SyncAsync(request.TournamentId, correlationId, CancellationToken.None));
+                jobs.Enqueue<NewTournamentSyncJob>(job => job.SyncAsync(request.TournamentId, CancellationToken.None));
 
                 return Results.Accepted();
             });
@@ -78,9 +75,9 @@ internal sealed class NewTournamentSyncJob(
 {
     private static readonly TimeZoneInfo EasternTimeZone = FindEasternTimeZone();
 
-    public async Task SyncAsync(int legacyTournamentId, string correlationId, CancellationToken ct)
+    public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
     {
-        using var _ = LegacyActor.EnterAmbientContext(correlationId);
+        using var _ = LegacyActor.EnterActorScope();
 
         var alreadyLinkedTournament = await db.Set<Tournament>()
             .Include(t => t.Squads)

@@ -25,9 +25,9 @@ internal sealed class SyncTournamentResultsJob(
     IDiscordNotifier discordNotifier,
     ILogger<SyncTournamentResultsJob> logger)
 {
-    public async Task SyncAsync(int legacyTournamentId, string correlationId, CancellationToken ct)
+    public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
     {
-        using var _ = LegacyActor.EnterAmbientContext(correlationId);
+        using var _ = LegacyActor.EnterActorScope();
 
         var tournament = await db.Set<Tournament>()
             .Include(t => t.Results)

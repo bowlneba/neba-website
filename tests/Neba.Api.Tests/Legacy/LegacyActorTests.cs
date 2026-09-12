@@ -1,4 +1,3 @@
-using Neba.Api.Auditing;
 using Neba.Api.Identity;
 using Neba.Api.Legacy;
 using Neba.TestFactory.Attributes;
@@ -9,18 +8,16 @@ namespace Neba.Api.Tests.Legacy;
 [Component("Legacy")]
 public sealed class LegacyActorTests
 {
-    [Fact(DisplayName = "EnterAmbientContext sets both the ambient actor and correlation id until disposed")]
-    public void EnterAmbientContext_SetsActorAndCorrelationId_UntilDisposed()
+    [Fact(DisplayName = "EnterActorScope sets the ambient actor until disposed")]
+    public void EnterActorScope_SetsActor_UntilDisposed()
     {
         // Act
-        using (LegacyActor.EnterAmbientContext("correlation-1"))
+        using (LegacyActor.EnterActorScope())
         {
             // Assert
             AmbientActorContext.ActorId.ShouldBe(LegacyActor.Id);
-            AmbientCorrelationContext.CorrelationId.ShouldBe("correlation-1");
         }
 
         AmbientActorContext.ActorId.ShouldBeNull();
-        AmbientCorrelationContext.CorrelationId.ShouldBeNull();
     }
 }

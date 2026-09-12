@@ -263,7 +263,6 @@ public sealed class UpdateBowlerEndpointTests : IAsyncLifetime
         capturedJob.Type.ShouldBe(typeof(UpdateBowlerSyncJob));
         capturedJob.Method.Name.ShouldBe(nameof(UpdateBowlerSyncJob.SyncAsync));
         capturedJob.Args[0].ShouldBe(42);
-        capturedJob.Args[1].ShouldBeOfType<string>().ShouldNotBeNullOrWhiteSpace();
     }
 }
 
@@ -372,7 +371,7 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
         var job = CreateJob(fakeLogger);
 
         // Act
-        await job.SyncAsync(999, "test-correlation-id", ct);
+        await job.SyncAsync(999, ct);
 
         // Assert
         (await _dbContext.Set<Bowler>().AnyAsync(ct)).ShouldBeFalse();
@@ -403,7 +402,7 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         var bowlers = await _dbContext.Set<Bowler>().Where(b => b.LegacyId == 1).ToListAsync(ct);
@@ -427,7 +426,7 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
@@ -449,7 +448,7 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
@@ -466,7 +465,7 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
@@ -487,7 +486,7 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
@@ -506,7 +505,7 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
         var job = CreateJob(fakeLogger);
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
@@ -527,7 +526,7 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
         var job = CreateJob(fakeLogger);
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
@@ -553,7 +552,7 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
         var job = CreateJob(fakeLogger);
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         var bowler = await _dbContext.Set<Bowler>().SingleAsync(b => b.LegacyId == 1, ct);
@@ -582,7 +581,7 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
         var valueAfterSync = await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("fresh-value"), token: ct);
@@ -603,7 +602,7 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
         var job = CreateJob();
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert - a stale cached value would be returned by GetOrSetAsync instead of invoking the factory.
         var valueAfterSync = await cache.GetOrSetAsync(cacheKey, _ => Task.FromResult("fresh-value"), token: ct);
@@ -620,7 +619,7 @@ public sealed class UpdateBowlerSyncJobTests(AppDbContextFixture fixture, Legacy
         var job = CreateJob(fakeLogger);
 
         // Act
-        await job.SyncAsync(1, "test-correlation-id", ct);
+        await job.SyncAsync(1, ct);
 
         // Assert
         (await _dbContext.Set<Bowler>().AnyAsync(ct)).ShouldBeFalse();

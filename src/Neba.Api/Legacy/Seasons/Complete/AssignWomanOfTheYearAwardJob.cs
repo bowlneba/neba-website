@@ -10,9 +10,9 @@ namespace Neba.Api.Legacy.Seasons.Complete;
 internal sealed class AssignWomanOfTheYearAwardJob(
     AppDbContext db, IFusionCache cache, ILogger<AssignWomanOfTheYearAwardJob> logger)
 {
-    public async Task AssignAsync(SeasonId seasonId, string correlationId, CancellationToken ct)
+    public async Task AssignAsync(SeasonId seasonId, CancellationToken ct)
     {
-        using var _ = LegacyActor.EnterAmbientContext(correlationId);
+        using var _ = LegacyActor.EnterActorScope();
 
         var season = await db.Seasons
             .Include(s => s.BowlerOfTheYearAwards)
