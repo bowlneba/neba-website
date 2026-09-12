@@ -124,6 +124,24 @@ public sealed class HallOfFameInductionConfigurationTests
         property.IsNullable.ShouldBeFalse();
     }
 
+    [Fact(DisplayName = "category has a value comparer that compares elements rather than reference")]
+    public void Configure_ShouldConfigureCategoriesValueComparer()
+    {
+        // Arrange
+        var property = _inductionType.FindProperty(nameof(HallOfFameInduction.Categories))!;
+        var comparer = property.GetValueComparer();
+
+        IReadOnlyCollection<HallOfFameCategory> first = [HallOfFameCategory.SuperiorPerformance, HallOfFameCategory.FriendOfNeba];
+        IReadOnlyCollection<HallOfFameCategory> second = [HallOfFameCategory.SuperiorPerformance, HallOfFameCategory.FriendOfNeba];
+        IReadOnlyCollection<HallOfFameCategory> different = [HallOfFameCategory.MeritoriousService];
+
+        // Act & Assert
+        comparer.ShouldNotBeNull();
+        comparer.Equals(first, second).ShouldBeTrue();
+        comparer.Equals(first, different).ShouldBeFalse();
+        comparer.GetHashCode(first).ShouldBe(comparer.GetHashCode(second));
+    }
+
     [Fact(DisplayName = "photo columns use custom names and expected lengths")]
     public void Configure_ShouldConfigurePhotoColumns()
     {

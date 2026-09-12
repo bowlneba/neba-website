@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 using Neba.Api.Database.Converters;
@@ -17,7 +18,12 @@ internal sealed class TournamentOilPatternConfiguration
 
         builder.Property(tournamentOilPattern => tournamentOilPattern.TournamentRounds)
             .HasColumnName("tournament_rounds")
-            .HasConversion<TournamentRoundValueConverter>()
+            .HasConversion(
+                new TournamentRoundValueConverter(),
+                new ValueComparer<IReadOnlyCollection<TournamentRound>>(
+                    (left, right) => (left ?? Array.Empty<TournamentRound>()).SequenceEqual(right ?? Array.Empty<TournamentRound>()),
+                    collection => collection.Aggregate(0, (hash, round) => HashCode.Combine(hash, round.GetHashCode())),
+                    collection => collection.ToList()))
             .IsRequired();
     }
 }
