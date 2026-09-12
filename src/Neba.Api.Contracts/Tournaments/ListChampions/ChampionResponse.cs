@@ -15,6 +15,12 @@ public sealed record ChampionResponse
     /// </summary>
     public required string BowlerName { get; init; }
 
+    /// <summary>The bowler's family or surname.</summary>
+    public required string BowlerLastName { get; init; }
+
+    /// <summary>The bowler's given first name.</summary>
+    public required string BowlerFirstName { get; init; }
+
     /// <summary>
     /// Indicates whether the bowler is in the Hall of Fame.
     /// </summary>

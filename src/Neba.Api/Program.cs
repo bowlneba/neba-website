@@ -43,9 +43,13 @@ var app = builder.Build();
 app.UseExceptionHandler();
 
 app.UseForwardedHeaders();
-app.UseRateLimiter();
 
+// Must run after authentication - the "public" rate-limiting policy partitions authenticated
+// callers by user id (see RateLimitingConfiguration), which requires context.User to already be
+// populated by the time the rate limiter's partition selector runs.
 await app.UseSecurityInfrastructureAsync();
+
+app.UseRateLimiter();
 
 app.UseFastEndpoints(config =>
 {

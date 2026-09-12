@@ -97,6 +97,21 @@ public sealed class SponsorDetailTests : IDisposable
         nav.Uri.ShouldEndWith("/not-found");
     }
 
+    [Fact(DisplayName = "Should show an inline error message when the API call fails with a non-NotFound error")]
+    public void OnInit_ShouldShowInlineError_WhenApiFailsWithNonNotFoundError()
+    {
+        // Arrange
+        SetupFailureResponse(System.Net.HttpStatusCode.TooManyRequests);
+
+        // Act
+        var cut = _ctx.Render<SponsorDetail>(p => p.Add(x => x.Slug, "test-slug"));
+
+        // Assert
+        var nav = _ctx.Services.GetRequiredService<NavigationManager>();
+        nav.Uri.ShouldNotEndWith("/not-found");
+        cut.Markup.ShouldContain("Something went wrong while loading this sponsor");
+    }
+
     [Fact(DisplayName = "Should render the sponsor normally when the API returns an inactive sponsor")]
     public void OnInit_ShouldRenderSponsor_WhenApiReturnsInactiveSponsor()
     {

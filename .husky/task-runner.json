@@ -7,6 +7,13 @@
       "command": "sh",
       "args": [".husky/dotnet-format-push.sh"],
       "include": ["**/*.cs"]
+    },
+    {
+      "name": "contract-mock-check",
+      "group": "pre-push",
+      "command": "sh",
+      "args": [".husky/contract-mock-check.sh"],
+      "include": ["src/Neba.Api.Contracts/**"]
     }
   ]
 }

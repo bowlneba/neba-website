@@ -48,6 +48,8 @@ internal sealed class ListChampionsEndpoint(
                 {
                     BowlerId = c.BowlerId.Value.ToString(),
                     BowlerName = c.BowlerName.ToDisplayName(),
+                    BowlerLastName = c.BowlerName.LastName,
+                    BowlerFirstName = c.BowlerName.FirstName,
                     HallOfFame = c.HallOfFame,
                 })],
             })],

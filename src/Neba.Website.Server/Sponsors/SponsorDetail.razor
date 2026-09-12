@@ -1,5 +1,6 @@
 @preservewhitespace false
 @page "/sponsors/{Slug}"
+@using ErrorOr
 @using Neba.Api.Contracts.Security
 @using Neba.Api.Contracts.Sponsors
 @using Neba.Website.Server.Services
@@ -16,6 +17,22 @@
     <div class="sponsor-detail-loading">
         <div class="neba-spinner"></div>
     </div>
+}
+else if (_hasError)
+{
+    <main class="neba-content-wrapper sponsor-detail">
+        <section class="sponsor-detail__about">
+            <p class="sponsor-detail__no-results">
+                Something went wrong while loading this sponsor. Please try again later.
+            </p>
+        </section>
+        <footer class="sponsor-detail__footer">
+            <a href="/sponsors" class="sponsor-detail__back-link">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Back to Sponsor Directory
+            </a>
+        </footer>
+    </main>
 }
 else
 {
@@ -289,6 +306,7 @@ else
 
     private SponsorDetailViewModel? _model;
     private bool _isLoading = true;
+    private bool _hasError;
 
     private static string FormatPhoneNumber(string phoneNumber)
     {
@@ -315,7 +333,19 @@ else
             // The server already treats an inactive sponsor as not-found for callers without the
             // Sponsors management permission (see GetSponsorDetailQueryHandler) — an authorized staff
             // member who just created/manages a non-current sponsor still gets the real response.
-            Navigation.NavigateTo("/not-found", replace: true);
+            // Any other error (rate limiting, a transient 5xx, etc.) is a real failure, not a
+            // missing sponsor, and must not be treated the same way — see TournamentDetail.razor
+            // for the same discrimination on the equivalent error path.
+            if (result.FirstError.Type == ErrorType.NotFound)
+            {
+                Navigation.NavigateTo("/not-found", replace: true);
+            }
+            else
+            {
+                _hasError = true;
+                _isLoading = false;
+            }
+
             return;
         }
 

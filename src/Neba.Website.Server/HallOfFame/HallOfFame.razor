@@ -74,7 +74,7 @@
                                         @categoryGroup.Category
                                     </div>
                                     <div class="inductees-photo-grid">
-                                        @foreach (var inductee in singleCategoryInductees.OrderBy(i => i.BowlerName))
+                                        @foreach (var inductee in singleCategoryInductees)
                                         {
                                             <div class="inductee-item">
                                                 <div class="inductee-photo" style="@GetPhotoStyle(inductee)">
@@ -105,7 +105,7 @@
                                     Combined
                                 </div>
                                 <div class="inductees-photo-grid">
-                                    @foreach (var inductee in combinedInductees.OrderBy(i => i.BowlerName))
+                                    @foreach (var inductee in combinedInductees)
                                     {
                                         <div class="inductee-item">
                                             <div class="inductee-photo" style="@GetPhotoStyle(inductee)">

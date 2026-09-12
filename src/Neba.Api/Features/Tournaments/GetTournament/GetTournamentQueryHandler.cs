@@ -208,12 +208,6 @@ internal sealed class GetTournamentQueryHandler(
         var revealed = OilPatternRevealPolicy.IsRevealed(
             row.OilPatternRevealDateTime, query.CallerHasTournamentManagementPermission, timeProvider.GetUtcNow());
 
-        var bowlingCenter = row.BowlingCenter;
-        if (bowlingCenter is not null && !query.CallerHasTournamentManagementPermission)
-        {
-            bowlingCenter = bowlingCenter with { CertificationNumber = null };
-        }
-
         return new TournamentDetailDto
         {
             Id = row.Id,
@@ -225,7 +219,7 @@ internal sealed class GetTournamentQueryHandler(
             TournamentType = row.TournamentType,
             EntryFee = row.EntryFee,
             RegistrationUrl = row.RegistrationUrl,
-            BowlingCenter = bowlingCenter,
+            BowlingCenter = row.BowlingCenter,
             Sponsors = sponsors,
             AddedMoney = row.SponsorMoney + row.NebaAddedMoney,
             SponsorMoney = row.SponsorMoney,

@@ -152,7 +152,10 @@
             bowlers
                 .GroupBy(b => b.TitleCount)
                 .OrderByDescending(g => g.Key)
-                .Select(g => (g.Key, (IReadOnlyList<BowlerTitleSummaryViewModel>)g.OrderBy(b => b.BowlerName).ToList()));
+                .Select(g => (g.Key, (IReadOnlyList<BowlerTitleSummaryViewModel>)g
+                    .OrderBy(b => b.BowlerLastName)
+                    .ThenBy(b => b.BowlerFirstName)
+                    .ToList()));
 
     public void ExpandAll()   => _collapsedTiers.Clear();
     public void CollapseAll() => _collapsedTiers.UnionWith(new[] { "elite", "mid", "std" });

@@ -123,6 +123,74 @@ public sealed class ListChampionsQueryHandlerTests(AppDbContextFixture fixture)
         dto.Champions.Select(c => c.BowlerId).ShouldBe([bowlerA.Id, bowlerB.Id], ignoreOrder: true);
     }
 
+    [Fact(DisplayName = "HandleAsync orders historical champions within a tournament by last name then first name")]
+    public async Task HandleAsync_ShouldOrderHistoricalChampionsByLastNameThenFirstName_WithinTournament()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var zach = BowlerFactory.Create(name: NameFactory.Create("Zach", "Adams"));
+        var amanda = BowlerFactory.Create(name: NameFactory.Create("Amanda", "Baker"));
+        var bob = BowlerFactory.Create(name: NameFactory.Create("Bob", "Baker"));
+        await _dbContext.Bowlers.AddRangeAsync([zach, amanda, bob], ct);
+
+        var tournament = TournamentFactory.Create(tournamentType: TournamentType.Doubles, seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        await _dbContext.HistoricalTournamentChampions.AddRangeAsync(
+            new HistoricalTournamentChampion { Bowler = bob, Tournament = tournament },
+            new HistoricalTournamentChampion { Bowler = zach, Tournament = tournament },
+            new HistoricalTournamentChampion { Bowler = amanda, Tournament = tournament });
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = new ListChampionsQueryHandler(_dbContext);
+
+        // Act
+        var result = await handler.HandleAsync(new ListChampionsQuery(), ct);
+
+        // Assert
+        // Sorted by last name (Adams, Baker, Baker), then first name within the tied last name (Amanda before Bob) —
+        // insertion order was intentionally different so this proves the query orders rather than preserving insert order.
+        result.ShouldHaveSingleItem();
+        result.Single().Champions.Select(c => c.BowlerName).ShouldBe([zach.Name, amanda.Name, bob.Name]);
+    }
+
+    [Fact(DisplayName = "HandleAsync orders recorded champions within a tournament by last name then first name")]
+    public async Task HandleAsync_ShouldOrderRecordedChampionsByLastNameThenFirstName_WithinTournament()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var zach = BowlerFactory.Create(name: NameFactory.Create("Zach", "Adams"));
+        var amanda = BowlerFactory.Create(name: NameFactory.Create("Amanda", "Baker"));
+        var bob = BowlerFactory.Create(name: NameFactory.Create("Bob", "Baker"));
+        await _dbContext.Bowlers.AddRangeAsync([zach, amanda, bob], ct);
+
+        var tournament = TournamentFactory.Create(tournamentType: TournamentType.Doubles, seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        tournament.CompleteTournament();
+        tournament.AddResult(bob.Id, place: 1, prizeMoney: 500m, points: 50);
+        tournament.AddResult(zach.Id, place: 1, prizeMoney: 500m, points: 50);
+        tournament.AddResult(amanda.Id, place: 1, prizeMoney: 500m, points: 50);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = new ListChampionsQueryHandler(_dbContext);
+
+        // Act
+        var result = await handler.HandleAsync(new ListChampionsQuery(), ct);
+
+        // Assert
+        result.ShouldHaveSingleItem();
+        result.Single().Champions.Select(c => c.BowlerName).ShouldBe([zach.Name, amanda.Name, bob.Name]);
+    }
+
     [Fact(DisplayName = "HandleAsync returns separate entries for each tournament")]
     public async Task HandleAsync_ShouldReturnSeparateEntry_ForEachTournament()
     {
@@ -395,5 +463,51 @@ public sealed class ListChampionsQueryHandlerTests(AppDbContextFixture fixture)
         // Assert
         result.Count.ShouldBe(2);
         result.Select(r => r.TournamentId).ShouldBe([historicalTournament.Id, recordedTournament.Id], ignoreOrder: true);
+    }
+
+    [Fact(DisplayName = "HandleAsync interleaves historical and recorded tournaments in tournament date order")]
+    public async Task HandleAsync_ShouldInterleaveHistoricalAndRecordedTournaments_InTournamentDateOrder()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var historicalBowler = BowlerFactory.Create();
+        var recordedBowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddRangeAsync([historicalBowler, recordedBowler], ct);
+
+        // The recorded (live-results) tournament predates the historical-record tournament, so a naive
+        // "historical bucket, then recorded bucket" concatenation would return them in the wrong order.
+        var recordedTournament = TournamentFactory.Create(
+            name: "Recorded 2020",
+            startDate: new DateOnly(2020, 3, 1),
+            endDate: new DateOnly(2020, 3, 2),
+            seasonId: season.Id);
+        var historicalTournament = TournamentFactory.Create(
+            name: "Historical 2024",
+            startDate: new DateOnly(2024, 10, 4),
+            endDate: new DateOnly(2024, 10, 5),
+            seasonId: season.Id);
+        await _dbContext.Tournaments.AddRangeAsync([recordedTournament, historicalTournament], ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        await _dbContext.HistoricalTournamentChampions.AddAsync(new HistoricalTournamentChampion
+        {
+            Bowler = historicalBowler,
+            Tournament = historicalTournament
+        }, ct);
+
+        recordedTournament.CompleteTournament();
+        recordedTournament.AddResult(recordedBowler.Id, place: 1, prizeMoney: 500m, points: 50);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = new ListChampionsQueryHandler(_dbContext);
+
+        // Act
+        var result = await handler.HandleAsync(new ListChampionsQuery(), ct);
+
+        // Assert
+        result.Select(r => r.TournamentId).ShouldBe([recordedTournament.Id, historicalTournament.Id]);
     }
 }

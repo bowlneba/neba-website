@@ -32,6 +32,19 @@ internal sealed class BearerTokenHandler(
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
+    // Buffer subtracted from the token's own "exp" claim so a proactive refresh happens slightly
+    // before expiry rather than racing it - avoids sending a token that expires mid-flight.
+    private static readonly TimeSpan ExpiryBuffer = TimeSpan.FromSeconds(30);
+
+    // HttpClientFactory reuses a handler instance across many outgoing calls (default ~2 minute
+    // handler lifetime), and a single Blazor request/circuit turn commonly fires several downstream
+    // API calls with the same unchanged token. Caching just the last decode avoids re-parsing the
+    // same JWT payload on every one of those calls; a wrong cache hit under concurrent access from a
+    // different token just falls through to a fresh decode, so no locking is needed.
+    private TokenExpiryCacheEntry? _lastExpiryCheck;
+
+    private sealed record TokenExpiryCacheEntry(string Token, bool IsExpiredOrExpiringSoon);
+
     /// <inheritdoc />
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
@@ -41,6 +54,17 @@ internal sealed class BearerTokenHandler(
         var token = httpContext is not null
             ? await httpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.AccessTokenName)
             : tokenCache.AccessToken;
+
+        // Proactively refresh an expired (or about-to-expire) token instead of only reacting to a
+        // 401 below. This matters for AllowAnonymous endpoints that read the caller's identity when
+        // present (e.g. GetTournamentEndpoint's permission-gated fields) - they never return 401 for
+        // a stale token, so without this the caller silently gets treated as anonymous instead of
+        // getting a refreshed token. It also avoids an extra round trip on authenticated endpoints
+        // for the common case of a circuit that's simply been open longer than the token's lifetime.
+        if (token is not null && IsExpiredOrExpiringSoon(token))
+        {
+            token = await TryRefreshAsync(httpContext, cancellationToken) ?? token;
+        }
 
         if (token is not null)
         {
@@ -132,6 +156,61 @@ internal sealed class BearerTokenHandler(
         await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);
 
         return refreshed.AccessToken;
+    }
+
+    /// <summary>
+    /// Reads the "exp" claim out of a JWT's payload segment without validating the signature -
+    /// signature/issuer/audience validation already happens server-side on every call; this is
+    /// only ever used to decide whether it's worth attempting a proactive refresh before sending.
+    /// Treats a token that can't be parsed as expired, so it falls through to a refresh attempt
+    /// rather than being sent as-is.
+    /// </summary>
+    private bool IsExpiredOrExpiringSoon(string jwt)
+    {
+        var cached = _lastExpiryCheck;
+        if (cached is not null && cached.Token == jwt)
+        {
+            return cached.IsExpiredOrExpiringSoon;
+        }
+
+        var result = ComputeIsExpiredOrExpiringSoon(jwt);
+        _lastExpiryCheck = new TokenExpiryCacheEntry(jwt, result);
+        return result;
+    }
+
+    private static bool ComputeIsExpiredOrExpiringSoon(string jwt)
+    {
+        var parts = jwt.Split('.');
+
+        if (parts.Length < 2)
+        {
+            return true;
+        }
+
+        try
+        {
+            var payloadBytes = Base64UrlDecode(parts[1]);
+            using var payload = JsonDocument.Parse(payloadBytes);
+
+            if (!payload.RootElement.TryGetProperty("exp", out var expElement))
+            {
+                return true;
+            }
+
+            var expiresAt = DateTimeOffset.FromUnixTimeSeconds(expElement.GetInt64());
+            return expiresAt <= DateTimeOffset.UtcNow.Add(ExpiryBuffer);
+        }
+        catch (Exception ex) when (ex is FormatException or JsonException or InvalidOperationException)
+        {
+            return true;
+        }
+    }
+
+    private static byte[] Base64UrlDecode(string value)
+    {
+        var padded = value.Replace('-', '+').Replace('_', '/');
+
+        return Convert.FromBase64String(padded.PadRight(padded.Length + ((4 - (padded.Length % 4)) % 4), '='));
     }
 
     private static async Task<HttpRequestMessage> CloneRequestAsync(HttpRequestMessage request, CancellationToken cancellationToken)

@@ -9,6 +9,12 @@ public sealed record BowlerTitleSummaryViewModel
     /// <summary>The bowler's display name.</summary>
     public required string BowlerName { get; init; }
 
+    /// <summary>The bowler's family or surname, used to sort/group by last name rather than the formatted display name.</summary>
+    public required string BowlerLastName { get; init; }
+
+    /// <summary>The bowler's given first name, used as a tiebreaker when sorting by last name.</summary>
+    public required string BowlerFirstName { get; init; }
+
     /// <summary>Total number of tournament titles won.</summary>
     public required int TitleCount { get; init; }
 
