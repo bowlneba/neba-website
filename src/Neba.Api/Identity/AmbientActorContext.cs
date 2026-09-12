@@ -21,12 +21,13 @@ internal static class AmbientActorContext
     /// </summary>
     public static IDisposable SetActor(string actorId)
     {
+        var previous = CurrentActorId.Value;
         CurrentActorId.Value = actorId;
-        return new ActorScope();
+        return new ActorScope(previous);
     }
 
-    private sealed class ActorScope : IDisposable
+    private sealed class ActorScope(string? previous) : IDisposable
     {
-        public void Dispose() => CurrentActorId.Value = null;
+        public void Dispose() => CurrentActorId.Value = previous;
     }
 }

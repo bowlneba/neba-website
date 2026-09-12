@@ -31,12 +31,13 @@ internal static class AmbientCorrelationContext
     /// </summary>
     public static IDisposable SetCorrelationId(string correlationId)
     {
+        var previous = Current.Value;
         Current.Value = correlationId;
-        return new CorrelationScope();
+        return new CorrelationScope(previous);
     }
 
-    private sealed class CorrelationScope : IDisposable
+    private sealed class CorrelationScope(string? previous) : IDisposable
     {
-        public void Dispose() => Current.Value = null;
+        public void Dispose() => Current.Value = previous;
     }
 }
