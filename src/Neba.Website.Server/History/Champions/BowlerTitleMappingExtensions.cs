@@ -18,10 +18,14 @@ internal static class BowlerTitleMappingExtensions
                 {
                     BowlerId = g.Key,
                     BowlerName = g.First().Champion.BowlerName,
+                    BowlerLastName = g.First().Champion.BowlerLastName,
+                    BowlerFirstName = g.First().Champion.BowlerFirstName,
                     TitleCount = g.Count(),
                     HallOfFame = g.First().Champion.HallOfFame,
                 })
-                .OrderByDescending(s => s.TitleCount)];
+                .OrderByDescending(s => s.TitleCount)
+                .ThenBy(s => s.BowlerLastName)
+                .ThenBy(s => s.BowlerFirstName)];
         }
 
         public List<TitlesByYearViewModel> ToTitlesByYear()

@@ -26,6 +26,8 @@ internal sealed class ListHallOfFameInductionsQueryHandler(
                 PhotoContainer = induction.Photo != null ? induction.Photo.Container : null,
                 PhotoPath = induction.Photo != null ? induction.Photo.Path : null
             })
+            .OrderBy(row => row.BowlerName.LastName)
+            .ThenBy(row => row.BowlerName.FirstName)
             .ToListAsync(cancellationToken);
 
         return [.. rows.Select(row => new HallOfFameInductionDto

@@ -273,6 +273,25 @@ public sealed class TitleCountViewTests : IDisposable
         countNums[0].ShouldBeGreaterThan(countNums[1]);
     }
 
+    [Fact(DisplayName = "Should order bowlers within a tied title count by last name, then first name")]
+    public void Render_ShouldOrderTiedBowlers_ByLastNameThenFirstName()
+    {
+        // Arrange — same title count, so display order comes purely from the tie-break.
+        // "Zach Adams" sorts last by first name but first by last name, proving the sort key is last name.
+        var zach = BowlerTitleSummaryViewModelFactory.Create(bowlerName: "Zach Adams", bowlerLastName: "Adams", bowlerFirstName: "Zach", titleCount: 3);
+        var amanda = BowlerTitleSummaryViewModelFactory.Create(bowlerName: "Amanda Baker", bowlerLastName: "Baker", bowlerFirstName: "Amanda", titleCount: 3);
+        var bob = BowlerTitleSummaryViewModelFactory.Create(bowlerName: "Bob Baker", bowlerLastName: "Baker", bowlerFirstName: "Bob", titleCount: 3);
+
+        // Act
+        var cut = Render([bob, zach, amanda]);
+
+        // Assert
+        var names = cut.FindAll("[data-tier=\"std\"] .bowler-card__name")
+            .Select(e => e.TextContent.Trim())
+            .ToList();
+        names.ShouldBe(["Zach Adams", "Amanda Baker", "Bob Baker"]);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────
 
     private IRenderedComponent<TitleCountView> Render(

@@ -42,12 +42,15 @@ internal sealed class ListChampionsQueryHandler(AppDbContext appDbContext)
             TournamentName = tournamentChampion.First().TournamentName,
             TournamentDate = tournamentChampion.First().TournamentDate,
             TournamentType = tournamentChampion.First().TournamentType.Name,
-            Champions = [.. tournamentChampion.Select(champion => new ChampionDto
-            {
-                BowlerId = champion.BowlerId,
-                BowlerName = champion.BowlerName,
-                HallOfFame = champion.HallOfFame
-            })]
+            Champions = [.. tournamentChampion
+                .OrderBy(champion => champion.BowlerName.LastName)
+                .ThenBy(champion => champion.BowlerName.FirstName)
+                .Select(champion => new ChampionDto
+                {
+                    BowlerId = champion.BowlerId,
+                    BowlerName = champion.BowlerName,
+                    HallOfFame = champion.HallOfFame
+                })]
         });
 
         var recordedChampionsByTournament = await _tournaments
@@ -73,14 +76,20 @@ internal sealed class ListChampionsQueryHandler(AppDbContext appDbContext)
             TournamentName = tournamentChampion.First().TournamentName,
             TournamentDate = tournamentChampion.First().TournamentDate,
             TournamentType = tournamentChampion.First().TournamentType.Name,
-            Champions = [.. tournamentChampion.Select(champion => new ChampionDto
-            {
-                BowlerId = champion.BowlerId,
-                BowlerName = champion.BowlerName,
-                HallOfFame = champion.HallOfFame
-            })]
+            Champions = [.. tournamentChampion
+                .OrderBy(champion => champion.BowlerName.LastName)
+                .ThenBy(champion => champion.BowlerName.FirstName)
+                .Select(champion => new ChampionDto
+                {
+                    BowlerId = champion.BowlerId,
+                    BowlerName = champion.BowlerName,
+                    HallOfFame = champion.HallOfFame
+                })]
         });
 
-        return [.. historicalTournaments, .. recordedTournaments];
+        return [.. historicalTournaments
+            .Concat(recordedTournaments)
+            .OrderBy(tournament => tournament.TournamentDate)
+            .ThenBy(tournament => tournament.TournamentName)];
     }
 }

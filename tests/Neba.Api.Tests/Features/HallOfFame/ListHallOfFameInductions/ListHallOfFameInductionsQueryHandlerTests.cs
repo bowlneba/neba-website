@@ -73,6 +73,38 @@ public sealed class ListHallOfFameInductionsQueryHandlerTests(AppDbContextFixtur
         dto.PhotoUri.ShouldBeNull();
     }
 
+    [Fact(DisplayName = "HandleAsync orders results by last name then first name")]
+    public async Task HandleAsync_ShouldOrderByLastNameThenFirstName_WhenMultipleInductionsExist()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+
+        var zach = BowlerFactory.Create(name: NameFactory.Create("Zach", "Adams"));
+        var amanda = BowlerFactory.Create(name: NameFactory.Create("Amanda", "Baker"));
+        var bob = BowlerFactory.Create(name: NameFactory.Create("Bob", "Baker"));
+        await _dbContext.Bowlers.AddRangeAsync([zach, amanda, bob], ct);
+
+        await _dbContext.HallOfFameInductions.AddRangeAsync(
+            [
+                HallOfFameInductionFactory.Create(bowlerId: bob.Id),
+                HallOfFameInductionFactory.Create(bowlerId: zach.Id),
+                HallOfFameInductionFactory.Create(bowlerId: amanda.Id)
+            ],
+            ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Loose);
+        var handler = new ListHallOfFameInductionsQueryHandler(_dbContext, fileStorageMock.Object);
+
+        // Act
+        var result = await handler.HandleAsync(new ListHallOfFameInductionsQuery(), ct);
+
+        // Assert
+        // Sorted by last name (Adams, Baker, Baker), then first name within the tied last name (Amanda before Bob) —
+        // insertion order was intentionally different so this proves the query orders rather than preserving insert order.
+        result.Select(dto => dto.BowlerName).ShouldBe([zach.Name, amanda.Name, bob.Name]);
+    }
+
     [Fact(DisplayName = "HandleAsync sets PhotoUri when induction has a photo")]
     public async Task HandleAsync_ShouldSetPhotoUri_WhenInductionHasPhoto()
     {

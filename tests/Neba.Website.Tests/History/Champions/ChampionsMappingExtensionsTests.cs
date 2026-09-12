@@ -34,7 +34,11 @@ public sealed class ChampionsMappingExtensionsTests
     {
         // Arrange
         var bowlerId = BowlerId.New();
-        var champion = ChampionResponseFactory.Create(bowlerId: bowlerId, bowlerName: "Joe Bowler");
+        var champion = ChampionResponseFactory.Create(
+            bowlerId: bowlerId,
+            bowlerName: "Joe Bowler",
+            bowlerLastName: "Bowler",
+            bowlerFirstName: "Joe");
         var tournament = TournamentChampionResponseFactory.Create(champions: [champion]);
 
         // Act
@@ -44,6 +48,8 @@ public sealed class ChampionsMappingExtensionsTests
         var summary = result.Single();
         summary.BowlerId.ShouldBe(bowlerId.Value.ToString());
         summary.BowlerName.ShouldBe("Joe Bowler");
+        summary.BowlerLastName.ShouldBe("Bowler");
+        summary.BowlerFirstName.ShouldBe("Joe");
     }
 
     [Fact(DisplayName = "Maps HallOfFame from first champion entry in group")]
@@ -88,6 +94,26 @@ public sealed class ChampionsMappingExtensionsTests
 
         // Assert
         result.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Breaks a TitleCount tie by last name, then first name")]
+    public void ToTitleSummaries_ShouldBreakTitleCountTie_ByLastNameThenFirstName()
+    {
+        // Arrange
+        var zach = ChampionResponseFactory.Create(bowlerId: BowlerId.New(), bowlerName: "Zach Adams", bowlerLastName: "Adams", bowlerFirstName: "Zach");
+        var amanda = ChampionResponseFactory.Create(bowlerId: BowlerId.New(), bowlerName: "Amanda Baker", bowlerLastName: "Baker", bowlerFirstName: "Amanda");
+        var bob = ChampionResponseFactory.Create(bowlerId: BowlerId.New(), bowlerName: "Bob Baker", bowlerLastName: "Baker", bowlerFirstName: "Bob");
+
+        // Each bowler has exactly one title, so they all tie on TitleCount and must fall back to name order.
+        var t1 = TournamentChampionResponseFactory.Create(champions: [bob]);
+        var t2 = TournamentChampionResponseFactory.Create(champions: [zach]);
+        var t3 = TournamentChampionResponseFactory.Create(champions: [amanda]);
+
+        // Act
+        var result = new[] { t1, t2, t3 }.ToTitleSummaries();
+
+        // Assert
+        result.Select(s => s.BowlerName).ShouldBe(["Zach Adams", "Amanda Baker", "Bob Baker"]);
     }
 
     // ── ToTitlesByYear ────────────────────────────────────────────────────

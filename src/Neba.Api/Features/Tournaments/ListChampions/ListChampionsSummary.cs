@@ -33,6 +33,8 @@ internal sealed class ListChampionsSummary
                             {
                                 BowlerId = "01JSTX0987654321ZYXWVUTSRQ",
                                 BowlerName = "Jane Smith",
+                                BowlerLastName = "Smith",
+                                BowlerFirstName = "Jane",
                                 HallOfFame = true,
                             },
                         ],

@@ -9,6 +9,8 @@
         {
           BowlerId: 01F59KXMYW9SY3CMBJDEBTERN7,
           BowlerName: Jimmy Quigley,
+          BowlerLastName: Quigley,
+          BowlerFirstName: Jimmy,
           HallOfFame: false
         }
       ]
@@ -22,21 +24,29 @@
         {
           BowlerId: 01HQBVCSMSQMJB8YSE8F5PMG3A,
           BowlerName: Sidney Moore,
+          BowlerLastName: Moore,
+          BowlerFirstName: Sidney,
           HallOfFame: false
         },
         {
           BowlerId: 01GQKGDCJV1TBYPY6T7MHYPYPF,
           BowlerName: Josh Ondricka,
+          BowlerLastName: Ondricka,
+          BowlerFirstName: Josh,
           HallOfFame: false
         },
         {
           BowlerId: 01HZCT4W0J7S7AJKKF54JXY2AM,
           BowlerName: Erica Tillman,
+          BowlerLastName: Tillman,
+          BowlerFirstName: Erica,
           HallOfFame: true
         },
         {
           BowlerId: 01GJAVKSQQZ04V30C1JEHTAJK9,
           BowlerName: Ross Jaskolski,
+          BowlerLastName: Jaskolski,
+          BowlerFirstName: Ross,
           HallOfFame: true
         }
       ]
@@ -50,6 +60,8 @@
         {
           BowlerId: 01JZW7P1VRF5HE2HGZM3Y2RCW4,
           BowlerName: Marco Morar,
+          BowlerLastName: Morar,
+          BowlerFirstName: Marco,
           HallOfFame: false
         }
       ]

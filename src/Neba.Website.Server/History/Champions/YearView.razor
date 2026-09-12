@@ -103,13 +103,13 @@
 
     private BowlerTitleSummaryViewModel LookupSummary(string bowlerId) =>
         Summaries.FirstOrDefault(s => s.BowlerId == bowlerId)
-        ?? new BowlerTitleSummaryViewModel { BowlerId = bowlerId, BowlerName = string.Empty, TitleCount = 0, HallOfFame = false };
+        ?? new BowlerTitleSummaryViewModel { BowlerId = bowlerId, BowlerName = string.Empty, BowlerLastName = string.Empty, BowlerFirstName = string.Empty, TitleCount = 0, HallOfFame = false };
 
     private Task InvokeChampion(BowlerTitleSummaryViewModel summary, BowlerTitleViewModel champion)
     {
         var effective = summary.BowlerId != string.Empty
             ? summary
-            : new BowlerTitleSummaryViewModel { BowlerId = champion.BowlerId, BowlerName = champion.BowlerName, TitleCount = 0, HallOfFame = champion.HallOfFame };
+            : new BowlerTitleSummaryViewModel { BowlerId = champion.BowlerId, BowlerName = champion.BowlerName, BowlerLastName = string.Empty, BowlerFirstName = string.Empty, TitleCount = 0, HallOfFame = champion.HallOfFame };
         return OnBowlerSelected.InvokeAsync(effective);
     }
 }
