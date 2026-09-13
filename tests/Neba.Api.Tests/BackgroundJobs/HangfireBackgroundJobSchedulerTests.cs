@@ -337,4 +337,77 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         logger.Collector.GetSnapshot().ShouldHaveSingleItem();
         logger.Collector.GetSnapshot()[0].Level.ShouldBe(LogLevel.Information);
     }
+
+    [Fact(DisplayName = "Should enqueue job when deduplication key has not been used before")]
+    public void EnqueueOnce_ShouldEnqueueJob_WhenNotPreviouslyEnqueued()
+    {
+        // Arrange
+        var logger = new FakeLogger<HangfireBackgroundJobScheduler>();
+        HangfireBackgroundJobScheduler scheduler = CreateScheduler(logger);
+        var job = new TestBackgroundJob("First Run");
+
+        // Act
+        scheduler.EnqueueOnce(job, "dedupe-key-new", TimeSpan.FromMinutes(15));
+
+        // Assert
+        logger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        logger.Collector.GetSnapshot()[0].Message.ShouldContain("Enqueuing background job");
+    }
+
+    [Fact(DisplayName = "Should skip enqueuing job when called again within the dedupe window")]
+    public void EnqueueOnce_ShouldSkipEnqueue_WhenCalledAgainWithinWindow()
+    {
+        // Arrange
+        var logger = new FakeLogger<HangfireBackgroundJobScheduler>();
+        HangfireBackgroundJobScheduler scheduler = CreateScheduler(logger);
+        var job = new TestBackgroundJob("Repeated Run");
+
+        // Act
+        scheduler.EnqueueOnce(job, "dedupe-key-repeat", TimeSpan.FromMinutes(15));
+        scheduler.EnqueueOnce(job, "dedupe-key-repeat", TimeSpan.FromMinutes(15));
+
+        // Assert
+        IReadOnlyList<FakeLogRecord> logs = logger.Collector.GetSnapshot();
+        logs.Count.ShouldBe(2);
+        logs[0].Message.ShouldContain("Enqueuing background job");
+        logs[1].Message.ShouldContain("Skipped enqueuing background job");
+    }
+
+    [Fact(DisplayName = "Should enqueue job every time when window is zero")]
+    public void EnqueueOnce_ShouldEnqueueEveryTime_WhenWindowIsZero()
+    {
+        // Arrange
+        var logger = new FakeLogger<HangfireBackgroundJobScheduler>();
+        HangfireBackgroundJobScheduler scheduler = CreateScheduler(logger);
+        var job = new TestBackgroundJob("No Window Run");
+
+        // Act
+        scheduler.EnqueueOnce(job, "dedupe-key-no-window", TimeSpan.Zero);
+        scheduler.EnqueueOnce(job, "dedupe-key-no-window", TimeSpan.Zero);
+
+        // Assert
+        IReadOnlyList<FakeLogRecord> logs = logger.Collector.GetSnapshot();
+        logs.Count.ShouldBe(2);
+        logs[0].Message.ShouldContain("Enqueuing background job");
+        logs[1].Message.ShouldContain("Enqueuing background job");
+    }
+
+    [Fact(DisplayName = "Should enqueue job independently when deduplication keys differ")]
+    public void EnqueueOnce_ShouldEnqueueSeparately_WhenDeduplicationKeysDiffer()
+    {
+        // Arrange
+        var logger = new FakeLogger<HangfireBackgroundJobScheduler>();
+        HangfireBackgroundJobScheduler scheduler = CreateScheduler(logger);
+        var job = new TestBackgroundJob("Distinct Keys Run");
+
+        // Act
+        scheduler.EnqueueOnce(job, "dedupe-key-a", TimeSpan.FromMinutes(15));
+        scheduler.EnqueueOnce(job, "dedupe-key-b", TimeSpan.FromMinutes(15));
+
+        // Assert
+        IReadOnlyList<FakeLogRecord> logs = logger.Collector.GetSnapshot();
+        logs.Count.ShouldBe(2);
+        logs[0].Message.ShouldContain("Enqueuing background job");
+        logs[1].Message.ShouldContain("Enqueuing background job");
+    }
 }

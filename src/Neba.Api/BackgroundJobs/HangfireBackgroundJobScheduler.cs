@@ -1,7 +1,9 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 
 using Hangfire;
+using Hangfire.Storage;
 
 using Neba.Api.Telemetry;
 
@@ -12,6 +14,8 @@ internal sealed class HangfireBackgroundJobScheduler(
     ILogger<HangfireBackgroundJobScheduler> logger)
         : IBackgroundJobScheduler
 {
+    private const string EnqueueOnceHashKey = "enqueue-once-markers";
+
     private static readonly ActivitySource ActivitySource = new("Neba.Hangfire");
 
     public string Enqueue<TJob>(TJob job)
@@ -23,6 +27,32 @@ internal sealed class HangfireBackgroundJobScheduler(
 
         return BackgroundJob.Enqueue<HangfireBackgroundJobScheduler>(
             scheduler => scheduler.ExecuteJobAsync(job, jobName, CancellationToken.None));
+    }
+
+    public void EnqueueOnce<TJob>(TJob job, string deduplicationKey, TimeSpan window)
+        where TJob : IBackgroundJob
+    {
+        using IStorageConnection connection = JobStorage.Current.GetConnection();
+        using IDisposable distributedLock = connection.AcquireDistributedLock(
+            $"enqueue-once-lock:{deduplicationKey}",
+            TimeSpan.FromSeconds(30));
+
+        Dictionary<string, string>? markers = connection.GetAllEntriesFromHash(EnqueueOnceHashKey);
+
+        if (markers is not null
+            && markers.TryGetValue(deduplicationKey, out string? lastEnqueuedAtRaw)
+            && DateTimeOffset.TryParse(lastEnqueuedAtRaw, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTimeOffset lastEnqueuedAt)
+            && DateTimeOffset.UtcNow - lastEnqueuedAt < window)
+        {
+            logger.LogSkippedDuplicateEnqueue(typeof(TJob).Name, deduplicationKey);
+            return;
+        }
+
+        Enqueue(job);
+
+        connection.SetRangeInHash(
+            EnqueueOnceHashKey,
+            [new KeyValuePair<string, string>(deduplicationKey, DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture))]);
     }
 
     public string Schedule<TJob>(
@@ -154,6 +184,14 @@ internal static partial class BackgroundJobLogMessages
     public static partial void LogEnqueueBackgroundJob(
         this ILogger<HangfireBackgroundJobScheduler> logger,
         string jobType);
+
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "Skipped enqueuing background job of type {JobType} with deduplication key {DeduplicationKey} - already enqueued within the dedupe window.")]
+    public static partial void LogSkippedDuplicateEnqueue(
+        this ILogger<HangfireBackgroundJobScheduler> logger,
+        string jobType,
+        string deduplicationKey);
 
     [LoggerMessage(
         Level = LogLevel.Information,
