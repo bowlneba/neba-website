@@ -17,13 +17,17 @@ internal static class RefreshTokenStore
         UserManager<ApplicationUser> userManager,
         ApplicationUser user,
         string rawToken,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        string? previousHash = null,
+        DateTimeOffset? previousHashExpiresAt = null)
     {
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
         var stored = new StoredRefreshToken
         {
             Hash = hash,
-            IssuedAt = timeProvider.GetUtcNow()
+            IssuedAt = timeProvider.GetUtcNow(),
+            PreviousHash = previousHash,
+            PreviousHashExpiresAt = previousHashExpiresAt
         };
         var json = JsonSerializer.Serialize(stored);
 

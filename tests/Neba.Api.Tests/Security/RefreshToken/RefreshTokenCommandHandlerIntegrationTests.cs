@@ -304,4 +304,85 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
             Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(oldRefreshToken))),
             "new token should replace the old one");
     }
+
+    [Fact(DisplayName = "HandleAsync succeeds when presented with the immediately-prior refresh token within the grace window")]
+    public async Task HandleAsync_ShouldSucceed_WhenPresentedWithPreviousTokenWithinGraceWindow()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
+        var timeProvider = new FakeTimeProvider(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        var (user, firstRefreshToken) = await SeedLoginAsync(userManager, roleManager, signInManager, timeProvider);
+
+        // A first, winning refresh rotates the stored token out from under firstRefreshToken.
+        await CreateHandler(userManager, roleManager, timeProvider)
+            .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = firstRefreshToken }, ct);
+        timeProvider.Advance(TimeSpan.FromSeconds(5));
+
+        // Act — a request that raced in with the now-rotated-out token, still inside the grace window.
+        var result = await CreateHandler(userManager, roleManager, timeProvider)
+            .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = firstRefreshToken }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.AccessToken.ShouldNotBeNullOrEmpty();
+        result.Value.RefreshToken.ShouldNotBeNullOrEmpty();
+    }
+
+    [Fact(DisplayName = "HandleAsync returns InvalidRefreshToken when presented with the immediately-prior refresh token after the grace window has passed")]
+    public async Task HandleAsync_ShouldReturnInvalidRefreshToken_WhenPresentedWithPreviousTokenAfterGraceWindow()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
+        var timeProvider = new FakeTimeProvider(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        var (user, firstRefreshToken) = await SeedLoginAsync(userManager, roleManager, signInManager, timeProvider);
+
+        await CreateHandler(userManager, roleManager, timeProvider)
+            .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = firstRefreshToken }, ct);
+        timeProvider.Advance(TimeSpan.FromSeconds(31));
+
+        // Act
+        var result = await CreateHandler(userManager, roleManager, timeProvider)
+            .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = firstRefreshToken }, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.Unauthorized);
+        result.FirstError.Code.ShouldBe("RefreshToken.InvalidRefreshToken");
+    }
+
+    [Fact(DisplayName = "HandleAsync keeps the same grace slot when a racing request rotates again, so a second racer with the original token still succeeds")]
+    public async Task HandleAsync_ShouldPreserveGraceSlot_WhenRacingRequestRotatesAgain()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
+        var timeProvider = new FakeTimeProvider(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        var (user, firstRefreshToken) = await SeedLoginAsync(userManager, roleManager, signInManager, timeProvider);
+
+        // Winner rotates first, then a racer presenting the same original token rotates again.
+        await CreateHandler(userManager, roleManager, timeProvider)
+            .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = firstRefreshToken }, ct);
+        await CreateHandler(userManager, roleManager, timeProvider)
+            .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = firstRefreshToken }, ct);
+
+        // Act — a second racer, also presenting the same original token.
+        var result = await CreateHandler(userManager, roleManager, timeProvider)
+            .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = firstRefreshToken }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.AccessToken.ShouldNotBeNullOrEmpty();
+        result.Value.RefreshToken.ShouldNotBeNullOrEmpty();
+    }
 }

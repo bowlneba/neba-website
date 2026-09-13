@@ -63,7 +63,7 @@ internal sealed class BearerTokenHandler(
         // for the common case of a circuit that's simply been open longer than the token's lifetime.
         if (token is not null && IsExpiredOrExpiringSoon(token))
         {
-            token = await TryRefreshAsync(httpContext, cancellationToken) ?? token;
+            token = await RefreshWithLockAsync(httpContext, token, cancellationToken) ?? token;
         }
 
         if (token is not null)
@@ -85,7 +85,7 @@ internal sealed class BearerTokenHandler(
 
         if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
-            var refreshedToken = await TryRefreshAsync(httpContext, cancellationToken);
+            var refreshedToken = await RefreshWithLockAsync(httpContext, token, cancellationToken);
 
             if (refreshedToken is not null)
             {
@@ -99,6 +99,38 @@ internal sealed class BearerTokenHandler(
         }
 
         return response;
+    }
+
+    /// <summary>
+    /// Wraps <see cref="TryRefreshAsync"/> in <see cref="CircuitTokenCache.RefreshLock"/> so a burst
+    /// of concurrent calls on the same circuit (e.g. several near-simultaneous uploads whose access
+    /// tokens all go stale together) serialize through one refresh instead of each racing the server
+    /// with the same soon-to-be-rotated-out refresh token. <paramref name="tokenAtCallTime"/> is the
+    /// token this caller observed before deciding it needed refreshing; if another caller already
+    /// refreshed past that token by the time this one gets the lock, that newer token is reused
+    /// instead of hitting the network again.
+    /// </summary>
+    private async Task<string?> RefreshWithLockAsync(HttpContext? httpContext, string? tokenAtCallTime, CancellationToken cancellationToken)
+    {
+        await tokenCache.RefreshLock.WaitAsync(cancellationToken);
+
+        try
+        {
+            var latest = httpContext is not null
+                ? await httpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.AccessTokenName)
+                : tokenCache.AccessToken;
+
+            if (latest is not null && latest != tokenAtCallTime && !IsExpiredOrExpiringSoon(latest))
+            {
+                return latest;
+            }
+
+            return await TryRefreshAsync(httpContext, cancellationToken);
+        }
+        finally
+        {
+            tokenCache.RefreshLock.Release();
+        }
     }
 
     private async Task<string?> TryRefreshAsync(HttpContext? httpContext, CancellationToken cancellationToken)

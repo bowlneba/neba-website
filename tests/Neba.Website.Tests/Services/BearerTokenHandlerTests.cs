@@ -298,6 +298,80 @@ public sealed class BearerTokenHandlerTests
         refreshHandler.Requests.ShouldHaveSingleItem();
     }
 
+    [Fact(DisplayName = "Should serialize concurrent refreshes through one call when multiple requests race an expiring cached token")]
+    public async Task SendAsync_ShouldSingleFlightRefresh_WhenConcurrentRequestsRaceExpiringToken()
+    {
+        // Arrange
+        using var innerHandler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+
+        var newAccessToken = BuildJwt(DateTimeOffset.UtcNow.AddMinutes(15));
+        var refreshStarted = new TaskCompletionSource();
+        var releaseRefresh = new TaskCompletionSource();
+        var refreshCallCount = 0;
+
+        // An async, gated responder so the test can deterministically pin the second call at the
+        // shared CircuitTokenCache.RefreshLock while the first call's refresh is still in flight -
+        // exactly the race that produced concurrent /security/refresh calls in production.
+        using var refreshHandler = new CapturingHandler(async request =>
+        {
+            Interlocked.Increment(ref refreshCallCount);
+            refreshStarted.TrySetResult();
+#pragma warning disable VSTHRD003 // Deliberate cross-task gate to pin the timing of the race under test.
+            await releaseRefresh.Task;
+#pragma warning restore VSTHRD003
+
+            var json = JsonSerializer.Serialize(new
+            {
+                accessToken = newAccessToken,
+                refreshToken = "new-refresh",
+                expiresAt = DateTimeOffset.UtcNow.AddMinutes(15),
+                userId = "user-123",
+                email = "admin@bowlneba.com",
+            }, JsonOptions);
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            };
+        });
+
+        var httpContextAccessorMock = new Mock<IHttpContextAccessor>(MockBehavior.Strict);
+        httpContextAccessorMock.SetupGet(a => a.HttpContext).Returns((HttpContext?)null);
+        var factoryMock = new Mock<IHttpClientFactory>(MockBehavior.Strict);
+        factoryMock.Setup(f => f.CreateClient(string.Empty)).Returns(() => new HttpClient(refreshHandler));
+
+        var expiredToken = BuildJwt(DateTimeOffset.UtcNow.AddMinutes(-1));
+        // Shared across both handlers, matching two calls on the same Blazor circuit going through
+        // separate transient BearerTokenHandler instances but the same scoped CircuitTokenCache.
+        var tokenCache = new CircuitTokenCache { AccessToken = expiredToken, RefreshToken = "refresh-abc", UserId = "user-123" };
+
+        using var sutA = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, tokenCache);
+        using var sutB = CreateHandler(innerHandler, httpContextAccessorMock.Object, factoryMock.Object, tokenCache);
+        using var clientA = new HttpClient(sutA, disposeHandler: false);
+        using var clientB = new HttpClient(sutB, disposeHandler: false);
+        var ct = TestContext.Current.CancellationToken;
+
+        // Act
+        var taskA = clientA.GetAsync(new Uri("https://downstream.example.com/resource"), ct);
+        await refreshStarted.Task; // A is now holding the lock, mid-refresh.
+        var taskB = clientB.GetAsync(new Uri("https://downstream.example.com/resource"), ct);
+        await Task.Delay(50, ct); // Give B's SendAsync a chance to queue behind A on the lock.
+        releaseRefresh.TrySetResult();
+
+#pragma warning disable VSTHRD003 // Deliberately awaiting the two calls kicked off above, after fanning them out.
+        using var responseA = await taskA;
+        using var responseB = await taskB;
+#pragma warning restore VSTHRD003
+
+        // Assert
+        responseA.StatusCode.ShouldBe(HttpStatusCode.OK);
+        responseB.StatusCode.ShouldBe(HttpStatusCode.OK);
+        refreshCallCount.ShouldBe(1, "B should reuse A's refreshed token instead of racing its own refresh call");
+        innerHandler.Requests.Count.ShouldBe(2);
+        innerHandler.Requests.ShouldAllBe(r => Equals(r.Headers.Authorization, new AuthenticationHeaderValue("Bearer", newAccessToken)));
+        tokenCache.AccessToken.ShouldBe(newAccessToken);
+    }
+
     [Fact(DisplayName = "Should retry with the original body intact when the request content is a single-read stream")]
     public async Task SendAsync_ShouldRetryWithOriginalBody_WhenContentIsSingleReadStream()
     {
@@ -442,11 +516,20 @@ public sealed class BearerTokenHandlerTests
 
     private sealed class RecordingHandler(Func<HttpRequestMessage, HttpResponseMessage> responder) : HttpMessageHandler
     {
+        private readonly Lock _lock = new();
+
+        // A List<T> (not thread-safe) is fine for every other test here since they only ever send
+        // one request at a time; the single-flight-refresh test below sends two requests
+        // concurrently, so mutation needs to be synchronized to avoid corrupting the list.
         public List<HttpRequestMessage> Requests { get; } = [];
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            Requests.Add(request);
+            lock (_lock)
+            {
+                Requests.Add(request);
+            }
+
             return Task.FromResult(responder(request));
         }
     }
