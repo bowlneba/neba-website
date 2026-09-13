@@ -1,5 +1,9 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
 
+using Neba.Api.Contracts.Compliance;
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server;
 
@@ -34,4 +38,35 @@ public sealed class InfrastructureConfigurationTests
         // Assert
         result.ShouldBeSameAs(builder);
     }
+
+    [Fact(DisplayName = "AddInfrastructure should wire up [LoggerMessage] redaction so a [PersonalData] parameter is masked")]
+    public async Task AddInfrastructure_ShouldWireUpRedaction_SoPersonalDataParameterIsMasked()
+    {
+        // Arrange
+        var builder = WebApplication.CreateBuilder();
+        builder.Configuration["ConnectionStrings:keyvault"] = null;
+        builder.Configuration["ConnectionStrings:blob"] = null;
+        builder.Logging.ClearProviders().AddFakeLogging();
+
+        builder.AddInfrastructure();
+
+        await using var provider = builder.Services.BuildServiceProvider();
+        var logger = provider.GetRequiredService<ILogger<InfrastructureConfigurationTests>>();
+        var collector = provider.GetFakeLogCollector();
+
+        // Act
+        logger.LogSampleWithPersonalData("log-target@example.com");
+
+        // Assert
+        var logs = collector.GetSnapshot();
+        logs.Count.ShouldBe(1);
+        logs[0].Message.ShouldNotContain("log-target@example.com");
+        logs[0].Message.ShouldMatch(@"^Sample: l\*+$");
+    }
+}
+
+internal static partial class InfrastructureConfigurationTestsLogMessages
+{
+    [LoggerMessage(Level = LogLevel.Information, Message = "Sample: {Value}")]
+    public static partial void LogSampleWithPersonalData(this ILogger logger, [PersonalData] string value);
 }

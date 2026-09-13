@@ -20,10 +20,7 @@ internal sealed class TournamentOilPatternConfiguration
             .HasColumnName("tournament_rounds")
             .HasConversion(
                 new TournamentRoundValueConverter(),
-                new ValueComparer<IReadOnlyCollection<TournamentRound>>(
-                    (left, right) => (left ?? Array.Empty<TournamentRound>()).SequenceEqual(right ?? Array.Empty<TournamentRound>()),
-                    collection => collection.Aggregate(0, (hash, round) => HashCode.Combine(hash, round.GetHashCode())),
-                    collection => collection.ToList()))
+                EnumCollectionValueComparer.Create<TournamentRound>())
             .IsRequired();
     }
 }

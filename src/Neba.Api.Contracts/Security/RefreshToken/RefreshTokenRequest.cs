@@ -1,3 +1,5 @@
+using Neba.Api.Contracts.Compliance;
+
 namespace Neba.Api.Contracts.Security.RefreshToken;
 
 /// <summary>
@@ -13,5 +15,6 @@ public sealed record RefreshTokenRequest
     /// <summary>
     /// Gets the refresh token used to obtain a new access token.
     /// </summary>
+    [PrivateData]
     public required string RefreshToken { get; init; }
 }

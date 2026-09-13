@@ -1,3 +1,5 @@
+using Neba.Api.Contracts.Compliance;
+
 namespace Neba.Api.Contracts.Security.ListUsers;
 
 /// <summary>
@@ -9,6 +11,7 @@ public sealed record UserSummaryResponse
     public required string UserId { get; init; }
 
     /// <summary>The user's email address.</summary>
+    [PersonalData]
     public required string Email { get; init; }
 
     /// <summary>Whether the user has confirmed their email (set their password).</summary>

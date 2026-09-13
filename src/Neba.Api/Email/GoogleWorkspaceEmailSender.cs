@@ -5,6 +5,7 @@ using MailKit.Net.Smtp;
 using MimeKit;
 
 using Neba.Api.Compliance;
+using Neba.Api.Contracts.Compliance;
 using Neba.Api.Discord;
 
 namespace Neba.Api.Email;

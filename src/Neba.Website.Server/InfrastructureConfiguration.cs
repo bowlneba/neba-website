@@ -3,6 +3,8 @@ using Azure.Storage.Blobs;
 
 using Microsoft.AspNetCore.DataProtection;
 
+using Neba.Api.Contracts.Compliance;
+
 namespace Neba.Website.Server;
 
 #pragma warning disable CA1708 // Identifiers should differ by more than case
@@ -31,6 +33,8 @@ internal static class InfrastructureConfiguration
         public WebApplicationBuilder AddInfrastructure()
         {
             ArgumentNullException.ThrowIfNull(builder);
+
+            builder.AddRedaction();
 
             return builder.AddKeyVault().AddSharedDataProtection();
         }

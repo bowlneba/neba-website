@@ -1,3 +1,5 @@
+using Neba.Api.Ambient;
+
 namespace Neba.Api.Identity;
 
 /// <summary>
@@ -11,22 +13,13 @@ namespace Neba.Api.Identity;
 /// </summary>
 internal static class AmbientActorContext
 {
-    private static readonly AsyncLocal<string?> CurrentActorId = new();
+    private static readonly AmbientValue<string> Ambient = new();
 
-    public static string? ActorId => CurrentActorId.Value;
+    public static string? ActorId => Ambient.Current;
 
     /// <summary>
     /// Sets the ambient actor for the remainder of the current async call chain. Dispose the
     /// returned scope when the actor no longer applies (e.g. at the end of a background job).
     /// </summary>
-    public static IDisposable SetActor(string actorId)
-    {
-        CurrentActorId.Value = actorId;
-        return new ActorScope();
-    }
-
-    private sealed class ActorScope : IDisposable
-    {
-        public void Dispose() => CurrentActorId.Value = null;
-    }
+    public static IDisposable SetActor(string actorId) => Ambient.Set(actorId);
 }

@@ -1,4 +1,5 @@
 using Neba.Api.Compliance;
+using Neba.Api.Contracts.Compliance;
 using Neba.Api.Security.Domain;
 using Neba.TestFactory.Attributes;
 

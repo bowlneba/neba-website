@@ -1,7 +1,10 @@
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Compliance.Classification;
 using Microsoft.Extensions.Compliance.Redaction;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
-namespace Neba.Api.Compliance;
+namespace Neba.Api.Contracts.Compliance;
 
 internal static class RedactionConfiguration
 {

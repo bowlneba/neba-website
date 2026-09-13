@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
 using Neba.Api.Features.Seasons.Domain;
-using Neba.Api.Identity;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -13,7 +12,7 @@ internal sealed class AssignRookieBowlerOfTheYearAwardJob(
 {
     public async Task AssignAsync(SeasonId seasonId, CancellationToken ct)
     {
-        using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
+        using var _ = LegacyActor.EnterActorScope();
 
         var season = await db.Seasons
             .Include(s => s.BowlerOfTheYearAwards)

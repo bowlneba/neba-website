@@ -43,10 +43,7 @@ internal sealed class HallOfFameInductionConfiguration
             .HasColumnName("category")
             .HasConversion(
                 new HallOfFameCategoryValueConverter(),
-                new ValueComparer<IReadOnlyCollection<HallOfFameCategory>>(
-                    (left, right) => (left ?? Array.Empty<HallOfFameCategory>()).SequenceEqual(right ?? Array.Empty<HallOfFameCategory>()),
-                    collection => collection.Aggregate(0, (hash, category) => HashCode.Combine(hash, category.GetHashCode())),
-                    collection => collection.ToList()))
+                EnumCollectionValueComparer.Create<HallOfFameCategory>())
             .IsRequired();
 
         builder.HasStoredFile(induction => induction.Photo,

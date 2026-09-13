@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-using Neba.Api.Compliance;
+using Neba.Api.Contracts.Compliance;
 
-using PersonalDataAttribute = Neba.Api.Compliance.PersonalDataAttribute;
+using PersonalDataAttribute = Neba.Api.Contracts.Compliance.PersonalDataAttribute;
 
 namespace Neba.Api.Security.Domain;
 

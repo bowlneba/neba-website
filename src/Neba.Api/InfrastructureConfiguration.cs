@@ -3,7 +3,7 @@ using Neba.Api.Auditing;
 using Neba.Api.BackgroundJobs;
 using Neba.Api.Caching;
 using Neba.Api.Clock;
-using Neba.Api.Compliance;
+using Neba.Api.Contracts.Compliance;
 using Neba.Api.Database;
 using Neba.Api.Discord;
 using Neba.Api.Documents;

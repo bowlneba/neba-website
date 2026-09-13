@@ -6,8 +6,19 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Ardalis.SmartEnum" />
+    <PackageReference Include="Microsoft.Extensions.Compliance.Redaction" />
+    <PackageReference Include="Microsoft.Extensions.Telemetry" />
     <PackageReference Include="Microsoft.FeatureManagement" />
     <PackageReference Include="Refit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Compliance redaction wiring (RedactionConfiguration, StarMaskingRedactor) is internal so
+         only the two app projects that actually wire up ILogger redaction can use it. -->
+    <InternalsVisibleTo Include="Neba.Api" />
+    <InternalsVisibleTo Include="Neba.Api.Tests" />
+    <InternalsVisibleTo Include="Neba.Website.Server" />
+    <InternalsVisibleTo Include="Neba.Website.Tests" />
   </ItemGroup>
 
 </Project>

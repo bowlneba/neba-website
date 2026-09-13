@@ -1,8 +1,14 @@
 using Microsoft.Extensions.Compliance.Classification;
 
-namespace Neba.Api.Compliance;
+namespace Neba.Api.Contracts.Compliance;
 
-internal static class DataTaxonomy
+/// <summary>
+/// Data-sensitivity classifications shared by every DTO/property tagged with
+/// <see cref="PublicDataAttribute"/>/<see cref="PersonalDataAttribute"/>/<see cref="PrivateDataAttribute"/>.
+/// Lives in the Contracts project (rather than Neba.Api) so request/response DTOs shared across
+/// the API/website boundary can carry these attributes directly.
+/// </summary>
+public static class DataTaxonomy
 {
     private const string TaxonomyName = nameof(DataTaxonomy);
 

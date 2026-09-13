@@ -9,7 +9,6 @@ using Neba.Api.Database;
 using Neba.Api.Discord;
 using Neba.Api.Email;
 using Neba.Api.Features.Tournaments.Domain;
-using Neba.Api.Identity;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -28,7 +27,7 @@ internal sealed class SyncTournamentResultsJob(
 {
     public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
     {
-        using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
+        using var _ = LegacyActor.EnterActorScope();
 
         var tournament = await db.Set<Tournament>()
             .Include(t => t.Results)

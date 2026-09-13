@@ -10,7 +10,6 @@ using Neba.Api.Features.Bowlers.Domain;
 using Neba.Api.Features.Seasons.Domain;
 using Neba.Api.Features.Stats.Domain;
 using Neba.Api.Features.Tournaments.Domain;
-using Neba.Api.Identity;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -53,7 +52,7 @@ internal sealed class GenerateSeasonStatsJob(
 
     public async Task SyncAsync(int legacyTournamentId, CancellationToken ct)
     {
-        using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
+        using var _ = LegacyActor.EnterActorScope();
 
         var tournament = await db.Set<Tournament>()
             .SingleOrDefaultAsync(t => t.LegacyId == legacyTournamentId, ct);

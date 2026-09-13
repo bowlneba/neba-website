@@ -1,3 +1,5 @@
+using Neba.Api.Contracts.Compliance;
+
 namespace Neba.Api.Contracts.Security.SetPasswordFromToken;
 
 /// <summary>
@@ -10,8 +12,10 @@ public sealed record SetPasswordFromTokenRequest
     public required string UserId { get; init; }
 
     /// <summary>The opaque token issued by <c>UserManager.GeneratePasswordResetTokenAsync</c>.</summary>
+    [PrivateData]
     public required string Token { get; init; }
 
     /// <summary>The new password to set.</summary>
+    [PrivateData]
     public required string NewPassword { get; init; }
 }

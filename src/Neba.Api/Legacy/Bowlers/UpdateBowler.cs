@@ -13,7 +13,6 @@ using Microsoft.EntityFrameworkCore;
 
 using Neba.Api.Database;
 using Neba.Api.Features.Bowlers.Domain;
-using Neba.Api.Identity;
 
 using ZiggyCreatures.Caching.Fusion;
 
@@ -92,7 +91,7 @@ internal sealed class UpdateBowlerSyncJob(
 {
     public async Task SyncAsync(int legacyBowlerId, CancellationToken ct)
     {
-        using var _ = AmbientActorContext.SetActor(LegacyActor.Id);
+        using var _ = LegacyActor.EnterActorScope();
 
         // See NewBowlerSyncJob.SyncAsync for the rationale on suppressing DAP005 here.
 #pragma warning disable DAP005
