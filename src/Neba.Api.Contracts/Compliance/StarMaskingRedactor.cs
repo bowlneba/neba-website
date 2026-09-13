@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Compliance.Redaction;
 
-namespace Neba.Api.Compliance;
+namespace Neba.Api.Contracts.Compliance;
 
 /// <summary>Keeps the first character of the value and replaces the remainder with '*'.</summary>
 internal sealed class StarMaskingRedactor : Redactor

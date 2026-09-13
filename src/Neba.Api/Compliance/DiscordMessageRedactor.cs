@@ -4,7 +4,7 @@ namespace Neba.Api.Compliance;
 
 /// <summary>
 /// Masks email addresses embedded in free-text sent to Discord — a new outbound channel that,
-/// unlike <see cref="ILogger"/>, isn't wrapped by <see cref="RedactionConfiguration.AddRedaction"/>.
+/// unlike <see cref="ILogger"/>, isn't wrapped by <see cref="Neba.Api.Contracts.Compliance.RedactionConfiguration.AddRedaction"/>.
 /// Exception/validation messages routinely quote an email address (e.g. "Bowler with email
 /// x@example.com already exists"), and that text is forwarded to Discord verbatim by
 /// <c>GlobalExceptionHandler</c>, <c>ResilientAuditDataProvider</c>, and

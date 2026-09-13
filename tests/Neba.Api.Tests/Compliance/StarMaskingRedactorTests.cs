@@ -1,4 +1,4 @@
-using Neba.Api.Compliance;
+using Neba.Api.Contracts.Compliance;
 using Neba.TestFactory.Attributes;
 
 namespace Neba.Api.Tests.Compliance;
