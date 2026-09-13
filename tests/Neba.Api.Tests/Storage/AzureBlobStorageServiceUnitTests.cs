@@ -1,4 +1,6 @@
+using Azure;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -124,6 +126,105 @@ public sealed class AzureBlobStorageServiceUnitTests
             () => sut.UploadFileAsync(
                 "container", "path.txt", stream, "text/plain",
                 new Dictionary<string, string>(), CancellationToken.None));
+    }
+
+    private static Mock<BlobContainerClient> CreateStrictContainerClientMock(bool containerExists)
+    {
+        var mockContainerClient = new Mock<BlobContainerClient>(MockBehavior.Strict);
+
+        mockContainerClient
+            .Setup(x => x.ExistsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Response.FromValue(containerExists, Mock.Of<Response>()));
+
+        mockContainerClient
+            .Setup(x => x.SetAccessPolicyAsync(
+                It.IsAny<PublicAccessType>(),
+                It.IsAny<IEnumerable<BlobSignedIdentifier>>(),
+                It.IsAny<BlobRequestConditions>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<Response<BlobContainerInfo>>());
+
+        var mockBlobClient = new Mock<BlobClient>(MockBehavior.Strict);
+        mockBlobClient
+            .Setup(x => x.UploadAsync(
+                It.IsAny<Stream>(),
+                It.IsAny<BlobUploadOptions>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<Response<BlobContentInfo>>());
+
+        mockContainerClient
+            .Setup(x => x.GetBlobClient(It.IsAny<string>()))
+            .Returns(mockBlobClient.Object);
+
+        return mockContainerClient;
+    }
+
+    private static AzureBlobStorageService CreateSutWithContainerClient(Mock<BlobContainerClient> mockContainerClient)
+    {
+        var mockBlobServiceClient = new Mock<BlobServiceClient>(MockBehavior.Strict);
+        mockBlobServiceClient
+            .Setup(x => x.GetBlobContainerClient(It.IsAny<string>()))
+            .Returns(mockContainerClient.Object);
+
+        var mockStopwatch = new Mock<IStopwatchProvider>(MockBehavior.Strict);
+        mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
+        mockStopwatch.Setup(x => x.GetElapsedTime(It.IsAny<long>())).Returns(TimeSpan.FromMilliseconds(10));
+
+        return new AzureBlobStorageService(
+            mockBlobServiceClient.Object,
+            mockStopwatch.Object,
+            NullLogger<AzureBlobStorageService>.Instance);
+    }
+
+    [Fact(DisplayName = "UploadFileAsync should not create container when container already exists")]
+    public async Task UploadFileAsync_ShouldNotCreateContainer_WhenContainerAlreadyExists()
+    {
+        // Arrange
+        Mock<BlobContainerClient> mockContainerClient = CreateStrictContainerClientMock(containerExists: true);
+        AzureBlobStorageService sut = CreateSutWithContainerClient(mockContainerClient);
+
+        // Act
+        await sut.UploadFileAsync(
+            "container", "path.txt", "content", "text/plain",
+            new Dictionary<string, string>(), CancellationToken.None);
+
+        // Assert
+        mockContainerClient.Verify(
+            x => x.CreateIfNotExistsAsync(
+                It.IsAny<PublicAccessType>(),
+                It.IsAny<IDictionary<string, string>>(),
+                It.IsAny<BlobContainerEncryptionScopeOptions>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact(DisplayName = "UploadFileAsync should create container when container does not exist")]
+    public async Task UploadFileAsync_ShouldCreateContainer_WhenContainerDoesNotExist()
+    {
+        // Arrange
+        Mock<BlobContainerClient> mockContainerClient = CreateStrictContainerClientMock(containerExists: false);
+        mockContainerClient
+            .Setup(x => x.CreateIfNotExistsAsync(
+                It.IsAny<PublicAccessType>(),
+                It.IsAny<IDictionary<string, string>>(),
+                It.IsAny<BlobContainerEncryptionScopeOptions>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<Response<BlobContainerInfo>>());
+        AzureBlobStorageService sut = CreateSutWithContainerClient(mockContainerClient);
+
+        // Act
+        await sut.UploadFileAsync(
+            "container", "path.txt", "content", "text/plain",
+            new Dictionary<string, string>(), CancellationToken.None);
+
+        // Assert
+        mockContainerClient.Verify(
+            x => x.CreateIfNotExistsAsync(
+                It.IsAny<PublicAccessType>(),
+                It.IsAny<IDictionary<string, string>>(),
+                It.IsAny<BlobContainerEncryptionScopeOptions>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact(DisplayName = "GetBlobUri should return URI from blob client")]
