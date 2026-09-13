@@ -131,7 +131,36 @@ public sealed class OilPatternPickerTests : IDisposable
         cut.FindAll("button").First(b => b.TextContent.Trim() == "Pick Existing").Click();
 
         // Assert
-        cut.FindAll("#pattern-select").Count.ShouldBe(1);
+        cut.FindAll("#pattern-search").Count.ShouldBe(1);
         cut.FindAll("#manual-length-category").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should default the new pattern's name to the search text when no existing pattern matches and Create New is chosen")]
+    public void Click_ShouldDefaultNewPatternName_WhenSearchTextHasNoMatch()
+    {
+        // Arrange
+        var pattern = OilPatternSummaryResponseFactory.Create(name: "Typhoon");
+        var cut = Render(patterns: [pattern]);
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "Pick Existing").Click();
+        cut.Find("#pattern-search").Input("Bermuda Wedge");
+
+        // Act
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "Create New").Click();
+
+        // Assert
+        cut.Find("#new-pattern-name").GetAttribute("value").ShouldBe("Bermuda Wedge");
+    }
+
+    [Fact(DisplayName = "Should leave the new pattern's name blank when Create New is chosen without having searched for a non-matching pattern")]
+    public void Click_ShouldLeaveNewPatternNameBlank_WhenNoSearchTextEntered()
+    {
+        // Arrange
+        var cut = Render();
+
+        // Act
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "Create New").Click();
+
+        // Assert
+        cut.Find("#new-pattern-name").GetAttribute("value").ShouldBe(string.Empty);
     }
 }

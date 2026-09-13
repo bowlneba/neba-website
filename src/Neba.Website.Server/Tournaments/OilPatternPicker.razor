@@ -41,14 +41,17 @@
     else if (_mode == OilPatternMode.Pick)
     {
         <div>
-            <label for="pattern-select" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Existing Pattern</label>
-            <select id="pattern-select" class="neba-select" @bind="_selectedOilPatternId" @bind:after="EmitSelectionChanged">
-                <option value="">Select a pattern…</option>
-                @foreach (var pattern in _patterns)
-                {
-                    <option value="@pattern.OilPatternId">@pattern.Name — @pattern.Length ft</option>
-                }
-            </select>
+            <label for="pattern-search" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Existing Pattern</label>
+            <NebaAutocomplete Id="pattern-search" TValue="string" TItem="OilPatternSummaryResponse"
+                              Value="@_selectedOilPatternId"
+                              ValueChanged="HandlePatternSelected"
+                              Items="@_patterns"
+                              DisplayText="@GetPatternDisplayText"
+                              ItemValue="@(pattern => pattern.OilPatternId)"
+                              Placeholder="Type a pattern name..."
+                              EmptyLabel="Select a pattern..."
+                              NoResultsText="No matching patterns — try &quot;Create New&quot; instead."
+                              FilterTextChanged="HandleFilterTextChanged" />
 
             @if (_selectedPattern is not null)
             {
@@ -77,21 +80,21 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label for="new-pattern-length" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Length (ft)</label>
-                    <input id="new-pattern-length" type="number" min="1" class="neba-input" @bind="_newPattern.Length" @bind:after="NotifyDirty" />
+                    <input id="new-pattern-length" type="number" min="1" class="neba-input" @bind="_newPattern.Length" @bind:after="NotifyDirty" placeholder="e.g. 40" />
                 </div>
                 <div>
                     <label for="new-pattern-volume" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Volume (mL)</label>
-                    <input id="new-pattern-volume" type="number" min="0" step="0.1" class="neba-input" @bind="_newPattern.Volume" @bind:after="NotifyDirty" />
+                    <input id="new-pattern-volume" type="number" min="0" step="0.1" class="neba-input" @bind="_newPattern.Volume" @bind:after="NotifyDirty" placeholder="e.g. 24.0" />
                 </div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label for="new-pattern-left" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Left Ratio</label>
-                    <input id="new-pattern-left" type="number" min="0" step="0.1" class="neba-input" @bind="_newPattern.LeftRatio" @bind:after="NotifyDirty" />
+                    <input id="new-pattern-left" type="number" min="0" step="0.1" class="neba-input" @bind="_newPattern.LeftRatio" @bind:after="NotifyDirty" placeholder="e.g. 5.0" />
                 </div>
                 <div>
                     <label for="new-pattern-right" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Right Ratio</label>
-                    <input id="new-pattern-right" type="number" min="0" step="0.1" class="neba-input" @bind="_newPattern.RightRatio" @bind:after="NotifyDirty" />
+                    <input id="new-pattern-right" type="number" min="0" step="0.1" class="neba-input" @bind="_newPattern.RightRatio" @bind:after="NotifyDirty" placeholder="e.g. 5.0" />
                 </div>
             </div>
 
@@ -166,6 +169,7 @@
     private string? _selectedOilPatternId;
     private string _manualLengthCategory = "";
     private string _manualRatioCategory = "";
+    private string _lastFilterText = string.Empty;
     private NewOilPatternModel _newPattern = new();
     private bool _isCreatingPattern;
     private string? _createErrorMessage;
@@ -220,8 +224,33 @@
 
     private void SetMode(OilPatternMode mode)
     {
+        // If the user searched for a pattern that doesn't exist and is now switching to Create New,
+        // they're almost certainly about to add the pattern they just typed — default the name field
+        // to it rather than leaving it blank.
+        if (mode == OilPatternMode.Create
+            && string.IsNullOrWhiteSpace(_newPattern.Name)
+            && !string.IsNullOrWhiteSpace(_lastFilterText)
+            && !_patterns.Any(pattern => GetPatternDisplayText(pattern).Contains(_lastFilterText, StringComparison.OrdinalIgnoreCase)))
+        {
+            _newPattern.Name = _lastFilterText.Trim();
+        }
+
         _mode = mode;
         _ = EmitSelectionChanged();
+    }
+
+    private static string GetPatternDisplayText(OilPatternSummaryResponse pattern)
+        => $"{pattern.Name} — {pattern.Length} ft";
+
+    private void HandlePatternSelected(string? oilPatternId)
+    {
+        _selectedOilPatternId = oilPatternId;
+        _ = EmitSelectionChanged();
+    }
+
+    private void HandleFilterTextChanged(string filterText)
+    {
+        _lastFilterText = filterText;
     }
 
     private Task NotifyDirty()
@@ -253,10 +282,10 @@
             OilPattern = new OilPatternInput
             {
                 Name = _newPattern.Name,
-                Length = _newPattern.Length,
-                Volume = _newPattern.Volume,
-                LeftRatio = _newPattern.LeftRatio,
-                RightRatio = _newPattern.RightRatio,
+                Length = _newPattern.Length ?? 0,
+                Volume = _newPattern.Volume ?? 0,
+                LeftRatio = _newPattern.LeftRatio ?? 0,
+                RightRatio = _newPattern.RightRatio ?? 0,
                 KegelId = Guid.TryParse(_newPattern.KegelId, out var kegelId) ? kegelId : null
             }
         };
@@ -276,9 +305,9 @@
             OilPatternId = result.Value.OilPatternId,
             Name = result.Value.Name,
             Length = result.Value.Length,
-            Volume = _newPattern.Volume,
-            LeftRatio = _newPattern.LeftRatio,
-            RightRatio = _newPattern.RightRatio,
+            Volume = _newPattern.Volume ?? 0,
+            LeftRatio = _newPattern.LeftRatio ?? 0,
+            RightRatio = _newPattern.RightRatio ?? 0,
             KegelId = request.OilPattern.KegelId,
             LengthCategory = result.Value.LengthCategory,
             RatioCategory = result.Value.RatioCategory
@@ -286,6 +315,7 @@
 
         _selectedOilPatternId = result.Value.OilPatternId;
         _newPattern = new NewOilPatternModel();
+        _lastFilterText = string.Empty;
         _mode = OilPatternMode.Pick;
         _hasLocalPatternAdditions = true;
 
@@ -296,10 +326,10 @@
     {
         [Required]
         public string Name { get; set; } = string.Empty;
-        public int Length { get; set; } = 40;
-        public decimal Volume { get; set; } = 24;
-        public decimal LeftRatio { get; set; } = 5;
-        public decimal RightRatio { get; set; } = 5;
+        public int? Length { get; set; }
+        public decimal? Volume { get; set; }
+        public decimal? LeftRatio { get; set; }
+        public decimal? RightRatio { get; set; }
         public string? KegelId { get; set; }
     }
 }
