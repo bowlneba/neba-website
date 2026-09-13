@@ -1,5 +1,6 @@
 @page "/stats/{BowlerId}"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using System.Globalization
 @inject IStatsApiService StatsApi
 @inject NavigationManager Nav
 
@@ -83,8 +84,8 @@
                 <span class="indiv-stat-value">@_model.Tournaments.ToString("N0")</span>
                 <span class="indiv-stat-label">Tournaments</span>
             </div>
-            <div class="indiv-stat-card" aria-label="@($"Winnings: {_model.Winnings:C0}")">
-                <span class="indiv-stat-value">@_model.Winnings.ToString("C0")</span>
+            <div class="indiv-stat-card" aria-label="@($"Winnings: {_model.Winnings.ToString("C0", CurrencyCulture)}")">
+                <span class="indiv-stat-value">@_model.Winnings.ToString("C0", CurrencyCulture)</span>
                 <span class="indiv-stat-label">$ Won</span>
             </div>
             @if (_model.MatchPlayWins + _model.MatchPlayLosses > 0)
@@ -250,6 +251,8 @@
 </div>
 
 @code {
+    private static readonly CultureInfo CurrencyCulture = CultureInfo.GetCultureInfo("en-US");
+
     [Parameter] public string BowlerId { get; set; } = "";
 
     [SupplyParameterFromQuery(Name = "season")]
