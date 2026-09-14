@@ -78,17 +78,18 @@ internal sealed class RefreshTokenCommandHandler(
         var permissions = await PermissionResolver.ResolveAsync(roleManager, roles);
         var tokenPair = jwtTokenService.CreateTokenPair(user, roles.AsReadOnly(), permissions);
 
-        // Single stored token per user, overwritten on each refresh: rotation is enforced by
-        // replacement, not by tracking a token family/generation, so there's no replay signal
-        // beyond "the presented token no longer matches what's stored." A request that raced in
-        // presenting the just-rotated-out token (matchesPreviousWithinGrace) rotates again without
-        // disturbing the existing grace slot, so other concurrent racers presenting that same old
-        // token still succeed too, instead of each rotation shrinking the window for the next one.
-        var (previousHash, previousHashExpiresAt) = matchesPreviousWithinGrace
-            ? (stored.PreviousHash, stored.PreviousHashExpiresAt)
-            : (stored.Hash, now.Add(RotationGraceWindow));
-
-        await RefreshTokenStore.StoreAsync(userManager, user, tokenPair.RefreshToken, timeProvider, previousHash, previousHashExpiresAt);
+        // Single stored token per user: a request that races in presenting the just-rotated-out
+        // token (matchesPreviousWithinGrace) is handed a fresh token pair so it isn't rejected
+        // outright, but the stored state is left untouched. Persisting this pair's hash as the new
+        // "current" would clobber whatever the actual rotation winner already moved to, silently
+        // evicting that live session; leaving the state alone means the winner's token keeps
+        // working, other racers can still use the same previous-hash slot until it expires, and the
+        // reissued pair from this branch is a one-time bridge that itself can't be used to refresh
+        // again later.
+        if (!matchesPreviousWithinGrace)
+        {
+            await RefreshTokenStore.StoreAsync(userManager, user, tokenPair.RefreshToken, timeProvider, stored.Hash, now.Add(RotationGraceWindow));
+        }
 
         return new RefreshTokenDto
         {

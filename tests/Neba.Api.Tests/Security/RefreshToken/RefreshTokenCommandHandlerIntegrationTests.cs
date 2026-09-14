@@ -385,4 +385,67 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         result.Value.AccessToken.ShouldNotBeNullOrEmpty();
         result.Value.RefreshToken.ShouldNotBeNullOrEmpty();
     }
+
+    [Fact(DisplayName = "HandleAsync does not invalidate the legitimate rotated-forward token when a racer replays the previous token within the grace window")]
+    public async Task HandleAsync_ShouldNotEvictRotatedForwardToken_WhenRacerReplaysPreviousTokenWithinGraceWindow()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
+        var timeProvider = new FakeTimeProvider(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        var (user, firstRefreshToken) = await SeedLoginAsync(userManager, roleManager, signInManager, timeProvider);
+
+        // The legitimate rotation: firstRefreshToken -> rotatedForwardToken.
+        var rotationResult = await CreateHandler(userManager, roleManager, timeProvider)
+            .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = firstRefreshToken }, ct);
+        var rotatedForwardToken = rotationResult.Value.RefreshToken;
+        timeProvider.Advance(TimeSpan.FromSeconds(5));
+
+        // A racer replays the now-superseded firstRefreshToken, still inside the grace window.
+        var racerResult = await CreateHandler(userManager, roleManager, timeProvider)
+            .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = firstRefreshToken }, ct);
+        racerResult.IsError.ShouldBeFalse();
+
+        // Act — the legitimate client presents the token it actually rotated forward to.
+        var result = await CreateHandler(userManager, roleManager, timeProvider)
+            .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = rotatedForwardToken }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse("the racer's grace-window replay must not evict the legitimately rotated-forward token");
+        result.Value.AccessToken.ShouldNotBeNullOrEmpty();
+        result.Value.RefreshToken.ShouldNotBeNullOrEmpty();
+    }
+
+    [Fact(DisplayName = "HandleAsync returns InvalidRefreshToken when a racer's grace-window-issued refresh token is used again")]
+    public async Task HandleAsync_ShouldReturnInvalidRefreshToken_WhenRacerGraceTokenIsReused()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+        var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
+        var timeProvider = new FakeTimeProvider(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        var (user, firstRefreshToken) = await SeedLoginAsync(userManager, roleManager, signInManager, timeProvider);
+
+        await CreateHandler(userManager, roleManager, timeProvider)
+            .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = firstRefreshToken }, ct);
+        timeProvider.Advance(TimeSpan.FromSeconds(5));
+
+        var racerResult = await CreateHandler(userManager, roleManager, timeProvider)
+            .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = firstRefreshToken }, ct);
+        racerResult.IsError.ShouldBeFalse();
+
+        // Act — the racer's own reissued refresh token was never persisted, so it can't be used again.
+        var result = await CreateHandler(userManager, roleManager, timeProvider)
+            .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = racerResult.Value.RefreshToken }, ct);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.Unauthorized);
+        result.FirstError.Code.ShouldBe("RefreshToken.InvalidRefreshToken");
+    }
 }
