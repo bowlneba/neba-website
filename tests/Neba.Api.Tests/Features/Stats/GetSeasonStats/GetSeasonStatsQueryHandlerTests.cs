@@ -325,9 +325,9 @@ statsEligible: true, seasonId: season.Id);
             endDate: new DateOnly(2025, 12, 31));
         await _dbContext.Seasons.AddAsync(season, ct);
 
-        var completedEligibleTournament = TournamentFactory.Create(seasonId: season.Id, statsEligible: true);
-        var upcomingTournament = TournamentFactory.Create(seasonId: season.Id, statsEligible: true);
-        var completedIneligibleTournament = TournamentFactory.Create(seasonId: season.Id, statsEligible: false);
+        var completedEligibleTournament = TournamentFactory.Create(statsEligible: true, seasonId: season.Id);
+        var upcomingTournament = TournamentFactory.Create(statsEligible: true, seasonId: season.Id);
+        var completedIneligibleTournament = TournamentFactory.Create(statsEligible: false, seasonId: season.Id);
         await _dbContext.Tournaments.AddRangeAsync(
             [completedEligibleTournament, upcomingTournament, completedIneligibleTournament], ct);
         await _dbContext.SaveChangesAsync(ct);
