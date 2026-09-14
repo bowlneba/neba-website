@@ -194,14 +194,14 @@ public sealed class BowlerSeasonStatsConfigurationTests
         property.IsNullable.ShouldBeTrue();
     }
 
-    [Fact(DisplayName = "average_finish is decimal(3,1), nullable")]
+    [Fact(DisplayName = "average_finish is decimal(5,1), nullable")]
     public void Configure_ShouldConfigureAverageFinishColumn()
     {
         // Act
         var property = _statsType.FindProperty(nameof(BowlerSeasonStats.AverageFinish))!;
 
         // Assert
-        property.GetPrecision().ShouldBe(3);
+        property.GetPrecision().ShouldBe(5);
         property.GetScale().ShouldBe(1);
         property.IsNullable.ShouldBeTrue();
     }

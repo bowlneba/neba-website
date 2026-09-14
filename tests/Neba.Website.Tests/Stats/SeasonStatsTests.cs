@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -129,6 +131,30 @@ public sealed class SeasonStatsTests : IDisposable
         markup.ShouldNotContain("Alpha Bowler");
         (cut.FindAll(".stats-season-btn.active").Single().TextContent ?? string.Empty).ShouldContain("2023-2024");
         _statsApi.RequestedSeasonYears.ShouldBe([null, s_secondSeasonYear]);
+    }
+
+    [Fact(DisplayName = "Should format winnings using US currency formatting regardless of the server's ambient culture")]
+    public void Render_ShouldFormatWinningsUsingUsCurrency_RegardlessOfServerCulture()
+    {
+        // Arrange
+        _statsApi.EnqueueResult(CreateStatsModel(firstRowName: "Alpha Bowler"));
+
+        var originalCulture = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
+
+        try
+        {
+            // Act
+            var cut = _ctx.Render<SeasonStatsPage>();
+
+            // Assert
+            cut.Markup.ShouldContain("$5,000");
+            cut.Markup.ShouldNotContain("€");
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
     }
 
     [Fact(DisplayName = "Should navigate to selected bowler page when search value matches a bowler")]

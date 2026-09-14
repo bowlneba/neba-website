@@ -245,6 +245,46 @@ public sealed class LegacySeasonStatsCalculatorTests
         result.AverageFinish.ShouldBe(5m);
     }
 
+    [Fact(DisplayName = "Compute should exclude non-positive Place values from HighFinish and AverageFinish")]
+    public void Compute_ShouldExcludeNonPositivePlaceValues_FromHighAndAverageFinish()
+    {
+        // Arrange - a -1 Place is a data-quality sentinel (e.g. an unplaceable team result that
+        // predates TournamentResult's own place > 0 validation), not a real finish of "better
+        // than 1st" - it must never pull HighFinish/AverageFinish toward it.
+        var qualifying = new[] { new LegacyQualifyingStatsRow(1, 100, 1, 200, 1, 200) };
+        var results = new[]
+        {
+            new LegacyBowlerResultRow(1, 100, 2, 50m, 10, null),
+            new LegacyBowlerResultRow(1, 101, 8, 0m, 5, null),
+            new LegacyBowlerResultRow(1, 102, -1, 0m, 0, null)
+        };
+
+        // Act
+        var result = ComputeSingle(qualifyingStats: qualifying, results: results);
+
+        // Assert
+        result.HighFinish.ShouldBe(2);
+        result.AverageFinish.ShouldBe(5m);
+    }
+
+    [Fact(DisplayName = "Compute should leave HighFinish and AverageFinish null when every result has a non-positive Place")]
+    public void Compute_ShouldLeaveFinishStatsNull_WhenEveryResultHasNonPositivePlace()
+    {
+        // Arrange
+        var qualifying = new[] { new LegacyQualifyingStatsRow(1, 100, 1, 200, 1, 200) };
+        var results = new[]
+        {
+            new LegacyBowlerResultRow(1, 100, -1, 0m, 0, null)
+        };
+
+        // Act
+        var result = ComputeSingle(qualifyingStats: qualifying, results: results);
+
+        // Assert
+        result.HighFinish.ShouldBeNull();
+        result.AverageFinish.ShouldBeNull();
+    }
+
     [Fact(DisplayName = "Compute should sum TournamentWinnings across all results")]
     public void Compute_ShouldSumTournamentWinnings_AcrossAllResults()
     {

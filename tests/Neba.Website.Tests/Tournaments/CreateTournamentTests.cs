@@ -389,7 +389,8 @@ public sealed class CreateTournamentTests : IDisposable
         var cut = RenderCreateTournament();
         await FillRequiredFieldsAsync(cut);
         await cut.InvokeAsync(() => FindButtonByText(cut, "Pick Existing").Click());
-        await cut.InvokeAsync(() => cut.Find("#pattern-select").Change("01J7ZK8X6ZQJ8V3F8N9T9C9R2E"));
+        await cut.InvokeAsync(() => cut.Find("#pattern-search").Input(pattern.Name));
+        await cut.InvokeAsync(() => cut.Find(".neba-autocomplete-option").Click());
 
         // Act
         await cut.Find("form").SubmitAsync();

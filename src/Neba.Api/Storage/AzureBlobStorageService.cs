@@ -178,7 +178,14 @@ internal sealed class AzureBlobStorageService
 
             var containerClient = _blobServiceClient.GetBlobContainerClient(container);
             var publicAccessType = container == PublicContainerName ? PublicAccessType.Blob : PublicAccessType.None;
-            await containerClient.CreateIfNotExistsAsync(publicAccessType, cancellationToken: cancellationToken);
+
+            // Checking first avoids the "ContainerAlreadyExists" 409 that CreateIfNotExistsAsync
+            // otherwise triggers - and the Azure SDK logs via its pipeline diagnostics - on every
+            // single upload for the container's entire lifetime after its first creation.
+            if (!await containerClient.ExistsAsync(cancellationToken))
+            {
+                await containerClient.CreateIfNotExistsAsync(publicAccessType, cancellationToken: cancellationToken);
+            }
 
             // CreateIfNotExistsAsync only applies publicAccessType at creation time - it no-ops on a
             // container that already exists (e.g. one created before this access-type gating existed).

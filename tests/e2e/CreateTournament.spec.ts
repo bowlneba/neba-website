@@ -116,7 +116,8 @@ test.describe('Tournaments page — create tournament (authenticated)', () => {
     await page.waitForSelector('#name');
 
     await page.getByRole('button', { name: 'Pick Existing' }).click();
-    await page.locator('#pattern-select').selectOption({ label: 'Typhoon — 40 ft' });
+    await page.locator('#pattern-search').fill('Typhoon');
+    await page.locator('.neba-autocomplete-option', { hasText: 'Typhoon' }).click();
 
     await expect(page.getByText('Typhoon', { exact: true })).toBeVisible();
     await expect(page.locator('.neba-badge', { hasText: 'Medium' }).first()).toBeVisible();
@@ -138,8 +139,37 @@ test.describe('Tournaments page — create tournament (authenticated)', () => {
 
     // A successful "Add Pattern" switches the picker back to "Pick Existing" mode with the new
     // pattern selected, proving the create-then-select round trip happened.
-    await expect(page.locator('#pattern-select')).toBeVisible();
+    await expect(page.locator('#pattern-search')).toBeVisible();
     await expect(page.getByText('Playwright Pattern', { exact: true })).toBeVisible();
+  });
+
+  test('shows a validation error and does not create a pattern when a required field is left blank', async ({ page }) => {
+    await page.goto('/tournaments/new');
+    await page.waitForSelector('#name');
+
+    await page.getByRole('button', { name: 'Create New' }).click();
+
+    await page.locator('#new-pattern-name').fill('Incomplete Pattern');
+    // Length, Volume, Left Ratio, and Right Ratio are left blank.
+
+    await page.locator('button.neba-btn-primary.neba-btn-sm', { hasText: 'Add Pattern' }).click();
+
+    await expect(page.locator('p.text-red-600')).toHaveText('Length is required.');
+    await expect(page.locator('#new-pattern-name')).toBeVisible();
+    await expect(page.getByText('Incomplete Pattern', { exact: true })).not.toBeVisible();
+  });
+
+  test('defaults the new pattern name to the search text when no existing pattern matches', async ({ page }) => {
+    await page.goto('/tournaments/new');
+    await page.waitForSelector('#name');
+
+    await page.getByRole('button', { name: 'Pick Existing' }).click();
+    await page.locator('#pattern-search').fill('Nonexistent Pattern');
+    await expect(page.locator('.neba-autocomplete-empty')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Create New' }).click();
+
+    await expect(page.locator('#new-pattern-name')).toHaveValue('Nonexistent Pattern');
   });
 
   test('sets the oil pattern reveal date/time', async ({ page }) => {
