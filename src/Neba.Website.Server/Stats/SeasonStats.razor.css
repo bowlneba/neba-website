@@ -66,8 +66,8 @@
 
 .stats-tabs {
     display: flex;
+    flex-wrap: wrap;
     border-bottom: 2px solid #e5e7eb;
-    overflow-x: auto;
 }
 
 .stats-tab {
