@@ -1,5 +1,6 @@
 @page "/stats"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using System.Globalization
 @inject IStatsApiService StatsApi
 @inject NavigationManager Nav
 @inject ILogger<SeasonStats> Logger
@@ -16,15 +17,8 @@
     <div class="stats-hero">
         <h1 class="text-3xl font-bold text-[var(--neba-blue-700)]">Season Statistics</h1>
         <div class="stats-hero-controls">
-            <div class="stats-season-selector" role="group" aria-label="Select season">
-                @foreach (var (id, name) in _initialAvailableSeasons)
-                {
-                    <button class="@(id == _selectedSeasonYear ? "stats-season-btn active" : "stats-season-btn")"
-                            aria-pressed="@(id == _selectedSeasonYear ? "true" : "false")" @onclick="() => OnSeasonChanged(id)">
-                        @name
-                    </button>
-                }
-            </div>
+            <SeasonSelector AvailableSeasons="@_initialAvailableSeasons" SelectedYear="@_selectedSeasonYear"
+                             SeasonSelected="OnSeasonChanged" />
             <div class="stats-bowler-search">
                 <input type="text" @oninput="OnBowlerSearchInput" @onchange="OnBowlerSearchChanged"
                        value="@_bowlerSearchText" list="bowler-search-list" placeholder="Search bowlers..."
@@ -119,8 +113,8 @@
                                                     <td class="text-right tabular-nums">@row.Entries</td>
                                                     <td class="text-right tabular-nums">@row.Finals</td>
                                                     <td class="text-right tabular-nums">@(row.AverageFinish?.ToString("F1") ?? "—")</td>
-                                                    <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings:C0}")">
-                                                        @row.Winnings.ToString("C0")</td>
+                                                    <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings.ToString("C0", CurrencyCulture)}")">
+                                                        @row.Winnings.ToString("C0", CurrencyCulture)</td>
                                                     </tr>
                                                 }
                                             </tbody>
@@ -271,8 +265,8 @@
                                                                             <td class="text-right tabular-nums">@FormatWinPercentage(row.WinPercentage)</td>
                                                                             <td class="text-right tabular-nums">@row.Finals</td>
                                                                             <td class="text-right tabular-nums">@row.MatchPlayAverage.ToString("F2")</td>
-                                                                            <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings:C0}")">
-                                                                                @row.Winnings.ToString("C0")</td>
+                                                                            <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings.ToString("C0", CurrencyCulture)}")">
+                                                                                @row.Winnings.ToString("C0", CurrencyCulture)</td>
                                                                             </tr>
                                                                         }
                                                                     </tbody>
@@ -367,8 +361,8 @@
                                                                                             <td class="text-right tabular-nums">
                                                                                                 @FormatWinPercentage(row.WinPercentage)
                                                                                             </td>
-                                                                                            <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings:C0}")">
-                                                                                                @row.Winnings.ToString("C0")</td>
+                                                                                            <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings.ToString("C0", CurrencyCulture)}")">
+                                                                                                @row.Winnings.ToString("C0", CurrencyCulture)</td>
                                                                                             </tr>
                                                                                         }
                                                                                     </tbody>
@@ -557,8 +551,8 @@
                                                                                                             @row.AverageFinish.ToString("F1")
                                                                                                         </td>
                                                                                                         <td class="text-right tabular-nums">@row.Finals</td>
-                                                                                                        <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings:C0}")">
-                                                                                                            @row.Winnings.ToString("C0")</td>
+                                                                                                        <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings.ToString("C0", CurrencyCulture)}")">
+                                                                                                            @row.Winnings.ToString("C0", CurrencyCulture)</td>
                                                                                                         </tr>
                                                                                                     }
                                                                                                 </tbody>
@@ -597,7 +591,7 @@
                                                                                             <span class="stats-glance-label">Total Entries</span>
                                                                                         </div>
                                                                                         <div class="stats-glance-tile">
-                                                                                            <span class="stats-glance-value">@_model.SeasonAtAGlance.TotalPrizeMoney.ToString("C0")</span>
+                                                                                            <span class="stats-glance-value">@_model.SeasonAtAGlance.TotalPrizeMoney.ToString("C0", CurrencyCulture)</span>
                                                                                             <span class="stats-glance-label">Prize Money</span>
                                                                                         </div>
                                                                                     </div>
@@ -726,6 +720,8 @@
                                                                 </NebaModal>
 
 @code {
+    private static readonly CultureInfo CurrencyCulture = CultureInfo.GetCultureInfo("en-US");
+
     [SupplyParameterFromQuery(Name = "season")]
     public int? Season { get; set; }
 
@@ -1011,7 +1007,7 @@ BoyStandingsSections()
                     <td class="text-right tabular-nums">@row.Entries</td>
                     <td class="text-right tabular-nums">@row.Finals</td>
                     <td class="text-right tabular-nums">@(row.AverageFinish?.ToString("F1") ?? "—")</td>
-                    <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings:C0}")">@row.Winnings.ToString("C0")</td>
+                    <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings.ToString("C0", CurrencyCulture)}")">@row.Winnings.ToString("C0", CurrencyCulture)</td>
                 </tr>
             }
         </tbody>
@@ -1087,7 +1083,7 @@ BoyStandingsSections()
                     <td class="text-right tabular-nums">@row.Games</td>
                     <td class="text-right tabular-nums">@($"{row.Wins}–{row.Loses}")</td>
                     <td class="text-right tabular-nums">@FormatWinPercentage(row.WinPercentage)</td>
-                    <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings:C0}")">@row.Winnings.ToString("C0")</td>
+                    <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings.ToString("C0", CurrencyCulture)}")">@row.Winnings.ToString("C0", CurrencyCulture)</td>
                 </tr>
             }
         </tbody>
@@ -1115,7 +1111,7 @@ BoyStandingsSections()
                     <td class="text-right tabular-nums">@FormatWinPercentage(row.WinPercentage)</td>
                     <td class="text-right tabular-nums">@row.Finals</td>
                     <td class="text-right tabular-nums">@row.MatchPlayAverage.ToString("F2")</td>
-                    <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings:C0}")">@row.Winnings.ToString("C0")</td>
+                    <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings.ToString("C0", CurrencyCulture)}")">@row.Winnings.ToString("C0", CurrencyCulture)</td>
                 </tr>
             }
         </tbody>
@@ -1235,7 +1231,7 @@ BoyStandingsSections()
                     <td><a href="@GetIndividualStatsUrl(row.BowlerId)" class="stats-name-link" @onclick="CloseModal">@row.BowlerName</a></td>
                     <td class="text-right tabular-nums @(row.Rank == 1 ? "text-[var(--neba-blue-300)]" : "")">@row.AverageFinish.ToString("F1")</td>
                     <td class="text-right tabular-nums">@row.Finals</td>
-                    <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings:C0}")">@row.Winnings.ToString("C0")</td>
+                    <td class="text-right tabular-nums" aria-label="@($"Winnings: {row.Winnings.ToString("C0", CurrencyCulture)}")">@row.Winnings.ToString("C0", CurrencyCulture)</td>
                 </tr>
             }
         </tbody>

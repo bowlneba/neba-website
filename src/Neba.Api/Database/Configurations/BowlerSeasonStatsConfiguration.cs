@@ -94,7 +94,7 @@ internal sealed class BowlerSeasonStatsConfiguration
         builder.Property(stat => stat.HighFinish);
 
         builder.Property(stat => stat.AverageFinish)
-            .HasPrecision(3, 1);
+            .HasPrecision(5, 1);
 
         // Match play
         builder.Property(stat => stat.MatchPlayWins)
