@@ -183,19 +183,11 @@ public sealed class AzureBlobStorageServiceUnitTests
         Mock<BlobContainerClient> mockContainerClient = CreateStrictContainerClientMock(containerExists: true);
         AzureBlobStorageService sut = CreateSutWithContainerClient(mockContainerClient);
 
-        // Act
-        await sut.UploadFileAsync(
+        // Act & Assert - the Strict mock has no Setup for CreateIfNotExistsAsync, so it
+        // would throw if UploadFileAsync called it
+        await Should.NotThrowAsync(() => sut.UploadFileAsync(
             "container", "path.txt", "content", "text/plain",
-            new Dictionary<string, string>(), CancellationToken.None);
-
-        // Assert
-        mockContainerClient.Verify(
-            x => x.CreateIfNotExistsAsync(
-                It.IsAny<PublicAccessType>(),
-                It.IsAny<IDictionary<string, string>>(),
-                It.IsAny<BlobContainerEncryptionScopeOptions>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+            new Dictionary<string, string>(), CancellationToken.None));
     }
 
     [Fact(DisplayName = "UploadFileAsync should create container when container does not exist")]
@@ -203,12 +195,14 @@ public sealed class AzureBlobStorageServiceUnitTests
     {
         // Arrange
         Mock<BlobContainerClient> mockContainerClient = CreateStrictContainerClientMock(containerExists: false);
+        var containerCreated = false;
         mockContainerClient
             .Setup(x => x.CreateIfNotExistsAsync(
                 It.IsAny<PublicAccessType>(),
                 It.IsAny<IDictionary<string, string>>(),
                 It.IsAny<BlobContainerEncryptionScopeOptions>(),
                 It.IsAny<CancellationToken>()))
+            .Callback(() => containerCreated = true)
             .ReturnsAsync(Mock.Of<Response<BlobContainerInfo>>());
         AzureBlobStorageService sut = CreateSutWithContainerClient(mockContainerClient);
 
@@ -218,13 +212,7 @@ public sealed class AzureBlobStorageServiceUnitTests
             new Dictionary<string, string>(), CancellationToken.None);
 
         // Assert
-        mockContainerClient.Verify(
-            x => x.CreateIfNotExistsAsync(
-                It.IsAny<PublicAccessType>(),
-                It.IsAny<IDictionary<string, string>>(),
-                It.IsAny<BlobContainerEncryptionScopeOptions>(),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+        containerCreated.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "GetBlobUri should return URI from blob client")]
