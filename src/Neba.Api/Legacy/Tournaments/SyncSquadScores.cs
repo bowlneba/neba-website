@@ -107,11 +107,26 @@ internal sealed class SyncSquadScoresSyncJob(
         var existing = await db.SquadScores
             .Where(squadScore => squadScore.SquadId == squad.Id)
             .ToListAsync(ct);
-        db.SquadScores.RemoveRange(existing);
+
+        // Intentionally NOT "batch then save once" (the usual SaveChanges-in-a-loop fix): the loop
+        // itself is the fix. Audit.EntityFramework serializes every changed entry's old/new values
+        // from one SaveChangesAsync call into a single EF audit event property, and a large squad
+        // (many bowlers x games) can produce hundreds of changed SquadScore rows in one call - past
+        // Azure Table Storage's 64KB per-property limit, silently dropped by
+        // ResilientAuditDataProvider. Capping each SaveChangesAsync's entity count bounds that
+        // property's size regardless of squad size.
+        const int saveBatchSize = 50;
+
+        foreach (var batch in existing.Chunk(saveBatchSize))
+        {
+            db.SquadScores.RemoveRange(batch);
+            await db.SaveChangesAsync(ct);
+        }
 
         // Rows whose legacy bowler id has no website Bowler.LegacyId match, grouped so one email
         // covers all of that bowler's scores rather than one email per row.
         var unmappedRowsByLegacyBowlerId = new Dictionary<int, List<LegacyQualifyingScoreRow>>();
+        var pendingScores = new List<SquadScore>();
 
         foreach (var row in rows)
         {
@@ -136,10 +151,14 @@ internal sealed class SyncSquadScoresSyncJob(
                 continue;
             }
 
-            await db.SquadScores.AddAsync(created.Value, ct);
+            pendingScores.Add(created.Value);
         }
 
-        await db.SaveChangesAsync(ct);
+        foreach (var batch in pendingScores.Chunk(saveBatchSize))
+        {
+            await db.SquadScores.AddRangeAsync(batch, ct);
+            await db.SaveChangesAsync(ct);
+        }
 
         await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: ct);
 

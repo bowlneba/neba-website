@@ -160,8 +160,14 @@ internal static class LegacySeasonStatsCalculator
             var matchPlayPinfall = matchPlay.Sum(m => m.Score);
             var matchPlayHighGame = matchPlay.Count > 0 ? matchPlay.Max(m => m.HighGame) : 0;
 
-            int? highFinish = bowlerResults.Count > 0 ? bowlerResults.Min(r => r.Place) : null;
-            decimal? averageFinish = bowlerResults.Count > 0 ? (decimal)bowlerResults.Average(r => r.Place) : null;
+            // A Place <= 0 is a data-quality sentinel (e.g. an unplaceable/team result predating
+            // TournamentResult's own place > 0 validation), not a real finish "better than 1st" -
+            // it must never pull HighFinish/AverageFinish toward it. Applies uniformly whether
+            // this bowlerResults set came from the current season's live TournamentResult rows
+            // (which should never carry one) or a past season being regenerated.
+            var placedResults = bowlerResults.Where(r => r.Place > 0).ToList();
+            int? highFinish = placedResults.Count > 0 ? placedResults.Min(r => r.Place) : null;
+            decimal? averageFinish = placedResults.Count > 0 ? (decimal)placedResults.Average(r => r.Place) : null;
 
             var awardPoints = ComputeAwardPoints(
                 bowlerResults,
