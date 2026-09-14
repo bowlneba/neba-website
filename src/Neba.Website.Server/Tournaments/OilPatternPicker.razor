@@ -79,21 +79,21 @@
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                    <label for="new-pattern-length" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Length (ft)</label>
+                    <FormLabel TargetId="new-pattern-length" For="@(() => _newPattern.Length)">Length (ft)</FormLabel>
                     <input id="new-pattern-length" type="number" min="1" class="neba-input" @bind="_newPattern.Length" @bind:after="NotifyDirty" placeholder="e.g. 40" />
                 </div>
                 <div>
-                    <label for="new-pattern-volume" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Volume (mL)</label>
+                    <FormLabel TargetId="new-pattern-volume" For="@(() => _newPattern.Volume)">Volume (mL)</FormLabel>
                     <input id="new-pattern-volume" type="number" min="0" step="0.1" class="neba-input" @bind="_newPattern.Volume" @bind:after="NotifyDirty" placeholder="e.g. 24.0" />
                 </div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="new-pattern-left" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Left Ratio</label>
+                    <FormLabel TargetId="new-pattern-left" For="@(() => _newPattern.LeftRatio)">Left Ratio</FormLabel>
                     <input id="new-pattern-left" type="number" min="0" step="0.1" class="neba-input" @bind="_newPattern.LeftRatio" @bind:after="NotifyDirty" placeholder="e.g. 5.0" />
                 </div>
                 <div>
-                    <label for="new-pattern-right" class="block text-sm font-medium text-[var(--neba-gray-700)] mb-1">Right Ratio</label>
+                    <FormLabel TargetId="new-pattern-right" For="@(() => _newPattern.RightRatio)">Right Ratio</FormLabel>
                     <input id="new-pattern-right" type="number" min="0" step="0.1" class="neba-input" @bind="_newPattern.RightRatio" @bind:after="NotifyDirty" placeholder="e.g. 5.0" />
                 </div>
             </div>
@@ -274,18 +274,23 @@
 
     private async Task AddNewPatternAsync()
     {
+        _createErrorMessage = GetValidationError();
+        if (_createErrorMessage is not null)
+        {
+            return;
+        }
+
         _isCreatingPattern = true;
-        _createErrorMessage = null;
 
         var request = new CreateOilPatternRequest
         {
             OilPattern = new OilPatternInput
             {
                 Name = _newPattern.Name,
-                Length = _newPattern.Length ?? 0,
-                Volume = _newPattern.Volume ?? 0,
-                LeftRatio = _newPattern.LeftRatio ?? 0,
-                RightRatio = _newPattern.RightRatio ?? 0,
+                Length = _newPattern.Length!.Value,
+                Volume = _newPattern.Volume!.Value,
+                LeftRatio = _newPattern.LeftRatio!.Value,
+                RightRatio = _newPattern.RightRatio!.Value,
                 KegelId = Guid.TryParse(_newPattern.KegelId, out var kegelId) ? kegelId : null
             }
         };
@@ -305,9 +310,9 @@
             OilPatternId = result.Value.OilPatternId,
             Name = result.Value.Name,
             Length = result.Value.Length,
-            Volume = _newPattern.Volume ?? 0,
-            LeftRatio = _newPattern.LeftRatio ?? 0,
-            RightRatio = _newPattern.RightRatio ?? 0,
+            Volume = _newPattern.Volume!.Value,
+            LeftRatio = _newPattern.LeftRatio!.Value,
+            RightRatio = _newPattern.RightRatio!.Value,
             KegelId = request.OilPattern.KegelId,
             LengthCategory = result.Value.LengthCategory,
             RatioCategory = result.Value.RatioCategory
@@ -322,13 +327,47 @@
         await EmitSelectionChanged();
     }
 
+    private string? GetValidationError()
+    {
+        if (string.IsNullOrWhiteSpace(_newPattern.Name))
+        {
+            return "Name is required.";
+        }
+
+        if (_newPattern.Length is null)
+        {
+            return "Length is required.";
+        }
+
+        if (_newPattern.Volume is null)
+        {
+            return "Volume is required.";
+        }
+
+        if (_newPattern.LeftRatio is null)
+        {
+            return "Left Ratio is required.";
+        }
+
+        if (_newPattern.RightRatio is null)
+        {
+            return "Right Ratio is required.";
+        }
+
+        return null;
+    }
+
     private sealed class NewOilPatternModel
     {
         [Required]
         public string Name { get; set; } = string.Empty;
+        [Required]
         public int? Length { get; set; }
+        [Required]
         public decimal? Volume { get; set; }
+        [Required]
         public decimal? LeftRatio { get; set; }
+        [Required]
         public decimal? RightRatio { get; set; }
         public string? KegelId { get; set; }
     }

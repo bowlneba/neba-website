@@ -143,6 +143,22 @@ test.describe('Tournaments page — create tournament (authenticated)', () => {
     await expect(page.getByText('Playwright Pattern', { exact: true })).toBeVisible();
   });
 
+  test('shows a validation error and does not create a pattern when a required field is left blank', async ({ page }) => {
+    await page.goto('/tournaments/new');
+    await page.waitForSelector('#name');
+
+    await page.getByRole('button', { name: 'Create New' }).click();
+
+    await page.locator('#new-pattern-name').fill('Incomplete Pattern');
+    // Length, Volume, Left Ratio, and Right Ratio are left blank.
+
+    await page.locator('button.neba-btn-primary.neba-btn-sm', { hasText: 'Add Pattern' }).click();
+
+    await expect(page.locator('p.text-red-600')).toHaveText('Length is required.');
+    await expect(page.locator('#new-pattern-name')).toBeVisible();
+    await expect(page.getByText('Incomplete Pattern', { exact: true })).not.toBeVisible();
+  });
+
   test('defaults the new pattern name to the search text when no existing pattern matches', async ({ page }) => {
     await page.goto('/tournaments/new');
     await page.waitForSelector('#name');
