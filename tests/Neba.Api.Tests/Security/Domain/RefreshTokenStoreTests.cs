@@ -43,6 +43,29 @@ public sealed class RefreshTokenStoreTests(SecurityDbContextFixture fixture)
         stored.IssuedAt.ShouldBe(timeProvider.GetUtcNow());
     }
 
+    [Fact(DisplayName = "StoreAsync then GetStoredJsonAsync round-trips the previous hash and its expiry")]
+    public async Task StoreAsync_ShouldRoundTripPreviousHashAndExpiry_ThroughGetStoredJsonAsync()
+    {
+        // Arrange
+        using var scope = fixture.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await SeedUserAsync(userManager);
+        var timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        var previousHash = StoredRefreshTokenFactory.ValidHash;
+        var previousHashExpiresAt = timeProvider.GetUtcNow().AddSeconds(30);
+
+        // Act
+        await RefreshTokenStore.StoreAsync(userManager, user, "raw-refresh-token", timeProvider, previousHash, previousHashExpiresAt);
+
+        // Assert
+        var storedJson = await RefreshTokenStore.GetStoredJsonAsync(userManager, user);
+        storedJson.ShouldNotBeNullOrEmpty();
+        var stored = JsonSerializer.Deserialize<StoredRefreshToken>(storedJson);
+        stored.ShouldNotBeNull();
+        stored.PreviousHash.ShouldBe(previousHash);
+        stored.PreviousHashExpiresAt.ShouldBe(previousHashExpiresAt);
+    }
+
     [Fact(DisplayName = "RemoveAsync clears the stored token")]
     public async Task RemoveAsync_ShouldClearStoredToken()
     {
