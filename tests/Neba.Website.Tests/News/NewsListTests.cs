@@ -525,6 +525,37 @@ public sealed class NewsListTests : IDisposable
         cut.FindAll("button.hero-delete-btn").Count.ShouldBe(1);
     }
 
+    [Fact(DisplayName = "Should not show the page-title help button when user lacks DeleteArticle permission")]
+    public void Render_ShouldNotShowPageTitleHelp_WhenUserLacksPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        var articles = ArticleSummaryResponseFactory.Bogus(1, 45);
+        SetupSuccessResponse(articles, totalItems: 1);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.FindAll(".page-title-help").ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Should show the page-title help button when user has DeleteArticle permission")]
+    public void Render_ShouldShowPageTitleHelp_WhenUserHasPermission()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.DeleteArticle.PolicyName);
+        var articles = ArticleSummaryResponseFactory.Bogus(1, 46);
+        SetupSuccessResponse(articles, totalItems: 1);
+
+        // Act
+        var cut = _ctx.Render<NewsList>();
+
+        // Assert
+        cut.FindAll(".page-title-help").Count.ShouldBe(1);
+    }
+
     [Fact(DisplayName = "Should not show edit icon on hero when user lacks EditArticle permission")]
     public void Render_ShouldNotShowHeroEditIcon_WhenUserLacksPermission()
     {

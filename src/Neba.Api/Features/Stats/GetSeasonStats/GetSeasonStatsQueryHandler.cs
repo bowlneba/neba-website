@@ -74,7 +74,9 @@ internal sealed class GetSeasonStatsQueryHandler(
     {
         var season = seasonsWithStats.First(s => s.Id == seasonId);
 
-        var tournamentCount = await _tournaments.CountAsync(tournament => tournament.SeasonId == seasonId, cancellationToken);
+        var tournamentCount = await _tournaments.CountAsync(
+            tournament => tournament.SeasonId == seasonId && tournament.Complete && tournament.StatsEligible,
+            cancellationToken);
 
         var (numberOfGames, numberOfTournaments, numberOfEntries) = _seasonStatsCalculator.CalculateStatMinimums(tournamentCount);
 
