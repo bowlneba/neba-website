@@ -131,7 +131,8 @@ public sealed class HangfireBackgroundJobSchedulerTelemetryTests : IDisposable
 
         return new HangfireBackgroundJobScheduler(
             scopeFactory,
-            NullLogger<HangfireBackgroundJobScheduler>.Instance);
+            NullLogger<HangfireBackgroundJobScheduler>.Instance,
+            TimeProvider.System);
     }
 
     private Activity GetActivityForJob(string jobTypeName)

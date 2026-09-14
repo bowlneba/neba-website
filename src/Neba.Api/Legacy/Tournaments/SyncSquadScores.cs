@@ -114,8 +114,14 @@ internal sealed class SyncSquadScoresSyncJob(
         // (many bowlers x games) can produce hundreds of changed SquadScore rows in one call - past
         // Azure Table Storage's 64KB per-property limit, silently dropped by
         // ResilientAuditDataProvider. Capping each SaveChangesAsync's entity count bounds that
-        // property's size regardless of squad size.
+        // property's size regardless of squad size. The whole batch loop runs inside one explicit
+        // transaction so a mid-loop failure rolls back every prior batch instead of leaving the
+        // squad's scores partially resynced - PooledAuditSaveChangesInterceptor opens/closes its own
+        // Audit.EntityFramework scope per SaveChangesAsync call regardless of an enclosing
+        // transaction, so this doesn't merge or grow any audit event.
         const int saveBatchSize = 50;
+
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
 
         foreach (var batch in existing.Chunk(saveBatchSize))
         {
@@ -159,6 +165,8 @@ internal sealed class SyncSquadScoresSyncJob(
             await db.SquadScores.AddRangeAsync(batch, ct);
             await db.SaveChangesAsync(ct);
         }
+
+        await transaction.CommitAsync(ct);
 
         await cache.RemoveByTagAsync($"neba:tournaments:{tournamentId}", token: ct);
 
