@@ -60,10 +60,9 @@ internal sealed class HangfireBackgroundJobScheduler(
         // deduplication key ever used and never shrinks.
         markers[deduplicationKey] = now.Add(window).ToString("O", CultureInfo.InvariantCulture);
 
-        List<KeyValuePair<string, string>> liveMarkers = markers
+        List<KeyValuePair<string, string>> liveMarkers = [.. markers
             .Where(marker => DateTimeOffset.TryParse(marker.Value, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTimeOffset markerExpiresAt)
-                && markerExpiresAt > now)
-            .ToList();
+                && markerExpiresAt > now)];
 
         using IWriteOnlyTransaction transaction = connection.CreateWriteTransaction();
         transaction.RemoveHash(EnqueueOnceHashKey);

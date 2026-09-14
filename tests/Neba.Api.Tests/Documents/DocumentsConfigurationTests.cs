@@ -24,14 +24,13 @@ public sealed class DocumentsConfigurationTests
                 ClientEmail = "test@test-project.iam.gserviceaccount.com",
                 PrivateKeyId = "test-key-id"
             },
-            Documents = documentNames
+            Documents = [.. documentNames
                 .Select(name => new GoogleDocument
                 {
                     Name = name,
                     DocumentId = $"doc-{name}",
                     WebRoute = $"/{name}"
-                })
-                .ToArray()
+                })]
         };
     }
 
