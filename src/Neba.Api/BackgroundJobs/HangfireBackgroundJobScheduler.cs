@@ -11,7 +11,8 @@ namespace Neba.Api.BackgroundJobs;
 
 internal sealed class HangfireBackgroundJobScheduler(
     IServiceScopeFactory serviceScopeFactory,
-    ILogger<HangfireBackgroundJobScheduler> logger)
+    ILogger<HangfireBackgroundJobScheduler> logger,
+    TimeProvider timeProvider)
         : IBackgroundJobScheduler
 {
     private const string EnqueueOnceHashKey = "enqueue-once-markers";
@@ -37,12 +38,12 @@ internal sealed class HangfireBackgroundJobScheduler(
             $"enqueue-once-lock:{deduplicationKey}",
             TimeSpan.FromSeconds(30));
 
-        Dictionary<string, string>? markers = connection.GetAllEntriesFromHash(EnqueueOnceHashKey);
+        DateTimeOffset now = timeProvider.GetUtcNow();
+        Dictionary<string, string> markers = connection.GetAllEntriesFromHash(EnqueueOnceHashKey) ?? [];
 
-        if (markers is not null
-            && markers.TryGetValue(deduplicationKey, out string? lastEnqueuedAtRaw)
-            && DateTimeOffset.TryParse(lastEnqueuedAtRaw, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTimeOffset lastEnqueuedAt)
-            && DateTimeOffset.UtcNow - lastEnqueuedAt < window)
+        if (markers.TryGetValue(deduplicationKey, out string? expiresAtRaw)
+            && DateTimeOffset.TryParse(expiresAtRaw, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTimeOffset expiresAt)
+            && now < expiresAt)
         {
             logger.LogSkippedDuplicateEnqueue(typeof(TJob).Name, deduplicationKey);
             return;
@@ -50,9 +51,26 @@ internal sealed class HangfireBackgroundJobScheduler(
 
         Enqueue(job);
 
-        connection.SetRangeInHash(
-            EnqueueOnceHashKey,
-            [new KeyValuePair<string, string>(deduplicationKey, DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture))]);
+        // Marker values are absolute expiry times (rather than enqueue times) so this hash can
+        // be pruned of every expired entry - including keys from other callers with a different
+        // window - on each write, without which the hash grows by one entry per distinct
+        // deduplication key ever used and never shrinks.
+        markers[deduplicationKey] = now.Add(window).ToString("O", CultureInfo.InvariantCulture);
+
+        List<KeyValuePair<string, string>> liveMarkers = markers
+            .Where(marker => DateTimeOffset.TryParse(marker.Value, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTimeOffset markerExpiresAt)
+                && markerExpiresAt > now)
+            .ToList();
+
+        using IWriteOnlyTransaction transaction = connection.CreateWriteTransaction();
+        transaction.RemoveHash(EnqueueOnceHashKey);
+
+        if (liveMarkers.Count > 0)
+        {
+            transaction.SetRangeInHash(EnqueueOnceHashKey, liveMarkers);
+        }
+
+        transaction.Commit();
     }
 
     public string Schedule<TJob>(

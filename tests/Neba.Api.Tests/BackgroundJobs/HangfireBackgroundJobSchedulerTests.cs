@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Testing;
+using Microsoft.Extensions.Time.Testing;
 
 using Neba.Api.BackgroundJobs;
 
@@ -72,7 +73,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
     }
 
     private static HangfireBackgroundJobScheduler CreateScheduler(
-        ILogger<HangfireBackgroundJobScheduler>? logger = null)
+        ILogger<HangfireBackgroundJobScheduler>? logger = null,
+        TimeProvider? timeProvider = null)
     {
         var mockScopeFactory = new Mock<IServiceScopeFactory>(MockBehavior.Strict);
 
@@ -102,7 +104,8 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
 
         return new HangfireBackgroundJobScheduler(
             mockScopeFactory.Object,
-            logger ?? NullLogger<HangfireBackgroundJobScheduler>.Instance);
+            logger ?? NullLogger<HangfireBackgroundJobScheduler>.Instance,
+            timeProvider ?? TimeProvider.System);
     }
 
     [Fact(DisplayName = "Should return job ID when enqueuing valid job")]
@@ -378,11 +381,13 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
     {
         // Arrange
         var logger = new FakeLogger<HangfireBackgroundJobScheduler>();
-        HangfireBackgroundJobScheduler scheduler = CreateScheduler(logger);
+        var timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        HangfireBackgroundJobScheduler scheduler = CreateScheduler(logger, timeProvider);
         var job = new TestBackgroundJob("No Window Run");
 
         // Act
         scheduler.EnqueueOnce(job, "dedupe-key-no-window", TimeSpan.Zero);
+        timeProvider.Advance(TimeSpan.FromTicks(1));
         scheduler.EnqueueOnce(job, "dedupe-key-no-window", TimeSpan.Zero);
 
         // Assert
@@ -409,5 +414,29 @@ public sealed class HangfireBackgroundJobSchedulerTests : IDisposable
         logs.Count.ShouldBe(2);
         logs[0].Message.ShouldContain("Enqueuing background job");
         logs[1].Message.ShouldContain("Enqueuing background job");
+    }
+
+    [Fact(DisplayName = "Should prune expired markers from the shared hash on the next call")]
+    public void EnqueueOnce_ShouldPruneExpiredMarkers_OnSubsequentCall()
+    {
+        // Arrange
+        var timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        HangfireBackgroundJobScheduler scheduler = CreateScheduler(timeProvider: timeProvider);
+        var job = new TestBackgroundJob("Pruning Run");
+
+        // Act
+        scheduler.EnqueueOnce(job, "dedupe-key-expired", TimeSpan.FromMinutes(15));
+
+        // Advance past the first marker's window before the next call reads/rewrites the hash.
+        timeProvider.Advance(TimeSpan.FromMinutes(16));
+        scheduler.EnqueueOnce(job, "dedupe-key-live", TimeSpan.FromMinutes(15));
+
+        // Assert
+        using Hangfire.Storage.IStorageConnection connection = _jobStorage.GetConnection();
+        Dictionary<string, string>? markers = connection.GetAllEntriesFromHash("enqueue-once-markers");
+
+        markers.ShouldNotBeNull();
+        markers.ShouldContainKey("dedupe-key-live");
+        markers.ShouldNotContainKey("dedupe-key-expired");
     }
 }
