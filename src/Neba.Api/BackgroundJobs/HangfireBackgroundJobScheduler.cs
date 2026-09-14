@@ -33,9 +33,12 @@ internal sealed class HangfireBackgroundJobScheduler(
     public void EnqueueOnce<TJob>(TJob job, string deduplicationKey, TimeSpan window)
         where TJob : IBackgroundJob
     {
+        // Locked on the hash key itself, not the deduplication key: every call reads, prunes, and
+        // rewrites the entire shared markers hash (not just its own entry), so two calls for
+        // different keys must still be mutually exclusive or one can clobber the other's marker.
         using IStorageConnection connection = JobStorage.Current.GetConnection();
         using IDisposable distributedLock = connection.AcquireDistributedLock(
-            $"enqueue-once-lock:{deduplicationKey}",
+            $"enqueue-once-lock:{EnqueueOnceHashKey}",
             TimeSpan.FromSeconds(30));
 
         DateTimeOffset now = timeProvider.GetUtcNow();
