@@ -11,11 +11,15 @@ public static class StoredRefreshTokenFactory
 
     public static StoredRefreshToken Create(
         string? hash = null,
-        DateTimeOffset? issuedAt = null)
+        DateTimeOffset? issuedAt = null,
+        string? previousHash = null,
+        DateTimeOffset? previousHashExpiresAt = null)
         => new()
         {
             Hash = hash ?? ValidHash,
             IssuedAt = issuedAt ?? ValidIssuedAt,
+            PreviousHash = previousHash,
+            PreviousHashExpiresAt = previousHashExpiresAt,
         };
 
     internal static IReadOnlyCollection<StoredRefreshToken> Bogus(int count, Faker faker)
