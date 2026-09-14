@@ -17,15 +17,8 @@
     <div class="stats-hero">
         <h1 class="text-3xl font-bold text-[var(--neba-blue-700)]">Season Statistics</h1>
         <div class="stats-hero-controls">
-            <div class="stats-season-selector" role="group" aria-label="Select season">
-                @foreach (var (id, name) in _initialAvailableSeasons)
-                {
-                    <button class="@(id == _selectedSeasonYear ? "stats-season-btn active" : "stats-season-btn")"
-                            aria-pressed="@(id == _selectedSeasonYear ? "true" : "false")" @onclick="() => OnSeasonChanged(id)">
-                        @name
-                    </button>
-                }
-            </div>
+            <SeasonSelector AvailableSeasons="@_initialAvailableSeasons" SelectedYear="@_selectedSeasonYear"
+                             SeasonSelected="OnSeasonChanged" />
             <div class="stats-bowler-search">
                 <input type="text" @oninput="OnBowlerSearchInput" @onchange="OnBowlerSearchChanged"
                        value="@_bowlerSearchText" list="bowler-search-list" placeholder="Search bowlers..."

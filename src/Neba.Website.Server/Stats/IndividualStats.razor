@@ -16,15 +16,8 @@
     <div class="indiv-hero">
         <a href="@GetSeasonStatsUrl()" class="indiv-back-link">← Season Stats</a>
         <div class="indiv-hero-body">
-            <div class="stats-season-selector" role="group" aria-label="Select season">
-                @foreach (var (id, name) in _initialAvailableSeasons)
-                {
-                    <button class="@(id == _selectedSeasonYear ? "stats-season-btn active" : "stats-season-btn")"
-                            aria-pressed="@(id == _selectedSeasonYear ? "true" : "false")" @onclick="() => OnSeasonChanged(id)">
-                        @name
-                    </button>
-                }
-            </div>
+            <SeasonSelector AvailableSeasons="@_initialAvailableSeasons" SelectedYear="@_selectedSeasonYear"
+                             SeasonSelected="OnSeasonChanged" />
             <div class="indiv-hero-title">
                 @if (_isLoading)
                 {
