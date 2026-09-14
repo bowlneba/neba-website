@@ -312,6 +312,46 @@ statsEligible: true, seasonId: season.Id);
         openSeries.Single().Results.Single().CumulativePoints.ShouldBe(100);
     }
 
+    [Fact(DisplayName = "HandleAsync excludes incomplete and stat-ineligible tournaments when computing stat minimums")]
+    public async Task HandleAsync_ShouldExcludeIncompleteAndStatIneligibleTournaments_WhenComputingStatMinimums()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var bowler = BowlerFactory.Create();
+        await _dbContext.Bowlers.AddAsync(bowler, ct);
+
+        var season = SeasonFactory.Create(
+            startDate: new DateOnly(2025, 1, 1),
+            endDate: new DateOnly(2025, 12, 31));
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var completedEligibleTournament = TournamentFactory.Create(seasonId: season.Id, statsEligible: true);
+        var upcomingTournament = TournamentFactory.Create(seasonId: season.Id, statsEligible: true);
+        var completedIneligibleTournament = TournamentFactory.Create(seasonId: season.Id, statsEligible: false);
+        await _dbContext.Tournaments.AddRangeAsync(
+            [completedEligibleTournament, upcomingTournament, completedIneligibleTournament], ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        completedEligibleTournament.CompleteTournament();
+        completedIneligibleTournament.CompleteTournament();
+        await _dbContext.SaveChangesAsync(ct);
+
+        var stats = BowlerSeasonStatsFactory.Create(seasonId: season.Id, bowlerId: bowler.Id);
+        await _dbContext.BowlerSeasonStats.AddAsync(stats, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var handler = CreateHandler();
+
+        // Act
+        var result = await handler.HandleAsync(new GetSeasonStatsQuery { SeasonYear = 2025 }, ct);
+
+        // Assert - only the completed, stat-eligible tournament should count toward the minimums (1, not 3)
+        result.IsError.ShouldBeFalse();
+        result.Value.MinimumNumberOfGames.ShouldBe(4.5m);
+        result.Value.MinimumNumberOfTournaments.ShouldBe(0.5m);
+        result.Value.MinimumNumberOfEntries.ShouldBe(0.75m);
+    }
+
     [Fact(DisplayName = "HandleAsync serves a fresh result after the season's stats cache tag is removed")]
     public async Task HandleAsync_ShouldServeFreshResult_AfterSeasonStatsCacheTagRemoved()
     {
