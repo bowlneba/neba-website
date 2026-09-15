@@ -25,9 +25,9 @@ public sealed record TokenSlot
     /// Gets the time at which this slot stops being accepted, or <see langword="null"/> if the slot
     /// is fully valid (not just a short-lived grace window after being superseded). A grace slot
     /// exists so a request that races in presenting a just-superseded hash - one already redeemed by
-    /// someone else, or already turned into a new slot itself - isn't rejected outright; redeeming a
-    /// grace slot always produces a brand new, fully valid slot, so a racer's reissued token is never
-    /// itself a dead end.
+    /// someone else - isn't rejected outright; redeeming a grace slot reissues a one-time bridge
+    /// token pair for that caller, but never persists a new slot, so a captured/replayed hash can't
+    /// be redeemed repeatedly within the grace window to mint unlimited independently valid sessions.
     /// </summary>
     public DateTimeOffset? GracedUntil { get; init; }
 }

@@ -438,8 +438,8 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         result.Value.RefreshToken.ShouldNotBeNullOrEmpty();
     }
 
-    [Fact(DisplayName = "HandleAsync succeeds when a racer's grace-window-issued refresh token is reused much later")]
-    public async Task HandleAsync_ShouldSucceed_WhenRacerGraceTokenIsReusedLater()
+    [Fact(DisplayName = "HandleAsync returns InvalidRefreshToken when a racer's grace-window-issued bridge token is presented again")]
+    public async Task HandleAsync_ShouldReturnInvalidRefreshToken_WhenRacerGraceBridgeTokenIsReused()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -455,23 +455,21 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
             .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = firstRefreshToken }, ct);
         timeProvider.Advance(TimeSpan.FromSeconds(5));
 
+        // A racer replays the now-graced firstRefreshToken and is handed a one-time bridge token
+        // that is never persisted - it must not itself become a fresh, independently durable slot,
+        // otherwise the same graced hash could be replayed repeatedly to mint unlimited sessions.
         var racerResult = await CreateHandler(userManager, roleManager, securityDbContext, timeProvider)
             .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = firstRefreshToken }, ct);
         racerResult.IsError.ShouldBeFalse();
 
-        // Advance well past the original 30s grace window and a normal access-token lifetime -
-        // exactly the scenario a dead-end bridge token used to fail: a legitimate client retrying
-        // after a lost response, then trying to refresh again much later.
-        timeProvider.Advance(TimeSpan.FromMinutes(15));
-
-        // Act — the racer's own reissued refresh token, presented long after the original race.
+        // Act — the racer's own reissued bridge token, presented immediately afterward.
         var result = await CreateHandler(userManager, roleManager, securityDbContext, timeProvider)
             .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = racerResult.Value.RefreshToken }, ct);
 
         // Assert
-        result.IsError.ShouldBeFalse("a racer-issued token must be just as durable as any other - no dead-end bridge tokens");
-        result.Value.AccessToken.ShouldNotBeNullOrEmpty();
-        result.Value.RefreshToken.ShouldNotBeNullOrEmpty();
+        result.IsError.ShouldBeTrue("a one-time bridge token must never be stored as a redeemable slot");
+        result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.Unauthorized);
+        result.FirstError.Code.ShouldBe("RefreshToken.InvalidRefreshToken");
     }
 
     [Fact(DisplayName = "HandleAsync leaves the legitimately rotated-forward slot untouched when a racer replays the previous token within the grace window")]
@@ -508,8 +506,8 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         winnerSlot.GracedUntil.ShouldBeNull();
     }
 
-    [Fact(DisplayName = "HandleAsync logs an informational graced-slot-promoted event when a racer replays the previous token within the grace window")]
-    public async Task HandleAsync_ShouldLogGracedSlotPromoted_WhenRacerReplaysPreviousTokenWithinGraceWindow()
+    [Fact(DisplayName = "HandleAsync logs an informational graced-slot-replayed event when a racer replays the previous token within the grace window")]
+    public async Task HandleAsync_ShouldLogGracedSlotReplayed_WhenRacerReplaysPreviousTokenWithinGraceWindow()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -563,8 +561,8 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         result.IsError.ShouldBeFalse("the grace window boundary is inclusive (now <= GracedUntil)");
     }
 
-    [Fact(DisplayName = "HandleAsync leaves neither caller with a dead-end token when two requests concurrently present the same still-current refresh token")]
-    public async Task HandleAsync_ShouldLeaveNeitherCallerWithADeadEndToken_WhenTwoRequestsConcurrentlyPresentSameCurrentToken()
+    [Fact(DisplayName = "HandleAsync keeps the CAS winner's token durable but hands the CAS loser a one-time bridge token when two requests concurrently present the same still-current refresh token")]
+    public async Task HandleAsync_ShouldKeepWinnerDurableAndLoserOneTime_WhenTwoRequestsConcurrentlyPresentSameCurrentToken()
     {
         // Arrange
         var ct = TestContext.Current.CancellationToken;
@@ -593,10 +591,11 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
         results[0].IsError.ShouldBeFalse();
         results[1].IsError.ShouldBeFalse();
 
-        // Both reissued tokens - the CAS winner's own new token, and the CAS loser's token
-        // (promoted from what became a grace slot) - must remain independently usable afterward,
-        // each from a fresh scope like a real follow-up request. Neither is a dead-end bridge, and
-        // redeeming one must not affect the other's own slot.
+        // Exactly one of the two concurrent requests wins the CAS and gets a fully durable new
+        // slot; the other loses the CAS, retries, finds its presented hash now matches the slot the
+        // winner just demoted to graced, and is handed a one-time bridge token instead. The bridge
+        // token must not itself be usable for a further refresh - otherwise the same request race
+        // could be repeated to mint unlimited independently durable sessions from one token.
         using var verifyScope = fixture.CreateScope();
         var verifyUserManager = verifyScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var verifyRoleManager = verifyScope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
@@ -604,11 +603,10 @@ public sealed class RefreshTokenCommandHandlerIntegrationTests(SecurityDbContext
 
         var followUpA = await CreateHandler(verifyUserManager, verifyRoleManager, verifySecurityDbContext, timeProvider)
             .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = results[0].Value.RefreshToken }, ct);
-        followUpA.IsError.ShouldBeFalse("the first racer's reissued token must remain usable, not a dead-end bridge");
-
         var followUpB = await CreateHandler(verifyUserManager, verifyRoleManager, verifySecurityDbContext, timeProvider)
             .HandleAsync(new RefreshTokenCommand { UserId = user.Id, RefreshToken = results[1].Value.RefreshToken }, ct);
-        followUpB.IsError.ShouldBeFalse(
-            "the second racer's reissued token must remain usable even after the first racer's own follow-up redemption - a sibling slot must never be affected by someone else's redemption");
+
+        (followUpA.IsError ^ followUpB.IsError).ShouldBeTrue(
+            "exactly one of the two reissued tokens - the CAS winner's - must remain durable, and the other - the CAS loser's one-time bridge token - must not");
     }
 }
