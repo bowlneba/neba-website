@@ -12,14 +12,11 @@ public static class StoredRefreshTokenFactory
     public static StoredRefreshToken Create(
         string? hash = null,
         DateTimeOffset? issuedAt = null,
-        string? previousHash = null,
-        DateTimeOffset? previousHashExpiresAt = null)
+        IReadOnlyList<TokenSlot>? extraSlots = null)
         => new()
         {
-            Hash = hash ?? ValidHash,
+            Slots = [.. new[] { new TokenSlot { Hash = hash ?? ValidHash, GracedUntil = null } }, .. extraSlots ?? []],
             IssuedAt = issuedAt ?? ValidIssuedAt,
-            PreviousHash = previousHash,
-            PreviousHashExpiresAt = previousHashExpiresAt,
         };
 
     internal static IReadOnlyCollection<StoredRefreshToken> Bogus(int count, Faker faker)
@@ -27,7 +24,7 @@ public static class StoredRefreshTokenFactory
         ArgumentNullException.ThrowIfNull(faker);
         return [.. Enumerable.Range(0, count).Select(_ => new StoredRefreshToken
         {
-            Hash = faker.Random.Hash(),
+            Slots = [new TokenSlot { Hash = faker.Random.Hash(), GracedUntil = null }],
             IssuedAt = faker.Date.PastOffset(2),
         })];
     }

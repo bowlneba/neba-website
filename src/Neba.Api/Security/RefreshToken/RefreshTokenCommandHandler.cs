@@ -1,11 +1,12 @@
 using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 
 using ErrorOr;
 
 using Microsoft.AspNetCore.Identity;
 
+using Neba.Api.Contracts.Security;
+using Neba.Api.Database;
 using Neba.Api.Messaging;
 using Neba.Api.Security.Domain;
 using Neba.Api.Security.Infrastructure.Authorization;
@@ -15,6 +16,7 @@ namespace Neba.Api.Security.RefreshToken;
 internal sealed class RefreshTokenCommandHandler(
     UserManager<ApplicationUser> userManager,
     RoleManager<ApplicationRole> roleManager,
+    SecurityDbContext securityDbContext,
     IJwtTokenService jwtTokenService,
     JwtSettings jwtSettings,
     TimeProvider timeProvider,
@@ -27,6 +29,11 @@ internal sealed class RefreshTokenCommandHandler(
     // race, short enough that a genuinely stolen/replayed old token isn't usable for long.
     private static readonly TimeSpan RotationGraceWindow = TimeSpan.FromSeconds(30);
 
+    // Bounds the optimistic-concurrency retry loop below. Real contention - several requests
+    // genuinely writing to the same user's record at the same instant - should be rare and settle
+    // within a couple of retries; this just stops an unbounded loop under pathological contention.
+    private const int MaxCasAttempts = 3;
+
     public async Task<ErrorOr<RefreshTokenDto>> HandleAsync(RefreshTokenCommand command, CancellationToken cancellationToken)
     {
         var user = await userManager.FindByIdAsync(command.UserId.ToString());
@@ -35,70 +42,119 @@ internal sealed class RefreshTokenCommandHandler(
             return RefreshTokenErrors.InvalidRefreshToken;
         }
 
-        var storedJson = await RefreshTokenStore.GetStoredJsonAsync(userManager, user);
-        if (storedJson is null)
+        var incomingHash = RefreshTokenStore.ComputeHash(command.RefreshToken);
+        IReadOnlyList<string>? roles = null;
+        IReadOnlyCollection<Permissions>? permissions = null;
+
+        for (var attempt = 0; attempt < MaxCasAttempts; attempt++)
         {
-            return RefreshTokenErrors.InvalidRefreshToken;
+            var storedJson = await RefreshTokenStore.GetStoredJsonAsync(userManager, user);
+            if (storedJson is null)
+            {
+                return RefreshTokenErrors.InvalidRefreshToken;
+            }
+
+            StoredRefreshToken stored;
+
+            try
+            {
+                stored = JsonSerializer.Deserialize<StoredRefreshToken>(storedJson)
+                    ?? throw new InvalidOperationException("Null deserialization result");
+            }
+            catch (Exception ex) when (ex is JsonException or InvalidOperationException)
+            {
+                logger.RefreshTokenDeserializationFailed(ex, command.UserId);
+                return RefreshTokenErrors.InvalidRefreshToken;
+            }
+
+            var now = timeProvider.GetUtcNow();
+
+            if (now > stored.IssuedAt.AddDays(jwtSettings.RefreshTokenExpiryDays))
+            {
+                return RefreshTokenErrors.InvalidRefreshToken;
+            }
+
+            var matchedSlot = stored.Slots.FirstOrDefault(slot =>
+                HashesMatch(slot.Hash, incomingHash)
+                && (slot.GracedUntil is null || now <= slot.GracedUntil));
+
+            if (matchedSlot is null)
+            {
+                return RefreshTokenErrors.InvalidRefreshToken;
+            }
+
+            // Roles/permissions don't change between CAS retries for the same user, so only
+            // resolve them once - on the first attempt whose token actually validated.
+            roles ??= (await userManager.GetRolesAsync(user)).AsReadOnly();
+            permissions ??= await PermissionResolver.ResolveAsync(roleManager, roles);
+
+            var tokenPair = jwtTokenService.CreateTokenPair(user, roles, permissions);
+            var newSlots = BuildNextSlots(stored.Slots, matchedSlot, tokenPair.RefreshToken, now);
+            var newValue = new StoredRefreshToken { Slots = newSlots, IssuedAt = now };
+
+            var persisted = await RefreshTokenStore.TryStoreAsync(securityDbContext, user, storedJson, newValue);
+            if (persisted)
+            {
+                if (matchedSlot.GracedUntil is not null)
+                {
+                    logger.RefreshTokenGracedSlotPromoted(command.UserId);
+                }
+
+                return new RefreshTokenDto
+                {
+                    AccessToken = tokenPair.AccessToken,
+                    RefreshToken = tokenPair.RefreshToken,
+                    ExpiresAt = tokenPair.ExpiresAt,
+                    UserId = user.Id,
+                    Email = user.Email!
+                };
+            }
+
+            // Lost the race: another request already wrote to this record between our read and
+            // this write. Loop and re-evaluate against the latest state rather than assuming.
         }
 
-        StoredRefreshToken stored;
+        logger.RefreshTokenRotationContended(command.UserId);
+        return RefreshTokenErrors.InvalidRefreshToken;
+    }
 
-        try
+    /// <summary>
+    /// Computes the next slot set after redeeming <paramref name="matchedSlot"/>. Every other slot
+    /// is left completely untouched (so a sibling caller's own valid session is never affected by
+    /// this redemption) aside from pruning graced slots that have already expired. The redeemed
+    /// slot is demoted to a grace slot (if it wasn't one already) rather than removed, so other
+    /// requests racing in with that exact hash still succeed until it naturally expires. A brand
+    /// new, fully valid slot is always appended for the freshly minted token - even a redemption
+    /// that only matched a grace slot produces a token that is just as durable as any other, not a
+    /// one-time bridge.
+    /// </summary>
+    private static List<TokenSlot> BuildNextSlots(
+        IReadOnlyList<TokenSlot> currentSlots,
+        TokenSlot matchedSlot,
+        string newRawToken,
+        DateTimeOffset now)
+    {
+        var next = new List<TokenSlot>(currentSlots.Count + 1);
+
+        foreach (var slot in currentSlots)
         {
-            stored = JsonSerializer.Deserialize<StoredRefreshToken>(storedJson)
-                ?? throw new InvalidOperationException("Null deserialization result");
-        }
-        catch (Exception ex) when (ex is JsonException or InvalidOperationException)
-        {
-            logger.RefreshTokenDeserializationFailed(ex, command.UserId);
-            return RefreshTokenErrors.InvalidRefreshToken;
-        }
+            if (ReferenceEquals(slot, matchedSlot))
+            {
+                next.Add(slot.GracedUntil is null
+                    ? slot with { GracedUntil = now.Add(RotationGraceWindow) }
+                    : slot);
+                continue;
+            }
 
-        var incomingHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(command.RefreshToken)));
-        var now = timeProvider.GetUtcNow();
-
-        var matchesCurrent = HashesMatch(stored.Hash, incomingHash);
-        var matchesPreviousWithinGrace = !matchesCurrent
-            && stored.PreviousHash is not null
-            && stored.PreviousHashExpiresAt is not null
-            && now <= stored.PreviousHashExpiresAt
-            && HashesMatch(stored.PreviousHash, incomingHash);
-
-        if (!matchesCurrent && !matchesPreviousWithinGrace)
-        {
-            return RefreshTokenErrors.InvalidRefreshToken;
-        }
-
-        if (now > stored.IssuedAt.AddDays(jwtSettings.RefreshTokenExpiryDays))
-        {
-            return RefreshTokenErrors.InvalidRefreshToken;
-        }
-
-        var roles = await userManager.GetRolesAsync(user);
-        var permissions = await PermissionResolver.ResolveAsync(roleManager, roles);
-        var tokenPair = jwtTokenService.CreateTokenPair(user, roles.AsReadOnly(), permissions);
-
-        // Single stored token per user: a request that races in presenting the just-rotated-out
-        // token (matchesPreviousWithinGrace) is handed a fresh token pair so it isn't rejected
-        // outright, but the stored state is left untouched. Persisting this pair's hash as the new
-        // "current" would clobber whatever the actual rotation winner already moved to, silently
-        // evicting that live session; leaving the state alone means the winner's token keeps
-        // working, other racers can still use the same previous-hash slot until it expires, and the
-        // reissued pair from this branch is a one-time bridge that itself can't be used to refresh
-        // again later.
-        if (!matchesPreviousWithinGrace)
-        {
-            await RefreshTokenStore.StoreAsync(userManager, user, tokenPair.RefreshToken, timeProvider, stored.Hash, now.Add(RotationGraceWindow));
+            if (slot.GracedUntil is null || now <= slot.GracedUntil)
+            {
+                next.Add(slot);
+            }
         }
 
-        return new RefreshTokenDto
-        {
-            AccessToken = tokenPair.AccessToken,
-            RefreshToken = tokenPair.RefreshToken,
-            ExpiresAt = tokenPair.ExpiresAt,
-            UserId = user.Id,
-            Email = user.Email!
-        };
+        next.Add(new TokenSlot { Hash = RefreshTokenStore.ComputeHash(newRawToken), GracedUntil = null });
+
+        return next;
     }
 
     private static bool HashesMatch(string storedHash, string incomingHash) =>
@@ -115,5 +171,23 @@ internal static partial class RefreshTokenLogMessages
     public static partial void RefreshTokenDeserializationFailed(
         this ILogger<RefreshTokenCommandHandler> logger,
         Exception ex,
+        Ulid userId);
+
+    // Deliberately Information, not a warning/error: this is expected, handled behavior (a
+    // grace-slot redemption), not a fault. Logged so its frequency can be measured.
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "Refresh token redemption for user {UserId} promoted a grace slot to a new fully valid slot")]
+    public static partial void RefreshTokenGracedSlotPromoted(
+        this ILogger<RefreshTokenCommandHandler> logger,
+        Ulid userId);
+
+    // Distinct from "genuinely invalid token" so ops can tell a contention storm apart from
+    // ordinary invalid-token traffic. Should be rare - see MaxCasAttempts.
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Refresh token rotation for user {UserId} failed after exhausting concurrency retries")]
+    public static partial void RefreshTokenRotationContended(
+        this ILogger<RefreshTokenCommandHandler> logger,
         Ulid userId);
 }

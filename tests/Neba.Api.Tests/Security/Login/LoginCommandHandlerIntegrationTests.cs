@@ -133,7 +133,9 @@ public sealed class LoginCommandHandlerIntegrationTests(SecurityDbContextFixture
         stored.ShouldNotBeNull();
 
         var expectedHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(result.Value.RefreshToken)));
-        stored.Hash.ShouldBe(expectedHash);
+        var slot = stored.Slots.ShouldHaveSingleItem();
+        slot.Hash.ShouldBe(expectedHash);
+        slot.GracedUntil.ShouldBeNull();
     }
 
     [Fact(DisplayName = "HandleAsync returns InvalidCredentials when the email is not registered")]

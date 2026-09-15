@@ -1,24 +1,33 @@
 namespace Neba.Api.Security.Domain;
 
 /// <summary>
-/// A hashed refresh token issued to a user, with the time it was issued.
+/// The hashed refresh token record for a user: a small set of independently-valid slots plus the
+/// time of the most recent successful redemption (drives absolute expiry).
 /// </summary>
 public sealed record StoredRefreshToken
 {
-    /// <summary>Gets the hash of the refresh token.</summary>
+    /// <summary>Gets the set of hashes currently acceptable for a refresh.</summary>
+    public required IReadOnlyList<TokenSlot> Slots { get; init; }
+
+    /// <summary>Gets the time of the most recent successful redemption.</summary>
+    public required DateTimeOffset IssuedAt { get; init; }
+}
+
+/// <summary>
+/// A single hashed refresh token that a refresh call may present.
+/// </summary>
+public sealed record TokenSlot
+{
+    /// <summary>Gets the hash of the refresh token this slot accepts.</summary>
     public required string Hash { get; init; }
 
-    /// <summary>Gets the date and time the token was issued.</summary>
-    public required DateTimeOffset IssuedAt { get; init; }
-
     /// <summary>
-    /// Gets the hash of the immediately-prior refresh token, kept for a short grace window after
-    /// rotation so a refresh call already in flight when another call rotates the token first
-    /// doesn't get rejected. Null once the grace window has passed or for a token that hasn't
-    /// rotated yet.
+    /// Gets the time at which this slot stops being accepted, or <see langword="null"/> if the slot
+    /// is fully valid (not just a short-lived grace window after being superseded). A grace slot
+    /// exists so a request that races in presenting a just-superseded hash - one already redeemed by
+    /// someone else, or already turned into a new slot itself - isn't rejected outright; redeeming a
+    /// grace slot always produces a brand new, fully valid slot, so a racer's reissued token is never
+    /// itself a dead end.
     /// </summary>
-    public string? PreviousHash { get; init; }
-
-    /// <summary>Gets the time at which <see cref="PreviousHash"/> stops being accepted.</summary>
-    public DateTimeOffset? PreviousHashExpiresAt { get; init; }
+    public DateTimeOffset? GracedUntil { get; init; }
 }
