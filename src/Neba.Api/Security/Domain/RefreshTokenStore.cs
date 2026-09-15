@@ -75,7 +75,7 @@ internal static class RefreshTokenStore
                     e.Entity.UserId == user.Id
                     && e.Entity.LoginProvider == Provider
                     && e.Entity.Name == Name);
-                    
+
             tracked?.State = EntityState.Detached;
         }
 
