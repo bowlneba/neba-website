@@ -63,21 +63,21 @@ internal static class RefreshTokenStore
                 && t.Value == expectedCurrentJson)
             .ExecuteUpdateAsync(s => s.SetProperty(t => t.Value, json));
 
-        if (rowsAffected > 0)
-        {
-            // ExecuteUpdateAsync writes straight to the database and bypasses the change
-            // tracker, so if this row happens to already be tracked on this same DbContext
-            // (e.g. UserManager loaded it earlier in this same scope/request), that tracked
-            // instance's Value is now stale. Detach it so the next read goes back to the
-            // database instead of silently returning the pre-write value.
-            var tracked = dbContext.ChangeTracker.Entries<IdentityUserToken<Ulid>>()
-                .FirstOrDefault(e =>
-                    e.Entity.UserId == user.Id
-                    && e.Entity.LoginProvider == Provider
-                    && e.Entity.Name == Name);
+        // ExecuteUpdateAsync writes straight to the database and bypasses the change tracker, so
+        // if this row is already tracked on this same DbContext (e.g. UserManager loaded it
+        // earlier via GetAuthenticationTokenAsync, which resolves through DbSet.FindAsync's local
+        // identity-map lookup), that tracked instance's Value is now stale - regardless of whether
+        // THIS write won or lost the CAS. On a win, our own write bypassed the tracker. On a loss,
+        // some other write committed underneath us. Either way, the next read in a CAS retry loop
+        // must not silently return the pre-write value via the identity map - detach unconditionally
+        // so it goes back to the database.
+        var tracked = dbContext.ChangeTracker.Entries<IdentityUserToken<Ulid>>()
+            .FirstOrDefault(e =>
+                e.Entity.UserId == user.Id
+                && e.Entity.LoginProvider == Provider
+                && e.Entity.Name == Name);
 
-            tracked?.State = EntityState.Detached;
-        }
+        tracked?.State = EntityState.Detached;
 
         return rowsAffected > 0;
     }
