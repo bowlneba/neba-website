@@ -312,7 +312,7 @@ public sealed class BearerTokenHandlerTests
         // An async, gated responder so the test can deterministically pin the second call at the
         // shared CircuitTokenCache.RefreshLock while the first call's refresh is still in flight -
         // exactly the race that produced concurrent /security/refresh calls in production.
-        using var refreshHandler = new CapturingHandler(async request =>
+        using var refreshHandler = new CapturingHandler(async _ =>
         {
             Interlocked.Increment(ref refreshCallCount);
             refreshStarted.TrySetResult();

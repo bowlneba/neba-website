@@ -43,95 +43,126 @@ internal sealed class RefreshTokenCommandHandler(
         }
 
         var incomingHash = RefreshTokenStore.ComputeHash(command.RefreshToken);
-        IReadOnlyList<string>? roles = null;
-        IReadOnlyCollection<Permissions>? permissions = null;
+        var roleContext = new RoleContext();
 
         for (var attempt = 0; attempt < MaxCasAttempts; attempt++)
         {
-            var storedJson = await RefreshTokenStore.GetStoredJsonAsync(userManager, user);
-            if (storedJson is null)
+            // Null means another request won the CAS race between our read and write; loop and
+            // re-evaluate against the latest state rather than assuming.
+            var outcome = await TryRefreshOnceAsync(command.UserId, user, incomingHash, roleContext);
+            if (outcome is not null)
             {
-                return RefreshTokenErrors.InvalidRefreshToken;
+                return outcome.Value;
             }
-
-            StoredRefreshToken stored;
-
-            try
-            {
-                stored = JsonSerializer.Deserialize<StoredRefreshToken>(storedJson)
-                    ?? throw new InvalidOperationException("Null deserialization result");
-            }
-            catch (Exception ex) when (ex is JsonException or InvalidOperationException)
-            {
-                logger.RefreshTokenDeserializationFailed(ex, command.UserId);
-                return RefreshTokenErrors.InvalidRefreshToken;
-            }
-
-            var now = timeProvider.GetUtcNow();
-
-            if (now > stored.IssuedAt.AddDays(jwtSettings.RefreshTokenExpiryDays))
-            {
-                return RefreshTokenErrors.InvalidRefreshToken;
-            }
-
-            var matchedSlot = stored.Slots.FirstOrDefault(slot =>
-                HashesMatch(slot.Hash, incomingHash)
-                && (slot.GracedUntil is null || now <= slot.GracedUntil));
-
-            if (matchedSlot is null)
-            {
-                return RefreshTokenErrors.InvalidRefreshToken;
-            }
-
-            // Roles/permissions don't change between CAS retries for the same user, so only
-            // resolve them once - on the first attempt whose token actually validated.
-            roles ??= (await userManager.GetRolesAsync(user)).AsReadOnly();
-            permissions ??= await PermissionResolver.ResolveAsync(roleManager, roles);
-
-            if (matchedSlot.GracedUntil is not null)
-            {
-                // Already-graced slot: this is a race replay of a token that was just rotated out
-                // from under this caller (or a replay of one), not the current rotation winner.
-                // Reissue a one-time bridge token so the caller isn't rejected outright, but never
-                // persist a new slot for it - otherwise the same graced hash could be replayed
-                // indefinitely within the grace window to mint unlimited independently long-lived
-                // sessions with no reuse/theft signal.
-                logger.RefreshTokenGracedSlotReplayed(command.UserId);
-                var bridgeTokenPair = jwtTokenService.CreateTokenPair(user, roles, permissions);
-
-                return new RefreshTokenDto
-                {
-                    AccessToken = bridgeTokenPair.AccessToken,
-                    RefreshToken = bridgeTokenPair.RefreshToken,
-                    ExpiresAt = bridgeTokenPair.ExpiresAt,
-                    UserId = user.Id,
-                    Email = user.Email!
-                };
-            }
-
-            var tokenPair = jwtTokenService.CreateTokenPair(user, roles, permissions);
-            var newSlots = BuildNextSlots(stored.Slots, matchedSlot, tokenPair.RefreshToken, now);
-            var newValue = new StoredRefreshToken { Slots = newSlots, IssuedAt = now };
-
-            var persisted = await RefreshTokenStore.TryStoreAsync(securityDbContext, user, storedJson, newValue);
-            if (persisted)
-            {
-                return new RefreshTokenDto
-                {
-                    AccessToken = tokenPair.AccessToken,
-                    RefreshToken = tokenPair.RefreshToken,
-                    ExpiresAt = tokenPair.ExpiresAt,
-                    UserId = user.Id,
-                    Email = user.Email!
-                };
-            }
-
-            // Lost the race: another request already wrote to this record between our read and
-            // this write. Loop and re-evaluate against the latest state rather than assuming.
         }
 
         logger.RefreshTokenRotationContended(command.UserId);
         return RefreshTokenErrors.InvalidRefreshToken;
+    }
+
+    private async Task<ErrorOr<RefreshTokenDto>?> TryRefreshOnceAsync(
+        Ulid userId,
+        ApplicationUser user,
+        string incomingHash,
+        RoleContext roleContext)
+    {
+        var storedJson = await RefreshTokenStore.GetStoredJsonAsync(userManager, user);
+        if (storedJson is null)
+        {
+            return RefreshTokenErrors.InvalidRefreshToken;
+        }
+
+        if (!TryDeserialize(storedJson, userId, out var stored))
+        {
+            return RefreshTokenErrors.InvalidRefreshToken;
+        }
+
+        var now = timeProvider.GetUtcNow();
+
+        if (now > stored.IssuedAt.AddDays(jwtSettings.RefreshTokenExpiryDays))
+        {
+            return RefreshTokenErrors.InvalidRefreshToken;
+        }
+
+        var matchedSlot = stored.Slots.FirstOrDefault(slot =>
+            HashesMatch(slot.Hash, incomingHash)
+            && (slot.GracedUntil is null || now <= slot.GracedUntil));
+
+        if (matchedSlot is null)
+        {
+            return RefreshTokenErrors.InvalidRefreshToken;
+        }
+
+        // Roles/permissions don't change between CAS retries for the same user, so only
+        // resolve them once - on the first attempt whose token actually validated.
+        roleContext.Roles ??= (await userManager.GetRolesAsync(user)).AsReadOnly();
+        roleContext.Permissions ??= await PermissionResolver.ResolveAsync(roleManager, roleContext.Roles);
+
+        if (matchedSlot.GracedUntil is not null)
+        {
+            // Already-graced slot: this is a race replay of a token that was just rotated out
+            // from under this caller (or a replay of one), not the current rotation winner.
+            // Reissue a one-time bridge token so the caller isn't rejected outright, but never
+            // persist a new slot for it - otherwise the same graced hash could be replayed
+            // indefinitely within the grace window to mint unlimited independently long-lived
+            // sessions with no reuse/theft signal.
+            logger.RefreshTokenGracedSlotReplayed(userId);
+            var bridgeTokenPair = jwtTokenService.CreateTokenPair(user, roleContext.Roles, roleContext.Permissions);
+            return ToDto(bridgeTokenPair, user);
+        }
+
+        return await TryRotateAsync(user, stored, matchedSlot, now, storedJson, roleContext);
+    }
+
+    private async Task<ErrorOr<RefreshTokenDto>?> TryRotateAsync(
+        ApplicationUser user,
+        StoredRefreshToken stored,
+        TokenSlot matchedSlot,
+        DateTimeOffset now,
+        string storedJson,
+        RoleContext roleContext)
+    {
+        var tokenPair = jwtTokenService.CreateTokenPair(user, roleContext.Roles!, roleContext.Permissions!);
+        var newSlots = BuildNextSlots(stored.Slots, matchedSlot, tokenPair.RefreshToken, now);
+        var newValue = new StoredRefreshToken { Slots = newSlots, IssuedAt = now };
+
+        var persisted = await RefreshTokenStore.TryStoreAsync(securityDbContext, user, storedJson, newValue);
+        return persisted ? (ErrorOr<RefreshTokenDto>?)ToDto(tokenPair, user) : null;
+    }
+
+    private bool TryDeserialize(string storedJson, Ulid userId, out StoredRefreshToken stored)
+    {
+        try
+        {
+            stored = JsonSerializer.Deserialize<StoredRefreshToken>(storedJson)
+                ?? throw new InvalidOperationException("Null deserialization result");
+            return true;
+        }
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException)
+        {
+            logger.RefreshTokenDeserializationFailed(ex, userId);
+            stored = default!;
+            return false;
+        }
+    }
+
+    private static RefreshTokenDto ToDto(TokenPair tokenPair, ApplicationUser user) =>
+        new()
+        {
+            AccessToken = tokenPair.AccessToken,
+            RefreshToken = tokenPair.RefreshToken,
+            ExpiresAt = tokenPair.ExpiresAt,
+            UserId = user.Id,
+            Email = user.Email!
+        };
+
+    // Roles/permissions are resolved once per HandleAsync call and shared across CAS retry
+    // attempts (see TryRefreshOnceAsync) - a mutable holder rather than ref/out params because
+    // it's threaded through several helper methods across awaits.
+    private sealed class RoleContext
+    {
+        public IReadOnlyList<string>? Roles { get; set; }
+        public IReadOnlyCollection<Permissions>? Permissions { get; set; }
     }
 
     /// <summary>

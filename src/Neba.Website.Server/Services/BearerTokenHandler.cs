@@ -120,12 +120,9 @@ internal sealed class BearerTokenHandler(
                 ? await httpContext.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, SecurityClaimsBuilder.AccessTokenName)
                 : tokenCache.AccessToken;
 
-            if (latest is not null && latest != tokenAtCallTime && !IsExpiredOrExpiringSoon(latest))
-            {
-                return latest;
-            }
-
-            return await TryRefreshAsync(httpContext, cancellationToken);
+            return latest is not null && latest != tokenAtCallTime && !IsExpiredOrExpiringSoon(latest)
+                ? latest
+                : await TryRefreshAsync(httpContext, cancellationToken);
         }
         finally
         {
