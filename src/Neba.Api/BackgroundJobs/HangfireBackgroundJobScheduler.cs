@@ -1,7 +1,9 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 
 using Hangfire;
+using Hangfire.Storage;
 
 using Neba.Api.Telemetry;
 
@@ -9,9 +11,12 @@ namespace Neba.Api.BackgroundJobs;
 
 internal sealed class HangfireBackgroundJobScheduler(
     IServiceScopeFactory serviceScopeFactory,
-    ILogger<HangfireBackgroundJobScheduler> logger)
+    ILogger<HangfireBackgroundJobScheduler> logger,
+    TimeProvider timeProvider)
         : IBackgroundJobScheduler
 {
+    private const string EnqueueOnceHashKey = "enqueue-once-markers";
+
     private static readonly ActivitySource ActivitySource = new("Neba.Hangfire");
 
     public string Enqueue<TJob>(TJob job)
@@ -23,6 +28,51 @@ internal sealed class HangfireBackgroundJobScheduler(
 
         return BackgroundJob.Enqueue<HangfireBackgroundJobScheduler>(
             scheduler => scheduler.ExecuteJobAsync(job, jobName, CancellationToken.None));
+    }
+
+    public void EnqueueOnce<TJob>(TJob job, string deduplicationKey, TimeSpan window)
+        where TJob : IBackgroundJob
+    {
+        // Locked on the hash key itself, not the deduplication key: every call reads, prunes, and
+        // rewrites the entire shared markers hash (not just its own entry), so two calls for
+        // different keys must still be mutually exclusive or one can clobber the other's marker.
+        using IStorageConnection connection = JobStorage.Current.GetConnection();
+        using IDisposable distributedLock = connection.AcquireDistributedLock(
+            $"enqueue-once-lock:{EnqueueOnceHashKey}",
+            TimeSpan.FromSeconds(30));
+
+        DateTimeOffset now = timeProvider.GetUtcNow();
+        Dictionary<string, string> markers = connection.GetAllEntriesFromHash(EnqueueOnceHashKey) ?? [];
+
+        if (markers.TryGetValue(deduplicationKey, out string? expiresAtRaw)
+            && DateTimeOffset.TryParse(expiresAtRaw, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTimeOffset expiresAt)
+            && now < expiresAt)
+        {
+            logger.LogSkippedDuplicateEnqueue(typeof(TJob).Name, deduplicationKey);
+            return;
+        }
+
+        Enqueue(job);
+
+        // Marker values are absolute expiry times (rather than enqueue times) so this hash can
+        // be pruned of every expired entry - including keys from other callers with a different
+        // window - on each write, without which the hash grows by one entry per distinct
+        // deduplication key ever used and never shrinks.
+        markers[deduplicationKey] = now.Add(window).ToString("O", CultureInfo.InvariantCulture);
+
+        List<KeyValuePair<string, string>> liveMarkers = [.. markers
+            .Where(marker => DateTimeOffset.TryParse(marker.Value, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTimeOffset markerExpiresAt)
+                && markerExpiresAt > now)];
+
+        using IWriteOnlyTransaction transaction = connection.CreateWriteTransaction();
+        transaction.RemoveHash(EnqueueOnceHashKey);
+
+        if (liveMarkers.Count > 0)
+        {
+            transaction.SetRangeInHash(EnqueueOnceHashKey, liveMarkers);
+        }
+
+        transaction.Commit();
     }
 
     public string Schedule<TJob>(
@@ -154,6 +204,14 @@ internal static partial class BackgroundJobLogMessages
     public static partial void LogEnqueueBackgroundJob(
         this ILogger<HangfireBackgroundJobScheduler> logger,
         string jobType);
+
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "Skipped enqueuing background job of type {JobType} with deduplication key {DeduplicationKey} - already enqueued within the dedupe window.")]
+    public static partial void LogSkippedDuplicateEnqueue(
+        this ILogger<HangfireBackgroundJobScheduler> logger,
+        string jobType,
+        string deduplicationKey);
 
     [LoggerMessage(
         Level = LogLevel.Information,

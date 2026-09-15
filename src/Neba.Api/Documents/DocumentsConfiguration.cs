@@ -60,11 +60,18 @@ internal static class DocumentsConfiguration
 
                 // Pre-warm the blob cache on startup so the first real request doesn't pay
                 // the live Google Drive fetch cost (can exceed the client's resilience timeout).
-                scheduler.Enqueue(new SyncDocumentToStorageJob
-                {
-                    DocumentName = documentName,
-                    TriggeredBy = "startup"
-                });
+                // EnqueueOnce dedupes this across pods that boot within the same rolling
+                // deploy/scale-out window - without it, every pod's own startup call to
+                // UseDocumentSyncJobs fires its own copy of this job (seen in production as
+                // ~20 startup syncs from a single multi-pod deploy).
+                scheduler.EnqueueOnce(
+                    new SyncDocumentToStorageJob
+                    {
+                        DocumentName = documentName,
+                        TriggeredBy = "startup"
+                    },
+                    $"startup-sync-document-{documentName}",
+                    TimeSpan.FromMinutes(15));
             }
         }
     }

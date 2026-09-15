@@ -1,0 +1,56 @@
+<div class="stats-season-selector" role="group" aria-label="Select season">
+    @foreach (var (year, name) in GetRecentSeasons())
+    {
+        <button class="@(year == SelectedYear ? "stats-season-btn active" : "stats-season-btn")"
+                aria-pressed="@(year == SelectedYear ? "true" : "false")"
+                @onclick="() => SelectYear(year)">
+            @name
+        </button>
+    }
+    @{
+        var olderSeasons = GetOlderSeasons();
+    }
+    @if (olderSeasons.Count > 0)
+    {
+        <div class="stats-season-jump">
+            <NebaAutocomplete TValue="int?" TItem="KeyValuePair<int, string>"
+                               Id="jump-to-season"
+                               Value="@GetSelectedOlderYear(olderSeasons)"
+                               ValueChanged="OnJumpSelectedAsync"
+                               Items="@olderSeasons"
+                               DisplayText="@(season => season.Value)"
+                               ItemValue="@(season => (int?)season.Key)"
+                               Placeholder="Jump to season..."
+                               EmptyLabel="Jump to season..." />
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyDictionary<int, string> AvailableSeasons { get; set; } = new Dictionary<int, string>();
+
+    [Parameter]
+    public int SelectedYear { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<int> SeasonSelected { get; set; }
+
+    private List<KeyValuePair<int, string>> GetRecentSeasons()
+        => AvailableSeasons.Take(3).ToList();
+
+    private List<KeyValuePair<int, string>> GetOlderSeasons()
+        => AvailableSeasons.Skip(3).ToList();
+
+    private int? GetSelectedOlderYear(List<KeyValuePair<int, string>> olderSeasons)
+        => olderSeasons.Any(season => season.Key == SelectedYear) ? SelectedYear : null;
+
+    private Task SelectYear(int year) => SeasonSelected.InvokeAsync(year);
+
+    private Task OnJumpSelectedAsync(int? year)
+    {
+        var recentSeasons = GetRecentSeasons();
+        var targetYear = year ?? (recentSeasons.Count > 0 ? recentSeasons[0].Key : SelectedYear);
+        return SeasonSelected.InvokeAsync(targetYear);
+    }
+}
