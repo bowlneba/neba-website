@@ -544,6 +544,32 @@ public sealed class SyncSquadScoresSyncJobTests(AppDbContextFixture fixture, Leg
         (await _dbContext.SquadScores.Where(s => s.SquadId == otherSquad.Id).ToListAsync(ct)).ShouldBeEmpty();
     }
 
+    [Fact(DisplayName = "SyncAsync should persist all rows when the squad has more changed rows than one save batch")]
+    public async Task SyncAsync_ShouldPersistAllRows_WhenSquadExceedsOneSaveBatch()
+    {
+        // Arrange - 55 bowlers x 1 game each crosses the 50-row save-batch boundary used to keep
+        // each SaveChangesAsync (and its EF audit event) from growing unbounded with squad size.
+        var ct = TestContext.Current.CancellationToken;
+        var squad = await CreateSquadAsync(legacySquadId: 1, ct);
+
+        const int bowlerCount = 55;
+        for (var i = 0; i < bowlerCount; i++)
+        {
+            var legacyBowlerId = 1000 + i;
+            await CreateBowlerAsync(legacyBowlerId, ct);
+            await InsertLegacyScoreAsync(legacyBowlerId, legacySquadId: 1, game: 1, score: 200 + i);
+        }
+
+        var job = CreateJob();
+
+        // Act
+        await job.SyncAsync(1, ct);
+
+        // Assert
+        var scores = await _dbContext.SquadScores.Where(s => s.SquadId == squad.Id).ToListAsync(ct);
+        scores.Count.ShouldBe(bowlerCount);
+    }
+
     [Fact(DisplayName = "SyncAsync should converge to the same row set when run twice for the same legacy squad id")]
     public async Task SyncAsync_ShouldConvergeToSameRowSet_WhenRunTwice()
     {

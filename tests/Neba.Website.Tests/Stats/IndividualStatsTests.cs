@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -139,6 +141,32 @@ public sealed class IndividualStatsTests : IDisposable
         markup.ShouldContain("213.50");
         markup.ShouldContain("30");
         markup.ShouldContain("$ Won");
+    }
+
+    [Fact(DisplayName = "Should format winnings using US currency formatting regardless of the server's ambient culture")]
+    public void Render_ShouldFormatWinningsUsingUsCurrency_RegardlessOfServerCulture()
+    {
+        // Arrange
+        var model = IndividualStatsPageViewModelFactory.Create(winnings: 1250m);
+        _statsApi.EnqueueIndividualResult(model);
+
+        var originalCulture = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
+
+        try
+        {
+            // Act
+            var cut = _ctx.Render<IndividualStatsPage>(p => p
+                .Add(x => x.BowlerId, BowlerId));
+
+            // Assert
+            cut.Markup.ShouldContain("$1,250");
+            cut.Markup.ShouldNotContain("€");
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
     }
 
     [Fact(DisplayName = "Should hide match play record stat card when wins and losses are both zero")]

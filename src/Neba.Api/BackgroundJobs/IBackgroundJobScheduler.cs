@@ -21,6 +21,26 @@ public interface IBackgroundJobScheduler
         where TJob : IBackgroundJob;
 
     /// <summary>
+    /// Enqueues a background job for immediate execution, unless a job with the same
+    /// deduplication key was already enqueued within the given time window.
+    /// </summary>
+    /// <typeparam name="TJob">
+    /// The type of the background job.
+    /// </typeparam>
+    /// <param name="job">
+    /// The background job to enqueue.
+    /// </param>
+    /// <param name="deduplicationKey">
+    /// A key shared by all callers that should be deduplicated against each other - for
+    /// example, across multiple instances of the same app enqueuing the same startup job.
+    /// </param>
+    /// <param name="window">
+    /// The time window during which a repeat enqueue with the same key is suppressed.
+    /// </param>
+    void EnqueueOnce<TJob>(TJob job, string deduplicationKey, TimeSpan window)
+        where TJob : IBackgroundJob;
+
+    /// <summary>
     /// Schedules a background job to be executed after a specified delay.
     /// </summary>
     /// <typeparam name="TJob">
