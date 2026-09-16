@@ -346,7 +346,7 @@ public sealed class SeasonStatsTests : IDisposable
         // Arrange
         var model = CreateStatsModel(firstRowName: "Alpha Bowler") with
         {
-            MinimumNumberOfTournaments = 2m,
+            MinimumNumberOfTournaments = 2,
         };
 
         _statsApi.EnqueueResult(model);
@@ -358,7 +358,7 @@ public sealed class SeasonStatsTests : IDisposable
 
         // Assert
         cut.Markup.ShouldContain("Match Play Record");
-        cut.Markup.ShouldContain("min 4 games");
+        cut.Markup.ShouldContain("min 2 games");
     }
 
     private static StatsPageViewModel CreateStatsModel(

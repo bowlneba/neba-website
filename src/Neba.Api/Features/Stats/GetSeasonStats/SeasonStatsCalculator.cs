@@ -5,9 +5,9 @@ internal sealed class SeasonStatsCalculator
 {
     public SeasonStatsSummaryDto CalculateSeasonStatsSummary(
         IReadOnlyCollection<BowlerSeasonStatsDto> bowlerStats,
-        decimal minimumGames,
-        decimal minimumTournaments,
-        decimal minimumEntries)
+        int minimumGames,
+        int minimumTournaments,
+        int minimumEntries)
     {
         // Season Bests
 
@@ -90,10 +90,8 @@ internal sealed class SeasonStatsCalculator
             })
             .ToArray();
 
-        var minimumMatchPlayGames = minimumTournaments * 2m;
-
         var matchPlayAverageLeaderboard = bowlerStats
-            .Where(bs => bs.MatchPlayGames > 0 && bs.MatchPlayGames >= minimumMatchPlayGames)
+            .Where(bs => bs.MatchPlayGames > 0 && bs.MatchPlayGames >= minimumTournaments)
             .OrderByDescending(bs => bs.MatchPlayPinfall * 1m / bs.MatchPlayGames)
             .Select(bs => new MatchPlayAverageDto
             {
@@ -109,7 +107,7 @@ internal sealed class SeasonStatsCalculator
             .ToArray();
 
         var matchPlayRecordLeaderboard = bowlerStats
-            .Where(bs => bs.MatchPlayWins + bs.MatchPlayLosses > 0 && bs.MatchPlayWins + bs.MatchPlayLosses >= minimumMatchPlayGames)
+            .Where(bs => bs.MatchPlayWins + bs.MatchPlayLosses > 0 && bs.MatchPlayWins + bs.MatchPlayLosses >= minimumTournaments)
             .OrderByDescending(bs => ComputeWinPercentage(bs.MatchPlayWins, bs.MatchPlayLosses))
             .ThenByDescending(bs => bs.MatchPlayWins)
             .Select(bs => new MatchPlayRecordDto
@@ -279,12 +277,12 @@ internal sealed class SeasonStatsCalculator
                 Winnings = bs.TournamentWinnings
             })];
 
-    public (decimal NumberOfGames, decimal NumberOfTournaments, decimal NumberOfEntries) CalculateStatMinimums(int tournamentCount)
+    public (int NumberOfGames, int NumberOfTournaments, int NumberOfEntries) CalculateStatMinimums(int tournamentCount)
         =>
         (
-            NumberOfGames: tournamentCount * 4.5m,
-            NumberOfTournaments: tournamentCount / 2m,
-            NumberOfEntries: tournamentCount * .75m
+            NumberOfGames: (int)Math.Round(tournamentCount * 4.5m, MidpointRounding.AwayFromZero),
+            NumberOfTournaments: (int)Math.Round(tournamentCount / 2m, MidpointRounding.AwayFromZero),
+            NumberOfEntries: (int)Math.Round(tournamentCount * .75m, MidpointRounding.AwayFromZero)
         );
 }
 
@@ -292,9 +290,9 @@ internal interface ISeasonStatsCalculator
 {
     SeasonStatsSummaryDto CalculateSeasonStatsSummary(
         IReadOnlyCollection<BowlerSeasonStatsDto> bowlerStats,
-        decimal minimumGames,
-        decimal minimumTournaments,
-        decimal minimumEntries);
+        int minimumGames,
+        int minimumTournaments,
+        int minimumEntries);
 
-    (decimal NumberOfGames, decimal NumberOfTournaments, decimal NumberOfEntries) CalculateStatMinimums(int tournamentCount);
+    (int NumberOfGames, int NumberOfTournaments, int NumberOfEntries) CalculateStatMinimums(int tournamentCount);
 }

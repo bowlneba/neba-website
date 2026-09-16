@@ -14,20 +14,20 @@ public sealed class SeasonStatsCalculatorTests
     // ─── CalculateStatMinimums ────────────────────────────────────────────────
 
     [Theory(DisplayName = "CalculateStatMinimums should return correct minimums for tournament count")]
-    [InlineData(0, 0.0, 0.0, 0.0)]
-    [InlineData(2, 9.0, 1.0, 1.5)]
-    [InlineData(10, 45.0, 5.0, 7.5)]
-    [InlineData(20, 90.0, 10.0, 15.0)]
+    [InlineData(0, 0, 0, 0)]
+    [InlineData(2, 9, 1, 2)]
+    [InlineData(10, 45, 5, 8)]
+    [InlineData(20, 90, 10, 15)]
     public void CalculateStatMinimums_ShouldReturnCorrectValues_ForTournamentCount(
-        int tournamentCount, double expectedGames, double expectedTournaments, double expectedEntries)
+        int tournamentCount, int expectedGames, int expectedTournaments, int expectedEntries)
     {
         // Act
         var (games, tournaments, entries) = _calculator.CalculateStatMinimums(tournamentCount);
 
         // Assert
-        games.ShouldBe((decimal)expectedGames);
-        tournaments.ShouldBe((decimal)expectedTournaments);
-        entries.ShouldBe((decimal)expectedEntries);
+        games.ShouldBe(expectedGames);
+        tournaments.ShouldBe(expectedTournaments);
+        entries.ShouldBe(expectedEntries);
     }
 
     // ─── HighAverageLeaderboard ───────────────────────────────────────────────
@@ -42,7 +42,7 @@ public sealed class SeasonStatsCalculatorTests
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
             [lowerAvgBowler, higherAvgBowler],
-            minimumGames: 50m, minimumTournaments: 1m, minimumEntries: 1m);
+            minimumGames: 50, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.HighAverageLeaderboard.First().Average.ShouldBe(220.00m);
@@ -58,7 +58,7 @@ public sealed class SeasonStatsCalculatorTests
 
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
-            [bowler], minimumGames: 1m, minimumTournaments: 1m, minimumEntries: 1m);
+            [bowler], minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.HighAverageLeaderboard.Single().Average.ShouldBe(212.50m);
@@ -74,7 +74,7 @@ public sealed class SeasonStatsCalculatorTests
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
             [activeBowler, inactiveBowler],
-            minimumGames: 1m, minimumTournaments: 1m, minimumEntries: 1m);
+            minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.HighAverageLeaderboard.Count.ShouldBe(1);
@@ -91,7 +91,7 @@ public sealed class SeasonStatsCalculatorTests
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
             [qualifyingBowler, belowThresholdBowler],
-            minimumGames: 50m, minimumTournaments: 1m, minimumEntries: 1m);
+            minimumGames: 50, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.HighAverageLeaderboard.Count.ShouldBe(1);
@@ -110,7 +110,7 @@ public sealed class SeasonStatsCalculatorTests
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
             [lowerBlockBowler, higherBlockBowler],
-            minimumGames: 1m, minimumTournaments: 1m, minimumEntries: 1m);
+            minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.HighBlockLeaderboard.First().HighBlock.ShouldBe(1350);
@@ -128,7 +128,7 @@ public sealed class SeasonStatsCalculatorTests
 
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
-            [bowler], minimumGames: 1m, minimumTournaments: 1m, minimumEntries: 1m);
+            [bowler], minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.MatchPlayRecordLeaderboard.Single().WinPercentage.ShouldBe(75.00m);
@@ -145,7 +145,7 @@ public sealed class SeasonStatsCalculatorTests
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
             [fewerWinsBowler, moreWinsBowler],
-            minimumGames: 1m, minimumTournaments: 1m, minimumEntries: 1m);
+            minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.MatchPlayRecordLeaderboard.First().Wins.ShouldBe(6);
@@ -164,7 +164,7 @@ public sealed class SeasonStatsCalculatorTests
 
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
-            [bowler], minimumGames: 1m, minimumTournaments: 1m, minimumEntries: 1m);
+            [bowler], minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.MatchPlayAverageLeaderboard.Single().MatchPlayAverage.ShouldBe(220.00m);
@@ -174,20 +174,20 @@ public sealed class SeasonStatsCalculatorTests
     public void MatchPlayAverageLeaderboard_ShouldExcludeBowlers_BelowMinimumMatchPlayGamesThreshold()
     {
         // Arrange
-        // minimumTournaments = 3 → minimumMatchPlayGames = 6
+        // minimumTournaments = 3 is the match play games threshold directly
         var qualifyingBowler = BowlerSeasonStatsDtoFactory.Create(
-            matchPlayWins: 3, matchPlayLosses: 3, matchPlayGames: 6, matchPlayPinfall: 1200);
+            matchPlayWins: 2, matchPlayLosses: 1, matchPlayGames: 3, matchPlayPinfall: 600);
         var belowThresholdBowler = BowlerSeasonStatsDtoFactory.Create(
-            matchPlayWins: 2, matchPlayLosses: 3, matchPlayGames: 5, matchPlayPinfall: 1000);
+            matchPlayWins: 1, matchPlayLosses: 1, matchPlayGames: 2, matchPlayPinfall: 400);
 
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
             [qualifyingBowler, belowThresholdBowler],
-            minimumGames: 1m, minimumTournaments: 3m, minimumEntries: 1m);
+            minimumGames: 1, minimumTournaments: 3, minimumEntries: 1);
 
         // Assert
         summary.MatchPlayAverageLeaderboard.Count.ShouldBe(1);
-        summary.MatchPlayAverageLeaderboard.Single().Games.ShouldBe(6);
+        summary.MatchPlayAverageLeaderboard.Single().Games.ShouldBe(3);
     }
 
     // ─── PointsPerEntryLeaderboard ───────────────────────────────────────────
@@ -201,7 +201,7 @@ public sealed class SeasonStatsCalculatorTests
 
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
-            [bowler], minimumGames: 1m, minimumTournaments: 1m, minimumEntries: 1m);
+            [bowler], minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.PointsPerEntryLeaderboard.Single().PointsPerEntry.ShouldBe(75.00m);
@@ -218,7 +218,7 @@ public sealed class SeasonStatsCalculatorTests
 
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
-            [bowler], minimumGames: 1m, minimumTournaments: 1m, minimumEntries: 1m);
+            [bowler], minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.PointsPerTournamentLeaderboard.Single().PointsPerTournament.ShouldBe(75.00m);
@@ -236,7 +236,7 @@ public sealed class SeasonStatsCalculatorTests
 
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
-            [bowler], minimumGames: 1m, minimumTournaments: 1m, minimumEntries: 1m);
+            [bowler], minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.FinalsPerEntryLeaderboard.Single().FinalsPerEntry.ShouldBe(0.75m);
@@ -255,7 +255,7 @@ public sealed class SeasonStatsCalculatorTests
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
             [worseFinishBowler, betterFinishBowler],
-            minimumGames: 1m, minimumTournaments: 1m, minimumEntries: 1m);
+            minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.AverageFinishesLeaderboard.First().AverageFinish.ShouldBe(2.5m);
@@ -274,7 +274,7 @@ public sealed class SeasonStatsCalculatorTests
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
             [lowPointsBowler, highPointsBowler],
-            minimumGames: 1m, minimumTournaments: 1m, minimumEntries: 1m);
+            minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.AllBowlers.First().Points.ShouldBe(800);
@@ -297,7 +297,7 @@ public sealed class SeasonStatsCalculatorTests
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
             [zelensky, andersonBob, andersonAlice],
-            minimumGames: 1m, minimumTournaments: 1m, minimumEntries: 1m);
+            minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         var names = summary.BowlerSearchList.Select(e => e.BowlerName).ToArray();
@@ -321,7 +321,7 @@ public sealed class SeasonStatsCalculatorTests
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
             [lowPointsBowler, zeroPointsBowler, highPointsBowler],
-            minimumGames: 1m, minimumTournaments: 1m, minimumEntries: 1m);
+            minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.BowlerOfTheYear.Count.ShouldBe(2);
@@ -340,7 +340,7 @@ public sealed class SeasonStatsCalculatorTests
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
             [seniorBowler, nonSeniorBowler],
-            minimumGames: 1m, minimumTournaments: 1m, minimumEntries: 1m);
+            minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.SeniorOfTheYear.Count.ShouldBe(1);
@@ -357,7 +357,7 @@ public sealed class SeasonStatsCalculatorTests
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
             [womanBowler, nonWomanBowler],
-            minimumGames: 1m, minimumTournaments: 1m, minimumEntries: 1m);
+            minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.WomanOfTheYear.Count.ShouldBe(1);
@@ -376,7 +376,7 @@ public sealed class SeasonStatsCalculatorTests
 
         // Act
         var summary = _calculator.CalculateSeasonStatsSummary(
-            [bowlerA, bowlerB], minimumGames: 1m, minimumTournaments: 1m, minimumEntries: 1m);
+            [bowlerA, bowlerB], minimumGames: 1, minimumTournaments: 1, minimumEntries: 1);
 
         // Assert
         summary.TotalEntries.ShouldBe(13);

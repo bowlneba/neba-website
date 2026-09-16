@@ -11,7 +11,7 @@ public static class SeasonStatsDtoFactory
         IReadOnlyCollection<BowlerSeasonStatsDto>? bowlerStats = null,
         IReadOnlyDictionary<int, IReadOnlyCollection<BowlerOfTheYearPointsRaceSeriesDto>>? bowlerOfTheYearRaces = null,
         SeasonStatsSummaryDto? summary = null,
-        (decimal games, decimal tournaments, decimal entries)? minimums = null)
+        (int games, int tournaments, int entries)? minimums = null)
         => new()
         {
             Season = season ?? SeasonWithStatsDtoFactory.Create(),
@@ -27,9 +27,9 @@ public static class SeasonStatsDtoFactory
                 [BowlerOfTheYearCategory.Rookie.Value] = [],
             },
             Summary = summary ?? SeasonStatsSummaryDtoFactory.Create(),
-            MinimumNumberOfGames = minimums?.games ?? 0m,
-            MinimumNumberOfTournaments = minimums?.tournaments ?? 0m,
-            MinimumNumberOfEntries = minimums?.entries ?? 0m,
+            MinimumNumberOfGames = minimums?.games ?? 0,
+            MinimumNumberOfTournaments = minimums?.tournaments ?? 0,
+            MinimumNumberOfEntries = minimums?.entries ?? 0,
         };
 
     internal static IReadOnlyCollection<SeasonStatsDto> Bogus(int count, Faker faker)
@@ -50,9 +50,9 @@ public static class SeasonStatsDtoFactory
                 [BowlerOfTheYearCategory.Rookie.Value] = [],
             },
             Summary = SeasonStatsSummaryDtoFactory.Bogus(1, faker).Single(),
-            MinimumNumberOfGames = faker.Random.Decimal(10, 60),
-            MinimumNumberOfTournaments = faker.Random.Decimal(2, 8),
-            MinimumNumberOfEntries = faker.Random.Decimal(3, 12),
+            MinimumNumberOfGames = faker.Random.Int(10, 60),
+            MinimumNumberOfTournaments = faker.Random.Int(2, 8),
+            MinimumNumberOfEntries = faker.Random.Int(3, 12),
         })];
     }
 

@@ -33,15 +33,15 @@ public sealed record SeasonStatsDto
     /// <summary>
     /// Gets the minimum thresholds for a bowler's statistics to be included in the season's statistics, such as the minimum number of games, tournaments, and squads participated in. These thresholds ensure that the statistics reflect a meaningful level of participation and performance, allowing for accurate representation of the season's competitive landscape and ensuring that the data is relevant and significant for analysis and comparison.
     /// </summary>
-    public required decimal MinimumNumberOfGames { get; init; }
+    public required int MinimumNumberOfGames { get; init; }
 
     /// <summary>
     /// Gets the minimum number of tournaments a bowler must have participated in for their statistics to be included in the season's statistics. This threshold ensures that the statistics reflect a meaningful level of participation and performance across multiple events, allowing for accurate representation of the season's competitive landscape and ensuring that the data is relevant and significant for analysis and comparison.
     /// </summary>
-    public required decimal MinimumNumberOfTournaments { get; init; }
+    public required int MinimumNumberOfTournaments { get; init; }
 
     /// <summary>
     /// Gets the minimum number of entries a bowler must have for their statistics to be included in the season's statistics. This threshold ensures that the statistics reflect a meaningful level of participation and performance across multiple events, allowing for accurate representation of the season's competitive landscape and ensuring that the data is relevant and significant for analysis and comparison.
     /// </summary>
-    public required decimal MinimumNumberOfEntries { get; init; }
+    public required int MinimumNumberOfEntries { get; init; }
 }

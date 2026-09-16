@@ -38,9 +38,9 @@ public static class GetSeasonStatsResponseFactory
         => new()
         {
             SelectedSeason = selectedSeason ?? ValidSelectedSeason,
-            MinimumNumberOfGames = 45m,
-            MinimumNumberOfTournaments = 5m,
-            MinimumNumberOfEntries = 7.5m,
+            MinimumNumberOfGames = 45,
+            MinimumNumberOfTournaments = 5,
+            MinimumNumberOfEntries = 8,
             AvailableSeasons = availableSeasons ?? new Dictionary<int, string> { { 2025, "2024-2025 Season" } },
             BowlerSearchList = bowlerSearchList ?? new Dictionary<string, string> { { "01JWXYZTEST000000000000002", "Jane Smith" } },
             BowlerOfTheYear = bowlerOfTheYear ?? [BowlerOfTheYearStandingResponseFactory.Create()],
@@ -108,9 +108,9 @@ public static class GetSeasonStatsResponseFactory
                 YouthPointsRace = [],
                 RookiePointsRace = [],
                 AllBowlers = FullStatModalRowResponseFactory.Bogus(faker.Random.Int(10, 30), faker),
-                MinimumNumberOfGames = faker.Random.Decimal(10, 60),
-                MinimumNumberOfTournaments = faker.Random.Decimal(2, 8),
-                MinimumNumberOfEntries = faker.Random.Decimal(3, 12)
+                MinimumNumberOfGames = faker.Random.Int(10, 60),
+                MinimumNumberOfTournaments = faker.Random.Int(2, 8),
+                MinimumNumberOfEntries = faker.Random.Int(3, 12)
             };
         })];
     }

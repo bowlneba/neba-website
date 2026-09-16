@@ -21,9 +21,9 @@
     01JQ0PB7VFQCCKESF6WVWHCRQV: German Kuphal,
     01K73HYD569V1A0H9JKWA23A8M: Amanda Kuphal
   },
-  MinimumNumberOfGames: 14.9512579361681150,
-  MinimumNumberOfTournaments: 3.83487769953668,
-  MinimumNumberOfEntries: 9.831782806586373,
+  MinimumNumberOfGames: 15,
+  MinimumNumberOfTournaments: 4,
+  MinimumNumberOfEntries: 10,
   BowlerOfTheYear: [
     {
       BowlerId: 01H8YFJ14MQ5E6CVE65XAQ7YP9,
