@@ -40,9 +40,7 @@ public sealed class ClearCacheCommandHandlerTests : IAsyncLifetime
                 ClientEmail = "test@test.iam.gserviceaccount.com",
                 PrivateKeyId = "test-key-id"
             },
-            Documents = documentNames
-                .Select(name => new GoogleDocument { DocumentId = $"{name}-id", Name = name, WebRoute = $"/{name}" })
-                .ToArray()
+            Documents = [.. documentNames.Select(name => new GoogleDocument { DocumentId = $"{name}-id", Name = name, WebRoute = $"/{name}" })]
         };
 
     [Fact(DisplayName = "HandleAsync evicts the neba-tagged FusionCache entries")]
