@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
+using Neba.Api.Contracts.Cache;
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Layout;
 using Neba.Website.Server.Notifications;
@@ -37,6 +38,8 @@ public sealed class MainLayoutTests : IDisposable
         var httpContextAccessorMock = new Mock<IHttpContextAccessor>(MockBehavior.Strict);
         httpContextAccessorMock.SetupGet(m => m.HttpContext).Returns((HttpContext?)null);
         _ctx.Services.AddSingleton(httpContextAccessorMock.Object);
+
+        _ctx.Services.AddSingleton(new Mock<ICacheApi>(MockBehavior.Strict).Object);
 
         _ctx.Services.AddHttpClient();
         _ctx.Services.AddSingleton(new NebaApiConfiguration
