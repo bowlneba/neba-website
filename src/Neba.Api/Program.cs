@@ -68,9 +68,8 @@ app.UseOpenApiDocumentation();
 
 app.UseInfrastructure();
 
-#if DEBUG
 #pragma warning disable CA1031, CA1848
-app.MapGet("/debug/cache", async (
+var clearCacheEndpoint = app.MapGet("/debug/cache", async (
     ZiggyCreatures.Caching.Fusion.IFusionCache fusionCache,
     Microsoft.Extensions.Caching.Hybrid.HybridCache hybridCache,
     Neba.Api.Storage.IFileStorageService storageService,
@@ -85,8 +84,20 @@ app.MapGet("/debug/cache", async (
     await Task.WhenAll(deleteTasks);
 
     return Results.Ok("Cache cleared.");
-}).AllowAnonymous();
+});
 
+// Freely available in Development for local debugging; requires the Cache.Clear permission
+// (held by Admins) everywhere else, since this is now a legitimate production admin action.
+if (app.Environment.IsDevelopment())
+{
+    clearCacheEndpoint.AllowAnonymous();
+}
+else
+{
+    clearCacheEndpoint.RequireAuthorization(Neba.Api.Contracts.Security.Permissions.ClearCache.PolicyName);
+}
+
+#if DEBUG
 app.MapGet("/debug/clear-audits", async (
     Azure.Data.Tables.TableServiceClient tableServiceClient,
     ILogger<Program> logger,
