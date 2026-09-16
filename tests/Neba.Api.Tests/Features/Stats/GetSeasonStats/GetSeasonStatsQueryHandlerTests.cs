@@ -347,9 +347,9 @@ statsEligible: true, seasonId: season.Id);
 
         // Assert - only the completed, stat-eligible tournament should count toward the minimums (1, not 3)
         result.IsError.ShouldBeFalse();
-        result.Value.MinimumNumberOfGames.ShouldBe(4.5m);
-        result.Value.MinimumNumberOfTournaments.ShouldBe(0.5m);
-        result.Value.MinimumNumberOfEntries.ShouldBe(0.75m);
+        result.Value.MinimumNumberOfGames.ShouldBe(5);
+        result.Value.MinimumNumberOfTournaments.ShouldBe(1);
+        result.Value.MinimumNumberOfEntries.ShouldBe(1);
     }
 
     [Fact(DisplayName = "HandleAsync serves a fresh result after the season's stats cache tag is removed")]

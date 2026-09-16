@@ -59,14 +59,11 @@
         try
         {
             using var client = HttpClientFactory.CreateClient();
-            using var response = await client.GetAsync(new Uri(ApiConfiguration.BaseUrl, "/debug/cache"));
+            using var response = await client.DeleteAsync(new Uri(ApiConfiguration.BaseUrl, "/cache"));
 
             if (response.IsSuccessStatusCode)
             {
-                var message = await response.Content.ReadAsStringAsync();
-                ToastService.Show("API Cache Cleared",
-                    string.IsNullOrWhiteSpace(message) ? "Cache was cleared." : message,
-                    NotifySeverity.Success);
+                ToastService.Show("API Cache Cleared", "Cache was cleared.", NotifySeverity.Success);
             }
             else
             {

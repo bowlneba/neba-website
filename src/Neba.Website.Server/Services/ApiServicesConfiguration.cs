@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Neba.Api.Contracts.Awards;
 using Neba.Api.Contracts.Bowlers;
 using Neba.Api.Contracts.BowlingCenters;
+using Neba.Api.Contracts.Cache;
 using Neba.Api.Contracts.Documents;
 using Neba.Api.Contracts.HallOfFame;
 using Neba.Api.Contracts.News;
@@ -85,6 +86,7 @@ internal static class ApiServicesConfiguration
             services.RegisterApiEndpoint<ITournamentsApi>();
             services.RegisterApiEndpoint<IBowlersApi>();
             services.RegisterApiEndpoint<ISecurityApi>();
+            services.RegisterApiEndpoint<ICacheApi>();
 
             return services;
         }

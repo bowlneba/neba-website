@@ -10,9 +10,9 @@
     01HMQSG53A9GNQWPY0Y94PSC1Z: Jane Bahringer,
     01JWBM82YEBGS892RW8ETWR4HX: Dana Bahringer
   },
-  MinimumNumberOfGames: 11.7129865017314400,
-  MinimumNumberOfTournaments: 2.1481427290235378,
-  MinimumNumberOfEntries: 8.47675255428849,
+  MinimumNumberOfGames: 11,
+  MinimumNumberOfTournaments: 2,
+  MinimumNumberOfEntries: 9,
   BowlerOfTheYear: [
     {
       BowlerId: 01HG1WFP9CANPD1HV10VAX97M1,

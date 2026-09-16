@@ -148,6 +148,15 @@ public sealed class Permissions
 
     #endregion
 
+    #region Cache
+
+    /// <summary>
+    /// Permission to clear the application's L1/L2 cache.
+    /// </summary>
+    public static readonly Permissions ClearCache = new("Cache.Clear", "Clear Cache");
+
+    #endregion
+
     private Permissions(string key, string name)
         : base(name, key)
     { }

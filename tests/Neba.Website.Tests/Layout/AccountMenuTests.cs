@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Claims;
 
 using Bunit;
@@ -7,11 +8,15 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
+using Neba.Api.Contracts.Cache;
 using Neba.Api.Contracts.Security;
 using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Layout;
 using Neba.Website.Server.Notifications;
 using Neba.Website.Server.Services;
+
+using Refit;
+using Refit.Testing;
 
 namespace Neba.Website.Tests.Layout;
 
@@ -21,14 +26,22 @@ public sealed class AccountMenuTests : IDisposable
 {
     private readonly BunitContext _ctx;
     private readonly BunitAuthorizationContext _authContext;
+    private readonly Mock<ICacheApi> _mockCacheApi;
+    private readonly ToastService _toastService;
 
     public AccountMenuTests()
     {
         _ctx = new BunitContext();
         _authContext = _ctx.AddAuthorization();
         _ctx.Services.AddScoped<CircuitTokenCache>();
-        _ctx.Services.AddScoped<ToastService>();
+
+        _toastService = new ToastService();
+        _ctx.Services.AddSingleton(_toastService);
+
         _ctx.Services.AddSingleton(new NebaApiConfiguration { BaseUrl = new Uri("https://api.bowlneba.com") });
+
+        _mockCacheApi = new Mock<ICacheApi>(MockBehavior.Strict);
+        _ctx.Services.AddSingleton(_mockCacheApi.Object);
 
         var httpContextAccessorMock = new Mock<IHttpContextAccessor>(MockBehavior.Strict);
         httpContextAccessorMock.SetupGet(m => m.HttpContext).Returns((HttpContext?)null);
@@ -47,7 +60,11 @@ public sealed class AccountMenuTests : IDisposable
         _ctx.Services.AddSingleton(mockWebHostEnvironment.Object);
     }
 
-    public void Dispose() => _ctx.Dispose();
+    public void Dispose()
+    {
+        _ctx.Dispose();
+        _toastService.Dispose();
+    }
 
     [Fact(DisplayName = "Should render nothing when user is not authorized")]
     public void Render_ShouldRenderNothing_WhenUserIsNotAuthorized()
@@ -225,5 +242,108 @@ public sealed class AccountMenuTests : IDisposable
         href.ShouldNotBeNull();
         href.ShouldNotContain("access_token");
         href.ShouldNotContain("test-token");
+    }
+
+    [Fact(DisplayName = "Should show the Clear Cache button when the user holds the ClearCache policy")]
+    public void Render_ShouldShowClearCacheButton_WhenUserHoldsPolicy()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ClearCache.PolicyName);
+
+        // Act
+        var cut = _ctx.Render<AccountMenu>();
+
+        // Assert
+        cut.FindAll("button.account-dropdown-link")
+            .ShouldContain(b => b.TextContent == "Clear Cache");
+    }
+
+    [Fact(DisplayName = "Should not show the Clear Cache button when the user lacks the ClearCache policy")]
+    public void Render_ShouldNotShowClearCacheButton_WhenUserLacksPolicy()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies();
+
+        // Act
+        var cut = _ctx.Render<AccountMenu>();
+
+        // Assert
+        cut.FindAll("button.account-dropdown-link").ShouldNotContain(b => b.TextContent == "Clear Cache");
+    }
+
+    [Fact(DisplayName = "Should show a success toast when clearing the cache succeeds")]
+    public async Task ClearCache_ShouldShowSuccessToast_WhenApiCallSucceeds()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ClearCache.PolicyName);
+
+        using var apiResponse = new StubApiResponse<object> { IsSuccessStatusCode = true };
+        _mockCacheApi
+            .Setup(a => a.ClearCacheAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(apiResponse);
+
+        var cut = _ctx.Render<AccountMenu>();
+
+        // Act
+        await cut.InvokeAsync(() => cut.Find("button.account-dropdown-link").Click());
+
+        // Assert
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Success);
+        _toastService.Current.Title.ShouldBe("Cache Cleared");
+    }
+
+    [Fact(DisplayName = "Should show a failure toast with the status code when clearing the cache returns a non-success status")]
+    public async Task ClearCache_ShouldShowFailureToastWithStatusCode_WhenApiCallReturnsNonSuccessStatus()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ClearCache.PolicyName);
+
+        using var apiResponse = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = HttpStatusCode.Forbidden
+        };
+        _mockCacheApi
+            .Setup(a => a.ClearCacheAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(apiResponse);
+
+        var cut = _ctx.Render<AccountMenu>();
+
+        // Act
+        await cut.InvokeAsync(() => cut.Find("button.account-dropdown-link").Click());
+
+        // Assert
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Error);
+        _toastService.Current.Title.ShouldBe("Cache Clear Failed");
+        _toastService.Current.Message.ShouldContain("403");
+    }
+
+    [Fact(DisplayName = "Should show a failure toast with the exception message when clearing the cache throws")]
+    public async Task ClearCache_ShouldShowFailureToastWithExceptionMessage_WhenApiCallThrows()
+    {
+        // Arrange
+        _authContext.SetAuthorized("test-user");
+        _authContext.SetPolicies(Permissions.ClearCache.PolicyName);
+
+        _mockCacheApi
+            .Setup(a => a.ClearCacheAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Connection refused"));
+
+        var cut = _ctx.Render<AccountMenu>();
+
+        // Act
+        await cut.InvokeAsync(() => cut.Find("button.account-dropdown-link").Click());
+
+        // Assert
+        _toastService.Current.ShouldNotBeNull();
+        _toastService.Current.Severity.ShouldBe(NotifySeverity.Error);
+        _toastService.Current.Title.ShouldBe("Cache Clear Failed");
+        _toastService.Current.Message.ShouldBe("Connection refused");
     }
 }
