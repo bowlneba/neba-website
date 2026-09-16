@@ -137,9 +137,7 @@
 
             if (response.IsSuccessStatusCode)
             {
-                ToastService.Show("Cache Cleared",
-                    string.IsNullOrWhiteSpace(response.Content) ? "Cache was cleared." : response.Content,
-                    NotifySeverity.Success);
+                ToastService.Show("Cache Cleared", "Cache was cleared.", NotifySeverity.Success);
             }
             else
             {
