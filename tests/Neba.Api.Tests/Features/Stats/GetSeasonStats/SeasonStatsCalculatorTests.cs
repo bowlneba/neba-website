@@ -18,6 +18,9 @@ public sealed class SeasonStatsCalculatorTests
     [InlineData(2, 9, 1, 2)]
     [InlineData(10, 45, 5, 8)]
     [InlineData(20, 90, 10, 15)]
+    // 1 tournament: NumberOfTournaments = 1/2 = 0.5 and NumberOfEntries = 1*.75 = 0.75 — both land
+    // exactly on the AwayFromZero midpoint-rounding boundary the calculator applies.
+    [InlineData(1, 5, 1, 1)]
     public void CalculateStatMinimums_ShouldReturnCorrectValues_ForTournamentCount(
         int tournamentCount, int expectedGames, int expectedTournaments, int expectedEntries)
     {
