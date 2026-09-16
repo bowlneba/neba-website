@@ -22,6 +22,10 @@
     <PackageVersion Include="AspNetCore.HealthChecks.SqlServer" Version="9.0.0" />
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.5.4" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="13.5.4" />
+    <!-- v33 reviewed against Verify.XunitV3's v33 paid-tier precedent: unlike Verify, Audit.NET's
+         v33 stayed MIT-licensed with no pricing change. Its one breaking change (EfEntitySettings
+         override callbacks gaining a PropertyOverrideContext argument) has no call site in this
+         repo, so 33.x is safe to track. -->
     <PackageVersion Include="Audit.EntityFramework.Core" Version="33.0.0" />
     <PackageVersion Include="Audit.Hangfire" Version="33.0.0" />
     <PackageVersion Include="Audit.NET" Version="33.0.0" />
