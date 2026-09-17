@@ -86,10 +86,11 @@ internal static class SecurityConfiguration
             builder.Services.AddSingleton(jwtSettings);
             builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
-            var websiteSettings = builder.Configuration
+            var websiteSettings = (builder.Configuration
                 .GetSection("WebsiteSettings")
                 .Get<WebsiteSettings>()
-                ?? throw new InvalidOperationException("WebsiteSettings configuration section is missing.");
+                ?? throw new InvalidOperationException("WebsiteSettings configuration section is missing."))
+                .WithPreviewOverride();
 
             if (string.IsNullOrWhiteSpace(websiteSettings.BaseUrl))
                 throw new InvalidOperationException("WebsiteSettings:BaseUrl must not be empty.");
