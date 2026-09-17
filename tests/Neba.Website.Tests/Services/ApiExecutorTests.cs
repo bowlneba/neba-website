@@ -580,7 +580,7 @@ public sealed class ApiExecutorTests
         const long startTimestamp = 1000;
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var apiResponseMock = new StubApiResponse<string>
+        using var apiResponseMock = new StubApiResponse<string>
         {
             IsSuccessStatusCode = false,
             StatusCode = System.Net.HttpStatusCode.Unauthorized,
@@ -613,7 +613,7 @@ public sealed class ApiExecutorTests
         const long startTimestamp = 1000;
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        var apiResponseMock = new StubApiResponse<object>
+        using var apiResponseMock = new StubApiResponse<object>
         {
             IsSuccessStatusCode = false,
             StatusCode = System.Net.HttpStatusCode.Unauthorized
