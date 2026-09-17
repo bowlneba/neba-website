@@ -10,6 +10,6 @@ updates:
     schedule:
       interval: "weekly"
     ignore:
-      # v33 becomes a paid version; stay on the 32.x free line.
+      # v33 becomes a paid version; stay on the 32.x free line, but still take 32.x updates.
       - dependency-name: "Verify.XunitV3"
-        versions: [">=33.0.0"]
+        update-types: ["version-update:semver-major"]
