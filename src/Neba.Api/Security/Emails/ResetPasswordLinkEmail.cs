@@ -9,6 +9,7 @@ internal sealed class ResetPasswordLinkEmail(string resetLink)
     public string ToHtmlBody()
     {
         var link = WebUtility.HtmlEncode(resetLink);
+        var websiteBaseUrl = new Uri(resetLink).GetLeftPart(UriPartial.Authority);
         return EmailLayout.Wrap($"""
             <h1 style="margin:0 0 20px;font-size:22px;color:#1a3a6e;font-weight:700;">Reset your password</h1>
             <p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#444;">
@@ -31,6 +32,6 @@ internal sealed class ResetPasswordLinkEmail(string resetLink)
               If the button above does not work, copy and paste this link into your browser:<br />
               <a href="{link}" style="color:#1a3a6e;word-break:break-all;overflow-wrap:break-word;">{link}</a>
             </p>
-            """);
+            """, websiteBaseUrl);
     }
 }

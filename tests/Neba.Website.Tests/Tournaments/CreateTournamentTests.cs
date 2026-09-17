@@ -79,7 +79,7 @@ public sealed class CreateTournamentTests : IDisposable
         _ctx.Services.AddSingleton(_mockBowlingCentersApi.Object);
         _ctx.Services.AddSingleton(_mockOilPatternsApi.Object);
         _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
-        _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
+        _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(_toastService);
         _ctx.Services.AddSingleton<HelpDocumentService>();
     }

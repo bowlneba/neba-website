@@ -8,6 +8,7 @@ using Neba.TestFactory.Attributes;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Telemetry.Metrics;
+using Neba.Website.Tests.TestSupport;
 
 using Refit;
 using Refit.Testing;
@@ -22,14 +23,17 @@ public sealed class ApiExecutorTests
 {
     private readonly ApiExecutor _executor;
     private readonly Mock<IStopwatchProvider> _stopwatchProviderMock;
+    private readonly StubNavigationManager _navigationManager;
     private readonly FakeLogger<ApiExecutor> _logger;
 
     public ApiExecutorTests()
     {
         _stopwatchProviderMock = new Mock<IStopwatchProvider>(MockBehavior.Strict);
+        _navigationManager = new StubNavigationManager();
         _logger = new FakeLogger<ApiExecutor>();
         _executor = new ApiExecutor(
             _stopwatchProviderMock.Object,
+            _navigationManager,
             _logger
         );
     }
@@ -494,7 +498,6 @@ public sealed class ApiExecutorTests
 
     [Theory(DisplayName = "Should handle various HTTP status codes as failure")]
     [InlineData(400, TestDisplayName = "400 Bad Request")]
-    [InlineData(401, TestDisplayName = "401 Unauthorized")]
     [InlineData(403, TestDisplayName = "403 Forbidden")]
     [InlineData(500, TestDisplayName = "500 Internal Server Error")]
     [InlineData(502, TestDisplayName = "502 Bad Gateway")]
@@ -565,6 +568,71 @@ public sealed class ApiExecutorTests
         result.IsError.ShouldBeTrue();
         result.FirstError.Code.ShouldBe($"{apiName}.{operationName}.NotFound");
         result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.NotFound);
+    }
+
+    [Fact(DisplayName = "Should return a session-expired Unauthorized error and redirect to logout for a 401 response")]
+    public async Task ExecuteAsync_ShouldReturnUnauthorizedErrorAndRedirectToLogout_For401()
+    {
+        // Arrange - BearerTokenHandler already attempted a silent token refresh before this
+        // response reached ApiExecutor, so a surviving 401 means the session is truly dead.
+        const string apiName = "TestApi";
+        const string operationName = "GetData";
+        const long startTimestamp = 1000;
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        using var apiResponseMock = new StubApiResponse<string>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.Unauthorized,
+            Content = null
+        };
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(TimeSpan.FromMilliseconds(50));
+
+        // Act
+        var result = await _executor.ExecuteAsync(
+            apiName, operationName,
+            _ => Task.FromResult<IApiResponse<string>>(apiResponseMock),
+            cancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe($"{apiName}.{operationName}.Unauthorized");
+        result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.Unauthorized);
+        result.FirstError.Description.ShouldContain("session has expired");
+        _navigationManager.Uri.ShouldEndWith("/account/logout");
+    }
+
+    [Fact(DisplayName = "Should return a session-expired Unauthorized error and redirect to logout for a non-generic 401 response")]
+    public async Task ExecuteAsync_NonGeneric_ShouldReturnUnauthorizedErrorAndRedirectToLogout_For401()
+    {
+        // Arrange
+        const string apiName = "TestApi";
+        const string operationName = "DeleteData";
+        const long startTimestamp = 1000;
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        using var apiResponseMock = new StubApiResponse<object>
+        {
+            IsSuccessStatusCode = false,
+            StatusCode = System.Net.HttpStatusCode.Unauthorized
+        };
+
+        _stopwatchProviderMock.Setup(s => s.GetTimestamp()).Returns(startTimestamp);
+        _stopwatchProviderMock.Setup(s => s.GetElapsedTime(startTimestamp)).Returns(TimeSpan.FromMilliseconds(50));
+
+        // Act
+        var result = await _executor.ExecuteAsync(
+            apiName, operationName,
+            _ => Task.FromResult<IApiResponse>(apiResponseMock),
+            cancellationToken);
+
+        // Assert
+        result.IsError.ShouldBeTrue();
+        result.FirstError.Code.ShouldBe($"{apiName}.{operationName}.Unauthorized");
+        result.FirstError.Type.ShouldBe(ErrorOr.ErrorType.Unauthorized);
+        _navigationManager.Uri.ShouldEndWith("/account/logout");
     }
 
     [Fact(DisplayName = "Should surface the FastEndpoints error body message for a 409 conflict response")]

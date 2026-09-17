@@ -115,8 +115,9 @@
     <PackageVersion Include="Testcontainers.Azurite" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.MsSql" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.15.0" />
-    <!-- v33 becomes a paid version; stay on the 32.x free line. -->
-    <PackageVersion Include="Verify.XunitV3" Version="32.0.1" />
+    <!-- v33 becomes a paid version; stay on the 32.x free line. Range's exclusive upper bound also
+         keeps `dotnet outdated` from suggesting 33.x, while still reporting/allowing 32.x updates. -->
+    <PackageVersion Include="Verify.XunitV3" Version="[32.0.1,33.0.0)" />
     <PackageVersion Include="Ulid" Version="1.4.1" />
     <PackageVersion Include="UnitsNet" Version="5.75.1" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />

@@ -1,5 +1,6 @@
 using Bunit;
 
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -37,11 +38,9 @@ public sealed class BylawsTests : IDisposable
         mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
         mockStopwatch.Setup(x => x.GetElapsedTime(It.IsAny<long>())).Returns(TimeSpan.Zero);
 
-        var apiExecutor = new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance);
-
         _ctx.Services.AddSingleton(_mockDocumentsApi.Object);
         _ctx.Services.AddSingleton(_mockClientTimeZoneService.Object);
-        _ctx.Services.AddSingleton(apiExecutor);
+        _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
     }
 
     public void Dispose() => _ctx.Dispose();

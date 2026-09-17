@@ -1,5 +1,6 @@
 using Bunit;
 
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -43,7 +44,7 @@ public sealed class BowlingCentersTests : IDisposable
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
 
         _ctx.Services.AddSingleton(_mockApi.Object);
-        _ctx.Services.AddSingleton(new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance));
+        _ctx.Services.AddSingleton(sp => new ApiExecutor(mockStopwatch.Object, sp.GetRequiredService<NavigationManager>(), NullLogger<ApiExecutor>.Instance));
         _ctx.Services.AddSingleton(new AzureMapsSettings());
         _ctx.Services.AddSingleton<ILogger<NebaMap>>(NullLogger<NebaMap>.Instance);
 

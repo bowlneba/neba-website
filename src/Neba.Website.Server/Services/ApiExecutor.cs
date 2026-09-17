@@ -6,6 +6,8 @@ using System.Text.Json;
 
 using ErrorOr;
 
+using Microsoft.AspNetCore.Components;
+
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Telemetry.Metrics;
 
@@ -17,6 +19,7 @@ namespace Neba.Website.Server.Services;
 
 internal sealed class ApiExecutor(
     IStopwatchProvider stopwatchProvider,
+    NavigationManager navigationManager,
     ILogger<ApiExecutor> logger)
 {
     private static readonly ActivitySource ActivitySource = new("Neba.Website.Server");
@@ -204,6 +207,21 @@ internal sealed class ApiExecutor(
             return Error.NotFound(
                 $"{apiName}.{operationName}.NotFound",
                 "The requested resource was not found.");
+        }
+
+        // BearerTokenHandler already attempted a silent token refresh before this response reached
+        // us (see BearerTokenHandler.SendAsync) - a 401 surviving that means the session is truly
+        // dead (refresh token expired or revoked), not a transient auth hiccup. The auth cookie's
+        // own sliding expiration can otherwise leave the UI looking "logged in" long after the
+        // underlying token pair stopped working, so force a real sign-out here instead of letting
+        // the caller show a generic, confusing error on the next action.
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            navigationManager.NavigateTo("/account/logout", forceLoad: true);
+
+            return Error.Unauthorized(
+                $"{apiName}.{operationName}.Unauthorized",
+                "Your session has expired. Please log in again.");
         }
 
         // 4xx: the server has already produced a human-readable reason (validation failure,

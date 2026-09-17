@@ -5,14 +5,14 @@ namespace Neba.Api.Tests.Security.Emails;
 
 [UnitTest]
 [Component("Email")]
-public sealed class ResetPasswordLinkEmailTests
+public sealed class AdminResetPasswordLinkEmailTests
 {
     [Fact(DisplayName = "ToHtmlBody should contain the reset link")]
     public void ToHtmlBody_ShouldContainResetLink()
     {
         // Arrange
         const string link = "https://bowlneba.com/reset-password?token=xyz789";
-        var email = new ResetPasswordLinkEmail(link);
+        var email = new AdminResetPasswordLinkEmail(link);
 
         // Act
         var html = email.ToHtmlBody();
@@ -26,7 +26,7 @@ public sealed class ResetPasswordLinkEmailTests
     {
         // Arrange
         const string link = "https://bowlneba.com/reset-password?userId=2&token=xyz";
-        var email = new ResetPasswordLinkEmail(link);
+        var email = new AdminResetPasswordLinkEmail(link);
 
         // Act
         var html = email.ToHtmlBody();
@@ -41,7 +41,7 @@ public sealed class ResetPasswordLinkEmailTests
     {
         // Arrange
         const string link = "https://preview.bowlneba.com/reset-password?token=xyz789";
-        var email = new ResetPasswordLinkEmail(link);
+        var email = new AdminResetPasswordLinkEmail(link);
 
         // Act
         var html = email.ToHtmlBody();
