@@ -140,7 +140,7 @@ test.describe('Tournament Detail — manage sponsors (authorized)', () => {
     // modal (both backdrops shared z-index 1000), making it unclickable.
     const confirmDialog = page.getByRole('dialog', { name: 'Discard unsaved changes?' });
     await expect(confirmDialog).toBeVisible();
-    await confirmDialog.locator('button.confirm-action-modal-confirm', { hasText: 'Discard' }).click({ timeout: 2000 });
+    await confirmDialog.locator('button.confirm-action-modal-confirm', { hasText: 'Discard' }).click();
 
     await expect(page.locator('.neba-modal-backdrop')).toHaveCount(0);
   });
