@@ -5,7 +5,7 @@
 @if (IsOpen)
 {
     <div class="neba-modal-backdrop @CssClass" @onclick="HandleBackdropClick"
-         style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; display: flex !important; align-items: @(AlignTop ? "flex-start" : "center") !important; justify-content: center !important; z-index: 1000 !important;">
+         style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; display: flex !important; align-items: @(AlignTop ? "flex-start" : "center") !important; justify-content: center !important; z-index: @(Nested ? "1100" : "1000") !important;">
         <div class="neba-modal-container @(CompactSize ? "neba-modal-container--compact" : null)" style="@ContainerStyle" @onclick:stopPropagation="true">
             <div class="neba-modal-content @CssClass" role="dialog" aria-modal="true" aria-labelledby="@DialogLabelledBy"
                  aria-label="@DialogAriaLabel" aria-describedby="@_bodyId" tabindex="-1" @onkeydown="HandleKeyDown"
@@ -144,6 +144,14 @@
     /// </summary>
     [Parameter]
     public bool AlignTop { get; set; }
+
+    /// <summary>
+    /// Raises the backdrop's z-index above the base modal layer. Use for a modal that can be opened
+    /// while another <see cref="NebaModal"/> is already open (e.g. a confirmation dialog shown over an
+    /// in-progress form modal) so it stacks above rather than behind the other backdrop.
+    /// </summary>
+    [Parameter]
+    public bool Nested { get; set; }
 
     /// <summary>
     /// Optional custom header content. When provided, replaces the built-in Title h2 element.

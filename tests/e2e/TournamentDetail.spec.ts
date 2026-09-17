@@ -127,6 +127,24 @@ test.describe('Tournament Detail — manage sponsors (authorized)', () => {
     await expect(page.locator('.mts-panel__empty')).toContainText('No sponsors attached to this tournament yet.');
   });
 
+  test('cancelling with unsaved changes shows a clickable discard confirmation above the Add Sponsor modal', async ({ page }) => {
+    await page.goto(`/tournaments/${MOCK_TOURNAMENT_SPONSOR_MGMT_ID}`);
+    await page.waitForSelector('.td-hero');
+
+    await page.locator('.mts-panel__header button', { hasText: '+ Add Sponsor' }).click();
+    await page.locator('#sponsor-pick').selectOption({ label: 'Acme Bowling Supply' });
+
+    await page.locator('.mts-modal-actions button.neba-btn-secondary', { hasText: 'Cancel' }).click();
+
+    // Regression: the discard confirmation used to render behind the still-open Add Sponsor
+    // modal (both backdrops shared z-index 1000), making it unclickable.
+    const confirmDialog = page.getByRole('dialog', { name: 'Discard unsaved changes?' });
+    await expect(confirmDialog).toBeVisible();
+    await confirmDialog.locator('button.confirm-action-modal-confirm', { hasText: 'Discard' }).click({ timeout: 2000 });
+
+    await expect(page.locator('.neba-modal-backdrop')).toHaveCount(0);
+  });
+
   test('shows an error alert and keeps the modal state when adding a sponsor fails', async ({ page }) => {
     await page.request.post(
       `http://localhost:5151/__mock/fail?path=/tournaments/${MOCK_TOURNAMENT_SPONSOR_MGMT_ID}/sponsors&status=409`
