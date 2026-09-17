@@ -35,4 +35,19 @@ public sealed class ConfirmAccountEmailTests
         html.ShouldContain("userId=1&amp;token=abc");
         html.ShouldNotContain("userId=1&token=abc");
     }
+
+    [Fact(DisplayName = "ToHtmlBody should use the confirmation link's own domain for the logo and footer link")]
+    public void ToHtmlBody_ShouldUseConfirmationLinkOwnDomainForLogoAndFooterLink()
+    {
+        // Arrange
+        const string link = "https://preview.bowlneba.com/confirm?token=abc123";
+        var email = new ConfirmAccountEmail(link);
+
+        // Act
+        var html = email.ToHtmlBody();
+
+        // Assert
+        html.ShouldContain("src=\"https://preview.bowlneba.com/images/neba-logo.png\"");
+        html.ShouldNotContain("https://bowlneba.com/images/neba-logo.png");
+    }
 }
