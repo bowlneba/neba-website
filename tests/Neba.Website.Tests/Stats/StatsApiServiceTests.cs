@@ -7,6 +7,7 @@ using Neba.TestFactory.Stats;
 using Neba.Website.Server.Clock;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Stats;
+using Neba.Website.Tests.TestSupport;
 
 using Refit;
 using Refit.Testing;
@@ -30,7 +31,7 @@ public sealed class StatsApiServiceTests
         mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
         mockStopwatch.Setup(x => x.GetElapsedTime(It.IsAny<long>())).Returns(TimeSpan.Zero);
 
-        var executor = new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance);
+        var executor = new ApiExecutor(mockStopwatch.Object, new StubNavigationManager(), NullLogger<ApiExecutor>.Instance);
         _service = new StatsApiService(executor, _mockStatsApi.Object);
     }
 

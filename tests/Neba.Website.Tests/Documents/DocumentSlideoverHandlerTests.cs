@@ -7,6 +7,7 @@ using Neba.Website.Server.Clock;
 using Neba.Website.Server.Documents;
 using Neba.Website.Server.Services;
 using Neba.Website.Server.Time;
+using Neba.Website.Tests.TestSupport;
 
 using Refit;
 using Refit.Testing;
@@ -30,7 +31,7 @@ public sealed class DocumentSlideoverHandlerTests
         mockStopwatch.Setup(x => x.GetTimestamp()).Returns(0L);
         mockStopwatch.Setup(x => x.GetElapsedTime(It.IsAny<long>())).Returns(TimeSpan.Zero);
 
-        _apiExecutor = new ApiExecutor(mockStopwatch.Object, NullLogger<ApiExecutor>.Instance);
+        _apiExecutor = new ApiExecutor(mockStopwatch.Object, new StubNavigationManager(), NullLogger<ApiExecutor>.Instance);
     }
 
     [Theory(DisplayName = "GetDocumentNameFromRoute should map known routes to document names")]
