@@ -319,4 +319,34 @@ public sealed class NebaModalTests : IDisposable
 
         containerStyle.ShouldContain("max-width: 700px;");
     }
+
+    [Fact(DisplayName = "Should apply the base z-index to the backdrop when Nested is false")]
+    public void Render_ShouldApplyBaseZIndex_WhenNestedIsFalse()
+    {
+        // Act
+        var cut = _ctx.Render<NebaModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.Nested, false));
+
+        // Assert
+        var backdropStyle = cut.Find(".neba-modal-backdrop").GetAttribute("style") ?? string.Empty;
+
+        backdropStyle.ShouldContain("z-index: 1000 !important;");
+    }
+
+    [Fact(DisplayName = "Should apply a raised z-index to the backdrop when Nested is true")]
+    public void Render_ShouldApplyRaisedZIndex_WhenNestedIsTrue()
+    {
+        // Act
+        var cut = _ctx.Render<NebaModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { }))
+            .Add(x => x.Nested, true));
+
+        // Assert
+        var backdropStyle = cut.Find(".neba-modal-backdrop").GetAttribute("style") ?? string.Empty;
+
+        backdropStyle.ShouldContain("z-index: 1100 !important;");
+    }
 }
