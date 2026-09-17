@@ -147,6 +147,15 @@
     color: #6b7280;
 }
 
+.stats-section-note {
+    margin: 0;
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
 /* ── Table ───────────────────────────────────────────────────── */
 
 .stats-table-wrapper {
