@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Neba.Api.BackgroundJobs;
 
 namespace Neba.Api.Features.Sponsors.EditSponsor;
@@ -15,10 +17,12 @@ public sealed record DeleteSponsorFilesJob
     /// Copied into a <see cref="List{T}"/> because Hangfire's JSON serializer records the runtime type,
     /// and it cannot rebuild the compiler-generated type a collection expression produces.
     /// </remarks>
+    [SuppressMessage("Style", "IDE0305:Simplify collection initialization", Justification = "A collection expression here compiles to a compiler-generated type Hangfire cannot deserialize.")]
+    [SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "A collection expression here compiles to a compiler-generated type Hangfire cannot deserialize.")]
     public required IReadOnlyCollection<StoredFileReference> Files
     {
         get;
-        init => field = [.. value];
+        init => field = new List<StoredFileReference>(value);
     }
 
     /// <inheritdoc />
