@@ -102,7 +102,7 @@ internal static class BackgroundJobsConfiguration
                             .TableName(_ => "JobAuditEvents")
                             // EntityMapper (not EntityBuilder) is required to retain the event payload -
                             // see the matching comment in AuditingConfiguration.cs.
-                            .EntityMapper(ev => new AuditEventTableEntity(ev.EventType ?? "unknown", Ulid.NewUlid().ToString(), ev)))))
+                            .EntityMapper(ev => ChunkedAuditEventTableEntity.Create(ev.EventType ?? "unknown", Ulid.NewUlid().ToString(), ev)))))
                     .UsePostgreSqlStorage(postgres => postgres
                         .UseConnectionFactory(new HangfireConnectionFactory(dataSource)),
                         new PostgreSqlStorageOptions
