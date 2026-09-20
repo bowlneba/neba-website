@@ -81,15 +81,16 @@ internal static class AuditingConfiguration
                 .ConfigureConnection(builder.Configuration.GetConnectionString("tables"))
                 .TableName(_ => "EFAuditEvents")
                 // EntityMapper (not EntityBuilder) is required to retain the event payload:
-                // AuditEventTableEntity serializes the full event to JSON in an "AuditEvent"
-                // column. EntityBuilder without a .Columns(...) call produces a TableEntity
+                // ChunkedAuditEventTableEntity serializes the full event to JSON in "AuditEvent"
+                // columns (split, since Table Storage caps a string column at 32K characters).
+                // EntityBuilder without a .Columns(...) call produces a TableEntity
                 // with no properties at all, silently discarding the payload.
-                .EntityMapper(ev => new AuditEventTableEntity(ToPartitionKey(ev.EventType), Ulid.NewUlid().ToString(), ev)));
+                .EntityMapper(ev => ChunkedAuditEventTableEntity.Create(ToPartitionKey(ev.EventType), Ulid.NewUlid().ToString(), ev)));
 
             var securityProvider = new AzureTableDataProvider(config => config
                 .ConfigureConnection(builder.Configuration.GetConnectionString("tables"))
                 .TableName(_ => "SecurityAuditEvents")
-                .EntityMapper(ev => new AuditEventTableEntity(ToPartitionKey(ev.EventType), Ulid.NewUlid().ToString(), ev)));
+                .EntityMapper(ev => ChunkedAuditEventTableEntity.Create(ToPartitionKey(ev.EventType), Ulid.NewUlid().ToString(), ev)));
 
             Audit.Core.Configuration.Setup()
                 .Use(new SecurityAuditDataProviderRouter(securityProvider, defaultProvider))
