@@ -11,7 +11,15 @@ public sealed record DeleteTournamentFilesJob
     /// <summary>
     /// Gets the collection of files to be deleted.
     /// </summary>
-    public required IReadOnlyCollection<TournamentFileReference> Files { get; init; }
+    /// <remarks>
+    /// Copied into a <see cref="List{T}"/> because Hangfire's JSON serializer records the runtime type,
+    /// and it cannot rebuild the compiler-generated type a collection expression produces.
+    /// </remarks>
+    public required IReadOnlyCollection<TournamentFileReference> Files
+    {
+        get;
+        init => field = value.ToList();
+    }
 
     /// <inheritdoc />
     public string JobName
