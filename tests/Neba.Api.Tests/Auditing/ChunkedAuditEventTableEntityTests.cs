@@ -72,9 +72,9 @@ public sealed class ChunkedAuditEventTableEntityTests
         auditEvent.CustomFields["Content"] = new string('a', ChunkedAuditEventTableEntity.MaxChunks * ChunkedAuditEventTableEntity.ChunkSize);
 
         // Act
-        var act = () => ChunkedAuditEventTableEntity.Create("partition", "row", auditEvent);
+        Azure.Data.Tables.TableEntity Act() => ChunkedAuditEventTableEntity.Create("partition", "row", auditEvent);
 
         // Assert
-        Should.Throw<InvalidOperationException>(act);
+        Should.Throw<InvalidOperationException>((Func<Azure.Data.Tables.TableEntity>)Act);
     }
 }
