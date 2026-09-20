@@ -18,7 +18,7 @@ public sealed record DeleteTournamentFilesJob
     public required IReadOnlyCollection<TournamentFileReference> Files
     {
         get;
-        init => field = value.ToList();
+        init => field = [.. value];
     }
 
     /// <inheritdoc />

@@ -18,7 +18,7 @@ public sealed record DeleteArticleFilesJob
     public required IReadOnlyCollection<StoredFileReference> Files
     {
         get;
-        init => field = value.ToList();
+        init => field = [.. value];
     }
 
     /// <inheritdoc />
