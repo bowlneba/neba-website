@@ -50,7 +50,7 @@ public sealed class ChunkedAuditEventTableEntityTests
     public void Split_ShouldNotSplitSurrogatePair_WhenBoundaryFallsInsidePair()
     {
         // Arrange
-        var json = new string('a', ChunkedAuditEventTableEntity.ChunkSize - 1) + "😀" + "tail";
+        var json = new string('a', ChunkedAuditEventTableEntity.ChunkSize - 1) + "😀tail";
 
         // Act
         var chunks = ChunkedAuditEventTableEntity.Split(json);
