@@ -12,12 +12,24 @@ namespace Neba.Api.Auditing;
 /// warning instead of failing the caller's SaveChanges/request pipeline (guideline #7 — audit
 /// failures must never fail the operation being audited).
 /// </summary>
+/// <remarks>
+/// Every failure is logged. Discord alerts are limited to one per failure kind and event type per
+/// <see cref="AlertCooldown"/>, so a sustained storage outage does not post one message per audited
+/// operation.
+/// </remarks>
 internal sealed class ResilientAuditDataProvider(
         IAuditDataProvider inner,
         IDiscordNotifier discordNotifier,
-        ILogger<ResilientAuditDataProvider> logger)
+        ILogger<ResilientAuditDataProvider> logger,
+        TimeProvider? timeProvider = null)
     : AuditDataProvider
 {
+    internal static readonly TimeSpan AlertCooldown = TimeSpan.FromMinutes(5);
+
+    private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
+    private readonly Dictionary<(string Title, string EventType), DateTimeOffset> _lastAlertAt = [];
+    private readonly Lock _alertLock = new();
+
     public override object? InsertEvent(AuditEvent auditEvent)
     {
         try
@@ -82,7 +94,32 @@ internal sealed class ResilientAuditDataProvider(
     // internally, so there's nothing here to observe or retry. CancellationToken.None, not any
     // caller-supplied token - the alert must outlive the audited operation's own cancellation.
     private void NotifyDiscordFireAndForget(string title, AuditEvent auditEvent, Exception exception)
-        => _ = Task.Run(() => discordNotifier.NotifyAsync(BuildAlert(title, auditEvent, exception), CancellationToken.None));
+    {
+        if (!TryStartAlertCooldown(title, auditEvent.EventType ?? "<unknown>"))
+        {
+            return;
+        }
+
+        _ = Task.Run(() => discordNotifier.NotifyAsync(BuildAlert(title, auditEvent, exception), CancellationToken.None));
+    }
+
+    // Returns true, and starts a new cooldown, when no alert for this failure kind and event type
+    // went out within AlertCooldown. The key set is bounded by the app's event types.
+    private bool TryStartAlertCooldown(string title, string eventType)
+    {
+        var now = _timeProvider.GetUtcNow();
+
+        lock (_alertLock)
+        {
+            if (_lastAlertAt.TryGetValue((title, eventType), out var lastAlertAt) && now - lastAlertAt < AlertCooldown)
+            {
+                return false;
+            }
+
+            _lastAlertAt[(title, eventType)] = now;
+            return true;
+        }
+    }
 
     // Stack trace deliberately omitted, same reasoning as GlobalExceptionHandler. Discord has none
     // of the app's PII redaction and a trace can echo argument values. The exception type and
