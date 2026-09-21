@@ -4,6 +4,7 @@ using Audit.Core;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
+using Microsoft.Extensions.Time.Testing;
 
 using Neba.Api.Auditing;
 using Neba.Api.Discord;
@@ -286,5 +287,133 @@ public sealed class ResilientAuditDataProviderTests
 
         // Assert
         result.ShouldBeNull();
+    }
+
+    // ── Discord alert cooldown ───────────────────────────────────────────────
+
+    // Counts notifications and signals each one, so a test can wait for the alerts it expects and
+    // then check that no further alert arrives.
+    private static Mock<IDiscordNotifier> CreateCountingDiscordNotifier(SemaphoreSlim signal, List<DiscordAlert> alerts)
+    {
+        var discordNotifier = new Mock<IDiscordNotifier>(MockBehavior.Strict);
+        discordNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<DiscordAlert>(), CancellationToken.None))
+            .Callback<DiscordAlert, CancellationToken>((alert, _) =>
+            {
+                lock (alerts)
+                {
+                    alerts.Add(alert);
+                }
+
+                signal.Release();
+            })
+            .Returns(Task.CompletedTask);
+        return discordNotifier;
+    }
+
+    private static Mock<IAuditDataProvider> CreateFailingInnerProvider()
+    {
+        var inner = new Mock<IAuditDataProvider>(MockBehavior.Strict);
+        inner.Setup(p => p.InsertEventAsync(It.IsAny<AuditEvent>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("storage outage"));
+        return inner;
+    }
+
+    [Fact(DisplayName = "InsertEventAsync logs every failure but notifies Discord once for the same event type within the cooldown")]
+    public async Task InsertEventAsync_WhenSameEventTypeFailsRepeatedlyWithinCooldown_LogsEachFailureAndNotifiesDiscordOnce()
+    {
+        // Arrange
+        var logger = new FakeLogger<ResilientAuditDataProvider>();
+        using var signal = new SemaphoreSlim(0);
+        var alerts = new List<DiscordAlert>();
+        var sut = new ResilientAuditDataProvider(
+            CreateFailingInnerProvider().Object,
+            CreateCountingDiscordNotifier(signal, alerts).Object,
+            logger,
+            new FakeTimeProvider());
+
+        // Act
+        await sut.InsertEventAsync(Event, TestContext.Current.CancellationToken);
+        await sut.InsertEventAsync(Event, TestContext.Current.CancellationToken);
+        await sut.InsertEventAsync(Event, TestContext.Current.CancellationToken);
+        await signal.WaitAsync(NotifyWaitTimeout, TestContext.Current.CancellationToken);
+
+        // Assert
+        logger.Collector.GetSnapshot().Count.ShouldBe(3);
+        (await signal.WaitAsync(TimeSpan.FromMilliseconds(200), TestContext.Current.CancellationToken)).ShouldBeFalse();
+        alerts.ShouldHaveSingleItem();
+    }
+
+    [Fact(DisplayName = "InsertEventAsync notifies Discord again for the same event type once the cooldown has passed")]
+    public async Task InsertEventAsync_WhenCooldownHasPassed_NotifiesDiscordAgain()
+    {
+        // Arrange
+        var timeProvider = new FakeTimeProvider();
+        using var signal = new SemaphoreSlim(0);
+        var alerts = new List<DiscordAlert>();
+        var sut = new ResilientAuditDataProvider(
+            CreateFailingInnerProvider().Object,
+            CreateCountingDiscordNotifier(signal, alerts).Object,
+            new FakeLogger<ResilientAuditDataProvider>(),
+            timeProvider);
+
+        // Act
+        await sut.InsertEventAsync(Event, TestContext.Current.CancellationToken);
+        await signal.WaitAsync(NotifyWaitTimeout, TestContext.Current.CancellationToken);
+        timeProvider.Advance(ResilientAuditDataProvider.AlertCooldown);
+        await sut.InsertEventAsync(Event, TestContext.Current.CancellationToken);
+        await signal.WaitAsync(NotifyWaitTimeout, TestContext.Current.CancellationToken);
+
+        // Assert
+        alerts.Count.ShouldBe(2);
+    }
+
+    [Fact(DisplayName = "InsertEventAsync notifies Discord separately for each event type within the cooldown")]
+    public async Task InsertEventAsync_WhenDifferentEventTypesFail_NotifiesDiscordForEach()
+    {
+        // Arrange
+        using var signal = new SemaphoreSlim(0);
+        var alerts = new List<DiscordAlert>();
+        var sut = new ResilientAuditDataProvider(
+            CreateFailingInnerProvider().Object,
+            CreateCountingDiscordNotifier(signal, alerts).Object,
+            new FakeLogger<ResilientAuditDataProvider>(),
+            new FakeTimeProvider());
+
+        // Act
+        await sut.InsertEventAsync(new AuditEvent { EventType = "First" }, TestContext.Current.CancellationToken);
+        await sut.InsertEventAsync(new AuditEvent { EventType = "Second" }, TestContext.Current.CancellationToken);
+        await signal.WaitAsync(NotifyWaitTimeout, TestContext.Current.CancellationToken);
+        await signal.WaitAsync(NotifyWaitTimeout, TestContext.Current.CancellationToken);
+
+        // Assert
+        alerts.Count.ShouldBe(2);
+    }
+
+    [Fact(DisplayName = "InsertEventAsync and ReplaceEventAsync failures for the same event type each notify Discord within the cooldown")]
+    public async Task InsertEventAsyncAndReplaceEventAsync_WhenBothFailForSameEventType_NotifyDiscordForEach()
+    {
+        // Arrange
+        var inner = new Mock<IAuditDataProvider>(MockBehavior.Strict);
+        inner.Setup(p => p.InsertEventAsync(It.IsAny<AuditEvent>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("storage outage"));
+        inner.Setup(p => p.ReplaceEventAsync(It.IsAny<object>(), It.IsAny<AuditEvent>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("storage outage"));
+        using var signal = new SemaphoreSlim(0);
+        var alerts = new List<DiscordAlert>();
+        var sut = new ResilientAuditDataProvider(
+            inner.Object,
+            CreateCountingDiscordNotifier(signal, alerts).Object,
+            new FakeLogger<ResilientAuditDataProvider>(),
+            new FakeTimeProvider());
+
+        // Act
+        await sut.InsertEventAsync(Event, TestContext.Current.CancellationToken);
+        await sut.ReplaceEventAsync("event-id", Event, TestContext.Current.CancellationToken);
+        await signal.WaitAsync(NotifyWaitTimeout, TestContext.Current.CancellationToken);
+        await signal.WaitAsync(NotifyWaitTimeout, TestContext.Current.CancellationToken);
+
+        // Assert
+        alerts.Select(a => a.Title).Order().ShouldBe(["Audit event insertion failed", "Audit event replacement failed"]);
     }
 }
