@@ -18,6 +18,7 @@ public sealed record DeleteSponsorFilesJob
     /// and it cannot rebuild the compiler-generated type a collection expression produces.
     /// </remarks>
     [SuppressMessage("Style", "IDE0305:Simplify collection initialization", Justification = "A collection expression here compiles to a compiler-generated type Hangfire cannot deserialize.")]
+    [SuppressMessage("Style", "IDE0306:Use collection expression for new", Justification = "A collection expression here compiles to a compiler-generated type Hangfire cannot deserialize.")]
     [SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "A collection expression here compiles to a compiler-generated type Hangfire cannot deserialize.")]
     public required IReadOnlyCollection<StoredFileReference> Files
     {
