@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 
-using Audit.AzureStorageTables.ConfigurationApi;
 using Audit.Core;
 using Audit.EntityFramework;
 
@@ -10,6 +9,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Testing;
 
+using Neba.Api.Auditing;
 using Neba.Api.Database;
 using Neba.Api.Database.Interceptors;
 using Neba.Api.Features.Bowlers.Domain;
@@ -77,9 +77,9 @@ public sealed class BowlerNameChangeAuditIntegrationTests(
             .UseAzureTableStorage(config => config
                 .ConnectionString(azuriteFixture.ConnectionString)
                 .TableName(_ => TableName)
-                // EntityMapper (not EntityBuilder) retains the event payload as a JSON column -
+                // EntityMapper (not EntityBuilder) retains the event payload as JSON columns -
                 // see AuditingConfiguration.AddAuditing()'s identical setup for why.
-                .EntityMapper(ev => new AuditEventTableEntity(ev.EventType ?? "unknown", Ulid.NewUlid().ToString(), ev)))
+                .EntityMapper(ev => ChunkedAuditEventTableEntity.Create(AuditingConfiguration.ToPartitionKey(ev.EventType), Ulid.NewUlid().ToString(), ev)))
             .WithCreationPolicy(EventCreationPolicy.InsertOnStartReplaceOnEnd);
 
         // Mirrors AuditingConfiguration.AddAuditing()'s real Bowler/Name opt-in exactly - see that
@@ -187,8 +187,8 @@ public sealed class BowlerNameChangeAuditIntegrationTests(
     {
         await foreach (var entity in _tableClient.QueryAsync<TableEntity>(cancellationToken: TestContext.Current.CancellationToken))
         {
-            var json = entity.GetString("AuditEvent");
-            if (json is null)
+            var json = ChunkedAuditEventTableEntity.ReadJson(entity);
+            if (json.Length == 0)
             {
                 continue;
             }
