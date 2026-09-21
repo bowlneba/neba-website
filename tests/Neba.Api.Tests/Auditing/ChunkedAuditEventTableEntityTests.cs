@@ -44,24 +44,36 @@ public sealed class ChunkedAuditEventTableEntityTests
             .ShouldBe(Audit.Core.Configuration.JsonAdapter.Serialize(auditEvent));
     }
 
-    [Fact(DisplayName = "Create should not split a surrogate pair across columns")]
-    public void Create_ShouldNotSplitSurrogatePair_WhenBoundaryFallsInsidePair()
+    // Split is tested directly with a raw string: the audit JSON adapter escapes non-ASCII characters
+    // (an emoji becomes 😀), so a serialized event never holds a raw surrogate pair.
+    [Fact(DisplayName = "Split should not split a surrogate pair across chunks")]
+    public void Split_ShouldNotSplitSurrogatePair_WhenBoundaryFallsInsidePair()
     {
         // Arrange
-        var auditEvent = new AuditEvent { CustomFields = [] };
-        auditEvent.CustomFields["Content"] = string.Concat(Enumerable.Repeat("😀", 10_000));
+        var json = new string('a', ChunkedAuditEventTableEntity.ChunkSize - 1) + "😀" + "tail";
 
         // Act
-        var entity = ChunkedAuditEventTableEntity.Create("partition", "row", auditEvent);
+        var chunks = ChunkedAuditEventTableEntity.Split(json);
 
         // Assert
-        var chunks = entity.Keys
-            .Where(key => key.StartsWith("AuditEvent", StringComparison.Ordinal))
-            .Select(key => entity.GetString(key))
-            .ToList();
+        chunks.Count.ShouldBe(2);
+        chunks[0].Length.ShouldBe(ChunkedAuditEventTableEntity.ChunkSize - 1);
+        chunks[1].ShouldStartWith("😀");
         chunks.ShouldAllBe(chunk => !char.IsHighSurrogate(chunk.Last()));
-        ChunkedAuditEventTableEntity.ReadJson(entity)
-            .ShouldBe(Audit.Core.Configuration.JsonAdapter.Serialize(auditEvent));
+        string.Concat(chunks).ShouldBe(json);
+    }
+
+    [Fact(DisplayName = "Split should return a single empty chunk when the JSON is empty")]
+    public void Split_ShouldReturnSingleEmptyChunk_WhenJsonIsEmpty()
+    {
+        // Arrange
+        var json = string.Empty;
+
+        // Act
+        var chunks = ChunkedAuditEventTableEntity.Split(json);
+
+        // Assert
+        chunks.ShouldHaveSingleItem().ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Create should throw when the event cannot fit in one table entity")]

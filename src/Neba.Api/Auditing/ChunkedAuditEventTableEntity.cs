@@ -26,9 +26,23 @@ internal static class ChunkedAuditEventTableEntity
     internal static TableEntity Create(string partitionKey, string rowKey, AuditEvent auditEvent)
     {
         var entity = new TableEntity(partitionKey, rowKey);
-        var json = Configuration.JsonAdapter.Serialize(auditEvent);
+        var chunks = Split(Configuration.JsonAdapter.Serialize(auditEvent));
 
-        var chunkIndex = 0;
+        for (var chunkIndex = 0; chunkIndex < chunks.Count; chunkIndex++)
+        {
+            entity[ColumnFor(chunkIndex)] = chunks[chunkIndex];
+        }
+
+        return entity;
+    }
+
+    /// <summary>
+    /// Cuts the event JSON into chunks of at most <see cref="ChunkSize"/> characters, never
+    /// splitting a surrogate pair across two chunks.
+    /// </summary>
+    internal static IReadOnlyList<string> Split(string json)
+    {
+        var chunks = new List<string>();
         var offset = 0;
 
         do
@@ -41,11 +55,10 @@ internal static class ChunkedAuditEventTableEntity
                 length--;
             }
 
-            entity[ColumnFor(chunkIndex)] = json.Substring(offset, length);
+            chunks.Add(json.Substring(offset, length));
             offset += length;
-            chunkIndex++;
         }
-        while (offset < json.Length && chunkIndex < MaxChunks);
+        while (offset < json.Length && chunks.Count < MaxChunks);
 
         if (offset < json.Length)
         {
@@ -55,7 +68,7 @@ internal static class ChunkedAuditEventTableEntity
                 $"Audit event JSON is {json.Length} characters, which exceeds the {MaxChunks * ChunkSize} characters one table entity can hold.");
         }
 
-        return entity;
+        return chunks;
     }
 
     /// <summary>
