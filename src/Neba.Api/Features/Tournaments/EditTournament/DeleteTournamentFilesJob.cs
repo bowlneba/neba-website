@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Neba.Api.BackgroundJobs;
 
 namespace Neba.Api.Features.Tournaments.EditTournament;
@@ -11,7 +13,18 @@ public sealed record DeleteTournamentFilesJob
     /// <summary>
     /// Gets the collection of files to be deleted.
     /// </summary>
-    public required IReadOnlyCollection<TournamentFileReference> Files { get; init; }
+    /// <remarks>
+    /// Copied into a <see cref="List{T}"/> because Hangfire's JSON serializer records the runtime type,
+    /// and it cannot rebuild the compiler-generated type a collection expression produces.
+    /// </remarks>
+    [SuppressMessage("Style", "IDE0305:Simplify collection initialization", Justification = "A collection expression here compiles to a compiler-generated type Hangfire cannot deserialize.")]
+    [SuppressMessage("Style", "IDE0306:Use collection expression for new", Justification = "A collection expression here compiles to a compiler-generated type Hangfire cannot deserialize.")]
+    [SuppressMessage("Style", "IDE0028:Simplify collection initialization", Justification = "A collection expression here compiles to a compiler-generated type Hangfire cannot deserialize.")]
+    public required IReadOnlyCollection<TournamentFileReference> Files
+    {
+        get;
+        init => field = new List<TournamentFileReference>(value);
+    }
 
     /// <inheritdoc />
     public string JobName
