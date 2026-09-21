@@ -72,7 +72,8 @@ internal static class ChunkedAuditEventTableEntity
     }
 
     /// <summary>
-    /// Joins the columns written by <see cref="Create"/> back into the event JSON.
+    /// Joins the columns written by <see cref="Create"/> back into the event JSON. Nothing in the app
+    /// reads audit rows; this exists for tests, and as the reference for any future reader.
     /// </summary>
     internal static string ReadJson(TableEntity entity)
     {
