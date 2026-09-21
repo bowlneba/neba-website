@@ -2,6 +2,7 @@ using System.Reflection;
 
 using Audit.AzureStorageTables.ConfigurationApi;
 using Audit.AzureStorageTables.Providers;
+using Audit.Core;
 using Audit.Hangfire;
 
 using Hangfire;
@@ -19,6 +20,41 @@ namespace Neba.Api.BackgroundJobs;
 
 internal static class BackgroundJobsConfiguration
 {
+    internal const string JobAuditTableName = "JobAuditEvents";
+
+    /// <summary>
+    /// Builds the data provider that stores Hangfire job audit events in Azure Table Storage.
+    /// </summary>
+    /// <remarks>
+    /// Wrapped in <see cref="ResilientAuditDataProvider"/>, like every other audit path: a storage
+    /// failure (or an event too big for one table entity) becomes a logged warning and a Discord
+    /// alert instead of an exception thrown out of the job filter.
+    /// <para>
+    /// <paramref name="tableName"/> exists for tests. Audit.NET caches each <c>TableClient</c> in a static
+    /// dictionary keyed by table name alone, so two test containers that both use the default name end up
+    /// sharing whichever container's client was cached first.
+    /// </para>
+    /// </remarks>
+    internal static IAuditDataProvider CreateJobAuditDataProvider(
+        string? tablesConnection,
+        IDiscordNotifier discordNotifier,
+        ILogger<ResilientAuditDataProvider> logger,
+        string tableName = JobAuditTableName)
+    {
+        var tableProvider = new AzureTableDataProvider(azureConfig => azureConfig
+            // ConfigureConnection (not ConnectionString) - the "tables" connection
+            // string resolves to a bare storage endpoint URI in production (auth via
+            // managed identity), not a Key=Value connection string. See the matching
+            // extension and comment in AuditingConfiguration.cs.
+            .ConfigureConnection(tablesConnection)
+            .TableName(_ => tableName)
+            // EntityMapper (not EntityBuilder) is required to retain the event payload -
+            // see the matching comment in AuditingConfiguration.cs.
+            .EntityMapper(ev => ChunkedAuditEventTableEntity.Create(ev.EventType ?? "unknown", Ulid.NewUlid().ToString(), ev)));
+
+        return new ResilientAuditDataProvider(tableProvider, discordNotifier, logger);
+    }
+
     extension(IServiceCollection services)
     {
         public void AddBackgroundJobs(IConfiguration configuration)
@@ -93,16 +129,10 @@ internal static class BackgroundJobsConfiguration
                         .AuditWhen(context =>
                             context.BackgroundJob.Job.Method.GetCustomAttribute<AuditJobExecutionFilterAttribute>() is null
                             && context.BackgroundJob.Job.Method.DeclaringType?.GetCustomAttribute<AuditJobExecutionFilterAttribute>() is null)
-                        .DataProvider(new AzureTableDataProvider(azureConfig => azureConfig
-                            // ConfigureConnection (not ConnectionString) - the "tables" connection
-                            // string resolves to a bare storage endpoint URI in production (auth via
-                            // managed identity), not a Key=Value connection string. See the matching
-                            // extension and comment in AuditingConfiguration.cs.
-                            .ConfigureConnection(configuration.GetConnectionString("tables"))
-                            .TableName(_ => "JobAuditEvents")
-                            // EntityMapper (not EntityBuilder) is required to retain the event payload -
-                            // see the matching comment in AuditingConfiguration.cs.
-                            .EntityMapper(ev => ChunkedAuditEventTableEntity.Create(ev.EventType ?? "unknown", Ulid.NewUlid().ToString(), ev)))))
+                        .DataProvider(CreateJobAuditDataProvider(
+                            configuration.GetConnectionString("tables"),
+                            serviceProvider.GetRequiredService<IDiscordNotifier>(),
+                            serviceProvider.GetRequiredService<ILogger<ResilientAuditDataProvider>>())))
                     .UsePostgreSqlStorage(postgres => postgres
                         .UseConnectionFactory(new HangfireConnectionFactory(dataSource)),
                         new PostgreSqlStorageOptions
