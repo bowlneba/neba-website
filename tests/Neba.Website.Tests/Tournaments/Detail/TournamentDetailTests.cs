@@ -225,7 +225,7 @@ public sealed class TournamentDetailTests : IDisposable
     {
         // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
-            winners: ["Alex Example", "Jamie Sample"], titleEligible: true));
+titleEligible: true, winners: ["Alex Example", "Jamie Sample"]));
 
         // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
@@ -238,7 +238,7 @@ public sealed class TournamentDetailTests : IDisposable
     public void Render_ShouldNotRenderChampionBar_WhenNoWinners()
     {
         // Arrange
-        SetupSuccessResponse(TournamentDetailResponseFactory.Create(winners: [], titleEligible: true));
+        SetupSuccessResponse(TournamentDetailResponseFactory.Create(titleEligible: true, winners: []));
 
         // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
@@ -252,7 +252,7 @@ public sealed class TournamentDetailTests : IDisposable
     {
         // Arrange
         SetupSuccessResponse(TournamentDetailResponseFactory.Create(
-            winners: ["Alex Example"], status: TournamentStatus.Truncated, titleEligible: false));
+status: TournamentStatus.Truncated, titleEligible: false, winners: ["Alex Example"]));
 
         // Act
         var cut = _ctx.Render<TournamentDetail>(p => p.Add(x => x.Id, TournamentDetailResponseFactory.ValidId));
