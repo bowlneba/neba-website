@@ -453,6 +453,43 @@ public sealed class GetTournamentQueryHandlerTests(AppDbContextFixture fixture)
         result.Value.Results.Single(r => r.BowlerName == recordedBowler.Name).SideCutName.ShouldBeNull();
     }
 
+    [Fact(DisplayName = "HandleAsync maps a non-positive Place to null for cancelled or truncated events")]
+    public async Task HandleAsync_ShouldMapNonPositivePlaceToNull_ForCancelledOrTruncatedEvents()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var season = SeasonFactory.Create();
+        await _dbContext.Seasons.AddAsync(season, ct);
+
+        var historicalBowler = BowlerFactory.Create(name: NameFactory.Create("Alice", "Historical"));
+        await _dbContext.Bowlers.AddAsync(historicalBowler, ct);
+
+        var tournament = TournamentFactory.Create(seasonId: season.Id);
+        await _dbContext.Tournaments.AddAsync(tournament, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        await _dbContext.HistoricalTournamentResults.AddAsync(new HistoricalTournamentResult
+        {
+            Bowler = historicalBowler,
+            Tournament = tournament,
+            Place = -1,
+            PrizeMoney = 0m,
+            Points = 25,
+        }, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        var fileStorageMock = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var handler = new GetTournamentQueryHandler(_dbContext, fileStorageMock.Object, TimeProvider.System);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new GetTournamentQuery { Id = tournament.Id, CallerIsAuthenticated = true, CallerHasTournamentManagementPermission = true }, ct);
+
+        // Assert
+        result.IsError.ShouldBeFalse();
+        result.Value.Results.Single(r => r.BowlerName == historicalBowler.Name).Place.ShouldBeNull();
+    }
+
     [Fact(DisplayName = "HandleAsync prefers the historical entry count over the recorded result count when both are present")]
     public async Task HandleAsync_ShouldPreferHistoricalEntryCount_WhenBothHistoricalAndRecordedDataArePresent()
     {
