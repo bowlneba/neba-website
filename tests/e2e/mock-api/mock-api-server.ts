@@ -499,12 +499,25 @@ const MOCK_TOURNAMENT_STATUS_ACTIONS = {
   results: [],
 };
 
+// A second, separate tournament for the Truncate happy-path test specifically — Truncate and
+// Cancel each finalize their tournament (a one-way transition), so the Truncate happy-path test
+// can't share MOCK_TOURNAMENT_STATUS_ACTIONS_ID with the Cancel happy-path test without one of
+// them observing the other's finalized status.
+export const MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID = '01JX0000000000000000000051';
+
+const MOCK_TOURNAMENT_TRUNCATE_ACTIONS = {
+  ...MOCK_TOURNAMENT_STATUS_ACTIONS,
+  id: MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID,
+  name: 'NEBA Truncate Actions Classic',
+};
+
 const EXTRA_TOURNAMENT_DETAILS = new Map<string, object>([
   [MOCK_TOURNAMENT_OIL_REVEAL_PENDING_ID, MOCK_TOURNAMENT_OIL_REVEAL_PENDING],
   [MOCK_TOURNAMENT_OIL_REVEALED_ID, MOCK_TOURNAMENT_OIL_REVEALED],
   [MOCK_TOURNAMENT_OIL_REVEAL_MGMT_ID, MOCK_TOURNAMENT_OIL_REVEAL_MGMT],
   [MOCK_TOURNAMENT_SPONSOR_MGMT_ID, MOCK_TOURNAMENT_SPONSOR_MGMT],
   [MOCK_TOURNAMENT_STATUS_ACTIONS_ID, MOCK_TOURNAMENT_STATUS_ACTIONS],
+  [MOCK_TOURNAMENT_TRUNCATE_ACTIONS_ID, MOCK_TOURNAMENT_TRUNCATE_ACTIONS],
 ]);
 
 type SeasonVariants = {

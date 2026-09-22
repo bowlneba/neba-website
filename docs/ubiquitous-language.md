@@ -732,15 +732,47 @@ Suffix is not free-text. If a value outside this set is required in the future, 
 
 **Definition**: A USBC sanctioned scratch bowling competition consisting of one or more qualifying squads (see `### Squad`) followed by a single-elimination match play championship round to determine a winner. Each tournament has a Tournament Type that governs format, team size, and eligibility. Lane conditions are characterized by a Pattern Length Category and Pattern Ratio Category, which may not be known at the time of tournament creation.
 
-A Tournament is **Complete** once match play has finished and its results are final (see `### Tournament Result`). Completion carries no business-rule gate today — the only caller is the legacy backdoor sync, which simply reports that nebamgmt-v3 has already marked the tournament done. Once a UI-driven completion endpoint replaces that backdoor, real invariants (all squads scored, match play finished, every entrant has a derived result) are expected to move onto `CompleteTournament()`.
+A Tournament moves through a Tournament Status over its lifecycle: Scheduled, then finalized as either Completed, Truncated, or Cancelled (see `### Tournament Status`). Finalizing carries no other business-rule gate today for Completion — the only caller is the legacy backdoor sync, which simply reports that nebamgmt-v3 has already marked the tournament done. Once a UI-driven completion endpoint replaces that backdoor, real invariants (all squads scored, match play finished, every entrant has a derived result) are expected to move onto `CompleteTournament()`. Truncating and Cancelling, by contrast, are board-level decisions made directly from the website admin panel, gated by the `Tournaments.ManageTournamentStatus` permission — see [`docs/policies/README.md`](policies/README.md).
+
+Whether a completed Tournament counts toward a NEBA title is tracked separately as **TitleEligible** — see `### Title Eligible`.
 
 **In Code**:
 
 - Namespace: `Neba.Api.Features.Tournaments.Domain`
 - Type: `Tournament` (aggregate root)
 - Identity type: `TournamentId` (ULID-backed strongly-typed ID)
-- Property: `Tournament.Complete` (`bool`, defaults to `false` at `Create`)
-- Operation: `Tournament.CompleteTournament()`
+- Property: `Tournament.Status` (`TournamentStatus`, defaults to `Scheduled` at `Create`)
+- Operations: `Tournament.CompleteTournament(entryCount)`, `Tournament.TruncateTournament()`, `Tournament.CancelTournament()`
+
+---
+
+### Tournament Status
+
+**Definition**: The lifecycle state of a Tournament. A tournament starts **Scheduled** (covers both "not yet started" and "in progress" — `StartDate`/`EndDate` already distinguish those) and finalizes into exactly one of three states, each reachable only once and only from Scheduled:
+
+- **Completed** — ran its full planned format to conclusion. The only status a tournament can be Title Eligible from.
+- **Truncated** — held, but didn't finish as planned (e.g. finals cancelled for a state of emergency, seeding-based payout instead). Still counts toward season stats; never Title Eligible.
+- **Cancelled** — no official NEBA event took place under this record. Never stats- or title-eligible.
+
+Once finalized (any status other than Scheduled), a tournament can't transition again — `CompleteTournament`/`TruncateTournament`/`CancelTournament` all return `Tournament.AlreadyFinalized` if called on an already-finalized tournament.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
+- Type: `TournamentStatus` (SmartEnum)
+- Property: `Tournament.Status`
+
+---
+
+### Title Eligible
+
+**Definition**: Whether a Tournament counts toward a NEBA title. Set once, only when a tournament transitions to Completed, by comparing the entry count supplied by the caller against the Tournament Type's Minimum Entries at that moment — never recomputed afterward, so a later change to Minimum Entries can't retroactively affect a tournament that already completed. Always `false` for every status other than Completed, including Truncated (which still counts toward stats) and Cancelled.
+
+**In Code**:
+
+- Namespace: `Neba.Api.Features.Tournaments.Domain`
+- Property: `Tournament.TitleEligible` (`bool`, defaults to `false` at `Create`)
+- Set via `Tournament.CompleteTournament(entryCount)`, comparing `entryCount` against `TournamentType.MinimumEntries`
 
 ---
 
@@ -792,7 +824,7 @@ A bowler gets a Tournament Result based on a paid, non-refunded Registration for
 - `PrizeMoney` is never negative; zero if none earned.
 - `Points` is never negative. Includes the tournament's base points-for-entering plus any additional points earned by placement (the base-points value and placement-to-points curve are not yet modeled — see `docs/plans/tournament-results.md` Future Work).
 - One Tournament Result per bowler per Tournament — enforced both by the aggregate (`Tournament.AddResult`) and a DB-level alternate key.
-- Tournament Results may only be recorded once the owning Tournament is Complete (see `### Tournament`).
+- Tournament Results may only be recorded once the owning Tournament is finalized as Completed or Truncated (see `### Tournament Status`) — not Scheduled, and not Cancelled.
 - No user input creates these records. Two population paths, both machine-driven: the legacy backdoor sync (migration window, tournaments already run in nebamgmt-v3) and, going forward, a background job that derives results from match play when a tournament completes (match play itself is not yet a domain concept — future work).
 - No edit capability exists. A correction scenario, if one arises, is designed around the real case rather than speculatively now.
 
@@ -940,12 +972,13 @@ Titles are the authoritative source for:
 
 ### Tournament Type
 
-**Definition**: The format classification of a NEBA tournament. Determines the number of bowlers per entry (Team Size), eligibility restrictions, and match play structure. Tournament types are categorized as either active formats (currently offered by NEBA) or inactive formats (retained for historical data integrity only).
+**Definition**: The format classification of a NEBA tournament. Determines the number of bowlers per entry (Team Size), eligibility restrictions, and match play structure. Tournament types are categorized as either active formats (currently offered by NEBA) or inactive formats (retained for historical data integrity only). Each type also defines Minimum Entries — the fewest entries (bowlers for a 1-bowler format, teams otherwise) a completed tournament of that type needs to be Title Eligible (see `### Title Eligible`).
 
 **In Code**:
 
 - Namespace: `Neba.Api.Features.Tournaments.Domain`
 - Type: `TournamentType` (SmartEnum)
+- Property: `TournamentType.MinimumEntries` (`int`)
 
 ---
 
