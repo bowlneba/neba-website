@@ -23,6 +23,8 @@ internal sealed class GetTournamentSummary : Summary<GetTournamentEndpoint>
                 StartDate = new DateOnly(2025, 3, 15),
                 EndDate = new DateOnly(2025, 3, 15),
                 StatsEligible = true,
+                Status = "Completed",
+                TitleEligible = true,
                 TournamentType = "Singles",
                 EntryFee = 75.00m,
                 RegistrationUrl = null,

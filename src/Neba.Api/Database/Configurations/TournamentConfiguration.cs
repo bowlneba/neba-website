@@ -37,6 +37,12 @@ internal sealed class TournamentConfiguration
         builder.Property(tournament => tournament.StatsEligible)
             .IsRequired();
 
+        builder.Property(tournament => tournament.Status)
+            .IsRequired();
+
+        builder.Property(tournament => tournament.TitleEligible)
+            .IsRequired();
+
         builder.Property(tournament => tournament.BowlingCenterId)
             .HasMaxLength(6);
 

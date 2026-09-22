@@ -31,6 +31,7 @@ internal static class SecurityRoleSeeder
             Permissions.EditTournament,
             Permissions.ManageTournamentSponsors,
             Permissions.DeleteTournament,
+            Permissions.ManageTournamentStatus,
 
             Permissions.ViewBackgroundJobsDashboard
         ],
@@ -46,14 +47,16 @@ internal static class SecurityRoleSeeder
 
             Permissions.CreateTournament,
             Permissions.EditTournament,
-            Permissions.ManageTournamentSponsors
+            Permissions.ManageTournamentSponsors,
+            Permissions.ManageTournamentStatus
         ],
 
         [Roles.TournamentDirector] =
         [
             Permissions.CreateTournament,
             Permissions.EditTournament,
-            Permissions.ManageTournamentSponsors
+            Permissions.ManageTournamentSponsors,
+            Permissions.ManageTournamentStatus
         ],
 
         [Roles.Journalist] =

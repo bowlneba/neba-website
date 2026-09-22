@@ -79,6 +79,8 @@ internal sealed class GetTournamentEndpoint(
             StartDate = dto.StartDate,
             EndDate = dto.EndDate,
             StatsEligible = dto.StatsEligible,
+            Status = dto.Status,
+            TitleEligible = dto.TitleEligible,
             TournamentType = dto.TournamentType,
             EntryFee = dto.EntryFee,
             RegistrationUrl = dto.RegistrationUrl,
